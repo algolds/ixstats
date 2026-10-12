@@ -276,7 +276,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
           editType: "border_adjust",
           editSubtype: input.editSubtype,
           operation: "update",
-          proposedData: input.proposedGeometry as any,
+          targetId: feature.id,
+          proposedData: { geometry: input.proposedGeometry } as object,
           currentData: feature.geometry ?? undefined,
           previousGeometry: feature.geometry ?? undefined,
           affectedFeatures:
@@ -327,10 +328,14 @@ export const geoEditorBordersRouter = createTRPCRouter({
       }
 
       const [geomA, geomB] = result;
+      const areaA = calculateArea(geomA);
+      const areaB = calculateArea(geomB);
       const featureIdA = input.nameA.replace(/\s+/g, "_");
       const featureIdB = input.nameB.replace(/\s+/g, "_");
       // Capture before the transaction nulls the original feature's link.
       const originalCountryId = feature.countryId;
+      // The larger part keeps the original's nation, so the sync below does not clear its outline
+      const aKeepsNation = areaA >= areaB;
 
       await ctx.db.$transaction(async (tx) => {
         // Deactivate and rename original to prevent unique constraint violation
@@ -355,7 +360,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
               properties: { id: featureIdA, name: input.nameA },
               centroid: calculateCentroid(geomA),
               boundingBox: calculateBBox(geomA),
-              areaSqKm: calculateArea(geomA),
+              areaSqKm: areaA,
+              countryId: aKeepsNation ? originalCountryId : null,
               isActive: true,
             },
             {
@@ -367,7 +373,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
               properties: { id: featureIdB, name: input.nameB },
               centroid: calculateCentroid(geomB),
               boundingBox: calculateBBox(geomB),
-              areaSqKm: calculateArea(geomB),
+              areaSqKm: areaB,
+              countryId: aKeepsNation ? null : originalCountryId,
               isActive: true,
             },
           ],
@@ -446,6 +453,10 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const countryIds = Array.from(
         new Set(features.map((f) => f.countryId).filter(Boolean))
       ) as string[];
+      // The merged feature keeps the largest linked source's nation, so its outline is not cleared
+      const keptCountryId =
+        features.filter((f) => f.countryId).sort((a, b) => (b.areaSqKm ?? 0) - (a.areaSqKm ?? 0))[0]
+          ?.countryId ?? null;
 
       await ctx.db.$transaction(async (tx) => {
         // Deactivate and rename originals to prevent unique constraint violation
@@ -472,6 +483,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             centroid: calculateCentroid(merged),
             boundingBox: calculateBBox(merged),
             areaSqKm: calculateArea(merged),
+            countryId: keptCountryId,
             isActive: true,
           },
         });

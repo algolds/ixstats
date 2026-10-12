@@ -10,6 +10,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders";
+import { geoEditorQueueRouter } from "~/server/api/routers/geo/editor/queue";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { geoEditorLinkageValidationRouter } from "~/server/api/routers/geo/editor/linkage/validation";
 import { geoFeaturesRealmLabelsRouter } from "~/server/api/routers/geo/features/realm-labels";
@@ -226,6 +227,55 @@ describe("world-mode border editing is realm-scoped", () => {
     expect(db.mapLayer!.findMany).not.toHaveBeenCalled();
   });
 
+  it("split keeps the nation on the larger part, merge on the largest linked source", async () => {
+    const db = realmDb();
+    const rect = (x0: number, x1: number) => ({
+      type: "Polygon",
+      coordinates: [
+        [
+          [x0, 0],
+          [x1, 0],
+          [x1, 1],
+          [x0, 1],
+          [x0, 0],
+        ],
+      ],
+    });
+    db.mapLayer!.findFirst!.mockResolvedValue({
+      id: "ml1",
+      featureId: "A",
+      countryId: "c1",
+      geometry: rect(0, 3),
+    });
+    db.mapLayer!.createMany = jest.fn();
+    await borders(db, MAP_OFFICER).splitCountry({
+      featureId: "A",
+      splitLine: [
+        [1, -1],
+        [1, 2],
+      ],
+      nameA: "West",
+      nameB: "East",
+      realm: "eurth",
+    });
+    const parts: Array<{ areaSqKm: number; countryId: string | null }> =
+      db.mapLayer!.createMany.mock.calls[0][0].data;
+    const [small, large] = [...parts].sort((a, b) => a.areaSqKm - b.areaSqKm);
+    expect(large!.countryId).toBe("c1");
+    expect(small!.countryId).toBeNull();
+
+    db.mapLayer!.findMany!.mockResolvedValue([
+      { id: "m1", featureId: "A", countryId: "c1", areaSqKm: 10, geometry: rect(0, 1) },
+      { id: "m2", featureId: "B", countryId: "c2", areaSqKm: 30, geometry: rect(1, 2) },
+    ]);
+    await borders(db, MAP_OFFICER).mergeCountries({
+      featureIds: ["A", "B"],
+      newName: "Union",
+      realm: "eurth",
+    });
+    expect(db.mapLayer!.create!.mock.calls[0][0].data.countryId).toBe("c2");
+  });
+
   it("an editor saves only into their own draft session", async () => {
     const db = realmDb();
     db.mapEditorSession!.updateMany!.mockResolvedValue({ count: 0 });
@@ -254,7 +304,44 @@ describe("world-mode border editing is realm-scoped", () => {
     expect(db.mapEditRequest!.create!.mock.calls[0][0].data).toMatchObject({
       realmId: EURTH,
       countryId: "c1",
+      targetId: "ml1",
+      proposedData: { geometry: { type: "Polygon", coordinates: [] } },
     });
+  });
+
+  it("approving a queued border edit reshapes its own feature, or refuses without approving", async () => {
+    const db = realmDb();
+    const geometry = { type: "Polygon", coordinates: [] };
+    db.mapEditRequest!.findUnique!.mockResolvedValue({
+      id: "req1",
+      status: "pending",
+      editType: "border_adjust",
+      operation: "update",
+      countryId: "c1",
+      realmId: EURTH,
+      targetId: "ml1",
+      proposedData: { geometry },
+    });
+    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null });
+    const queue = createCallerFactory(geoEditorQueueRouter)(ctxAs(db, ADMIN));
+    await queue.approveEdit({ editId: "req1" });
+    expect(db.mapLayer!.findFirst!.mock.calls[0][0].where).toEqual({
+      id: "ml1",
+      layerType: "political",
+      isActive: true,
+      realmId: EURTH,
+    });
+    expect(db.mapLayer!.update!.mock.calls[0][0]).toEqual({
+      where: { id: "ml1" },
+      data: { geometry },
+    });
+    expect(db.mapEditRequest!.update!.mock.calls[0][0].data.status).toBe("approved");
+
+    db.mapLayer!.findFirst!.mockResolvedValue(null);
+    await expect(queue.approveEdit({ editId: "req1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(db.mapEditRequest!.update).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -306,6 +393,33 @@ describe("linkage and auto-match are realm-scoped", () => {
     ).updateFeatureProperties({ featureId: "F", displayName: "New name", realm: "eurth" });
     expect(db.mapLayer!.update!.mock.calls[0][0].data).toEqual({ displayName: "New name" });
     expect(db.country!.update).not.toHaveBeenCalled();
+  });
+
+  it("an admin saving a region's other fields keeps the linked nation's name", async () => {
+    const db = realmDb();
+    db.mapLayer!.findFirst!.mockResolvedValue({
+      id: "ml1",
+      featureId: "F",
+      countryId: "c1",
+      displayName: "Region",
+    });
+    const caller = createCallerFactory(geoEditorLinkageAssignmentRouter)(ctxAs(db, ADMIN));
+    await caller.updateFeatureProperties({
+      featureId: "F",
+      displayName: "Region",
+      properties: { note: "x" },
+      realm: "eurth",
+    });
+    expect(db.country!.update).not.toHaveBeenCalled();
+    await caller.updateFeatureProperties({
+      featureId: "F",
+      displayName: "New name",
+      realm: "eurth",
+    });
+    expect(db.country!.update!.mock.calls[0][0].data).toEqual({
+      name: "New name",
+      slug: "new-name",
+    });
   });
 
   it("a founder cannot link regions of another realm", async () => {

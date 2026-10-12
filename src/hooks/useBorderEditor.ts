@@ -9,6 +9,7 @@ import {
   type UndoStack,
   type VertexRef,
   type AltitudeSnapResult,
+  type NeighborChanges,
   createUndoStack,
   pushUndo,
   canUndo,
@@ -17,6 +18,7 @@ import {
   getRedoGeometry,
   undo as undoStack,
   redo as redoStack,
+  getAllRings,
   moveVertex,
   addVertex,
   findNearestVertex,
@@ -28,8 +30,7 @@ import {
   naturalizeGeometry,
   simplifyGeometry,
 } from "~/lib/maps/border-editor";
-import { buildSharedVertexIndex, moveSharedVertex } from "~/lib/maps/shared-vertex-builder";
-import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
+import { cascadeMoveVertex, vkey, type TopologyRef } from "~/lib/maps/topology-engine";
 import { traceAlongLayer } from "~/lib/maps/border-trace";
 import type { TraceFeature } from "~/lib/maps/border-trace";
 
@@ -51,12 +52,12 @@ export interface BorderEditorState {
   neighborGeometries: Record<string, Polygon | MultiPolygon>;
   /** Geometries of neighbors changed during this session (sent on submit). */
   dirtyNeighbors: Record<string, Polygon | MultiPolygon>;
+  /** Neighbor geometries as loaded (what revert restores). */
+  originalNeighborGeometries: Record<string, Polygon | MultiPolygon>;
   isDirty: boolean;
   isLoading: boolean;
   error: string | null;
   areaKm2: number | null;
-  /** Shared vertices for the currently loaded feature */
-  sharedVertices: SharedVertexData[];
   /** Active altitude snap indicator */
   altitudeSnap: AltitudeSnapResult | null;
   traceStart: [number, number] | null;
@@ -114,14 +115,35 @@ const INITIAL_STATE: BorderEditorState = {
   neighbors: [],
   neighborGeometries: {},
   dirtyNeighbors: {},
+  originalNeighborGeometries: {},
   isDirty: false,
   isLoading: false,
   error: null,
   areaKm2: null,
-  sharedVertices: [],
   altitudeSnap: null,
   traceStart: null,
 };
+
+/**
+ * Neighbour outlines with one undo entry's neighbour changes rolled back ("before") or replayed ("after").
+ * A neighbour back on its loaded outline is no longer dirty.
+ */
+function withNeighborChanges(
+  s: BorderEditorState,
+  changes: NeighborChanges | undefined,
+  side: "before" | "after"
+): Pick<BorderEditorState, "neighborGeometries" | "dirtyNeighbors"> {
+  const moved = Object.fromEntries(
+    Object.entries(changes ?? {}).map(([fid, change]) => [fid, change[side]])
+  );
+  const dirty = Object.entries({ ...s.dirtyNeighbors, ...moved }).filter(
+    ([fid, g]) => g !== s.originalNeighborGeometries[fid]
+  );
+  return {
+    neighborGeometries: { ...s.neighborGeometries, ...moved },
+    dirtyNeighbors: Object.fromEntries(dirty),
+  };
+}
 
 export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const [state, setState] = useState<BorderEditorState>(INITIAL_STATE);
@@ -136,7 +158,12 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const mergeCountries = api.geoEditor.mergeCountries.useMutation();
   const repairGeometry = api.geoEditor.repairBorderGeometry.useMutation();
   const utils = api.useUtils();
-  const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
+  /** The state a vertex drag started from, and the neighbour vertices sharing the dragged one. */
+  const dragStart = useRef<{
+    geometry: Polygon | MultiPolygon;
+    neighborGeometries: Record<string, Polygon | MultiPolygon>;
+    partners: TopologyRef[];
+  } | null>(null);
 
   // Trace mode state (mutable refs)
   /** River/coast layer data updated externally via setTraceLayerSource. */
@@ -205,13 +232,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
                 neighborGeoms[n.featureId] = n.geometry as Polygon | MultiPolygon;
               }
             }
-            const sharedVertices = buildSharedVertexIndex([
-              { featureId, geometry: geom },
-              ...Object.entries(neighborGeoms).map(([fid, g]) => ({
-                featureId: fid,
-                geometry: g,
-              })),
-            ]);
             setState((s) => ({
               ...s,
               featureId,
@@ -221,6 +241,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               neighbors: data.neighbors,
               neighborGeometries: neighborGeoms,
               dirtyNeighbors: {},
+              originalNeighborGeometries: neighborGeoms,
               undoStackState: createUndoStack(),
               selectedVertex: null,
               splitLine: [],
@@ -229,7 +250,6 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
               isLoading: false,
               error: null,
               areaKm2: calculateArea(geom),
-              sharedVertices,
               altitudeSnap: null,
               traceStart: null,
             }));
@@ -373,40 +393,45 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   // Drag moves geometry without pushing undo (called per mousemove)
   const handleVertexDrag = useCallback((ref: VertexRef, to: Position) => {
     setState((s) => {
-      if (!s.geometry) return s;
-      // Capture the pre-drag geometry on the first drag event
-      if (!dragStartGeom.current) {
-        dragStartGeom.current = s.geometry;
+      if (!s.geometry || !s.featureId) return s;
+      // On the first drag event capture the pre-drag state and the neighbour vertices sharing the dragged
+      // one, matched on the vertex itself (not the pointer) and kept for the whole drag
+      if (!dragStart.current) {
+        const at = getAllRings(s.geometry)[ref.ringIndex]?.[ref.vertexIndex] ?? ref.coord;
+        dragStart.current = {
+          geometry: s.geometry,
+          neighborGeometries: s.neighborGeometries,
+          partners: Object.entries(s.neighborGeometries).flatMap(([featureId, g]) =>
+            getAllRings(g).flatMap((ring, ringIndex) =>
+              ring.flatMap((c, vertexIndex) =>
+                distanceDeg(c, at) < 0.001 ? [{ featureId, ringIndex, vertexIndex }] : []
+              )
+            )
+          ),
+        };
       }
+      const { partners } = dragStart.current;
 
-      // Is the vertex being dragged a shared one? Match on its CURRENT coord.
-      const here = ref.coord;
-      const shared = s.sharedVertices.find((sv) => distanceDeg([sv.lng, sv.lat], here) < 0.001);
+      if (partners.length > 0) {
+        const geomMap = new Map(Object.entries(s.neighborGeometries));
+        geomMap.set(s.featureId, s.geometry);
+        const self = {
+          featureId: s.featureId,
+          ringIndex: ref.ringIndex,
+          vertexIndex: ref.vertexIndex,
+        };
+        // The drag's vertices as a one-bucket index keyed where they move to
+        const key = vkey(to);
+        const updated = cascadeMoveVertex(new Map([[key, [self, ...partners]]]), geomMap, key, to);
 
-      if (shared) {
-        const geomMap = new Map<string, Polygon | MultiPolygon>();
-        geomMap.set(s.featureId!, s.geometry);
-        for (const [fid, g] of Object.entries(s.neighborGeometries)) geomMap.set(fid, g);
-        const updated = moveSharedVertex(shared, to, geomMap);
-
-        const newSelf = updated.get(s.featureId!) ?? s.geometry;
-        const newNeighbors: Record<string, Polygon | MultiPolygon> = { ...s.neighborGeometries };
-        const newDirty: Record<string, Polygon | MultiPolygon> = { ...s.dirtyNeighbors };
-        for (const [fid, g] of updated) {
-          if (fid === s.featureId) continue;
-          newNeighbors[fid] = g;
-          newDirty[fid] = g;
-        }
-        // Update the shared-vertex's stored coord so the next drag event still matches.
-        const newShared = s.sharedVertices.map((sv) =>
-          sv === shared ? { ...sv, lng: to[0], lat: to[1] } : sv
-        );
+        const newSelf = updated.get(s.featureId) ?? s.geometry;
+        updated.delete(s.featureId);
+        const moved = Object.fromEntries(updated);
         return {
           ...s,
           geometry: newSelf,
-          neighborGeometries: newNeighbors,
-          dirtyNeighbors: newDirty,
-          sharedVertices: newShared,
+          neighborGeometries: { ...s.neighborGeometries, ...moved },
+          dirtyNeighbors: { ...s.dirtyNeighbors, ...moved },
           isDirty: true,
           areaKm2: calculateArea(newSelf),
           selectedVertex: { ...ref, coord: to },
@@ -428,12 +453,25 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   // Commit the drag as a single undo entry (called on mouseup)
   const commitDrag = useCallback(() => {
     setState((s) => {
-      const beforeDrag = dragStartGeom.current;
-      dragStartGeom.current = null;
-      if (!beforeDrag || !s.geometry) return s;
+      const start = dragStart.current;
+      dragStart.current = null;
+      if (!start || !s.geometry) return s;
       // Don't push if geometry didn't actually change
-      if (beforeDrag === s.geometry) return s;
-      const newStack = pushUndo(s.undoStackState, "move_vertex", beforeDrag, s.geometry);
+      if (start.geometry === s.geometry) return s;
+      // The neighbours the drag carried along, so undo/redo move them too
+      const neighbors: NeighborChanges = Object.fromEntries(
+        start.partners.map(({ featureId }) => [
+          featureId,
+          { before: start.neighborGeometries[featureId]!, after: s.neighborGeometries[featureId]! },
+        ])
+      );
+      const newStack = pushUndo(
+        s.undoStackState,
+        "move_vertex",
+        start.geometry,
+        s.geometry,
+        neighbors
+      );
       return { ...s, undoStackState: newStack };
     });
   }, []);
@@ -463,8 +501,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!canUndo(s.undoStackState)) return s;
       const prevGeom = getUndoGeometry(s.undoStackState);
       if (!prevGeom) return s;
+      const entry = s.undoStackState.entries[s.undoStackState.position];
       return {
         ...s,
+        ...withNeighborChanges(s, entry?.neighbors, "before"),
         geometry: prevGeom,
         undoStackState: undoStack(s.undoStackState),
         isDirty: true,
@@ -478,8 +518,10 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       if (!canRedo(s.undoStackState)) return s;
       const nextGeom = getRedoGeometry(s.undoStackState);
       if (!nextGeom) return s;
+      const entry = s.undoStackState.entries[s.undoStackState.position + 1];
       return {
         ...s,
+        ...withNeighborChanges(s, entry?.neighbors, "after"),
         geometry: nextGeom,
         undoStackState: redoStack(s.undoStackState),
         isDirty: true,
@@ -541,6 +583,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
           originalGeometry: s.geometry,
           isDirty: false,
           dirtyNeighbors: {},
+          originalNeighborGeometries: s.neighborGeometries,
           undoStackState: createUndoStack(),
         }));
       }
@@ -610,6 +653,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
       return {
         ...s,
         geometry: s.originalGeometry,
+        neighborGeometries: s.originalNeighborGeometries,
         dirtyNeighbors: {},
         undoStackState: createUndoStack(),
         selectedVertex: null,
@@ -711,22 +755,17 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
         const result = applyBrushStroke(strokePoints, radiusKm, s.geometry, targetGeom);
         if (!result) return s;
 
-        const newDirty: Record<string, Polygon | MultiPolygon> = {
-          ...s.neighborGeometries,
-        };
-        newDirty[targetFeatureId] = result.target;
-        for (const [fid] of Object.entries(s.dirtyNeighbors)) {
-          if (fid !== targetFeatureId) newDirty[fid] = s.dirtyNeighbors[fid]!;
-        }
-
-        const newStack = pushUndo(s.undoStackState, "brush", s.geometry, result.source);
+        const newStack = pushUndo(s.undoStackState, "brush", s.geometry, result.source, {
+          [targetFeatureId]: { before: targetGeom, after: result.target },
+        });
 
         brushResultRef.current = true;
 
         return {
           ...s,
           geometry: result.source,
-          dirtyNeighbors: newDirty,
+          neighborGeometries: { ...s.neighborGeometries, [targetFeatureId]: result.target },
+          dirtyNeighbors: { ...s.dirtyNeighbors, [targetFeatureId]: result.target },
           undoStackState: newStack,
           isDirty: true,
           areaKm2: calculateArea(result.source),

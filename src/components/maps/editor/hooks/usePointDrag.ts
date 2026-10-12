@@ -211,6 +211,9 @@ export function usePointDrag({
     };
 
     let nudgeTimer: ReturnType<typeof setTimeout> | null = null;
+    /** Where nudges left a point whose feature still holds `base` (the feature is never mutated, so undo
+     *  records where it was). */
+    let nudged: { id: string; base: [number, number]; coords: [number, number] } | null = null;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && dragRef.current) {
@@ -239,14 +242,15 @@ export function usePointDrag({
 
       e.preventDefault();
       const delta = e.shiftKey ? NUDGE_LARGE : NUDGE_SMALL;
+      // Repeated nudges accumulate here, before and after the save lands
+      const from =
+        nudged?.id === sel.id && nudged.base === sel.coordinates ? nudged.coords : sel.coordinates;
       const newCoords: [number, number] = [
-        sel.coordinates[0] + direction[0] * delta,
-        sel.coordinates[1] + direction[1] * delta,
+        from[0] + direction[0] * delta,
+        from[1] + direction[1] * delta,
       ];
+      nudged = { id: sel.id, base: sel.coordinates, coords: newCoords };
       syncPointsSource(sel.id, newCoords);
-
-      // Updated in place so repeated nudges accumulate before the save lands.
-      sel.coordinates = newCoords;
 
       // Commit once the arrow keys go quiet: a burst of nudges is one save and one undo step.
       if (nudgeTimer) clearTimeout(nudgeTimer);

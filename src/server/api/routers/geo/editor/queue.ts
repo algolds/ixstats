@@ -60,10 +60,18 @@ async function applyBorderAdjust(
   actorId: string,
   reviewNote: string | undefined
 ) {
-  const mapLayer = await db.mapLayer.findFirst({
-    where: { layerType: "political", countryId: edit.countryId },
-  });
-  if (!mapLayer || !proposed.geometry) return;
+  // The feature the edit was filed against, still active on the edit's realm map
+  const mapLayer =
+    edit.targetId &&
+    (await db.mapLayer.findFirst({
+      where: { id: edit.targetId, layerType: "political", isActive: true, realmId: edit.realmId },
+    }));
+  if (!mapLayer || !proposed.geometry) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "This border edit can no longer be applied: its feature or geometry is missing",
+    });
+  }
   const oldAreaSqKm = mapLayer.areaSqKm;
 
   await db.mapLayer.update({

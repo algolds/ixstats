@@ -338,9 +338,7 @@ export async function applyMapImportPlan(
   );
   const written = new Set(writeResult.written);
   const deactivated =
-    diff.mode === "replace"
-      ? await deactivateOtherFeatures(db, realm.id, LAYER, writeResult.written)
-      : 0;
+    diff.mode === "replace" ? await deactivateOtherFeatures(db, realm.id, LAYER, keys) : 0;
 
   const landAreasFilled: string[] = [];
   for (const f of features) {

@@ -125,7 +125,7 @@ export async function writePipelineLayers(
         db,
         input.realmId,
         entry.layerType,
-        written.written
+        entry.features.map((f) => f.key)
       );
     }
   }

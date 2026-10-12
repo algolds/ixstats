@@ -18,6 +18,7 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { useBorderEditor } from "~/hooks/useBorderEditor";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import type { useEditorGeoDataState, useEditorSelectionState, useEditorToolState } from "./state";
 
 type Editor = ReturnType<typeof useMapEditor>;
@@ -26,12 +27,13 @@ const ROUTE_QUERY_OPTIONS = { staleTime: 60_000, gcTime: 5 * 60_000 } as const;
 
 /** Country routes when a country is open, the world route set otherwise. */
 export function useTransportRouteData(activeCountryId: string | null, isWorldMode: boolean) {
+  const realm = useMapRealm();
   const { data: countryRoutesData } = api.transport.getCountryRoutes.useQuery(
     { countryId: activeCountryId ?? "" },
     { enabled: !!activeCountryId, ...ROUTE_QUERY_OPTIONS }
   );
   const { data: worldRoutesData } = api.transport.getAllRoutesGeoJSON.useQuery(
-    {},
+    { realm },
     { enabled: isWorldMode || !activeCountryId, ...ROUTE_QUERY_OPTIONS }
   );
   return (
@@ -92,15 +94,16 @@ export function useEditorServerMutations(editor: Editor) {
   return { utils, generateTransport, recalculateGeo, simplifyAll };
 }
 
-export function useWikiLinking(editor: Editor, activeCountryId: string | null) {
+/** Saves a city, POI, story pin or label's wiki link on its own row (null unlinks it). */
+export function useFeatureWikiLink(editor: Editor, activeCountryId: string | null) {
   const wikiLinkMutation = { onSuccess: () => editor.refetchFeatures() };
   const updateCityWiki = api.geoFeatures.updateCity.useMutation(wikiLinkMutation);
   const updatePOIWiki = api.geoFeatures.updatePOI.useMutation(wikiLinkMutation);
   const updateStoryPinWiki = api.geoFeatures.updateStoryPin.useMutation(wikiLinkMutation);
   const updateMapLabelWiki = api.geoFeatures.updateMapLabel.useMutation(wikiLinkMutation);
 
-  const handleLinkFeature = useCallback(
-    async (featureId: string, featureType: string, wikiPageTitle: string) => {
+  return useCallback(
+    async (featureId: string, featureType: string, wikiPageTitle: string | null) => {
       const countryId = activeCountryId;
       if (!countryId) return;
       const linkers: Partial<Record<string, () => Promise<unknown>>> = {
@@ -115,7 +118,10 @@ export function useWikiLinking(editor: Editor, activeCountryId: string | null) {
     },
     [activeCountryId, updateCityWiki, updatePOIWiki, updateStoryPinWiki, updateMapLabelWiki]
   );
+}
 
+export function useWikiLinking(editor: Editor, activeCountryId: string | null) {
+  const handleLinkFeature = useFeatureWikiLink(editor, activeCountryId);
   const wikiScanner = useWikiScanner({
     features: editor.allFeatures,
     onLinkFeature: handleLinkFeature,

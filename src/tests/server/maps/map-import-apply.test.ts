@@ -229,6 +229,22 @@ describe("applyMapImportPlan and rollback", () => {
     });
   });
 
+  it("replace mode keeps a feature whose incoming border was rejected", async () => {
+    const db = setup();
+    const realm = await findImportRealm(db, "r1");
+    const plan = await planMapImport(db as never, realm, result, apply("replace"), {});
+    plan.features.find((f) => f.key === "borealis-key")!.geometry = square(500);
+    const applied = await applyMapImportPlan(db as never, realm, plan, {
+      jobId: "j1",
+      requestedBy: "admin_1",
+    });
+    expect(applied.rejected.map((r) => r.key)).toEqual(["borealis-key"]);
+    expect(applied.deactivated).toBe(1); // Old Kingdom only
+    const row = (key: string) =>
+      db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === key);
+    expect(row("borealis-key").isActive).toBe(true);
+  });
+
   it("planning the same map again finds every border unchanged, although the stored copy was repaired", async () => {
     const db = setup();
     const realm = await findImportRealm(db, "r1");
@@ -301,6 +317,26 @@ describe("importPipelineResult on the shared writer", () => {
       mode: "replace",
       rollbackAvailable: true,
     });
+  });
+
+  it("replace mode keeps a feature whose incoming row was rejected", async () => {
+    const db = setup();
+    const out = await writePipelineLayers(db as never, {
+      realmId: "r1",
+      mode: "replace",
+      createdBy: "admin_1",
+      layers: {
+        lakes: {
+          type: "FeatureCollection",
+          features: [{ type: "Feature", id: "lake-1", properties: {}, geometry: square(500, 1) }],
+        },
+      },
+    });
+    expect(out).toMatchObject({ imported: 0, deactivated: 0 });
+    expect(out.rejected.map((r) => r.key)).toEqual(["lake-1"]);
+    expect(
+      db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === "lake-1").isActive
+    ).toBe(true);
   });
 
   it("rejects bad geometry instead of writing it, and accepts river lines", async () => {

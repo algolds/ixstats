@@ -5,7 +5,9 @@ import {
   createVertexEditState,
   useVertexEditPointer,
   type VertexEditLatest,
+  type VertexEditState,
 } from "~/components/maps/editor/hooks/useVertexEditPointer";
+import { buildTopologyIndex } from "~/lib/maps/topology-engine";
 
 type Handler = (e: unknown) => void;
 
@@ -73,11 +75,12 @@ const move = (x: number, lng: number, lat: number) => ({
 
 afterEach(() => jest.restoreAllMocks());
 
-function setup() {
+function setup(prepare?: (st: VertexEditState) => void) {
   const frame = controlledFrames();
   const { map, fire } = fakeMap();
   const st = createVertexEditState();
   st.edit = { featureId: "region-1", currentGeometry: square() };
+  prepare?.(st);
   const latest: { current: VertexEditLatest } = {
     current: { features: [], countryGeometry: null, snapEnabled: false },
   };
@@ -138,5 +141,36 @@ describe("useVertexEditPointer drag", () => {
     frame();
 
     expect(vertex()).toEqual([1, 1]);
+  });
+
+  it("Escape also puts back the neighbours the drag carried along", () => {
+    const neighbor: Polygon = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [1, 0],
+          [2, 0],
+          [2, 1],
+          [1, 1],
+          [1, 0],
+        ],
+      ],
+    };
+    const { frame, fire, st } = setup((s) => {
+      s.topology = buildTopologyIndex([
+        { id: "region-1", geometry: s.edit!.currentGeometry },
+        { id: "region-2", geometry: neighbor },
+      ]);
+      s.neighbors = new Map([["region-2", neighbor]]);
+    });
+    const topology = new Map(st.topology!);
+    fire("mousemove", move(20, 2, 2));
+    frame();
+    expect((st.neighbors.get("region-2") as Polygon).coordinates[0]![3]).toEqual([2, 2]);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(st.neighbors.get("region-2")).toBe(neighbor);
+    expect(st.changedNeighborIds.size).toBe(0);
+    expect(st.topology).toEqual(topology);
   });
 });

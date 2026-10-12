@@ -102,15 +102,12 @@ export function moveVertex(
   const ring = rings[ref.ringIndex];
   if (!ring) return geometry;
 
+  const closed = isRingClosed(ring);
   ring[ref.vertexIndex] = to;
 
   // If this is the first vertex and ring is closed, update the closing vertex too
-  if (ref.vertexIndex === 0 && isRingClosed(ring)) {
+  if (ref.vertexIndex === 0 && closed) {
     ring[ring.length - 1] = [...to];
-  }
-  // If this is the last-before-close vertex, also handled by the check above
-  if (ref.vertexIndex === ring.length - 2 && isRingClosed(ring)) {
-    // noop — moving second-to-last doesn't affect closure
   }
 
   return rebuildGeometry(geometry, rings);

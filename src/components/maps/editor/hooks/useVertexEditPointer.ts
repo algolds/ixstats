@@ -25,6 +25,10 @@ const MIDPOINT_LAYER = "editor-vedit-midpoints-layer";
 interface DragVertexState extends VertexRef {
   originalCoord: Position;
   initialGeometry: Polygon | MultiPolygon;
+  /** Neighbour shapes, reshaped set and topology index before the drag, restored by Escape. */
+  initialNeighbors: Map<string, Polygon | MultiPolygon>;
+  initialChangedNeighborIds: Set<string>;
+  initialTopology: TopologyIndex | null;
   startScreenPoint: ScreenPoint;
   committed: boolean;
   lockedAxis: DragAxis | null;
@@ -154,6 +158,9 @@ export function useVertexEditPointer({
         ...vertex,
         originalCoord: [...vertex.coord],
         initialGeometry: structuredClone(st.edit!.currentGeometry),
+        initialNeighbors: new Map(st.neighbors),
+        initialChangedNeighborIds: new Set(st.changedNeighborIds),
+        initialTopology: st.topology && new Map(st.topology),
         startScreenPoint,
         committed,
         lockedAxis: null,
@@ -262,6 +269,12 @@ export function useVertexEditPointer({
       st.drag = null;
       if (drag.committed) {
         st.edit.currentGeometry = drag.initialGeometry;
+        for (const [id, geometry] of drag.initialNeighbors) {
+          if (st.neighbors.get(id) !== geometry) queueCascadeVisual(id, geometry);
+        }
+        st.neighbors = drag.initialNeighbors;
+        st.changedNeighborIds = drag.initialChangedNeighborIds;
+        st.topology = drag.initialTopology;
         updateVertexEditVis(false);
         stopDragging();
       }

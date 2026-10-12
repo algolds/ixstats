@@ -190,7 +190,12 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
       const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
 
       // Update Country name and slug if displayName is changed and country is linked
-      if (renamesNation && targetCountryId && input.displayName !== undefined) {
+      if (
+        renamesNation &&
+        targetCountryId &&
+        input.displayName !== undefined &&
+        input.displayName !== feature.displayName
+      ) {
         const slug = input.displayName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")

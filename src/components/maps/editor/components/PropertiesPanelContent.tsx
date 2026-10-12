@@ -9,6 +9,7 @@ import { DocumentInspector } from "./inspector/DocumentInspector";
 import { WorldCountryProfile, type WorldCountryProfileProps } from "./WorldCountryProfile";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
+import { useFeatureWikiLink } from "../hooks/useEditorOverlayServices";
 
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
@@ -327,18 +328,15 @@ function SelectedFeatureInspector({
   editor,
   feature,
   activeCountryId,
-  updatePropertiesMutation,
   onEditRoute,
   onDeleteFeature,
 }: {
   editor: MapEditorInstance;
   feature: EditorFeature;
   activeCountryId: string | null;
-  updatePropertiesMutation: PropertiesPanelContentProps["updatePropertiesMutation"];
   onEditRoute: ((routeId: string) => void) | undefined;
   onDeleteFeature: PropertiesPanelContentProps["handleDeleteFeature"];
 }) {
-  const realm = useMapRealm();
   const utils = api.useUtils();
   const updateRouteMutation = api.transport.updateRoute.useMutation({
     onSuccess: () => {
@@ -348,14 +346,15 @@ function SelectedFeatureInspector({
     },
   });
 
+  const linkWikiPage = useFeatureWikiLink(editor, activeCountryId);
+
   const handleUpdate = async (updates: FeaturePropertyUpdates) => {
-    if ("wikiPageTitle" in updates && updatePropertiesMutation) {
-      await updatePropertiesMutation.mutateAsync({
-        featureId: feature.id,
-        displayName: typeof updates.name === "string" ? updates.name : feature.name,
-        wikiPageTitle: (updates.wikiPageTitle as string | null) ?? null,
-        realm,
-      });
+    if ("wikiPageTitle" in updates) {
+      await linkWikiPage(
+        feature.id,
+        feature.type,
+        (updates.wikiPageTitle as string | null) ?? null
+      );
     }
     await applyFeatureUpdate(editor, feature, updates, updateRouteMutation, activeCountryId);
   };
@@ -457,7 +456,6 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent(
     editor,
     countryInfo,
     featureDetails,
-    updatePropertiesMutation,
     selectedRouteId,
     setSelectedRouteId,
     handleSubmit,
@@ -489,7 +487,6 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent(
         editor={editor}
         feature={editor.selectedFeature}
         activeCountryId={activeCountryId}
-        updatePropertiesMutation={updatePropertiesMutation}
         onEditRoute={effectiveOnEditRoute}
         onDeleteFeature={handleDeleteFeature}
       />
