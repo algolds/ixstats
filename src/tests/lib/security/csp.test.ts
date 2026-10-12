@@ -17,6 +17,12 @@ describe("CSP template", () => {
   it("allows no plain http: images or ws: sockets outside development", () => {
     const csp = buildCSPTemplate(false);
     expect(csp).toMatch(/img-src 'self' data: blob: https:;/);
-    expect(csp).toMatch(/connect-src 'self' https: wss:;/);
+    expect(csp).toMatch(/connect-src 'self' blob: https: wss:;/);
+  });
+
+  it("lets MapLibre's worker fetch blob: GeoJSON (the world editor's draft preview)", () => {
+    for (const development of [false, true]) {
+      expect(buildCSPTemplate(development)).toMatch(/connect-src [^;]*\bblob:/);
+    }
   });
 });
