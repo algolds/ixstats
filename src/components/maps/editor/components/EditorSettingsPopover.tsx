@@ -18,6 +18,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
 import type { RouteType } from "~/lib/economy/transport-generator";
+import { describeQueuedGeoProfiles, type GeoProfileQueued } from "~/lib/maps/geo-profile-queue";
 import type { MapEditorInstance } from "../types/editor-state";
 
 export interface SimplifyAllMutation {
@@ -43,16 +44,7 @@ export interface TransportMutation {
 
 export interface RecalculateGeoMutation {
   isPending: boolean;
-  mutateAsync: (args?: { countryId?: string } | void) => Promise<
-    | {
-        processed: number;
-        failed: number;
-        total: number;
-        errors: string[];
-      }
-    | { success?: boolean }
-    | void
-  >;
+  mutateAsync: (args?: { countryId?: string } | void) => Promise<GeoProfileQueued>;
 }
 
 interface EditorSettingsPopoverProps {
@@ -287,13 +279,14 @@ export function EditorSettingsPopover({
                   }
                   label={recalculateGeo.isPending ? "Recalculating..." : "Recalc"}
                   onClick={() =>
-                    run("Recalculation error", async () => {
-                      await recalculateGeo.mutateAsync({ countryId: activeCountryId });
-                      return "Geographic profile and resources recalculated";
-                    })
+                    run("Recalculation error", async () =>
+                      describeQueuedGeoProfiles(
+                        await recalculateGeo.mutateAsync({ countryId: activeCountryId })
+                      )
+                    )
                   }
                   disabled={recalculateGeo.isPending}
-                  title="Recalculate the geographic profile and resources for the active country"
+                  title="Queue a recalculation of the geographic profile and resources for the active country"
                 />
               </>
             )}

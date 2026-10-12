@@ -33,6 +33,15 @@ describe("CRON_JOBS", () => {
     expect(lockOf("lorewards-state-sync")).toBe("lorewards");
   });
 
+  it("runs the geo profile recalculation under its own lease", () => {
+    const job = CRON_JOBS.find((j) => j.name === "geo-profiles");
+    expect(job).toMatchObject({
+      lockName: "geo-profiles",
+      exportName: "runGeoProfileRecalculation",
+    });
+    expect(job?.timeoutMs).toBeGreaterThan(20 * 60_000);
+  });
+
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
     "%s points at an existing module and export",
     (_name, job) => {

@@ -78,6 +78,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `notification-email-digest` | `7 8 * * *` | — |
 | `realm-source-sync` | `37 * * * *` | — |
 | `map-import` | `* * * * *` | — |
+| `geo-profiles` | `*/5 * * * *` | — |
 
 - `stat-progression` persists the economic projection into each country's stored `current*` stats and writes one `HistoricalDataPoint` per IxTime month; the admin `forceRecalculation` takes the same lease.
 - `thinkpages-trending` scores posts with engagement decay, writes `TrendingTopic` and reconciles the like/reply/repost counters.
@@ -88,6 +89,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 - `exchange-market` recomputes the four Exchange sector indices, rebalances the sector funds (zero-sum), applies company decisions queued a day earlier and refreshes company fair values; `exchange-contract-expiry` cancels OPEN contracts never awarded within 3 days of bidding closing and refunds their escrow once ([exchange.md](../systems/exchange.md)).
 - `realm-source-sync` runs every realm whose own source sync schedule is due (`RealmSourceSync.intervalHours` since its last applied run), one realm at a time, each under the lease `realm-source-sync:<realmId>` that manual runs share ([realms-eurth-onboarding.md](../systems/realms-eurth-onboarding.md), step 4).
 - `map-import` runs queued realm map import analyses (PNG tracing in a worker thread) and any apply job the web process left queued for two minutes, one realm at a time under the lease `map-import:<realmId>`; without it the web process runs the queue in-process ([maps.md](../systems/maps.md#realm-map-import-engine)).
+- `geo-profiles` recomputes the geo profiles (and map-derived `GeographicResource` rows) that the map editor's Recalc action queued by marking them stale, plus any country with map geometry and no profile, one country at a time under the lease `geo-profiles` ([maps.md](../systems/maps.md)); without it Recalc queues work that never runs.
 - `elections` also schedules first elections, and `diplomatic-drift` expires foreign-policy proposals and alliance invites after 14 days.
 
 ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM2 process.

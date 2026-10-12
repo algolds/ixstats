@@ -74,15 +74,9 @@ export function useEditorServerMutations(editor: Editor) {
     onError,
   });
 
-  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation({
-    onSuccess: () => {
-      editor.refetchFeatures();
-      utils.geoCore.getMapBundle.invalidate();
-      utils.geoCore.getMapBundleDetail.invalidate();
-      utils.resources.getCountryResources.invalidate();
-    },
-    onError,
-  });
+  // Only queues the work (the geo-profiles cron job recomputes it), so nothing is refetched here: no map or
+  // resource data has changed yet.
+  const recalculateGeo = api.geoCore.recalculateGeoProfiles.useMutation({ onError });
 
   // Success/failure toasts are raised by the caller (EditorHeader) with the result counts.
   const simplifyAll = api.geoFeatures.simplifySubdivisions.useMutation({

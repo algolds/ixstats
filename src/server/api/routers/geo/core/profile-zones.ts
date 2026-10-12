@@ -11,10 +11,9 @@ import {
 import { climateZoneOf } from "~/lib/maps/climate-zones";
 import { isLandBand } from "~/lib/maps/elevation-config";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { estimateBboxOverlap } from "./geometry";
 
-/** Longitude/latitude extent of the country; the whole globe when it has no stored bounding box. */
+/** Longitude/latitude extent of a country: its stored bounding box. */
 export type Extent = [minLng: number, minLat: number, maxLng: number, maxLat: number];
 
 const LAYER_SELECT = {
@@ -59,52 +58,57 @@ function overlappingFills(
 
 /**
  * $1 country, $2 layer type: the area (km² on Earth) of the country's own realm's features of that layer inside
- * its border, per fill colour and zone.
+ * its border, per fill colour and zone. The border is cut into pieces of at most 256 vertices and each feature
+ * (some span continents) into pieces of at most 2048 (ST_Subdivide), so every overlay is a small one; the GiST
+ * index on `geom_postgis` prunes the features first. The pieces partition the shapes, so their areas add up, and
+ * a piece inside a border piece counts whole.
  */
 const CLIPPED_FILLS_SQL = `
-  WITH country AS (
-    SELECT "realmId", ST_MakeValid(ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326)) AS geom
-      FROM "Country" WHERE id = $1 LIMIT 1
+  WITH c AS MATERIALIZED (
+    SELECT "realmId", geom_postgis FROM "Country" WHERE id = $1 AND geom_postgis IS NOT NULL
+  ),
+  parts AS MATERIALIZED (SELECT ST_Subdivide(c.geom_postgis, 256) AS g FROM c),
+  cand AS MATERIALIZED (
+    SELECT ml.properties AS props, ST_Subdivide(ml.geom_postgis, 2048) AS g
+      FROM c JOIN map_layers ml ON ml."worldId" = c."realmId" AND ml."layerType" = $2
+       AND ml."isActive" = true AND ml.geom_postgis && c.geom_postgis
   )
-  SELECT ml.properties->>'fill' AS fill, ml.properties->>'climateId' AS "climateId",
-         ml.properties->>'zoneId' AS "zoneId",
-         SUM(ST_Area(ST_Intersection(ml.geom_postgis, c.geom)::geography)) / 1000000.0 AS area
-    FROM country c
-    JOIN map_layers ml ON ml."worldId" = c."realmId" AND ml."layerType" = $2 AND ml."isActive" = true
-   WHERE ml.geom_postgis IS NOT NULL AND ST_Intersects(ml.geom_postgis, c.geom)
+  SELECT cand.props->>'fill' AS fill, cand.props->>'climateId' AS "climateId",
+         cand.props->>'zoneId' AS "zoneId",
+         SUM(ST_Area((CASE WHEN ST_CoveredBy(cand.g, parts.g) THEN cand.g
+                           ELSE ST_Intersection(cand.g, parts.g) END)::geography)) / 1000000.0 AS area
+    FROM cand JOIN parts ON cand.g && parts.g
    GROUP BY 1, 2, 3`;
 
 /**
- * The fills of a country's realm layer and the area each covers in it. A realm's layers are clipped to the
- * nation in PostGIS (its zones are large pieces whose boxes span continents); Ixnay keeps the bounding-box
- * estimate, which is also the fallback when PostGIS fails.
+ * The fills of a country's realm layer and the area each covers in it. The realm's layers are clipped to the
+ * nation in PostGIS (its zones are large pieces whose boxes span continents), Ixnay's included. A country wider
+ * than 180 degrees crosses +-180, where its `geom_postgis` is a planar sliver (the convention of the atlas_r0
+ * migration), so its zones are estimated from bounding boxes instead. A failing query is not estimated over: it
+ * rejects, so the profile (cached for an hour) is never built from a degraded answer.
  */
 export async function countryZoneFills(
   db: PrismaClient,
   country: { id: string; realmId: string },
   layerType: "climate" | "altitudes",
-  extent: Extent
+  bbox: Extent | null
 ): Promise<ZoneFill[]> {
-  if (country.realmId !== DEFAULT_REALM_ID) {
-    try {
-      const rows = await db.$queryRawUnsafe<
-        Array<{
-          fill: string | null;
-          climateId: string | null;
-          zoneId: string | null;
-          area: number;
-        }>
-      >(CLIPPED_FILLS_SQL, country.id, layerType);
-      return rows.map((r) => ({ ...r, fill: r.fill ?? "", overlapArea: Number(r.area) || 0 }));
-    } catch (err) {
-      console.warn("PostGIS zone clipping failed, falling back to bbox estimation:", err);
-    }
+  if (bbox && bbox[2] - bbox[0] > 180) {
+    const layers = await db.mapLayer.findMany({
+      where: { layerType, isActive: true, realmId: country.realmId },
+      select: LAYER_SELECT,
+    });
+    return overlappingFills(layers, bbox);
   }
-  const layers = await db.mapLayer.findMany({
-    where: { layerType, isActive: true, realmId: country.realmId },
-    select: LAYER_SELECT,
-  });
-  return overlappingFills(layers, extent);
+  const rows = await db.$queryRawUnsafe<
+    Array<{
+      fill: string | null;
+      climateId: string | null;
+      zoneId: string | null;
+      area: number;
+    }>
+  >(CLIPPED_FILLS_SQL, country.id, layerType);
+  return rows.map((r) => ({ ...r, fill: r.fill ?? "", overlapArea: Number(r.area) || 0 }));
 }
 
 function withPercentAreas<T extends { areaSqKm: number; percentArea: number }>(zones: T[]) {

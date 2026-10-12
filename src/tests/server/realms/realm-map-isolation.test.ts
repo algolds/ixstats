@@ -268,6 +268,10 @@ describe("/maps shows only the viewed realm's map", () => {
 describe("a country's geo profile uses its own realm's base layers", () => {
   it("an Eurth country is profiled against Eurth's climate, altitude, river and lake layers", async () => {
     const db = emptyDb();
+    // the profile reads the country's perimeter from PostGIS too; a country without one cannot be profiled
+    db.$queryRawUnsafe!.mockImplementation(async (sql: string) =>
+      sql.includes("ST_Perimeter") ? [{ perimeter_km: 100 }] : []
+    );
     db.country!.findUnique!.mockResolvedValue({
       id: "c_eu",
       name: "Gallambria",
@@ -284,7 +288,7 @@ describe("a country's geo profile uses its own realm's base layers", () => {
     // Climate and altitude zones are clipped to the nation in PostGIS, like rivers and lakes
     const sqls = db.$queryRawUnsafe!.mock.calls.map((c: [string]) => c[0]);
     const zoneAndHydroSql = sqls.filter((sql: string) =>
-      /ST_Intersection\(ml\.geom_postgis|"layerType" = '(rivers|lakes)'/.test(sql)
+      /ST_Subdivide\(ml\.geom_postgis|"layerType" = '(rivers|lakes)'/.test(sql)
     );
     expect(zoneAndHydroSql).toHaveLength(4);
     for (const sql of zoneAndHydroSql) expect(sql).toContain(`ml."worldId" = c."realmId"`);
