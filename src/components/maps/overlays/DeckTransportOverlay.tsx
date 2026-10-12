@@ -9,6 +9,7 @@
  * - 3D Volumetric Hub Pillars (ColumnLayer) visualizing logistics capacity & throughput
  * - Native MapLibre interleaved rendering (custom layer shared WebGL context)
  * - Projection-aware: gracefully suppresses 3D layers in low-zoom Globe mode to prevent Mercator clipping
+ * - Stays off the map while its projection is the dynamic expression, which deck.gl cannot read
  * - Facet Design System aesthetics: violet-cyan gradient arcs, frosted glass column pillars
  */
 
@@ -44,26 +45,45 @@ export interface DeckTransportOverlayProps {
   onSelectSegment?: (segmentId: string) => void;
 }
 
+/**
+ * deck.gl's MapboxOverlay reads the map's projection type on add, on every setProps and on every
+ * render, and throws on anything but "globe" or "mercator". The world map's dynamic projection is
+ * an interpolate expression until a surface locks it flat. A style with no projection yet is plain.
+ */
+function hasPlainProjection(map: MapLibreMap): boolean {
+  const type = map.getProjection()?.type;
+  return type === undefined || type === "globe" || type === "mercator";
+}
+
 // Typed adapter so MapboxOverlay can be added as a MapLibre control
 class DeckMapLibreAdapter implements MapLibreControl {
   private overlay: MapboxOverlay;
+  private map: MapLibreMap | null = null;
+  private element: HTMLElement | null = null;
 
   constructor(props: MapboxOverlayProps) {
     this.overlay = new MapboxOverlay(props);
   }
 
   setProps(props: MapboxOverlayProps): void {
+    // The owner drops this control on the next render once the projection is not plain
+    if (this.map && !hasPlainProjection(this.map)) return;
     this.overlay.setProps(props);
   }
 
   onAdd(map: MapLibreMap): HTMLElement {
     const el = this.overlay.onAdd(map);
     el.style.pointerEvents = "none";
+    this.map = map;
+    this.element = el;
     return el;
   }
 
   onRemove(_map: MapLibreMap): void {
     this.overlay.onRemove();
+    this.element?.remove();
+    this.element = null;
+    this.map = null;
   }
 
   getDefaultPosition() {
@@ -207,15 +227,34 @@ export function DeckTransportOverlay({
   useEffect(() => {
     if (!map) return;
 
-    let adapter = adapterRef.current;
-    if (!adapter) {
-      adapter = new DeckMapLibreAdapter({
-        interleaved: false,
-        layers: [],
-      });
-      adapterRef.current = adapter;
-      map.addControl(adapter);
-    }
+    const pushLayers = () =>
+      adapterRef.current?.setProps({ layers: buildDeckLayersRef.current(currentTimeRef.current) });
+
+    const detachControl = () => {
+      const adapter = adapterRef.current;
+      if (!adapter) return;
+      adapterRef.current = null;
+      try {
+        map.removeControl(adapter);
+        adapter.finalize();
+      } catch {
+        // Map or control already detached
+      }
+    };
+
+    // deck.gl throws on the dynamic (expression) projection, so the control is only on the map
+    // while the projection is plain. `render` is the event deck's own view sync runs on, and this
+    // listener is registered before the control's, so a projection change drops the control first.
+    const syncControl = () => {
+      if (!hasPlainProjection(map)) {
+        detachControl();
+      } else if (!adapterRef.current) {
+        const adapter = new DeckMapLibreAdapter({ interleaved: false, layers: [] });
+        map.addControl(adapter);
+        adapterRef.current = adapter;
+        pushLayers();
+      }
+    };
 
     // Projection & Globe mode listener
     const updateProjectionGuard = () => {
@@ -224,28 +263,23 @@ export function DeckTransportOverlay({
       const isGlobe = zoom < 4.5;
       if (isGlobeModeRef.current !== isGlobe) {
         isGlobeModeRef.current = isGlobe;
-        adapter?.setProps({ layers: buildDeckLayersRef.current(currentTimeRef.current) });
+        pushLayers();
       }
     };
 
     map.on("zoom", updateProjectionGuard);
+    map.on("render", syncControl);
     updateProjectionGuard();
+    syncControl();
 
     return () => {
       map.off("zoom", updateProjectionGuard);
+      map.off("render", syncControl);
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
         animFrameRef.current = 0;
       }
-      if (adapterRef.current) {
-        try {
-          map.removeControl(adapterRef.current);
-          adapterRef.current.finalize();
-        } catch {
-          // Map or control already detached
-        }
-        adapterRef.current = null;
-      }
+      detachControl();
     };
   }, [map]);
 
