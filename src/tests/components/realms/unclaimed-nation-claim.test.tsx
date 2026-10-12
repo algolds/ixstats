@@ -54,12 +54,21 @@ beforeEach(() => {
 describe("ClaimNationButton", () => {
   it("renders nothing for signed-out viewers", () => {
     mockSignedIn = false;
-    const { container } = render(<ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" />);
+    const { container } = render(
+      <ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" />
+    );
     expect(container).toBeEmptyDOMElement();
   });
 
   it("claims the existing country through the claim flow after confirming", () => {
-    render(<ClaimNationButton realmSlug="eurth" countryId="c1" countryName="Tavok" label="Claim this nation" />);
+    render(
+      <ClaimNationButton
+        realmSlug="eurth"
+        countryId="c1"
+        countryName="Tavok"
+        label="Claim this nation"
+      />
+    );
     fireEvent.click(screen.getByRole("button", { name: "Claim this nation" }));
     const confirm = screen.getByRole("button", { name: "Claim Tavok" });
     expect(confirm).toBeDisabled();
@@ -120,7 +129,12 @@ describe("CountryIdentityStrip", () => {
 });
 
 describe("claimableNation", () => {
-  const base = { id: "c1", name: "Bainbridge_Islands", owner: null, realm: { slug: "eurth", status: "active" } };
+  const base = {
+    id: "c1",
+    name: "Bainbridge_Islands",
+    owner: null,
+    realm: { slug: "eurth", status: "active" },
+  };
 
   it("is claimable when unowned in an open realm other than Ixnay", () => {
     expect(claimableNation(base)).toEqual({ countryId: "c1", countryName: "Bainbridge Islands" });
@@ -132,5 +146,15 @@ describe("claimableNation", () => {
     expect(claimableNation({ ...base, realm: { slug: "ixnay", status: "active" } })).toBeNull();
     expect(claimableNation({ ...base, realm: { slug: "eurth", status: "archived" } })).toBeNull();
     expect(claimableNation({ ...base, realm: null })).toBeNull();
+  });
+
+  it("is not claimable when the founder reserved it as scenery, and is when it is open or says nothing", () => {
+    expect(claimableNation({ ...base, claimable: false })).toBeNull();
+    expect(claimableNation({ ...base, claimable: true })).toEqual({
+      countryId: "c1",
+      countryName: "Bainbridge Islands",
+    });
+    // a record from before the column was read keeps its claim button
+    expect(claimableNation({ ...base, claimable: undefined })).not.toBeNull();
   });
 });

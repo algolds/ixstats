@@ -1,18 +1,21 @@
 import { isIxnaySlug } from "./realm-ids";
 
 /**
- * Whether a country page offers "Claim this nation": the nation has no owner and belongs to a realm (other than
- * Ixnay, whose open nations are taken from /setup) that is open to claims. Client-safe; reads the loaded
- * country record (`owner`/`ownerUserId` and `realm { slug, status }`).
+ * Whether a country page offers "Claim this nation": the nation has no owner, is open to claims (a founder can
+ * reserve a generated nation as scenery: `claimable` false) and belongs to a realm (other than Ixnay, whose open
+ * nations are taken from /setup) that is open to claims. Client-safe; reads the loaded country record
+ * (`owner`/`ownerUserId`, `claimable` and `realm { slug, status }`).
  */
 export function claimableNation(country: {
   id?: unknown;
   name?: unknown;
   ownerUserId?: unknown;
   owner?: unknown;
+  claimable?: boolean;
   realm?: { slug?: unknown; status?: unknown } | null;
 }): { countryId: string; countryName: string } | null {
   if (country.owner || country.ownerUserId) return null;
+  if (country.claimable === false) return null;
   const slug = typeof country.realm?.slug === "string" ? country.realm.slug : null;
   if (!slug || isIxnaySlug(slug)) return null;
   if (country.realm?.status !== "active") return null;
