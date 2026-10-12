@@ -9,7 +9,13 @@ jest.mock("~/server/modules/identity/identity.invites", () => ({
 
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { Prisma } from "@prisma/client";
+jest.mock("~/server/shared/map-invalidation", () => ({
+  ...jest.requireActual("~/server/shared/map-invalidation"),
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+}));
+
 import { realmsRouter } from "~/server/api/routers/realms";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { resolveRealmInviter } from "~/server/modules/identity/identity.invites";
 
@@ -730,6 +736,63 @@ describe("realms.adminUpdateRealm", () => {
     expect(realm.update).toHaveBeenCalledWith({
       where: { id: "r_eurth" },
       data: { status: "archived" },
+    });
+  });
+
+  describe("tile access", () => {
+    beforeEach(() => jest.mocked(invalidateRealmMap).mockClear());
+
+    it.each(["draft", "generating", "active", "archived"] as const)(
+      "moves the realm to a new map version after its status becomes %s",
+      async (status) => {
+        const realm = {
+          findUnique: jest.fn(),
+          update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
+        };
+        await adminCaller(realm).adminUpdateRealm({ id: "r_eurth", status });
+
+        expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+        expect(invalidateRealmMap).toHaveBeenCalledWith(expect.anything(), "r_eurth");
+        // After the write, so a reader that rebuilds the memo sees the new status
+        const [update] = realm.update.mock.invocationCallOrder;
+        const [invalidated] = jest.mocked(invalidateRealmMap).mock.invocationCallOrder;
+        expect(update).toBeLessThan(invalidated!);
+      }
+    );
+
+    it("also does so when the status changes together with a nation cap", async () => {
+      const realm = {
+        findUnique: jest.fn().mockResolvedValue({ settings: null }),
+        update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
+      };
+      await adminCaller(realm).adminUpdateRealm({
+        id: "r_eurth",
+        status: "draft",
+        maxNationsPerUser: 2,
+      });
+      expect(invalidateRealmMap).toHaveBeenCalledWith(expect.anything(), "r_eurth");
+    });
+
+    it("leaves the map alone for an edit that cannot change who may read it", async () => {
+      const realm = {
+        findUnique: jest.fn().mockResolvedValue({ settings: null }),
+        update: jest.fn().mockResolvedValue({ id: "r_eurth" }),
+      };
+      await adminCaller(realm).adminUpdateRealm({
+        id: "r_eurth",
+        name: "Eurth",
+        visibility: "public",
+      });
+      await adminCaller(realm).adminUpdateRealm({ id: "r_eurth", maxNationsPerUser: 2 });
+      expect(invalidateRealmMap).not.toHaveBeenCalled();
+    });
+
+    it("does not touch the map of a realm that does not exist", async () => {
+      const realm = { findUnique: jest.fn().mockResolvedValue(null), update: jest.fn() };
+      await expect(
+        adminCaller(realm).adminUpdateRealm({ id: "nope", status: "draft", maxNationsPerUser: 2 })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      expect(invalidateRealmMap).not.toHaveBeenCalled();
     });
   });
 

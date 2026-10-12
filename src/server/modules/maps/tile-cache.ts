@@ -11,11 +11,13 @@ import { randomBytes } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isTileCoord, isTiledLayer, type TiledLayer } from "~/lib/maps/decorative-tiles";
-import { ByteLru } from "~/server/shared/byte-lru";
+import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 
 const REALM_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DONE_MARKER = ".done";
 const MEMORY_BYTES = 32 * 1024 * 1024;
+/** Tiles never change under their key, so this only bounds how long an idle one is kept. */
+const MEMORY_TTL_MS = 60 * 60 * 1000;
 /** How long a version's folder outlives the next version's readiness (open tabs still ask for the old URLs). */
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
@@ -55,7 +57,10 @@ function tileFile(...[realmId, version, layer, z, x, y]: TileArgs): string | nul
   return path.join(dir, layer, String(z), String(x), `${y}.pbf`);
 }
 
-const memory = new ByteLru<Buffer>(MEMORY_BYTES);
+const memory = new ByteBoundedCache<Buffer>({
+  maxBytes: MEMORY_BYTES,
+  defaultTtlMs: MEMORY_TTL_MS,
+});
 
 /** The tile's bytes (empty for a tile with nothing in it), or null when it is not cached. */
 export async function readTile(
@@ -72,7 +77,7 @@ export async function readTile(
   if (hot) return hot;
   try {
     const bytes = await readFile(file);
-    memory.set(file, bytes);
+    memory.set(file, bytes, bytes.length);
     return bytes;
   } catch (err) {
     // The cache is only an optimisation: a file that cannot be read is a miss
@@ -103,7 +108,8 @@ export async function writeTile(
     await rm(temporary, { force: true });
     throw err;
   }
-  memory.set(file, Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes));
+  const kept = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes);
+  memory.set(file, kept, kept.length);
 }
 
 /** What `getTile` needs from its caller: the renderer and the realm's current map version (read on a miss only). */
@@ -143,16 +149,16 @@ function renderOnce(key: TileArgs, render: () => Promise<Uint8Array>): Promise<B
  * The tile for a URL's version. A cached tile is served as is. On a miss the version is compared with the realm's
  * current one: the current version's tile is rendered once and stored; a version the realm has not reached is null
  * (a made-up URL must not fill the disk); an older version (an open tab that has not seen the edit) gets the
- * current data, not stored under the old version.
+ * current version's tile, from its cache or rendered once into it, and is not cacheable under the old URL.
  */
 export async function getTile(key: TileArgs, source: TileOrigin): Promise<TileResult | null> {
   const hit = await readTile(...key);
   if (hit) return { bytes: hit, cacheable: true };
   const current = await source.currentVersion();
-  const version = key[1];
+  const [realmId, version, ...tile] = key;
   if (version > current) return null;
-  if (version < current) return { bytes: Buffer.from(await source.render()), cacheable: false };
-  return { bytes: await renderOnce(key, source.render), cacheable: true };
+  const bytes = await renderOnce([realmId, current, ...tile], source.render);
+  return { bytes, cacheable: version === current };
 }
 
 /** Whether the cron job finished pre-rendering the version's low zooms. */

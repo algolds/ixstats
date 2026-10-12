@@ -2,10 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { buildTile } from "~/server/api/routers/geo/core/tiles";
 import { isTileCoord, isTiledLayer } from "~/lib/maps/decorative-tiles";
-import { PRIVATE_TILE_CACHE, resolveTileRealm } from "~/server/modules/maps/realm-tile-access";
+import {
+  PRIVATE_TILE_CACHE,
+  resolveTileRealm,
+  type TileRealm,
+} from "~/server/modules/maps/realm-tile-access";
 import { getTile } from "~/server/modules/maps/tile-cache";
 
 const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
+// A slug can be renamed or given to another realm, so a slug-addressed URL names no fixed content
+const SLUG_CACHE = "public, max-age=300";
 // Not-found and failure answers are never stored: a cache rule on this path would otherwise keep an
 // anonymous viewer's 404 for a draft realm and serve it to the staff who may see the tile
 const failure = (status: number) =>
@@ -21,6 +27,16 @@ async function currentMapVersion(realmId: string): Promise<number> {
   return row?.mapVersion ?? 0;
 }
 
+/**
+ * Ixnay's and published realms' tiles at their own version are immutable when the URL names the realm by id; by
+ * slug they are cached briefly. An unpublished realm's, and any answer that is not its URL's own version, are
+ * never stored.
+ */
+function tileCacheControl(target: TileRealm, byId: boolean, cacheable: boolean): string {
+  if (target.access !== "public" || !cacheable) return PRIVATE_TILE_CACHE;
+  return byId ? IMMUTABLE_CACHE : SLUG_CACHE;
+}
+
 interface TileParams {
   realm: string;
   version: string;
@@ -32,8 +48,9 @@ interface TileParams {
 
 /**
  * One vector tile of a realm's decorative map layer (altitudes, rivers, lakes) at a map version. The URL names the
- * version, so Ixnay's and published realms' tiles are immutable; an unpublished realm's are never cached. Tiles
- * are rendered once per version and served from the disk cache after that (tile-cache.ts).
+ * version, so Ixnay's and published realms' tiles are immutable when it names the realm by id; an unpublished
+ * realm's are never cached. Tiles are rendered once per version and served from the disk cache after that
+ * (tile-cache.ts).
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<TileParams> }) {
   const { realm, version, layer, z, x, y } = await params;
@@ -49,12 +66,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<T
       currentVersion: () => currentMapVersion(target.id),
     });
     if (!tile) return notFound();
-    const shared = target.access === "public" && tile.cacheable;
+    const cacheControl = tileCacheControl(target, realm === target.id, tile.cacheable);
     // Copied into an ArrayBuffer-backed view, which is what a Response body accepts
     return new NextResponse(new Uint8Array(tile.bytes), {
       headers: {
         "Content-Type": "application/x-protobuf",
-        "Cache-Control": shared ? IMMUTABLE_CACHE : PRIVATE_TILE_CACHE,
+        "Cache-Control": cacheControl,
       },
     });
   } catch (err) {

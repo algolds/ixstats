@@ -12,6 +12,7 @@ import {
   REALM_POWERS,
   STAFF_FOUNDER_ID,
 } from "~/lib/realms/realm-region";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 import { notifyRealmFounderChanged } from "./realms.notices";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
@@ -19,7 +20,7 @@ import type { BoardGrantGuard } from "./realms.region-actions";
 
 type TransferDb = Pick<
   PrismaClient,
-  "realm" | "realmOfficer" | "country" | "user" | "adminAuditLog" | "$transaction"
+  "realm" | "realmOfficer" | "country" | "user" | "adminAuditLog" | "$transaction" | "$queryRaw"
 >;
 
 /** `AdminAuditLog.action` of a realm handover; `changes` holds the previous and new owner. */
@@ -110,6 +111,12 @@ async function applyTransfer(
       },
     });
   });
+
+  // The founder decides who may read an unpublished realm's tiles: drop the remembered access (after the commit;
+  // a failing version bump never undoes the handover either)
+  await invalidateRealmMap(db, realm.id).catch((e: Error) =>
+    console.error("[realms] map invalidation after handover failed:", e)
+  );
 
   // A failing notice never undoes the handover.
   const notices = [

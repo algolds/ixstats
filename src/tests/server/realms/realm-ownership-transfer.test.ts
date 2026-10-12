@@ -10,7 +10,13 @@ jest.mock("~/server/modules/realms/realms.notices", () => ({
   notifyRealmFounderChanged: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock("~/server/shared/map-invalidation", () => ({
+  ...jest.requireActual("~/server/shared/map-invalidation"),
+  invalidateRealmMap: jest.fn().mockResolvedValue(1),
+}));
+
 import { realmsRouter } from "~/server/api/routers/realms";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { notifyRealmFounderChanged } from "~/server/modules/realms/realms.notices";
 import { REALM_OWNER_TRANSFER_ACTION } from "~/server/modules/realms/realms.transfer";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -71,7 +77,10 @@ function callerAs(
 
 const auditChanges = (db: Db) => JSON.parse(db.adminAuditLog.create.mock.calls[0][0].data.changes);
 
-beforeEach(() => notify.mockClear());
+beforeEach(() => {
+  notify.mockClear();
+  jest.mocked(invalidateRealmMap).mockClear();
+});
 
 describe("site admins transfer a realm", () => {
   const transfer = (overrides: Record<string, unknown> = {}) => ({
@@ -159,6 +168,35 @@ describe("site admins transfer a realm", () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ clerkUserId: FOUNDER, role: "previous", keptAsOfficer: false })
     );
+  });
+
+  it("drops the realm's remembered tile access, after the handover commits, so the old founder loses private tiles at once", async () => {
+    const db = makeDb();
+    await callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer());
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth");
+    const [update] = db.realm.update.mock.invocationCallOrder;
+    const [invalidated] = jest.mocked(invalidateRealmMap).mock.invocationCallOrder;
+    expect(update).toBeLessThan(invalidated!);
+  });
+
+  it("still completes the handover and tells both when the version bump fails", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.mocked(invalidateRealmMap).mockRejectedValueOnce(new Error("db down"));
+    const db = makeDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer())
+    ).resolves.toMatchObject({ newOwnerId: PLAYER });
+    expect(notify).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
+  it("leaves the realm's map alone when the handover is refused", async () => {
+    const db = makeDb();
+    await expect(
+      callerAs(ADMIN, db, admin).region.adminTransferOwner(transfer({ newOwnerId: FOUNDER }))
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(invalidateRealmMap).not.toHaveBeenCalled();
   });
 
   it("keeps the previous founder as an officer with every power when asked", async () => {
@@ -312,6 +350,14 @@ describe("a founder hands their realm over", () => {
       code: "FORBIDDEN",
     });
     expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
+  it("drops the realm's remembered tile access once the founder's handover commits", async () => {
+    const db = makeDb();
+    db.country.findFirst.mockResolvedValue({ id: "c1" });
+    await callerAs(FOUNDER, db).region.handOver(handOver());
+    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
+    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "eurth");
   });
 
   it("needs the realm's slug typed", async () => {

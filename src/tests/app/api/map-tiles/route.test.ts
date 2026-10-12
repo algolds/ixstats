@@ -248,11 +248,49 @@ describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
     }
   );
 
-  it("gives an out-of-date version the current data, but never stores or caches it", async () => {
-    const res = await get("r_eurth", "1", "lakes", "0", "0", "0");
+  it("answers an out-of-date version from the current version's cache, uncacheable, rendering once", async () => {
+    const run = freshGet();
+    for (const version of ["1", "0", "1"]) {
+      const res = await run("r_eurth", version, "lakes", "0", "0", "0");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control")).toBe("private, no-store");
+      expect(await body(res)).toEqual(new Uint8Array([1, 2, 3]));
+    }
+    expect(buildTile).toHaveBeenCalledTimes(1);
+    expect(readdirSync(path.join(root, "r_eurth"))).toEqual(["2"]);
+    expect(existsSync(path.join(root, "r_eurth", "2", "lakes", "0", "0", "0.pbf"))).toBe(true);
+    // The current version's own URL is then a hit, and immutable
+    const current = await run("r_eurth", "2", "lakes", "0", "0", "0");
+    expect(current.headers.get("cache-control")).toBe(IMMUTABLE);
+    expect(buildTile).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes only ID-addressed URLs immutable: a slug can be renamed or reassigned", async () => {
+    const run = freshGet();
+    const byId = await run("r_eurth", "2", "lakes", "0", "0", "0");
+    const bySlug = await run("eurth", "2", "lakes", "0", "0", "0");
+    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
+    expect(bySlug.headers.get("cache-control")).toBe("public, max-age=300");
+    expect(bySlug.status).toBe(200);
+    expect(await body(bySlug)).toEqual(await body(byId));
+  });
+
+  it.each([
+    ["the Ixnay realm id", "default", IMMUTABLE],
+    ["Ixnay's slug", "ixworld", "public, max-age=300"],
+    ["Ixnay's name", "ixnay", "public, max-age=300"],
+  ])("serves Ixnay by %s with its own cache header", async (_name, realm, cacheControl) => {
+    const res = await get(realm, "3", "lakes", "0", "0", "0");
+    expect(res.headers.get("cache-control")).toBe(cacheControl);
+  });
+
+  it("keeps a slug-addressed unpublished realm private and uncached", async () => {
+    asOwner();
+    const res = await get("draft-world", "1", "lakes", "0", "0", "0");
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("private, no-store");
-    expect(readdirSync(root)).toEqual([]);
+    asAnonymous();
+    expect((await get("draft-world", "1", "lakes", "0", "0", "0")).status).toBe(404);
   });
 
   it("404s on a version the realm has not reached, writing nothing", async () => {

@@ -6,6 +6,7 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
+import { tileUrlTemplate } from "~/lib/maps/decorative-tiles";
 
 beforeEach(() => useQuery.mockReset());
 
@@ -15,6 +16,18 @@ describe("useRealmMapVersion", () => {
     const { result } = renderHook(() => useRealmMapVersion("eurth"));
     expect(useQuery).toHaveBeenCalledWith({ realm: "eurth" }, expect.any(Object));
     expect(result.current).toEqual({ realmId: "r_eurth", version: 7 });
+  });
+
+  it("builds tile URLs from the realm id the server resolved, never the slug the map was asked for", () => {
+    useQuery.mockReturnValue({ data: { realmId: "r_eurth", version: 7 } });
+    const { result } = renderHook(() => {
+      const source = useRealmMapVersion("eurth");
+      return source && tileUrlTemplate(source, "rivers");
+    });
+    expect(result.current).toBe(
+      `${window.location.origin}/api/map-tiles/r_eurth/7/rivers/{z}/{x}/{y}`
+    );
+    expect(result.current).not.toContain("/eurth/");
   });
 
   it("leaves the realm to the server (the viewer's) when none is named", () => {

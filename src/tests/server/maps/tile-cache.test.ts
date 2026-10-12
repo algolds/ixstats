@@ -193,12 +193,56 @@ describe("getTile", () => {
     expect(render).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the current data for an out-of-date version without storing it under that version", async () => {
+  it("serves an out-of-date version from the current version's cache, never storing under the old one", async () => {
+    // key is version 3; the realm is at 5
     const render = jest.fn().mockResolvedValue(new Uint8Array([3]));
     const result = await cache.getTile(key, source(render, 5));
     expect(result).toEqual({ bytes: bytes(3), cacheable: false });
     expect(await cache.readTile(...key)).toBeNull();
-    expect(readdirSync(root)).toEqual([]);
+    expect(readFileSync(path.join(root, "default", "5", "altitudes", "2", "1", "1.pbf"))).toEqual(
+      bytes(3)
+    );
+    expect(readdirSync(root)).toEqual(["default"]);
+    expect(readdirSync(path.join(root, "default"))).toEqual(["5"]);
+  });
+
+  it("costs an out-of-date version's tiles a disk hit, not a render, once the current version has them", async () => {
+    const render = jest.fn().mockResolvedValue(new Uint8Array([3]));
+    await cache.getTile(["default", 5, "altitudes", 2, 1, 1], source(render, 5));
+    expect(render).toHaveBeenCalledTimes(1);
+
+    for (const version of [3, 4, 0]) {
+      const result = await freshCache().getTile(
+        ["default", version, "altitudes", 2, 1, 1],
+        source(render, 5)
+      );
+      expect(result).toEqual({ bytes: bytes(3), cacheable: false });
+    }
+    expect(render).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders an out-of-date tile once, however many old versions ask at once, sharing it with the current version's request", async () => {
+    let release: (value: Uint8Array) => void = () => {};
+    const render = jest.fn(() => new Promise<Uint8Array>((resolve) => (release = resolve)));
+    const pending = [
+      cache.getTile(["default", 5, "altitudes", 2, 1, 1], source(render, 5)),
+      cache.getTile(["default", 4, "altitudes", 2, 1, 1], source(render, 5)),
+      cache.getTile(["default", 3, "altitudes", 2, 1, 1], source(render, 5)),
+    ];
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    release(new Uint8Array([8]));
+    const results = await Promise.all(pending);
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(results.map((r) => r?.cacheable)).toEqual([true, false, false]);
+    for (const r of results) expect(r?.bytes).toEqual(bytes(8));
+  });
+
+  it("still serves a tile the old version has on disk as that version's own (cacheable)", async () => {
+    await cache.writeTile(...key, bytes(1, 2));
+    const render = jest.fn();
+    const result = await freshCache().getTile(key, source(render, 5));
+    expect(result).toEqual({ bytes: bytes(1, 2), cacheable: true });
+    expect(render).not.toHaveBeenCalled();
   });
 
   it("answers null for a version the realm has not reached, without rendering or writing", async () => {

@@ -1,5 +1,5 @@
 /** Realms router — realm admin, realm lookup and nation claims. Logic lives in ~/server/modules/realms. */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import {
@@ -36,6 +36,7 @@ import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache, invalidateCache } from "~/lib/cache";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
@@ -125,6 +126,23 @@ function slugTaken(error: Error): never {
   if (parsePrismaError(error)?.type === "unique_constraint")
     throw new TRPCError({ code: "CONFLICT", message: "That slug is taken" });
   throw error;
+}
+
+/** An admin's edit of a realm row; a nation cap is merged into `Realm.settings` (NOT_FOUND when there is no realm). */
+async function updateRealm(
+  db: Pick<PrismaClient, "realm">,
+  id: string,
+  data: Prisma.RealmUpdateInput,
+  maxNationsPerUser?: number
+) {
+  if (maxNationsPerUser === undefined) return db.realm.update({ where: { id }, data });
+
+  const realm = await db.realm.findUnique({ where: { id }, select: { settings: true } });
+  if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+  return db.realm.update({
+    where: { id },
+    data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
+  });
 }
 
 export const realmsRouter = createTRPCRouter({
@@ -314,14 +332,10 @@ export const realmsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { id, maxNationsPerUser, ...data } = input;
-      if (maxNationsPerUser === undefined) return ctx.db.realm.update({ where: { id }, data });
-
-      const realm = await ctx.db.realm.findUnique({ where: { id }, select: { settings: true } });
-      if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-      return ctx.db.realm.update({
-        where: { id },
-        data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
-      });
+      const realm = await updateRealm(ctx.db, id, data, maxNationsPerUser);
+      // The status decides who may read the realm's tiles: a new map version and no remembered access
+      if (data.status !== undefined) await invalidateRealmMap(ctx.db, id);
+      return realm;
     }),
 
   /** The realm region page: overview, happenings, the Manage tab and its actions (see ./region.ts). */
