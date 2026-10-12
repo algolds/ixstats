@@ -9,6 +9,7 @@ import {
 } from "iconoir-react";
 import { useRouter } from "next/navigation";
 import { ProvinceGeneratorPanel } from "./ProvinceGeneratorPanel";
+import { WorldSlotTools } from "./WorldSlotTools";
 import { JsonViewer } from "~/components/shared/json-viewer";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { Polygon, MultiPolygon } from "geojson";
@@ -63,6 +64,8 @@ export interface WorldCountryProfileProps {
   ) => void;
   countryGeometry?: Polygon | MultiPolygon | null;
   countryId?: string | null;
+  /** A generated nation slot was deleted from here: drop it from the selection */
+  onSlotDeleted?: () => void;
 }
 
 const inputClasses =
@@ -422,6 +425,13 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile(
       )}
       <PropertiesJsonCard {...props} />
       {isUnclaimed && <UnclaimedActions {...props} />}
+      {mapSelectedCountry.countryId && props.onSlotDeleted && (
+        <WorldSlotTools
+          countryId={mapSelectedCountry.countryId}
+          countryName={title}
+          onDeleted={props.onSlotDeleted}
+        />
+      )}
 
       <div className="border-separator space-y-2 border-t pt-3">
         {enterBorderEdit && (

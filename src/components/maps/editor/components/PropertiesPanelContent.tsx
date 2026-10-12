@@ -60,6 +60,7 @@ interface PropertiesPanelContentProps extends ProfilePassthroughProps {
   activeEditorMode: "view" | "border_edit";
   activeCountryId: string | null;
   mapSelectedCountry: SelectedCountry | null;
+  setMapSelectedCountry?: (country: SelectedCountry | null) => void;
   borderState: BorderEditorState;
   borderActions: BorderEditorActions;
   editor: MapEditorInstance;
@@ -508,6 +509,7 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent(
           featureDetails={featureDetails ?? null}
           countryGeometry={(countryGeo?.geometry as Polygon | MultiPolygon | null) ?? null}
           countryId={activeCountryId ?? ""}
+          onSlotDeleted={() => props.setMapSelectedCountry?.(null)}
         />
       );
     }
