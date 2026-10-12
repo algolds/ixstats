@@ -232,8 +232,8 @@ configuration object, never from a literal:
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`; the export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
-  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
-  `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
+  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`.
+  An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
 
 ### The literals that remain (plan 415 count)

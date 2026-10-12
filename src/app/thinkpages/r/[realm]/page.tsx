@@ -6,7 +6,7 @@ interface RealmPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 /** A realm's landing page: its live board, the realm's boards beside it. */

@@ -121,7 +121,7 @@ function MyCountryRouterInner() {
       document.title =
         section === "overview"
           ? `${countryName} - MyCountry`
-          : `${countryName} - ${SECTION_TITLES[section]} - IxStats`;
+          : `${countryName} - ${SECTION_TITLES[section]} - IxStates`;
 
       // Scroll to top on section change
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -154,7 +154,7 @@ function MyCountryRouterInner() {
     document.title =
       activeSection === "overview"
         ? `${country.name} - MyCountry`
-        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStats`;
+        : `${country.name} - ${SECTION_TITLES[activeSection]} - IxStates`;
   }, [country?.name, activeSection]);
 
   return (

@@ -3,7 +3,7 @@
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { DashboardRouter } from "~/components/dashboard/DashboardRouter";
-import { IxStatsSplashPage } from "./IxStatsSplashPage";
+import { FrontPage } from "./front-page/FrontPage";
 
 export function HomeClient() {
   const { isSignedIn, isLoaded } = useUser();
@@ -24,7 +24,7 @@ export function HomeClient() {
   }
 
   if (!isSignedIn) {
-    return <IxStatsSplashPage />;
+    return <FrontPage />;
   }
 
   return <DashboardRouter />;

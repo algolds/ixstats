@@ -20,7 +20,7 @@ import { PageHeader } from "~/components/shell/PageHeader";
 
 export default function AchievementsPage() {
   useEffect(() => {
-    document.title = "Achievements - IxStats";
+    document.title = "Achievements - IxStates";
   }, []);
 
   const { user } = useUser();

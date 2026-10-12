@@ -21,7 +21,7 @@ By creating an account, accessing or using the Services, claiming or managing an
 
 The Services are operated by **Alpaia Holdings**, a New York general partnership (Email: [admin@ixwiki.com](mailto:admin@ixwiki.com)). “IxStates” is the platform and service name operated by Alpaia Holdings and is not a separate legal entity unless expressly designated as such.
 
-“Ixnay” refers to the broader collaborative digital worldbuilding community and creative project administered by Alpaia Holdings. The Services encompass the entire ecosystem, including **IxStates**, **Realms**, **MyCountry**, **IxWiki / WikiOS**, **ThinkPages**, **ThinkShare**, **IxVault**, **IxWorld** and related GIS mapping systems, **Onoma**, **Vexel**, **Statecraft**, **UPG**, and affiliated creative tools.
+“Ixnay” refers to the broader collaborative digital worldbuilding community and creative project administered by Alpaia Holdings. The Services encompass the entire ecosystem, including **IxStates**, **Realms**, **MyCountry**, **IxWiki / WikiOS**, **ThinkPages**, **ThinkShare**, **IxVault**, **Maps** and related GIS mapping systems, **Onoma**, **Vexel**, **Statecraft**, **UPG**, and affiliated creative tools.
 
 ### 1.2 Age Eligibility & Minor Protections
 

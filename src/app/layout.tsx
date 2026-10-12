@@ -48,7 +48,7 @@ const isClerkConfigured = Boolean(
 export const metadata: Metadata = {
   // Absolute base for canonical, og:url and OG image URLs (origin only; see siteMetadataBase).
   metadataBase: siteMetadataBase(),
-  title: "IxStats — Nations, economy, lore",
+  title: "IxStates",
   description: "Statistics and simulation game",
   icons: [{ rel: "icon", url: withBasePath("/favicon.ico") }],
 };

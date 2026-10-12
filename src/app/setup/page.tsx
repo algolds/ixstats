@@ -53,7 +53,7 @@ interface CountryOption {
 // Intro-disclosure steps data with IxStats design language
 const setupIntroSteps = [
   {
-    title: "Welcome to IxStats",
+    title: "Welcome to IxStates",
     short_description: "An economic simulation for worldbuilders",
     full_description:
       "IxStats simulates your country's economy, government, diplomacy and intelligence, with other players running the rest of the world.",

@@ -9,7 +9,7 @@ interface NewAdvertPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Advertise your realm - IxStats",
+  title: "Advertise your realm - IxStates",
 };
 
 /** The form that starts a realm's advert in Find a Realm (a static segment, so it wins over `c/[key]/new`); signed-out visitors are sent to sign-in. */

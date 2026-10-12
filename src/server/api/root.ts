@@ -64,6 +64,7 @@ import { geoWikiRouter } from "./routers/geo/wiki";
 import { resourcesRouter } from "./routers/resources";
 import { transportRouter } from "./routers/transport";
 import { realmsRouter } from "./routers/realms";
+import { frontPageRouter } from "./routers/frontPage";
 import { actionLinksRouter } from "./routers/actionLinks";
 import { thinkpagesForumRouter } from "./routers/thinkpagesForum";
 import { thinkpagesForumModRouter } from "./routers/thinkpagesForum/mod";
@@ -144,6 +145,7 @@ export const appRouter = createTRPCRouter({
   resources: resourcesRouter,
   transport: transportRouter,
   realms: realmsRouter,
+  frontPage: frontPageRouter,
   actionLinks: actionLinksRouter,
   thinkpagesForum: thinkpagesForumRouter,
   thinkpagesForumMod: thinkpagesForumModRouter,

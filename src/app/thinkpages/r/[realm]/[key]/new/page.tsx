@@ -6,7 +6,7 @@ interface NewRealmThreadPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "New thread - IxStats",
+  title: "New thread - IxStates",
 };
 
 export default async function NewRealmThreadPage({ params }: NewRealmThreadPageProps) {

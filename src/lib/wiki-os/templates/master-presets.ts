@@ -550,7 +550,7 @@ export const MASTER_TEMPLATE_PRESETS: MasterTemplatePreset[] = [
   {
     name: "Coord",
     category: "geographic",
-    description: "Geographic coordinate badge with IxWorld Voronoi spatial mesh projection.",
+    description: "Geographic coordinate badge with Voronoi spatial mesh projection.",
     isCanonical: true,
     params: [
       { name: "1", label: "Latitude", required: true, example: "40.7128" },

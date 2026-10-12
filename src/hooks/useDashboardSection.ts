@@ -37,7 +37,7 @@ export function useDashboardSection(initialSection: DashboardSection): {
       if (next === section) return;
       setSection(next);
       window.history.pushState(null, "", withBasePath(DASHBOARD_SECTION_PATHS[next]));
-      document.title = `${DASHBOARD_SECTION_TITLES[next]} - IxStats`;
+      document.title = `${DASHBOARD_SECTION_TITLES[next]} - IxStates`;
       window.scrollTo({ top: 0, behavior: "instant" });
     },
     [section]

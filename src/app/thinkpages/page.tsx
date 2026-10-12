@@ -8,7 +8,7 @@ interface ThinkPagesHomeProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
   description: "The community forum: sitewide boards and a section for every realm.",
 };
 

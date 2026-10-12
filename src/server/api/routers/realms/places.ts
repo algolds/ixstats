@@ -7,7 +7,10 @@ import { TRPCError } from "@trpc/server";
 import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
 import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
-import { nationPageTaken } from "~/server/modules/realms/realms.handover";
+import {
+  openNationCounts,
+  unclaimedNationPages,
+} from "~/server/modules/realms/realms.open-nations";
 import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import {
@@ -22,30 +25,6 @@ const FORUM_ACTIVITY_WINDOW_DAYS = 7;
 
 /** How many nations a nation search returns at most. */
 export const NATION_SEARCH_LIMIT = 20;
-
-type NationPage = { realmId: string; title: string; wikiSource: string };
-
-/**
- * The nation pages of realms' lore indexes that no country has taken yet: claimable through
- * `realms.claimNationPage`. A page is taken by the country carrying its page reference (even after a rename), or
- * by name for a country without one, as in getRealmHub.
- */
-async function unclaimedNationPages<P extends NationPage>(
-  db: PrismaClient,
-  pages: P[]
-): Promise<P[]> {
-  if (pages.length === 0) return [];
-  const titles = [...new Set(pages.map((page) => page.title))];
-  const countries = await db.country.findMany({
-    where: {
-      realmId: { in: [...new Set(pages.map((page) => page.realmId))] },
-      OR: [{ wikiPageTitle: { in: titles } }, { wikiPageTitle: null, name: { in: titles } }],
-    },
-    select: { realmId: true, name: true, wikiSource: true, wikiPageTitle: true },
-  });
-  const taken = nationPageTaken(countries);
-  return pages.filter((page) => !taken(page));
-}
 
 type ForumActivity = { recentPosts: number; lastPostAt: Date | null };
 
@@ -168,12 +147,8 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const realmIds = realms.map((r) => r.id);
   if (realmIds.length === 0) return [];
 
-  const [unclaimed, mine, nationPages] = await Promise.all([
-    db.country.groupBy({
-      by: ["realmId"],
-      where: { realmId: { in: realmIds }, ownerUserId: null, claimable: true },
-      _count: { _all: true },
-    }),
+  const [open, mine] = await Promise.all([
+    openNationCounts(db, realmIds),
     viewerUserId
       ? db.country.groupBy({
           by: ["realmId"],
@@ -181,19 +156,11 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
           _count: { _all: true },
         })
       : Promise.resolve([]),
-    db.realmPage.findMany({
-      where: { realmId: { in: realmIds }, kind: "nation" },
-      select: { realmId: true, title: true, wikiSource: true },
-    }),
   ]);
-  const claimablePages = new Map<string, number>();
-  for (const page of await unclaimedNationPages(db, nationPages))
-    claimablePages.set(page.realmId, (claimablePages.get(page.realmId) ?? 0) + 1);
 
   const since = new Date(Date.now() - FORUM_ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
   const countBy = (rows: Array<{ realmId: string; _count: { _all: number } }>) =>
     new Map(rows.map((row) => [row.realmId, row._count._all]));
-  const unclaimedBy = countBy(unclaimed);
   const mineBy = countBy(mine);
 
   // Both figures are batched for every realm; the forum counts still exclude the board, which has its own figure.
@@ -205,9 +172,9 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
     ...realm,
     foundedAt: foundedAt ?? createdAt,
     nationCount: _count.countries,
-    openNationCount: unclaimedBy.get(realm.id) ?? 0,
+    openNationCount: open.nations.get(realm.id) ?? 0,
     /** Lore-index nation pages no country has taken yet (claimable through `realms.claimNationPage`). */
-    openNationPageCount: claimablePages.get(realm.id) ?? 0,
+    openNationPageCount: open.pages.get(realm.id) ?? 0,
     myNationCount: mineBy.get(realm.id) ?? 0,
     maxNationsPerUser: realmSettings(settings).maxNationsPerUser,
     /** Forum activity in the realm's section: posts in the last week and the latest thread activity. */

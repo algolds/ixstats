@@ -20,11 +20,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     );
     const { meta } = parseMarkdownDocument(source);
     return {
-      title: meta.title ? `${meta.title} - Help Center - IxStats` : "Help Center - IxStats",
+      title: meta.title ? `${meta.title} - Help Center - IxStates` : "Help Center - IxStates",
       description: meta.description,
     };
   } catch {
-    return { title: "Help Center - IxStats" };
+    return { title: "Help Center - IxStates" };
   }
 }
 

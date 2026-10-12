@@ -9,7 +9,7 @@ interface NewPostsRouteProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 /** Unread threads across the boards the member can see; signed-out visitors are sent to sign-in. */

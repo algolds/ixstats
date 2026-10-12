@@ -186,7 +186,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
 
   // 3. Geography & Atlas
   {
-    name: "IxWorld map",
+    name: "World map",
     path: "/maps",
     icon: Compass,
     category: "Geography",

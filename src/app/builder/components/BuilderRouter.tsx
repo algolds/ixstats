@@ -81,7 +81,7 @@ const SECTION_TITLES: Record<BuilderSection, string> = {
 /** Section names in the page title; the editor's final section reviews rather than creates. */
 function pageTitle(section: BuilderSection, mode: "create" | "edit"): string {
   const title = mode === "edit" && section === "preview" ? "Review" : SECTION_TITLES[section];
-  return `${title} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStats`;
+  return `${title} - ${mode === "edit" ? "Country Editor" : "MyCountry Builder"} - IxStates`;
 }
 
 const NO_SECTIONS = new Set<BuilderSection>();

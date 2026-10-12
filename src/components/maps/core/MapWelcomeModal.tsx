@@ -133,7 +133,7 @@ function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
   return (
     <div className="text-label-secondary text-footnote space-y-2 leading-relaxed">
       <div>
-        IxWorld runs on{" "}
+        The map runs on{" "}
         <Tooltip
           content={
             <div className="text-footnote space-y-2">

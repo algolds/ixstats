@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
-  title: "ThinkTanks - IxStats",
+  title: "ThinkTanks - IxStates",
   description: "Collaborative groups, chats, and working notes",
 };
 

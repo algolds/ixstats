@@ -8,7 +8,7 @@ interface ForumThreadPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 export default async function ForumThreadPage({ params, searchParams }: ForumThreadPageProps) {

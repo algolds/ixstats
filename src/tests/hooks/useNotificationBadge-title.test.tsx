@@ -48,18 +48,18 @@ describe("useNotificationBadge title handling", () => {
 
   it("prefixes the current page title after navigating between pages", () => {
     const view = render(<App page="First" />);
-    expect(document.title).toBe("First - IxStats");
+    expect(document.title).toBe("First - IxStates");
 
     view.rerender(<App page="Second" />);
-    expect(document.title).toBe("Second - IxStats");
+    expect(document.title).toBe("Second - IxStates");
 
     unread = 4;
     view.rerender(<App page="Second" />);
-    expect(document.title).toBe("(4) Second - IxStats");
+    expect(document.title).toBe("(4) Second - IxStates");
 
     unread = 0;
     view.rerender(<App page="Second" />);
-    expect(document.title).toBe("Second - IxStats");
+    expect(document.title).toBe("Second - IxStates");
   });
 
   it("does not revert to the first page title when the sidecar updates or unmounts", () => {
@@ -70,22 +70,22 @@ describe("useNotificationBadge title handling", () => {
     act(() => {
       view.rerender(<App page="Second" />);
     });
-    expect(document.title).toBe("(2) Second - IxStats");
+    expect(document.title).toBe("(2) Second - IxStates");
 
     view.rerender(<App page={null} />);
     // The sidecar is still mounted with unread=2: the page's cleanup must not drop the badge,
     // and the title is the current page's, never the first one's.
-    expect(document.title).toBe("(2) Second - IxStats");
+    expect(document.title).toBe("(2) Second - IxStates");
 
     view.unmount();
     // With the last badge gone only the bare title remains.
-    expect(document.title).toBe("Second - IxStats");
+    expect(document.title).toBe("Second - IxStates");
   });
 
   it("leaves a bare title when a page unmounts and nothing is unread", () => {
     const view = render(<App page="First" />);
     view.rerender(<App page={null} />);
-    expect(document.title).toBe("First - IxStats");
+    expect(document.title).toBe("First - IxStates");
   });
 
   it("strips the prefix on unmount without touching the rest of the title", () => {

@@ -5,7 +5,7 @@ import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Messages - IxStats",
+  title: "Messages - IxStates",
   description: "Unified messaging",
 };
 
