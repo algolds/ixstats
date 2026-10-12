@@ -154,7 +154,7 @@
       }
     },
     {
-      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorRouter.tsx"],
+      "files": ["src/app/admin/maps/style-editor/_components/StyleEditorFrame.tsx"],
       "rules": {
         "react/iframe-missing-sandbox": "off"
       }

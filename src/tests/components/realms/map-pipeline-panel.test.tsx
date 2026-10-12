@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
-import { MapPipelineTab } from "~/app/admin/realms/_components/map-pipeline/MapPipelineTab";
 import {
   MAP_PIPELINE_STEP_LABELS,
   MAP_PIPELINE_STEPS,
@@ -45,15 +44,6 @@ jest.mock("~/trpc/react", () => {
         realms: { mapPipeline: { get: invalidate, runs: invalidate, run: invalidate } },
       }),
       realms: {
-        adminListRealms: {
-          useQuery: () => ({
-            data: [
-              { id: "default", slug: "ixnay", name: "Ixnay" },
-              { id: "eurth-id", slug: "eurth", name: "Eurth" },
-            ],
-            isLoading: false,
-          }),
-        },
         mapPipeline: {
           get: { useQuery: () => ({ data: view, isLoading: false, error: null }) },
           runs: { useQuery: () => ({ data: runs }) },
@@ -311,18 +301,5 @@ describe("Map pipeline panel", () => {
     render(<MapPipelinePanel slug="eurth" />);
     expect(screen.getByText(/The saved pipeline no longer reads/)).toBeInTheDocument();
     expect(screen.getByText(/physical: No art named "blank"/)).toBeInTheDocument();
-  });
-});
-
-describe("/admin/realms Map tab", () => {
-  beforeEach(() => {
-    view = baseView;
-    runs = [];
-  });
-
-  it("opens on the first realm other than Ixnay", () => {
-    render(<MapPipelineTab />);
-    expect(screen.getByText("Art files")).toBeInTheDocument();
-    expect(screen.getByText(/someone\/eurth-map at main/)).toBeInTheDocument();
   });
 });

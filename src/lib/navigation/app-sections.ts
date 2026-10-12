@@ -510,7 +510,7 @@ export const APPS: readonly AppDefinition[] = [
         ["realms", "Realms", "/admin/realms", Sparks],
       ]),
       ...adminGroup("Apps", [
-        ["maps", "WorldStudio", "/admin/maps", MapIcon],
+        ["maps", "Atlas", "/admin/maps", MapIcon],
         ["style-editor", "Map style editor", "/admin/maps/style-editor", Palette],
         ["wikios", "WikiOS", "/admin/wikios-settings", OpenBook],
         ["lorescanner", "LoreScanner", "/admin/lorescanner", Search],

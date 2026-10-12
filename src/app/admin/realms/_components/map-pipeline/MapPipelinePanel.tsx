@@ -68,7 +68,7 @@ function NoPipeline({
 /**
  * A realm's map pipeline (docs/systems/realm-maps.md): its config (preset, art, raster and physical layers, climate
  * key, labels, flags, default view, smoothing), runs (dry run or apply, any steps) with live progress, and the run
- * history. In /admin/realms → Map (site admins) and the realm's Manage tab (founder and Map officers).
+ * history. On the Atlas realm page (site admins) and the realm's Manage tab (founder and Map officers).
  */
 export function MapPipelinePanel({
   slug,

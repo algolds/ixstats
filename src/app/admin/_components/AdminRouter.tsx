@@ -78,10 +78,10 @@ const NationalIssuesPanel = dynamic(
   { loading: Loader, ssr: false }
 );
 
-const WorldStudioPanel = dynamic(() => import("../maps/WorldStudioPanel").then((m) => m.default), {
-  loading: Loader,
-  ssr: false,
-});
+const AtlasPanel = dynamic(
+  () => import("../maps/_components/atlas/AtlasPanel").then((m) => m.AtlasPanel),
+  { loading: Loader, ssr: false }
+);
 
 const CalculationEditor = dynamic(
   () => import("../calculations/CalculationEditor").then((m) => m.CalculationEditor),
@@ -223,9 +223,9 @@ export function AdminRouter() {
       case "realms":
         return <RealmsPanel defaultTab="realms" />;
       case "maps":
-        return <WorldStudioPanel />;
+        return <AtlasPanel />;
       case "style-editor":
-        return <WorldStudioPanel initialTab="settings" />;
+        return <AtlasPanel initialTab="style" />;
       case "cards":
         return <CardsPanel />;
       case "vault":

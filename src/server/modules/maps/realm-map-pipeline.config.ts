@@ -1,5 +1,5 @@
 /**
- * A realm's map pipeline from its admin panel (`/admin/realms` → Map for site admins, `/r/<realm>/manage` → Map for
+ * A realm's map pipeline from its admin panel (`/admin/maps/realms/<slug>` for site admins, `/r/<realm>/manage` → Map for
  * the founder and Map officers): read and save the config (`Realm.settings.map.pipeline`), fill it from a source
  * preset, start a run (dry run or apply, any steps), follow it, list past runs and cancel. Everything goes through
  * `realmMapAccess` (Ixnay stays with site admins; archived realms are read-only), and every change is recorded

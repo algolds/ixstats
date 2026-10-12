@@ -20,7 +20,7 @@ import { ClaimsTab } from "./_components/ClaimsTab";
 import { SourceSyncTab } from "./_components/source-sync/SourceSyncTab";
 import { WikiTab } from "./_components/wiki/WikiTab";
 import { NationsTab } from "./_components/nations/NationsTab";
-import { MapPipelineTab } from "./_components/map-pipeline/MapPipelineTab";
+import { RealmMapLinks } from "./_components/map-pipeline/RealmMapLinks";
 
 interface RealmsPanelProps {
   defaultTab?: "realms" | "claims" | "users" | "source-sync" | "wiki" | "nations" | "map";
@@ -114,7 +114,7 @@ export function RealmsPanel({ defaultTab = "realms" }: RealmsPanelProps) {
         </TabsContent>
 
         <TabsContent value="map" className="mt-6 focus-visible:outline-none">
-          <MapPipelineTab />
+          <RealmMapLinks />
         </TabsContent>
       </Tabs>
     </div>
