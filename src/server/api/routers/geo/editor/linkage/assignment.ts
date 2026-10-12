@@ -7,6 +7,9 @@ import {
 } from "~/server/api/trpc";
 import { editableMapRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms";
+import { RealmRegionError } from "~/server/modules/realms/realms.region";
+import { renameGeneratedSlot } from "~/server/modules/realms/realms.slot-rename";
+import { invalidateCache } from "~/lib/cache";
 import { TRPCError } from "@trpc/server";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
@@ -14,6 +17,12 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { assertFound, requirePoliticalLayer } from "../../core/shared";
+
+function regionError(error: Error): never {
+  if (error instanceof RealmRegionError)
+    throw new TRPCError({ code: error.code, message: error.message });
+  throw error;
+}
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -163,30 +172,32 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         updateData.properties = input.properties;
       }
 
-      await ctx.db.mapLayer.update({
-        where: { id: feature.id },
-        data: updateData,
-      });
+      const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
+      const newName = input.displayName !== feature.displayName ? input.displayName : undefined;
+
+      // A generated slot is its country: the nation is renamed first and in the same transaction, so a refused
+      // name (taken) leaves the region as it was
+      const slotRenamed = await ctx.db
+        .$transaction(async (tx) => {
+          const followed = await renameGeneratedSlot(tx, realmId, targetCountryId, newName);
+          await tx.mapLayer.update({ where: { id: feature.id }, data: updateData });
+          return followed;
+        })
+        .catch(regionError);
+      if (slotRenamed) await invalidateCache(["countries."]).catch(() => undefined);
 
       // The region is stored: the map version moves even if a nation write or sync below fails
       try {
-        const targetCountryId = input.countryId !== undefined ? input.countryId : feature.countryId;
-
         // Update Country name and slug if displayName is changed and country is linked
-        if (
-          renamesNation &&
-          targetCountryId &&
-          input.displayName !== undefined &&
-          input.displayName !== feature.displayName
-        ) {
-          const slug = input.displayName
+        if (renamesNation && targetCountryId && newName !== undefined && !slotRenamed) {
+          const slug = newName
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "");
           await ctx.db.country.update({
             where: { id: targetCountryId },
             data: {
-              name: input.displayName,
+              name: newName,
               slug,
             },
           });
