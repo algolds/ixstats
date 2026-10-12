@@ -2,6 +2,8 @@
  * UPG v2 — Mesh Unit Tests
  */
 
+// @ts-expect-error d3-delaunay has no declaration file
+import { Delaunay } from "d3-delaunay";
 import { createMesh, cellLng, cellLat, farthestPointSample } from "~/lib/worldgen/v2/mesh";
 import { makeRng } from "~/lib/worldgen/v2/helpers/rng";
 
@@ -85,6 +87,44 @@ describe("v2/mesh", () => {
     expect(graph.cells.state.length).toBe(n);
     expect(graph.cells.downstream.length).toBe(n);
     expect(graph.cells.flux.length).toBe(n);
+  });
+});
+
+describe("v2/mesh Lloyd relaxation", () => {
+  /** The straightforward relaxation: centroid of each cellPolygon, a fresh triangulation per pass. */
+  function relaxed(start: Float64Array, passes: number): Float64Array {
+    const bounds = [-180, -90, 180, 90];
+    const points = start.slice();
+    let voronoi = new Delaunay(points.slice()).voronoi(bounds);
+    for (let pass = 0; pass < passes; pass++) {
+      for (let i = 0; i < points.length / 2; i++) {
+        const poly: [number, number][] | null = voronoi.cellPolygon(i);
+        if (!poly || poly.length < 3) continue;
+        let cx = 0,
+          cy = 0,
+          area = 0;
+        for (let j = 0; j < poly.length - 1; j++) {
+          const [x0, y0] = poly[j]!;
+          const [x1, y1] = poly[j + 1]!;
+          const cross = x0 * y1 - x1 * y0;
+          cx += (x0 + x1) * cross;
+          cy += (y0 + y1) * cross;
+          area += cross;
+        }
+        area /= 2;
+        if (Math.abs(area) < 1e-10) continue;
+        points[i * 2] = Math.max(-179.95, Math.min(179.95, cx / (6 * area)));
+        points[i * 2 + 1] = Math.max(-89.9, Math.min(89.9, cy / (6 * area)));
+      }
+      voronoi = new Delaunay(points.slice()).voronoi(bounds);
+    }
+    return points;
+  }
+
+  it("moves every cell centre exactly as centroid relaxation of the jittered grid does", () => {
+    const start = createMesh(TEST_SEED, 2000, 0).cells.p;
+    const mesh = createMesh(TEST_SEED, 2000, 3);
+    expect(Array.from(mesh.cells.p)).toEqual(Array.from(relaxed(start, 3)));
   });
 });
 

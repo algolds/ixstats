@@ -5,12 +5,16 @@
  *    over a noisy cost field (irregular, seed-unique silhouettes), sized by `continentSizeVariance`
  *    and kept apart by an ocean gap; optional polar caps; islands and arcs from the leftover budget.
  *    The land budget is exact: land cells = (1 − oceanPercentage) × cells.
+ *    With a land mask (a realm's own map) land is taken from the mask instead and nothing is grown.
  * 2. Plate types follow the landmasses (a plate is continental when most of it is land).
  * 3. Mountains: convergent plate boundaries uplift a belt a few cells wide.
  * 4. Elevation: land cells are ranked by a relief score (coast distance + mountains + noise) and
  *    mapped onto the target hypsometric curve, so the share of land per elevation zone matches
  *    `hypsometry` exactly while mountains still sit on the tectonic belts. Ocean depth grows
- *    with distance from land.
+ *    with distance from land. The mask's altitude bands, when it has them, pull the ranking.
+ *
+ * Unit-sphere coordinates and the noise fields the flood fills read per edge are computed once per
+ * cell into typed arrays.
  */
 
 import type { WorldGraph, WorldGenParams } from "./types";
@@ -19,7 +23,8 @@ import { makeRng } from "./helpers/rng";
 import { buildNoiseConfig, fractalNoise, ridgedNoise } from "./helpers/noise";
 import { MinHeap } from "./helpers/heap";
 import { computeCoastalDistance } from "./helpers/flood-fill";
-import { cellLat, cellLng, cellXYZ, lngDelta } from "./mesh";
+import { cellLat, cellLng, cellVectors, chord2, lngDelta } from "./mesh";
+import { sampleLandMask, type LandMask } from "../land-mask";
 
 /** Cells of ocean kept between two different continents (and between a continent and a polar cap). */
 const CONTINENT_GAP_HOPS = 2;
@@ -29,22 +34,53 @@ const POLAR_CAP_LAT = 72;
 const MAX_CONTINENT_LAT = 80;
 /** Width in cells of the convergent mountain belt. */
 const MOUNTAIN_BELT_HOPS = 6;
+/** Relief score added at the mask's highest altitude band (a convergent ridge adds up to 3). */
+const MASK_ZONE_PULL = 2;
+
+type NoiseConfig = ReturnType<typeof buildNoiseConfig>;
+
+/** Noise at every cell, from the packed unit-sphere coordinates. */
+function noiseField(sphere: Float64Array, config: NoiseConfig): Float64Array {
+  const field = new Float64Array(sphere.length / 3);
+  for (let i = 0; i < field.length; i++) field[i] = fractalNoise(sphere, i, config);
+  return field;
+}
+
+/** Land and altitude band per cell, read from a realm's land mask at the cell centres. */
+function maskedLand(graph: WorldGraph, mask: LandMask): { owner: Uint16Array; zone?: Uint8Array } {
+  const n = graph.cells.n;
+  const owner = new Uint16Array(n);
+  const zone = mask.zone ? new Uint8Array(n) : undefined;
+  for (let i = 0; i < n; i++) {
+    const at = sampleLandMask(mask, cellLng(graph, i), cellLat(graph, i));
+    owner[i] = at.land ? 1 : 0;
+    if (zone) zone[i] = at.zone ?? 0;
+  }
+  return zone ? { owner, zone } : { owner };
+}
 
 /**
  * Generate landmasses and elevation in meters for every cell.
  * Mutates graph.cells.h, isLand, elevZone, isMountainRidge, coastDist and plate types in-place.
+ * With `landMask` the land is the mask's, not grown from `continentCount` and `oceanPercentage`.
  */
-export function generateTerrain(graph: WorldGraph, params: WorldGenParams): void {
+export function generateTerrain(
+  graph: WorldGraph,
+  params: WorldGenParams,
+  landMask?: LandMask
+): void {
   const { cells } = graph;
   const n = cells.n;
+  const sphere = cellVectors(graph);
 
-  const mountain = convergentMountainField(graph, params.seed);
-  const owner = growLandmasses(graph, params, mountain);
+  const mountain = convergentMountainField(graph, params.seed, sphere);
+  const guide = landMask ? maskedLand(graph, landMask) : undefined;
+  const owner = guide?.owner ?? growLandmasses(graph, params, mountain, sphere);
 
   for (let i = 0; i < n; i++) cells.isLand[i] = owner[i]! > 0 ? 1 : 0;
   assignPlateTypes(graph);
   computeCoastalDistance(graph);
-  shapeElevation(graph, params, mountain);
+  shapeElevation(graph, params, mountain, sphere, guide?.zone);
 
   for (let i = 0; i < n; i++) {
     const isLand = cells.h[i]! >= 0;
@@ -73,7 +109,8 @@ function gaussian(rng: () => number): number {
 function growLandmasses(
   graph: WorldGraph,
   params: WorldGenParams,
-  mountain: Float32Array
+  mountain: Float32Array,
+  sphere: Float64Array
 ): Uint16Array {
   const rng = makeRng(params.seed + 20);
   const { cells } = graph;
@@ -84,6 +121,7 @@ function growLandmasses(
   const ISLAND = K + 2;
   const shape = buildNoiseConfig(params.seed + 21, 4, 2.2, 2.2, 0.55);
   const coast = buildNoiseConfig(params.seed + 26, 5, 6, 2.1, 0.6);
+  const shapeNoise = noiseField(sphere, shape);
   // Without a cap, a hemisphere's continents stay equatorward of MAX_CONTINENT_LAT
   const latOk = (lat: number) =>
     lat > 0
@@ -95,7 +133,7 @@ function growLandmasses(
   // Polar caps
   for (let i = 0; i < n; i++) {
     const lat = cellLat(graph, i);
-    const edge = POLAR_CAP_LAT + 4 * fractalNoise(cellXYZ(graph, i), shape);
+    const edge = POLAR_CAP_LAT + 4 * shapeNoise[i]!;
     if ((params.polarLand.south && lat < -edge) || (params.polarLand.north && lat > edge)) {
       owner[i] = POLAR;
       budget--;
@@ -116,12 +154,19 @@ function growLandmasses(
   );
   const weightSum = weights.reduce((a, b) => a + b, 0);
   const targets = weights.map((w) => Math.round((continentBudget * w) / weightSum));
-  const centers = pickContinentCenters(graph, params, K, free, rng);
+  const centers = pickContinentCenters(graph, params, K, free, rng, sphere);
 
   // Size-weighted regions over the noisy cost field; growth slows outside the latitude band
   const [bandSouth, bandNorth] = params.continentLatitudeRange;
   const bandPenalty = (lat: number) =>
     1 + (Math.max(0, bandSouth - lat, lat - bandNorth) / 15) ** 2;
+  // Per-cell step cost factors, so the Dijkstra below computes no noise per edge
+  const stepNoise = new Float64Array(n);
+  const stepBand = new Float64Array(n);
+  for (let i = 0; i < n; i++) {
+    stepNoise[i] = Math.exp(2.2 * shapeNoise[i]!);
+    stepBand[i] = bandPenalty(cellLat(graph, i));
+  }
   const region = new Uint16Array(n);
   const cost = new Float64Array(n).fill(Infinity);
   const heap = new MinHeap();
@@ -138,8 +183,7 @@ function growLandmasses(
     const speed = 1 / Math.sqrt(Math.max(1, targets[k - 1]!));
     for (const nb of cells.neighbors[cell]!) {
       if (!free[nb]) continue;
-      const step = Math.exp(2.2 * fractalNoise(cellXYZ(graph, nb), shape));
-      const c = key + step * speed * bandPenalty(cellLat(graph, nb));
+      const c = key + stepNoise[nb]! * speed * stepBand[nb]!;
       if (c < cost[nb]!) {
         cost[nb] = c;
         region[nb] = k;
@@ -172,7 +216,7 @@ function growLandmasses(
     if (take === 0) continue;
     const scale = Math.max(1e-9, cost[list[take - 1]!]!);
     for (const c of list) {
-      score[c] = (cost[c]! / scale) * (1 - roughness * fractalNoise(cellXYZ(graph, c), coast));
+      score[c] = (cost[c]! / scale) * (1 - roughness * fractalNoise(sphere, c, coast));
     }
     list.sort((a, b) => score[a]! - score[b]!);
     for (let j = 0; j < take; j++) owner[list[j]!] = k;
@@ -189,7 +233,7 @@ function growLandmasses(
     for (let j = 0; j < Math.min(extra, shore.length); j++) owner[shore[j]!] = 0;
   }
 
-  placeIslands(graph, params, owner, mountain, islandBudget, ISLAND, latOk, rng);
+  placeIslands(graph, params, owner, mountain, islandBudget, ISLAND, latOk, rng, sphere);
   return owner;
 }
 
@@ -263,7 +307,8 @@ function pickContinentCenters(
   params: WorldGenParams,
   K: number,
   free: Uint8Array,
-  rng: () => number
+  rng: () => number,
+  sphere: Float64Array
 ): number[] {
   const [latMin, latMax] = params.continentLatitudeRange;
   let pool: number[] = [];
@@ -280,12 +325,8 @@ function pickContinentCenters(
     // ponytail: 600-cell random pool keeps placement seed-varied; exact farthest-point would be a regular lattice
     for (let s = 0; s < 600; s++) {
       const c = pool[Math.floor(rng() * pool.length)]!;
-      const [x, y, z] = cellXYZ(graph, c);
       let d = Infinity;
-      for (const o of centers) {
-        const [ox, oy, oz] = cellXYZ(graph, o);
-        d = Math.min(d, (x - ox) ** 2 + (y - oy) ** 2 + (z - oz) ** 2);
-      }
+      for (const o of centers) d = Math.min(d, chord2(sphere, c, o));
       if (d > bestDist) {
         bestDist = d;
         best = c;
@@ -309,7 +350,8 @@ function placeIslands(
   budget: number,
   islandId: number,
   latOk: (lat: number) => boolean,
-  rng: () => number
+  rng: () => number,
+  sphere: Float64Array
 ): void {
   if (budget <= 0) return;
   const { cells } = graph;
@@ -328,9 +370,7 @@ function placeIslands(
   for (let i = 0; i < n; i++) {
     if (!open(i, -1)) continue;
     const score =
-      fractalNoise(cellXYZ(graph, i), noise) +
-      1.2 * Math.exp(-landDist[i]! / 4) +
-      0.8 * mountain[i]!;
+      fractalNoise(sphere, i, noise) + 1.2 * Math.exp(-landDist[i]! / 4) + 0.8 * mountain[i]!;
     seeds.push({ cell: i, score });
   }
   seeds.sort((a, b) => b.score - a.score);
@@ -370,7 +410,11 @@ function assignPlateTypes(graph: WorldGraph): void {
  * Mountain belt strength 0..1 per cell: convergence speed at the nearest convergent boundary,
  * decaying over MOUNTAIN_BELT_HOPS cells, with ridged noise for crests and passes.
  */
-function convergentMountainField(graph: WorldGraph, seed: number): Float32Array {
+function convergentMountainField(
+  graph: WorldGraph,
+  seed: number,
+  sphere: Float64Array
+): Float32Array {
   const { cells, plates } = graph;
   const n = cells.n;
   const strength = new Float32Array(n);
@@ -417,7 +461,7 @@ function convergentMountainField(graph: WorldGraph, seed: number): Float32Array 
   const field = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     if (dist[i] === 65535) continue;
-    const crest = 0.55 + 0.45 * ridgedNoise(cellXYZ(graph, i), ridges);
+    const crest = 0.55 + 0.45 * ridgedNoise(sphere, i, ridges);
     field[i] = strength[i]! * Math.exp(-dist[i]! / 2.5) * crest;
   }
   return field;
@@ -439,7 +483,13 @@ function hypsometricHeight(r: number, cumulative: number[]): number {
   return min + t * (ZONE_TOP[z]! - min);
 }
 
-function shapeElevation(graph: WorldGraph, params: WorldGenParams, mountain: Float32Array): void {
+function shapeElevation(
+  graph: WorldGraph,
+  params: WorldGenParams,
+  mountain: Float32Array,
+  sphere: Float64Array,
+  zone?: Uint8Array
+): void {
   const { cells } = graph;
   const n = cells.n;
   const hills = buildNoiseConfig(params.seed + 24, 4, 10, 2.1, 0.5);
@@ -450,12 +500,12 @@ function shapeElevation(graph: WorldGraph, params: WorldGenParams, mountain: Flo
   const land: { cell: number; score: number }[] = [];
   for (let i = 0; i < n; i++) {
     if (!cells.isLand[i]) continue;
-    const p = cellXYZ(graph, i);
     const score =
       0.5 * Math.min(1, cells.coastDist[i]! / 10) +
       3 * mountain[i]! +
-      0.35 * fractalNoise(p, macro) +
-      0.45 * roughness * fractalNoise(p, hills);
+      0.35 * fractalNoise(sphere, i, macro) +
+      0.45 * roughness * fractalNoise(sphere, i, hills) +
+      (zone ? (MASK_ZONE_PULL * zone[i]!) / (ELEVATION_ZONES.length - 1) : 0);
     land.push({ cell: i, score });
   }
   land.sort((a, b) => a.score - b.score);
@@ -490,8 +540,7 @@ function shapeElevation(graph: WorldGraph, params: WorldGenParams, mountain: Flo
   for (let i = 0; i < n; i++) {
     if (cells.isLand[i]) continue;
     const d = dist[i] === 65535 ? 20 : dist[i]!;
-    const depth =
-      60 + 4800 * (1 - Math.exp(-(d - 1) / 4)) + 350 * fractalNoise(cellXYZ(graph, i), macro);
+    const depth = 60 + 4800 * (1 - Math.exp(-(d - 1) / 4)) + 350 * fractalNoise(sphere, i, macro);
     cells.h[i] = -Math.max(1, depth);
   }
 }

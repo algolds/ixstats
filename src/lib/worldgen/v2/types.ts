@@ -27,7 +27,7 @@ export interface WorldGraph {
   settlements: Settlement[];
 }
 
-interface WorldCells {
+export interface WorldCells {
   /** Number of cells in the mesh */
   n: number;
   /** Cell center coordinates: flat [lng0,lat0, lng1,lat1, ...] in WGS84 */
@@ -101,6 +101,9 @@ interface WorldCells {
   /** State/country ID (0 = unclaimed) */
   state: Uint16Array;
 }
+
+/** The mesh geometry: written once by `createMesh`, never mutated by a later stage, so graphs can share it. */
+export type MeshGeometry = Pick<WorldCells, "p" | "neighbors" | "vertices" | "boundary">;
 
 // Entity Types
 
@@ -270,11 +273,32 @@ export interface WorldGenParams {
 
 // Generation Output
 
+/** The slot key of a generated state: the slot's `key` and its political feature's `slotKey`. */
+export const slotKey = (stateId: number): string => `slot_${stateId}`;
+
+/** A claimable nation slot: a generated country with its derived baseline. */
+export interface WorldSlot {
+  /** Stable within one world; the political feature's `slotKey` */
+  key: string;
+  /** Suggested name the claimant may keep */
+  name: string;
+  colour: string;
+  /** Land cells */
+  cells: number;
+  areaKm2: number;
+  population: number;
+  gdpPerCapita: number;
+}
+
 export interface GeneratedWorld {
   seed: number;
   params: WorldGenParams;
-  /** 7-layer GeoJSON output for IxWorldMap renderer */
+  /** 7-layer GeoJSON output for IxWorldMap renderer (no `political` when the realm's borders are kept) */
   layers: Record<string, import("geojson").FeatureCollection>;
+  /** Nation slots, from the generated countries (empty when the realm's borders are kept) */
+  slots: WorldSlot[];
+  /** Packed per cell: lng, lat, height in metres */
+  cells: Float32Array;
   /** Generation statistics */
   stats: WorldStats;
   /** The internal world graph (for Studio editor, not for rendering) */
@@ -327,14 +351,15 @@ export interface QualityReport {
 }
 
 /**
- * Create an empty WorldGraph skeleton with all typed arrays allocated and zeroed.
+ * Create an empty WorldGraph skeleton with all typed arrays allocated and zeroed. With `geometry`
+ * the graph shares those mesh arrays instead of allocating its own.
  */
-export function createEmptyWorldGraph(n: number): WorldGraph {
+export function createEmptyWorldGraph(n: number, geometry?: MeshGeometry): WorldGraph {
   const cells: WorldCells = {
     n,
-    p: new Float64Array(n * 2),
-    neighbors: Array.from({ length: n }, () => []),
-    vertices: Array.from({ length: n }, () => [[0, 0] as [number, number]]),
+    p: geometry?.p ?? new Float64Array(n * 2),
+    neighbors: geometry?.neighbors ?? Array.from({ length: n }, () => []),
+    vertices: geometry?.vertices ?? Array.from({ length: n }, () => [[0, 0] as [number, number]]),
 
     // Tectonic
     plate: new Uint16Array(n),
@@ -365,7 +390,7 @@ export function createEmptyWorldGraph(n: number): WorldGraph {
 
     // Feature membership
     feature: new Uint16Array(n),
-    boundary: new Uint8Array(n),
+    boundary: geometry?.boundary ?? new Uint8Array(n),
 
     // Political
     culture: new Uint16Array(n),

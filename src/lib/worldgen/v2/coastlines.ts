@@ -12,10 +12,13 @@
  *
  * Coastal lowlands come from the terrain stage's relief ranking, so no height damping happens
  * here (damping after the hypsometric mapping would skew the elevation-zone targets).
+ *
+ * With `fixedCoast` (land taken from a realm's own map) the coastline is the realm's: steps 1, 2
+ * and 5 are skipped, so only the classification and the coastal distance are refreshed.
  */
 
 import type { WorldGraph, WorldGenParams, GeographicFeature } from "./types";
-import { cellLat, cellXYZ, cellAreaKm2 } from "./mesh";
+import { cellLat, cellVectors, cellAreaKm2 } from "./mesh";
 import { buildNoiseConfig, fractalNoise } from "./helpers/noise";
 import { computeCoastalDistance } from "./helpers/flood-fill";
 import { getElevationZone } from "./config";
@@ -24,13 +27,36 @@ import { getElevationZone } from "./config";
  * Refine coastline features and classify all cells into geographic features.
  * Mutates graph.cells and populates graph.features in-place.
  */
-export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): void {
+export function refineCoastlines(
+  graph: WorldGraph,
+  params: WorldGenParams,
+  fixedCoast = false
+): void {
+  // Refresh coastal distance for initial landmass
+  computeCoastalDistance(graph);
+
+  if (!fixedCoast) carveCoastline(graph, params);
+
+  // Step 3: Re-compute coastal distance after peninsula/fjord edits
+  computeCoastalDistance(graph);
+
+  // Step 4: Geographic feature classification via flood-fill connected components
+  classifyGeographicFeatures(graph);
+
+  // Step 5: Minimum landmass filter (sink single-cell specks left by bay carving)
+  if (!fixedCoast) filterTinyLandmasses(graph);
+
+  // Step 6: Final feature classification & coastal distance update
+  classifyGeographicFeatures(graph);
+  computeCoastalDistance(graph);
+}
+
+/** Steps 1-2: fjords, peninsulas and bays cut from the generated coastline. */
+function carveCoastline(graph: WorldGraph, params: WorldGenParams): void {
   const { cells } = graph;
   const n = cells.n;
   const complexity = params.coastlineComplexity ?? 0.6;
-
-  // Refresh coastal distance for initial landmass
-  computeCoastalDistance(graph);
+  const sphere = cellVectors(graph);
 
   const noiseFjord = buildNoiseConfig(params.seed + 31, 3, 11, 2.0, 0.5);
   const noiseCoast = buildNoiseConfig(params.seed + 32, 3, 7, 2.0, 0.5);
@@ -44,7 +70,7 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
 
     // Check if cell is coastal (coastDist <= 2) and near mountain ridge
     if (cells.coastDist[i]! <= 2 && cells.isMountainRidge[i]) {
-      const val = fractalNoise(cellXYZ(graph, i), noiseFjord);
+      const val = fractalNoise(sphere, i, noiseFjord);
 
       // Carve fjord inlet by dropping elevation below sea level
       if (val > 0.45 * (1 - complexity * 0.3)) {
@@ -59,7 +85,7 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
   // Step 2: Peninsulas & Bays — coastal noise perturbation
   for (let i = 0; i < n; i++) {
     const dist = cells.coastDist[i]!;
-    const val = fractalNoise(cellXYZ(graph, i), noiseCoast);
+    const val = fractalNoise(sphere, i, noiseCoast);
 
     if (cells.isLand[i] && dist === 0) {
       // Coastal land cell: potential bay carving
@@ -83,19 +109,6 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
       }
     }
   }
-
-  // Step 3: Re-compute coastal distance after peninsula/fjord edits
-  computeCoastalDistance(graph);
-
-  // Step 4: Geographic feature classification via flood-fill connected components
-  classifyGeographicFeatures(graph);
-
-  // Step 5: Minimum landmass filter (sink single-cell specks left by bay carving)
-  filterTinyLandmasses(graph);
-
-  // Step 6: Final feature classification & coastal distance update
-  classifyGeographicFeatures(graph);
-  computeCoastalDistance(graph);
 }
 
 /**

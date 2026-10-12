@@ -123,6 +123,8 @@ function traceUpwind(graph: WorldGraph): UpwindTrace {
   const landKm = new Float32Array(n);
   const barrier = new Float32Array(n);
   const upwindH = new Float32Array(n);
+  const cosLat = new Float64Array(n);
+  for (let i = 0; i < n; i++) cosLat[i] = Math.cos((cellLat(graph, i) * Math.PI) / 180);
 
   for (let i = 0; i < n; i++) {
     if (!cells.isLand[i]) continue;
@@ -135,10 +137,17 @@ function traceUpwind(graph: WorldGraph): UpwindTrace {
       let best = -1;
       let bestDot = 0;
       let bestLen = 0;
+      const curLng = cellLng(graph, cur);
+      const curLat = cellLat(graph, cur);
+      const cosCur = cosLat[cur]!;
       for (const nb of cells.neighbors[cur]!) {
-        const [dx, dy] = offset(graph, cur, nb);
+        const dx = lngDelta(curLng, cellLng(graph, nb)) * cosCur;
+        const dy = cellLat(graph, nb) - curLat;
+        // Only a neighbour with a positive component along the upwind direction can beat bestDot
+        const along = dx * ux + dy * uy;
+        if (!(along > 0)) continue;
         const len = Math.hypot(dx, dy);
-        const dot = len > 0 ? (dx * ux + dy * uy) / len : 0;
+        const dot = len > 0 ? along / len : 0;
         if (dot > bestDot) {
           bestDot = dot;
           best = nb;

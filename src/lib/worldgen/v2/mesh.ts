@@ -12,7 +12,7 @@
 // @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
-import { createEmptyWorldGraph, type WorldGraph } from "./types";
+import { createEmptyWorldGraph, type MeshGeometry, type WorldGraph } from "./types";
 import { toXYZ } from "./helpers/noise";
 import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 
@@ -39,88 +39,154 @@ export function createMesh(
 
   // Step 2: Delaunay + Voronoi over the whole globe (cells at ±180 are stitched in Step 7)
   const bounds: [number, number, number, number] = [-180, -90, 180, 90];
-  let delaunay = Delaunay.from(
-    Array.from({ length: n }, (_, i) => [points[i * 2]!, points[i * 2 + 1]!])
-  );
-  let voronoi = delaunay.voronoi(bounds);
+  // The triangulation owns a copy of the points: relaxation writes `points` while it reads them
+  const delaunay = new Delaunay(points.slice());
+  const voronoi = delaunay.voronoi(bounds);
 
   // Step 3: Lloyd relaxation for uniform cell size
+  const centroid = new CentroidSink();
   for (let iter = 0; iter < lloydIterations; iter++) {
     for (let i = 0; i < n; i++) {
-      const poly = voronoi.cellPolygon(i);
-      if (!poly || poly.length < 3) continue;
-
-      // Compute centroid of Voronoi polygon
-      let cx = 0,
-        cy = 0,
-        area = 0;
-      for (let j = 0; j < poly.length - 1; j++) {
-        const [x0, y0] = poly[j]!;
-        const [x1, y1] = poly[j + 1]!;
-        const cross = x0 * y1 - x1 * y0;
-        cx += (x0 + x1) * cross;
-        cy += (y0 + y1) * cross;
-        area += cross;
-      }
-      area /= 2;
+      // Centroid of the cell's Voronoi polygon, accumulated while d3 walks its vertices
+      centroid.reset();
+      voronoi.renderCell(i, centroid);
+      if (centroid.vertices < 2) continue;
+      const area = centroid.area / 2;
       if (Math.abs(area) < 1e-10) continue;
-      cx /= 6 * area;
-      cy /= 6 * area;
 
       // Clamp to bounds
-      cx = Math.max(-179.95, Math.min(179.95, cx));
-      cy = Math.max(-89.9, Math.min(89.9, cy));
+      const cx = Math.max(-179.95, Math.min(179.95, centroid.cx / (6 * area)));
+      const cy = Math.max(-89.9, Math.min(89.9, centroid.cy / (6 * area)));
 
       points[i * 2] = cx;
       points[i * 2 + 1] = cy;
     }
 
-    // Re-triangulate with relaxed points
-    delaunay = Delaunay.from(
-      Array.from({ length: n }, (_, i) => [points[i * 2]!, points[i * 2 + 1]!])
-    );
-    voronoi = delaunay.voronoi(bounds);
+    // Re-triangulate with relaxed points (in place: the buffers are reused)
+    delaunay.points.set(points);
+    voronoi.update();
   }
 
-  // Step 4: Build the WorldGraph skeleton
-  const graph = createEmptyWorldGraph(n);
-  const { cells } = graph;
-
-  // Copy cell center positions
-  for (let i = 0; i < n * 2; i++) {
-    cells.p[i] = points[i]!;
-  }
-
-  // Step 5: Extract adjacency from Delaunay edges
+  // Step 4: Extract adjacency from Delaunay edges
+  const neighbors: number[][] = new Array(n);
   for (let i = 0; i < n; i++) {
     const nbs: number[] = [];
     for (const j of delaunay.neighbors(i)) {
       if (!nbs.includes(j)) nbs.push(j);
     }
-    cells.neighbors[i] = nbs;
+    neighbors[i] = nbs;
   }
 
-  // Step 6: Extract cell polygon vertices
+  // Step 5: Extract cell polygon vertices (d3 hands out fresh rings)
+  const vertices: [number, number][][] = new Array(n);
   for (let i = 0; i < n; i++) {
-    const poly = voronoi.cellPolygon(i);
-    if (poly) {
-      cells.vertices[i] = poly.map(([x, y]: [number, number]) => [x, y] as [number, number]);
-    } else {
-      cells.vertices[i] = [[0, 0]];
-    }
+    vertices[i] = voronoi.cellPolygon(i) ?? [[0, 0]];
   }
 
-  // Step 7: Wrap the antimeridian — cells whose edges lie on x = -180 and x = +180 at
+  const graph = createEmptyWorldGraph(n, {
+    p: points,
+    neighbors,
+    vertices,
+    boundary: new Uint8Array(n),
+  });
+  const { cells } = graph;
+
+  // Step 6: Wrap the antimeridian — cells whose edges lie on x = -180 and x = +180 at
   // overlapping latitudes become neighbours, so continents, rivers and borders cross it
   stitchAntimeridian(graph);
 
-  // Step 8: Boundary cells are the polar edge rows (the globe has no east/west edge)
+  // Step 7: Boundary cells are the polar edge rows (the globe has no east/west edge)
   for (let i = 0; i < n; i++) {
     if (cells.vertices[i]!.some(([, y]) => Math.abs(Math.abs(y) - 90) < 1e-9))
       cells.boundary[i] = 1;
   }
 
   return graph;
+}
+
+/**
+ * A drawing context for `Voronoi.renderCell` that sums the polygon centroid terms
+ * (Σ (x0+x1)·cross, Σ (y0+y1)·cross, Σ cross) instead of building the polygon.
+ */
+class CentroidSink {
+  cx = 0;
+  cy = 0;
+  area = 0;
+  /** Vertices drawn so far (the closing one excluded) */
+  vertices = 0;
+  private firstX = 0;
+  private firstY = 0;
+  private lastX = 0;
+  private lastY = 0;
+
+  reset(): void {
+    this.cx = 0;
+    this.cy = 0;
+    this.area = 0;
+    this.vertices = 0;
+  }
+
+  moveTo(x: number, y: number): void {
+    this.firstX = this.lastX = x;
+    this.firstY = this.lastY = y;
+    this.vertices = 1;
+  }
+
+  lineTo(x: number, y: number): void {
+    this.edgeTo(x, y);
+    this.vertices++;
+  }
+
+  closePath(): void {
+    this.edgeTo(this.firstX, this.firstY);
+  }
+
+  private edgeTo(x1: number, y1: number): void {
+    const x0 = this.lastX;
+    const y0 = this.lastY;
+    const cross = x0 * y1 - x1 * y0;
+    this.cx += (x0 + x1) * cross;
+    this.cy += (y0 + y1) * cross;
+    this.area += cross;
+    this.lastX = x1;
+    this.lastY = y1;
+  }
+}
+
+/** Meshes the cache keeps: the current world and the one before it. */
+const MESH_CACHE_SIZE = 2;
+
+/**
+ * Remembers recent meshes by (seed, cellCount, lloydIterations) so a slider change, which keeps all
+ * three, skips the mesh build. Only the geometry is kept: every call returns a fresh graph that
+ * shares it, because the generation stages write the attribute arrays and never the geometry.
+ */
+export class MeshCache {
+  private readonly entries = new Map<string, MeshGeometry>();
+
+  constructor(private readonly build: typeof createMesh = createMesh) {}
+
+  get(seed: number, cellCount: number, lloydIterations: number): WorldGraph {
+    const key = `${seed}:${cellCount}:${lloydIterations}`;
+    const geometry =
+      this.entries.get(key) ?? geometryOf(this.build(seed, cellCount, lloydIterations));
+    // Re-insert so the map stays ordered oldest first
+    this.entries.delete(key);
+    this.entries.set(key, geometry);
+    if (this.entries.size > MESH_CACHE_SIZE) {
+      this.entries.delete(this.entries.keys().next().value!);
+    }
+    return createEmptyWorldGraph(geometry.p.length / 2, geometry);
+  }
+}
+
+function geometryOf({ cells }: WorldGraph): MeshGeometry {
+  return {
+    p: cells.p,
+    neighbors: cells.neighbors,
+    vertices: cells.vertices,
+    boundary: cells.boundary,
+  };
 }
 
 /** Latitude span of the cell's edge lying on the meridian x (null when it has none). */
@@ -169,9 +235,35 @@ export function lngDelta(a: number, b: number): number {
   return d;
 }
 
-/** Unit-sphere coordinates of cell i. */
-export function cellXYZ(graph: WorldGraph, i: number): [number, number, number] {
-  return toXYZ(graph.cells.p[i * 2]!, graph.cells.p[i * 2 + 1]!);
+const unitVectors = new WeakMap<Float64Array, Float64Array>();
+
+/**
+ * Unit-sphere coordinates of every cell, packed [x0,y0,z0, x1,y1,z1, ...]. Computed once per mesh
+ * (graphs sharing a cached mesh share it too).
+ */
+export function cellVectors(graph: WorldGraph): Float64Array {
+  const { p, n } = graph.cells;
+  let vectors = unitVectors.get(p);
+  if (!vectors || vectors.length !== n * 3) {
+    vectors = new Float64Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const [x, y, z] = toXYZ(p[i * 2]!, p[i * 2 + 1]!);
+      vectors[i * 3] = x;
+      vectors[i * 3 + 1] = y;
+      vectors[i * 3 + 2] = z;
+    }
+    unitVectors.set(p, vectors);
+  }
+  return vectors;
+}
+
+/** Squared chord distance between cells a and b on the unit sphere (monotonic in great-circle distance). */
+export function chord2(sphere: Float64Array, a: number, b: number): number {
+  return (
+    (sphere[a * 3]! - sphere[b * 3]!) ** 2 +
+    (sphere[a * 3 + 1]! - sphere[b * 3 + 1]!) ** 2 +
+    (sphere[a * 3 + 2]! - sphere[b * 3 + 2]!) ** 2
+  );
 }
 
 // Utility: Cell Accessors
@@ -186,8 +278,21 @@ export function cellLat(graph: WorldGraph, i: number): number {
   return graph.cells.p[i * 2 + 1]!;
 }
 
+const cellAreas = new WeakMap<object, Float64Array>();
+
 /** Approximate area of cell i in km² using the Haversine-based polygon area. */
 export function cellAreaKm2(graph: WorldGraph, i: number): number {
+  // Computed for every cell on first use and shared by the graphs of one (cached) mesh
+  let areas = cellAreas.get(graph.cells.vertices);
+  if (!areas || areas.length !== graph.cells.n) {
+    areas = new Float64Array(graph.cells.n);
+    for (let c = 0; c < areas.length; c++) areas[c] = polygonAreaKm2(graph, c);
+    cellAreas.set(graph.cells.vertices, areas);
+  }
+  return areas[i]!;
+}
+
+function polygonAreaKm2(graph: WorldGraph, i: number): number {
   const verts = graph.cells.vertices[i]!;
   if (verts.length < 4) return 0;
 
@@ -260,6 +365,7 @@ function generateJitteredGrid(targetCount: number, rng: () => number): Float64Ar
 export function farthestPointSample(graph: WorldGraph, count: number, rng: () => number): number[] {
   const { cells } = graph;
   const n = cells.n;
+  const sphere = cellVectors(graph);
   const firstCenter = Math.floor(rng() * n);
   const centers: number[] = [firstCenter];
   const dist = new Float64Array(n).fill(Infinity);
@@ -267,12 +373,10 @@ export function farthestPointSample(graph: WorldGraph, count: number, rng: () =>
   chosen[firstCenter] = 1;
 
   for (let k = 1; k < count; k++) {
-    const [cx, cy, cz] = cellXYZ(graph, centers[k - 1]!);
+    const last = centers[k - 1]!;
 
-    // Squared chord distance on the unit sphere (monotonic in great-circle distance)
     for (let i = 0; i < n; i++) {
-      const [x, y, z] = cellXYZ(graph, i);
-      const d2 = (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2;
+      const d2 = chord2(sphere, i, last);
       if (d2 < dist[i]!) dist[i] = d2;
     }
 

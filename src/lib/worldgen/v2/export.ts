@@ -5,13 +5,17 @@
  * - background: landmass base polygons (merged by continent, 3-pass Chaikin smoothed)
  * - altitudes: 9-zone cumulative isoline contour polygons (zone N = elevZone >= N, 3-pass Chaikin smoothed)
  * - climate: biome region polygons (grouped by biome, 3-pass Chaikin smoothed)
- * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, etc.)
+ * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, slotKey, etc.)
+ *   (omitted when the realm keeps its own borders)
  * - rivers: river network LineString features
  * - lakes: lake feature polygons
  * - icecaps: ice cap polygons (biome === 10)
+ *
+ * Only countries carry names (the suggested names of their slots): continents, rivers and lakes
+ * are left unnamed.
  */
 
-import type { WorldGraph, WorldGenParams } from "./types";
+import { slotKey, type WorldGraph, type WorldGenParams } from "./types";
 import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } from "geojson";
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
@@ -25,19 +29,33 @@ import { cellLng, cellLat } from "./mesh";
 
 export function exportToGeoJSON(
   graph: WorldGraph,
-  params: Pick<WorldGenParams, "hasIcecaps"> = { hasIcecaps: true }
+  params: Pick<WorldGenParams, "hasIcecaps"> = { hasIcecaps: true },
+  options: { political?: boolean } = {}
 ): Record<string, FeatureCollection> {
   const layers: Record<string, FeatureCollection> = {
     background: exportBackground(graph),
     altitudes: exportAltitudes(graph),
     climate: exportClimate(graph),
-    political: exportPolitical(graph),
+    ...((options.political ?? true) ? { political: exportPolitical(graph) } : {}),
     rivers: exportRivers(graph),
     lakes: exportLakes(graph),
     icecaps: params.hasIcecaps ? exportIcecaps(graph) : { type: "FeatureCollection", features: [] },
   };
 
   return layers;
+}
+
+/** Cell ids by key, in cell order (key 0 means none). One pass instead of one per feature. */
+function bucketCells(n: number, keyOf: (cell: number) => number): Map<number, number[]> {
+  const buckets = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
+    const key = keyOf(i);
+    if (key === 0) continue;
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(i);
+    else buckets.set(key, [i]);
+  }
+  return buckets;
 }
 
 // Layer Exporters
@@ -47,16 +65,14 @@ function exportBackground(graph: WorldGraph): FeatureCollection {
   const geoFeatures: Feature[] = [];
 
   const continents = features.filter((f) => f.type === "continent" || f.type === "island");
+  const landmassIds = new Set(continents.map((f) => f.id));
+  const cellsOf = bucketCells(cells.n, (i) =>
+    landmassIds.has(cells.feature[i]!) ? cells.feature[i]! : 0
+  );
 
   for (const cont of continents) {
-    const contCells: number[] = [];
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.feature[i] === cont.id) {
-        contCells.push(i);
-      }
-    }
-
-    if (contCells.length === 0) continue;
+    const contCells = cellsOf.get(cont.id);
+    if (!contCells) continue;
 
     const geom = mergeCellsToMultiPolygon(graph, contCells);
     if (!geom) continue;
@@ -69,7 +85,6 @@ function exportBackground(graph: WorldGraph): FeatureCollection {
       geometry: smoothedGeom,
       properties: {
         id: `landmass_${cont.id}`,
-        name: cont.name,
         type: cont.type,
         fill: "#e8e5da",
         _fillColor: "#e8e5da",
@@ -160,21 +175,17 @@ function exportClimate(graph: WorldGraph): FeatureCollection {
 function exportPolitical(graph: WorldGraph): FeatureCollection {
   const { cells, states } = graph;
   const geoFeatures: Feature[] = [];
+  const cellsOf = bucketCells(cells.n, (i) => cells.state[i]!);
 
   for (const state of states) {
-    const stateCells: number[] = [];
+    const stateCells = cellsOf.get(state.id);
+    if (!stateCells) continue;
     let sumLng = 0,
       sumLat = 0;
-
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.state[i] === state.id) {
-        stateCells.push(i);
-        sumLng += cellLng(graph, i);
-        sumLat += cellLat(graph, i);
-      }
+    for (const i of stateCells) {
+      sumLng += cellLng(graph, i);
+      sumLat += cellLat(graph, i);
     }
-
-    if (stateCells.length === 0) continue;
 
     const centroidLng = sumLng / stateCells.length;
     const centroidLat = sumLat / stateCells.length;
@@ -191,6 +202,7 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
       properties: {
         _id: `state_${state.id}`,
         id: state.id,
+        slotKey: slotKey(state.id),
         _displayName: state.name,
         name: state.name,
         _fillColor: state.color,
@@ -234,7 +246,6 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
       geometry: geom,
       properties: {
         id: river.id,
-        name: river.name,
         flux: river.flux,
         lengthKm: river.lengthKm,
         fill: "#0284c7",
@@ -253,16 +264,11 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
   const geoFeatures: Feature[] = [];
 
   const lakeFeatures = features.filter((f) => f.type === "lake");
+  const cellsOf = bucketCells(cells.n, (i) => (cells.isLand[i] === 1 ? cells.lake[i]! : 0));
 
   for (const lake of lakeFeatures) {
-    const lakeCells: number[] = [];
-    for (let i = 0; i < cells.n; i++) {
-      if (cells.isLand[i] === 1 && cells.lake[i] === lake.id) {
-        lakeCells.push(i);
-      }
-    }
-
-    if (lakeCells.length === 0) continue;
+    const lakeCells = cellsOf.get(lake.id);
+    if (!lakeCells) continue;
 
     const geom = mergeCellsToMultiPolygon(graph, lakeCells);
     if (!geom) continue;
@@ -275,7 +281,6 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
       geometry: smoothedGeom,
       properties: {
         id: lake.id,
-        name: lake.name,
         areaKm2: lake.areaKm2,
         fill: "#0284c7",
         _fillColor: "#0284c7",

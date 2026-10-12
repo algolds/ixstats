@@ -11,29 +11,62 @@
  * 6. Quality Gate (report-only)
  * 7. Natural-Border Political Overlay
  * 8. 7-Layer GeoJSON Export
+ *
+ * "Generate to fit" runs the same stages around a realm's own map: a land mask replaces the
+ * grown continents (and fixes the coastline) and kept borders replace the generated countries.
  */
 
-import type { WorldGenParams, GeneratedWorld, WorldStats, ProgressCallback } from "./types";
+import type {
+  WorldGenParams,
+  GeneratedWorld,
+  WorldGraph,
+  WorldStats,
+  ProgressCallback,
+} from "./types";
+import type { LandMask } from "../land-mask";
 import { DEFAULT_PARAMS } from "./config";
-import { createMesh } from "./mesh";
+import { createMesh, type MeshCache } from "./mesh";
 import { generateTectonicPlates } from "./tectonics";
 import { generateTerrain } from "./terrain";
 import { refineCoastlines } from "./coastlines";
 import { computeHydroClimate } from "./hydro-climate";
 import { validateWorld } from "./quality-gate";
-import { generatePolitics } from "./politics";
+import { buildSlots, generatePolitics } from "./politics";
 import { exportToGeoJSON } from "./export";
+
+export interface GenerateOptions {
+  /** Land comes from this mask (a realm's own map); no continents are grown and the coast is kept */
+  landMask?: LandMask;
+  /** The realm keeps its borders: no countries are generated and there is no political layer */
+  keepBorders?: boolean;
+  /** Reuses the mesh of the previous run when seed, cell count and relaxation are unchanged */
+  meshCache?: MeshCache;
+}
+
+/** Cell centres packed as lng, lat, height (m) per cell. */
+function packCells(graph: WorldGraph): Float32Array {
+  const { cells } = graph;
+  const packed = new Float32Array(cells.n * 3);
+  for (let i = 0; i < cells.n; i++) {
+    packed[i * 3] = cells.p[i * 2]!;
+    packed[i * 3 + 1] = cells.p[i * 2 + 1]!;
+    packed[i * 3 + 2] = cells.h[i]!;
+  }
+  return packed;
+}
 
 /**
  * Generate a complete world using the Unified Physical Geography Engine (v2).
  *
  * @param userParams Generation parameters (merged with defaults)
  * @param onProgress Optional progress callback for UI
+ * @param options Generate-to-fit inputs and the mesh cache
  * @returns Generated world with 7-layer GeoJSON output and internal WorldGraph
  */
 export function generateWorld(
   userParams: Partial<WorldGenParams>,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  options: GenerateOptions = {}
 ): GeneratedWorld {
   const params: WorldGenParams = { ...DEFAULT_PARAMS, ...userParams };
   const t0 = performance.now();
@@ -41,7 +74,9 @@ export function generateWorld(
 
   // Stage 1: Voronoi Mesh (50K+)
   report("mesh", 5, "Generating spatial Voronoi mesh...");
-  const graph = createMesh(params.seed, params.cellCount, params.lloydIterations);
+  const graph = options.meshCache
+    ? options.meshCache.get(params.seed, params.cellCount, params.lloydIterations)
+    : createMesh(params.seed, params.cellCount, params.lloydIterations);
   report("mesh", 15, `Mesh generated: ${graph.cells.n} cells`);
 
   // Stage 2: Tectonic Plates
@@ -51,12 +86,12 @@ export function generateWorld(
 
   // Stage 3: Terrain Elevation
   report("terrain", 30, "Computing multi-fractal terrain elevation...");
-  generateTerrain(graph, params);
+  generateTerrain(graph, params, options.landMask);
   report("terrain", 42, "Elevation & mountain ridges calculated");
 
   // Stage 4: Coastline Refinement
   report("coastlines", 45, "Refining fjords, peninsulas & archipelagos...");
-  refineCoastlines(graph, params);
+  refineCoastlines(graph, params, options.landMask !== undefined);
   report("coastlines", 52, "Coastline geometry finalized");
 
   // Stage 5: Unified Hydrology & Climate
@@ -73,18 +108,24 @@ export function generateWorld(
   const qualityReport = validateWorld(graph, params);
   report("quality", 82, `Quality Audit Score: ${qualityReport.compositeScore}%`);
 
-  // Stage 7: Natural-Border Political Overlay
-  report("politics", 85, "Generating cultures, settlements & natural-border countries...");
-  generatePolitics(graph, params);
-  report(
-    "politics",
-    92,
-    `${graph.states.length} countries, ${graph.settlements.length} settlements`
-  );
+  // Stage 7: Natural-Border Political Overlay (the realm's own borders replace it when kept)
+  if (options.keepBorders) {
+    report("politics", 92, "Keeping the realm's borders");
+  } else {
+    report("politics", 85, "Generating cultures, settlements & natural-border countries...");
+    generatePolitics(graph, params);
+    report(
+      "politics",
+      92,
+      `${graph.states.length} countries, ${graph.settlements.length} settlements`
+    );
+  }
 
   // Stage 8: GeoJSON Export
   report("export", 95, "Exporting to 7-layer GeoJSON with spline smoothing...");
-  const layers = exportToGeoJSON(graph, params);
+  const layers = exportToGeoJSON(graph, params, { political: !options.keepBorders });
+  const slots = buildSlots(graph, params.developmentLevel);
+  const cells = packCells(graph);
   report("export", 100, "Generation complete");
 
   const generationTimeMs = Math.round(performance.now() - t0);
@@ -120,6 +161,8 @@ export function generateWorld(
     seed: params.seed,
     params,
     layers,
+    slots,
+    cells,
     stats,
     graph,
   };
@@ -127,3 +170,4 @@ export function generateWorld(
 
 // Re-export core types
 export type { WorldGenParams, GeneratedWorld, ProgressCallback } from "./types";
+export { MeshCache } from "./mesh";
