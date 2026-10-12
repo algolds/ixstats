@@ -15,6 +15,13 @@ import { usePermissions } from "~/hooks/usePermissions";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import { Card } from "~/components/ui/card";
 
+/** Full-screen map tools: no admin container or status strip around them (exact match, as their sub-paths are not). */
+const FULL_SCREEN_PATHS: ReadonlySet<string> = new Set([
+  "/admin/maps/editor",
+  "/admin/maps/style-editor",
+  "/admin/maps/studio",
+]);
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -84,7 +91,7 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     return <AccessDeniedScreen />;
   }
 
-  if (pathname === "/admin/maps/editor" || pathname === "/admin/maps/style-editor") {
+  if (FULL_SCREEN_PATHS.has(pathname)) {
     return <AdminErrorBoundary>{children}</AdminErrorBoundary>;
   }
 

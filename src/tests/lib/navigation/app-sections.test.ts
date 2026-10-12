@@ -342,6 +342,7 @@ describe("app section map resolvers", () => {
     expect(isChromelessPath("/maps/anything")).toBe(true);
     expect(isChromelessPath("/mycountry/map-editor")).toBe(true);
     expect(isChromelessPath("/admin/maps/editor")).toBe(true);
+    expect(isChromelessPath("/admin/maps/studio")).toBe(true);
     expect(isChromelessPath("/admin/maps")).toBe(false);
     expect(isChromelessPath("/mycountry")).toBe(false);
   });

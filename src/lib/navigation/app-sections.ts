@@ -670,6 +670,7 @@ const CHROMELESS_PREFIXES: readonly string[] = [
   "/mycountry/map-editor",
   "/admin/maps/editor",
   "/admin/maps/style-editor",
+  "/admin/maps/studio",
 ];
 
 /** `URLSearchParams` or Next's `ReadonlyURLSearchParams`. */
