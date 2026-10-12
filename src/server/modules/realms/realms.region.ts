@@ -347,7 +347,13 @@ export async function getRealmHappenings(
   const [nations, claims, embassies, officers, activity] = await Promise.all([
     wants("nation")
       ? db.country.findMany({
-          where: { realmId: realm.id, claimable: true, ...(older && { createdAt: older }) },
+          // A generated nation nobody owns is no event (applying a world makes hundreds, once per regeneration)
+          where: {
+            realmId: realm.id,
+            claimable: true,
+            NOT: { worldgen: true, ownerUserId: null },
+            ...(older && { createdAt: older }),
+          },
           orderBy: { createdAt: "desc" },
           take,
           select: { id: true, name: true, slug: true, createdAt: true },
