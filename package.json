@@ -102,6 +102,7 @@
     "lint:manual": "oxlint src",
     "lint:strict": "oxlint --max-warnings 24 src",
     "lint:strict:deny": "oxlint --deny-warnings src",
+    "perf:atlas": "bun scripts/perf/atlas-bench.ts",
     "post:deploy:validate": "bun scripts/deployment/post-deployment-validation.ts",
     "postbuild": "./scripts/post-build.sh",
     "postinstall": "node scripts/setup/copy-maplibre-worker.mjs && prisma generate",

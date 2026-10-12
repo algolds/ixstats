@@ -1,0 +1,101 @@
+/**
+ * scripts/perf/atlas-bench.ts - Atlas Release 0 acceptance benchmark (`bun run perf:atlas`).
+ *
+ * Measures every acceptance target of docs/specs/2026-10-11-atlas-release-0-performance-design.md against the local
+ * database and prints one PASS or FAIL line per target with the measured value; the exit code is 1 if any target
+ * fails. It runs the server code in process (the route handlers, the loaders, the tRPC procedure) on a Prisma client
+ * of its own, so it needs no dev server, and the editor measurements on the pure functions the editor uses plus the
+ * real region-reshape hook in jsdom. Nothing is written to the database. Vector tiles render into a temporary folder
+ * that is removed at the end, never the app's `MAP_TILE_DIR`.
+ *
+ * Usage: bun run perf:atlas
+ *
+ * It reads `DATABASE_URL` the way Bun loads `.env` and refuses a database that is not on this machine, or is
+ * named like production (`--production` lifts the second check, as in the migration runners).
+ */
+import "./atlas-bench-client";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { databaseLabel, productionDatabaseRefusal } from "../lib/database-guard";
+import { isLocalDatabaseUrl } from "../lib/wikios-harness";
+import { client, writeStatements } from "./atlas-bench-client";
+import { borderEditorTargets } from "./atlas-bench-editor";
+import { exactly, exitCode, renderResults, type TargetResult } from "./atlas-bench-report";
+import { reshapeTargets } from "./atlas-bench-reshape";
+import {
+  coverageTargets,
+  geoProfileTargets,
+  layerTargets,
+  printTileHits,
+  tileTargets,
+} from "./atlas-bench-server";
+
+const TILE_HITS_FLAG = "--tile-hits";
+
+/** Why this run must not start, or null. */
+function refusal(): string | null {
+  const url = process.env.DATABASE_URL;
+  if (!url || !isLocalDatabaseUrl(url)) {
+    return `DATABASE_URL (${databaseLabel(url)}) is not a database on this machine.`;
+  }
+  return productionDatabaseRefusal(url, process.argv.includes("--production"));
+}
+
+async function ixnayMapVersion(): Promise<number> {
+  const realm = await client.realm.findUniqueOrThrow({
+    where: { id: "default" },
+    select: { mapVersion: true },
+  });
+  return realm.mapVersion;
+}
+
+/** Every measurement in turn, the routes first so the layers the coverage check reads are already built. */
+async function measure(version: number): Promise<TargetResult[]> {
+  const results = [
+    ...(await layerTargets(version)),
+    ...(await coverageTargets(version)),
+    ...(await tileTargets(version, fileURLToPath(import.meta.url))),
+    ...(await geoProfileTargets()),
+    ...(await borderEditorTargets()),
+    ...(await reshapeTargets()),
+  ];
+  const writes = await writeStatements();
+  return [
+    ...results,
+    exactly("benchmark: database write statements", writes.length, 0, "", writes[0]),
+  ];
+}
+
+async function main(): Promise<number> {
+  const reason = refusal();
+  if (reason) {
+    process.stderr.write(`${reason}\n`);
+    return 1;
+  }
+  const hitsFlag = process.argv.indexOf(TILE_HITS_FLAG);
+  if (hitsFlag >= 0) {
+    await printTileHits(Number(process.argv[hitsFlag + 1]));
+    return 0;
+  }
+
+  const version = await ixnayMapVersion();
+  const tileDir = await mkdtemp(path.join(tmpdir(), "atlas-bench-tiles-"));
+  process.env.MAP_TILE_DIR = tileDir;
+  try {
+    const results = await measure(version);
+    const heading = `Atlas Release 0 acceptance: ${databaseLabel(process.env.DATABASE_URL)}, Ixnay map version ${version}, tiles in ${tileDir}`;
+    process.stdout.write(`${heading}\n\n${renderResults(results)}\n`);
+    return exitCode(results);
+  } finally {
+    await rm(tileDir, { recursive: true, force: true });
+  }
+}
+
+const code = await main().catch((err: Error) => {
+  process.stderr.write(`perf:atlas failed: ${err.stack ?? err.message}\n`);
+  return 1;
+});
+await client.$disconnect();
+process.exit(code);

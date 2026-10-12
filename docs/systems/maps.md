@@ -61,6 +61,14 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
   `map_layers`, `subdivisions`, `cities` and `points_of_interest`. `db push` cannot create triggers, so they live in
   `prisma/migrations/20261007_map_geometry_sync_triggers.sql` (idempotent, with a backfill). `db:bootstrap` applies
   it; on an existing database run it by hand after `db push` (see the deploy runbook).
+- **Atlas Release 0 migration.** `prisma/migrations/20261021120000_atlas_r0/migration.sql` (idempotent, hand-written; `db push`
+  does not run it) adds `realms."mapVersion"`, the `country_geom_sync` trigger that keeps `"Country".geom_postgis` in step
+  with `geometry` (plus a backfill of countries written before it), and the `atlas_country_union()` function behind a
+  nation's outline. Apply it by hand after `db push` (the file's header has the command).
+- **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/<version>/<layer>/<z>/<x>/<y>.pbf`);
+  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). The web server and the cron
+  worker (`ixstats-cron`) have different working directories, so production sets it to one shared folder for both.
+  See [Map delivery](#map-delivery-atlas-release-0).
 - **Realm-scoped spatial SQL.** Realms share one coordinate space. Every raw join on `map_layers` matches the realm of
   what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
   realm, and a country's border by id comes from `COUNTRY_BORDER_SQL` (`src/lib/maps/geo-validation.ts`).
@@ -311,6 +319,75 @@ The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/compo
 - **Overlays and style readiness.** Overlay components check `isMapStyleReady()` (`src/lib/maps/geojson-layer-helpers.ts`), not `map.isStyleLoaded()`, which is false whenever any source is re-tiling and made overlays silently skip setup or cleanup mid-pan. `TransportOverlay`'s `styledata` handler is a no-op once its layers exist; it used to call `moveLayer` on every style event, which re-triggered itself and kept the map rendering every frame.
 - **Cache invalidation.** `useMapLiveSync` coalesces bursts of `map_data_changed` SSE events into one invalidation (750 ms trailing), and `useMapPrefetch` warms per-country summaries and wiki intros in idle time after the first bundle arrives.
 
+## Map Delivery (Atlas Release 0)
+
+Layers and tiles reach the browser through versioned routes, not tRPC, so the browser's HTTP cache and the server's byte
+caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-release-0-performance-design.md).
+
+- **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is incremented by `invalidateRealmMap(db, realmId)`
+  (`src/server/shared/map-invalidation.ts`), which every write path that changes what a realm's layers hold calls after
+  its transaction commits (border saves, split and merge, imports and rollbacks, linkage, sovereignty, area
+  recomputes). It also clears that realm's assembled layers, runs the hooks of the other caches (packed layers, the tile
+  access memo) and drops the cached map tRPC reads (`MAP_TRPC_KEYS`). `invalidateAllRealmMaps(db)` is for global admin
+  work with no realm. `getRealmMapVersion` memoises the version for 5 s per process, so a bump made by the cron worker
+  shows up in the web process within 5 s.
+- **Layer route** `GET /api/map-layers/<realm>/<version>/<layer>?bucket=<0|1|2>&format=<n>`. `<realm>` is an id or a
+  slug (Ixnay answers to `ixnay`, `ixworld` and `default`); `bucket` is the zoom level of detail (0 globe, 1 mid and the
+  default, 2 detail); `format` is `LAYER_FORMAT_VERSION` (`src/lib/maps/layer-format.ts`), which changes when the packed
+  wire format or the loader does. The body is the packed layer (`geojson-pack.ts`) as a ready string from one
+  `ByteBoundedCache` (256 MB, 24 h TTL, `layer-delivery.ts`) keyed by realm, version, format, layer and bucket; a miss
+  builds the layer once however many requests wait for it. A URL naming the current version and format is served
+  `public, max-age=31536000, immutable` for Ixnay and published realms, with an `ETag` that `If-None-Match` turns into a
+  304; a URL naming an older version or format gets the current data with `public, no-cache`. An unpublished (draft or
+  generating) realm's layers go only to those who may see it, as `private, no-store`; a realm the viewer may not see is
+  a 404 (`private, no-store`), and an unknown `bucket` a 400. A realm with no such layer gets an empty FeatureCollection,
+  not an error.
+- **Coverage simplification** (`modules/maps/coverage-simplify.ts`). The political layer is simplified per bucket (0.025,
+  0.008 and 0.002 degrees) with PostGIS `ST_CoverageSimplify` over the realm's active features, so a border two nations
+  share keeps the same vertices on both sides. A row whose bounding box is wider than 180 degrees (it crosses +-180, so
+  its `geom_postgis` is a planar sliver) and a row the simplification empties are left out of the coverage and
+  simplified one polygon at a time from their GeoJSON with turf; if the function is missing, or GEOS refuses the
+  coverage, the whole layer takes that path. The decorative polygon layers are not coverage-simplified.
+- **Vector tiles** `GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>` for `altitudes`, `rivers` and `lakes`
+  (z0 to z6), rendered by PostGIS (`geo/core/tiles.ts`). A rendered tile is written to the tile folder (`MAP_TILE_DIR`,
+  above) and read back from it through a 32 MB in-memory cache (1 h TTL), so a cached tile costs no query. A request
+  for an older version gets the current version's tile as `private, no-store` (it is not that URL's content); a version
+  above the realm's is a 404. Ixnay's and published realms' tiles are `immutable` when the URL names the realm by id and
+  `public, max-age=300` when it names a slug (a slug can be renamed); unpublished realms are `private, no-store`. The
+  realm row (status, owner) behind that decision is memoised for 60 s, the answer for the viewer never is.
+- **Cron jobs** (`src/server/cron/jobs.ts`, both every 5 minutes, both to be named in `CRON_ENABLED_JOBS`):
+  - `map-tiles` renders z0 to z3 of the three layers for Ixnay and every published realm whose current version has no
+    `.done` marker, then removes the folders of versions a newer one has outlived for more than a day. A run stops
+    starting tiles after 15 minutes and the next one continues. Deeper zooms render on first request. It needs the
+    same `MAP_TILE_DIR` as the web server.
+  - `geo-profiles` recomputes, one country at a time (20 minute run budget), the geo profiles that
+    `geoCore.recalculateGeoProfiles` marked stale, and any country without one. The mutation only queues; the toast
+    says when the job last ran.
+- **Geo profile.** `geoCore.getCountryGeoProfile` is a `cachedStaticProcedure` (1 h). Its queries read the indexed
+  `geom_postgis` columns of `"Country"` and `map_layers` (bounding-box `&&` first, `ST_Subdivide` pieces of the country for
+  the river and lake clips), filter by the country's realm and run together in one `Promise.all`.
+
+### Release 0 acceptance (`bun run perf:atlas`)
+
+`scripts/perf/atlas-bench.ts` ([scripts README](../../scripts/README.md)) runs the targets against
+the local database in process and exits 1 if any fails. Measured 2026-10-12 on the `ixstats_wv1` clone (Ixnay only: 183
+political features, 93,631 points; WSL2, 8 GB), three runs, all 13 lines PASS:
+
+| Target | Limit | Measured |
+| :--- | :---: | :--- |
+| Layer route, event-loop block on a hit (political, buckets 0 to 2, 60 hits) | 50 ms | 0.6 to 7.7 ms (cold builds 310 to 410 ms; one 838 ms in a loaded run) |
+| Layer route, repeat request with `If-None-Match` | 304 | 304, 0.2 ms; versioned URL `immutable` |
+| Tile route, DB statements on a warm disk hit (z1 and z2, three layers, 60 tiles, fresh process) | 0 | 0 (cold render 3.8 to 4.8 s, 120 statements) |
+| Tile route, event-loop block on a warm hit | 50 ms | 1.6 to 2.7 ms disk, 0.3 to 0.5 ms memory |
+| `getCountryGeoProfile`, Caphiria, tRPC cache bypassed, median of 5 | 400 ms | 306 to 370 ms (first call 383 to 464 ms) |
+| Border drag, JS per frame on Caphiria (7,279 points, shared vertex, 60 frames) | 4 ms | 1.8 to 2.2 ms mean |
+| Region reshape, overlap checks during a 10-move drag / after mouse-up | 0 / 1 | 0 / 1 (the one check took 41 to 111 ms) |
+| Autosave payload after 50 drags | 1 MB | 154 KB |
+| Coverage simplify, political features left unsimplified | 0 | 0: 93,631 points raw to 53,742 / 61,870 / 75,348 (buckets 0 / 1 / 2); 178 features by `ST_CoverageSimplify`, the 5 crossing +-180 by the per-polygon fallback |
+
+The geo profile has the least headroom (about 30 ms at its worst). The benchmark writes nothing to the database (it
+counts write statements and fails on one) and renders tiles into a temporary folder it removes, never `MAP_TILE_DIR`.
+
 ## Map Layers & Stacking Order
 
 MapLibre GL JS renders vector GeoJSON layers. Hydrological layers strictly render **above** political boundaries for correct cartographic presentation:
@@ -359,6 +436,9 @@ The Map Editor (`MapEditorOverlay`, `src/components/maps/editor/`) is a full-scr
 ### 4. Performance Model
 - **Pointer work never re-renders the editor.** Cursor position, hovered feature, terrain-at-cursor and zoom live in `transientMapStore`, which notifies at most once per animation frame; only leaf components (status bar, hover tooltip, elevation HUD) subscribe. Hover hit-testing (`queryRenderedFeatures`), the lasso/marquee outline and cascade previews during a vertex drag are all frame-batched and drawn straight into their GeoJSON sources.
 - **Layers upload only on real change.** `useMapLayers` keys feature uploads on the features array and the visibility *values*; opacity is a paint-property effect. The overlay passes memoised layer props, and the plugin context is stable (plugins read `context.state` through a getter), so map listeners are not re-registered on unrelated renders.
+- **Border vertex drag** (`useBorderDrag.ts`, `src/lib/maps/border-drag.ts`). The shapes live in a ref while a vertex moves: a frame copies only the touched rings (the vertex and the neighbour vertices on it, through `cascadeMoveVertex`), draws a small `border-drag` source (the vertex and its two edges) and the outline's `active-feature` data, and sends the live area through `transientMapStore`. React state is set once, at mouse-up (`commitDrag`), as one undo entry.
+- **Border autosave** (`useBorderAutosave.ts`, `src/lib/maps/border-draft.ts`). After 30 s without a change while dirty, the editor session stores `{ featureId, geometry, dirtyNeighbors, savedAt }` and no undo stack (154 KB after 50 drags on Caphiria, against 15.1 MB before). `startBorderEditSession` returns the draft only for the same user and feature, saved after the feature's last update and less than 24 h ago, minus any moved neighbour that was saved since; the editor offers Restore or Discard (`restoreDraft`, `discardDraft`).
+- **Region reshape** runs no overlap check while a vertex is dragged. Mouse-up runs it once, against the regions that share a vertex with the edited one (`useSubdivisionVertexEdit`).
 - **Rulers** re-render on map move in their own component (`EditorRulers`), so they track the camera without re-rendering the map.
 - **Feature queries** are invalidated through one debounced call per burst (features + routes only; the country border and linkage are not refetched after feature edits).
 - **Phones** mount the bottom sheet only (and only once there is something to fill in); desktop never mounts the hidden sheet, and phones never mount the docked panels.

@@ -18,6 +18,7 @@ scripts/
 ├── deployment/                   # Staging/rollback/validation tooling (see deployment/README.md)
 ├── diagnostics/                  # Health check, benchmark, cache and DB analysis scripts (diagnostics:*)
 ├── cron/                         # Cron job checker (cron:check)
+├── perf/                         # Atlas Release 0 acceptance benchmark (atlas-bench.ts, perf:atlas)
 ├── codemods/                     # One-shot codemods (hex-to-tokens, facet-anti-slop)
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
@@ -74,6 +75,14 @@ scripts/
 | [`scripts/bench/wikios-bench.ts`](bench/wikios-bench.ts) | **WikiOS vs MediaWiki speed**: times article page, `wikios.getArticleHtml`, search and history on both systems (p50/p75, cold/warm, script/CSS weight) over `bench/pages.default.json`; throttled, `IxStats-Builder` UA; `--mw` is required, output goes to `.bench-out/` (git-ignored). `bun scripts/bench/wikios-bench.ts --mw <MediaWiki URL> --wikios http://localhost:3000`. |
 | [`scripts/audit/wikios-render-parity.ts`](audit/wikios-render-parity.ts) | **WikiOS render parity**: scores WikiOS HTML against MediaWiki `action=parse` per page (text, links, images, headings, tables, infobox) and lists the templates on the lowest-scoring pages. `--mw-api` is required; output goes to `.bench-out/`. `bun scripts/audit/wikios-render-parity.ts --mw-api <MediaWiki api.php URL> --wikios http://localhost:3000`. |
 | [`scripts/audit/wikios-roundtrip.ts`](audit/wikios-roundtrip.ts) | **Visual-editor round trip**: runs each page's wikitext (local DB, read-only, or MediaWiki) through the editor's load/save pipeline without edits and reports byte-identical share, skipped pages and changed lines by construct; output goes to `.bench-out/`. `bun scripts/audit/wikios-roundtrip.ts --source db --limit 20`. |
+
+---
+
+## ⏱️ Performance (`scripts/perf/`)
+
+| Script | Purpose & Command |
+| :--- | :--- |
+| [`scripts/perf/atlas-bench.ts`](perf/atlas-bench.ts) | **Atlas Release 0 acceptance** (`bun run perf:atlas`): measures each target of the [Release 0 spec](../docs/specs/2026-10-11-atlas-release-0-performance-design.md#acceptance) against the local database and prints one `PASS`/`FAIL` line per target with the measured value and the limit; exit code 1 if any fails. In process, no dev server: the layer and tile route handlers (cold build, cache hit and its event-loop time, `If-None-Match` 304, DB statements on a disk hit), `getCountryGeoProfile` for Caphiria with the tRPC cache bypassed, `ST_CoverageSimplify` on Ixnay's political layer, the border drag frame and the 50-drag autosave payload on the pure editor functions, and the region-reshape hook in jsdom (overlap checks while dragging and after mouse-up). Reads only: a final line fails the run if it issued any write statement. Tiles render into a temporary folder that is removed afterwards, never `MAP_TILE_DIR`. Reads `DATABASE_URL` as Bun loads `.env`; refuses a database that is not on this machine, or is named `ixstats` unless `--production` is passed. `bun run perf:atlas`. Parts: `atlas-bench-report.ts` (the table, unit-tested in `src/tests/scripts/atlas-bench-report.test.ts`), `-server.ts`, `-editor.ts`, `-reshape.ts`, `-client.ts` (the Prisma client that counts statements; imported first). |
 
 ---
 
