@@ -33,11 +33,13 @@ export async function GET(request: Request) {
       // Subscribe to map update bus
       const unsubscribe = mapUpdateBus.subscribe((event) => {
         if (closed) return;
-        void resolveEventRealm(db, event).then((resolved) => {
-          if (closed) return;
-          const data = JSON.stringify(resolved);
-          controller.enqueue(encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`));
-        });
+        void resolveEventRealm(db, event)
+          .then((resolved) => {
+            if (closed) return;
+            const data = JSON.stringify(resolved);
+            controller.enqueue(encoder.encode(`event: map_data_changed\ndata: ${data}\n\n`));
+          })
+          .catch((err) => console.error("[map-updates] relay failed:", err));
       });
 
       // Keep-alive: send comment every 15s to prevent connection timeout

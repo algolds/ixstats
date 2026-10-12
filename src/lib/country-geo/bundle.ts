@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { getCountryColor } from "~/lib/maps/map-config";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
+import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
 
 /** The outline cached on the Country row (megabytes for a large nation, so read only when needed). */
 async function readCountryOutline(db: Pick<PrismaClient, "country">, countryId: string) {
@@ -29,6 +30,8 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
           boundingBox: true,
           landArea: true,
           areaSqMi: true,
+          realmId: true,
+          realm: { select: { slug: true } },
         },
       }),
       db.mapLayer.findFirst({
@@ -223,6 +226,8 @@ export async function getCountryGeoBundle(db: any, countryId: string) {
       geoRollupMode: country.geoRollupMode,
       currentPopulation: country.currentPopulation,
       currentTotalGdp: country.currentTotalGdp,
+      // The realm's slug: a viewer of another realm asks for this realm's layers by it (Ixnay's row may be missing)
+      realmSlug: country.realm?.slug ?? (country.realmId === DEFAULT_REALM_ID ? IXNAY_SLUG : null),
     },
     geometry,
     centroid: parsedCentroid,

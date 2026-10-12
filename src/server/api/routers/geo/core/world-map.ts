@@ -13,11 +13,15 @@ import {
 // The map's geometry layers (political, background, ...) are not tRPC procedures: they are served as packed JSON by
 // the versioned GET /api/map-layers route (src/server/modules/maps/layer-delivery.ts). What stays here is what
 // the layers do not carry: points, capitals, cities and subdivisions.
+/** The realm's map version the client asks at: part of the query key, so a moved version refetches. Unused here. */
+const versionInput = { version: z.number().int().min(0).optional() };
+
 const zoomInput = z
   .object({
     /** Current map zoom level for LOD-based geometry simplification */
     zoom: z.number().min(0).max(20).optional(),
     ...realmScopeInput.shape,
+    ...versionInput,
   })
   .optional();
 
@@ -176,7 +180,7 @@ export const worldMapProcedures = {
    * Cities and subdivisions only draw from zoom 4, so they come from getMapBundleDetail once the viewer zooms in.
    */
   getMapBundleMarkers: cachedPublicProcedure
-    .input(realmScopeInput.optional())
+    .input(z.object({ ...realmScopeInput.shape, ...versionInput }).optional())
     .query(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input?.realm);
       const inRealm = { country: { realmId } };

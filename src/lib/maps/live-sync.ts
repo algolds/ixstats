@@ -12,7 +12,6 @@ export type MapSyncQuery = "version" | "markers" | "detail" | "storyPins" | "lab
 
 export interface MapSyncEvent {
   changeType: string;
-  countryId?: string;
   /** The realm the change happened in; absent: every realm. */
   realmId?: string;
 }
@@ -56,11 +55,10 @@ export function queriesFor(changeType: string): readonly MapSyncQuery[] {
 /** The event off the stream's JSON. A payload that cannot be read is an unknown change in every realm. */
 export function parseMapSyncEvent(data: string): MapSyncEvent {
   try {
-    const { changeType, countryId, realmId } = JSON.parse(data) as Partial<MapSyncEvent>;
+    const { changeType, realmId } = JSON.parse(data) as Partial<MapSyncEvent>;
     return {
       changeType: typeof changeType === "string" ? changeType : "unknown",
-      countryId: typeof countryId === "string" ? countryId : undefined,
-      realmId: typeof realmId === "string" ? realmId : undefined,
+      ...(typeof realmId === "string" && { realmId }),
     };
   } catch {
     return { changeType: "unknown" };

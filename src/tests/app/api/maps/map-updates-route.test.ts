@@ -6,7 +6,7 @@
 jest.mock("~/server/db", () => ({ db: { country: { findUnique: jest.fn() } } }));
 
 import { GET } from "~/app/api/sse/map-updates/route";
-import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import { broadcastMapUpdate, mapUpdateBus } from "~/lib/maps/map-update-bus";
 import { db } from "~/server/db";
 
 const findUnique = db.country.findUnique as jest.Mock;
@@ -54,5 +54,20 @@ describe("GET /api/sse/map-updates", () => {
       countryId: "c-route-1",
       realmId: "r_other",
     });
+  });
+
+  it("logs an event it cannot relay and goes on with the next one", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => {});
+    const stream = await openStream();
+
+    // A BigInt cannot be serialised, so relaying this event throws after the realm lookup
+    mapUpdateBus.emit({ type: "map_data_changed", changeType: "poi", timestamp: 1n as never });
+    broadcastMapUpdate("bulk", undefined, "r_eurth");
+
+    const chunk = await stream.next();
+    stream.close();
+    expect(dataOf(chunk)).toMatchObject({ changeType: "bulk", realmId: "r_eurth" });
+    expect(error).toHaveBeenCalledWith("[map-updates] relay failed:", expect.any(Error));
+    error.mockRestore();
   });
 });

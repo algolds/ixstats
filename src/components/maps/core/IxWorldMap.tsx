@@ -9,7 +9,7 @@ import type { TileSource } from "~/lib/maps/decorative-tiles";
 import { oceanLabelFeatures } from "~/lib/maps/ocean-labels";
 
 import { Suspense } from "react";
-import { acquireSurface } from "~/lib/maps/map-engine";
+import { acquireSurface, setSurfaceWarmKey } from "~/lib/maps/map-engine";
 
 // Overlay components + their wiring
 import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
@@ -283,6 +283,12 @@ const IxWorldMap = memo(
       selectedCountryId,
     });
 
+    // The parked map shows this realm's data from here on (the realm is known once its map version is)
+    const shownRealmId = tileSource?.realmId;
+    useEffect(() => {
+      if (isLoaded && shownRealmId) setSurfaceWarmKey("world", shownRealmId);
+    }, [isLoaded, shownRealmId]);
+
     // Initialize a standalone MapLibre instance for the main world map.
     useEffect(() => {
       const el = containerRef.current;
@@ -298,6 +304,8 @@ const IxWorldMap = memo(
           maxZoom: MAP_DEFAULTS.maxZoom,
           theme,
           projectionMode,
+          // The realm the data is of: a map parked with another realm's data starts clean
+          warmKey: tileSource?.realmId,
           interactive: true,
           onCreate: (map, maplibregl) => {
             map.__mlgl = maplibregl;

@@ -14,6 +14,14 @@ let mockCritical: LayerResult;
 let mockExtra: LayerResult;
 let mockMarkers: { data?: { features: unknown; capitals: unknown; realmId: string } };
 let mockDetailEnabled: boolean | undefined;
+/** The map version the realm answers (undefined until its query does), and what the two overlay queries were given. */
+let mockVersion: { realmId: string; version: number } | undefined;
+let mockMarkersCall: { input: unknown; enabled?: boolean };
+let mockDetailInput: unknown;
+
+jest.mock("~/hooks/useRealmMapVersion", () => ({
+  useRealmMapVersion: () => ({ mapVersion: mockVersion, error: null }),
+}));
 
 jest.mock("~/hooks/useMapLayerData", () => ({
   useMapLayerData: (call: LayerCall) => {
@@ -24,9 +32,15 @@ jest.mock("~/hooks/useMapLayerData", () => ({
 jest.mock("~/trpc/react", () => ({
   api: {
     geoCore: {
-      getMapBundleMarkers: { useQuery: () => mockMarkers },
+      getMapBundleMarkers: {
+        useQuery: (input: unknown, opts: { enabled?: boolean }) => {
+          mockMarkersCall = { input, enabled: opts.enabled };
+          return mockMarkers;
+        },
+      },
       getMapBundleDetail: {
-        useQuery: (_input: unknown, opts: { enabled?: boolean }) => {
+        useQuery: (input: unknown, opts: { enabled?: boolean }) => {
+          mockDetailInput = input;
           mockDetailEnabled = opts.enabled;
           return { data: undefined };
         },
@@ -74,6 +88,9 @@ beforeEach(() => {
   mockExtra = none;
   mockMarkers = {};
   mockDetailEnabled = undefined;
+  mockVersion = { realmId: "default", version: 1 };
+  mockMarkersCall = { input: undefined };
+  mockDetailInput = undefined;
 });
 
 describe("useMapDataBatched layers", () => {
@@ -182,6 +199,35 @@ describe("useMapDataBatched overlays", () => {
 
     rerender({ zoom: 1.8 });
     expect(mockDetailEnabled).toBe(true);
+  });
+});
+
+describe("useMapDataBatched overlay queries follow the realm's map version", () => {
+  it("names the version in both queries, so a moved version is a new query that refetches", () => {
+    mockVersion = { realmId: "r_eurth", version: 3 };
+    const { rerender } = renderHook(() => useMapDataBatched(undefined, 5, "eurth"));
+    expect(mockMarkersCall.input).toEqual({ realm: "eurth", version: 3 });
+    expect(mockDetailInput).toEqual({ realm: "eurth", version: 3 });
+
+    mockVersion = { realmId: "r_eurth", version: 4 };
+    rerender();
+
+    expect(mockMarkersCall.input).toEqual({ realm: "eurth", version: 4 });
+    expect(mockDetailInput).toEqual({ realm: "eurth", version: 4 });
+  });
+
+  it("asks for neither until the version is known", () => {
+    mockVersion = undefined;
+    renderHook(() => useMapDataBatched(undefined, 5, "eurth"));
+
+    expect(mockMarkersCall.enabled).toBe(false);
+    expect(mockDetailEnabled).toBe(false);
+  });
+
+  it("asks once the version is known, the detail only past zoom 3", () => {
+    renderHook(() => useMapDataBatched(undefined, 1.8));
+    expect(mockMarkersCall.enabled).toBe(true);
+    expect(mockDetailEnabled).toBe(false);
   });
 });
 

@@ -2,8 +2,15 @@ import { getCountryGeoBundle } from "~/lib/country-geo/bundle";
 
 const outline = { type: "Polygon", coordinates: [[[0, 0]]] };
 
-function makeDb({ layer }: { layer: object | null }) {
+function makeDb({
+  layer,
+  realm = { realmId: "r_eurth", realm: { slug: "eurth" } },
+}: {
+  layer: object | null;
+  realm?: { realmId: string; realm: { slug: string } | null };
+}) {
   const countryRow = {
+    ...realm,
     id: "c1",
     name: "Caphiria",
     slug: "caphiria",
@@ -59,6 +66,24 @@ describe("getCountryGeoBundle queries", () => {
     expect(db.country.findUnique).toHaveBeenCalledTimes(1);
     expect(db.country.findUnique.mock.calls[0]![0].select).not.toHaveProperty("geometry");
     expect(bundle.geometry).toEqual(layerRow.geometry);
+  });
+
+  it("names the country's realm by slug, so a viewer of another realm can load that realm's layers", async () => {
+    const db = makeDb({ layer: layerRow });
+    const bundle = await getCountryGeoBundle(db, "c1");
+
+    expect(db.country.findUnique.mock.calls[0]![0].select).toMatchObject({
+      realmId: true,
+      realm: { select: { slug: true } },
+    });
+    expect(bundle.country.realmSlug).toBe("eurth");
+  });
+
+  it("names Ixnay's slug for a country of Ixnay, whose realm row may not be there", async () => {
+    const db = makeDb({ layer: layerRow, realm: { realmId: "default", realm: null } });
+    const bundle = await getCountryGeoBundle(db, "c1");
+
+    expect(bundle.country.realmSlug).toBe("ixnay");
   });
 
   it("selects only the map layer columns the bundle uses", async () => {

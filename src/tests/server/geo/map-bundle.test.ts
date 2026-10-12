@@ -66,6 +66,18 @@ describe("geoCore.getMapBundleMarkers", () => {
     expect(markers.capitals.features).toEqual([]);
   });
 
+  it("takes the realm's map version as part of its input: a moved version reads the database again", async () => {
+    const capitals = jest.fn().mockResolvedValue([]);
+    const db = dbWith({ city: { findMany: capitals } });
+
+    await caller(ctxFor(db)).getMapBundleMarkers({ version: 1 });
+    await caller(ctxFor(db)).getMapBundleMarkers({ version: 1 });
+    expect(capitals).toHaveBeenCalledTimes(1);
+
+    await caller(ctxFor(db)).getMapBundleMarkers({ version: 2 });
+    expect(capitals).toHaveBeenCalledTimes(2);
+  });
+
   it("carries no layers: those come from the versioned layer route", async () => {
     const markers = await caller(ctxFor(dbWith())).getMapBundleMarkers();
     expect(Object.keys(markers).sort()).toEqual(["capitals", "features", "realmId"]);
@@ -129,6 +141,18 @@ describe("geoCore.getMapBundleDetail", () => {
 
     expect(detail.cities.features).toEqual([]);
     expect(detail.subdivisions.features).toEqual([]);
+  });
+
+  it("takes the realm's map version as part of its input: a moved version reads the database again", async () => {
+    const cities = jest.fn().mockResolvedValue([]);
+    const db = dbWith({ city: { findMany: cities } });
+
+    await caller(ctxFor(db)).getMapBundleDetail({ version: 1 });
+    await caller(ctxFor(db)).getMapBundleDetail({ version: 1 });
+    expect(cities).toHaveBeenCalledTimes(1);
+
+    await caller(ctxFor(db)).getMapBundleDetail({ version: 2 });
+    expect(cities).toHaveBeenCalledTimes(2);
   });
 
   it("sends city and subdivision coordinates at map precision, not database precision", async () => {

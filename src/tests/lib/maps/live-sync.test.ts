@@ -5,7 +5,7 @@
 import { isForRealm, parseMapSyncEvent, queriesFor } from "~/lib/maps/live-sync";
 
 describe("parseMapSyncEvent", () => {
-  it("reads the change type, country and realm off the stream's JSON", () => {
+  it("reads the change type and realm off the stream's JSON, and nothing else", () => {
     const data = JSON.stringify({
       type: "map_data_changed",
       changeType: "poi",
@@ -14,16 +14,12 @@ describe("parseMapSyncEvent", () => {
       timestamp: 5,
     });
 
-    expect(parseMapSyncEvent(data)).toEqual({
-      changeType: "poi",
-      countryId: "c1",
-      realmId: "r_eurth",
-    });
+    expect(parseMapSyncEvent(data)).toStrictEqual({ changeType: "poi", realmId: "r_eurth" });
   });
 
   it("takes a payload it cannot read as an unknown change in every realm", () => {
-    expect(parseMapSyncEvent("not json")).toEqual({ changeType: "unknown" });
-    expect(parseMapSyncEvent(JSON.stringify({ changeType: 7, realmId: 3 }))).toEqual({
+    expect(parseMapSyncEvent("not json")).toStrictEqual({ changeType: "unknown" });
+    expect(parseMapSyncEvent(JSON.stringify({ changeType: 7, realmId: 3 }))).toStrictEqual({
       changeType: "unknown",
     });
   });

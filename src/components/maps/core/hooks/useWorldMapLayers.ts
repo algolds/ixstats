@@ -25,9 +25,9 @@ const NO_OCEAN_LABELS: OceanLabelFeature[] = [];
  * parked between visits and borrowed again (map-engine), and its sources still hold the data, so a new mount that
  * finds the same data already there pushes nothing.
  */
-const loadedData = new WeakMap<MapLibreMap, Map<string, unknown>>();
+const loadedData = new WeakMap<MapLibreMap, Map<MapLayerType, FeatureCollection>>();
 
-function loadedDataOf(map: MapLibreMap): Map<string, unknown> {
+function loadedDataOf(map: MapLibreMap): Map<MapLayerType, FeatureCollection> {
   let loaded = loadedData.get(map);
   if (!loaded) {
     loaded = new Map();

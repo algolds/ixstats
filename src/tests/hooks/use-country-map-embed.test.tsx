@@ -40,16 +40,37 @@ beforeEach(() => {
   mockBundle = undefined;
 });
 
+const bundleOf = (realmSlug: string | null) => ({ country: { realmSlug }, cities: [] });
+
 describe("useCountryMapEmbed", () => {
-  it("draws the neighbours from the political layer /maps downloads, once a country is named", () => {
+  it("draws the neighbours from the political layer of the country's realm", () => {
+    mockBundle = bundleOf("eurth");
     mockLayers = { political };
     const { result } = renderHook(() => useCountryMapEmbed("c1"));
 
-    expect(mockLayerCall).toMatchObject({ layers: ["political"], enabled: true });
+    expect(mockLayerCall).toMatchObject({ layers: ["political"], realm: "eurth", enabled: true });
     expect(result.current.worldPolitical).toBe(political);
   });
 
+  it("asks for the layer of a country in Ixnay by Ixnay's slug, for a viewer of any realm", () => {
+    mockBundle = bundleOf("ixnay");
+    renderHook(() => useCountryMapEmbed("c1"));
+    expect(mockLayerCall).toMatchObject({ realm: "ixnay", enabled: true });
+  });
+
+  it("falls back to the viewer's realm when the bundle names none", () => {
+    mockBundle = { cities: [] };
+    renderHook(() => useCountryMapEmbed("c1"));
+    expect(mockLayerCall).toMatchObject({ realm: undefined, enabled: true });
+  });
+
+  it("downloads no layer until the country's realm is known: not the viewer's in its place", () => {
+    renderHook(() => useCountryMapEmbed("c1"));
+    expect(mockLayerCall).toMatchObject({ realm: undefined, enabled: false });
+  });
+
   it("downloads no layer until a country is named", () => {
+    mockBundle = bundleOf("eurth");
     renderHook(() => useCountryMapEmbed(null));
     expect(mockLayerCall).toMatchObject({ layers: ["political"], enabled: false });
   });

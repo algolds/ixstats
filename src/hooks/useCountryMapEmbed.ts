@@ -31,8 +31,14 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     { enabled, ...MAP_CACHE }
   );
 
-  // World political layer for neighbor rendering: the packed layer /maps downloads (same versioned URL)
-  const { layers: worldMap } = useDecodedMapLayers({ layers: ["political"], enabled });
+  // World political layer for neighbor rendering: the packed layer /maps downloads (same versioned URL), of the
+  // country's realm, which is not the viewer's when the country is another realm's. It waits for the bundle, which
+  // names that realm (a bundle that does not leaves the viewer's realm).
+  const { layers: worldMap } = useDecodedMapLayers({
+    layers: ["political"],
+    realm: bundle?.country?.realmSlug ?? undefined,
+    enabled: enabled && !!bundle,
+  });
 
   return useMemo(() => {
     const cities = bundle?.cities ?? [];

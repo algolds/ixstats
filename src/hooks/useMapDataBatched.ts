@@ -22,6 +22,7 @@ import type {
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
 import { useMapLayerData, type MapLayerBucket } from "~/hooks/useMapLayerData";
+import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
 import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
@@ -87,8 +88,16 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   // one fetches only that layer. Tiled layers (altitudes, rivers, lakes) never come here.
   const extra = useMapLayerData({ layers: requestedExtraLayers, realm, bucket: 1 });
 
-  // POIs and capitals, which the layers do not carry
-  const { data: markers } = api.geoCore.getMapBundleMarkers.useQuery({ realm }, MAP_QUERY_OPTIONS);
+  // POIs, capitals, cities and subdivisions, which the layers do not carry, are asked at the realm's map version
+  // (the one the layers' URLs name): a moved version is a new query, so they refresh with the layers even when no
+  // live-sync event arrives.
+  const { mapVersion } = useRealmMapVersion(realm);
+  const version = mapVersion?.version;
+
+  const { data: markers } = api.geoCore.getMapBundleMarkers.useQuery(
+    { realm, version },
+    { ...MAP_QUERY_OPTIONS, enabled: version !== undefined }
+  );
 
   // Cities and subdivisions draw from zoom 4: fetch them once the viewer first passes zoom 3, so
   // they are there in time and the globe view never downloads them. Latched: zooming back out
@@ -98,8 +107,8 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     if ((zoom ?? 0) >= DETAIL_FETCH_ZOOM) setWantDetail(true);
   }, [zoom]);
   const { data: detail } = api.geoCore.getMapBundleDetail.useQuery(
-    { realm },
-    { ...MAP_QUERY_OPTIONS, enabled: wantDetail }
+    { realm, version },
+    { ...MAP_QUERY_OPTIONS, enabled: wantDetail && version !== undefined }
   );
 
   // Both arrive packed
