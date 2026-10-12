@@ -1,10 +1,13 @@
 /**
  * A realm's applied map imports and their rollback. Only the realm's latest import that is still in place can be
  * rolled back (rolling back an older one would undo the newer import's work too): its snapshot restores the
- * features it changed, deletes the ones it created and puts back the linked countries' outline and land area.
+ * features it changed, deletes the ones it created and puts back the linked countries' outline and land area. A
+ * world import's snapshot also removes the nation slots it created and puts back the ones it retired, unless a
+ * player has since claimed one of the new slots (then nothing is rolled back).
  */
 import type { PrismaClient } from "@prisma/client";
 import {
+  heldSlots,
   restoreMapSnapshot,
   unpackSnapshot,
   type RestoreResult,
@@ -67,6 +70,15 @@ export async function rollbackMapImport(
   if (newer > 0)
     throw new MapImportError("CONFLICT", "Roll back the newer import of this realm first");
 
+  const snapshot = unpackSnapshot(record.snapshot);
+  const held = await heldSlots(db, snapshot.slots?.created ?? []);
+  if (held.size > 0) {
+    throw new MapImportError(
+      "CONFLICT",
+      `${held.size} of the nations this import created have been claimed, so it can't be rolled back`
+    );
+  }
+
   // Claim the rollback first, so two clicks never restore twice.
   const claimed = await db.mapImport.updateMany({
     where: { id: importId, rolledBackAt: null },
@@ -75,7 +87,7 @@ export async function rollbackMapImport(
   if (claimed.count === 0)
     throw new MapImportError("CONFLICT", "This import was already rolled back");
   try {
-    const restored = await restoreMapSnapshot(db, unpackSnapshot(record.snapshot));
+    const restored = await restoreMapSnapshot(db, snapshot);
     const adjacencyPairs = await refreshRealmMap(db, record.realmId);
     return { ...restored, adjacencyPairs };
   } catch (error) {
