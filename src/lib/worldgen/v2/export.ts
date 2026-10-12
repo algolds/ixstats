@@ -211,7 +211,6 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
         _centroidLng: centroidLng,
         _centroidLat: centroidLat,
         culture: state.culture,
-        continent: state.continent,
       },
     });
   }

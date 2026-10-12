@@ -27,7 +27,7 @@ export interface WorldGraph {
   settlements: Settlement[];
 }
 
-export interface WorldCells {
+interface WorldCells {
   /** Number of cells in the mesh */
   n: number;
   /** Cell center coordinates: flat [lng0,lat0, lng1,lat1, ...] in WGS84 */

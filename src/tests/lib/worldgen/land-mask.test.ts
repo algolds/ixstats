@@ -4,6 +4,7 @@
 
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import { rasterizeLandMask, sampleLandMask } from "~/lib/worldgen/land-mask";
+import { ELEVATION_ZONES } from "~/lib/worldgen/v2/config";
 
 type Ring = [number, number][];
 
@@ -220,6 +221,13 @@ describe("rasterizeLandMask", () => {
 
 describe("rasterizeLandMask altitude zones", () => {
   const land = feature(polygon(box(0, 0, 60, 60)));
+
+  it("clamps a band above the top zone to the generator's highest zone", () => {
+    const mask = rasterizeLandMask({
+      altitudes: collection(feature(polygon(box(0, 0, 60, 60)), { zone: "zone_9" })),
+    });
+    expect(sampleLandMask(mask, 30, 30).zone).toBe(ELEVATION_ZONES.length - 1);
+  });
 
   it("stores the highest band covering each pixel", () => {
     const mask = rasterizeLandMask(

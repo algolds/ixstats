@@ -56,6 +56,12 @@ describe("v2/export & generateWorld", () => {
     }
   });
 
+  it("political features carry no continent name (only countries are named)", () => {
+    for (const feature of world.layers.political!.features) {
+      expect(feature.properties).not.toHaveProperty("continent");
+    }
+  });
+
   it("altitudes layer features have elevation zone properties", () => {
     const altitudes = world.layers.altitudes!;
     expect(altitudes.features.length).toBeGreaterThan(0);

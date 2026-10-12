@@ -58,14 +58,17 @@ const TYPICAL = { coast: 0.45, river: 0.2 } as const;
 const COAST_WEIGHT = 0.25;
 const RIVER_WEIGHT = 0.3;
 
-const unit = (v: number) => Math.min(1, Math.max(0, v));
+/** NaN and ±Infinity count as 0, so a bad input cannot leak into the population or the GDP. */
+const finite = (v: number) => (Number.isFinite(v) ? v : 0);
+const unit = (v: number) => Math.min(1, Math.max(0, finite(v)));
 
 /** Mean of `table` over the climate mix, which need not sum to 1; unknown groups are ignored. */
 function mixMean(mix: Record<string, number>, table: Record<string, number>): number {
   let total = 0;
   let sum = 0;
-  for (const [group, share] of Object.entries(mix)) {
+  for (const [group, raw] of Object.entries(mix)) {
     const value = table[group];
+    const share = finite(raw);
     if (value === undefined || !(share > 0)) continue;
     total += share;
     sum += share * value;
@@ -74,10 +77,13 @@ function mixMean(mix: Record<string, number>, table: Record<string, number>): nu
 }
 
 export function deriveBaseline(input: BaselineInput): Baseline {
-  if (!(input.cells > 0)) return { population: 0, gdpPerCapita: 0 };
+  const cells = finite(input.cells);
+  const habitableKm2 = finite(input.habitableKm2);
+  // An all-ice slot (no habitable land) is empty: no people and no GDP to speak of
+  if (!(cells > 0) || !(habitableKm2 > 0)) return { population: 0, gdpPerCapita: 0 };
 
   const density = mixMean(input.climateMix, DENSITY) * DENSITY_SCALE[input.developmentLevel];
-  const population = Math.round(Math.max(0, input.habitableKm2) * density);
+  const population = Math.round(habitableKm2 * density);
 
   const factor =
     1 +

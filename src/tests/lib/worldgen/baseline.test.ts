@@ -63,6 +63,45 @@ describe("deriveBaseline population", () => {
     expect(deriveBaseline(input({ habitableKm2: 0 })).population).toBe(0);
   });
 
+  it.each(LEVELS)("%s: an all-ice slot has neither people nor GDP", (level) => {
+    const allIce = { cells: 40, habitableKm2: 0, developmentLevel: level };
+    expect(deriveBaseline(input(allIce))).toEqual({ population: 0, gdpPerCapita: 0 });
+    expect(deriveBaseline(input({ ...allIce, habitableKm2: -5 }))).toEqual({
+      population: 0,
+      gdpPerCapita: 0,
+    });
+  });
+
+  it("treats non-finite numbers as zero instead of leaking NaN or Infinity", () => {
+    expect(deriveBaseline(input({ cells: NaN }))).toEqual({ population: 0, gdpPerCapita: 0 });
+    expect(deriveBaseline(input({ habitableKm2: NaN }))).toEqual({
+      population: 0,
+      gdpPerCapita: 0,
+    });
+    expect(deriveBaseline(input({ habitableKm2: Infinity }))).toEqual({
+      population: 0,
+      gdpPerCapita: 0,
+    });
+  });
+
+  it("reads a non-finite coast, river or climate share as zero", () => {
+    expect(deriveBaseline(input({ coastShare: NaN }))).toEqual(
+      deriveBaseline(input({ coastShare: 0 }))
+    );
+    expect(deriveBaseline(input({ coastShare: Infinity }))).toEqual(
+      deriveBaseline(input({ coastShare: 0 }))
+    );
+    expect(deriveBaseline(input({ riverShare: NaN }))).toEqual(
+      deriveBaseline(input({ riverShare: 0 }))
+    );
+    expect(deriveBaseline(input({ climateMix: { C: NaN, D: 1 } }))).toEqual(
+      deriveBaseline(input({ climateMix: { D: 1 } }))
+    );
+    expect(deriveBaseline(input({ climateMix: { C: Infinity, D: 1 } }))).toEqual(
+      deriveBaseline(input({ climateMix: { D: 1 } }))
+    );
+  });
+
   it("orders climates the way a map reader expects", () => {
     const pop = (g: string) => deriveBaseline(input({ climateMix: { [g]: 1 } })).population;
     expect(pop("C")).toBeGreaterThan(pop("D"));
