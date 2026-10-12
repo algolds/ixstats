@@ -6,13 +6,13 @@
 import { createWorldRunner } from "~/lib/worldgen/worker/world-runner";
 import type {
   WorldGenResult,
-  WorldWorkerRequest,
+  WorldGenerateRequest,
   WorldWorkerResponse,
 } from "~/lib/worldgen/worker/world-messages";
 
 type ResultMessage = Extract<WorldWorkerResponse, { type: "result" }>;
 
-export function realWorld(over: Partial<WorldWorkerRequest> = {}): WorldGenResult {
+export function realWorld(over: Partial<WorldGenerateRequest> = {}): WorldGenResult {
   let result: ResultMessage | null = null;
   const run = createWorldRunner((message) => {
     if (message.type === "result") result = message;
@@ -20,13 +20,16 @@ export function realWorld(over: Partial<WorldWorkerRequest> = {}): WorldGenResul
   });
   run({ type: "generate", id: 1, params: { cellCount: 3000, plateCount: 8 }, seed: 7, ...over });
   if (!result) throw new Error("The generator made no world");
-  const { seed, params, layers, slots, stats, cells, relief } = result as ResultMessage;
+  const { seed, params, layers, slots, stats, restartedAt, generationMs, cells, relief } =
+    result as ResultMessage;
   return {
     seed,
     params,
     layers,
     slots,
     stats,
+    restartedAt,
+    generationMs,
     cells: new Float32Array(cells),
     relief: { ...relief, rgba: new Uint8ClampedArray(relief.rgba) },
   };

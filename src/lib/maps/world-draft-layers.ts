@@ -15,6 +15,7 @@
  * borders and country names stay visible over the draft.
  */
 
+import type { FeatureCollection, Point } from "geojson";
 import type {
   ExpressionSpecification,
   GeoJSONSource,
@@ -32,6 +33,8 @@ import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
 
 const DRAFT_PREFIX = "worldgen-draft-";
 const DRAFT_RELIEF_ID = `${DRAFT_PREFIX}relief`;
+const DRAFT_DIAGNOSTIC_ID = `${DRAFT_PREFIX}diagnostic`;
+const DRAFT_SEEDS_ID = `${DRAFT_PREFIX}seeds`;
 
 /**
  * The layers the draft draws: those the live map shows by default (`LAYER_CONFIGS`). Climate and ice caps stay
@@ -43,16 +46,43 @@ type DraftType = (typeof DRAFT_TYPES)[number];
 const sourceIdOf = (type: DraftType) => `${DRAFT_PREFIX}${type}`;
 const strokeIdOf = (type: DraftType) => `${sourceIdOf(type)}-stroke`;
 
-/** Draft layers, bottom to top. The relief sits over the elevation and under the countries, as the live overlay does. */
+/**
+ * Draft layers, bottom to top. The relief sits over the elevation and under the countries, as the live overlay does;
+ * a diagnostic image (Studio) sits under the relief, so it replaces the elevation's look and keeps the countries,
+ * water and seeds over it.
+ */
 const STACK: readonly string[] = [
   sourceIdOf("background"),
   sourceIdOf("altitudes"),
+  DRAFT_DIAGNOSTIC_ID,
   DRAFT_RELIEF_ID,
   sourceIdOf("political"),
   strokeIdOf("political"),
   sourceIdOf("lakes"),
   sourceIdOf("rivers"),
+  DRAFT_SEEDS_ID,
 ];
+
+/** What the Studio's Layers tab can switch on and off. */
+export type DraftLayerKey = (typeof DRAFT_TYPES)[number] | "relief" | "diagnostic" | "seeds";
+
+export const DRAFT_LAYER_KEYS: readonly DraftLayerKey[] = [
+  ...DRAFT_TYPES,
+  "relief",
+  "diagnostic",
+  "seeds",
+];
+
+/** A diagnostic image to draw: straight RGBA in Web Mercator rows, pinned like the relief. */
+export type DraftImage = { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
+
+/** The map layers behind each switch. */
+function layerIdsOf(key: DraftLayerKey): string[] {
+  if (key === "relief") return [DRAFT_RELIEF_ID];
+  if (key === "diagnostic") return [DRAFT_DIAGNOSTIC_ID];
+  if (key === "seeds") return [DRAFT_SEEDS_ID];
+  return key === "political" ? [sourceIdOf(key), strokeIdOf(key)] : [sourceIdOf(key)];
+}
 
 /** Source options for the draft: a coarse simplification and a wide buffer keep a 100k-cell world light to tile. */
 const GEOJSON_OPTIONS = { tolerance: 0.5, buffer: 48, maxzoom: 8 } as const;
@@ -171,14 +201,37 @@ export class WorldDraft {
   private readonly pending = new Map<string, string[]>();
   private listening = false;
   private busy = false;
-  private image: { relief: WorldGenResult["relief"]; data: ImageData } | null = null;
-  /** The image each relief source holds, so a source made anew after a style reload is fed again */
+  /** The decoded image of each image source, kept for as long as the same pixels are shown */
+  private readonly images = new Map<string, { pixels: DraftImage; data: ImageData }>();
+  /** The image each image source holds, so a source made anew after a style reload is fed again */
   private readonly imageOn = new WeakMap<ImageSource, ImageData>();
+  private diagnostic: DraftImage | null = null;
+  private seeds: string | null = null;
+  /** Layers the Studio switched off; everything else is shown */
+  private readonly switched = new Map<DraftLayerKey, boolean>();
 
   constructor(private readonly map: MapLibreMap) {}
 
   show(result: WorldGenResult): void {
     this.shown = result;
+    this.push();
+  }
+
+  /** Shows or hides one of the draft's layers; kept across worlds and style reloads. */
+  setVisible(key: DraftLayerKey, visible: boolean): void {
+    this.switched.set(key, visible);
+    if (isMapStyleReady(this.map)) this.applyVisibility();
+  }
+
+  /** Puts a diagnostic image under the relief (null removes it); it stays across worlds until it is changed. */
+  showDiagnostic(image: DraftImage | null): void {
+    this.diagnostic = image;
+    this.push();
+  }
+
+  /** Draws the nations' seed points over the draft (null removes them); kept across worlds like the diagnostic. */
+  showSeeds(seeds: FeatureCollection<Point> | null): void {
+    this.seeds = seeds ? JSON.stringify(seeds) : null;
     this.push();
   }
 
@@ -191,11 +244,16 @@ export class WorldDraft {
   clear(): void {
     const { map } = this;
     this.shown = null;
-    this.image = null;
+    this.images.clear();
     this.pushed.clear();
     if (isMapStyleReady(map)) {
       for (const id of STACK) if (map.getLayer(id)) map.removeLayer(id);
-      for (const id of [...DRAFT_TYPES.map(sourceIdOf), DRAFT_RELIEF_ID]) {
+      for (const id of [
+        ...DRAFT_TYPES.map(sourceIdOf),
+        DRAFT_RELIEF_ID,
+        DRAFT_DIAGNOSTIC_ID,
+        DRAFT_SEEDS_ID,
+      ]) {
         if (map.getSource(id)) map.removeSource(id);
       }
       for (const [id, visibility] of this.hidden) {
@@ -220,26 +278,59 @@ export class WorldDraft {
         if (json === undefined) this.removeType(type);
         else this.pushType(type, json, anchor);
       }
-      this.pushRelief(shown.relief, anchor);
+      this.pushImage(DRAFT_DIAGNOSTIC_ID, this.diagnostic, anchor);
+      this.pushImage(DRAFT_RELIEF_ID, shown.relief, anchor);
+      this.pushSeeds(anchor);
       this.hideLive(ids, shown.layers.political !== undefined);
+      this.applyVisibility();
     } finally {
       this.busy = false;
     }
   }
 
   private pushType(type: DraftType, json: string, anchor: string | undefined): void {
-    const { map } = this;
-    const sourceId = sourceIdOf(type);
-    const source = map.getSource(sourceId) as GeoJSONSource | undefined;
-    if (!source || this.pushed.get(sourceId) !== json) {
-      const url = this.blobUrl(sourceId, json);
-      if (source) void source.setData(url).catch(() => {});
-      else map.addSource(sourceId, { type: "geojson", data: url, ...GEOJSON_OPTIONS });
-      this.pushed.set(sourceId, json);
-    }
+    this.pushSource(sourceIdOf(type), json);
     for (const spec of layerSpecs(type)) {
-      if (!map.getLayer(spec.id)) map.addLayer(spec, this.beforeFor(spec.id, anchor));
+      if (!this.map.getLayer(spec.id)) this.map.addLayer(spec, this.beforeFor(spec.id, anchor));
     }
+  }
+
+  /** Gives a GeoJSON source `json` as a blob URL, adding the source when it is missing; an unchanged layer is left. */
+  private pushSource(sourceId: string, json: string): void {
+    const { map } = this;
+    const source = map.getSource(sourceId) as GeoJSONSource | undefined;
+    if (source && this.pushed.get(sourceId) === json) return;
+    const url = this.blobUrl(sourceId, json);
+    if (source) void source.setData(url).catch(() => {});
+    else map.addSource(sourceId, { type: "geojson", data: url, ...GEOJSON_OPTIONS });
+    this.pushed.set(sourceId, json);
+  }
+
+  private pushSeeds(anchor: string | undefined): void {
+    const { map } = this;
+    if (this.seeds === null) {
+      if (map.getLayer(DRAFT_SEEDS_ID)) map.removeLayer(DRAFT_SEEDS_ID);
+      if (map.getSource(DRAFT_SEEDS_ID)) map.removeSource(DRAFT_SEEDS_ID);
+      this.pushed.delete(DRAFT_SEEDS_ID);
+      this.release(DRAFT_SEEDS_ID);
+      return;
+    }
+    this.pushSource(DRAFT_SEEDS_ID, this.seeds);
+    if (map.getLayer(DRAFT_SEEDS_ID)) return;
+    map.addLayer(
+      {
+        id: DRAFT_SEEDS_ID,
+        type: "circle",
+        source: DRAFT_SEEDS_ID,
+        paint: {
+          "circle-radius": 5,
+          "circle-color": ["coalesce", ["get", "color"], "#ffffff"],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      },
+      this.beforeFor(DRAFT_SEEDS_ID, anchor)
+    );
   }
 
   private removeType(type: DraftType): void {
@@ -252,30 +343,52 @@ export class WorldDraft {
     this.release(sourceIdOf(type));
   }
 
-  private pushRelief(relief: WorldGenResult["relief"], anchor: string | undefined): void {
+  /** An image source pinned at the Mercator corners: added, fed its pixels once, and removed when `pixels` is null. */
+  private pushImage(id: string, pixels: DraftImage | null, anchor: string | undefined): void {
     const { map } = this;
-    if (this.image?.relief !== relief) {
-      this.image = { relief, data: new ImageData(relief.rgba, relief.width, relief.height) };
+    if (!pixels) {
+      if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(id)) map.removeSource(id);
+      this.images.delete(id);
+      return;
     }
-    let source = map.getSource(DRAFT_RELIEF_ID) as ImageSource | undefined;
+    let image = this.images.get(id);
+    if (image?.pixels !== pixels) {
+      image = { pixels, data: new ImageData(pixels.rgba, pixels.width, pixels.height) };
+      this.images.set(id, image);
+    }
+    let source = map.getSource(id) as ImageSource | undefined;
     if (!source) {
-      map.addSource(DRAFT_RELIEF_ID, { type: "image", coordinates: RELIEF_COORDINATES });
-      source = map.getSource(DRAFT_RELIEF_ID) as ImageSource;
+      map.addSource(id, { type: "image", coordinates: RELIEF_COORDINATES });
+      source = map.getSource(id) as ImageSource;
     }
-    if (this.imageOn.get(source) !== this.image.data) {
-      source.updateImage({ image: this.image.data, coordinates: RELIEF_COORDINATES });
-      this.imageOn.set(source, this.image.data);
+    if (this.imageOn.get(source) !== image.data) {
+      source.updateImage({ image: image.data, coordinates: RELIEF_COORDINATES });
+      this.imageOn.set(source, image.data);
     }
-    if (!map.getLayer(DRAFT_RELIEF_ID)) {
+    if (!map.getLayer(id)) {
       map.addLayer(
         {
-          id: DRAFT_RELIEF_ID,
+          id,
           type: "raster",
-          source: DRAFT_RELIEF_ID,
+          source: id,
           paint: { "raster-opacity": 1, "raster-fade-duration": 0 },
         },
-        this.beforeFor(DRAFT_RELIEF_ID, anchor)
+        this.beforeFor(id, anchor)
       );
+    }
+  }
+
+  /** Sets each draft layer's visibility to what the Studio asked for (shown unless switched off). */
+  private applyVisibility(): void {
+    const { map } = this;
+    for (const [key, visible] of this.switched) {
+      for (const id of layerIdsOf(key)) {
+        if (!map.getLayer(id)) continue;
+        const now = map.getLayoutProperty(id, "visibility");
+        if (visible && now === "none") map.setLayoutProperty(id, "visibility", "visible");
+        else if (!visible && now !== "none") map.setLayoutProperty(id, "visibility", "none");
+      }
     }
   }
 

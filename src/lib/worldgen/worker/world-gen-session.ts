@@ -4,16 +4,27 @@
  * generator, so terminating is the only way to cancel), drops answers to anything but the latest request, and ends
  * a run that takes too long in the error state. The last good world stays in the view through all of it.
  *
+ *
+ * Diagnostic, seeds and render requests are separate: they have ids of their own, are settled as promises, and are
+ * never dropped for a newer generate id. They are answered from the world the worker finished last, so they are
+ * refused while a generate runs (the worker holds no world then) and rejected when the worker is replaced.
+ *
  * Plain TypeScript (the hook only mirrors `onChange` into React state), so it runs under jest with a fake worker.
  */
 
+import type { FeatureCollection, Point } from "geojson";
+import type { DiagnosticKind } from "../diagnostics";
 import type { LandMaskLayers } from "../land-mask";
+import type { PngWidth } from "../render-png";
 import type { WorldGenParams } from "../v2/types";
 import type {
+  DiagnosticResult,
   WorldGenResult,
   WorldGenStage,
   WorldWorkerFactory,
+  WorldQueryResponse,
   WorldWorkerHandle,
+  WorldWorkerRequest,
   WorldWorkerResponse,
 } from "./world-messages";
 
@@ -64,6 +75,8 @@ const RUNNING_VIEW = {
   error: null,
 } as const;
 
+type Pending = { resolve: (message: WorldQueryResponse) => void; reject: (error: Error) => void };
+
 export class WorldGenSession {
   private worker: WorldWorkerHandle | null = null;
   private latestId = 0;
@@ -72,6 +85,10 @@ export class WorldGenSession {
   private maskKeySent: string | null = null;
   private clock: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
+  /** The id of the generate whose result the worker holds the graph of; null while none does */
+  private heldWorld: number | null = null;
+  private nextRequestId = 0;
+  private readonly pending = new Map<number, Pending>();
   private view: WorldGenView = IDLE_VIEW;
 
   constructor(
@@ -86,6 +103,7 @@ export class WorldGenSession {
   ): void {
     if (this.disposed) return;
     const id = ++this.latestId;
+    this.heldWorld = null;
     // A worker still busy cannot take another request; its answer is no longer wanted
     if (this.busy) this.discardWorker();
     try {
@@ -100,6 +118,25 @@ export class WorldGenSession {
         error instanceof Error ? error.message : "The world generator could not be started"
       );
     }
+  }
+
+  /** A diagnostic layer of the world in view, drawn (or recalled) by the worker: no regeneration. */
+  diagnostic(kind: DiagnosticKind): Promise<DiagnosticResult> {
+    return this.query("diagnostic-result", (q) => ({ type: "diagnostic", kind, ...q })).then(
+      ({ image }) => ({ ...image, rgba: new Uint8ClampedArray(image.rgba) })
+    );
+  }
+
+  /** The world's nations' seeds, a GeoJSON point at each capital. */
+  nationSeeds(): Promise<FeatureCollection<Point>> {
+    return this.query("seeds-result", (q) => ({ type: "seeds", ...q })).then(({ seeds }) => seeds);
+  }
+
+  /** The world as an equirectangular PNG, drawn and encoded in the worker. */
+  renderPng(width: PngWidth, politics: boolean): Promise<Blob> {
+    return this.query("render-result", (q) => ({ type: "render", width, politics, ...q })).then(
+      ({ png }) => png
+    );
   }
 
   /** Ends the run in flight; the view goes back to the last good world, or to idle. */
@@ -122,6 +159,44 @@ export class WorldGenSession {
     this.disposed = true;
     this.latestId++;
     this.discardWorker();
+  }
+
+  private query<T extends WorldQueryResponse["type"]>(
+    type: T,
+    build: (query: { requestId: number; world: number }) => WorldWorkerRequest
+  ): Promise<Extract<WorldQueryResponse, { type: T }>> {
+    const { worker, heldWorld } = this;
+    if (this.disposed || !worker || heldWorld === null) {
+      return Promise.reject(new Error("There is no world to draw"));
+    }
+    const requestId = ++this.nextRequestId;
+    return new Promise((resolve, reject) => {
+      this.pending.set(requestId, {
+        resolve: (message) => resolve(message as Extract<WorldQueryResponse, { type: T }>),
+        reject,
+      });
+      try {
+        worker.post(build({ requestId, world: heldWorld }));
+      } catch (error) {
+        this.pending.delete(requestId);
+        reject(error instanceof Error ? error : new Error("The request could not be sent"));
+      }
+    });
+  }
+
+  /** The answer to a diagnostic, seeds or render request, by its own id. */
+  private settle(message: Extract<WorldWorkerResponse, { requestId: number }>): void {
+    const waiting = this.pending.get(message.requestId);
+    if (!waiting) return;
+    this.pending.delete(message.requestId);
+    if (message.type === "request-error") waiting.reject(new Error(message.message));
+    else waiting.resolve(message);
+  }
+
+  private rejectPending(message: string): void {
+    const waiting = [...this.pending.values()];
+    this.pending.clear();
+    for (const { reject } of waiting) reject(new Error(message));
   }
 
   /** The request's mask fields: the layers are left out when this worker already holds the mask for the key. */
@@ -149,6 +224,10 @@ export class WorldGenSession {
   }
 
   private receive(message: WorldWorkerResponse): void {
+    if ("requestId" in message) {
+      this.settle(message);
+      return;
+    }
     if (message.id !== this.latestId) return;
     if (message.type === "progress") {
       this.update({ stage: message.stage, pct: message.pct, message: message.message });
@@ -160,6 +239,7 @@ export class WorldGenSession {
       this.fail(message.message);
       return;
     }
+    this.heldWorld = message.id;
     this.update({
       state: "ready",
       stage: null,
@@ -172,6 +252,8 @@ export class WorldGenSession {
         layers: message.layers,
         slots: message.slots,
         stats: message.stats,
+        restartedAt: message.restartedAt,
+        generationMs: message.generationMs,
         cells: new Float32Array(message.cells),
         relief: {
           width: message.relief.width,
@@ -201,6 +283,8 @@ export class WorldGenSession {
     this.worker = null;
     this.maskKeySent = null;
     this.busy = false;
+    this.heldWorld = null;
+    this.rejectPending("The world generator was restarted");
   }
 
   private stopClock(): void {

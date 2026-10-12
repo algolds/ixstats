@@ -6,14 +6,31 @@
  * the id of its request; the hook drops anything but the latest.
  */
 
+import type { FeatureCollection, Point } from "geojson";
+import type { DiagnosticKind, DiagnosticLegend } from "../diagnostics";
 import type { LandMaskLayers } from "../land-mask";
+import type { PngWidth } from "../render-png";
 import type { StageId } from "../v2/stages";
 import type { ProgressCallback, WorldGenParams, WorldSlot } from "../v2/types";
 import type { WorldPreviewStats } from "../world-stats";
 
 export type WorldGenStage = Parameters<ProgressCallback>[0];
 
-export type WorldWorkerRequest = {
+/**
+ * Diagnostic, seeds and render requests are answered from the world the worker last finished. They have ids of
+ * their own (`requestId`, counted apart from the generate ids), so a newer generate never makes the session drop
+ * their answers, and `world` is the id of the generate whose result the asker is looking at: a request for any other
+ * world gets an `request-error`, because the worker's graph is the newest one (or none, after a failed run).
+ */
+type WorldQuery = { requestId: number; world: number };
+
+export type WorldWorkerRequest =
+  | WorldGenerateRequest
+  | ({ type: "diagnostic"; kind: DiagnosticKind } & WorldQuery)
+  | ({ type: "seeds" } & WorldQuery)
+  | ({ type: "render"; width: PngWidth; politics: boolean } & WorldQuery);
+
+export type WorldGenerateRequest = {
   type: "generate";
   id: number;
   /** Merged over the generator's defaults; `seed` below wins over any seed in here */
@@ -55,7 +72,31 @@ export type WorldWorkerResponse =
       /** Hillshade as straight RGBA in Web Mercator rows (north up, +-MERCATOR_MAX_LAT); transferred */
       relief: { width: number; height: number; rgba: ArrayBuffer };
     }
-  | { type: "error"; id: number; message: string };
+  | { type: "error"; id: number; message: string }
+  | { type: "diagnostic-result"; requestId: number; world: number; image: DiagnosticPayload }
+  | { type: "seeds-result"; requestId: number; world: number; seeds: FeatureCollection<Point> }
+  | { type: "render-result"; requestId: number; world: number; width: number; png: Blob }
+  | { type: "request-error"; requestId: number; message: string };
+
+/** A diagnostic as posted: the pixels are a buffer of their own, transferred. */
+export type DiagnosticPayload = {
+  kind: DiagnosticKind;
+  width: number;
+  height: number;
+  rgba: ArrayBuffer;
+  legend: DiagnosticLegend;
+};
+
+/** A diagnostic as the hook hands it out: Web Mercator rows, pinned at +-MERCATOR_MAX_LAT like the relief. */
+export type DiagnosticResult = Omit<DiagnosticPayload, "rgba"> & {
+  rgba: Uint8ClampedArray<ArrayBuffer>;
+};
+
+/** What the worker was asked for, by message type. */
+export type WorldQueryResponse = Extract<
+  WorldWorkerResponse,
+  { type: "diagnostic-result" | "seeds-result" | "render-result" }
+>;
 
 /** A finished generation as the editor holds it. */
 export type WorldGenResult = {
@@ -64,6 +105,10 @@ export type WorldGenResult = {
   layers: Record<string, string>;
   slots: WorldSlot[];
   stats: WorldPreviewStats;
+  /** The stage this run started at: "Draft, 0.4 s from Climate" */
+  restartedAt: StageId;
+  /** What the generator took for this run, in ms */
+  generationMs: number;
   cells: Float32Array;
   relief: { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
 };

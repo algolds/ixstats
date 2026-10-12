@@ -7,7 +7,12 @@
  * why the result is 1024 px square: 256 px tiles, 2^2 of them across the world.
  */
 
-import { RASTER_TILE_SIZE, remapRows, tileSourceRows } from "~/lib/maps/raster-tiles";
+import {
+  RASTER_TILE_SIZE,
+  remapRows,
+  tileSourceRows,
+  type RgbaImage,
+} from "~/lib/maps/raster-tiles";
 import { addDetail, heightsFromCells, hillshade } from "./relief";
 
 const PREVIEW_ZOOM = 2;
@@ -22,25 +27,25 @@ export type ReliefImage = {
   rgba: Uint8Array;
 };
 
+/**
+ * An equirectangular image `256 * 2^zoom` wide, warped to Web Mercator rows: the tile builder's own
+ * (`tileSourceRows` + `remapRows`) over the world's `2^zoom` tile rows, a `256 * 2^zoom` px square. The relief
+ * and every diagnostic layer go through it, so they line up with each other and with the draft layers.
+ */
+export function warpToMercator(source: RgbaImage, zoom: number): ReliefImage {
+  const size = RASTER_TILE_SIZE * 2 ** zoom;
+  const rows = new Float64Array(size);
+  for (let ty = 0; ty < 2 ** zoom; ty++) {
+    rows.set(tileSourceRows(zoom, ty, source.height), ty * RASTER_TILE_SIZE);
+  }
+  return { width: size, height: size, rgba: remapRows(source, rows) };
+}
+
 /** `cells` is packed `[lng, lat, h, ...]` as the generator returns it. */
 export function previewRelief(cells: Float32Array): ReliefImage {
   const grid = heightsFromCells(cells, PREVIEW_RELIEF_WIDTH);
   addDetail(grid, RUGGEDNESS);
   const shade = hillshade(grid);
-  const source = {
-    width: grid.width,
-    height: grid.height,
-    data: new Uint8Array(shade.buffer, shade.byteOffset, shade.byteLength),
-  };
-
-  const tileRows = 2 ** PREVIEW_ZOOM;
-  const rows = new Float64Array(PREVIEW_RELIEF_WIDTH);
-  for (let ty = 0; ty < tileRows; ty++) {
-    rows.set(tileSourceRows(PREVIEW_ZOOM, ty, grid.height), ty * RASTER_TILE_SIZE);
-  }
-  return {
-    width: PREVIEW_RELIEF_WIDTH,
-    height: PREVIEW_RELIEF_WIDTH,
-    rgba: remapRows(source, rows),
-  };
+  const data = new Uint8Array(shade.buffer, shade.byteOffset, shade.byteLength);
+  return warpToMercator({ width: grid.width, height: grid.height, data }, PREVIEW_ZOOM);
 }

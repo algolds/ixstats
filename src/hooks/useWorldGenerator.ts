@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { FeatureCollection, Point } from "geojson";
+import type { DiagnosticKind } from "~/lib/worldgen/diagnostics";
+import type { PngWidth } from "~/lib/worldgen/render-png";
 import type { WorldGenParams } from "~/lib/worldgen/v2/types";
-import type { WorldWorkerFactory } from "~/lib/worldgen/worker/world-messages";
+import type { DiagnosticResult, WorldWorkerFactory } from "~/lib/worldgen/worker/world-messages";
 import {
   IDLE_VIEW,
   WorldGenSession,
@@ -9,7 +12,13 @@ import {
 } from "~/lib/worldgen/worker/world-gen-session";
 
 export type { WorldGenStatus, WorldGenerateOptions } from "~/lib/worldgen/worker/world-gen-session";
-export type { WorldGenResult, WorldGenStage } from "~/lib/worldgen/worker/world-messages";
+export type {
+  DiagnosticResult,
+  WorldGenResult,
+  WorldGenStage,
+} from "~/lib/worldgen/worker/world-messages";
+export type { DiagnosticKind, DiagnosticLegend } from "~/lib/worldgen/diagnostics";
+export type { PngWidth } from "~/lib/worldgen/render-png";
 
 export interface WorldGenerator extends WorldGenView {
   /**
@@ -25,7 +34,23 @@ export interface WorldGenerator extends WorldGenView {
    * never previewed on another.
    */
   reset(): void;
+  /**
+   * A diagnostic layer of the world in `result`, drawn by the worker from its cached graph (no regeneration) and
+   * cached there per kind until the next generate: straight RGBA in Web Mercator rows, with its legend as data.
+   * Rejects while a generate runs or after the worker was replaced; ask again when `result` changes.
+   */
+  diagnostic(kind: DiagnosticKind): Promise<DiagnosticResult>;
+  /** The nations' seeds of the world in `result`: a GeoJSON point at each capital. Rejects like `diagnostic`. */
+  nationSeeds(): Promise<FeatureCollection<Point>>;
+  /**
+   * The world in `result` as an equirectangular PNG (ocean, land by height band, lakes, rivers, relief, and with
+   * `politics` the fills and borders), drawn and encoded in the worker. Rejects like `diagnostic`; a generate that
+   * replaces the worker mid-render loses it.
+   */
+  renderPng(width: PngWidth, politics: boolean): Promise<Blob>;
 }
+
+const noWorld = <T>(): Promise<T> => Promise.reject(new Error("There is no world to draw"));
 
 /**
  * The world generator in a Web Worker. `createWorker` must be stable (a module-level function such as
@@ -54,6 +79,19 @@ export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenera
     setView(IDLE_VIEW);
   }, []);
 
+  const diagnostic = useCallback<WorldGenerator["diagnostic"]>(
+    (kind) => session.current?.diagnostic(kind) ?? noWorld(),
+    []
+  );
+  const nationSeeds = useCallback<WorldGenerator["nationSeeds"]>(
+    () => session.current?.nationSeeds() ?? noWorld(),
+    []
+  );
+  const renderPng = useCallback<WorldGenerator["renderPng"]>(
+    (width, politics) => session.current?.renderPng(width, politics) ?? noWorld(),
+    []
+  );
+
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -63,5 +101,5 @@ export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenera
     };
   }, []);
 
-  return { ...view, generate, cancel, reset };
+  return { ...view, generate, cancel, reset, diagnostic, nationSeeds, renderPng };
 }

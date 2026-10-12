@@ -6,7 +6,10 @@
 import type { FeatureCollection } from "geojson";
 import { generateWorldStaged } from "~/lib/worldgen/v2";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
-import type { WorldWorkerRequest, WorldWorkerResponse } from "~/lib/worldgen/worker/world-messages";
+import type {
+  WorldGenerateRequest,
+  WorldWorkerResponse,
+} from "~/lib/worldgen/worker/world-messages";
 import { createWorldRunner } from "~/lib/worldgen/worker/world-runner";
 
 type Posted = { message: WorldWorkerResponse; transfer: ArrayBuffer[] };
@@ -22,7 +25,7 @@ function harness(generate: typeof generateWorldStaged = generateWorldStaged) {
   return { posted, run };
 }
 
-const request = (over: Partial<WorldWorkerRequest> = {}): WorldWorkerRequest => ({
+const request = (over: Partial<WorldGenerateRequest> = {}): WorldGenerateRequest => ({
   type: "generate",
   id: 1,
   params: { cellCount: 2500 },
@@ -65,7 +68,7 @@ describe("worldgen/world-runner", () => {
     const messages = posted.map((p) => p.message);
     const progress = messages.filter((m) => m.type === "progress");
     expect(progress.length).toBeGreaterThan(3);
-    expect(messages.every((m) => m.id === 4)).toBe(true);
+    expect(messages.every((m) => "id" in m && m.id === 4)).toBe(true);
     expect(progress.map((m) => m.pct)).toEqual(
       [...progress.map((m) => m.pct)].sort((a, b) => a - b)
     );

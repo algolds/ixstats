@@ -41,7 +41,12 @@ const MIN_COS = 0.02;
  * triangulation is not periodic, so without the copies the strip between the westmost and eastmost cells would be
  * missing. The margin is a few cell spacings, widened towards the poles where a row holds fewer cells.
  */
-function pixelPoints(cells: Float32Array, width: number, height: number): PixelPoints {
+function pixelPoints(
+  cells: Float32Array,
+  width: number,
+  height: number,
+  floorAtZero: boolean
+): PixelPoints {
   const n = Math.floor(cells.length / 3);
   const xy = new Float64Array(n * 4);
   const z = new Float32Array(n * 2);
@@ -59,7 +64,8 @@ function pixelPoints(cells: Float32Array, width: number, height: number): PixelP
     if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
     const x = ((lng + 180) / 360) * width;
     const y = ((90 - lat) / 180) * height;
-    const h = cells[i * 3 + 2]! > 0 ? cells[i * 3 + 2]! : 0;
+    const value = cells[i * 3 + 2]!;
+    const h = floorAtZero && !(value > 0) ? 0 : value;
     push(x, y, h);
     valid++;
     const cos = Math.max(MIN_COS, Math.cos((lat * Math.PI) / 180));
@@ -140,15 +146,10 @@ function fillTriangle(
   }
 }
 
-/**
- * Rasterise the cell triangulation to a `width` x `width / 2` grid. `cells` is packed `[lng, lat, h, ...]` in degrees
- * and metres; sea cells (h < 0) count as 0. Cells near the antimeridian are mirrored across it before triangulating,
- * so the seam has no gap column and no triangle streaks across the map.
- */
-export function heightsFromCells(cells: Float32Array, width = 2048): HeightGrid {
+function rasterizeCells(cells: Float32Array, width: number, floorAtZero: boolean): HeightGrid {
   const height = width >> 1;
   const metres = new Float32Array(width * height);
-  const points = pixelPoints(cells, width, height);
+  const points = pixelPoints(cells, width, height, floorAtZero);
   if (points.cells < 3) return { width, height, metres };
   const { triangles } = new Delaunay(points.xy.subarray(0, points.count * 2));
   for (let t = 0; t < triangles.length; t += 3) {
@@ -163,6 +164,23 @@ export function heightsFromCells(cells: Float32Array, width = 2048): HeightGrid 
     );
   }
   return { width, height, metres };
+}
+
+/**
+ * Rasterise the cell triangulation to a `width` x `width / 2` grid. `cells` is packed `[lng, lat, h, ...]` in degrees
+ * and metres; sea cells (h < 0) count as 0. Cells near the antimeridian are mirrored across it before triangulating,
+ * so the seam has no gap column and no triangle streaks across the map.
+ */
+export function heightsFromCells(cells: Float32Array, width = 2048): HeightGrid {
+  return rasterizeCells(cells, width, true);
+}
+
+/**
+ * The same rasteriser for any per-cell value (`[lng, lat, value, ...]`): negative values, such as a temperature
+ * below freezing, are kept. The grid's `metres` hold the value in its own unit.
+ */
+export function scalarsFromCells(cells: Float32Array, width = 2048): HeightGrid {
+  return rasterizeCells(cells, width, false);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

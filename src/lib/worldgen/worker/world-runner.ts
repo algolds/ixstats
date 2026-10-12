@@ -7,11 +7,23 @@
  */
 
 import { generateWorldStaged, MeshCache, StageCache } from "~/lib/worldgen/v2";
-import type { ProgressCallback } from "~/lib/worldgen/v2/types";
+import type { ProgressCallback, WorldGraph } from "~/lib/worldgen/v2/types";
+import {
+  nationSeeds,
+  renderDiagnostic,
+  type DiagnosticImage,
+  type DiagnosticKind,
+} from "~/lib/worldgen/diagnostics";
 import { rasterizeLandMask, type LandMask } from "~/lib/worldgen/land-mask";
+import { renderMap, type RenderedMap } from "~/lib/worldgen/render-png";
 import { previewRelief } from "~/lib/worldgen/relief-preview";
 import { computeWorldStats } from "~/lib/worldgen/world-stats";
-import type { WorldWorkerRequest, WorldWorkerResponse } from "./world-messages";
+import { encodePng } from "./encode-png";
+import type {
+  WorldGenerateRequest,
+  WorldWorkerRequest,
+  WorldWorkerResponse,
+} from "./world-messages";
 
 type PostToMain = (message: WorldWorkerResponse, transfer?: ArrayBuffer[]) => void;
 
@@ -22,16 +34,35 @@ function ownBuffer(view: Float32Array | Uint8Array): ArrayBuffer {
   return copy;
 }
 
+/** An error's message, or `fallback` for a throw that is not an Error (or has none). */
+function messageOf<T>(error: T, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+/** Turns the rendered pixels into a PNG; the worker's is `OffscreenCanvas.convertToBlob`. */
+export type PngEncoder = (image: RenderedMap) => Promise<Blob>;
+
+/** The world the worker holds for diagnostics and renders: the graph of the last finished generate. */
+type HeldWorld = {
+  /** The id of the generate request that made it */
+  id: number;
+  graph: WorldGraph;
+  /** Each diagnostic once drawn, until the next generate */
+  diagnostics: Map<DiagnosticKind, DiagnosticImage>;
+};
+
 export function createWorldRunner(
   post: PostToMain,
-  generate: typeof generateWorldStaged = generateWorldStaged
+  generate: typeof generateWorldStaged = generateWorldStaged,
+  toPng: PngEncoder = encodePng
 ): (request: WorldWorkerRequest) => void {
   const meshCache = new MeshCache();
   const cache = new StageCache();
   let mask: { key: string; value: LandMask } | null = null;
+  let held: HeldWorld | null = null;
 
   /** The request's land mask: the kept one for a key it has seen, else rasterised (and kept when it has a key). */
-  const maskOf = ({ landMaskLayers, maskKey }: WorldWorkerRequest): LandMask | undefined => {
+  const maskOf = ({ landMaskLayers, maskKey }: WorldGenerateRequest): LandMask | undefined => {
     if (maskKey !== undefined && mask?.key === maskKey) return mask.value;
     if (!landMaskLayers) {
       if (maskKey !== undefined) throw new Error("The land mask for this map was not sent");
@@ -42,8 +73,10 @@ export function createWorldRunner(
     return value;
   };
 
-  const run = (request: WorldWorkerRequest): void => {
+  const run = (request: WorldGenerateRequest): void => {
     const { id } = request;
+    // The stage cache rewrites its graph in place from here on: nothing may be drawn from the old one
+    held = null;
     const landMask = maskOf(request);
     const params = { ...request.params, seed: request.seed };
     const onProgress: ProgressCallback = (stage, pct, message) =>
@@ -61,6 +94,7 @@ export function createWorldRunner(
     }
 
     const graph = world.graph;
+    held = { id, graph, diagnostics: new Map() };
     const relief = previewRelief(world.cells);
     const cells = ownBuffer(world.cells);
     const rgba = ownBuffer(relief.rgba);
@@ -88,13 +122,71 @@ export function createWorldRunner(
     );
   };
 
+  /** A diagnostic from the held world: drawn once per kind, and posted as a copy so the cached image stays whole. */
+  const diagnosticOf = (world: HeldWorld, kind: DiagnosticKind): DiagnosticImage => {
+    let image = world.diagnostics.get(kind);
+    if (!image) {
+      image = renderDiagnostic(world.graph, kind);
+      world.diagnostics.set(kind, image);
+    }
+    return image;
+  };
+
+  const answer = (request: Exclude<WorldWorkerRequest, WorldGenerateRequest>): void => {
+    const { requestId } = request;
+    const fail = (message: string) => post({ type: "request-error", requestId, message });
+    const world = held;
+    if (!world || world.id !== request.world) {
+      fail(world ? "The world has changed since it was requested" : "There is no world to draw");
+      return;
+    }
+    switch (request.type) {
+      case "diagnostic": {
+        const { rgba, ...image } = diagnosticOf(world, request.kind);
+        const copy = ownBuffer(rgba);
+        post(
+          {
+            type: "diagnostic-result",
+            requestId,
+            world: world.id,
+            image: { ...image, rgba: copy },
+          },
+          [copy]
+        );
+        return;
+      }
+      case "seeds":
+        post({ type: "seeds-result", requestId, world: world.id, seeds: nationSeeds(world.graph) });
+        return;
+      case "render": {
+        const { width, politics } = request;
+        // The pixels are made now, from the graph as it is; only the encoding waits
+        const image = renderMap(world.graph, width, { politics });
+        toPng(image)
+          .then((png) => post({ type: "render-result", requestId, world: world.id, width, png }))
+          .catch((error) => fail(messageOf(error, "The image could not be encoded")));
+        return;
+      }
+    }
+  };
+
   return (request) => {
+    if (request.type !== "generate") {
+      try {
+        answer(request);
+      } catch (error) {
+        post({
+          type: "request-error",
+          requestId: request.requestId,
+          message: messageOf(error, "The request failed"),
+        });
+      }
+      return;
+    }
     try {
       run(request);
     } catch (error) {
-      const message =
-        error instanceof Error && error.message ? error.message : "World generation failed";
-      post({ type: "error", id: request.id, message });
+      post({ type: "error", id: request.id, message: messageOf(error, "World generation failed") });
     }
   };
 }

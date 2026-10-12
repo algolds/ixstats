@@ -9,13 +9,17 @@ import type {
   WorldWorkerFactory,
   WorldWorkerHandle,
   WorldWorkerListener,
+  WorldGenerateRequest,
   WorldWorkerRequest,
   WorldWorkerResponse,
 } from "~/lib/worldgen/worker/world-messages";
 
 export type FakeWorldWorker = WorldWorkerHandle & {
   listener: WorldWorkerListener;
-  posted: WorldWorkerRequest[];
+  /** The generate requests */
+  posted: WorldGenerateRequest[];
+  /** The diagnostic, seeds and render requests */
+  queries: Exclude<WorldWorkerRequest, WorldGenerateRequest>[];
   terminated: boolean;
   /** Deliver a message as if the worker had posted it (also after termination, as a queued one could) */
   say(message: WorldWorkerResponse): void;
@@ -27,9 +31,11 @@ export function fakeWorldWorkers() {
     const worker: FakeWorldWorker = {
       listener,
       posted: [],
+      queries: [],
       terminated: false,
       post: (request) => {
-        worker.posted.push(request);
+        if (request.type === "generate") worker.posted.push(request);
+        else worker.queries.push(request);
       },
       terminate: () => {
         worker.terminated = true;
@@ -90,6 +96,8 @@ export function worldResult(over: Partial<WorldGenResult> = {}): WorldGenResult 
     },
     slots: [],
     stats: { landShare: 0.3, continents: 4, climateMix: { D: 1 }, slotCount: 0, baseline: null },
+    restartedAt: "mesh",
+    generationMs: 10,
     cells: new Float32Array([10, 20, 300]),
     relief: { width: 2, height: 2, rgba: new Uint8ClampedArray(16) },
     ...over,
