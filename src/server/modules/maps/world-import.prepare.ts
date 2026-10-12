@@ -215,6 +215,12 @@ function estimatedAreaSqKm(geometry: Geometry): number {
 }
 
 /**
+ * The browser counts a slot's people on its cells; PostGIS measures the smoothed border, which comes out a few per cent
+ * smaller (up to 15 % for a slot cut at the poles). A full-density slot must still pass.
+ */
+const MEASURED_AREA_SLACK = 1.25;
+
+/**
  * The figures a browser sent for a slot, against what the server can derive. `measuredKm2` is PostGIS's area on
  * Earth, or null when it could not measure.
  */
@@ -228,7 +234,7 @@ function figuresProblem(
     return `${slot.name}: GDP per capita ${slot.gdpPerCapita.toLocaleString("en-US")} is outside what its development level allows (${min.toLocaleString("en-US")} to ${max.toLocaleString("en-US")})`;
   }
   if (measuredKm2 === null) return null;
-  const allowed = measuredKm2 * bounds.maxDensity;
+  const allowed = measuredKm2 * bounds.maxDensity * MEASURED_AREA_SLACK;
   if (slot.population > allowed) {
     return `${slot.name}: population ${slot.population.toLocaleString("en-US")} is more than its ${Math.round(measuredKm2).toLocaleString("en-US")} km² can hold`;
   }

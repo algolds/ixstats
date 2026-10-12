@@ -739,21 +739,23 @@ describe("the dry run's refusals (Review Focus 3)", () => {
     };
 
     it("refuses a population more than the measured area can hold, and checks nothing of it without PostGIS", async () => {
-      // PostGIS measures every shape here as 49,000 km2: at most 110 people a km2 at the industrial level
-      const crowded = { slots: [slot(1, { population: 6_000_000 })] };
+      // PostGIS measures every shape here as 49,000 km2: at most 110 people a km2 at the industrial level, with a
+      // quarter of slack for the smoothed border being smaller than the cells the browser counted (6,737,500)
+      const crowded = { slots: [slot(1, { population: 7_000_000 })] };
       const db = seedRealm();
       postgis(db);
       await refused(
         crowded,
-        /Nation 1: population 6,000,000 is more than its 49,000 km² can hold/,
+        /Nation 1: population 7,000,000 is more than its 49,000 km² can hold/,
         db
       );
+      // 120 a km2 of the measured border: a full-density slot whose smoothed border came out smaller
       const ok = seedRealm();
       postgis(ok);
       expect(
         await runWorldDryRun(
           ok,
-          jobFor(await stored({ slots: [slot(1, { population: 5_000_000 })] }))
+          jobFor(await stored({ slots: [slot(1, { population: 5_880_000 })] }))
         )
       ).toBeTruthy();
       jest.mocked(isPostGISAvailable).mockResolvedValue(false);
