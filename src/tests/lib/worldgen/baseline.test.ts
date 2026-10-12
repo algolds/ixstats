@@ -3,7 +3,7 @@
  * development level varied by geography within 0.75-1.25.
  */
 
-import { deriveBaseline } from "~/lib/worldgen/baseline";
+import { baselineBounds, deriveBaseline } from "~/lib/worldgen/baseline";
 import type { DevelopmentLevel } from "~/lib/worldgen/v2/types";
 
 const LEVELS: DevelopmentLevel[] = ["developing", "industrial", "modern"];
@@ -158,5 +158,34 @@ describe("deriveBaseline GDP per capita", () => {
         }
       }
     }
+  });
+});
+
+describe("baselineBounds", () => {
+  it.each(LEVELS)(
+    "brackets everything deriveBaseline gives at the %s level",
+    (developmentLevel) => {
+      const { gdpPerCapita, maxDensity } = baselineBounds(developmentLevel);
+      expect(gdpPerCapita).toEqual({
+        min: BASE_GDP[developmentLevel] * 0.75,
+        max: BASE_GDP[developmentLevel] * 1.25,
+      });
+      for (const group of ["A", "B", "C", "D", "E", "F", "H"]) {
+        for (const coastShare of [0, 1]) {
+          const out = deriveBaseline(
+            input({ developmentLevel, climateMix: { [group]: 1 }, coastShare })
+          );
+          expect(out.gdpPerCapita).toBeGreaterThanOrEqual(gdpPerCapita.min);
+          expect(out.gdpPerCapita).toBeLessThanOrEqual(gdpPerCapita.max);
+          expect(out.population).toBeLessThanOrEqual(1000 * maxDensity);
+        }
+      }
+    }
+  );
+
+  it("allows the densest the climate table has, scaled by the level", () => {
+    expect(baselineBounds("developing").maxDensity).toBeCloseTo(110 * 0.8);
+    expect(baselineBounds("industrial").maxDensity).toBe(110);
+    expect(baselineBounds("modern").maxDensity).toBeCloseTo(110 * 1.25);
   });
 });

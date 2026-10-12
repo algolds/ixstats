@@ -3,6 +3,7 @@
  * `startMapImport`) and run off the request path:
  *
  *   - map-pipeline: a realm map pipeline run (realm-map-pipeline.job.ts), any of its steps, dry run or apply;
+ *   - world: a generated world bundle written into a realm (world-import.ts): its dry run, then its apply job;
  *   - analyse (dryRun): read the upload, run the engine (a worker thread under Bun), store the result file and a
  *     summary (regions, report, georeference, suggested mapping);
  *   - apply: plan the analysed result with the admin's mapping and write it (map-import.apply.ts).
@@ -42,6 +43,8 @@ import {
 import {
   findImportRealm,
   loadImportRealm,
+  MAP_IMPORT_LOCK_MS,
+  mapImportLockName,
   MapImportError,
   realmNations,
   saveRealmGeoreference,
@@ -60,10 +63,16 @@ import {
   runMapPipelineJob,
   type PipelineSummary,
 } from "./realm-map-pipeline.job";
+import { assertWorldImportAllowed } from "./world-import.guards";
+import {
+  runWorldJob,
+  type WorldApplySummary,
+  type WorldDryRunSummary,
+  type WorldImportDeps,
+} from "./world-import";
 
-export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
+export { MAP_IMPORT_LOCK_MS, mapImportLockName };
 export const STALE_AFTER_MS = 10 * 60_000;
-export const mapImportLockName = (realmId: string) => `map-import:${realmId}`;
 const PROGRESS_INTERVAL_MS = 750;
 
 export interface AnalyseSummary {
@@ -87,7 +96,8 @@ export interface ApplySummary extends AppliedImport {
   nations: number;
 }
 
-export type MapImportSummary = AnalyseSummary | ApplySummary | PipelineSummary;
+export type MapImportSummary =
+  AnalyseSummary | ApplySummary | PipelineSummary | WorldDryRunSummary | WorldApplySummary;
 
 export interface StartMapImportInput {
   realmId: string;
@@ -111,6 +121,8 @@ export interface MapImportDeps {
   ) => Promise<EngineResult>;
   /** A realm map pipeline run's replaceable parts (the CLI's local checkout, tests). */
   pipeline?: PipelineDeps;
+  /** A world import's replaceable parts (the relief build, tests). */
+  world?: WorldImportDeps;
 }
 
 async function defaultDb(): Promise<PrismaClient> {
@@ -172,6 +184,9 @@ export async function startMapImportApply(
   if (!parent.dryRun || parent.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "Only a finished analysis can be applied");
   }
+  if (parent.kind === "world") {
+    throw new MapImportError("BAD_REQUEST", "A world is applied with its own apply, not a mapping");
+  }
   const apply = mapImportApplySchema.parse(applyInput);
   const job = await db.mapImportJob.create({
     data: {
@@ -183,6 +198,40 @@ export async function startMapImportApply(
         georef: (parent.options as MapImportOptions).georef ?? null,
         attribution: (parent.options as MapImportOptions).attribution ?? null,
       } as Prisma.InputJsonValue,
+      requestedBy: actor.clerkUserId,
+      parentJobId: parent.id,
+      uploadId: parent.uploadId,
+      filename: parent.filename,
+      stage: "Waiting to start",
+    },
+    select: { id: true },
+  });
+  if (deps.kick !== false) kickMapImports(db, deps);
+  return job.id;
+}
+
+/**
+ * Queue the apply of a checked world (the dry run of a `world` job that succeeded). The person must still be allowed
+ * to generate the realm's world; the apply job checks again when it runs, and its transaction once more.
+ */
+export async function startWorldApply(
+  db: PrismaClient,
+  actor: RealmActor,
+  parentJobId: string,
+  deps: MapImportDeps = {}
+): Promise<string> {
+  const parent = await db.mapImportJob.findUnique({ where: { id: parentJobId } });
+  if (!parent) throw new MapImportError("NOT_FOUND", "Import not found");
+  await assertWorldImportAllowed(db, actor, parent.realmId);
+  if (parent.kind !== "world" || !parent.dryRun || parent.status !== "succeeded") {
+    throw new MapImportError("BAD_REQUEST", "Only a world whose check has finished can be applied");
+  }
+  const job = await db.mapImportJob.create({
+    data: {
+      realmId: parent.realmId,
+      kind: "world",
+      dryRun: false,
+      options: {},
       requestedBy: actor.clerkUserId,
       parentJobId: parent.id,
       uploadId: parent.uploadId,
@@ -283,6 +332,12 @@ export async function previewMapImport(
   const realm = await loadImportRealm(db, actor, job.realmId);
   if (!job.dryRun || job.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "The analysis has not finished");
+  }
+  if (job.kind === "world") {
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "A world's changes are in its check result, not a preview"
+    );
   }
   const options = mapImportOptionsSchema.parse(job.options ?? {});
   const result = await readImportResult(job.id);
@@ -416,7 +471,7 @@ async function runApply(
   return { phase: "apply", nations: plan.features.length, ...applied };
 }
 
-/** The job's work by kind: a pipeline run, an analysis or an apply. */
+/** The job's work by kind: a pipeline run, a world, an analysis or an apply. */
 function runJob(
   db: PrismaClient,
   job: Prisma.MapImportJobGetPayload<object>,
@@ -424,21 +479,36 @@ function runJob(
   deps: MapImportDeps
 ): Promise<MapImportSummary> {
   if (job.kind === MAP_PIPELINE_KIND) return runMapPipelineJob(db, job, progress, deps.pipeline);
+  if (job.kind === "world") return runWorldJob(db, job, progress, deps.world);
   return job.dryRun ? runAnalyse(db, job, progress, deps) : runApply(db, job, progress);
 }
 
 /** Mark running jobs that stopped reporting (a restarted process) as failed. Returns how many. */
 export async function recoverStaleMapImports(db: PrismaClient, now = new Date()): Promise<number> {
-  const { count } = await db.mapImportJob.updateMany({
-    where: { status: "running", heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) } },
+  const stale = {
+    status: "running",
+    heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) },
+  };
+  const stopped = { status: "failed", finishedAt: now };
+  // A world apply that stopped may have retired and created slots with no snapshot recorded to roll back to: the
+  // apply itself heals that (it retires the slots a run left unopened and writes again)
+  const world = await db.mapImportJob.updateMany({
+    where: { ...stale, kind: "world", dryRun: false },
     data: {
-      status: "failed",
+      ...stopped,
       error:
-        "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
-      finishedAt: now,
+        "The import stopped (the server restarted?). Apply the world again: it replaces whatever the interrupted run wrote.",
     },
   });
-  return count;
+  const { count } = await db.mapImportJob.updateMany({
+    where: stale,
+    data: {
+      ...stopped,
+      error:
+        "The import stopped (the server restarted?). Start it again; an apply can be rolled back if it wrote anything.",
+    },
+  });
+  return world.count + count;
 }
 
 /**

@@ -12,6 +12,10 @@ import {
 } from "~/lib/maps/realm-map-settings";
 import { canImportRealmMap, type RealmActor } from "~/server/modules/realms/realms.access";
 
+/** How long a realm's import job lease lasts, and its name: one job of a realm (an import, a rollback, a relief build) at a time. */
+export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
+export const mapImportLockName = (realmId: string) => `map-import:${realmId}`;
+
 export type MapImportErrorCode =
   "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "CONFLICT" | "BAD_GATEWAY";
 

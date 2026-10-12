@@ -11,7 +11,12 @@ import {
   writeRealmMapFeatures,
   type RealmMapFeatureInput,
 } from "~/lib/maps/realm-map-writer";
-import { captureMapSnapshot, packSnapshot } from "~/lib/maps/realm-map-snapshot";
+import {
+  captureMapSnapshot,
+  packSnapshot,
+  type MapImportSnapshot,
+  type SnapshotScope,
+} from "~/lib/maps/realm-map-snapshot";
 import { refreshRealmMap } from "./map-import.apply";
 
 export interface PipelineLayerWrite {
@@ -21,6 +26,15 @@ export interface PipelineLayerWrite {
   createdBy: string;
   /** The background job writing it (a realm map pipeline run), recorded on the map import. */
   jobId?: string | null;
+  /** Political feature key → the country it is linked to (a generated world's slots); other features keep their link. */
+  countryLinks?: Readonly<Record<string, string>>;
+  /**
+   * The rollback snapshot, when the caller took it before changing anything else (a world import retires and creates
+   * nation slots first, and puts them back from this snapshot if the write fails). Default: captured here.
+   */
+  snapshot?: MapImportSnapshot;
+  /** What the map import's summary says it came from (default "pipeline"), and any counts to record with it. */
+  summary?: { source: string } & Record<string, string | number>;
 }
 
 export interface PipelineLayerResult {
@@ -32,7 +46,11 @@ export interface PipelineLayerResult {
   mapImportId: string | null;
 }
 
-function layerFeatures(layerType: string, collection: FeatureCollection): RealmMapFeatureInput[] {
+export function layerFeatures(
+  layerType: string,
+  collection: FeatureCollection,
+  links: Readonly<Record<string, string>> = {}
+): RealmMapFeatureInput[] {
   return collection.features
     .filter((feature) => feature?.geometry)
     .map((feature, index) => {
@@ -43,9 +61,11 @@ function layerFeatures(layerType: string, collection: FeatureCollection): RealmM
           ? String(rawId)
           : `${layerType}_${index}`;
       const rawName = feature.properties?.name ?? feature.properties?.displayName;
+      const countryId = layerType === "political" ? links[key] : undefined;
       return {
         key,
         geometry: feature.geometry,
+        ...(countryId && { countryId }),
         name: typeof rawName === "string" && rawName.trim() ? rawName.trim().slice(0, 200) : null,
         properties: (feature.properties ?? {}) as Record<string, unknown>,
       };
@@ -83,15 +103,39 @@ async function rebuildSharedVertices(
   }
 }
 
+function layerEntries(
+  layers: PipelineLayerWrite["layers"],
+  links?: PipelineLayerWrite["countryLinks"]
+) {
+  return Object.entries(layers).flatMap(([layerType, collection]) =>
+    collection?.features
+      ? [{ layerType, collection, features: layerFeatures(layerType, collection, links) }]
+      : []
+  );
+}
+
+const scopesOf = (
+  entries: ReturnType<typeof layerEntries>,
+  mode: PipelineLayerWrite["mode"]
+): SnapshotScope[] =>
+  entries.map((entry) => ({
+    layerType: entry.layerType,
+    keys: entry.features.map((f) => f.key),
+    wholeLayer: mode === "replace",
+    countryIds: [],
+  }));
+
+/** What a write of these layers records for rollback: the keys it writes, per layer (every feature when replacing). */
+export const pipelineSnapshotScopes = (
+  layers: PipelineLayerWrite["layers"],
+  mode: PipelineLayerWrite["mode"]
+) => scopesOf(layerEntries(layers), mode);
+
 export async function writePipelineLayers(
   db: PrismaClient,
   input: PipelineLayerWrite
 ): Promise<PipelineLayerResult> {
-  const entries = Object.entries(input.layers).flatMap(([layerType, collection]) =>
-    collection?.features
-      ? [{ layerType, collection, features: layerFeatures(layerType, collection) }]
-      : []
-  );
+  const entries = layerEntries(input.layers, input.countryLinks);
   const result: PipelineLayerResult = {
     imported: 0,
     rejected: [],
@@ -102,16 +146,8 @@ export async function writePipelineLayers(
   };
   if (entries.length === 0) return result;
 
-  const snapshot = await captureMapSnapshot(
-    db,
-    input.realmId,
-    entries.map((e) => ({
-      layerType: e.layerType,
-      keys: e.features.map((f) => f.key),
-      wholeLayer: input.mode === "replace",
-      countryIds: [],
-    }))
-  );
+  const snapshot =
+    input.snapshot ?? (await captureMapSnapshot(db, input.realmId, scopesOf(entries, input.mode)));
 
   for (const entry of entries) {
     const written = await writeRealmMapFeatures(db, input.realmId, entry.features, {
@@ -143,6 +179,7 @@ export async function writePipelineLayers(
         rejected: result.rejected.length,
         deactivated: result.deactivated,
         source: "pipeline",
+        ...input.summary,
       },
       snapshot: packed.bytes,
       snapshotBytes: packed.size,

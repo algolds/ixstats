@@ -3,6 +3,13 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/maps/geo-validation", () => ({
   isPostGISAvailable: jest.fn().mockResolvedValue(false),
 }));
+// A rollback takes the realm's job lease: the lease table is not modelled here
+jest.mock("~/lib/system/job-lock", () => ({
+  withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
+    ran: true,
+    result: await fn(),
+  })),
+}));
 
 import type { Polygon } from "geojson";
 import {
