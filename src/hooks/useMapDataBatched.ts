@@ -21,7 +21,6 @@ import type {
   CapitalsGeoJson,
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { useMapLayerData, type MapLayerBucket } from "~/hooks/useMapLayerData";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
@@ -60,8 +59,6 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   const [visibleLayers, setVisibleLayers] = useState<Set<MapLayerType>>(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
-
-  const viewerRealmId = useViewerRealmId();
 
   // Level of detail. The first layers are the server's mid-zoom LOD, which is already the most
   // detail the viewer can show below zoom 7. Requesting a coarser globe bucket after the first
@@ -178,9 +175,6 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     toggleLayer,
     isLoading,
     error: critical.error,
-    /** The realm these layers are for (tile URLs use it): the map version's answer once it is in;
-     * before that, without ?realm=, the viewer's realm, which is what the server resolves then too */
-    realmId: critical.realmId ?? (realm ? undefined : viewerRealmId),
     overlayFeatures,
     capitalsGeoJson,
   };

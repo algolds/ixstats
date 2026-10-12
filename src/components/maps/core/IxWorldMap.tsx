@@ -5,6 +5,7 @@ import type { MapLayerType } from "~/lib/maps/map-config";
 import { MAP_DEFAULTS, buildBaseStyle, mapHomeCenter } from "~/lib/maps/map-config";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
+import type { TileSource } from "~/lib/maps/decorative-tiles";
 import { oceanLabelFeatures } from "~/lib/maps/ocean-labels";
 
 import { Suspense } from "react";
@@ -127,8 +128,8 @@ interface IxWorldMapProps {
   ixnay?: boolean;
   /** The realm's base image (full-globe equirectangular), drawn under the political layer. */
   baseImageUrl?: string | null;
-  /** The realm whose decorative layers (altitudes, rivers, lakes) draw from vector tiles. */
-  tileRealmId?: string;
+  /** The realm and map version whose vector tiles draw the decorative layers (altitudes, rivers, lakes). */
+  tileSource?: TileSource;
   /** The realm whose raster art `rasterLayers` are. */
   rasterRealmId?: string | null;
   /** The realm's raster art switched on (base map, overlays), in drawing order. */
@@ -171,7 +172,7 @@ const IxWorldMap = memo(
       showOceanLabels = false,
       ixnay = false,
       baseImageUrl,
-      tileRealmId,
+      tileSource,
       rasterRealmId,
       rasterLayers,
       artMode = false,
@@ -249,7 +250,7 @@ const IxWorldMap = memo(
       oceanLabels,
       showPrimeMeridian: ixnay,
       labelsVisible,
-      tileRealmId,
+      tileSource,
       artMode,
     });
 

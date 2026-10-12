@@ -3,13 +3,11 @@ import { NextRequest } from "next/server";
 
 const auth = jest.fn().mockResolvedValue({ userId: null });
 jest.mock("@clerk/nextjs/server", () => ({ auth: () => auth() }));
-const realmFindFirst = jest.fn();
 const realmFindUnique = jest.fn();
 const userFind = jest.fn().mockResolvedValue(null);
 jest.mock("~/server/db", () => ({
   db: {
     realm: {
-      findFirst: (a: unknown) => realmFindFirst(a),
       findUnique: (a: unknown) => realmFindUnique(a),
     },
     user: { findUnique: (a: unknown) => userFind(a) },
@@ -22,6 +20,7 @@ jest.mock("~/server/modules/maps/layer-delivery", () => ({
 const getRealmMapVersion = jest.fn();
 jest.mock("~/server/shared/map-invalidation", () => ({
   getRealmMapVersion: (...a: unknown[]) => getRealmMapVersion(...a),
+  onMapInvalidated: jest.fn(),
 }));
 
 // A getter, so a test can move the loader's output format between requests
@@ -33,6 +32,10 @@ jest.mock("~/lib/maps/layer-format", () => ({
 }));
 
 import { GET } from "~/app/api/map-layers/[realm]/[version]/[layer]/route";
+import { onMapInvalidated } from "~/server/shared/map-invalidation";
+
+/** What the tile access check registers to forget the realm rows it remembers (it keeps each for 60 s). */
+const forgetRealms = jest.mocked(onMapInvalidated).mock.calls[0]![0];
 
 const BODY = '{"type":"FeatureCollection","packed":4,"features":[]}';
 const IMMUTABLE = "public, max-age=31536000, immutable";
@@ -67,7 +70,7 @@ const get = (
   return getRaw(realm, version, layer, withFormat, headers);
 };
 
-/** A realm row as the access check and the slug lookup read it. */
+/** A realm row as the tile realm lookup reads it. */
 const realmRow = (status: string, ownerId = "clerk_owner") => ({
   id: "r_eurth",
   status,
@@ -76,13 +79,13 @@ const realmRow = (status: string, ownerId = "clerk_owner") => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  forgetRealms(null);
   mockFormat = 1;
   auth.mockResolvedValue({ userId: null });
   userFind.mockResolvedValue(null);
   packedLayerAt.mockResolvedValue(BODY);
   getRealmMapVersion.mockResolvedValue(3);
   realmFindUnique.mockResolvedValue(realmRow("active"));
-  realmFindFirst.mockResolvedValue({ id: "r_eurth" });
 });
 
 describe("GET /api/map-layers", () => {
@@ -101,7 +104,7 @@ describe("GET /api/map-layers", () => {
     const res = await get("ixnay", "3", "political");
     expect(res.status).toBe(200);
     expect(res.headers.get("etag")).toBe('"default-3-f1-political-1"');
-    expect(realmFindFirst).not.toHaveBeenCalled();
+    expect(realmFindUnique).not.toHaveBeenCalled();
   });
 
   it("defaults to the mid zoom bucket", async () => {
@@ -115,16 +118,17 @@ describe("GET /api/map-layers", () => {
   });
 
   it("caches a published realm's layer publicly, found by slug or id", async () => {
+    realmFindUnique.mockImplementation(
+      async ({ where }: { where: { id?: string; slug?: string } }) =>
+        where.id === "r_eurth" || where.slug === "eurth" ? realmRow("active") : null
+    );
     const bySlug = await get("eurth", "3", "political");
     expect(bySlug.headers.get("cache-control")).toBe(IMMUTABLE);
     expect(bySlug.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
 
-    realmFindFirst.mockClear();
     const byId = await get("r_eurth", "3", "political");
     expect(byId.status).toBe(200);
-    expect(realmFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { OR: [{ id: "r_eurth" }, { slug: "r_eurth" }] } })
-    );
+    expect(byId.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
   });
 
   it("answers 304 to a matching If-None-Match without building the layer", async () => {
@@ -277,7 +281,7 @@ describe("GET /api/map-layers: bad requests", () => {
   });
 
   it("404s on an unknown realm", async () => {
-    realmFindFirst.mockResolvedValue(null);
+    realmFindUnique.mockResolvedValue(null);
     expect((await get("nowhere", "3", "political")).status).toBe(404);
     expect(packedLayerAt).not.toHaveBeenCalled();
   });

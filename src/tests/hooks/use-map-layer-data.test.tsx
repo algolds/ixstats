@@ -136,7 +136,7 @@ describe("useMapLayerData", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mockVersionQuery).toHaveBeenCalledWith(
-      expect.anything(),
+      undefined,
       expect.objectContaining({ enabled: false })
     );
   });

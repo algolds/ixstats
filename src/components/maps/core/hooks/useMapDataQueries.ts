@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { useMapDataBatched } from "~/hooks/useMapDataBatched";
+import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import type { RouterOutputs } from "~/trpc/react";
 import type { SelectedCountry, IxWorldMapRef } from "../IxWorldMap";
@@ -76,8 +77,9 @@ export function useMapDataQueries({
     error,
     overlayFeatures: batchedOverlayFeatures,
     capitalsGeoJson: batchedCapitalsGeoJson,
-    realmId,
   } = useMapDataBatched(initialLayers, currentZoom, realm);
+  // The realm and map version the decorative vector tiles are fetched at (a map edit is a new URL)
+  const { mapVersion: tileSource } = useRealmMapVersion(realm);
 
   const cacheOpts = { staleTime: 5 * 60_000, gcTime: 30 * 60_000 };
   const { data: storyPinsGeoJson } = api.geoFeatures.getAllStoryPins.useQuery(
@@ -229,6 +231,6 @@ export function useMapDataQueries({
     isPreloading,
     overlayData,
     error,
-    realmId,
+    tileSource,
   };
 }

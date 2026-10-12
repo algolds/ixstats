@@ -481,7 +481,7 @@ export function MapContainer({
     isPreloading,
     overlayData,
     error,
-    realmId,
+    tileSource,
   } = useMapDataQueries({
     realm,
     initialLayers,
@@ -606,7 +606,7 @@ export function MapContainer({
         showOceanLabels={ixnay}
         ixnay={ixnay}
         baseImageUrl={realmDisplay?.baseImage}
-        tileRealmId={realmId}
+        tileSource={tileSource}
         rasterRealmId={realmDisplay?.realmId}
         rasterLayers={raster.shown}
         artMode={raster.artMode}

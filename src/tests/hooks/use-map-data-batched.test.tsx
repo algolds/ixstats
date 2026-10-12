@@ -5,7 +5,6 @@ type LayerResult = {
   packed?: Record<string, unknown>;
   error: Error | null;
   isPending: boolean;
-  realmId?: string;
 };
 
 /** What each useMapLayerData call asked for, in call order within the last render. */
@@ -15,7 +14,6 @@ let mockCritical: LayerResult;
 let mockExtra: LayerResult;
 let mockMarkers: { data?: { features: unknown; capitals: unknown; realmId: string } };
 let mockDetailEnabled: boolean | undefined;
-const profile = { country: { realmId: "r_eurth" } };
 
 jest.mock("~/hooks/useMapLayerData", () => ({
   useMapLayerData: (call: LayerCall) => {
@@ -25,7 +23,6 @@ jest.mock("~/hooks/useMapLayerData", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    users: { getProfile: { useQuery: () => ({ data: profile }) } },
     geoCore: {
       getMapBundleMarkers: { useQuery: () => mockMarkers },
       getMapBundleDetail: {
@@ -56,11 +53,10 @@ const packedSquare = (id: string) => ({
   ],
 });
 
-const loaded = (layers: Record<string, unknown>, realmId = "r_eurth"): LayerResult => ({
+const loaded = (layers: Record<string, unknown>): LayerResult => ({
   packed: layers,
   error: null,
   isPending: false,
-  realmId,
 });
 const loading: LayerResult = { packed: undefined, error: null, isPending: true };
 const none: LayerResult = { packed: undefined, error: null, isPending: false };
@@ -160,23 +156,6 @@ describe("useMapDataBatched layers", () => {
     const error = new Error("Map layer political could not be loaded (500)");
     mockCritical = { packed: undefined, error, isPending: false };
     expect(render().result.current.error).toBe(error);
-  });
-});
-
-describe("useMapDataBatched realm", () => {
-  it("reports the realm the map version names", () => {
-    mockCritical = loaded({ political: packedSquare("borders") }, "r_eurth");
-    expect(render(undefined, 1.8, "eurth").result.current.realmId).toBe("r_eurth");
-  });
-
-  it("knows the viewer's realm before the version arrives, so tiles start at once", () => {
-    mockCritical = loading;
-    expect(render().result.current.realmId).toBe("r_eurth");
-  });
-
-  it("waits for the version when the map names a realm (?realm=)", () => {
-    mockCritical = loading;
-    expect(render(undefined, 1.8, "eurth").result.current.realmId).toBeUndefined();
   });
 });
 

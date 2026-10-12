@@ -4,8 +4,7 @@ import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import type { ZoomBucket } from "~/server/modules/maps/layer-lod";
 import { packedLayerAt } from "~/server/modules/maps/layer-delivery";
-import { findRealmIdBySlugOrId } from "~/server/modules/maps/map-realm";
-import { PRIVATE_TILE_CACHE, realmTileAccess } from "~/server/modules/maps/realm-tile-access";
+import { PRIVATE_TILE_CACHE, resolveTileRealm } from "~/server/modules/maps/realm-tile-access";
 import { getRealmMapVersion } from "~/server/shared/map-invalidation";
 
 const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
@@ -49,12 +48,12 @@ export async function GET(
     return new NextResponse(null, { status: 400, headers: { "Cache-Control": "no-store" } });
 
   try {
-    const realmId = await findRealmIdBySlugOrId(db, realm);
-    const access = realmId && (await realmTileAccess(realmId));
-    if (!realmId || !access) return notFound();
+    const target = await resolveTileRealm(realm);
+    if (!target) return notFound();
 
+    const { id: realmId } = target;
     const version = await getRealmMapVersion(db, realmId);
-    if (access === "private") {
+    if (target.access === "private") {
       const body = await packedLayerAt(db, realmId, version, layer, bucket);
       return new NextResponse(body, {
         headers: { "Content-Type": "application/json", "Cache-Control": PRIVATE_TILE_CACHE },

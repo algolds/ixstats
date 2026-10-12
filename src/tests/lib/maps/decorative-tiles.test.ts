@@ -1,5 +1,10 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { applyVectorTiles } from "~/lib/maps/decorative-tiles";
+import {
+  MAX_TILE_ZOOM,
+  applyVectorTiles,
+  isTileCoord,
+  tileUrlTemplate,
+} from "~/lib/maps/decorative-tiles";
 
 type Source = { type: string; tiles?: string[]; setTiles?: jest.Mock };
 type Layer = { id: string; type: string; source?: string; [key: string]: unknown };
@@ -11,7 +16,12 @@ function fakeMap(sources: Record<string, Source>, layers: Layer[]) {
     layers,
     getSource: (id: string) => sources[id],
     getStyle: () => ({ layers: layers.map((l) => ({ ...l })) }),
-    removeLayer: jest.fn((id: string) => layers.splice(layers.findIndex((l) => l.id === id), 1)),
+    removeLayer: jest.fn((id: string) =>
+      layers.splice(
+        layers.findIndex((l) => l.id === id),
+        1
+      )
+    ),
     removeSource: jest.fn((id: string) => delete sources[id]),
     addSource: jest.fn((id: string, spec: Source) => {
       sources[id] = { ...spec, setTiles: jest.fn() };
@@ -66,4 +76,34 @@ describe("applyVectorTiles", () => {
     applyVectorTiles(map as unknown as MapLibreMap, "rivers", "new");
     expect(setTiles).toHaveBeenCalledWith(["new"]);
   });
+});
+
+describe("tileUrlTemplate", () => {
+  it("names the realm, the map version and the layer, so a new version is a new URL", () => {
+    const url = (version: number) => tileUrlTemplate({ realmId: "r_eurth", version }, "rivers");
+    expect(url(7)).toBe(`${window.location.origin}/api/map-tiles/r_eurth/7/rivers/{z}/{x}/{y}`);
+    expect(url(8)).not.toBe(url(7));
+  });
+
+  it("encodes the realm segment", () => {
+    expect(tileUrlTemplate({ realmId: "a b", version: 0 }, "lakes")).toContain("/a%20b/0/lakes/");
+  });
+});
+
+describe("isTileCoord", () => {
+  it.each([
+    [0, 0, 0],
+    [3, 7, 7],
+    [MAX_TILE_ZOOM, 63, 0],
+  ])("accepts %i/%i/%i", (z, x, y) => expect(isTileCoord(z, x, y)).toBe(true));
+
+  it.each([
+    [MAX_TILE_ZOOM + 1, 0, 0],
+    [-1, 0, 0],
+    [2, 4, 0],
+    [2, 0, -1],
+    [1.5, 0, 0],
+    [2, 0.5, 0],
+    [Number.NaN, 0, 0],
+  ])("rejects %s/%s/%s", (z, x, y) => expect(isTileCoord(z, x, y)).toBe(false));
 });
