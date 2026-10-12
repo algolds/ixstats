@@ -151,30 +151,49 @@ describe("getCountryGeoProfile queries", () => {
     expect(profile.area.perimeterKm).toBe(1000);
   });
 
-  it("estimates rivers and lakes from bounding boxes when PostGIS fails, keeping the rest", async () => {
+  it.each([
+    ["rivers", (sql: string) => sql.includes("'rivers'")],
+    ["lakes", (sql: string) => sql.includes("'lakes'")],
+    ["neighbours", (sql: string) => sql.includes("'political'")],
+    ["perimeter", (sql: string) => sql.includes("ST_Perimeter")],
+    ["zones", (sql: string) => sql.includes("$2")],
+  ])("rejects when the %s query fails, and the failure is not cached", async (_name, fails) => {
+    let failing = true;
     const db = fakeDb((sql, ...params) => {
-      if (sql.includes("'rivers'") || sql.includes("'lakes'")) throw new Error("postgis down");
+      if (failing && fails(sql)) throw new Error("postgis down");
       return answer(sql, ...params);
     });
-    db.mapLayer.findMany.mockResolvedValue([]);
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
 
-    const profile = await call(db);
+    await expect(call(db)).rejects.toThrow("postgis down");
 
-    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
-    expect(profile.hydro.riverCount).toBe(0);
-    expect(profile.neighbors).toHaveLength(1);
+    failing = false;
+    const profile = await call(db);
+    expect(profile.hydro.riverCount).toBe(3);
+    expect(db.country.findUnique).toHaveBeenCalledTimes(2);
+    expect(db.mapLayer.findMany).not.toHaveBeenCalled();
   });
 
-  it("falls back to the bounding box for the perimeter when the neighbour query fails", async () => {
-    const db = fakeDb((sql, ...params) => {
-      if (sql.includes("'political'")) throw new Error("postgis down");
-      return answer(sql, ...params);
-    });
+  it("rejects, caching nothing, when the country has no PostGIS shape", async () => {
+    const db = fakeDb((sql, ...params) =>
+      sql.includes("ST_Perimeter") ? [] : answer(sql, ...params)
+    );
+
+    await expect(call(db)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(call(db)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(db.country.findUnique).toHaveBeenCalledTimes(2);
+  });
+
+  it("estimates the zones of a country crossing the antimeridian, clipping everything else in PostGIS", async () => {
+    const db = fakeDb();
+    db.country.findUnique.mockResolvedValue({ ...COUNTRY, boundingBox: [-179.9, 7, 179.9, 20] });
+
     const profile = await call(db);
-    expect(profile.neighbors).toEqual([]);
-    expect(profile.area.perimeterKm).toBeGreaterThan(0);
-    expect(profile.area.perimeterKm).not.toBe(1000);
+
+    // rivers, lakes, neighbours and perimeter; the two zone layers come from bounding boxes
+    expect(sqlOf(db)).toHaveLength(4);
+    expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
+    expect(profile.hydro.riverCount).toBe(3);
   });
 });
 

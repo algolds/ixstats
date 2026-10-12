@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Geometry } from "geojson";
 import type { PrismaClient } from "@prisma/client";
 import { cachedStaticProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -13,13 +12,7 @@ import {
 } from "~/lib/maps/geo-analytics";
 import { kmPerDegree, kmPerDegreeLng, scaleDistanceToRadius } from "~/lib/maps/planet";
 import { parseRealmMapSettings, realmRadiusKm } from "~/lib/maps/realm-map-settings";
-import { estimateBboxOverlap } from "./geometry";
-import {
-  buildClimateZones,
-  buildElevationZones,
-  countryZoneFills,
-  type Extent,
-} from "./profile-zones";
+import { buildClimateZones, buildElevationZones, countryZoneFills } from "./profile-zones";
 
 /**
  * $1 country: how many of the realm's rivers or lakes touch the country and their summed length/area inside it.
@@ -58,51 +51,21 @@ async function clippedLayerStats(
   return { count: Number(rows[0]?.count ?? 0), total: Number(rows[0]?.total ?? 0) };
 }
 
-/** Bbox-estimation fallback for when the PostGIS hydrography queries fail. */
-async function hydrographyByBbox(db: PrismaClient, realmId: string, extent: Extent) {
-  const inExtent = async (layerType: "rivers" | "lakes") => {
-    const layers = await db.mapLayer.findMany({
-      where: { layerType, isActive: true, realmId },
-      select: { featureId: true, geometry: true, properties: true, areaSqKm: true },
-    });
-    return layers.filter((layer) => {
-      const geometry = layer.geometry as Geometry | null;
-      return !!geometry && estimateBboxOverlap(geometry, ...extent) > 0;
-    });
-  };
-  const [rivers, lakes] = await Promise.all([inExtent("rivers"), inExtent("lakes")]);
+/**
+ * Rivers and lakes inside the country. A failing query rejects (nothing is estimated in its place): the profile is
+ * cached for an hour, so a degraded answer would be served to everyone for that long.
+ */
+async function loadHydrography(db: PrismaClient, countryId: string) {
+  const [rivers, lakes] = await Promise.all([
+    clippedLayerStats(db, countryId, "rivers"),
+    clippedLayerStats(db, countryId, "lakes"),
+  ]);
   return {
-    riverCount: rivers.length,
-    totalRiverLengthKm: rivers.reduce((sum, river) => {
-      const props = river.properties as Record<string, unknown> | null;
-      return sum + ((props?.["lengthKm"] as number) ?? river.areaSqKm ?? 0);
-    }, 0),
-    lakeCount: lakes.length,
-    totalLakeAreaSqKm: lakes.reduce((sum, lake) => sum + (lake.areaSqKm ?? 0), 0),
+    riverCount: rivers.count,
+    totalRiverLengthKm: rivers.total,
+    lakeCount: lakes.count,
+    totalLakeAreaSqKm: lakes.total,
   };
-}
-
-async function loadHydrography(
-  db: PrismaClient,
-  countryId: string,
-  realmId: string,
-  extent: Extent
-) {
-  try {
-    const [rivers, lakes] = await Promise.all([
-      clippedLayerStats(db, countryId, "rivers"),
-      clippedLayerStats(db, countryId, "lakes"),
-    ]);
-    return {
-      riverCount: rivers.count,
-      totalRiverLengthKm: rivers.total,
-      lakeCount: lakes.count,
-      totalLakeAreaSqKm: lakes.total,
-    };
-  } catch (err) {
-    console.warn("PostGIS hydro query failed, falling back to bbox estimation:", err);
-    return hydrographyByBbox(db, realmId, extent);
-  }
 }
 
 /**
@@ -131,46 +94,35 @@ const PERIMETER_SQL = `
 
 /**
  * Neighbours and coastline via PostGIS: intersecting the stored `geom_postgis` shapes gives pixel-perfect
- * neighbour detection and accurate shared-border lengths.
+ * neighbour detection and accurate shared-border lengths. A failing query rejects, like the hydrography's; so does
+ * a country with no `geom_postgis` (the trigger left it NULL for an invalid outline), which cannot be measured.
  */
-async function loadNeighbours(
-  db: PrismaClient,
-  countryId: string,
-  extent: Extent,
-  storedCoastlineKm: number | null
-) {
-  try {
-    const [neighborRows, [perimeter]] = await Promise.all([
-      db.$queryRawUnsafe<
-        Array<{ id: string; name: string; slug: string | null; shared_border_km: number }>
-      >(NEIGHBOURS_SQL, countryId),
-      db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(PERIMETER_SQL, countryId),
-    ]);
-    if (!perimeter) throw new Error("Country has no PostGIS geometry");
-    const neighbors = neighborRows
-      .filter((r) => Number(r.shared_border_km) > 0)
-      .map((r) => ({
-        id: r.id,
-        name: r.name,
-        slug: r.slug,
-        sharedBorderKm: Math.round(Number(r.shared_border_km)),
-      }))
-      .sort((a, b) => b.sharedBorderKm - a.sharedBorderKm);
-
-    const perimeterKm = Math.round(Number(perimeter.perimeter_km ?? 0));
-    const sharedBorderKm = neighbors.reduce((sum, n) => sum + n.sharedBorderKm, 0);
-    return { neighbors, perimeterKm, coastlineKm: Math.max(0, perimeterKm - sharedBorderKm) };
-  } catch {
-    // PostGIS unavailable or geometry invalid — fall back to bbox estimation
-    const [minLng, minLat, maxLng, maxLat] = extent;
-    const perimeterKm = Math.round(
-      2 *
-        ((maxLat - minLat) * kmPerDegree() +
-          (maxLng - minLng) * kmPerDegreeLng((minLat + maxLat) / 2)) *
-        1.3
-    );
-    return { neighbors: [], perimeterKm, coastlineKm: storedCoastlineKm ?? perimeterKm };
+async function loadNeighbours(db: PrismaClient, countryId: string) {
+  const [neighborRows, [perimeter]] = await Promise.all([
+    db.$queryRawUnsafe<
+      Array<{ id: string; name: string; slug: string | null; shared_border_km: number }>
+    >(NEIGHBOURS_SQL, countryId),
+    db.$queryRawUnsafe<Array<{ perimeter_km: number }>>(PERIMETER_SQL, countryId),
+  ]);
+  if (!perimeter) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "Country has no usable map outline. Re-save its map features to rebuild it.",
+    });
   }
+  const neighbors = neighborRows
+    .filter((r) => Number(r.shared_border_km) > 0)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      sharedBorderKm: Math.round(Number(r.shared_border_km)),
+    }))
+    .sort((a, b) => b.sharedBorderKm - a.sharedBorderKm);
+
+  const perimeterKm = Math.round(Number(perimeter.perimeter_km ?? 0));
+  const sharedBorderKm = neighbors.reduce((sum, n) => sum + n.sharedBorderKm, 0);
+  return { neighbors, perimeterKm, coastlineKm: Math.max(0, perimeterKm - sharedBorderKm) };
 }
 
 async function loadSuperlatives(db: PrismaClient, countryId: string) {
@@ -227,7 +179,6 @@ export const geoProfileProcedures = {
           geometry: true,
           centroid: true,
           boundingBox: true,
-          coastlineKm: true,
           landArea: true,
           areaSqMi: true,
           realmId: true,
@@ -248,7 +199,6 @@ export const geoProfileProcedures = {
         });
       }
 
-      const extent: Extent = bbox ?? [-180, -90, 180, 90];
       const realmId = country.realmId;
       const realm = await ctx.db.realm.findUnique({
         where: { id: realmId },
@@ -260,10 +210,10 @@ export const geoProfileProcedures = {
       // Everything below is independent: climate and altitude layers of the country's own realm (its zones named
       // by its climate key), hydrography, neighbours and perimeter, and the superlatives
       const [climateFills, altitudeFills, hydro, measured, superlatives] = await Promise.all([
-        countryZoneFills(ctx.db, country, "climate", extent),
-        countryZoneFills(ctx.db, country, "altitudes", extent),
-        loadHydrography(ctx.db, input.countryId, realmId, extent),
-        loadNeighbours(ctx.db, input.countryId, extent, country.coastlineKm),
+        countryZoneFills(ctx.db, country, "climate", bbox),
+        countryZoneFills(ctx.db, country, "altitudes", bbox),
+        loadHydrography(ctx.db, input.countryId),
+        loadNeighbours(ctx.db, input.countryId),
         loadSuperlatives(ctx.db, input.countryId),
       ]);
       const climateKey = parseRealmMapSettings(realm?.settings).climateKey ?? null;

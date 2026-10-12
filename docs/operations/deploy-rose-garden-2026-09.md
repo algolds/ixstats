@@ -394,6 +394,18 @@ runs analyses in-process (slower, sharing the web server's CPU); apply jobs alwa
 CRON_ENABLED_JOBS=...,map-import
 ```
 
+Enable `geo-profiles` (every 5 minutes) to make the map editor's **Recalc** action (`geoCore.recalculateGeoProfiles`)
+do anything. The action only marks the stored geo profiles stale and returns at once; this job recomputes each stale or
+missing profile and the country's map-derived `GeographicResource` rows, one country at a time under the lease
+`geo-profiles`, and stops starting countries after 20 minutes (the next run carries on). Without it nothing is
+recomputed: the toast then says no `geo-profiles` run is recorded. The first run also computes every country that has map
+geometry but no stored profile, and replacing a country's resources resets their `exploitedPercent`, so check
+`SELECT count(*) FROM geographic_resources WHERE "exploitedPercent" > 0` before enabling it:
+
+```
+CRON_ENABLED_JOBS=...,geo-profiles
+```
+
 That makes 25 jobs here, including `notification-email-digest`, `realm-source-sync` and `map-import` (plus the two
 WikiOS ones below): the full table of 27 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
 schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.

@@ -13,7 +13,7 @@ import { isLandBand } from "~/lib/maps/elevation-config";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
 import { estimateBboxOverlap } from "./geometry";
 
-/** Longitude/latitude extent of the country; the whole globe when it has no stored bounding box. */
+/** Longitude/latitude extent of a country: its stored bounding box. */
 export type Extent = [minLng: number, minLat: number, maxLng: number, maxLat: number];
 
 const LAYER_SELECT = {
@@ -82,33 +82,33 @@ const CLIPPED_FILLS_SQL = `
 
 /**
  * The fills of a country's realm layer and the area each covers in it. The realm's layers are clipped to the
- * nation in PostGIS (its zones are large pieces whose boxes span continents), Ixnay's included; the
- * bounding-box estimate is the fallback when PostGIS fails.
+ * nation in PostGIS (its zones are large pieces whose boxes span continents), Ixnay's included. A country wider
+ * than 180 degrees crosses +-180, where its `geom_postgis` is a planar sliver (the convention of the atlas_r0
+ * migration), so its zones are estimated from bounding boxes instead. A failing query is not estimated over: it
+ * rejects, so the profile (cached for an hour) is never built from a degraded answer.
  */
 export async function countryZoneFills(
   db: PrismaClient,
   country: { id: string; realmId: string },
   layerType: "climate" | "altitudes",
-  extent: Extent
+  bbox: Extent | null
 ): Promise<ZoneFill[]> {
-  try {
-    const rows = await db.$queryRawUnsafe<
-      Array<{
-        fill: string | null;
-        climateId: string | null;
-        zoneId: string | null;
-        area: number;
-      }>
-    >(CLIPPED_FILLS_SQL, country.id, layerType);
-    return rows.map((r) => ({ ...r, fill: r.fill ?? "", overlapArea: Number(r.area) || 0 }));
-  } catch (err) {
-    console.warn("PostGIS zone clipping failed, falling back to bbox estimation:", err);
+  if (bbox && bbox[2] - bbox[0] > 180) {
+    const layers = await db.mapLayer.findMany({
+      where: { layerType, isActive: true, realmId: country.realmId },
+      select: LAYER_SELECT,
+    });
+    return overlappingFills(layers, bbox);
   }
-  const layers = await db.mapLayer.findMany({
-    where: { layerType, isActive: true, realmId: country.realmId },
-    select: LAYER_SELECT,
-  });
-  return overlappingFills(layers, extent);
+  const rows = await db.$queryRawUnsafe<
+    Array<{
+      fill: string | null;
+      climateId: string | null;
+      zoneId: string | null;
+      area: number;
+    }>
+  >(CLIPPED_FILLS_SQL, country.id, layerType);
+  return rows.map((r) => ({ ...r, fill: r.fill ?? "", overlapArea: Number(r.area) || 0 }));
 }
 
 function withPercentAreas<T extends { areaSqKm: number; percentArea: number }>(zones: T[]) {

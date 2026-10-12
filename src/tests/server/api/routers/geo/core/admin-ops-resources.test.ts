@@ -34,6 +34,11 @@ function makeDb() {
       findMany: jest.fn(async () => []),
       findUnique: jest.fn(async () => null),
     },
+    cronRun: {
+      findFirst: jest.fn(
+        async (_args: { where: { job: string } }): Promise<{ startedAt: Date } | null> => null
+      ),
+    },
     mapLayer: { findMany: jest.fn(async () => []) },
     countryGeoProfile: {
       updateMany: jest.fn(async () => ({ count: 2 })),
@@ -65,7 +70,7 @@ describe("geoCore.recalculateGeoProfiles queues the work (Atlas R0)", () => {
     const db = makeDb();
     const res = await caller(db).recalculateGeoProfiles();
 
-    expect(res).toEqual({ queued: 2 });
+    expect(res).toEqual({ queued: 2, lastRunAt: null });
     expect(db.countryGeoProfile.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({ data: { lastCalculatedAt: GEO_PROFILE_STALE_AT } })
     );
@@ -79,8 +84,19 @@ describe("geoCore.recalculateGeoProfiles queues the work (Atlas R0)", () => {
     db.country.count.mockResolvedValue(1);
     const res = await caller(db).recalculateGeoProfiles({ countryId: "c1" });
 
-    expect(res).toEqual({ queued: 1 });
+    expect(res).toEqual({ queued: 1, lastRunAt: null });
     expect(db.country.count.mock.calls[0]?.[0].where).toMatchObject({ id: "c1" });
+  });
+
+  it("returns when the geo-profiles job last ran", async () => {
+    const startedAt = new Date("2026-10-11T12:00:00Z");
+    const db = makeDb();
+    db.cronRun.findFirst.mockResolvedValue({ startedAt });
+
+    const res = await caller(db).recalculateGeoProfiles();
+
+    expect(res).toEqual({ queued: 2, lastRunAt: startedAt });
+    expect(db.cronRun.findFirst.mock.calls[0]?.[0].where).toEqual({ job: "geo-profiles" });
   });
 
   it("is admin only", async () => {

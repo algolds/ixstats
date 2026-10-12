@@ -27,7 +27,7 @@ const COUNTRIES = [
   { id: "c3", name: "Cartadania" },
 ];
 
-function makeDb(countries = COUNTRIES) {
+function makeDb(countries = COUNTRIES, lastRun: { startedAt: Date } | null = null) {
   const state = { running: 0, peak: 0 };
   return {
     state,
@@ -43,6 +43,15 @@ function makeDb(countries = COUNTRIES) {
         realmId: "default",
         realm: { settings: {} },
       })),
+    },
+    cronRun: {
+      findFirst: jest.fn(
+        async (_args: {
+          where: { job: string };
+          orderBy: { startedAt: "desc" };
+          select: { startedAt: true };
+        }) => lastRun
+      ),
     },
     mapLayer: { findMany: jest.fn(async () => []) },
     $queryRawUnsafe: jest.fn(async () => []),
@@ -72,7 +81,7 @@ describe("queueGeoProfileRecalculation", () => {
     const db = makeDb();
     const result = await queueGeoProfileRecalculation(db as never);
 
-    expect(result).toEqual({ queued: 3 });
+    expect(result).toEqual({ queued: 3, lastRunAt: null });
     const scope = db.country.count.mock.calls[0]?.[0].where;
     expect(scope).toEqual({
       AND: [{ geometry: { not: Prisma.DbNull } }, { geometry: { not: Prisma.JsonNull } }],
@@ -90,11 +99,32 @@ describe("queueGeoProfileRecalculation", () => {
     const db = makeDb([COUNTRIES[0]!]);
     const result = await queueGeoProfileRecalculation(db as never, "c1");
 
-    expect(result).toEqual({ queued: 1 });
+    expect(result).toMatchObject({ queued: 1 });
     expect(db.country.count.mock.calls[0]?.[0].where).toMatchObject({ id: "c1" });
     expect(db.countryGeoProfile.updateMany.mock.calls[0]?.[0].where).toEqual({
       country: expect.objectContaining({ id: "c1" }),
     });
+  });
+});
+
+describe("queueGeoProfileRecalculation: lastRunAt", () => {
+  it("reports when the geo-profiles job last ran, so the admin can tell whether it is enabled", async () => {
+    const startedAt = new Date("2026-10-11T12:00:00Z");
+    const db = makeDb(COUNTRIES, { startedAt });
+
+    const result = await queueGeoProfileRecalculation(db as never);
+
+    expect(result).toEqual({ queued: 3, lastRunAt: startedAt });
+    expect(db.cronRun.findFirst).toHaveBeenCalledWith({
+      where: { job: "geo-profiles" },
+      orderBy: { startedAt: "desc" },
+      select: { startedAt: true },
+    });
+  });
+
+  it("reports no run when the job never ran", async () => {
+    const result = await queueGeoProfileRecalculation(makeDb() as never);
+    expect(result.lastRunAt).toBeNull();
   });
 });
 

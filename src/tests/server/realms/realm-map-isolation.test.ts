@@ -268,6 +268,10 @@ describe("/maps shows only the viewed realm's map", () => {
 describe("a country's geo profile uses its own realm's base layers", () => {
   it("an Eurth country is profiled against Eurth's climate, altitude, river and lake layers", async () => {
     const db = emptyDb();
+    // the profile reads the country's perimeter from PostGIS too; a country without one cannot be profiled
+    db.$queryRawUnsafe!.mockImplementation(async (sql: string) =>
+      sql.includes("ST_Perimeter") ? [{ perimeter_km: 100 }] : []
+    );
     db.country!.findUnique!.mockResolvedValue({
       id: "c_eu",
       name: "Gallambria",

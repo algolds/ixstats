@@ -45,7 +45,10 @@ function fakeDb(rows: (sql: string) => unknown[]) {
     namedRiver: { findFirst: jest.fn(async () => null) },
     namedLake: { findFirst: jest.fn(async () => null) },
     city: { findFirst: jest.fn(async () => null) },
-    $queryRawUnsafe: jest.fn(async (sql: string) => rows(sql)),
+    // the profile reads the country's perimeter from PostGIS too; a country without one cannot be profiled
+    $queryRawUnsafe: jest.fn(async (sql: string) =>
+      sql.includes("ST_Perimeter") ? [{ perimeter_km: 100 }] : rows(sql)
+    ),
     $executeRawUnsafe: jest.fn(async () => 0),
     $transaction: jest.fn(),
   };

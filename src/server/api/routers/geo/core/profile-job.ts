@@ -9,12 +9,10 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { buildGeoProfile, computeEconomicGeoModifiers } from "~/lib/maps/geo-analytics";
 import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
 import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
-import {
-  buildClimateZones,
-  buildElevationZones,
-  countryZoneFills,
-  type Extent,
-} from "./profile-zones";
+import { buildClimateZones, buildElevationZones, countryZoneFills } from "./profile-zones";
+
+/** The job's name in the cron registry (src/server/cron/jobs.ts) and so in its `CronRun` rows. */
+const GEO_PROFILE_JOB = "geo-profiles";
 
 /** A profile calculated at this instant or earlier is stale (a queued recalculation sets it). */
 export const GEO_PROFILE_STALE_AT = new Date(0);
@@ -64,15 +62,13 @@ async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
 
   const coastlineKm = country.coastlineKm ?? 0;
   const areaKm2 = country.landArea ?? (country.areaSqMi ? country.areaSqMi / 0.386102 : 0);
-  const extent: Extent = (country.boundingBox as [number, number, number, number] | null) ?? [
-    -180, -90, 180, 90,
-  ];
+  const bbox = country.boundingBox as [number, number, number, number] | null;
 
   // Climate/altitude layers of the country's own realm, its zones named by its climate key
   const place = { id: countryId, realmId: country.realmId };
   const [climateFills, altitudeFills] = await Promise.all([
-    countryZoneFills(db, place, "climate", extent),
-    countryZoneFills(db, place, "altitudes", extent),
+    countryZoneFills(db, place, "climate", bbox),
+    countryZoneFills(db, place, "altitudes", bbox),
   ]);
   const climateKey = parseRealmMapSettings(country.realm?.settings).climateKey ?? null;
   const climateDistribution = buildClimateZones(climateFills, false, climateKey);
@@ -120,12 +116,14 @@ async function recalculateGeoProfile(db: PrismaClient, countryId: string) {
 
 /**
  * Marks the stored profiles of one country, or of every country with geometry, stale so the `geo-profiles` job
- * recomputes them, and returns how many countries that queues. Computes nothing itself.
+ * recomputes them. Computes nothing itself. Returns how many countries that queues and when the job last ran (null:
+ * never, so it is probably not in `CRON_ENABLED_JOBS`), so the admin can tell a queue that will drain from one that
+ * will not.
  */
 export async function queueGeoProfileRecalculation(
   db: PrismaClient,
   countryId?: string
-): Promise<{ queued: number }> {
+): Promise<{ queued: number; lastRunAt: Date | null }> {
   const where: Prisma.CountryWhereInput = countryId
     ? { ...WITH_GEOMETRY, id: countryId }
     : WITH_GEOMETRY;
@@ -134,7 +132,12 @@ export async function queueGeoProfileRecalculation(
     where: { country: where },
     data: { lastCalculatedAt: GEO_PROFILE_STALE_AT },
   });
-  return { queued };
+  const lastRun = await db.cronRun.findFirst({
+    where: { job: GEO_PROFILE_JOB },
+    orderBy: { startedAt: "desc" },
+    select: { startedAt: true },
+  });
+  return { queued, lastRunAt: lastRun?.startedAt ?? null };
 }
 
 interface CountryOutcome {
