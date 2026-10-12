@@ -14,7 +14,7 @@ import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
 import { createEmptyWorldGraph, type MeshGeometry, type WorldGraph } from "./types";
 import { toXYZ } from "./helpers/noise";
-import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
+import { sphericalRingAreaSqKm } from "~/lib/maps/planet";
 
 // Public API
 
@@ -280,36 +280,20 @@ export function cellLat(graph: WorldGraph, i: number): number {
 
 const cellAreas = new WeakMap<object, Float64Array>();
 
-/** Approximate area of cell i in km² using the Haversine-based polygon area. */
+/**
+ * Area of cell i in km²: the geodesic area of its polygon on Earth's sphere, the measure PostGIS geography gives the
+ * exported polygons. The cells tile the globe, so they sum to the planet's surface (510.07 million km²).
+ */
 export function cellAreaKm2(graph: WorldGraph, i: number): number {
   // Computed for every cell on first use and shared by the graphs of one (cached) mesh
   let areas = cellAreas.get(graph.cells.vertices);
   if (!areas || areas.length !== graph.cells.n) {
     areas = new Float64Array(graph.cells.n);
-    for (let c = 0; c < areas.length; c++) areas[c] = polygonAreaKm2(graph, c);
+    for (let c = 0; c < areas.length; c++)
+      areas[c] = sphericalRingAreaSqKm(graph.cells.vertices[c]!);
     cellAreas.set(graph.cells.vertices, areas);
   }
   return areas[i]!;
-}
-
-function polygonAreaKm2(graph: WorldGraph, i: number): number {
-  const verts = graph.cells.vertices[i]!;
-  if (verts.length < 4) return 0;
-
-  // Simplified: treat each cell as a flat polygon at its latitude
-  const lat = cellLat(graph, i);
-  const kmPerDegLng = kmPerDegreeLng(lat);
-  const kmPerDegLat = kmPerDegreeLat();
-
-  let area = 0;
-  for (let j = 0; j < verts.length - 1; j++) {
-    const [x0, y0] = verts[j]!;
-    const [x1, y1] = verts[j + 1]!;
-    area += (x1 - x0) * kmPerDegLng * ((y0 + y1) / 2) * kmPerDegLat;
-  }
-
-  // Shoelace area is signed — take absolute value
-  return Math.abs(area / 2);
 }
 
 // Internal: Jittered Grid Generation

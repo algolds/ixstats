@@ -2,8 +2,10 @@
  * UPG v2 — Export & Orchestrator Unit Tests
  */
 
+import type { Geometry } from "geojson";
 import { generateWorld } from "~/lib/worldgen/v2/index";
-import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
+import { DEFAULT_PARAMS, WORLD_PRESETS } from "~/lib/worldgen/v2/config";
+import { sphericalRingAreaSqKm } from "~/lib/maps/planet";
 
 const TEST_SEED = 42;
 const TEST_CELLS = 3000;
@@ -109,5 +111,49 @@ describe("v2/export & generateWorld", () => {
       "politics",
       "export",
     ]);
+  });
+});
+
+/** Geodesic area (km²) of a Polygon or MultiPolygon: each outer ring less its holes. */
+function geodesicAreaKm2(geometry: Geometry): number {
+  const polygons =
+    geometry.type === "Polygon"
+      ? [geometry.coordinates]
+      : geometry.type === "MultiPolygon"
+        ? geometry.coordinates
+        : [];
+  return polygons.reduce(
+    (sum, [outer, ...holes]) =>
+      sum +
+      sphericalRingAreaSqKm(outer!) -
+      holes.reduce((held, hole) => held + sphericalRingAreaSqKm(hole), 0),
+    0
+  );
+}
+
+describe("v2/export political areas", () => {
+  const world = generateWorld({ ...WORLD_PRESETS.eurth, seed: 7, cellCount: 8000 });
+  const { cells } = world.graph!;
+
+  /** Slots away from the poles (the export clamps rings at 85°) and the antimeridian seam, with some mass. */
+  const interior = world.slots.filter((slot) => {
+    const own: number[] = [];
+    for (let i = 0; i < cells.n; i++) if (cells.state[i] === Number(slot.key.slice(5))) own.push(i);
+    return (
+      own.length >= 6 &&
+      own.every((i) => Math.abs(cells.p[i * 2 + 1]!) < 75 && Math.abs(cells.p[i * 2]!) < 170)
+    );
+  });
+
+  it("covers the surface: the exported polygons measure as much as the slots claim", () => {
+    expect(interior.length).toBeGreaterThan(20);
+    for (const slot of interior) {
+      const feature = world.layers.political!.features.find(
+        (f) => f.properties?.slotKey === slot.key
+      )!;
+      const ratio = geodesicAreaKm2(feature.geometry) / slot.areaKm2;
+      expect(ratio).toBeGreaterThan(0.95);
+      expect(ratio).toBeLessThan(1.06);
+    }
   });
 });

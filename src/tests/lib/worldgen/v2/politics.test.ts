@@ -9,6 +9,7 @@ import { refineCoastlines } from "~/lib/worldgen/v2/coastlines";
 import { computeHydroClimate } from "~/lib/worldgen/v2/hydro-climate";
 import { generatePolitics } from "~/lib/worldgen/v2/politics";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
+import { sphericalRingAreaSqKm } from "~/lib/maps/planet";
 
 const TEST_SEED = 42;
 const TEST_CELLS = 3000;
@@ -72,6 +73,19 @@ describe("v2/politics", () => {
       expect(state.capital).toBeGreaterThan(0);
       expect(state.areaKm2).toBeGreaterThan(0);
       expect(state.cellCount).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives every state the geodesic area of its cells", () => {
+    const geodesic = new Map<number, number>();
+    for (let i = 0; i < graph.cells.n; i++) {
+      const stateId = graph.cells.state[i]!;
+      if (stateId === 0) continue;
+      const area = sphericalRingAreaSqKm(graph.cells.vertices[i]!);
+      geodesic.set(stateId, (geodesic.get(stateId) ?? 0) + area);
+    }
+    for (const state of graph.states) {
+      expect(Math.abs(state.areaKm2 / geodesic.get(state.id)! - 1)).toBeLessThan(0.01);
     }
   });
 

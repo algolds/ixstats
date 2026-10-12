@@ -4,8 +4,15 @@
 
 // @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
-import { createMesh, cellLng, cellLat, farthestPointSample } from "~/lib/worldgen/v2/mesh";
+import {
+  createMesh,
+  cellAreaKm2,
+  cellLng,
+  cellLat,
+  farthestPointSample,
+} from "~/lib/worldgen/v2/mesh";
 import { makeRng } from "~/lib/worldgen/v2/helpers/rng";
+import { EARTH_RADIUS_KM, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 
 // Use a smaller cell count for fast tests
 const TEST_CELLS = 5000;
@@ -87,6 +94,46 @@ describe("v2/mesh", () => {
     expect(graph.cells.state.length).toBe(n);
     expect(graph.cells.downstream.length).toBe(n);
     expect(graph.cells.flux.length).toBe(n);
+  });
+});
+
+describe("v2/mesh cellAreaKm2", () => {
+  const SURFACE_KM2 = 4 * Math.PI * EARTH_RADIUS_KM ** 2;
+  const graph = createMesh(TEST_SEED, 20000, 2);
+
+  it("sums over the whole mesh to the planet's surface area (within 1%)", () => {
+    let total = 0;
+    for (let i = 0; i < graph.cells.n; i++) total += cellAreaKm2(graph, i);
+    expect(Math.abs(total / SURFACE_KM2 - 1)).toBeLessThan(0.01);
+  });
+
+  it("matches the geodesic area of each cell's polygon", () => {
+    for (let i = 0; i < graph.cells.n; i += 37) {
+      const geodesic = sphericalRingAreaSqKm(graph.cells.vertices[i]!, EARTH_RADIUS_KM);
+      expect(Math.abs(cellAreaKm2(graph, i) / geodesic - 1)).toBeLessThan(0.01);
+    }
+  });
+
+  it("sums over a latitude band to the band's area on the sphere", () => {
+    // A zone between two parallels covers 2πR²(sin φ2 − sin φ1)
+    const band = (from: number, to: number) => {
+      let total = 0;
+      for (let i = 0; i < graph.cells.n; i++) {
+        const lat = cellLat(graph, i);
+        if (lat >= from && lat < to) total += cellAreaKm2(graph, i);
+      }
+      const rad = Math.PI / 180;
+      return (
+        total / (2 * Math.PI * EARTH_RADIUS_KM ** 2 * (Math.sin(to * rad) - Math.sin(from * rad)))
+      );
+    };
+    for (const [from, to] of [
+      [-10, 10],
+      [30, 50],
+      [-70, -50],
+    ] as const) {
+      expect(Math.abs(band(from, to) - 1)).toBeLessThan(0.03);
+    }
   });
 });
 
