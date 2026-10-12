@@ -49,7 +49,7 @@ interface Grab {
 }
 
 /** A vertex of the biggest region that has one in common with another region (the cascade case). */
-function sharedVertex(regions: readonly Region[]): Grab | null {
+function sharedVertex(regions: Region[]): Grab | null {
   const index = buildTopologyIndex(regions);
   for (const region of [...regions].sort(
     (a, b) => pointCount(b.geometry) - pointCount(a.geometry)

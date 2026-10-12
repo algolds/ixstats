@@ -370,23 +370,26 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
 ### Release 0 acceptance (`bun run perf:atlas`)
 
 `scripts/perf/atlas-bench.ts` ([scripts README](../../scripts/README.md)) runs the targets against
-the local database in process and exits 1 if any fails. Measured 2026-10-12 on the `ixstats_wv1` clone (Ixnay only: 183
-political features, 93,631 points; WSL2, 8 GB), three runs, all 13 lines PASS:
+the local database in process and exits 1 if any fails. The figures below are from one run on 2026-10-12 against the
+`ixstats_wv1` clone (Ixnay only: 183 political features, 93,631 points; WSL2, 8 GB). Timings move from run to run; the
+geo profile has the least headroom against its limit.
 
-| Target | Limit | Measured |
+| Target | Limit | Measured (one run) |
 | :--- | :---: | :--- |
-| Layer route, event-loop block on a hit (political, buckets 0 to 2, 60 hits) | 50 ms | 0.6 to 7.7 ms (cold builds 310 to 410 ms; one 838 ms in a loaded run) |
-| Layer route, repeat request with `If-None-Match` | 304 | 304, 0.2 ms; versioned URL `immutable` |
-| Tile route, DB statements on a warm disk hit (z1 and z2, three layers, 60 tiles, fresh process) | 0 | 0 (cold render 3.8 to 4.8 s, 120 statements) |
-| Tile route, event-loop block on a warm hit | 50 ms | 1.6 to 2.7 ms disk, 0.3 to 0.5 ms memory |
-| `getCountryGeoProfile`, Caphiria, tRPC cache bypassed, median of 5 | 400 ms | 306 to 370 ms (first call 383 to 464 ms) |
-| Border drag, JS per frame on Caphiria (7,279 points, shared vertex, 60 frames) | 4 ms | 1.8 to 2.2 ms mean |
-| Region reshape, overlap checks during a 10-move drag / after mouse-up | 0 / 1 | 0 / 1 (the one check took 41 to 111 ms) |
+| Layer route, event-loop block on a hit (political, buckets 0 to 2, 60 hits) | 50 ms | 6.92 ms max, 0.02 ms median (cold builds 529 / 336 / 322 ms) |
+| Layer route, repeat request with `If-None-Match` | 304 | 304 in 0.18 ms; versioned URL `immutable` |
+| Tile route, DB statements on a warm disk hit (z1 and z2, three layers, 60 tiles, fresh process) | 0 | 0 (cold render 4,164 ms, 120 statements) |
+| Tile route, event-loop block on a warm hit | 50 ms | 2.02 ms max on disk, 0.23 ms max in memory |
+| `getCountryGeoProfile`, Caphiria, tRPC cache bypassed, median of 5 | 400 ms | 299 ms (first call 388 ms) |
+| Border drag, JS per frame on Caphiria (7,279 points, shared vertex, 60 frames) | 4 ms | 1.74 ms mean, 4.50 ms max |
+| Region reshape, overlap checks during a 10-move drag / after mouse-up | 0 / 1 | 0 / 1 |
 | Autosave payload after 50 drags | 1 MB | 154 KB |
 | Coverage simplify, political features left unsimplified | 0 | 0: 93,631 points raw to 53,742 / 61,870 / 75,348 (buckets 0 / 1 / 2); 178 features by `ST_CoverageSimplify`, the 5 crossing +-180 by the per-polygon fallback |
 
-The geo profile has the least headroom (about 30 ms at its worst). The benchmark writes nothing to the database (it
-counts write statements and fails on one) and renders tiles into a temporary folder it removes, never `MAP_TILE_DIR`.
+All 13 lines the script prints passed in that run. They do not cover the spec's release-frame criterion for region
+reshape (no frame over 16 ms from overlap checks): it is pending and not gated yet. The one overlap check on the drop
+took 62.6 ms in that run, so the mouse-up frame is over 16 ms. The benchmark writes nothing to the database (it counts
+write statements and fails on one) and renders tiles into a temporary folder it removes, never `MAP_TILE_DIR`.
 
 ## Map Layers & Stacking Order
 
