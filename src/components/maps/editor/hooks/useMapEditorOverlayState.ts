@@ -41,6 +41,8 @@ interface UseMapEditorOverlayStateProps {
   countryId?: string;
   onExit: () => void;
   isWorldMode?: boolean;
+  /** The admin studio's sandbox: the World tab alone, nothing applied */
+  sandbox?: boolean;
   mapRef: React.RefObject<EditorMapRef | null>;
 }
 
@@ -48,6 +50,7 @@ export function useMapEditorOverlayState({
   countryId,
   onExit,
   isWorldMode = false,
+  sandbox = false,
   mapRef,
 }: UseMapEditorOverlayStateProps) {
   const realm = useMapRealm();
@@ -116,6 +119,7 @@ export function useMapEditorOverlayState({
 
   const geo = useEditorGeoDataState({
     isWorldMode,
+    sandbox,
     activeCountryId,
     setActiveCountryId,
     mapSelectedCountry,
@@ -252,6 +256,7 @@ export function useMapEditorOverlayState({
     ...tools,
     ...selection,
     isWorldMode,
+    isSandbox: sandbox,
     activeCountryId,
     setActiveCountryId,
     activeEditorMode,

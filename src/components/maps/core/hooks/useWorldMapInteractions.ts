@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import type { ExpressionSpecification, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
+import { isWorldDraftShown } from "~/lib/maps/world-draft-layers";
 import type { SelectedCountry, SelectedFeature, HoveredCountry, MapLayerData } from "../IxWorldMap";
 import { COUNTRY_LABEL_OPACITY } from "../utils/map-core-helpers";
 import { computeCountryLabelFade } from "../utils/label-fade";
@@ -216,6 +217,16 @@ export function useWorldMapInteractions({
   const handleMouseMove = useCallback(
     (e: MapMouseEvent) => {
       if (!map || isDraggingRef.current || !map.getLayer("fill-political")) return;
+      // A draft world hides the live features: nothing to hit-test, and no tooltip may linger
+      if (isWorldDraftShown(map)) {
+        clearAllHover(
+          map,
+          hoverRef.current,
+          tooltipPopupRef.current,
+          handlersRef.current.onCountryHover
+        );
+        return;
+      }
       updateHover(
         {
           map,

@@ -22,7 +22,9 @@ function defaultPanelConfigs(isWorldMode: boolean): PanelConfigs {
   return {
     panelA: {
       placement: "left",
-      tabs: isWorldMode ? ["linkages", "sovereignty", "layers"] : ["layers", "wiki", "stories"],
+      tabs: isWorldMode
+        ? ["linkages", "sovereignty", "layers", "world"]
+        : ["layers", "wiki", "stories"],
       collapsed: false,
     },
     panelB: { placement: "right", tabs: ["properties", "history"], collapsed: false },
@@ -43,7 +45,7 @@ function loadPanelConfigs(isWorldMode: boolean): PanelConfigs {
 /** Drops tabs the current mode doesn't use and adds the ones it requires (saved layouts predate some). */
 function syncRequiredTabs(prev: PanelConfigs, isWorldMode: boolean): PanelConfigs {
   const removed = new Set<TabId>(
-    isWorldMode ? ["features", "stories"] : ["features", "linkages", "sovereignty"]
+    isWorldMode ? ["features", "stories"] : ["features", "linkages", "sovereignty", "world"]
   );
   const next: PanelConfigs = {
     panelA: { ...prev.panelA, tabs: prev.panelA.tabs.filter((t) => !removed.has(t)) },
@@ -59,7 +61,7 @@ function syncRequiredTabs(prev: PanelConfigs, isWorldMode: boolean): PanelConfig
     changed = true;
   };
   const required: TabId[] = isWorldMode
-    ? ["layers", "linkages", "sovereignty"]
+    ? ["layers", "linkages", "sovereignty", "world"]
     : ["layers", "wiki", "stories"];
   for (const tab of required) ensureTab(tab, "panelA");
   ensureTab("properties", "panelB");

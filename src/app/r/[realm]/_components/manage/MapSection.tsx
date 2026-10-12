@@ -9,6 +9,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
+import { realmWorldEditorHref } from "~/lib/maps/realm-world-editor";
 import {
   MAX_MAP_ATTRIBUTION_LENGTH,
   MAX_REALM_RADIUS_KM,
@@ -85,6 +86,16 @@ function MapSettingsForm({ slug, display }: { slug: string; display: RealmMapDis
           Open the realm's map
         </Link>{" "}
         <span className="text-label-secondary">and choose World editor.</span>
+      </p>
+
+      <p className="text-footnote">
+        <Link className="text-tint underline" href={realmWorldEditorHref(slug)}>
+          Generate or regenerate the world
+        </Link>{" "}
+        <span className="text-label-secondary">
+          opens the world editor on its World tab, where you preview a generated world and tune it
+          before using it.
+        </span>
       </p>
 
       <div className="flex flex-col gap-2">

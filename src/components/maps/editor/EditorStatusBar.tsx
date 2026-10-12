@@ -173,6 +173,7 @@ export function EditorStatusBar({
   const transientCoords = useTransientMapStore((s) => s.cursorCoords);
   const transientTerrain = useTransientMapStore((s) => s.terrainInfo);
   const transientZoom = useTransientMapStore((s) => s.zoom);
+  const worldDraft = useTransientMapStore((s) => s.worldDraft);
   const activeCoords = propCoords ?? transientCoords;
   const activeTerrain = terrainInfo?.elevation ? terrainInfo : transientTerrain;
   const zoom = propZoom ?? transientZoom ?? undefined;
@@ -220,12 +221,21 @@ export function EditorStatusBar({
         <Badge variant="default" className="shrink-0">
           {modeInfo.label}
         </Badge>
+        {worldDraft && (
+          <Badge variant="warning" className="shrink-0">
+            Draft
+          </Badge>
+        )}
         {selectedCount > 0 && (
           <Badge variant="info" className="shrink-0">
             {selectedCount} selected
           </Badge>
         )}
-        <span className="text-label-secondary hidden truncate sm:inline">{modeInfo.hint}</span>
+        <span className="text-label-secondary hidden truncate sm:inline">
+          {worldDraft
+            ? worldDraft.message || "Preview of a generated world, not saved"
+            : modeInfo.hint}
+        </span>
       </div>
 
       <SaveState

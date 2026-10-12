@@ -4,8 +4,9 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { api } from "~/trpc/react";
 import Link from "next/link";
-import { SystemRestart as Loader2, EditPencil, Palette } from "iconoir-react";
+import { SystemRestart as Loader2, EditPencil, Palette, Planet } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { WORLD_SANDBOX_HREF } from "~/lib/maps/realm-world-editor";
 import { Skeleton } from "~/components/ui/skeleton";
 import nextDynamic from "next/dynamic";
 
@@ -73,6 +74,12 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               <Link href="/admin/maps/editor">
                 <EditPencil />
                 Open world editor
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={WORLD_SANDBOX_HREF}>
+                <Planet />
+                Studio
               </Link>
             </Button>
             <Button asChild size="sm" variant="outline">

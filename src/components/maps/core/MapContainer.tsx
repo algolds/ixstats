@@ -12,7 +12,7 @@ import {
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
-import { wantsRealmLabelsEditor } from "~/lib/maps/realm-labels";
+import { wantsRealmMapEditor } from "~/lib/maps/realm-world-editor";
 import { useNotify } from "~/hooks/useNotify";
 import { useMapPinInfo } from "~/hooks/useMapPinInfo";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
@@ -460,16 +460,16 @@ export function MapContainer({
   });
   const { selectedCountry, setMapEngineReady, setProjectionMode, isEditing } = state;
 
-  // `?editor=labels` (the admin panel's link): open the world editor once the map is up, for its map editors.
-  const openLabelsEditor = wantsRealmLabelsEditor(useSearchParams());
+  // `?editor=labels` or `?editor=world` (links from admin and Manage): open the world editor once the map is up.
+  const openEditorFromLink = wantsRealmMapEditor(useSearchParams());
   const mayEditRealmMap = isAdmin || !!realmDisplay?.canEdit;
   const openedEditor = useRef(false);
   const { mapEngineReady, setIsWorldEditing } = state;
   useEffect(() => {
-    if (openedEditor.current || !openLabelsEditor || !mayEditRealmMap || !mapEngineReady) return;
+    if (openedEditor.current || !openEditorFromLink || !mayEditRealmMap || !mapEngineReady) return;
     openedEditor.current = true;
     setIsWorldEditing(true);
-  }, [openLabelsEditor, mayEditRealmMap, mapEngineReady, setIsWorldEditing]);
+  }, [openEditorFromLink, mayEditRealmMap, mapEngineReady, setIsWorldEditing]);
 
   const {
     mapLayers,
