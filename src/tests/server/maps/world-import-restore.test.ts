@@ -149,6 +149,17 @@ describe("a failure after the slots changed", () => {
     );
   });
 
+  it("opens the slots it had closed again when the apply fails, so the previous map is as it was", async () => {
+    const { db } = original();
+    db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(applyWorld(db, jobFor(await stored()))).rejects.toThrow("disk full");
+    error.mockRestore();
+    // c_old2 (a withdrawn claim holds it) was closed for the new world and is open again with its old border
+    expect(country(db, "c_old2")).toMatchObject({ claimable: true });
+    expect(db.country.rows.map((c: { id: string }) => c.id).sort()).toEqual(SEEDED.sort());
+  });
+
   it("never deletes a new slot a player claimed in the meantime, or the claim", async () => {
     const { db } = original();
     // The map import cannot be recorded; while the apply is writing, a player files a claim for a new slot
@@ -298,6 +309,8 @@ describe("rolling a world back", () => {
       slug: "old-one",
       worldgen: true,
     });
+    // the slot the world had closed (its old claim kept it) is open again, as its border is
+    expect(country(db, "c_old2")).toMatchObject({ claimable: true });
     expect(db.country.rows).toHaveLength(4);
     expect(layer(db, "political", "slot_old")).toMatchObject({
       isActive: true,

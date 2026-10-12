@@ -74,7 +74,7 @@ export const dryRun = (over: object = {}) => ({
       lakes: counts(),
       icecaps: counts(2),
     },
-    slots: { create: 12, retire: 3, keep: 2, renamed: 1 },
+    slots: { create: 12, retire: 3, keep: 2, reserved: 1, renamed: 1 },
     warnings: [],
     replaces: [],
     ...over,

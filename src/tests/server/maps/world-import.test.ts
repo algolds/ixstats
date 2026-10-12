@@ -63,11 +63,12 @@ describe("runWorldDryRun", () => {
     expect(diff.layers.rivers).toEqual({ create: 1, change: 0, retire: 1 });
     expect(diff.layers.lakes).toEqual({ create: 0, change: 0, retire: 1 });
     expect(diff.layers.background).toEqual({ create: 1, change: 0, retire: 0 });
-    // c_old1 goes; c_old2 has a claim row, c_owned an owner: both stay
-    expect(diff.slots).toEqual({ create: 3, retire: 1, keep: 2, renamed: 1 });
+    // c_old1 goes; c_old2 has a claim row (kept, reserved: no land), c_owned an owner (kept as it is)
+    expect(diff.slots).toEqual({ create: 3, retire: 1, keep: 1, reserved: 1, renamed: 1 });
     expect(diff.warnings).toEqual(
       expect.arrayContaining([
         "The realm's current map (5 features) will be replaced",
+        "1 earlier nation has an old claim on file and is kept as reserved, with no land",
         "2 nations that are not generated slots, or that a player holds, keep their country but lose their border",
         "1 names were already taken in this realm and got a number",
         "PostGIS is not available, so the geometry and the nations' populations were not checked",
@@ -82,6 +83,7 @@ describe("runWorldDryRun", () => {
     expect(diff.replaces).toEqual([
       "The realm's current map (5 features) will be replaced",
       "2 nations that are not generated slots, or that a player holds, keep their country but lose their border",
+      "1 earlier nation has an old claim on file and is kept as reserved, with no land",
     ]);
     // each is also in the full list, which holds the notes too
     expect(diff.warnings).toEqual(expect.arrayContaining(diff.replaces));
@@ -435,14 +437,15 @@ describe("retiring slots (Review Focus 2)", () => {
       claimable: false,
       ownerUserId: null,
     });
-    const keep = JSON.stringify(["c_old2", "c_owned", "c_manual"].map((id) => country(db, id)));
+    const keep = JSON.stringify(["c_owned", "c_manual"].map((id) => country(db, id)));
+    const held = { ...country(db, "c_old2") };
     await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
     expect(db.country.deleteMany).toHaveBeenCalledTimes(1);
     const deleted = db.country.deleteMany.mock.calls[0][0].where.id.in;
     expect(deleted.sort()).toEqual(["c_old1", "c_scenery"]);
-    expect(JSON.stringify(["c_old2", "c_owned", "c_manual"].map((id) => country(db, id)))).toBe(
-      keep
-    );
+    expect(JSON.stringify(["c_owned", "c_manual"].map((id) => country(db, id)))).toBe(keep);
+    // the one with only a claim row stays whole, but for being closed to claims
+    expect(country(db, "c_old2")).toEqual({ ...held, claimable: false });
   });
 
   it("never deletes a slot that has any claim row, whatever its status", async () => {
@@ -461,12 +464,41 @@ describe("retiring slots (Review Focus 2)", () => {
     ]);
   });
 
+  it("closes the unowned slots it keeps: with no land left they can't be claimed, and says how many", async () => {
+    const db = seedRealm();
+    const job = jobFor(await stored());
+    const diff = await runWorldDryRun(db, job);
+    expect(diff.slots).toMatchObject({ keep: 1, reserved: 1 });
+    await applyWorld(db, job, undefined, { runRelief: relief() });
+    // c_old2's withdrawn claim keeps it, its border is retired by the new world: reserved, not open to claim
+    expect(country(db, "c_old2")).toMatchObject({ worldgen: true, claimable: false });
+    expect(layer(db, "political", "slot_old")).toMatchObject({ isActive: false });
+    // a player's nation is as it was (and a slot made scenery stays so)
+    expect(country(db, "c_owned")).toMatchObject({ claimable: true, ownerUserId: "u_player" });
+    expect(country(db, "c_manual")).toMatchObject({ claimable: true });
+  });
+
+  it("leaves a kept slot that is already scenery as it is, and a realm map apply closes nothing", async () => {
+    const db = seedRealm();
+    country(db, "c_old2").claimable = false;
+    await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
+    expect(country(db, "c_old2")).toMatchObject({ claimable: false });
+    const kept = seedRealm();
+    await applyWorld(kept, jobFor(await stored({ source: "realm-map" })), undefined, {
+      runRelief: relief(),
+    });
+    expect(country(kept, "c_old2")).toMatchObject({ claimable: true });
+  });
+
   it("keeps a slot a restricting foreign key holds (a blurb response), and does not count it as retired", async () => {
     const db = seedRealm();
     db.blurbResponse.rows.push({ id: "b1", countryId: "c_old1" });
     const job = jobFor(await stored());
     const diff = await runWorldDryRun(db, job);
-    expect(diff.slots).toMatchObject({ retire: 0, keep: 3 });
+    expect(diff.slots).toMatchObject({ retire: 0, keep: 1, reserved: 2 });
+    expect(diff.replaces).toContain(
+      "2 earlier nations have old claims on file and are kept as reserved, with no land"
+    );
     await applyWorld(db, job, undefined, { runRelief: relief() });
     expect(country(db, "c_old1")).toBeDefined();
     expect(db.country.deleteMany.mock.calls[0][0].where.id.in).toEqual([]);

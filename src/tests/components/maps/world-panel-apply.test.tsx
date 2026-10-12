@@ -230,7 +230,7 @@ describe("a world applied while the tab was away", () => {
               (layer) => [layer, { create: 0, change: 0, retire: 0 }]
             )
           ),
-          slots: { create: 0, retire: 0, keep: 0, renamed: 0 },
+          slots: { create: 0, retire: 0, keep: 0, reserved: 0, renamed: 0 },
           warnings: [],
           replaces: [],
         },

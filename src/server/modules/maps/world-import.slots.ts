@@ -11,8 +11,10 @@
  * map and the realm's status again, counts the pending and approved claims again and aborts if there are any. Only
  * then does it retire slots, and only those no player has: `worldgen`, no owner, no claim row at all (a claim row is
  * removed with its country, `RealmClaim.country` cascades) and no blurb response (the one foreign key that stops a
- * delete), never a country the realm's players made. New slots are created unclaimable and opened by `openSlots`
- * once the map is written, so nobody can claim a slot that has no territory yet.
+ * delete), never a country the realm's players made. The old slots that stay with no owner (an old claim row or a
+ * blurb response holds them) have no territory once the new world is written, so the same transaction closes them. New
+ * slots are created unclaimable and opened by `openSlots` once the map is written, so nobody can claim a slot that has
+ * no territory yet.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { buildBaselineCountryData } from "~/lib/countries/baseline-country";
@@ -63,6 +65,8 @@ export interface SlotStep {
   created: CreatedNation[];
   /** Every column of the slots retired, for the rollback snapshot. */
   retired: SnapshotSlotCountry[];
+  /** The ids of the kept slots that were closed (no owner, and no territory once the world is written). */
+  reserved: string[];
 }
 
 type SlotTx = Prisma.TransactionClient;
@@ -95,6 +99,23 @@ export async function retirableSlots(
   ]);
   const held = new Set([...claimed, ...blurbs].map((row) => row.countryId));
   return slots.filter((slot) => !slot.ownerUserId && !held.has(slot.id));
+}
+
+/**
+ * Close the generated slots a regeneration kept with no owner (called after the retiring, so what is left is held by a
+ * claim row or a blurb response): the new world has no territory for them, and an open one would be a nation players
+ * can claim that is not on the map. Returns the ids of those that were open.
+ */
+async function reserveKeptSlots(tx: SlotTx, realmId: string): Promise<string[]> {
+  const open = await tx.country.findMany({
+    where: { realmId, worldgen: true, ownerUserId: null, claimable: true },
+    select: { id: true },
+  });
+  const ids = open.map((slot) => slot.id);
+  if (ids.length > 0) {
+    await tx.country.updateMany({ where: { id: { in: ids } }, data: { claimable: false } });
+  }
+  return ids;
 }
 
 /** A stored JSON value as input for another column; null (nothing stored) leaves the column as it is. */
@@ -235,6 +256,7 @@ export async function replaceSlots(
         await assertNoLockingClaims(tx, realm.id);
 
         const retired = input.retire ? await retireSlots(tx, realm.id) : [];
+        const reserved = input.retire ? await reserveKeptSlots(tx, realm.id) : [];
         const nations: NewNation[] = input.slots
           ? input.slots.map((planned) => ({
               name: planned.slot.name,
@@ -257,7 +279,7 @@ export async function replaceSlots(
         for (const [index, nation] of nations.entries()) {
           created.push(await createNation(tx, current, nation, names[index]!, input.level));
         }
-        return { created, retired: retired.map(toSnapshot) };
+        return { created, retired: retired.map(toSnapshot), reserved };
       },
       { timeout: TRANSACTION_MS, maxWait: TRANSACTION_MS }
     );

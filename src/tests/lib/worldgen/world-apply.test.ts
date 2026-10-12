@@ -280,10 +280,14 @@ describe("the diff in words", () => {
   });
 
   it("sums up the nations: new, retired, kept, renamed", () => {
-    expect(slotChangeText({ create: 12, retire: 3, keep: 2, renamed: 1 })).toBe(
-      "12 new, 3 retired, 2 kept, 1 renamed"
+    expect(slotChangeText({ create: 12, retire: 3, keep: 2, reserved: 4, renamed: 1 })).toBe(
+      "12 new, 3 retired, 2 kept, 4 reserved, 1 renamed"
     );
-    expect(slotChangeText({ create: 0, retire: 0, keep: 0, renamed: 0 })).toBe("No change");
+    expect(slotChangeText({ create: 0, retire: 0, keep: 0, reserved: 0, renamed: 0 })).toBe(
+      "No change"
+    );
+    // a check stored before nations were reserved has no count of them
+    expect(slotChangeText({ create: 1, retire: 0, keep: 0, renamed: 0 })).toBe("1 new");
   });
 
   it("sums up what an apply wrote", () => {

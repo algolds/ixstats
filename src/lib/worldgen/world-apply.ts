@@ -155,17 +155,22 @@ export const layerChangeText = ({ create, change, retire }: Counts): string =>
     [retire, "retired"],
   ]);
 
-/** The nations' part of the diff: new, retired, kept (held by a player or claimed) and renamed (name taken). */
+/**
+ * The nations' part of the diff: new, retired, kept (a player holds them), reserved (kept for an old claim, with no
+ * land, so not open to claims) and renamed (name taken). A check stored before nations were reserved has no count.
+ */
 export const slotChangeText = (slots: {
   create: number;
   retire: number;
   keep: number;
+  reserved?: number;
   renamed: number;
 }): string =>
   joined([
     [slots.create, "new"],
     [slots.retire, "retired"],
     [slots.keep, "kept"],
+    [slots.reserved ?? 0, "reserved"],
     [slots.renamed, "renamed"],
   ]);
 

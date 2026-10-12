@@ -128,8 +128,10 @@ export interface WorldDiff {
     create: number;
     /** Old generated slots no player has: retired. */
     retire: number;
-    /** Old generated slots a player holds or has a claim row for: kept as they are. */
+    /** Old generated slots a player owns: kept as they are. */
     keep: number;
+    /** Old generated slots with no owner that an old claim row or response keeps: kept, closed to claims, no land. */
+    reserved: number;
     /** New slots whose name was taken in the realm and got a number. */
     renamed: number;
   };
@@ -213,6 +215,9 @@ async function replacedWarnings(
   return warnings;
 }
 
+const reservedWarning = (count: number) =>
+  `${count} earlier ${count === 1 ? "nation has an old claim on file and is" : "nations have old claims on file and are"} kept as reserved, with no land`;
+
 async function diffWorld(
   db: PrismaClient,
   realm: ImportRealm,
@@ -234,13 +239,17 @@ async function diffWorld(
     }),
     db.country.findMany({
       where: { realmId: realm.id },
-      select: { id: true, name: true, worldgen: true },
+      select: { id: true, name: true, worldgen: true, ownerUserId: true },
     }),
   ]);
   const retirable = preset ? await retirableSlots(db, realm.id) : [];
   const unlinked = preset ? [] : await unlinkedFeatures(db, realm.id);
   const retiredIds = new Set(retirable.map((slot) => slot.id));
   const survivors = countries.filter((country) => !retiredIds.has(country.id));
+  // A regeneration closes the unowned generated slots it keeps: no territory is left for them
+  const reservedIds = new Set(
+    preset ? survivors.filter((c) => c.worldgen && !c.ownerUserId).map((country) => country.id) : []
+  );
   const wanted = preset
     ? prepared.slots.map((planned) => planned.slot.name)
     : unlinked.map((n) => n.name);
@@ -256,8 +265,11 @@ async function diffWorld(
     const links = rows.filter(
       (row) => row.layerType === "political" && row.isActive && row.countryId !== null
     );
-    const kept = links.filter((row) => !retiredIds.has(row.countryId!)).length;
+    const kept = links.filter(
+      (row) => !retiredIds.has(row.countryId!) && !reservedIds.has(row.countryId!)
+    ).length;
     replaces.push(...(await replacedWarnings(db, realm.id, rows, kept)));
+    if (reservedIds.size > 0) replaces.push(reservedWarning(reservedIds.size));
     warnings.push(...replaces);
     const empty = prepared.slots.filter((planned) => planned.slot.population === 0).length;
     if (empty > 0)
@@ -282,7 +294,8 @@ async function diffWorld(
     slots: {
       create: wanted.length,
       retire: retirable.length,
-      keep: countries.filter((country) => country.worldgen).length - retirable.length,
+      keep: survivors.filter((country) => country.worldgen).length - reservedIds.size,
+      reserved: reservedIds.size,
       renamed: renamed.length,
     },
     warnings,
@@ -524,7 +537,11 @@ export async function applyWorld(
     level: bundle.params.developmentLevel,
     check,
   });
-  snapshot.slots = { retired: step.retired, created: step.created.map((c) => c.countryId) };
+  snapshot.slots = {
+    retired: step.retired,
+    created: step.created.map((c) => c.countryId),
+    reserved: step.reserved,
+  };
 
   progress.write(45, "Writing the map");
   const outcome = await writeWorld(db, job, realm, prepared, step, snapshot).catch(

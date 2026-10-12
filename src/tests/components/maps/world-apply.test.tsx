@@ -215,7 +215,7 @@ describe("the review", () => {
     expect(within(diff).getByText("Borders").nextSibling).toHaveTextContent("12 new, 3 retired");
     expect(within(diff).getByText("Lakes").nextSibling).toHaveTextContent("No change");
     expect(within(diff).getByText("Nations").nextSibling).toHaveTextContent(
-      "12 new, 3 retired, 2 kept, 1 renamed"
+      "12 new, 3 retired, 2 kept, 1 reserved, 1 renamed"
     );
   });
 

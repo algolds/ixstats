@@ -50,10 +50,14 @@ type Stored<T> = {
 };
 export type SnapshotSlotCountry = Stored<Prisma.CountryGetPayload<object>>;
 
-/** The generated nation slots a world import retired (kept whole) and created (their ids). */
+/**
+ * The generated nation slots a world import retired (kept whole), created (their ids) and closed (the ids of the kept
+ * slots it made unclaimable; absent in a snapshot taken before it did).
+ */
 export interface SnapshotSlots {
   retired: SnapshotSlotCountry[];
   created: string[];
+  reserved?: string[];
 }
 
 /** What a world import changes on the realm itself: its generation record and its relief raster layer. */
@@ -322,6 +326,16 @@ async function recreateRetiredSlots(
   return count;
 }
 
+/** Open again the kept slots the import closed: their borders come back with the map rows. */
+async function reopenReservedSlots(tx: Prisma.TransactionClient, snapshot: MapImportSnapshot) {
+  const reserved = snapshot.slots?.reserved ?? [];
+  if (reserved.length === 0) return;
+  await tx.country.updateMany({
+    where: { id: { in: reserved }, realmId: snapshot.realmId, ownerUserId: null },
+    data: { claimable: true },
+  });
+}
+
 /** Put a realm's map back as the snapshot recorded it. Batches of rows, each in its own transaction. */
 export async function restoreMapSnapshot(
   db: PrismaClient,
@@ -340,7 +354,9 @@ export async function restoreMapSnapshot(
     result.slots = await db.$transaction(
       async (tx) => {
         const { removed, kept } = await removeCreatedSlots(tx, snapshot);
-        return { restored: await recreateRetiredSlots(tx, snapshot), removed, kept };
+        const restored = await recreateRetiredSlots(tx, snapshot);
+        await reopenReservedSlots(tx, snapshot);
+        return { restored, removed, kept };
       },
       { timeout, maxWait: timeout }
     );
