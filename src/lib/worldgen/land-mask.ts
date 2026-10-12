@@ -18,7 +18,7 @@ export type LandMask = {
 };
 
 /** A realm's layers as stored: features may lack a geometry. */
-type LayerFeatures = FeatureCollection<Geometry | null>;
+export type LayerFeatures = FeatureCollection<Geometry | null>;
 
 export type LandMaskLayers = {
   background?: LayerFeatures;
@@ -67,6 +67,32 @@ export function rasterizeLandMask(layers: LandMaskLayers, width = 1024): LandMas
   const zone = rasterizeZones(layers.altitudes, rasterizer, w * h);
   if (zone) mask.zone = zone;
   return mask;
+}
+
+/** Value of `rasterizeValues` at a pixel no feature covers. */
+export const NO_VALUE = 255;
+
+/**
+ * Paint each feature's value (0-254, from `valueOf`; null skips it) over the pixels its polygon covers on the same
+ * grid as `rasterizeLandMask` (`width` by `width / 2`). Later features paint over earlier ones.
+ */
+export function rasterizeValues(
+  features: LayerFeatures | undefined,
+  width: number,
+  valueOf: (feature: Feature<Geometry | null>) => number | null
+): Uint8Array {
+  const w = Math.max(2, Math.round(width));
+  const h = Math.max(1, Math.round(w / 2));
+  const grid = new Uint8Array(w * h).fill(NO_VALUE);
+  const rasterizer = new ScanlineFiller(w, h);
+  for (const feature of features?.features ?? []) {
+    const value = valueOf(feature);
+    if (value === null) continue;
+    rasterizer.fillGeometry(feature.geometry, (row, x0, x1) =>
+      grid.fill(value, row + x0, row + x1)
+    );
+  }
+  return grid;
 }
 
 function rasterizeZones(

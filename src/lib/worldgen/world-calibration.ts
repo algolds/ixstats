@@ -7,21 +7,13 @@
  * reference is what was measured on the two maps (see the note on `WORLD_PRESETS`) and is kept here.
  */
 
+import { CLIMATE_GROUP_NAMES, TREWARTHA_GROUPS, type TrewarthaGroup } from "./measure-world";
 import { ELEVATION_ZONES, WORLD_PRESETS, getElevationZone } from "./v2/config";
 import type { WorldPreviewStats } from "./world-stats";
 
-export const CLIMATE_GROUPS = ["A", "B", "C", "D", "E", "F", "H"] as const;
-type ClimateGroup = (typeof CLIMATE_GROUPS)[number];
-
-export const CLIMATE_GROUP_NAMES: Record<ClimateGroup, string> = {
-  A: "Tropical",
-  B: "Dry",
-  C: "Subtropical",
-  D: "Temperate",
-  E: "Boreal",
-  F: "Polar",
-  H: "Highland",
-};
+export { CLIMATE_GROUP_NAMES };
+export const CLIMATE_GROUPS = TREWARTHA_GROUPS;
+type ClimateGroup = TrewarthaGroup;
 
 type Targets = { ixnay: number | null; eurth: number | null };
 

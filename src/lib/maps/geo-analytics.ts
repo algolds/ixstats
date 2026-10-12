@@ -225,15 +225,15 @@ const KOPPEN_TO_TREWARTHA: Array<[RegExp, string]> = [
   [/^EF/, "Fi"],
 ];
 
-/**
- * The Trewartha type (full name, e.g. "Temperate Oceanic (Do)") whose metadata the estimates use for a climate
- * key's zone code: a Trewartha code itself, else the nearest type to a Köppen code (Cfb → Do); null if neither.
- */
+/** The Trewartha code of a zone code: itself, or the nearest type to a Köppen code (Cfb → Do); null if neither. */
+export function trewarthaCodeOf(code: string): string | null {
+  const nearest = KOPPEN_TO_TREWARTHA.find(([re]) => re.test(code))?.[1];
+  return CLIMATE_CODE_TO_NAME[code] ? code : (nearest ?? null);
+}
+
+/** The Trewartha type (full name, e.g. "Temperate Oceanic (Do)") of a climate key's zone code; null if neither. */
 export function climateMetadataType(code: string): string | null {
-  const trewartha = CLIMATE_CODE_TO_NAME[code]
-    ? code
-    : KOPPEN_TO_TREWARTHA.find(([re]) => re.test(code))?.[1];
-  return trewartha ? (CLIMATE_CODE_TO_NAME[trewartha] ?? null) : null;
+  return CLIMATE_CODE_TO_NAME[trewarthaCodeOf(code) ?? ""] ?? null;
 }
 
 /** Canonical Trewartha fill colors → climate code. Used to identify climate zones from SVG map data. */
