@@ -11,6 +11,7 @@ import {
   rasterMaxZoom,
   rasterTilePath,
   remapRows,
+  sameRasterLayer,
   tileSourceRows,
   withRasterLayer,
 } from "~/lib/maps/raster-tiles";
@@ -164,5 +165,21 @@ describe("settings upsert", () => {
       ["climate", "aaaaaaaa"],
     ]);
     expect(withRasterLayer(start, layer({ id: "tectonic", kind: "overlay" }))).toHaveLength(3);
+  });
+
+  it("tells a layer as recorded from one built anew", () => {
+    const built = layer({ kind: "overlay", order: 10 });
+    expect(sameRasterLayer(undefined, built)).toBe(false);
+    expect(sameRasterLayer({ ...built }, built)).toBe(true);
+    for (const change of [
+      { label: "Relief" },
+      { kind: "base" as const },
+      { version: "bbbbbbbb" },
+      { maxZoom: 4 },
+      { order: 2 },
+      { legend: true },
+    ]) {
+      expect(sameRasterLayer({ ...built, ...change }, built)).toBe(false);
+    }
   });
 });

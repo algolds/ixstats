@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { NextRequest } from "next/server";
+import sharp from "sharp";
 
 const auth = jest.fn().mockResolvedValue({ userId: null });
 jest.mock("@clerk/nextjs/server", () => ({ auth: () => auth() }));
@@ -17,6 +18,7 @@ jest.mock("~/server/db", () => ({
 
 import { GET as getTile } from "~/app/api/map-rasters/[realm]/[layer]/[version]/[z]/[x]/[y]/route";
 import { GET as getLegend } from "~/app/api/map-rasters/[realm]/[layer]/[version]/legend/route";
+import { transparentRasterTile } from "~/server/modules/maps/realm-rasters.serve";
 
 const VERSION = "0123456789abcdef";
 let root: string;
@@ -28,6 +30,10 @@ beforeAll(() => {
   mkdirSync(path.join(dir, "2", "1"), { recursive: true });
   writeFileSync(path.join(dir, "2", "1", "3.webp"), Uint8Array.from([7, 8, 9]));
   writeFileSync(path.join(dir, "legend.webp"), Uint8Array.from([4, 5]));
+  // A relief layer builds only the tiles with shading in them
+  const relief = path.join(root, "r_eurth", "relief", VERSION);
+  mkdirSync(path.join(relief, "2", "1"), { recursive: true });
+  writeFileSync(path.join(relief, "2", "1", "3.webp"), Uint8Array.from([5, 6]));
   // A file next to the realm folders that no URL may reach
   writeFileSync(path.join(root, "secret.webp"), Uint8Array.from([1]));
 });
@@ -114,5 +120,51 @@ describe("GET /api/map-rasters", () => {
     const res = await tile("r_eurth", "geography", VERSION, "2", "1", "3");
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("private, no-store");
+  });
+
+  describe("a relief tile that was not built", () => {
+    const alpha = async (res: Response) => {
+      const { data, info } = await sharp(new Uint8Array(await res.arrayBuffer()))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      return { size: [info.width, info.height], opaque: data.some((v, i) => i % 4 === 3 && v > 0) };
+    };
+
+    it("serves a built relief tile as it is", async () => {
+      const res = await tile("r_eurth", "relief", VERSION, "2", "1", "3");
+      expect(new Uint8Array(await res.arrayBuffer())).toEqual(Uint8Array.from([5, 6]));
+    });
+
+    it("is one transparent 256 px tile, cached for good like any other", async () => {
+      const res = await tile("r_eurth", "relief", VERSION, "2", "0", "0");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("image/webp");
+      expect(res.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
+      expect(await alpha(res)).toEqual({ size: [256, 256], opaque: false });
+    });
+
+    it("is built once per process", async () => {
+      expect(transparentRasterTile()).toBe(transparentRasterTile());
+      const a = new Uint8Array(
+        await (await tile("r_eurth", "relief", VERSION, "2", "0", "0")).arrayBuffer()
+      );
+      const b = new Uint8Array(
+        await (await tile("r_eurth", "relief", VERSION, "3", "7", "7")).arrayBuffer()
+      );
+      expect(b).toEqual(a);
+      expect(b).toEqual(await transparentRasterTile());
+    });
+
+    it("stays a 404 for a version that was never built, a legend, and a tile outside the pyramid", async () => {
+      expect((await tile("r_eurth", "relief", "fedcba9876543210", "2", "0", "0")).status).toBe(404);
+      expect((await legend("r_eurth", "relief", VERSION)).status).toBe(404);
+      expect((await tile("r_eurth", "relief", VERSION, "2", "4", "0")).status).toBe(404);
+    });
+
+    it("keeps the realm's access rules", async () => {
+      realmFind.mockResolvedValue({ id: "r_eurth", status: "draft", ownerId: "clerk_owner" });
+      expect((await tile("r_eurth", "relief", VERSION, "2", "0", "0")).status).toBe(404);
+    });
   });
 });

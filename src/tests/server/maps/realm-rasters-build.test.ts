@@ -5,12 +5,13 @@
  * (the high-latitude band included, where an image stretched without reprojection would be far off), the legend
  * is written, the grey copy is grey, a version is built once, and stale versions are pruned.
  */
-import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import {
   buildRealmRaster,
+  planRealmRaster,
   pruneRasterVersions,
   rasterVersion,
 } from "~/server/modules/maps/realm-rasters.build";
@@ -162,5 +163,108 @@ describe("buildRealmRaster", () => {
     expect(await pruneRasterVersions("r1", "geo", [b.version, c.version])).toEqual([a.version]);
     expect(existsSync(a.dir)).toBe(false);
     expect(existsSync(c.dir)).toBe(true);
+  });
+});
+
+/** A 512×256 globe, fully transparent except an opaque blob at 170°W–100°W, 40°N–70°N. */
+async function blobGlobe(opaque = true): Promise<Uint8Array> {
+  const data = new Uint8Array(W * H * 4);
+  if (opaque) {
+    for (let y = 28; y < 72; y++) {
+      for (let x = 14; x < 114; x++) data.set([20, 20, 20, 160], (y * W + x) * 4);
+    }
+  }
+  return new Uint8Array(
+    await sharp(data, { raw: { width: W, height: H, channels: 4 } })
+      .png()
+      .toBuffer()
+  );
+}
+
+const isLossless = (file: string) => readFileSync(file).includes("VP8L");
+
+describe("build options", () => {
+  it("names a layer built without options as it always has been", () => {
+    const image = Uint8Array.from([1, 2, 3, 4]);
+    expect(rasterVersion({ kind: "overlay", image })).toBe("b28c04de8afacfa7");
+    expect(
+      rasterVersion({ kind: "base", image, grey: true, legend: Uint8Array.from([9, 9]) })
+    ).toBe("beb3dbec60744120");
+  });
+
+  it("puts the zoom, the lossy quality and the transparent skip in the version", () => {
+    const base = { kind: "overlay" as const, image: Uint8Array.from([1, 2, 3, 4]) };
+    const lossy = { quality: 70, alphaQuality: 60 };
+    const versions = [
+      rasterVersion(base),
+      rasterVersion({ ...base, maxZoom: 5 }),
+      rasterVersion({ ...base, maxZoom: 4 }),
+      rasterVersion({ ...base, lossy }),
+      rasterVersion({ ...base, lossy: { ...lossy, alphaQuality: 61 } }),
+      rasterVersion({ ...base, skipTransparent: true }),
+      rasterVersion({ ...base, maxZoom: 5, lossy, skipTransparent: true }),
+    ];
+    expect(new Set(versions).size).toBe(versions.length);
+  });
+
+  it("plans and builds to the zoom asked for, past the image's own resolution", async () => {
+    const input = {
+      realmId: "r1",
+      layerId: "relief",
+      kind: "overlay" as const,
+      image: await blobGlobe(),
+      maxZoom: 3,
+    };
+    expect((await planRealmRaster(input)).maxZoom).toBe(3);
+    const result = await buildRealmRaster(input);
+    expect(result).toMatchObject({ maxZoom: 3, tiles: 85, skipped: 0 });
+    expect(existsSync(path.join(result.dir, "3", "7", "7.webp"))).toBe(true);
+    await expect(planRealmRaster({ ...input, maxZoom: 9 })).rejects.toThrow(/zoom/i);
+  });
+
+  it("writes lossy WebP for an overlay when asked, lossless otherwise", async () => {
+    const input = {
+      realmId: "r1",
+      layerId: "relief",
+      kind: "overlay" as const,
+      image: await blobGlobe(),
+    };
+    const lossless = await buildRealmRaster(input);
+    expect(isLossless(path.join(lossless.dir, "0", "0", "0.webp"))).toBe(true);
+    const lossy = await buildRealmRaster({ ...input, lossy: { quality: 70, alphaQuality: 60 } });
+    expect(lossy.version).not.toBe(lossless.version);
+    expect(isLossless(path.join(lossy.dir, "0", "0", "0.webp"))).toBe(false);
+  });
+
+  it("leaves fully transparent tiles out and counts them", async () => {
+    const result = await buildRealmRaster({
+      realmId: "r1",
+      layerId: "relief",
+      kind: "overlay",
+      image: await blobGlobe(),
+      maxZoom: 2,
+      skipTransparent: true,
+    });
+    expect(result.tiles + result.skipped).toBe(21);
+    expect(result.skipped).toBeGreaterThan(0);
+    expect(result.tiles).toBeGreaterThan(0);
+    expect(existsSync(path.join(result.dir, "2", "0", "1.webp"))).toBe(true); // the blob's tile
+    expect(existsSync(path.join(result.dir, "2", "3", "3.webp"))).toBe(false); // open sea
+    expect(existsSync(path.join(result.dir, "0", "0", "0.webp"))).toBe(true);
+  });
+
+  it("builds a layer whose every tile is transparent, and finds it built next time", async () => {
+    const input = {
+      realmId: "r1",
+      layerId: "relief",
+      kind: "overlay" as const,
+      image: await blobGlobe(false),
+      maxZoom: 1,
+      skipTransparent: true,
+    };
+    const first = await buildRealmRaster(input);
+    expect(first).toMatchObject({ built: true, tiles: 0, skipped: 5 });
+    expect(existsSync(first.dir)).toBe(true);
+    expect(await buildRealmRaster(input)).toMatchObject({ built: false });
   });
 });

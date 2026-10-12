@@ -3,7 +3,7 @@
  * `<realmId>/<layerId>/<version>/<z>/<x>/<y>.webp` plus `legend.webp`. Every path segment is checked against a
  * strict pattern before it is joined, so a request can never reach outside the folder. Server only.
  */
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { isRasterTileCoord } from "~/lib/maps/raster-tiles";
 import { RealmRasterLayerSchema } from "~/lib/maps/realm-map-settings";
@@ -37,6 +37,13 @@ export function rasterTileFile(dir: string, z: number, x: number, y: number): st
 }
 
 export const RASTER_LEGEND_FILE = "legend.webp";
+
+/** Whether a built version's folder exists. */
+export const rasterVersionExists = (dir: string) =>
+  stat(dir).then(
+    (info) => info.isDirectory(),
+    () => false
+  );
 
 /** A file's bytes, or null when it does not exist. */
 export async function readRasterFile(file: string): Promise<Uint8Array | null> {
