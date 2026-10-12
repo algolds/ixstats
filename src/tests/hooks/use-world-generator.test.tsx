@@ -2,7 +2,7 @@
  * The world generator hook: one worker for the editor's life, a new generate replacing any in flight, stale
  * answers dropped, and a failed run leaving the last good world in place.
  */
-import { StrictMode } from "react";
+import { Activity, StrictMode } from "react";
 import { act, renderHook } from "@testing-library/react";
 
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
@@ -341,6 +341,27 @@ describe("useWorldGenerator", () => {
     act(() => result.current.generate({}, 3));
     expect(workers).toHaveLength(2);
     expect(result.current.state).toBe("generating");
+  });
+
+  it("reset also drops a world that state kept after the session was gone (Activity hidden, then shown)", () => {
+    const { factory, workers } = fakeWorldWorkers();
+    let mode: "visible" | "hidden" = "visible";
+    const { result, rerender } = renderHook(() => useWorldGenerator(factory), {
+      wrapper: ({ children }) => <Activity mode={mode}>{children}</Activity>,
+    });
+    act(() => result.current.generate({}, 1));
+    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!), { seed: 5 })));
+
+    // Hiding unmounts the effects (the session is disposed); the state stays
+    mode = "hidden";
+    rerender();
+    mode = "visible";
+    rerender();
+    expect(workers[0]!.terminated).toBe(true);
+    expect(result.current.result!.seed).toBe(5);
+
+    act(() => result.current.reset());
+    expect(result.current).toMatchObject({ state: "idle", result: null, error: null });
   });
 
   it("reset clears an error and the world of an idle generator, with no worker to end", () => {

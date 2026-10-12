@@ -320,9 +320,17 @@ export class WorldDraft {
     if (event.isSourceLoaded) this.release(event.sourceId);
   };
 
-  /** A source that failed to load will not read its URLs either. */
+  /**
+   * A source that failed to load will not read its URLs either, unless a newer load is queued behind the one that
+   * failed (the source is then not `loaded()`); that one releases them. Listening to `error` makes MapLibre stop
+   * logging errors itself, so every one is logged here.
+   */
   private readonly onError = (event: MapErrorEvent & { sourceId?: string }): void => {
-    if (event.sourceId !== undefined) this.release(event.sourceId);
+    console.error(event.error);
+    const { sourceId } = event;
+    if (sourceId === undefined) return;
+    if ((this.map.getSource(sourceId) as GeoJSONSource | undefined)?.loaded() === false) return;
+    this.release(sourceId);
   };
 
   private release(sourceId: string): void {

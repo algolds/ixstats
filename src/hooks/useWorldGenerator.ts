@@ -48,7 +48,11 @@ export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenera
     [createWorker]
   );
   const cancel = useCallback(() => session.current?.cancel(), []);
-  const reset = useCallback(() => session.current?.reset(), []);
+  const reset = useCallback(() => {
+    session.current?.reset();
+    // The session may be gone (Activity hid the host) while React kept the view
+    setView(IDLE_VIEW);
+  }, []);
 
   useEffect(() => {
     mounted.current = true;

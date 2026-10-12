@@ -23,10 +23,13 @@ class StubImageData {
 /** Blob URLs created and revoked, in order. */
 let created: { url: string; size: number; type: string }[];
 let revoked: string[];
+/** The draft logs the map errors it listens to; the tests that emit one read it here. */
+let errorLog: jest.SpyInstance;
 
 beforeEach(() => {
   created = [];
   revoked = [];
+  errorLog = jest.spyOn(console, "error").mockImplementation(() => {});
   Object.defineProperty(globalThis, "ImageData", { value: StubImageData, configurable: true });
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
@@ -41,6 +44,8 @@ beforeEach(() => {
     value: (url: string) => revoked.push(url),
   });
 });
+
+afterEach(() => errorLog.mockRestore());
 
 /** The live layers of a realm's map, as the world map names them, under a base style layer. */
 const LIVE = [
@@ -322,6 +327,18 @@ describe("useWorldPreview", () => {
       expect(rig.visibility("stroke-political")).toBe("none");
       expect(rig.visibility("fill-political")).toBeUndefined();
     });
+
+    it("leaves a border layer the user hid by hand alone when the world is cleared", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      act(() => rig.show(keptBorders()));
+      expect(rig.visibility("fill-political")).toBeUndefined();
+
+      rig.fake.setLayoutProperty("fill-political", "visibility", "none");
+      act(() => rig.show(null));
+
+      expect(rig.visibility("fill-political")).toBe("none");
+    });
   });
 
   describe("blob URLs", () => {
@@ -402,6 +419,38 @@ describe("useWorldPreview", () => {
       expect(revoked).toHaveLength(5);
       expect(rig.listeners("error")).toBe(0);
       expect(rig.listeners("sourcedata")).toBe(0);
+    });
+
+    it("are kept when their source fails with a newer load queued, until that load finishes", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      const first = String(rig.sources.get("worldgen-draft-lakes")!.spec.data);
+      act(() =>
+        rig.show(worldResult({ layers: { ...worldResult().layers, lakes: layerJson("2") } }))
+      );
+      const second = rig.sources.get("worldgen-draft-lakes")!.setData.mock.calls[0]![0];
+
+      // The first load fails with the second still queued behind it: nothing is revoked yet
+      rig.sources.get("worldgen-draft-lakes")!.loaded.mockReturnValue(false);
+      act(() => rig.emit("error", { sourceId: "worldgen-draft-lakes" }));
+      expect(revoked).toEqual([]);
+
+      // The second one finishes: both go
+      rig.sources.get("worldgen-draft-lakes")!.loaded.mockReturnValue(true);
+      act(() => rig.emit("sourcedata", { sourceId: "worldgen-draft-lakes", isSourceLoaded: true }));
+      expect(revoked.sort()).toEqual([first, second].sort());
+    });
+
+    it("do not hide the map errors the draft listens to: they are still logged", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      const failure = new Error("Unexpected token in GeoJSON");
+      const live = new Error("tile 404");
+
+      act(() => rig.emit("error", { sourceId: "worldgen-draft-lakes", error: failure }));
+      act(() => rig.emit("error", { sourceId: "source-political", error: live }));
+
+      expect(errorLog.mock.calls).toEqual([[failure], [live]]);
     });
 
     it("are all revoked when the draft is cleared before they load", () => {

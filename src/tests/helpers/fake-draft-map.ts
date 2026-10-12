@@ -15,10 +15,12 @@ export type FakeSource = {
   spec: Record<string, SpecValue>;
   setData: jest.Mock<Promise<void>, [string]>;
   updateImage: jest.Mock<void, [ImageUpdate]>;
+  /** False while a load is queued behind the one in flight, as on a real GeoJSON source */
+  loaded: jest.Mock<boolean, []>;
 };
 
 /** The parts of a MapLibre event the preview reads (`error` events carry the id of a failing source too). */
-type MapEvent = { sourceId?: string; isSourceLoaded?: boolean };
+type MapEvent = { sourceId?: string; isSourceLoaded?: boolean; error?: Error };
 type Handler = (event: MapEvent) => void;
 
 export function fakeDraftMap(live: (string | { id: string; visibility: string })[] = []) {
@@ -50,6 +52,7 @@ export function fakeDraftMap(live: (string | { id: string; visibility: string })
         spec,
         setData: jest.fn((_url: string) => Promise.resolve()),
         updateImage: jest.fn((_update: ImageUpdate) => {}),
+        loaded: jest.fn(() => true),
       });
     }),
     removeSource: jest.fn((id: string) => {
