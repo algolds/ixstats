@@ -4,8 +4,9 @@
  * useMapLayerData - the map's geometry layers, downloaded as packed JSON from the versioned layer route
  * (`/api/map-layers/<realm>/<version>/<layer>?bucket=&format=`). The URL names the realm's map version
  * (`useRealmMapVersion`) and the loader format of this build (`layer-format.ts`), so a changed map or build is a new
- * URL and an unchanged one is the browser's cached copy: a second load downloads nothing. React Query keeps each URL's response for the session (it never goes stale; the version
- * moves the key instead).
+ * URL and an unchanged one is the browser's cached copy: a second load downloads nothing. React Query keeps a URL's
+ * response while its version is the current one (it never goes stale; the version moves the key instead) and drops
+ * the realm's older versions once the version moves, so a long editing session does not pile up old maps.
  */
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -17,13 +18,11 @@ import { unpackLayers, type PackedFeatureCollection } from "~/lib/maps/geojson-p
 import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
 import { dropLegacyMapCache } from "~/lib/maps/legacy-map-cache";
 import type { MapLayerType } from "~/lib/maps/map-config";
+import { dropStaleLayerQueries, MAP_LAYER_QUERY_KEY } from "~/lib/maps/stale-map-queries";
 import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 
 /** The layer's level of detail: 0 globe, 1 mid (below zoom 7), 2 detail. */
 export type MapLayerBucket = 0 | 1 | 2;
-
-/** Key prefix of every layer query, for invalidating them all. */
-const MAP_LAYER_QUERY_KEY = "map-layer";
 
 function mapLayerUrl(
   realmId: string,
@@ -112,17 +111,12 @@ export function useMapLayerData({
 }: UseMapLayerDataOptions) {
   const { mapVersion, error: versionError } = useRealmMapVersion(realm, enabled);
   const realmId = mapVersion?.realmId;
+  const version = mapVersion?.version;
+  const queryClient = useQueryClient();
   useEffect(dropLegacyMapCache, []);
   const combined = useQueries({
     queries: layers.map((layer) => ({
-      queryKey: [
-        MAP_LAYER_QUERY_KEY,
-        realmId,
-        mapVersion?.version,
-        LAYER_FORMAT_VERSION,
-        layer,
-        bucket,
-      ],
+      queryKey: [MAP_LAYER_QUERY_KEY, realmId, version, LAYER_FORMAT_VERSION, layer, bucket],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
         fetchLayer(
           mapLayerUrl(mapVersion!.realmId, mapVersion!.version, layer, bucket),
@@ -136,6 +130,14 @@ export function useMapLayerData({
     })),
     combine: combineLayers,
   });
+
+  // The queries of the versions before this one have no observer now (the effect that re-keys them runs first), and
+  // the shown ref below keeps their data on screen: drop them, or each save adds ~5 MB to the tab for 2 h.
+  useEffect(() => {
+    if (realmId !== undefined && version !== undefined) {
+      dropStaleLayerQueries(queryClient, realmId, version);
+    }
+  }, [queryClient, realmId, version]);
 
   // A new version is a new query with no data of its own (React Query matches queries to observers by key), so the
   // previous version's layers stay on show until the new ones arrive. Only the same realm's: another realm's layers

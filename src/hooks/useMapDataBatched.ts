@@ -12,7 +12,8 @@
  *   load one request per layer.
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type {
@@ -24,6 +25,7 @@ import type { FeatureCollection } from "geojson";
 import { useMapLayerData, type MapLayerBucket } from "~/hooks/useMapLayerData";
 import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
+import { dropStaleOverlayQueries } from "~/lib/maps/stale-map-queries";
 import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
 import { CRITICAL_LAYERS, LOCKED_LAYERS, MAP_QUERY_OPTIONS } from "./useMapData";
 
@@ -53,6 +55,19 @@ function getMapZoomBucket(zoom: number | undefined): 0 | 1 | 2 | undefined {
  * up to the zoom-7 detail bucket, beyond. The map only reports zoom when this changes. */
 export function getZoomBand(zoom: number): number {
   return [DETAIL_FETCH_ZOOM, 4, 7].filter((edge) => zoom >= edge).length;
+}
+
+/**
+ * `data`, or while a moved map version's query has none yet, the realm's previous data: cities and subdivisions
+ * stay drawn through an edit instead of blinking off. Never another realm's.
+ */
+function useKeptForRealm<T>(data: T | undefined, realmId: string | undefined): T | undefined {
+  const kept = useRef<{ realmId?: string; data?: T }>({});
+  const shown = data ?? (kept.current.realmId === realmId ? kept.current.data : undefined);
+  useEffect(() => {
+    kept.current = { realmId, data: shown };
+  }, [realmId, shown]);
+  return shown;
 }
 
 /** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
@@ -93,11 +108,20 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   // live-sync event arrives.
   const { mapVersion } = useRealmMapVersion(realm);
   const version = mapVersion?.version;
+  const realmId = mapVersion?.realmId;
 
-  const { data: markers } = api.geoCore.getMapBundleMarkers.useQuery(
+  // Each version's answers are their own queries: drop the older versions' once the version moves, or they sit in
+  // memory for the 2 h gcTime (the kept data below holds what is on screen).
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (version !== undefined) dropStaleOverlayQueries(queryClient, realm, version);
+  }, [queryClient, realm, version]);
+
+  const { data: markersAtVersion } = api.geoCore.getMapBundleMarkers.useQuery(
     { realm, version },
     { ...MAP_QUERY_OPTIONS, enabled: version !== undefined }
   );
+  const markers = useKeptForRealm(markersAtVersion, realmId);
 
   // Cities and subdivisions draw from zoom 4: fetch them once the viewer first passes zoom 3, so
   // they are there in time and the globe view never downloads them. Latched: zooming back out
@@ -106,10 +130,11 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   useEffect(() => {
     if ((zoom ?? 0) >= DETAIL_FETCH_ZOOM) setWantDetail(true);
   }, [zoom]);
-  const { data: detail } = api.geoCore.getMapBundleDetail.useQuery(
+  const { data: detailAtVersion } = api.geoCore.getMapBundleDetail.useQuery(
     { realm, version },
     { ...MAP_QUERY_OPTIONS, enabled: wantDetail && version !== undefined }
   );
+  const detail = useKeptForRealm(detailAtVersion, realmId);
 
   // Both arrive packed
   const criticalLayers = useMemo(

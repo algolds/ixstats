@@ -175,6 +175,51 @@ describe("useMapLayerData", () => {
     );
   });
 
+  it("drops the previous version's layer queries once the version moves, keeping other realms' and the shown map", async () => {
+    queryClient.setQueryData(["map-layer", "r_other", 9, 1, "political", 1], "another realm");
+    const { result, rerender } = renderHook(() => useMapLayerData({ layers: ["political"] }), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    const before = result.current.packed?.political;
+    const layerVersions = () =>
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["map-layer"] })
+        .map((q) => `${q.queryKey[1]}/${q.queryKey[2]}`)
+        .sort();
+    expect(layerVersions()).toEqual(["default/3", "r_other/9"]);
+
+    mockVersion = { realmId: "default", version: 4 };
+    rerender();
+    await waitFor(() => expect(layerVersions()).toEqual(["default/4", "r_other/9"]));
+
+    // the map still draws the previous version's data until the new one lands; then the new one
+    await waitFor(() => expect(result.current.packed?.political).not.toBe(before));
+    expect(layerVersions()).toEqual(["default/4", "r_other/9"]);
+  });
+
+  it("keeps a version's layers that another mounted map still shows", async () => {
+    const other = renderHook(() => useMapLayerData({ layers: ["political"], realm: "other" }), {
+      wrapper,
+    });
+    await waitFor(() => expect(other.result.current.isPending).toBe(false));
+
+    // the same realm under a different slug has moved on: the first map still observes version 3
+    mockVersion = { realmId: "default", version: 4 };
+    const moved = renderHook(() => useMapLayerData({ layers: ["political"], realm: "ixnay" }), {
+      wrapper,
+    });
+    await waitFor(() => expect(moved.result.current.isPending).toBe(false));
+
+    const versions = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ["map-layer"] })
+      .map((q) => q.queryKey[2]);
+    expect(versions).toContain(3);
+    expect(versions).toContain(4);
+  });
+
   it("escapes the realm in the URL", async () => {
     mockVersion = { realmId: "a/b", version: 0 };
     const { result } = renderHook(() => useMapLayerData({ layers: ["background"] }), { wrapper });
