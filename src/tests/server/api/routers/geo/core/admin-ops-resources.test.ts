@@ -41,7 +41,7 @@ function makeDb() {
     },
     mapLayer: { findMany: jest.fn(async () => []) },
     countryGeoProfile: {
-      updateMany: jest.fn(async () => ({ count: 2 })),
+      updateMany: jest.fn(async (_args: { data: object }) => ({ count: 2 })),
       upsert: jest.fn(async () => ({})),
     },
   };

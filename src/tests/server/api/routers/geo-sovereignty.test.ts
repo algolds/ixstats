@@ -5,7 +5,8 @@
  * the political map.
  *
  * `jest` is the ambient global (not imported from "@jest/globals") because the hoisted
- * jest.mock() factories below call jest.fn() inline; see trpc-impersonation.test.ts.
+ * jest.mock() factories below call jest.fn() inline; see trpc-impersonation.test.ts. So is `expect`: the
+ * imported one types toHaveBeenCalledWith(db, ...) by the real function's parameters, and a mock db is no PrismaClient.
  */
 jest.mock("~/server/shared/map-invalidation", () => ({
   __esModule: true,
@@ -18,7 +19,7 @@ jest.mock("~/lib/maps/map-update-bus", () => ({
   broadcastMapUpdate: jest.fn(),
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoSovereigntyRouter } from "~/server/api/routers/geo/sovereignty";
 import { invalidateAllRealmMaps, invalidateRealmMap } from "~/server/shared/map-invalidation";

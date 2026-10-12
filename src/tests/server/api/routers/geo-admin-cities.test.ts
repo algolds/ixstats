@@ -5,7 +5,8 @@
  * outside it are skipped; one failed row does not abort the batch.
  *
  * `jest` is the ambient global (not imported from "@jest/globals") because the hoisted
- * jest.mock() factories below call jest.fn() inline; see trpc-impersonation.test.ts.
+ * jest.mock() factories below call jest.fn() inline; see trpc-impersonation.test.ts. So is `expect`: the
+ * imported one types toHaveBeenCalledWith(db, ...) by the real function's parameters, and a mock db is no PrismaClient.
  */
 jest.mock("~/lib/country-geo", () => ({
   __esModule: true,
@@ -29,7 +30,7 @@ jest.mock("~/lib/city-importer/svg-points", () => ({
   parseCitySvg: jest.fn().mockReturnValue({ layers: [], points: [] }),
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoAdminCitiesRouter } from "~/server/api/routers/geo/admin/cities";
 import { upsertCity } from "~/lib/country-geo";

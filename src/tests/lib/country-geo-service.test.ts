@@ -233,7 +233,7 @@ describe("country-geo-service - Rollups & Reconciliation", () => {
 
   describe("distributeSubdivisionDemographicsToCities", () => {
     /** The rows written by the batched UPDATE statements, in order: one `{ id, population, gdp }` each. */
-    function writtenCityRows() {
+    function writtenCityRows(): Array<{ id: string; population: number; gdp: number }> {
       return mockDb.$executeRawUnsafe.mock.calls.flatMap(
         ([, ids, populations, gdps]: [string, string[], number[], number[]]) =>
           ids.map((id, n) => ({ id, population: populations[n], gdp: gdps[n] }))

@@ -75,28 +75,36 @@ describe("lookupCityPoints", () => {
 
   /** Answers the containment query (it names the `unnest` of points and `subdivisions`) and the water query. */
   function batchDb(over: { containment?: object[] | Error; water?: object[] | Error } = {}) {
-    const $queryRawUnsafe = jest.fn(async (sql: string, _countryId: string, indexes: number[]) => {
-      const n = indexes.length;
-      if (sql.includes("subdivisions")) {
-        if (over.containment instanceof Error) throw over.containment;
+    const $queryRawUnsafe = jest.fn(
+      async (
+        sql: string,
+        _countryId: string,
+        indexes: number[],
+        _lngs?: number[],
+        _lats?: number[]
+      ) => {
+        const n = indexes.length;
+        if (sql.includes("subdivisions")) {
+          if (over.containment instanceof Error) throw over.containment;
+          return (
+            over.containment ??
+            Array.from({ length: n }, (_, i) => ({
+              i,
+              is_inside: i % 2 === 0,
+              subdivisionId: i % 2 === 0 ? `sub${i}` : null,
+            }))
+          );
+        }
+        if (over.water instanceof Error) throw over.water;
         return (
-          over.containment ??
-          Array.from({ length: n }, (_, i) => ({
-            i,
-            is_inside: i % 2 === 0,
-            subdivisionId: i % 2 === 0 ? `sub${i}` : null,
-          }))
+          over.water ??
+          Array.from({ length: n }, (_, i) => [
+            { i, type: "rivers", distance: i + 0.5 },
+            { i, type: "lakes", distance: 100 + i },
+          ]).flat()
         );
       }
-      if (over.water instanceof Error) throw over.water;
-      return (
-        over.water ??
-        Array.from({ length: n }, (_, i) => [
-          { i, type: "rivers", distance: i + 0.5 },
-          { i, type: "lakes", distance: 100 + i },
-        ]).flat()
-      );
-    });
+    );
     return { db: { $queryRawUnsafe } as never, $queryRawUnsafe };
   }
 
