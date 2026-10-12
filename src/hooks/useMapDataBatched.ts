@@ -242,11 +242,6 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     toggleLayer,
     isLoading,
     error: criticalError,
-    /** The realm these layers are for (tile URLs use it): the server's answer once the bundle is in;
-     * before that, without ?realm=, the viewer's realm, which is what the server resolves then too */
-    realmId:
-      (criticalIsPlaceholder ? undefined : criticalBundle?.realmId) ??
-      (realm ? undefined : viewerRealmId),
     overlayFeatures,
     capitalsGeoJson,
   };

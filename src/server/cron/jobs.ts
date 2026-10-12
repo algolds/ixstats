@@ -367,6 +367,25 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     },
   },
   {
+    // Map tiles (docs/systems/maps.md): renders z0-3 of a published realm's altitudes, rivers and lakes when its map
+    // version has changed, so the first visitor finds them cached, and removes tile folders of outlived versions.
+    // Needs MAP_TILE_DIR to match the web server's (their working directories differ).
+    name: "map-tiles",
+    defaultSchedule: "*/5 * * * *",
+    lockName: "map-tiles",
+    // Above the run's own budget (MAP_TILE_RUN_BUDGET_MS, 15 min), so the lease never expires mid-tile.
+    timeoutMs: 25 * MINUTE,
+    modulePath: "~/server/modules/maps/tile-prerender",
+    exportName: "runMapTilePrerender",
+    load: async () => {
+      const [{ runMapTilePrerender }, { db }] = await Promise.all([
+        import("~/server/modules/maps/tile-prerender"),
+        import("~/server/db"),
+      ]);
+      return () => runMapTilePrerender(db);
+    },
+  },
+  {
     // Realm map imports (docs/systems/maps.md): runs queued analyses (PNG tracing in a worker thread) and any
     // apply job the web process left queued, one realm at a time under `map-import:<realmId>` leases.
     name: "map-import",

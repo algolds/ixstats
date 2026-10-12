@@ -35,10 +35,17 @@ beforeAll(() => {
 afterAll(() => {
   rmSync(root, { recursive: true, force: true });
   delete process.env.MAP_RASTER_DIR;
+  jest.restoreAllMocks();
 });
+
+// The realm row is memoised for 60 s (realm-tile-access.ts) and each test sets its own, so every test starts a
+// minute later than the last
+let clock = Date.now();
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clock += 61_000;
+  jest.spyOn(Date, "now").mockReturnValue(clock);
   realmFind.mockResolvedValue({ id: "r_eurth", status: "active", ownerId: "clerk_owner" });
 });
 

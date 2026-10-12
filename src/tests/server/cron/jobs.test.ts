@@ -42,6 +42,16 @@ describe("CRON_JOBS", () => {
     expect(job?.timeoutMs).toBeGreaterThan(20 * 60_000);
   });
 
+  it("pre-renders map tiles under its own lease, longer than the run's budget", () => {
+    const job = CRON_JOBS.find((j) => j.name === "map-tiles");
+    expect(job).toMatchObject({
+      lockName: "map-tiles",
+      modulePath: "~/server/modules/maps/tile-prerender",
+      exportName: "runMapTilePrerender",
+    });
+    expect(job?.timeoutMs).toBeGreaterThan(15 * 60_000);
+  });
+
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
     "%s points at an existing module and export",
     (_name, job) => {

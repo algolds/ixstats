@@ -3,7 +3,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { useMapLayers } from "~/components/maps/editor/hooks/useMapLayers";
 
-jest.mock("~/hooks/useViewerRealmId", () => ({ useViewerRealmId: () => undefined }));
+jest.mock("~/hooks/useRealmMapVersion", () => ({ useRealmMapVersion: () => undefined }));
 
 interface AddedSource {
   type: string;

@@ -9,6 +9,7 @@ import {
   MAP_LAYER_TYPES,
   IXNAY_PRIME_MERIDIAN_LNG,
 } from "~/lib/maps/map-config";
+import type { TileSource } from "~/lib/maps/decorative-tiles";
 import type { OceanLabelFeature } from "~/lib/maps/ocean-labels";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { applySmoothProjection } from "../utils/projectionTransition";
@@ -343,8 +344,8 @@ interface UseWorldMapLayersProps {
   showPrimeMeridian?: boolean;
   /** The global "Labels" toggle; country names stay hidden while it is off. */
   labelsVisible?: boolean;
-  /** The realm whose decorative layers to draw from vector tiles; undefined until it is known. */
-  tileRealmId?: string;
+  /** The realm and map version whose vector tiles draw the decorative layers; undefined until known. */
+  tileSource?: TileSource;
   /** A realm's base map art is shown: political fills and borders give way to the art's. */
   artMode?: boolean;
 }
@@ -361,7 +362,7 @@ export function useWorldMapLayers({
   oceanLabels = NO_OCEAN_LABELS,
   showPrimeMeridian = false,
   labelsVisible = true,
-  tileRealmId,
+  tileSource,
   artMode = false,
 }: UseWorldMapLayersProps) {
   useEffect(() => {
@@ -452,5 +453,5 @@ export function useWorldMapLayers({
     artMode,
   ]);
 
-  useDecorativeTiles(map, isLoaded, tileRealmId);
+  useDecorativeTiles(map, isLoaded, tileSource);
 }

@@ -6,7 +6,8 @@ const applyVectorTiles = jest.fn();
 jest.mock("~/lib/maps/decorative-tiles", () => ({
   ...jest.requireActual("~/lib/maps/decorative-tiles"),
   applyVectorTiles: (...args: unknown[]) => applyVectorTiles(...args),
-  tileUrlTemplate: (realmId: string, layer: string) => `tiles/${realmId}/${layer}`,
+  tileUrlTemplate: (source: { realmId: string; version: number }, layer: string) =>
+    `tiles/${source.realmId}/${source.version}/${layer}`,
 }));
 
 import { useWorldMapLayers } from "~/components/maps/core/hooks/useWorldMapLayers";
@@ -74,23 +75,56 @@ describe("useWorldMapLayers with tiled layers", () => {
     error.mockRestore();
   });
 
-  it("points the three tiled sources at the realm's tiles, and again after each style change", () => {
+  it("points the three tiled sources at the realm's versioned tiles, and again after each style change", () => {
     const { map, method } = fakeMap();
 
-    renderHook(() => useWorldMapLayers({ ...baseProps, map, layers: [], tileRealmId: "r_eurth" }));
+    renderHook(() =>
+      useWorldMapLayers({
+        ...baseProps,
+        map,
+        layers: [],
+        tileSource: { realmId: "r_eurth", version: 3 },
+      })
+    );
 
     expect(applyVectorTiles.mock.calls.map((c) => [c[1], c[2]])).toEqual([
-      ["altitudes", "tiles/r_eurth/altitudes"],
-      ["rivers", "tiles/r_eurth/rivers"],
-      ["lakes", "tiles/r_eurth/lakes"],
+      ["altitudes", "tiles/r_eurth/3/altitudes"],
+      ["rivers", "tiles/r_eurth/3/rivers"],
+      ["lakes", "tiles/r_eurth/3/lakes"],
     ]);
     expect(method("on")).toHaveBeenCalledWith("styledata", expect.any(Function));
   });
 
-  it("waits for the realm before asking for tiles", () => {
+  it("waits for the realm's map version before asking for tiles", () => {
     const { map } = fakeMap();
     renderHook(() => useWorldMapLayers({ ...baseProps, map, layers: [] }));
     expect(applyVectorTiles).not.toHaveBeenCalled();
+  });
+
+  it("points the sources at the new URLs when the map version changes, not on an equal source", () => {
+    const { map } = fakeMap();
+    const { rerender } = renderHook(
+      ({ version }: { version: number }) =>
+        useWorldMapLayers({
+          ...baseProps,
+          map,
+          layers: [],
+          tileSource: { realmId: "r_eurth", version },
+        }),
+      { initialProps: { version: 3 } }
+    );
+    expect(applyVectorTiles).toHaveBeenCalledTimes(3);
+
+    rerender({ version: 3 });
+    expect(applyVectorTiles).toHaveBeenCalledTimes(3);
+
+    rerender({ version: 4 });
+    expect(applyVectorTiles).toHaveBeenCalledTimes(6);
+    expect(applyVectorTiles.mock.calls.slice(3).map((c) => c[2])).toEqual([
+      "tiles/r_eurth/4/altitudes",
+      "tiles/r_eurth/4/rivers",
+      "tiles/r_eurth/4/lakes",
+    ]);
   });
 
   it("re-pushes country data after a theme change, which re-applies the style's empty sources", () => {

@@ -10,9 +10,26 @@ export type TiledLayer = (typeof TILED_LAYERS)[number];
 export const isTiledLayer = (t: string): t is TiledLayer =>
   (TILED_LAYERS as readonly string[]).includes(t);
 
+/** The deepest zoom the tiles are served at; MapLibre overzooms past it. */
+export const MAX_TILE_ZOOM = 6;
+
+/** Whether z/x/y is a tile of the pyramid the vector tiles cover (integers, z up to `MAX_TILE_ZOOM`). */
+export function isTileCoord(z: number, x: number, y: number): boolean {
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > MAX_TILE_ZOOM) return false;
+  const size = 2 ** z;
+  return x >= 0 && x < size && y >= 0 && y < size;
+}
+
+/** The realm a map's tiles come from and its map version: a new version is a new tile URL. */
+export interface TileSource {
+  realmId: string;
+  version: number;
+}
+
 /** Absolute tile URL template (MapLibre fetches tiles from its worker, where relative URLs don't resolve). */
-export function tileUrlTemplate(realmId: string, layer: TiledLayer): string {
-  return `${window.location.origin}${withBasePath(`/api/map-tiles/${encodeURIComponent(realmId)}/${layer}`)}/{z}/{x}/{y}`;
+export function tileUrlTemplate({ realmId, version }: TileSource, layer: TiledLayer): string {
+  const path = `/api/map-tiles/${encodeURIComponent(realmId)}/${version}/${layer}`;
+  return `${window.location.origin}${withBasePath(path)}/{z}/{x}/{y}`;
 }
 
 /**
@@ -34,7 +51,7 @@ export function applyVectorTiles(map: MapLibreMap, layer: TiledLayer, url: strin
   const beforeId = last >= 0 ? order[last + 1]?.id : undefined;
   for (const spec of specs) map.removeLayer(spec.id);
   if (source) map.removeSource(sourceId);
-  map.addSource(sourceId, { type: "vector", tiles: [url], maxzoom: 6 });
+  map.addSource(sourceId, { type: "vector", tiles: [url], maxzoom: MAX_TILE_ZOOM });
   for (const spec of specs)
     map.addLayer({ ...spec, "source-layer": layer } as LayerSpecification, beforeId);
 }

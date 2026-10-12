@@ -136,35 +136,6 @@ describe("useMapDataBatched IndexedDB cache", () => {
     expect(byType.political?.data).toEqual(eurthBorders);
   });
 
-  it("reports the realm the bundle resolved", () => {
-    bundleResult = {
-      data: { worldMap: { political: eurthBorders }, realmId: "r_eurth" },
-      isLoading: false,
-      error: null,
-      isPlaceholderData: false,
-    };
-    expect(
-      renderHook(() => useMapDataBatched(undefined, 1.8, "eurth")).result.current.realmId
-    ).toBe("r_eurth");
-  });
-
-  it("knows the viewer's realm before the bundle arrives, so tiles start at once", () => {
-    bundleResult = { data: undefined, isLoading: true, error: null, isPlaceholderData: false };
-    expect(renderHook(() => useMapDataBatched()).result.current.realmId).toBe("r_eurth");
-  });
-
-  it("waits for the server's answer when the map names a realm (?realm=)", () => {
-    bundleResult = {
-      data: { worldMap: { political: eurthBorders } },
-      isLoading: false,
-      error: null,
-      isPlaceholderData: true,
-    };
-    expect(
-      renderHook(() => useMapDataBatched(undefined, 1.8, "eurth")).result.current.realmId
-    ).toBeUndefined();
-  });
-
   it("fetches cities and subdivisions once the viewer first passes zoom 3, and keeps them", () => {
     bundleResult = { data: undefined, isLoading: true, error: null, isPlaceholderData: false };
     const { rerender } = renderHook(({ zoom }) => useMapDataBatched(undefined, zoom), {
