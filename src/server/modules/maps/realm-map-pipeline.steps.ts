@@ -18,12 +18,12 @@ import {
   type RealmMapDefaultView,
 } from "~/lib/maps/realm-map-settings";
 import { localizeRealmFlags } from "~/server/modules/realms/realms.flags";
-import { recomputeRealmMapAreas } from "~/server/modules/realms/realms.map";
 import { artText } from "./realm-map-pipeline.art";
 import {
   capDetails,
   changedStatus,
   currentSettings,
+  measureRealmAreas,
   skipped,
   type StepContext,
   type StepReport,
@@ -233,7 +233,7 @@ export async function runAreasStep(ctx: StepContext): Promise<StepReport> {
       ...(planned && { counts: planned }),
     };
   }
-  const areas = await recomputeRealmMapAreas(ctx.db, ctx.actor, ctx.realm.id);
+  const areas = await measureRealmAreas(ctx);
   return {
     status: "changed",
     summary: `areas measured again: ${areas.updated} features (radius ${areas.radiusKm} km)`,

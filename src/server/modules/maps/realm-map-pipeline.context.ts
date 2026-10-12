@@ -11,6 +11,8 @@ import type { LayerEngineOptions } from "~/lib/maps/import/png/layer-engine-opti
 import type { ProgressFn } from "~/lib/maps/import/progress";
 import type { fetchRepoBytes, fetchRepoFile } from "~/lib/realms/sources/fetch";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
+import { recomputeRealmMapAreas } from "~/server/modules/realms/realms.map";
+import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import type { ArtResolver } from "./realm-map-pipeline.art";
 
 export type StepStatus = "unchanged" | "would-change" | "changed" | "skipped" | "failed";
@@ -77,6 +79,17 @@ export async function currentSettings(ctx: StepContext): Promise<Prisma.JsonValu
     select: { settings: true },
   });
   return realm?.settings ?? {};
+}
+
+/**
+ * Measure the realm's map features again and give the map a new version. `areaSqKm` is served with the layers and the
+ * tiles (`_areaSqKm`), so a changed area is a changed map: the bump comes after the measuring, never before, or a URL
+ * of the new version could hold the old areas.
+ */
+export async function measureRealmAreas(ctx: StepContext) {
+  const areas = await recomputeRealmMapAreas(ctx.db, ctx.actor, ctx.realm.id);
+  await invalidateRealmMap(ctx.db, ctx.realm.id);
+  return areas;
 }
 
 /** The report of a step that changes something: what an apply would do, or did. */

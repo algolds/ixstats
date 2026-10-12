@@ -26,13 +26,13 @@ import {
   withRealmMapSettings,
   type ClimateKey,
 } from "~/lib/maps/realm-map-settings";
-import { recomputeRealmMapAreas } from "~/server/modules/realms/realms.map";
 import { writePipelineLayers } from "./map-import.pipeline";
 import { artText, type ArtResolver } from "./realm-map-pipeline.art";
 import {
   capDetails,
   changedStatus,
   currentSettings,
+  measureRealmAreas,
   skipped,
   type StepContext,
   type StepReport,
@@ -229,7 +229,7 @@ async function write(
     });
     lines.push(`climate key: ${key.system}, ${key.zones.length} zones`);
   }
-  const areas = await recomputeRealmMapAreas(ctx.db, ctx.actor, ctx.realm.id);
+  const areas = await measureRealmAreas(ctx);
   lines.push(`areas measured again: ${areas.updated} features (radius ${areas.radiusKm} km)`);
   return lines;
 }
