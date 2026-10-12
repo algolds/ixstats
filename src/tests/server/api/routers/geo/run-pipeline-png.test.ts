@@ -369,7 +369,8 @@ describe("geoEditor.runPipeline — SVG input", () => {
 
   it("no longer generates worlds: the procedural source is rejected before the pipeline runs", async () => {
     await expect(
-      caller().runPipeline({ source: "procedural" as "svg", svgContent: "<svg/>" })
+      // @ts-expect-error "procedural" is no longer a source
+      caller().runPipeline({ source: "procedural", svgContent: "<svg/>" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(runMock).not.toHaveBeenCalled();
   });

@@ -420,7 +420,7 @@ export function useWorldMapLayers({
       if (!config) continue;
       const sourceId = `source-${layer.type}`;
       // On /maps the decorative sources are vector tiles (effect below) and these layers are listed
-      // only for visibility; maps that pass their own GeoJSON (the pipeline lab) still get it pushed
+      // only for visibility; a map with no tile source still gets its GeoJSON pushed
       if (map.getSource(sourceId)?.type === "vector") continue;
       const isLabels = layer.type === "country_labels";
 

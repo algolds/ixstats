@@ -161,7 +161,7 @@ describe("useWorldMapLayers with tiled layers", () => {
     );
   });
 
-  it("still pushes rivers GeoJSON on a map that draws them from GeoJSON (the map pipeline lab)", () => {
+  it("still pushes rivers GeoJSON on a map that draws them from GeoJSON", () => {
     const { map, riversSetData } = fakeMap("geojson");
     const rivers: FeatureCollection = { ...borders };
     renderHook(() =>
