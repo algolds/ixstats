@@ -27,6 +27,7 @@ export const MAP_PIPELINE_STEPS = [
   "repair",
   "physical",
   "rasters",
+  "relief",
   "labels",
   "flags",
   "defaultView",
@@ -38,6 +39,7 @@ export const MAP_PIPELINE_STEP_LABELS: Record<MapPipelineStep, string> = {
   repair: "Border repair and smoothing",
   physical: "Physical layers",
   rasters: "Raster layers",
+  relief: "Relief",
   labels: "Map labels",
   flags: "Local flags",
   defaultView: "Default view",
@@ -130,6 +132,13 @@ export const realmMapPipelineSchema = pipelineObjectSchema.superRefine((pipeline
   }
 });
 export type RealmMapPipeline = z.infer<typeof realmMapPipelineSchema>;
+
+/**
+ * Whether a run of these steps reads the realm's stored pipeline config. `relief` shades the realm's stored altitude
+ * bands and reads nothing from it, so a relief-only run works for a realm with no pipeline (Ixnay, a generated world).
+ */
+export const needsStoredPipeline = (steps: readonly MapPipelineStep[]): boolean =>
+  steps.some((step) => step !== "relief");
 
 /** The art keys one step reads (none for steps that read no art). */
 export function stepArt(pipeline: RealmMapPipeline, step: MapPipelineStep): string[] {

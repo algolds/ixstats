@@ -6,7 +6,7 @@
  * one each. Dry run by default; --apply writes.
  *
  * Shared arguments:
- *   --realm <slug>       the realm (its pipeline config is `Realm.settings.map.pipeline`)
+ *   --realm <slug>       the realm (its pipeline config is `Realm.settings.map.pipeline`; `--steps relief` needs none)
  *   --source <dir>       a local checkout of the realm's source repository: repository art is read from it
  *   --preset <id>        first fill the realm's pipeline from a source preset (empty fields only; --force: all)
  *   --apply              write; without it every step only reports what it would change

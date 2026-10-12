@@ -2,6 +2,8 @@
 import { artSourceSchema } from "~/lib/maps/realm-map-art";
 import {
   fillPipelineFromPreset,
+  MAP_PIPELINE_STEP_LABELS,
+  MAP_PIPELINE_STEPS,
   orderedSteps,
   readRealmMapPipeline,
   realmMapPipelineSchema,
@@ -80,6 +82,22 @@ describe("realm map pipeline config", () => {
     expect(stepArt(pipeline, "rasters")).toEqual(["geo", "legend"]);
     expect(stepArt(pipeline, "physical")).toEqual([]);
     expect(stepArt(pipeline, "repair")).toEqual([]);
+    expect(stepArt(pipeline, "relief")).toEqual([]);
+  });
+
+  it("runs the relief step after the physical layers it shades, before the labels", () => {
+    expect(MAP_PIPELINE_STEPS).toEqual([
+      "repair",
+      "physical",
+      "rasters",
+      "relief",
+      "labels",
+      "flags",
+      "defaultView",
+      "areas",
+    ]);
+    expect(MAP_PIPELINE_STEP_LABELS.relief).toBe("Relief");
+    expect(orderedSteps(["areas", "relief", "physical"])).toEqual(["physical", "relief", "areas"]);
   });
 
   it("orders steps as a run takes them, once each", () => {

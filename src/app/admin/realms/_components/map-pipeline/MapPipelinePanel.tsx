@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Signal } from "~/components/ui/signal";
+import { needsStoredPipeline } from "~/lib/maps/realm-map-pipeline";
 import { PipelineEditor } from "./PipelineEditor";
 import { PresetLoader } from "./PresetLoader";
 import { RunHistory } from "./RunHistory";
@@ -27,8 +28,7 @@ function builtText(built: PipelineView["built"]): string {
   ].join(", ");
 }
 
-function runBlocked(view: PipelineView, dirty: boolean, running: boolean): string | null {
-  if (!view.pipeline) return "Save the pipeline first.";
+function runBlocked(dirty: boolean, running: boolean): string | null {
   if (dirty) return "Save your changes first: a run uses the saved config.";
   if (running) return "A run is in progress.";
   return null;
@@ -139,19 +139,21 @@ export function MapPipelinePanel({
       ) : (
         <NoPipeline view={view} onLoaded={refresh} onScratch={() => setScratch(true)} />
       )}
-      {view.pipeline && (
-        <RunSection
-          slug={slug}
-          steps={view.steps}
-          blocked={runBlocked(view, dirty, running)}
-          jobId={followed}
-          onStarted={(id) => {
-            setJobId(id);
-            void utils.realms.mapPipeline.runs.invalidate({ realm: slug });
-          }}
-          onFinished={refresh}
-        />
-      )}
+      {/* Without a saved pipeline only the steps that read none can run (relief reads the stored bands) */}
+      <RunSection
+        key={view.pipeline ? "pipeline" : "no-pipeline"}
+        slug={slug}
+        steps={
+          view.pipeline ? view.steps : view.steps.filter((s) => !needsStoredPipeline([s.step]))
+        }
+        blocked={runBlocked(dirty, running)}
+        jobId={followed}
+        onStarted={(id) => {
+          setJobId(id);
+          void utils.realms.mapPipeline.runs.invalidate({ realm: slug });
+        }}
+        onFinished={refresh}
+      />
       {runs && runs.length > 0 && (
         <RunHistory runs={runs} selectedId={followed} onSelect={setJobId} />
       )}

@@ -123,7 +123,6 @@ describe("Map pipeline panel", () => {
     view = { ...baseView, pipeline: null };
     render(<MapPipelinePanel slug="eurth" />);
     expect(screen.getByText("No map pipeline yet")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Dry run" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Load preset" }));
     expect(calls.loadPreset).toEqual([{ realm: "eurth", presetId: "eurth-map", force: false }]);
 
@@ -180,6 +179,28 @@ describe("Map pipeline panel", () => {
     expect(screen.getByText('No art named "geography"')).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent("2 fields need fixing");
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  it("offers a realm with no pipeline the relief step alone, and runs it", () => {
+    view = { ...baseView, pipeline: null };
+    responses.start = { jobId: "job-9" };
+    render(<MapPipelinePanel slug="eurth" />);
+    const run = screen.getByRole("group", { name: "Steps to run" });
+    expect(
+      within(run)
+        .getAllByRole("checkbox")
+        .map((c) => c.id)
+    ).toEqual(["run-step-relief"]);
+    expect(within(run).getByRole("checkbox", { name: "Relief" })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Dry run" }));
+    expect(calls.start).toEqual([{ realm: "eurth", steps: ["relief"], dryRun: true }]);
+  });
+
+  it("offers relief with the other steps once the realm has a pipeline", () => {
+    render(<MapPipelinePanel slug="eurth" />);
+    const run = screen.getByRole("group", { name: "Steps to run" });
+    expect(within(run).getAllByRole("checkbox")).toHaveLength(MAP_PIPELINE_STEPS.length);
+    expect(within(run).getByRole("checkbox", { name: "Relief" })).toBeChecked();
   });
 
   it("starts a dry run of every step and shows each step's report", () => {
