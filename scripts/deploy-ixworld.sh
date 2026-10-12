@@ -160,9 +160,10 @@ ln -sfn "$IXSTATS_DIR/public/images/uploads" "$IXWORLD_DIR/public/images/uploads
 ln -sfn "$IXSTATS_DIR/public/images/downloaded" "$IXWORLD_DIR/public/images/downloaded"
 
 # data/ holds runtime-generated content (cache, etc.) and is not build output, so do NOT
-# use --delete here. (D8)
+# use --delete here. (D8) The vector tile cache (the default MAP_TILE_DIR) is the main app's own and can be gigabytes:
+# production points all tile processes at one MAP_TILE_DIR outside data/, so it is never copied into the IxWorld folder.
 if [ -d "data" ]; then
-    rsync -ah data/ "$IXWORLD_DIR/data/"
+    rsync -ah --exclude '/cache/map-tiles' data/ "$IXWORLD_DIR/data/"
 fi
 
 # Sync PM2 config

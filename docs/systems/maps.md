@@ -66,8 +66,10 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
   with `geometry` (plus a backfill of countries written before it), and the `atlas_country_union()` function behind a
   nation's outline. Apply it by hand after `db push` (the file's header has the command).
 - **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/f<format>/<version>/<layer>/<z>/<x>/<y>.pbf`);
-  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). The web server and the cron
-  worker (`ixstats-cron`) have different working directories, so production sets it to one shared folder for both.
+  unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). Three processes serve or
+  render tiles: the web app, the IxWorld standalone (maps.ixwiki.com) and the cron worker (`ixstats-cron`). Their
+  working directories differ, so production sets `MAP_TILE_DIR` to one folder outside the repository and `data/` for
+  all three; otherwise each fills a folder of its own, and the cron job pre-renders into one that nobody reads.
   See [Map delivery](#map-delivery-atlas-release-0).
 - **Realm-scoped spatial SQL.** Realms share one coordinate space. Every raw join on `map_layers` matches the realm of
   what it measures (`ml."worldId" = <country>."realmId"`); `getTerrainAtPoint` / `getTerrainForArea` take a required
@@ -362,7 +364,9 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
   - `map-tiles` renders z0 to z3 of the three layers for Ixnay and every published realm whose current version has no
     `.done` marker, then removes the folders of versions a newer one has outlived for more than a day. A run stops
     starting tiles after 15 minutes and the next one continues. Deeper zooms render on first request. It needs the
-    same `MAP_TILE_DIR` as the web server.
+    same `MAP_TILE_DIR` as the web app and the IxWorld standalone. Without the job the web process still cleans up
+    after itself: after it renders a tile it removes the realm's outlived version folders (at most once an hour per
+    realm, never the current version), so the disk cannot fill; pre-rendering is what the job adds.
   - `geo-profiles` recomputes, one country at a time (20 minute run budget), the geo profiles that
     `geoCore.recalculateGeoProfiles` marked stale, and any country without one. The mutation only queues; the toast
     says when the job last ran.

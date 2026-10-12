@@ -137,6 +137,15 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
 - **PM2 processes:** give `ixstats-cron` and `ixstats-ws` the same values by adding them to their `env:` blocks in
   `ecosystem.config.cjs`. The loaders also read `.env.production.local` once `NODE_ENV=production` is in effect.
 - **`ixstats-cron`:** add `CRON_ENABLED_JOBS: ''` to its `env:` block for now (no jobs; see step 7).
+- **`MAP_TILE_DIR` (Atlas Release 0 vector tiles):** the map's altitude, river and lake tiles are cached on disk, one
+  folder per realm, map version and tile format, and grow with every border save. Three processes read and write
+  that cache: the web app, the IxWorld standalone (maps.ixwiki.com, `/ixwiki/public/maps/ixworld`) and `ixstats-cron`.
+  Their working directories differ, so unset, each one fills its own `data/cache/map-tiles` and the cron job renders
+  into a folder maps.ixwiki.com never reads. Create one folder outside the repository and outside `data/` (the IxWorld
+  deploy copies `data/`), for example `mkdir -p /var/cache/ixstats/map-tiles`, and set the same
+  `MAP_TILE_DIR=/var/cache/ixstats/map-tiles` in the `env:` of the web app's PM2 app, of `ixstats-cron` and of
+  `ecosystem.ixworld.config.cjs`. Check `df -h /` again after a week: a realm with many saves adds about 0.35 MB per
+  version at z0 to z3 alone.
 - **Notification email and push (optional, SL-5):** both are off until their variables are set, and Settings hides
   their switches until then. Email takes `EMAIL_API_KEY` and `EMAIL_FROM` (and `EMAIL_API_URL` for an API other
   than Resend that accepts Resend's JSON); links in emails use `APP_URL` or `NEXT_PUBLIC_APP_URL`. Push takes
@@ -426,7 +435,18 @@ geometry but no stored profile, and replacing a country's resources resets their
 CRON_ENABLED_JOBS=...,geo-profiles
 ```
 
-That makes 25 jobs here, including `notification-email-digest`, `realm-source-sync` and `map-import` (plus the two
+Enable `map-tiles` (every 5 minutes) once `MAP_TILE_DIR` is set (step 2). It renders z0 to z3 of the altitude, river and
+lake tiles of Ixnay and every published realm whose current map version has no `.done` marker (about 20 s of PostGIS per
+realm), so the first visitor after a map change finds them cached, and deletes tile folders of versions a newer one
+outlived a day ago. Without it nothing is pre-rendered: the first visitor pays the render, and the web process removes
+a realm's outlived folders itself (at most once an hour per realm) so the disk cannot fill. Leave it out until the
+Atlas SQL of step 5a has been applied and `MAP_TILE_DIR` is shared:
+
+```
+CRON_ENABLED_JOBS=...,map-tiles
+```
+
+That makes 26 jobs here, including `notification-email-digest`, `realm-source-sync`, `map-import` and `map-tiles` (plus the two
 WikiOS ones below): the full table of 27 in `src/server/cron/jobs.ts` ([events.md](../reference/events.md#scheduled--batch-jobs) lists them with
 schedules). Each run is recorded as a `CronRun` row; `/api/health` shows the last run per job.
 
