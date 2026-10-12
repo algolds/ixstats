@@ -17,7 +17,10 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
 }));
 
 import { encodeWorldBundle } from "~/lib/maps/import/world-bundle";
-import type { WorldLock } from "~/components/maps/editor/panels/WorldApplyRegion";
+import type {
+  WorldApplyRegionProps,
+  WorldLock,
+} from "~/components/maps/editor/panels/WorldApplyRegion";
 import {
   applyWorld,
   calls,
