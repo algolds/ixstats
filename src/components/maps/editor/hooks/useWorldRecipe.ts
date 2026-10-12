@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { WorldPreset } from "~/lib/worldgen/v2/config";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
 import {
   clampControls,
   controlsForPreset,
   newWorldSeed,
   paramsFromControls,
+  withKnownPresets,
   type WorldControls,
   type WorldSource,
 } from "~/lib/worldgen/world-controls";
@@ -16,8 +16,10 @@ import {
   loadWorldRecipe,
   saveWorldRecipe,
 } from "~/lib/worldgen/world-draft-recipe";
+import { FALLBACK_PRESET_SLUG, type WorldPresetOption } from "~/lib/worldgen/world-presets";
 import type { WorldGenerator } from "~/hooks/useWorldGenerator";
 import { useLatest } from "./useLatest";
+import { useWorldPresets } from "./useWorldPresets";
 
 interface UseWorldRecipeArgs {
   /** Where the recipe is kept: the realm's id, or the sandbox's */
@@ -85,11 +87,24 @@ export function useWorldRecipe({
     const usable = saved && (saved.controls.source !== "realm-map" || hasRealmMap) ? saved : null;
     return {
       restored: usable !== null,
-      controls: usable?.controls ?? controlsForPreset("earthlike"),
+      controls: usable?.controls ?? controlsForPreset(FALLBACK_PRESET_SLUG),
       seed: usable?.seed ?? newWorldSeed(),
     };
   });
-  const [controls, setControls] = useState<WorldControls>(start.controls);
+  const presets = useWorldPresets();
+  const [stored, setControls] = useState<WorldControls>(start.controls);
+  // What was asked for, as the published presets make it: a preset that has since been archived or unpublished is
+  // Earth-like, and controls nobody has moved yet are the published Earth-like preset's values, not the factory ones
+  const settle = useCallback(
+    (raw: WorldControls, known: readonly WorldPresetOption[] | null) => {
+      if (!known) return raw;
+      if (!start.restored && raw === start.controls)
+        return controlsForPreset(FALLBACK_PRESET_SLUG, known);
+      return withKnownPresets(raw, known);
+    },
+    [start]
+  );
+  const controls = useMemo(() => settle(stored, presets), [settle, stored, presets]);
   const [seed, setSeed] = useState(start.seed);
   // A ref, not state: every run also moves the generator's view (or the controls), which renders this
   const lastRun = useRef<LastRun | null>(null);
@@ -102,6 +117,7 @@ export function useWorldRecipe({
     realmMapVersion,
     realmMapReady,
     scope,
+    presets,
   });
   const { generate, reset } = generator;
 
@@ -112,12 +128,14 @@ export function useWorldRecipe({
         realmMapVersion: mapVersion,
         realmMapReady: ready,
         scope: key,
+        presets: known,
       } = latest.current;
-      // A world fitted to the realm's map waits for the map: the saved recipe runs once it has loaded
-      if (next.source === "realm-map" && !ready) return;
+      // A world waits for the presets (its recipe is theirs) and, fitted to the realm's map, for the map: the saved
+      // recipe runs once they have loaded
+      if (!known || (next.source === "realm-map" && !ready)) return;
       discarded.current = false;
       generate(
-        paramsFromControls(next),
+        paramsFromControls(next, known),
         nextSeed,
         next.source === "realm-map"
           ? {
@@ -143,7 +161,10 @@ export function useWorldRecipe({
   const restore = useCallback(() => {
     if (!discarded.current) generateNow();
   }, [generateNow]);
-  useRunOnce(start.restored && (start.controls.source !== "realm-map" || realmMapReady), restore);
+  useRunOnce(
+    start.restored && presets !== null && (start.controls.source !== "realm-map" || realmMapReady),
+    restore
+  );
 
   // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
   const fitsMap = controls.source === "realm-map";
@@ -163,16 +184,19 @@ export function useWorldRecipe({
     [run, latest]
   );
   /** Change controls without generating: a slider mid-drag */
-  const setLive = useCallback((patch: Partial<WorldControls>) => {
-    setControls((current) => ({ ...current, ...patch }));
-  }, []);
+  const setLive = useCallback(
+    (patch: Partial<WorldControls>) => {
+      setControls((current) => ({ ...settle(current, latest.current.presets), ...patch }));
+    },
+    [settle, latest]
+  );
 
   const pickPreset = useCallback(
-    (preset: WorldPreset) =>
-      apply({
-        ...controlsForPreset(preset),
-        developmentLevel: latest.current.controls.developmentLevel,
-      }),
+    (slug: string) => {
+      const { presets: known, controls: current } = latest.current;
+      if (known)
+        apply({ ...controlsForPreset(slug, known), developmentLevel: current.developmentLevel });
+    },
     [apply, latest]
   );
   const pickSource = useCallback((source: WorldSource) => apply({ source }), [apply]);

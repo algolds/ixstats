@@ -16,6 +16,7 @@ jest.mock("~/trpc/react", () => {
         map: {
           display: { useQuery: jest.fn(() => createMockQuery()) },
           worldStatus: { useQuery: jest.fn(() => createMockQuery()) },
+          worldPresets: { useQuery: jest.fn(() => createMockQuery()) },
         },
       },
     },

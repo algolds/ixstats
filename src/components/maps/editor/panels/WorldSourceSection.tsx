@@ -8,18 +8,8 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { realmManageHref } from "~/lib/maps/realm-world-editor";
-import type { WorldPreset } from "~/lib/worldgen/v2/config";
-import {
-  WORLD_PRESET_IDS,
-  type WorldControls,
-  type WorldSource,
-} from "~/lib/worldgen/world-controls";
-
-const PRESET_LABELS: Record<WorldPreset, string> = {
-  earthlike: "Earth-like",
-  ixnay: "Ixnay",
-  eurth: "Eurth",
-};
+import type { WorldControls, WorldSource } from "~/lib/worldgen/world-controls";
+import { WorldPresetPicker } from "./WorldPresetPicker";
 
 /** Whether the realm's own map can stand in as the source: it has borders, and they have loaded. */
 export type RealmMapState = "none" | "loading" | "failed" | "ready";
@@ -35,7 +25,7 @@ interface WorldSourceSectionProps {
   /** Asks for the realm's map layers again, after they could not be loaded */
   onRetryMap: () => void;
   onPickSource: (source: WorldSource) => void;
-  onPickPreset: (preset: WorldPreset) => void;
+  onPickPreset: (slug: string) => void;
   onCommitSeed: (seed: number) => void;
   onReroll: () => void;
 }
@@ -100,13 +90,10 @@ export function WorldSourceSection({
           </div>
         )}
         {controls.source === "preset" && (
-          <SegmentedControl
+          <WorldPresetPicker
             aria-label="Preset"
-            size="sm"
-            fullWidth
             value={controls.preset}
             onValueChange={onPickPreset}
-            options={WORLD_PRESET_IDS.map((id) => ({ value: id, label: PRESET_LABELS[id] }))}
           />
         )}
         {controls.source === "realm-map" && (

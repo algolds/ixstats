@@ -17,6 +17,7 @@ jest.mock("~/trpc/react", () => {
         map: {
           display: { useQuery: jest.fn(() => createMockQuery()) },
           worldStatus: { useQuery: jest.fn(() => createMockQuery()) },
+          worldPresets: { useQuery: jest.fn(() => createMockQuery()) },
         },
       },
     },
@@ -171,7 +172,7 @@ describe("generating", () => {
     expect(lastRequest().params).toMatchObject({ polarLand: { north: true, south: true } });
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Elevation profile" })).getByRole("radio", {
-        name: "Rugged",
+        name: "Eurth",
       })
     );
     expect(lastRequest().params).toMatchObject({ hypsometry: WORLD_PRESETS.eurth.hypsometry });

@@ -103,13 +103,41 @@ describe("world draft recipe", () => {
       '{"seed":"x","controls":{}}',
       '{"seed":5}',
       stored({ seed: 5, controls: { ...recipe().controls, source: "elsewhere" } }),
-      stored({ seed: 5, controls: { ...recipe().controls, preset: "mars" } }),
+      stored({ seed: 5, controls: { ...recipe().controls, preset: "" } }),
+      stored({ seed: 5, controls: { ...recipe().controls, hypsometry: 3 } }),
       stored({ seed: 5, controls: { ...recipe().controls, developmentLevel: "none" } }),
       stored({ seed: 5, controls: { ...recipe().controls, latitudeBand: [1] } }),
     ]) {
       window.localStorage.setItem(key, value);
       expect({ value, loaded: loadWorldRecipe("realm_a") }).toEqual({ value, loaded: null });
     }
+  });
+
+  it("keeps any preset slug, for the presets to be checked against once they are known", () => {
+    window.localStorage.setItem(
+      worldRecipeKey("realm_a"),
+      stored({
+        seed: 5,
+        controls: { ...recipe().controls, preset: "badlands", hypsometry: "mars" },
+      })
+    );
+    expect(loadWorldRecipe("realm_a")?.controls).toMatchObject({
+      preset: "badlands",
+      hypsometry: "mars",
+    });
+  });
+
+  it("reads a version 1 recipe, whose preset ids are the built-ins' slugs, and saves it as version 2", () => {
+    const { seed, controls } = recipe();
+    window.localStorage.setItem(
+      worldRecipeKey("realm_a"),
+      JSON.stringify({ version: 1, engine: ATLAS_ENGINE_VERSION, seed, controls })
+    );
+    const loaded = loadWorldRecipe("realm_a");
+    expect(loaded).toEqual(recipe());
+    saveWorldRecipe("realm_a", loaded!);
+    expect(JSON.parse(window.localStorage.getItem(worldRecipeKey("realm_a"))!).version).toBe(2);
+    expect(WORLD_RECIPE_VERSION).toBe(2);
   });
 
   it("pulls stored numbers back inside the slider limits", () => {

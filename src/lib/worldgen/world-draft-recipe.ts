@@ -7,7 +7,7 @@
 
 import { z } from "zod";
 import { ATLAS_ENGINE_VERSION } from "~/lib/buildVersion";
-import { clampControls, WORLD_PRESET_IDS, type WorldControls } from "./world-controls";
+import { clampControls, type WorldControls } from "./world-controls";
 
 export interface WorldRecipe {
   seed: number;
@@ -16,15 +16,24 @@ export interface WorldRecipe {
 
 const KEY_PREFIX = "ixworld-world-recipe:";
 
-/** The shape of a stored recipe. A recipe also carries the Atlas engine it was made for: another engine makes another world from the same seed. */
-export const WORLD_RECIPE_VERSION = 1;
+/**
+ * The shape of a stored recipe. A recipe also carries the Atlas engine it was made for: another engine makes another
+ * world from the same seed. Version 2 names its preset and elevation profile by the preset's slug, which may be any
+ * published preset; version 1 named one of the three built-ins by id, and those ids are the built-ins' slugs, so a
+ * version 1 recipe is read as it stands and saved as version 2. A slug no published preset has is Earth-like once the
+ * presets are known (`withKnownPresets`).
+ */
+export const WORLD_RECIPE_VERSION = 2;
+const LEGACY_RECIPE_VERSION = 1;
 
 /** The storage key of a realm's recipe (`scope` is its id, or "sandbox" for the admin studio). */
 export const worldRecipeKey = (scope: string) => `${KEY_PREFIX}${scope}`;
 
+const slug = z.string().min(1).max(64);
+
 const controlsSchema = z.object({
   source: z.enum(["preset", "realm-map"]),
-  preset: z.enum(WORLD_PRESET_IDS),
+  preset: slug,
   continents: z.number(),
   landShare: z.number(),
   nations: z.number(),
@@ -36,14 +45,14 @@ const controlsSchema = z.object({
   islands: z.number(),
   polarNorth: z.boolean(),
   polarSouth: z.boolean(),
-  hypsometry: z.enum(WORLD_PRESET_IDS),
+  hypsometry: slug,
   rivers: z.number(),
   lakes: z.number(),
   coastComplexity: z.number(),
 });
 
 const recipeSchema = z.object({
-  version: z.literal(WORLD_RECIPE_VERSION),
+  version: z.union([z.literal(WORLD_RECIPE_VERSION), z.literal(LEGACY_RECIPE_VERSION)]),
   engine: z.literal(ATLAS_ENGINE_VERSION),
   seed: z.number().int().min(1).max(2_147_483_647),
   controls: controlsSchema,

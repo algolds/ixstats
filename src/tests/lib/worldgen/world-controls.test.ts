@@ -11,9 +11,12 @@ import {
   controlsForPreset,
   newWorldSeed,
   paramsFromControls,
+  withKnownPresets,
   type WorldControls,
 } from "~/lib/worldgen/world-controls";
+import type { WorldPresetOption } from "~/lib/worldgen/world-presets";
 import { DEFAULT_PARAMS, WORLD_PRESETS } from "~/lib/worldgen/v2/config";
+import { FACTORY_PRESETS } from "~/lib/worldgen/world-presets";
 import { worldGenParamsSchema } from "~/lib/maps/import/world-bundle";
 
 const earthlike = (): WorldControls => controlsForPreset("earthlike");
@@ -133,11 +136,84 @@ describe("paramsFromControls", () => {
     expect(paramsFromControls({ ...earthlike(), landShare: 0.229 }).oceanPercentage).toBe(0.771);
   });
 
-  it("does not touch the parameters no control names", () => {
+  it("does not touch the parameters no control names when the preset sets none of them", () => {
     const params = paramsFromControls(earthlike());
     for (const key of ["cellCount", "plateCount", "terrainRoughness", "hasIcecaps", "seed"]) {
       expect(params).not.toHaveProperty(key);
     }
+  });
+
+  describe("with the published presets", () => {
+    const tuned: WorldPresetOption = {
+      slug: "badlands",
+      name: "Badlands",
+      params: {
+        continentCount: 4,
+        temperatureOffset: 6,
+        terrainRoughness: 0.9,
+        hasIcecaps: false,
+        plateCount: 14,
+        hypsometry: [10, 10, 10, 10, 10, 10, 10, 10, 20],
+      },
+    };
+    const presets = [...FACTORY_PRESETS, tuned];
+
+    it("reads a preset's values from the list it is given", () => {
+      const controls = controlsForPreset("badlands", presets);
+      expect(controls).toMatchObject({
+        preset: "badlands",
+        hypsometry: "badlands",
+        continents: 4,
+        temperature: 6,
+      });
+    });
+
+    it("lets the preset's own values for the parameters no control names reach the generator", () => {
+      const params = paramsFromControls(controlsForPreset("badlands", presets), presets);
+      expect(params).toMatchObject({ terrainRoughness: 0.9, hasIcecaps: false, plateCount: 14 });
+    });
+
+    it("keeps the controls above the preset: a moved slider wins over the preset's value", () => {
+      const params = paramsFromControls(
+        { ...controlsForPreset("badlands", presets), continents: 7, temperature: -2 },
+        presets
+      );
+      expect(params).toMatchObject({
+        continentCount: 7,
+        temperatureOffset: -2,
+        terrainRoughness: 0.9,
+      });
+    });
+
+    it("takes the elevation profile from the preset named by the profile control", () => {
+      const params = paramsFromControls(
+        { ...controlsForPreset("eurth", presets), hypsometry: "badlands" },
+        presets
+      );
+      expect(params.hypsometry).toEqual([10, 10, 10, 10, 10, 10, 10, 10, 20]);
+    });
+
+    it("leaves the preset's other values out of a world fitted to the realm's own map", () => {
+      const params = paramsFromControls(
+        { ...controlsForPreset("badlands", presets), source: "realm-map" },
+        presets
+      );
+      expect(params).not.toHaveProperty("terrainRoughness");
+      expect(params).not.toHaveProperty("plateCount");
+    });
+
+    it("falls back to Earth-like for a preset that is not on the list", () => {
+      const controls = controlsForPreset("gone", presets);
+      expect(controls).toEqual(controlsForPreset("earthlike", presets));
+      expect(
+        paramsFromControls({ ...controls, preset: "gone", hypsometry: "gone" }, presets)
+      ).toEqual(paramsFromControls(controls, presets));
+    });
+
+    it("has factory Earth-like when even Earth-like was archived", () => {
+      const withoutEarthlike = presets.filter((p) => p.slug !== "earthlike");
+      expect(controlsForPreset("gone", withoutEarthlike)).toEqual(controlsForPreset("earthlike"));
+    });
   });
 
   it("copies the elevation profile, so a later edit cannot change the shared preset", () => {
@@ -245,5 +321,28 @@ describe("newWorldSeed", () => {
 
   it("changes with the draw", () => {
     expect(newWorldSeed(() => 0.2)).not.toBe(newWorldSeed(() => 0.7));
+  });
+});
+
+describe("withKnownPresets", () => {
+  it("is the same object when the preset and the elevation profile are on the list", () => {
+    const controls = { ...controlsForPreset("eurth"), hypsometry: "ixnay" };
+    expect(withKnownPresets(controls, FACTORY_PRESETS)).toBe(controls);
+  });
+
+  it("sets a preset or profile that is not on the list to Earth-like, keeping every other control", () => {
+    const controls = {
+      ...controlsForPreset("eurth"),
+      preset: "gone",
+      hypsometry: "ixnay",
+      rivers: 1.3,
+    };
+    const known = withKnownPresets(controls, FACTORY_PRESETS);
+    expect(known).toEqual({ ...controls, preset: "earthlike" });
+    expect(withKnownPresets({ ...controls, hypsometry: "gone" }, FACTORY_PRESETS)).toMatchObject({
+      preset: "earthlike",
+      hypsometry: "earthlike",
+      rivers: 1.3,
+    });
   });
 });

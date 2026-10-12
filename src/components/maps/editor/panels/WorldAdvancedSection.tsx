@@ -4,16 +4,9 @@ import { useId } from "react";
 import { NavArrowDown, NavArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { SegmentedControl } from "~/components/ui/segmented-control";
-import type { WorldPreset } from "~/lib/worldgen/v2/config";
-import { CONTROL_LIMITS, WORLD_PRESET_IDS } from "~/lib/worldgen/world-controls";
+import { CONTROL_LIMITS } from "~/lib/worldgen/world-controls";
 import { ControlSlider, SwitchRow, percent, type ControlSectionProps } from "./WorldControlParts";
-
-const PROFILE_LABELS: Record<WorldPreset, string> = {
-  earthlike: "Earth-like",
-  ixnay: "Flat",
-  eurth: "Rugged",
-};
+import { WorldPresetPicker } from "./WorldPresetPicker";
 
 const latitude = (degrees: number) => `${Math.abs(degrees)}°${degrees < 0 ? "S" : "N"}`;
 
@@ -90,13 +83,10 @@ export function WorldAdvancedSection({
           <span id={profileId} className="text-label text-footnote">
             Elevation profile
           </span>
-          <SegmentedControl
+          <WorldPresetPicker
             aria-labelledby={profileId}
-            size="sm"
-            fullWidth
             value={controls.hypsometry}
             onValueChange={(hypsometry) => onCommit({ hypsometry })}
-            options={WORLD_PRESET_IDS.map((id) => ({ value: id, label: PROFILE_LABELS[id] }))}
           />
         </div>
         <ControlSlider

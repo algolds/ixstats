@@ -11,11 +11,15 @@ import { useDecodedMapLayers, useRetryMapLayers } from "~/hooks/useMapLayerData"
 import { WorldApplyRegion } from "~/components/maps/editor/panels/WorldApplyRegion";
 import { WorldPanel } from "~/components/maps/editor/panels/WorldPanel";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
+import { FACTORY_PRESETS } from "~/lib/worldgen/world-presets";
 import { fakeWorldWorkers } from "~/tests/helpers/fake-world-worker";
 import { resetFakeMapImport } from "~/tests/helpers/fake-map-import";
 
 export const displayQuery = jest.mocked(api.realms.map.display.useQuery as unknown as jest.Mock);
 export const statusQuery = jest.mocked(api.realms.map.worldStatus.useQuery as unknown as jest.Mock);
+export const presetsQuery = jest.mocked(
+  api.realms.map.worldPresets.useQuery as unknown as jest.Mock
+);
 export const preview = jest.mocked(useWorldPreview);
 export const layersQuery = jest.mocked(useDecodedMapLayers);
 export const retryLayers = jest.fn();
@@ -108,6 +112,7 @@ export function resetPanelTests() {
   resetFakeMapImport();
   region.mockClear();
   statusQuery.mockReturnValue(OPEN);
+  presetsQuery.mockReturnValue({ data: FACTORY_PRESETS, isError: false });
   preview.mockReset();
   preview.mockReturnValue({ active: false });
 }
