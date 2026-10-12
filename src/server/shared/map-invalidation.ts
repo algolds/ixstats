@@ -14,13 +14,13 @@ type VersionReader = { realm: Pick<PrismaClient["realm"], "findUnique"> };
 
 /**
  * Cached tRPC reads of map data, matched by procedure path. Their keys carry the realm only for non-Ixnay
- * realms, so a bump drops them for every realm; a refill is cheap. "geoCore.getWorldMap" and
- * "geoCore.getMapBundle" also match the *AsOf, *Detail and *Markers variants (the layers themselves are not tRPC:
- * the versioned layer route serves them).
+ * realms, so a bump drops them for every realm; a refill is cheap. (The layers themselves are not tRPC: the
+ * versioned layer route serves them, keyed by the map version.)
  */
 export const MAP_TRPC_KEYS: string[] = [
-  "geoCore.getWorldMap",
-  "geoCore.getMapBundle",
+  "geoCore.getWorldMapAsOf",
+  "geoCore.getMapBundleMarkers",
+  "geoCore.getMapBundleDetail",
   "geoCore.getCountryFeatures",
   "geoCore.getAllMapFeatures",
   "geoCore.getCountryGeometry",

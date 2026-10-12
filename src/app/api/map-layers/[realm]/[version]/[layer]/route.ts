@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
+import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import type { ZoomBucket } from "~/server/modules/maps/layer-lod";
 import { packedLayerAt } from "~/server/modules/maps/layer-delivery";
@@ -8,7 +9,8 @@ import { PRIVATE_TILE_CACHE, realmTileAccess } from "~/server/modules/maps/realm
 import { getRealmMapVersion } from "~/server/shared/map-invalidation";
 
 const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
-/** A URL whose version is not the current one: current data, which must not be kept as that version's forever. */
+/** A URL whose map version or loader format is not the current one: current data, which must not be kept as that
+ * URL's forever. */
 const REVALIDATE_CACHE = "public, no-cache";
 
 /** A realm the viewer may not see is indistinguishable from one that does not exist, and never stored. */
@@ -30,10 +32,11 @@ function matchesEtag(header: string | null, etag: string): boolean {
 }
 
 /**
- * One layer of a realm's map in the packed wire format, by map version. The version is in the URL so a changed
- * map is a new URL; the body is always the current data, and the tag names the current version. Ixnay and
- * published realms are cacheable by anyone for a year; an unpublished realm's layers go only to those who may see
- * the realm, and are never stored.
+ * One layer of a realm's map in the packed wire format, by map version and loader format (`?format=`, see
+ * layer-format.ts). Both are in the URL so a changed map or a changed build is a new URL; the body is always the
+ * current data, and the tag names the current version and format. Ixnay and published realms are cacheable by
+ * anyone for a year when the URL names both; an unpublished realm's layers go only to those who may see the realm,
+ * and are never stored.
  */
 export async function GET(
   request: NextRequest,
@@ -42,7 +45,8 @@ export async function GET(
   const { realm, version: urlVersion, layer } = await params;
   if (!isLayer(layer) || !/^\d{1,9}$/.test(urlVersion)) return notFound();
   const bucket = zoomBucket(request.nextUrl.searchParams.get("bucket"));
-  if (bucket === null) return new NextResponse(null, { status: 400 });
+  if (bucket === null)
+    return new NextResponse(null, { status: 400, headers: { "Cache-Control": "no-store" } });
 
   try {
     const realmId = await findRealmIdBySlugOrId(db, realm);
@@ -57,11 +61,11 @@ export async function GET(
       });
     }
 
-    const etag = `"${realmId}-${version}-${layer}-${bucket}"`;
-    const headers = {
-      ETag: etag,
-      "Cache-Control": Number(urlVersion) === version ? IMMUTABLE_CACHE : REVALIDATE_CACHE,
-    };
+    const etag = `"${realmId}-${version}-f${LAYER_FORMAT_VERSION}-${layer}-${bucket}"`;
+    const named =
+      Number(urlVersion) === version &&
+      request.nextUrl.searchParams.get("format") === String(LAYER_FORMAT_VERSION);
+    const headers = { ETag: etag, "Cache-Control": named ? IMMUTABLE_CACHE : REVALIDATE_CACHE };
     if (matchesEtag(request.headers.get("if-none-match"), etag)) {
       return new NextResponse(null, { status: 304, headers });
     }

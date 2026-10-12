@@ -167,7 +167,7 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     mw: ReturnType<typeof createCacheMiddlewareFactory>,
     input: object,
     next: () => Promise<{ ok: boolean; data: string }>
-  ) => mw({ ctx, path: "geoCore.getWorldMap", type: "query", input, next });
+  ) => mw({ ctx, path: "geoCore.getMapBundleDetail", type: "query", input, next });
 
   it("evicts the least recently used entries by bytes, not by count", async () => {
     // Each 400-character result takes about 800 bytes serialised: three do not fit in 2,000
@@ -198,7 +198,12 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     const mod = withMemoryCap(100_000);
     const mw = mod.createCacheMiddlewareFactory({ ttlSeconds: 60, namespace: "copy" });
     const next = jest.fn(async () => ({ ok: true, data: { rows: [1, 2, 3] } }));
-    const opts = { ctx, path: "geoCore.getWorldMap", type: "query" as const, input: { n: 1 } };
+    const opts = {
+      ctx,
+      path: "geoCore.getMapBundleDetail",
+      type: "query" as const,
+      input: { n: 1 },
+    };
 
     const first = await mw({ ...opts, next });
     (first.data as { rows: number[] }).rows.push(99);
@@ -235,7 +240,7 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
 
     await run(mw, { n: 1 }, next);
     await other({ n: 1 });
-    await mod.invalidateCache(["geoCore.getWorldMap"]);
+    await mod.invalidateCache(["geoCore.getMapBundleDetail"]);
     await run(mw, { n: 1 }, next);
     await other({ n: 1 });
 

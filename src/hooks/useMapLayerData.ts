@@ -2,9 +2,9 @@
 
 /**
  * useMapLayerData - the map's geometry layers, downloaded as packed JSON from the versioned layer route
- * (`/api/map-layers/<realm>/<version>/<layer>?bucket=`). The URL names the realm's map version
- * (`useRealmMapVersion`), so a changed map is a new URL and an unchanged one is the browser's cached copy: a second
- * load downloads nothing. React Query keeps each URL's response for the session (it never goes stale; the version
+ * (`/api/map-layers/<realm>/<version>/<layer>?bucket=&format=`). The URL names the realm's map version
+ * (`useRealmMapVersion`) and the loader format of this build (`layer-format.ts`), so a changed map or build is a new
+ * URL and an unchanged one is the browser's cached copy: a second load downloads nothing. React Query keeps each URL's response for the session (it never goes stale; the version
  * moves the key instead).
  */
 
@@ -14,6 +14,8 @@ import type { FeatureCollection } from "geojson";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { unpackLayers, type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
+import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
+import { dropLegacyMapCache } from "~/lib/maps/legacy-map-cache";
 import type { MapLayerType } from "~/lib/maps/map-config";
 import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 
@@ -21,16 +23,16 @@ import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 export type MapLayerBucket = 0 | 1 | 2;
 
 /** Key prefix of every layer query, for invalidating them all. */
-export const MAP_LAYER_QUERY_KEY = "map-layer";
+const MAP_LAYER_QUERY_KEY = "map-layer";
 
-export function mapLayerUrl(
+function mapLayerUrl(
   realmId: string,
   version: number,
   layer: MapLayerType,
   bucket: MapLayerBucket
 ): string {
   return withBasePath(
-    `/api/map-layers/${encodeURIComponent(realmId)}/${version}/${layer}?bucket=${bucket}`
+    `/api/map-layers/${encodeURIComponent(realmId)}/${version}/${layer}?bucket=${bucket}&format=${LAYER_FORMAT_VERSION}`
   );
 }
 
@@ -39,13 +41,29 @@ interface LoadedLayer {
   packed: PackedFeatureCollection;
 }
 
+/** A layer request the server answered with an error. */
+class LayerLoadError extends Error {
+  constructor(
+    layer: MapLayerType,
+    readonly status: number
+  ) {
+    super(`Map layer ${layer} could not be loaded (${status})`);
+  }
+}
+
+/** Retry a layer that failed, twice, unless the server refused it (4xx, such as 403/404): asking again changes nothing. */
+function retryLayer(failureCount: number, error: Error): boolean {
+  if (error instanceof LayerLoadError && error.status >= 400 && error.status < 500) return false;
+  return failureCount < 2;
+}
+
 async function fetchLayer(
   url: string,
   layer: MapLayerType,
   signal: AbortSignal
 ): Promise<LoadedLayer> {
   const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`Map layer ${layer} could not be loaded (${res.status})`);
+  if (!res.ok) throw new LayerLoadError(layer, res.status);
   return { layer, packed: (await res.json()) as PackedFeatureCollection };
 }
 
@@ -93,9 +111,18 @@ export function useMapLayerData({
   enabled = true,
 }: UseMapLayerDataOptions) {
   const { mapVersion, error: versionError } = useRealmMapVersion(realm, enabled);
+  const realmId = mapVersion?.realmId;
+  useEffect(dropLegacyMapCache, []);
   const combined = useQueries({
     queries: layers.map((layer) => ({
-      queryKey: [MAP_LAYER_QUERY_KEY, mapVersion?.realmId, mapVersion?.version, layer, bucket],
+      queryKey: [
+        MAP_LAYER_QUERY_KEY,
+        realmId,
+        mapVersion?.version,
+        LAYER_FORMAT_VERSION,
+        layer,
+        bucket,
+      ],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
         fetchLayer(
           mapLayerUrl(mapVersion!.realmId, mapVersion!.version, layer, bucket),
@@ -103,6 +130,7 @@ export function useMapLayerData({
           signal
         ),
       enabled: enabled && !!mapVersion,
+      retry: retryLayer,
       staleTime: Infinity,
       gcTime: 2 * 60 * 60_000,
     })),
@@ -110,24 +138,24 @@ export function useMapLayerData({
   });
 
   // A new version is a new query with no data of its own (React Query matches queries to observers by key), so the
-  // previous version's layers stay on show until the new ones arrive.
-  const shown = useRef<Packed | undefined>(undefined);
-  const packed = useMemo<Packed | undefined>(
-    () =>
-      shown.current && combined.packed
-        ? { ...shown.current, ...combined.packed }
-        : (combined.packed ?? shown.current),
-    [combined.packed]
-  );
+  // previous version's layers stay on show until the new ones arrive. Only the same realm's: another realm's layers
+  // never stand in for this one's, whether it is still loading or has failed.
+  const shown = useRef<{ realmId?: string; packed?: Packed }>({});
+  const packed = useMemo<Packed | undefined>(() => {
+    const previous = shown.current.realmId === realmId ? shown.current.packed : undefined;
+    return previous && combined.packed
+      ? { ...previous, ...combined.packed }
+      : (combined.packed ?? previous);
+  }, [combined.packed, realmId]);
   useEffect(() => {
-    shown.current = packed;
-  }, [packed]);
+    shown.current = { realmId, packed };
+  }, [realmId, packed]);
 
   return {
     packed,
     error: combined.error ?? versionError,
     isPending: combined.pending || (enabled && !mapVersion),
-    realmId: mapVersion?.realmId,
+    realmId,
   };
 }
 

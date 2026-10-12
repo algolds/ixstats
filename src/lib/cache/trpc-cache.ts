@@ -318,8 +318,9 @@ export const cacheConfigs = {
 // Shared invalidation key sets for geo feature writes (Plan 119 §2.3)
 export const GEO_FEATURE_INVALIDATE_KEYS: string[] = [
   "geoCore.getCountryFeatures",
-  "geoCore.getMapBundle",
-  "geoCore.getWorldMap",
+  "geoCore.getMapBundleMarkers",
+  "geoCore.getMapBundleDetail",
+  "geoCore.getWorldMapAsOf",
   "geoCore.getAllMapFeatures",
   "countryGeo.getCountryGeoBundle",
 ];

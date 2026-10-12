@@ -6,6 +6,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
 import { MAP_TRPC_KEYS } from "~/server/shared/map-invalidation";
+import { GEO_FEATURE_INVALIDATE_KEYS } from "~/lib/cache/trpc-cache";
+import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 
 type ModelMock = Record<string, jest.Mock>;
@@ -92,9 +94,20 @@ describe("geoCore.getMapBundleMarkers", () => {
 });
 
 describe("map invalidation", () => {
-  it("drops the cached markers and detail with the map's other cached reads (keys match by substring)", () => {
-    for (const procedure of ["geoCore.getMapBundleMarkers", "geoCore.getMapBundleDetail"]) {
-      expect(MAP_TRPC_KEYS.some((key) => procedure.includes(key))).toBe(true);
+  it("drops the cached map procedures by their exact paths, all of which exist", () => {
+    const live = new Set(
+      [...Object.keys(worldMapProcedures), ...Object.keys(borderHistoryProcedures)].map(
+        (name) => `geoCore.${name}`
+      )
+    );
+    for (const key of [
+      "geoCore.getMapBundleMarkers",
+      "geoCore.getMapBundleDetail",
+      "geoCore.getWorldMapAsOf",
+    ]) {
+      expect(live.has(key)).toBe(true);
+      expect(MAP_TRPC_KEYS).toContain(key);
+      expect(GEO_FEATURE_INVALIDATE_KEYS).toContain(key);
     }
   });
 });

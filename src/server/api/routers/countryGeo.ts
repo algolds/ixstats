@@ -26,8 +26,9 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 
 const GEO_CACHE_KEYS = [
   "geoCore.getCountryFeatures",
-  "geoCore.getMapBundle",
-  "geoCore.getWorldMap",
+  "geoCore.getMapBundleMarkers",
+  "geoCore.getMapBundleDetail",
+  "geoCore.getWorldMapAsOf",
   "geoCore.getAllMapFeatures",
   "countryGeo.getCountryGeoBundle",
 ];

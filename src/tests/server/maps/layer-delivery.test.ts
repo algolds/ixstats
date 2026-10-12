@@ -4,6 +4,13 @@ jest.mock("~/lib/cache", () => ({
   __esModule: true,
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
+// A getter, so a test can move the loader's output format
+let mockFormat = 1;
+jest.mock("~/lib/maps/layer-format", () => ({
+  get LAYER_FORMAT_VERSION() {
+    return mockFormat;
+  },
+}));
 jest.mock("~/server/modules/maps/layer-loader", () => ({
   loadLayerWithFallback: jest.fn(),
 }));
@@ -66,6 +73,7 @@ const freshRealm = () => `r_${++realmCounter}`;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockFormat = 1;
   jest.spyOn(console, "log").mockImplementation(() => {});
   jest.spyOn(console, "warn").mockImplementation(() => {});
   loader.mockImplementation(async (_db, _layer, _bucket, _realm, version) => square(version ?? 0));
@@ -125,6 +133,15 @@ describe("getPackedLayer", () => {
     await getPackedLayer(db, a, "background", 1);
     await getPackedLayer(db, b, "political", 1);
     expect(loader).toHaveBeenCalledTimes(4);
+  });
+
+  it("keeps a layer built by another loader format apart, so a changed build is never served an old copy", async () => {
+    const realm = freshRealm();
+    const db = dbAt({ [realm]: 0 });
+    await getPackedLayer(db, realm, "political", 1);
+    mockFormat = 2;
+    await getPackedLayer(db, realm, "political", 1);
+    expect(loader).toHaveBeenCalledTimes(2);
   });
 
   it("builds the version it keyed by, so a version read before the data cannot cache newer data under it", async () => {

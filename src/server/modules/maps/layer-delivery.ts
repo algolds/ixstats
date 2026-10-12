@@ -1,14 +1,15 @@
 /**
  * Map layers as the browser downloads them: the layer in the packed wire format (`geojson-pack.ts`), already
- * stringified, held in one byte-bounded cache keyed by realm, map version, layer and zoom bucket, behind the
- * versioned `/api/map-layers` route. A hit is a string handed to the response; a miss builds it once however many
- * requests wait for it. The version is in the key, so a map change made by another process (the cron worker's
- * imports) reads fresh data once it bumps `Realm.mapVersion`, without anything having to clear this process's memory.
- * Server only.
+ * stringified, held in one byte-bounded cache keyed by realm, map version, loader format (`layer-format.ts`),
+ * layer and zoom bucket, behind the versioned `/api/map-layers` route. A hit is a string handed to the response; a
+ * miss builds it once however many requests wait for it. The version is in the key, so a map change made by another
+ * process (the cron worker's imports) reads fresh data once it bumps `Realm.mapVersion`, without anything having to
+ * clear this process's memory. Server only.
  */
 import type { PrismaClient } from "@prisma/client";
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import { packFeatureCollection } from "~/lib/maps/geojson-pack";
+import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getCompressionForLayer, type ZoomBucket } from "./layer-lod";
 import { loadLayerWithFallback } from "./layer-loader";
@@ -61,7 +62,7 @@ export function packedLayerAt(
   layer: string,
   bucket: ZoomBucket
 ): Promise<string> {
-  const key = `${realmId}:${version}:${layer}:${bucket}`;
+  const key = `${realmId}:${version}:${LAYER_FORMAT_VERSION}:${layer}:${bucket}`;
   const hit = packedLayers.get(key);
   if (hit !== undefined) return Promise.resolve(hit);
   const building = inflight.get(key);

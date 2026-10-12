@@ -63,8 +63,9 @@ describe("invalidateRealmMap", () => {
     expect(invalidateCache).toHaveBeenCalledWith(MAP_TRPC_KEYS);
     expect(MAP_TRPC_KEYS).toEqual(
       expect.arrayContaining([
-        "geoCore.getWorldMap",
-        "geoCore.getMapBundle",
+        "geoCore.getWorldMapAsOf",
+        "geoCore.getMapBundleMarkers",
+        "geoCore.getMapBundleDetail",
         "geoCore.getCountryFeatures",
         "geoCore.getAllMapFeatures",
         "geoCore.getCountryGeometry",
@@ -73,6 +74,11 @@ describe("invalidateRealmMap", () => {
         "geoEditor.validateLinkage",
       ])
     );
+  });
+
+  it("names the procedures that exist, not the removed layer procedures' prefixes", () => {
+    expect(MAP_TRPC_KEYS).not.toContain("geoCore.getWorldMap");
+    expect(MAP_TRPC_KEYS).not.toContain("geoCore.getMapBundle");
   });
 
   it("increments the realm's version once and returns the new one", async () => {
