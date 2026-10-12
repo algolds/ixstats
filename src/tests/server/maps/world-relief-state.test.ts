@@ -12,9 +12,34 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 jest.mock("~/lib/maps/map-update-bus", () => ({ broadcastMapUpdate: jest.fn() }));
 
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { rebuildRealmRelief } from "~/server/modules/maps/world-import";
 import { worldReliefFailed } from "~/server/modules/maps/world-import.relief-state";
 import { relief, seedRealm } from "./world-import-fixtures";
+
+let rasterDir: string;
+beforeAll(() => {
+  rasterDir = mkdtempSync(path.join(tmpdir(), "world-relief-state-"));
+  process.env.MAP_RASTER_DIR = rasterDir;
+});
+afterAll(() => {
+  rmSync(rasterDir, { recursive: true, force: true });
+  delete process.env.MAP_RASTER_DIR;
+});
+
+/** A realm whose settings record a relief layer of this version. */
+const recordsRelief = (version: string) =>
+  seedRealm({
+    settings: {
+      map: {
+        rasterLayers: [
+          { id: "relief", label: "Relief", kind: "overlay", version, maxZoom: 5, order: 10 },
+        ],
+      },
+    },
+  });
 
 const FAILED = { status: "failed", version: null, tiles: 0, error: "sharp ran out of memory" };
 const BUILT = { status: "built", version: "abc12345", tiles: 12, error: null };
@@ -89,6 +114,25 @@ describe("worldReliefFailed", () => {
     addApply(db, "j_apply", FAILED);
     db.mapImport.rows[0]!.rolledBackAt = new Date();
     await expect(worldReliefFailed(db, "r1")).resolves.toBe(false);
+  });
+});
+
+describe("worldReliefFailed, for a relief whose tiles are gone", () => {
+  it("is true when the settings record a relief version that is not on disk (pruned, or never shared)", async () => {
+    const db = recordsRelief("a".repeat(8));
+    await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
+  });
+
+  it("is false when the recorded version is on disk, and when the realm records no relief", async () => {
+    mkdirSync(path.join(rasterDir, "r1", "relief", "b".repeat(8)), { recursive: true });
+    await expect(worldReliefFailed(recordsRelief("b".repeat(8)), "r1")).resolves.toBe(false);
+    await expect(worldReliefFailed(seedRealm(), "r1")).resolves.toBe(false);
+  });
+
+  it("is true with a world whose relief step built, once its tiles are gone", async () => {
+    const db = recordsRelief("c".repeat(8));
+    addApply(db, "j_apply", BUILT);
+    await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
   });
 });
 
