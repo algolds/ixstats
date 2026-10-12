@@ -1,5 +1,6 @@
 /**
- * scripts/perf/atlas-bench.ts - Atlas Release 0 acceptance benchmark (`bun run perf:atlas`).
+ * scripts/perf/atlas-bench.ts - Atlas acceptance benchmark (`bun run perf:atlas`): the Release 0 targets and the
+ * Release A world generator's.
  *
  * Measures the acceptance targets of docs/specs/2026-10-11-atlas-release-0-performance-design.md against the local
  * database and prints one PASS or FAIL line per target with the measured value (INFO lines print numbers that have
@@ -7,6 +8,9 @@
  * loaders, the tRPC procedure) on a Prisma client of its own, so it needs no dev server, and the editor measurements
  * on the pure functions the editor uses plus the real region-reshape hook in jsdom. Nothing is written to the
  * database. Vector tiles render into a temporary folder that is removed at the end, never the app's `MAP_TILE_DIR`.
+ * The generator lines (first generation, slider change, reroll, gated on the targets of
+ * docs/specs/2026-10-11-atlas-release-a-world-creation-design.md; the worker runner's end-to-end time per message,
+ * informational) run in fresh child processes and need no database (atlas-bench-worldgen.ts).
  *
  * What it cannot see: a browser. The second `/maps` load's "no layer download" is checked as what the layer route
  * sends (an immutable URL and a 304 for a repeat request), not as a download that does not happen; the region-reshape
@@ -36,6 +40,7 @@ import {
   printTileHits,
   tileTargets,
 } from "./atlas-bench-server";
+import { printWorldgenRun, WORLDGEN_RUN_FLAG, worldgenTargets } from "./atlas-bench-worldgen";
 
 const TILE_HITS_FLAG = "--tile-hits";
 
@@ -65,6 +70,7 @@ async function measure(version: number): Promise<TargetResult[]> {
     ...(await geoProfileTargets()),
     ...(await borderEditorTargets()),
     ...(await reshapeTargets()),
+    ...worldgenTargets(fileURLToPath(import.meta.url)),
   ];
   const writes = await writeStatements();
   return [
@@ -84,13 +90,18 @@ async function main(): Promise<number> {
     await printTileHits(Number(process.argv[hitsFlag + 1]));
     return 0;
   }
+  const worldgenFlag = process.argv.indexOf(WORLDGEN_RUN_FLAG);
+  if (worldgenFlag >= 0) {
+    printWorldgenRun(process.argv[worldgenFlag + 1] ?? "");
+    return 0;
+  }
 
   const version = await ixnayMapVersion();
   const tileDir = await mkdtemp(path.join(tmpdir(), "atlas-bench-tiles-"));
   process.env.MAP_TILE_DIR = tileDir;
   try {
     const results = await measure(version);
-    const heading = `Atlas Release 0 acceptance: ${databaseLabel(process.env.DATABASE_URL)}, Ixnay map version ${version}, tiles in ${tileDir}`;
+    const heading = `Atlas acceptance (Release 0, generator): ${databaseLabel(process.env.DATABASE_URL)}, Ixnay map version ${version}, tiles in ${tileDir}`;
     process.stdout.write(`${heading}\n\n${renderResults(results)}\n`);
     return exitCode(results);
   } finally {
