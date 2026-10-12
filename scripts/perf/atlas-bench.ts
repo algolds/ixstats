@@ -1,12 +1,17 @@
 /**
  * scripts/perf/atlas-bench.ts - Atlas Release 0 acceptance benchmark (`bun run perf:atlas`).
  *
- * Measures every acceptance target of docs/specs/2026-10-11-atlas-release-0-performance-design.md against the local
- * database and prints one PASS or FAIL line per target with the measured value; the exit code is 1 if any target
- * fails. It runs the server code in process (the route handlers, the loaders, the tRPC procedure) on a Prisma client
- * of its own, so it needs no dev server, and the editor measurements on the pure functions the editor uses plus the
- * real region-reshape hook in jsdom. Nothing is written to the database. Vector tiles render into a temporary folder
- * that is removed at the end, never the app's `MAP_TILE_DIR`.
+ * Measures the acceptance targets of docs/specs/2026-10-11-atlas-release-0-performance-design.md against the local
+ * database and prints one PASS or FAIL line per target with the measured value (INFO lines print numbers that have
+ * no target); the exit code is 1 if any target fails. It runs the server code in process (the route handlers, the
+ * loaders, the tRPC procedure) on a Prisma client of its own, so it needs no dev server, and the editor measurements
+ * on the pure functions the editor uses plus the real region-reshape hook in jsdom. Nothing is written to the
+ * database. Vector tiles render into a temporary folder that is removed at the end, never the app's `MAP_TILE_DIR`.
+ *
+ * What it cannot see: a browser. The second `/maps` load's "no layer download" is checked as what the layer route
+ * sends (an immutable URL and a 304 for a repeat request), not as a download that does not happen; the region-reshape
+ * release frame is the overlap work done in the mouse-up handler, over a fake map in jsdom, not a painted frame; and
+ * the drag frame is the JS of the pure drag functions, without MapLibre's own work on the posted data.
  *
  * Usage: bun run perf:atlas
  *
