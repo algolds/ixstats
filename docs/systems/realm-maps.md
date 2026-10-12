@@ -204,7 +204,9 @@ cron runner, scripts); tiles are built by sharp, one zoom at a time (about 500 M
 ## 7. Production notes
 
 - **`MAP_RASTER_DIR`** (default `data/map-rasters` under the app): the web server serves tiles from it and the cron
-  runner (or the CLI) writes it; set the same absolute path for both in the production env file.
+  runner (or the CLI) writes it; a generated world's relief is written by the web server's apply job, and the IxWorld
+  standalone (maps.ixwiki.com) serves the tiles too. Set the same absolute path, outside the repository and `data/`, for
+  the web app, the cron runner, the CLI and the IxWorld standalone in the production env (the deploy runbook's step 5c).
 - **`MAP_IMPORT_DIR`** (default `.map-imports` under the app): uploads and fetched art, by SHA-256. Web server and cron
   runner must share it (one host: the app directory). Fetched art accumulates there (a few MB per art version).
 - **`public/flags`**: the flags step writes `public/flags/` under the process's working directory, but the standalone

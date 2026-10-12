@@ -343,12 +343,22 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 
 Atlas Release A draws a hillshade over the land (the raster layer `relief`). Generated worlds build theirs when they
 are applied; Ixnay's and Eurth's come from their stored altitude bands and are built once, by hand, on the server
-itself (the command writes to the database it is connected to). The step needs no stored map pipeline. The web app
-serves the tiles from `MAP_RASTER_DIR` and the command writes there ([realm-maps.md](../systems/realm-maps.md#7-production-notes)),
-so both need the same absolute path; a generated world's relief is built by its apply job in the web process, so the
-web app writes there too. The IxWorld deploy copies `data/` into the standalone (`scripts/deploy-ixworld.sh`), which
-includes the default `data/map-rasters`: with the default folder, redeploy IxWorld after this step so maps.ixwiki.com
-has the tiles.
+itself (the command writes to the database it is connected to). The step needs no stored map pipeline.
+
+**Required first: one shared raster folder.** Four processes touch the tiles: the web app (serves them, and builds a
+founder's world relief in its apply job, at any time after the deploy), `ixstats-cron` (pipeline runs), the command
+below, and the IxWorld standalone (maps.ixwiki.com serves them). Unset, `MAP_RASTER_DIR` is `data/map-rasters` under
+each process's own working directory, so every one of them reads and writes a different folder. A redeploy of IxWorld
+copies the web app's `data/` once: that would cover Ixnay and Eurth as built today, and never a world a founder applies
+later, whose relief tiles maps.ixwiki.com would then answer with 404 ([realm-maps.md](../systems/realm-maps.md#7-production-notes)).
+Do this before the commands:
+
+1. Create one folder outside the repository and outside `data/` (the IxWorld deploy copies `data/`), for example
+   `mkdir -p /var/lib/ixstats/map-rasters`, owned by the user that runs the processes. If tiles already exist under
+   `data/map-rasters`, move them into it.
+2. Set the same absolute `MAP_RASTER_DIR=/var/lib/ixstats/map-rasters` in the `env:` of the web app's PM2 app, of
+   `ixstats-cron` and of `ecosystem.ixworld.config.cjs`, and export it in the shell that runs the command below.
+3. Reload them with `pm2 reload <app> --update-env` and check each sees it, as for `MAP_TILE_DIR` (step 2).
 
 ```bash
 cd /ixwiki/public/projects/ixstats
@@ -367,6 +377,10 @@ Each run prints the step's status in brackets, then the job's result. Expect:
 - a realm with no stored altitude bands: `Relief [skipped]` and `No altitude bands to shade`. Nothing is written, and
   there is nothing to do for that realm.
 
+Then check the folder is the shared one: `ls "$MAP_RASTER_DIR"/ixnay/relief` lists the version folder, and a tile
+request to maps.ixwiki.com for that version (`/api/map-rasters/ixnay/relief/<version>/0/0/0`, with the version from
+the realm's settings) answers 200, not 404. Repeat with a test realm's first applied world in step 6.
+
 ## 6. Smoke checks (browser)
 
 - `/`, `/dashboard`, `/mycountry`, `/maps` load, and the console shows no errors.
@@ -382,7 +396,8 @@ Each run prints the step's status in brackets, then the job's result. Expect:
 - **Map editor:** click two points on one river, and the edge follows the river.
 - **Relief:** Ixnay's hillshade shows on `/maps` (the Relief toggle in the layer controls). On a test realm where you are
   the founder, `/maps?realm=<slug>&editor=world` opens the World tab; generating and rerolling work, and nothing is applied
-  until Use this world.
+  until Use this world. After you apply a world on that realm, its relief shows on `maps.ixwiki.com` too (the shared
+  `MAP_RASTER_DIR` of step 5c; a 404 on its relief tiles means the standalone reads another folder).
 
 ## 6b. Serve Eurth (the first outside realm)
 
