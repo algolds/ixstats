@@ -11,6 +11,7 @@ import {
   MAP_PIPELINE_STEP_LABELS,
   MAP_PIPELINE_STEPS,
   mapPipelineOptionsSchema,
+  needsStoredPipeline,
   readRealmMapPipeline,
   stepArt,
   withRealmMapPipeline,
@@ -200,16 +201,18 @@ export async function startMapPipelineRun(
 ): Promise<{ jobId: string }> {
   const realm = await editableRealm(db, actor, realmId);
   const { pipeline, problem } = readRealmMapPipeline(realm.settings);
-  if (!pipeline) {
+  if (!pipeline && needsStoredPipeline(options.steps)) {
     throw new MapImportError(
       "BAD_REQUEST",
       problem ?? "Set up the map pipeline first (or load a preset)"
     );
   }
-  const gone = await missingUploads(
-    pipeline,
-    options.steps.flatMap((step) => stepArt(pipeline, step))
-  );
+  const gone = pipeline
+    ? await missingUploads(
+        pipeline,
+        options.steps.flatMap((step) => stepArt(pipeline, step))
+      )
+    : [];
   if (gone.length > 0) {
     throw new MapImportError(
       "BAD_REQUEST",

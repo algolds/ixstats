@@ -88,7 +88,7 @@ function rasterizeZones(
 }
 
 /** Altitude band 0-8 of a feature: generated worlds (`zone_N`), Ixnay's subgroups, or its band colour. */
-function bandZone(feature: Feature<Geometry | null>): number | null {
+export function bandZone(feature: Feature<Geometry | null>): number | null {
   const props = feature.properties;
   if (!props || isLandBand(props)) return null;
   for (const id of [props.zone, props.zoneId]) {

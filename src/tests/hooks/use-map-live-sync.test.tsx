@@ -12,7 +12,7 @@ jest.mock("~/hooks/useRealmMapVersion", () => ({
 jest.mock("~/trpc/react", () => {
   const query = () => ({ invalidate: jest.fn() });
   const utils = {
-    realms: { map: { version: query() } },
+    realms: { map: { version: query(), display: query() } },
     geoCore: {
       getMapBundleMarkers: query(),
       getMapBundleDetail: query(),
@@ -32,6 +32,7 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 const utils = api.useUtils();
 const invalidators = {
   version: utils.realms.map.version.invalidate,
+  display: utils.realms.map.display.invalidate,
   markers: utils.geoCore.getMapBundleMarkers.invalidate,
   detail: utils.geoCore.getMapBundleDetail.invalidate,
   storyPins: utils.geoFeatures.getAllStoryPins.invalidate,
@@ -94,12 +95,12 @@ describe("useMapLiveSync", () => {
     expect(called()).toEqual([]);
   });
 
-  it("refetches only the version when its realm's map version moved", () => {
+  it("refetches the version, and the display with the raster layers it lists, when its realm's map version moved", () => {
     renderHook(() => useMapLiveSync("eurth"));
 
     receive({ changeType: "version", realmId: "r_a" });
 
-    expect(called()).toEqual(["version"]);
+    expect(called()).toEqual(["display", "version"]);
   });
 
   it("refetches only the queries a story pin change touches", () => {
@@ -129,6 +130,7 @@ describe("useMapLiveSync", () => {
       "countryFeatures",
       "countryGeometry",
       "detail",
+      "display",
       "labels",
       "markers",
       "storyPins",
@@ -160,7 +162,7 @@ describe("useMapLiveSync", () => {
 
     receive({ changeType: "version", realmId: "r_b" });
 
-    expect(called()).toEqual(["version"]);
+    expect(called()).toEqual(["display", "version"]);
   });
 
   it("reads the version of the realm the map shows", () => {

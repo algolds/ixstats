@@ -6,7 +6,7 @@
  * removed. Raster layers the pipeline does not list are kept as they are.
  */
 import type { Prisma } from "@prisma/client";
-import { withRasterLayer } from "~/lib/maps/raster-tiles";
+import { sameRasterLayer, withRasterLayer } from "~/lib/maps/raster-tiles";
 import type { PipelineRaster } from "~/lib/maps/realm-map-pipeline";
 import {
   parseRealmMapSettings,
@@ -58,15 +58,6 @@ function rasterEntry(
   });
 }
 
-const sameEntry = (a: RealmRasterLayer | undefined, b: RealmRasterLayer) =>
-  !!a &&
-  a.label === b.label &&
-  a.kind === b.kind &&
-  a.version === b.version &&
-  a.maxZoom === b.maxZoom &&
-  a.order === b.order &&
-  !!a.legend === !!b.legend;
-
 async function planRaster(
   ctx: StepContext,
   spec: PipelineRaster,
@@ -90,7 +81,7 @@ async function planRaster(
     plan,
     image,
     legend,
-    changed: !plan.built || !sameEntry(current, entry),
+    changed: !plan.built || !sameRasterLayer(current, entry),
     previous: current?.version,
   };
 }

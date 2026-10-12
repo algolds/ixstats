@@ -31,7 +31,11 @@ const INVALIDATE_DEBOUNCE_MS = 750;
 type Utils = ReturnType<typeof api.useUtils>;
 
 const REFETCH: Record<MapSyncQuery, (utils: Utils) => void> = {
-  version: (utils) => void utils.realms.map.version.invalidate(),
+  version: (utils) => {
+    void utils.realms.map.version.invalidate();
+    // The display carries the raster layers (a rebuilt relief is a new entry) and is otherwise cached for 10 minutes
+    void utils.realms.map.display.invalidate();
+  },
   markers: (utils) => void utils.geoCore.getMapBundleMarkers.invalidate(),
   detail: (utils) => void utils.geoCore.getMapBundleDetail.invalidate(),
   storyPins: (utils) => void utils.geoFeatures.getAllStoryPins.invalidate(),

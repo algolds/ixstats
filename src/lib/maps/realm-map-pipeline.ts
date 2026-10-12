@@ -19,6 +19,7 @@ import { z } from "zod";
 import { realmLabelSeedFileSchema } from "./realm-labels";
 import { artKeySchema, artSourceSchema } from "./realm-map-art";
 import { MAP_DEFAULTS } from "./map-config";
+import { RELIEF_LAYER_ID } from "./raster-tiles";
 import { RealmRasterLayerSchema } from "./realm-map-settings";
 import { layerConfigArt, realmLayerConfigSchema } from "./import/realm-layer-config";
 
@@ -27,6 +28,7 @@ export const MAP_PIPELINE_STEPS = [
   "repair",
   "physical",
   "rasters",
+  "relief",
   "labels",
   "flags",
   "defaultView",
@@ -38,6 +40,7 @@ export const MAP_PIPELINE_STEP_LABELS: Record<MapPipelineStep, string> = {
   repair: "Border repair and smoothing",
   physical: "Physical layers",
   rasters: "Raster layers",
+  relief: "Relief",
   labels: "Map labels",
   flags: "Local flags",
   defaultView: "Default view",
@@ -96,6 +99,9 @@ const pipelineObjectSchema = z.object({
     .default([])
     .refine((layers) => new Set(layers.map((l) => l.id)).size === layers.length, {
       message: "Raster layer ids must be unique",
+    })
+    .refine((layers) => layers.every((l) => l.id !== RELIEF_LAYER_ID), {
+      message: `The raster layer id "${RELIEF_LAYER_ID}" is reserved for the realm's relief`,
     }),
   physical: realmLayerConfigSchema.optional(),
   labels: pipelineLabelsSchema.optional(),
@@ -130,6 +136,13 @@ export const realmMapPipelineSchema = pipelineObjectSchema.superRefine((pipeline
   }
 });
 export type RealmMapPipeline = z.infer<typeof realmMapPipelineSchema>;
+
+/**
+ * Whether a run of these steps reads the realm's stored pipeline config. `relief` shades the realm's stored altitude
+ * bands and reads nothing from it, so a relief-only run works for a realm with no pipeline (Ixnay, a generated world).
+ */
+export const needsStoredPipeline = (steps: readonly MapPipelineStep[]): boolean =>
+  steps.some((step) => step !== "relief");
 
 /** The art keys one step reads (none for steps that read no art). */
 export function stepArt(pipeline: RealmMapPipeline, step: MapPipelineStep): string[] {

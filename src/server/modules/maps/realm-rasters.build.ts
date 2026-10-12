@@ -1,8 +1,9 @@
 /**
  * Build a realm's raster map layer: a full-globe equirectangular image (2:1, `lon = x/W·360−180`,
  * `lat = 90−y/H·180`) becomes Web Mercator XYZ tiles, 256 px WebP, zoom 0 to the first zoom as wide as the image
- * (src/lib/maps/raster-tiles.ts), plus an optional legend image, in `<MAP_RASTER_DIR>/<realm>/<layer>/<version>/`.
- * The version is a hash of the inputs, so the same image is never built twice and a changed one gets new URLs.
+ * (src/lib/maps/raster-tiles.ts) or to the zoom asked for, plus an optional legend image, in
+ * `<MAP_RASTER_DIR>/<realm>/<layer>/<version>/`. The version is a hash of the inputs, so the same image is never
+ * built twice and a changed one gets new URLs.
  *
  * Memory: one zoom at a time, the image resized to that zoom's equatorial resolution (z5: 8192×4096 RGBA,
  * 128 MB), then one row of tiles at a time. Server and scripts only (sharp).
@@ -19,7 +20,7 @@ import {
   tileSourceRows,
   type RgbaImage,
 } from "~/lib/maps/raster-tiles";
-import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
+import { MAX_RASTER_ZOOM, type RealmRasterLayer } from "~/lib/maps/realm-map-settings";
 import {
   RASTER_LEGEND_FILE,
   rasterLayerDir,
@@ -44,7 +45,15 @@ export interface RasterBuildInput {
   grey?: boolean;
   /** Build again even when this version's folder exists. */
   force?: boolean;
+  /** Tiles up to this zoom, instead of the first zoom as wide as the image (relief: past its resolution). */
+  maxZoom?: number;
+  /** Lossy WebP for an overlay (default: lossless): colour quality and alpha quality, 0 to 100. */
+  lossy?: { quality: number; alphaQuality: number };
+  /** Write no tile that is fully transparent (the tile route answers a missing relief tile with one). */
+  skipTransparent?: boolean;
 }
+
+type RasterOptions = Pick<RasterBuildInput, "maxZoom" | "lossy" | "skipTransparent">;
 
 export interface RasterBuildResult {
   version: string;
@@ -52,14 +61,33 @@ export interface RasterBuildResult {
   legend: boolean;
   /** False when this version had been built already. */
   built: boolean;
+  /** Tiles written. */
   tiles: number;
+  /** Fully transparent tiles left out (`skipTransparent`). */
+  skipped: number;
   dir: string;
 }
 
-/** The content hash naming a build: the image, the legend and every option that changes the tiles. */
-export function rasterVersion(input: Pick<RasterBuildInput, "kind" | "image" | "legend" | "grey">) {
+/** The options that change the tiles, named for the version hash; empty when the build has none of them. */
+function optionsKey({ maxZoom, lossy, skipTransparent }: RasterOptions): string {
+  const parts = [
+    maxZoom !== undefined && `zoom${maxZoom}`,
+    lossy && `lossy${lossy.quality}/${lossy.alphaQuality}`,
+    skipTransparent && "skip-transparent",
+  ].filter(Boolean);
+  return parts.length > 0 ? `${parts.join(",")}|` : "";
+}
+
+/**
+ * The content hash naming a build: the image, the legend and every option that changes the tiles. A build without
+ * `maxZoom`, `lossy` and `skipTransparent` hashes as it did before they existed, so its layers keep their versions.
+ */
+export function rasterVersion(
+  input: Pick<RasterBuildInput, "kind" | "image" | "legend" | "grey"> & RasterOptions
+) {
   const hash = createHash("sha256");
   hash.update(`${BUILD_REVISION}|${input.kind}|${input.grey ? "grey" : "colour"}|`);
+  hash.update(optionsKey(input));
   hash.update(input.image);
   hash.update(input.legend ? `|legend:${input.legend.length}|` : "|no-legend|");
   if (input.legend) hash.update(input.legend);
@@ -67,8 +95,13 @@ export function rasterVersion(input: Pick<RasterBuildInput, "kind" | "image" | "
 }
 
 /** Base maps are photos of a sort (lossy, small); overlays are flat colours with clean alpha edges. */
-const webpOptions = (kind: RealmRasterLayer["kind"]): WebpOptions =>
-  kind === "base" ? { quality: 90, effort: 4 } : { lossless: true, effort: 4 };
+function webpOptions(
+  kind: RealmRasterLayer["kind"],
+  lossy: RasterBuildInput["lossy"]
+): WebpOptions {
+  if (kind === "base") return { quality: 90, effort: 4 };
+  return lossy ? { ...lossy, effort: 4 } : { lossless: true, effort: 4 };
+}
 
 async function sharpModule() {
   return (await import("sharp")).default;
@@ -99,29 +132,40 @@ function tileOf(strip: Uint8Array, stripWidth: number, left: number): Uint8Array
   return tile;
 }
 
+/** Whether every pixel of an RGBA tile has alpha 0. */
+function fullyTransparent(tile: Uint8Array): boolean {
+  for (let i = 3; i < tile.length; i += 4) if (tile[i] !== 0) return false;
+  return true;
+}
+
 async function writeTiles(
   dir: string,
   z: number,
   source: RgbaImage,
-  options: WebpOptions
-): Promise<number> {
+  options: WebpOptions,
+  skipTransparent: boolean
+): Promise<{ written: number; skipped: number }> {
   const sharp = await sharpModule();
   const size = 2 ** z;
   const raw = { width: RASTER_TILE_SIZE, height: RASTER_TILE_SIZE, channels: 4 as const };
+  let skipped = 0;
   for (let ty = 0; ty < size; ty++) {
     const strip = remapRows(source, tileSourceRows(z, ty, source.height));
     await Promise.all(
       Array.from({ length: size }, async (_, tx) => {
+        const pixels = tileOf(strip, source.width, tx * RASTER_TILE_SIZE);
+        if (skipTransparent && fullyTransparent(pixels)) {
+          skipped++;
+          return;
+        }
         const file = rasterTileFile(dir, z, tx, ty)!;
-        const webp = await sharp(tileOf(strip, source.width, tx * RASTER_TILE_SIZE), { raw })
-          .webp(options)
-          .toBuffer();
+        const webp = await sharp(pixels, { raw }).webp(options).toBuffer();
         await mkdir(path.dirname(file), { recursive: true });
         await writeFile(file, webp);
       })
     );
   }
-  return size * size;
+  return { written: size * size - skipped, skipped };
 }
 
 async function writeLegend(dir: string, legend: Uint8Array, grey: boolean): Promise<void> {
@@ -159,7 +203,8 @@ export interface RasterPlan {
  * version exists. Throws when the image is not a full-globe equirectangular one (2:1).
  */
 export async function planRealmRaster(
-  input: Pick<RasterBuildInput, "realmId" | "layerId" | "kind" | "image" | "legend" | "grey">
+  input: Pick<RasterBuildInput, "realmId" | "layerId" | "kind" | "image" | "legend" | "grey"> &
+    RasterOptions
 ): Promise<RasterPlan> {
   const sharp = await sharpModule();
   const { width = 0, height = 0 } = await sharp(input.image, {
@@ -168,30 +213,41 @@ export async function planRealmRaster(
   if (!(width > 0) || Math.abs(width / height / 2 - 1) > ASPECT_TOLERANCE) {
     throw new Error(`Expected a full-globe equirectangular image (2:1), got ${width}×${height}`);
   }
+  const maxZoom = input.maxZoom ?? rasterMaxZoom(width);
+  if (!Number.isInteger(maxZoom) || maxZoom < 0 || maxZoom > MAX_RASTER_ZOOM) {
+    throw new Error(
+      `Raster zoom must be a whole number from 0 to ${MAX_RASTER_ZOOM}, got ${maxZoom}`
+    );
+  }
   const version = rasterVersion(input);
   const dir = rasterVersionDir(input.realmId, input.layerId, version);
   if (!dir) throw new Error(`Not a valid realm or layer id: ${input.realmId}/${input.layerId}`);
-  return { version, maxZoom: rasterMaxZoom(width), dir, built: await exists(dir) };
+  return { version, maxZoom, dir, built: await exists(dir) };
 }
 
 /** Build the layer's tiles (and legend) into its version folder; a version already built is kept as it is. */
 export async function buildRealmRaster(input: RasterBuildInput): Promise<RasterBuildResult> {
   const { version, maxZoom, dir, built } = await planRealmRaster(input);
   const result = { version, maxZoom, legend: !!input.legend, dir };
-  if (!input.force && built) return { ...result, built: false, tiles: 0 };
+  if (!input.force && built) return { ...result, built: false, tiles: 0, skipped: 0 };
 
   // Built beside the final folder and moved in whole, so a half-built version is never served
   const temporary = `${dir}.${process.pid}.tmp`;
   await rm(temporary, { recursive: true, force: true });
+  await mkdir(temporary, { recursive: true }); // a layer whose every tile is skipped still has its folder
+  const options = webpOptions(input.kind, input.lossy);
   let tiles = 0;
+  let skipped = 0;
   for (let z = 0; z <= maxZoom; z++) {
     const source = await equirectAtZoom(input.image, z, !!input.grey);
-    tiles += await writeTiles(temporary, z, source, webpOptions(input.kind));
+    const counts = await writeTiles(temporary, z, source, options, !!input.skipTransparent);
+    tiles += counts.written;
+    skipped += counts.skipped;
   }
   if (input.legend) await writeLegend(temporary, input.legend, !!input.grey);
   await rm(dir, { recursive: true, force: true });
   await rename(temporary, dir);
-  return { ...result, built: true, tiles };
+  return { ...result, built: true, tiles, skipped };
 }
 
 /** Remove the layer's built versions other than `keep` (the live one and the one before it). */

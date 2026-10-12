@@ -6,7 +6,7 @@
  * request path: the `map-import` cron runner takes pipeline runs (applied ones included) when it is enabled, and
  * the physical layer engine runs in a worker thread under Bun.
  *
- * Steps run in pipeline order (repair, physical, rasters, labels, flags, defaultView, areas), each with a slice of
+ * Steps run in pipeline order (repair, physical, rasters, relief, labels, flags, defaultView, areas), each with a slice of
  * the progress bar; a failing step is recorded and the run goes on with the next one (the run is then `failed`, with
  * every step's report kept). The result holds each step's report and the SHA-256 of every art file read.
  */
@@ -15,8 +15,10 @@ import { ImportCancelledError } from "~/lib/maps/import/progress";
 import {
   MAP_PIPELINE_STEP_LABELS,
   mapPipelineOptionsSchema,
+  needsStoredPipeline,
   orderedSteps,
   readRealmMapPipeline,
+  realmMapPipelineSchema,
   type MapPipelineStep,
 } from "~/lib/maps/realm-map-pipeline";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
@@ -30,6 +32,7 @@ import type {
 } from "./realm-map-pipeline.context";
 import { runPhysicalStep } from "./realm-map-pipeline.physical";
 import { runRastersStep } from "./realm-map-pipeline.rasters";
+import { runReliefStep } from "./realm-map-pipeline.relief";
 import { runRepairStep } from "./realm-map-pipeline.repair";
 import {
   runAreasStep,
@@ -59,6 +62,7 @@ const STEP_RUNNERS: Record<MapPipelineStep, (ctx: StepContext) => Promise<StepRe
   repair: runRepairStep,
   physical: runPhysicalStep,
   rasters: runRastersStep,
+  relief: runReliefStep,
   labels: runLabelsStep,
   flags: runFlagsStep,
   defaultView: runDefaultViewStep,
@@ -84,9 +88,12 @@ async function loadRun(db: PrismaClient, job: PipelineJob) {
     select: { id: true, slug: true, name: true, settings: true },
   });
   if (!realm) throw new Error("Realm not found");
-  const { pipeline, problem } = readRealmMapPipeline(realm.settings);
-  if (!pipeline)
-    throw new Error(problem ?? "The realm has no map pipeline: load a preset or set one up");
+  const stored = readRealmMapPipeline(realm.settings);
+  if (!stored.pipeline && needsStoredPipeline(options.steps)) {
+    throw new Error(stored.problem ?? "The realm has no map pipeline: load a preset or set one up");
+  }
+  // A relief-only run reads no config: it gets an empty one when the realm has none
+  const pipeline = stored.pipeline ?? realmMapPipelineSchema.parse({});
   return { options, realm: { id: realm.id, slug: realm.slug, name: realm.name }, pipeline };
 }
 

@@ -10,6 +10,10 @@ jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock("~/server/modules/maps/realm-relief", () => ({
+  planRealmRelief: jest.fn().mockResolvedValue(null),
+  applyRealmRelief: jest.fn(),
+}));
 jest.mock("~/lib/system/job-lock", () => ({
   withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
     ran: true,
@@ -39,6 +43,7 @@ import {
   startMapPipelineRun,
 } from "~/server/modules/maps/realm-map-pipeline.config";
 import { autoDefaultView } from "~/server/modules/maps/realm-map-pipeline.steps";
+import { planRealmRelief, type ReliefPlan } from "~/server/modules/maps/realm-relief";
 import { admin, fakeDb, founder, stranger } from "./map-import-fakes";
 
 let dir: string;
@@ -87,6 +92,7 @@ describe("map pipeline config", () => {
       "repair",
       "physical",
       "rasters",
+      "relief",
       "labels",
       "flags",
       "defaultView",
@@ -174,6 +180,61 @@ describe("map pipeline runs", () => {
     ).rejects.toBeInstanceOf(MapImportError);
   });
 
+  it("starts and runs a relief-only run on a realm with no pipeline, and still refuses any other step", async () => {
+    const db = setup();
+    await expect(
+      startMapPipelineRun(
+        db,
+        founder,
+        "r1",
+        { steps: ["relief", "labels"], dryRun: true },
+        { kick: false }
+      )
+    ).rejects.toThrow(/Set up the map pipeline/);
+
+    const plan: ReliefPlan = {
+      entry: {
+        id: "relief",
+        label: "Relief",
+        kind: "overlay",
+        version: "0123456789abcdef",
+        maxZoom: 5,
+        order: 10,
+      },
+      image: new Uint8Array(),
+      built: false,
+      changed: true,
+      previous: undefined,
+    };
+    jest.mocked(planRealmRelief).mockResolvedValueOnce(plan);
+    const { jobId } = await startMapPipelineRun(
+      db,
+      founder,
+      "r1",
+      { steps: ["relief"], dryRun: true },
+      { kick: false }
+    );
+    expect(await runMapImportJob(db, jobId)).toBe("ran");
+    const run = await getMapPipelineRun(db, founder, jobId);
+    expect(run.status).toBe("succeeded");
+    expect(run.result?.steps.map((s) => [s.step, s.status])).toEqual([["relief", "would-change"]]);
+    expect(planRealmRelief).toHaveBeenCalledWith(db, "r1", { bands: true });
+    expect(db.realm.rows[0].settings.map?.pipeline).toBeUndefined();
+
+    // A stored pipeline that no longer reads does not stop a run that does not use it
+    db.realm.rows[0].settings = { map: { pipeline: { art: { x: { uploadId: 5 } } } } };
+    const again = await startMapPipelineRun(
+      db,
+      founder,
+      "r1",
+      { steps: ["relief"], dryRun: true },
+      { kick: false }
+    );
+    expect(again.jobId).not.toBe(jobId);
+    expect(await runMapImportJob(db, again.jobId)).toBe("ran");
+    expect((await getMapPipelineRun(db, founder, again.jobId)).status).toBe("succeeded");
+  });
+
   it("a dry run reports each step and writes nothing; an apply writes; a second apply finds nothing to do", async () => {
     const db = runDb(withPipeline({ labels, defaultView: "auto" }));
     const run = async (dryRun: boolean) => {
@@ -205,7 +266,11 @@ describe("map pipeline runs", () => {
 
     const again = await run(false);
     expect(again.result?.steps.map((s) => s.status)).toEqual(["unchanged", "unchanged"]);
-    db.user.rows.push({ clerkUserId: admin.clerkUserId, forumUsername: "Ixnay", wikiUsername: null });
+    db.user.rows.push({
+      clerkUserId: admin.clerkUserId,
+      forumUsername: "Ixnay",
+      wikiUsername: null,
+    });
     const runs = await listMapPipelineRuns(db, admin, "r1");
     expect(runs).toHaveLength(3);
     // Who started each run, by name (the panel shows it), not a raw account id.
@@ -237,6 +302,32 @@ describe("map pipeline runs", () => {
     expect(run.status).toBe("failed");
     expect(run.error).toMatch(/Map labels: Art "labels": the uploaded file is gone/);
     expect(run.result?.steps.map((s) => s.status)).toEqual(["failed", "would-change"]);
+  });
+
+  it("fails a queued run of any step but relief once the realm has no pipeline", async () => {
+    // Queued while the realm had a pipeline, run after it was cleared
+    const db = runDb({});
+    for (const [id, steps] of [
+      ["jobgone01", ["labels"]],
+      ["jobgone02", ["relief", "labels"]],
+    ] as const) {
+      db.mapImportJob.rows.push({
+        id,
+        realmId: "r1",
+        kind: "map-pipeline",
+        status: "queued",
+        dryRun: true,
+        options: { steps, dryRun: true },
+        requestedBy: "admin_1",
+        createdAt: new Date(),
+        progress: 0,
+      });
+      await runMapImportJob(db, id);
+      const run = await getMapPipelineRun(db, admin, id);
+      expect(run.status).toBe("failed");
+      expect(run.error).toMatch(/no map pipeline/);
+      expect(run.result).toBeNull();
+    }
   });
 
   it("skips the steps the pipeline does not configure", async () => {

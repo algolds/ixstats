@@ -2,6 +2,8 @@
 import { artSourceSchema } from "~/lib/maps/realm-map-art";
 import {
   fillPipelineFromPreset,
+  MAP_PIPELINE_STEP_LABELS,
+  MAP_PIPELINE_STEPS,
   orderedSteps,
   readRealmMapPipeline,
   realmMapPipelineSchema,
@@ -62,6 +64,21 @@ describe("realm map pipeline config", () => {
     ).toThrow(/unique/);
   });
 
+  it("keeps the id relief for the realm's own relief layer", () => {
+    const parse = (id: string) =>
+      realmMapPipelineSchema.safeParse({
+        art: { geo: { repoPath: "geo.png" } },
+        rasters: [{ id, label: "Shading", kind: "overlay", art: "geo" }],
+      });
+    const refused = parse("relief");
+    expect(refused.success).toBe(false);
+    expect(refused.error?.issues[0]).toMatchObject({
+      path: ["rasters"],
+      message: expect.stringMatching(/relief.*reserved/),
+    });
+    expect(parse("shading").success).toBe(true);
+  });
+
   it("takes labels typed in as a seed list", () => {
     const pipeline = realmMapPipelineSchema.parse({
       labels: {
@@ -80,6 +97,22 @@ describe("realm map pipeline config", () => {
     expect(stepArt(pipeline, "rasters")).toEqual(["geo", "legend"]);
     expect(stepArt(pipeline, "physical")).toEqual([]);
     expect(stepArt(pipeline, "repair")).toEqual([]);
+    expect(stepArt(pipeline, "relief")).toEqual([]);
+  });
+
+  it("runs the relief step after the physical layers it shades, before the labels", () => {
+    expect(MAP_PIPELINE_STEPS).toEqual([
+      "repair",
+      "physical",
+      "rasters",
+      "relief",
+      "labels",
+      "flags",
+      "defaultView",
+      "areas",
+    ]);
+    expect(MAP_PIPELINE_STEP_LABELS.relief).toBe("Relief");
+    expect(orderedSteps(["areas", "relief", "physical"])).toEqual(["physical", "relief", "areas"]);
   });
 
   it("orders steps as a run takes them, once each", () => {

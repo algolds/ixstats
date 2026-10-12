@@ -1,8 +1,13 @@
 import type { NextRequest } from "next/server";
+import { RELIEF_LAYER_ID, RELIEF_MAX_ZOOM } from "~/lib/maps/raster-tiles";
 import { rasterTileFile } from "~/server/modules/maps/realm-rasters.storage";
 import { serveRealmRaster, tileCoord } from "~/server/modules/maps/realm-rasters.serve";
 
-/** One raster tile (256 px WebP) of a realm's map art layer, by version. */
+/**
+ * One raster tile (256 px WebP) of a realm's map art layer, by version. The relief layer is built without its fully
+ * transparent tiles, so a tile of it that is not there is a transparent one, not a 404 (up to its zoom, z5: above
+ * that no tile exists).
+ */
 export async function GET(
   _request: NextRequest,
   {
@@ -19,7 +24,9 @@ export async function GET(
   }
 ) {
   const { z, x, y, ...ref } = await params;
-  return serveRealmRaster(ref, (dir) =>
-    rasterTileFile(dir, tileCoord(z), tileCoord(x), tileCoord(y))
+  return serveRealmRaster(
+    ref,
+    (dir) => rasterTileFile(dir, tileCoord(z), tileCoord(x), tileCoord(y)),
+    { transparentWhenMissing: ref.layer === RELIEF_LAYER_ID && tileCoord(z) <= RELIEF_MAX_ZOOM }
   );
 }

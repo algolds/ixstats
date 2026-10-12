@@ -13,6 +13,15 @@ import { MAX_RASTER_ZOOM, type RealmRasterLayer } from "./realm-map-settings";
 
 export const RASTER_TILE_SIZE = 256;
 
+/**
+ * The raster layer holding a realm's hillshade (src/server/modules/maps/realm-relief.ts). It is built without its
+ * fully transparent tiles, so `/api/map-rasters` answers a missing tile of this layer with a transparent one.
+ */
+export const RELIEF_LAYER_ID = "relief";
+
+/** The zoom the relief layer is built to (MapLibre overzooms past it): no relief tile exists above it. */
+export const RELIEF_MAX_ZOOM = 5;
+
 /** The first zoom whose world (256·2^z px) is at least as wide as the image; MapLibre overzooms past it. */
 export function rasterMaxZoom(imageWidth: number): number {
   let z = 0;
@@ -108,6 +117,19 @@ export function rasterTilePath(realmId: string, layer: LayerRef): string {
 /** The layer's legend image (app-relative), when it has one. */
 export function rasterLegendPath(realmId: string, layer: LayerRef): string {
   return `${layerPath(realmId, layer)}/legend`;
+}
+
+/** Whether `stored` is `built` as the settings record it: the same version, zoom range, label, kind, order and legend. */
+export function sameRasterLayer(stored: RealmRasterLayer | undefined, built: RealmRasterLayer) {
+  return (
+    !!stored &&
+    stored.label === built.label &&
+    stored.kind === built.kind &&
+    stored.version === built.version &&
+    stored.maxZoom === built.maxZoom &&
+    stored.order === built.order &&
+    !!stored.legend === !!built.legend
+  );
 }
 
 /** The realm's raster layers with `layer` added, or replacing the one with its id. */
