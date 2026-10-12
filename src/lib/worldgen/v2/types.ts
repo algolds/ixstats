@@ -270,6 +270,9 @@ export interface WorldGenParams {
   developmentLevel: DevelopmentLevel;
 }
 
+/** A world preset's recipe: any of the parameters but the seed (a preset makes a different world from every seed). */
+export type WorldPresetParams = Partial<Omit<WorldGenParams, "seed">>;
+
 // Generation Output
 
 /** The slot key of a generated state: the slot's `key` and its political feature's `slotKey`. */

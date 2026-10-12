@@ -28,6 +28,7 @@ import {
   updateRealmMapSettings,
 } from "~/server/modules/realms/realms.map";
 import { RealmMapSettingsSchema } from "~/lib/maps/realm-map-settings";
+import { listPublishedWorldPresets } from "~/server/modules/maps/world-presets";
 import { getRealmMapVersion, invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 
@@ -111,6 +112,12 @@ export const realmMapRouter = createTRPCRouter({
     const status = await getRealmWorldStatus(ctx.db, ctx.user, realmId).catch(mapError);
     return { ...status, reliefFailed: await worldReliefFailed(ctx.db, realmId) };
   }),
+
+  /**
+   * The presets the World tab offers: published and unarchived, in the admin's order, each by slug and name with its
+   * published recipe (no seed). Drafts never leave the admin's `atlas.presets` procedures.
+   */
+  worldPresets: protectedProcedure.query(({ ctx }) => listPublishedWorldPresets(ctx.db)),
 
   /** A country as a generated nation slot, for the Properties inspector's slot tools. */
   worldSlot: protectedProcedure

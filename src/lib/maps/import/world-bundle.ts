@@ -9,7 +9,7 @@
  */
 import type { Feature, FeatureCollection, Position } from "geojson";
 import { z } from "zod";
-import type { WorldGenParams } from "~/lib/worldgen/v2/types";
+import type { WorldGenParams, WorldPresetParams } from "~/lib/worldgen/v2/types";
 
 export const WORLD_BUNDLE_VERSION = 1;
 export const MAX_WORLD_BUNDLE_CELLS = 200_000;
@@ -80,8 +80,11 @@ const fail = (reason: string): { ok: false; reason: string } => ({ ok: false, re
 const latitude = z.number().min(-90).max(90);
 const countryCount = z.number().int().min(1).max(500);
 
-/** Bounded generator params: an unbounded cellCount or plateCount would pin whoever runs them. */
-export const worldGenParamsSchema: z.ZodType<WorldGenParams> = z.object({
+/**
+ * The bounds of every generator parameter: an unbounded cellCount or plateCount would pin whoever runs them. The
+ * shape is exported for the schemas built from it, and for the Studio's parameter ranges.
+ */
+export const WORLD_PARAM_SHAPE = {
   seed: z.number().int(),
   cellCount: z.number().int().min(1000).max(150000),
   plateCount: z.number().int().min(3).max(30),
@@ -105,7 +108,16 @@ export const worldGenParamsSchema: z.ZodType<WorldGenParams> = z.object({
   useMarkovNaming: z.boolean(),
   lloydIterations: z.number().int().min(0).max(5),
   developmentLevel: z.enum(["developing", "industrial", "modern"]),
-});
+};
+
+export const worldGenParamsSchema: z.ZodType<WorldGenParams> = z.object(WORLD_PARAM_SHAPE);
+
+/** A preset's recipe: any of the parameters but the seed, which a preset never carries (an unknown key, `seed` too, is rejected). */
+export const worldPresetParamsSchema: z.ZodType<WorldPresetParams> = z
+  .object(WORLD_PARAM_SHAPE)
+  .omit({ seed: true })
+  .partial()
+  .strict();
 
 // Cells
 
