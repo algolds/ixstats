@@ -8,7 +8,8 @@ import { geoEditorBordersRouter } from "~/server/api/routers/geo/editor/borders"
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const EURTH = "r_eurth";
-const SAVED = new Date("2026-10-11T10:00:00Z");
+// Recent, so the draft stays inside its 24 h restore window whenever the test runs
+const SAVED = new Date(Date.now() - 60_000);
 const hoursBefore = (hours: number) => new Date(SAVED.getTime() - hours * 3_600_000);
 const square = {
   type: "Polygon",

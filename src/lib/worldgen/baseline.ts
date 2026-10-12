@@ -76,6 +76,18 @@ function mixMean(mix: Record<string, number>, table: Record<string, number>): nu
   return total > 0 ? sum / total : 0;
 }
 
+/**
+ * What `deriveBaseline` can produce at a development level: the range of a slot's GDP per capita (0 for an empty
+ * slot aside) and the most people per km² of its land. The server checks the figures a browser sends against these.
+ */
+export function baselineBounds(level: DevelopmentLevel) {
+  const base = GDP_BASE[level];
+  return {
+    gdpPerCapita: { min: base * GDP_FACTOR_RANGE.min, max: base * GDP_FACTOR_RANGE.max },
+    maxDensity: Math.max(...Object.values(DENSITY)) * DENSITY_SCALE[level],
+  };
+}
+
 export function deriveBaseline(input: BaselineInput): Baseline {
   const cells = finite(input.cells);
   const habitableKm2 = finite(input.habitableKm2);

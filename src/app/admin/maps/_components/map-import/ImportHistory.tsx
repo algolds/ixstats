@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import type { MapImportContext } from "./useMapImportJob";
+import type { MapImportContext } from "~/hooks/useMapImportJob";
 
 type ImportRow = MapImportContext["imports"][number];
 

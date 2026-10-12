@@ -114,6 +114,19 @@ describe("useMapLayerData", () => {
     expect(mockVersionQuery).toHaveBeenCalledWith({ realm: "eurth" }, expect.anything());
   });
 
+  it("names the map version its layers belong to, which is what says the layers changed", async () => {
+    const { result, rerender } = renderHook(() => useMapLayerData({ layers: ["political"] }), {
+      wrapper,
+    });
+    expect(result.current.version).toBe(3);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+    rerender();
+    expect(result.current.version).toBe(3);
+    mockVersion = { realmId: "default", version: 4 };
+    rerender();
+    expect(result.current.version).toBe(4);
+  });
+
   it("waits for the version, fetching nothing and reporting it is pending", () => {
     mockVersion = undefined;
     const { result } = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });

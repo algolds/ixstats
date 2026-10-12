@@ -155,6 +155,8 @@ export function useMapLayerData({
 
   return {
     packed,
+    /** The map version the layers belong to; it names their content, which is fixed for a version */
+    version,
     error: combined.error ?? versionError,
     isPending: combined.pending || (enabled && !mapVersion),
   };

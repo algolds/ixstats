@@ -1,53 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
-import {
-  MAX_MAP_IMPORT_BYTES,
-  type MapImportKind,
-  type MapImportOptionsInput,
-} from "~/lib/maps/import/options";
-import type { GeojsonInspection } from "~/lib/maps/import/geojson-engine";
+import type { MapImportOptionsInput } from "~/lib/maps/import/options";
+import { postMapUpload, type MapUploadInfo } from "~/lib/maps/import/upload-client";
 import type { MapGeoreference } from "~/lib/maps/realm-map-settings";
 import { GeorefPanel, type CapitalHint } from "./GeorefPanel";
 
-export interface MapUploadInfo {
-  uploadId: string;
-  kind: MapImportKind;
-  filename: string;
-  size: number;
-  width: number | null;
-  height: number | null;
-  geojson?: GeojsonInspection;
-}
-
-const MAX_MB = MAX_MAP_IMPORT_BYTES / 1024 / 1024;
-
 /** Upload the file to the map import store; the server reads its kind from the bytes. A world bundle is refused here. */
 export async function uploadMapFile(realmId: string, file: File): Promise<MapUploadInfo> {
-  if (file.size > MAX_MAP_IMPORT_BYTES) throw new Error(`Map files are limited to ${MAX_MB} MB`);
-  const form = new FormData();
-  form.append("file", file);
-  const res = await fetch(
-    withBasePath(`/api/admin/map-import/upload?realm=${encodeURIComponent(realmId)}`),
-    {
-      method: "POST",
-      body: form,
-    }
-  );
-  const body = (await res
-    .json()
-    .catch(() => ({ error: `Upload failed (${res.status})` }))) as MapUploadInfo & {
-    error?: string;
-  };
-  if (!res.ok) throw new Error(body.error ?? `Upload failed (${res.status})`);
-  if (body.kind === "world")
+  const info = await postMapUpload(realmId, file);
+  if (info.kind === "world")
     throw new Error("That is a world bundle. Apply it from the World tab of the map editor.");
-  return body;
+  return info;
 }
 
 interface SettingsProps {

@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { notifyFromStore } from "~/hooks/useNotify";
 import { confirmEditorAction } from "~/components/maps/editor/components/EditorConfirmDialog";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
+import { initialSidebarTab } from "~/components/maps/editor/utils/world-tab";
+import { wantsRealmWorldEditor } from "~/lib/maps/realm-world-editor";
 import type { PropertiesPanelCountry } from "~/components/maps/editor/types/editor-state";
 import { invalidateMapViews, notifySuccess } from "./geo-invalidation";
 import { useEditorFeatureProperties } from "./useEditorFeatureProperties";
@@ -14,6 +17,8 @@ import { useEditorSovereigntyState } from "./useEditorSovereigntyState";
 
 interface UseEditorGeoDataStateProps {
   isWorldMode: boolean;
+  /** The admin studio's sandbox: the World tab alone */
+  sandbox?: boolean;
   activeCountryId: string | null;
   setActiveCountryId: (id: string | null) => void;
   mapSelectedCountry: SelectedCountry | null;
@@ -25,6 +30,7 @@ const includesText = (haystack: string, needle: string) =>
 
 export function useEditorGeoDataState({
   isWorldMode,
+  sandbox = false,
   activeCountryId,
   setActiveCountryId,
   mapSelectedCountry,
@@ -34,8 +40,10 @@ export function useEditorGeoDataState({
   // The realm being edited: its features, and its nations to link them to.
   const realm = useMapRealm();
 
-  const [activeSidebarTab, setActiveSidebarTab] = useState<TabId>(
-    isWorldMode ? "linkages" : "layers"
+  // `?editor=world` (the realm's Manage page) and the studio's sandbox open the World tab
+  const wantsWorldTab = wantsRealmWorldEditor(useSearchParams());
+  const [activeSidebarTab, setActiveSidebarTab] = useState<TabId>(() =>
+    initialSidebarTab({ isWorldMode, wantsWorldTab, sandbox })
   );
 
   // Linkage / assignment

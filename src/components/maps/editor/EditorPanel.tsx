@@ -11,6 +11,7 @@ import {
   List,
   OpenBook as BookOpen,
   Globe,
+  Planet,
   Link as LinkIcon,
   ViewGrid as Layout,
   ClockRotateRight as History,
@@ -43,7 +44,8 @@ export type TabId =
   | "linkages"
   | "sovereignty"
   | "history"
-  | "queue";
+  | "queue"
+  | "world";
 
 const TAB_DEFS: Record<
   TabId,
@@ -58,6 +60,7 @@ const TAB_DEFS: Record<
   stories: { label: "Stories", Icon: Bookmark },
   history: { label: "History", Icon: History },
   queue: { label: "Queue", Icon: Inbox },
+  world: { label: "World", Icon: Planet },
 };
 
 interface EditorPanelProps {
@@ -85,6 +88,8 @@ interface EditorPanelProps {
   sovereigntyContent?: React.ReactNode;
   historyContent?: React.ReactNode;
   queueContent?: React.ReactNode;
+  /** The World tab: generate a world, preview it and tune it (world editor). */
+  worldContent?: React.ReactNode;
   /** Feature count for badge */
   featureCount?: number;
   /** Whether import wizard should take over the panel */
@@ -205,6 +210,7 @@ function TabBody({
     | "sovereigntyContent"
     | "historyContent"
     | "queueContent"
+    | "worldContent"
     | "featuresLoading"
   >;
 }) {
@@ -221,6 +227,8 @@ function TabBody({
       return (
         props.queueContent && <div className={`${scroll} px-3 py-3`}>{props.queueContent}</div>
       );
+    case "world":
+      return props.worldContent && <div className={scroll}>{props.worldContent}</div>;
     case "linkages":
       return props.linkagesContent && <div className={scroll}>{props.linkagesContent}</div>;
     case "sovereignty":

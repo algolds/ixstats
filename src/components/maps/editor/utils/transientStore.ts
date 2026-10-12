@@ -24,6 +24,8 @@ interface TransientEditorState {
   zoom: number | null;
   /** Area of the border being dragged, live until the drag commits (km², null when idle). */
   borderAreaKm2: number | null;
+  /** A generated world covers the map as a draft; `message` is the stage being made ("" when it is done). */
+  worldDraft: { message: string } | null;
 }
 
 class TransientStore {
@@ -34,6 +36,7 @@ class TransientStore {
     terrainInfo: null,
     zoom: null,
     borderAreaKm2: null,
+    worldDraft: null,
   };
 
   private listeners = new Set<() => void>();
@@ -94,6 +97,13 @@ class TransientStore {
   public setBorderAreaKm2 = (area: number | null): void => {
     if (this.state.borderAreaKm2 === area) return;
     this.state = { ...this.state, borderAreaKm2: area };
+    this.emitChange();
+  };
+
+  public setWorldDraft = (draft: { message: string } | null): void => {
+    const current = this.state.worldDraft;
+    if (current === draft || (current && draft && current.message === draft.message)) return;
+    this.state = { ...this.state, worldDraft: draft };
     this.emitChange();
   };
 

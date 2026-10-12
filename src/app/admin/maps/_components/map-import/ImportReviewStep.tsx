@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import type { MapImportApplyInput } from "~/lib/maps/import/options";
-import type { MapImportDiff } from "./useMapImportJob";
+import type { MapImportDiff } from "~/hooks/useMapImportJob";
 
 const STATUS: Record<string, { label: string; variant: "success" | "info" | "default" }> = {
   new: { label: "New", variant: "success" },

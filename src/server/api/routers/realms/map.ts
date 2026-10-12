@@ -1,13 +1,26 @@
 /**
  * realms.map: what a realm's map viewer shows beyond its layers (planet radius, default view, base image, credit
- * line, unclaimed nations, whether the viewer edits it), the realm's map settings, and "Recompute areas". Logic
- * lives in ~/server/modules/realms/realms.map.ts.
+ * line, unclaimed nations, whether the viewer edits it), the realm's map settings, "Recompute areas", and the World
+ * tab's server side (the lock, the slot tools). Logic lives in ~/server/modules/realms/realms.map.ts and
+ * realms.world-slots.ts.
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { mutationRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { worldReliefFailed } from "~/server/modules/maps/world-import.relief-state";
 import { RealmRegionError } from "~/server/modules/realms/realms.region";
+import {
+  deleteWorldSlot,
+  getRealmWorldStatus,
+  getWorldSlot,
+  setSlotClaimable,
+} from "~/server/modules/realms/realms.world-slots";
 import {
   getRealmMapDisplay,
   realmForWikiArticle,
@@ -87,5 +100,43 @@ export const realmMapRouter = createTRPCRouter({
       await invalidateRealmMap(ctx.db, realmId);
       broadcastMapUpdate("borders", undefined, realmId);
       return result;
+    }),
+  /**
+   * Whether the realm's world can be regenerated or applied: its status and the pending and approved claims that
+   * lock it, and whether the relief step of its latest world import failed (the tab then offers to rebuild it). The
+   * realm's map editors only; never Ixnay.
+   */
+  worldStatus: protectedProcedure.input(realmInput).query(async ({ ctx, input }) => {
+    const realmId = await mutationRealmId(ctx, input.realm);
+    const status = await getRealmWorldStatus(ctx.db, ctx.user, realmId).catch(mapError);
+    return { ...status, reliefFailed: await worldReliefFailed(ctx.db, realmId) };
+  }),
+
+  /** A country as a generated nation slot, for the Properties inspector's slot tools. */
+  worldSlot: protectedProcedure
+    .input(realmInput.extend({ countryId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      const realmId = await mutationRealmId(ctx, input.realm);
+      return getWorldSlot(ctx.db, ctx.user, realmId, input.countryId).catch(mapError);
+    }),
+
+  /** Whether players may claim a generated nation slot (`Country.claimable`). */
+  setSlotClaimable: rateLimitedMutationProcedure
+    .input(realmInput.extend({ countryId: z.string().min(1), claimable: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const realmId = await mutationRealmId(ctx, input.realm);
+      return setSlotClaimable(ctx.db, ctx.user, realmId, input.countryId, input.claimable).catch(
+        mapError
+      );
+    }),
+
+  /** Delete a generated nation slot nobody holds or has claimed; its map features stay, unlinked. */
+  deleteSlot: rateLimitedMutationProcedure
+    .input(realmInput.extend({ countryId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const realmId = await mutationRealmId(ctx, input.realm);
+      await deleteWorldSlot(ctx.db, ctx.user, realmId, input.countryId).catch(mapError);
+      await invalidateRealmMap(ctx.db, realmId);
+      return { deleted: true };
     }),
 });
