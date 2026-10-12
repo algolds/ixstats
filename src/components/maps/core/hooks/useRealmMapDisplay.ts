@@ -85,7 +85,14 @@ const NO_RASTER_LAYERS: readonly RealmRasterLayer[] = [];
 
 // The choices live outside any component: the map's layer panel and the editor's Layers panel are separate parts
 // of the page (the editor is sometimes above the map, sometimes below it) and must show one set of switches.
-const choices = new Map<string, RasterSelection>();
+interface Choice {
+  selection: RasterSelection;
+  /** The viewer has switched the relief on or off themselves, so a base map no longer decides it */
+  reliefChosen: boolean;
+}
+
+const DEFAULT_CHOICE: Choice = { selection: DEFAULT_SHOWN, reliefChosen: false };
+const choices = new Map<string, Choice>();
 const listeners = new Set<() => void>();
 
 const subscribe = (listener: () => void) => {
@@ -95,40 +102,56 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-const chosenFor = (realmId: string | null): RasterSelection =>
-  (realmId && choices.get(realmId)) || DEFAULT_SHOWN;
+const choiceFor = (realmId: string | null): Choice =>
+  (realmId && choices.get(realmId)) || DEFAULT_CHOICE;
 
-function choose(realmId: string | null, change: (current: RasterSelection) => RasterSelection) {
+function choose(realmId: string | null, change: (current: Choice) => Choice) {
   if (!realmId) return;
-  choices.set(realmId, change(chosenFor(realmId)));
+  choices.set(realmId, change(choiceFor(realmId)));
   for (const listener of listeners) listener();
 }
 
 /**
- * The raster art switches of the realm a map shows. Each realm opens with no base map and its relief shown; a
- * choice lasts for the session, for everything that shows the realm's switches. "Art mode" is on while a base map
- * is shown: the art carries names, flags and borders.
+ * A base map carries its own shading, so the relief starts off while one is shown and returns with the standard
+ * style, unless the viewer has chosen it either way.
+ */
+function withBase({ selection, reliefChosen }: Choice, base: string | null): Choice {
+  const others = selection.overlays.filter((id) => id !== RELIEF_LAYER_ID);
+  const relief = reliefChosen ? selection.overlays.includes(RELIEF_LAYER_ID) : base === null;
+  return {
+    reliefChosen,
+    selection: { base, overlays: relief ? [...others, RELIEF_LAYER_ID] : others },
+  };
+}
+
+/**
+ * The raster art switches of the realm a map shows. Each realm opens with no base map and its relief shown (off
+ * under a base map unless the viewer chooses it); a choice lasts for the session, for everything that shows the
+ * realm's switches. "Art mode" is on while a base map is shown: the art carries names, flags and borders.
  */
 export function useRealmRasterSelection(display: ReturnType<typeof useRealmMapDisplay>) {
   const layers = display?.rasterLayers ?? NO_RASTER_LAYERS;
   const realmId = display?.realmId ?? null;
-  const selection = useSyncExternalStore(
+  const { selection } = useSyncExternalStore(
     subscribe,
-    () => chosenFor(realmId),
-    () => DEFAULT_SHOWN
+    () => choiceFor(realmId),
+    () => DEFAULT_CHOICE
   );
 
   const setBase = useCallback(
-    (base: string | null) => choose(realmId, (current) => ({ ...current, base })),
+    (base: string | null) => choose(realmId, (current) => withBase(current, base)),
     [realmId]
   );
   const toggleOverlay = useCallback(
     (id: string) =>
       choose(realmId, (current) => ({
-        ...current,
-        overlays: current.overlays.includes(id)
-          ? current.overlays.filter((o) => o !== id)
-          : [...current.overlays, id],
+        reliefChosen: current.reliefChosen || id === RELIEF_LAYER_ID,
+        selection: {
+          ...current.selection,
+          overlays: current.selection.overlays.includes(id)
+            ? current.selection.overlays.filter((o) => o !== id)
+            : [...current.selection.overlays, id],
+        },
       })),
     [realmId]
   );

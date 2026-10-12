@@ -23,6 +23,7 @@ const OTHER = "r_other";
 const FOUNDER = "clerk_founder";
 const MAP_OFFICER = "clerk_mapper";
 const BOARD_OFFICER = "clerk_board";
+const CLAIMS_OFFICER = "clerk_claims";
 const PLAYER = "clerk_player";
 const ADMIN = "clerk_admin";
 
@@ -38,6 +39,7 @@ const OFFICERS: Record<string, Array<{ userId: string; powers: string[] }>> = {
   [EURTH]: [
     { userId: MAP_OFFICER, powers: ["map"] },
     { userId: BOARD_OFFICER, powers: ["board"] },
+    { userId: CLAIMS_OFFICER, powers: ["map", "claims"] },
   ],
   [OTHER]: [],
   [DEFAULT_REALM_ID]: [],
@@ -52,6 +54,7 @@ function modelMock(): ModelMock {
     findUnique: jest.fn().mockResolvedValue(null),
     count: jest.fn().mockResolvedValue(0),
     update: jest.fn().mockResolvedValue({}),
+    updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     delete: jest.fn().mockResolvedValue({}),
   };
 }
@@ -119,6 +122,7 @@ describe("realms.map.worldStatus", () => {
       approvedClaims: 1,
       locked: true,
       lockReason: "claims",
+      canReviewClaims: true,
     });
     const where = db.realmClaim!.count!.mock.calls.map(([arg]) => arg.where);
     expect(where).toEqual(
@@ -127,6 +131,17 @@ describe("realms.map.worldStatus", () => {
         { realmId: EURTH, status: "approved" },
       ])
     );
+  });
+
+  it("says whether the viewer can review the claims that lock it: the founder, the Claims power, site staff", async () => {
+    const db = realmDb();
+    const reviewer = async (who: string) =>
+      (await caller(db, who).worldStatus({ realm: "eurth" })).canReviewClaims;
+    expect(await reviewer(FOUNDER)).toBe(true);
+    expect(await reviewer(CLAIMS_OFFICER)).toBe(true);
+    expect(await reviewer(ADMIN)).toBe(true);
+    // The Map power alone edits the map but has no Claims section to open
+    expect(await reviewer(MAP_OFFICER)).toBe(false);
   });
 
   it("is unlocked while the realm has no pending or approved claim", async () => {
@@ -204,21 +219,39 @@ describe("realms.map.worldSlot", () => {
 describe("realms.map.setSlotClaimable", () => {
   const input = { realm: "eurth", countryId: SLOT.id, claimable: false };
 
-  it("writes Country.claimable for a generated slot", async () => {
+  it("writes Country.claimable for an unowned generated slot, in one conditional write", async () => {
     const db = realmDb();
-    await caller(db, FOUNDER).setSlotClaimable(input);
-    expect(db.country!.update).toHaveBeenCalledWith({
-      where: { id: SLOT.id },
+    await expect(caller(db, FOUNDER).setSlotClaimable(input)).resolves.toEqual({
+      claimable: false,
+    });
+    expect(db.country!.updateMany).toHaveBeenCalledWith({
+      where: { id: SLOT.id, realmId: EURTH, worldgen: true, ownerUserId: null },
       data: { claimable: false },
     });
+    expect(db.country!.update).not.toHaveBeenCalled();
   });
 
   it("lets an officer with the map power do the same", async () => {
     const db = realmDb();
-    await caller(db, MAP_OFFICER).setSlotClaimable({ ...input, claimable: true });
-    expect(db.country!.update).toHaveBeenCalledWith({
-      where: { id: SLOT.id },
+    await caller(db, MAP_OFFICER).setSlotClaimable(input);
+    expect(db.country!.updateMany).toHaveBeenCalled();
+  });
+
+  it("makes a slot claimable again whoever holds it", async () => {
+    const db = realmDb();
+    await caller(db, FOUNDER).setSlotClaimable({ ...input, claimable: true });
+    expect(db.country!.updateMany).toHaveBeenCalledWith({
+      where: { id: SLOT.id, realmId: EURTH, worldgen: true },
       data: { claimable: true },
+    });
+  });
+
+  it("refuses to reserve a slot a player holds: it is no scenery", async () => {
+    const db = realmDb();
+    db.country!.updateMany!.mockResolvedValue({ count: 0 });
+    db.country!.findUnique!.mockResolvedValue({ ...SLOT, ownerUserId: "db_player" });
+    await expect(caller(db, FOUNDER).setSlotClaimable(input)).rejects.toMatchObject({
+      code: "CONFLICT",
     });
   });
 
@@ -235,26 +268,35 @@ describe("realms.map.setSlotClaimable", () => {
       await expect(caller(db, who).setSlotClaimable({ ...input, realm })).rejects.toMatchObject({
         code: "FORBIDDEN",
       });
-      expect(db.country!.update).not.toHaveBeenCalled();
+      expect(db.country!.updateMany).not.toHaveBeenCalled();
     }
   });
 
   it("leaves a country that is not a generated slot alone", async () => {
     const db = realmDb();
+    db.country!.updateMany!.mockResolvedValue({ count: 0 });
     db.country!.findUnique!.mockResolvedValue({ ...SLOT, worldgen: false });
     await expect(caller(db, FOUNDER).setSlotClaimable(input)).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
-    expect(db.country!.update).not.toHaveBeenCalled();
   });
 
   it("leaves a country of another realm alone", async () => {
     const db = realmDb();
+    db.country!.updateMany!.mockResolvedValue({ count: 0 });
     db.country!.findUnique!.mockResolvedValue({ ...SLOT, realmId: OTHER });
     await expect(caller(db, FOUNDER).setSlotClaimable(input)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-    expect(db.country!.update).not.toHaveBeenCalled();
+  });
+
+  it("answers not found, not an internal error, when the slot is deleted under the write", async () => {
+    const db = realmDb();
+    db.country!.updateMany!.mockResolvedValue({ count: 0 });
+    db.country!.findUnique!.mockResolvedValue(null);
+    await expect(caller(db, FOUNDER).setSlotClaimable(input)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
   });
 });
 

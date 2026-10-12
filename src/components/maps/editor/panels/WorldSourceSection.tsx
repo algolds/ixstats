@@ -22,7 +22,7 @@ const PRESET_LABELS: Record<WorldPreset, string> = {
 };
 
 /** Whether the realm's own map can stand in as the source: it has borders, and they have loaded. */
-export type RealmMapState = "none" | "loading" | "ready";
+export type RealmMapState = "none" | "loading" | "failed" | "ready";
 
 const MAX_SEED = 2 ** 31 - 1;
 
@@ -85,6 +85,11 @@ export function WorldSourceSection({
         )}
         {realmMap === "loading" && (
           <p className="text-label-secondary text-caption">Loading the realm's map.</p>
+        )}
+        {realmMap === "failed" && (
+          <p className="text-label-secondary text-caption">
+            The realm's map could not be loaded. Reload the editor to try again.
+          </p>
         )}
         {controls.source === "preset" && (
           <SegmentedControl

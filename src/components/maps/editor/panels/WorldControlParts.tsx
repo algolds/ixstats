@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef } from "react";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
 import { cn } from "~/lib/utils/cn";
@@ -29,11 +29,15 @@ interface ControlSliderProps {
   disabled?: boolean;
   /** Called on every step of a drag: updates the readout */
   onChange: (value: number) => void;
-  /** Called when the drag ends or a key steps the value: generates the world */
+  /** Called when the drag ends, or when the keys that stepped the value are released: generates the world */
   onCommit: (value: number) => void;
 }
 
-/** A labelled slider that asks for a new world when it is released, not on every tick of the drag. */
+/**
+ * A labelled slider that asks for a new world when it is released, not on every tick of the drag. A key held down
+ * steps the value many times: those steps update the readout and commit once, when the key comes up (or focus
+ * leaves), so a held arrow does not restart the generator at every repeat.
+ */
 export function ControlSlider({
   label,
   value,
@@ -47,8 +51,27 @@ export function ControlSlider({
   onCommit,
 }: ControlSliderProps) {
   const labelId = useId();
+  const byKeyboard = useRef(false);
+  // The last value a key stepped to, not yet committed
+  const stepped = useRef<number | null>(null);
+  const release = () => {
+    const value = stepped.current;
+    stepped.current = null;
+    if (value !== null) onCommit(value);
+  };
   return (
-    <div className={cn("space-y-0.5", disabled && "opacity-60")}>
+    <div
+      className={cn("space-y-0.5", disabled && "opacity-60")}
+      onKeyDownCapture={() => {
+        byKeyboard.current = true;
+      }}
+      onKeyUp={release}
+      onBlur={release}
+      onPointerDownCapture={() => {
+        release();
+        byKeyboard.current = false;
+      }}
+    >
       <div className="flex items-baseline justify-between gap-2">
         <span id={labelId} className="text-label text-footnote">
           {label}
@@ -63,7 +86,11 @@ export function ControlSlider({
         value={[value]}
         disabled={disabled}
         onValueChange={([next]) => next !== undefined && onChange(next)}
-        onValueCommit={([next]) => next !== undefined && onCommit(next)}
+        onValueCommit={([next]) => {
+          if (next === undefined) return;
+          if (byKeyboard.current) stepped.current = next;
+          else onCommit(next);
+        }}
         className="py-2"
       />
       {ends && (

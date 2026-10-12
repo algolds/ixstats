@@ -5,28 +5,31 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import { Button } from "~/components/ui/button";
 import { useRealmMapDisplay } from "~/components/maps/core/hooks/useRealmMapDisplay";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
-import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
 import { useWorldPreview } from "~/hooks/useWorldPreview";
 import { api } from "~/trpc/react";
 import { controlAvailability } from "~/lib/worldgen/world-controls";
-import { hasRealmBorders, landMaskLayersFrom } from "~/lib/worldgen/realm-land-mask";
+import {
+  MASK_LAYER_TYPES,
+  hasRealmBorders,
+  landMaskLayersFrom,
+} from "~/lib/worldgen/realm-land-mask";
 import { createWorldWorker } from "~/lib/worldgen/worker/create-world-worker";
 import type { WorldWorkerFactory } from "~/lib/worldgen/worker/world-messages";
 import { useWorldRecipe } from "../hooks/useWorldRecipe";
 import { WorldAdvancedSection } from "./WorldAdvancedSection";
-import { WorldApplyRegion } from "./WorldApplyRegion";
+import { WorldApplyRegion, type WorldLock } from "./WorldApplyRegion";
 import { WorldBasicControls } from "./WorldBasicControls";
 import { WorldCalibration } from "./WorldCalibration";
-import { WorldLockedNotice } from "./WorldLockedNotice";
+import { WorldLockUnknownNotice, WorldLockedNotice } from "./WorldLockedNotice";
 import { WorldSourceSection, type RealmMapState } from "./WorldSourceSection";
 import { WorldProgress, WorldStats } from "./WorldStatsSection";
 
 interface WorldPanelProps {
   /** The map the draft is drawn on; null until it is up */
   map: MapLibreMap | null;
-  /** The layers the editor has loaded for this realm: what "This realm's map" is built around */
-  mapLayers: readonly MapLayerData[];
   /** The admin studio: calibration instead of the apply region, and nothing of a realm is changed */
   sandbox?: boolean;
   /** Starts the generator's worker; tests pass a fake */
@@ -47,24 +50,28 @@ export function WorldPanel(props: WorldPanelProps) {
   return <RealmWorldPanel key={display.realmId} display={display} {...props} />;
 }
 
-function realmMapState(hasRealmMap: boolean, ready: boolean): RealmMapState {
+function realmMapState(hasRealmMap: boolean, ready: boolean, pending: boolean): RealmMapState {
   if (!hasRealmMap) return "none";
-  return ready ? "ready" : "loading";
+  if (ready) return "ready";
+  return pending ? "loading" : "failed";
 }
 
 function RealmWorldPanel({
   display,
   map,
-  mapLayers,
   sandbox = false,
   createWorker = createWorldWorker,
 }: WorldPanelProps & { display: Display }) {
   const generator = useWorldGenerator(createWorker);
   const { active } = useWorldPreview(map, generator.result);
 
-  const realmMapLayers = useMemo(() => landMaskLayersFrom(mapLayers), [mapLayers]);
+  // The editor's own layer queries (same keys, so nothing downloads twice), read for the layers a world is fitted
+  // to. "Ready" is every one of them settled, so a map that is still arriving is never fitted half-loaded.
+  const realm = useMapRealm();
+  const loaded = useDecodedMapLayers({ layers: MASK_LAYER_TYPES, realm });
+  const realmMapLayers = useMemo(() => landMaskLayersFrom(loaded.layers), [loaded.layers]);
   const hasRealmMap = display.layerTypes.includes("political");
-  const realmMapReady = hasRealmBorders(realmMapLayers);
+  const realmMapReady = !loaded.isPending && hasRealmBorders(realmMapLayers);
   const recipe = useWorldRecipe({
     scope: sandbox ? `sandbox:${display.realmId}` : display.realmId,
     hasRealmMap,
@@ -82,10 +89,20 @@ function RealmWorldPanel({
   }, [active, generating, stage]);
   useEffect(() => () => transientMapStore.setWorldDraft(null), []);
 
-  const { data: status } = api.realms.map.worldStatus.useQuery(
+  const statusQuery = api.realms.map.worldStatus.useQuery(
     { realm: display.realmSlug ?? "" },
     { enabled: !sandbox && !!display.realmSlug, retry: false, staleTime: 15_000 }
   );
+  const status = statusQuery.data;
+  const lock: WorldLock = statusQuery.isError
+    ? {
+        phase: "failed",
+        message: statusQuery.error?.message ?? "The realm's claims could not be read",
+        retry: () => void statusQuery.refetch(),
+      }
+    : status
+      ? { phase: "ready", status }
+      : { phase: "loading" };
   const available = controlAvailability(controls.source);
   const hasWorld = generator.result !== null;
 
@@ -96,14 +113,16 @@ function RealmWorldPanel({
           lockReason={status.lockReason}
           pendingClaims={status.pendingClaims}
           approvedClaims={status.approvedClaims}
+          canReviewClaims={status.canReviewClaims}
           realmSlug={display.realmSlug}
         />
       )}
+      {lock.phase === "failed" && <WorldLockUnknownNotice onRetry={lock.retry} />}
 
       <WorldSourceSection
         controls={controls}
         seed={recipe.seed}
-        realmMap={realmMapState(hasRealmMap, realmMapReady)}
+        realmMap={realmMapState(hasRealmMap, realmMapReady, loaded.isPending)}
         realmSlug={display.realmSlug}
         onPickSource={recipe.pickSource}
         onPickPreset={recipe.pickPreset}
@@ -124,7 +143,12 @@ function RealmWorldPanel({
         onCommit={recipe.apply}
       />
 
-      <WorldProgress view={generator} hasWorld={hasWorld} onGenerate={recipe.generateNow} />
+      <WorldProgress
+        view={generator}
+        hasWorld={hasWorld}
+        sandbox={sandbox}
+        onGenerate={recipe.generateNow}
+      />
       {generator.result && <WorldStats stats={generator.result.stats} />}
 
       {hasWorld && (
@@ -141,7 +165,8 @@ function RealmWorldPanel({
           result={generator.result}
           source={controls.source}
           generating={generating}
-          status={status}
+          stale={recipe.stale || generator.state === "error"}
+          lock={lock}
           onDiscardDraft={recipe.discard}
         />
       )}

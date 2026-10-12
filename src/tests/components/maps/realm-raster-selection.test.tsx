@@ -103,6 +103,61 @@ describe("raster selection", () => {
   });
 });
 
+describe("relief under a painted base map", () => {
+  const withRelief = (realm: string) => display(realm, [...LAYERS, RELIEF]);
+
+  it("is off while a base map is shown, and back on when the base map goes", () => {
+    const realm = freshRealm();
+    const { result } = renderHook(() => useRealmRasterSelection(withRelief(realm)));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["relief"]);
+    act(() => result.current.setBase("geography"));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["geography"]);
+    expect(result.current.artMode).toBe(true);
+    act(() => result.current.setBase(null));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["relief"]);
+  });
+
+  it("can still be switched on over the art, and then stays on", () => {
+    const realm = freshRealm();
+    const { result } = renderHook(() => useRealmRasterSelection(withRelief(realm)));
+    act(() => result.current.setBase("geography"));
+    act(() => result.current.toggleOverlay("relief"));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["geography", "relief"]);
+    act(() => result.current.setBase("geography-grey"));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["geography-grey", "relief"]);
+    act(() => result.current.setBase(null));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["relief"]);
+  });
+
+  it("stays off, once the viewer switched it off, when the base map goes", () => {
+    const realm = freshRealm();
+    const { result } = renderHook(() => useRealmRasterSelection(withRelief(realm)));
+    act(() => result.current.toggleOverlay("relief"));
+    act(() => result.current.setBase("geography"));
+    act(() => result.current.setBase(null));
+    expect(result.current.shown).toEqual([]);
+  });
+
+  it("leaves the other overlays as they were when the base map changes", () => {
+    const realm = freshRealm();
+    const { result } = renderHook(() => useRealmRasterSelection(withRelief(realm)));
+    act(() => result.current.toggleOverlay("climate"));
+    act(() => result.current.setBase("geography"));
+    expect(result.current.shown.map((l) => l.id)).toEqual(["geography", "climate"]);
+  });
+
+  it("shows the Layers panel switch the same way", () => {
+    const realm = freshRealm();
+    const relief = renderHook(() => useRealmRelief(withRelief(realm)));
+    const raster = renderHook(() => useRealmRasterSelection(withRelief(realm)));
+    expect(relief.result.current.shown).toBe(true);
+    act(() => raster.result.current.setBase("geography"));
+    expect(relief.result.current.shown).toBe(false);
+    act(() => relief.result.current.toggle());
+    expect(relief.result.current.shown).toBe(true);
+  });
+});
+
 describe("the relief switch", () => {
   it("is offered only on a realm with a relief layer, on by default, and toggles", () => {
     const realm = freshRealm();

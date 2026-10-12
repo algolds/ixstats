@@ -28,5 +28,5 @@ export const WORLD_SANDBOX_HREF = "/admin/maps/editor?sandbox=1";
 export const isWorldSandbox = (params: Params) => params?.get("sandbox") === "1";
 
 /** A section of a realm's Manage page. */
-export const realmManageHref = (realmSlug: string, section: "map-import" | "claims" | "map") =>
+export const realmManageHref = (realmSlug: string, section: "map-import" | "claims") =>
   `/r/${encodeURIComponent(realmSlug)}/manage#${section}`;

@@ -45,8 +45,12 @@ jest.mock("~/components/maps/editor/panels/StorylinesPanel", () => ({
 import { useRealmMapDisplay } from "~/components/maps/core/hooks/useRealmMapDisplay";
 import { MapEditorSidebarPanels } from "~/components/maps/editor/components/MapEditorSidebarPanels";
 import type { TabId } from "~/components/maps/editor/EditorPanel";
+import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
 const display = jest.mocked(useRealmMapDisplay);
+
+// Falling back to the Layers tab draws its opacity sliders
+beforeAll(stubResizeObserver);
 
 const WORLD_TABS: TabId[] = ["linkages", "sovereignty", "layers", "world"];
 
@@ -194,10 +198,18 @@ describe("the World tab's content", () => {
     expect(state.setActiveSidebarTab).toHaveBeenCalledWith("world");
   });
 
-  it("is not drawn for a tab that is not offered, whatever the active tab says", () => {
+  it("is not drawn for a tab that is not offered: the panel shows its first tab instead", () => {
     display.mockReturnValue(realm({ isIxnay: true }) as never);
     renderPanel(stateOf({ activeSidebarTab: "world" }));
     expect(screen.queryByTestId("world-panel")).toBeNull();
+    expect(screen.getByText("links body")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Links" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("keeps the requested tab when this panel shows it", () => {
+    display.mockReturnValue(realm() as never);
+    renderPanel(stateOf({ activeSidebarTab: "sovereignty" }));
+    expect(screen.getByText("sovereignty body")).toBeInTheDocument();
   });
 });
 

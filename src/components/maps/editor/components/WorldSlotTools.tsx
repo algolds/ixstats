@@ -49,7 +49,8 @@ export function WorldSlotTools({ countryId, countryName, onDeleted }: WorldSlotT
   if (!realm || display?.isIxnay || !slot?.worldgen) return null;
 
   const deletable = !slot.owned && slot.claims === 0;
-  const reason = slot.owned ? "A player holds this nation." : "This nation has a claim.";
+  // A held nation is no scenery: it stays claimable (and can't be deleted) while a player holds it
+  const locked = slot.owned && slot.claimable;
   const confirmDelete = async () => {
     const confirmed = await confirmEditorAction({
       title: `Delete ${countryName}?`,
@@ -61,7 +62,7 @@ export function WorldSlotTools({ countryId, countryName, onDeleted }: WorldSlotT
   };
 
   return (
-    <Card padding="sm" className="space-y-2">
+    <Card content="input" padding="sm" className="space-y-2">
       <h3 className="text-label text-caption font-semibold">Nation slot</h3>
       <div className="flex items-center justify-between gap-2">
         <span id={labelId} className="text-label text-footnote">
@@ -70,28 +71,38 @@ export function WorldSlotTools({ countryId, countryName, onDeleted }: WorldSlotT
         <Switch
           aria-labelledby={labelId}
           checked={slot.claimable}
-          disabled={setClaimable.isPending}
+          disabled={setClaimable.isPending || locked}
           onCheckedChange={(next) => setClaimable.mutate({ realm, countryId, claimable: next })}
         />
       </div>
-      <p className="text-label-secondary text-caption">
-        {slot.claimable
-          ? "Players can claim this nation."
-          : "Reserved: players can't claim this nation."}
-      </p>
-      {deletable ? (
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-destructive w-full"
-          disabled={remove.isPending}
-          onClick={() => void confirmDelete()}
-        >
-          Delete slot
-        </Button>
+      {slot.owned ? (
+        <p className="text-label-secondary text-caption">
+          A player holds this nation.{" "}
+          {locked ? "It can't be reserved or deleted." : "It can be made claimable again."}
+        </p>
       ) : (
-        <p className="text-label-secondary text-caption">{reason} It can't be deleted.</p>
+        <p className="text-label-secondary text-caption">
+          {slot.claimable
+            ? "Players can claim this nation."
+            : "Reserved: players can't claim this nation."}
+        </p>
       )}
+      {!slot.owned &&
+        (deletable ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive w-full"
+            disabled={remove.isPending}
+            onClick={() => void confirmDelete()}
+          >
+            Delete slot
+          </Button>
+        ) : (
+          <p className="text-label-secondary text-caption">
+            This nation has a claim. It can't be deleted.
+          </p>
+        ))}
     </Card>
   );
 }

@@ -149,12 +149,29 @@ describe("WorldSlotTools", () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
-  it("offers no deletion for a slot a player holds, and says why", () => {
+  it("can't reserve a slot a player holds: the switch is off limits, and the note says why", () => {
     queries.mockReturnValue(query({ ...SLOT, owned: true }));
     renderTools();
+    const toggle = screen.getByRole("switch", { name: "Claimable" });
+    expect(toggle).toBeChecked();
+    expect(toggle).toBeDisabled();
     expect(screen.queryByRole("button", { name: "Delete slot" })).toBeNull();
     expect(screen.getByText(/a player holds this nation/i)).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "Claimable" })).toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(setClaimable).not.toHaveBeenCalled();
+  });
+
+  it("lets a held slot that was reserved before be made claimable again", () => {
+    queries.mockReturnValue(query({ ...SLOT, owned: true, claimable: false }));
+    renderTools();
+    const toggle = screen.getByRole("switch", { name: "Claimable" });
+    expect(toggle).toBeEnabled();
+    fireEvent.click(toggle);
+    expect(setClaimable).toHaveBeenCalledWith({
+      realm: "eurth",
+      countryId: "c_slot",
+      claimable: true,
+    });
   });
 
   it("offers no deletion for a slot with a claim, and says why", () => {

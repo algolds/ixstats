@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { ATLAS_ENGINE_VERSION } from "~/lib/buildVersion";
 import { clampControls, WORLD_PRESET_IDS, type WorldControls } from "./world-controls";
 
 export interface WorldRecipe {
@@ -14,6 +15,9 @@ export interface WorldRecipe {
 }
 
 const KEY_PREFIX = "ixworld-world-recipe:";
+
+/** The shape of a stored recipe. A recipe also carries the Atlas engine it was made for: another engine makes another world from the same seed. */
+export const WORLD_RECIPE_VERSION = 1;
 
 /** The storage key of a realm's recipe (`scope` is its id, or "sandbox" for the admin studio). */
 export const worldRecipeKey = (scope: string) => `${KEY_PREFIX}${scope}`;
@@ -39,6 +43,8 @@ const controlsSchema = z.object({
 });
 
 const recipeSchema = z.object({
+  version: z.literal(WORLD_RECIPE_VERSION),
+  engine: z.literal(ATLAS_ENGINE_VERSION),
   seed: z.number().int().min(1).max(2_147_483_647),
   controls: controlsSchema,
 });
@@ -52,14 +58,27 @@ function storage(): Storage | null {
   }
 }
 
-/** The realm's saved recipe, with its numbers pulled inside the slider limits; null when there is none or it is unusable. */
+/**
+ * The realm's saved recipe, with its numbers pulled inside the slider limits; null when there is none. A recipe
+ * that is corrupt, from before versions or made for another format or engine is dropped, not kept to fail again.
+ */
 export function loadWorldRecipe(scope: string): WorldRecipe | null {
   try {
     const raw = storage()?.getItem(worldRecipeKey(scope));
     if (!raw) return null;
-    const parsed = recipeSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return null;
-    return { seed: parsed.data.seed, controls: clampControls(parsed.data.controls) };
+    const parsed = parse(raw);
+    if (!parsed) clearWorldRecipe(scope);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function parse(raw: string): WorldRecipe | null {
+  try {
+    const result = recipeSchema.safeParse(JSON.parse(raw));
+    if (!result.success) return null;
+    return { seed: result.data.seed, controls: clampControls(result.data.controls) };
   } catch {
     return null;
   }
@@ -67,7 +86,8 @@ export function loadWorldRecipe(scope: string): WorldRecipe | null {
 
 export function saveWorldRecipe(scope: string, recipe: WorldRecipe): void {
   try {
-    storage()?.setItem(worldRecipeKey(scope), JSON.stringify(recipe));
+    const stored = { version: WORLD_RECIPE_VERSION, engine: ATLAS_ENGINE_VERSION, ...recipe };
+    storage()?.setItem(worldRecipeKey(scope), JSON.stringify(stored));
   } catch {
     // Storage is full or blocked: the recipe lasts as long as the tab does
   }

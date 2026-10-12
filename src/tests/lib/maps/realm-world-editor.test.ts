@@ -69,30 +69,20 @@ const collection = (n: number): FeatureCollection => ({
 describe("landMaskLayersFrom", () => {
   it("hands over the background, political and altitude layers, and nothing else", () => {
     const [background, political, altitudes] = [collection(1), collection(2), collection(3)];
-    const layers = landMaskLayersFrom([
-      { type: "rivers", data: collection(4) },
-      { type: "background", data: background },
-      { type: "political", data: political },
-      { type: "altitudes", data: altitudes },
-    ]);
+    const layers = landMaskLayersFrom({ rivers: collection(4), background, political, altitudes });
     expect(layers).toEqual({ background, political, altitudes });
   });
 
-  it("leaves out a layer the editor has not loaded", () => {
-    const layers = landMaskLayersFrom([{ type: "political", data: collection(1) }]);
+  it("leaves out a layer that did not arrive", () => {
+    const layers = landMaskLayersFrom({ political: collection(1) });
     expect(Object.keys(layers)).toEqual(["political"]);
+    expect(landMaskLayersFrom(undefined)).toEqual({});
   });
 
   it("knows whether the realm has borders to keep", () => {
-    expect(hasRealmBorders(landMaskLayersFrom([{ type: "political", data: collection(2) }]))).toBe(
-      true
-    );
-    expect(hasRealmBorders(landMaskLayersFrom([{ type: "political", data: collection(0) }]))).toBe(
-      false
-    );
-    expect(hasRealmBorders(landMaskLayersFrom([{ type: "background", data: collection(2) }]))).toBe(
-      false
-    );
-    expect(hasRealmBorders(landMaskLayersFrom([]))).toBe(false);
+    expect(hasRealmBorders(landMaskLayersFrom({ political: collection(2) }))).toBe(true);
+    expect(hasRealmBorders(landMaskLayersFrom({ political: collection(0) }))).toBe(false);
+    expect(hasRealmBorders(landMaskLayersFrom({ background: collection(2) }))).toBe(false);
+    expect(hasRealmBorders(landMaskLayersFrom(undefined))).toBe(false);
   });
 });

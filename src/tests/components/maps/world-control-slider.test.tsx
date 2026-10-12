@@ -61,6 +61,58 @@ describe("ControlSlider", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  describe("keys", () => {
+    const keys = () => {
+      const { onChange, onCommit } = setup();
+      return {
+        onChange,
+        onCommit,
+        wrapper: screen.getByText("Continents").closest("div")!.parentElement!,
+      };
+    };
+
+    it("commit once, when the key comes up, with the last value", () => {
+      const { onCommit, wrapper } = keys();
+      const release = screen.getByRole("button", { name: "release" });
+      // A key held down: each repeat steps the slider
+      for (let repeat = 0; repeat < 5; repeat++) {
+        fireEvent.keyDown(wrapper, { key: "ArrowRight", repeat: repeat > 0 });
+        fireEvent.click(release);
+      }
+      expect(onCommit).not.toHaveBeenCalled();
+      fireEvent.keyUp(wrapper, { key: "ArrowRight" });
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(8);
+      fireEvent.keyUp(wrapper, { key: "ArrowRight" });
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("commit when focus leaves, if the key never came up here", () => {
+      const { onCommit, wrapper } = keys();
+      fireEvent.keyDown(wrapper, { key: "ArrowRight" });
+      fireEvent.click(screen.getByRole("button", { name: "release" }));
+      fireEvent.blur(wrapper);
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("leave a pointer release to commit at once, even after keys were used", () => {
+      const { onCommit, wrapper } = keys();
+      fireEvent.keyDown(wrapper, { key: "ArrowRight" });
+      fireEvent.keyUp(wrapper, { key: "ArrowRight" });
+      fireEvent.pointerDown(wrapper);
+      fireEvent.click(screen.getByRole("button", { name: "release" }));
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+
+    it("commit a key step that is still waiting when the pointer takes over", () => {
+      const { onCommit, wrapper } = keys();
+      fireEvent.keyDown(wrapper, { key: "ArrowRight" });
+      fireEvent.click(screen.getByRole("button", { name: "release" }));
+      fireEvent.pointerDown(wrapper);
+      expect(onCommit).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("shows its label, the value as text and the captions at its ends", () => {
     setup();
     expect(screen.getByText("Continents")).toBeInTheDocument();

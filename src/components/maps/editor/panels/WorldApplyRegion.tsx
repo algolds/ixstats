@@ -6,6 +6,15 @@ import type { WorldSource } from "~/lib/worldgen/world-controls";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
 
 /**
+ * Whether claims or an archived realm lock applying, as `realms.map.worldStatus` answers. `loading` and `failed`
+ * are different: a failed read is not an unlocked world, and the server checks the lock again when it applies.
+ */
+export type WorldLock =
+  | { phase: "loading" }
+  | { phase: "failed"; message: string; retry: () => void }
+  | { phase: "ready"; status: RouterOutputs["realms"]["map"]["worldStatus"] };
+
+/**
  * What the apply flow can read. `WorldPanel` renders this region below the draft's statistics, on a realm (never in
  * the studio's sandbox), and owns everything in it.
  */
@@ -21,8 +30,13 @@ export interface WorldApplyRegionProps {
   source: WorldSource;
   /** A generation is running, so `result` is about to be replaced */
   generating: boolean;
-  /** Whether claims or an archived realm lock applying (`realms.map.worldStatus`); undefined while it loads */
-  status: RouterOutputs["realms"]["map"]["worldStatus"] | undefined;
+  /**
+   * `result` is not the world the controls, the seed and the realm's map now ask for: a slider is mid-drag, the last
+   * generation failed, or the realm's map changed or is loading under a draft fitted to it. Apply only a draft
+   * that is not stale.
+   */
+  stale: boolean;
+  lock: WorldLock;
   /** Drops the draft from the map and the stored recipe: call it once the world has been applied */
   onDiscardDraft: () => void;
 }

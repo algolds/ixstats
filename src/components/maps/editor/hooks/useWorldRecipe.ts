@@ -24,8 +24,9 @@ interface UseWorldRecipeArgs {
   scope: string;
   /** The realm has borders to build on (a political layer) */
   hasRealmMap: boolean;
-  /** Its layers have loaded, so a world can be fitted to them */
+  /** Every layer of its map has settled (arrived, or come back empty), so a world can be fitted to them */
   realmMapReady: boolean;
+  /** The layers a world is fitted to; a new object whenever any of them changes */
   realmMapLayers: LandMaskLayers;
   generator: Pick<WorldGenerator, "generate" | "reset">;
 }
@@ -49,11 +50,20 @@ function useRunOnce(ready: boolean, run: () => void) {
   );
 }
 
+/** What the latest world was asked for: to tell whether the draft still matches the controls and the map. */
+interface LastRun {
+  controls: WorldControls;
+  seed: number;
+  mask: LandMaskLayers;
+}
+
 /**
  * The World tab's recipe: the controls and the seed, the draft kept in browser storage per realm, and the calls
  * that ask the generator for a world. A slider reports `setLive` while it is dragged and `apply` when it is
  * released; only `apply` (and the seed, source and preset changes) generate. A recipe found in storage is
- * generated again as soon as the realm's map is ready, so reopening the tab brings the preview back.
+ * generated again as soon as the realm's map is ready, so reopening the tab brings the preview back, and a world
+ * fitted to the realm's map is generated again when that map changes. `stale` says the draft is not the world the
+ * controls, the seed and the map now ask for.
  */
 export function useWorldRecipe({
   scope,
@@ -74,6 +84,8 @@ export function useWorldRecipe({
   });
   const [controls, setControls] = useState<WorldControls>(start.controls);
   const [seed, setSeed] = useState(start.seed);
+  // A ref, not state: every run also moves the generator's view (or the controls), which renders this
+  const lastRun = useRef<LastRun | null>(null);
   const latest = useLatest({ controls, seed, realmMapLayers, realmMapReady, scope });
   const { generate, reset } = generator;
 
@@ -88,15 +100,28 @@ export function useWorldRecipe({
         next.source === "realm-map" ? { landMaskLayers: layers, keepBorders: true } : undefined
       );
       saveWorldRecipe(key, { seed: nextSeed, controls: next });
+      lastRun.current = { controls: next, seed: nextSeed, mask: layers };
     },
     [generate, latest]
   );
 
-  const restore = useCallback(
+  /** Make the world the controls and seed now ask for */
+  const generateNow = useCallback(
     () => run(latest.current.controls, latest.current.seed),
     [run, latest]
   );
-  useRunOnce(start.restored && (start.controls.source !== "realm-map" || realmMapReady), restore);
+  useRunOnce(
+    start.restored && (start.controls.source !== "realm-map" || realmMapReady),
+    generateNow
+  );
+
+  // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
+  const fitsMap = controls.source === "realm-map";
+  const ran = lastRun.current;
+  const mapMoved = !!ran && ran.mask !== realmMapLayers;
+  useEffect(() => {
+    if (fitsMap && realmMapReady && mapMoved) generateNow();
+  }, [fitsMap, realmMapReady, mapMoved, generateNow]);
 
   /** Change controls and make a new world */
   const apply = useCallback(
@@ -130,20 +155,25 @@ export function useWorldRecipe({
     [run, latest]
   );
   const reroll = useCallback(() => commitSeed(newWorldSeed()), [commitSeed]);
-  const generateNow = useCallback(
-    () => run(latest.current.controls, latest.current.seed),
-    [run, latest]
-  );
 
   /** Take the draft off the map and forget the recipe; the controls stay for the next one */
   const discard = useCallback(() => {
     reset();
     clearWorldRecipe(latest.current.scope);
+    // Nothing left to keep fitted to the map
+    lastRun.current = null;
   }, [reset, latest]);
+
+  const stale =
+    ran === null ||
+    ran.controls !== controls ||
+    ran.seed !== seed ||
+    (fitsMap && (!realmMapReady || ran.mask !== realmMapLayers));
 
   return {
     controls,
     seed,
+    stale,
     apply,
     setLive,
     pickPreset,

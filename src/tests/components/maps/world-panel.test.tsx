@@ -22,12 +22,19 @@ jest.mock("~/trpc/react", () => {
   };
 });
 jest.mock("~/hooks/useWorldPreview", () => ({ useWorldPreview: jest.fn() }));
+jest.mock("~/hooks/useMapLayerData", () => ({ useDecodedMapLayers: jest.fn() }));
+// The real region, called through, so its props can be read
+jest.mock("~/components/maps/editor/panels/WorldApplyRegion", () => {
+  const actual = jest.requireActual("~/components/maps/editor/panels/WorldApplyRegion");
+  return { ...actual, WorldApplyRegion: jest.fn(actual.WorldApplyRegion) };
+});
 
 import { api } from "~/trpc/react";
 import { useWorldPreview } from "~/hooks/useWorldPreview";
+import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
+import { WorldApplyRegion } from "~/components/maps/editor/panels/WorldApplyRegion";
 import { WorldPanel } from "~/components/maps/editor/panels/WorldPanel";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
-import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { controlsForPreset } from "~/lib/worldgen/world-controls";
 import {
@@ -41,6 +48,8 @@ import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 const displayQuery = jest.mocked(api.realms.map.display.useQuery as unknown as jest.Mock);
 const statusQuery = jest.mocked(api.realms.map.worldStatus.useQuery as unknown as jest.Mock);
 const preview = jest.mocked(useWorldPreview);
+const layersQuery = jest.mocked(useDecodedMapLayers);
+const region = jest.mocked(WorldApplyRegion);
 
 const REALM = "r_eurth";
 const display = (over: Record<string, unknown> = {}) => ({
@@ -54,7 +63,9 @@ const display = (over: Record<string, unknown> = {}) => ({
     ...over,
   },
 });
-const OPEN = { data: { lockReason: null, pendingClaims: 0, approvedClaims: 0 } };
+const OPEN = {
+  data: { lockReason: null, pendingClaims: 0, approvedClaims: 0, canReviewClaims: true },
+};
 
 const polygons = (n: number): FeatureCollection => ({
   type: "FeatureCollection",
@@ -74,10 +85,27 @@ const polygons = (n: number): FeatureCollection => ({
     },
   })),
 });
-const layers = (political = 2): MapLayerData[] => [
-  { type: "background", data: polygons(1), visible: true },
-  { type: "political", data: polygons(political), visible: true },
-];
+/** The realm's mask layers as the layer queries answer; a new call is a map that changed. */
+const mapLayers = ({
+  political = 2,
+  background = 1,
+  altitudes,
+  pending = false,
+}: {
+  political?: number;
+  background?: number;
+  altitudes?: number;
+  pending?: boolean;
+} = {}): ReturnType<typeof useDecodedMapLayers> => ({
+  layers: {
+    background: polygons(background),
+    political: polygons(political),
+    ...(altitudes !== undefined && { altitudes: polygons(altitudes) }),
+  },
+  packed: undefined,
+  error: null,
+  isPending: pending,
+});
 
 let workers: ReturnType<typeof fakeWorldWorkers>["workers"];
 let factory: ReturnType<typeof fakeWorldWorkers>["factory"];
@@ -87,6 +115,8 @@ beforeEach(() => {
   window.localStorage.clear();
   ({ factory, workers } = fakeWorldWorkers());
   displayQuery.mockReturnValue(display());
+  layersQuery.mockReturnValue(mapLayers());
+  region.mockClear();
   statusQuery.mockReturnValue(OPEN);
   preview.mockReset();
   preview.mockReturnValue({ active: false });
@@ -97,7 +127,7 @@ afterEach(() => {
 });
 
 const renderPanel = (props: Partial<React.ComponentProps<typeof WorldPanel>> = {}) =>
-  render(<WorldPanel map={null} mapLayers={layers()} createWorker={factory} {...props} />);
+  render(<WorldPanel map={null} createWorker={factory} {...props} />);
 
 const lastRequest = () => workers.at(-1)!.posted.at(-1)!;
 const requestCount = () => workers.reduce((n, w) => n + w.posted.length, 0);
@@ -107,10 +137,25 @@ async function generateFirst() {
   return lastRequest();
 }
 
-const step = (name: string, key = "ArrowRight") =>
-  fireEvent.keyDown(screen.getByRole("slider", { name }), { key });
+/** One key press on a slider: the keys commit when they come up. */
+const step = (name: string, key = "ArrowRight") => {
+  const thumb = screen.getByRole("slider", { name });
+  fireEvent.keyDown(thumb, { key });
+  fireEvent.keyUp(thumb, { key });
+};
 
 describe("generating", () => {
+  it("invites a realm's editor to use the world, and the studio to compare it", () => {
+    const realm = renderPanel();
+    expect(screen.getByText(/then use it for this realm/)).toBeInTheDocument();
+    realm.unmount();
+    renderPanel({ sandbox: true });
+    expect(screen.queryByText(/use it for this realm/)).toBeNull();
+    expect(
+      screen.getByText("Generate a world on the map to compare it with Ixnay and Eurth.")
+    ).toBeInTheDocument();
+  });
+
   it("makes no world until asked, then generates from the Earth-like controls", async () => {
     renderPanel();
     expect(requestCount()).toBe(0);
@@ -329,7 +374,7 @@ describe("the draft recipe", () => {
     saveWorldRecipe(REALM, { seed: 31, controls: controlsForPreset("ixnay") });
     render(
       <StrictMode>
-        <WorldPanel map={null} mapLayers={layers()} createWorker={factory} />
+        <WorldPanel map={null} createWorker={factory} />
       </StrictMode>
     );
     // The worker of the trial mount was disposed with it; the one that stays has the request
@@ -370,7 +415,7 @@ describe("the draft recipe", () => {
       controls: { ...controlsForPreset("earthlike"), source: "realm-map" },
     });
     displayQuery.mockReturnValue(display({ layerTypes: [] }));
-    renderPanel({ mapLayers: [] });
+    renderPanel();
     expect(requestCount()).toBe(0);
     expect(screen.getByRole("radio", { name: "Preset" })).toBeChecked();
   });
@@ -379,7 +424,7 @@ describe("the draft recipe", () => {
     const { rerender } = renderPanel();
     await generateFirst();
     displayQuery.mockReturnValue(display({ realmId: "r_other", realmSlug: "other" }));
-    rerender(<WorldPanel map={null} mapLayers={layers()} createWorker={factory} />);
+    rerender(<WorldPanel map={null} createWorker={factory} />);
     expect(screen.getByRole("button", { name: "Generate preview" })).toBeInTheDocument();
   });
 });
@@ -411,7 +456,7 @@ describe("this realm's map", () => {
 
   it("is disabled, with a link to Map import, while the realm has no political layer", () => {
     displayQuery.mockReturnValue(display({ layerTypes: ["background"] }));
-    renderPanel({ mapLayers: [] });
+    renderPanel();
     expect(within(sourceControl()).getByRole("radio", { name: "This realm's map" })).toBeDisabled();
     expect(screen.getByRole("link", { name: /Import one under Map import/ })).toHaveAttribute(
       "href",
@@ -419,41 +464,135 @@ describe("this realm's map", () => {
     );
   });
 
-  it("waits for the layers to load before it can be chosen", () => {
-    renderPanel({ mapLayers: layers(0) });
+  it("waits for every layer of the map to settle before it can be chosen", () => {
+    layersQuery.mockReturnValue(mapLayers({ pending: true }));
+    renderPanel();
     expect(within(sourceControl()).getByRole("radio", { name: "This realm's map" })).toBeDisabled();
     expect(screen.getByText("Loading the realm's map.")).toBeInTheDocument();
   });
 
-  it("makes no world from a half-loaded map, and uses the latest controls once it has loaded", () => {
-    saveWorldRecipe(REALM, {
-      seed: 9,
-      controls: { ...controlsForPreset("earthlike"), source: "realm-map" },
-    });
-    const { rerender } = renderPanel({ mapLayers: layers(0) });
-    step("Temperature");
-    expect(requestCount()).toBe(0);
-    rerender(<WorldPanel map={null} mapLayers={layers(2)} createWorker={factory} />);
-    expect(requestCount()).toBe(1);
-    expect(lastRequest().params).toMatchObject({ temperatureOffset: 0.5 });
+  it("says so when the map could not be loaded at all", () => {
+    layersQuery.mockReturnValue(mapLayers({ political: 0 }));
+    renderPanel();
+    expect(within(sourceControl()).getByRole("radio", { name: "This realm's map" })).toBeDisabled();
+    expect(screen.getByText(/could not be loaded/)).toBeInTheDocument();
   });
 
-  it("brings back a saved fit once the layers have loaded", () => {
+  it("fits a map whose altitude layer came back empty or absent, using what arrived", () => {
+    layersQuery.mockReturnValue(mapLayers({ political: 4, background: 1 }));
+    renderPanel();
+    fireEvent.click(within(sourceControl()).getByRole("radio", { name: "This realm's map" }));
+    expect(lastRequest().landMaskLayers).not.toHaveProperty("altitudes");
+    expect(lastRequest().landMaskLayers?.political?.features).toHaveLength(4);
+  });
+
+  it("hands over the altitude layer too when the realm has one", () => {
+    layersQuery.mockReturnValue(mapLayers({ altitudes: 5 }));
+    renderPanel();
+    fireEvent.click(within(sourceControl()).getByRole("radio", { name: "This realm's map" }));
+    expect(lastRequest().landMaskLayers?.altitudes?.features).toHaveLength(5);
+  });
+
+  it("makes no world from a map still arriving, and uses the latest controls once it has settled", () => {
     saveWorldRecipe(REALM, {
       seed: 9,
       controls: { ...controlsForPreset("earthlike"), source: "realm-map" },
     });
-    const { rerender } = renderPanel({ mapLayers: layers(0) });
+    // The political layer is in, the rest is not: not a map to fit a world around yet
+    layersQuery.mockReturnValue(mapLayers({ pending: true }));
+    const { rerender } = renderPanel();
+    step("Temperature");
     expect(requestCount()).toBe(0);
-    rerender(<WorldPanel map={null} mapLayers={layers(3)} createWorker={factory} />);
+    layersQuery.mockReturnValue(mapLayers({ background: 3, altitudes: 2 }));
+    rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(requestCount()).toBe(1);
+    expect(lastRequest().params).toMatchObject({ temperatureOffset: 0.5 });
+    expect(lastRequest().landMaskLayers?.background?.features).toHaveLength(3);
+    expect(lastRequest().landMaskLayers?.altitudes?.features).toHaveLength(2);
+  });
+
+  it("brings back a saved fit once the layers have settled", () => {
+    saveWorldRecipe(REALM, {
+      seed: 9,
+      controls: { ...controlsForPreset("earthlike"), source: "realm-map" },
+    });
+    layersQuery.mockReturnValue(mapLayers({ political: 0, pending: true }));
+    const { rerender } = renderPanel();
+    expect(requestCount()).toBe(0);
+    layersQuery.mockReturnValue(mapLayers({ political: 3 }));
+    rerender(<WorldPanel map={null} createWorker={factory} />);
     expect(lastRequest()).toMatchObject({ seed: 9, keepBorders: true });
     expect(lastRequest().landMaskLayers?.political?.features).toHaveLength(3);
   });
 });
 
+describe("a world fitted to the realm's map", () => {
+  /** The panel with a world fitted to the map and delivered; `reload` is the map changing under it. */
+  function fitted() {
+    const view = render(<WorldPanel map={null} createWorker={factory} />);
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Source" })).getByRole("radio", {
+        name: "This realm's map",
+      })
+    );
+    act(() => workers.at(-1)!.say(resultMessage(lastRequest().id)));
+    return {
+      ...view,
+      reload: (layers: ReturnType<typeof mapLayers>) => {
+        layersQuery.mockReturnValue(layers);
+        view.rerender(<WorldPanel map={null} createWorker={factory} />);
+      },
+    };
+  }
+
+  it("is generated again when the realm's map changes under it", () => {
+    const { reload } = fitted();
+    const before = requestCount();
+    reload(mapLayers({ political: 5 }));
+    expect(requestCount()).toBe(before + 1);
+    expect(lastRequest().landMaskLayers?.political?.features).toHaveLength(5);
+    expect(lastRequest().keepBorders).toBe(true);
+  });
+
+  it("waits while the new map loads, then fits it once", () => {
+    const { reload } = fitted();
+    const before = requestCount();
+    reload(mapLayers({ political: 6, pending: true }));
+    expect(requestCount()).toBe(before);
+    const settled = mapLayers({ political: 6 });
+    reload(settled);
+    expect(requestCount()).toBe(before + 1);
+    reload(settled);
+    expect(requestCount()).toBe(before + 1);
+  });
+
+  it("is not generated again for a world made from a preset", async () => {
+    const { rerender } = render(<WorldPanel map={null} createWorker={factory} />);
+    await generateFirst();
+    const before = requestCount();
+    layersQuery.mockReturnValue(mapLayers({ political: 5 }));
+    rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(requestCount()).toBe(before);
+  });
+
+  it("is not brought back after the draft was discarded", () => {
+    const { reload } = fitted();
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    const before = requestCount();
+    reload(mapLayers({ political: 5 }));
+    expect(requestCount()).toBe(before);
+  });
+});
+
 describe("the lock", () => {
   const LOCKED = {
-    data: { lockReason: "claims", pendingClaims: 2, approvedClaims: 1, locked: true },
+    data: {
+      lockReason: "claims",
+      pendingClaims: 2,
+      approvedClaims: 1,
+      locked: true,
+      canReviewClaims: true,
+    },
   };
 
   it("explains that claims lock the world and links to the realm's claims", () => {
@@ -467,6 +606,13 @@ describe("the lock", () => {
     );
   });
 
+  it("names who reviews the claims, with no link, to an officer who has no Claims section", () => {
+    statusQuery.mockReturnValue({ data: { ...LOCKED.data, canReviewClaims: false } });
+    renderPanel();
+    expect(screen.queryByRole("link", { name: /claims/i })).toBeNull();
+    expect(screen.getByText(/officers with the Claims power review them/)).toBeInTheDocument();
+  });
+
   it("still lets a preview be made and tuned", async () => {
     statusQuery.mockReturnValue(LOCKED);
     renderPanel();
@@ -477,7 +623,7 @@ describe("the lock", () => {
 
   it("says an archived realm's world can't change", () => {
     statusQuery.mockReturnValue({
-      data: { lockReason: "archived", pendingClaims: 0, approvedClaims: 0 },
+      data: { lockReason: "archived", pendingClaims: 0, approvedClaims: 0, canReviewClaims: true },
     });
     renderPanel();
     expect(screen.getByText("This realm is archived")).toBeInTheDocument();
@@ -494,6 +640,105 @@ describe("the lock", () => {
       { realm: "eurth" },
       expect.objectContaining({ enabled: true })
     );
+  });
+});
+
+describe("the lock as the apply region sees it", () => {
+  const props = () => region.mock.lastCall![0];
+
+  it("is loading until the status answers", () => {
+    statusQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+    renderPanel();
+    expect(props().lock).toEqual({ phase: "loading" });
+  });
+
+  it("is ready with the status once it answers", () => {
+    renderPanel();
+    expect(props().lock).toEqual({ phase: "ready", status: OPEN.data });
+  });
+
+  it("is failed, not loading and not open, when the status could not be read", () => {
+    const refetch = jest.fn();
+    statusQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { message: "Realm not found" },
+      refetch,
+    });
+    renderPanel();
+    const lock = props().lock;
+    expect(lock).toMatchObject({ phase: "failed", message: "Realm not found" });
+    expect(screen.getByText("Claims could not be checked")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it("does not show the failed notice while it is only loading", () => {
+    statusQuery.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+    renderPanel();
+    expect(screen.queryByText("Claims could not be checked")).toBeNull();
+  });
+});
+
+describe("what the apply region is given of the draft", () => {
+  const props = () => region.mock.lastCall![0];
+
+  it("hands over the realm, the draft and how it was made", async () => {
+    renderPanel();
+    const request = await generateFirst();
+    act(() => workers[0]!.say(resultMessage(request.id, { seed: request.seed })));
+    expect(props()).toMatchObject({
+      realm: { id: REALM, slug: "eurth" },
+      source: "preset",
+      generating: false,
+      result: expect.objectContaining({ seed: request.seed }),
+    });
+  });
+
+  it("calls a draft that matches the controls and the seed current, and one mid-drag stale", async () => {
+    renderPanel();
+    const request = await generateFirst();
+    act(() => workers[0]!.say(resultMessage(request.id)));
+    expect(props().stale).toBe(false);
+    // A key held on the slider: the readout moves, no world is asked for yet
+    const thumb = screen.getByRole("slider", { name: "Continents" });
+    fireEvent.keyDown(thumb, { key: "ArrowRight" });
+    expect(props().stale).toBe(true);
+    fireEvent.keyUp(thumb, { key: "ArrowRight" });
+    act(() => workers.at(-1)!.say(resultMessage(lastRequest().id)));
+    expect(props().stale).toBe(false);
+  });
+
+  it("calls the draft stale when the latest generation failed", async () => {
+    renderPanel();
+    const request = await generateFirst();
+    act(() => workers[0]!.say(resultMessage(request.id)));
+    step("Continents");
+    act(() => workers.at(-1)!.say({ type: "error", id: lastRequest().id, message: "failed" }));
+    expect(props().stale).toBe(true);
+  });
+
+  it("calls a draft fitted to the realm's map stale while that map loads, and again fresh once refitted", () => {
+    const { rerender } = renderPanel();
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Source" })).getByRole("radio", {
+        name: "This realm's map",
+      })
+    );
+    act(() => workers.at(-1)!.say(resultMessage(lastRequest().id)));
+    expect(props().stale).toBe(false);
+
+    layersQuery.mockReturnValue(mapLayers({ political: 4, pending: true }));
+    rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(props().stale).toBe(true);
+
+    layersQuery.mockReturnValue(mapLayers({ political: 4 }));
+    rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(props().generating).toBe(true);
+    act(() => workers.at(-1)!.say(resultMessage(lastRequest().id)));
+    expect(props().stale).toBe(false);
+    expect(props().generating).toBe(false);
   });
 });
 

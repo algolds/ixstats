@@ -3,14 +3,20 @@
  * preview back. Storage may be missing, full, blocked or hold anything, and none of that may break the tab.
  */
 
+import { ATLAS_ENGINE_VERSION } from "~/lib/buildVersion";
 import { CONTROL_LIMITS, controlsForPreset } from "~/lib/worldgen/world-controls";
 import {
   clearWorldRecipe,
   loadWorldRecipe,
   saveWorldRecipe,
+  WORLD_RECIPE_VERSION,
   worldRecipeKey,
   type WorldRecipe,
 } from "~/lib/worldgen/world-draft-recipe";
+
+/** What storage holds for a recipe: the recipe under the current format and engine. */
+const stored = (fields: object) =>
+  JSON.stringify({ version: WORLD_RECIPE_VERSION, engine: ATLAS_ENGINE_VERSION, ...fields });
 
 const recipe = (): WorldRecipe => ({
   seed: 4242,
@@ -36,6 +42,43 @@ describe("world draft recipe", () => {
     expect(worldRecipeKey("realm_a")).not.toBe(worldRecipeKey("realm_b"));
   });
 
+  it("stamps a recipe with its format and the generator's version", () => {
+    saveWorldRecipe("realm_a", recipe());
+    const raw = JSON.parse(window.localStorage.getItem(worldRecipeKey("realm_a"))!);
+    expect(raw).toMatchObject({ version: WORLD_RECIPE_VERSION, engine: ATLAS_ENGINE_VERSION });
+  });
+
+  it("drops a recipe from before versions, or made by another format or generator", () => {
+    const key = worldRecipeKey("realm_a");
+    const { seed, controls } = recipe();
+    for (const raw of [
+      JSON.stringify({ seed, controls }),
+      JSON.stringify({
+        version: WORLD_RECIPE_VERSION + 1,
+        engine: ATLAS_ENGINE_VERSION,
+        seed,
+        controls,
+      }),
+      JSON.stringify({
+        version: WORLD_RECIPE_VERSION,
+        engine: `${ATLAS_ENGINE_VERSION}-old`,
+        seed,
+        controls,
+      }),
+    ]) {
+      window.localStorage.setItem(key, raw);
+      expect(loadWorldRecipe("realm_a")).toBeNull();
+      expect(window.localStorage.getItem(key)).toBeNull();
+    }
+  });
+
+  it("drops a recipe that is corrupt, so it is not read again", () => {
+    const key = worldRecipeKey("realm_a");
+    window.localStorage.setItem(key, "{not json");
+    expect(loadWorldRecipe("realm_a")).toBeNull();
+    expect(window.localStorage.getItem(key)).toBeNull();
+  });
+
   it("forgets a recipe on request", () => {
     saveWorldRecipe("realm_a", recipe());
     clearWorldRecipe("realm_a");
@@ -54,10 +97,10 @@ describe("world draft recipe", () => {
       "[]",
       '{"seed":"x","controls":{}}',
       '{"seed":5}',
-      JSON.stringify({ seed: 5, controls: { ...recipe().controls, source: "elsewhere" } }),
-      JSON.stringify({ seed: 5, controls: { ...recipe().controls, preset: "mars" } }),
-      JSON.stringify({ seed: 5, controls: { ...recipe().controls, developmentLevel: "none" } }),
-      JSON.stringify({ seed: 5, controls: { ...recipe().controls, latitudeBand: [1] } }),
+      stored({ seed: 5, controls: { ...recipe().controls, source: "elsewhere" } }),
+      stored({ seed: 5, controls: { ...recipe().controls, preset: "mars" } }),
+      stored({ seed: 5, controls: { ...recipe().controls, developmentLevel: "none" } }),
+      stored({ seed: 5, controls: { ...recipe().controls, latitudeBand: [1] } }),
     ]) {
       window.localStorage.setItem(key, value);
       expect({ value, loaded: loadWorldRecipe("realm_a") }).toEqual({ value, loaded: null });
@@ -67,7 +110,7 @@ describe("world draft recipe", () => {
   it("pulls stored numbers back inside the slider limits", () => {
     window.localStorage.setItem(
       worldRecipeKey("realm_a"),
-      JSON.stringify({ seed: 9, controls: { ...recipe().controls, continents: 99, rainfall: -3 } })
+      stored({ seed: 9, controls: { ...recipe().controls, continents: 99, rainfall: -3 } })
     );
     const loaded = loadWorldRecipe("realm_a");
     expect(loaded?.controls.continents).toBe(CONTROL_LIMITS.continents.max);
@@ -78,7 +121,7 @@ describe("world draft recipe", () => {
     for (const seed of [0, -4, 1.5, Number.NaN]) {
       window.localStorage.setItem(
         worldRecipeKey("realm_a"),
-        JSON.stringify({ seed, controls: recipe().controls })
+        stored({ seed, controls: recipe().controls })
       );
       expect(loadWorldRecipe("realm_a")).toBeNull();
     }

@@ -8,7 +8,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import type { RealmActor } from "./realms.access";
+import { realmPowers, type RealmActor } from "./realms.access";
 import { realmMapAccess } from "./realms.map-access";
 import { RealmRegionError } from "./realms.region";
 
@@ -22,10 +22,12 @@ export interface RealmWorldStatus {
   approvedClaims: number;
   locked: boolean;
   lockReason: "archived" | "claims" | null;
+  /** The viewer can open the realm's Claims section (the founder, the Claims power, site staff) */
+  canReviewClaims: boolean;
 }
 
-/** The realm's `status`, once `actor` is known to edit its map and it is not Ixnay. */
-async function requireWorldEditor(db: ReadDb, actor: RealmActor, realmId: string): Promise<string> {
+/** The realm's status and the viewer's powers in it, once `actor` is known to edit its map and it is not Ixnay. */
+async function requireWorldEditor(db: ReadDb, actor: RealmActor, realmId: string) {
   if (realmId === DEFAULT_REALM_ID) {
     throw new RealmRegionError("FORBIDDEN", "Ixnay's map has no generated world");
   }
@@ -33,14 +35,24 @@ async function requireWorldEditor(db: ReadDb, actor: RealmActor, realmId: string
   if (!access.canEdit) {
     throw new RealmRegionError("FORBIDDEN", access.reason ?? "You can't edit this map");
   }
-  const realm = await db.realm.findUnique({ where: { id: realmId }, select: { status: true } });
+  const realm = await db.realm.findUnique({
+    where: { id: realmId },
+    select: {
+      status: true,
+      ownerId: true,
+      officers: { select: { userId: true, powers: true } },
+    },
+  });
   if (!realm) throw new RealmRegionError("NOT_FOUND", "Realm not found");
-  return realm.status;
+  return {
+    status: realm.status,
+    canReviewClaims: realmPowers(actor, realm, realm.officers).includes("claims"),
+  };
 }
 
 /** As `requireWorldEditor`, and the realm is not archived (an archived realm's world can't be changed). */
 async function requireWritableWorld(db: ReadDb, actor: RealmActor, realmId: string) {
-  if ((await requireWorldEditor(db, actor, realmId)) === "archived") {
+  if ((await requireWorldEditor(db, actor, realmId)).status === "archived") {
     throw new RealmRegionError(
       "FORBIDDEN",
       "This realm is archived and its world can't be changed"
@@ -54,7 +66,7 @@ export async function getRealmWorldStatus(
   actor: RealmActor,
   realmId: string
 ): Promise<RealmWorldStatus> {
-  const status = await requireWorldEditor(db, actor, realmId);
+  const { status, canReviewClaims } = await requireWorldEditor(db, actor, realmId);
   const [pendingClaims, approvedClaims] = await Promise.all([
     db.realmClaim.count({ where: { realmId, status: "pending" } }),
     db.realmClaim.count({ where: { realmId, status: "approved" } }),
@@ -68,6 +80,7 @@ export async function getRealmWorldStatus(
     approvedClaims,
     locked: lockReason !== null,
     lockReason,
+    canReviewClaims,
   };
 }
 
@@ -126,7 +139,11 @@ export async function getWorldSlot(
   };
 }
 
-/** Whether players may claim the generated slot (`Country.claimable`; a reserved slot is scenery). */
+/**
+ * Whether players may claim the generated slot (`Country.claimable`; a reserved slot is scenery). A slot a player
+ * holds is not scenery and can't be reserved, though it can be made claimable again. One conditional write, so a
+ * slot deleted or taken under it is refused rather than half changed; a refusal is then read back to say why.
+ */
 export async function setSlotClaimable(
   db: ReadDb,
   actor: RealmActor,
@@ -135,8 +152,18 @@ export async function setSlotClaimable(
   claimable: boolean
 ): Promise<{ claimable: boolean }> {
   await requireWritableWorld(db, actor, realmId);
-  requireGenerated(await loadSlot(db, realmId, countryId));
-  await db.country.update({ where: { id: countryId }, data: { claimable } });
+  const { count } = await db.country.updateMany({
+    where: { id: countryId, realmId, worldgen: true, ...(claimable ? {} : { ownerUserId: null }) },
+    data: { claimable },
+  });
+  if (count === 0) {
+    const slot = await loadSlot(db, realmId, countryId);
+    requireGenerated(slot);
+    if (slot.ownerUserId !== null) {
+      throw new RealmRegionError("CONFLICT", "A player holds this nation, so it can't be reserved");
+    }
+    throw new RealmRegionError("NOT_FOUND", "That nation is not in this realm");
+  }
   return { claimable };
 }
 

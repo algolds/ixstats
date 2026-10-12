@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Button } from "~/components/ui/button";
 import { Signal } from "~/components/ui/signal";
 import { realmManageHref } from "~/lib/maps/realm-world-editor";
 
@@ -8,6 +9,8 @@ interface WorldLockedNoticeProps {
   lockReason: "claims" | "archived";
   pendingClaims: number;
   approvedClaims: number;
+  /** The viewer can open the realm's Claims section (it exists for the founder and the Claims power only) */
+  canReviewClaims: boolean;
   realmSlug: string | null;
 }
 
@@ -16,6 +19,7 @@ export function WorldLockedNotice({
   lockReason,
   pendingClaims,
   approvedClaims,
+  canReviewClaims,
   realmSlug,
 }: WorldLockedNoticeProps) {
   if (lockReason === "archived") {
@@ -32,13 +36,29 @@ export function WorldLockedNotice({
         new world would replace nations players have claimed or asked for. You can still make and
         tune a preview.
       </p>
-      {realmSlug && (
-        <p className="mt-1">
+      <p className="mt-1">
+        {canReviewClaims && realmSlug ? (
           <Link className="text-tint underline" href={realmManageHref(realmSlug, "claims")}>
             Review the realm's claims
           </Link>
-        </p>
-      )}
+        ) : (
+          "The realm's founder and officers with the Claims power review them."
+        )}
+      </p>
+    </Signal>
+  );
+}
+
+/** The claims that lock the world could not be read, so applying stays off until they can. */
+export function WorldLockUnknownNotice({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Signal tone="warning" title="Claims could not be checked">
+      <p>
+        Using a world stays off until the realm's claims can be read. You can still make a preview.
+      </p>
+      <Button size="sm" variant="outline" className="mt-2" onClick={onRetry}>
+        Check again
+      </Button>
     </Signal>
   );
 }

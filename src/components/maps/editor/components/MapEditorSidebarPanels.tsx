@@ -9,6 +9,7 @@ import {
   useRealmRelief,
 } from "~/components/maps/core/hooks/useRealmMapDisplay";
 import { buildLayers, isMapSwitchedLayer } from "~/components/maps/editor/utils/layer-rows";
+import { RELIEF_LAYER_ID } from "~/lib/maps/raster-tiles";
 import { sidebarTabsFor, worldTabAvailable } from "~/components/maps/editor/utils/world-tab";
 import { LinkageValidationPanel } from "./LinkageValidationPanel";
 import { SovereigntyPanel } from "./SovereigntyPanel";
@@ -87,7 +88,11 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
     tabs.includes("properties") ? "properties" : (tabs[0] ?? "properties")
   );
 
-  const effectiveActiveTab: TabId = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
+  // A requested tab this panel does not show (`?editor=world` where the World tab is not offered) falls back to its first
+  const requestedTab = panelId === "panelA" ? activeSidebarTab : panelBActiveTab;
+  const effectiveActiveTab: TabId = tabs.includes(requestedTab)
+    ? requestedTab
+    : (tabs[0] ?? requestedTab);
 
   const {
     onSelectFeature: handleSelectFeature,
@@ -105,7 +110,7 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
       layers={buildLayers(layerStates, editorVisibleLayers, relief)}
       onToggleVisibility={(id) => {
         if (id === "climate") toggleEditorLayer("climate");
-        else if (id === "relief") relief.toggle();
+        else if (id === RELIEF_LAYER_ID) relief.toggle();
         else updateLayer(id, (layer) => ({ visible: !(layer?.visible ?? true) }));
       }}
       onToggleLock={(id) => {
@@ -206,7 +211,7 @@ export const MapEditorSidebarPanels = memo(function MapEditorSidebarPanels({
       layersContent={effectiveActiveTab === "layers" ? renderLayersElement() : undefined}
       worldContent={
         effectiveActiveTab === "world" && worldTabAvailable(worldTab) ? (
-          <WorldPanel map={worldMap} mapLayers={state.worldMapLayers} sandbox={isSandbox} />
+          <WorldPanel map={worldMap} sandbox={isSandbox} />
         ) : undefined
       }
       wikiContent={

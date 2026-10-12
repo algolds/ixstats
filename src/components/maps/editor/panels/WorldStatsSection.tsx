@@ -61,11 +61,13 @@ export function WorldStats({ stats }: { stats: WorldPreviewStats }) {
 interface WorldProgressProps {
   view: Pick<WorldGenView, "state" | "message" | "pct" | "error">;
   hasWorld: boolean;
+  /** The studio's sandbox: a world is made to be compared, not used */
+  sandbox?: boolean;
   onGenerate: () => void;
 }
 
 /** The run in flight (its stage and how far), the error that ended one, or the button to make the first world. */
-export function WorldProgress({ view, hasWorld, onGenerate }: WorldProgressProps) {
+export function WorldProgress({ view, hasWorld, sandbox, onGenerate }: WorldProgressProps) {
   if (view.state === "generating") {
     return (
       <p className="text-label-secondary text-footnote flex items-center gap-2" role="status">
@@ -94,7 +96,9 @@ export function WorldProgress({ view, hasWorld, onGenerate }: WorldProgressProps
   return (
     <div className="space-y-2">
       <p className="text-label-secondary text-footnote">
-        Preview a generated world on the map, tune it, then use it for this realm.
+        {sandbox
+          ? "Generate a world on the map to compare it with Ixnay and Eurth."
+          : "Preview a generated world on the map, tune it, then use it for this realm."}
       </p>
       <Button size="sm" onClick={onGenerate}>
         Generate preview
