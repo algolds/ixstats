@@ -1,5 +1,6 @@
 import type { LayerSpecification, Map as MapLibreMap, VectorTileSource } from "maplibre-gl";
 import { withBasePath } from "~/lib/base-path";
+import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 
 /** Decorative map layers the /maps viewer draws from vector tiles (`/api/map-tiles`), not GeoJSON.
  * Climate stays GeoJSON: it loads only when switched on, and its Arctic zone is a ring around the
@@ -26,9 +27,10 @@ export interface TileSource {
   version: number;
 }
 
-/** Absolute tile URL template (MapLibre fetches tiles from its worker, where relative URLs don't resolve). */
+/** Absolute tile URL template (MapLibre fetches tiles from its worker, where relative URLs don't resolve). It names
+ * the realm, its map version and this build's tile format, so a changed map or renderer is a new URL. */
 export function tileUrlTemplate({ realmId, version }: TileSource, layer: TiledLayer): string {
-  const path = `/api/map-tiles/${encodeURIComponent(realmId)}/${version}/${layer}`;
+  const path = `/api/map-tiles/${encodeURIComponent(realmId)}/${version}/f${TILE_FORMAT_VERSION}/${layer}`;
   return `${window.location.origin}${withBasePath(path)}/{z}/{x}/{y}`;
 }
 

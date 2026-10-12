@@ -65,7 +65,7 @@ The **Ultra-Fidelity Unified Physical Geography (UPG v2)** vector engine (`src/l
   does not run it) adds `realms."mapVersion"`, the `country_geom_sync` trigger that keeps `"Country".geom_postgis` in step
   with `geometry` (plus a backfill of countries written before it), and the `atlas_country_union()` function behind a
   nation's outline. Apply it by hand after `db push` (the file's header has the command).
-- **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/<version>/<layer>/<z>/<x>/<y>.pbf`);
+- **`MAP_TILE_DIR`.** The vector tile cache lives under it (`<MAP_TILE_DIR>/<realmId>/f<format>/<version>/<layer>/<z>/<x>/<y>.pbf`);
   unset, it is `data/cache/map-tiles` under the process's working directory (gitignored). The web server and the cron
   worker (`ixstats-cron`) have different working directories, so production sets it to one shared folder for both.
   See [Map delivery](#map-delivery-atlas-release-0).
@@ -348,8 +348,11 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
   its `geom_postgis` is a planar sliver) and a row the simplification empties are left out of the coverage and
   simplified one polygon at a time from their GeoJSON with turf; if the function is missing, or GEOS refuses the
   coverage, the whole layer takes that path. The decorative polygon layers are not coverage-simplified.
-- **Vector tiles** `GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>` for `altitudes`, `rivers` and `lakes`
-  (z0 to z6), rendered by PostGIS (`geo/core/tiles.ts`). A rendered tile is written to the tile folder (`MAP_TILE_DIR`,
+- **Vector tiles** `GET /api/map-tiles/<realm>/<version>/f<format>/<layer>/<z>/<x>/<y>` for `altitudes`, `rivers` and `lakes`
+  (z0 to z6), rendered by PostGIS (`geo/core/tiles.ts`). `<format>` is `TILE_FORMAT_VERSION` (`src/lib/maps/tile-format.ts`),
+  which any change to what the renderer produces must bump: tiles are `immutable` for a year in browsers and kept on
+  disk, so a new format is a new URL and a new folder (a URL of another format gets this build's tile as
+  `private, no-store`). A rendered tile is written to the tile folder (`MAP_TILE_DIR`,
   above) and read back from it through a 32 MB in-memory cache (1 h TTL), so a cached tile costs no query. A request
   for an older version gets the current version's tile as `private, no-store` (it is not that URL's content); a version
   above the realm's is a 404. Ixnay's and published realms' tiles are `immutable` when the URL names the realm by id and

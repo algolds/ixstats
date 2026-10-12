@@ -59,7 +59,7 @@ describe("runMapTilePrerender", () => {
     const result = await runMapTilePrerender(fakeDb([IXNAY]));
     expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES);
     expect(result).toMatchObject({ rendered: LOW_ZOOM_TILES, failed: 0, versionsCompleted: 1 });
-    expect(existsSync(path.join(root, "default", "4", ".done"))).toBe(true);
+    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
 
     const calls = buildTile.mock.calls.map(
       ([, realm, layer, z, x, y]) => `${realm}/${layer}/${z}/${x}/${y}`
@@ -89,13 +89,13 @@ describe("runMapTilePrerender", () => {
     buildTile.mockClear();
     await runMapTilePrerender(fakeDb([{ ...IXNAY, mapVersion: 5 }]));
     expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES);
-    expect(existsSync(path.join(root, "default", "5", ".done"))).toBe(true);
+    expect(existsSync(path.join(root, "default", "f1", "5", ".done"))).toBe(true);
   });
 
   it("stores empty tiles too, so a realm with no features is marked done and its tiles are cache hits", async () => {
     buildTile.mockResolvedValue(new Uint8Array());
     await runMapTilePrerender(fakeDb([{ id: "r_empty", status: "active", mapVersion: 0 }]));
-    expect(existsSync(path.join(root, "r_empty", "0", ".done"))).toBe(true);
+    expect(existsSync(path.join(root, "r_empty", "f1", "0", ".done"))).toBe(true);
     const hit = await readTile("r_empty", 0, "lakes", 3, 3, 3);
     expect(hit?.length).toBe(0);
   });
@@ -123,7 +123,7 @@ describe("runMapTilePrerender", () => {
     );
     const first = await runMapTilePrerender(fakeDb([IXNAY]));
     expect(first).toMatchObject({ rendered: LOW_ZOOM_TILES - 1, failed: 1, versionsCompleted: 0 });
-    expect(existsSync(path.join(root, "default", "4", ".done"))).toBe(false);
+    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(false);
 
     buildTile.mockClear();
     buildTile.mockResolvedValue(new Uint8Array([2]));
@@ -131,7 +131,7 @@ describe("runMapTilePrerender", () => {
     // Only the failed tile is rendered again
     expect(buildTile).toHaveBeenCalledTimes(1);
     expect(second).toMatchObject({ rendered: 1, failed: 0, versionsCompleted: 1 });
-    expect(existsSync(path.join(root, "default", "4", ".done"))).toBe(true);
+    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
   });
 
   it("does not render a tile a viewer already caused to be cached", async () => {
@@ -152,19 +152,19 @@ describe("runMapTilePrerender", () => {
     const first = await runMapTilePrerender(fakeDb([IXNAY]), options);
     expect(first.rendered).toBe(10);
     expect(first.versionsCompleted).toBe(0);
-    expect(existsSync(path.join(root, "default", "4", ".done"))).toBe(false);
+    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(false);
 
     clock = 0;
     buildTile.mockClear();
     await runMapTilePrerender(fakeDb([IXNAY]), { budgetMs: 1_000_000, now: () => clock });
     expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES - 10);
-    expect(existsSync(path.join(root, "default", "4", ".done"))).toBe(true);
+    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
   });
 
   it("removes versions a day after the next one was ready, for every realm", async () => {
     const DAY = 24 * 60 * 60 * 1000;
     const old = (realm: string, version: number, ageMs: number) => {
-      const dir = path.join(root, realm, String(version));
+      const dir = path.join(root, realm, "f1", String(version));
       mkdirSync(dir, { recursive: true });
       writeFileSync(path.join(dir, ".done"), "");
       const stamp = new Date(Date.now() - ageMs);
@@ -181,9 +181,9 @@ describe("runMapTilePrerender", () => {
       ])
     );
     // Ixnay's version 3 was just rendered, so version 2 (its successor 3 is brand new) stays; version 1 goes
-    expect(readdirSync(path.join(root, "default")).sort()).toEqual(["2", "3"]);
+    expect(readdirSync(path.join(root, "default", "f1")).sort()).toEqual(["2", "3"]);
     // The draft realm was not rendered; its newest old version is judged by its own age
-    expect(readdirSync(path.join(root, "r_draft"))).toEqual([]);
+    expect(readdirSync(path.join(root, "r_draft", "f1"))).toEqual([]);
     expect(result.removedVersions).toBe(3);
   });
 });

@@ -19,7 +19,7 @@ jest.mock("~/server/api/routers/geo/core/tiles", () => ({
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
 
-import { GET } from "~/app/api/map-tiles/[realm]/[version]/[layer]/[z]/[x]/[y]/route";
+import { GET } from "~/app/api/map-tiles/[realm]/[version]/[format]/[layer]/[z]/[x]/[y]/route";
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
 
@@ -42,15 +42,19 @@ type Getter = (
   layer: string,
   z: string,
   x: string,
-  y: string
+  y: string,
+  /** The URL's tile format segment; the build's own (`f1`) unless a test asks for another. */
+  format?: string
 ) => Promise<Response>;
 
 const getter =
   (handler: typeof GET): Getter =>
-  (realm, version, layer, z, x, y) =>
+  (realm, version, layer, z, x, y, format = "f1") =>
     handler(
-      new NextRequest(`http://localhost/api/map-tiles/${realm}/${version}/${layer}/${z}/${x}/${y}`),
-      { params: Promise.resolve({ realm, version, layer, z, x, y }) }
+      new NextRequest(
+        `http://localhost/api/map-tiles/${realm}/${version}/${format}/${layer}/${z}/${x}/${y}`
+      ),
+      { params: Promise.resolve({ realm, version, format, layer, z, x, y }) }
     );
 
 const get = getter(GET);
@@ -59,9 +63,10 @@ const get = getter(GET);
 function freshGet(): Getter {
   jest.resetModules();
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const route = require("~/app/api/map-tiles/[realm]/[version]/[layer]/[z]/[x]/[y]/route") as {
-    GET: typeof GET;
-  };
+  const route =
+    require("~/app/api/map-tiles/[realm]/[version]/[format]/[layer]/[z]/[x]/[y]/route") as {
+      GET: typeof GET;
+    };
   return getter(route.GET);
 }
 
@@ -105,7 +110,7 @@ const asAnonymous = () => {
 
 const body = async (res: Response) => new Uint8Array(await res.arrayBuffer());
 
-describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
+describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", () => {
   it("serves an Ixnay tile as immutable, from the current version", async () => {
     const res = await get("default", "3", "rivers", "2", "1", "3");
     expect(res.status).toBe(200);
@@ -118,7 +123,9 @@ describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
   it("renders a tile once, writes it to the disk cache, and serves the next request without the renderer", async () => {
     const run = freshGet();
     await run("default", "3", "rivers", "2", "1", "3");
-    expect(existsSync(path.join(root, "default", "3", "rivers", "2", "1", "3.pbf"))).toBe(true);
+    expect(existsSync(path.join(root, "default", "f1", "3", "rivers", "2", "1", "3.pbf"))).toBe(
+      true
+    );
     const again = await run("default", "3", "rivers", "2", "1", "3");
     expect(await body(again)).toEqual(new Uint8Array([1, 2, 3]));
     expect(again.headers.get("cache-control")).toBe(IMMUTABLE);
@@ -168,6 +175,37 @@ describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
     expect(realmFind).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["a number", "1"],
+    ["a word", "latest"],
+    ["an f with no number", "f"],
+    ["a negative format", "f-1"],
+    ["a fractional format", "f1.5"],
+    ["an enormous format", "f9999999999"],
+  ])("404s on %s for the format without querying", async (_n, format) => {
+    const res = await get("default", "3", "rivers", "1", "0", "0", format);
+    expect(res.status).toBe(404);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(buildTile).not.toHaveBeenCalled();
+    expect(realmFind).not.toHaveBeenCalled();
+  });
+
+  it("answers a URL of another tile format with this build's tiles, but never as that URL's immutable copy", async () => {
+    const run = freshGet();
+    for (const format of ["f0", "f2"]) {
+      const res = await run("default", "3", "rivers", "1", "0", "0", format);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control")).toBe("private, no-store");
+      expect(await body(res)).toEqual(new Uint8Array([1, 2, 3]));
+    }
+    // the tile itself is stored once, under this build's format, and is immutable at its own URL
+    expect(readdirSync(path.join(root, "default"))).toEqual(["f1"]);
+    expect(buildTile).toHaveBeenCalledTimes(1);
+    expect((await run("default", "3", "rivers", "1", "0", "0")).headers.get("cache-control")).toBe(
+      IMMUTABLE
+    );
+  });
+
   it("404s on an unknown realm, uncached", async () => {
     const res = await get("r_nope", "0", "lakes", "0", "0", "0");
     expect(res.status).toBe(404);
@@ -199,7 +237,9 @@ describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
     const run = freshGet();
     asOwner();
     expect((await run("r_draft", "1", "lakes", "0", "0", "0")).status).toBe(200);
-    expect(existsSync(path.join(root, "r_draft", "1", "lakes", "0", "0", "0.pbf"))).toBe(true);
+    expect(existsSync(path.join(root, "r_draft", "f1", "1", "lakes", "0", "0", "0.pbf"))).toBe(
+      true
+    );
 
     asAnonymous();
     for (const name of ["r_draft", "draft-world"]) {
@@ -257,8 +297,10 @@ describe("GET /api/map-tiles/<realm>/<version>/<layer>/<z>/<x>/<y>", () => {
       expect(await body(res)).toEqual(new Uint8Array([1, 2, 3]));
     }
     expect(buildTile).toHaveBeenCalledTimes(1);
-    expect(readdirSync(path.join(root, "r_eurth"))).toEqual(["2"]);
-    expect(existsSync(path.join(root, "r_eurth", "2", "lakes", "0", "0", "0.pbf"))).toBe(true);
+    expect(readdirSync(path.join(root, "r_eurth", "f1"))).toEqual(["2"]);
+    expect(existsSync(path.join(root, "r_eurth", "f1", "2", "lakes", "0", "0", "0.pbf"))).toBe(
+      true
+    );
     // The current version's own URL is then a hit, and immutable
     const current = await run("r_eurth", "2", "lakes", "0", "0", "0");
     expect(current.headers.get("cache-control")).toBe(IMMUTABLE);

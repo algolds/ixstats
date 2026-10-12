@@ -25,7 +25,7 @@ describe("useRealmMapVersion", () => {
       return mapVersion && tileUrlTemplate(mapVersion, "rivers");
     });
     expect(result.current).toBe(
-      `${window.location.origin}/api/map-tiles/r_eurth/7/rivers/{z}/{x}/{y}`
+      `${window.location.origin}/api/map-tiles/r_eurth/7/f1/rivers/{z}/{x}/{y}`
     );
     expect(result.current).not.toContain("/eurth/");
   });

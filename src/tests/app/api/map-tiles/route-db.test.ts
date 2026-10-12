@@ -21,19 +21,22 @@ jest.mock("~/server/db", () => {
 });
 
 import { db } from "~/server/db";
-import { GET } from "~/app/api/map-tiles/[realm]/[version]/[layer]/[z]/[x]/[y]/route";
+import { GET } from "~/app/api/map-tiles/[realm]/[version]/[format]/[layer]/[z]/[x]/[y]/route";
 
 const get = (realm: string, version: number, layer: string, z: number, x: number, y: number) => {
   const params = {
     realm,
     version: String(version),
+    format: "f1",
     layer,
     z: String(z),
     x: String(x),
     y: String(y),
   };
   return GET(
-    new NextRequest(`http://localhost/api/map-tiles/${realm}/${version}/${layer}/${z}/${x}/${y}`),
+    new NextRequest(
+      `http://localhost/api/map-tiles/${realm}/${version}/f1/${layer}/${z}/${x}/${y}`
+    ),
     {
       params: Promise.resolve(params),
     }

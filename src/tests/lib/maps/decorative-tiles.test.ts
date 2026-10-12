@@ -79,14 +79,31 @@ describe("applyVectorTiles", () => {
 });
 
 describe("tileUrlTemplate", () => {
-  it("names the realm, the map version and the layer, so a new version is a new URL", () => {
+  it("names the realm, the map version, the tile format and the layer, so a new version is a new URL", () => {
     const url = (version: number) => tileUrlTemplate({ realmId: "r_eurth", version }, "rivers");
-    expect(url(7)).toBe(`${window.location.origin}/api/map-tiles/r_eurth/7/rivers/{z}/{x}/{y}`);
+    expect(url(7)).toBe(`${window.location.origin}/api/map-tiles/r_eurth/7/f1/rivers/{z}/{x}/{y}`);
     expect(url(8)).not.toBe(url(7));
   });
 
+  it("is a different URL for a different tile format", () => {
+    jest.resetModules();
+    jest.doMock("~/lib/maps/tile-format", () => ({ TILE_FORMAT_VERSION: 2 }));
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const next =
+        require("~/lib/maps/decorative-tiles") as typeof import("~/lib/maps/decorative-tiles");
+      expect(next.tileUrlTemplate({ realmId: "r_eurth", version: 7 }, "rivers")).toBe(
+        `${window.location.origin}/api/map-tiles/r_eurth/7/f2/rivers/{z}/{x}/{y}`
+      );
+    } finally {
+      jest.dontMock("~/lib/maps/tile-format");
+    }
+  });
+
   it("encodes the realm segment", () => {
-    expect(tileUrlTemplate({ realmId: "a b", version: 0 }, "lakes")).toContain("/a%20b/0/lakes/");
+    expect(tileUrlTemplate({ realmId: "a b", version: 0 }, "lakes")).toContain(
+      "/a%20b/0/f1/lakes/"
+    );
   });
 });
 

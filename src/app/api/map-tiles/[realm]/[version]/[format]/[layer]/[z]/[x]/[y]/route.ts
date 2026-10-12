@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { buildTile } from "~/server/api/routers/geo/core/tiles";
 import { isTileCoord, isTiledLayer } from "~/lib/maps/decorative-tiles";
+import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 import {
   PRIVATE_TILE_CACHE,
   resolveTileRealm,
@@ -20,6 +21,9 @@ const notFound = () => failure(404);
 
 /** A URL segment of digits only, else NaN (which is no coordinate or version). */
 const digits = (segment: string) => (/^\d{1,9}$/.test(segment) ? Number(segment) : NaN);
+
+/** The format segment, `f<n>` (tile-format.ts), as its number, else NaN. */
+const formatNumber = (segment: string) => digits(segment.startsWith("f") ? segment.slice(1) : "");
 
 /** The realm's current map version, read fresh: it decides whether a missing tile may be stored. */
 async function currentMapVersion(realmId: string): Promise<number> {
@@ -40,6 +44,7 @@ function tileCacheControl(target: TileRealm, byId: boolean, cacheable: boolean):
 interface TileParams {
   realm: string;
   version: string;
+  format: string;
   layer: string;
   z: string;
   x: string;
@@ -47,15 +52,21 @@ interface TileParams {
 }
 
 /**
- * One vector tile of a realm's decorative map layer (altitudes, rivers, lakes) at a map version. The URL names the
- * version, so Ixnay's and published realms' tiles are immutable when it names the realm by id; an unpublished
- * realm's are never cached. Tiles are rendered once per version and served from the disk cache after that
- * (tile-cache.ts).
+ * One vector tile of a realm's decorative map layer (altitudes, rivers, lakes) at a map version and tile format
+ * (`f<n>`, tile-format.ts). The URL names both, so Ixnay's and published realms' tiles are immutable when it names
+ * the realm by id and this build's format; an unpublished realm's are never cached, and a URL of another format gets
+ * this build's tile, not stored under that URL. Tiles are rendered once per version and format and served from the
+ * disk cache after that (tile-cache.ts).
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<TileParams> }) {
-  const { realm, version, layer, z, x, y } = await params;
+  const { realm, version, format, layer, z, x, y } = await params;
   const [zn, xn, yn, mapVersion] = [digits(z), digits(x), digits(y), digits(version)];
-  if (!isTiledLayer(layer) || !isTileCoord(zn, xn, yn) || Number.isNaN(mapVersion)) {
+  if (
+    !isTiledLayer(layer) ||
+    !isTileCoord(zn, xn, yn) ||
+    Number.isNaN(mapVersion) ||
+    Number.isNaN(formatNumber(format))
+  ) {
     return notFound();
   }
   try {
@@ -66,7 +77,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<T
       currentVersion: () => currentMapVersion(target.id),
     });
     if (!tile) return notFound();
-    const cacheControl = tileCacheControl(target, realm === target.id, tile.cacheable);
+    const cacheable = tile.cacheable && formatNumber(format) === TILE_FORMAT_VERSION;
+    const cacheControl = tileCacheControl(target, realm === target.id, cacheable);
     // Copied into an ArrayBuffer-backed view, which is what a Response body accepts
     return new NextResponse(new Uint8Array(tile.bytes), {
       headers: {
@@ -75,7 +87,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<T
       },
     });
   } catch (err) {
-    console.error(`[map-tiles] ${realm}/${version}/${layer}/${z}/${x}/${y} failed`, err);
+    console.error(`[map-tiles] ${realm}/${version}/${format}/${layer}/${z}/${x}/${y} failed`, err);
     return failure(500);
   }
 }

@@ -9,10 +9,11 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import type { Feature, Geometry } from "geojson";
 import { GET as layerRoute } from "~/app/api/map-layers/[realm]/[version]/[layer]/route";
-import { GET as tileRoute } from "~/app/api/map-tiles/[realm]/[version]/[layer]/[z]/[x]/[y]/route";
+import { GET as tileRoute } from "~/app/api/map-tiles/[realm]/[version]/[format]/[layer]/[z]/[x]/[y]/route";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { TILED_LAYERS, type TiledLayer } from "~/lib/maps/decorative-tiles";
 import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
+import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { geoProfileProcedures } from "~/server/api/routers/geo/core/geo-profile";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -134,11 +135,12 @@ const tileHitsSchema = z.object({
 type TileRun = z.infer<typeof tileHitsSchema> & { totalMs: number };
 
 function tileRequest(version: number, { layer, zoom, x, y }: Tile) {
-  const url = `http://localhost/api/map-tiles/${DEFAULT_REALM_ID}/${version}/${layer}/${zoom}/${x}/${y}`;
+  const url = `http://localhost/api/map-tiles/${DEFAULT_REALM_ID}/${version}/f${TILE_FORMAT_VERSION}/${layer}/${zoom}/${x}/${y}`;
   return tileRoute(new NextRequest(url), {
     params: Promise.resolve({
       realm: DEFAULT_REALM_ID,
       version: String(version),
+      format: `f${TILE_FORMAT_VERSION}`,
       layer,
       z: String(zoom),
       x: String(x),

@@ -1,25 +1,33 @@
 /**
  * The vector tile cache (`/api/map-tiles`): a realm's decorative tiles are rendered by PostGIS once per map version
- * and kept on disk as `<MAP_TILE_DIR>/<realmId>/<version>/<layer>/<z>/<x>/<y>.pbf`, behind a small in-memory LRU.
- * A version bump is a new folder and a new URL, so nothing is ever invalidated; the `map-tiles` cron job
- * (tile-prerender.ts) renders the low zooms ahead of the first visitor and removes folders a day after a newer
- * version was ready. The web server and the cron worker share the folder, so set `MAP_TILE_DIR` for both in
- * production (their working directories differ). Every path segment is checked before it is joined, so a request
- * can never reach outside the root. Server only.
+ * and kept on disk as `<MAP_TILE_DIR>/<realmId>/f<format>/<version>/<layer>/<z>/<x>/<y>.pbf` (`format` is
+ * TILE_FORMAT_VERSION), behind a small in-memory LRU. A version bump or a format bump is a new folder and a new URL,
+ * so nothing is ever invalidated. Old folders are removed a day after a newer version was ready, by the `map-tiles`
+ * cron job (tile-prerender.ts), which also renders the low zooms ahead of the first visitor, and, so the disk cannot
+ * fill when that job is off, by the web process itself once an hour per realm after it renders a tile
+ * (sweepStaleTileVersions). Every process that serves or renders tiles (the web app, the IxWorld standalone, the cron
+ * worker) must share one `MAP_TILE_DIR` in production (their working directories differ). Every path segment is
+ * checked before it is joined, so a request can never reach outside the root. Server only.
  */
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isTileCoord, isTiledLayer, type TiledLayer } from "~/lib/maps/decorative-tiles";
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
+import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 
 const REALM_ID = /^[A-Za-z0-9_-]{1,64}$/;
+/** The realm's folder holding this build's tile format; another format's tiles sit in a sibling folder. */
+const FORMAT_DIR = `f${TILE_FORMAT_VERSION}`;
+const FORMAT_DIR_NAME = /^f\d+$/;
 const DONE_MARKER = ".done";
 const MEMORY_BYTES = 32 * 1024 * 1024;
 /** Tiles never change under their key, so this only bounds how long an idle one is kept. */
 const MEMORY_TTL_MS = 60 * 60 * 1000;
 /** How long a version's folder outlives the next version's readiness (open tabs still ask for the old URLs). */
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+/** The web process cleans a realm's old folders at most this often. */
+const SWEEP_EVERY_MS = 60 * 60 * 1000;
 
 /** Where the tiles live: `MAP_TILE_DIR`, else `data/cache/map-tiles` under the app (gitignored). */
 export function mapTileDir(): string {
@@ -43,8 +51,13 @@ function realmDir(realmId: string): string | null {
   return REALM_ID.test(realmId) ? path.join(mapTileDir(), realmId) : null;
 }
 
-function versionDir(realmId: string, version: number): string | null {
+function formatDir(realmId: string): string | null {
   const dir = realmDir(realmId);
+  return dir && path.join(dir, FORMAT_DIR);
+}
+
+function versionDir(realmId: string, version: number): string | null {
+  const dir = formatDir(realmId);
   return dir && Number.isSafeInteger(version) && version >= 0
     ? path.join(dir, String(version))
     : null;
@@ -136,8 +149,14 @@ function renderOnce(key: TileArgs, render: () => Promise<Uint8Array>): Promise<B
     const stored = await readTile(...key);
     if (stored) return stored;
     const bytes = Buffer.from(await render());
-    await writeTile(...key, bytes).catch((err: Error) =>
-      console.error(`[map-tiles] ${id} not stored`, err)
+    await writeTile(...key, bytes).then(
+      () => {
+        // Off the response's path: a failed cleanup costs nothing but a log line
+        sweepStaleTileVersions(key[0], key[1]).catch((err: Error) =>
+          console.error(`[map-tiles] cleanup of ${key[0]} failed`, err)
+        );
+      },
+      (err: Error) => console.error(`[map-tiles] ${id} not stored`, err)
     );
     return bytes;
   })().finally(() => inflight.delete(id));
@@ -189,17 +208,20 @@ async function readyAt(dir: string): Promise<number> {
 
 /**
  * Remove the realm's folders of versions below `currentVersion` once the next folder up was ready more than a day
- * ago (the newest old version has none above it and is judged by its own time). Returns how many went.
+ * ago (the newest old version has none above it and is judged by its own time), and the folders of other tile
+ * formats once untouched for a day. Returns how many folders went.
  */
 export async function removeStaleTileVersions(
   realmId: string,
   currentVersion: number,
   now = Date.now()
 ): Promise<number> {
-  const dir = realmDir(realmId);
-  if (!dir) return 0;
-  const names = await readdir(dir).catch(() => [] as string[]);
-  const versions = names.filter((name) => /^\d+$/.test(name)).map(Number);
+  const root = realmDir(realmId);
+  const dir = formatDir(realmId);
+  if (!root || !dir) return 0;
+  const versions = (await readdir(dir).catch(() => [] as string[]))
+    .filter((name) => /^\d+$/.test(name))
+    .map(Number);
   versions.sort((a, b) => a - b);
   let removed = 0;
   for (const [i, version] of versions.entries()) {
@@ -209,5 +231,29 @@ export async function removeStaleTileVersions(
     await rm(folder(version), { recursive: true, force: true });
     removed++;
   }
+  for (const name of await readdir(root).catch(() => [] as string[])) {
+    if (name === FORMAT_DIR || !FORMAT_DIR_NAME.test(name)) continue;
+    if (now - (await readyAt(path.join(root, name))) <= STALE_AFTER_MS) continue;
+    await rm(path.join(root, name), { recursive: true, force: true });
+    removed++;
+  }
   return removed;
+}
+
+const lastSweep = new Map<string, number>();
+
+/**
+ * The web process's own cleanup, so the disk cannot fill when the `map-tiles` cron job is off: after it stores a
+ * tile of `currentVersion` it removes the realm's outlived versions (removeStaleTileVersions), at most once an hour
+ * per realm. Null when this realm was swept less than an hour ago.
+ */
+export async function sweepStaleTileVersions(
+  realmId: string,
+  currentVersion: number,
+  now = Date.now()
+): Promise<number | null> {
+  const last = lastSweep.get(realmId);
+  if (last !== undefined && now - last < SWEEP_EVERY_MS) return null;
+  lastSweep.set(realmId, now);
+  return removeStaleTileVersions(realmId, currentVersion, now);
 }

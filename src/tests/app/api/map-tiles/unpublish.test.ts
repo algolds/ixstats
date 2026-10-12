@@ -64,7 +64,7 @@ jest.mock("~/lib/cache", () => ({
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { GET } from "~/app/api/map-tiles/[realm]/[version]/[layer]/[z]/[x]/[y]/route";
+import { GET } from "~/app/api/map-tiles/[realm]/[version]/[format]/[layer]/[z]/[x]/[y]/route";
 import { realmsRouter } from "~/server/api/routers/realms";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -72,10 +72,11 @@ const IMMUTABLE = "public, max-age=31536000, immutable";
 const admin = { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } };
 
 const tile = (realm: string, version: number) =>
-  GET(new NextRequest(`http://localhost/api/map-tiles/${realm}/${version}/lakes/0/0/0`), {
+  GET(new NextRequest(`http://localhost/api/map-tiles/${realm}/${version}/f1/lakes/0/0/0`), {
     params: Promise.resolve({
       realm,
       version: String(version),
+      format: "f1",
       layer: "lakes",
       z: "0",
       x: "0",
