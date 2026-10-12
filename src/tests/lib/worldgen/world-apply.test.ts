@@ -326,4 +326,9 @@ describe("the diff in words", () => {
     });
     expect(splitWarnings({ warnings, replaces: [] }).replaces).toEqual([]);
   });
+
+  it("reads every warning as a note when there is no list, as in a check stored before the server made one", () => {
+    const stored = { warnings: ["A", "B"] } as { warnings: string[]; replaces: string[] };
+    expect(splitWarnings(stored)).toEqual({ replaces: [], notes: ["A", "B"] });
+  });
 });

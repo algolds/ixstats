@@ -97,7 +97,37 @@ describe("using a world", () => {
       uploadId: UPLOAD.uploadId,
       kind: "world",
       filename: "world-7.json.gz",
+      fittedMapVersion: undefined,
     });
+  });
+
+  it("sends the map version the draft was fitted to with the world, for the server to check", async () => {
+    const { political: _political, ...layers } = DRAFT.layers;
+    renderRegion({
+      source: "realm-map",
+      result: worldResult({ layers, slots: [] }),
+      mapVersion: CHECKED_MAP,
+    });
+    await startCheck();
+    expect(start).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "world", fittedMapVersion: CHECKED_MAP })
+    );
+  });
+
+  it("asks for the realm's map version again when a check or an apply is refused, to catch up with a map that moved", async () => {
+    renderRegion({ mapVersion: CHECKED_MAP });
+    await startCheck();
+    expect(invalidated.version).not.toHaveBeenCalled();
+    act(() =>
+      setJob("j_check", {
+        status: "failed",
+        progress: 5,
+        stage: null,
+        error: "The map changed since the check. Check the world again.",
+      })
+    );
+    await screen.findByText("The world could not be checked.");
+    expect(invalidated.version).toHaveBeenCalled();
   });
 
   it("sends a world fitted to the realm's map without borders or nations", async () => {
@@ -231,6 +261,13 @@ describe("the review", () => {
     expect(warning).not.toHaveTextContent("current map");
   });
 
+  it("reads every warning as a note from a check stored before the server flagged any", async () => {
+    renderRegion();
+    await reachReview(dryRun({ warnings: ["A note from an older check"], replaces: undefined }));
+    expect(screen.getByText("A note from an older check")).toBeInTheDocument();
+    expect(screen.queryByText("This replaces work in the realm")).toBeNull();
+  });
+
   it("has no replaced-work warning when the server has none", async () => {
     renderRegion();
     await reachReview();
@@ -297,19 +334,17 @@ describe("the review", () => {
     expect(screen.queryByText(/The realm's map changed/)).toBeNull();
   });
 
-  it("holds a world fitted to the realm's map when the map is edited and the preview is fitted to the edit", async () => {
+  it("holds a world fitted to the realm's map when the map moves under the same preview", async () => {
+    // the preview object is the one that was checked, and it is not stale: only the map's version says it moved
     const { political: _political, ...layers } = DRAFT.layers;
-    const fitted = (seed: number) => worldResult({ seed, layers, slots: [] });
-    const view = renderRegion({
-      source: "realm-map",
-      result: fitted(7),
-      mapVersion: CHECKED_MAP,
-    });
+    const fitted = worldResult({ seed: 7, layers, slots: [] });
+    const view = renderRegion({ source: "realm-map", result: fitted, mapVersion: CHECKED_MAP });
     await reachReview(dryRun({ source: "realm-map" }));
-    // the map is edited and the preview is made again from the same recipe: the same seed and parameters
-    view.update({ result: fitted(7), mapVersion: CHECKED_MAP + 1 });
+    expect(screen.getByRole("button", { name: "Apply this world" })).toBeEnabled();
+    view.update({ mapVersion: CHECKED_MAP + 1 });
     expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
     expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
+    expect(screen.getByText(/The realm's map changed after this check/)).toBeInTheDocument();
   });
 
   it("shows the server's refusal of a check of a map that moved, and checks again on Retry", async () => {

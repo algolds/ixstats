@@ -56,6 +56,7 @@ export function useWorldApply({
 
   const latest = useLatest({
     flow,
+    mapVersion,
     busy: view.stage === "sending" || view.stage === "applying",
     result,
     source,
@@ -68,9 +69,16 @@ export function useWorldApply({
   });
 
   const begin = useCallback(async () => {
-    const { busy, result: draft, source: from, realmId: realm } = latest.current;
+    const {
+      busy,
+      result: draft,
+      source: from,
+      realmId: realm,
+      mapVersion: fitted,
+    } = latest.current;
     if (!draft || busy || calling.current) return;
     calling.current = true;
+    setCancelError(null);
     const sent: Sent = { draft, key: draftKey(draft, from), resumed: false };
     setFlow({ step: "sending", sent });
     try {
@@ -81,6 +89,8 @@ export function useWorldApply({
         uploadId: upload.uploadId,
         kind: "world",
         filename: `world-${draft.seed}.json.gz`,
+        // The map the draft was fitted to (a draft that is not stale is fitted to the map as the browser has it)
+        fittedMapVersion: fitted,
       });
       saveWorldJob(realm, { checkJobId: jobId, applyJobId: null, draftKey: sent.key });
       setFlow({ step: "checking", sent, checkJobId: jobId });
@@ -98,6 +108,7 @@ export function useWorldApply({
     const { flow: now, realmId: realm } = latest.current;
     if (now.step !== "checking" || calling.current) return;
     calling.current = true;
+    setCancelError(null);
     setFlow({ ...now, step: "applying", applyJobId: null });
     try {
       const { jobId } = await latest.current.applyWorld({ jobId: now.checkJobId });
@@ -158,6 +169,8 @@ export function useWorldApply({
       void cache.realms.map.display.invalidate();
     }
     if (stage === "done" || stage === "failed") void cache.realms.map.worldStatus.invalidate();
+    // A refusal can be the map having moved on under a view that has not caught up
+    if (stage === "failed") void cache.realms.map.version.invalidate();
   }, [stage, latest]);
 
   return { view, cancelError, begin, confirm, cancel, close };

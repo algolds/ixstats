@@ -83,6 +83,8 @@ export const geoEditorMapImportRouter = createTRPCRouter({
           kind: z.enum(MAP_IMPORT_KINDS),
           filename: z.string().min(1).max(200),
           options: mapImportOptionsSchema.optional(),
+          /** A world: the map version the browser fitted the draft to (required for a world fitted to the realm's map) */
+          fittedMapVersion: z.number().int().min(0).optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -96,6 +98,7 @@ export const geoEditorMapImportRouter = createTRPCRouter({
             realmId: input.realmId,
             source: { kind: input.kind, uploadId: input.uploadId, filename: input.filename },
             options: input.options,
+            fittedMapVersion: input.kind === "world" ? input.fittedMapVersion : undefined,
             requestedBy: ctx.user.clerkUserId,
           },
           { db: ctx.db }

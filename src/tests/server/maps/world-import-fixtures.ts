@@ -113,7 +113,12 @@ export const CHECK_ID = "j_world_check";
 
 export const jobFor = (
   uploadId: string,
-  over: Partial<{ requestedBy: string; realmId: string; parentJobId: string | null }> = {}
+  over: Partial<{
+    requestedBy: string;
+    realmId: string;
+    parentJobId: string | null;
+    options: object;
+  }> = {}
 ) => ({
   id: "j_world",
   realmId: "r1",

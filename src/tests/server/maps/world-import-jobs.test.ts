@@ -81,10 +81,16 @@ beforeEach(() => {
 async function dryRun(
   db: ReturnType<typeof seedRealm>,
   uploadId: string,
-  requestedBy = "founder_1"
+  requestedBy = "founder_1",
+  fittedMapVersion?: number
 ) {
   const jobId = await startMapImport(
-    { realmId: "r1", source: { kind: "world", uploadId, filename: "world.json.gz" }, requestedBy },
+    {
+      realmId: "r1",
+      source: { kind: "world", uploadId, filename: "world.json.gz" },
+      requestedBy,
+      fittedMapVersion,
+    },
     { db, kick: false }
   );
   await runMapImportJob(db, jobId, { world: { runRelief } });
@@ -174,6 +180,39 @@ describe("a world through the job runner", () => {
     expect((job.result as WorldApplySummary).relief).toMatchObject({
       status: "failed",
       error: "out of memory",
+    });
+  });
+});
+
+describe("the map version a world was fitted to", () => {
+  it("is kept with the job, and the dry run records it", async () => {
+    const db = seedRealm({ mapVersion: 4 });
+    const dryId = await dryRun(db, await storeBundle(makeBundle()), "founder_1", 4);
+    expect(db.mapImportJob.rows.find((j: { id: string }) => j.id === dryId).options).toMatchObject({
+      fittedMapVersion: 4,
+    });
+    const job = await getMapImportJob(db, founder, dryId);
+    expect(job.result).toMatchObject({
+      phase: "world-dry-run",
+      mapVersion: 4,
+      fittedMapVersion: 4,
+    });
+  });
+
+  it("leaves a world fitted to the realm's map to the check: stale fails it, current passes it", async () => {
+    const bundle = makeBundle({ source: "realm-map" });
+    const stale = seedRealm({ mapVersion: 4 });
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const staleId = await dryRun(stale, await storeBundle(bundle), "founder_1", 3);
+    error.mockRestore();
+    expect(await getMapImportJob(stale, founder, staleId)).toMatchObject({
+      status: "failed",
+      error: "The map changed since the check. Check the world again.",
+    });
+    const current = seedRealm({ mapVersion: 4 });
+    const currentId = await dryRun(current, await storeBundle(bundle), "founder_1", 4);
+    expect(await getMapImportJob(current, founder, currentId)).toMatchObject({
+      status: "succeeded",
     });
   });
 });

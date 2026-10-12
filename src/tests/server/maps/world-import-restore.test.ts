@@ -463,7 +463,7 @@ describe("the realm map source", () => {
       }
     );
     const id = await stored({ source: "realm-map" });
-    const diff = await runWorldDryRun(db, jobFor(id));
+    const diff = await runWorldDryRun(db, jobFor(id, { options: { fittedMapVersion: 0 } }));
     expect(diff.slots).toMatchObject({ create: 2, retire: 0 });
     expect(diff.layers.political).toEqual({ create: 0, change: 0, retire: 0 });
 

@@ -104,6 +104,8 @@ export interface StartMapImportInput {
   realmId: string;
   source: { kind: MapImportKind; bytes?: Uint8Array; uploadId?: string; filename: string };
   options?: MapImportOptionsInput;
+  /** A world: the map version the browser fitted the draft to (kept with the job's options) */
+  fittedMapVersion?: number;
   /** Clerk userId, or "cron" / "script". */
   requestedBy: string;
 }
@@ -159,7 +161,9 @@ export async function startMapImport(
       realmId: input.realmId,
       kind: input.source.kind,
       dryRun: true,
-      options: options as Prisma.InputJsonValue,
+      options: (input.fittedMapVersion === undefined
+        ? options
+        : { ...options, fittedMapVersion: input.fittedMapVersion }) as Prisma.InputJsonValue,
       requestedBy: input.requestedBy,
       uploadId,
       filename: input.source.filename.slice(0, 200),

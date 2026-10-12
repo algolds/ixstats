@@ -26,14 +26,35 @@ jest.mock("~/server/modules/maps/realm-relief", () => ({
   })),
 }));
 
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { createCallerFactory } from "~/server/api/trpc";
 import { geoEditorMapImportRouter } from "~/server/api/routers/geo/editor/map-import";
 import { buildRealmRelief } from "~/server/modules/maps/realm-relief";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { admin, founder, stranger } from "~/tests/server/maps/map-import-fakes";
-import { CHECK_ID, seedRealm } from "~/tests/server/maps/world-import-fixtures";
+import {
+  CHECK_ID,
+  makeBundle,
+  seedRealm,
+  storeBundle,
+} from "~/tests/server/maps/world-import-fixtures";
 
 const UPLOAD = "a".repeat(64);
+
+let dir: string;
+beforeAll(() => {
+  dir = mkdtempSync(path.join(tmpdir(), "world-router-"));
+  process.env.MAP_IMPORT_DIR = dir;
+});
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true });
+  delete process.env.MAP_IMPORT_DIR;
+});
+// Queueing a job kicks the in-process runner on a timer: no timer fires, so no job runs after the test
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => jest.useRealTimers());
 
 function caller(user: typeof admin, realm: Record<string, unknown> = {}) {
   const db = seedRealm(realm);
@@ -53,6 +74,20 @@ describe("geoEditor.mapImport.start for a world", () => {
     uploadId: UPLOAD,
     kind: "world" as const,
     filename: "world.json.gz",
+  });
+
+  it("keeps the map version the draft was fitted to with the world check, and takes only a whole number", async () => {
+    const { api, db } = caller(founder, { mapVersion: 3 });
+    // the kicked runner is not wanted here: only the stored job is looked at
+    const uploadId = await storeBundle(makeBundle());
+    const { jobId } = await api.start({ ...input(), uploadId, fittedMapVersion: 3 });
+    expect(
+      db.mapImportJob.rows.find((job: { id: string }) => job.id === jobId).options
+    ).toMatchObject({
+      fittedMapVersion: 3,
+    });
+    await expect(api.start({ ...input(), uploadId, fittedMapVersion: -1 })).rejects.toThrow();
+    await expect(api.start({ ...input(), uploadId, fittedMapVersion: 1.5 })).rejects.toThrow();
   });
 
   it("keeps other players out", async () => {

@@ -23,6 +23,7 @@ import { freeNationSlug } from "~/server/modules/realms/realms.claims";
 import { realmNationDefaults } from "~/server/modules/realms/realms.settings";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { loadImportRealm, MapImportError, type ImportRealm } from "./map-import.realm";
+import { assertMapUnchangedSince } from "./world-import.check";
 import { assertNoLockingClaims } from "./world-import.guards";
 import type { PreparedSlot } from "./world-import.prepare";
 
@@ -209,6 +210,8 @@ export interface ReplaceSlotsInput {
   /** The slots to create, or null to create one for each of the realm's unlinked political features. */
   slots: readonly PreparedSlot[] | null;
   level: DevelopmentLevel;
+  /** The world's check (its dry run result): the realm's map must still be the version it read */
+  check: Prisma.JsonValue | null;
 }
 
 /**
@@ -225,6 +228,8 @@ export async function replaceSlots(
     return await db.$transaction(
       async (tx) => {
         await lockSlotsAndRealm(tx, realm.id);
+        // The map as it is with the locks held: an edit that commits after this waits for the apply's writes
+        await assertMapUnchangedSince(tx, realm.id, input.check);
         // Who may edit, and not archived, as the realm is now; then the claims, as they are now
         const current = await loadImportRealm(tx, input.actor, realm.id);
         await assertNoLockingClaims(tx, realm.id);

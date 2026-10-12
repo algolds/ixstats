@@ -3,7 +3,7 @@
  * the job to its end, and when the world is applied the draft goes off the map and the maps are asked again, whichever
  * tab was open when the job landed. A refusal is shown with the draft kept; a job that is gone is let go.
  */
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const fake = jest.requireActual("~/tests/helpers/fake-map-import");
@@ -420,6 +420,75 @@ describe("calling a job off", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(await screen.findByRole("button", { name: "Use this world" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("says nothing of a cancel that found the job already finished (a conflict), and keeps following it", async () => {
+    cancelJob.mockRejectedValue(
+      Object.assign(new Error("The import has already finished"), { data: { code: "CONFLICT" } })
+    );
+    renderRegion();
+    await startCheck();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(cancelJob).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/could not be called off/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+  });
+
+  it("says when a queued apply could not be called off, on the apply's progress", async () => {
+    cancelJob.mockRejectedValue(new Error("Too many requests"));
+    renderRegion();
+    await reachReview();
+    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
+    await screen.findByText(/Applying the world/);
+    act(() => setJob("j_apply", { status: "queued", progress: 0, stage: null }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The job could not be called off: Too many requests"
+    );
+    expect(screen.getByText(/Applying the world/)).toBeInTheDocument();
+  });
+
+  it("does not carry a failed cancel's message into the next job", async () => {
+    cancelJob.mockRejectedValue(new Error("Too many requests"));
+    renderRegion();
+    await startCheck();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await screen.findByRole("alert");
+    // the check lands anyway, and the person goes on to apply it
+    act(() => setJob("j_check", dryRun()));
+    await screen.findByText("What this world changes");
+    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
+    await screen.findByText(/Applying the world/);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/could not be called off/)).toBeNull();
+  });
+
+  it("does not carry it into a new check started with Retry", async () => {
+    cancelJob.mockRejectedValue(new Error("Too many requests"));
+    renderRegion();
+    await startCheck();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await screen.findByRole("alert");
+    act(() => setJob("j_check", { status: "failed", progress: 9, stage: null, error: "No" }));
+    start.mockResolvedValue({ jobId: "j_check_2" });
+    fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+    await screen.findByText(/Checking the world/);
+    expect(screen.queryByText(/could not be called off/)).toBeNull();
+  });
+
+  it("drops the old message when Cancel is pressed again and finds the job finished", async () => {
+    cancelJob.mockRejectedValueOnce(new Error("Too many requests"));
+    cancelJob.mockRejectedValueOnce(
+      Object.assign(new Error("The import has already finished"), { data: { code: "CONFLICT" } })
+    );
+    renderRegion();
+    await startCheck();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(cancelJob).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 
   it("shows how the check ended when it had finished before it could be called off", async () => {

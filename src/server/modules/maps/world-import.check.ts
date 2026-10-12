@@ -39,6 +39,27 @@ export async function assertMapUnchangedSince(
   }
 }
 
+/** The map version the browser fitted a world to, as `start` was given it (stored in the job's options). */
+export function fittedMapVersionOf(options: Prisma.JsonValue | undefined): number | null {
+  if (!options || typeof options !== "object" || Array.isArray(options)) return null;
+  const version = options.fittedMapVersion;
+  return typeof version === "number" ? version : null;
+}
+
+/**
+ * A world fitted to the realm's own map (its land and borders) is only good for the map it was fitted to: refuse one
+ * made for another version (CONFLICT, the same reason as a stale check), and one that does not say which.
+ */
+export function assertFittedToMap(fitted: number | null, current: number): void {
+  if (fitted === null) {
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "A world fitted to the realm's map needs the map version it was fitted to"
+    );
+  }
+  if (fitted !== current) throw new MapImportError("CONFLICT", MAP_CHANGED);
+}
+
 /** The finished check that an apply job was queued from. */
 export async function loadCheck(
   db: Pick<PrismaClient, "mapImportJob">,
