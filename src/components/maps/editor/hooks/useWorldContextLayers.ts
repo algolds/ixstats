@@ -3,7 +3,7 @@ import type { Map as MapLibreMap, GeoJSONSource, ExpressionSpecification } from 
 import type { FeatureCollection } from "geojson";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
-import { setLayerOpacity } from "../utils/map-helpers";
+import { prebuildSnapGrids, setLayerOpacity } from "../utils/map-helpers";
 import type { MapTheme } from "~/lib/map-styles/registry";
 
 type LayerConfig = (typeof LAYER_CONFIGS)[MapLayerType];
@@ -175,6 +175,9 @@ export function useWorldContextLayers(
   theme: MapTheme | undefined
 ) {
   const lastLoadedDataRef = useRef<Map<string, MapLayerData["data"]>>(new Map());
+
+  // The tiled layers' GeoJSON is only for snapping; index it while idle so the first snap is instant
+  useEffect(() => prebuildSnapGrids(worldMapLayers), [worldMapLayers]);
 
   useEffect(() => {
     if (!map || !isLoaded || !worldMapLayers || worldMapLayers.length === 0) return;

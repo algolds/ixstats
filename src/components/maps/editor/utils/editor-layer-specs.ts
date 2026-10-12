@@ -1,5 +1,5 @@
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
-import type { SourcelessLayer } from "./map-helpers";
+import type { GeoJSONSourceOptions, SourcelessLayer } from "./map-helpers";
 import type { ExpressionSpecification } from "maplibre-gl";
 
 type LayerOf<T extends SourcelessLayer["type"]> = Extract<SourcelessLayer, { type: T }>;
@@ -49,7 +49,11 @@ const labelPaint = (
 });
 
 const NO_FEATURE: Filter = ["==", ["get", "id"], ""];
-const featureTypeIs = (type: string): ExpressionSpecification => ["==", ["get", "featureType"], type];
+const featureTypeIs = (type: string): ExpressionSpecification => [
+  "==",
+  ["get", "featureType"],
+  type,
+];
 
 /** Translucent fill plus dashed outline, used by the gap / empty-region / lasso overlays. */
 function fillAndDashedStroke(
@@ -215,6 +219,9 @@ export const RIVER_LINE_LAYERS: SourcelessLayer[] = [
     { layout: { "line-cap": "round", "line-join": "round" } }
   ),
 ];
+
+/** Region ids are the source's feature ids, so `updateData` can move one region without a rebuild. */
+export const SUBDIVISION_SOURCE_OPTIONS: GeoJSONSourceOptions = { promoteId: "id" };
 
 export function subdivisionLayers(regionsOpacity: number): SourcelessLayer[] {
   return [

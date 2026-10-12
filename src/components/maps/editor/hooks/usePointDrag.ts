@@ -16,6 +16,7 @@ import {
   type DragAxis,
   type ScreenPoint,
 } from "./drag-utils";
+import { coalesceToFrame } from "~/lib/frame-coalesce";
 import { createListeners, queryNear } from "./map-interaction";
 import { useLatest } from "./useLatest";
 
@@ -118,6 +119,12 @@ export function usePointDrag({
       source.setData(collection(buildPointFeatures(latest.current.features, override)));
     };
 
+    // Mouse events can outpace the display; the source is sent the latest point once per frame.
+    const syncDrag = coalesceToFrame((coords: [number, number]) => {
+      const drag = dragRef.current;
+      if (drag) syncPointsSource(drag.featureId, coords);
+    });
+
     const setGhost = (coords: [number, number] | null) => {
       getGeoJSONSource(map, "editor-points-ghost")?.setData(
         collection(coords ? [pointFeature(coords)] : [])
@@ -186,8 +193,7 @@ export function usePointDrag({
         drag.lockedAxis
       );
 
-      // Straight to the map source for 60fps responsiveness.
-      syncPointsSource(drag.featureId, drag.currentCoords);
+      syncDrag.schedule(drag.currentCoords);
       canvas.style.cursor = "grabbing";
     };
 
@@ -200,6 +206,7 @@ export function usePointDrag({
     const onMouseUp = async () => {
       const drag = dragRef.current;
       if (!drag) return;
+      syncDrag.flush(); // the point lands where the pointer stopped
       clearDragState();
       if (!drag.committed) return;
 
@@ -219,6 +226,7 @@ export function usePointDrag({
       if (e.key === "Escape" && dragRef.current) {
         e.preventDefault();
         const wasCommitted = dragRef.current.committed;
+        syncDrag.cancel();
         clearDragState();
         if (wasCommitted) {
           syncPointsSource(null, null);
@@ -270,6 +278,7 @@ export function usePointDrag({
 
     return () => {
       listeners.dispose();
+      syncDrag.cancel();
       if (nudgeTimer) clearTimeout(nudgeTimer);
     };
   }, [map, isLoaded]);

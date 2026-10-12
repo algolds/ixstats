@@ -20,6 +20,7 @@ import {
   POINT_GHOST_LAYERS,
   POINT_LAYERS,
   RIVER_LINE_LAYERS,
+  SUBDIVISION_SOURCE_OPTIONS,
   subdivisionLayers,
 } from "../utils/editor-layer-specs";
 import { useMapOverlayLayers } from "./useMapOverlayLayers";
@@ -283,7 +284,8 @@ export function useMapLayers({
       map,
       "editor-subdivisions",
       collection(polyFeatures),
-      subdivisionLayers(layerOpacity?.regions ?? 0.6)
+      subdivisionLayers(layerOpacity?.regions ?? 0.6),
+      SUBDIVISION_SOURCE_OPTIONS
     );
     // oxlint-disable-next-line
   }, [map, isLoaded, features, visibilityKey, theme]);

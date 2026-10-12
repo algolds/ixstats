@@ -3,6 +3,17 @@ import type { FeatureCollection } from "geojson";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useWorldContextLayers } from "~/components/maps/editor/hooks/useWorldContextLayers";
 
+jest.mock("~/components/maps/editor/utils/map-helpers", () => ({
+  ...jest.requireActual<typeof import("~/components/maps/editor/utils/map-helpers")>(
+    "~/components/maps/editor/utils/map-helpers"
+  ),
+  prebuildSnapGrids: jest.fn(),
+}));
+
+import { prebuildSnapGrids } from "~/components/maps/editor/utils/map-helpers";
+
+const prebuild = jest.mocked(prebuildSnapGrids);
+
 const rivers: FeatureCollection = {
   type: "FeatureCollection",
   features: [
@@ -68,5 +79,38 @@ describe("useWorldContextLayers", () => {
       )
     );
     expect(setData).toHaveBeenCalledWith(rivers);
+  });
+});
+
+describe("useWorldContextLayers snap grids", () => {
+  beforeEach(() => prebuild.mockReset());
+
+  it("starts indexing the layers for snapping when they arrive, and stops when they change", () => {
+    const cancel = jest.fn();
+    prebuild.mockReturnValue(cancel);
+    const first = [{ type: "rivers" as const, data: rivers, visible: true }];
+    const second = [{ type: "rivers" as const, data: { ...rivers }, visible: true }];
+    const { map } = fakeMap("vector");
+    const { rerender, unmount } = renderHook(
+      ({ layers }) => useWorldContextLayers(map, true, layers, "standard"),
+      { initialProps: { layers: first } }
+    );
+    expect(prebuild).toHaveBeenCalledTimes(1);
+    expect(prebuild).toHaveBeenLastCalledWith(first);
+    expect(cancel).not.toHaveBeenCalled();
+
+    rerender({ layers: second });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(prebuild).toHaveBeenLastCalledWith(second);
+
+    unmount();
+    expect(cancel).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not wait for the map", () => {
+    prebuild.mockReturnValue(jest.fn());
+    const layers = [{ type: "rivers" as const, data: rivers, visible: true }];
+    renderHook(() => useWorldContextLayers(null, false, layers, "standard"));
+    expect(prebuild).toHaveBeenCalledWith(layers);
   });
 });

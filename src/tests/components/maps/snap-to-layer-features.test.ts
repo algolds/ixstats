@@ -14,7 +14,7 @@ jest.mock("~/lib/maps/segment-grid", () => {
   };
 });
 
-import { snapToLayerFeatures } from "~/components/maps/editor/utils/map-helpers";
+import { prebuildSnapGrids, snapToLayerFeatures } from "~/components/maps/editor/utils/map-helpers";
 
 const ORDER = ["rivers", "lakes", "background", "altitudes", "climate"];
 
@@ -97,5 +97,74 @@ describe("snapToLayerFeatures", () => {
     const visible = new Set(ORDER);
     for (let i = 0; i < 50; i++) snapToLayerFeatures([1 + i * 0.01, 1], fresh, visible, 0.02);
     expect(buildSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("prebuildSnapGrids", () => {
+  const visible = new Set(ORDER);
+
+  afterEach(() => {
+    jest.useRealTimers();
+    Reflect.deleteProperty(window, "requestIdleCallback");
+    Reflect.deleteProperty(window, "cancelIdleCallback");
+  });
+
+  it("indexes every snap layer while idle, so the first snap builds nothing", () => {
+    jest.useFakeTimers();
+    const fresh = [layer("rivers", 21, false), layer("lakes", 22, true)];
+    buildSpy.mockClear();
+
+    prebuildSnapGrids(fresh);
+    expect(buildSpy).not.toHaveBeenCalled();
+    jest.runAllTimers();
+    expect(buildSpy).toHaveBeenCalledTimes(2);
+
+    snapToLayerFeatures([1, 1], fresh, visible, 0.02);
+    expect(buildSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("builds one layer per idle period when the browser has requestIdleCallback", () => {
+    const idle: Array<() => void> = [];
+    Object.assign(window, {
+      requestIdleCallback: jest.fn((task: () => void) => idle.push(task)),
+      cancelIdleCallback: jest.fn(),
+    });
+    const fresh = [layer("rivers", 31, false), layer("lakes", 32, true)];
+    buildSpy.mockClear();
+
+    prebuildSnapGrids(fresh);
+    expect(idle).toHaveLength(1);
+    expect(buildSpy).not.toHaveBeenCalled();
+
+    idle.shift()!();
+    expect(buildSpy).toHaveBeenCalledTimes(1);
+    expect(idle).toHaveLength(1);
+    idle.shift()!();
+    expect(buildSpy).toHaveBeenCalledTimes(2);
+    expect(idle).toHaveLength(0);
+  });
+
+  it("stops when cancelled", () => {
+    jest.useFakeTimers();
+    const fresh = [layer("rivers", 41, false), layer("lakes", 42, true)];
+    buildSpy.mockClear();
+
+    const cancel = prebuildSnapGrids(fresh);
+    cancel();
+    jest.runAllTimers();
+    expect(buildSpy).not.toHaveBeenCalled();
+  });
+
+  it("skips layers snapping never uses and layers already indexed", () => {
+    jest.useFakeTimers();
+    const political = { ...layer("rivers", 51, false), type: "political" as const };
+    const indexed = layer("lakes", 52, true);
+    snapToLayerFeatures([1, 1], [indexed], visible, 0.02);
+    buildSpy.mockClear();
+
+    prebuildSnapGrids([political, indexed]);
+    jest.runAllTimers();
+    expect(buildSpy).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
   });
 });

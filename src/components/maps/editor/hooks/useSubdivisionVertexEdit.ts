@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import type { Polygon, MultiPolygon, FeatureCollection } from "geojson";
+import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
-import { getVertices, simplifyGeometry, sanitizeRegionShape } from "~/lib/maps/border-editor";
+import {
+  getAllRings,
+  getVertices,
+  simplifyGeometry,
+  sanitizeRegionShape,
+} from "~/lib/maps/border-editor";
 import { clipGeometryToBorder } from "~/lib/maps/province-importer/topology";
-import { buildTopologyIndex } from "~/lib/maps/topology-engine";
+import { buildTopologyIndex, vkey } from "~/lib/maps/topology-engine";
 import {
   getGeoJSONSource,
   calculateOverlapGeoJson,
@@ -20,7 +25,11 @@ import {
   snapToCountryBorderRing,
   snapToNeighbors,
 } from "./vertex-edit-geometry";
-import { createVertexEditState, useVertexEditPointer } from "./useVertexEditPointer";
+import {
+  createVertexEditState,
+  useVertexEditPointer,
+  type VertexEditState,
+} from "./useVertexEditPointer";
 
 interface UseSubdivisionVertexEditProps {
   map: MapLibreMap | null;
@@ -45,9 +54,6 @@ interface UseSubdivisionVertexEditProps {
 }
 
 type RegionGeometry = Polygon | MultiPolygon;
-type SourceFeatures = {
-  features?: Array<{ properties?: { id?: string }; geometry?: unknown }>;
-};
 
 /** Subdivision layers that are filtered (or reset) while a region is being reshaped. */
 const REGION_LAYERS = [
@@ -60,6 +66,29 @@ const REGION_LAYERS = [
 const clipToBorder = (geometry: RegionGeometry, border: RegionGeometry) =>
   clipGeometryToBorder(geometry, border).geometry;
 
+/**
+ * The regions that share a vertex with the one being edited, at the shapes the cascade left them in.
+ * These are the only regions a reshape can newly overlap, so the overlap check looks at no others.
+ */
+function adjacentRegions(st: VertexEditState, features: EditorFeature[]): EditorFeature[] {
+  const { edit, topology } = st;
+  if (!edit || !topology) return [];
+
+  const ids = new Set<string>();
+  for (const ring of getAllRings(edit.currentGeometry)) {
+    for (const vertex of ring) {
+      for (const ref of topology.get(vkey(vertex)) ?? []) ids.add(ref.featureId);
+    }
+  }
+  return features.flatMap((f) => {
+    const geometry = ids.has(f.id) ? st.neighbors.get(f.id) : undefined;
+    // A plain copy: the cascade's clones keep the `_bbox` the saved shape had cached
+    return geometry
+      ? [{ ...f, geometry: { type: geometry.type, coordinates: geometry.coordinates } }]
+      : [];
+  });
+}
+
 /** Cascade visuals are written to the subdivisions source at most once per frame. */
 function useCascadeVisuals(map: MapLibreMap | null) {
   const pendingRef = useRef<Map<string, RegionGeometry>>(new Map());
@@ -68,27 +97,11 @@ function useCascadeVisuals(map: MapLibreMap | null) {
   const flush = useCallback(() => {
     frameRef.current = null;
     const pending = pendingRef.current;
-    if (!map || pending.size === 0) return;
-    try {
-      // Patches the source's own data in place (no full rebuild) via its private cache.
-      const src = map.getSource("editor-subdivisions") as
-        | {
-            _data?: SourceFeatures;
-            _options?: { data?: SourceFeatures };
-            setData?: (data: FeatureCollection) => void;
-          }
-        | undefined;
-      const data = src?._data || src?._options?.data;
-      if (src?.setData && data?.features) {
-        for (const f of data.features) {
-          const id = f.properties?.id;
-          if (id && pending.has(id)) f.geometry = pending.get(id);
-        }
-        src.setData(data as FeatureCollection);
-      }
-    } catch {
-      // Visual-only feedback
-    }
+    if (pending.size === 0) return;
+    // Region ids are the source's feature ids (promoteId), so each neighbour moves on its own.
+    void getGeoJSONSource(map, "editor-subdivisions")?.updateData({
+      update: [...pending].map(([id, newGeometry]) => ({ id, newGeometry })),
+    });
     pending.clear();
   }, [map]);
 
@@ -139,6 +152,13 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
     [st]
   );
 
+  const updateMidpoints = useCallback(() => {
+    if (!map || !st.edit) return;
+    getGeoJSONSource(map, "editor-vedit-midpoints")?.setData(
+      collection(buildMidpointFeatures(st.edit.currentGeometry))
+    );
+  }, [map, st]);
+
   const updateVertexEditVis = useCallback(
     (fastOnly = false) => {
       if (!map || !st.edit) return;
@@ -157,28 +177,29 @@ export function useSubdivisionVertexEdit(props: UseSubdivisionVertexEditProps) {
       );
       if (fastOnly) return;
 
-      // Midpoints (add-vertex handles) and overlap highlights are skipped while dragging.
-      setSource("editor-vedit-midpoints", buildMidpointFeatures(geo));
+      // Drag frames stop above; their midpoints follow on a throttle, the overlap check on mouse-up.
+      updateMidpoints();
       getGeoJSONSource(map, "editor-overlap-highlight")?.setData(
-        calculateOverlapGeoJson(geo, latest.current.features, featureId)
+        calculateOverlapGeoJson(geo, adjacentRegions(st, latest.current.features), featureId)
       );
     },
-    [map, st, markDirty]
+    [map, st, markDirty, updateMidpoints]
   );
 
+  /** Add-vertex handles follow a drag at most every 100 ms; the overlap check waits for the drop. */
   const scheduleThrottledUpdate = useCallback(() => {
     if (st.throttleTimer) clearTimeout(st.throttleTimer);
     const sinceLast = Date.now() - lastUpdateRef.current;
     if (sinceLast >= 100) {
-      updateVertexEditVis(false);
+      updateMidpoints();
       lastUpdateRef.current = Date.now();
     } else {
       st.throttleTimer = setTimeout(() => {
-        updateVertexEditVis(false);
+        updateMidpoints();
         lastUpdateRef.current = Date.now();
       }, 100 - sinceLast);
     }
-  }, [st, updateVertexEditVis]);
+  }, [st, updateMidpoints]);
 
   useEffect(() => {
     return () => {
