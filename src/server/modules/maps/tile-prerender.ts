@@ -11,7 +11,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { TILED_LAYERS } from "~/lib/maps/decorative-tiles";
 import { DEFAULT_REALM_ID, isUnpublishedStatus } from "~/lib/realms/realm-ids";
-import { buildTile } from "~/server/api/routers/geo/core/tiles";
+import { buildTile } from "~/server/modules/maps/tile-render";
 import {
   isTileVersionDone,
   markTileVersionDone,

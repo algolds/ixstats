@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
-import { buildTile } from "~/server/api/routers/geo/core/tiles";
+import { buildTile } from "~/server/modules/maps/tile-render";
 import { isTileCoord, isTiledLayer } from "~/lib/maps/decorative-tiles";
 import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 import {

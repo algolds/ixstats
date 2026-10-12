@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const buildTile = jest.fn();
-jest.mock("~/server/api/routers/geo/core/tiles", () => ({
+jest.mock("~/server/modules/maps/tile-render", () => ({
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
 

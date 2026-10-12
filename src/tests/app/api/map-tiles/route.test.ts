@@ -15,7 +15,7 @@ jest.mock("~/server/db", () => ({
   },
 }));
 const buildTile = jest.fn();
-jest.mock("~/server/api/routers/geo/core/tiles", () => ({
+jest.mock("~/server/modules/maps/tile-render", () => ({
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
 

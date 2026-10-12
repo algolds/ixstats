@@ -4,7 +4,7 @@ import { VectorTile } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
 import type { Geometry, Position } from "geojson";
 import { splitCollectionAtAntimeridian } from "~/lib/maps/map-utils";
-import { buildTile, sourceGeometry } from "~/server/api/routers/geo/core/tiles";
+import { buildTile, sourceGeometry } from "~/server/modules/maps/tile-render";
 
 const url = process.env.TILES_DB_URL;
 const run = url ? describe : describe.skip;

@@ -349,7 +349,7 @@ caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-rel
   simplified one polygon at a time from their GeoJSON with turf; if the function is missing, or GEOS refuses the
   coverage, the whole layer takes that path. The decorative polygon layers are not coverage-simplified.
 - **Vector tiles** `GET /api/map-tiles/<realm>/<version>/f<format>/<layer>/<z>/<x>/<y>` for `altitudes`, `rivers` and `lakes`
-  (z0 to z6), rendered by PostGIS (`geo/core/tiles.ts`). `<format>` is `TILE_FORMAT_VERSION` (`src/lib/maps/tile-format.ts`),
+  (z0 to z6), rendered by PostGIS (`modules/maps/tile-render.ts`). `<format>` is `TILE_FORMAT_VERSION` (`src/lib/maps/tile-format.ts`),
   which any change to what the renderer produces must bump: tiles are `immutable` for a year in browsers and kept on
   disk, so a new format is a new URL and a new folder (a URL of another format gets this build's tile as
   `private, no-store`). A rendered tile is written to the tile folder (`MAP_TILE_DIR`,

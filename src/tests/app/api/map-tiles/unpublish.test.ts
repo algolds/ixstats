@@ -56,7 +56,7 @@ jest.mock("~/server/db", () => ({
   db: new Proxy({}, { get: (_t, name: string) => (fakeDb as Record<string, unknown>)[name] }),
 }));
 const buildTile = jest.fn();
-jest.mock("~/server/api/routers/geo/core/tiles", () => ({
+jest.mock("~/server/modules/maps/tile-render", () => ({
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
 jest.mock("~/lib/cache", () => ({
