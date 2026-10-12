@@ -285,6 +285,26 @@ describe("relief/addDetail", () => {
     expect(spread(1500, 1)).toBeGreaterThan(spread(1500, 0.3) * 2);
   });
 
+  it("texture shows on mountains and not on lowland once shaded", () => {
+    const shadedAlphas = (altitude: number): number[] => {
+      const g = grid(2048, () => altitude);
+      addDetail(g, 0.6);
+      const rgba = hillshade(g);
+      const out: number[] = [];
+      for (let y = 300; y < 700; y++)
+        for (let x = 0; x < 2048; x += 3) out.push(rgba[(y * 2048 + x) * 4 + 3]! / 255);
+      return out.sort((p, q) => p - q);
+    };
+    const lowland = shadedAlphas(100);
+    const hills = shadedAlphas(800);
+    const mountains = shadedAlphas(3000);
+    const p90 = (a: number[]) => a[Math.floor(a.length * 0.9)]!;
+    expect(lowland[lowland.length - 1]).toBeLessThanOrEqual(0.02);
+    expect(p90(hills)).toBeGreaterThan(0.02);
+    expect(p90(mountains)).toBeGreaterThan(0.08);
+    expect(p90(mountains)).toBeGreaterThan(p90(hills));
+  });
+
   it("tiles seamlessly: the pattern repeats every eighth of the width", () => {
     const g = grid(2048, () => 1200);
     addDetail(g, 0.8);
@@ -311,11 +331,11 @@ describe("relief/hillshade", () => {
   const cx = 1024;
   const cy = 512;
 
-  /** A cone with a 4 % physical slope and a 12 pixel radius, wrapping horizontally. */
+  /** A cone with a 0.4 % physical slope and a 12 pixel radius, wrapping horizontally. */
   const cone = (centre: number): HeightGrid =>
     grid(W, (x, y) => {
       const dx = Math.min(Math.abs(x - centre), W - Math.abs(x - centre));
-      return Math.max(0, (12 - Math.hypot(dx, y - cy)) * 0.04 * mppEq);
+      return Math.max(0, (12 - Math.hypot(dx, y - cy)) * 0.004 * mppEq);
     });
 
   it("returns RGBA the size of the grid", () => {
@@ -345,7 +365,7 @@ describe("relief/hillshade", () => {
   });
 
   it("puts shadow on the east face of a north-south ridge and light on its west face", () => {
-    const ridge = grid(W, (x) => Math.max(0, 8000 - Math.abs(x - cx) * 0.04 * mppEq * 1.0));
+    const ridge = grid(W, (x) => Math.max(0, 8000 - Math.abs(x - cx) * 0.004 * mppEq));
     const rgba = hillshade(ridge);
     const row = cy * W;
     expect(alphaOf(rgba, row + cx + 4)).toBeGreaterThan(20);
@@ -362,25 +382,27 @@ describe("relief/hillshade", () => {
       }
       return max;
     };
-    // A cliff facing away from the light is as dark as it gets; a steep face looking straight at it, as bright.
-    const away = hillshade(
-      grid(W, (x, y) => 1 + 8000 * Math.max(0, Math.min(1, (cx + cy - x - y) / 4)))
-    );
-    const towards = hillshade(
-      grid(W, (x, y) => 1 + 8000 * Math.max(0, Math.min(1, (x + y - cx - cy) / 4)))
-    );
-    expect(alphas(away, false)).toBeLessThanOrEqual(Math.round(0.56 * 255));
-    expect(alphas(away, false)).toBeGreaterThan(Math.round(0.5 * 255));
-    expect(alphas(towards, true)).toBeLessThanOrEqual(Math.round(0.21 * 255));
-    expect(alphas(towards, true)).toBeGreaterThan(Math.round(0.18 * 255));
+    // A 25 degree face (after exaggeration) looking straight away from the light is as dark as it gets, and one
+    // looking straight at it as bright; a steeper face tilts out of the light's reach and is dimmer, not brighter.
+    const run = (sign: number) =>
+      hillshade(
+        grid(
+          W,
+          (x, y) => 8000 + sign * 0.0082 * mppEq * Math.max(-20, Math.min(20, x + y - cx - cy))
+        )
+      );
+    expect(alphas(run(-1), false)).toBeLessThanOrEqual(Math.round(0.56 * 255));
+    expect(alphas(run(-1), false)).toBeGreaterThan(Math.round(0.5 * 255));
+    expect(alphas(run(1), true)).toBeLessThanOrEqual(Math.round(0.21 * 255));
+    expect(alphas(run(1), true)).toBeGreaterThan(Math.round(0.18 * 255));
   });
 
   it("shades the same physical slope equally at 0 and 60 degrees latitude", () => {
-    // A 4 % physical slope: each pixel's rise follows its row's width in metres.
+    // A 0.4 % physical slope: each pixel's rise follows its row's width in metres.
     const rowAt = (lat: number) => Math.round(((90 - lat) / 180) * H - 0.5);
     const ramp = grid(W, () => 0);
     for (let y = 0; y < H; y++) {
-      const step = -0.04 * metresPerPixelX(y, W, H);
+      const step = -0.004 * metresPerPixelX(y, W, H);
       for (let x = 0; x < W; x++)
         ramp.metres[y * W + x] = 8000 + step * Math.max(-10, Math.min(10, x - cx));
     }
@@ -391,7 +413,7 @@ describe("relief/hillshade", () => {
     expect(Math.abs(eq - hi)).toBeLessThanOrEqual(2);
 
     // One fixed rise per pixel is a steeper physical slope the further from the equator.
-    const fixed = grid(W, (x) => 8000 - 0.04 * mppEq * Math.max(-10, Math.min(10, x - cx)));
+    const fixed = grid(W, (x) => 8000 - 0.004 * mppEq * Math.max(-10, Math.min(10, x - cx)));
     const naive = hillshade(fixed);
     expect(
       Math.abs(alphaOf(naive, rowAt(0) * W + cx) - alphaOf(naive, rowAt(60) * W + cx))
@@ -400,11 +422,55 @@ describe("relief/hillshade", () => {
 
   it("scales the north-south slope by the metres per degree of latitude", () => {
     const rise = (kmPerDegreeLat() * 1000 * 180) / H; // metres per pixel row
-    // Heights fall to the south by a 5 % physical slope: the face looks away from the light.
-    const south = grid(W, (_x, y) => 8000 - 0.05 * rise * Math.max(-8, Math.min(8, y - cy)));
+    // Heights fall to the south by a 0.5 % physical slope: the face looks away from the light.
+    const south = grid(W, (_x, y) => 8000 - 0.005 * rise * Math.max(-8, Math.min(8, y - cy)));
     const rgba = hillshade(south);
     expect(alphaOf(rgba, cy * W + cx)).toBeGreaterThan(20);
     expect(rgba[(cy * W + cx) * 4]).toBe(0);
+  });
+
+  it("shows a mountain ridge of realistic size: 3,000 m over 10 pixels shades to the shadow cap", () => {
+    const ridge = grid(W, (x) => Math.max(0, 3000 - Math.abs(x - cx) * 300));
+    const rgba = hillshade(ridge);
+    const i = cy * W + cx + 5;
+    expect(rgba[i * 4]).toBe(0);
+    expect(alphaOf(rgba, i)).toBeGreaterThanOrEqual(Math.round(0.4 * 255));
+    expect(alphaOf(rgba, i)).toBeLessThanOrEqual(Math.round(0.56 * 255));
+    const lit = cy * W + cx - 5;
+    expect(alphaOf(rgba, lit)).toBeGreaterThanOrEqual(Math.round(0.15 * 255));
+    expect(alphaOf(rgba, lit)).toBeLessThanOrEqual(Math.round(0.21 * 255));
+  });
+
+  it("keeps a 50 m undulation on lowland nearly transparent", () => {
+    // 50 m swells every 16 pixels (about 300 km) over 100 m ground.
+    const swells = grid(
+      W,
+      (x, y) => 100 + 50 * Math.sin((x * 2 * Math.PI) / 16) * Math.cos((y * 2 * Math.PI) / 16)
+    );
+    const rgba = hillshade(swells);
+    let max = 0;
+    for (let y = 300; y < 700; y++)
+      for (let x = 0; x < W; x++) max = Math.max(max, alphaOf(rgba, y * W + x));
+    expect(max).toBeLessThanOrEqual(Math.round(0.08 * 255));
+  });
+
+  it("shades a hill the same at 1024 px as at 2048 px (the exaggeration is physical)", () => {
+    const hillAt = (width: number) => {
+      const height = width / 2;
+      const mx = (kmPerDegreeLng(0) * 1000 * 360) / width;
+      const my = (kmPerDegreeLat() * 1000 * 180) / height;
+      return grid(width, (x, y) => {
+        const r = Math.hypot((x - width / 2) * mx, (y - height / 2) * my);
+        return Math.max(0, (480_000 - r) * 0.004);
+      });
+    };
+    const big = hillshade(hillAt(2048));
+    const small = hillshade(hillAt(1024));
+    // 100 km south-east of the summit: 10 px at 2048, 5 px at 1024.
+    const a = alphaOf(big, (512 + 10) * 2048 + 1024 + 10);
+    const b = alphaOf(small, (256 + 5) * 1024 + 512 + 5);
+    expect(a).toBeGreaterThan(30);
+    expect(Math.abs(a - b)).toBeLessThanOrEqual(4);
   });
 
   it("wraps across the antimeridian: a hill on the seam shades like one in the middle", () => {

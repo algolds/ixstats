@@ -340,14 +340,27 @@ export function heightsFromBands(
 
 /** The detail tile spans an eighth of the world's width at this reference resolution, at any grid size. */
 const DETAIL_REFERENCE_WIDTH = 2048;
-/** Detail amplitude in metres at ruggedness 1: this much everywhere plus this share of the height. */
-const DETAIL_BASE_METRES = 20;
-const DETAIL_HEIGHT_SHARE = 0.15;
+/** Detail amplitude in metres at ruggedness 1: a few metres everywhere, 60 % of the height on hills and mountains. */
+const DETAIL_LOWLAND_METRES = 5;
+const DETAIL_HIGHLAND_SHARE = 0.6;
+/** The highland share fades in (smoothstep) between these heights, so lowlands stay smooth and hills get texture. */
+const DETAIL_HILLS_START = 100;
+const DETAIL_HILLS_FULL = 700;
+
+/** Detail amplitude in metres at ruggedness 1 for land at height `m`. */
+function detailAmplitude(m: number): number {
+  const t = Math.min(
+    1,
+    Math.max(0, (m - DETAIL_HILLS_START) / (DETAIL_HILLS_FULL - DETAIL_HILLS_START))
+  );
+  return DETAIL_LOWLAND_METRES + DETAIL_HIGHLAND_SHARE * m * t * t * (3 - 2 * t);
+}
 
 /**
- * Add fractal detail to the land of `grid` in place. `ruggedness` scales it: 0 adds nothing, 1 is the full amount
- * (about +-15 % of the height, more on high ground). The tile is placed in world space, so a 1024 px preview and
- * the 2048 px tiles show the same hills. Sea is untouched and land stays above sea level.
+ * Add fractal detail to the land of `grid` in place. `ruggedness` scales it: 0 adds nothing, 1 is the full amount.
+ * The amplitude grows with altitude: lowland (under ~100 m) gets a few metres, so it stays flat under the
+ * hillshade, while hills and mountains get a texture the shading can show. The tile is placed in world space, so a
+ * 1024 px preview and the 2048 px tiles show the same hills. Sea is untouched and land stays above sea level.
  */
 export function addDetail(grid: HeightGrid, ruggedness: number): void {
   if (!(ruggedness > 0)) return;
@@ -362,8 +375,10 @@ export function addDetail(grid: HeightGrid, ruggedness: number): void {
     for (let x = 0; x < width; x++) {
       const m = metres[row + x]!;
       if (m <= 0) continue;
-      const amplitude = ruggedness * (DETAIL_BASE_METRES + DETAIL_HEIGHT_SHARE * m);
-      metres[row + x] = Math.max(1, m + tile[tileRow + columns[x]!]! * amplitude);
+      metres[row + x] = Math.max(
+        1,
+        m + tile[tileRow + columns[x]!]! * ruggedness * detailAmplitude(m)
+      );
     }
   }
 }
@@ -378,14 +393,22 @@ const ALTITUDE = (45 * Math.PI) / 180;
 const LIGHT_X = Math.sin(AZIMUTH) * Math.cos(ALTITUDE);
 const LIGHT_Y = Math.cos(AZIMUTH) * Math.cos(ALTITUDE);
 const LIGHT_Z = Math.sin(ALTITUDE);
-/** Slopes are drawn this much steeper than they are: a pixel is ~20 km wide, so true slopes barely shade. */
-const VERTICAL_EXAGGERATION = 3;
-/** Near the poles a pixel row shrinks to nothing; do not divide by it. */
-const MIN_POLAR_COS = 0.05;
+/**
+ * Slopes are drawn this much steeper than they are. A pixel is ~20 km wide, so a 5,000 m mountain belt over 30 pixels
+ * is a 0.8 % slope and would barely shade; at 40 the belts of generated Eurth and Ixnay worlds reach the shadow and
+ * highlight caps while lowland stays clear. It scales the physical slope (metres per metre), not the per-pixel one,
+ * so it does not depend on the grid width: the 1024 px preview shades like the 2048 px tiles.
+ */
+const VERTICAL_EXAGGERATION = 40;
+/**
+ * Near the poles a pixel row shrinks to nothing and the same height step would read as a cliff; below this share of
+ * the equator's width the shading stops scaling by latitude (about 72 degrees).
+ */
+const MIN_POLAR_COS = 0.3;
 /** Alpha (0-255) per unit of shade difference from flat ground, and its ceiling: black shadows, white highlights. */
 const SHADOW_GAIN = 400;
 const SHADOW_MAX = 140; // 0.55
-const LIGHT_GAIN = 200;
+const LIGHT_GAIN = 300;
 const LIGHT_MAX = 50; // 0.2
 
 /** Shade one row of land pixels into `out` (RGBA). Sea and flat land stay transparent. */

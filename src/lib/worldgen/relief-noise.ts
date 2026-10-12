@@ -1,5 +1,6 @@
 /**
- * Relief detail texture: a 256 x 256 fractal value-noise tile that repeats seamlessly, built once on first use.
+ * Relief detail texture: a 256 x 256 fractal value-noise tile that repeats seamlessly, built once on first use. Six
+ * octaves with a gain of 0.6 keep the fine octaves strong, so the tile shades as grain and crags rather than swells.
  * Pure and deterministic (a fixed hash, no randomness), so the worker preview and the server tiles add the same
  * detail.
  */
@@ -7,8 +8,8 @@
 export const DETAIL_SIZE = 256;
 
 /** Lattice cells across the tile per octave; each divides DETAIL_SIZE so every octave wraps exactly. */
-const OCTAVE_PERIODS = [4, 8, 16, 32, 64] as const;
-const GAIN = 0.5;
+const OCTAVE_PERIODS = [4, 8, 16, 32, 64, 128] as const;
+const GAIN = 0.6;
 
 let texture: Float32Array | null = null;
 
