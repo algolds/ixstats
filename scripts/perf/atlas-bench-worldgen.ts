@@ -6,6 +6,9 @@
  *
  * - `generateWorld` alone, gated on the spec's targets: first generation, a slider change (same seed, mesh cached,
  *   one param changed) and a reroll (new seed, new mesh). The slider change and the reroll are the median of five.
+ * - `generateWorldStaged` alone, gated per stage: the restart time inside the generator (what the stage cache buys)
+ *   of a change that reaches the mesh, the land, the climate, the nations and the output, each the median of five
+ *   warm restarts.
  * - The worker's runner (`createWorldRunner`, the code in `world.worker.ts`) end to end per message, printed for
  *   information: the generator plus what the runner does with the world before it posts it. The phases are timed by
  *   replaying the runner's steps on the world it just made (the runner exposes no hooks); "other" is the runner's own
@@ -18,7 +21,8 @@
 import { spawnSync } from "node:child_process";
 import { z } from "zod";
 import { previewRelief } from "~/lib/worldgen/relief-preview";
-import { generateWorld, MeshCache } from "~/lib/worldgen/v2";
+import { generateWorld, generateWorldStaged, MeshCache, StageCache } from "~/lib/worldgen/v2";
+import { STAGE_ORDER, type StageId } from "~/lib/worldgen/v2/stages";
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import type { GeneratedWorld, WorldGenParams } from "~/lib/worldgen/v2/types";
 import { computeWorldStats } from "~/lib/worldgen/world-stats";
@@ -39,6 +43,14 @@ export const WORLDGEN_RUN_FLAG = "--worldgen-run";
 const FIRST_LIMIT_MS = 1000;
 const SLIDER_LIMIT_MS = 600;
 const REROLL_LIMIT_MS = 900;
+/** The restart targets by the stage a change reaches (the spec's, with the output raised from 150 ms by ruling). */
+const STAGE_LIMIT_MS: Record<StageId, number> = {
+  mesh: 1000,
+  land: 600,
+  climate: 250,
+  nations: 250,
+  output: 200,
+};
 /** A child takes about 4 s (a generation under 2 s, the rest loading modules); a hung one must not stall the run. */
 const CHILD_TIMEOUT_MS = 60_000;
 
@@ -52,6 +64,35 @@ const SLIDERS: readonly { label: string; params: Partial<WorldGenParams> }[] = [
   { label: "wetter or drier", params: { precipitationScale: 1.3 } },
   { label: "nations", params: { countryCountRange: [40, 120] } },
 ];
+
+/** Five changes that each reach their stage and no earlier one, each different from the one before and from `base`. */
+const STAGE_CHANGES: Record<
+  StageId,
+  { param: string; change: (base: WorldGenParams, repeat: number) => Partial<WorldGenParams> }
+> = {
+  mesh: { param: "seed", change: (_base, repeat) => ({ seed: REROLL_SEEDS[repeat]! }) },
+  land: {
+    param: "oceanPercentage",
+    change: (base, repeat) => ({ oceanPercentage: base.oceanPercentage - 0.01 * (repeat + 1) }),
+  },
+  climate: {
+    param: "temperatureOffset",
+    change: (base, repeat) => ({ temperatureOffset: base.temperatureOffset + 0.5 * (repeat + 1) }),
+  },
+  nations: {
+    param: "countryCountRange",
+    change: (_base, repeat) => ({ countryCountRange: [40 + 5 * repeat, 120] }),
+  },
+  output: { param: "hasIcecaps", change: (_base, repeat) => ({ hasIcecaps: repeat % 2 === 1 }) },
+};
+
+const stageMsSchema = z.object({
+  mesh: z.array(z.number()),
+  land: z.array(z.number()),
+  climate: z.array(z.number()),
+  nations: z.array(z.number()),
+  output: z.array(z.number()),
+});
 
 const messageSchema = z.object({
   totalMs: z.number(),
@@ -67,6 +108,7 @@ export const directSchema = z.object({
   firstMs: z.number(),
   sliderMs: z.array(z.number()),
   rerollMs: z.array(z.number()),
+  stageMs: stageMsSchema,
 });
 export const runnerSchema = z.object({
   first: messageSchema,
@@ -96,6 +138,38 @@ function timed<T>(work: () => T): { result: T; ms: number } {
 
 // --- Measuring (child processes) -----------------------------------------------------------------------------
 
+/**
+ * `generateWorldStaged` through one stage cache and mesh cache, as the worker holds them, warm: each stage's five
+ * changes are made from the base world (put back untimed first), and the time is the run's own, which must start at
+ * the stage the change reaches.
+ */
+function measureStages(base: Partial<WorldGenParams>): DirectRun["stageMs"] {
+  const cache = new StageCache();
+  const meshCache = new MeshCache();
+  const start = { ...base, seed: SEED };
+  const generate = (params: Partial<WorldGenParams>) =>
+    timed(() => generateWorldStaged(params, undefined, { cache, meshCache }));
+  const baseParams = generate(start).result.params;
+  const series = (stage: StageId): number[] =>
+    REROLL_SEEDS.map((_seed, repeat) => {
+      if (repeat === 0) generate(start);
+      const run = generate({ ...start, ...STAGE_CHANGES[stage].change(baseParams, repeat) });
+      if (run.result.restartedAt !== stage) {
+        throw new Error(
+          `a change of ${STAGE_CHANGES[stage].param} restarted at ${run.result.restartedAt}`
+        );
+      }
+      return run.ms;
+    });
+  return {
+    mesh: series("mesh"),
+    land: series("land"),
+    climate: series("climate"),
+    nations: series("nations"),
+    output: series("output"),
+  };
+}
+
 /** `generateWorld` alone through one mesh cache, as the worker holds it: the first run is the cold one. */
 export function measureDirect(overrides: Partial<WorldGenParams> = {}): DirectRun {
   const base = presetParams(overrides);
@@ -108,6 +182,7 @@ export function measureDirect(overrides: Partial<WorldGenParams> = {}): DirectRu
     firstMs: first.ms,
     sliderMs: SLIDERS.map((slider) => generate({ ...base, ...slider.params, seed: SEED }).ms),
     rerollMs: REROLL_SEEDS.map((seed) => generate({ ...base, seed }).ms),
+    stageMs: measureStages(base),
   };
 }
 
@@ -152,9 +227,9 @@ export function measureRunner(overrides: Partial<WorldGenParams> = {}): RunnerRu
     resultAt: 0,
     failure: null,
   };
-  const generate: typeof generateWorld = (...args) => {
+  const generate: typeof generateWorldStaged = (...args) => {
     const startedAt = performance.now();
-    const world = generateWorld(...args);
+    const world = generateWorldStaged(...args);
     const endedAt = performance.now();
     state.made = { world, generateMs: endedAt - startedAt, endedAt };
     return world;
@@ -232,6 +307,21 @@ export function directTargets(run: DirectRun | null): TargetResult[] {
   ];
 }
 
+/** The five gated restart lines, one per stage a change can reach; a missing run (the child failed) fails them all. */
+export function stageTargets(run: DirectRun | null): TargetResult[] {
+  return STAGE_ORDER.map((stage) => {
+    const times = run?.stageMs[stage] ?? [];
+    const { param } = STAGE_CHANGES[stage];
+    return atMost(
+      `world generator: restart at ${stage}, median`,
+      median(times),
+      STAGE_LIMIT_MS[stage],
+      "ms",
+      `a change of ${param} on the stage cache, median of ${times.length} warm restarts: ${ms(times)} ms`
+    );
+  });
+}
+
 /** One informational line for a kind of message: the median wall time, the median of each phase beneath it. */
 function runnerLine(name: string, messages: readonly MessageRun[], note: string): TargetResult {
   const of = (pick: (message: MessageRun) => number) => median(messages.map(pick));
@@ -292,11 +382,11 @@ function childRun<T>(entry: string, mode: string, schema: z.ZodType<T>): T | nul
   return run;
 }
 
-/** The generator's gated lines and the runner's informational ones; `entry` is atlas-bench.ts, which runs the children. */
+/** The generator's gated lines (full runs, then restarts) and the runner's informational ones; `entry` is atlas-bench.ts, which runs the children. */
 export function worldgenTargets(entry: string): TargetResult[] {
   log("world generator: generateWorld alone in a fresh process");
   const direct = childRun(entry, "direct", directSchema);
   log("world generator: the worker runner in a fresh process");
   const runner = childRun(entry, "runner", runnerSchema);
-  return [...directTargets(direct), ...runnerTargets(runner)];
+  return [...directTargets(direct), ...stageTargets(direct), ...runnerTargets(runner)];
 }

@@ -5,6 +5,7 @@ import { exitCode, RESULT_MARKER } from "../../../scripts/perf/atlas-bench-repor
 import {
   directSchema,
   directTargets,
+  stageTargets,
   measureDirect,
   measureRunner,
   readRun,
@@ -19,6 +20,13 @@ const direct = (over: Partial<DirectRun> = {}): DirectRun => ({
   firstMs: 850,
   sliderMs: [300, 310, 320, 330, 340],
   rerollMs: [600, 610, 620, 630, 640],
+  stageMs: {
+    mesh: [700, 710, 720, 730, 740],
+    land: [400, 410, 420, 430, 440],
+    climate: [150, 160, 170, 180, 190],
+    nations: [100, 110, 120, 130, 140],
+    output: [100, 110, 120, 130, 140],
+  },
   ...over,
 });
 
@@ -42,7 +50,13 @@ const runner = (): RunnerRun => ({
 const verdicts = (run: DirectRun | null) => directTargets(run).map((result) => result.pass);
 
 describe("readRun", () => {
-  const run = { cellCount: 66626, firstMs: 850, sliderMs: [300], rerollMs: [600] };
+  const run = {
+    cellCount: 66626,
+    firstMs: 850,
+    sliderMs: [300],
+    rerollMs: [600],
+    stageMs: { mesh: [700], land: [400], climate: [150], nations: [100], output: [100] },
+  };
 
   it("reads the marked line among whatever else the child printed", () => {
     const stdout = `loading\n${RESULT_MARKER}${JSON.stringify(run)}\n`;
@@ -94,6 +108,43 @@ describe("directTargets", () => {
   });
 });
 
+describe("stageTargets", () => {
+  const stageVerdicts = (run: DirectRun | null) => stageTargets(run).map((result) => result.pass);
+  const withStage = (stage: keyof DirectRun["stageMs"], ms: number[]): DirectRun => {
+    const run = direct();
+    return { ...run, stageMs: { ...run.stageMs, [stage]: ms } };
+  };
+
+  it("gates a restart at each stage, in the order of the stages", () => {
+    expect(stageTargets(direct()).map((result) => result.name)).toEqual([
+      "world generator: restart at mesh, median",
+      "world generator: restart at land, median",
+      "world generator: restart at climate, median",
+      "world generator: restart at nations, median",
+      "world generator: restart at output, median",
+    ]);
+    expect(stageVerdicts(direct())).toEqual([true, true, true, true, true]);
+  });
+
+  it("holds each to its own limit: 1.0 s, 0.6 s, 250 ms, 250 ms and 200 ms", () => {
+    const limits = { mesh: 1000, land: 600, climate: 250, nations: 250, output: 200 } as const;
+    (Object.keys(limits) as (keyof typeof limits)[]).forEach((stage, index) => {
+      expect(stageVerdicts(withStage(stage, [limits[stage]]))[index]).toBe(true);
+      expect(stageVerdicts(withStage(stage, [limits[stage] + 0.5]))[index]).toBe(false);
+    });
+  });
+
+  it("gates the median of the repeats, and prints every one of them", () => {
+    const run = withStage("climate", [100, 100, 100, 100, 5000]);
+    expect(stageVerdicts(run)[2]).toBe(true);
+    expect(stageTargets(run)[2]!.detail).toContain("100 / 100 / 100 / 100 / 5000");
+  });
+
+  it("fails all five when the measurement is missing", () => {
+    expect(stageVerdicts(null)).toEqual([false, false, false, false, false]);
+  });
+});
+
 describe("runnerTargets", () => {
   it("prints the first message, a slider message and a reroll message, none of them gated", () => {
     const results = runnerTargets(runner());
@@ -140,6 +191,15 @@ describe("the measurements", () => {
     expect(run.rerollMs).toHaveLength(5);
     for (const ms of [run.firstMs, ...run.sliderMs, ...run.rerollMs]) {
       expect(ms).toBeGreaterThan(0);
+    }
+  });
+
+  it("times five restarts at each stage, each starting at the stage its change reaches", () => {
+    // measureStages throws when a change restarts anywhere but at its own stage
+    const { stageMs } = measureDirect(small);
+    for (const times of Object.values(stageMs)) {
+      expect(times).toHaveLength(5);
+      for (const ms of times) expect(ms).toBeGreaterThan(0);
     }
   });
 

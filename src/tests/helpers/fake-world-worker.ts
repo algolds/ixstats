@@ -62,6 +62,8 @@ export function resultMessage(id: number, over: Partial<ResultMessage> = {}): Re
     },
     slots: [],
     stats: { landShare: 0.3, continents: 4, climateMix: { D: 1 }, slotCount: 0, baseline: null },
+    restartedAt: "mesh",
+    generationMs: 10,
     cells: new Float32Array([10, 20, 300]).buffer,
     relief: { width: 2, height: 2, rgba: new Uint8Array(16).buffer },
     ...over,

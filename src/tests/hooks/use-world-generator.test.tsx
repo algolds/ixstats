@@ -85,6 +85,38 @@ describe("useWorldGenerator", () => {
     expect(world.stats.continents).toBe(4);
   });
 
+  it("sends the land mask layers once per key to a worker, and again to a new worker", () => {
+    const { result, workers } = setup();
+    const landMaskLayers = { background: { type: "FeatureCollection" as const, features: [] } };
+    const generate = (maskKey?: string) =>
+      act(() => result.current.generate({}, 12, { landMaskLayers, keepBorders: true, maskKey }));
+    const finish = (worker: FakeWorldWorker) =>
+      act(() => worker.say(resultMessage(lastId(worker))));
+
+    generate("realm:1");
+    finish(workers[0]!);
+    generate("realm:1");
+    finish(workers[0]!);
+    expect(workers[0]!.posted[0]).toMatchObject({ maskKey: "realm:1", landMaskLayers });
+    expect(workers[0]!.posted[1]).toMatchObject({ maskKey: "realm:1", keepBorders: true });
+    expect(workers[0]!.posted[1]).not.toHaveProperty("landMaskLayers");
+
+    // A new map is sent again; a request without a key always carries its layers
+    generate("realm:2");
+    finish(workers[0]!);
+    generate();
+    finish(workers[0]!);
+    expect(workers[0]!.posted[2]).toHaveProperty("landMaskLayers");
+    expect(workers[0]!.posted[3]).toHaveProperty("landMaskLayers");
+
+    // A worker replaced while busy has not seen the layers
+    generate("realm:2");
+    expect(workers[0]!.posted[4]).not.toHaveProperty("landMaskLayers");
+    generate("realm:2");
+    expect(workers).toHaveLength(2);
+    expect(workers[1]!.posted[0]).toHaveProperty("landMaskLayers");
+  });
+
   it("sends no mask or borders flag when the caller gives none", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));

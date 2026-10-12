@@ -119,7 +119,14 @@ export function useWorldRecipe({
       generate(
         paramsFromControls(next),
         nextSeed,
-        next.source === "realm-map" ? { landMaskLayers: layers, keepBorders: true } : undefined
+        next.source === "realm-map"
+          ? {
+              landMaskLayers: layers,
+              // The worker keeps the mask it made of this map, so a slider change does not send it or redo it
+              ...(mapVersion === undefined ? {} : { maskKey: `${key}:${mapVersion}` }),
+              keepBorders: true,
+            }
+          : undefined
       );
       saveWorldRecipe(key, { seed: nextSeed, controls: next });
       lastRun.current = { controls: next, seed: nextSeed, mapVersion };

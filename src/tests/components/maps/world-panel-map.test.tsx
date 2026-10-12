@@ -251,9 +251,12 @@ describe("a realm map read again", () => {
   it("fits the world again, once, when the map has moved to a new version", () => {
     const { rerender } = fittedAt(5);
     const before = requestCount();
+    // The worker keeps its mask by the realm and the map's version
+    expect(lastRequest().maskKey).toMatch(/:5$/);
     layersQuery.mockReturnValue(mapLayers({ version: 6, political: 4 }));
     rerender(<WorldPanel map={null} createWorker={factory} />);
     expect(requestCount()).toBe(before + 1);
+    expect(lastRequest().maskKey).toMatch(/:6$/);
     expect(lastRequest().landMaskLayers?.political?.features).toHaveLength(4);
     layersQuery.mockReturnValue(mapLayers({ version: 6, political: 4 }));
     rerender(<WorldPanel map={null} createWorker={factory} />);

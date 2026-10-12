@@ -46,6 +46,12 @@ export const IDLE_VIEW: WorldGenView = {
 export type WorldGenerateOptions = {
   /** The realm's layers, rasterised by the worker into the land mask (generate to fit) */
   landMaskLayers?: LandMaskLayers;
+  /**
+   * Names the content of `landMaskLayers` (the realm and its map version). The layers go to a worker once per key;
+   * after that the worker uses the mask it kept, and a change that leaves the mask alone restarts the generator
+   * later than the land. Without a key the layers are sent, and rasterised, every time.
+   */
+  maskKey?: string;
   /** The realm keeps its borders: no countries are generated */
   keepBorders?: boolean;
 };
@@ -62,6 +68,8 @@ export class WorldGenSession {
   private worker: WorldWorkerHandle | null = null;
   private latestId = 0;
   private busy = false;
+  /** The `maskKey` the current worker has been sent the layers of */
+  private maskKeySent: string | null = null;
   private clock: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
   private view: WorldGenView = IDLE_VIEW;
@@ -85,7 +93,7 @@ export class WorldGenSession {
       this.busy = true;
       this.clock = setTimeout(() => this.timeOut(id), WORLD_GEN_TIMEOUT_MS);
       this.update(RUNNING_VIEW);
-      worker.post({ type: "generate", id, params, seed, ...options });
+      worker.post({ type: "generate", id, params, seed, ...this.maskRequest(options) });
     } catch (error) {
       this.discardWorker();
       this.fail(
@@ -114,6 +122,15 @@ export class WorldGenSession {
     this.disposed = true;
     this.latestId++;
     this.discardWorker();
+  }
+
+  /** The request's mask fields: the layers are left out when this worker already holds the mask for the key. */
+  private maskRequest(options: WorldGenerateOptions): WorldGenerateOptions {
+    const { landMaskLayers, ...rest } = options;
+    if (!landMaskLayers) return rest;
+    if (options.maskKey !== undefined && options.maskKey === this.maskKeySent) return rest;
+    if (options.maskKey !== undefined) this.maskKeySent = options.maskKey;
+    return { ...rest, landMaskLayers };
   }
 
   private start(): WorldWorkerHandle {
@@ -182,6 +199,7 @@ export class WorldGenSession {
     this.stopClock();
     this.worker?.terminate();
     this.worker = null;
+    this.maskKeySent = null;
     this.busy = false;
   }
 
