@@ -45,10 +45,15 @@ const ms = (values: readonly number[]) => values.map((value) => value.toFixed(0)
 
 // --- Layer route -------------------------------------------------------------------------------------------------
 
+/** Asked by realm id, as the client does: only an ID-addressed URL is immutable (a slug can be renamed). */
 function layerRequest(version: number, bucket: ZoomBucket, headers: Record<string, string> = {}) {
-  const url = `http://localhost/api/map-layers/ixnay/${version}/political?bucket=${bucket}&format=${LAYER_FORMAT_VERSION}`;
+  const url = `http://localhost/api/map-layers/${DEFAULT_REALM_ID}/${version}/political?bucket=${bucket}&format=${LAYER_FORMAT_VERSION}`;
   return layerRoute(new NextRequest(url, { headers }), {
-    params: Promise.resolve({ realm: "ixnay", version: String(version), layer: "political" }),
+    params: Promise.resolve({
+      realm: DEFAULT_REALM_ID,
+      version: String(version),
+      layer: "political",
+    }),
   });
 }
 
