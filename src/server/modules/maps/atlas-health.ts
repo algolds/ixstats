@@ -20,6 +20,8 @@ export const MAP_CRON_JOBS = ["map-tiles", "geo-profiles", "map-import"] as cons
 export interface StorageFigure {
   /** Total size of the folder's files; 0 for a folder that does not exist; null when it was not measured in time */
   bytes: number | null;
+  /** Some subfolders could not be read and are left out of `bytes` */
+  partial: boolean;
   measuredAt: Date;
 }
 
@@ -30,27 +32,40 @@ export interface AtlasHealth {
   cron: Record<(typeof MAP_CRON_JOBS)[number], CronJobHealth | null>;
 }
 
+/** A finished walk: the bytes counted and how many folders could not be read. */
+export interface WalkResult {
+  bytes: number;
+  skipped: number;
+}
+
 export interface HealthDeps {
   now?: () => number;
   budgetMs?: number;
   /** Measured sizes by folder, kept for STORAGE_CACHE_MS. */
   cache?: Map<string, StorageFigure>;
   /** Total bytes under a folder; `expired()` turns true once the budget has passed (tests replace it). */
-  walk?: (dir: string, expired: () => boolean) => Promise<number | null>;
+  walk?: (dir: string, expired: () => boolean) => Promise<WalkResult | null>;
 }
 
 const sharedCache = new Map<string, StorageFigure>();
 
-/** The bytes of every file under `dir`, 0 when it does not exist, null when `expired()` stopped the walk. */
-export async function folderBytes(dir: string, expired: () => boolean): Promise<number | null> {
+/**
+ * The bytes of every file under `dir` (0 when it does not exist), counting a folder that cannot be read as skipped;
+ * null when `expired()` stopped the walk.
+ */
+export async function folderBytes(dir: string, expired: () => boolean): Promise<WalkResult | null> {
   let total = 0;
+  let skipped = 0;
   const pending = [dir];
   while (pending.length > 0) {
     if (expired()) return null;
     const here = pending.pop()!;
-    const entries = await readdir(here, { withFileTypes: true }).catch((error: unknown) => {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-      throw error;
+    const entries = await readdir(here, { withFileTypes: true }).catch((error) => {
+      // A folder that is gone counts as empty; one that cannot be read is left out and reported
+      const gone =
+        typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
+      if (!gone) skipped++;
+      return [];
     });
     for (let i = 0; i < entries.length; i += WALK_PARALLEL) {
       if (expired()) return null;
@@ -68,7 +83,7 @@ export async function folderBytes(dir: string, expired: () => boolean): Promise<
       total += sizes.reduce((sum, size) => sum + size, 0);
     }
   }
-  return total;
+  return { bytes: total, skipped };
 }
 
 /** One folder's size, from the cache when it is under ten minutes old, else walked within the budget. */
@@ -89,10 +104,14 @@ async function measureFolder(dir: string, deps: HealthDeps): Promise<StorageFigu
     }, deps.budgetMs ?? STORAGE_BUDGET_MS);
     timer.unref?.();
   });
-  const bytes = await Promise.race([walk(dir, expired).catch(() => null), late]);
+  const walked = await Promise.race([walk(dir, expired).catch(() => null), late]);
   clearTimeout(timer);
   // A walk that ran over the budget or failed is "not measured" (null)
-  const figure = { bytes, measuredAt: new Date(now()) };
+  const figure: StorageFigure = {
+    bytes: walked?.bytes ?? null,
+    partial: (walked?.skipped ?? 0) > 0,
+    measuredAt: new Date(now()),
+  };
   cache.set(dir, figure);
   return figure;
 }

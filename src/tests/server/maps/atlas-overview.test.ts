@@ -215,7 +215,7 @@ describe("realmOverview figures", () => {
     ]);
   });
 
-  it("reports unchecked relief folders as built and says the check was partial", async () => {
+  it("reports relief folders the budget cut off as unknown, without a relief flag, and says the check was partial", async () => {
     const db = atlasFakeDb();
     addRealm(db, "a");
     const { realms, partial } = await realmOverview(
@@ -224,7 +224,15 @@ describe("realmOverview figures", () => {
       { folderExists: () => new Promise<boolean>(() => undefined), budgetMs: 10 }
     );
     expect(partial).toBe(true);
-    expect(realms[0]!.relief).toBe("built");
+    expect(realms[0]!.relief).toBe("unknown");
+    expect(realms[0]!.flags).not.toContain("relief");
+  });
+
+  it("calls a realm with no relief entry missing even when the check ran out of time", async () => {
+    const db = atlasFakeDb();
+    addRealm(db, "a", { settings: null });
+    const { realms } = await realmOverview(db, {}, { folderExists: async () => true });
+    expect(realms[0]!.relief).toBe("missing");
   });
 });
 

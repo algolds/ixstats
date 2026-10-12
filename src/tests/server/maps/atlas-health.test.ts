@@ -5,7 +5,7 @@ jest.mock("~/env", () => ({
 }));
 jest.mock("~/server/db", () => ({ db: {} }));
 
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
@@ -13,6 +13,7 @@ import {
   folderBytes,
   STORAGE_CACHE_MS,
   type StorageFigure,
+  type WalkResult,
 } from "~/server/modules/maps/atlas-health";
 import { atlasFakeDb } from "./atlas-fakes";
 
@@ -61,7 +62,9 @@ describe("atlasHealth storage", () => {
 
   it("reports a folder over its time budget as not measured and still answers", async () => {
     const walk = jest.fn((dir: string) =>
-      dir.endsWith("tiles") ? new Promise<number | null>(() => undefined) : Promise.resolve(5)
+      dir.endsWith("tiles")
+        ? new Promise<WalkResult | null>(() => undefined)
+        : Promise.resolve({ bytes: 5, skipped: 0 })
     );
     const started = Date.now();
     const health = await atlasHealth(atlasFakeDb(), {
@@ -83,16 +86,30 @@ describe("atlasHealth storage", () => {
       budgetMs: 10,
       walk: (_dir, over) => {
         expired = over;
-        return new Promise<number | null>(() => undefined);
+        return new Promise<WalkResult | null>(() => undefined);
       },
     });
     expect(expired?.()).toBe(true);
     expect(await folderBytes(process.env.MAP_TILE_DIR!, () => true)).toBeNull();
   });
 
-  it("keeps a measurement for ten minutes, a timeout too", async () => {
+  it("keeps a timeout as not measured for ten minutes too", async () => {
     const cache = new Map<string, StorageFigure>();
-    const walk = jest.fn(async () => 7);
+    const walk = jest.fn(() => new Promise<WalkResult | null>(() => undefined));
+    const deps = { now: () => NOW, cache, walk, budgetMs: 10 };
+    const first = await atlasHealth(atlasFakeDb(), deps);
+    const second = await atlasHealth(atlasFakeDb(), {
+      ...deps,
+      now: () => NOW + STORAGE_CACHE_MS - 1,
+    });
+    expect(first.storage.tiles.bytes).toBeNull();
+    expect(second.storage.tiles.bytes).toBeNull();
+    expect(walk).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps a measurement for ten minutes", async () => {
+    const cache = new Map<string, StorageFigure>();
+    const walk = jest.fn(async () => ({ bytes: 7, skipped: 0 }));
     let now = NOW;
     const deps = { now: () => now, cache, walk };
     await atlasHealth(atlasFakeDb(), deps);
@@ -103,6 +120,40 @@ describe("atlasHealth storage", () => {
     now = NOW + STORAGE_CACHE_MS;
     await atlasHealth(atlasFakeDb(), deps);
     expect(walk).toHaveBeenCalledTimes(6);
+  });
+});
+
+describe("folderBytes", () => {
+  const unreadable = process.getuid?.() === 0 ? it.skip : it;
+
+  unreadable("skips a folder it cannot read, counts the rest and says so", async () => {
+    const base = path.join(root, "mixed");
+    await mkdir(path.join(base, "open"), { recursive: true });
+    await mkdir(path.join(base, "locked"), { recursive: true });
+    await writeFile(path.join(base, "open", "a"), Buffer.alloc(10));
+    await writeFile(path.join(base, "locked", "b"), Buffer.alloc(99));
+    await chmod(path.join(base, "locked"), 0o000);
+    try {
+      expect(await folderBytes(base, () => false)).toEqual({ bytes: 10, skipped: 1 });
+    } finally {
+      await chmod(path.join(base, "locked"), 0o755);
+    }
+  });
+
+  it("is zero for a folder that does not exist, and not partial", async () => {
+    expect(await folderBytes(path.join(root, "nothing"), () => false)).toEqual({
+      bytes: 0,
+      skipped: 0,
+    });
+  });
+
+  it("shows a partly measured folder as partial in the figure", async () => {
+    const health = await atlasHealth(atlasFakeDb(), {
+      now: () => NOW,
+      cache: new Map(),
+      walk: async () => ({ bytes: 3, skipped: 2 }),
+    });
+    expect(health.storage.tiles).toMatchObject({ bytes: 3, partial: true });
   });
 });
 

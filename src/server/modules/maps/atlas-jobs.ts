@@ -6,6 +6,7 @@
  * Server only.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { z } from "zod";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { mapImportApplySchema, type MapImportOptionsInput } from "~/lib/maps/import/options";
@@ -19,7 +20,7 @@ import {
 } from "./map-import.jobs";
 import { atlasRealmId } from "./atlas-overview";
 import { rollbackMapImport } from "./map-import.history";
-import { MapImportError } from "./map-import.realm";
+import { loadImportRealm, MapImportError } from "./map-import.realm";
 import { mapImportDir, mapUploadSize } from "./map-import.storage";
 import { startMapPipelineRun, cancelMapPipelineRun } from "./realm-map-pipeline.config";
 import { MAP_PIPELINE_KIND } from "./realm-map-pipeline.job";
@@ -343,6 +344,8 @@ export async function retryAtlasJob(
   const blocked = await retryBlocker(job);
   if (blocked) throw new MapImportError("BAD_REQUEST", blocked);
   const as = retryAs(job);
+  // Who may import into the realm, and not into an archived one; a world also has its own guard below
+  if (job.kind !== "world") await loadImportRealm(db, actor, job.realmId);
   const started = { db, ...deps };
   if (as === "pipeline") {
     const { jobId: newId } = await startMapPipelineRun(
@@ -355,7 +358,7 @@ export async function retryAtlasJob(
     return { jobId: newId, retryAs: as, note: RETRY_NOTES[as] };
   }
   if (as === "apply") {
-    const apply = mapImportApplySchema.parse((job.options as { apply?: unknown }).apply);
+    const { apply } = z.object({ apply: mapImportApplySchema }).parse(job.options);
     const newId = await startMapImportApply(db, actor, job.parentJobId!, apply, started);
     return { jobId: newId, retryAs: as, note: RETRY_NOTES[as] };
   }

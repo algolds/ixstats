@@ -12,7 +12,8 @@ import { rasterVersionDir, rasterVersionExists } from "./realm-rasters.storage";
 
 type OverviewDb = Pick<PrismaClient, "realm" | "mapLayer" | "realmClaim" | "$queryRaw">;
 
-export type ReliefState = "built" | "missing" | "failed";
+/** `unknown`: the folder check ran out of time before this realm's folder was looked at */
+export type ReliefState = "built" | "missing" | "failed" | "unknown";
 export type RealmFlag =
   "missing-layers" | "relief" | "last-job-failed" | "unlinked" | "invalid-geometry";
 
@@ -46,7 +47,7 @@ export interface RealmOverviewRow {
 
 export interface RealmOverview {
   realms: RealmOverviewRow[];
-  /** The relief folder checks ran out of time: relief of the realms not checked is reported as built */
+  /** The relief folder checks ran out of time: the realms not checked have relief `unknown` */
   partial: boolean;
   /** Active feature count per layer type, per realm id (the realm page's breakdown) */
   layerCounts: Record<string, Record<string, number>>;
@@ -142,7 +143,7 @@ async function reliefFolders(
 function flagsOf(row: Omit<RealmOverviewRow, "flags">): RealmFlag[] {
   const flags: RealmFlag[] = [];
   if (row.layers.present < row.layers.total) flags.push("missing-layers");
-  if (row.relief !== "built") flags.push("relief");
+  if (row.relief === "missing" || row.relief === "failed") flags.push("relief");
   if (row.lastJob?.status === "failed") flags.push("last-job-failed");
   if (row.linkage.linked < row.linkage.total) flags.push("unlinked");
   if (row.invalidGeometry > 0) flags.push("invalid-geometry");
@@ -242,7 +243,6 @@ export async function realmOverview(
     const missing = WORLD_BUNDLE_LAYERS.filter((layer) => !counts[layer]);
     const nation = nations.get(realm.id);
     const job = lastJob.get(realm.id);
-    const folder = present.has(realm.id) || unchecked.has(realm.id);
     const base = {
       id: realm.id,
       slug: realm.slug,
@@ -255,7 +255,13 @@ export async function realmOverview(
         total: WORLD_BUNDLE_LAYERS.length,
         missing,
       },
-      relief: failedRelief.has(realm.id) ? "failed" : folder ? "built" : "missing",
+      relief: failedRelief.has(realm.id)
+        ? "failed"
+        : present.has(realm.id)
+          ? "built"
+          : unchecked.has(realm.id)
+            ? "unknown"
+            : "missing",
       linkage: { linked: linked.get(realm.id) ?? 0, total: counts.political ?? 0 },
       nations: {
         total: nation?.total ?? 0,

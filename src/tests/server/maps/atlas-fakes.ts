@@ -8,6 +8,7 @@ import { fakeDb } from "./map-import-fakes";
 type Row = Record<string, any>;
 
 const time = (value: unknown) => (value instanceof Date ? value.getTime() : value);
+const ms = (value: unknown): number => Number(time(value));
 
 function matches(row: Row, where: Row = {}): boolean {
   return Object.entries(where).every(([key, cond]) => {
@@ -18,8 +19,12 @@ function matches(row: Row, where: Row = {}): boolean {
         if (op === "in") return (arg as unknown[]).includes(value);
         if (op === "notIn") return !(arg as unknown[]).includes(value);
         if (op === "not") return arg === null ? value != null : value !== arg;
-        if (op === "lt") return value != null && time(value)! < time(arg)!;
-        if (op === "gte") return value != null && time(value)! >= time(arg)!;
+        if (op === "lt")
+          return value != null && (time(value) as number | string) < (time(arg) as number | string);
+        if (op === "gte")
+          return (
+            value != null && (time(value) as number | string) >= (time(arg) as number | string)
+          );
         return false;
       });
     }
@@ -51,10 +56,7 @@ function groupBy(rows: Row[], { by, where, _count, _max }: Row) {
     ...(_count && { _count: { _all: list.length } }),
     ...(_max && {
       _max: Object.fromEntries(
-        Object.keys(_max).map((k) => [
-          k,
-          list.map((r) => r[k]).sort((a, b) => time(b)! - time(a)!)[0],
-        ])
+        Object.keys(_max).map((k) => [k, list.map((r) => r[k]).sort((a, b) => ms(b) - ms(a))[0]])
       ),
     }),
   }));

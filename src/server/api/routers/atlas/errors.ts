@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { ZodError } from "zod";
 import { MapImportError } from "~/server/modules/maps/map-import.realm";
 
-export function atlasError(error: unknown): never {
+export function atlasError(error: Error): never {
   if (error instanceof MapImportError)
     throw new TRPCError({ code: error.code, message: error.message });
   if (error instanceof ZodError) {

@@ -10,6 +10,7 @@ jest.mock("~/server/modules/maps/realm-map-pipeline.config", () => ({
 }));
 jest.mock("~/server/modules/maps/map-import.history", () => ({ rollbackMapImport: jest.fn() }));
 
+import { ZodError } from "zod";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -358,6 +359,127 @@ describe("retryAtlasJob", () => {
       code: "NOT_FOUND",
     });
     expect(db.mapImportJob.rows).toHaveLength(3);
+  });
+});
+
+describe("retry guards", () => {
+  const deps = { kick: false };
+
+  function failedWorldApply(db: Fake, realmId: string) {
+    const check = seed(db, { kind: "world", realmId });
+    return seed(db, {
+      kind: "world",
+      dryRun: false,
+      status: "failed",
+      parentJobId: check.id,
+      realmId,
+    });
+  }
+
+  it("refuses to retry a world on Ixnay", async () => {
+    const db = world();
+    db.realm.rows.push({
+      id: "default",
+      slug: "ixnay",
+      name: "Ixnay",
+      ownerId: "o",
+      status: "active",
+      settings: null,
+    });
+    const failed = failedWorldApply(db, "default");
+    const before = db.mapImportJob.rows.length;
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(db.mapImportJob.rows).toHaveLength(before);
+  });
+
+  it("refuses to retry a world while a claim is pending", async () => {
+    const db = world();
+    const failed = failedWorldApply(db, "a");
+    db.realmClaim.rows.push({ realmId: "a", status: "pending" });
+    const before = db.mapImportJob.rows.length;
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    expect(db.mapImportJob.rows).toHaveLength(before);
+  });
+
+  it("refuses every kind of retry in an archived realm", async () => {
+    const db = world();
+    db.realm.rows.push({
+      id: "old",
+      slug: "old",
+      name: "Old",
+      ownerId: "o",
+      status: "archived",
+      settings: null,
+    });
+    const parent = seed(db, { realmId: "old" });
+    await saveImportResult(parent.id, {} as never);
+    const failed = [
+      seed(db, { realmId: "old", status: "failed" }),
+      seed(db, { realmId: "old", status: "failed", kind: "world" }),
+      failedWorldApply(db, "old"),
+      seed(db, {
+        realmId: "old",
+        status: "failed",
+        dryRun: false,
+        parentJobId: parent.id,
+        options: { apply: { mapping: {} } },
+      }),
+      seed(db, {
+        realmId: "old",
+        status: "failed",
+        kind: "map-pipeline",
+        uploadId: null,
+        options: { steps: ["relief"], dryRun: false },
+      }),
+    ];
+    const before = db.mapImportJob.rows.length;
+    for (const job of failed) {
+      await expect(retryAtlasJob(db, admin, job.id, deps)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringMatching(/archived/i),
+      });
+    }
+    expect(db.mapImportJob.rows).toHaveLength(before);
+    expect(startMapPipelineRun).not.toHaveBeenCalled();
+  });
+
+  it.each(["svg", "geojson"])(
+    "applies a failed %s import again from its analysis",
+    async (kind) => {
+      const db = world();
+      const parent = seed(db, { kind });
+      await saveImportResult(parent.id, {} as never);
+      const failed = seed(db, {
+        kind,
+        status: "failed",
+        dryRun: false,
+        parentJobId: parent.id,
+        options: { apply: { mapping: { r: "Nation" } } },
+      });
+      const result = await retryAtlasJob(db, admin, failed.id, deps);
+      expect(db.mapImportJob.rows.find((r: any) => r.id === result.jobId)).toMatchObject({
+        kind,
+        dryRun: false,
+        parentJobId: parent.id,
+      });
+    }
+  );
+
+  it("refuses an apply whose stored mapping is missing", async () => {
+    const db = world();
+    const parent = seed(db);
+    await saveImportResult(parent.id, {} as never);
+    const failed = seed(db, {
+      status: "failed",
+      dryRun: false,
+      parentJobId: parent.id,
+      options: {},
+    });
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toBeInstanceOf(ZodError);
   });
 });
 
