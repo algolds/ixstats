@@ -1,7 +1,8 @@
 /**
  * A stand-in for the `atlas.*` tRPC pieces the Atlas admin UI reads and calls. A test sets `state` (what the queries
  * answer) and reads `calls` (every mutation, in order, with its input). Mutations answer with `responses[name]` and
- * run the component's `onSuccess`.
+ * run the component's `onSuccess`, or run its `onError` with `failures[name]` when the test set one. `notify` records
+ * the toasts.
  *
  * Use it from a `jest.mock("~/trpc/react", ...)` factory: `jest.requireActual("~/tests/helpers/fake-atlas-ui")`.
  */
@@ -89,6 +90,10 @@ export interface AtlasState {
   jobDetail: (JobRow & { result: object | null; retryNote: string }) | undefined;
   realm: Atlas["realms"]["get"] | undefined;
   realmError: string | null;
+  /** Read errors by query: the query answers no data and this message */
+  readErrors: { health?: string; overview?: string; jobs?: string };
+  /** Queries still loading */
+  loading: { health?: boolean; overview?: boolean };
 }
 
 export const state: AtlasState = {
@@ -99,10 +104,20 @@ export const state: AtlasState = {
   jobDetail: undefined,
   realm: undefined,
   realmError: null,
+  readErrors: {},
+  loading: {},
 };
 
 export const calls: Array<[name: string, input: object]> = [];
 export const responses: Record<string, object> = {};
+/** Mutations named here fail with this message */
+export const failures: Record<string, string> = {};
+export const notify = {
+  success: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warning: jest.fn(),
+};
 /** The inputs the list queries were asked with */
 export const listInputs: object[] = [];
 export const fetchNextPage = jest.fn();
@@ -116,7 +131,11 @@ export function resetFakeAtlas() {
   state.jobDetail = undefined;
   state.realm = undefined;
   state.realmError = null;
+  state.readErrors = {};
+  state.loading = {};
   calls.length = 0;
+  Object.values(notify).forEach((fn) => fn.mockClear());
+  Object.keys(failures).forEach((key) => delete failures[key]);
   listInputs.length = 0;
   fetchNextPage.mockClear();
   invalidate.mockClear();
@@ -125,18 +144,30 @@ export function resetFakeAtlas() {
 
 function mutation(name: string) {
   return {
-    useMutation: (opts?: { onSuccess?: (data: object, input: object) => void }) => ({
+    useMutation: (opts?: {
+      onSuccess?: (data: object, input: object) => void;
+      onError?: (error: { message: string }) => void;
+    }) => ({
       mutate: (input: object) => {
         calls.push([name, input]);
-        opts?.onSuccess?.(responses[name] ?? {}, input);
+        const message = failures[name];
+        if (message !== undefined) opts?.onError?.({ message });
+        else opts?.onSuccess?.(responses[name] ?? {}, input);
       },
       isPending: false,
     }),
   };
 }
 
-const query = (read: () => object | undefined) => ({
-  useQuery: () => ({ data: read(), isLoading: false, error: null }),
+const query = (read: () => object | undefined, key?: "health" | "overview") => ({
+  useQuery: () => {
+    const message = key ? state.readErrors[key] : undefined;
+    return {
+      data: message ? undefined : read(),
+      isLoading: key ? !!state.loading[key] : false,
+      error: message ? { message } : null,
+    };
+  },
 });
 
 const utils = (): object =>
@@ -147,9 +178,9 @@ const utils = (): object =>
 export const api = {
   useUtils: utils,
   atlas: {
-    health: { summary: query(() => state.health) },
+    health: { summary: query(() => state.health, "health") },
     realms: {
-      overview: query(() => state.overview),
+      overview: query(() => state.overview, "overview"),
       get: {
         useQuery: () => ({
           data: state.realm,
@@ -171,7 +202,7 @@ export const api = {
           return {
             data: { pages: state.jobPages },
             isLoading: false,
-            error: null,
+            error: state.readErrors.jobs ? { message: state.readErrors.jobs } : null,
             hasNextPage: !!last?.nextCursor,
             isFetchingNextPage: false,
             fetchNextPage,

@@ -3,13 +3,26 @@
 import Link from "next/link";
 import { NavArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
 /** /admin/realms "Map": a link per realm to its page in Atlas, where its map pipeline lives. */
 export function RealmMapLinks() {
-  const { data: realms, isLoading } = api.realms.adminListRealms.useQuery();
+  const { data: realms, isLoading, error, refetch } = api.realms.adminListRealms.useQuery();
 
   if (isLoading) return <p className="text-label-secondary text-body">Loading realms…</p>;
+  if (error) {
+    return (
+      <div className="flex flex-col items-start gap-3">
+        <p className="text-destructive text-body" role="alert">
+          {error.message}
+        </p>
+        <Button size="sm" variant="outline" onClick={() => void refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
   if (!realms || realms.length === 0) {
     return <p className="text-label-secondary text-body">Create a realm first.</p>;
   }
@@ -22,7 +35,7 @@ export function RealmMapLinks() {
         {realms.map((realm) => (
           <Link
             key={realm.id}
-            href={`/admin/maps/realms/${realm.slug}`}
+            href={`/admin/maps/realms/${encodeURIComponent(realm.slug)}`}
             className="text-label text-body flex items-center justify-between px-4 py-3"
           >
             <span>{realm.name}</span>

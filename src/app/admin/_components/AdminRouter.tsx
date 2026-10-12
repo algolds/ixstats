@@ -224,8 +224,6 @@ export function AdminRouter() {
         return <RealmsPanel defaultTab="realms" />;
       case "maps":
         return <AtlasPanel />;
-      case "style-editor":
-        return <AtlasPanel initialTab="style" />;
       case "cards":
         return <CardsPanel />;
       case "vault":

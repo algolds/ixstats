@@ -4,9 +4,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
   calls,
+  failures,
   fetchNextPage,
   jobRow,
   listInputs,
+  notify,
   realmRow,
   resetFakeAtlas,
   responses,
@@ -15,7 +17,7 @@ import {
 
 jest.mock("~/trpc/react", () => ({ api: jest.requireActual("~/tests/helpers/fake-atlas-ui").api }));
 jest.mock("~/hooks/useNotify", () => ({
-  useNotify: () => ({ success: jest.fn(), info: jest.fn(), error: jest.fn(), warning: jest.fn() }),
+  useNotify: () => jest.requireActual("~/tests/helpers/fake-atlas-ui").notify,
 }));
 jest.mock("~/components/ui/sheet", () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
@@ -147,6 +149,58 @@ describe("job actions", () => {
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
     );
     expect(calls.at(-1)).toEqual(["atlas.jobs.rollback", { importId: "imp_1" }]);
+  });
+});
+
+describe("job action results", () => {
+  const failedRow = () => page(jobRow({ id: "failed", status: "failed", canRetry: true }));
+
+  it("toasts the note when a retry starts", () => {
+    state.jobPages = [failedRow()];
+    responses["atlas.jobs.retry"] = { jobId: "new", retryAs: "apply", note: "Started again" };
+    render(<AtlasJobsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(notify.success).toHaveBeenCalledWith("Job started again", "Started again");
+  });
+
+  it("toasts the server's error when a retry fails", () => {
+    state.jobPages = [failedRow()];
+    failures["atlas.jobs.retry"] = "The upload is gone";
+    render(<AtlasJobsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(notify.error).toHaveBeenCalledWith(
+      "Could not start the job again",
+      "The upload is gone"
+    );
+    expect(notify.success).not.toHaveBeenCalled();
+  });
+
+  it("toasts the server's error when a cancel fails", () => {
+    state.jobPages = [page(jobRow({ id: "queued", status: "queued", canCancel: true }))];
+    failures["atlas.jobs.cancel"] = "Already finished";
+    render(<AtlasJobsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel job" }));
+    expect(notify.error).toHaveBeenCalledWith("Could not cancel the job", "Already finished");
+  });
+
+  it("toasts the server's error when a roll back fails, and the counts when it works", () => {
+    state.jobPages = [page(jobRow({ id: "done", canRollBack: true, importId: "imp_1" }))];
+    failures["atlas.jobs.rollback"] = "A later import is in place";
+    render(<AtlasJobsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll back" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
+    );
+    expect(notify.error).toHaveBeenCalledWith("Could not roll back", "A later import is in place");
+  });
+});
+
+describe("the jobs read error", () => {
+  it("shows the server's message instead of the list", () => {
+    state.readErrors.jobs = "Jobs could not be read";
+    render(<AtlasJobsTab />);
+    expect(screen.getByText("Jobs could not be read")).toBeInTheDocument();
   });
 });
 

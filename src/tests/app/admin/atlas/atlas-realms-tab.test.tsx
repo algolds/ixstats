@@ -144,3 +144,11 @@ describe("sorting and filtering", () => {
     expect(screen.getByText("No realms match")).toBeInTheDocument();
   });
 });
+
+describe("the realms read error", () => {
+  it("shows the server's message", () => {
+    state.readErrors.overview = "Realms are down";
+    render(<AtlasRealmsTab />);
+    expect(screen.getByText("Realms are down")).toBeInTheDocument();
+  });
+});

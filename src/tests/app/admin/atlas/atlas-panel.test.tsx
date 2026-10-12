@@ -70,12 +70,6 @@ describe("the Atlas page", () => {
     );
   });
 
-  it("can open on the Map style tab", () => {
-    render(<AtlasPanel initialTab="style" />);
-    expect(screen.getByRole("tab", { name: "Map style" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("style frame 720")).toBeInTheDocument();
-  });
-
   it("opens the import wizard from the header button and closes it again", () => {
     render(<AtlasPanel />);
     expect(screen.queryByText(/import wizard/)).toBeNull();
@@ -83,6 +77,14 @@ describe("the Atlas page", () => {
     expect(screen.getByText("import wizard new")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByText(/import wizard/)).toBeNull();
+  });
+
+  it("opens a fresh wizard after the ?importJob one is closed", () => {
+    window.history.replaceState(null, "", "/admin/maps?importJob=job_42");
+    render(<AtlasPanel />);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(screen.getByRole("button", { name: "Import a map" }));
+    expect(screen.getByText("import wizard new")).toBeInTheDocument();
   });
 
   it("opens the wizard on the job in ?importJob", () => {
@@ -128,5 +130,18 @@ describe("the health strip", () => {
     state.health = undefined;
     render(<AtlasPanel />);
     expect(screen.getByText("The health summary could not be read.")).toBeInTheDocument();
+  });
+
+  it("shows the server's message when the summary fails", () => {
+    state.readErrors.health = "Health is down";
+    render(<AtlasPanel />);
+    expect(screen.getByText("Health is down")).toBeInTheDocument();
+  });
+
+  it("shows a placeholder while the summary loads", () => {
+    state.loading.health = true;
+    render(<AtlasPanel />);
+    expect(screen.queryByLabelText("Map health")).toBeNull();
+    expect(screen.queryByText("The health summary could not be read.")).toBeNull();
   });
 });

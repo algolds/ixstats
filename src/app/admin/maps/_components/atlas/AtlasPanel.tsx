@@ -33,10 +33,10 @@ function useImportJobParam(): string | null {
 }
 
 /** Atlas: the admin home for every realm's map. A health strip, then Realms, Jobs, Edit queue and Map style. */
-export function AtlasPanel({ initialTab = "realms" }: { initialTab?: AtlasTab }) {
+export function AtlasPanel() {
   usePageTitle({ title: "Admin - Atlas" });
   const importJob = useImportJobParam();
-  const [tab, setTab] = useState<AtlasTab>(initialTab);
+  const [tab, setTab] = useState<AtlasTab>("realms");
   const [importChoice, setImportChoice] = useState<boolean | null>(null);
   const importOpen = importChoice ?? importJob !== null;
 
@@ -64,7 +64,10 @@ export function AtlasPanel({ initialTab = "realms" }: { initialTab?: AtlasTab })
       <AtlasHealthStrip onOpenTab={setTab} />
 
       {importOpen && (
-        <AtlasImportPanel initialJobId={importJob} onClose={() => setImportChoice(false)} />
+        <AtlasImportPanel
+          initialJobId={importChoice === null ? importJob : null}
+          onClose={() => setImportChoice(false)}
+        />
       )}
 
       <SegmentedControl

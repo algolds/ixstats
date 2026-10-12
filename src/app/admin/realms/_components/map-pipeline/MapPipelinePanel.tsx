@@ -70,13 +70,7 @@ function NoPipeline({
  * key, labels, flags, default view, smoothing), runs (dry run or apply, any steps) with live progress, and the run
  * history. On the Atlas realm page (site admins) and the realm's Manage tab (founder and Map officers).
  */
-export function MapPipelinePanel({
-  slug,
-  onDirtyChange,
-}: {
-  slug: string;
-  onDirtyChange?: (dirty: boolean) => void;
-}) {
+export function MapPipelinePanel({ slug }: { slug: string }) {
   const utils = api.useUtils();
   const [scratch, setScratch] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -99,13 +93,6 @@ export function MapPipelinePanel({
     void utils.realms.mapPipeline.get.invalidate({ realm: slug });
     void utils.realms.mapPipeline.runs.invalidate({ realm: slug });
   }, [utils, slug]);
-  const reportDirty = useCallback(
-    (next: boolean) => {
-      setDirty(next);
-      onDirtyChange?.(next);
-    },
-    [onDirtyChange]
-  );
 
   if (isLoading) return <p className="text-label-secondary text-body">Loading the map pipeline…</p>;
   if (!view)
@@ -134,7 +121,7 @@ export function MapPipelinePanel({
           source={view.source}
           presets={view.presets}
           onSaved={refresh}
-          onDirtyChange={reportDirty}
+          onDirtyChange={setDirty}
         />
       ) : (
         <NoPipeline view={view} onLoaded={refresh} onScratch={() => setScratch(true)} />

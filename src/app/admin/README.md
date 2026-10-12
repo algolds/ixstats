@@ -29,7 +29,7 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 | `logs/` | System / calculation / user log viewer (`LogsPanel`) |
 | `realms/` | Realms, nation claims queue + user→realm assignments |
 | `storyteller/` | Storyteller world events / event chains |
-| `maps/` | World Studio panel; `maps/editor/` and `maps/style-editor/` are full-page editors (own error boundary) |
+| `maps/` | Atlas panel and realm pages; `maps/editor/` and `maps/style-editor/` are full-page editors (own error boundary) |
 | `reference-data/` | Reference data management hub |
 | `national-issues/` | National issues templates |
 | `rings-audit/` | Health-ring data audit |

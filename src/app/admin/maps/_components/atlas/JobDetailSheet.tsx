@@ -51,7 +51,7 @@ function JobDetail({ jobId }: { jobId: string }) {
 
   const result = summarizeResult(job.result);
   return (
-    <div className="flex flex-col gap-5 text-sm">
+    <div className="text-footnote flex flex-col gap-5">
       <div className="flex items-center gap-2">
         <Badge variant={statusTone(job.status)}>{STATUS_LABELS[job.status] ?? job.status}</Badge>
         {job.stage && <span className="text-label-secondary">{job.stage}</span>}

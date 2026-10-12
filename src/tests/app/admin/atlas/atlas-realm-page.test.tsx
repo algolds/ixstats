@@ -4,8 +4,10 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import {
   calls,
+  failures,
   jobRow,
   listInputs,
+  notify,
   realmRow,
   resetFakeAtlas,
   responses,
@@ -14,7 +16,7 @@ import {
 
 jest.mock("~/trpc/react", () => ({ api: jest.requireActual("~/tests/helpers/fake-atlas-ui").api }));
 jest.mock("~/hooks/useNotify", () => ({
-  useNotify: () => ({ success: jest.fn(), info: jest.fn(), error: jest.fn(), warning: jest.fn() }),
+  useNotify: () => jest.requireActual("~/tests/helpers/fake-atlas-ui").notify,
 }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/components/shell/PageHeader", () => ({
@@ -132,5 +134,46 @@ describe("the realm page actions", () => {
     render(<AtlasRealmPage slug="eurth" />);
     fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
     expect(calls).toEqual([["atlas.realms.refresh", { realm: "eurth" }]]);
+  });
+
+  it("toasts the results of a rebuild, a roll back and a refresh", () => {
+    responses["atlas.jobs.rollback"] = { restored: 2, deleted: 1 };
+    responses["atlas.realms.refresh"] = { mapVersion: 5 };
+    render(<AtlasRealmPage slug="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "Rebuild relief" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rebuild relief" })
+    );
+    expect(notify.success).toHaveBeenCalledWith("Relief rebuilt");
+    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
+    );
+    expect(notify.success).toHaveBeenCalledWith(
+      "Import rolled back",
+      "2 borders restored, 1 removed"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
+    expect(notify.success).toHaveBeenCalledWith("Caches refreshed", "The map is now at version 5");
+  });
+
+  it("toasts the server's error when an action fails", () => {
+    failures["geoEditor.mapImport.rebuildRelief"] = "No relief source";
+    failures["atlas.jobs.rollback"] = "A later import is in place";
+    failures["atlas.realms.refresh"] = "Realm not found";
+    render(<AtlasRealmPage slug="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "Rebuild relief" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rebuild relief" })
+    );
+    expect(notify.error).toHaveBeenCalledWith("Could not rebuild the relief", "No relief source");
+    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
+    );
+    expect(notify.error).toHaveBeenCalledWith("Could not roll back", "A later import is in place");
+    fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
+    expect(notify.error).toHaveBeenCalledWith("Could not refresh the caches", "Realm not found");
+    expect(notify.success).not.toHaveBeenCalled();
   });
 });
