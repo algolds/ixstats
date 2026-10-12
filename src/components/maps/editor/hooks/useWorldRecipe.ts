@@ -91,7 +91,7 @@ export function useWorldRecipe({
       seed: usable?.seed ?? newWorldSeed(),
     };
   });
-  const presets = useWorldPresets();
+  const { presets, fallback } = useWorldPresets();
   const [stored, setControls] = useState<WorldControls>(start.controls);
   // What was asked for, as the published presets make it: a preset that has since been archived or unpublished is
   // Earth-like, and controls nobody has moved yet are the published Earth-like preset's values, not the factory ones
@@ -118,7 +118,10 @@ export function useWorldRecipe({
     realmMapReady,
     scope,
     presets,
+    fallback,
   });
+  // A Generate asked for while the presets were loading, made as soon as they are in
+  const waitingForPresets = useRef(false);
   const { generate, reset } = generator;
 
   const run = useCallback(
@@ -129,10 +132,15 @@ export function useWorldRecipe({
         realmMapReady: ready,
         scope: key,
         presets: known,
+        fallback: standIn,
       } = latest.current;
-      // A world waits for the presets (its recipe is theirs) and, fitted to the realm's map, for the map: the saved
-      // recipe runs once they have loaded
-      if (!known || (next.source === "realm-map" && !ready)) return;
+      // A world waits for the presets (its recipe is theirs): a request made meanwhile is made once they are in. Fitted
+      // to the realm's map it waits for the map too: the saved recipe runs once it has loaded
+      if (!known) {
+        waitingForPresets.current = true;
+        return;
+      }
+      if (next.source === "realm-map" && !ready) return;
       discarded.current = false;
       generate(
         paramsFromControls(next, known),
@@ -146,7 +154,8 @@ export function useWorldRecipe({
             }
           : undefined
       );
-      saveWorldRecipe(key, { seed: nextSeed, controls: next });
+      // The built-ins standing in for presets that could not be read are not the founder's choice: leave the recipe
+      if (!standIn) saveWorldRecipe(key, { seed: nextSeed, controls: next });
       lastRun.current = { controls: next, seed: nextSeed, mapVersion };
     },
     [generate, latest]
@@ -165,6 +174,14 @@ export function useWorldRecipe({
     start.restored && presets !== null && (start.controls.source !== "realm-map" || realmMapReady),
     restore
   );
+  useEffect(() => {
+    if (!presets || !waitingForPresets.current) return;
+    waitingForPresets.current = false;
+    const asked = latest.current;
+    const made = lastRun.current;
+    // The restore of a saved recipe may just have made this very world
+    if (!made || made.controls !== asked.controls || made.seed !== asked.seed) generateNow();
+  }, [presets, generateNow, latest]);
 
   // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
   const fitsMap = controls.source === "realm-map";

@@ -141,4 +141,54 @@ describe("the presets of the World tab", () => {
     view.rerender(<WorldPanel map={null} createWorker={factory} />);
     expect(lastRequest()).toMatchObject({ seed: 91 });
   });
+
+  it("replays a Generate click made while the presets load, once they arrive", () => {
+    presetsQuery.mockReturnValue({ data: undefined, isError: false });
+    const view = renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Generate preview" }));
+    expect(requestCount()).toBe(0);
+    presetsQuery.mockReturnValue({ data: published, isError: false });
+    view.rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(requestCount()).toBe(1);
+    view.rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(requestCount()).toBe(1);
+  });
+
+  it("does not replay anything when no click was made while the presets loaded", () => {
+    presetsQuery.mockReturnValue({ data: undefined, isError: false });
+    const view = renderPanel();
+    presetsQuery.mockReturnValue({ data: published, isError: false });
+    view.rerender(<WorldPanel map={null} createWorker={factory} />);
+    expect(requestCount()).toBe(0);
+  });
+
+  it("generates from the built-ins when the presets cannot be read, so Generate still works", async () => {
+    presetsQuery.mockReturnValue({ data: undefined, isError: true });
+    renderPanel();
+    await generateFirst();
+    expect(requestCount()).toBe(1);
+  });
+
+  it("never writes the built-ins' stand-in choice over a founder's saved recipe", async () => {
+    saveWorldRecipe(REALM, {
+      seed: 91,
+      controls: { ...controlsForPreset("badlands", published), rivers: 1.3 },
+    });
+    presetsQuery.mockReturnValue({ data: undefined, isError: true });
+    renderPanel();
+    // The preview is made, as Earth-like, but the stored choice stays the founder's
+    expect(requestCount()).toBe(1);
+    expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands", rivers: 1.3 });
+    fireEvent.click(screen.getByRole("radio", { name: "Eurth" }));
+    expect(requestCount()).toBe(2);
+    expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands" });
+  });
+
+  it("saves the recipe again once the real presets are in use", async () => {
+    presetsQuery.mockReturnValue({ data: published, isError: false });
+    renderPanel();
+    await generateFirst();
+    fireEvent.click(screen.getByRole("radio", { name: "Badlands" }));
+    expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands" });
+  });
 });

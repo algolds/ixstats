@@ -55,10 +55,27 @@ const factoryVersionId = (slug: string) => `world-preset-${slug}-factory`;
 
 const toJson = (value: object): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 
-/** Stored params, as long as they still pass the schema; a row the schema has since outgrown reads as no overrides. */
-function storedParams(json: Prisma.JsonValue): WorldPresetParams {
-  const parsed = worldPresetParamsSchema.safeParse(json);
-  return parsed.success ? parsed.data : {};
+/**
+ * Stored params. A key the schema has since outgrown (a bound that tightened, a `seed` someone wrote by hand) is
+ * dropped on its own and the rest is kept; a warning names the preset and the keys. Params that are not an object at
+ * all read as no overrides.
+ */
+function storedParams(json: Prisma.JsonValue, slug: string): WorldPresetParams {
+  const whole = worldPresetParamsSchema.safeParse(json);
+  if (whole.success) return whole.data;
+  const entries =
+    json && typeof json === "object" && !Array.isArray(json) ? Object.entries(json) : [];
+  const kept: WorldPresetParams = {};
+  const dropped: string[] = [];
+  for (const [key, value] of entries) {
+    const one = worldPresetParamsSchema.safeParse({ [key]: value });
+    if (one.success) Object.assign(kept, one.data);
+    else dropped.push(key);
+  }
+  console.warn(
+    `[world-presets] preset ${slug}: stored params ${dropped.length ? `dropped ${dropped.join(", ")}` : "are not an object"}`
+  );
+  return kept;
 }
 
 /** Params for a write: the bounded schema, which rejects a `seed` and any key it does not know. */
@@ -132,12 +149,16 @@ function summarize(row: PresetRow): PresetSummary {
       published && published.publishedAt
         ? {
             versionId: published.id,
-            params: storedParams(published.params),
+            params: storedParams(published.params, row.slug),
             publishedAt: published.publishedAt,
           }
         : null,
     draft: draft
-      ? { versionId: draft.id, params: storedParams(draft.params), savedAt: draft.updatedAt }
+      ? {
+          versionId: draft.id,
+          params: storedParams(draft.params, row.slug),
+          savedAt: draft.updatedAt,
+        }
       : null,
     archived: row.archivedAt !== null,
   };
@@ -166,7 +187,7 @@ export async function listPublishedWorldPresets(db: PrismaClient): Promise<World
     select: { slug: true, name: true, publishedVersion: { select: { params: true } } },
   });
   return rows.flatMap(({ slug, name, publishedVersion }) =>
-    publishedVersion ? [{ slug, name, params: storedParams(publishedVersion.params) }] : []
+    publishedVersion ? [{ slug, name, params: storedParams(publishedVersion.params, slug) }] : []
   );
 }
 
@@ -217,7 +238,12 @@ async function freeSlug(db: PrismaClient, name: string): Promise<string> {
   return slug;
 }
 
-/** A new preset, last in order, as an unpublished draft (founders do not see it until it is published). */
+const isUniqueViolation = (error: Error) => "code" in error && error.code === "P2002";
+
+/**
+ * A new preset, last in order, as an unpublished draft (founders do not see it until it is published). If another
+ * admin takes the slug first, it is tried once more with the next free one, then reported as a conflict.
+ */
 export async function createWorldPreset(
   db: PrismaClient,
   userId: string,
@@ -225,7 +251,24 @@ export async function createWorldPreset(
 ): Promise<PresetSummary> {
   await seedWorldPresets(db);
   const params = checkedParams(input.params ?? {});
-  const slug = await freeSlug(db, input.name);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const slug = await freeSlug(db, input.name);
+    try {
+      return await insertPreset(db, userId, slug, input, params);
+    } catch (error) {
+      if (!(error instanceof Error && isUniqueViolation(error))) throw error;
+    }
+  }
+  throw new WorldPresetError("CONFLICT", "That name was taken at the same moment; try again");
+}
+
+async function insertPreset(
+  db: PrismaClient,
+  userId: string,
+  slug: string,
+  input: CreatePresetInput,
+  params: WorldPresetParams
+): Promise<PresetSummary> {
   const last = await db.worldPreset.findFirst({
     orderBy: { sortOrder: "desc" },
     select: { sortOrder: true },
@@ -319,9 +362,15 @@ async function writeDraft(
   note: string | null
 ): Promise<PresetSummary> {
   const data = { params: toJson(checkedParams(params)), note };
-  if (preset.draftVersionId) {
-    await db.worldPresetVersion.update({ where: { id: preset.draftVersionId }, data });
-  } else {
+  // One conditional statement: a version published since the preset was read (by another admin) is not a draft any
+  // more and is never rewritten; the save then starts a new draft
+  const updated = preset.draftVersionId
+    ? await db.worldPresetVersion.updateMany({
+        where: { id: preset.draftVersionId, presetId: preset.id, publishedAt: null },
+        data,
+      })
+    : { count: 0 };
+  if (updated.count === 0) {
     await db.$transaction(async (tx) => {
       const draft = await tx.worldPresetVersion.create({
         data: { ...data, presetId: preset.id, createdBy: userId },
@@ -384,7 +433,7 @@ export async function listWorldPresetVersions(
       ? [
           {
             versionId: row.id,
-            params: storedParams(row.params),
+            params: storedParams(row.params, slug),
             note: row.note,
             createdBy: row.createdBy,
             publishedAt: row.publishedAt,
@@ -408,7 +457,7 @@ export async function restoreWorldPresetVersion(
   });
   if (!version?.publishedAt) throw new WorldPresetError("NOT_FOUND", "Version not found");
   const note = `Restored from ${version.publishedAt.toISOString().slice(0, 10)}`;
-  return writeDraft(db, preset, userId, storedParams(version.params), note);
+  return writeDraft(db, preset, userId, storedParams(version.params, slug), note);
 }
 
 /** A new draft from the code values in `WORLD_PRESETS` (built-ins only; an existing draft is replaced). */

@@ -323,11 +323,92 @@ describe("what founders get", () => {
     expect(slugs(await listPublishedWorldPresets(client))).toEqual(["eurth", "ixnay", "earthlike"]);
   });
 
-  it("reads a stored recipe the schema no longer accepts as no overrides, rather than failing", async () => {
+  it("drops only the stored keys that fail validation, keeps the rest, and warns naming the preset and keys", async () => {
     const { client, versions } = setup();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
     await listWorldPresets(client);
-    versions.find((v) => v.presetId.endsWith("eurth"))!.params = { seed: 5 };
+    versions.find((v) => v.presetId.endsWith("eurth"))!.params = {
+      riverDensity: 2,
+      seed: 5,
+      oceanPercentage: 9,
+      polarLand: { north: true, south: false },
+    };
+    const eurth = (await listPublishedWorldPresets(client)).find((p) => p.slug === "eurth");
+    expect(eurth?.params).toEqual({ riverDensity: 2, polarLand: { north: true, south: false } });
+    const message = warn.mock.calls.map((call) => call.join(" ")).join("\n");
+    expect(message).toContain("eurth");
+    expect(message).toContain("seed");
+    expect(message).toContain("oceanPercentage");
+    expect(message).not.toContain("riverDensity");
+    warn.mockRestore();
+  });
+
+  it("reads stored params that are not an object as no overrides, with a warning", async () => {
+    const { client, versions } = setup();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    await listWorldPresets(client);
+    versions.find((v) => v.presetId.endsWith("eurth"))!.params = [1, 2];
     const eurth = (await listPublishedWorldPresets(client)).find((p) => p.slug === "eurth");
     expect(eurth?.params).toEqual({});
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("does not warn for a recipe that is valid", async () => {
+    const { client } = setup();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    await listPublishedWorldPresets(client);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+describe("concurrent edits", () => {
+  it("never rewrites a version published between the read and the save: the save starts a new draft", async () => {
+    const { client, db, versions } = setup();
+    const first = await saveWorldPresetDraft(client, ADMIN, "eurth", { riverDensity: 2 });
+    const draftId = first.draft!.versionId;
+    // Another admin publishes the draft after this save has read the preset and before it writes
+    const realUpdateMany = db.worldPresetVersion.updateMany.getMockImplementation()!;
+    db.worldPresetVersion.updateMany.mockImplementationOnce(async (args) => {
+      await publishWorldPreset(client, "eurth");
+      return realUpdateMany(args);
+    });
+    const saved = await saveWorldPresetDraft(client, ADMIN, "eurth", { riverDensity: 3 });
+    expect(versions.find((v) => v.id === draftId)?.params).toEqual({ riverDensity: 2 });
+    expect(saved.published?.params).toEqual({ riverDensity: 2 });
+    expect(saved.draft?.params).toEqual({ riverDensity: 3 });
+    expect(saved.draft?.versionId).not.toBe(draftId);
+  });
+
+  it("retries a create that lost the race for a slug, with the next free one", async () => {
+    const { client, db, presets } = setup();
+    await listWorldPresets(client);
+    const realCreate = db.worldPreset.create.getMockImplementation()!;
+    db.worldPreset.create.mockImplementationOnce(async (args) => {
+      await realCreate({ data: { slug: "racy", name: "Other admin's" } });
+      throw Object.assign(new Error("Unique constraint failed on slug"), { code: "P2002" });
+    });
+    const created = await createWorldPreset(client, ADMIN, { name: "Racy" });
+    expect(created.slug).toBe("racy-2");
+    expect(presets.map((p) => p.slug)).toEqual(expect.arrayContaining(["racy", "racy-2"]));
+  });
+
+  it("reports a CONFLICT when the slug is taken again on the retry", async () => {
+    const { client, db } = setup();
+    await listWorldPresets(client);
+    db.worldPreset.create.mockRejectedValue(
+      Object.assign(new Error("Unique constraint failed on slug"), { code: "P2002" })
+    );
+    await rejectsWith(createWorldPreset(client, ADMIN, { name: "Racy" }), "CONFLICT");
+  });
+
+  it("does not hide another failure as a slug clash", async () => {
+    const { client, db } = setup();
+    await listWorldPresets(client);
+    db.worldPreset.create.mockRejectedValue(new Error("connection lost"));
+    await expect(createWorldPreset(client, ADMIN, { name: "Racy" })).rejects.toThrow(
+      "connection lost"
+    );
   });
 });

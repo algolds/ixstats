@@ -376,9 +376,9 @@ model WorldPresetVersion {
   updatedAt   DateTime  @default(now()) @updatedAt // a draft's last save
   publishedAt DateTime?
 
-  preset      WorldPreset   @relation("PresetVersions", fields: [presetId], references: [id], onDelete: Cascade)
+  preset       WorldPreset   @relation("PresetVersions", fields: [presetId], references: [id], onDelete: Cascade)
   publishedFor WorldPreset[] @relation("PresetPublished")
-  draftFor    WorldPreset[] @relation("PresetDraft")
+  draftFor     WorldPreset[] @relation("PresetDraft")
 
   @@index([presetId, createdAt])
   @@map("world_preset_versions")

@@ -40,6 +40,9 @@ echo "✓ Static assets synced."
 
 # Ensure local database schema is aligned with the codebase (Prisma 6 CLI doesn't autoload env with config files)
 echo "🚀 Syncing database schema with codebase..."
+# The production dump still has procedural_worlds rows, which db push refuses to drop: the idempotent Atlas Studio SQL
+# creates the preset tables and drops the dead models first (as scripts/deploy-production.sh does)
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL

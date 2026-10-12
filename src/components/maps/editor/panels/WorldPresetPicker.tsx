@@ -13,7 +13,7 @@ interface WorldPresetPickerProps {
 
 /** A choice among the published presets, by the names the admin gave them. */
 export function WorldPresetPicker({ value, onValueChange, ...label }: WorldPresetPickerProps) {
-  const presets = useWorldPresets();
+  const { presets } = useWorldPresets();
   if (!presets) return <p className="text-label-secondary text-caption">Loading the presets.</p>;
   return (
     <SegmentedControl

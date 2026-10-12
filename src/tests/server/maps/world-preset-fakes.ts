@@ -171,6 +171,11 @@ export function createPresetDb() {
         return Object.assign(row, data, { updatedAt: tick() });
       }
     ),
+    updateMany: jest.fn(async ({ where, data }: { where: Where; data: Partial<VersionRow> }) => {
+      const hit = versions.filter((v) => matches(v, where));
+      for (const row of hit) Object.assign(row, data, { updatedAt: tick() });
+      return { count: hit.length };
+    }),
     findFirst: jest.fn(
       async ({ where }: { where: Where }) => versions.find((v) => matches(v, where)) ?? null
     ),
