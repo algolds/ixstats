@@ -1,10 +1,12 @@
 /**
  * An uploaded map file: what kind it is (from its bytes, not its name), what the wizard needs to know about it
  * before an import (an image's size, an SVG's viewBox, a GeoJSON's properties and coordinate space), and its id in
- * the map import store.
+ * the map import store. A gzip file must be a valid world bundle (the generator's upload), or it is refused.
  */
 import type { MapImportKind } from "~/lib/maps/import/options";
 import { inspectGeojson, type GeojsonInspection } from "~/lib/maps/import/geojson-engine";
+import { isGzip } from "~/lib/maps/import/world-bundle";
+import { parseWorldBundle } from "~/lib/maps/import/world-bundle.node";
 import { MapImportError } from "./map-import.realm";
 import { saveMapUpload } from "./map-import.storage";
 
@@ -22,8 +24,12 @@ export interface MapUploadInfo {
 const startsWith = (bytes: Uint8Array, signature: number[], offset = 0) =>
   signature.every((b, i) => bytes[offset + i] === b);
 
-/** The kind of a map file from its first bytes: a raster image, an SVG drawing or GeoJSON; null otherwise. */
+/**
+ * The kind of a map file from its first bytes: a raster image, an SVG drawing, GeoJSON or a gzip world bundle (the
+ * header only; acceptMapUpload checks the bundle itself); null otherwise.
+ */
 export function sniffMapKind(bytes: Uint8Array): MapImportKind | null {
+  if (isGzip(bytes)) return "world";
   if (
     startsWith(bytes, [0x89, 0x50, 0x4e, 0x47]) || // PNG
     startsWith(bytes, [0xff, 0xd8, 0xff]) || // JPEG
@@ -70,7 +76,10 @@ export async function acceptMapUpload(bytes: Uint8Array, filename: string): Prom
   let height: number | null = null;
   let geojson: GeojsonInspection | undefined;
   try {
-    if (kind === "png") {
+    if (kind === "world") {
+      const bundle = parseWorldBundle(bytes);
+      if (!bundle.ok) throw new Error(`That file is not a world bundle: ${bundle.reason}`);
+    } else if (kind === "png") {
       const { imageDimensions } = await import("~/lib/maps/import/png/decode");
       ({ width, height } = await imageDimensions(bytes));
     } else {

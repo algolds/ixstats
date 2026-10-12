@@ -1,6 +1,7 @@
 /**
- * Map import upload: the PNG/JPEG/SVG/GeoJSON file of a realm map import, as multipart form data (field `file`),
- * for the realm in `?realm=<realm id>`. Site admins, the realm's founder and its officers with the Map power
+ * Map import upload: the PNG/JPEG/SVG/GeoJSON file of a realm map import, or the gzip world bundle of the map
+ * editor's World tab (kind "world", validated here), as multipart form data (field `file`), for the realm in
+ * `?realm=<realm id>`. Site admins, the realm's founder and its officers with the Map power
  * (canImportRealmMap; Ixnay is admin-only, an archived realm is read-only). The body is refused by its
  * Content-Length before it is read when it is over the limit (MAX_MAP_IMPORT_BYTES), and again by the file's own
  * size. Returns the upload id the wizard passes to geoEditor.mapImport.start, with the file's kind and size.

@@ -6,7 +6,8 @@ import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
 import { z } from "zod";
 import { mapGeoreferenceSchema } from "~/lib/maps/realm-map-settings";
 
-export const MAP_IMPORT_KINDS = ["png", "svg", "geojson"] as const;
+/** "world" is a gzip world bundle from the browser generator: applied through the map editor's World tab, not the import wizard. */
+export const MAP_IMPORT_KINDS = ["png", "svg", "geojson", "world"] as const;
 export type MapImportKind = (typeof MAP_IMPORT_KINDS)[number];
 
 export const MAP_IMPORT_STATUSES = [
@@ -18,7 +19,7 @@ export const MAP_IMPORT_STATUSES = [
 ] as const;
 export type MapImportStatus = (typeof MAP_IMPORT_STATUSES)[number];
 
-/** Largest file the import accepts (PNG, JPEG, SVG or GeoJSON). */
+/** Largest file the import accepts (PNG, JPEG, SVG, GeoJSON or a gzip world bundle). */
 export const MAX_MAP_IMPORT_BYTES = 40 * 1024 * 1024;
 
 const hex = z

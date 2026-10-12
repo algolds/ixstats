@@ -27,7 +27,7 @@ export interface MapUploadInfo {
 
 const MAX_MB = MAX_MAP_IMPORT_BYTES / 1024 / 1024;
 
-/** Upload the file to the map import store; the server reads its kind from the bytes. */
+/** Upload the file to the map import store; the server reads its kind from the bytes. A world bundle is refused here. */
 export async function uploadMapFile(realmId: string, file: File): Promise<MapUploadInfo> {
   if (file.size > MAX_MAP_IMPORT_BYTES) throw new Error(`Map files are limited to ${MAX_MB} MB`);
   const form = new FormData();
@@ -45,6 +45,8 @@ export async function uploadMapFile(realmId: string, file: File): Promise<MapUpl
     error?: string;
   };
   if (!res.ok) throw new Error(body.error ?? `Upload failed (${res.status})`);
+  if (body.kind === "world")
+    throw new Error("That is a world bundle. Apply it from the World tab of the map editor.");
   return body;
 }
 

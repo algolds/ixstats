@@ -27,6 +27,8 @@ export async function runImportEngineInline(
   isCancelled: () => boolean = () => false,
   sliceMs = 40
 ): Promise<EngineResult> {
+  if (kind === "world")
+    throw new Error("A world bundle is applied from the map editor's World tab, not read as a map");
   const ctx = engineContext(progress, { sliceMs, isCancelled });
   if (kind === "png") return runPngEngine(bytes, options.png, ctx);
   const text = new TextDecoder("utf-8").decode(bytes);

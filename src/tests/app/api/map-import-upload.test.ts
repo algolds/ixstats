@@ -19,11 +19,14 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 import { mkdtempSync, rmSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { NextResponse, type NextRequest } from "next/server";
 import { POST } from "~/app/api/admin/map-import/upload/route";
 import { MAX_MAP_IMPORT_BYTES } from "~/lib/maps/import/options";
+import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
+import { encodeCells, encodeWorldBundle, type WorldBundle } from "~/lib/maps/import/world-bundle";
 import { sniffMapKind } from "~/server/modules/maps/map-import.upload";
 
 const MB = 1024 * 1024;
@@ -109,6 +112,68 @@ describe("POST /api/admin/map-import/upload", () => {
     expect((await response.json()).error).toMatch(/PNG, JPEG or WebP/);
   });
 });
+const empty = { type: "FeatureCollection" as const, features: [] };
+const worldBundle: WorldBundle = {
+  version: 1,
+  seed: 3,
+  params: { ...DEFAULT_PARAMS },
+  source: "realm-map",
+  layers: {
+    background: {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [0, 0],
+                [1, 0],
+                [1, 1],
+                [0, 0],
+              ],
+            ],
+          },
+        },
+      ],
+    },
+    altitudes: empty,
+    climate: empty,
+    rivers: empty,
+    lakes: empty,
+    icecaps: empty,
+  },
+  slots: [],
+  cells: encodeCells(new Float32Array([1, 2, 3])),
+};
+
+describe("POST /api/admin/map-import/upload with a world bundle", () => {
+  it("stores a gzip world bundle as kind world", async () => {
+    const file = new File([await encodeWorldBundle(worldBundle)], "world.json.gz");
+    const response = await POST(request({ realm: "r1", contentLength: 1000, file }).req);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ kind: "world", filename: "world.json.gz", width: null });
+    expect(body.uploadId).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("refuses other gzip, naming why", async () => {
+    const notBundle = new File([gzipSync("hello")], "notes.gz");
+    const response = await POST(request({ realm: "r1", file: notBundle }).req);
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/not a world bundle.*not valid JSON/i);
+  });
+
+  it("refuses a gzip bundle that breaks a rule, with the rule's reason", async () => {
+    const hostile = { ...worldBundle, slots: [{ key: "slot_1" }] };
+    const file = new File([gzipSync(JSON.stringify(hostile))], "world.json.gz");
+    const response = await POST(request({ realm: "r1", file }).req);
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatch(/not a world bundle.*slots/i);
+  });
+});
 
 describe("sniffMapKind", () => {
   it("reads the kind from the bytes, not the name", () => {
@@ -120,5 +185,7 @@ describe("sniffMapKind", () => {
     ).toBe("svg");
     expect(sniffMapKind(bytes('  {"type":"FeatureCollection"}'))).toBe("geojson");
     expect(sniffMapKind(bytes("GIF89a"))).toBeNull();
+    expect(sniffMapKind(new Uint8Array([0x1f, 0x8b, 0x08, 0, 0, 0]))).toBe("world");
+    expect(sniffMapKind(new Uint8Array([0x1f, 0x8b, 0x07]))).toBeNull();
   });
 });
