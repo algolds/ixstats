@@ -6,6 +6,7 @@ import { useMapData } from "~/hooks/useMapData";
 import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { useBorderEditor } from "~/hooks/useBorderEditor";
+import { useShallowStable } from "~/hooks/useShallowStable";
 import { api } from "~/trpc/react";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
@@ -13,6 +14,7 @@ import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { EditorMode } from "~/hooks/map-editor/editor-types";
 import { useEditorDraft } from "./useEditorDraft";
 import { useEditorKeyboardShortcuts } from "./useEditorKeyboardShortcuts";
+import { useBorderDraftPrompt } from "./useBorderDraftPrompt";
 import {
   getDisabledTools,
   useAutoSelectLinkedFeature,
@@ -77,10 +79,8 @@ export function useMapEditorOverlayState({
   });
   const importer = useProvinceImporter(scopedCountryId ?? "__none__");
 
-  const { data: neighborGeoms } = api.geoCore.getNeighborGeometries.useQuery(
-    { featureId: borderState.featureId!, realm },
-    { enabled: !!borderState.featureId }
-  );
+  // An unsaved draft of the loaded border is offered back (restore or discard)
+  useBorderDraftPrompt(borderState, borderActions, mapSelectedCountry?.displayName);
 
   const isLinked = !!editor.linkage?.isLinked;
   const linkageLoading = editor.linkageLoading;
@@ -245,7 +245,7 @@ export function useMapEditorOverlayState({
 
   const featureCounts = useFeatureCounts(editor.allFeatures);
 
-  return {
+  return useShallowStable({
     ...geo,
     ...borderOps,
     ...layout,
@@ -262,7 +262,6 @@ export function useMapEditorOverlayState({
     borderActions,
     editor,
     importer,
-    neighborGeoms,
     isLinked,
     linkageLoading,
     hasGeometry,
@@ -304,5 +303,5 @@ export function useMapEditorOverlayState({
     handleEditRoute,
     handleSubmit,
     featureCounts,
-  };
+  });
 }

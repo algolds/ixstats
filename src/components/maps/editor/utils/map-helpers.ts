@@ -122,18 +122,24 @@ export type SourcelessLayer = LayerSpecification extends infer L
     : never
   : never;
 
+/** Source options a layer set can need; `promoteId` makes a property the feature id for `updateData`. */
+export interface GeoJSONSourceOptions {
+  promoteId?: string;
+}
+
 /** First call adds the GeoJSON source and its layers (in order); later calls only replace the data. */
 export function upsertGeoJSONLayers(
   map: MapLibreMap,
   sourceId: string,
   data: GeoJSON.GeoJSON,
-  layers: SourcelessLayer[]
+  layers: SourcelessLayer[],
+  sourceOptions: GeoJSONSourceOptions = {}
 ) {
   if (map.getSource(sourceId)) {
     getGeoJSONSource(map, sourceId)?.setData(data);
     return;
   }
-  map.addSource(sourceId, { type: "geojson", data });
+  map.addSource(sourceId, { type: "geojson", data, ...sourceOptions });
   for (const layer of layers) map.addLayer({ ...layer, source: sourceId } as LayerSpecification);
 }
 
@@ -330,6 +336,34 @@ function layerGrid(data: FeatureCollection): SegmentGrid {
     layerGrids.set(data, grid);
   }
   return grid;
+}
+
+/** Runs `task` when the browser is idle (after a short timer where it cannot tell); returns its canceller. */
+function whenIdle(task: () => void): () => void {
+  if ("requestIdleCallback" in window) {
+    const handle = window.requestIdleCallback(task, { timeout: 2000 });
+    return () => window.cancelIdleCallback(handle);
+  }
+  const handle = setTimeout(task, 50);
+  return () => clearTimeout(handle);
+}
+
+/**
+ * Builds the segment grid of every snap layer ahead of the first snap, one layer per idle period,
+ * so indexing them never stalls the first drag that snaps. Returns a function that stops the work.
+ */
+export function prebuildSnapGrids(layers: MapLayerData[] | undefined): () => void {
+  const pending = (layers ?? []).filter(
+    (l) => (SNAP_LAYER_TYPES as readonly string[]).includes(l.type) && !layerGrids.has(l.data)
+  );
+  let cancel = () => {};
+  let next = 0;
+  const buildNext = () => {
+    layerGrid(pending[next++]!.data);
+    if (next < pending.length) cancel = whenIdle(buildNext);
+  };
+  if (pending.length > 0) cancel = whenIdle(buildNext);
+  return () => cancel();
 }
 
 /**

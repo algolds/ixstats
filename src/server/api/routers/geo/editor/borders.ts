@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
+import { restorableBorderDraft } from "~/lib/maps/border-draft";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
@@ -24,6 +26,10 @@ async function realmAreaOf(
   return (geometry: PolygonalGeometry) => scaleAreaToRadius(flatArea(geometry), radiusKm);
 }
 
+/** A user's border editor session for one feature of one realm (feature ids repeat across realms). */
+const borderSessionId = (userId: string, realmId: string, featureId: string) =>
+  `${userId}_${realmId}_${featureId}`;
+
 export const geoEditorBordersRouter = createTRPCRouter({
   /** Start a border editing session for a feature. Returns geometry + neighbor info. */
   startBorderEditSession: rateLimitedMutationProcedure
@@ -42,6 +48,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             boundingBox: true,
             areaSqKm: true,
             countryId: true,
+            updatedAt: true,
           },
         }),
         `Feature not found: ${input.featureId}`
@@ -76,20 +83,31 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
       // Create or resume session
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const userId = ctx.auth!.userId ?? "system";
+      const sessionId = borderSessionId(userId, realmId, input.featureId);
       const session = await ctx.db.mapEditorSession.upsert({
-        where: { id: `${ctx.auth!.userId ?? "system"}_${input.featureId}` },
+        where: { id: sessionId },
         create: {
-          id: `${ctx.auth!.userId ?? "system"}_${input.featureId}`,
-          userId: ctx.auth!.userId ?? "system",
+          id: sessionId,
+          userId,
           featureId: input.featureId,
-          sessionData: { undoStack: [], mode: "select" } as any,
+          sessionData: { undoStack: [], mode: "select" },
           expiresAt,
         },
         update: { expiresAt, updatedAt: new Date() },
       });
 
       return {
-        session: { id: session.id, sessionData: session.sessionData },
+        session: { id: session.id },
+        // Only this user's draft of this feature, newer than the feature's last save
+        draft: restorableBorderDraft({
+          sessionData: session.sessionData,
+          sessionUserId: session.userId,
+          sessionFeatureId: session.featureId,
+          userId,
+          featureId: input.featureId,
+          featureUpdatedAt: feature.updatedAt,
+        }),
         feature: {
           featureId: feature.featureId,
           displayName: feature.displayName,
@@ -112,11 +130,12 @@ export const geoEditorBordersRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Only the session's own editor saves into it (session ids are `<userId>_<featureId>`).
+      // Only the session's own editor saves into it (session ids are `<userId>_<realmId>_<featureId>`).
       const { count } = await ctx.db.mapEditorSession.updateMany({
         where: { id: input.sessionId, userId: ctx.auth?.userId ?? "system" },
         data: {
-          sessionData: input.sessionData as any,
+          // Stamped here: a restore compares it with the feature's (server-side) updatedAt
+          sessionData: { ...(input.sessionData as Prisma.InputJsonObject), savedAt: Date.now() },
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
@@ -255,7 +274,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
 
         // Clean up session
         await ctx.db.mapEditorSession.deleteMany({
-          where: { userId: ctx.auth!.userId ?? "system", featureId: input.featureId },
+          where: { id: borderSessionId(ctx.auth!.userId ?? "system", realmId, input.featureId) },
         });
 
         return { applied: true, editRequestId: null };

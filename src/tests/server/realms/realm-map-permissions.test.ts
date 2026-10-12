@@ -60,6 +60,7 @@ function modelMock(): ModelMock {
     update: jest.fn().mockResolvedValue({}),
     updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     delete: jest.fn().mockResolvedValue({}),
+    deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     upsert: jest.fn().mockResolvedValue({ id: "session", sessionData: {} }),
   };
 }
@@ -294,6 +295,164 @@ describe("world-mode border editing is realm-scoped", () => {
     expect(db.mapEditorSession!.updateMany!.mock.calls[0][0].where).toEqual({
       id: `${FOUNDER}_Gallambria`,
       userId: MAP_OFFICER,
+    });
+  });
+
+  describe("opening the border editor offers the editor's own newer draft", () => {
+    const SAVED = new Date("2026-10-11T10:00:00Z");
+    const square = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 0],
+        ],
+      ],
+    };
+
+    function open(
+      session: { userId?: string; featureId?: string; sessionData: object },
+      featureUpdatedAt: Date
+    ) {
+      const db = realmDb();
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        featureId: "Gallambria",
+        boundingBox: null,
+        updatedAt: featureUpdatedAt,
+      });
+      db.mapEditorSession!.upsert!.mockResolvedValue({
+        id: "s1",
+        userId: MAP_OFFICER,
+        featureId: "Gallambria",
+        ...session,
+      });
+      return borders(db, MAP_OFFICER)
+        .startBorderEditSession({ featureId: "Gallambria", realm: "eurth" })
+        .then((result) => ({ result, db }));
+    }
+    const draftData = (savedAt: Date, featureId = "Gallambria") => ({
+      featureId,
+      geometry: square,
+      dirtyNeighbors: {},
+      savedAt: savedAt.getTime(),
+    });
+    const hoursBefore = (date: Date, hours: number) => new Date(date.getTime() - hours * 3_600_000);
+
+    beforeEach(() => jest.useFakeTimers({ now: new Date("2026-10-11T12:00:00Z") }));
+    afterEach(() => jest.useRealTimers());
+
+    it("returns a draft saved after the feature last changed, and never the raw session data", async () => {
+      const { result } = await open({ sessionData: draftData(SAVED) }, hoursBefore(SAVED, 1));
+      expect(result.draft).toEqual(draftData(SAVED));
+      expect(result.session).toEqual({ id: "s1" });
+    });
+
+    it("names the realm in the session id, since feature ids repeat across realms", async () => {
+      const { db } = await open({ sessionData: draftData(SAVED) }, hoursBefore(SAVED, 1));
+      expect(db.mapEditorSession!.upsert!.mock.calls[0][0].where.id).toBe(
+        `${MAP_OFFICER}_${EURTH}_Gallambria`
+      );
+    });
+
+    it("stamps the save time itself, so the comparison with the feature's update time uses one clock", async () => {
+      const db = realmDb();
+      await borders(db, MAP_OFFICER).saveBorderEditDraft({
+        sessionId: `${MAP_OFFICER}_${EURTH}_Gallambria`,
+        sessionData: { ...draftData(SAVED), savedAt: 1 },
+      });
+      const saved = db.mapEditorSession!.updateMany!.mock.calls[0][0].data.sessionData;
+      expect(saved.savedAt).toBe(Date.now());
+      expect(saved.geometry).toEqual(square);
+    });
+
+    it("offers nothing on the next open once the draft was reset by a discard", async () => {
+      const db = realmDb();
+      const sessionId = `${MAP_OFFICER}_${EURTH}_Gallambria`;
+      let stored: object = { undoStack: [], mode: "select" };
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        featureId: "Gallambria",
+        boundingBox: null,
+        updatedAt: hoursBefore(SAVED, 1),
+      });
+      db.mapEditorSession!.updateMany!.mockImplementation(
+        async ({ data }: { data: { sessionData: object } }) => {
+          stored = data.sessionData;
+          return { count: 1 };
+        }
+      );
+      db.mapEditorSession!.upsert!.mockImplementation(async () => ({
+        id: sessionId,
+        userId: MAP_OFFICER,
+        featureId: "Gallambria",
+        sessionData: stored,
+      }));
+      const caller = borders(db, MAP_OFFICER);
+      const open = () => caller.startBorderEditSession({ featureId: "Gallambria", realm: "eurth" });
+
+      await caller.saveBorderEditDraft({ sessionId, sessionData: draftData(SAVED) });
+      expect((await open()).draft).not.toBeNull();
+
+      await caller.saveBorderEditDraft({
+        sessionId,
+        sessionData: { undoStack: [], mode: "select" },
+      });
+      expect((await open()).draft).toBeNull();
+    });
+
+    it("applying an edit clears this realm's draft of the feature, not another realm's", async () => {
+      const db = realmDb();
+      db.mapLayer!.findFirst!.mockResolvedValue({
+        id: "ml1",
+        geometry: square,
+        countryId: null,
+        displayName: "Gallambria",
+        areaSqKm: 1,
+      });
+
+      await borders(db, MAP_OFFICER).submitBorderEdit({
+        featureId: "Gallambria",
+        editSubtype: "vertex_edit",
+        proposedGeometry: square,
+        applyDirectly: true,
+        realm: "eurth",
+      });
+
+      expect(db.mapEditorSession!.deleteMany!.mock.calls).toEqual([
+        [{ where: { id: `${MAP_OFFICER}_${EURTH}_Gallambria` } }],
+      ]);
+    });
+
+    it("offers no draft once the feature was saved after it", async () => {
+      const { result } = await open({ sessionData: draftData(SAVED) }, hoursBefore(SAVED, -1));
+      expect(result.draft).toBeNull();
+    });
+
+    it("offers no draft written for another feature", async () => {
+      const other = draftData(SAVED, "Daxia");
+      const { result } = await open({ sessionData: other }, hoursBefore(SAVED, 1));
+      expect(result.draft).toBeNull();
+    });
+
+    it("offers no draft that belongs to another user", async () => {
+      const { result } = await open(
+        { userId: PLAYER, sessionData: draftData(SAVED) },
+        hoursBefore(SAVED, 1)
+      );
+      expect(result.draft).toBeNull();
+    });
+
+    it("offers no draft from a fresh session or an older autosave format", async () => {
+      const fresh = await open({ sessionData: { undoStack: [], mode: "select" } }, SAVED);
+      expect(fresh.result.draft).toBeNull();
+      const legacy = await open(
+        { sessionData: { geometry: square, undoStack: { entries: [] }, mode: "vertex_edit" } },
+        hoursBefore(SAVED, 1)
+      );
+      expect(legacy.result.draft).toBeNull();
     });
   });
 

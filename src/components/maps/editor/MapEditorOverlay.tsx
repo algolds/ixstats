@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { BorderEditorToolOptions } from "~/components/maps/editor/toolbars/options/BorderEditorToolOptions";
 
 import { MapEditorToolbar } from "~/components/maps/editor/MapEditorToolbar";
 import { EditorStatusBar } from "~/components/maps/editor/EditorStatusBar";
-import type { Polygon, MultiPolygon } from "geojson";
 import type { EditorMapRef } from "~/components/maps/editor/EditorMap";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import { EditorCanvas } from "./components/EditorCanvas";
@@ -69,7 +68,6 @@ export default function MapEditorOverlay({
     borderState,
     borderActions,
     editor,
-    neighborGeoms,
     disabledTools,
     isAdmin,
     generateTransport,
@@ -87,6 +85,7 @@ export default function MapEditorOverlay({
     setShowShortcuts,
     contextMenu,
     setContextMenu,
+    requestDeleteSelection,
     handleBorderToolbarSubmit,
     handleExitBorderEdit,
     simplifyAll,
@@ -103,8 +102,7 @@ export default function MapEditorOverlay({
     map: sharedWorldMap,
     isActive: isWorldMode && activeEditorMode === "border_edit",
     geometry: borderState.geometry,
-    neighborGeometries: neighborGeoms as
-      Array<{ featureId: string; geometry: Polygon | MultiPolygon | null }> | undefined,
+    neighborGeometries: borderState.neighborGeometries,
     mode: borderState.mode,
     splitLine: borderState.splitLine,
     mergeTargets: borderState.mergeTargets,
@@ -118,6 +116,13 @@ export default function MapEditorOverlay({
     traceStart: borderState.traceStart,
     onToggleMergeTarget: borderActions.toggleMergeTarget,
   });
+
+  const showHelp = useCallback(() => setShowWelcomeModal(true), []);
+  const deleteSelection = useCallback(
+    () => void requestDeleteSelection(),
+    [requestDeleteSelection]
+  );
+  const openShortcuts = useCallback(() => setShowShortcuts(true), [setShowShortcuts]);
 
   const renderPanel = (panelId: "panelA" | "panelB") => (
     <MapEditorSidebarPanels
@@ -157,7 +162,7 @@ export default function MapEditorOverlay({
           recalculateGeo={recalculateGeo}
           simplifyAll={simplifyAll}
           handleRequestExit={handleRequestExit}
-          onShowHelp={() => setShowWelcomeModal(true)}
+          onShowHelp={showHelp}
           countryId={countryId}
           snapEnabled={snapEnabled}
           setSnapEnabled={setSnapEnabled}
@@ -165,16 +170,13 @@ export default function MapEditorOverlay({
           setSnapTolerance={setSnapTolerance}
           panelsLocked={panelsLocked}
           setPanelsLocked={setPanelsLocked}
-          onDeleteSelection={() => void state.requestDeleteSelection()}
-          onShowShortcuts={() => setShowShortcuts(true)}
+          onDeleteSelection={deleteSelection}
+          onShowShortcuts={openShortcuts}
         />
 
         {activeEditorMode !== "border_edit" && (
           <EditorErrorBoundary name="ToolOptions">
-            <ConnectedToolOptionsBar
-              editor={editor}
-              onDeleteSelection={() => void state.requestDeleteSelection()}
-            />
+            <ConnectedToolOptionsBar editor={editor} onDeleteSelection={deleteSelection} />
           </EditorErrorBoundary>
         )}
 
@@ -245,7 +247,7 @@ export default function MapEditorOverlay({
           hasUnsavedChanges={state.hasUnsavedChanges}
           error={editor.mutationError}
           onDismissError={() => editor.setMutationError(null)}
-          onShowShortcuts={() => setShowShortcuts(true)}
+          onShowShortcuts={openShortcuts}
         />
 
         {/* Leaf-only helpers: terrain lookup under the cursor and the confirm dialog host */}

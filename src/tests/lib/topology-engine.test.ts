@@ -1,4 +1,4 @@
-import type { Polygon } from "geojson";
+import type { MultiPolygon, Polygon } from "geojson";
 import { vkey, buildTopologyIndex, cascadeMoveVertex } from "~/lib/maps/topology-engine";
 
 // Two adjacent unit squares sharing the edge at x=1:
@@ -180,5 +180,100 @@ describe("cascadeMoveVertex", () => {
     expect(geoA.coordinates[0]![0]).toEqual([-0.1, -0.1]);
     // Ring closure: first vertex moved, so last should also move
     expect(geoA.coordinates[0]![4]).toEqual([-0.1, -0.1]);
+  });
+});
+
+describe("cascadeMoveVertex ring-level copies", () => {
+  // Two polygons; the first has a hole. Rings: [0] A outer, [1] A hole, [2] B outer.
+  const MULTI: MultiPolygon = {
+    type: "MultiPolygon",
+    coordinates: [
+      [
+        [
+          [0, 0],
+          [10, 0],
+          [10, 10],
+          [0, 10],
+          [0, 0],
+        ],
+        [
+          [2, 2],
+          [2, 4],
+          [4, 4],
+          [4, 2],
+          [2, 2],
+        ],
+      ],
+      [
+        [
+          [20, 0],
+          [30, 0],
+          [30, 10],
+          [20, 10],
+          [20, 0],
+        ],
+      ],
+    ],
+  };
+
+  const move = (geometry: MultiPolygon, ringIndex: number, vertexIndex: number, to: number[]) => {
+    const key = vkey(to);
+    const refs = [{ featureId: "m", ringIndex, vertexIndex }];
+    return cascadeMoveVertex(new Map([[key, refs]]), new Map([["m", geometry]]), key, to).get(
+      "m"
+    ) as MultiPolygon;
+  };
+
+  it("copies only the touched ring; every other ring keeps its identity", () => {
+    const result = move(MULTI, 2, 1, [31, 1]);
+
+    expect(result.coordinates[0]![0]).toBe(MULTI.coordinates[0]![0]);
+    expect(result.coordinates[0]![1]).toBe(MULTI.coordinates[0]![1]);
+    expect(result.coordinates[1]![0]).not.toBe(MULTI.coordinates[1]![0]);
+    expect(result.coordinates[1]![0]![1]).toEqual([31, 1]);
+  });
+
+  it("leaves the input geometry untouched", () => {
+    const before = JSON.stringify(MULTI);
+    move(MULTI, 0, 0, [-1, -1]);
+    expect(JSON.stringify(MULTI)).toBe(before);
+  });
+
+  it("copies a ring once when several refs of one feature land in it", () => {
+    const key = vkey([0, 0]);
+    // The same coordinate is both the first and the closing vertex of the ring
+    const refs = [
+      { featureId: "m", ringIndex: 0, vertexIndex: 0 },
+      { featureId: "m", ringIndex: 0, vertexIndex: 4 },
+    ];
+    const result = cascadeMoveVertex(
+      new Map([[key, refs]]),
+      new Map([["m", MULTI]]),
+      key,
+      [-5, -5]
+    ).get("m") as MultiPolygon;
+
+    expect(result.coordinates[0]![0]![0]).toEqual([-5, -5]);
+    expect(result.coordinates[0]![0]![4]).toEqual([-5, -5]);
+    expect(result.coordinates[0]![1]).toBe(MULTI.coordinates[0]![1]);
+  });
+
+  it("shares the unmoved vertices of the touched ring with the input", () => {
+    const result = move(MULTI, 0, 0, [-1, -1]);
+    expect(result.coordinates[0]![0]![1]).toBe(MULTI.coordinates[0]![0]![1]);
+  });
+
+  it("works on a Polygon without altering its ring array", () => {
+    const poly = structuredClone(SQUARE_A);
+    const key = vkey([1, 1]);
+    const out = cascadeMoveVertex(
+      new Map([[key, [{ featureId: "a", ringIndex: 0, vertexIndex: 2 }]]]),
+      new Map([["a", poly]]),
+      key,
+      [1.2, 1.2]
+    ).get("a") as Polygon;
+    expect(out.coordinates).not.toBe(poly.coordinates);
+    expect(poly.coordinates[0]![2]).toEqual([1, 1]);
+    expect(out.coordinates[0]![2]).toEqual([1.2, 1.2]);
   });
 });
