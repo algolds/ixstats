@@ -23,20 +23,27 @@ export class NationOwnershipError extends Error {
 const alreadyOwned = () =>
   new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
-/**
- * Give `countryId` to `userId`, within their nation cap in its realm (min(realm cap, tier cap) — nationCapacity).
- * It becomes their active nation only when they have none (ruling F-1): a player
- * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
- */
-export async function assignNation(
+/** A generated nation slot the realm's founder made scenery (Country.claimable false): no player may take it. */
+export const isUnclaimable = (country: { claimable?: boolean }) => country.claimable === false;
+
+async function assign(
   tx: OwnershipTx,
-  input: { userId: string; countryId: string }
+  input: { userId: string; countryId: string },
+  claim: boolean
 ): Promise<void> {
   const country = await tx.country.findUnique({
     where: { id: input.countryId },
-    select: { id: true, realmId: true, ownerUserId: true, realm: { select: { settings: true } } },
+    select: {
+      id: true,
+      realmId: true,
+      ownerUserId: true,
+      claimable: true,
+      realm: { select: { settings: true } },
+    },
   });
   if (!country) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
+  if (claim && isUnclaimable(country))
+    throw new NationOwnershipError("COUNTRY_NOT_FOUND", "This nation is no longer open for claims");
   if (country.ownerUserId && country.ownerUserId !== input.userId) throw alreadyOwned();
   if (!country.ownerUserId) {
     const capacity = await nationCapacity(tx, {
@@ -58,6 +65,20 @@ export async function assignNation(
     data: { countryId: country.id },
   });
 }
+
+/**
+ * Give `countryId` to `userId`, within their nation cap in its realm (min(realm cap, tier cap) — nationCapacity).
+ * It becomes their active nation only when they have none (ruling F-1): a player
+ * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
+ */
+export const assignNation = (tx: OwnershipTx, input: { userId: string; countryId: string }) =>
+  assign(tx, input, false);
+
+/** `assignNation` for an approved claim: a country that is not claimable (since it was claimed for) is refused. */
+export const assignClaimedNation = (
+  tx: OwnershipTx,
+  input: { userId: string; countryId: string }
+) => assign(tx, input, true);
 
 /** Take the nation away from its owner; anyone acting as it stops doing so. */
 export async function releaseNation(tx: OwnershipTx, countryId: string): Promise<void> {

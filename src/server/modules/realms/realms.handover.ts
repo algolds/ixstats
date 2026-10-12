@@ -61,14 +61,14 @@ export function nationPageTaken(countries: CountryPageFields[]): (page: NationPa
 
 /**
  * The realm's unclaimed nation of a page (`nationOfPageWhere`; the sync creates roster nations up front), or null
- * when there is none or it already has an owner.
+ * when there is none, it already has an owner, or it is a generated slot nobody may claim.
  */
 export async function findUnclaimedNation(
   tx: Pick<Prisma.TransactionClient, "country">,
   page: NationPageRef
 ): Promise<{ id: string; name: string } | null> {
   const country = await tx.country.findFirst({
-    where: nationOfPageWhere(page),
+    where: { ...nationOfPageWhere(page), claimable: true },
     select: { id: true, name: true, ownerUserId: true },
   });
   return country && country.ownerUserId === null ? { id: country.id, name: country.name } : null;
@@ -128,7 +128,9 @@ export async function fillEmptyFromPrefill(
   if (country.nationalIdentity) {
     await tx.nationalIdentity.update({ where: { countryId }, data: identity });
   } else {
-    await tx.nationalIdentity.create({ data: { countryId, countryName: country.name, ...identity } });
+    await tx.nationalIdentity.create({
+      data: { countryId, countryName: country.name, ...identity },
+    });
   }
 }
 

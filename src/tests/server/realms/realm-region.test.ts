@@ -617,6 +617,17 @@ describe("overview and happenings", () => {
     expect(overview?.realm.foundedAt).toEqual(new Date("2026-01-01"));
   });
 
+  it("counts only claimable nations in the stats: scenery slots are not nations of the realm", async () => {
+    const db = overviewDb();
+    await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
+    expect(db.country.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { realmId: "eurth", claimable: true } })
+    );
+    expect(db.country.count).toHaveBeenCalledWith({
+      where: { realmId: "eurth", claimable: true, ownerUserId: { not: null } },
+    });
+  });
+
   it("gives the viewer no board restriction and never reads the board bans", async () => {
     const db = overviewDb();
     const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
@@ -776,6 +787,16 @@ describe("overview and happenings", () => {
     expect(nextCursor).toBeNull();
   });
 
+  it("founds no happening for a scenery slot", async () => {
+    const db = makeDb();
+    await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["nation"] });
+    expect(db.country.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ realmId: "eurth", claimable: true }),
+      })
+    );
+  });
+
   it("leaves embassies with draft or generating partners out of the happenings (AT-6)", async () => {
     const db = makeDb();
     await callerAs(PLAYER, db).region.happenings({ slug: "eurth", kinds: ["embassy"] });
@@ -896,6 +917,46 @@ describe("deleting a realm (AT-8)", () => {
       callerAs(ADMIN, withMap, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" })
     ).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("map regions") });
     expect(withMap.realm.delete).not.toHaveBeenCalled();
+  });
+
+  it("counts only the nations that block: owned ones, ones with a claim in play, and any not generated", async () => {
+    const db = deletableDb();
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.realm.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          _count: {
+            select: {
+              countries: {
+                where: {
+                  OR: [
+                    { worldgen: false },
+                    { ownerUserId: { not: null } },
+                    { realmClaims: { some: { status: { in: ["pending", "approved"] } } } },
+                  ],
+                },
+              },
+            },
+          },
+        }),
+      })
+    );
+  });
+
+  it("deletes the realm's unowned generated slots with it, before the realm", async () => {
+    const db = deletableDb();
+    await callerAs(ADMIN, db, admin).region.deleteRealm({ realmId: "eurth", confirmSlug: "eurth" });
+    expect(db.country.deleteMany).toHaveBeenCalledWith({
+      where: {
+        realmId: "eurth",
+        worldgen: true,
+        ownerUserId: null,
+        realmClaims: { none: { status: { in: ["pending", "approved"] } } },
+      },
+    });
+    expect(db.country.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      db.realm.delete.mock.invocationCallOrder[0]!
+    );
   });
 
   it("deletes an empty realm and retires its board", async () => {

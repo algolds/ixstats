@@ -85,9 +85,10 @@ describe("realm settings: nationDefaults", () => {
 });
 
 describe("UNCLAIMED_NATION_WHERE", () => {
-  it("excludes owned nations and nations ever approved for a claim", () => {
+  it("excludes owned nations, nations ever approved for a claim and generated slots", () => {
     expect(UNCLAIMED_NATION_WHERE).toEqual({
       ownerUserId: null,
+      worldgen: false,
       realmClaims: { none: { status: "approved" } },
     });
   });
@@ -137,6 +138,10 @@ describe("realm nation defaults service", () => {
     });
     expect(db.country.count).toHaveBeenLastCalledWith({
       where: { realmId: "eurth-id", ...UNCLAIMED_NATION_WHERE },
+    });
+    // The realm table never overwrites the baselines a generated slot derived from its map.
+    expect(db.country.count).toHaveBeenNthCalledWith(1, {
+      where: { realmId: "eurth-id", worldgen: false },
     });
   });
 

@@ -103,6 +103,14 @@ describe("realms.getBySlug", () => {
     await expect(caller(findUnique).getBySlug({ slug: "nowhere" })).resolves.toBeNull();
   });
 
+  it("lists only the realm's claimable nations: generated scenery slots are not nations of the realm", async () => {
+    const findUnique = jest.fn().mockResolvedValue(null);
+    await caller(findUnique).getBySlug({ slug: "eurth" });
+    expect(findUnique.mock.calls[0]![0].select.countries).toEqual(
+      expect.objectContaining({ where: { claimable: true }, orderBy: { name: "asc" } })
+    );
+  });
+
   it("lists the nation pages no country of the realm has taken, and the size and source of the lore index", async () => {
     const findUnique = jest.fn().mockResolvedValue({
       id: "eurth-id",
@@ -697,6 +705,20 @@ describe("realms.adminUpdateRealm", () => {
       { id: "r_eurth", maxNationsPerUser: 3 },
       { id: "default", maxNationsPerUser: 1 },
     ]);
+  });
+
+  it("adminListRealms counts only claimable nations", async () => {
+    const realm = {
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    };
+    await adminCaller(realm).adminListRealms();
+    expect(realm.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: { _count: { select: { countries: { where: { claimable: true } } } } },
+      })
+    );
   });
 
   it("merges maxNationsPerUser into Realm.settings and keeps the other keys", async () => {

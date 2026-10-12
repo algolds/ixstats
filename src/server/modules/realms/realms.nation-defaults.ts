@@ -28,9 +28,13 @@ export const NATION_DEFAULTS_APPLIED_ACTION = "REALM_NATION_DEFAULTS_APPLIED";
 /** How many changed nations a preview lists. */
 export const PREVIEW_SAMPLE_SIZE = 12;
 
-/** A nation no player holds and none was ever approved for. */
+/**
+ * A nation no player holds and none was ever approved for. A generated slot (`worldgen`) is never one: its
+ * baselines are derived from its map, and the realm's growth table must not overwrite them.
+ */
 export const UNCLAIMED_NATION_WHERE = {
   ownerUserId: null,
+  worldgen: false,
   realmClaims: { none: { status: "approved" } },
 } satisfies Prisma.CountryWhereInput;
 
@@ -82,7 +86,7 @@ function audit(
 /** The realm's table, whether it is the realm's own, IxStats's defaults, and its nation counts. */
 export async function getNationDefaults(db: NationDefaultsDb, actor: RealmActor, realmId: string) {
   const realm = await loadRealm(db, actor, realmId);
-  const nations = await db.country.count({ where: { realmId: realm.id } });
+  const nations = await db.country.count({ where: { realmId: realm.id, worldgen: false } });
   const unclaimed = await db.country.count({
     where: { realmId: realm.id, ...UNCLAIMED_NATION_WHERE },
   });

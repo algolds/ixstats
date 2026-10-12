@@ -24,6 +24,7 @@ export async function getRealmHub(db: HubDb, slug: string, viewer: RealmActor | 
       status: true,
       visibility: true,
       countries: {
+        where: { claimable: true },
         orderBy: { name: "asc" },
         select: {
           id: true,

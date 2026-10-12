@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { createClaimsService } from "~/server/modules/realms";
-import { fillEmptyFromPrefill } from "~/server/modules/realms/realms.handover";
+import { fillEmptyFromPrefill, findUnclaimedNation } from "~/server/modules/realms/realms.handover";
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
@@ -142,6 +142,7 @@ describe("claiming an unclaimed nation the source sync created", () => {
             { wikiSource: "iiwiki", wikiPageTitle: "Aurelia" },
             { wikiPageTitle: null, name: "Aurelia" },
           ],
+          claimable: true,
         },
       })
     );
@@ -180,5 +181,38 @@ describe("fillEmptyFromPrefill", () => {
     expect(tx.nationalIdentity.create).toHaveBeenCalledWith({
       data: { countryId: "c", countryName: "X", motto: "Onward", capitalCity: "Wiki City" },
     });
+  });
+});
+
+describe("findUnclaimedNation", () => {
+  const page = { realmId: EURTH, wikiSource: "iiwiki", title: "Aurelia" };
+  const tx = (
+    rows: Array<{ id: string; name: string; ownerUserId: string | null; claimable: boolean }>
+  ) => ({
+    country: {
+      // Honours the one filter this test cares about, as the database does.
+      findFirst: jest.fn(
+        async ({ where }: any) =>
+          rows.find((r) => where.claimable === undefined || r.claimable === where.claimable) ?? null
+      ),
+    },
+  });
+
+  it("finds the unowned claimable nation of a page", async () => {
+    const db: any = tx([{ id: "c1", name: "Aurelia", ownerUserId: null, claimable: true }]);
+    await expect(findUnclaimedNation(db, page)).resolves.toEqual({ id: "c1", name: "Aurelia" });
+  });
+
+  it("ignores a generated slot nobody may claim, even when it carries the page's name", async () => {
+    const db: any = tx([{ id: "c1", name: "Aurelia", ownerUserId: null, claimable: false }]);
+    await expect(findUnclaimedNation(db, page)).resolves.toBeNull();
+    expect(db.country.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ claimable: true }) })
+    );
+  });
+
+  it("is still null for a claimable nation a player owns", async () => {
+    const db: any = tx([{ id: "c1", name: "Aurelia", ownerUserId: "u2", claimable: true }]);
+    await expect(findUnclaimedNation(db, page)).resolves.toBeNull();
   });
 });

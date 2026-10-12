@@ -222,11 +222,11 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
 
   const [stats, claimed, ownedNations, partners, preview] = await Promise.all([
     db.country.aggregate({
-      where: { realmId: realm.id },
+      where: { realmId: realm.id, claimable: true },
       _count: { _all: true },
       _sum: { currentPopulation: true },
     }),
-    db.country.count({ where: { realmId: realm.id, ownerUserId: { not: null } } }),
+    db.country.count({ where: { realmId: realm.id, claimable: true, ownerUserId: { not: null } } }),
     viewer
       ? db.country.findMany({
           where: { realmId: realm.id, ownerUserId: viewer.id },
@@ -347,7 +347,7 @@ export async function getRealmHappenings(
   const [nations, claims, embassies, officers, activity] = await Promise.all([
     wants("nation")
       ? db.country.findMany({
-          where: { realmId: realm.id, ...(older && { createdAt: older }) },
+          where: { realmId: realm.id, claimable: true, ...(older && { createdAt: older }) },
           orderBy: { createdAt: "desc" },
           take,
           select: { id: true, name: true, slug: true, createdAt: true },

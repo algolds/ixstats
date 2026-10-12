@@ -71,6 +71,7 @@ describe("realms.searchNations", () => {
     expect(countryWhere).toEqual({
       realmId: { in: ["default", "eurth"] },
       isDemo: false,
+      claimable: true,
       name: { contains: "au", mode: "insensitive" },
     });
     expect(db.country.findMany.mock.calls[0]![0].take).toBe(NATION_SEARCH_LIMIT);

@@ -52,8 +52,9 @@ export async function loadRealmMetadataSource(
   if (!realm || !isRealmPublished(realm.id, realm.status)) return null;
 
   const [nationCount, claimedCount] = await Promise.all([
-    db.country.count({ where: { realmId: realm.id } }),
-    db.country.count({ where: { realmId: realm.id, ownerUserId: { not: null } } }),
+    // Generated scenery slots (claimable false) are no nations of the realm.
+    db.country.count({ where: { realmId: realm.id, claimable: true } }),
+    db.country.count({ where: { realmId: realm.id, claimable: true, ownerUserId: { not: null } } }),
   ]);
   return {
     name: realm.name,

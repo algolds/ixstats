@@ -161,7 +161,8 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
       foundedAt: true,
       createdAt: true,
       settings: true,
-      _count: { select: { countries: true } },
+      // Generated scenery slots (claimable false) are no nations of the realm.
+      _count: { select: { countries: { where: { claimable: true } } } },
     },
   });
   const realmIds = realms.map((r) => r.id);
@@ -170,7 +171,7 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   const [unclaimed, mine, nationPages] = await Promise.all([
     db.country.groupBy({
       by: ["realmId"],
-      where: { realmId: { in: realmIds }, ownerUserId: null },
+      where: { realmId: { in: realmIds }, ownerUserId: null, claimable: true },
       _count: { _all: true },
     }),
     viewerUserId
@@ -233,7 +234,7 @@ export async function searchDirectoryNations(db: PrismaClient, query: string) {
 
   const [countries, pages] = await Promise.all([
     db.country.findMany({
-      where: { realmId: { in: realmIds }, isDemo: false, name: contains },
+      where: { realmId: { in: realmIds }, isDemo: false, claimable: true, name: contains },
       orderBy: { name: "asc" },
       take: NATION_SEARCH_LIMIT,
       select: { id: true, name: true, slug: true, flag: true, realmId: true, ownerUserId: true },

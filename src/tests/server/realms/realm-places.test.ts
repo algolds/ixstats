@@ -223,6 +223,15 @@ describe("realms.directory", () => {
     const rows = await callerAs(OWNER, db).directory();
 
     expect(db.realm.findMany.mock.calls[0]![0].where).toEqual(DIRECTORY_REALM_WHERE);
+    // Generated scenery slots are no nations of the realm: neither counted nor open.
+    expect(db.realm.findMany.mock.calls[0]![0].select._count).toEqual({
+      select: { countries: { where: { claimable: true } } },
+    });
+    expect(db.country.groupBy.mock.calls[0]![0].where).toEqual({
+      realmId: { in: ["eurth", "quiet"] },
+      ownerUserId: null,
+      claimable: true,
+    });
     // The sections: every listed realm's public categories, never the board.
     expect(db.forumCategory.findMany).toHaveBeenCalledTimes(1);
     expect(db.forumCategory.findMany.mock.calls[0]![0].where).toEqual({

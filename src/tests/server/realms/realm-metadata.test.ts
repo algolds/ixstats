@@ -127,6 +127,15 @@ describe("loadRealmMetadataSource", () => {
     );
   });
 
+  it("counts only claimable nations: generated scenery slots are not nations of the realm", async () => {
+    const db = dbWith(row);
+    await loadRealmMetadataSource(db as never, "eurth");
+    expect(db.country.count.mock.calls.map(([args]) => args.where)).toEqual([
+      { realmId: "r1", claimable: true },
+      { realmId: "r1", claimable: true, ownerUserId: { not: null } },
+    ]);
+  });
+
   it("gives no banner when none is set", async () => {
     const db = dbWith({ ...row, bannerUrl: null });
     await expect(loadRealmMetadataSource(db as never, "eurth")).resolves.toMatchObject({

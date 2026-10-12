@@ -1,9 +1,10 @@
 /**
  * Site-admin realm actions that end a realm (AT-8). Deleting is for realms created by mistake: it refuses Ixnay,
- * and any realm that still has nations or map regions. It never releases, moves or deletes a nation; a realm with
- * nations is archived instead (read-only, closed to claims).
+ * and any realm that still has nations or map regions. It never releases or moves a nation; a realm with nations
+ * is archived instead (read-only, closed to claims). The one exception is a generated slot (`worldgen`) nobody
+ * owns or has a claim in play for: it goes with the realm.
  */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 import { RealmRegionError } from "./realms.region";
@@ -13,12 +14,26 @@ type AdminDb = Pick<
   "realm" | "mapLayer" | "realmBoard" | "thinktankGroup" | "forumCategory" | "$transaction"
 >;
 
+const CLAIM_IN_PLAY = {
+  status: { in: ["pending", "approved"] },
+} satisfies Prisma.RealmClaimWhereInput;
+
+/** The nations that keep a realm from being deleted: every one but an unowned generated slot with no claim in play. */
+const BLOCKING_NATION_WHERE = {
+  OR: [
+    { worldgen: false },
+    { ownerUserId: { not: null } },
+    { realmClaims: { some: CLAIM_IN_PLAY } },
+  ],
+} satisfies Prisma.CountryWhereInput;
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * Delete an empty realm, confirmed by typing its slug. Its claims, lore index, officers, embassies, board
  * restrictions and polls go with it (cascade); its board group is deactivated and unmapped, and its forum
  * categories are deleted (their threads and posts cascade). An empty realm can only have been posted in by staff.
+ * Its unowned generated slots are deleted first.
  */
 export async function deleteRealm(
   db: AdminDb,
@@ -31,7 +46,12 @@ export async function deleteRealm(
     throw new RealmRegionError("BAD_REQUEST", "Ixnay can't be deleted");
   const realm = await db.realm.findUnique({
     where: { id: input.realmId },
-    select: { id: true, slug: true, name: true, _count: { select: { countries: true } } },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      _count: { select: { countries: { where: BLOCKING_NATION_WHERE } } },
+    },
   });
   if (!realm) throw new RealmRegionError("NOT_FOUND", "Realm not found");
   if (input.confirmSlug.trim() !== realm.slug)
@@ -53,6 +73,14 @@ export async function deleteRealm(
     );
 
   await db.$transaction(async (tx) => {
+    await tx.country.deleteMany({
+      where: {
+        realmId: realm.id,
+        worldgen: true,
+        ownerUserId: null,
+        realmClaims: { none: CLAIM_IN_PLAY },
+      },
+    });
     const board = await tx.realmBoard.findUnique({
       where: { realmId: realm.id },
       select: { groupId: true },

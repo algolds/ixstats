@@ -1513,3 +1513,62 @@ describe("claims on a released nation's held material (ToS §2.7, §2.8)", () =>
     await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "pending" });
   });
 });
+
+describe("scenery slots (Country.claimable false)", () => {
+  const scenery = { ...country, claimable: false };
+
+  it("claimCountry refuses a slot nobody may claim and files nothing", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue(scenery);
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
+    expect(db.country.updateMany).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
+  it("claimCountry still takes a claimable country", async () => {
+    const { db, claims } = setup();
+    db.country.findUnique.mockResolvedValue({ ...country, claimable: true });
+    await expect(claims.claimCountry(actor, "c1")).resolves.toMatchObject({ status: "approved" });
+  });
+
+  it("claimNationPage looks for the page's unclaimed nation among claimable countries only", async () => {
+    const { db, claims } = pageSetup();
+    await claims.claimNationPage(actor, EURTH, "Aurelia");
+    expect(db.country.findFirst.mock.calls[0][0].where).toMatchObject({
+      realmId: EURTH,
+      claimable: true,
+    });
+  });
+
+  it("approving a claim filed before its country was made scenery rejects it with a reason and assigns nothing", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique.mockResolvedValue(scenery);
+    db.realmClaim.findUnique.mockResolvedValue({
+      id: "cl1",
+      status: "pending",
+      userId: "u1",
+      countryId: "c1",
+      realmId: "default",
+      realm: { ownerId: "system", slug: "ixnay", officers: [] },
+      user: { clerkUserId: "clerk_u1" },
+      country: { name: "Aurelia" },
+    });
+    await expect(claims.reviewClaim(admin, "cl1", { approve: true })).resolves.toEqual({
+      status: "rejected",
+    });
+    expect(db.country.updateMany).not.toHaveBeenCalled();
+    expect(db.user.updateMany).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+    expect(db.realmClaim.updateMany).toHaveBeenLastCalledWith({
+      where: { id: "cl1", status: "pending" },
+      data: expect.objectContaining({
+        status: "rejected",
+        rejectionReason: expect.stringMatching(/no longer open for claims/),
+      }),
+    });
+    expect(deps.onClaimRejected).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: expect.stringMatching(/no longer open for claims/) })
+    );
+  });
+});

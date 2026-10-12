@@ -32,7 +32,7 @@ import {
   hasMapRegion,
   nationOfPageWhere,
 } from "./realms.handover";
-import { assignNation, NationOwnershipError } from "./realms.ownership";
+import { assignClaimedNation, isUnclaimable, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import type { NationPagePrefill } from "./realms.prefill";
 import { realmNationDefaults } from "./realms.settings";
@@ -378,7 +378,7 @@ async function handOver(
   prefill: NationPagePrefill | null = null
 ): Promise<HandOver> {
   if (target.kind === "country") {
-    await assignNation(tx, { userId: claim.userId, countryId: target.countryId });
+    await assignClaimedNation(tx, { userId: claim.userId, countryId: target.countryId });
     // Before the prefill: a former holder's restored flag is not overwritten by the wiki's.
     await settleMaterialHold(tx, target.countryId, claim.userId);
     await fillEmptyFromPrefill(tx, target.countryId, prefill);
@@ -397,7 +397,7 @@ async function handOver(
   // The nation may exist unclaimed (created by the realm's source sync since the claim was filed): hand it over.
   const unclaimed = await findUnclaimedNation(tx, page);
   const country = unclaimed ?? (await createNationCountry(tx, page, prefill));
-  await assignNation(tx, { userId: claim.userId, countryId: country.id });
+  await assignClaimedNation(tx, { userId: claim.userId, countryId: country.id });
   if (unclaimed) {
     await settleMaterialHold(tx, country.id, claim.userId);
     await fillEmptyFromPrefill(tx, country.id, prefill);
@@ -593,7 +593,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     const country = await db.country.findUnique({
       where: { id: countryId },
       select: {
-        id: true,
+        claimable: true,
         name: true,
         realmId: true,
         ownerUserId: true,
@@ -602,7 +602,7 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
         realm: { select: { settings: true, status: true, slug: true, rulesHtml: true } },
       },
     });
-    if (!country) throw new ClaimError("NOT_FOUND", "Country not found");
+    if (!country || isUnclaimable(country)) throw new ClaimError("NOT_FOUND", "Country not found");
     assertRealmOpen(country.realmId, country.realm?.status);
     if (country.ownerUserId)
       throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");

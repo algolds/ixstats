@@ -247,7 +247,7 @@ export const realmsRouter = createTRPCRouter({
     const realms = await ctx.db.realm.findMany({
       orderBy: { updatedAt: "desc" },
       include: {
-        _count: { select: { countries: true } },
+        _count: { select: { countries: { where: { claimable: true } } } },
       },
     });
     return realms.map((realm) => ({
