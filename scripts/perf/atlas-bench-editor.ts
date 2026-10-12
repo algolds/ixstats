@@ -1,6 +1,7 @@
 /**
  * scripts/perf/atlas-bench-editor.ts - the border editor's acceptance measurements of `bun run perf:atlas`: the JS
- * cost of one frame of a vertex drag on Caphiria, and the size of the autosave payload after 50 drags. Both run the
+ * cost of one frame of a vertex drag on Caphiria (gated on the 95th percentile after a warm-up; the slowest frame is
+ * printed), and the size of the autosave payload after 50 drags. Both run the
  * pure functions the editor uses (`border-drag.ts`, `border-draft.ts`) on Ixnay's political layer from the database;
  * no React, no map.
  */
@@ -17,7 +18,7 @@ import { buildBorderDraft } from "~/lib/maps/border-draft";
 import { calculateArea, getAllRings, type VertexRef } from "~/lib/maps/border-editor";
 import { dragBorderVertex, startBorderDrag, type BorderDragStart } from "~/lib/maps/border-drag";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { atMost, median, type TargetResult } from "./atlas-bench-report";
+import { atMost, info, median, percentile, type TargetResult } from "./atlas-bench-report";
 import { client } from "./atlas-bench-client";
 
 type Shape = Polygon | MultiPolygon;
@@ -32,6 +33,12 @@ const STEP_DEGREES = 0.001;
 /** Autosave budget: 1 MB. */
 const AUTOSAVE_LIMIT_KB = 1024;
 const FRAME_LIMIT_MS = 4;
+/** Frames before the measured ones: the first run of the drag path is the JIT compiling it, which a drag in the
+ * editor pays once on its first frames and a mean over 60 frames hides. */
+const WARMUP_FRAMES = 5;
+/** The drag target is gated on this percentile of the frames after the warm-up, so one slow frame in twenty can
+ * show; the slowest frame is printed beside it. */
+const FRAME_PERCENTILE = 0.95;
 
 interface PoliticalFeature {
   featureId: string;
@@ -172,22 +179,38 @@ export async function borderEditorTargets(): Promise<TargetResult[]> {
   if (!edited || !vertex) {
     const detail = `no ${EDITED_FEATURE} feature, or no vertex a neighbour shares, in Ixnay's political layer`;
     return [
-      atMost("border editor: JS per drag frame", Number.NaN, FRAME_LIMIT_MS, "ms", detail),
+      atMost(
+        "border editor: JS per drag frame, p95 (Caphiria)",
+        Number.NaN,
+        FRAME_LIMIT_MS,
+        "ms",
+        detail
+      ),
       atMost("border editor: autosave payload", Number.NaN, AUTOSAVE_LIMIT_KB, "KB", detail),
     ];
   }
+  const grabbedAt = performance.now();
   const start = startBorderDrag(edited.featureId, edited.geometry, neighbors, vertex);
+  const grabMs = performance.now() - grabbedAt;
   const times = timeDrag(start);
-  const mean = times.reduce((sum, time) => sum + time, 0) / times.length;
+  const measured = times.slice(WARMUP_FRAMES);
+  const mean = measured.reduce((sum, time) => sum + time, 0) / measured.length;
   const payloadKb = Buffer.byteLength(draftAfterDrags(edited, neighbors, vertex)) / 1024;
   const points = getAllRings(edited.geometry).reduce((sum, ring) => sum + ring.length, 0);
+  const slowest = Math.max(...times);
   return [
     atMost(
-      "border editor: JS per drag frame (Caphiria)",
-      mean,
+      "border editor: JS per drag frame, p95 (Caphiria)",
+      percentile(measured, FRAME_PERCENTILE),
       FRAME_LIMIT_MS,
       "ms",
-      `mean of ${DRAG_FRAMES} frames, median ${median(times).toFixed(2)} / max ${Math.max(...times).toFixed(2)} ms; ${points} points, ${Object.keys(neighbors).length} neighbours, ${start.partners.length} moving with the vertex`
+      `p95 of ${measured.length} frames after ${WARMUP_FRAMES} warm-up frames (mean ${mean.toFixed(2)}, median ${median(measured).toFixed(2)} ms); ${points} points, ${Object.keys(neighbors).length} neighbours, ${start.partners.length} moving with the vertex`
+    ),
+    info(
+      "border editor: slowest drag frame (Caphiria)",
+      slowest,
+      "ms",
+      `frame ${times.indexOf(slowest) + 1} of ${DRAG_FRAMES} (the warm-up frames included); grabbing the vertex (startBorderDrag) took ${grabMs.toFixed(2)} ms`
     ),
     atMost(
       `border editor: autosave payload after ${AUTOSAVE_DRAGS} drags`,

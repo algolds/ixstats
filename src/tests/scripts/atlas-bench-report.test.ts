@@ -5,9 +5,11 @@ import {
   atMost,
   exactly,
   exitCode,
+  info,
   markedPayload,
   matches,
   median,
+  percentile,
   renderResults,
   RESULT_MARKER,
   type TargetResult,
@@ -80,6 +82,39 @@ describe("median", () => {
   });
 });
 
+describe("percentile", () => {
+  it("is the smallest value that at least p of the values are at or below (nearest rank)", () => {
+    const values = Array.from({ length: 20 }, (_, i) => i + 1);
+    expect(percentile(values, 0.95)).toBe(19);
+    expect(percentile(values, 1)).toBe(20);
+    expect(percentile(values, 0.5)).toBe(10);
+    expect(percentile([5], 0.95)).toBe(5);
+  });
+
+  it("is not the maximum when one frame in twenty is slow", () => {
+    const frames = [...Array.from({ length: 19 }, () => 1), 4.5];
+    expect(percentile(frames, 0.95)).toBe(1);
+    expect(Math.max(...frames)).toBe(4.5);
+  });
+
+  it("does not reorder its input and is NaN for none", () => {
+    const values = [3, 1, 2];
+    percentile(values, 0.95);
+    expect(values).toEqual([3, 1, 2]);
+    expect(percentile([], 0.95)).toBeNaN();
+  });
+});
+
+describe("info", () => {
+  it("is a line with a number and no target", () => {
+    const line = info("slowest drag frame", 4.5, "ms", "frame 12");
+    expect(line.measured).toBe("4.5 ms");
+    expect(line.target).toBe("not gated");
+    expect(line.informational).toBe(true);
+    expect(line.detail).toBe("frame 12");
+  });
+});
+
 describe("markedPayload", () => {
   it("returns the text after the last marker line, whatever else the process printed", () => {
     const stdout = [
@@ -113,6 +148,11 @@ describe("exitCode", () => {
   it("is 1 when nothing was measured", () => {
     expect(exitCode([])).toBe(1);
   });
+
+  it("is not decided by an informational line, however slow", () => {
+    expect(exitCode([pass, info("slowest frame", 900, "ms")])).toBe(0);
+    expect(exitCode([info("slowest frame", 1, "ms")])).toBe(1);
+  });
 });
 
 describe("renderResults", () => {
@@ -131,6 +171,14 @@ describe("renderResults", () => {
   it("ends with the count of targets that pass", () => {
     const text = renderResults(results);
     expect(text.split("\n").at(-1)).toBe("1 of 2 targets pass");
+  });
+
+  it("marks an informational line INFO and leaves it out of the count of targets", () => {
+    const text = renderResults([...results, info("slowest drag frame", 4.5, "ms", "frame 12")]);
+    const lines = text.split("\n");
+    expect(lines[3]).toMatch(/^INFO +slowest drag frame +4\.5 ms +not gated$/);
+    expect(lines[4]).toBe("      frame 12");
+    expect(lines.at(-1)).toBe("1 of 2 targets pass");
   });
 
   it("aligns the measured column across lines", () => {

@@ -4,6 +4,7 @@
  * (src/tests/scripts/atlas-bench-report.test.ts).
  *
  * A value that was not measured (NaN, Infinity) fails its target: a broken measurement must not read as a pass.
+ * An informational line (`info`) is the one exception to having a target: it prints a number and decides nothing.
  */
 
 export interface TargetResult {
@@ -14,6 +15,8 @@ export interface TargetResult {
   /** The limit with its comparison, as printed. */
   target: string;
   pass: boolean;
+  /** A number printed for information: no target, never fails the run, not counted (see `info`). */
+  informational?: boolean;
   /** Supporting numbers (cold times, per-bucket values), printed under the line. */
   detail?: string;
 }
@@ -36,6 +39,13 @@ export function median(values: readonly number[]): number {
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length === 0) return Number.NaN;
   return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/** The smallest value that at least a fraction `p` of `values` are at or below (nearest rank); NaN for none. */
+export function percentile(values: readonly number[], p: number): number {
+  if (values.length === 0) return Number.NaN;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil(p * sorted.length) - 1)]!;
 }
 
 /** 0.314 -> "0.31", 3.2 -> "3.2", 512.4 -> "512": two decimals under 100, whole numbers above. */
@@ -81,6 +91,18 @@ export function exactly(
   };
 }
 
+/** A number worth reading that has no target: printed as INFO, never decides the exit code, not counted as a target. */
+export function info(name: string, value: number, unit: string, detail?: string): TargetResult {
+  return {
+    name,
+    measured: withUnit(value, unit),
+    target: "not gated",
+    pass: true,
+    informational: true,
+    detail,
+  };
+}
+
 /** The measured text must be the expected text (a header). */
 export function matches(
   name: string,
@@ -91,21 +113,29 @@ export function matches(
   return { name, measured, target: expected, pass: measured === expected, detail };
 }
 
-/** 1 when any target fails, or when nothing was measured; else 0. */
+const gated = (results: readonly TargetResult[]) =>
+  results.filter((result) => !result.informational);
+
+/** 1 when any target fails, or when no target was measured; else 0. Informational lines do not count. */
 export function exitCode(results: readonly TargetResult[]): 0 | 1 {
-  return results.length > 0 && results.every((result) => result.pass) ? 0 : 1;
+  const targets = gated(results);
+  return targets.length > 0 && targets.every((result) => result.pass) ? 0 : 1;
 }
 
 const widest = (texts: readonly string[]) => Math.max(0, ...texts.map((text) => text.length));
 
-/** PASS/FAIL, name, measured value and target per line, the detail beneath it, and a count of passing targets. */
+const verdict = (result: TargetResult) =>
+  result.informational ? "INFO" : result.pass ? "PASS" : "FAIL";
+
+/** PASS/FAIL (INFO for an informational line), name, measured value and target per line, the detail beneath it, and a count of passing targets. */
 export function renderResults(results: readonly TargetResult[]): string {
   const nameWidth = widest(results.map((result) => result.name));
   const measuredWidth = widest(results.map((result) => result.measured));
   const lines = results.flatMap((result) => [
-    `${result.pass ? "PASS" : "FAIL"}  ${result.name.padEnd(nameWidth)}  ${result.measured.padEnd(measuredWidth)}  ${result.target}`,
+    `${verdict(result)}  ${result.name.padEnd(nameWidth)}  ${result.measured.padEnd(measuredWidth)}  ${result.target}`,
     ...(result.detail ? [`      ${result.detail}`] : []),
   ]);
-  const passing = results.filter((result) => result.pass).length;
-  return [...lines, `${passing} of ${results.length} targets pass`].join("\n");
+  const targets = gated(results);
+  const passing = targets.filter((result) => result.pass).length;
+  return [...lines, `${passing} of ${targets.length} targets pass`].join("\n");
 }
