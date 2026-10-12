@@ -353,7 +353,7 @@ describe("geoEditor.importPipelineResult — adjacency (AT-16)", () => {
   });
 });
 
-describe("geoEditor.runPipeline — SVG and procedural input are unchanged", () => {
+describe("geoEditor.runPipeline — SVG input", () => {
   it("forwards SVG content as before, with no PNG fields", async () => {
     await caller().runPipeline({
       source: "svg",
@@ -363,18 +363,14 @@ describe("geoEditor.runPipeline — SVG and procedural input are unchanged", () 
     expect(runMock).toHaveBeenCalledWith({
       source: "svg",
       svgContent: "<svg/>",
-      worldGenParams: undefined,
       targetLayers: ["political"],
     });
   });
 
-  it("forwards procedural parameters as before", async () => {
-    await caller().runPipeline({ source: "procedural", worldGenParams: { seed: 7 } });
-    expect(runMock).toHaveBeenCalledWith({
-      source: "procedural",
-      svgContent: undefined,
-      worldGenParams: { seed: 7 },
-      targetLayers: undefined,
-    });
+  it("no longer generates worlds: the procedural source is rejected before the pipeline runs", async () => {
+    await expect(
+      caller().runPipeline({ source: "procedural" as "svg", svgContent: "<svg/>" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(runMock).not.toHaveBeenCalled();
   });
 });

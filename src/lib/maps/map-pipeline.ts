@@ -1,7 +1,7 @@
 /**
  * Map Pipeline Orchestrator
  *
- * Unified entry point for converting raw map data (SVG, PNG, or procedural)
+ * Unified entry point for converting raw map data (SVG or PNG)
  * into a working map layer set with enriched metadata.
  *
  * Pipeline: Input → Parse/Convert → Enrich → Validate → Output
@@ -9,11 +9,10 @@
 
 import type { FeatureCollection } from "geojson";
 import type { SvgCoordinateConfig } from "~/lib/flags/svg-coordinate-config";
-import type { WorldGenParams } from "~/lib/worldgen/types";
 import type { PngToSvgConfig, PngToSvgResult } from "~/lib/flags/png-to-svg";
 import { getZoneByColor } from "./elevation-config";
 
-type PipelineSource = "svg" | "png" | "procedural";
+type PipelineSource = "svg" | "png";
 
 export interface PipelineInput {
   source: PipelineSource;
@@ -22,8 +21,6 @@ export interface PipelineInput {
   /** For PNG input */
   pngBuffer?: Buffer;
   pngConfig?: PngToSvgConfig;
-  /** For procedural generation */
-  worldGenParams?: Partial<WorldGenParams>;
   /** Coordinate calibration (required for SVG/PNG) */
   coordinateConfig?: SvgCoordinateConfig;
   /** Reference GeoJSON for auto-calibration */
@@ -207,26 +204,6 @@ export async function runMapPipeline(
           // No altitude layer in SVG — expected for political-only maps
         }
       }
-    }
-
-    if (input.source === "procedural") {
-      report("parsing", 30, "Generating procedural world...");
-
-      if (!input.worldGenParams) throw new Error("World gen params required for procedural source");
-
-      const { generateWorld } = await import("~/lib/worldgen/engine");
-      const world = generateWorld(input.worldGenParams);
-
-      // Copy all generated layers
-      for (const [layerType, collection] of Object.entries(world.layers)) {
-        layers[layerType] = collection;
-      }
-
-      report(
-        "parsing",
-        50,
-        `Generated: ${world.stats.countryCount} countries, ${world.stats.altitudeZoneCount} altitude zones`
-      );
     }
 
     report("enrichment", 60, "Enriching altitude features with elevation data...");

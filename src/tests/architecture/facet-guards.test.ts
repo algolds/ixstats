@@ -80,7 +80,7 @@ const FACET_CONVERTED = [
   "components/messages/",
   "app/messages/",
   "components/halo/",
-  // Phase 4 apps: Labs (Onoma, its brand logo, Vexel, map pipeline). The XenForo bridge (Forum) is gone (4b).
+  // Phase 4 apps: Labs (Onoma, its brand logo, Vexel). The XenForo bridge (Forum) is gone (4b).
   "app/labs/",
   "components/onoma/",
   // Phase 4 apps: Admin console (+ the Facet materials lab) and its shared admin components.

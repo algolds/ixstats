@@ -9,7 +9,7 @@
  *  - linkage:    feature ↔ country linking, feature properties, linkage validation/repair
  *  - queue:      edit-request review queue (approve/reject) and per-country edit history
  *  - borders:    border editor sessions, drafts, submit, split/merge
- *  - procedural: procedural world generation and the SVG/import map pipeline
+ *  - procedural: the SVG and PNG map pipeline (runPipeline) and importPipelineResult
  *  - mapImport:  background realm map imports (PNG, SVG, GeoJSON), dry runs, apply and rollback
  */
 import { mergeRouters } from "~/server/api/trpc";
