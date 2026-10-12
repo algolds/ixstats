@@ -471,7 +471,7 @@ describe("retry guards", () => {
 
   it("refuses an apply whose stored mapping is missing", async () => {
     const db = world();
-    const parent = seed(db);
+    const parent = seed(db, {});
     await saveImportResult(parent.id, {} as never);
     const failed = seed(db, {
       status: "failed",
