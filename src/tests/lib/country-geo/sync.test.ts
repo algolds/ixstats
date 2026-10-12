@@ -18,6 +18,7 @@ const geometry = {
 // The outline is unioned in PostGIS (sync-union.test.ts); here the union returns the first region's geometry.
 function dbWith(layer: object | null, more: object[] = []) {
   return {
+    $queryRaw: jest.fn().mockResolvedValue([{ present: true }]),
     $queryRawUnsafe: jest.fn().mockResolvedValue([{ result: { geometry, wide: null } }]),
     mapLayer: { findMany: jest.fn().mockResolvedValue(layer ? [layer, ...more] : []) },
     country: {

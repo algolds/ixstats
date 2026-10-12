@@ -3,7 +3,7 @@
 /**
  * Bootstraps an EMPTY local development database from the repository alone:
  * enables PostGIS, pushes the Prisma schema, installs the PostGIS geometry sync
- * triggers `db push` cannot create, and seeds the reference catalogs.
+ * triggers and functions `db push` cannot create, and seeds the reference catalogs.
  *
  *   docker compose -f docker-compose.dev.yml up -d
  *   bun run db:bootstrap
@@ -22,6 +22,12 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "postgres", "db"])
 /** The map tables' geometry → geom_postgis triggers (and their backfill); idempotent. */
 export const MAP_GEOMETRY_TRIGGERS_SQL =
   "prisma/migrations/20261007_map_geometry_sync_triggers.sql";
+
+/** Atlas Release 0: Realm.mapVersion, the Country geom_postgis trigger and backfill, atlas_country_union; idempotent. */
+export const ATLAS_R0_SQL = "prisma/migrations/20261021120000_atlas_r0/migration.sql";
+
+/** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
+export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL];
 
 export interface BootstrapGuardInput {
   nodeEnv: string | undefined;
@@ -99,16 +105,10 @@ async function main(): Promise<void> {
   }
 
   run("bunx", ["prisma", "db", "push", "--skip-generate"]);
-  console.log("🗺️  Installing the map geometry sync triggers...");
-  run("bunx", [
-    "prisma",
-    "db",
-    "execute",
-    "--schema",
-    "prisma/schema",
-    "--file",
-    MAP_GEOMETRY_TRIGGERS_SQL,
-  ]);
+  console.log("🗺️  Installing the map geometry triggers and the Atlas functions...");
+  for (const file of DB_SETUP_SQL_FILES) {
+    run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", file]);
+  }
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 
   console.log(`

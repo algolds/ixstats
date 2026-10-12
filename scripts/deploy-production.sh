@@ -172,6 +172,9 @@ if [ $? -eq 0 ]; then
     # db push never runs migration SQL; this data rename is idempotent (IxWorld realm → Ixnay).
     # ponytail: one-off line; drop it once prod's realm row reads Ixnay.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261019120000_rename_ixworld_realm_ixnay/migration.sql || exit 1
+    # Atlas Release 0 (docs/specs/2026-10-11-atlas-release-0-performance-design.md): the Country geom_postgis trigger and
+    # backfill and the atlas_country_union function the code calls. Idempotent; must be in place before the new code runs.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261021120000_atlas_r0/migration.sql || exit 1
 else
     echo "❌ Database sync failed"
     exit 1

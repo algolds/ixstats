@@ -8,6 +8,15 @@
 import { readFileSync } from "node:fs";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 
+/** A fresh copy of the module, so the once-per-process function probe starts unanswered. */
+async function freshSync() {
+  let loaded: typeof import("~/lib/country-geo/sync") | undefined;
+  await jest.isolateModulesAsync(async () => {
+    loaded = await import("~/lib/country-geo/sync");
+  });
+  return loaded!;
+}
+
 const square = (x: number, y: number) => ({
   type: "Polygon" as const,
   coordinates: [
@@ -34,6 +43,8 @@ const unionOf = (geometry: object | null, wide: object[] | null = null) => [
 
 function dbWith(unionRows: object[], regions: object[]) {
   return {
+    // the once-per-process probe for atlas_country_union: present
+    $queryRaw: jest.fn().mockResolvedValue([{ present: true }]),
     $queryRawUnsafe: jest.fn().mockResolvedValue(unionRows),
     mapLayer: { findMany: jest.fn().mockResolvedValue(regions) },
     country: {
@@ -124,7 +135,7 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
     });
   });
 
-  it("a database without atlas_country_union degrades the same way, with a warning", async () => {
+  it("a union statement that fails (a dropped connection) degrades the same way, with a warning", async () => {
     const db = dbWith([], [region(2000, [0.5, 0.5], [0, 0, 1, 1])]);
     db.$queryRawUnsafe.mockRejectedValue(
       new Error("function atlas_country_union(text, text) does not exist")
@@ -159,6 +170,67 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: "c1" },
       data: { geometry: null, centroid: null, boundingBox: null, landArea: null, areaSqMi: null },
+    });
+  });
+
+  describe("a database without atlas_country_union (the R0 SQL not applied)", () => {
+    let warn: jest.SpyInstance;
+    beforeEach(() => {
+      warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    });
+    afterEach(() => warn.mockRestore());
+
+    it("asks the union function no question at all: the cached outline stays, the metrics are still written", async () => {
+      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
+      const db = dbWith(unionOf(square(0, 0)), [region(2000, [0.5, 0.5], [0, 0, 1, 1])]);
+      db.$queryRaw.mockResolvedValue([{ present: false }]);
+
+      await sync(db, "c1");
+
+      expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+      const data = db.country.update.mock.calls[0][0].data;
+      expect(data).not.toHaveProperty("geometry");
+      expect(data).toMatchObject({ centroid: [0.5, 0.5], landArea: 2000 });
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("20261021120000_atlas_r0"));
+    });
+
+    it("probes with to_regprocedure, which answers NULL instead of raising, so it cannot abort a caller's transaction", async () => {
+      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
+      const db = dbWith(unionOf(square(0, 0)), [region(2000, [0.5, 0.5], [0, 0, 1, 1])]);
+      await sync(db, "c1");
+      const [strings] = db.$queryRaw.mock.calls[0];
+      expect(strings.join("")).toContain("to_regprocedure('atlas_country_union(text,text)')");
+    });
+
+    it("probes once per process, whatever the answer", async () => {
+      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
+      const missing = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
+      missing.$queryRaw.mockResolvedValue([{ present: false }]);
+      await sync(missing, "c1");
+      await sync(missing, "c2");
+      expect(missing.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledTimes(1);
+
+      const { syncCountryGeometryFromMapLayer: syncOther } = await freshSync();
+      const present = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
+      await syncOther(present, "c1");
+      await syncOther(present, "c2");
+      expect(present.$queryRaw).toHaveBeenCalledTimes(1);
+      expect(present.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    });
+
+    it("a probe that fails is not remembered: this call keeps the outline, the next one asks again", async () => {
+      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
+      const db = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
+      db.$queryRaw.mockRejectedValueOnce(new Error("connection reset"));
+
+      await sync(db, "c1");
+      expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
+      expect(db.country.update.mock.calls[0][0].data).not.toHaveProperty("geometry");
+
+      await sync(db, "c2");
+      expect(db.$queryRaw).toHaveBeenCalledTimes(2);
+      expect(db.country.update.mock.calls[1][0].data.geometry).toEqual(square(0, 0));
     });
   });
 

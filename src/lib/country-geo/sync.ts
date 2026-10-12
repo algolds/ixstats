@@ -30,12 +30,48 @@ interface RegionUnion {
 
 const polygonsOf = (g: RegionGeometry) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
 
+/**
+ * Whether the database has atlas_country_union, asked once per process (the R0 SQL is applied before the code runs;
+ * a process started without it keeps the cached outlines until restarted). Calling a missing function inside a
+ * caller's transaction would abort it, and every statement after it; to_regprocedure answers NULL instead of
+ * raising, so this probe is safe on a transaction client too. A probe that fails is not remembered.
+ */
+let unionFunctionPresent: Promise<boolean> | undefined;
+
+function hasUnionFunction(db: Pick<PrismaClient, "$queryRaw">): Promise<boolean> {
+  unionFunctionPresent ??= probeUnionFunction(db).then(
+    (present) => {
+      if (!present) {
+        console.warn(
+          "[country-geo] atlas_country_union is missing: apply prisma/migrations/20261021120000_atlas_r0/migration.sql. " +
+            "Nations keep their cached outlines until this process restarts after it."
+        );
+      }
+      return present;
+    },
+    (error) => {
+      unionFunctionPresent = undefined;
+      console.warn("[country-geo] could not check for atlas_country_union:", error);
+      return false;
+    }
+  );
+  return unionFunctionPresent;
+}
+
+async function probeUnionFunction(db: Pick<PrismaClient, "$queryRaw">): Promise<boolean> {
+  const [row] = await db.$queryRaw<
+    Array<{ present: boolean }>
+  >`SELECT to_regprocedure('atlas_country_union(text,text)') IS NOT NULL AS present`;
+  return row?.present === true;
+}
+
 /** The nation's outline: the PostGIS union of its regions, with any region drawn across +-180 beside it. */
 async function unionLinkedRegions(
-  db: Pick<PrismaClient, "$queryRawUnsafe">,
+  db: Pick<PrismaClient, "$queryRaw" | "$queryRawUnsafe">,
   countryId: string,
   realmId: string
 ): Promise<RegionGeometry | null> {
+  if (!(await hasUnionFunction(db))) return null;
   let union: RegionUnion | null | undefined;
   try {
     const [row] = await db.$queryRawUnsafe<Array<{ result: RegionUnion | null }>>(
@@ -45,8 +81,8 @@ async function unionLinkedRegions(
     );
     union = row?.result;
   } catch (error) {
-    // Only a database without the function lands here (a failed union is caught in SQL): the cached outline
-    // stays. On a transaction client this statement error would already have aborted the transaction.
+    // The function catches its own failures, so only the statement itself (a dropped connection) lands here: the
+    // cached outline stays.
     console.warn(`[country-geo] region union failed for ${countryId}, keeping its outline:`, error);
     return null;
   }

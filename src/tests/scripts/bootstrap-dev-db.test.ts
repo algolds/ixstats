@@ -1,7 +1,9 @@
 import { describe, it, expect } from "@jest/globals";
 import { readFileSync } from "node:fs";
 import {
+  ATLAS_R0_SQL,
   bootstrapRefusal,
+  DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
 } from "../../../scripts/setup/bootstrap-dev-db";
 
@@ -34,6 +36,19 @@ describe("db:bootstrap guards", () => {
     expect(
       bootstrapRefusal({ nodeEnv: "development", databaseUrl: undefined, allowRemote: false })
     ).toMatch(/DATABASE_URL/);
+  });
+});
+
+describe("the SQL a fresh database needs besides db push", () => {
+  it("runs the geometry triggers, then the Atlas R0 SQL (it backfills through them)", () => {
+    expect(DB_SETUP_SQL_FILES).toEqual([MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL]);
+  });
+
+  it("the Atlas R0 SQL is the idempotent one that creates what the code calls", () => {
+    const sql = readFileSync(ATLAS_R0_SQL, "utf8");
+    expect(sql).toContain('ADD COLUMN IF NOT EXISTS "mapVersion"');
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION atlas_country_union(");
+    expect(sql).toContain("CREATE OR REPLACE FUNCTION sync_country_geom()");
   });
 });
 

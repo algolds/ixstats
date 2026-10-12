@@ -73,6 +73,11 @@ Read it end to end once before starting. Every command here is meant to be run b
     the PostGIS triggers that fill `geom_postgis` on `map_layers`, `subdivisions`, `cities` and `points_of_interest`,
     and backfills rows still missing it. **`db push` cannot create triggers**: run the file by hand after the deploy
     script (step 5b). Idempotent; on prod, where the archived setup script installed them, it only backfills
+  - Atlas Release 0 (2026-10-21, additive): `Realm.mapVersion` (default 0), which versioned map layer and tile URLs
+    carry, and the PostGIS pieces `db push` cannot create: a `Country` trigger that fills `geom_postgis` from
+    `geometry`, a backfill of the countries missing it, and the function `atlas_country_union`
+    (`prisma/migrations/20261021120000_atlas_r0/migration.sql`, idempotent). **Apply that file before the new code
+    serves a request** (step 5a); the deploy script runs it again after its own push
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -258,6 +263,21 @@ UPDATE "User" SET handle = 'heku' WHERE id = 'cmdfcodpb00014kevb5x5b1es' AND han
 COMMIT;
 SQL
 # expect: UPDATE 1 twice (UPDATE 0 when already applied)
+```
+
+Then apply the Atlas Release 0 SQL by hand, **before any new code runs**. `db push` adds `Realm.mapVersion` and
+`Country.geom_postgis` but cannot create the `Country` trigger or the `atlas_country_union` function, and it does not
+backfill. Without the function, the code now notices (one check per process, logged as a warning) and keeps nations'
+cached outlines, so nothing aborts; without the backfill, every country's geography panel (`getCountryGeoProfile`)
+answers "Country has no usable map outline" until `"Country".geom_postgis` is filled. The deploy script applies the same
+idempotent file after its own push, so this step is for the order: SQL first, code second.
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261021120000_atlas_r0/migration.sql
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT to_regprocedure('atlas_country_union(text,text)') IS NOT NULL, (SELECT count(*) FROM \"Country\" WHERE geometry IS NOT NULL AND geom_postgis IS NULL);"
+#   expect: t|0, or t and a count of only countries whose stored outline is invalid (the run printed a WARNING naming each)
 ```
 
 Then run the deploy script — its `db push` is now a no-op:

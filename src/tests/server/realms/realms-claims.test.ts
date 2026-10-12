@@ -1013,6 +1013,7 @@ describe("approved nation-page claims take their map region (decision 11)", () =
       ...s.db,
       mapLayer: table,
       country: { ...s.db.country, update: jest.fn().mockResolvedValue({}) },
+      $queryRaw: jest.fn().mockResolvedValue([{ present: true }]),
       $queryRawUnsafe: unionQuery(rows),
     };
     delete s.db.mapLayer;
