@@ -260,7 +260,7 @@ export async function replaceSlots(
         const nations: NewNation[] = input.slots
           ? input.slots.map((planned) => ({
               name: planned.slot.name,
-              population: planned.slot.population,
+              population: planned.population,
               gdpPerCapita: planned.slot.gdpPerCapita,
               areaKm2: planned.areaKm2,
               claimable: planned.slot.claimable,

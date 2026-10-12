@@ -49,6 +49,8 @@ export interface PreparedSlot {
   featureKey: string;
   /** The slot's area as the server measured it, in km² on the realm's planet (its land area). */
   areaKm2: number;
+  /** The people the nation starts with: the browser's count (on Earth) scaled to the realm's planet like the area. */
+  population: number;
 }
 
 export interface PreparedWorld {
@@ -266,7 +268,9 @@ function planSlots(
     const problem = figuresProblem(slot, measured, bounds);
     if (problem) problems.push(problem);
     const earth = measured ?? estimatedAreaSqKm(feature.geometry);
-    return [{ slot, featureKey, areaKm2: scaleAreaToRadius(earth, radiusKm) }];
+    // The figures were checked on Earth's numbers; the nation lives on the realm's planet, area and people scaled alike
+    const population = Math.round(scaleAreaToRadius(slot.population, radiusKm));
+    return [{ slot, featureKey, areaKm2: scaleAreaToRadius(earth, radiusKm), population }];
   });
 }
 

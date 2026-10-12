@@ -374,6 +374,25 @@ describe("applyWorld", () => {
     expect(Object.fromEntries(claimable)).toEqual({ "Nation 1": true, "Nation 2 (2)": false });
   });
 
+  it("scales a nation's people to the realm's planet as its land area is, so the density is as generated", async () => {
+    const earth = seedRealm();
+    const small = seedRealm({ settings: { map: { radiusKm: 3185.5 } } }); // half of Earth's radius
+    const id = await stored({ slots: [slot(1)] });
+    await applyWorld(earth, jobFor(id), undefined, { runRelief: relief() });
+    await applyWorld(small, jobFor(id), undefined, { runRelief: relief() });
+    const made = (db: ReturnType<typeof seedRealm>) =>
+      db.country.rows.find((c: { name: string }) => c.name === "Nation 1");
+    const [onEarth, onSmall] = [made(earth), made(small)];
+    expect(onEarth.baselinePopulation).toBe(1_000_000);
+    // a quarter of the area on a planet of half the radius, and a quarter of the people
+    expect(onSmall.landArea / onEarth.landArea).toBeCloseTo(0.25, 6);
+    expect(onSmall.baselinePopulation).toBe(250_000);
+    expect(onSmall.baselinePopulation / onSmall.landArea).toBeCloseTo(
+      onEarth.baselinePopulation / onEarth.landArea,
+      4
+    );
+  });
+
   it("gives an empty slot a token population and a floor GDP per capita", async () => {
     const db = seedRealm();
     const id = await stored({ slots: [slot(1, { population: 0, gdpPerCapita: 0 })] });
