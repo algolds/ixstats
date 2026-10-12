@@ -15,10 +15,21 @@ export const WORLD_BUNDLE_VERSION = 1;
 export const MAX_WORLD_BUNDLE_CELLS = 200_000;
 export const MAX_WORLD_BUNDLE_SLOTS = 500;
 /**
- * What a gunzipped bundle may measure: a zip-bomb cap. The largest world the generator makes (150,000 cells) is
- * 13.4 MB of JSON; this is 3.5 times that, so a hostile bundle can hold a request for a second or two, not five.
+ * What a gunzipped bundle may measure: a zip-bomb cap. The largest world the World tab's controls can make (land
+ * share 0.6, islands 0.3, 12 continents, 300 nations, rivers 2.5, lakes 0.05, coast complexity 1, on the default
+ * 100,000-cell mesh, which yields 66,626 cells) is 25.0 MB of JSON, so this is 1.9 times that. The generator's own
+ * parameter bound (150,000 cells requested, 99,900 made) reaches 35.9 MB, 1.3 times under the cap; no control asks
+ * for it. A hostile bundle can hold a request for a second or two, not five.
  */
 export const MAX_WORLD_BUNDLE_JSON_BYTES = 48 * 1024 * 1024;
+/**
+ * How many map features and coordinate positions a bundle may hold in all its layers: the import checks the features
+ * in PostGIS batches and writes them one transaction at a time, so a hostile bundle of many tiny shapes must not fit
+ * under the byte cap. The same worlds as above hold at most 2,727 features and 1.25 million positions (3,704 and
+ * 1.78 million at 150,000 cells requested): the caps are 7.3 and 3.2 times that (5.4 and 2.2 times).
+ */
+export const MAX_WORLD_BUNDLE_FEATURES = 20_000;
+export const MAX_WORLD_BUNDLE_POSITIONS = 4_000_000;
 
 export const WORLD_BUNDLE_LAYERS = [
   "background",
@@ -280,16 +291,52 @@ function featureProblem(
   return slotKeys.has(key) ? null : `names slotKey ${key}, which is not one of the bundle's slots`;
 }
 
-/** The first problem in the layers (named by layer and feature index), or null when every feature is sound. */
+const sumLengths = (lines: Position[][]) => lines.reduce((n, line) => n + line.length, 0);
+
+/** How many positions a geometry holds; its structure has been checked (`geometryProblem` found none). */
+function positionCount(geometry: Feature["geometry"]): number {
+  switch (geometry.type) {
+    case "Polygon":
+      return sumLengths(geometry.coordinates);
+    case "MultiPolygon":
+      return geometry.coordinates.reduce((n, rings) => n + sumLengths(rings), 0);
+    case "LineString":
+      return geometry.coordinates.length;
+    case "MultiLineString":
+      return sumLengths(geometry.coordinates);
+    default:
+      return 0;
+  }
+}
+
+const countText = (n: number) => n.toLocaleString("en-US");
+
+/**
+ * The first problem in the layers (named by layer and feature index), or null when every feature is sound and the
+ * bundle holds no more features and positions than a world may.
+ */
 function layersProblem(
   layers: Record<string, FeatureCollection>,
   slotKeys: ReadonlySet<string>
 ): string | null {
+  const featureCount = WORLD_BUNDLE_LAYERS.reduce(
+    (n, layer) => n + (layers[layer]?.features.length ?? 0),
+    0
+  );
+  if (featureCount > MAX_WORLD_BUNDLE_FEATURES) {
+    return `The bundle has ${countText(featureCount)} map features; a world has at most ${countText(MAX_WORLD_BUNDLE_FEATURES)}`;
+  }
+  let positions = 0;
   for (const layer of WORLD_BUNDLE_LAYERS) {
     const features = layers[layer]?.features ?? [];
     for (let i = 0; i < features.length; i++) {
-      const problem = featureProblem(layer, features[i]!, slotKeys);
+      const feature = features[i]!;
+      const problem = featureProblem(layer, feature, slotKeys);
       if (problem) return `${layer} feature ${i}: ${problem}`;
+      positions += positionCount(feature.geometry);
+      if (positions > MAX_WORLD_BUNDLE_POSITIONS) {
+        return `The bundle has more than ${countText(MAX_WORLD_BUNDLE_POSITIONS)} points in its shapes; a world has at most ${countText(MAX_WORLD_BUNDLE_POSITIONS)}`;
+      }
     }
   }
   return null;

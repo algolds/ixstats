@@ -14,7 +14,9 @@ import {
   encodeWorldBundle,
   isGzip,
   MAX_WORLD_BUNDLE_CELLS,
+  MAX_WORLD_BUNDLE_FEATURES,
   MAX_WORLD_BUNDLE_JSON_BYTES,
+  MAX_WORLD_BUNDLE_POSITIONS,
   MAX_WORLD_BUNDLE_SLOTS,
   parseWorldBundleJson,
   worldGenParamsSchema,
@@ -414,8 +416,66 @@ describe("parseWorldBundleJson accepts only bundles the importer can use", () =>
   });
 });
 
+describe("how many shapes a bundle may hold", () => {
+  const lakes = (features: Feature[]): FeatureCollection => ({
+    type: "FeatureCollection",
+    features,
+  });
+  /** What `bundle()` holds without its lakes: 4 features (a land, two nations, a river) and 17 positions. */
+  const OTHER_FEATURES = 4;
+  const OTHER_POSITIONS = 17;
+
+  it("takes exactly the most features and refuses one more, with the count and the limit", () => {
+    const withLakes = (count: number) =>
+      bundle({
+        layers: {
+          ...bundle().layers,
+          lakes: lakes(Array.from({ length: count }, () => polygon({}))),
+        },
+      });
+    expect(reasonOfBundle(withLakes(MAX_WORLD_BUNDLE_FEATURES - OTHER_FEATURES))).toBeNull();
+    expect(reasonOfBundle(withLakes(MAX_WORLD_BUNDLE_FEATURES - OTHER_FEATURES + 1))).toBe(
+      "The bundle has 20,001 map features; a world has at most 20,000"
+    );
+  });
+
+  it("counts the features of every layer, not each layer alone", () => {
+    const half = Array.from({ length: MAX_WORLD_BUNDLE_FEATURES / 2 }, () => polygon({}));
+    const layers = { ...bundle().layers, lakes: lakes(half), icecaps: lakes(half) };
+    expect(reasonOfBundle(bundle({ layers }))).toMatch(/has 20,004 map features/);
+  });
+
+  /** Lakes that hold `positions` positions between them, in rings of 100,000 (the same ring, written out again). */
+  function lakesOf(positions: number): FeatureCollection {
+    const ringOf = (n: number) => {
+      const points = Array.from({ length: n - 1 }, (_, i) => [
+        Math.round(Math.cos(i) * 1e4) / 1e3,
+        Math.round(Math.sin(i) * 1e4) / 1e3,
+      ]);
+      return [...points, points[0]!];
+    };
+    const full = ringOf(100_000);
+    const rings = Array.from({ length: Math.floor(positions / 100_000) }, () =>
+      polygon({}, [full])
+    );
+    const rest = positions % 100_000;
+    return lakes(rest >= 4 ? [...rings, polygon({}, [ringOf(rest)])] : rings);
+  }
+
+  it("takes exactly the most positions and refuses one more, with the limit", () => {
+    const room = MAX_WORLD_BUNDLE_POSITIONS - OTHER_POSITIONS;
+    const withLakes = (positions: number) =>
+      bundle({ layers: { ...bundle().layers, lakes: lakesOf(positions) } });
+    expect(reasonOfBundle(withLakes(room))).toBeNull();
+    expect(reasonOfBundle(withLakes(room + 1))).toBe(
+      "The bundle has more than 4,000,000 points in its shapes; a world has at most 4,000,000"
+    );
+    // two bundles of four million points each: a few seconds
+  }, 60_000);
+});
+
 describe("the decompressed cap", () => {
-  it("is 48 MB, a few times the largest legitimate bundle", () => {
+  it("is 48 MB, about twice the largest bundle the World tab's controls can make", () => {
     expect(MAX_WORLD_BUNDLE_JSON_BYTES).toBe(48 * 1024 * 1024);
   });
 
