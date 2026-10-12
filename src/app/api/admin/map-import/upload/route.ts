@@ -4,7 +4,8 @@
  * `?realm=<realm id>`. Site admins, the realm's founder and its officers with the Map power
  * (canImportRealmMap; Ixnay is admin-only, an archived realm is read-only). The body is refused by its
  * Content-Length before it is read when it is over the limit (MAX_MAP_IMPORT_BYTES), and again by the file's own
- * size. Returns the upload id the wizard passes to geoEditor.mapImport.start, with the file's kind and size.
+ * size. Returns the upload id the wizard passes to geoEditor.mapImport.start, with the file's kind and size. A stored
+ * upload also starts the hourly pruning of old world bundles (map-import.prune.ts).
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@clerk/nextjs/server";
@@ -14,6 +15,7 @@ import { MAX_MAP_IMPORT_BYTES } from "~/lib/maps/import/options";
 import { oversizedUploadResponse } from "~/server/shared/request-size";
 import { requireAdminSession } from "~/server/shared/route-auth";
 import { canImportRealmMap } from "~/server/modules/realms/realms.access";
+import { pruneWorldUploadsIfDue } from "~/server/modules/maps/map-import.prune";
 import { acceptMapUpload } from "~/server/modules/maps/map-import.upload";
 import { MapImportError } from "~/server/modules/maps/map-import.realm";
 
@@ -81,6 +83,10 @@ export async function POST(request: NextRequest) {
       );
     }
     const info = await acceptMapUpload(new Uint8Array(await file.arrayBuffer()), file.name);
+    // Old world bundles are cleared by the uploads that follow them, at most once an hour; this one does not wait
+    void pruneWorldUploadsIfDue(db).catch((error: unknown) =>
+      console.error("[MapImportUpload] Pruning old world bundles failed:", error)
+    );
     return NextResponse.json(info);
   } catch (error) {
     if (error instanceof MapImportError) {

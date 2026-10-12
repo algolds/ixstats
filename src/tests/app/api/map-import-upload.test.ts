@@ -13,6 +13,10 @@ jest.mock("~/server/shared/route-auth", () => ({
 }));
 const auth = jest.fn();
 jest.mock("@clerk/nextjs/server", () => ({ auth: () => auth() }));
+const pruneIfDue = jest.fn();
+jest.mock("~/server/modules/maps/map-import.prune", () => ({
+  pruneWorldUploadsIfDue: (...args: unknown[]) => pruneIfDue(...args),
+}));
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
   rateLimiter: { check: jest.fn().mockResolvedValue({ success: true }) },
@@ -41,6 +45,7 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  pruneIfDue.mockReset().mockResolvedValue(null);
   auth.mockResolvedValue({ userId: "founder_1" });
   realmFindUnique.mockResolvedValue({ id: "r1", ownerId: "founder_1" });
   requireAdminSession.mockResolvedValue(
@@ -100,6 +105,26 @@ describe("POST /api/admin/map-import/upload", () => {
     expect(body).toMatchObject({ kind: "geojson", filename: "eurth.geojson", width: null });
     expect(body.uploadId).toMatch(/^[0-9a-f]{64}$/);
     expect(body.geojson.suggestedNameProperty).toBe("NAME");
+  });
+
+  it("starts the pruning of old world bundles after it stores a file, and not after a refusal", async () => {
+    await POST(request({ realm: "r1", file: new File(["hello"], "notes.txt") }).req);
+    expect(pruneIfDue).not.toHaveBeenCalled();
+    expect((await POST(request({ realm: "r1", file: geojson }).req)).status).toBe(200);
+    expect(pruneIfDue).toHaveBeenCalledTimes(1);
+  });
+
+  it("answers the upload even when the pruning fails", async () => {
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    pruneIfDue.mockRejectedValue(new Error("disk unreadable"));
+    const response = await POST(request({ realm: "r1", file: geojson }).req);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(response.status).toBe(200);
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("Pruning old world bundles failed"),
+      expect.any(Error)
+    );
+    error.mockRestore();
   });
 
   it("lets a site admin upload to any realm, and refuses a file of no known kind", async () => {

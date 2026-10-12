@@ -77,3 +77,9 @@ export async function loadCheck(
   }
   return check.result;
 }
+
+/** Where a map import came from, as its recorded summary says ("world", "pipeline", ...); null when it says nothing. */
+export const summarySource = (summary: Prisma.JsonValue | null | undefined): string | null =>
+  summary && typeof summary === "object" && !Array.isArray(summary) && "source" in summary
+    ? String(summary.source)
+    : null;

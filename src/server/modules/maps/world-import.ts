@@ -56,6 +56,7 @@ import {
   currentMapVersion,
   fittedMapVersionOf,
   loadCheck,
+  summarySource,
 } from "./world-import.check";
 import { markWorldReliefBuilt } from "./world-import.relief-state";
 import {
@@ -177,11 +178,6 @@ function layerDiff(
     retire: existing.filter((row) => row.isActive && !keys.has(row.featureId)).length,
   };
 }
-
-const summarySource = (summary: Prisma.JsonValue): string | null =>
-  summary && typeof summary === "object" && !Array.isArray(summary) && "source" in summary
-    ? String(summary.source)
-    : null;
 
 /** What replacing the realm's current map loses: hand edits since the last generation, or the map itself. */
 async function replacedWarnings(
