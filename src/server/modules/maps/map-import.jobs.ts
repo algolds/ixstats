@@ -501,14 +501,16 @@ export async function recoverStaleMapImports(db: PrismaClient, now = new Date())
     heartbeatAt: { lt: new Date(now.getTime() - STALE_AFTER_MS) },
   };
   const stopped = { status: "failed", finishedAt: now };
-  // A world apply that stopped may have retired and created slots with no snapshot recorded to roll back to: the
-  // apply itself heals that (it retires the slots a run left unopened and writes again)
+  // A world apply that stopped may have retired and created slots with no snapshot recorded to roll back to. A new
+  // preset world heals that (it retires the slots a run left unopened and writes again). A world fitted to the
+  // realm's map keeps what the run wrote, its layers and the nations it created (linked, so closed to claims): those
+  // cannot be told from the slots a founder reserved on purpose, so the person opens them
   const world = await db.mapImportJob.updateMany({
     where: { ...stale, kind: "world", dryRun: false },
     data: {
       ...stopped,
       error:
-        "The import stopped (the server restarted?). Apply the world again: it replaces whatever the interrupted run wrote.",
+        "The import stopped (the server restarted?). Apply the world again. A new preset world replaces whatever the interrupted run wrote. A world fitted to the realm's map keeps what the interrupted run wrote, and the nations it created stay closed to claims until you switch on Claimable for each in Properties.",
     },
   });
   const { count } = await db.mapImportJob.updateMany({

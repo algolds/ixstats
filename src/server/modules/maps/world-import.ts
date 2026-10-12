@@ -99,7 +99,12 @@ export type ReliefRunner = (
 export interface WorldImportDeps {
   /** Builds the relief tiles (default: realm-relief.ts `buildRealmRelief`). Tests replace it. */
   runRelief?: ReliefRunner;
+  /** How often a long step reports progress (default 30 s). Tests shorten it. */
+  heartbeatMs?: number;
 }
+
+/** A job that reports nothing for STALE_AFTER_MS (10 minutes) is marked failed: a long step reports far more often. */
+const HEARTBEAT_MS = 30_000;
 
 async function defaultRelief(db: PrismaClient, realmId: string, source: ReliefSource) {
   return (await import("./realm-relief")).buildRealmRelief(db, realmId, source);
@@ -387,6 +392,23 @@ function nameBorders(prepared: PreparedWorld, created: readonly CreatedNation[])
   };
 }
 
+/**
+ * Run `work` while reporting `stage` every `everyMs`: writing or shading a large world can take minutes with no other
+ * report, and the stale-job sweep would fail a running apply whose world then lands.
+ */
+async function withHeartbeat<T>(
+  progress: WorldProgress,
+  at: { percent: number; stage: string; everyMs: number },
+  work: () => Promise<T>
+): Promise<T> {
+  const timer = setInterval(() => progress.write(at.percent, at.stage), at.everyMs);
+  try {
+    return await work();
+  } finally {
+    clearInterval(timer);
+  }
+}
+
 /** Run one step of the compensation; the reason it failed (logged), or null when it worked. */
 async function attempt(what: string, run: () => Promise<void>): Promise<string | null> {
   try {
@@ -570,15 +592,22 @@ export async function applyWorld(
     reserved: step.reserved,
   };
 
+  const everyMs = deps.heartbeatMs ?? HEARTBEAT_MS;
   progress.write(45, "Writing the map");
-  const outcome = await writeWorld(db, job, realm, prepared, step, snapshot).catch(
-    (error: Error | string) =>
-      compensate(db, snapshot, job.id, error instanceof Error ? error : new Error(error))
+  const outcome = await withHeartbeat(
+    progress,
+    { percent: 45, stage: "Writing the map", everyMs },
+    () =>
+      writeWorld(db, job, realm, prepared, step, snapshot).catch((error: Error | string) =>
+        compensate(db, snapshot, job.id, error instanceof Error ? error : new Error(error))
+      )
   );
 
   progress.write(90, "Building relief");
   const relief = prepared.layers.altitudes
-    ? await buildRelief(db, realm.id, bundle.cells, deps.runRelief ?? defaultRelief)
+    ? await withHeartbeat(progress, { percent: 90, stage: "Building relief", everyMs }, () =>
+        buildRelief(db, realm.id, bundle.cells, deps.runRelief ?? defaultRelief)
+      )
     : KEPT_RELIEF;
   const { written, opened } = outcome;
   const record = written.mapImportId

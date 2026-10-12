@@ -19,6 +19,7 @@ import {
   jobFor,
   layer,
   mapRow,
+  RELIEF_ENTRY,
   relief,
   seedRealm,
   slot,
@@ -395,6 +396,80 @@ describe("applyWorld", () => {
     });
     expect(layer(db, "political", "slot_1")).toMatchObject({ isActive: true });
     expect(db.realm.rows[0].seed).toBe(42);
+  });
+
+  describe("while the map is written (a long write must not look like a stopped job)", () => {
+    const progress = () => ({ write: jest.fn(), isCancelled: () => false });
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const reports = (write: jest.Mock, stage: string) =>
+      write.mock.calls.filter(([, said]) => said === stage).length;
+
+    it("reports progress again and again until the write is done, then stops", async () => {
+      const db = seedRealm();
+      const { write, isCancelled } = progress();
+      // The write is held at the moment the layers are recorded, as a slow one would be
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => (release = resolve));
+      const record = db.mapImport.create.getMockImplementation()!;
+      db.mapImport.create.mockImplementationOnce(async (args: object) => {
+        await held;
+        return record(args);
+      });
+      const done = applyWorld(
+        db,
+        jobFor(await stored()),
+        { write, isCancelled },
+        {
+          runRelief: relief(),
+          heartbeatMs: 5,
+        }
+      );
+      await sleep(60);
+      expect(reports(write, "Writing the map")).toBeGreaterThan(3);
+      release();
+      await done;
+      const settled = write.mock.calls.length;
+      await sleep(30);
+      expect(write.mock.calls.length).toBe(settled);
+    });
+
+    it("keeps reporting while the relief is built", async () => {
+      const db = seedRealm();
+      const { write, isCancelled } = progress();
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => (release = resolve));
+      const runRelief = jest.fn(async () => {
+        await held;
+        return RELIEF_ENTRY;
+      });
+      const done = applyWorld(
+        db,
+        jobFor(await stored()),
+        { write, isCancelled },
+        {
+          runRelief,
+          heartbeatMs: 5,
+        }
+      );
+      await sleep(60);
+      expect(reports(write, "Building relief")).toBeGreaterThan(3);
+      release();
+      await done;
+    });
+
+    it("stops reporting when the write fails", async () => {
+      const db = seedRealm();
+      const { write, isCancelled } = progress();
+      db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
+      const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+      await expect(
+        applyWorld(db, jobFor(await stored()), { write, isCancelled }, { heartbeatMs: 5 })
+      ).rejects.toThrow("disk full");
+      error.mockRestore();
+      const settled = write.mock.calls.length;
+      await sleep(30);
+      expect(write.mock.calls.length).toBe(settled);
+    });
   });
 
   it("creates 500 slots with their own names and slugs", async () => {

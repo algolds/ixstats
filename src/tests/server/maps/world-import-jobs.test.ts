@@ -238,6 +238,11 @@ describe("a world job that stopped", () => {
     const error = (id: string) =>
       db.mapImportJob.rows.find((j: { id: string }) => j.id === id).error as string;
     expect(error("j_apply")).toMatch(/Apply the world again/);
+    // a world fitted to the realm's map does not reopen the nations the interrupted run made: it says how to
+    expect(error("j_apply")).toMatch(
+      /fitted to the realm's map keeps what the interrupted run wrote/
+    );
+    expect(error("j_apply")).toMatch(/closed to claims until you switch on Claimable/);
     expect(error("j_apply")).not.toMatch(/rolled back/);
     expect(error("j_check")).toMatch(/Start it again/);
     expect(error("j_check")).not.toMatch(/Apply the world again/);
