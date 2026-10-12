@@ -6,7 +6,9 @@
 import { act, renderHook } from "@testing-library/react";
 
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
+import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticLegend } from "~/lib/worldgen/diagnostics";
+import type { DiagnosticResult } from "~/lib/worldgen/worker/world-messages";
 import {
   fakeWorldWorkers,
   resultMessage,
@@ -88,28 +90,64 @@ describe("useWorldGenerator queries", () => {
     expect(result.current.state).toBe("ready");
   });
 
-  it("does not drop an answer when a newer generate has bumped the generate id", async () => {
+  it("rejects a query in flight when a newer generate starts, even on an idle worker", async () => {
     const { result, workers } = withWorld();
-    let pending!: Promise<unknown>;
+    let pending!: Promise<Blob>;
     act(() => {
       pending = result.current.renderPng(2048, true);
     });
     const { requestId } = lastQuery(workers[0]!);
     expect(lastQuery(workers[0]!)).toMatchObject({ type: "render", width: 2048, politics: true });
 
-    // The worker is idle, so a generate reuses it and the render is still wanted
+    // The idle worker is reused, but world 1's picture must not be taken for world 2's
+    const rejection = expect(pending).rejects.toThrow("changed");
     act(() => result.current.generate({ oceanPercentage: 0.6 }, 1));
     expect(workers).toHaveLength(1);
-    const png = new Blob(["png"], { type: "image/png" });
-    await act(async () => {
-      workers[0]!.say({ type: "render-result", requestId, world: 1, width: 2048, png });
-      await expect(pending).resolves.toBe(png);
+    await rejection;
+
+    // Its late answer finds nobody waiting and changes nothing
+    act(() => {
+      workers[0]!.say({
+        type: "render-result",
+        requestId,
+        world: 1,
+        width: 2048,
+        png: new Blob(["old"]),
+      });
     });
+    expect(result.current.state).toBe("generating");
+  });
+
+  it("rejects diagnostics and seeds in flight for the same reason", async () => {
+    const { result } = withWorld();
+    let image!: Promise<DiagnosticResult>;
+    let seeds!: Promise<FeatureCollection<Point>>;
+    act(() => {
+      image = result.current.diagnostic("rainfall");
+      seeds = result.current.nationSeeds();
+    });
+    const rejections = [
+      expect(image).rejects.toThrow("changed"),
+      expect(seeds).rejects.toThrow("changed"),
+    ];
+    act(() => result.current.generate({ seed: 9 }, 9));
+    await Promise.all(rejections);
+  });
+
+  it("rejects what is in flight when the hook unmounts", async () => {
+    const { result, unmount } = withWorld();
+    let pending!: Promise<DiagnosticResult>;
+    act(() => {
+      pending = result.current.diagnostic("height");
+    });
+    const rejection = expect(pending).rejects.toThrow("restarted");
+    unmount();
+    await rejection;
   });
 
   it("resolves the nations' seeds", async () => {
     const { result, workers } = withWorld();
-    let pending!: Promise<unknown>;
+    let pending!: Promise<FeatureCollection<Point>>;
     act(() => {
       pending = result.current.nationSeeds();
     });
@@ -123,7 +161,7 @@ describe("useWorldGenerator queries", () => {
 
   it("rejects with the worker's message when it refuses", async () => {
     const { result, workers } = withWorld();
-    let pending!: Promise<unknown>;
+    let pending!: Promise<DiagnosticResult>;
     act(() => {
       pending = result.current.diagnostic("flow");
     });
@@ -136,8 +174,8 @@ describe("useWorldGenerator queries", () => {
 
   it("answers requests by their own ids, in any order", async () => {
     const { result, workers } = withWorld();
-    let first!: Promise<unknown>;
-    let second!: Promise<unknown>;
+    let first!: Promise<FeatureCollection<Point>>;
+    let second!: Promise<Blob>;
     act(() => {
       first = result.current.nationSeeds();
       second = result.current.renderPng(4096, false);
@@ -176,7 +214,7 @@ describe("useWorldGenerator queries", () => {
 
   it("rejects what is in flight when the worker is replaced", async () => {
     const { result, workers } = withWorld();
-    let pending!: Promise<unknown>;
+    let pending!: Promise<Blob>;
     act(() => {
       pending = result.current.renderPng(8192, true);
     });
@@ -184,7 +222,7 @@ describe("useWorldGenerator queries", () => {
     act(() => result.current.generate({ seed: 2 }, 2));
     act(() => result.current.generate({ seed: 3 }, 3));
     expect(workers[0]!.terminated).toBe(true);
-    await expect(pending).rejects.toThrow("restarted");
+    await expect(pending).rejects.toThrow("changed");
   });
 
   it("rejects a diagnostic of a world that failed to generate", async () => {

@@ -104,6 +104,8 @@ export class WorldGenSession {
     if (this.disposed) return;
     const id = ++this.latestId;
     this.heldWorld = null;
+    // An answer about the world being replaced must not be taken for the next one's, whichever worker draws it
+    this.rejectPending("The world changed before the answer came");
     // A worker still busy cannot take another request; its answer is no longer wanted
     if (this.busy) this.discardWorker();
     try {

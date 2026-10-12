@@ -152,6 +152,23 @@ describe("worldgen/diagnostics", () => {
     });
   });
 
+  it("flags the values the fixed temperature and rainfall domains clip, and only those", () => {
+    const temperature = drawDiagnostic(graph, "temperature", 128).legend;
+    expect(temperature.clipped).toEqual({ low: true, high: true });
+    expect(temperature.stops[0]!.label).toBe("-30 or colder");
+    expect(temperature.stops[temperature.stops.length - 1]!.label).toBe("38 or hotter");
+
+    // Rainfall cannot go below zero, so only the wet end is flagged
+    const rainfall = drawDiagnostic(graph, "rainfall", 128).legend;
+    expect(rainfall.clipped).toEqual({ low: false, high: true });
+    expect(rainfall.stops[0]!.label).toBeUndefined();
+    expect(rainfall.stops[rainfall.stops.length - 1]!.label).toBe("4500 or wetter");
+
+    for (const kind of ["height", "flow", "cells"] as const) {
+      expect(drawDiagnostic(graph, kind, 128).legend.clipped).toEqual({ low: false, high: false });
+    }
+  });
+
   it.each(DIAGNOSTIC_KINDS)("%s has a legend of colour stops", (kind: DiagnosticKind) => {
     const { legend } = drawDiagnostic(graph, kind, 128);
     expect(legend.kind).toBe(kind);

@@ -54,6 +54,11 @@ export interface DiagnosticLegend {
   domain: [number, number];
   /** `linear` and `log` ramps blend between stops; `bands` are steps */
   scale: "linear" | "log" | "bands";
+  /**
+   * Whether values past the low or high end of `domain` are drawn at that end's colour: the end stops are then
+   * labelled "or colder" and so on, and the legend can say so.
+   */
+  clipped: { low: boolean; high: boolean };
   stops: LegendStop[];
 }
 
@@ -146,6 +151,7 @@ const heightLegend = (): DiagnosticLegend => ({
   unit: "m",
   domain: [0, TOP_METRES],
   scale: "bands",
+  clipped: { low: false, high: false },
   stops: [
     { value: -1, color: OCEAN_COLOR, label: "Sea" },
     ...ELEVATION_ZONES.map((z) => ({
@@ -164,6 +170,8 @@ interface Ramp {
   title: string;
   unit: string;
   domain: [number, number];
+  /** The labels of the end stops where values past the end are drawn at its colour (null where none can be) */
+  clipLabels: { low: string | null; high: string | null };
   stops: ReadonlyArray<{ value: number; color: string }>;
 }
 
@@ -172,6 +180,7 @@ const RAMPS: Record<"temperature" | "rainfall", Ramp> = {
     title: "Temperature",
     unit: "°C",
     domain: [-30, 38],
+    clipLabels: { low: "-30 or colder", high: "38 or hotter" },
     stops: [
       { value: -30, color: "#313695" },
       { value: -15, color: "#4575b4" },
@@ -188,6 +197,7 @@ const RAMPS: Record<"temperature" | "rainfall", Ramp> = {
     title: "Rainfall",
     unit: "mm/year",
     domain: [0, 4500],
+    clipLabels: { low: null, high: "4500 or wetter" },
     stops: [
       { value: 0, color: "#f6e8c3" },
       { value: 250, color: "#dfc27d" },
@@ -200,13 +210,21 @@ const RAMPS: Record<"temperature" | "rainfall", Ramp> = {
   },
 };
 
-const legendOf = (kind: "temperature" | "rainfall"): DiagnosticLegend => ({
-  kind,
-  ...RAMPS[kind],
-  domain: [...RAMPS[kind].domain],
-  scale: "linear",
-  stops: RAMPS[kind].stops.map((s) => ({ ...s })),
-});
+const legendOf = (kind: "temperature" | "rainfall"): DiagnosticLegend => {
+  const { title, unit, domain, clipLabels, stops } = RAMPS[kind];
+  return {
+    kind,
+    title,
+    unit,
+    domain: [...domain],
+    scale: "linear",
+    clipped: { low: clipLabels.low !== null, high: clipLabels.high !== null },
+    stops: stops.map(({ value, color }, k) => {
+      const label = k === 0 ? clipLabels.low : k === stops.length - 1 ? clipLabels.high : null;
+      return label === null ? { value, color } : { value, color, label };
+    }),
+  };
+};
 
 /** The ramp's 256 colours, each stop at its place in the domain. */
 function rampOf({ domain: [lo, hi], stops }: Ramp): Uint8Array {
@@ -292,13 +310,13 @@ function riverPoints(graph: WorldGraph, ids: readonly number[]): [number, number
 
 /**
  * Every river as a line over `raster`, from its land cells. `style` turns a cell's flux, as a 0-1 share of the
- * world's range on a log scale, into the segment's colour and radius (px).
+ * world's range on a log scale, into the segment's colour and radius (px). Returns that range.
  */
 export function strokeRivers(
   raster: Raster,
   graph: WorldGraph,
   style: (t: number) => { colour: Rgba; radius: number }
-): void {
+): [number, number] {
   const { cells, rivers } = graph;
   const [min, max] = fluxRange(graph);
   const span = Math.max(1e-9, Math.log(max) - Math.log(min));
@@ -318,6 +336,7 @@ export function strokeRivers(
       drawSegment(raster, from, toPixel(line[k]![0], line[k]![1], raster), colour, radius);
     }
   }
+  return [min, max];
 }
 
 function drawFlow(graph: WorldGraph, width: number): { raster: Raster; legend: DiagnosticLegend } {
@@ -340,14 +359,13 @@ function drawFlow(graph: WorldGraph, width: number): { raster: Raster; legend: D
     FLOW_STOPS.map((hex, k) => ({ at: k / (FLOW_STOPS.length - 1), color: hexToRgb(hex) }))
   );
   const scale = width / DIAGNOSTIC_WIDTH;
-  strokeRivers(raster, graph, (t) => {
+  const [min, max] = strokeRivers(raster, graph, (t) => {
     const shade = Math.round(t * 255) * 3;
     return {
       colour: [table[shade]!, table[shade + 1]!, table[shade + 2]!, 255],
       radius: (0.5 + 1.2 * t) * scale,
     };
   });
-  const [min, max] = fluxRange(graph);
   const span = Math.log(max) - Math.log(min);
   const legend: DiagnosticLegend = {
     kind: "flow",
@@ -355,6 +373,7 @@ function drawFlow(graph: WorldGraph, width: number): { raster: Raster; legend: D
     unit: "flux",
     domain: [min, max],
     scale: "log",
+    clipped: { low: false, high: false },
     stops: FLOW_STOPS.map((color, k) => ({
       value: Math.exp(Math.log(min) + (span * k) / (FLOW_STOPS.length - 1)),
       color,
@@ -383,6 +402,7 @@ function drawCells(graph: WorldGraph, width: number): { raster: Raster; legend: 
       unit: "",
       domain: [0, 0],
       scale: "bands",
+      clipped: { low: false, high: false },
       stops: [{ value: 0, color: "#1f2937", label: "Cell edge" }],
     },
   };

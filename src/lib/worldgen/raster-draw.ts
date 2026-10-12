@@ -130,6 +130,51 @@ export const toPixel = (lng: number, lat: number, raster: Raster): [number, numb
   ((90 - lat) / 180) * raster.height,
 ];
 
+/** A ring in pixels: x unwrapped across the antimeridian so consecutive vertices are neighbours, and its row range. */
+interface PixelRing {
+  xs: Float64Array;
+  ys: Float64Array;
+  minY: number;
+  maxY: number;
+}
+
+function pixelRing(raster: Raster, ring: ReadonlyArray<readonly [number, number]>): PixelRing {
+  const xs = new Float64Array(ring.length);
+  const ys = new Float64Array(ring.length);
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (let k = 0; k < ring.length; k++) {
+    const [x, y] = toPixel(ring[k]![0], ring[k]![1], raster);
+    xs[k] = k > 0 ? nearestTo(x, xs[k - 1]!, raster.width) : x;
+    ys[k] = y;
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+  return { xs, ys, minY, maxY };
+}
+
+/** `x` shifted by whole world widths to the copy nearest `previous`. */
+function nearestTo(x: number, previous: number, width: number): number {
+  let near = x;
+  while (near - previous > width / 2) near -= width;
+  while (previous - near > width / 2) near += width;
+  return near;
+}
+
+/** Where the ring covers the line `yc`: its left and right x, or null (half-open, so a shared edge is one side's). */
+function rowExtent({ xs, ys }: PixelRing, yc: number): [number, number] | null {
+  let left = Infinity;
+  let right = -Infinity;
+  for (let k = 0; k < xs.length; k++) {
+    const n = k + 1 === xs.length ? 0 : k + 1;
+    if (ys[k]! <= yc === ys[n]! <= yc) continue;
+    const x = xs[k]! + ((yc - ys[k]!) / (ys[n]! - ys[k]!)) * (xs[n]! - xs[k]!);
+    left = Math.min(left, x);
+    right = Math.max(right, x);
+  }
+  return left <= right ? [left, right] : null;
+}
+
 /**
  * Lay `colour` over the inside of a convex ring (a Voronoi cell) of [lng, lat] points, wherever `where` (a grid
  * the size of the raster) is above zero, or everywhere without one. Pixel centres decide, half-open, so two cells
@@ -141,46 +186,17 @@ export function fillRing(
   colour: Rgba,
   where?: Float32Array
 ): void {
-  const { width, height, data } = raster;
   if (ring.length < 3) return;
-  const xs = new Float64Array(ring.length);
-  const ys = new Float64Array(ring.length);
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (let k = 0; k < ring.length; k++) {
-    const [x, y] = toPixel(ring[k]![0], ring[k]![1], raster);
-    let ux = x;
-    if (k > 0) {
-      const previous = xs[k - 1]!;
-      while (ux - previous > width / 2) ux -= width;
-      while (previous - ux > width / 2) ux += width;
-    }
-    xs[k] = ux;
-    ys[k] = y;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-  const y0 = Math.max(0, Math.ceil(minY - 0.5));
-  const y1 = Math.min(height - 1, Math.ceil(maxY - 0.5) - 1);
-  for (let y = y0; y <= y1; y++) {
-    const yc = y + 0.5;
-    let left = Infinity;
-    let right = -Infinity;
-    for (let k = 0; k < ring.length; k++) {
-      const n = k + 1 === ring.length ? 0 : k + 1;
-      if (ys[k]! <= yc === ys[n]! <= yc) continue;
-      const x = xs[k]! + ((yc - ys[k]!) / (ys[n]! - ys[k]!)) * (xs[n]! - xs[k]!);
-      if (x < left) left = x;
-      if (x > right) right = x;
-    }
-    if (!(left <= right)) continue;
-    const from = Math.ceil(left - 0.5);
-    const to = Math.ceil(right - 0.5) - 1;
-    for (let x = from; x <= to; x++) {
-      const column = wrapColumn(x, width);
-      const px = y * width + column;
-      if (where && !(where[px]! > 0)) continue;
-      putPixel(data, px * 4, colour);
+  const { width, height, data } = raster;
+  const pixels = pixelRing(raster, ring);
+  const y1 = Math.min(height - 1, Math.ceil(pixels.maxY - 0.5) - 1);
+  for (let y = Math.max(0, Math.ceil(pixels.minY - 0.5)); y <= y1; y++) {
+    const extent = rowExtent(pixels, y + 0.5);
+    if (!extent) continue;
+    const to = Math.ceil(extent[1] - 0.5) - 1;
+    for (let x = Math.ceil(extent[0] - 0.5); x <= to; x++) {
+      const px = y * width + wrapColumn(x, width);
+      if (!where || where[px]! > 0) putPixel(data, px * 4, colour);
     }
   }
 }

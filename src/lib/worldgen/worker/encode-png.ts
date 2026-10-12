@@ -14,5 +14,8 @@ export async function encodePng({ width, height, rgba }: RenderedMap): Promise<B
   const context = canvas.getContext("2d");
   if (!context) throw new Error("This browser could not make a canvas that large");
   context.putImageData(new ImageData(rgba, width, height), 0, 0);
+  // The canvas has its own copy now. Detach the pixels (134 MB at 8192 px) so they go before the encode runs
+  // rather than after: moving the buffer into a clone that is then dropped frees it without copying.
+  structuredClone(rgba.buffer, { transfer: [rgba.buffer] });
   return canvas.convertToBlob({ type: "image/png" });
 }

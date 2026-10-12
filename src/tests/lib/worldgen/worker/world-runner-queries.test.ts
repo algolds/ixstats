@@ -182,11 +182,14 @@ describe("worldgen/world-runner queries", () => {
     }
     Object.assign(globalThis, { OffscreenCanvas: FakeCanvas, ImageData: FakeImageData });
     try {
-      await expect(
-        encodePng({ width: 4, height: 2, rgba: new Uint8ClampedArray(32) })
-      ).resolves.toBe(png);
+      const rgba = new Uint8ClampedArray(32);
+      const detach = jest.spyOn(globalThis, "structuredClone");
+      await expect(encodePng({ width: 4, height: 2, rgba })).resolves.toBe(png);
       expect(calls).toEqual(["canvas 4x2", "put 4", "blob image/png"]);
+      // The canvas holds its own copy by now: the 134 MB of pixels at 8192 px are detached before the encode
+      expect(detach).toHaveBeenCalledWith(rgba.buffer, { transfer: [rgba.buffer] });
     } finally {
+      jest.restoreAllMocks();
       Reflect.deleteProperty(globalThis, "OffscreenCanvas");
       Reflect.deleteProperty(globalThis, "ImageData");
     }
