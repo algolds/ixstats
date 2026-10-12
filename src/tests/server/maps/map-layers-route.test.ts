@@ -174,6 +174,22 @@ describe("GET /api/map-layers", () => {
     expect(res.headers.get("etag")).toBe('"default-2-f1-political-1"');
   });
 
+  it("serves a version that is an epoch second (ten digits, what a bump yields from the first edit on)", async () => {
+    getRealmMapVersion.mockResolvedValue(1791783284);
+    const res = await get("default", "1791783284", "political");
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
+    expect(res.headers.get("etag")).toBe('"default-1791783284-f1-political-1"');
+    expect(packedLayerAt).toHaveBeenCalledWith(
+      expect.anything(),
+      "default",
+      1791783284,
+      "political",
+      1
+    );
+  });
+
   it("serves an empty realm's layer as the empty collection the loader built, status 200", async () => {
     packedLayerAt.mockResolvedValue('{"type":"FeatureCollection","packed":4,"features":[]}');
     const res = await get("eurth", "0", "political");
@@ -275,6 +291,8 @@ describe("GET /api/map-layers: bad requests", () => {
     ["a non-numeric version", "default", "latest", "political"],
     ["a negative version", "default", "-1", "political"],
     ["a fractional version", "default", "1.5", "political"],
+    ["a version past a 32-bit integer", "default", "2147483648", "political"],
+    ["an enormous version", "default", "99999999999999", "political"],
   ])("404s on %s without querying", async (_n, realm, version, layer) => {
     expect((await get(realm, version, layer)).status).toBe(404);
     expect(packedLayerAt).not.toHaveBeenCalled();

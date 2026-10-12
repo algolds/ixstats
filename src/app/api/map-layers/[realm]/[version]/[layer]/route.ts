@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { LAYER_FORMAT_VERSION } from "~/lib/maps/layer-format";
 import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
+import { parseMapVersion } from "~/lib/maps/map-version";
 import type { ZoomBucket } from "~/server/modules/maps/layer-lod";
 import { packedLayerAt } from "~/server/modules/maps/layer-delivery";
 import { PRIVATE_TILE_CACHE, resolveTileRealm } from "~/server/modules/maps/realm-tile-access";
@@ -42,7 +43,8 @@ export async function GET(
   { params }: { params: Promise<{ realm: string; version: string; layer: string }> }
 ) {
   const { realm, version: urlVersion, layer } = await params;
-  if (!isLayer(layer) || !/^\d{1,9}$/.test(urlVersion)) return notFound();
+  const namedVersion = parseMapVersion(urlVersion);
+  if (!isLayer(layer) || namedVersion === null) return notFound();
   const bucket = zoomBucket(request.nextUrl.searchParams.get("bucket"));
   if (bucket === null)
     return new NextResponse(null, { status: 400, headers: { "Cache-Control": "no-store" } });
@@ -62,7 +64,7 @@ export async function GET(
 
     const etag = `"${realmId}-${version}-f${LAYER_FORMAT_VERSION}-${layer}-${bucket}"`;
     const named =
-      Number(urlVersion) === version &&
+      namedVersion === version &&
       request.nextUrl.searchParams.get("format") === String(LAYER_FORMAT_VERSION);
     const headers = { ETag: etag, "Cache-Control": named ? IMMUTABLE_CACHE : REVALIDATE_CACHE };
     if (matchesEtag(request.headers.get("if-none-match"), etag)) {

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { buildTile } from "~/server/modules/maps/tile-render";
 import { isTileCoord, isTiledLayer } from "~/lib/maps/decorative-tiles";
+import { parseMapVersion } from "~/lib/maps/map-version";
 import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 import {
   PRIVATE_TILE_CACHE,
@@ -19,7 +20,7 @@ const failure = (status: number) =>
   new NextResponse(null, { status, headers: { "Cache-Control": "no-store" } });
 const notFound = () => failure(404);
 
-/** A URL segment of digits only, else NaN (which is no coordinate or version). */
+/** A URL segment of digits only, else NaN (which is no coordinate or format). */
 const digits = (segment: string) => (/^\d{1,9}$/.test(segment) ? Number(segment) : NaN);
 
 /** The format segment, `f<n>` (tile-format.ts), as its number, else NaN. */
@@ -60,11 +61,11 @@ interface TileParams {
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<TileParams> }) {
   const { realm, version, format, layer, z, x, y } = await params;
-  const [zn, xn, yn, mapVersion] = [digits(z), digits(x), digits(y), digits(version)];
+  const [zn, xn, yn, mapVersion] = [digits(z), digits(x), digits(y), parseMapVersion(version)];
   if (
     !isTiledLayer(layer) ||
     !isTileCoord(zn, xn, yn) ||
-    Number.isNaN(mapVersion) ||
+    mapVersion === null ||
     Number.isNaN(formatNumber(format))
   ) {
     return notFound();

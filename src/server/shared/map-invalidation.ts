@@ -5,8 +5,9 @@ import { clearLayerCache, clearRealmLayerCache } from "./layer-cache";
 
 // One place that says "this realm's map changed". Every write path that changes what a realm's map layers hold
 // (borders, imports, rollbacks, linkage, sovereignty, area recomputes) calls invalidateRealmMap after the write
-// commits. It clears the server's assembled-layer caches and the cached map reads and increments
-// Realm.mapVersion, which versioned layer and tile URLs carry: a new version is a new URL, so browsers and CDNs
+// commits. It clears the server's assembled-layer caches and the cached map reads and moves
+// Realm.mapVersion (one up, but never below the epoch second, so a restored database never serves a number it served
+// before), which versioned layer and tile URLs carry: a new version is a new URL, so browsers and CDNs
 // never serve the old map. It then announces the new version on the live-sync stream, naming the realm, so open maps
 // of that realm (and no other) fetch it. This is a cross-domain primitive (src/server/shared), like layer-cache.ts.
 
@@ -124,7 +125,7 @@ export async function invalidateRealmMap(db: VersionWriter, realmId: string): Pr
   runHooks(realmId);
   const rows = await db.$queryRaw<
     Array<{ mapVersion: number }>
-  >`UPDATE "realms" SET "mapVersion" = "mapVersion" + 1 WHERE "id" = ${realmId} RETURNING "mapVersion"`;
+  >`UPDATE "realms" SET "mapVersion" = GREATEST("mapVersion" + 1, (extract(epoch from now()))::int) WHERE "id" = ${realmId} RETURNING "mapVersion"`;
   versionMemo.delete(realmId);
   epoch++;
   await dropMapReads();
@@ -138,7 +139,7 @@ export async function invalidateAllRealmMaps(db: AllVersionsWriter): Promise<voi
   epoch++;
   clearLayerCache();
   runHooks(null);
-  await db.$executeRaw`UPDATE "realms" SET "mapVersion" = "mapVersion" + 1`;
+  await db.$executeRaw`UPDATE "realms" SET "mapVersion" = GREATEST("mapVersion" + 1, (extract(epoch from now()))::int)`;
   versionMemo.clear();
   epoch++;
   await dropMapReads();

@@ -326,8 +326,10 @@ The public viewer (`/maps`, `MapContainer` → `IxWorldMap`, hooks in `src/compo
 Layers and tiles reach the browser through versioned routes, not tRPC, so the browser's HTTP cache and the server's byte
 caches do the work. Design: [Atlas Release 0 spec](../specs/2026-10-11-atlas-release-0-performance-design.md).
 
-- **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is incremented by `invalidateRealmMap(db, realmId)`
-  (`src/server/shared/map-invalidation.ts`), which every write path that changes what a realm's layers hold calls after
+- **Map version.** `Realm.mapVersion` (Ixnay is realm `default`) is moved by `invalidateRealmMap(db, realmId)`
+  (`src/server/shared/map-invalidation.ts`) to `GREATEST(version + 1, epoch seconds)`: up by one, but never below the
+  clock, so a database restored to an older state jumps past every version its immutable URLs and tile folders carried
+  (a version is ten digits from the first edit on; `parseMapVersion` accepts up to a 32-bit integer). Every write path that changes what a realm's layers hold calls after
   its transaction commits (border saves, split and merge, imports and rollbacks, linkage, sovereignty, area
   recomputes). It also clears that realm's assembled layers, runs the hooks of the other caches (packed layers, the tile
   access memo) and drops the cached map tRPC reads (`MAP_TRPC_KEYS`). `invalidateAllRealmMaps(db)` is for global admin

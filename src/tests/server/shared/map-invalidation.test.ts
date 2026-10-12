@@ -23,6 +23,11 @@ import {
 const fc = { type: "FeatureCollection" as const, features: [] };
 const entry = () => ({ data: fc, timestamp: Date.now() });
 
+/** The statement that moves a realm's version: one past the old one, never below the clock, so a restored database
+ * never serves a number it served before (map-version-sql.test.ts evaluates it). */
+const NEXT_VERSION =
+  'UPDATE "realms" SET "mapVersion" = GREATEST("mapVersion" + 1, (extract(epoch from now()))::int)';
+
 function fakeDb(version = 4) {
   return {
     $queryRaw: jest.fn().mockResolvedValue([{ mapVersion: version }]),
@@ -88,7 +93,7 @@ describe("invalidateRealmMap", () => {
     expect(version).toBe(7);
     expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const [strings, realmId] = db.$queryRaw.mock.calls[0];
-    expect(strings.join("?")).toMatch(/UPDATE "realms" SET "mapVersion" = "mapVersion" \+ 1/);
+    expect(strings.join("?")).toContain(NEXT_VERSION);
     expect(strings.join("?")).toMatch(/RETURNING "mapVersion"/);
     expect(realmId).toBe("r1");
   });
@@ -177,9 +182,7 @@ describe("invalidateAllRealmMaps", () => {
 
     expect(layerCache.size).toBe(0);
     expect(db.$executeRaw).toHaveBeenCalledTimes(1);
-    expect(db.$executeRaw.mock.calls[0][0].join("?")).toMatch(
-      /UPDATE "realms" SET "mapVersion" = "mapVersion" \+ 1/
-    );
+    expect(db.$executeRaw.mock.calls[0][0].join("?")).toContain(NEXT_VERSION);
     expect(invalidateCache).toHaveBeenCalledWith(MAP_TRPC_KEYS);
     expect(hook).toHaveBeenCalledWith(null);
   });

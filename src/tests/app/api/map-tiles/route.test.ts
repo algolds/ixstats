@@ -167,6 +167,7 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
     ["a negative version", "default", "-1", "rivers", "1", "0", "0"],
     ["a fractional version", "default", "1.5", "rivers", "1", "0", "0"],
     ["an enormous version", "default", "99999999999999", "rivers", "1", "0", "0"],
+    ["a version past a 32-bit integer", "default", "2147483648", "rivers", "1", "0", "0"],
   ])("404s on %s without querying", async (_n, realm, version, layer, z, x, y) => {
     const res = await get(realm, version, layer, z, x, y);
     expect(res.status).toBe(404);
@@ -204,6 +205,20 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
     expect((await run("default", "3", "rivers", "1", "0", "0")).headers.get("cache-control")).toBe(
       IMMUTABLE
     );
+  });
+
+  it("serves a version that is an epoch second (ten digits, what a bump yields from the first edit on)", async () => {
+    table[0]!.mapVersion = 1791783284;
+    try {
+      const res = await get("default", "1791783284", "rivers", "1", "0", "0");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
+      expect(
+        existsSync(path.join(root, "default", "f1", "1791783284", "rivers", "1", "0", "0.pbf"))
+      ).toBe(true);
+    } finally {
+      table[0]!.mapVersion = 3;
+    }
   });
 
   it("404s on an unknown realm, uncached", async () => {
