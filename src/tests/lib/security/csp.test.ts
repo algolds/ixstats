@@ -20,9 +20,15 @@ describe("CSP template", () => {
     expect(csp).toMatch(/connect-src 'self' blob: https: wss:;/);
   });
 
-  it("lets MapLibre's worker fetch blob: GeoJSON (the world editor's draft preview)", () => {
-    for (const development of [false, true]) {
-      expect(buildCSPTemplate(development)).toMatch(/connect-src [^;]*\bblob:/);
+  it("lets MapLibre's worker fetch blob: GeoJSON (the world editor's draft preview), in production and in development", () => {
+    expect(buildCSPTemplate(false)).toMatch(/connect-src 'self' blob: https: wss:;/);
+
+    // The development switch is NODE_ENV, not the argument
+    const env = jest.replaceProperty(process.env, "NODE_ENV", "development");
+    try {
+      expect(buildCSPTemplate(false)).toMatch(/connect-src 'self' blob: https: wss: ws:;/);
+    } finally {
+      env.restore();
     }
   });
 });

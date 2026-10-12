@@ -9,13 +9,15 @@ type Spec = { id: string; type?: string; source?: string; layout?: Record<string
 
 type SpecValue = string | number | boolean | undefined | SpecValue[] | { [key: string]: SpecValue };
 
+type ImageUpdate = { image: { data: Uint8ClampedArray }; coordinates?: SpecValue };
+
 export type FakeSource = {
   spec: Record<string, SpecValue>;
   setData: jest.Mock<Promise<void>, [string]>;
-  updateImage: jest.Mock<void, [{ image: { data: Uint8ClampedArray }; coordinates?: SpecValue }]>;
+  updateImage: jest.Mock<void, [ImageUpdate]>;
 };
 
-/** The parts of a MapLibre event the preview reads. */
+/** The parts of a MapLibre event the preview reads (`error` events carry the id of a failing source too). */
 type MapEvent = { sourceId?: string; isSourceLoaded?: boolean };
 type Handler = (event: MapEvent) => void;
 
@@ -39,15 +41,15 @@ export function fakeDraftMap(live: (string | { id: string; visibility: string })
 
   const map = {
     style,
-    getStyle: () => ({ layers: order.map((id) => ({ id })) }),
+    getLayersOrder: () => [...order],
     getLayer: (id: string) => layers.get(id),
     getSource: (id: string) => sources.get(id),
     addSource: jest.fn((id: string, spec: Record<string, SpecValue>) => {
       if (sources.has(id)) throw new Error(`source ${id} exists`);
       sources.set(id, {
         spec,
-        setData: jest.fn(() => Promise.resolve()),
-        updateImage: jest.fn(),
+        setData: jest.fn((_url: string) => Promise.resolve()),
+        updateImage: jest.fn((_update: ImageUpdate) => {}),
       });
     }),
     removeSource: jest.fn((id: string) => {
@@ -66,10 +68,12 @@ export function fakeDraftMap(live: (string | { id: string; visibility: string })
       order.splice(order.indexOf(id), 1);
     }),
     getLayoutProperty: (id: string, name: string) => layers.get(id)?.layout[name],
-    setLayoutProperty: jest.fn((id: string, name: string, value: string) => {
+    // undefined unsets the property, as on the real map
+    setLayoutProperty: jest.fn((id: string, name: string, value: string | undefined) => {
       const layer = layers.get(id);
       if (!layer) throw new Error(`no layer ${id}`);
-      layer.layout[name] = value;
+      if (value === undefined) delete layer.layout[name];
+      else layer.layout[name] = value;
     }),
     on: jest.fn((type: string, handler: Handler) => {
       handlers.set(type, (handlers.get(type) ?? new Set()).add(handler));

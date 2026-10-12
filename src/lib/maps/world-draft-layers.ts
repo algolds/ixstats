@@ -4,13 +4,15 @@
  *
  * Each GeoJSON layer arrives as a JSON string and goes to the map as a blob URL through `source.setData(url)`, so
  * MapLibre's worker parses it and the main thread only posts a message. A URL is revoked once its source reports
- * loaded (or when the draft is cleared). The relief goes in as decoded `ImageData` (`updateImage({ image })`), with
- * no encoding or URL, in the Web Mercator rows the worker already warped it to.
+ * loaded or failed, when its layer is dropped, or when the draft is cleared. The relief goes in as decoded
+ * `ImageData` (`updateImage({ image })`), with no encoding or URL, in the Web Mercator rows the worker already
+ * warped it to.
  *
  * Everything here is idempotent, because `sync()` runs on every `styledata`: after a style reload (a theme change
  * wipes all sources and layers) it adds the draft back, pushes the data again and hides the live layers that came
  * back. A live layer someone shows again while previewing is hidden again, and the visibility it is then restored
- * to is the one it was last given.
+ * to is the one it was last given. A world that keeps the realm's borders has no political layer, so the live
+ * borders and country names stay visible over the draft.
  */
 
 import type {
@@ -19,6 +21,7 @@ import type {
   ImageSource,
   LayerSpecification,
   Map as MapLibreMap,
+  ErrorEvent as MapErrorEvent,
   MapSourceDataEvent,
   VisibilitySpecification,
 } from "maplibre-gl";
@@ -93,6 +96,17 @@ const LIVE_IDS: ReadonlySet<string> = new Set([
   "country-name-labels",
 ]);
 const LIVE_PREFIXES = ["fill-", "stroke-", "realm-raster-"];
+/**
+ * The live layers that draw the realm's borders and country names. A world that keeps the realm's borders has no
+ * political layer of its own, so these stay visible over the draft.
+ */
+const BORDER_IDS: ReadonlySet<string> = new Set([
+  "fill-political",
+  "stroke-political",
+  "sovereignty-border",
+  "sovereignty-labels",
+  "country-name-labels",
+]);
 
 const isLiveRealmLayer = (id: string): boolean =>
   !id.startsWith(DRAFT_PREFIX) && (LIVE_IDS.has(id) || LIVE_PREFIXES.some((p) => id.startsWith(p)));
@@ -144,9 +158,6 @@ function layerSpecs(type: DraftType): LayerSpecification[] {
   return specs;
 }
 
-const styleLayerIds = (map: MapLibreMap): string[] =>
-  map.getStyle()?.layers?.map((layer) => layer.id) ?? [];
-
 export class WorldDraft {
   private shown: WorldGenResult | null = null;
   /** Live layer id to the visibility it had before it was hidden (undefined = the default, visible) */
@@ -185,7 +196,7 @@ export class WorldDraft {
         if (map.getSource(id)) map.removeSource(id);
       }
       for (const [id, visibility] of this.hidden) {
-        if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility ?? "visible");
+        if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
       }
     }
     this.hidden.clear();
@@ -197,7 +208,8 @@ export class WorldDraft {
     if (!shown || this.busy || !isMapStyleReady(map)) return;
     this.busy = true;
     try {
-      const ids = styleLayerIds(map);
+      // getLayersOrder, not getStyle(): this runs on every styledata and must not serialise the whole style
+      const ids = map.getLayersOrder();
       // Under the first live layer: the draft takes the place of the live stack
       const anchor = ids.find(isLiveRealmLayer);
       for (const type of DRAFT_TYPES) {
@@ -206,7 +218,7 @@ export class WorldDraft {
         else this.pushType(type, json, anchor);
       }
       this.pushRelief(shown.relief, anchor);
-      this.hideLive(ids);
+      this.hideLive(ids, shown.layers.political !== undefined);
     } finally {
       this.busy = false;
     }
@@ -234,6 +246,7 @@ export class WorldDraft {
     }
     if (map.getSource(sourceIdOf(type))) map.removeSource(sourceIdOf(type));
     this.pushed.delete(sourceIdOf(type));
+    this.release(sourceIdOf(type));
   }
 
   private pushRelief(relief: WorldGenResult["relief"], anchor: string | undefined): void {
@@ -269,12 +282,18 @@ export class WorldDraft {
     return above ?? anchor;
   }
 
-  private hideLive(ids: readonly string[]): void {
+  /** Hides the live layers (not the borders, when the draft has none of its own); puts back any it no longer hides. */
+  private hideLive(ids: readonly string[], draftHasBorders: boolean): void {
     const { map } = this;
     const live = ids.filter(isLiveRealmLayer);
-    const present = new Set(live);
-    for (const id of this.hidden.keys()) if (!present.has(id)) this.hidden.delete(id);
-    for (const id of live) {
+    const hide = new Set(live.filter((id) => draftHasBorders || !BORDER_IDS.has(id)));
+    for (const [id, prior] of this.hidden) {
+      if (hide.has(id)) continue;
+      // Gone from the map, or no longer to be hidden
+      if (live.includes(id)) map.setLayoutProperty(id, "visibility", prior);
+      this.hidden.delete(id);
+    }
+    for (const id of hide) {
       const visibility = map.getLayoutProperty(id, "visibility");
       // Already hidden by us; a layer that is visible again was shown (or made anew) since
       if (visibility === "none" && this.hidden.has(id)) continue;
@@ -290,6 +309,7 @@ export class WorldDraft {
     this.pending.set(sourceId, urls);
     if (!this.listening) {
       this.map.on("sourcedata", this.onSourceData);
+      this.map.on("error", this.onError);
       this.listening = true;
     }
     return url;
@@ -297,13 +317,21 @@ export class WorldDraft {
 
   /** A source with nothing left to load has read its URLs (a newer one supersedes an older). */
   private readonly onSourceData = (event: MapSourceDataEvent): void => {
-    if (!event.isSourceLoaded) return;
-    const urls = this.pending.get(event.sourceId);
+    if (event.isSourceLoaded) this.release(event.sourceId);
+  };
+
+  /** A source that failed to load will not read its URLs either. */
+  private readonly onError = (event: MapErrorEvent & { sourceId?: string }): void => {
+    if (event.sourceId !== undefined) this.release(event.sourceId);
+  };
+
+  private release(sourceId: string): void {
+    const urls = this.pending.get(sourceId);
     if (!urls) return;
     for (const url of urls) URL.revokeObjectURL(url);
-    this.pending.delete(event.sourceId);
+    this.pending.delete(sourceId);
     if (this.pending.size === 0) this.stopListening();
-  };
+  }
 
   private revokeAll(): void {
     for (const urls of this.pending.values()) for (const url of urls) URL.revokeObjectURL(url);
@@ -312,7 +340,10 @@ export class WorldDraft {
   }
 
   private stopListening(): void {
-    if (this.listening) this.map.off("sourcedata", this.onSourceData);
+    if (this.listening) {
+      this.map.off("sourcedata", this.onSourceData);
+      this.map.off("error", this.onError);
+    }
     this.listening = false;
   }
 }

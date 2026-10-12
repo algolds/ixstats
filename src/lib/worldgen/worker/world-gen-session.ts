@@ -102,6 +102,14 @@ export class WorldGenSession {
     this.update({ state: this.view.result ? "ready" : "idle", stage: null, pct: 0, message: "" });
   }
 
+  /** Ends the run in flight and forgets the world and the error: back to idle, as on a fresh mount. */
+  reset(): void {
+    if (this.disposed) return;
+    this.latestId++;
+    this.discardWorker();
+    this.update(IDLE_VIEW);
+  }
+
   dispose(): void {
     this.disposed = true;
     this.latestId++;
@@ -115,6 +123,7 @@ export class WorldGenSession {
         // A worker that has been replaced is none of our business
         if (this.worker !== worker) return;
         const wasBusy = this.busy;
+        this.latestId++;
         this.discardWorker();
         if (wasBusy) this.fail(message);
       },
@@ -158,6 +167,8 @@ export class WorldGenSession {
 
   private timeOut(id: number): void {
     if (id !== this.latestId) return;
+    // Whatever the terminated worker still delivers is for a request nobody waits for
+    this.latestId++;
     this.discardWorker();
     this.fail("Generating the world took too long");
   }

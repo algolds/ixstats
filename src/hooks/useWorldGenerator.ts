@@ -19,6 +19,12 @@ export interface WorldGenerator extends WorldGenView {
   generate(params: Partial<WorldGenParams>, seed: number, options?: WorldGenerateOptions): void;
   /** Ends the generation in flight and goes back to the last good world (or idle). */
   cancel(): void;
+  /**
+   * Ends the generation in flight and forgets the last good world and the error: back to idle. The editor calls
+   * this when the realm changes (or keys the component that holds the hook by realm), so one realm's world is
+   * never previewed on another.
+   */
+  reset(): void;
 }
 
 /**
@@ -29,23 +35,29 @@ export interface WorldGenerator extends WorldGenView {
 export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenerator {
   const [view, setView] = useState<WorldGenView>(IDLE_VIEW);
   const session = useRef<WorldGenSession | null>(null);
+  // True until unmount. A strict-mode or Activity remount sets it again; a `generate` after unmount would
+  // otherwise build a session no cleanup will ever dispose.
+  const mounted = useRef(true);
 
   const generate = useCallback<WorldGenerator["generate"]>(
     (params, seed, options) => {
+      if (!mounted.current) return;
       session.current ??= new WorldGenSession(createWorker, setView);
       session.current.generate(params, seed, options);
     },
     [createWorker]
   );
   const cancel = useCallback(() => session.current?.cancel(), []);
+  const reset = useCallback(() => session.current?.reset(), []);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
       session.current?.dispose();
       session.current = null;
-    },
-    []
-  );
+    };
+  }, []);
 
-  return { ...view, generate, cancel };
+  return { ...view, generate, cancel, reset };
 }

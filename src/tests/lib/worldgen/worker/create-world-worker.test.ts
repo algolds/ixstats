@@ -2,14 +2,15 @@
  * The browser factory: a module worker on world.worker.ts whose messages and crashes reach the listener.
  */
 
-import type { WorldWorkerResponse } from "~/lib/worldgen/worker/world-messages";
+import type { WorldWorkerRequest, WorldWorkerResponse } from "~/lib/worldgen/worker/world-messages";
 import { createWorldWorker } from "~/lib/worldgen/worker/create-world-worker";
 
 class StubWorker {
   static last: StubWorker;
   onmessage: ((event: { data: WorldWorkerResponse }) => void) | null = null;
   onerror: ((event: { message: string }) => void) | null = null;
-  posted: unknown[] = [];
+  onmessageerror: (() => void) | null = null;
+  posted: WorldWorkerRequest[] = [];
   terminated = false;
   constructor(
     readonly url: URL,
@@ -17,7 +18,7 @@ class StubWorker {
   ) {
     StubWorker.last = this;
   }
-  postMessage(message: unknown) {
+  postMessage(message: WorldWorkerRequest) {
     this.posted.push(message);
   }
   terminate() {
@@ -59,5 +60,12 @@ describe("worldgen/create-world-worker", () => {
     StubWorker.last.onerror!({ message: "" });
     expect(onCrash).toHaveBeenNthCalledWith(1, "SyntaxError: bad script");
     expect(onCrash).toHaveBeenNthCalledWith(2, "The world generator stopped unexpectedly");
+  });
+
+  it("reports an answer the browser could not deserialise as a crash", () => {
+    const onCrash = jest.fn();
+    createWorldWorker({ onMessage: jest.fn(), onCrash });
+    StubWorker.last.onmessageerror!();
+    expect(onCrash).toHaveBeenCalledWith("The world generator sent an unreadable answer");
   });
 });

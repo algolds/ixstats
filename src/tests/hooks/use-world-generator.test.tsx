@@ -2,6 +2,7 @@
  * The world generator hook: one worker for the editor's life, a new generate replacing any in flight, stale
  * answers dropped, and a failed run leaving the last good world in place.
  */
+import { StrictMode } from "react";
 import { act, renderHook } from "@testing-library/react";
 
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
@@ -175,7 +176,7 @@ describe("useWorldGenerator", () => {
 
     act(() => result.current.generate({}, 1));
     expect(workers).toHaveLength(2);
-    expect(workers[1]!.posted[0]).toMatchObject({ id: 2 });
+    expect(workers[1]!.posted).toHaveLength(1);
   });
 
   it("times out a generation after 30 seconds: error state, worker terminated, last world kept", () => {
@@ -258,6 +259,100 @@ describe("useWorldGenerator", () => {
     act(() => workers[1]!.say(resultMessage(cancelled, { seed: 999 })));
     expect(result.current.result!.seed).toBe(5);
     expect(result.current.state).toBe("ready");
+  });
+
+  it("drops what a worker killed by the timeout still delivers", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!), { seed: 5 })));
+    act(() => result.current.generate({}, 2));
+    const late = lastId(workers[0]!);
+    act(() => {
+      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
+    });
+    expect(result.current.state).toBe("error");
+
+    act(() =>
+      workers[0]!.say({ type: "progress", id: late, stage: "mesh", pct: 50, message: "late" })
+    );
+    expect(result.current).toMatchObject({ state: "error", stage: null, pct: 0, message: "" });
+    act(() => workers[0]!.say(resultMessage(late, { seed: 999 })));
+    expect(result.current.state).toBe("error");
+    expect(result.current.result!.seed).toBe(5);
+  });
+
+  it("drops what a crashed worker still delivers", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    const late = lastId(workers[0]!);
+    act(() => workers[0]!.listener.onCrash("boom"));
+    expect(result.current.state).toBe("error");
+
+    act(() => workers[0]!.say(resultMessage(late, { seed: 999 })));
+    expect(result.current).toMatchObject({ state: "error", error: "boom", result: null });
+  });
+
+  it("does nothing when generate is called after unmount: no worker, no clock", () => {
+    const { result, workers, unmount } = setup();
+    const { generate } = result.current;
+    unmount();
+    act(() => generate({}, 1));
+
+    expect(workers).toHaveLength(0);
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it("keeps working after React's strict-mode unmount and remount", () => {
+    const { factory, workers } = fakeWorldWorkers();
+    const { result } = renderHook(() => useWorldGenerator(factory), { wrapper: StrictMode });
+    act(() => result.current.generate({}, 1));
+
+    expect(workers).toHaveLength(1);
+    expect(result.current.state).toBe("generating");
+    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!))));
+    expect(result.current.state).toBe("ready");
+  });
+
+  it("reset ends the run, drops the world and the error and goes back to idle", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!), { seed: 5 })));
+    act(() => result.current.generate({}, 2));
+    const late = lastId(workers[0]!);
+    act(() => result.current.reset());
+
+    expect(result.current).toMatchObject({
+      state: "idle",
+      stage: null,
+      pct: 0,
+      message: "",
+      error: null,
+      result: null,
+    });
+    expect(workers[0]!.terminated).toBe(true);
+    expect(jest.getTimerCount()).toBe(0);
+
+    // What the run it ended posts afterwards is dropped
+    act(() => workers[0]!.say(resultMessage(late, { seed: 999 })));
+    expect(result.current.state).toBe("idle");
+    expect(result.current.result).toBeNull();
+
+    // And the hook is usable again
+    act(() => result.current.generate({}, 3));
+    expect(workers).toHaveLength(2);
+    expect(result.current.state).toBe("generating");
+  });
+
+  it("reset clears an error and the world of an idle generator, with no worker to end", () => {
+    const { result, workers } = setup();
+    act(() => result.current.reset());
+    expect(workers).toHaveLength(0);
+
+    act(() => result.current.generate({}, 1));
+    act(() => workers[0]!.say({ type: "error", id: lastId(workers[0]!), message: "no" }));
+    expect(result.current.state).toBe("error");
+    act(() => result.current.reset());
+    expect(result.current).toMatchObject({ state: "idle", error: null, result: null });
   });
 
   it("terminates the worker and stops the clock on unmount", () => {

@@ -187,10 +187,12 @@ describe("useWorldPreview", () => {
 
     act(() => rig.show(null));
 
-    expect(rig.visibility("fill-background")).toBe("visible");
+    // A layer with no visibility set gets none set again, not "visible"
+    expect(rig.visibility("fill-background")).toBeUndefined();
+    expect(rig.layers.get("fill-background")!.layout).not.toHaveProperty("visibility");
     expect(rig.visibility("fill-altitudes")).toBe("visible");
     expect(rig.visibility("fill-climate")).toBe("none");
-    expect(rig.visibility("fill-political")).toBe("visible");
+    expect(rig.visibility("fill-political")).toBeUndefined();
     expect(rig.visibility("realm-raster-relief")).toBe("none");
     expect(rig.fake.setLayoutProperty).not.toHaveBeenCalledWith(
       "fill-climate",
@@ -217,9 +219,10 @@ describe("useWorldPreview", () => {
     rig.unmount();
 
     expect(rig.draftIds()).toEqual([]);
-    expect(rig.visibility("fill-political")).toBe("visible");
+    expect(rig.visibility("fill-political")).toBeUndefined();
     expect(rig.listeners("styledata")).toBe(0);
     expect(rig.listeners("sourcedata")).toBe(0);
+    expect(rig.listeners("error")).toBe(0);
   });
 
   it("updates a new world in place: setData on the same sources, nothing added or hidden twice", () => {
@@ -256,18 +259,69 @@ describe("useWorldPreview", () => {
     expect(rig.sources.get("worldgen-draft-relief")!.updateImage).toHaveBeenCalledTimes(2);
   });
 
-  it("drops a layer the new world does not have (the realm keeps its borders)", () => {
-    const rig = mount();
-    act(() => rig.show(worldResult()));
-    const { political: _political, ...withoutPolitical } = worldResult().layers;
-    act(() => rig.show(worldResult({ layers: withoutPolitical })));
+  describe("a world that keeps the realm's borders (no political layer)", () => {
+    const BORDERS = [
+      "fill-political",
+      "stroke-political",
+      "sovereignty-border",
+      "sovereignty-labels",
+    ];
+    const LIVE_WITH_BORDERS = [...LIVE, "sovereignty-labels"];
+    const keptBorders = () => {
+      const { political: _political, ...layers } = worldResult().layers;
+      return worldResult({ layers });
+    };
 
-    expect(rig.draftIds()).not.toContain("worldgen-draft-political");
-    expect(rig.draftIds()).not.toContain("worldgen-draft-political-stroke");
-    expect(rig.sources.has("worldgen-draft-political")).toBe(false);
-    expect(rig.draftIds()).toContain("worldgen-draft-lakes");
-    // The live political layer stays hidden
-    expect(rig.visibility("fill-political")).toBe("none");
+    it("drops the draft's own political layer", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      act(() => rig.show(keptBorders()));
+
+      expect(rig.draftIds()).not.toContain("worldgen-draft-political");
+      expect(rig.draftIds()).not.toContain("worldgen-draft-political-stroke");
+      expect(rig.sources.has("worldgen-draft-political")).toBe(false);
+      expect(rig.draftIds()).toContain("worldgen-draft-lakes");
+    });
+
+    it("leaves the live borders and country names visible, and hides the rest of the live map", () => {
+      const rig = mount(LIVE_WITH_BORDERS);
+      act(() => rig.show(keptBorders()));
+
+      for (const id of [...BORDERS, "country-name-labels"]) {
+        expect(rig.visibility(id)).toBeUndefined();
+        expect(rig.fake.setLayoutProperty).not.toHaveBeenCalledWith(id, "visibility", "none");
+      }
+      for (const id of ["fill-background", "fill-altitudes", "fill-lakes", "fill-rivers"]) {
+        expect(rig.visibility(id)).toBe("none");
+      }
+    });
+
+    it("shows the borders again after a world that has its own, and hides them for it", () => {
+      const rig = mount(LIVE_WITH_BORDERS);
+      act(() => rig.show(worldResult()));
+      expect(rig.visibility("fill-political")).toBe("none");
+      expect(rig.visibility("country-name-labels")).toBe("none");
+
+      act(() => rig.show(keptBorders()));
+      for (const id of [...BORDERS, "country-name-labels"]) {
+        expect(rig.visibility(id)).toBeUndefined();
+      }
+
+      act(() => rig.show(worldResult()));
+      for (const id of [...BORDERS, "country-name-labels"]) expect(rig.visibility(id)).toBe("none");
+    });
+
+    it("restores a border layer to the visibility it had, when the world is cleared", () => {
+      const rig = mount(
+        LIVE.map((id) => (id === "stroke-political" ? { id, visibility: "none" } : id))
+      );
+      act(() => rig.show(worldResult()));
+      act(() => rig.show(keptBorders()));
+      expect(rig.visibility("stroke-political")).toBe("none");
+      act(() => rig.show(null));
+      expect(rig.visibility("stroke-political")).toBe("none");
+      expect(rig.visibility("fill-political")).toBeUndefined();
+    });
   });
 
   describe("blob URLs", () => {
@@ -319,6 +373,37 @@ describe("useWorldPreview", () => {
       expect(revoked.sort()).toEqual([first, second].sort());
     });
 
+    it("are revoked for a layer the new world drops", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      const political = String(rig.sources.get("worldgen-draft-political")!.spec.data);
+      const { political: _political, ...layers } = worldResult().layers;
+      act(() => rig.show(worldResult({ layers })));
+
+      expect(revoked).toEqual([political]);
+    });
+
+    it("are revoked when their source fails to load, and only that source's", () => {
+      const rig = mount();
+      act(() => rig.show(worldResult()));
+      const lakes = String(rig.sources.get("worldgen-draft-lakes")!.spec.data);
+
+      act(() => rig.emit("error", {}));
+      act(() => rig.emit("error", { sourceId: "source-political" }));
+      expect(revoked).toEqual([]);
+
+      act(() => rig.emit("error", { sourceId: "worldgen-draft-lakes" }));
+      expect(revoked).toEqual([lakes]);
+      expect(rig.listeners("error")).toBe(1);
+
+      for (const type of ["background", "altitudes", "political", "rivers"]) {
+        act(() => rig.emit("error", { sourceId: `worldgen-draft-${type}` }));
+      }
+      expect(revoked).toHaveLength(5);
+      expect(rig.listeners("error")).toBe(0);
+      expect(rig.listeners("sourcedata")).toBe(0);
+    });
+
     it("are all revoked when the draft is cleared before they load", () => {
       const rig = mount();
       act(() => rig.show(worldResult()));
@@ -357,7 +442,7 @@ describe("useWorldPreview", () => {
 
       // And a clear afterwards restores the layers that came back
       act(() => rig.show(null));
-      for (const id of LIVE) expect(rig.visibility(id)).toBe("visible");
+      for (const id of LIVE) expect(rig.visibility(id)).toBeUndefined();
     });
 
     it("hides a live layer added while previewing, and restores it", () => {
@@ -368,7 +453,7 @@ describe("useWorldPreview", () => {
       expect(rig.visibility("realm-raster-hillshade")).toBe("none");
 
       act(() => rig.show(null));
-      expect(rig.visibility("realm-raster-hillshade")).toBe("visible");
+      expect(rig.visibility("realm-raster-hillshade")).toBeUndefined();
     });
 
     it("hides a live layer again when it is shown while previewing", () => {

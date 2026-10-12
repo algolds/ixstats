@@ -10,6 +10,7 @@ export const createWorldWorker: WorldWorkerFactory = (listener) => {
   worker.onmessage = (event: MessageEvent<WorldWorkerResponse>) => listener.onMessage(event.data);
   worker.onerror = (event: ErrorEvent) =>
     listener.onCrash(event.message || "The world generator stopped unexpectedly");
+  worker.onmessageerror = () => listener.onCrash("The world generator sent an unreadable answer");
   return {
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a Worker has no target origin
     post: (request) => worker.postMessage(request),
