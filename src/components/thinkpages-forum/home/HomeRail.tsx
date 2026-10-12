@@ -34,33 +34,46 @@ function SeeAll({ href, label }: { href: string; label: string }) {
 export function LatestActivityPanel({ items }: { items: Readonly<Activity> }) {
   return (
     <RailPanel title="Latest activity" icon={<Clock />}>
-      <ol className="relative -mx-2">
-        <span aria-hidden className="bg-separator absolute top-5 bottom-5 left-5 w-px" />
-        {items.map((item) => {
-          const name = item.author?.name ?? "Member";
-          return (
-            <li key={item.postId}>
-              <Link href={postHref(item.postId)} className={cn(ROW, "relative items-start")}>
-                <span className="inline-flex shrink-0 items-center gap-1.5 pt-0.5">
-                  <ForumAvatar name={name} avatarUrl={item.author?.avatarUrl} size="xs" />
-                  {item.author?.flagUrl ? <AuthorFlag url={item.author.flagUrl} /> : null}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="text-callout text-label-secondary line-clamp-2">
-                    <span className="text-label font-medium">{name}</span>
-                    {item.isFirstPost ? " started " : " replied in "}
-                    <span className="text-label">{item.threadTitle}</span>
-                  </span>
-                  <span className="text-footnote text-label-secondary block truncate tabular-nums">
-                    {`${item.categoryName} · ${timeAgo(item.at)}`}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
+      <LatestActivityList items={items} />
     </RailPanel>
+  );
+}
+
+/** The rows of Latest activity, for a surface that supplies its own frame (the front page). */
+export function LatestActivityList({
+  items,
+  className,
+}: {
+  items: Readonly<Activity>;
+  className?: string;
+}) {
+  return (
+    <ol className={cn("relative -mx-2", className)}>
+      <span aria-hidden className="bg-separator absolute top-5 bottom-5 left-5 w-px" />
+      {items.map((item) => {
+        const name = item.author?.name ?? "Member";
+        return (
+          <li key={item.postId}>
+            <Link href={postHref(item.postId)} className={cn(ROW, "relative items-start")}>
+              <span className="inline-flex shrink-0 items-center gap-1.5 pt-0.5">
+                <ForumAvatar name={name} avatarUrl={item.author?.avatarUrl} size="xs" />
+                {item.author?.flagUrl ? <AuthorFlag url={item.author.flagUrl} /> : null}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="text-callout text-label-secondary line-clamp-2">
+                  <span className="text-label font-medium">{name}</span>
+                  {item.isFirstPost ? " started " : " replied in "}
+                  <span className="text-label">{item.threadTitle}</span>
+                </span>
+                <span className="text-footnote text-label-secondary block truncate tabular-nums">
+                  {`${item.categoryName} · ${timeAgo(item.at)}`}
+                </span>
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 

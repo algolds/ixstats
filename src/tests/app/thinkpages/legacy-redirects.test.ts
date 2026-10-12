@@ -266,7 +266,7 @@ describe("/thinkpages is the forum home", () => {
   });
 
   it("is titled ThinkPages", () => {
-    expect(homeMetadata.title).toBe("ThinkPages - IxStats");
+    expect(homeMetadata.title).toBe("ThinkPages - IxStates");
   });
 });
 

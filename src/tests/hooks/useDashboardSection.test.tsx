@@ -15,7 +15,7 @@ let pushState: jest.SpyInstance;
 beforeEach(() => {
   mockPathname = "/dashboard";
   window.history.replaceState(null, "", "/dashboard");
-  document.title = "Dashboard - IxStats";
+  document.title = "Dashboard - IxStates";
   pushState = jest.spyOn(window.history, "pushState");
   jest.spyOn(window, "scrollTo").mockImplementation(() => {});
 });
@@ -39,7 +39,7 @@ describe("useDashboardSection", () => {
     act(() => result.current.navigate("accounts"));
     expect(result.current.section).toBe("accounts");
     expect(pushState).toHaveBeenCalledWith(null, "", withBasePath("/dashboard/accounts"));
-    expect(document.title).toBe("Accounts - IxStats");
+    expect(document.title).toBe("Accounts - IxStates");
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "instant" });
   });
 
@@ -47,7 +47,7 @@ describe("useDashboardSection", () => {
     const { result } = renderHook(() => useDashboardSection("home"));
     act(() => result.current.navigate("home"));
     expect(pushState).not.toHaveBeenCalled();
-    expect(document.title).toBe("Dashboard - IxStats");
+    expect(document.title).toBe("Dashboard - IxStates");
   });
 
   it("follows the browser back button", () => {

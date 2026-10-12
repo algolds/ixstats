@@ -49,7 +49,7 @@ function showEmbed(wrap,lat,lng,zoom){
   var f=document.createElement('iframe');
   f.setAttribute('allow','fullscreen');
   f.setAttribute('loading','lazy');
-  f.setAttribute('title','IxWorld Map Embed');
+  f.setAttribute('title','Map embed');
   f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:none';
   f.src=src;
   wrap.appendChild(f);
@@ -62,7 +62,7 @@ window._ixCoordsFullscreen=function(lat,lng,zoom){
     _ixIframe=document.createElement('iframe');
     _ixIframe.setAttribute('allow','fullscreen');
     _ixIframe.setAttribute('loading','eager');
-    _ixIframe.setAttribute('title','IxWorld Map Embed');
+    _ixIframe.setAttribute('title','Map embed');
     _ixIframe.style.cssText='position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:none';
     document.body.appendChild(_ixIframe);
     _ixIframe.src=_ixBase;

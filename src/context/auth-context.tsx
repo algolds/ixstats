@@ -6,6 +6,7 @@ import {
   useAuth as useClerkAuth,
   SignInButton as ClerkSignInButton,
   SignOutButton as ClerkSignOutButton,
+  SignUpButton as ClerkSignUpButton,
   UserButton as ClerkUserButton,
 } from "@clerk/nextjs";
 import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
@@ -134,6 +135,11 @@ export function SignedOut({ children }: { children: React.ReactNode }) {
 export function SignOutButton(props: React.ComponentProps<typeof ClerkSignOutButton>) {
   assertClerkConfigured("SignOutButton");
   return <ClerkSignOutButton {...props} />;
+}
+
+export function SignUpButton(props: React.ComponentProps<typeof ClerkSignUpButton>) {
+  assertClerkConfigured("SignUpButton");
+  return <ClerkSignUpButton {...props} />;
 }
 
 export function SignInButton(props: React.ComponentProps<typeof ClerkSignInButton>) {

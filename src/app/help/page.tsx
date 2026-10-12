@@ -7,7 +7,7 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Card } from "~/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Help Center - IxStats",
+  title: "Help Center - IxStates",
   description:
     "Guides to every part of IxStats: building a nation, MyCountry, the Vault, maps, the wiki and the community.",
 };

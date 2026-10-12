@@ -60,13 +60,13 @@ describe("AdminNavigationProvider", () => {
   it("titles the document per section", () => {
     mockPathname = "/admin/national-issues";
     render(<Tree />);
-    expect(document.title).toBe("Admin - National Issues - IxStats");
+    expect(document.title).toBe("Admin - National Issues - IxStates");
   });
 
   it("titles the dashboard", () => {
     mockPathname = "/admin";
     render(<Tree />);
-    expect(document.title).toBe("Admin Dashboard - IxStats");
+    expect(document.title).toBe("Admin Dashboard - IxStates");
   });
 
   it("switches section in place when a caller navigates", () => {

@@ -9,7 +9,7 @@ interface RealmCategoryPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 export default async function RealmCategoryPage({ params, searchParams }: RealmCategoryPageProps) {

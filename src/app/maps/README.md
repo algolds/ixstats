@@ -16,7 +16,7 @@ For the full system guide (component catalog, procedural worldgen, classificatio
 
 Players edit their own nation in place: the country editor (`MapEditorOverlay`) opens over the map from `/maps`.
 
-This page is a client component (`export const dynamic = "force-dynamic"`). `layout.tsx` sets metadata and switches the title/description between standalone (`IxWorld - Interactive World Map`) and embedded (`World Map - IxStates`) modes.
+This page is a client component (`export const dynamic = "force-dynamic"`). `layout.tsx` sets the metadata (`World Map - IxStates`, the same standalone and embedded).
 
 ### URL parameters (deep linking)
 

@@ -11,6 +11,7 @@ import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { addGeoLayers } from "~/components/maps/shared/geo-layers";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { IXNAY_SLUG } from "~/lib/realms/realm-ids";
+import { cn } from "~/lib/utils/cn";
 
 interface CoordinatesMapEmbedProps {
   lat: number;
@@ -23,6 +24,9 @@ interface CoordinatesMapEmbedProps {
    * viewer's realm.
    */
   realm?: string;
+  /** False: a plain realm map, with no marker at the coordinates and no coordinates label. */
+  marker?: boolean;
+  className?: string;
 }
 
 /** Popup title as a text node: the title comes from wiki markup, so it is never parsed as HTML. */
@@ -60,6 +64,8 @@ export function CoordinatesMapEmbed({
   zoom = 5,
   options = "",
   realm: realmProp,
+  marker = true,
+  className,
 }: CoordinatesMapEmbedProps) {
   const wiki = useWikiContext();
   const explicitRealm = embedRealm(realmProp, wiki);
@@ -152,6 +158,8 @@ export function CoordinatesMapEmbed({
         zoom: zoom,
         attributionControl: false,
         interactive: interactiveVal,
+        // Touch: one finger scrolls the page, two pan the map.
+        cooperativeGestures: window.matchMedia("(pointer: coarse)").matches,
       });
 
       mapRef.current = map;
@@ -194,18 +202,19 @@ export function CoordinatesMapEmbed({
           ]);
         }
 
-        const marker = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
-
-        if (titleVal) {
-          marker.setPopup(
-            new maplibregl.Popup({ offset: 25 }).setDOMContent(buildPopupTitleNode(titleVal))
-          );
+        if (marker) {
+          const pin = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+          if (titleVal) {
+            pin.setPopup(
+              new maplibregl.Popup({ offset: 25 }).setDOMContent(buildPopupTitleNode(titleVal))
+            );
+          }
         }
 
         setMapReady(true);
       });
     },
-    [lat, lng, zoom, interactiveVal, titleVal, worldPolitical]
+    [lat, lng, zoom, interactiveVal, titleVal, worldPolitical, marker]
   );
 
   useEffect(() => {
@@ -240,7 +249,10 @@ export function CoordinatesMapEmbed({
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed bg-map-ocean/40 rounded-row border-separator relative overflow-hidden border"
+      className={cn(
+        "wikios-ixworld-embed bg-map-ocean/40 rounded-row border-separator relative overflow-hidden border",
+        className
+      )}
       style={{ height: heightVal }}
     >
       {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
@@ -252,7 +264,7 @@ export function CoordinatesMapEmbed({
         </div>
       )}
 
-      {mapReady && (
+      {mapReady && marker && (
         <div className="facet-chrome rounded-control text-footnote text-label-secondary pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 select-none">
           <MapPin className="text-blue h-2.5 w-2.5" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>

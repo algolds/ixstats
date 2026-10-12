@@ -5,7 +5,7 @@ import { permalinkTarget } from "~/lib/thinkpages-forum/permalink";
 import { locatePostFor } from "~/server/api/routers/thinkpagesForum/permalink";
 import { db } from "~/server/db";
 
-export const metadata: Metadata = { title: "ThinkPages - IxStats" };
+export const metadata: Metadata = { title: "ThinkPages - IxStates" };
 
 interface LegacyPostPageProps {
   params: Promise<{ postId: string }>;

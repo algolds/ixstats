@@ -261,7 +261,7 @@ const CANONICAL_BUILTIN_TEMPLATES = [
   },
   {
     name: "Coord",
-    description: "Geographic coordinate badge with IxWorld Voronoi spatial mesh projection.",
+    description: "Geographic coordinate badge with Voronoi spatial mesh projection.",
     category: "geographic",
     paramCount: 4,
     isCanonical: true,

@@ -11,7 +11,7 @@ interface ModerationPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Moderation - IxStats",
+  title: "Moderation - IxStates",
 };
 
 const first = (value: string | string[] | undefined): string | undefined =>

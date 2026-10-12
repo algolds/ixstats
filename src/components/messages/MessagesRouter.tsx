@@ -147,7 +147,7 @@ function MessagesRouterInner() {
     setSearchQuery("");
 
     window.history.pushState(null, "", withBasePath("/messages"));
-    document.title = "Messages - IxStats";
+    document.title = "Messages - IxStates";
   };
 
   // Handle browser back/forward
@@ -161,7 +161,7 @@ function MessagesRouterInner() {
   }, []);
 
   useEffect(() => {
-    document.title = `${SECTION_TITLES[activeFolder]} - Messages - IxStats`;
+    document.title = `${SECTION_TITLES[activeFolder]} - Messages - IxStates`;
   }, [activeFolder]);
 
   const createConversation = api.messages.createConversation.useMutation();

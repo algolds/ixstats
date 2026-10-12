@@ -5,7 +5,7 @@ import { SettingsContent, SettingsSkeleton } from "./_components/SettingsContent
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Settings - IxStats",
+  title: "Settings - IxStates",
   description:
     "Manage your diplomat identity, country preferences, wiki credentials, and notifications.",
 };

@@ -3,7 +3,7 @@ import { SavedPosts } from "~/components/thinkpages/SavedPosts";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 
 export const metadata: Metadata = {
-  title: "Saved posts - IxStats",
+  title: "Saved posts - IxStates",
 };
 
 export default function SavedPostsPage() {

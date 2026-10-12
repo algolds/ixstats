@@ -6,7 +6,7 @@ import { restoreTitle } from "~/lib/notifications/title-badge";
 
 interface UsePageTitleOptions {
   /**
-   * Custom page title without the "- IxStats" suffix
+   * Custom page title without the "- IxStates" suffix
    * @example "Dashboard", "Country Profile", "MyCountry"
    */
   title: string;
@@ -20,8 +20,8 @@ interface UsePageTitleOptions {
 /**
  * Universal page title hook that combines custom title with notification badge
  *
- * Format: "(N) PageName - IxStats" when unread notifications exist
- * Otherwise: "PageName - IxStats"
+ * Format: "(N) PageName - IxStates" when unread notifications exist
+ * Otherwise: "PageName - IxStates"
  *
  * @param options - Configuration options
  * @returns void (updates document.title directly)
@@ -30,7 +30,7 @@ interface UsePageTitleOptions {
  * ```tsx
  * function DashboardPage() {
  *   usePageTitle({ title: "Dashboard" });
- *   // Sets title to "Dashboard - IxStats" or "(3) Dashboard - IxStats" if 3 unread notifications
+ *   // Sets title to "Dashboard - IxStates" or "(3) Dashboard - IxStates" if 3 unread notifications
  *   return <div>...</div>;
  * }
  * ```
@@ -44,7 +44,7 @@ export function usePageTitle({ title, enableNotificationBadge = true }: UsePageT
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    const baseTitle = `${title} - IxStats`;
+    const baseTitle = `${title} - IxStates`;
     const fullTitle =
       enableNotificationBadge && unreadCount > 0 ? `(${unreadCount}) ${baseTitle}` : baseTitle;
 

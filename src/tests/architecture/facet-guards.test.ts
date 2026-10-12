@@ -114,10 +114,8 @@ const FACET_CONVERTED = [
   "app/privacy/",
   "app/terms/",
   "app/page.tsx",
-  "app/_components/splash/",
-  "app/_components/IxStatsSplashPage.tsx",
+  "app/_components/front-page/",
   "app/_components/HomeClient.tsx",
-  "lib/splash/",
   "lib/tier-utils.ts",
   // Phase 4 primitives: the shared UI kit itself (status inks, no glass/v2 classes).
   "components/ui/",

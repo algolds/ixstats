@@ -4,7 +4,7 @@ import { STASHED_HREF } from "~/lib/thinkpages-forum/links";
 import { requireSignIn } from "../_lib/require-sign-in";
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 /** The threads the member stashed; signed-out visitors are sent to sign-in. */

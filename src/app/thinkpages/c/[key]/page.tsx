@@ -9,7 +9,7 @@ interface ForumCategoryPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 export default async function ForumCategoryPage({ params, searchParams }: ForumCategoryPageProps) {

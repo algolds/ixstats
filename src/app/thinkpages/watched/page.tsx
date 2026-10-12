@@ -9,7 +9,7 @@ interface WatchedRouteProps {
 }
 
 export const metadata: Metadata = {
-  title: "ThinkPages - IxStats",
+  title: "ThinkPages - IxStates",
 };
 
 /** The threads the member watches; signed-out visitors are sent to sign-in. */

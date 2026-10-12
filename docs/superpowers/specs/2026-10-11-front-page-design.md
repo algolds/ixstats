@@ -36,7 +36,7 @@ Replaces the signed-out splash (`IxStatsSplashPage`) with a Facet front page for
 
 ## 1. Page
 
-`HomeClient` renders `<FrontPage />` when signed out, and sets the page title to "IxStates" (signed in stays "Dashboard"). The page root is `data-app` unset, so it wears the Home ink on the shell canvas.
+`HomeClient` renders `<FrontPage />` when signed out. Tab titles across the site end in "- IxStates" (`usePageTitle`, page metadata), and the root default title is "IxStates". The page root has no `data-app`, so it wears the Home ink on the shell canvas.
 
 All new UI lives in `src/app/_components/front-page/`: `FrontPage.tsx` (orchestration only) and one file per pane below.
 
@@ -44,19 +44,20 @@ All new UI lives in `src/app/_components/front-page/`: `FrontPage.tsx` (orchestr
 
 `EntityHeader`:
 
-- `art`: the Ix mark (`src/app/_components/ix-logo-v2.svg`).
+- `art`: the Ixnay seal (`public/images/ix-logo.svg`), standing in until IxStates has its own logo; a code comment marks the swap.
 - `name`: "IxStates".
 - `description` (new prop): "A worldbuilding platform. Build nations in shared realms, map them, write their history and run their economies."
 - `facts`: "{realms} realms · {nations} nations · {players} players", figures in `tabular-nums`. Omitted while loading or on error.
 - `action`: Button "Browse realms" → `/realms`.
+- The header sits on the canvas rather than in a `PageHeader` band, so it pads its top by `--shell-top-offset` to clear the floating Halo. On narrow screens the action wraps under the name.
 
 ### 1.2 Lead row: featured realm
 
 **`FeaturedRealmMap`** (8 of 12 columns; Maps cyan; `content="visualization"`, flush pane):
 
 - Title `{Realm name}` with a map icon; subtitle "Featured realm today".
-- Trailing link "Open in IxWorld" → `/maps?realm={slug}`.
-- Body: `CoordinatesMapEmbed` for the realm with `marker={false}`, a whole-world view, interactive. It mounts after `requestIdleCallback` (falling back to `setTimeout`), so MapLibre and tiles never compete with first paint. Until then the realm thumbnail fills the pane, or an empty Well when there is none.
+- Trailing link "Open map" → `/maps?realm={slug}`.
+- Body: `CoordinatesMapEmbed` for the realm with `marker={false}`, interactive, at the zoom that fits the whole world to the pane's measured width (`log2(width / 512)`). It mounts after `requestIdleCallback` (falling back to `setTimeout`), so MapLibre and tiles never compete with first paint. Until then the realm thumbnail fills the pane, or an empty Well when there is none.
 
 **`RealmHappenings`** (4 columns; ink; `content="feed"`):
 
@@ -85,7 +86,7 @@ All new UI lives in `src/app/_components/front-page/`: `FrontPage.tsx` (orchestr
 | Economic tier | `Badge` |
 | Government | text, "–" when empty |
 
-Figures right-aligned, `tabular-nums`. Footer link "See all {n} nations" → `/countries?realm={slug}`. Below 1024px the table becomes a `FacetList` ranked list (flag, name, GDP).
+Figures right-aligned, `tabular-nums`. Header link "See all {n} nations" → `/countries?realm={slug}`. Below 1024px the same table hides Population, GDP per capita, Tier and Government, leaving a ranked list of flag, name and GDP.
 
 The table is not sortable: ten pre-ranked rows do not need it, and the full list is one link away.
 
@@ -106,7 +107,7 @@ The table is not sortable: ten pre-ranked rows do not need it, and the full list
 
 ### 2.1 `frontPage.get`
 
-A new router `src/server/api/routers/frontPage.ts` (thin), registered in `root.ts`, with one `cachedPublicProcedure` (60 s), no input. Logic lives in `src/server/modules/front-page/front-page.service.ts`.
+A new router `src/server/api/routers/frontPage.ts` (thin), registered in `root.ts`, with one `cachedPublicProcedure` (60 s), no input. Logic lives in `src/server/modules/realms/realms.front-page.ts`.
 
 Returns:
 
@@ -126,7 +127,7 @@ Returns:
 - `facts.realms`: realms matching `DIRECTORY_REALM_WHERE`.
 - `facts.nations`: all nations in those realms (the directory's `nationCount`, summed).
 - `facts.players`: `user.count()`.
-- `openRealms`: directory realms ranked by open nation count, descending, then name. Open means `ownerUserId: null`, the rule `realms.directory` uses for `openNationCount` (`routers/realms/places.ts`), counted with one `country.groupBy`.
+- `openRealms`: directory realms ranked by open nation count, descending, then name. Open is the number /realms shows under Open to join: countries nobody owns plus lore-index nation pages no country has taken. Both pages read it from `openNationCounts` in `src/server/modules/realms/realms.open-nations.ts`.
 
 ### 2.2 Featured realm pick
 
@@ -168,11 +169,15 @@ All UI strings follow Facet section 9: sentence case, no em dashes, "–" for em
 ## 5. Testing
 
 - `src/lib/front-page.test.ts`: `isFeaturable` (map rows, nation threshold, directory rule) and `pickFeaturedRealm` (stable order, day rollover, wrap-around, single realm).
-- `front-page.service` test with a mocked Prisma client: Ixnay fallback when no realm qualifies, nations sorted by GDP and capped at 10, open realms filtered and capped at 4.
+- `realms.front-page` test with a fake Prisma client: Ixnay fallback when no realm qualifies, nations sorted by GDP and capped at 10, open realms filtered and capped at 4, untaken nation pages counted as open.
 - `FrontPage` render test with a mocked `api`: all panes render; one failing query shows only that pane's error.
 - Facet guard tests pass with the exemptions removed.
 - Gates: `bun run typecheck:ui`, `bun run typecheck:server`, `bun run test`, `bun run lint`. No builds.
 - Browser check on the dev server, signed out, at 1440 px and 390 px: no console errors, the map mounts after first paint, every link resolves.
+
+## User-facing "IxWorld"
+
+The maps app is "Maps" in every user-facing string: the front page link, the `/maps` tab title (`World Map - IxStates`, standalone and embedded alike), the Halo search entry, the map welcome dialog, the wiki map embed's accessible title, the WikiOS coordinate template description and the Terms of Service. Code names (`IxWorldMap`, `IXWORLD_*`), storage keys and deploy scripts keep the name. The default realm is Ixnay (slug `ixnay`) by migration `20261019120000_rename_ixworld_realm_ixnay`.
 
 ## Out of scope
 
