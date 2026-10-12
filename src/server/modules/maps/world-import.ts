@@ -49,6 +49,7 @@ import {
 import type { ReliefEntry, ReliefSource } from "./realm-relief";
 import { assertWorldImportAllowed, jobActor } from "./world-import.guards";
 import { loadWorldBundle, prepareWorld, type PreparedWorld } from "./world-import.prepare";
+import { assertMapUnchangedSince, currentMapVersion, loadCheck } from "./world-import.check";
 import { markWorldReliefBuilt } from "./world-import.relief-state";
 import {
   dedupeNames,
@@ -69,6 +70,8 @@ export interface WorldJob {
   realmId: string;
   uploadId: string | null;
   requestedBy: string;
+  /** The check an apply job was queued from */
+  parentJobId?: string | null;
 }
 
 export interface WorldProgress {
@@ -105,6 +108,8 @@ export interface WorldLayerDiff {
 }
 
 export interface WorldDiff {
+  /** The realm's map version the check read: an apply of this check needs the map to still be at it */
+  mapVersion: number;
   source: PreparedWorld["bundle"]["source"];
   seed: number;
   developmentLevel: PreparedWorld["bundle"]["params"]["developmentLevel"];
@@ -201,7 +206,8 @@ async function replacedWarnings(
 async function diffWorld(
   db: PrismaClient,
   realm: ImportRealm,
-  prepared: PreparedWorld
+  prepared: PreparedWorld,
+  mapVersion: number
 ): Promise<WorldDiff> {
   const { bundle } = prepared;
   const preset = bundle.source === "preset";
@@ -256,6 +262,7 @@ async function diffWorld(
   }
 
   return {
+    mapVersion,
     source: bundle.source,
     seed: bundle.seed,
     developmentLevel: bundle.params.developmentLevel,
@@ -289,11 +296,13 @@ export async function runWorldDryRun(
     await jobActor(db, job.requestedBy),
     job.realmId
   );
+  // Read before the map is, so a change while this runs shows as a newer map than the check
+  const mapVersion = await currentMapVersion(db, realm.id);
   progress.write(10, "Checking the geometry");
   const prepared = await prepareWorld(db, realm, bundle);
   if (progress.isCancelled()) throw new ImportCancelledError();
   progress.write(80, "Comparing with the realm's map");
-  return diffWorld(db, realm, prepared);
+  return diffWorld(db, realm, prepared, mapVersion);
 }
 
 // The apply
@@ -481,6 +490,8 @@ export async function applyWorld(
   const prepared = await prepareWorld(db, realm, bundle);
   const preset = bundle.source === "preset";
   if (progress.isCancelled()) throw new ImportCancelledError();
+  // The check was a diff against the map as it was: the last thing before anything is written
+  await assertMapUnchangedSince(db, realm.id, await loadCheck(db, job));
 
   progress.write(20, "Saving a snapshot to roll back to");
   const scopes = pipelineSnapshotScopes(prepared.layers, "replace");

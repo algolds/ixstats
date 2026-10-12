@@ -108,14 +108,18 @@ export function makeBundle(options: BundleOptions = {}): WorldBundle {
 /** The bundle as the upload route stores it (gzip JSON); returns its upload id. Needs MAP_IMPORT_DIR set. */
 export const storeBundle = (bundle: WorldBundle) => saveMapUpload(gzipSync(JSON.stringify(bundle)));
 
+/** The check `jobFor` is the apply of: `seedRealm` has it finished, against the map version the realm has. */
+export const CHECK_ID = "j_world_check";
+
 export const jobFor = (
   uploadId: string,
-  over: Partial<{ requestedBy: string; realmId: string }> = {}
+  over: Partial<{ requestedBy: string; realmId: string; parentJobId: string | null }> = {}
 ) => ({
   id: "j_world",
   realmId: "r1",
   uploadId,
   requestedBy: "founder_1",
+  parentJobId: CHECK_ID as string | null,
   ...over,
 });
 
@@ -171,6 +175,15 @@ export function seedRealm(over: Record<string, unknown> = {}) {
     seed: null,
     generationParams: null,
     ...over,
+  });
+  db.mapImportJob.rows.push({
+    id: CHECK_ID,
+    realmId: "r1",
+    kind: "world",
+    dryRun: true,
+    status: "succeeded",
+    result: { phase: "world-dry-run", mapVersion: db.realm.rows[0].mapVersion },
+    createdAt: new Date("2026-01-01T00:00:00Z"),
   });
   db.user.rows.push(
     { id: "u_founder", clerkUserId: "founder_1", role: { name: "user", level: 100 } },

@@ -37,6 +37,8 @@ export interface WorldApplyRegionProps {
    * stale is applied.
    */
   stale: boolean;
+  /** The realm's map version now (the layers' version), when it is known: a check of an older map is not applied */
+  mapVersion?: number;
   lock: WorldLock;
   /** Drops the draft from the map and the stored recipe: called once the world has been applied */
   onDiscardDraft: () => void;
@@ -66,14 +68,17 @@ function draftBlock({ result, generating, stale }: WorldApplyRegionProps): strin
  * failed.
  */
 export function WorldApplyRegion(props: WorldApplyRegionProps) {
-  const { realm, result, source, generating, stale, lock, onDiscardDraft } = props;
-  const { view, begin, confirm, cancel, close } = useWorldApply({
+  const { realm, result, source, generating, stale, mapVersion, lock, onDiscardDraft } = props;
+  const { view, cancelError, begin, confirm, cancel, close } = useWorldApply({
     realmId: realm.id,
     result,
     source,
+    mapVersion,
     onApplied: onDiscardDraft,
   });
   const lockedBy = lockBlock(lock);
+  const reviewOutdated =
+    view.stage === "review" && (view.outdated || view.mapMoved || generating || stale);
   const blocked = lockedBy ?? draftBlock(props);
   const appliedRelief = view.stage === "done" ? view.applied.relief : null;
   // An archived realm's relief can't be rebuilt either, so it is not offered there
@@ -102,14 +107,16 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
           message={view.message}
           progress={view.progress}
           onCancel={view.cancellable ? () => void cancel() : undefined}
+          error={cancelError}
         />
       )}
       {view.stage === "review" && (
         <WorldApplyReview
           diff={view.diff}
-          // A preview being made or out of step with the controls is not the world that was checked
-          outdated={view.outdated || generating || stale}
-          blocked={view.outdated || generating || stale ? blocked : lockedBy}
+          // A preview being made or out of step with the controls, or a map that moved, is not the world checked
+          outdated={reviewOutdated}
+          mapMoved={view.mapMoved}
+          blocked={reviewOutdated ? blocked : lockedBy}
           onApply={() => void confirm()}
           onCheckAgain={() => void begin()}
           onCancel={close}
@@ -121,6 +128,7 @@ export function WorldApplyRegion(props: WorldApplyRegionProps) {
           message={view.message}
           progress={view.progress}
           onCancel={view.cancellable ? () => void cancel() : undefined}
+          error={cancelError}
         />
       )}
       {view.stage === "done" && (

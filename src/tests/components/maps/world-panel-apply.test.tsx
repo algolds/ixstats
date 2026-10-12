@@ -199,6 +199,67 @@ describe("a world applied while the tab was away", () => {
     expect(loadWorldRecipe(REALM)).not.toBeNull();
   });
 
+  describe("a review left while the realm's map was edited", () => {
+    const FIT_PARAMS = { ...DEFAULT_PARAMS, seed: 31 };
+    const fittedRecipe = () =>
+      saveWorldRecipe(REALM, {
+        seed: 31,
+        controls: { ...controlsForPreset("earthlike"), source: "realm-map" },
+      });
+    /** The check the tab left on the review, of the map at version 5, for the world the recipe makes */
+    const leaveReviewOfMapAt = (version: number) => {
+      fittedRecipe();
+      saveWorldJob(REALM, {
+        checkJobId: "j_check",
+        applyJobId: null,
+        draftKey: draftKey(worldResult({ seed: 31, params: FIT_PARAMS }), "realm-map"),
+      });
+      setJob("j_check", {
+        status: "succeeded",
+        progress: 100,
+        stage: null,
+        error: null,
+        result: {
+          phase: "world-dry-run",
+          mapVersion: version,
+          source: "realm-map",
+          seed: 31,
+          developmentLevel: "industrial",
+          layers: Object.fromEntries(
+            ["background", "altitudes", "climate", "political", "rivers", "lakes", "icecaps"].map(
+              (layer) => [layer, { create: 0, change: 0, retire: 0 }]
+            )
+          ),
+          slots: { create: 0, retire: 0, keep: 0, renamed: 0 },
+          warnings: [],
+          replaces: [],
+        },
+      });
+    };
+    const restoreDraft = () =>
+      act(() =>
+        workers.at(-1)!.say(resultMessage(lastRequest().id, { seed: 31, params: FIT_PARAMS }))
+      );
+
+    it("will not apply the old check to the world fitted to the edited map", () => {
+      leaveReviewOfMapAt(5);
+      layersQuery.mockReturnValue(mapLayers({ version: 6 }));
+      renderPanel();
+      restoreDraft();
+      expect(screen.getByText(/The realm's map changed after this check/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+      expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
+    });
+
+    it("applies it when the map is as the check read it", () => {
+      leaveReviewOfMapAt(5);
+      layersQuery.mockReturnValue(mapLayers({ version: 5 }));
+      renderPanel();
+      restoreDraft();
+      expect(screen.getByRole("button", { name: "Apply this world" })).toBeEnabled();
+    });
+  });
+
   it("still lets a new preview be made after the world was applied", () => {
     savedRecipe();
     saveWorldJob(REALM, JOB);

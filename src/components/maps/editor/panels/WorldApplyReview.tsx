@@ -23,8 +23,10 @@ function DiffRow({ label, value }: { label: string; value: string }) {
 
 interface WorldApplyReviewProps {
   diff: WorldDryRun;
-  /** The draft on the map is not the world that was checked: changed since, or being made again */
+  /** The check no longer holds: the draft is not the world that was checked, or the realm's map moved on */
   outdated: boolean;
+  /** The realm's map is newer than the one the check read (a reason for `outdated`) */
+  mapMoved: boolean;
   /** Why the world can't be applied now (a claim landed, the claims can't be read), or null */
   blocked: string | null;
   onApply: () => void;
@@ -39,6 +41,7 @@ interface WorldApplyReviewProps {
 export function WorldApplyReview({
   diff,
   outdated,
+  mapMoved,
   blocked,
   onApply,
   onCheckAgain,
@@ -81,8 +84,9 @@ export function WorldApplyReview({
       )}
       {outdated && (
         <p className="text-label-secondary text-caption" role="status">
-          The preview changed after this check, or is being made again. Check it again to use the
-          new one.
+          {mapMoved
+            ? "The realm's map changed after this check. Check it again to use the new map."
+            : "The preview changed after this check, or is being made again. Check it again to use the new one."}
         </p>
       )}
       {blocked && <p className="text-label-secondary text-caption">{blocked}</p>}

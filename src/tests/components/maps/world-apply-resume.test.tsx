@@ -27,6 +27,7 @@ import {
 } from "~/tests/helpers/fake-map-import";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import {
+  CHECKED_MAP,
   DRAFT,
   REALM,
   applied,
@@ -298,6 +299,59 @@ describe("a tab left while a world is checked", () => {
   });
 });
 
+describe("a tab left on a review while the map was edited", () => {
+  const { political: _political, ...layers } = DRAFT.layers;
+  /** A preview fitted to the realm's own map, made from the recipe: the same seed and parameters every time. */
+  const fitted = () => worldResult({ seed: 7, layers, slots: [] });
+  const FITTED_KEY = draftKey(fitted(), "realm-map");
+
+  async function leaveOnReview() {
+    const first = renderRegion({ source: "realm-map", result: fitted(), mapVersion: CHECKED_MAP });
+    await reachReview(dryRun({ source: "realm-map" }));
+    first.unmount();
+  }
+
+  it("will not apply the old check to the edited map, though the preview is fitted to it from the same recipe", async () => {
+    await leaveOnReview();
+    expect(loadWorldJob(REALM)).toMatchObject({ draftKey: FITTED_KEY });
+    renderRegion({ source: "realm-map", result: fitted(), mapVersion: CHECKED_MAP + 1 });
+    expect(await screen.findByText(/The realm's map changed after this check/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+    start.mockResolvedValue({ jobId: "j_check_2" });
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    await screen.findByText(/Checking the world/);
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(applyWorld).not.toHaveBeenCalled();
+  });
+
+  it("applies the check when the map is as it was", async () => {
+    await leaveOnReview();
+    renderRegion({ source: "realm-map", result: fitted(), mapVersion: CHECKED_MAP });
+    expect(await screen.findByRole("button", { name: "Apply this world" })).toBeEnabled();
+  });
+
+  it("holds a preset check too when the map moved, since its diff no longer holds", async () => {
+    const first = renderRegion({ mapVersion: CHECKED_MAP });
+    await reachReview();
+    first.unmount();
+    renderRegion({ mapVersion: CHECKED_MAP + 3 });
+    expect(await screen.findByText(/The realm's map changed after this check/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+  });
+});
+
+describe("a stored job that is not this realm's", () => {
+  it("is let go, as if it were gone, and not followed", async () => {
+    saveWorldJob(REALM, { checkJobId: "j_x", applyJobId: "j_x_apply", draftKey: KEY });
+    setJob("j_x_apply", { ...applied(), realmId: "r_other" });
+    const back = renderRegion();
+    expect(await screen.findByRole("button", { name: "Use this world" })).toBeEnabled();
+    expect(screen.queryByText("The world is applied")).toBeNull();
+    expect(back.onDiscardDraft).not.toHaveBeenCalled();
+    expect(loadWorldJob(REALM)).toBeNull();
+  });
+});
+
 describe("a world applied for a draft that moved on", () => {
   it("keeps the newer draft, and still shows the result", async () => {
     await leaveMidApply();
@@ -351,6 +405,21 @@ describe("calling a job off", () => {
     await screen.findByText(/Applying the world/);
     expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
     await act(async () => queued({ jobId: "j_apply" }));
+  });
+
+  it("says when the job could not be called off for another reason, and lets Cancel be pressed again", async () => {
+    cancelJob.mockRejectedValueOnce(new Error("Too many requests"));
+    cancelJob.mockResolvedValueOnce({ cancelled: true });
+    renderRegion();
+    await startCheck();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The job could not be called off: Too many requests"
+    );
+    expect(screen.getByText(/Checking the world/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(await screen.findByRole("button", { name: "Use this world" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("shows how the check ended when it had finished before it could be called off", async () => {

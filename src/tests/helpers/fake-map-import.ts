@@ -44,8 +44,9 @@ export const invalidated = {
 /** The job ids the component asked the job query for, with whether it was enabled */
 export const jobReads: Array<{ jobId: string; enabled: boolean }> = [];
 
+/** Set a job's view. Jobs belong to the realm under test (`r_eurth`) unless the test says another. */
 export function setJob(id: string, job: object) {
-  jobs.set(id, { id, ...job });
+  jobs.set(id, { id, realmId: "r_eurth", ...job });
   emit();
 }
 export function failRead(id: string, error: FakeCallError) {

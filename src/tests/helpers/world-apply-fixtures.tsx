@@ -43,6 +43,9 @@ export const claimsLock = (): WorldLock => ({
 export const refusal = (message: string, code: string) =>
   Object.assign(new Error(message), { data: { code } });
 
+/** The realm's map version the fixtures' checks read */
+export const CHECKED_MAP = 5;
+
 export const UPLOAD = {
   uploadId: "a".repeat(64),
   kind: "world",
@@ -58,6 +61,7 @@ export const dryRun = (over: object = {}) => ({
   error: null,
   result: {
     phase: "world-dry-run",
+    mapVersion: CHECKED_MAP,
     source: "preset",
     seed: 7,
     developmentLevel: "industrial",

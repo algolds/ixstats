@@ -184,6 +184,7 @@ function RealmWorldPanel({
           source={controls.source}
           generating={generating}
           stale={recipe.stale || generator.state === "error"}
+          mapVersion={loaded.version}
           lock={lock}
           onDiscardDraft={recipe.discard}
         />

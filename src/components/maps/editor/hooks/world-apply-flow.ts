@@ -45,8 +45,11 @@ export type WorldApplyView =
   | { stage: "sending" }
   /** `cancellable`: nothing is written yet, so the check can be called off */
   | { stage: "checking"; progress: number; message: string; cancellable: boolean }
-  /** `outdated`: the draft on the map is no longer the world that was checked */
-  | { stage: "review"; diff: WorldDryRun; outdated: boolean }
+  /**
+   * `outdated`: the draft on the map is no longer the world that was checked. `mapMoved`: the realm's map is newer
+   * than the one the check read, so its diff no longer holds (the server refuses to apply it).
+   */
+  | { stage: "review"; diff: WorldDryRun; outdated: boolean; mapMoved: boolean }
   /** `cancellable`: the apply has not started (it is only queued); once it runs it is all or nothing */
   | { stage: "applying"; progress: number; message: string; cancellable: boolean }
   | { stage: "done"; applied: WorldApplied }
@@ -60,10 +63,15 @@ type Outcome<T> = { result: T } | { failure: WorldFailure } | null;
 function outcomeOf<T extends JobResult>(
   poll: Polled,
   stage: WorldFailureStage,
+  realmId: string,
   accepts: (result: JobResult | null) => result is T
 ): Outcome<T> {
   const job = poll.data;
   if (!job) return poll.error ? { failure: failureOf(poll.error, stage) } : null;
+  // A job of another realm is not ours, however its id got here: it reads as gone
+  if (job.realmId !== realmId) {
+    return { failure: { stage, code: "NOT_FOUND", reason: "Import not found" } };
+  }
   if (job.status === "succeeded") {
     return accepts(job.result)
       ? { result: job.result }
@@ -87,6 +95,13 @@ export function isSentDraft(sent: Sent, current: WorldGenResult | null, source: 
   return current === null || draftKey(current, source) === sent.key;
 }
 
+/**
+ * Whether the realm's map is newer than the one a check read. Versions only go up, so a map version that is older than
+ * the check's is a view that has not caught up, not a change.
+ */
+export const mapMovedSince = (checked: number | undefined, current: number | undefined) =>
+  checked !== undefined && current !== undefined && current > checked;
+
 /** A job that was stored and is not there any more (it was cleared, or the store was): nothing to pick up. */
 const isGone = (failure: WorldFailure, sent: Sent) => sent.resumed && failure.code === "NOT_FOUND";
 
@@ -95,9 +110,9 @@ export function worldApplyView(
   flow: Flow,
   check: Polled,
   apply: Polled,
-  current: WorldGenResult | null,
-  source: WorldSource
+  now: { realmId: string; draft: WorldGenResult | null; source: WorldSource; mapVersion?: number }
 ): WorldApplyView {
+  const { realmId, draft: current, source } = now;
   switch (flow.step) {
     case "idle":
     case "sending":
@@ -105,7 +120,7 @@ export function worldApplyView(
     case "failed":
       return { stage: "failed", failure: flow.failure };
     case "checking": {
-      const outcome = outcomeOf(check, "check", isDryRun);
+      const outcome = outcomeOf(check, "check", realmId, isDryRun);
       if (!outcome) {
         return {
           stage: "checking",
@@ -122,10 +137,11 @@ export function worldApplyView(
         stage: "review",
         diff: outcome.result,
         outdated: !isSentDraft(flow.sent, current, source),
+        mapMoved: mapMovedSince(outcome.result.mapVersion, now.mapVersion),
       };
     }
     case "applying": {
-      const outcome = outcomeOf(apply, "apply", isApplied);
+      const outcome = outcomeOf(apply, "apply", realmId, isApplied);
       if (!outcome) {
         return {
           stage: "applying",

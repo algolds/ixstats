@@ -31,7 +31,7 @@ import { geoEditorMapImportRouter } from "~/server/api/routers/geo/editor/map-im
 import { buildRealmRelief } from "~/server/modules/maps/realm-relief";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { admin, founder, stranger } from "~/tests/server/maps/map-import-fakes";
-import { seedRealm } from "~/tests/server/maps/world-import-fixtures";
+import { CHECK_ID, seedRealm } from "~/tests/server/maps/world-import-fixtures";
 
 const UPLOAD = "a".repeat(64);
 
@@ -74,7 +74,8 @@ describe("geoEditor.mapImport.start for a world", () => {
     const { api, db } = caller(founder);
     db.realmClaim.rows.push({ id: "q", realmId: "r1", countryId: null, status: "pending" });
     await expect(api.start(input())).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(db.mapImportJob.rows).toHaveLength(0);
+    // only the finished check the realm was seeded with: no job was queued
+    expect(db.mapImportJob.rows.map((job: { id: string }) => job.id)).toEqual([CHECK_ID]);
   });
 });
 
@@ -89,6 +90,18 @@ describe("geoEditor.mapImport.applyWorld", () => {
     await expect(api.applyWorld({ jobId: "j_png" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(api.applyWorld({ jobId: "j_wait" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
+    });
+  });
+
+  it("queues the apply of a check of the map as it is, and refuses one of a map that moved since", async () => {
+    const { api, db } = caller(founder, { mapVersion: 3 });
+    await expect(api.applyWorld({ jobId: CHECK_ID })).resolves.toEqual({
+      jobId: expect.any(String),
+    });
+    db.realm.rows[0].mapVersion = 4;
+    await expect(api.applyWorld({ jobId: CHECK_ID })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The map changed since the check. Check the world again.",
     });
   });
 

@@ -18,6 +18,8 @@ interface UseWorldApplyArgs {
   realmId: string;
   result: WorldGenResult | null;
   source: WorldSource;
+  /** The realm's map version now, when it is known */
+  mapVersion?: number;
   /** The world is applied: drop the draft from the map and the stored recipe */
   onApplied: () => void;
 }
@@ -31,7 +33,13 @@ interface UseWorldApplyArgs {
  * when another is chosen) or a page that was reloaded mid-apply picks the job up again: it is polled to its end and the
  * success handling (the draft off the map, the maps asked again) runs then.
  */
-export function useWorldApply({ realmId, result, source, onApplied }: UseWorldApplyArgs) {
+export function useWorldApply({
+  realmId,
+  result,
+  source,
+  mapVersion,
+  onApplied,
+}: UseWorldApplyArgs) {
   const [flow, setFlow] = useState<Flow>(() => resumedFlow(loadWorldJob(realmId)));
   const utils = api.useUtils();
   const start = api.geoEditor.mapImport.start.useMutation();
@@ -41,9 +49,10 @@ export function useWorldApply({ realmId, result, source, onApplied }: UseWorldAp
   const applyJobId = flow.step === "applying" ? flow.applyJobId : null;
   const check = useMapImportJob(checkJobId);
   const apply = useMapImportJob(applyJobId);
-  const view = worldApplyView(flow, check, apply, result, source);
+  const view = worldApplyView(flow, check, apply, { realmId, draft: result, source, mapVersion });
   // A call that is under way: a second press in the same moment, before the view has caught up, is ignored
   const calling = useRef(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const latest = useLatest({
     flow,
@@ -108,17 +117,22 @@ export function useWorldApply({ realmId, result, source, onApplied }: UseWorldAp
     }
   }, [latest]);
 
-  /** Call off the check, or an apply that has not started. A job that has finished meanwhile is shown as it ended. */
+  /**
+   * Call off the check, or an apply that has not started. A job that has finished meanwhile is shown as it ended; a
+   * call that failed for another reason is said, and Cancel can be pressed again.
+   */
   const cancel = useCallback(async () => {
     const { flow: now } = latest.current;
     const jobId =
       now.step === "applying" ? now.applyJobId : now.step === "checking" ? now.checkJobId : null;
     if (!jobId) return;
+    setCancelError(null);
     try {
       await latest.current.cancelJob({ jobId });
       setFlow({ step: "idle" });
-    } catch {
-      // The job finished or the call failed: the polled job says which, and Cancel can be pressed again
+    } catch (error) {
+      const failure = failureOf(error instanceof Error ? error : new Error(String(error)), "check");
+      if (failure.code !== "CONFLICT") setCancelError(failure.reason);
     }
   }, [latest]);
 
@@ -146,5 +160,5 @@ export function useWorldApply({ realmId, result, source, onApplied }: UseWorldAp
     if (stage === "done" || stage === "failed") void cache.realms.map.worldStatus.invalidate();
   }, [stage, latest]);
 
-  return { view, begin, confirm, cancel, close };
+  return { view, cancelError, begin, confirm, cancel, close };
 }

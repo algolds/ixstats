@@ -63,6 +63,7 @@ import {
   runMapPipelineJob,
   type PipelineSummary,
 } from "./realm-map-pipeline.job";
+import { assertMapUnchangedSince } from "./world-import.check";
 import { assertWorldImportAllowed } from "./world-import.guards";
 import {
   runWorldJob,
@@ -226,6 +227,8 @@ export async function startWorldApply(
   if (parent.kind !== "world" || !parent.dryRun || parent.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "Only a world whose check has finished can be applied");
   }
+  // Refused here, before anything is queued; the apply job checks again when it runs
+  await assertMapUnchangedSince(db, parent.realmId, parent.result);
   const job = await db.mapImportJob.create({
     data: {
       realmId: parent.realmId,
@@ -309,11 +312,15 @@ export async function listMapImportJobs(
   });
 }
 
-/** Cancel a queued or running job (a running one stops at its next progress report). */
+/**
+ * Cancel a queued or running job (a running one stops at its next progress report). A world apply is only called off
+ * while it is queued: once it runs it is all or nothing, and marking it cancelled would hide a world that lands.
+ */
 export async function cancelMapImportJob(db: PrismaClient, actor: RealmActor, jobId: string) {
   const job = await getMapImportJob(db, actor, jobId);
+  const worldApply = job.kind === "world" && !job.dryRun;
   const { count } = await db.mapImportJob.updateMany({
-    where: { id: job.id, status: { in: ["queued", "running"] } },
+    where: { id: job.id, status: { in: worldApply ? ["queued"] : ["queued", "running"] } },
     data: { status: "cancelled", stage: "Cancelled", finishedAt: new Date() },
   });
   if (count === 0) throw new MapImportError("CONFLICT", "The import has already finished");

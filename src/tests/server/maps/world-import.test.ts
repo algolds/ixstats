@@ -173,6 +173,67 @@ describe("runWorldDryRun", () => {
   });
 });
 
+describe("the map a check was made against", () => {
+  const MOVED = "The map changed since the check. Check the world again.";
+
+  it("records the realm's map version in the dry run", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    const diff = await runWorldDryRun(db, jobFor(await stored()));
+    expect(diff.mapVersion).toBe(7);
+  });
+
+  it("reads the version from the realm's row, not from a copy another process may have changed", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    const id = await stored();
+    await runWorldDryRun(db, jobFor(id));
+    db.realm.rows[0].mapVersion = 9;
+    expect((await runWorldDryRun(db, jobFor(id))).mapVersion).toBe(9);
+  });
+
+  it("applies the check of the map as it still is", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    const result = await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
+    expect(result.slots.created).toBe(3);
+  });
+
+  it("refuses to apply a check of a map that has changed since, writing nothing", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    const id = await stored();
+    db.realm.rows[0].mapVersion = 8; // an edit after the check
+    const before = stateOf(db);
+    const runRelief = relief();
+    await expect(applyWorld(db, jobFor(id), undefined, { runRelief })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: MOVED,
+    });
+    expect(stateOf(db)).toBe(before);
+    expect(runRelief).not.toHaveBeenCalled();
+    expect(db.mapImport.rows).toHaveLength(0);
+  });
+
+  it("refuses a map that moved the other way too (a restored database), whatever the direction", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    db.realm.rows[0].mapVersion = 3;
+    await expect(applyWorld(db, jobFor(await stored()))).rejects.toMatchObject({ message: MOVED });
+  });
+
+  it("refuses a check that recorded no version, and an apply that has no check", async () => {
+    const db = seedRealm({ mapVersion: 7 });
+    db.mapImportJob.rows[0].result = { phase: "world-dry-run" };
+    const id = await stored();
+    await expect(applyWorld(db, jobFor(id))).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: MOVED,
+    });
+    await expect(applyWorld(db, jobFor(id, { parentJobId: null }))).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    await expect(applyWorld(db, jobFor(id, { parentJobId: "gone" }))).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
+
 describe("guards", () => {
   const bundleId = () => stored();
 

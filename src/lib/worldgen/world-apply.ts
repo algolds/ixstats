@@ -191,9 +191,11 @@ export const appliedText = (applied: {
  * list, shown first) and the rest, as notes. The split is the server's, not a reading of its wording.
  */
 export function splitWarnings(diff: { warnings: readonly string[]; replaces: readonly string[] }) {
+  // A check stored before the server flagged these has no list: all its warnings are notes
+  const replaces = diff.replaces ?? [];
   return {
-    replaces: [...diff.replaces],
-    notes: diff.warnings.filter((warning) => !diff.replaces.includes(warning)),
+    replaces: [...replaces],
+    notes: diff.warnings.filter((warning) => !replaces.includes(warning)),
   };
 }
 

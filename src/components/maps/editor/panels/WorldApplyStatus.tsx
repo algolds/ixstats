@@ -19,6 +19,8 @@ interface WorldApplyProgressProps {
   progress: number | null;
   /** Offered where the step can be called off without a half-written world */
   onCancel?: () => void;
+  /** Why calling it off failed, when it did */
+  error?: string | null;
 }
 
 /** A step that takes a while: what it is doing and how far it has got (no number while it is only starting). */
@@ -27,6 +29,7 @@ export function WorldApplyProgress({
   message,
   progress,
   onCancel,
+  error,
 }: WorldApplyProgressProps) {
   return (
     <div className="space-y-2" role="status">
@@ -41,6 +44,11 @@ export function WorldApplyProgress({
         {progress !== null && <span className="ml-auto tabular-nums">{Math.round(progress)}%</span>}
       </p>
       {progress !== null && <Progress value={progress} aria-label={label} />}
+      {error && (
+        <p className="text-destructive text-caption" role="alert">
+          The job could not be called off: {error}
+        </p>
+      )}
       {onCancel && (
         <Button size="sm" variant="outline" onClick={onCancel}>
           Cancel

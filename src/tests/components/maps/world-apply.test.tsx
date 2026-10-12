@@ -32,6 +32,7 @@ import {
 } from "~/tests/helpers/fake-map-import";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import {
+  CHECKED_MAP,
   DRAFT,
   OPEN,
   REALM,
@@ -270,6 +271,61 @@ describe("the review", () => {
     view.update({ result: worldResult({ seed: 8 }), generating: true });
     expect(screen.getByRole("button", { name: "Check again" })).toBeDisabled();
     expect(screen.getByText("Wait for the preview to finish.")).toBeInTheDocument();
+  });
+
+  it("will not apply a check of a map that has moved on since: the map changed, so check it again", async () => {
+    const view = renderRegion({ mapVersion: CHECKED_MAP });
+    await reachReview();
+    expect(screen.getByRole("button", { name: "Apply this world" })).toBeEnabled();
+    view.update({ mapVersion: CHECKED_MAP + 1 });
+    expect(screen.getByText(/The realm's map changed after this check/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+    start.mockResolvedValue({ jobId: "j_check_2" });
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
+    expect(applyWorld).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["the same map", CHECKED_MAP],
+    ["a view of the map that has not caught up with the check", CHECKED_MAP - 1],
+    ["a map version that is not known yet", undefined],
+  ])("applies the check of %s", async (_name, mapVersion) => {
+    renderRegion({ mapVersion });
+    await reachReview();
+    expect(screen.getByRole("button", { name: "Apply this world" })).toBeEnabled();
+    expect(screen.queryByText(/The realm's map changed/)).toBeNull();
+  });
+
+  it("holds a world fitted to the realm's map when the map is edited and the preview is fitted to the edit", async () => {
+    const { political: _political, ...layers } = DRAFT.layers;
+    const fitted = (seed: number) => worldResult({ seed, layers, slots: [] });
+    const view = renderRegion({
+      source: "realm-map",
+      result: fitted(7),
+      mapVersion: CHECKED_MAP,
+    });
+    await reachReview(dryRun({ source: "realm-map" }));
+    // the map is edited and the preview is made again from the same recipe: the same seed and parameters
+    view.update({ result: fitted(7), mapVersion: CHECKED_MAP + 1 });
+    expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Check again" })).toBeEnabled();
+  });
+
+  it("shows the server's refusal of a check of a map that moved, and checks again on Retry", async () => {
+    applyWorld.mockRejectedValue(
+      refusal("The map changed since the check. Check the world again.", "CONFLICT")
+    );
+    renderRegion({ mapVersion: CHECKED_MAP });
+    await reachReview();
+    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
+    expect(
+      await screen.findByText("The map changed since the check. Check the world again.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Your preview is kept.")).toBeInTheDocument();
+    start.mockResolvedValue({ jobId: "j_check_2" });
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(start).toHaveBeenCalledTimes(2));
   });
 
   it("turns Apply off if claims lock the realm while the review is open", async () => {

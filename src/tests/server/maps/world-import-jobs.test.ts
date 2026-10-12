@@ -27,6 +27,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  cancelMapImportJob,
   getMapImportJob,
   previewMapImport,
   recoverStaleMapImports,
@@ -239,6 +240,38 @@ describe("queueing a world apply", () => {
     });
   });
 
+  it("is refused for a check of a map that has changed since, and nothing is queued", async () => {
+    const db = seedRealm({ mapVersion: 4 });
+    const dryId = await dryRun(db, await storeBundle(makeBundle()));
+    expect(
+      ((await getMapImportJob(db, founder, dryId)).result as WorldDryRunSummary).mapVersion
+    ).toBe(4);
+    db.realm.rows[0].mapVersion = 5;
+    const jobs = db.mapImportJob.rows.length;
+    await expect(startWorldApply(db, founder, dryId, { db, kick: false })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The map changed since the check. Check the world again.",
+    });
+    expect(db.mapImportJob.rows).toHaveLength(jobs);
+  });
+
+  it("fails an apply job whose map changed after it was queued, changing nothing", async () => {
+    const db = seedRealm({ mapVersion: 4 });
+    const dryId = await dryRun(db, await storeBundle(makeBundle()));
+    const applyId = await startWorldApply(db, founder, dryId, { db, kick: false });
+    db.realm.rows[0].mapVersion = 5; // an edit while the job waited for the realm's lease
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await runMapImportJob(db, applyId, { world: { runRelief } });
+    error.mockRestore();
+    const job = await getMapImportJob(db, founder, applyId);
+    expect(job).toMatchObject({
+      status: "failed",
+      error: "The map changed since the check. Check the world again.",
+    });
+    expect(db.country.rows).toHaveLength(4);
+    expect(runRelief).not.toHaveBeenCalled();
+  });
+
   it("is not a mapped import: the wizard's apply and preview refuse a world", async () => {
     const db = seedRealm();
     const dryId = await dryRun(db, await storeBundle(makeBundle()));
@@ -251,6 +284,47 @@ describe("queueing a world apply", () => {
     // and a world apply is not a mapped apply summary
     const job = await getMapImportJob(db, founder, dryId);
     expect((job.result as ApplySummary | WorldDryRunSummary).phase).toBe("world-dry-run");
+  });
+});
+
+describe("cancelling a world job", () => {
+  const jobRow = (db: ReturnType<typeof seedRealm>, over: object) => {
+    db.mapImportJob.rows.push({
+      id: "j_x",
+      realmId: "r1",
+      kind: "world",
+      dryRun: false,
+      status: "queued",
+      ...over,
+    });
+    return "j_x";
+  };
+  const statusOf = (db: ReturnType<typeof seedRealm>) =>
+    db.mapImportJob.rows.find((j: { id: string }) => j.id === "j_x").status;
+
+  it("calls off a world apply that is still queued", async () => {
+    const db = seedRealm();
+    const id = jobRow(db, { status: "queued" });
+    await expect(cancelMapImportJob(db, founder, id)).resolves.toEqual({ cancelled: true });
+    expect(statusOf(db)).toBe("cancelled");
+  });
+
+  it("does not call off a world apply that is running: it is all or nothing", async () => {
+    const db = seedRealm();
+    const id = jobRow(db, { status: "running" });
+    await expect(cancelMapImportJob(db, founder, id)).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(statusOf(db)).toBe("running");
+  });
+
+  it.each([
+    ["a world check that is running", { dryRun: true, status: "running" }],
+    ["a world check that is queued", { dryRun: true, status: "queued" }],
+    ["a map import that is running", { kind: "png", dryRun: false, status: "running" }],
+  ])("still calls off %s", async (_name, over) => {
+    const db = seedRealm();
+    const id = jobRow(db, over);
+    await expect(cancelMapImportJob(db, founder, id)).resolves.toEqual({ cancelled: true });
+    expect(statusOf(db)).toBe("cancelled");
   });
 });
 
