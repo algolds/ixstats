@@ -1,19 +1,24 @@
 /**
- * UPG v2 — polygon merge parity
+ * UPG v2 — polygon merge
  *
- * The merge matches vertices by quantised integer keys. The reference below is the previous
- * implementation (vertices keyed by `toFixed(6)` strings); on a fixed world both must produce the
- * same geometry for every cell set the exporter merges.
+ * The merge matches vertices by quantised integer keys. The reference below is the earlier
+ * implementation (vertices keyed by `toFixed(6)` strings); on a fixed world both must find the same
+ * rings for every cell set the exporter merges. The merge differs from it in what it does with the
+ * rings: it sorts them into shells and holes by orientation, cuts them at the latitude limit, and
+ * marks where the region across a ring's edge changes.
  */
 
-import type { Position, Polygon, MultiPolygon } from "geojson";
-import { mergeCellsToMultiPolygon } from "~/lib/worldgen/v2/helpers/polygon-merge";
+import type { Position } from "geojson";
+import {
+  mergeCells,
+  RING_LATITUDE,
+  type MergedPolygon,
+} from "~/lib/worldgen/v2/helpers/polygon-merge";
 import { generateWorld } from "~/lib/worldgen/v2/index";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import { createMesh } from "~/lib/worldgen/v2/mesh";
 import type { WorldGraph } from "~/lib/worldgen/v2/types";
-
-type Geometry = Polygon | MultiPolygon;
+import { pointInRing, signedArea } from "~/tests/helpers/ring-geometry";
 
 /** The string-keyed implementation this task replaced, kept verbatim as the oracle. */
 function referenceGroups(graph: WorldGraph, cellIds: number[]): number[][] {
@@ -119,43 +124,38 @@ function referenceMergeGroup(graph: WorldGraph, cellIds: number[]): Position[][]
   return rings;
 }
 
-function referenceMerge(graph: WorldGraph, cellIds: number[]): Geometry | null {
-  const polygons: Position[][][] = [];
-  for (const group of referenceGroups(graph, cellIds)) {
-    const rings = referenceMergeGroup(graph, group);
-    if (rings && rings.length > 0) polygons.push(rings);
-  }
-  if (polygons.length === 0) return null;
-  if (polygons.length === 1) return { type: "Polygon", coordinates: polygons[0]! };
-  return { type: "MultiPolygon", coordinates: polygons };
+/** The rings the reference finds, whichever polygon it puts them in. */
+function referenceRings(graph: WorldGraph, cellIds: number[]): Position[][] {
+  return referenceGroups(graph, cellIds).flatMap(
+    (group) => referenceMergeGroup(graph, group) ?? []
+  );
 }
 
-function expectSameGeometry(actual: Geometry | null, expected: Geometry | null) {
-  if (expected === null) {
-    expect(actual).toBeNull();
-    return;
-  }
-  expect(actual).not.toBeNull();
-  expect(actual!.type).toBe(expected.type);
-  const flat = (g: Geometry): Position[][][] =>
-    g.type === "Polygon" ? [g.coordinates] : g.coordinates;
-  const a = flat(actual!);
-  const e = flat(expected);
+const ringsOf = (polygons: MergedPolygon[]): Position[][] =>
+  polygons.flatMap((polygon) => polygon.map((ring) => ring.coordinates));
+
+/** Rings in a fixed order: by their first vertex, then their length. */
+function canonical(rings: Position[][]): Position[][] {
+  return [...rings].sort(
+    (a, b) => a[0]![0]! - b[0]![0]! || a[0]![1]! - b[0]![1]! || a.length - b.length
+  );
+}
+
+function expectSameRings(actual: Position[][], expected: Position[][]) {
+  const a = canonical(actual);
+  const e = canonical(expected);
   expect(a.length).toBe(e.length);
-  a.forEach((polygon, p) => {
-    expect(polygon.length).toBe(e[p]!.length);
-    polygon.forEach((ring, r) => {
-      const want = e[p]![r]!;
-      expect(ring.length).toBe(want.length);
-      for (let i = 0; i < ring.length; i++) {
-        expect(Math.abs(ring[i]![0]! - want[i]![0]!)).toBeLessThan(1e-6);
-        expect(Math.abs(ring[i]![1]! - want[i]![1]!)).toBeLessThan(1e-6);
-      }
-    });
+  a.forEach((ring, r) => {
+    const want = e[r]!;
+    expect(ring.length).toBe(want.length);
+    for (let i = 0; i < ring.length; i++) {
+      expect(Math.abs(ring[i]![0]! - want[i]![0]!)).toBeLessThan(1e-6);
+      expect(Math.abs(ring[i]![1]! - want[i]![1]!)).toBeLessThan(1e-6);
+    }
   });
 }
 
-describe("v2/polygon-merge parity with the string-keyed reference", () => {
+describe("v2/polygon-merge", () => {
   const world = generateWorld({ ...DEFAULT_PARAMS, seed: 42, cellCount: 12000 });
   const graph = world.graph!;
   const { cells } = graph;
@@ -166,54 +166,158 @@ describe("v2/polygon-merge parity with the string-keyed reference", () => {
     return out;
   };
 
-  it("merges all land like the reference", () => {
-    const land = cellsWhere((i) => cells.isLand[i] === 1);
-    expect(land.length).toBeGreaterThan(500);
-    expectSameGeometry(mergeCellsToMultiPolygon(graph, land), referenceMerge(graph, land));
+  /** The merge cuts the polar cells at the latitude limit, which the reference does not do. */
+  const clear = (i: number) => cells.vertices[i]!.every(([, y]) => Math.abs(y) <= RING_LATITUDE);
+
+  describe("parity with the string-keyed reference", () => {
+    it("merges all land like the reference", () => {
+      const land = cellsWhere((i) => cells.isLand[i] === 1 && clear(i));
+      expect(land.length).toBeGreaterThan(500);
+      expectSameRings(ringsOf(mergeCells(graph, land)), referenceRings(graph, land));
+    });
+
+    it("merges every continent, biome, elevation threshold and state like the reference", () => {
+      const sets: number[][] = [];
+      for (const f of graph.features) {
+        if (f.type === "continent" || f.type === "island") {
+          sets.push(cellsWhere((i) => cells.feature[i] === f.id && clear(i)));
+        }
+      }
+      for (let biome = 0; biome < 12; biome++) {
+        sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.biome[i] === biome && clear(i)));
+      }
+      for (let z = 0; z < 9; z++) {
+        sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.elevZone[i]! >= z && clear(i)));
+      }
+      for (const s of graph.states)
+        sets.push(cellsWhere((i) => cells.state[i] === s.id && clear(i)));
+      sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.lake[i]! > 0 && clear(i)));
+
+      expect(sets.length).toBeGreaterThan(30);
+      for (const set of sets) {
+        expectSameRings(ringsOf(mergeCells(graph, set)), referenceRings(graph, set));
+      }
+    });
+
+    it("merges the open ocean, which touches the seam, like the reference", () => {
+      const ocean = cellsWhere((i) => cells.isLand[i] === 0 && clear(i));
+      expectSameRings(ringsOf(mergeCells(graph, ocean)), referenceRings(graph, ocean));
+    });
+
+    it("handles a single cell, scattered cells and no cells like the reference", () => {
+      const one = [cellsWhere(clear)[1000]!];
+      expectSameRings(ringsOf(mergeCells(graph, one)), referenceRings(graph, one));
+      const scattered = cellsWhere((i) => i % 97 === 0 && clear(i));
+      expectSameRings(ringsOf(mergeCells(graph, scattered)), referenceRings(graph, scattered));
+      expect(mergeCells(graph, [])).toEqual([]);
+    });
+
+    it("gives the same rings on a mesh built from the same seed twice", () => {
+      const a = createMesh(5, 4000, 2);
+      const b = createMesh(5, 4000, 2);
+      const all = Array.from({ length: a.cells.n }, (_, i) => i);
+      expect(mergeCells(a, all)).toEqual(mergeCells(b, all));
+    });
   });
 
-  it("merges every continent, biome, elevation threshold and state like the reference", () => {
-    const sets: number[][] = [];
-    for (const f of graph.features) {
-      if (f.type === "continent" || f.type === "island") {
-        sets.push(cellsWhere((i) => cells.feature[i] === f.id));
+  describe("shells and holes", () => {
+    /** Cell sets that reach the poles and the seam, where a group's cells need not form one piece. */
+    const polarSets = () => {
+      const sets = [
+        cellsWhere((i) => cells.isLand[i] === 0),
+        cellsWhere((i) => cells.isLand[i] === 1),
+      ];
+      for (const s of graph.states) sets.push(cellsWhere((i) => cells.state[i] === s.id));
+      return sets;
+    };
+
+    const expectSound = (polygons: MergedPolygon[]) => {
+      for (const [shell, ...holes] of polygons) {
+        expect(signedArea(shell!.coordinates)).toBeGreaterThan(0);
+        for (const { coordinates } of holes) {
+          expect(signedArea(coordinates)).toBeLessThan(0);
+          const [a, b] = coordinates;
+          const [x, y] = [(a![0]! + b![0]!) / 2, (a![1]! + b![1]!) / 2];
+          expect(pointInRing(shell!.coordinates, x, y)).toBe(true);
+        }
+      }
+    };
+
+    it("makes every counter-clockwise ring the shell of a polygon and every clockwise ring a hole inside one", () => {
+      for (const set of polarSets()) expectSound(mergeCells(graph, set));
+    });
+
+    it("gives the pieces of a group that meet only at a pole polygons of their own", () => {
+      const pieces = polarSets().map((set) => ({
+        polygons: mergeCells(graph, set).length,
+        groups: referenceGroups(graph, set).length,
+      }));
+      for (const { polygons, groups } of pieces) expect(polygons).toBeGreaterThanOrEqual(groups);
+      expect(pieces.some(({ polygons, groups }) => polygons > groups)).toBe(true);
+    });
+
+    it("keeps the rings between the latitude limit and the opposite one", () => {
+      for (const set of polarSets()) {
+        for (const ring of ringsOf(mergeCells(graph, set))) {
+          for (const [, lat] of ring) expect(Math.abs(lat!)).toBeLessThanOrEqual(RING_LATITUDE);
+        }
+      }
+    });
+  });
+
+  describe("corners", () => {
+    const key = (x: number, y: number) => `${Math.round(x * 1e5)},${Math.round(y * 1e5)}`;
+    const stateOf = (i: number) => cells.state[i]!;
+
+    /** Regions around every vertex of the mesh: the labels of its cells, and the map's edges it lies on. */
+    const around = new Map<string, Set<number>>();
+    for (let i = 0; i < cells.n; i++) {
+      for (const [x, y] of cells.vertices[i]!) {
+        const regions = around.get(key(x, y)) ?? new Set<number>();
+        regions.add(stateOf(i));
+        if (x === -180) regions.add(-1);
+        if (x === 180) regions.add(-2);
+        if (y === -RING_LATITUDE) regions.add(-3);
+        if (y === RING_LATITUDE) regions.add(-4);
+        around.set(key(x, y), regions);
       }
     }
-    for (let biome = 0; biome < 12; biome++) {
-      sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.biome[i] === biome));
-    }
-    for (let z = 0; z < 9; z++) {
-      sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.elevZone[i]! >= z));
-    }
-    for (const s of graph.states) sets.push(cellsWhere((i) => cells.state[i] === s.id));
-    sets.push(cellsWhere((i) => cells.isLand[i] === 1 && cells.lake[i]! > 0));
 
-    expect(sets.length).toBeGreaterThan(30);
-    for (const set of sets) {
-      expectSameGeometry(mergeCellsToMultiPolygon(graph, set), referenceMerge(graph, set));
-    }
-  });
+    it("marks a vertex of a ring as a corner exactly where three regions meet there", () => {
+      let corners = 0;
+      for (const state of graph.states) {
+        // A state with cells at the poles would be cut short there, leaving cells of its own beyond its edge
+        const set = cellsWhere((i) => stateOf(i) === state.id);
+        if (!set.every(clear)) continue;
+        for (const polygon of mergeCells(graph, set, stateOf)) {
+          for (const { coordinates, corners: marked } of polygon) {
+            coordinates.slice(0, -1).forEach(([x, y], v) => {
+              const regions = around.get(key(x!, y!))!;
+              expect({ state: state.id, v, corner: marked.includes(v) }).toEqual({
+                state: state.id,
+                v,
+                corner: regions.size >= 3,
+              });
+            });
+            corners += marked.length;
+          }
+        }
+      }
+      expect(corners).toBeGreaterThan(100);
+    });
 
-  it("merges the open ocean, which touches the poles and the seam, like the reference", () => {
-    const ocean = cellsWhere((i) => cells.isLand[i] === 0);
-    expectSameGeometry(mergeCellsToMultiPolygon(graph, ocean), referenceMerge(graph, ocean));
-  });
-
-  it("handles a single cell, scattered cells and no cells like the reference", () => {
-    const one = [cells.n >> 1];
-    expectSameGeometry(mergeCellsToMultiPolygon(graph, one), referenceMerge(graph, one));
-    const scattered = cellsWhere((i) => i % 97 === 0);
-    expectSameGeometry(
-      mergeCellsToMultiPolygon(graph, scattered),
-      referenceMerge(graph, scattered)
-    );
-    expect(mergeCellsToMultiPolygon(graph, [])).toBeNull();
-  });
-
-  it("gives the same geometry on a mesh built from the same seed twice", () => {
-    const a = createMesh(5, 4000, 2);
-    const b = createMesh(5, 4000, 2);
-    const all = Array.from({ length: a.cells.n }, (_, i) => i);
-    expect(mergeCellsToMultiPolygon(a, all)).toEqual(mergeCellsToMultiPolygon(b, all));
+    it("finds no corners on a landmass clear of the map's edges when its neighbours are not told apart", () => {
+      const island = graph.features.find(
+        (f) =>
+          f.type === "island" &&
+          cellsWhere((i) => cells.feature[i] === f.id).every(
+            (i) => clear(i) && Math.abs(cells.p[i * 2]!) < 170
+          )
+      )!;
+      const set = cellsWhere((i) => cells.feature[i] === island.id);
+      const rings = mergeCells(graph, set).flat();
+      expect(rings.length).toBeGreaterThan(0);
+      for (const ring of rings) expect(ring.corners).toEqual([]);
+    });
   });
 });

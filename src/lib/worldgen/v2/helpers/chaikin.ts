@@ -1,48 +1,111 @@
 /**
- * UPG v2 — Vector smoothing: Douglas-Peucker decimation, Catmull-Rom splines, harmonic perturbation.
+ * UPG v2 — Vector smoothing: Douglas-Peucker decimation, splines through polygon vertices, harmonic perturbation.
  */
+
+/** Exported rings are held to this latitude (Web Mercator's limit is 85.05°). */
+export const MAX_LATITUDE = 85;
 
 /**
- * Smooth a closed polygon ring using Catmull-Rom spline interpolation (tau = 0.5).
- * Replaces sharp polygon corners with continuous spline curves.
+ * Length of a spline end tangent as a fraction of its segment. A full Catmull-Rom curve (1) swells the area of
+ * a small region by up to 9% (a two-cell country); at 0.35 a region of 13 cells or more is within 3% of its cells
+ * and the smallest within 5%, at the price of tighter corners.
  */
-export function catmullRomSmooth(ring: [number, number][], passes: number = 3): [number, number][] {
-  if (ring.length < 4 || passes <= 0) return ring;
+const SPLINE_TENSION = 0.35;
 
-  let current = ring;
+/**
+ * The edges of the map. A border that runs along an edge is a straight chain, and the chain meeting it at a
+ * sharp angle must not sag across it: a splined point on the far side of an edge is put `inset` inside.
+ */
+export interface Bounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  inset: number;
+}
 
-  for (let p = 0; p < passes; p++) {
-    const next: [number, number][] = [];
-    const len = current.length - 1; // exclude duplicate closing vertex
+function holdInside(value: number, min: number, max: number, inset: number): number {
+  if (value < min) return min + inset;
+  if (value > max) return max - inset;
+  return value;
+}
 
-    for (let i = 0; i < len; i++) {
-      const p0 = current[(i - 1 + len) % len]!;
-      const p1 = current[i]!;
-      const p2 = current[(i + 1) % len]!;
-      const p3 = current[(i + 2) % len]!;
+function distance(a: [number, number], b: [number, number]): number {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
-      for (let tStep = 0; tStep < 2; tStep++) {
-        const t = tStep * 0.5;
-        const tt = t * t;
-        const ttt = tt * t;
+/**
+ * Point halfway along the spline segment p1 → p2, with p0 and p3 the points around it. A cubic Hermite
+ * segment whose end tangents point along p0 → p2 and p1 → p3 and are SPLINE_TENSION times as long as the
+ * segment itself: the curve passes through every control point, like a Catmull-Rom spline, yet a long
+ * neighbouring segment cannot throw a short one into a loop, and a point never moves more than a quarter of
+ * SPLINE_TENSION of its segment off the chord. Swapping the direction of travel gives the same point.
+ */
+function splineMidpoint(
+  p0: [number, number],
+  p1: [number, number],
+  p2: [number, number],
+  p3: [number, number]
+): [number, number] {
+  const length = distance(p1, p2);
+  const inLength = distance(p0, p2) || 1;
+  const outLength = distance(p1, p3) || 1;
+  const scale = (length / 8) * SPLINE_TENSION;
+  return [
+    (p1[0] + p2[0]) / 2 + scale * ((p2[0] - p0[0]) / inLength - (p3[0] - p1[0]) / outLength),
+    (p1[1] + p2[1]) / 2 + scale * ((p2[1] - p0[1]) / inLength - (p3[1] - p1[1]) / outLength),
+  ];
+}
 
-        const q0 = -0.5 * ttt + tt - 0.5 * t;
-        const q1 = 1.5 * ttt - 2.5 * tt + 1.0;
-        const q2 = -1.5 * ttt + 2.0 * tt + 0.5 * t;
-        const q3 = 0.5 * ttt - 0.5 * tt;
-
-        const x = p0[0] * q0 + p1[0] * q1 + p2[0] * q2 + p3[0] * q3;
-        const y = p0[1] * q0 + p1[1] * q1 + p2[1] * q2 + p3[1] * q3;
-        next.push([x, y]);
-      }
+/** One refinement pass: every segment gains the spline point halfway along it. */
+function refine(points: [number, number][], closed: boolean, bounds?: Bounds): [number, number][] {
+  // A closed ring repeats its first point at the end; an open chain keeps its ends fixed
+  const n = closed ? points.length - 1 : points.length;
+  const at = (i: number) =>
+    closed ? points[(i + n) % n]! : points[Math.max(0, Math.min(n - 1, i))]!;
+  const refined: [number, number][] = [];
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const mid = splineMidpoint(at(i - 1), at(i), at(i + 1), at(i + 2));
+    if (bounds) {
+      mid[0] = holdInside(mid[0], bounds.minX, bounds.maxX, bounds.inset);
+      mid[1] = holdInside(mid[1], bounds.minY, bounds.maxY, bounds.inset);
     }
-
-    if (next.length > 0) {
-      next.push([next[0]![0], next[0]![1]]);
-    }
-    current = next;
+    refined.push(points[i]!, mid);
   }
+  refined.push(closed ? [refined[0]![0], refined[0]![1]] : points[n - 1]!);
+  return refined;
+}
 
+/**
+ * Smooth a closed polygon ring with a spline through its vertices. Replaces sharp polygon corners with
+ * continuous curves; each pass doubles the number of vertices. New points are held within `bounds`.
+ */
+export function catmullRomSmooth(
+  ring: [number, number][],
+  passes: number = 3,
+  bounds?: Bounds
+): [number, number][] {
+  if (ring.length < 4 || passes <= 0) return ring;
+  let current = ring;
+  for (let p = 0; p < passes; p++) current = refine(current, true, bounds);
+  return current;
+}
+
+/**
+ * Smooth an open chain of a ring (the stretch of border between two corners) the same way. Its end points
+ * stay where they are and the curve leaves each of them along the chain's first and last segment, so a
+ * corner stays a corner and the result depends on the chain alone.
+ */
+export function catmullRomSmoothChain(
+  chain: [number, number][],
+  passes: number = 3,
+  bounds?: Bounds
+): [number, number][] {
+  if (chain.length < 3 || passes <= 0) return chain;
+  let current = chain;
+  for (let p = 0; p < passes; p++) current = refine(current, false, bounds);
   return current;
 }
 
@@ -193,7 +256,7 @@ export function perturbRing(
     const dy = (n2 - n1) * amplitude * 0.8;
 
     const newLng = Math.max(-180, Math.min(180, lng + dx));
-    const newLat = Math.max(-85, Math.min(85, lat + dy));
+    const newLat = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, lat + dy));
 
     perturbed.push([Math.round(newLng * 10000) / 10000, Math.round(newLat * 10000) / 10000]);
   }

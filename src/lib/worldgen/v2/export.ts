@@ -2,9 +2,9 @@
  * UPG v2 — GeoJSON Export Engine
  *
  * Converts WorldGraph into a 7-layer GeoJSON collection matching IxWorldMap renderer contract:
- * - background: landmass base polygons (merged by continent, 3-pass Chaikin smoothed)
- * - altitudes: 9-zone cumulative isoline contour polygons (zone N = elevZone >= N, 3-pass Chaikin smoothed)
- * - climate: biome region polygons (grouped by biome, 3-pass Chaikin smoothed)
+ * - background: landmass base polygons (merged by continent, spline smoothed)
+ * - altitudes: 9-zone cumulative isoline contour polygons (zone N = elevZone >= N, spline smoothed)
+ * - climate: biome region polygons (grouped by biome, spline smoothed)
  * - political: country territory polygons (grouped by state, with _id, _displayName, _fillColor, slotKey, etc.)
  *   (omitted when the realm keeps its own borders)
  * - rivers: river network LineString features
@@ -13,6 +13,10 @@
  *
  * Only countries carry names (the suggested names of their slots): continents, rivers and lakes
  * are left unnamed.
+ *
+ * Polygons are built to be valid as they stand, without a PostGIS repair: shells run counter-clockwise, holes
+ * clockwise inside their shell, rings do not cross themselves, and the rings of neighbouring countries and
+ * biomes share their borders point for point. They stop short of the poles (see RING_LATITUDE).
  */
 
 import { slotKey, type WorldGraph, type WorldGenParams } from "./types";
@@ -26,14 +30,13 @@ import type {
   Position,
 } from "geojson";
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
-import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
-import {
-  catmullRomSmooth,
-  catmullRomSmoothLine,
-  simplifyRing,
-  perturbRing,
-} from "./helpers/chaikin";
+import { mergeCells, type MergedPolygon } from "./helpers/polygon-merge";
+import { catmullRomSmoothLine } from "./helpers/chaikin";
+import { smoothRing } from "./helpers/ring-smooth";
 import { cellLng, cellLat } from "./mesh";
+
+/** Spline refinement passes of every polygon ring: 4 vertices per cell edge */
+const SMOOTHING_PASSES = 2;
 
 export function exportToGeoJSON(
   graph: WorldGraph,
@@ -100,18 +103,15 @@ function exportBackground(graph: WorldGraph): FeatureCollection {
 
   const continents = features.filter((f) => f.type === "continent" || f.type === "island");
   const landmassIds = new Set(continents.map((f) => f.id));
-  const cellsOf = bucketCells(cells.n, (i) =>
-    landmassIds.has(cells.feature[i]!) ? cells.feature[i]! : 0
-  );
+  const landmassOf = (i: number) => (landmassIds.has(cells.feature[i]!) ? cells.feature[i]! : 0);
+  const cellsOf = bucketCells(cells.n, landmassOf);
 
   for (const cont of continents) {
     const contCells = cellsOf.get(cont.id);
     if (!contCells) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, contCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, contCells, landmassOf));
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -147,10 +147,8 @@ function exportAltitudes(graph: WorldGraph): FeatureCollection {
 
     if (zoneLandCells.length === 0) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, zoneLandCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, zoneLandCells));
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -173,6 +171,8 @@ function exportAltitudes(graph: WorldGraph): FeatureCollection {
 function exportClimate(graph: WorldGraph): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
+  /** Water is its own region, apart from every biome */
+  const biomeOf = (i: number) => (cells.isLand[i] ? cells.biome[i]! + 1 : 0);
 
   for (const biomeConfig of TREWARTHA_BIOMES) {
     const biomeCells: number[] = [];
@@ -184,10 +184,8 @@ function exportClimate(graph: WorldGraph): FeatureCollection {
 
     if (biomeCells.length === 0) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, biomeCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, biomeCells, biomeOf));
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -209,7 +207,8 @@ function exportClimate(graph: WorldGraph): FeatureCollection {
 function exportPolitical(graph: WorldGraph): FeatureCollection {
   const { cells, states } = graph;
   const geoFeatures: Feature[] = [];
-  const cellsOf = bucketCells(cells.n, (i) => cells.state[i]!);
+  const stateOf = (i: number) => cells.state[i]!;
+  const cellsOf = bucketCells(cells.n, stateOf);
 
   for (const state of states) {
     const stateCells = cellsOf.get(state.id);
@@ -224,10 +223,8 @@ function exportPolitical(graph: WorldGraph): FeatureCollection {
     const centroidLng = sumLng / stateCells.length;
     const centroidLat = sumLat / stateCells.length;
 
-    const geom = mergeCellsToMultiPolygon(graph, stateCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, stateCells, stateOf));
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -303,10 +300,8 @@ function exportLakes(graph: WorldGraph): FeatureCollection {
     const lakeCells = cellsOf.get(lake.id);
     if (!lakeCells) continue;
 
-    const geom = mergeCellsToMultiPolygon(graph, lakeCells);
-    if (!geom) continue;
-
-    const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, lakeCells));
+    if (!smoothedGeom) continue;
 
     geoFeatures.push({
       type: "Feature",
@@ -339,9 +334,8 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
   }
 
   if (iceCells.length > 0) {
-    const geom = mergeCellsToMultiPolygon(graph, iceCells);
-    if (geom) {
-      const smoothedGeom = smoothGeometry(geom, 2);
+    const smoothedGeom = smoothGeometry(mergeCells(graph, iceCells));
+    if (smoothedGeom) {
       geoFeatures.push({
         type: "Feature",
         id: 1,
@@ -358,29 +352,20 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function processVectorRing(ring: [number, number][], passes: number): [number, number][] {
-  // 1. Fine decimation of collinear/duplicate points (0.001° ≈ 100m)
-  const simplified = simplifyRing(ring, 0.001);
-  // 2. Interpolate smooth Catmull-Rom spline curves through structural control points
-  const smoothed = catmullRomSmooth(simplified, passes);
-  // 3. Sub-cell harmonic noise perturbation for natural organic cartographic detail
-  return perturbRing(smoothed, 42, 0.08, 0.004);
-}
-
-function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon | MultiPolygon {
-  if (geom.type === "Polygon") {
-    return {
-      type: "Polygon",
-      coordinates: geom.coordinates.map((ring) =>
-        processVectorRing(ring as [number, number][], passes)
-      ),
-    };
+/**
+ * The polygons smoothed ring by ring, as a Polygon or MultiPolygon (null when nothing is left). A ring that
+ * smoothing collapsed to less than a triangle is dropped: a shell takes its polygon with it, a hole just goes.
+ */
+function smoothGeometry(polygons: MergedPolygon[]): Polygon | MultiPolygon | null {
+  const coordinates: Position[][][] = [];
+  for (const [shell, ...holes] of polygons) {
+    const outer = smoothRing(shell!, SMOOTHING_PASSES);
+    if (outer.length < 4) continue;
+    const inner = holes.map((hole) => smoothRing(hole, SMOOTHING_PASSES));
+    coordinates.push([outer, ...inner.filter((ring) => ring.length >= 4)]);
   }
-
-  return {
-    type: "MultiPolygon",
-    coordinates: geom.coordinates.map((poly) =>
-      poly.map((ring) => processVectorRing(ring as [number, number][], passes))
-    ),
-  };
+  if (coordinates.length === 0) return null;
+  return coordinates.length === 1
+    ? { type: "Polygon", coordinates: coordinates[0]! }
+    : { type: "MultiPolygon", coordinates };
 }
