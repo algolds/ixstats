@@ -9,25 +9,76 @@ import type { WorldGenParams } from "./types";
 
 // Default Generation Parameters
 
+/** Earth's land hypsometry over the 9 zones (share of land, %). */
+const EARTH_HYPSOMETRY = [18, 22, 12, 22, 15, 6, 3, 1.5, 0.5];
+
 export const DEFAULT_PARAMS: WorldGenParams = {
   seed: 42,
   cellCount: 100000,
   plateCount: 10,
   continentCount: 6,
+  continentLatitudeRange: [-50, 60],
+  continentSizeVariance: 0.5,
+  islandShare: 0.06,
+  polarLand: { north: false, south: true },
   countryCountRange: [60, 200],
-  oceanPercentage: 0.65,
+  oceanPercentage: 0.7,
   terrainRoughness: 0.5,
   coastlineComplexity: 0.6,
-  climateFidelity: 1.0,
+  hypsometry: EARTH_HYPSOMETRY,
+  temperatureOffset: 0,
+  precipitationScale: 1,
+  riverDensity: 1,
+  lakeCoverage: 0.012,
   hasIcecaps: true,
   hasRivers: true,
   hasLakes: true,
-  useIxWorldTemplate: false,
-  templateStrength: 0.6,
   useMarkovNaming: true,
-  languageFamilies: [],
   lloydIterations: 5,
 };
+
+/**
+ * Presets reproducing the shape statistics of the two hand-drawn realm maps. Targets were measured
+ * on 2026-10-11 by sampling each realm's active map_layers on a 0.5° grid (area-weighted):
+ *
+ * - Ixnay (IxEarth): 22.9% land in ~6 mid-latitude continents plus ~240 islands, no polar land,
+ *   flat (49% of land below 100 m), warm and wet (Ar 28%, Cf+Cs 25%, B 16%, D 18%, E/F/H 4%),
+ *   ~350 lakes covering ~1.1% of land, ~1000 river segments.
+ * - Eurth: 22.9% land in two large continents, two medium ones and a south-polar continent (13% of
+ *   land), rugged (zones 3+ hold 32% of land), continental climate (Dc 23%, E 9%, B 23%, Fi 10%),
+ *   ~60 lakes (1.1% of land), ~400 river segments.
+ */
+export const WORLD_PRESETS = {
+  earthlike: {},
+  ixnay: {
+    oceanPercentage: 0.771,
+    continentCount: 6,
+    continentLatitudeRange: [-40, 60],
+    continentSizeVariance: 0.45,
+    islandShare: 0.07,
+    polarLand: { north: false, south: false },
+    hypsometry: [48.8, 24.7, 15.3, 8.5, 1.9, 0.7, 0.2, 0.1, 0],
+    temperatureOffset: 1.5,
+    precipitationScale: 1.6,
+    riverDensity: 1.4,
+    lakeCoverage: 0.011,
+  },
+  eurth: {
+    oceanPercentage: 0.771,
+    continentCount: 5,
+    continentLatitudeRange: [18, 60],
+    continentSizeVariance: 0.75,
+    islandShare: 0.06,
+    polarLand: { north: false, south: true },
+    hypsometry: [39.6, 19, 9.3, 16, 8.1, 4.5, 1.8, 1.5, 0.1],
+    temperatureOffset: 3,
+    precipitationScale: 1,
+    riverDensity: 0.8,
+    lakeCoverage: 0.011,
+  },
+} satisfies Record<string, Partial<WorldGenParams>>;
+
+export type WorldPreset = keyof typeof WORLD_PRESETS;
 
 // Elevation Zones (meters)
 
@@ -145,45 +196,14 @@ export const QUALITY_THRESHOLDS = {
   /** Minimum composite quality score to pass (0-100) */
   compositeMinimum: 85,
 
-  // Check 1: Continent count
-  minContinents: 3,
-  maxContinents: 10,
-  minContinentCells: 1000,
-
-  // Check 2: Continent shape diversity
-  maxConvexity: 0.85,
-  aspectRatioSimilarityThreshold: 0.2,
-
   // Check 3: Mountain placement
   mountainBoundaryCorrelation: 0.8,
   mountainBoundaryMaxDist: 10,
 
-  // Check 4: River drainage quality
-  riverDownhillFlowMin: 1.0,
-  riverMountainCrossingMax: 0.0,
-  riverReachesWaterMin: 0.9,
-
-  // Check 5: Climate coherence
-  rainShadowPresence: 0.7,
-  equatorialTropicalMin: 0.6,
-  polarTundraMin: 0.6,
-
-  // Check 6: Lake placement
-  lakesInDepressionMin: 0.8,
-
-  // Check 7: Coastline complexity
-  coastlineFractalDimMin: 1.15,
-  minPeninsulasPerContinent: 1,
-  minBaysPerContinent: 1,
-
   // Check 8: Land/ocean ratio
   landOceanTolerancePercent: 8,
 
-  // Check 9: Elevation zone coverage
-  minZonesPerLargeContinent: 5,
-
-  // Natural border thresholds (politics)
-  naturalBorderMin: 0.6,
+  // Natural border strengths (politics)
   riverBorderStrength: 0.8,
   mountainBorderStrength: 1.0,
   coastBorderStrength: 1.0,
@@ -193,23 +213,7 @@ export const QUALITY_THRESHOLDS = {
 // Tectonic Constants
 
 export const TECTONIC_CONSTANTS = {
-  /** Continental plate base elevation in meters */
-  continentalBaseElevation: 300,
-  /** Oceanic plate base elevation in meters */
-  oceanicBaseElevation: -3000,
-  /** Peak mountain uplift at convergent boundaries in meters */
-  convergentUpliftMax: 5500,
-  /** Width of mountain belt in cells from boundary */
-  convergentBeltWidth: 12,
-  /** Rift valley depression depth in meters */
-  divergentDepressionDepth: -400,
-  /** Mid-ocean ridge height above ocean floor in meters */
-  midOceanRidgeHeight: 1200,
-  /** Subduction arc offset from boundary in cells */
-  subductionArcOffset: 5,
-  /** Continental shelf width in cells */
-  continentalShelfWidth: 4,
-  /** Velocity threshold for boundary classification */
+  /** Relative closing speed above which a boundary is convergent (or divergent) */
   boundaryVelocityThreshold: 0.3,
   /** Continental plate speed range [min, max] in relative units */
   continentalSpeedRange: [0.3, 1.2] as [number, number],
@@ -220,24 +224,24 @@ export const TECTONIC_CONSTANTS = {
 // Climate Constants
 
 export const CLIMATE_CONSTANTS = {
-  /** Baseline equatorial temperature in °C */
-  equatorialTemp: 30,
-  /** Temperature drop per degree of latitude */
-  latitudeTempGradient: 0.667,
+  /** Annual-mean sea-level temperature at the equator in °C */
+  equatorialTemp: 28,
+  /** Zonal cooling T = equatorialTemp − k·lat² (fits Earth: 13 °C at 45°, 2 °C at 60°, −30 °C at 90°) */
+  latitudeTempCurvature: 0.0072,
   /** Altitude lapse rate: °C per 1000m */
   lapseRatePerKm: 6.5,
-  /** Coastal temperature moderation range in BFS hops */
-  coastModerationRange: 5,
+  /** Annual-mean cooling of deep continental interiors at mid/high latitudes in °C */
+  continentalCooling: 3,
   /** Warm ocean current temperature boost in °C */
-  warmCurrentBoost: 5,
+  warmCurrentBoost: 3,
   /** Cold ocean current temperature reduction in °C */
   coldCurrentReduction: -3,
-  /** Orographic precipitation multiplier for windward slopes */
-  orographicLiftMultiplier: 2.5,
-  /** Rain shadow precipitation multiplier for leeward slopes */
-  rainShadowMultiplier: 0.3,
-  /** Target river count range [min, max] */
-  targetRiverRange: [500, 1500] as [number, number],
-  /** Minimum flux threshold scaling factor */
-  fluxThresholdFactor: 0.001,
+  /** Share of land cells carrying a river at riverDensity = 1 */
+  riverCellShare: 0.08,
+  /** Ocean colder than this (annual mean °C) is drawn as sea ice */
+  seaIceTemp: -13,
+  /** Land colder than this (annual mean °C) holds a permanent ice sheet */
+  iceSheetTemp: -14,
+  /** Land within this many km of the windward ocean counts as maritime (Do, Cs) */
+  maritimeKm: 700,
 } as const;

@@ -23,7 +23,7 @@ export interface PipelineInput {
   pngBuffer?: Buffer;
   pngConfig?: PngToSvgConfig;
   /** For procedural generation */
-  worldGenParams?: WorldGenParams;
+  worldGenParams?: Partial<WorldGenParams>;
   /** Coordinate calibration (required for SVG/PNG) */
   coordinateConfig?: SvgCoordinateConfig;
   /** Reference GeoJSON for auto-calibration */

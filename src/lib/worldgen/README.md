@@ -6,14 +6,31 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
 
 ## Key Design Principles
 
-1. **Fixed 100,000-Cell Spatial Mesh**: Uses a single high-density Voronoi mesh (`WorldGraph`, 100,000 cells, 5 Lloyd relaxation iterations). No user-facing cell resolution sliders—mesh density is locked to ensure uniform cartographic fidelity.
-2. **Coastal Hypsometric Slope Damping**: Smooth exponential coastal dampening ($H_{\text{damped}}[i] = H[i] \cdot (1.0 - 0.85 \cdot e^{-0.35 \cdot \text{coastDist}[i]})$) keeps shoreline land in lowlands (`zone_0`/`zone_1`, 0–350m), preventing glacial mountain peaks (`zone_8`) from touching ocean borders.
-3. **Polar Soft Clamping**: High-latitude noise dampening (`polarFactor = cos(((absLat - 70) / 18) * (PI / 2))`) for $|lat| > 70^\circ$. South Pole ($lat < -74^\circ$) clamps to a stable +800m polar continent plateau; North Pole ($lat > 76^\circ$) clamps to a -1500m Arctic sea basin with ice caps, eliminating map projection pinching.
-4. **Option A 3-Stage IxWorld Vector Synthesis Engine**:
-   - **Douglas-Peucker Decimation (`simplifyRing`)**: Strips high-frequency Voronoi cell chatter ($120^\circ$ direction flips) before curve calculation.
-   - **Control Point Catmull-Rom Subdivision (`catmullRomSmooth`)**: Passes clean structural control points into Catmull-Rom spline subdivision ($\tau = 0.5$; 2 passes for polygons, 3 for river lines) for smooth Bezier arcs at all zoom levels without scalloped wave bumps.
-   - **Multi-Octave Harmonic Vector Perturbation (`perturbRing`)**: Morphs vector coordinates with continuous harmonic noise matching IxWorld's `vector-synthesis.ts` architecture for organic fractal cartography.
-5. **Topological Layer Locking**: All 7 GeoJSON output layers (`background`, `altitudes`, `climate`, `political`, `rivers`, `lakes`, `icecaps`) share the exact same underlying Voronoi mesh graph, guaranteeing zero visual drift, gaps, or overlapping artifacts between coastlines, borders, biomes, and isolines.
+1. **Whole-globe Voronoi mesh**: a latitude-compensated jittered grid (≈ ⅔ of `cellCount` cells, ~3,700 km² each at the default) with 5 Lloyd passes, covering ±90° and stitched across the antimeridian, so continents, rivers and borders cross ±180° without a seam. All noise is evaluated on the unit sphere (no seam, no polar pinching).
+2. **Controlled landmasses**: `continentCount` continents are grown from centres inside `continentLatitudeRange` over a noisy cost field (size spread `continentSizeVariance`, an ocean gap between them), optional Antarctica-style `polarLand` caps, and `islandShare` of the land as archipelagos and volcanic arcs. Land is exactly `1 − oceanPercentage` of the globe.
+3. **Hypsometric elevation**: land cells are ranked by relief (distance inland + convergent-boundary mountain belts + noise) and mapped onto the `hypsometry` curve, so the share of land in each of the 9 zones matches the target while mountains stay on the tectonic belts.
+4. **Climate from physics, classified by Trewartha's rules**: zonal temperature with lapse rate and continentality, Coriolis wind belts, an upwind trace for onshore rain, continentality and distance-fading rain shadows, then month counts of a seasonal temperature curve decide the 12 Trewartha types. `temperatureOffset` and `precipitationScale` tune a world warmer/colder or wetter/drier.
+5. **Topological layer locking**: all 7 GeoJSON layers come from the same cells, so coastlines, borders, biomes and isolines never drift apart. The quality gate is report-only and never edits the graph after hydrology.
+
+---
+
+## Realm Presets
+
+`WORLD_PRESETS` in [`v2/config.ts`](v2/config.ts) reproduce the shape statistics of the two hand-drawn realm maps (measured 2026-10-11 from each realm's `map_layers` on a 0.5° grid):
+
+|         | Land  | Continents                      | Polar land | Land < 100 m | Climate (ref.)                    |
+| ------- | ----- | ------------------------------- | ---------- | ------------ | --------------------------------- |
+| `ixnay` | 22.9% | ~6 mid-latitude + ~240 islands  | none       | 49%          | A 37, B 16, C 25, D 18, E/F/H 4   |
+| `eurth` | 22.9% | 2 large, 2 medium + south-polar | south      | 40% (rugged) | A 21, B 23, C 11, D 24, E 9, F 13 |
+
+```typescript
+import { generateWorld } from "~/lib/worldgen/v2";
+import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
+
+const ixnayLike = generateWorld({ ...WORLD_PRESETS.ixnay, seed: 7 });
+```
+
+`src/tests/lib/worldgen/v2/presets.test.ts` holds the presets to those targets. Known gap: Eurth packs more continental (D) land into 40–60°N than the generator reliably does, so generated Eurth-likes run ~10 points low on D and high on A/B depending on seed.
 
 ---
 
@@ -21,7 +38,7 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
 
 ```
                        ┌─────────────────────────────────────────┐
-                       │ 100,000-Cell Voronoi Mesh (5-Pass Lloyd) │
+                       │ Whole-Globe Voronoi Mesh (5-Pass Lloyd)  │
                        └────────────────────┬────────────────────┘
                                             │
                                             ▼
@@ -31,7 +48,7 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
                                             │
                                             ▼
                        ┌─────────────────────────────────────────┐
-                       │ Multi-Fractal Terrain & Coastal Damping │
+                       │ Continents, Mountains & Hypsometry      │
                        └────────────────────┬────────────────────┘
                                             │
                                             ▼
@@ -46,7 +63,7 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
                                             │
                                             ▼
                        ┌─────────────────────────────────────────┐
-                       │ Automated 9-Check Quality Gate          │
+                       │ 9-Check Quality Gate (report-only)      │
                        └────────────────────┬────────────────────┘
                                             │
                                             ▼
@@ -62,16 +79,16 @@ The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedur
 
 ### Stage Details
 
-| Stage | Module | Key Operations |
-|-------|--------|----------------|
-| 1. Mesh | [`mesh.ts`](v2/mesh.ts) | 100,000 Voronoi cells, 5 Lloyd relaxation passes, adjacency graph, boundary cell classification. |
-| 2. Tectonics | [`tectonics.ts`](v2/tectonics.ts) | 10 tectonic plates, continental vs oceanic assignment, velocity vectors, convergent/divergent/transform classification, BFS distance fields. |
-| 3. Terrain | [`terrain.ts`](v2/terrain.ts) | Multi-octave fractal noise heightmap (meters), convergent mountain uplift, polar cosine soft clamping (North/South poles), 2-pass spatial Laplacian heightmap smoothing. |
-| 4. Coastlines | [`coastlines.ts`](v2/coastlines.ts) | Fjord carving ($|lat| > 48^\circ$), peninsula extension, bay formation, island filtering (< 5 cells), smooth exponential coastal slope damping (`coastDist <= 8`), geographic feature classification. |
-| 5. Hydro-Climate | [`hydro-climate.ts`](v2/hydro-climate.ts) | 8 sub-passes: temperature, lapse rate, Coriolis wind vectoring, rain shadow precipitation, priority-queue depression filling, steepest-descent river flow, tributary networks, lake basins, and 12 Trewartha biomes. Post-routing `elevZone` recalibration. |
-| 6. Quality Gate | [`quality-gate.ts`](v2/quality-gate.ts) | 9 scientific/aesthetic checks (continent count, shape diversity, mountain alignment, river drainage, climate-zone coherence, lake placement, coastline complexity, land/ocean ratio, 9-zone elevation coverage). Performs in-place repairs. |
-| 7. Politics | [`politics.ts`](v2/politics.ts) | Culture centers, habitability-scored settlement seeding, Dijkstra shortest-path country expansion over natural border cost fields (rivers, mountains, coastlines), exclave repair, island capital proximity assignment. |
-| 8. Export & Vector Synthesis | [`export.ts`](v2/export.ts) | Polygon ring merging, 3-stage vector synthesis (Douglas-Peucker decimation $\rightarrow$ Catmull-Rom spline subdivision, 2 passes for polygons / 3 for rivers $\rightarrow$ multi-octave harmonic noise perturbation), 7 topology-locked GeoJSON layer collections. |
+| Stage                        | Module                                    | Key Operations                                                                                                                                                                                                                                                      |
+| ---------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Mesh                      | [`mesh.ts`](v2/mesh.ts)                   | Whole-globe Voronoi cells, 5 Lloyd passes, adjacency graph stitched across the antimeridian, polar boundary rows.                                                                                                                                                   |
+| 2. Tectonics                 | [`tectonics.ts`](v2/tectonics.ts)         | Plates, velocity vectors, convergent/divergent/transform classification, BFS distance to boundaries.                                                                                                                                                                |
+| 3. Terrain                   | [`terrain.ts`](v2/terrain.ts)             | Continents, polar caps, islands; plate types from land cover; convergent mountain belts; hypsometric elevation; ocean depth.                                                                                                                                        |
+| 4. Coastlines                | [`coastlines.ts`](v2/coastlines.ts)       | Fjords ($                                                                                                                                                                                                                                                           | lat | > 48^\circ$), peninsulas and bays, single-cell speck removal, geographic feature classification. |
+| 5. Hydro-Climate             | [`hydro-climate.ts`](v2/hydro-climate.ts) | Wind belts, upwind trace, temperature, ocean currents, precipitation, priority-flood depression filling, rivers with tributaries and watersheds, lakes (`lakeCoverage`), 12 Trewartha biomes.                                                                       |
+| 6. Quality Gate              | [`quality-gate.ts`](v2/quality-gate.ts)   | 9 scientific/aesthetic checks (continent count, shape diversity, mountain alignment, river drainage, climate-zone coherence, lake placement, coastline complexity, land/ocean ratio, 9-zone elevation coverage). Report-only.                                       |
+| 7. Politics                  | [`politics.ts`](v2/politics.ts)           | Cultures, spaced capitals (one per country, `countryCountRange`) and towns, Dijkstra country expansion over natural border costs (rivers, mountains, coastlines), exclave repair.                                                                                   |
+| 8. Export & Vector Synthesis | [`export.ts`](v2/export.ts)               | Polygon ring merging, 3-stage vector synthesis (Douglas-Peucker decimation $\rightarrow$ Catmull-Rom spline subdivision, 2 passes for polygons / 3 for rivers $\rightarrow$ multi-octave harmonic noise perturbation), 7 topology-locked GeoJSON layer collections. |
 
 ---
 
@@ -86,12 +103,12 @@ export interface GeneratedWorld {
   graph: WorldGraph;
   layers: {
     background: FeatureCollection; // Base landmass polygons (#e8e5da)
-    altitudes: FeatureCollection;  // 9-zone cumulative topography isolines (zone_0 to zone_8)
-    climate: FeatureCollection;    // 12 Trewartha biome polygons
-    political: FeatureCollection;  // National country territories with _id, _displayName, _fillColor, _areaSqKm
-    rivers: FeatureCollection;     // Hydrographic river LineStrings (_strokeColor #0284c7, lengthKm, flux)
-    lakes: FeatureCollection;      // Inland waterbody lake polygons (_fillColor #0284c7, areaKm2)
-    icecaps: FeatureCollection;    // Polar ice cap polygons (#ffffff)
+    altitudes: FeatureCollection; // 9-zone cumulative topography isolines (zone_0 to zone_8)
+    climate: FeatureCollection; // 12 Trewartha biome polygons
+    political: FeatureCollection; // National country territories with _id, _displayName, _fillColor, _areaSqKm
+    rivers: FeatureCollection; // Hydrographic river LineStrings (_strokeColor #0284c7, lengthKm, flux)
+    lakes: FeatureCollection; // Inland waterbody lake polygons (_fillColor #0284c7, areaKm2)
+    icecaps: FeatureCollection; // Polar ice cap polygons (#ffffff)
   };
   stats: WorldStats;
 }
@@ -115,17 +132,17 @@ MapLibre layers are mounted in `zIndex` order (`LAYER_CONFIGS` in `src/lib/maps/
 
 ## Standard Elevation Zones (9-Zone System)
 
-| ID | Zone ID | Name | Min (m) | Max (m) | Color |
-|---|---|---|---|---|---|
-| 0 | `zone_0` | Coastal Lowlands | 0 | 99 | `#a8c995ff` |
-| 1 | `zone_1` | Low Hills | 100 | 349 | `#c3d3a1ff` |
-| 2 | `zone_2` | Rolling Hills | 350 | 499 | `#dcdcacff` |
-| 3 | `zone_3` | Uplands | 500 | 999 | `#f7e6b8ff` |
-| 4 | `zone_4` | Low Mountains | 1000 | 1999 | `#dac497ff` |
-| 5 | `zone_5` | Mid Mountains | 2000 | 2999 | `#bea276ff` |
-| 6 | `zone_6` | High Mountains | 3000 | 3999 | `#9c7b50ff` |
-| 7 | `zone_7` | Alpine | 4000 | 4999 | `#7a5c34ff` |
-| 8 | `zone_8` | Glacial Peaks | 5000 | 9000 | `#f0f0f0ff` |
+| ID  | Zone ID  | Name             | Min (m) | Max (m) | Color       |
+| --- | -------- | ---------------- | ------- | ------- | ----------- |
+| 0   | `zone_0` | Coastal Lowlands | 0       | 99      | `#a8c995ff` |
+| 1   | `zone_1` | Low Hills        | 100     | 349     | `#c3d3a1ff` |
+| 2   | `zone_2` | Rolling Hills    | 350     | 499     | `#dcdcacff` |
+| 3   | `zone_3` | Uplands          | 500     | 999     | `#f7e6b8ff` |
+| 4   | `zone_4` | Low Mountains    | 1000    | 1999    | `#dac497ff` |
+| 5   | `zone_5` | Mid Mountains    | 2000    | 2999    | `#bea276ff` |
+| 6   | `zone_6` | High Mountains   | 3000    | 3999    | `#9c7b50ff` |
+| 7   | `zone_7` | Alpine           | 4000    | 4999    | `#7a5c34ff` |
+| 8   | `zone_8` | Glacial Peaks    | 5000    | 9000    | `#f0f0f0ff` |
 
 ---
 
@@ -138,13 +155,16 @@ import { generateWorld } from "~/lib/worldgen/v2";
 
 const world = generateWorld({
   seed: 42,
-  cellCount: 100000,
-  oceanPercentage: 0.65,
+  oceanPercentage: 0.7,
   continentCount: 6,
+  continentLatitudeRange: [-50, 60],
+  polarLand: { north: false, south: true },
   countryCountRange: [60, 200],
 });
 
-console.log(`Generated ${world.stats.countryCount} nations across ${world.stats.continentCount} continents`);
+console.log(
+  `Generated ${world.stats.countryCount} nations across ${world.stats.continentCount} continents`
+);
 ```
 
 ### Progress-Monitored Generation (Labs & Async Pipelines)
@@ -152,19 +172,16 @@ console.log(`Generated ${world.stats.countryCount} nations across ${world.stats.
 ```typescript
 import { generateWorld } from "~/lib/worldgen/v2";
 
-const world = generateWorld(
-  { seed: 12345 },
-  (stageName, percentComplete) => {
-    console.log(`Stage: ${stageName} (${percentComplete}%)`);
-  }
-);
+const world = generateWorld({ seed: 12345 }, (stageName, percentComplete) => {
+  console.log(`Stage: ${stageName} (${percentComplete}%)`);
+});
 ```
 
 ---
 
 ## Testing & Verification
 
-The UPG v2 engine has 12 Jest test files in `src/tests/lib/worldgen/v2/` (plus `src/tests/lib/maps/pipeline/enrichment-pipeline.test.ts` for the map pipeline):
+The UPG v2 engine has 13 Jest test files in `src/tests/lib/worldgen/v2/` (plus `src/tests/lib/maps/pipeline/enrichment-pipeline.test.ts` for the map pipeline):
 
 ```bash
 # Run all UPG v2 unit, integration, performance, and quality gate tests (Jest)
@@ -172,9 +189,11 @@ bun run test -- src/tests/lib/worldgen/v2 src/tests/lib/maps/pipeline
 ```
 
 ### Key Test Suites:
+
 - `mesh.test.ts`: Voronoi mesh density, spatial distribution, and boundary detection.
-- `terrain.test.ts`: Heightmaps, elevation zone assignments, mountain ridges, and polar soft clamps.
-- `coastlines.test.ts`: Feature classification, island filtering, and coastal slope damping.
-- `quality-gate.test.ts`: 9-check quality evaluation and deterministic in-place repairs.
+- `terrain.test.ts`: Heightmaps, elevation zone assignments, mountain ridges.
+- `coastlines.test.ts`: Feature classification and speck removal.
+- `quality-gate.test.ts`: 9-check quality evaluation; the gate never mutates the graph.
+- `presets.test.ts`: Ixnay/Eurth preset fidelity and regressions from the 2026-10 audit.
 - `integration.test.ts`: Multi-seed end-to-end pipeline validation across seeds `1`, `42`, `100`, `256`, `777`.
 - `multi-seed-audit.test.ts`: 10-seed scientific composite score enforcement ($\ge 85\%$).

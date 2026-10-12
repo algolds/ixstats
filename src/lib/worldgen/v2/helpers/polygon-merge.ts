@@ -31,7 +31,9 @@ function findContiguousGroups(graph: WorldGraph, cellIds: number[]): number[][] 
       group.push(c);
 
       for (const nb of graph.cells.neighbors[c]!) {
-        if (!visited.has(nb) && cellSet.has(nb)) {
+        // Antimeridian links share no Voronoi edge: each side becomes its own polygon
+        const wraps = Math.abs(graph.cells.p[nb * 2]! - graph.cells.p[c * 2]!) > 180;
+        if (!wraps && !visited.has(nb) && cellSet.has(nb)) {
           visited.add(nb);
           queue.push(nb);
         }

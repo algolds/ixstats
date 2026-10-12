@@ -5,13 +5,13 @@
  */
 
 import type { WorldGenParams, GeneratedWorld, ProgressCallback } from "./types";
-import { DEFAULT_PARAMS } from "./types";
 import { generateWorld as generateWorldV2 } from "./v2";
 
 /**
  * Generate a complete world using the Unified Physical Geography Engine (v2).
+ * Parameters are merged with the v2 defaults; spread a `WORLD_PRESETS` entry to start from a realm.
  *
- * @param userParams Generation parameters (merged with defaults)
+ * @param userParams Generation parameters
  * @param onProgress Optional progress callback for UI
  * @returns Generated world with 7-layer GeoJSON output
  */
@@ -19,7 +19,5 @@ export function generateWorld(
   userParams: Partial<WorldGenParams>,
   onProgress?: ProgressCallback
 ): GeneratedWorld {
-  const params: WorldGenParams = { ...DEFAULT_PARAMS, ...userParams };
-  const v2World = generateWorldV2(params, onProgress as any);
-  return v2World as unknown as GeneratedWorld;
+  return generateWorldV2(userParams, onProgress) as unknown as GeneratedWorld;
 }

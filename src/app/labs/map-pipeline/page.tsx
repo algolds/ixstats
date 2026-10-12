@@ -3,6 +3,7 @@
 import React, { useState, useTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { generateWorld } from "~/lib/worldgen/engine";
+import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import {
   normalizeAzgaarGraph,
   type NormalizedMapData,
@@ -27,8 +28,10 @@ export default function MapPipelineLabPage() {
   const [config, setConfig] = useState<MapGenConfig>({
     seed: 12345,
     cellCount: 100000,
+    preset: "earthlike",
+    continentCount: 6,
     countryCount: 12,
-    landCoverage: 35,
+    landCoverage: 30,
   });
 
   const [isPending, startTransition] = useTransition();
@@ -55,15 +58,17 @@ export default function MapPipelineLabPage() {
     startTransition(() => {
       const t0 = performance.now();
       const world = generateWorld({
+        ...WORLD_PRESETS[config.preset],
         seed: config.seed,
         cellCount: config.cellCount,
+        continentCount: config.continentCount,
         countryCountRange: [config.countryCount, config.countryCount],
         oceanPercentage: 1 - config.landCoverage / 100,
       });
 
       if (!world.graph) return;
 
-      const normalized = normalizeAzgaarGraph(world.graph, config.seed);
+      const normalized = normalizeAzgaarGraph(world.graph, config.seed, world.layers);
       const enriched = enrichMapDataset(normalized.layers, normalized.countries, "lab_realm");
       const elapsed = Math.round(performance.now() - t0);
 

@@ -139,54 +139,10 @@ interface Burg {
   lat: number;
 }
 
-// Generation Parameters
+// Generation Parameters (owned by UPG v2)
 
-export interface WorldGenParams {
-  seed: number;
-  /** Number of Voronoi cells (10000-50000, default 20000) */
-  cellCount: number;
-  /** Number of continents (1-8, default 6) */
-  continentCount: number;
-  /** Target country count range */
-  countryCountRange: [number, number];
-  /** Target ocean fraction (0.4-0.85, default 0.65) */
-  oceanPercentage: number;
-  /** Terrain roughness 0-1 (controls blob count and noise) */
-  terrainRoughness: number;
-  /** Generate ice caps at poles */
-  hasIcecaps: boolean;
-  /** Generate rivers */
-  hasRivers: boolean;
-  /** Generate lakes */
-  hasLakes: boolean;
-  /** Use IxWorld continent outlines as soft template */
-  useIxWorldTemplate: boolean;
-  /** How closely to follow the template (0=ignore, 1=strict) */
-  templateStrength: number;
-  /** Enable Markov chain naming */
-  useMarkovNaming: boolean;
-  /** Specific language family IDs (empty = use all) */
-  languageFamilies: string[];
-  /** Use UPG v2 unified physical geography engine (default true) */
-  useV2Engine?: boolean;
-}
-
-export const DEFAULT_PARAMS: WorldGenParams = {
-  seed: 42,
-  cellCount: 50000,
-  continentCount: 6,
-  countryCountRange: [60, 200],
-  oceanPercentage: 0.65,
-  terrainRoughness: 0.5,
-  hasIcecaps: true,
-  hasRivers: true,
-  hasLakes: true,
-  useIxWorldTemplate: true,
-  templateStrength: 0.6,
-  useMarkovNaming: true,
-  languageFamilies: [],
-  useV2Engine: true,
-};
+import type { WorldGenParams } from "./v2/types";
+export type { WorldGenParams };
 
 // Generation Output
 
@@ -216,17 +172,4 @@ interface WorldStats {
   cellCount: number;
 }
 
-type GenerationStage =
-  | "mesh"
-  | "template"
-  | "heightmap"
-  | "features"
-  | "rivers"
-  | "climate"
-  | "cultures"
-  | "settlements"
-  | "states"
-  | "validate"
-  | "export";
-
-export type ProgressCallback = (stage: GenerationStage, progress: number, message: string) => void;
+export type { ProgressCallback } from "./v2/types";

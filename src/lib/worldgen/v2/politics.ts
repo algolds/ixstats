@@ -13,7 +13,7 @@
 import type { WorldGraph, WorldGenParams, PoliticalState, Settlement } from "./types";
 import { QUALITY_THRESHOLDS } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
-import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
+import { cellLat, cellLng, cellAreaKm2, cellXYZ } from "./mesh";
 import { dijkstraMultiSource } from "./helpers/flood-fill";
 import { MarkovNameGenerator } from "~/lib/onoma/markov-naming";
 import { getLanguageFamilies } from "~/lib/onoma/language-families";
@@ -61,17 +61,10 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
     }
   }
 
-  // Step 4: State Expansion via Natural-Border Dijkstra
-  const targetCount = Math.round(
-    ((params.countryCountRange?.[0] ?? 60) + (params.countryCountRange?.[1] ?? 200)) / 2
-  );
-
-  // Select state capitals from top-scoring settlements distributed across continents
-  const capitalBurgs = graph.settlements.filter((s) => s.isCapital);
-  if (capitalBurgs.length === 0) return;
-
-  const actualStateCount = Math.min(targetCount, capitalBurgs.length);
-  const chosenCapitals = capitalBurgs.slice(0, actualStateCount);
+  // Step 4: State Expansion via Natural-Border Dijkstra from the spaced capitals
+  const chosenCapitals = graph.settlements.filter((s) => s.isCapital);
+  if (chosenCapitals.length === 0) return;
+  const actualStateCount = chosenCapitals.length;
 
   // Prepare multi-source Dijkstra from capital locations
   const sources = chosenCapitals.map((b, idx) => ({
@@ -175,6 +168,42 @@ function generateCultures(
 
 // Helpers: Settlements
 
+/** Squared chord distance between two cells on the unit sphere. */
+function chord2(graph: WorldGraph, a: number, b: number): number {
+  const [ax, ay, az] = cellXYZ(graph, a);
+  const [bx, by, bz] = cellXYZ(graph, b);
+  return (ax - bx) ** 2 + (ay - by) ** 2 + (az - bz) ** 2;
+}
+
+/**
+ * Greedy spaced pick: walk candidates best-first, keeping those at least `radius` (unit-sphere
+ * chord) from every kept cell; relax the radius until `count` are kept or candidates run out.
+ */
+function pickSpaced(
+  graph: WorldGraph,
+  ranked: number[],
+  count: number,
+  radius: number,
+  taken: number[] = []
+): number[] {
+  const picked: number[] = [];
+  const used = new Set<number>(taken);
+  let r = radius;
+  for (let round = 0; round < 6 && picked.length < count; round++, r *= 0.75) {
+    const r2 = r * r;
+    for (const c of ranked) {
+      if (picked.length >= count) break;
+      if (used.has(c)) continue;
+      // ponytail: O(candidates × picked) scan, fine for ≤ a few hundred capitals; grid-bucket it if counts grow
+      const near = (o: number) => chord2(graph, c, o) < r2;
+      if (taken.some(near) || picked.some(near)) continue;
+      picked.push(c);
+      used.add(c);
+    }
+  }
+  return picked;
+}
+
 function generateSettlements(
   graph: WorldGraph,
   params: WorldGenParams,
@@ -183,65 +212,60 @@ function generateSettlements(
 ): void {
   const { cells } = graph;
 
-  // Habitability score per land cell (0-1)
-  const scores = landCells.map((c) => {
+  // Habitability score per land cell (0-1), with a little jitter so ties break per seed
+  const scoreOf = new Map<number, number>();
+  for (const c of landCells) {
     let score = 0.5;
-
-    // Coastal bonus
-    if (cells.coastDist[c] === 0) score += 0.25;
-    // River bonus
-    if (cells.river[c]! > 0) score += 0.2;
-    // Temperate climate bonus
+    if (cells.coastDist[c] === 0) score += 0.25; // Coastal bonus
+    if (cells.river[c]! > 0) score += 0.2; // River bonus
     const temp = cells.temp[c]!;
-    if (temp >= 12 && temp <= 25) score += 0.15;
-    // Lowland bonus
-    if (cells.elevZone[c]! <= 2) score += 0.1;
-    // Aridity penalty
-    if (cells.aridity[c]! > 0.6) score -= 0.25;
+    if (temp >= 12 && temp <= 25) score += 0.15; // Temperate climate bonus
+    if (cells.elevZone[c]! <= 2) score += 0.1; // Lowland bonus
+    if (cells.aridity[c]! > 0.6) score -= 0.25; // Aridity penalty
+    if (cells.biome[c] === 10) score -= 0.5; // Ice
+    scoreOf.set(c, Math.max(0.01, Math.min(1.0, score + rng() * 0.1)));
+  }
+  const ranked = [...landCells].sort((a, b) => scoreOf.get(b)! - scoreOf.get(a)!);
 
-    return { cell: c, score: Math.max(0.01, Math.min(1.0, score)) };
-  });
+  // Capitals: one per country, spaced so each gets a comparable share of land
+  const [minCountries, maxCountries] = params.countryCountRange;
+  const stateTarget = Math.max(
+    1,
+    Math.min(Math.round((minCountries + maxCountries) / 2), Math.floor(landCells.length / 8))
+  );
+  const cellSpacing = Math.sqrt((4 * Math.PI) / cells.n); // mean cell spacing in radians
+  const stateRadius = Math.sqrt(landCells.length / stateTarget / Math.PI) * cellSpacing * 1.3;
+  const capitals = pickSpaced(graph, ranked, stateTarget, stateRadius);
 
-  scores.sort((a, b) => b.score - a.score);
-
-  const targetCount = Math.min(150, Math.max(40, Math.floor(landCells.length / 50)));
-  const chosen = scores.slice(0, targetCount);
+  // Towns: further spaced settlements between the capitals
+  const townTarget = Math.max(40, Math.min(300, Math.floor(landCells.length / 50)));
+  const towns = pickSpaced(graph, ranked, townTarget, stateRadius / 2, capitals);
 
   const families = getLanguageFamilies();
   const generators = families.map((f, idx) => new MarkovNameGenerator(f, params.seed + 700 + idx));
 
-  let burgId = 1;
-  for (let i = 0; i < chosen.length; i++) {
-    const { cell, score } = chosen[i]!;
+  [...capitals, ...towns].forEach((cell, i) => {
+    const burgId = i + 1;
+    const score = scoreOf.get(cell)!;
     const cultureId = cells.culture[cell]!;
     let name = `City ${burgId}`;
-
-    if (params.useMarkovNaming ?? true) {
-      const famIdx = cultureId % generators.length;
-      if (generators[famIdx]) {
-        name = generators[famIdx]!.generate();
-      }
+    if (params.useMarkovNaming) {
+      const generator = generators[cultureId % generators.length];
+      if (generator) name = generator.generate();
     }
-
-    const isCapital = i < 80; // Top 80 are capital candidates
-    const isPort = cells.coastDist[cell] === 0;
-    const population = Math.round(10000 + score * 500000 + rng() * 50000);
-
     graph.settlements.push({
       id: burgId,
       name,
       cell,
-      state: 0, // assigned in step 6
-      population,
-      isCapital,
-      isPort,
+      state: 0, // assigned with the states
+      population: Math.round(10000 + score * 500000 + rng() * 50000),
+      isCapital: i < capitals.length,
+      isPort: cells.coastDist[cell] === 0,
       lng: cellLng(graph, cell),
       lat: cellLat(graph, cell),
       score,
     });
-
-    burgId++;
-  }
+  });
 }
 
 // Helpers: Unclaimed Land Filling
@@ -285,17 +309,11 @@ function fillUnclaimedLandCells(
 
   if (unassigned.length > 0 && sources.length > 0) {
     for (const cellId of unassigned) {
-      const cLng = cellLng(graph, cellId);
-      const cLat = cellLat(graph, cellId);
       let closestState = sources[0]!.id;
       let minDistance = Infinity;
 
       for (const src of sources) {
-        const capLng = cellLng(graph, src.cell);
-        const capLat = cellLat(graph, src.cell);
-        const dLng = cLng - capLng;
-        const dLat = cLat - capLat;
-        const distSq = dLng * dLng + dLat * dLat;
+        const distSq = chord2(graph, cellId, src.cell);
         if (distSq < minDistance) {
           minDistance = distSq;
           closestState = src.id;

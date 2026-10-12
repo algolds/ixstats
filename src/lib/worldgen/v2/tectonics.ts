@@ -12,7 +12,7 @@
 import type { WorldGraph, WorldGenParams, TectonicPlate, BoundaryType } from "./types";
 import { TECTONIC_CONSTANTS } from "./config";
 import { makeRng } from "./helpers/rng";
-import { farthestPointSample, cellLng, cellLat } from "./mesh";
+import { farthestPointSample, cellLng, cellLat, lngDelta } from "./mesh";
 import { bfsAssign } from "./helpers/flood-fill";
 
 /**
@@ -116,9 +116,11 @@ export function classifyCellBoundary(
   const relVx = plateB.velocity[0] - plateA.velocity[0];
   const relVy = plateB.velocity[1] - plateA.velocity[1];
 
-  // Boundary normal vector pointing from cell A to cell B
-  const dx = cellLng(graph, cellB) - cellLng(graph, cellA);
-  const dy = cellLat(graph, cellB) - cellLat(graph, cellA);
+  // Boundary normal vector pointing from cell A to cell B (east/north km-proportional, seam-wrapped)
+  const latA = cellLat(graph, cellA);
+  const dx =
+    lngDelta(cellLng(graph, cellA), cellLng(graph, cellB)) * Math.cos((latA * Math.PI) / 180);
+  const dy = cellLat(graph, cellB) - latA;
   const len = Math.sqrt(dx * dx + dy * dy);
 
   if (len < 1e-6) return "transform";

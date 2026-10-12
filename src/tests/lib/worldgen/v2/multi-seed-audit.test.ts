@@ -10,7 +10,7 @@
  */
 
 import { generateWorld } from "~/lib/worldgen/v2/index";
-import { validateAndRepair } from "~/lib/worldgen/v2/quality-gate";
+import { validateWorld } from "~/lib/worldgen/v2/quality-gate";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 
 const AUDIT_SEEDS = [1, 42, 100, 256, 500, 777, 1000, 2025, 9999, 31415];
@@ -28,7 +28,7 @@ describe("v2/multi-seed-audit — 10-Seed Quality Audit (≥85% Threshold)", () 
         plateCount: 8,
       });
 
-      const report = validateAndRepair(world.graph!, {
+      const report = validateWorld(world.graph!, {
         ...DEFAULT_PARAMS,
         seed,
         cellCount: AUDIT_CELLS,

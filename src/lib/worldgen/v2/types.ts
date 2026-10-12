@@ -134,7 +134,7 @@ export interface GeographicFeature {
   border: boolean;
 }
 
-interface RiverNetwork {
+export interface RiverNetwork {
   id: number;
   name: string;
   /** Ordered cell IDs from source to mouth */
@@ -219,37 +219,47 @@ export interface Settlement {
 export interface WorldGenParams {
   /** Deterministic seed */
   seed: number;
-  /** Number of Voronoi cells (20000-100000, default 50000) */
+  /** Approximate number of Voronoi cells (the latitude-compensated grid yields ~2/3 of this) */
   cellCount: number;
   /** Number of tectonic plates (6-20, default 10) */
   plateCount: number;
-  /** Target number of continents (2-8, default 6) */
+  /** Number of continents grown (1-12) */
   continentCount: number;
+  /** Latitude band continent centres are drawn from: [south, north] in degrees */
+  continentLatitudeRange: [number, number];
+  /** Spread of continent sizes: 0 = equal, 1+ = a few dominant continents */
+  continentSizeVariance: number;
+  /** Share of the land budget placed as islands and archipelagos (0-0.3) */
+  islandShare: number;
+  /** Antarctica-style polar land caps beyond ~72° */
+  polarLand: { north: boolean; south: boolean };
   /** Target country count range */
   countryCountRange: [number, number];
-  /** Target ocean fraction (0.4-0.85, default 0.65) */
+  /** Target ocean fraction (0.4-0.85, default 0.7) */
   oceanPercentage: number;
-  /** Terrain roughness 0-1 (controls noise amplitude) */
+  /** Terrain roughness 0-1 (hill noise amplitude) */
   terrainRoughness: number;
   /** Coastline complexity 0-1 (0 = smooth blobs, 1 = highly fractalized) */
   coastlineComplexity: number;
-  /** Climate simulation fidelity 0-1 (0 = simple lat model, 1 = full Coriolis+currents) */
-  climateFidelity: number;
+  /** Target share of land in each of the 9 elevation zones (normalized, zone_0..zone_8) */
+  hypsometry: number[];
+  /** Global temperature shift in °C (warm or cold world) */
+  temperatureOffset: number;
+  /** Global precipitation multiplier */
+  precipitationScale: number;
+  /** River density multiplier (1 = default) */
+  riverDensity: number;
+  /** Target lake surface as a share of land (0-0.05) */
+  lakeCoverage: number;
   /** Generate ice caps at poles */
   hasIcecaps: boolean;
   /** Generate rivers */
   hasRivers: boolean;
   /** Generate lakes */
   hasLakes: boolean;
-  /** Use IxWorld continent outlines as soft template */
-  useIxWorldTemplate: boolean;
-  /** How closely to follow the template (0=ignore, 1=strict) */
-  templateStrength: number;
   /** Enable Markov chain naming */
   useMarkovNaming: boolean;
-  /** Specific language family IDs (empty = use all) */
-  languageFamilies: string[];
-  /** Lloyd relaxation iterations for mesh (1-5, default 3) */
+  /** Lloyd relaxation iterations for mesh (1-5, default 5) */
   lloydIterations: number;
 }
 
@@ -303,15 +313,12 @@ export interface QualityCheckResult {
   passed: boolean;
   score: number; // 0-100
   details: string;
-  repaired: boolean;
-  repairAction?: string;
 }
 
 export interface QualityReport {
   passed: boolean;
   compositeScore: number; // 0-100
   checks: QualityCheckResult[];
-  totalRepairs: number;
 }
 
 /**

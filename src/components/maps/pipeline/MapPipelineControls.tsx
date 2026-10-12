@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ProjectionMode } from "~/lib/maps/map-config";
+import { DEFAULT_PARAMS, WORLD_PRESETS, type WorldPreset } from "~/lib/worldgen/v2/config";
 import { Play, Refresh as RefreshCw, Component as Layers, Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -12,9 +13,18 @@ import { Checkbox } from "~/components/ui/checkbox";
 export interface MapGenConfig {
   seed: number;
   cellCount: number;
+  /** Realm style: continent layout, hypsometry and climate tuned to a reference map */
+  preset: WorldPreset;
+  continentCount: number;
   countryCount: number;
   landCoverage: number;
 }
+
+const PRESET_OPTIONS: { value: WorldPreset; label: string }[] = [
+  { value: "earthlike", label: "Earth-like" },
+  { value: "ixnay", label: "Ixnay" },
+  { value: "eurth", label: "Eurth" },
+];
 
 interface MapPipelineControlsProps {
   config: MapGenConfig;
@@ -28,6 +38,13 @@ interface MapPipelineControlsProps {
 }
 
 const SLIDERS = [
+  {
+    key: "continentCount",
+    label: "Continents",
+    min: 1,
+    max: 12,
+    format: (v: number) => `${v} continents`,
+  },
   {
     key: "countryCount",
     label: "Nations generated",
@@ -60,6 +77,17 @@ export function MapPipelineControls({
 
   const handleRandomizeSeed = () => {
     onChangeConfig({ ...config, seed: Math.floor(Math.random() * 1000000) });
+  };
+
+  // A preset carries its own land share and continent count; the sliders then fine-tune it
+  const handlePreset = (preset: WorldPreset) => {
+    const params = { ...DEFAULT_PARAMS, ...WORLD_PRESETS[preset] };
+    onChangeConfig({
+      ...config,
+      preset,
+      continentCount: params.continentCount,
+      landCoverage: Math.round((1 - params.oceanPercentage) * 100),
+    });
   };
 
   return (
@@ -124,13 +152,18 @@ export function MapPipelineControls({
               />
             </div>
 
-            <div className="border-tint/20 bg-tint-fill text-label rounded-control-sm text-caption flex items-center justify-between border p-2">
-              <span className="flex items-center gap-2">
-                <Layers className="text-tint h-3.5 w-3.5" /> Mesh engine
+            <div className="space-y-2">
+              <span id="pipeline-preset" className="text-label text-caption">
+                Realm style
               </span>
-              <span className="text-tint text-caption font-semibold tabular-nums">
-                100K RBF Splines
-              </span>
+              <SegmentedControl
+                aria-labelledby="pipeline-preset"
+                fullWidth
+                size="sm"
+                value={config.preset}
+                onValueChange={(v) => handlePreset(v as WorldPreset)}
+                options={PRESET_OPTIONS}
+              />
             </div>
 
             {SLIDERS.map(({ key, label, min, max, format }) => (

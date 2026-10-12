@@ -13,6 +13,7 @@
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
 import { createEmptyWorldGraph, type WorldGraph } from "./types";
+import { toXYZ } from "./helpers/noise";
 import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 
 // Public API
@@ -36,9 +37,8 @@ export function createMesh(
   const points = generateJitteredGrid(cellCount, rng);
   const n = points.length / 2;
 
-  // Step 2: Delaunay + Voronoi within safe geographic bounds
-  // Slightly inside [-180,180]×[-90,90] to avoid edge-case degeneracies
-  const bounds: [number, number, number, number] = [-179.9, -84, 179.9, 84];
+  // Step 2: Delaunay + Voronoi over the whole globe (cells at ±180 are stitched in Step 7)
+  const bounds: [number, number, number, number] = [-180, -90, 180, 90];
   let delaunay = Delaunay.from(
     Array.from({ length: n }, (_, i) => [points[i * 2]!, points[i * 2 + 1]!])
   );
@@ -68,8 +68,8 @@ export function createMesh(
       cy /= 6 * area;
 
       // Clamp to bounds
-      cx = Math.max(-179.9, Math.min(179.9, cx));
-      cy = Math.max(-83.9, Math.min(83.9, cy));
+      cx = Math.max(-179.95, Math.min(179.95, cx));
+      cy = Math.max(-89.9, Math.min(89.9, cy));
 
       points[i * 2] = cx;
       points[i * 2 + 1] = cy;
@@ -110,23 +110,68 @@ export function createMesh(
     }
   }
 
-  // Step 7: Detect boundary cells
+  // Step 7: Wrap the antimeridian — cells whose edges lie on x = -180 and x = +180 at
+  // overlapping latitudes become neighbours, so continents, rivers and borders cross it
+  stitchAntimeridian(graph);
+
+  // Step 8: Boundary cells are the polar edge rows (the globe has no east/west edge)
   for (let i = 0; i < n; i++) {
-    const verts = cells.vertices[i]!;
-    for (const [x, y] of verts) {
-      if (
-        Math.abs(x - -180) < 0.5 ||
-        Math.abs(x - 180) < 0.5 ||
-        Math.abs(y - -84) < 1.0 ||
-        Math.abs(y - 84) < 1.0
-      ) {
-        cells.boundary[i] = 1;
-        break;
-      }
-    }
+    if (cells.vertices[i]!.some(([, y]) => Math.abs(Math.abs(y) - 90) < 1e-9))
+      cells.boundary[i] = 1;
   }
 
   return graph;
+}
+
+/** Latitude span of the cell's edge lying on the meridian x (null when it has none). */
+function seamSpan(verts: [number, number][], x: number): [number, number] | null {
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const [vx, vy] of verts) {
+    if (Math.abs(vx - x) > 1e-9) continue;
+    lo = Math.min(lo, vy);
+    hi = Math.max(hi, vy);
+  }
+  return hi > lo ? [lo, hi] : null;
+}
+
+function stitchAntimeridian(graph: WorldGraph): void {
+  const { cells } = graph;
+  const west: { cell: number; span: [number, number] }[] = [];
+  const east: { cell: number; span: [number, number] }[] = [];
+  for (let i = 0; i < cells.n; i++) {
+    const w = seamSpan(cells.vertices[i]!, -180);
+    if (w) west.push({ cell: i, span: w });
+    const e = seamSpan(cells.vertices[i]!, 180);
+    if (e) east.push({ cell: i, span: e });
+  }
+  west.sort((a, b) => a.span[0] - b.span[0]);
+  east.sort((a, b) => a.span[0] - b.span[0]);
+  // Two-pointer sweep over the two sorted lists of latitude intervals
+  let j = 0;
+  for (const w of west) {
+    while (j < east.length && east[j]!.span[1] <= w.span[0]) j++;
+    for (let k = j; k < east.length && east[k]!.span[0] < w.span[1]; k++) {
+      const e = east[k]!.cell;
+      if (!cells.neighbors[w.cell]!.includes(e)) {
+        cells.neighbors[w.cell]!.push(e);
+        cells.neighbors[e]!.push(w.cell);
+      }
+    }
+  }
+}
+
+/** Signed longitude difference b − a wrapped into [-180, 180]. */
+export function lngDelta(a: number, b: number): number {
+  let d = b - a;
+  if (d > 180) d -= 360;
+  else if (d < -180) d += 360;
+  return d;
+}
+
+/** Unit-sphere coordinates of cell i. */
+export function cellXYZ(graph: WorldGraph, i: number): [number, number, number] {
+  return toXYZ(graph.cells.p[i * 2]!, graph.cells.p[i * 2 + 1]!);
 }
 
 // Utility: Cell Accessors
@@ -173,16 +218,16 @@ export function cellAreaKm2(graph: WorldGraph, i: number): number {
  */
 function generateJitteredGrid(targetCount: number, rng: () => number): Float64Array {
   // Calculate grid dimensions for approximately targetCount cells
-  // Aspect ratio: longitude span (360°) is 2× latitude span (168° usable)
-  const aspectRatio = 360 / 168;
+  // Aspect ratio: longitude span (360°) is 2× latitude span (180°)
+  const aspectRatio = 360 / 180;
   const cols = Math.round(Math.sqrt(targetCount * aspectRatio));
   const rows = Math.round(targetCount / cols);
-  const cellH = 168 / rows; // from -84 to 84
+  const cellH = 180 / rows;
 
   const points: number[] = [];
 
   for (let row = 0; row < rows; row++) {
-    const lat = -84 + (row + 0.5) * cellH;
+    const lat = -90 + (row + 0.5) * cellH;
     const latRad = (Math.abs(lat) * Math.PI) / 180;
 
     // Latitude density compensation: at high latitudes, cells cover
@@ -198,8 +243,8 @@ function generateJitteredGrid(targetCount: number, rng: () => number): Float64Ar
       const jx = (rng() - 0.5) * effectiveCellW * 0.8;
       const jy = (rng() - 0.5) * cellH * 0.8;
 
-      const finalLng = Math.max(-179.9, Math.min(179.9, lng + jx));
-      const finalLat = Math.max(-83.9, Math.min(83.9, lat + jy));
+      const finalLng = Math.max(-179.95, Math.min(179.95, lng + jx));
+      const finalLat = Math.max(-89.9, Math.min(89.9, lat + jy));
 
       points.push(finalLng, finalLat);
     }
@@ -222,14 +267,12 @@ export function farthestPointSample(graph: WorldGraph, count: number, rng: () =>
   chosen[firstCenter] = 1;
 
   for (let k = 1; k < count; k++) {
-    const lastCenter = centers[k - 1]!;
-    const cx = cells.p[lastCenter * 2]!;
-    const cy = cells.p[lastCenter * 2 + 1]!;
+    const [cx, cy, cz] = cellXYZ(graph, centers[k - 1]!);
 
+    // Squared chord distance on the unit sphere (monotonic in great-circle distance)
     for (let i = 0; i < n; i++) {
-      const dx = cells.p[i * 2]! - cx;
-      const dy = cells.p[i * 2 + 1]! - cy;
-      const d2 = dx * dx + dy * dy;
+      const [x, y, z] = cellXYZ(graph, i);
+      const d2 = (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2;
       if (d2 < dist[i]!) dist[i] = d2;
     }
 

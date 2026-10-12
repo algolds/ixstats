@@ -11,13 +11,11 @@
  * - icecaps: ice cap polygons (biome === 10)
  */
 
-import type { WorldGraph } from "./types";
+import type { WorldGraph, WorldGenParams } from "./types";
 import type { FeatureCollection, Feature, LineString, Polygon, MultiPolygon } from "geojson";
 import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
 import { mergeCellsToMultiPolygon } from "./helpers/polygon-merge";
 import {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  chaikinSmoothLine,
   catmullRomSmooth,
   catmullRomSmoothLine,
   simplifyRing,
@@ -25,7 +23,10 @@ import {
 } from "./helpers/chaikin";
 import { cellLng, cellLat } from "./mesh";
 
-export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollection> {
+export function exportToGeoJSON(
+  graph: WorldGraph,
+  params: Pick<WorldGenParams, "hasIcecaps"> = { hasIcecaps: true }
+): Record<string, FeatureCollection> {
   const layers: Record<string, FeatureCollection> = {
     background: exportBackground(graph),
     altitudes: exportAltitudes(graph),
@@ -33,7 +34,7 @@ export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollec
     political: exportPolitical(graph),
     rivers: exportRivers(graph),
     lakes: exportLakes(graph),
-    icecaps: exportIcecaps(graph),
+    icecaps: params.hasIcecaps ? exportIcecaps(graph) : { type: "FeatureCollection", features: [] },
   };
 
   return layers;

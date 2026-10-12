@@ -6,13 +6,16 @@
  * 2. Fjord carving (high-latitude glacial coastal inlets)
  * 3. Archipelago scattering (island clusters near subduction zones)
  * 4. Bay formation (coastal erosion concavities)
- * 5. Minimum landmass filter (sinks tiny <5 cell noise slivers)
+ * 5. Minimum landmass filter (sinks single-cell noise specks)
  * 6. Geographic feature classification (ocean, continent, lake, island)
  * 7. Coastal distance update
+ *
+ * Coastal lowlands come from the terrain stage's relief ranking, so no height damping happens
+ * here (damping after the hypsometric mapping would skew the elevation-zone targets).
  */
 
 import type { WorldGraph, WorldGenParams, GeographicFeature } from "./types";
-import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
+import { cellLat, cellXYZ, cellAreaKm2 } from "./mesh";
 import { buildNoiseConfig, fractalNoise } from "./helpers/noise";
 import { computeCoastalDistance } from "./helpers/flood-fill";
 import { getElevationZone } from "./config";
@@ -29,7 +32,8 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
   // Refresh coastal distance for initial landmass
   computeCoastalDistance(graph);
 
-  const noiseCoast = buildNoiseConfig(params.seed + 31, 3, 0.05, 2.0, 0.5);
+  const noiseFjord = buildNoiseConfig(params.seed + 31, 3, 11, 2.0, 0.5);
+  const noiseCoast = buildNoiseConfig(params.seed + 32, 3, 7, 2.0, 0.5);
 
   // Step 1: Fjords at high latitudes (|lat| > 50°) near mountain ridges
   for (let i = 0; i < n; i++) {
@@ -40,8 +44,7 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
 
     // Check if cell is coastal (coastDist <= 2) and near mountain ridge
     if (cells.coastDist[i]! <= 2 && cells.isMountainRidge[i]) {
-      const lng = cellLng(graph, i);
-      const val = fractalNoise(lng * 4, lat * 4, noiseCoast);
+      const val = fractalNoise(cellXYZ(graph, i), noiseFjord);
 
       // Carve fjord inlet by dropping elevation below sea level
       if (val > 0.45 * (1 - complexity * 0.3)) {
@@ -56,10 +59,7 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
   // Step 2: Peninsulas & Bays — coastal noise perturbation
   for (let i = 0; i < n; i++) {
     const dist = cells.coastDist[i]!;
-    const lng = cellLng(graph, i);
-    const lat = cellLat(graph, i);
-
-    const val = fractalNoise(lng * 2.5, lat * 2.5, noiseCoast);
+    const val = fractalNoise(cellXYZ(graph, i), noiseCoast);
 
     if (cells.isLand[i] && dist === 0) {
       // Coastal land cell: potential bay carving
@@ -90,19 +90,8 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
   // Step 4: Geographic feature classification via flood-fill connected components
   classifyGeographicFeatures(graph);
 
-  // Step 5: Minimum landmass filter (sink tiny < 5 cell islands)
+  // Step 5: Minimum landmass filter (sink single-cell specks left by bay carving)
   filterTinyLandmasses(graph);
-
-  // Step 6: Smooth exponential coastal hypsometric slope damping (coastDist <= 8)
-  // Prevents abrupt elevation step cutoffs near shorelines and eliminates single-cell mountain ribbons
-  for (let i = 0; i < n; i++) {
-    if (cells.isLand[i] && cells.coastDist[i]! <= 8) {
-      const dist = cells.coastDist[i]!;
-      const dampFactor = 1.0 - 0.85 * Math.exp(-0.35 * dist);
-      cells.h[i] = cells.h[i]! * dampFactor;
-      cells.elevZone[i] = getElevationZone(cells.h[i]!);
-    }
-  }
 
   // Step 6: Final feature classification & coastal distance update
   classifyGeographicFeatures(graph);
@@ -113,8 +102,8 @@ export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): voi
  * Classify connected components of water and land cells into features:
  * - Ocean basins (water touching boundary or area > 100 cells)
  * - Lakes (interior water body surrounded by land)
- * - Continents (landmass area >= 1000 cells)
- * - Islands (landmass area < 1000 cells)
+ * - Continents (landmass >= 2.5% of all land)
+ * - Islands (smaller landmasses)
  */
 function classifyGeographicFeatures(graph: WorldGraph): void {
   const { cells } = graph;
@@ -125,6 +114,9 @@ function classifyGeographicFeatures(graph: WorldGraph): void {
 
   const visited = new Uint8Array(n);
   let featureId = 1; // 1-indexed
+  let landCells = 0;
+  for (let i = 0; i < n; i++) landCells += cells.isLand[i]!;
+  const continentThreshold = Math.max(20, Math.round(landCells * 0.025));
 
   for (let i = 0; i < n; i++) {
     if (visited[i]) continue;
@@ -158,8 +150,6 @@ function classifyGeographicFeatures(graph: WorldGraph): void {
       // Water body: all non-land cells belong to ocean features (inland lakes generated on land in hydro pass)
       type = "ocean";
     } else {
-      // Landmass: continent if >= 1000 cells (or >= 15% of total cells if low count), else island
-      const continentThreshold = Math.min(1000, Math.floor(n * 0.05));
       type = component.length >= continentThreshold ? "continent" : "island";
     }
 
@@ -189,7 +179,8 @@ function classifyGeographicFeatures(graph: WorldGraph): void {
 }
 
 /**
- * Filter out tiny disconnected land slivers (< 5 cells) by converting them to water.
+ * Sink single-cell land specks (bay carving leftovers) by converting them to water.
+ * Placed islands are clusters and survive.
  */
 function filterTinyLandmasses(graph: WorldGraph): void {
   const { cells, features } = graph;
@@ -197,7 +188,7 @@ function filterTinyLandmasses(graph: WorldGraph): void {
 
   const tinyFeatureIds = new Set<number>();
   for (const f of features) {
-    if (f.type === "island" && f.cellCount < 5) {
+    if (f.type === "island" && f.cellCount < 2) {
       tinyFeatureIds.add(f.id);
     }
   }

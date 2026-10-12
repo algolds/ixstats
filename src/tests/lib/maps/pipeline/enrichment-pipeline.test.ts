@@ -81,7 +81,7 @@ import { auditGeographicalAccuracy } from "~/lib/maps/pipeline/geographical-accu
 
 describe("accuracy-normalizer", () => {
   it("evaluates a single world generation against IxWorld & IRL targets", () => {
-    const world = generateWorld({ seed: 12345, cellCount: 500, useIxWorldTemplate: true });
+    const world = generateWorld({ seed: 12345, cellCount: 500 });
     const scoreCard = evaluateWorldAccuracy(world);
 
     expect(scoreCard.seed).toBe(12345);
@@ -98,7 +98,6 @@ describe("accuracy-normalizer", () => {
           seed,
           cellCount: 600,
           countryCountRange: [8, 15],
-          useIxWorldTemplate: true,
         }),
       seeds
     );

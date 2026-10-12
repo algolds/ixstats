@@ -7,7 +7,7 @@ import { generateTectonicPlates } from "~/lib/worldgen/v2/tectonics";
 import { generateTerrain } from "~/lib/worldgen/v2/terrain";
 import { refineCoastlines } from "~/lib/worldgen/v2/coastlines";
 import { computeHydroClimate } from "~/lib/worldgen/v2/hydro-climate";
-import { checkCoastlineComplexity, validateAndRepair } from "~/lib/worldgen/v2/quality-gate";
+import { checkCoastlineComplexity, validateWorld } from "~/lib/worldgen/v2/quality-gate";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 
 const TEST_SEED = 42;
@@ -35,7 +35,7 @@ describe("v2/quality-gate", () => {
   });
   computeHydroClimate(graph, { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS });
 
-  const report = validateAndRepair(graph, {
+  const report = validateWorld(graph, {
     ...DEFAULT_PARAMS,
     seed: TEST_SEED,
     cellCount: TEST_CELLS,
@@ -61,17 +61,15 @@ describe("v2/quality-gate", () => {
     }
   });
 
-  it("report totalRepairs is a non-negative integer", () => {
-    expect(report.totalRepairs).toBeGreaterThanOrEqual(0);
-  });
-
-  it("quality gate runs deterministically on second pass", () => {
-    const report2 = validateAndRepair(graph, {
+  it("quality gate is report-only: a second pass scores the same and leaves the graph untouched", () => {
+    const before = Array.from(graph.cells.h);
+    const report2 = validateWorld(graph, {
       ...DEFAULT_PARAMS,
       seed: TEST_SEED,
       cellCount: TEST_CELLS,
     });
     expect(report2.compositeScore).toBe(report.compositeScore);
+    expect(Array.from(graph.cells.h)).toEqual(before);
   });
 });
 

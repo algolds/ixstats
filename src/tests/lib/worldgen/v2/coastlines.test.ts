@@ -50,10 +50,10 @@ describe("v2/coastlines", () => {
     expect(types.has("continent") || types.has("island")).toBe(true);
   });
 
-  it("removes tiny landmasses < 5 cells", () => {
+  it("sinks single-cell land specks", () => {
     for (const f of graph.features) {
       if (f.type === "island") {
-        expect(f.cellCount).toBeGreaterThanOrEqual(5);
+        expect(f.cellCount).toBeGreaterThanOrEqual(2);
       }
     }
   });

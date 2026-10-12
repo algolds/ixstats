@@ -128,9 +128,12 @@ function extractRivers(graph: PackedGraph): NormalizedRiverPayload[] {
 /**
  * Normalize a PackedGraph output into structured realm map layers and entity datasets.
  */
-export function normalizeAzgaarGraph(graph: PackedGraph, seed = 42): NormalizedMapData {
-  // 7 GeoJSON layers sharing identical cell topology and boundary alignment
-  const layers = exportToGeoJSON(graph as any);
+export function normalizeAzgaarGraph(
+  graph: PackedGraph,
+  seed = 42,
+  // The generator already exported these; re-exporting a 100K-cell graph doubles the run time
+  layers: Record<string, FeatureCollection> = exportToGeoJSON(graph as any)
+): NormalizedMapData {
   const countries = extractCountries(layers.political, graph);
   const cities = extractCities(graph, countries[0]?.featureId || "unclaimed");
   const rivers = extractRivers(graph);

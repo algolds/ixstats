@@ -1,102 +1,81 @@
 /**
  * UPG v2 — Unified Hydrology & Climate Pass
  *
- * Executes the 8 cross-referencing sub-passes that compute hydrology and climate together:
- * 1. Base Temperature & Lapse Rate
- * 2. Coriolis Wind Patterns & Mountain Wind Shadows
- * 3. Ocean Current Gyres & Thermal Influence
- * 4. Precipitation, Orographic Rain Shadows & Aridity
- * 5. Priority-Queue Depression Filling & Downstream Flow Routing
- * 6. Water Flux Accumulation, River Network Detection & Tributary Tracing
- * 7. Topographic, Rift & Endorheic Lake Formation
- * 8. Trewartha Biome Classification (12 Biomes)
+ * Executes the cross-referencing sub-passes that compute hydrology and climate together:
+ * 1. Coriolis wind belts & mountain wind shadows
+ * 2. Upwind trace: distance over land from the windward ocean and the highest barrier crossed
+ * 3. Temperature: zonal curve, lapse rate, continentality (cold interiors at mid/high latitudes)
+ * 4. Ocean current gyres (warm east coasts, cold west coasts in the subtropics)
+ * 5. Precipitation: smooth zonal bands (ITCZ, subtropical highs, westerlies) × continentality,
+ *    orographic lift and rain shadows; aridity
+ * 6. Priority-flood depression filling & downstream flow routing
+ * 7. Flux accumulation, river networks with tributaries, watersheds
+ * 8. Lakes in the deepest filled depressions, up to `lakeCoverage` of land
+ * 9. Trewartha biome classification (12 biomes) from month counts of a seasonal temperature curve
  */
 
-// oxlint-disable-next-line typescript/no-unused-vars
-import type { WorldGraph, WorldGenParams, Watershed } from "./types";
+import type { WorldGraph, WorldGenParams, RiverNetwork } from "./types";
 import { CLIMATE_CONSTANTS, getElevationZone } from "./config";
-import { makeRng } from "./helpers/rng";
-import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
+import { MinHeap } from "./helpers/heap";
+import { cellLat, cellLng, cellAreaKm2, lngDelta } from "./mesh";
+
+/** Steps (cells, ~100 km each at default resolution) traced upwind. */
+const UPWIND_STEPS = 40;
+
+interface UpwindTrace {
+  /** km travelled over land before reaching the windward ocean (capped) */
+  landKm: Float32Array;
+  /** rain-shadow strength: height of upwind ground above this cell (m), fading with distance */
+  barrier: Float32Array;
+  /** elevation of the immediate upwind neighbour (m) */
+  upwindH: Float32Array;
+}
 
 /**
  * Main entry point for the unified hydrology and climate pass.
  * Mutates graph.cells attributes and populates graph.rivers and graph.watersheds in-place.
  */
 export function computeHydroClimate(graph: WorldGraph, params: WorldGenParams): void {
-  const rng = makeRng(params.seed + 40);
   const { cells } = graph;
   const n = cells.n;
 
-  // Pass 1: Base Temperature & Altitude Lapse Rate
-  computeTemperature(graph);
-
-  // Pass 2: Wind Patterns (Coriolis) & Wind Shadows
   computeWindPatterns(graph);
-
-  // Pass 3: Ocean Currents & Thermal Influence
+  const upwind = traceUpwind(graph);
+  computeTemperature(graph, params, upwind);
   computeOceanCurrents(graph);
+  computePrecipitation(graph, params, upwind);
 
-  // Pass 4: Precipitation, Orographic Rain Shadows & Aridity
-  computePrecipitationAndRainShadows(graph);
-
-  // Pass 5: Depression Filling & Downstream Routing
   const depressionDepths = fillDepressionsAndRouteFlow(graph);
 
-  // Recalibrate elevation zones to match post-hydraulic filled heightmap
+  // Recalibrate elevation zones to match the filled heightmap
   for (let i = 0; i < n; i++) {
-    const hMeters = cells.h[i]!;
-    const isLand = hMeters >= 0;
+    const isLand = cells.h[i]! >= 0;
     cells.isLand[i] = isLand ? 1 : 0;
-    cells.elevZone[i] = isLand ? getElevationZone(hMeters) : 0;
+    cells.elevZone[i] = isLand ? getElevationZone(cells.h[i]!) : 0;
   }
 
-  // Pass 6: Flux Accumulation & River Network Detection
-  if (params.hasRivers ?? true) {
-    generateRiverNetworks(graph, params, rng);
-  }
+  accumulateFlux(graph);
+  graph.rivers = [];
+  graph.watersheds = [];
+  cells.river.fill(0);
+  cells.watershed.fill(0);
+  if (params.hasRivers) generateRiverNetworks(graph, params);
+  cells.lake.fill(0);
+  if (params.hasLakes) generateLakes(graph, params, depressionDepths);
 
-  // Pass 7: Lake Formation (Land Depressions & River Sinks)
-  if (params.hasLakes ?? true) {
-    generateLakes(graph, depressionDepths);
-  }
-
-  // Pass 8: Trewartha Biome Classification
-  classifyBiomes(graph);
+  classifyBiomes(graph, upwind);
 }
 
-// Pass 1: Temperature
-
-function computeTemperature(graph: WorldGraph): void {
-  const { cells } = graph;
-  const n = cells.n;
-
-  for (let i = 0; i < n; i++) {
-    const lat = Math.abs(cellLat(graph, i));
-    const elevMeters = Math.max(0, cells.h[i]!);
-
-    // Base temperature curve from equator (30°C) to pole (-30°C)
-    const baseTemp =
-      CLIMATE_CONSTANTS.equatorialTemp - CLIMATE_CONSTANTS.latitudeTempGradient * lat;
-
-    // Thermodynamic lapse rate: -6.5°C per 1000m elevation
-    const lapse = (elevMeters / 1000) * CLIMATE_CONSTANTS.lapseRatePerKm;
-
-    cells.temp[i] = baseTemp - lapse;
-  }
-
-  // Ocean moderation: land cells near ocean have moderated temperature extremes
-  const coastRange = CLIMATE_CONSTANTS.coastModerationRange;
-  for (let i = 0; i < n; i++) {
-    if (cells.isLand[i] && cells.coastDist[i]! <= coastRange) {
-      const distFrac = cells.coastDist[i]! / coastRange;
-      const modFactor = (1 - distFrac) * 0.4; // up to 40% moderation near coast
-      // Pull toward 15°C mild maritime average
-      cells.temp[i] = cells.temp[i]! * (1 - modFactor) + 15 * modFactor;
-    }
-  }
+/** Planar east/north offset in degrees from cell a to cell b, longitude scaled by cos(lat) and seam-wrapped. */
+function offset(graph: WorldGraph, a: number, b: number): [number, number] {
+  const lat = cellLat(graph, a);
+  return [
+    lngDelta(cellLng(graph, a), cellLng(graph, b)) * Math.cos((lat * Math.PI) / 180),
+    cellLat(graph, b) - lat,
+  ];
 }
 
-// Pass 2: Wind Patterns (Coriolis)
+// Pass 1: Wind Patterns (Coriolis)
 
 function computeWindPatterns(graph: WorldGraph): void {
   const { cells } = graph;
@@ -106,16 +85,16 @@ function computeWindPatterns(graph: WorldGraph): void {
     const lat = cellLat(graph, i);
     const absLat = Math.abs(lat);
 
-    let windAngleRad = 0; // 0 = East, π/2 = North, π = West, 3π/2 = South
-
+    // Direction the air moves toward: 0 = East, π/2 = North, π = West
+    let windAngleRad: number;
     if (absLat < 30) {
-      // Trade winds: East → West (angle ~ π)
-      windAngleRad = Math.PI * 0.9 + (lat > 0 ? -0.1 : 0.1);
+      // Trade winds blow toward the west and the equator
+      windAngleRad = lat > 0 ? Math.PI * 1.1 : Math.PI * 0.9;
     } else if (absLat < 60) {
-      // Westerlies: West → East (angle ~ 0)
-      windAngleRad = Math.PI * 0.1 + (lat > 0 ? 0.1 : -0.1);
+      // Westerlies blow toward the east and the pole
+      windAngleRad = lat > 0 ? Math.PI * 0.1 : Math.PI * 1.9;
     } else {
-      // Polar easterlies: East → West (angle ~ π)
+      // Polar easterlies
       windAngleRad = Math.PI * 0.95;
     }
 
@@ -125,492 +104,456 @@ function computeWindPatterns(graph: WorldGraph): void {
 
   // Wind speed reduction behind mountain ridges (wind shadow)
   for (let i = 0; i < n; i++) {
-    if (cells.isMountainRidge[i] || cells.h[i]! > 2000) {
-      const windAngle = cells.windDir[i]!;
-      // Find leeward downwind neighbor
-      const windDx = Math.cos(windAngle);
-      const windDy = Math.sin(windAngle);
-
-      const lngI = cellLng(graph, i);
-      const latI = cellLat(graph, i);
-
-      for (const nb of cells.neighbors[i]!) {
-        const dx = cellLng(graph, nb) - lngI;
-        const dy = cellLat(graph, nb) - latI;
-        // Dot product with wind direction vector
-        const dot = dx * windDx + dy * windDy;
-        if (dot > 0) {
-          // Neighbor is downwind of mountain: reduce wind speed
-          cells.windSpeed[nb] = Math.min(cells.windSpeed[nb]!, 0.35);
-        }
-      }
+    if (!cells.isMountainRidge[i] && cells.h[i]! <= 2000) continue;
+    const wx = Math.cos(cells.windDir[i]!);
+    const wy = Math.sin(cells.windDir[i]!);
+    for (const nb of cells.neighbors[i]!) {
+      const [dx, dy] = offset(graph, i, nb);
+      if (dx * wx + dy * wy > 0) cells.windSpeed[nb] = Math.min(cells.windSpeed[nb]!, 0.35);
     }
   }
 }
 
-// Pass 3: Ocean Currents
+// Pass 2: Upwind trace
+
+/** Walk each land cell against the wind until the ocean, recording land distance and barriers. */
+function traceUpwind(graph: WorldGraph): UpwindTrace {
+  const { cells } = graph;
+  const n = cells.n;
+  const landKm = new Float32Array(n);
+  const barrier = new Float32Array(n);
+  const upwindH = new Float32Array(n);
+
+  for (let i = 0; i < n; i++) {
+    if (!cells.isLand[i]) continue;
+    const ux = -Math.cos(cells.windDir[i]!);
+    const uy = -Math.sin(cells.windDir[i]!);
+    let cur = i;
+    let km = 0;
+    let top = 0;
+    for (let step = 0; step < UPWIND_STEPS; step++) {
+      let best = -1;
+      let bestDot = 0;
+      let bestLen = 0;
+      for (const nb of cells.neighbors[cur]!) {
+        const [dx, dy] = offset(graph, cur, nb);
+        const len = Math.hypot(dx, dy);
+        const dot = len > 0 ? (dx * ux + dy * uy) / len : 0;
+        if (dot > bestDot) {
+          bestDot = dot;
+          best = nb;
+          bestLen = len;
+        }
+      }
+      if (best < 0) break;
+      if (step === 0) upwindH[i] = Math.max(0, cells.h[best]!);
+      if (!cells.isLand[best]) break;
+      km += bestLen * 111;
+      // Air re-moistens downwind of a range, so a barrier's shadow fades over ~1500 km
+      top = Math.max(top, (cells.h[best]! - cells.h[i]!) * Math.exp(-km / 1500));
+      cur = best;
+    }
+    landKm[i] = km;
+    barrier[i] = top;
+  }
+  return { landKm, barrier, upwindH };
+}
+
+// Pass 3: Temperature
+
+/** Annual-mean sea-level temperature by latitude (°C): ~28 at the equator, ~13 at 45°, ~-30 at the poles. */
+function zonalTemperature(absLat: number): number {
+  return (
+    CLIMATE_CONSTANTS.equatorialTemp - CLIMATE_CONSTANTS.latitudeTempCurvature * absLat * absLat
+  );
+}
+
+function computeTemperature(graph: WorldGraph, params: WorldGenParams, upwind: UpwindTrace): void {
+  const { cells } = graph;
+  for (let i = 0; i < cells.n; i++) {
+    const absLat = Math.abs(cellLat(graph, i));
+    const lapse = (Math.max(0, cells.h[i]!) / 1000) * CLIMATE_CONSTANTS.lapseRatePerKm;
+    // Continental interiors at mid/high latitudes have cold winters, pulling the annual mean down
+    const continentality =
+      Math.min(1, upwind.landKm[i]! / 3000) * Math.max(0, Math.min(1, (absLat - 30) / 30));
+    cells.temp[i] =
+      zonalTemperature(absLat) +
+      params.temperatureOffset -
+      lapse -
+      CLIMATE_CONSTANTS.continentalCooling * continentality;
+  }
+}
+
+// Pass 4: Ocean Currents
 
 function computeOceanCurrents(graph: WorldGraph): void {
   const { cells } = graph;
   const n = cells.n;
   cells.oceanCurrentInfluence.fill(0);
 
-  // Western boundary of ocean basins (eastern coasts of continents) get warm currents (+5°C)
-  // Eastern boundary of ocean basins (western coasts of continents) get cold currents (-3°C)
+  // Western boundary currents warm east coasts; eastern boundary currents cool west coasts
   for (let i = 0; i < n; i++) {
-    if (!cells.isLand[i]) continue;
-    if (cells.coastDist[i]! > 3) continue;
-
+    if (!cells.isLand[i] || cells.coastDist[i]! > 3) continue;
     const lng = cellLng(graph, i);
-    const lat = cellLat(graph, i);
-    const absLat = Math.abs(lat);
+    const absLat = Math.abs(cellLat(graph, i));
+    if (absLat < 15 || absLat > 55) continue;
 
-    // Check if ocean is to the East or West of this coastal cell
     let oceanEast = false;
     let oceanWest = false;
-
     for (const nb of cells.neighbors[i]!) {
-      if (!cells.isLand[nb]) {
-        const nbLng = cellLng(graph, nb);
-        if (nbLng > lng) oceanEast = true;
-        if (nbLng < lng) oceanWest = true;
-      }
+      if (cells.isLand[nb]) continue;
+      const d = lngDelta(lng, cellLng(graph, nb));
+      if (d > 0) oceanEast = true;
+      if (d < 0) oceanWest = true;
     }
 
-    if (absLat >= 15 && absLat <= 55) {
-      if (oceanEast) {
-        // Ocean to East = East coast of continent = Warm Western Boundary Current (e.g. Gulf Stream)
-        cells.oceanCurrentInfluence[i] = CLIMATE_CONSTANTS.warmCurrentBoost;
-        cells.temp[i] += CLIMATE_CONSTANTS.warmCurrentBoost;
-      } else if (oceanWest) {
-        // Ocean to West = West coast of continent = Cold Eastern Boundary Current (e.g. California Current)
-        cells.oceanCurrentInfluence[i] = CLIMATE_CONSTANTS.coldCurrentReduction;
-        cells.temp[i] += CLIMATE_CONSTANTS.coldCurrentReduction;
-      }
+    if (oceanEast && !oceanWest) {
+      cells.oceanCurrentInfluence[i] = CLIMATE_CONSTANTS.warmCurrentBoost;
+    } else if (oceanWest && !oceanEast) {
+      cells.oceanCurrentInfluence[i] = CLIMATE_CONSTANTS.coldCurrentReduction;
     }
+    cells.temp[i] += cells.oceanCurrentInfluence[i]!;
   }
 }
 
-// Pass 4: Precipitation & Rain Shadows
+// Pass 5: Precipitation & Rain Shadows
 
-function computePrecipitationAndRainShadows(graph: WorldGraph): void {
+/** Zonal mean precipitation (mm/yr): ITCZ peak, subtropical dry belt, mid-latitude storm track, dry poles. */
+function zonalPrecipitation(absLat: number): number {
+  return (
+    250 + 1800 * Math.exp(-((absLat / 16) ** 2)) + 800 * Math.exp(-(((absLat - 48) / 15) ** 2))
+  );
+}
+
+/** Köppen dry threshold (mm/yr, evenly spread rain): below it, evaporation outpaces rainfall. */
+function dryThreshold(temp: number): number {
+  return 20 * Math.max(0, temp) + 140;
+}
+
+function computePrecipitation(
+  graph: WorldGraph,
+  params: WorldGenParams,
+  upwind: UpwindTrace
+): void {
   const { cells } = graph;
-  const n = cells.n;
+  for (let i = 0; i < cells.n; i++) {
+    const absLat = Math.abs(cellLat(graph, i));
+    let p = zonalPrecipitation(absLat);
 
-  for (let i = 0; i < n; i++) {
-    const lat = Math.abs(cellLat(graph, i));
-
-    // Base precipitation curve (mm/yr): high near equator (2000mm), low at poles (200mm), dip at subtropics 20-30° (500mm)
-    let basePrec = 1000;
-    if (lat < 15) basePrec = 2200;
-    else if (lat < 35)
-      basePrec = 500; // Subtropical dry belt
-    else if (lat < 60)
-      basePrec = 1200; // Temperate wet belt
-    else basePrec = 250; // Polar dry belt
-
-    // Continental interior drying (precipitation decreases inland)
     if (cells.isLand[i]) {
-      const dist = cells.coastDist[i]!;
-      const continentDrying = Math.max(0.2, 1.0 - dist * 0.04);
-      basePrec *= continentDrying;
+      const h = Math.max(0, cells.h[i]!);
+      // Onshore winds wet the windward coast (east coasts in the trades, west coasts in the
+      // westerlies); moisture is then rained out inland, slowly under the ITCZ and monsoons
+      const decayKm = 5000 + 5000 * Math.exp(-((absLat / 18) ** 2));
+      p *= (1 + 1.2 * Math.exp(-upwind.landKm[i]! / 600)) * Math.exp(-upwind.landKm[i]! / decayKm);
+      // Rain shadow behind higher ground, orographic lift on windward slopes
+      p *= Math.exp(-Math.max(0, upwind.barrier[i]! - 300) / 1500);
+      const lift = h - upwind.upwindH[i]!;
+      if (lift > 150) p *= 1 + Math.min(1.2, lift / 1500);
+      // Warm currents feed coastal rain; cold currents stabilise the air (coastal deserts)
+      const current = cells.oceanCurrentInfluence[i]!;
+      if (current > 0) p *= 1.3;
+      else if (current < 0) p *= 0.6;
     }
 
-    // Coastal moisture boost
-    if (cells.isLand[i] && cells.coastDist[i]! <= 2) {
-      basePrec *= 1.3;
-    }
-
-    // Warm current precipitation boost
-    if (cells.oceanCurrentInfluence[i]! > 0) {
-      basePrec *= 1.4;
-    }
-
-    cells.prec[i] = basePrec;
-  }
-
-  // Orographic lift & Rain shadow effect
-  for (let i = 0; i < n; i++) {
-    if (!cells.isLand[i]) continue;
-
-    const windAngle = cells.windDir[i]!;
-    const windDx = Math.cos(windAngle);
-    const windDy = Math.sin(windAngle);
-
-    const lngI = cellLng(graph, i);
-    const latI = cellLat(graph, i);
-
-    // Check neighbors upwind vs downwind
-    let maxUpwindElevDiff = 0;
-    let maxDownwindElevDiff = 0;
-
-    for (const nb of cells.neighbors[i]!) {
-      if (!cells.isLand[nb]) continue;
-      const dx = cellLng(graph, nb) - lngI;
-      const dy = cellLat(graph, nb) - latI;
-      const dot = dx * windDx + dy * windDy;
-
-      const elevDiff = cells.h[i]! - cells.h[nb]!;
-
-      if (dot < 0 && elevDiff > 500) {
-        // nb is UPWIND and LOWER than cell i → windward slope → Orographic Lift
-        maxUpwindElevDiff = Math.max(maxUpwindElevDiff, elevDiff);
-      } else if (dot > 0 && elevDiff < -500) {
-        // nb is DOWNWIND of higher cell → leeward side → Rain Shadow
-        maxDownwindElevDiff = Math.max(maxDownwindElevDiff, Math.abs(elevDiff));
-      }
-    }
-
-    if (maxUpwindElevDiff > 0) {
-      // Windward lift: multiply precipitation
-      cells.prec[i] = Math.min(4000, cells.prec[i]! * CLIMATE_CONSTANTS.orographicLiftMultiplier);
-    } else if (maxDownwindElevDiff > 0) {
-      // Leeward rain shadow: reduce precipitation
-      cells.prec[i] = Math.max(50, cells.prec[i]! * CLIMATE_CONSTANTS.rainShadowMultiplier);
-    }
-
-    // Compute aridity index (0 = wet, 1 = dry)
-    // High temp + low prec = high aridity
-    const potentialEvap = Math.max(100, (cells.temp[i]! + 10) * 60);
-    const aridityVal = Math.max(0, Math.min(1.0, 1.0 - cells.prec[i]! / potentialEvap));
-    cells.aridity[i] = aridityVal;
+    p = Math.max(30, Math.min(5000, p * params.precipitationScale));
+    cells.prec[i] = p;
+    // Aridity 0..1: 0.5 sits on the dry threshold
+    cells.aridity[i] = Math.max(0, Math.min(1, 1 - p / (2 * dryThreshold(cells.temp[i]!))));
   }
 }
 
-// Pass 5: Depression Filling & Flow Routing
+// Pass 6: Depression Filling & Flow Routing
 
+/**
+ * Priority-flood from the ocean: every land cell gets a monotone path to the sea.
+ * Returns how far each land cell was raised (the depth of the depression it sits in).
+ */
 function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
   const { cells } = graph;
   const n = cells.n;
 
   cells.downstream.fill(-1);
-
-  // Priority-queue-based depression filling algorithm
-  // Start from ocean/boundary cells and flood inward to ensure every cell has a downhill path
   const filledH = new Float64Array(cells.h);
   const depressionDepths = new Float32Array(n);
-
-  // Collect water & boundary cells as seeds
-  const queue: { cell: number; elev: number }[] = [];
   const visited = new Uint8Array(n);
+  const heap = new MinHeap();
 
   for (let i = 0; i < n; i++) {
-    if (!cells.isLand[i] || cells.boundary[i]) {
+    if (!cells.isLand[i]) {
       visited[i] = 1;
-      queue.push({ cell: i, elev: filledH[i]! });
+      heap.push(filledH[i]!, i);
     }
   }
 
-  // Sort initial seeds ascending by elevation
-  queue.sort((a, b) => a.elev - b.elev);
-
-  while (queue.length > 0) {
-    const { cell, elev } = queue.shift()!;
-
+  while (heap.size > 0) {
+    const elev = heap.peekKey()!;
+    const cell = heap.pop();
     for (const nb of cells.neighbors[cell]!) {
       if (visited[nb]) continue;
       visited[nb] = 1;
-
-      // Raise neighbor elevation if it sits in a depression below current cell
-      if (filledH[nb]! < elev) {
-        filledH[nb] = elev + 0.01; // tiny offset to ensure monotonic gradient
-      }
-
-      // Priority insert into queue (maintain sorted order)
-      const nbElev = filledH[nb]!;
-      let lo = 0,
-        hi = queue.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >>> 1;
-        if (queue[mid]!.elev < nbElev) lo = mid + 1;
-        else hi = mid;
-      }
-      queue.splice(lo, 0, { cell: nb, elev: nbElev });
+      // Raise a cell sitting below its spill point, with a tiny gradient so water keeps moving
+      if (filledH[nb]! <= elev) filledH[nb] = elev + 0.01;
+      heap.push(filledH[nb]!, nb);
     }
   }
 
-  // Track depression depths before updating cells.h
-  for (let i = 0; i < n; i++) {
-    if (cells.isLand[i]) {
-      depressionDepths[i] = Math.max(0, filledH[i]! - cells.h[i]!);
-      cells.h[i] = filledH[i]!;
-    }
-  }
-
-  // Compute downstream neighbor: for each land cell, choose neighbor with steepest descent in filledH
   for (let i = 0; i < n; i++) {
     if (!cells.isLand[i]) continue;
+    depressionDepths[i] = Math.max(0, filledH[i]! - cells.h[i]!);
+    cells.h[i] = filledH[i]!;
+  }
 
+  // Steepest descent on the filled surface
+  for (let i = 0; i < n; i++) {
+    if (!cells.isLand[i]) continue;
     let lowestNb = -1;
     let lowestElev = cells.h[i]!;
-
     for (const nb of cells.neighbors[i]!) {
       if (cells.h[nb]! < lowestElev) {
         lowestElev = cells.h[nb]!;
         lowestNb = nb;
       }
     }
-
     cells.downstream[i] = lowestNb;
   }
 
   return depressionDepths;
 }
 
-// Pass 6: Rivers & Flux Accumulation
+// Pass 7: Rivers, Tributaries & Watersheds
 
-// oxlint-disable-next-line typescript/no-unused-vars
-function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, rng: () => number): void {
+/** Land cells ordered from highest to lowest (sources before mouths). */
+function landByHeightDesc(graph: WorldGraph): number[] {
+  const land: number[] = [];
+  for (let i = 0; i < graph.cells.n; i++) if (graph.cells.isLand[i]) land.push(i);
+  return land.sort((a, b) => graph.cells.h[b]! - graph.cells.h[a]!);
+}
+
+function accumulateFlux(graph: WorldGraph): void {
   const { cells } = graph;
-  const n = cells.n;
-
-  graph.rivers = [];
-  graph.watersheds = [];
   cells.flux.fill(0);
-  cells.river.fill(0);
-  cells.watershed.fill(0);
-
-  // Sort land cells by elevation descending (highest cells accumulate first)
-  const landCells: number[] = [];
-  for (let i = 0; i < n; i++) {
-    if (cells.isLand[i]) landCells.push(i);
-  }
-
-  landCells.sort((a, b) => cells.h[b]! - cells.h[a]!);
-
-  // Initialize per-cell water input from precipitation
-  for (const c of landCells) {
-    cells.flux[c] = Math.max(1, cells.prec[c]! * 0.05);
-  }
-
-  // Accumulate flux downhill
-  for (const c of landCells) {
+  const land = landByHeightDesc(graph);
+  for (const c of land) cells.flux[c] = Math.max(1, cells.prec[c]! * 0.05);
+  for (const c of land) {
     const ds = cells.downstream[c]!;
-    if (ds >= 0 && cells.isLand[ds]) {
-      cells.flux[ds] += cells.flux[c]!;
-    }
-  }
-
-  // Adaptive threshold for river detection
-  const fluxValues = Array.from(cells.flux).sort((a, b) => b - a);
-  const targetCount = Math.min(1200, Math.max(300, Math.floor(landCells.length * 0.08)));
-  const fluxCutoff = fluxValues[targetCount] ?? 50;
-
-  // Trace rivers from high-flux coastal mouth cells upstream
-  let riverId = 1;
-
-  for (const c of landCells) {
-    if (cells.flux[c]! >= fluxCutoff && cells.river[c] === 0) {
-      // Start tracing a river from this headwater cell downhill to mouth
-      const riverPath: number[] = [];
-      let curr = c;
-
-      while (curr >= 0 && cells.isLand[curr]) {
-        // Prevent river from crossing mountain ridges
-        if (cells.isMountainRidge[curr] && riverPath.length > 0) {
-          break; // Stop river before crossing mountain peak
-        }
-
-        riverPath.push(curr);
-        cells.river[curr] = riverId;
-
-        const next = cells.downstream[curr]!;
-        // Stop tracing if next cell is out of bounds, ocean water, or forms a cycle
-        if (next < 0 || !cells.isLand[next] || riverPath.includes(next)) {
-          break;
-        }
-        curr = next;
-      }
-
-      if (riverPath.length >= 3) {
-        const source = riverPath[0]!;
-        const mouth = riverPath[riverPath.length - 1]!;
-        const flux = cells.flux[mouth]!;
-
-        // Estimate length in km
-        let lengthKm = 0;
-        for (let j = 0; j < riverPath.length - 1; j++) {
-          const dx = cellLng(graph, riverPath[j]!) - cellLng(graph, riverPath[j + 1]!);
-          const dy = cellLat(graph, riverPath[j]!) - cellLat(graph, riverPath[j + 1]!);
-          lengthKm += Math.sqrt(dx * dx + dy * dy) * 111;
-        }
-
-        graph.rivers.push({
-          id: riverId,
-          name: `River ${riverId}`,
-          cells: riverPath,
-          source,
-          mouth,
-          flux,
-          lengthKm: Math.round(lengthKm),
-          tributaries: [],
-        });
-
-        riverId++;
-      }
-    }
-  }
-
-  // Trace watershed basins for each river
-  let watershedId = 1;
-  for (const river of graph.rivers) {
-    const wsCells: number[] = [];
-    for (const c of river.cells) {
-      wsCells.push(c);
-      cells.watershed[c] = watershedId;
-    }
-
-    let areaKm2 = 0;
-    for (const c of wsCells) {
-      areaKm2 += cellAreaKm2(graph, c);
-    }
-
-    graph.watersheds.push({
-      id: watershedId,
-      cells: wsCells,
-      river: river.id,
-      areaKm2: Math.round(areaKm2),
-      isEndorheic: false,
-    });
-
-    watershedId++;
+    if (ds >= 0 && cells.isLand[ds]) cells.flux[ds] += cells.flux[c]!;
   }
 }
 
-// Pass 7: Lakes (Land Depressions & Sinks)
+function riverLengthKm(graph: WorldGraph, path: number[]): number {
+  let km = 0;
+  for (let j = 0; j < path.length - 1; j++) {
+    const [dx, dy] = offset(graph, path[j]!, path[j + 1]!);
+    km += Math.hypot(dx, dy) * 111;
+  }
+  return Math.round(km);
+}
 
-function generateLakes(graph: WorldGraph, depressionDepths: Float32Array): void {
-  const { cells, features } = graph;
-  const n = cells.n;
+function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams): void {
+  const { cells } = graph;
+  const land = landByHeightDesc(graph);
+  if (land.length === 0) return;
 
-  cells.lake.fill(0);
+  // Rivers occupy roughly the top `share` of land cells by accumulated flux
+  const share = Math.min(0.3, CLIMATE_CONSTANTS.riverCellShare * params.riverDensity);
+  const fluxSorted = land.map((c) => cells.flux[c]!).sort((a, b) => b - a);
+  const fluxCutoff = fluxSorted[Math.min(fluxSorted.length - 1, Math.floor(land.length * share))]!;
 
-  // Identify candidate land cells (isLand === 1) sitting in depressions or endorheic sinks
-  const candidateCells: number[] = [];
-  for (let i = 0; i < n; i++) {
-    if (!cells.isLand[i]) continue;
+  const byId = new Map<number, RiverNetwork>();
+  let riverId = 1;
+  for (const c of land) {
+    if (cells.flux[c]! < fluxCutoff || cells.river[c] !== 0) continue;
 
-    const depth = depressionDepths[i] ?? 0;
-    const flux = cells.flux[i] ?? 0;
-    const isSink = cells.downstream[i] === -1;
-
-    // Land cell forms a lake if it has a hydraulic depression > 1.5m with flux > 20,
-    // or if it's an endorheic sink receiving river flux > 80
-    if ((depth > 1.5 && flux > 20) || (isSink && flux > 80)) {
-      candidateCells.push(i);
+    // Trace downstream to the sea, or to the river this one joins as a tributary
+    const path: number[] = [];
+    let joins = 0;
+    let curr = c;
+    while (curr >= 0 && cells.isLand[curr]) {
+      if (cells.river[curr] !== 0) {
+        joins = cells.river[curr]!;
+        path.push(curr); // the confluence cell, so the lines meet
+        break;
+      }
+      path.push(curr);
+      curr = cells.downstream[curr]!;
     }
+
+    const ownCells = joins ? path.slice(0, -1) : path;
+    if (path.length < 3 || ownCells.length === 0) continue;
+    for (const pc of ownCells) cells.river[pc] = riverId;
+
+    const mouth = path[path.length - 1]!;
+    const river: RiverNetwork = {
+      id: riverId,
+      name: `River ${riverId}`,
+      cells: path,
+      source: path[0]!,
+      mouth,
+      flux: cells.flux[mouth]!,
+      lengthKm: Math.max(1, riverLengthKm(graph, path)),
+      tributaries: [],
+    };
+    graph.rivers.push(river);
+    byId.set(riverId, river);
+    byId.get(joins)?.tributaries.push(riverId);
+    riverId++;
   }
 
-  if (candidateCells.length === 0) return;
+  // Watersheds: each land cell belongs to the first river its flow path reaches
+  for (let k = land.length - 1; k >= 0; k--) {
+    const c = land[k]!;
+    const ds = cells.downstream[c]!;
+    cells.watershed[c] =
+      cells.river[c]! > 0
+        ? cells.river[c]!
+        : ds >= 0 && cells.isLand[ds]
+          ? cells.watershed[ds]!
+          : 0;
+  }
+  const area = new Map<number, number>();
+  const members = new Map<number, number[]>();
+  for (const c of land) {
+    const ws = cells.watershed[c]!;
+    if (!ws) continue;
+    area.set(ws, (area.get(ws) ?? 0) + cellAreaKm2(graph, c));
+    if (!members.has(ws)) members.set(ws, []);
+    members.get(ws)!.push(c);
+  }
+  for (const river of graph.rivers) {
+    graph.watersheds.push({
+      id: river.id,
+      cells: members.get(river.id) ?? [],
+      river: river.id,
+      areaKm2: Math.round(area.get(river.id) ?? 0),
+      isEndorheic: false,
+    });
+  }
+}
 
-  const candidateSet = new Set(candidateCells);
-  const visited = new Set<number>();
-  let nextLakeId = features.length > 0 ? Math.max(...features.map((f) => f.id)) + 1 : 1;
+// Pass 8: Lakes (filled depressions)
 
-  for (const c of candidateCells) {
-    if (visited.has(c)) continue;
+/**
+ * Lakes are the deepest filled depressions (by water volume), added until their surface reaches
+ * `lakeCoverage` of land. Basins over a sixth of that surface are skipped (salt flats, marsh).
+ */
+function generateLakes(graph: WorldGraph, params: WorldGenParams, depths: Float32Array): void {
+  const { cells, features } = graph;
+  const n = cells.n;
+  let landCount = 0;
+  for (let i = 0; i < n; i++) landCount += cells.isLand[i]!;
+  let budget = Math.round(landCount * params.lakeCoverage);
+  if (budget <= 0) return;
+  // Spread the surface over many lakes: no single lake takes more than a sixth of it
+  const maxLake = Math.max(1, Math.round(budget / 6));
 
-    const lakeComponent: number[] = [];
-    const queue = [c];
-    visited.add(c);
-
-    while (queue.length > 0) {
-      const curr = queue.pop()!;
-      lakeComponent.push(curr);
-
-      for (const nb of cells.neighbors[curr]!) {
-        if (cells.isLand[nb] && candidateSet.has(nb) && !visited.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
+  const seen = new Uint8Array(n);
+  const basins: { cells: number[]; volume: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    if (seen[i] || !cells.isLand[i] || depths[i]! <= 1) continue;
+    const basin: number[] = [];
+    let volume = 0;
+    const stack = [i];
+    seen[i] = 1;
+    while (stack.length > 0) {
+      const c = stack.pop()!;
+      basin.push(c);
+      volume += depths[c]!;
+      for (const nb of cells.neighbors[c]!) {
+        if (!seen[nb] && cells.isLand[nb] && depths[nb]! > 1) {
+          seen[nb] = 1;
+          stack.push(nb);
         }
       }
     }
+    basins.push({ cells: basin, volume });
+  }
+  basins.sort((a, b) => b.volume - a.volume);
 
-    if (lakeComponent.length === 0) continue;
-
+  let nextLakeId = features.reduce((m, f) => Math.max(m, f.id), 0) + 1;
+  for (const basin of basins) {
+    if (budget <= 0) break;
+    if (basin.cells.length > maxLake) continue;
     const lakeId = nextLakeId++;
-    let totalAreaKm2 = 0;
-    for (const lc of lakeComponent) {
-      cells.lake[lc] = lakeId;
-      totalAreaKm2 += cellAreaKm2(graph, lc);
+    let areaKm2 = 0;
+    for (const c of basin.cells) {
+      cells.lake[c] = lakeId;
+      areaKm2 += cellAreaKm2(graph, c);
     }
-
+    budget -= basin.cells.length;
     features.push({
       id: lakeId,
       type: "lake",
-      cellCount: lakeComponent.length,
-      areaKm2: Math.round(totalAreaKm2),
+      cellCount: basin.cells.length,
+      areaKm2: Math.round(areaKm2),
       name: `Lake ${lakeId}`,
       border: false,
     });
   }
 }
 
-// Pass 8: Biomes (Trewartha)
+// Pass 9: Biomes (Trewartha)
 
-function classifyBiomes(graph: WorldGraph): void {
+/**
+ * Half the annual temperature range (°C): ~1.5 at the equator, growing poleward, and up to
+ * 2.5× larger deep inside continents than on windward coasts.
+ */
+function seasonalAmplitude(absLat: number, landKm: number): number {
+  const continentality = Math.min(1, landKm / 2000);
+  return 1.5 + 0.25 * absLat * (0.4 + 0.6 * continentality);
+}
+
+/** Months (0-12) with a mean above `threshold`, for a sinusoidal year of the given mean and amplitude. */
+function monthsAbove(threshold: number, mean: number, amplitude: number): number {
+  const x = (threshold - mean) / amplitude;
+  return x <= -1 ? 12 : x >= 1 ? 0 : (12 * Math.acos(x)) / Math.PI;
+}
+
+/** Trewartha group from mean temperature, seasonal amplitude and precipitation; ids index TREWARTHA_BIOMES. */
+function classifyLandBiome(
+  temp: number,
+  amplitude: number,
+  prec: number,
+  h: number,
+  absLat: number,
+  maritime: boolean
+): number {
+  const warmest = temp + amplitude;
+  const coldest = temp - amplitude;
+  // Fi: ice cap — no month above freezing, or cold enough for a self-sustaining ice sheet
+  if (warmest <= 0 || temp < CLIMATE_CONSTANTS.iceSheetTemp) return 10;
+  if (h >= 2300) return 11; // H: highland
+  if (warmest < 10) return 9; // Ft: tundra, no month above 10 °C
+  const warmMonths = monthsAbove(10, temp, amplitude);
+  if (warmMonths < 4) return 8; // E: boreal, 1-3 months above 10 °C
+  const dry = dryThreshold(temp);
+  if (prec < dry) return prec < dry / 2 ? 3 : 2; // Bw desert / Bs steppe
+  if (coldest >= 18) return prec >= 1700 ? 0 : 1; // Ar / Aw: every month above 18 °C
+  if (warmMonths >= 8) {
+    // Cs: dry-summer windward (west) coasts under the poleward edge of the subtropical high
+    return absLat >= 28 && absLat <= 46 && maritime && prec < 1600 ? 5 : 4;
+  }
+  return coldest > 0 ? 6 : 7; // Do oceanic (mild winters) / Dc continental (freezing winters)
+}
+
+function classifyBiomes(graph: WorldGraph, upwind: UpwindTrace): void {
   const { cells } = graph;
-  const n = cells.n;
-
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < cells.n; i++) {
     const temp = cells.temp[i]!;
-    const prec = cells.prec[i]!;
-    const aridity = cells.aridity[i]!;
-    const elev = cells.h[i]!;
-    const lat = Math.abs(cellLat(graph, i));
-
     if (!cells.isLand[i]) {
-      // Water cell: Fi Ice Cap only if polar or freezing, else Temperate Oceanic
-      cells.biome[i] = temp <= 0 || lat > 70 ? 10 : 6;
+      // Sea ice where the water stays frozen most of the year
+      cells.biome[i] = temp < CLIMATE_CONSTANTS.seaIceTemp ? 10 : 6;
       continue;
     }
-
-    let biomeId = 7; // Default: Temperate Continental (Dc)
-
-    if (temp <= -10 || (lat > 70 && temp < 0) || elev > 5000) {
-      // 10: Fi (Ice Cap)
-      biomeId = 10;
-    } else if (elev > 3000 || (elev > 2500 && temp < 5)) {
-      // 11: H (Highland)
-      biomeId = 11;
-    } else if (temp < 0 || (lat > 60 && temp < 8)) {
-      // 9: Ft (Tundra)
-      biomeId = 9;
-    } else if (temp < 10) {
-      // 8: E (Boreal)
-      biomeId = 8;
-    } else if (aridity > 0.75 || prec < 250) {
-      // 3: Bw (Desert)
-      biomeId = 3;
-    } else if (aridity > 0.5 || prec < 500) {
-      // 2: Bs (Steppe)
-      biomeId = 2;
-    } else if (temp > 20 && lat < 25) {
-      if (prec > 1600) {
-        // 0: Ar (Tropical Wet)
-        biomeId = 0;
-      } else {
-        // 1: Aw (Tropical Dry)
-        biomeId = 1;
-      }
-    } else if (temp > 15) {
-      if (prec < 800 && aridity > 0.35) {
-        // 5: Cs (Subtropical Dry Summer / Mediterranean)
-        biomeId = 5;
-      } else {
-        // 4: Cf (Subtropical Humid)
-        biomeId = 4;
-      }
-    } else {
-      if (prec > 1000) {
-        // 6: Do (Temperate Oceanic)
-        biomeId = 6;
-      } else {
-        // 7: Dc (Temperate Continental)
-        biomeId = 7;
-      }
-    }
-
-    cells.biome[i] = biomeId;
+    const absLat = Math.abs(cellLat(graph, i));
+    const landKm = upwind.landKm[i]!;
+    cells.biome[i] = classifyLandBiome(
+      temp,
+      seasonalAmplitude(absLat, landKm),
+      cells.prec[i]!,
+      cells.h[i]!,
+      absLat,
+      landKm < CLIMATE_CONSTANTS.maritimeKm
+    );
   }
 }

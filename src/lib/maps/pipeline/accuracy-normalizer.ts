@@ -5,7 +5,7 @@
  * derived from Ixnay (IxEarth) baseline and IRL Earth geographic standards.
  *
  * Targets & Safe Tolerance Bands:
- * 1. Land Coverage: 25% - 45% (IRL: 29%, Ixnay: 35%)
+ * 1. Land Coverage: 20% - 45% (IRL: 29%, Ixnay: 22.9%, Eurth: 22.9% — measured 2026-10-11)
  * 2. Elevation Distribution: Coastal Lowlands (0-500m) >= 45%, Highlands <= 40%, Alpine <= 15%
  * 3. Major Continent Count: 3 - 7 distinct landmasses
  * 4. Nation Size Distribution: Max nation area <= 35% of total land
@@ -36,7 +36,7 @@ interface AccuracyScoreCard {
 }
 
 const T = {
-  landPercentageMin: 25,
+  landPercentageMin: 20,
   landPercentageMax: 45,
   continentCountMin: 1,
   continentCountMax: 12,

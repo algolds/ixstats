@@ -1,38 +1,6 @@
 /**
- * Smooth an open polyline (not closed). Used for rivers.
- *
- * @param line Open polyline coordinates
- * @param iterations Subdivision passes
- * @returns Smoothed polyline (preserves start and end points)
+ * UPG v2 — Vector smoothing: Douglas-Peucker decimation, Catmull-Rom splines, harmonic perturbation.
  */
-export function chaikinSmoothLine(
-  line: [number, number][],
-  iterations: number
-): [number, number][] {
-  if (line.length < 3 || iterations <= 0) return line;
-
-  let current = line;
-
-  for (let iter = 0; iter < iterations; iter++) {
-    const next: [number, number][] = [];
-    // Preserve first point
-    next.push(current[0]!);
-
-    for (let i = 0; i < current.length - 1; i++) {
-      const [x0, y0] = current[i]!;
-      const [x1, y1] = current[i + 1]!;
-
-      next.push([x0 * 0.75 + x1 * 0.25, y0 * 0.75 + y1 * 0.25]);
-      next.push([x0 * 0.25 + x1 * 0.75, y0 * 0.25 + y1 * 0.75]);
-    }
-
-    // Preserve last point
-    next.push(current[current.length - 1]!);
-    current = next;
-  }
-
-  return current;
-}
 
 /**
  * Smooth a closed polygon ring using Catmull-Rom spline interpolation (tau = 0.5).
