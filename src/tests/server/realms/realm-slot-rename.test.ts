@@ -37,7 +37,14 @@ const REALM = { id: EURTH, slug: "eurth", ownerId: FOUNDER, status: "active" };
 const OFFICERS = [{ userId: MAP_OFFICER, powers: ["map"] }];
 
 const FEATURE = { id: "ml1", featureId: "slot_27", countryId: "c_slot", displayName: "Algir" };
-const SLOT = {
+const SLOT: {
+  id: string;
+  name: string;
+  realmId: string;
+  worldgen: boolean;
+  ownerUserId: string | null;
+  realm: { slug: string };
+} = {
   id: "c_slot",
   name: "Algir",
   realmId: EURTH,
