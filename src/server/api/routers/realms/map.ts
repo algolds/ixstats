@@ -13,6 +13,7 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { mutationRealmId, realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { worldReliefFailed } from "~/server/modules/maps/world-import.relief-state";
 import { RealmRegionError } from "~/server/modules/realms/realms.region";
 import {
   deleteWorldSlot,
@@ -102,11 +103,13 @@ export const realmMapRouter = createTRPCRouter({
     }),
   /**
    * Whether the realm's world can be regenerated or applied: its status and the pending and approved claims that
-   * lock it. The realm's map editors only; never Ixnay.
+   * lock it, and whether the relief step of its latest world import failed (the tab then offers to rebuild it). The
+   * realm's map editors only; never Ixnay.
    */
   worldStatus: protectedProcedure.input(realmInput).query(async ({ ctx, input }) => {
     const realmId = await mutationRealmId(ctx, input.realm);
-    return getRealmWorldStatus(ctx.db, ctx.user, realmId).catch(mapError);
+    const status = await getRealmWorldStatus(ctx.db, ctx.user, realmId).catch(mapError);
+    return { ...status, reliefFailed: await worldReliefFailed(ctx.db, realmId) };
   }),
 
   /** A country as a generated nation slot, for the Properties inspector's slot tools. */

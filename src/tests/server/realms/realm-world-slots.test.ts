@@ -123,6 +123,7 @@ describe("realms.map.worldStatus", () => {
       locked: true,
       lockReason: "claims",
       canReviewClaims: true,
+      reliefFailed: false,
     });
     const where = db.realmClaim!.count!.mock.calls.map(([arg]) => arg.where);
     expect(where).toEqual(
@@ -161,6 +162,39 @@ describe("realms.map.worldStatus", () => {
       locked: true,
       lockReason: "archived",
     });
+  });
+
+  it("says the relief step of the latest world import failed, so the tab can offer to rebuild it", async () => {
+    const db = realmDb();
+    db.mapImportJob!.findMany!.mockResolvedValue([
+      { id: "j_apply", result: { phase: "world-apply", relief: { status: "failed" } } },
+    ]);
+    await expect(caller(db, FOUNDER).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
+      reliefFailed: true,
+    });
+    expect(db.mapImportJob!.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { realmId: EURTH, kind: "world", dryRun: false, status: "succeeded" },
+      })
+    );
+  });
+
+  it("does not say it once the relief was built", async () => {
+    const db = realmDb();
+    db.mapImportJob!.findMany!.mockResolvedValue([
+      { id: "j_apply", result: { phase: "world-apply", relief: { status: "built" } } },
+    ]);
+    await expect(caller(db, FOUNDER).worldStatus({ realm: "eurth" })).resolves.toMatchObject({
+      reliefFailed: false,
+    });
+  });
+
+  it("does not look at the realm's imports for someone who may not see its world", async () => {
+    const db = realmDb();
+    await expect(caller(db, PLAYER).worldStatus({ realm: "eurth" })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(db.mapImportJob!.findMany).not.toHaveBeenCalled();
   });
 
   it("is for the realm's map editors only", async () => {

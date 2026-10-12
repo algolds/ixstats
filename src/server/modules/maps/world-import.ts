@@ -49,6 +49,7 @@ import {
 import type { ReliefEntry, ReliefSource } from "./realm-relief";
 import { assertWorldImportAllowed, jobActor } from "./world-import.guards";
 import { loadWorldBundle, prepareWorld, type PreparedWorld } from "./world-import.prepare";
+import { markWorldReliefBuilt } from "./world-import.relief-state";
 import {
   dedupeNames,
   openSlots,
@@ -574,6 +575,10 @@ export async function rebuildRealmRelief(
 ): Promise<ReliefRebuild> {
   const source = await reliefSource(db, realmId);
   const entry = await (deps.runRelief ?? defaultRelief)(db, realmId, source);
+  // The relief is there: the book-keeping that clears the "Rebuild relief" offer must not fail the rebuild
+  await markWorldReliefBuilt(db, realmId, entry).catch((error: Error) =>
+    console.error(`[world-import] relief of ${realmId} built, but not recorded:`, error)
+  );
   return {
     source: "cells" in source ? "cells" : "bands",
     version: entry.version,
