@@ -274,6 +274,18 @@ describe("the review", () => {
     ).toBeNull();
   });
 
+  it("shows the layers the realm keeps as kept, and has no land row for a world fitted to its map", async () => {
+    renderRegion();
+    await reachReview(dryRun({ source: "realm-map", kept: ["background", "political", "rivers"] }));
+    const diff = within(screen.getByLabelText("What using this world changes"));
+    expect(diff.getByText("Rivers").nextSibling).toHaveTextContent("Kept as it is");
+    expect(diff.getByText("Elevation").nextSibling).toHaveTextContent(
+      "4 new, 2 changed, 1 retired"
+    );
+    expect(diff.queryByText("Land and sea")).toBeNull();
+    expect(diff.queryByText("Borders")).toBeNull();
+  });
+
   it("goes back to Use this world on Cancel, without applying", async () => {
     renderRegion();
     await reachReview();

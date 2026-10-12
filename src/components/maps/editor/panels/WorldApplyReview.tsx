@@ -36,7 +36,7 @@ interface WorldApplyReviewProps {
 
 /**
  * The dry run of a world: what it would do to the realm, before anything is written. Work the world replaces (hand
- * edits, earlier imports) is said first, in a warning of its own.
+ * edits, earlier imports) is said first, in a warning of its own. The layers a realm map world leaves alone say so.
  */
 export function WorldApplyReview({
   diff,
@@ -48,9 +48,12 @@ export function WorldApplyReview({
   onCancel,
 }: WorldApplyReviewProps) {
   const { replaces, notes } = splitWarnings(diff);
+  // A world fitted to the realm's map writes neither its borders nor its land; the layers it has stay as they are
+  const preset = diff.source === "preset";
   const layers = WORLD_BUNDLE_LAYERS.filter(
-    (layer) => layer !== "political" || diff.source === "preset"
+    (layer) => preset || (layer !== "political" && layer !== "background")
   );
+  const kept = diff.kept ?? [];
   return (
     <div className="space-y-3">
       <p className="text-label text-footnote font-medium">What this world changes</p>
@@ -69,7 +72,7 @@ export function WorldApplyReview({
             <DiffRow
               key={layer}
               label={WORLD_LAYER_LABELS[layer]}
-              value={layerChangeText(diff.layers[layer])}
+              value={kept.includes(layer) ? "Kept as it is" : layerChangeText(diff.layers[layer])}
             />
           ))}
           <DiffRow label="Nations" value={slotChangeText(diff.slots)} />

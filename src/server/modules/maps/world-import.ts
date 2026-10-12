@@ -18,8 +18,9 @@
  *   6. after the commit, the relief tiles are built from the bundle's cells; if that fails the world stays and the
  *      result says the relief step failed (`rebuildRealmRelief` runs it again).
  *
- * The "realm map" source keeps the realm's own borders: no political layer is written, and each political feature
- * with no country gets one, claimable.
+ * The "realm map" source keeps what the realm drew: no political layer and no land layer is written, each political
+ * feature with no country gets one (claimable), and only the other layers the realm has none of are generated. The
+ * relief is shaded from the elevation, so it is built only when the elevation is written.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import {
@@ -124,6 +125,8 @@ export interface WorldDiff {
   seed: number;
   developmentLevel: PreparedWorld["bundle"]["params"]["developmentLevel"];
   layers: Record<WorldBundleLayerName, WorldLayerDiff>;
+  /** The layers the realm has that the world leaves as they are (a world fitted to the realm's map; else none). */
+  kept: WorldBundleLayerName[];
   slots: {
     create: number;
     /** Old generated slots no player has: retired. */
@@ -291,6 +294,7 @@ async function diffWorld(
     layers: Object.fromEntries(
       WORLD_BUNDLE_LAYERS.map((layer) => [layer, layerDiff(prepared, layer, rows)])
     ) as WorldDiff["layers"],
+    kept: prepared.kept,
     slots: {
       create: wanted.length,
       retire: retirable.length,
@@ -327,8 +331,20 @@ export async function runWorldDryRun(
   const prepared = await prepareWorld(db, realm, bundle);
   if (progress.isCancelled()) throw new ImportCancelledError();
   progress.write(80, "Comparing with the realm's map");
-  return diffWorld(db, realm, prepared, { mapVersion, fittedMapVersion });
+  const diff = await diffWorld(db, realm, prepared, { mapVersion, fittedMapVersion });
+  if (bundle.source === "realm-map" && hasNothingToAdd(diff)) {
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "This world has nothing to add: the realm has every layer it would generate, and every region has a nation"
+    );
+  }
+  return diff;
 }
+
+/** Whether a world fitted to the realm's map would write no feature and create no nation. */
+const hasNothingToAdd = (diff: WorldDiff): boolean =>
+  diff.slots.create === 0 &&
+  Object.values(diff.layers).every(({ create, change }) => create === 0 && change === 0);
 
 // The apply
 
@@ -339,9 +355,13 @@ export interface WorldApplyResult {
   slots: { created: number; retired: number; opened: number };
   mapImportId: string | null;
   rollbackAvailable: boolean;
-  /** The relief step runs after the world is committed: a failure leaves the world and says why. */
+  /**
+   * The relief step runs after the world is committed: a failure leaves the world and says why. "kept": the world did
+   * not write the elevation the relief is shaded from (a world fitted to a realm that has its own), so the realm's
+   * relief is as it was.
+   */
   relief: {
-    status: "built" | "failed";
+    status: "built" | "failed" | "kept";
     version: string | null;
     tiles: number;
     error: string | null;
@@ -421,6 +441,13 @@ async function compensate(
   if (notes.length === 0) throw cause;
   throw new Error(`${cause.message}. ${notes.join(". ")}`, { cause });
 }
+
+const KEPT_RELIEF: WorldApplyResult["relief"] = {
+  status: "kept",
+  version: null,
+  tiles: 0,
+  error: null,
+};
 
 async function buildRelief(
   db: PrismaClient,
@@ -550,7 +577,9 @@ export async function applyWorld(
   );
 
   progress.write(90, "Building relief");
-  const relief = await buildRelief(db, realm.id, bundle.cells, deps.runRelief ?? defaultRelief);
+  const relief = prepared.layers.altitudes
+    ? await buildRelief(db, realm.id, bundle.cells, deps.runRelief ?? defaultRelief)
+    : KEPT_RELIEF;
   const { written, opened } = outcome;
   const record = written.mapImportId
     ? await db.mapImport.findUnique({

@@ -43,6 +43,7 @@ import {
   jobFor,
   layer,
   makeBundle,
+  mapRow,
   relief,
   seedRealm,
   square,
@@ -614,7 +615,8 @@ describe("the realm map source", () => {
       isActive: true,
     });
     expect(layer(db, "political", "Nation 2")).toMatchObject({ countryId: second.id });
-    // the other political features are exactly as they were, and the physical layers were written
+    // the other political features are exactly as they were; the layers the realm has (rivers, lakes) are kept
+    // and the ones it has none of are written, but never a land layer
     expect(
       JSON.stringify(
         db.mapLayer.rows.filter(
@@ -623,8 +625,13 @@ describe("the realm map source", () => {
         )
       )
     ).toBe(politicalBefore);
-    expect(layer(db, "rivers", "1")).toMatchObject({ isActive: true });
-    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: false });
+    expect(layer(db, "altitudes", "1")).toMatchObject({ isActive: true });
+    expect(layer(db, "climate", "1")).toMatchObject({ isActive: true });
+    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: true });
+    expect(layer(db, "rivers", "1")).toBeUndefined();
+    expect(layer(db, "lakes", "l_old")).toMatchObject({ isActive: true });
+    expect(layer(db, "background", "1")).toBeUndefined();
+    expect(result.written).toBe(2);
     expect(db.realm.rows[0]).toMatchObject({ seed: 42, generationParams: { source: "realm-map" } });
     expect(runRelief).toHaveBeenCalledTimes(1);
 
@@ -633,6 +640,30 @@ describe("the realm map source", () => {
     expect(restored.slots).toMatchObject({ restored: 0, removed: 2 });
     expect(db.country.rows).toHaveLength(4);
     expect(layer(db, "political", "Aurelia")).toMatchObject({ countryId: null });
+    expect(layer(db, "altitudes", "1")).toBeUndefined();
+    expect(layer(db, "climate", "1")).toBeUndefined();
+    expect(layer(db, "rivers", "r_old")).toMatchObject({ isActive: true });
+  });
+
+  it("leaves the realm's own land and elevation as drawn, and builds no relief from cells that don't match", async () => {
+    const db = seedRealm();
+    db.mapLayer.rows.push(mapRow("background", "land"), mapRow("altitudes", "zone_own"));
+    const own = () =>
+      JSON.stringify(
+        db.mapLayer.rows.filter((r: { layerType: string }) =>
+          ["background", "altitudes"].includes(r.layerType)
+        )
+      );
+    const before = own();
+    const runRelief = relief();
+    const result = await applyWorld(db, jobFor(await stored({ source: "realm-map" })), undefined, {
+      runRelief,
+    });
+    expect(own()).toBe(before);
+    expect(layer(db, "climate", "1")).toMatchObject({ isActive: true });
+    // the relief is shaded from the elevation: the generated cells belong to elevation the realm did not take
+    expect(runRelief).not.toHaveBeenCalled();
+    expect(result.relief).toEqual({ status: "kept", version: null, tiles: 0, error: null });
   });
 });
 

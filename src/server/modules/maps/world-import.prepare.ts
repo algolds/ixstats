@@ -14,6 +14,10 @@
  *
  * Any problem refuses the whole bundle with every reason found (a MapImportError), and nothing is written. Shapes
  * of the physical layers that PostGIS finds nothing of once repaired are left out with a warning.
+ *
+ * A world fitted to the realm's own map ("realm-map") keeps what the realm drew: it never writes a land layer (the
+ * generated one is cut from Voronoi cells and would not follow the realm's coasts) and writes only the layers the
+ * realm has none of; the others are left out here and listed in `kept`.
  */
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import type { PrismaClient } from "@prisma/client";
@@ -51,6 +55,8 @@ export interface PreparedWorld {
   bundle: WorldBundle;
   /** The layers as they are written: seam-fitted, political features keyed by slot. */
   layers: Record<string, FeatureCollection>;
+  /** The layers the realm has that the world leaves as they are (a world fitted to the realm's map; else none). */
+  kept: WorldBundleLayerName[];
   slots: PreparedSlot[];
   warnings: string[];
 }
@@ -264,6 +270,17 @@ function planSlots(
   });
 }
 
+/** The bundle layers the realm already has (active features), in the bundle's layer order. */
+async function realmLayers(db: PrismaClient, realmId: string): Promise<WorldBundleLayerName[]> {
+  const rows = await db.mapLayer.findMany({
+    where: { realmId, isActive: true, layerType: { in: [...WORLD_BUNDLE_LAYERS] } },
+    select: { layerType: true },
+    distinct: ["layerType"],
+  });
+  const present = new Set(rows.map((row) => row.layerType));
+  return WORLD_BUNDLE_LAYERS.filter((layer) => present.has(layer));
+}
+
 /**
  * Check a bundle against the realm and prepare it to write: the dry run and the apply both run this, so the apply
  * never relies on a check made earlier. Throws a MapImportError listing every problem found.
@@ -279,10 +296,15 @@ export async function prepareWorld(
     problems.push(`The seed ${bundle.seed} does not fit the realm's 32-bit seed column`);
   }
 
+  // A world fitted to the realm's map writes the physical layers the realm has none of, and never its land
+  const kept = bundle.source === "realm-map" ? await realmLayers(db, realm.id) : [];
+  const left = new Set<WorldBundleLayerName>(
+    bundle.source === "realm-map" ? ["background", ...kept] : []
+  );
   const layers: Record<string, FeatureCollection> = {};
   for (const layer of WORLD_BUNDLE_LAYERS) {
     const collection = bundle.layers[layer];
-    if (collection) layers[layer] = fitLayer(layer, collection, problems);
+    if (collection && !left.has(layer)) layers[layer] = fitLayer(layer, collection, problems);
   }
   if (layers.political) layers.political = keyPolitical(layers.political, bundle.slots, problems);
   duplicateKeys(layers, problems);
@@ -298,5 +320,5 @@ export async function prepareWorld(
     problems
   );
   if (problems.length > 0) refuse(problems);
-  return { bundle, layers: inspected.layers, slots, warnings };
+  return { bundle, layers: inspected.layers, kept, slots, warnings };
 }

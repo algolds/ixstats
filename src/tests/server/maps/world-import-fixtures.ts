@@ -128,7 +128,12 @@ export const jobFor = (
   ...over,
 });
 
-const row = (layerType: string, featureId: string, extra: Record<string, unknown> = {}) => ({
+/** A map feature of the realm (active, no country unless `extra` says). */
+export const mapRow = (
+  layerType: string,
+  featureId: string,
+  extra: Record<string, unknown> = {}
+) => ({
   id: `m_${layerType}_${featureId}`,
   realmId: "r1",
   layerType,
@@ -208,11 +213,11 @@ export function seedRealm(over: Record<string, unknown> = {}) {
     status: "withdrawn",
   });
   db.mapLayer.rows.push(
-    row("political", "slot_old", { countryId: "c_old1", displayName: "Old One" }),
-    row("political", "old_owned", { countryId: "c_owned", displayName: "Old Owned" }),
-    row("political", "manual-key", { countryId: "c_manual", displayName: "Nation 2" }),
-    row("rivers", "r_old"),
-    row("lakes", "l_old")
+    mapRow("political", "slot_old", { countryId: "c_old1", displayName: "Old One" }),
+    mapRow("political", "old_owned", { countryId: "c_owned", displayName: "Old Owned" }),
+    mapRow("political", "manual-key", { countryId: "c_manual", displayName: "Nation 2" }),
+    mapRow("rivers", "r_old"),
+    mapRow("lakes", "l_old")
   );
   return db;
 }

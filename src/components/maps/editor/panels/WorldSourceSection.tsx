@@ -112,7 +112,7 @@ export function WorldSourceSection({
         {controls.source === "realm-map" && (
           <p className="text-label-secondary text-caption">
             The land and the borders stay as the realm drew them. Climate, rivers, lakes and
-            elevation are generated around them.
+            elevation are generated around them, except for any the realm already has.
           </p>
         )}
       </div>

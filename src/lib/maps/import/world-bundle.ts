@@ -47,7 +47,10 @@ export interface WorldBundle {
   version: typeof WORLD_BUNDLE_VERSION;
   seed: number;
   params: WorldGenParams;
-  /** "realm-map": generated around the realm's own borders, so no political layer and no slots. */
+  /**
+   * "realm-map": generated around the realm's own borders, so no political layer and no slots. The importer writes
+   * only the physical layers the realm has none of, and never this bundle's `background` (the realm keeps its land).
+   */
   source: WorldBundleSource;
   layers: Record<Exclude<WorldBundleLayerName, "political">, FeatureCollection> & {
     political?: FeatureCollection;

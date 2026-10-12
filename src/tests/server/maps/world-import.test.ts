@@ -18,6 +18,7 @@ import {
   feature,
   jobFor,
   layer,
+  mapRow,
   relief,
   seedRealm,
   slot,
@@ -127,7 +128,7 @@ describe("runWorldDryRun", () => {
     );
   });
 
-  it("flags nothing for a first world in an empty realm, and not the realm map's kept borders", async () => {
+  it("flags nothing for a first world in an empty realm, and not for the realm map's own land and borders", async () => {
     const empty = seedRealm();
     empty.mapLayer.rows.splice(0);
     empty.country.rows.splice(0);
@@ -138,6 +139,9 @@ describe("runWorldDryRun", () => {
     );
     expect(kept.replaces).toEqual([]);
     expect(kept.warnings.length).toBeGreaterThan(0);
+    // nothing of the realm's own is replaced: its land, its borders and the layers it has are kept (next test)
+    expect(kept.layers.political).toEqual({ create: 0, change: 0, retire: 0 });
+    expect(kept.layers.background).toEqual({ create: 0, change: 0, retire: 0 });
   });
 
   it("warns of hand edits made since the last generation, not of the generation's own touches", async () => {
@@ -159,6 +163,51 @@ describe("runWorldDryRun", () => {
     expect(diff.warnings).toContain(
       "1 features were edited by hand since the last generation and will be replaced"
     );
+  });
+
+  describe("for a realm map bundle (the realm keeps what it has)", () => {
+    const check = async (db: ReturnType<typeof seedRealm>) =>
+      runWorldDryRun(
+        db,
+        jobFor(await stored({ source: "realm-map" }), { options: { fittedMapVersion: 0 } })
+      );
+    const none = { create: 0, change: 0, retire: 0 };
+
+    it("generates only the layers the realm has none of, and lists the ones it keeps", async () => {
+      const db = seedRealm(); // borders, rivers and lakes
+      db.mapLayer.rows.push(mapRow("background", "land"));
+      const diff = await check(db);
+      // the realm's land, borders, rivers and lakes stay; its elevation and climate are generated
+      expect(diff.kept).toEqual(["background", "political", "rivers", "lakes"]);
+      expect(diff.layers.background).toEqual(none);
+      expect(diff.layers.rivers).toEqual(none);
+      expect(diff.layers.lakes).toEqual(none);
+      expect(diff.layers.altitudes).toEqual({ create: 1, change: 0, retire: 0 });
+      expect(diff.layers.climate).toEqual({ create: 1, change: 0, retire: 0 });
+      expect(diff.replaces).toEqual([]);
+    });
+
+    it("never writes a land layer, even for a realm that has none", async () => {
+      const db = seedRealm();
+      const diff = await check(db);
+      expect(diff.layers.background).toEqual(none);
+      expect(diff.kept).not.toContain("background");
+    });
+
+    it("keeps no layer of a preset world, which writes all seven", async () => {
+      const diff = await runWorldDryRun(seedRealm(), jobFor(await stored()));
+      expect(diff.kept).toEqual([]);
+    });
+
+    it("refuses a world that has nothing to add: every layer is there and every region has a nation", async () => {
+      const db = seedRealm();
+      for (const type of ["altitudes", "climate", "icecaps"])
+        db.mapLayer.rows.push(mapRow(type, "x"));
+      await expect(check(db)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringContaining("nothing to add"),
+      });
+    });
   });
 
   it("keeps the realm's borders for a realm map bundle and counts the regions that become nations", async () => {

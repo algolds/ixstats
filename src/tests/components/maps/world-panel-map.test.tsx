@@ -76,6 +76,16 @@ describe("this realm's map", () => {
     expect(request.landMaskLayers).not.toHaveProperty("rivers");
   });
 
+  it("says the land and borders stay as drawn and that only the layers the realm lacks are generated", () => {
+    renderPanel();
+    fireEvent.click(within(sourceControl()).getByRole("radio", { name: "This realm's map" }));
+    expect(
+      screen.getByText(
+        "The land and the borders stay as the realm drew them. Climate, rivers, lakes and elevation are generated around them, except for any the realm already has."
+      )
+    ).toBeInTheDocument();
+  });
+
   it("turns off what the realm's map decides", () => {
     renderPanel();
     fireEvent.click(within(sourceControl()).getByRole("radio", { name: "This realm's map" }));
