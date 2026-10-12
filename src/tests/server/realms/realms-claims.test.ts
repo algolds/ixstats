@@ -142,7 +142,7 @@ describe("claimCountry", () => {
       where: { userId: "u1", source: "ixwiki", verifiedAt: { not: null } },
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "c1", ownerUserId: null },
+      where: { id: "c1", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1" },
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
@@ -240,7 +240,7 @@ describe("claimCountry", () => {
     // …then the nation is handed over; no second claim row.
     expect(db.realmClaim.create).not.toHaveBeenCalled();
     expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "c1", ownerUserId: null },
+      where: { id: "c1", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1" },
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
@@ -583,7 +583,7 @@ describe("claimNationPage", () => {
       }),
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "new-c", ownerUserId: null },
+      where: { id: "new-c", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1" },
     });
     expect(db.realmClaim.update).toHaveBeenCalledWith({
@@ -860,7 +860,7 @@ describe("reviewClaim — nation page claims", () => {
       wikiPageTitle: "Aurelia",
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
-      where: { id: "new-c", ownerUserId: null },
+      where: { id: "new-c", ownerUserId: null, claimable: true },
       data: { ownerUserId: "u1" },
     });
     expect(db.realmClaim.update).toHaveBeenCalledWith({
@@ -1539,6 +1539,40 @@ describe("scenery slots (Country.claimable false)", () => {
       realmId: EURTH,
       claimable: true,
     });
+  });
+
+  it("an auto-approval that loses a flip to scenery is a claim error, not a 500, and assigns nothing", async () => {
+    const { db, deps, claims } = setup();
+    db.country.findUnique
+      .mockResolvedValueOnce({ ...country, claimable: true })
+      .mockResolvedValueOnce(scenery);
+    await expect(claims.claimCountry(actor, "c1")).rejects.toMatchObject({
+      name: "ClaimError",
+      code: "NOT_FOUND",
+      message: expect.stringMatching(/no longer open for claims/),
+    });
+    expect(db.country.updateMany).not.toHaveBeenCalled();
+    expect(deps.onNationAssigned).not.toHaveBeenCalled();
+  });
+
+  it("claimNationPage tells a page named like a scenery slot from one taken by a player", async () => {
+    const taken = pageSetup();
+    taken.db.country.findFirst.mockResolvedValue({ claimable: true });
+    await expect(taken.claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
+      code: "ALREADY_OWNED",
+      message: expect.stringMatching(/belongs to another player/),
+    });
+    const { db, claims } = pageSetup();
+    // The unclaimed lookup ignores scenery (claimable: true filter); the existence check still sees the slot.
+    db.country.findFirst.mockImplementation(
+      async ({ where }: { where: { claimable?: boolean } }) =>
+        where.claimable ? null : { claimable: false }
+    );
+    await expect(claims.claimNationPage(actor, EURTH, "Aurelia")).rejects.toMatchObject({
+      code: "ALREADY_OWNED",
+      message: expect.stringMatching(/scenery/),
+    });
+    expect(db.realmClaim.create).not.toHaveBeenCalled();
   });
 
   it("approving a claim filed before its country was made scenery rejects it with a reason and assigns nothing", async () => {

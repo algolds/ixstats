@@ -13,6 +13,7 @@ import {
   encodeWorldBundle,
   isGzip,
   MAX_WORLD_BUNDLE_CELLS,
+  MAX_WORLD_BUNDLE_JSON_BYTES,
   MAX_WORLD_BUNDLE_SLOTS,
   parseWorldBundleJson,
   worldGenParamsSchema,
@@ -319,12 +320,107 @@ describe("parseWorldBundleJson refuses", () => {
   });
 
   it("a feature with no geometry", () => {
-    const hollow = bundle();
-    hollow.layers.lakes = {
-      type: "FeatureCollection",
-      features: [{ type: "Feature", properties: {}, geometry: null as unknown as Polygon }],
-    };
-    expect(reasonOfBundle(hollow)).toMatch(/lakes.*feature 0.*geometry/i);
+    const empty = '"lakes":{"type":"FeatureCollection","features":[]}';
+    const hollow =
+      '"lakes":{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":null}]}';
+    const text = JSON.stringify(bundle());
+    expect(text).toContain(empty);
+    expect(reasonOf(text.replace(empty, hollow))).toMatch(/lakes.*feature 0.*geometry/i);
+  });
+});
+
+describe("parseWorldBundleJson bounds", () => {
+  const withBackground = (coordinates: number[][]) => {
+    const b = bundle();
+    b.layers.background = { type: "FeatureCollection", features: [polygon({}, [coordinates])] };
+    return b;
+  };
+  const triangle = (lng: number, lat: number) => [
+    [0, 0],
+    [lng, lat],
+    [1, 1],
+    [0, 0],
+  ];
+
+  it("refuses a finite but absurd coordinate that PostGIS would later fail on", () => {
+    expect(reasonOfBundle(withBackground(triangle(1, 1e300)))).toMatch(
+      /background feature 0.*finite.*range/i
+    );
+    expect(reasonOfBundle(withBackground(triangle(1e300, 1)))).toMatch(/background feature 0/i);
+    expect(reasonOfBundle(withBackground(triangle(1, 90.5)))).toMatch(/range/i);
+    expect(reasonOfBundle(withBackground(triangle(360.5, 1)))).toMatch(/range/i);
+  });
+
+  it("accepts the real generator's reach: longitude past 180 on antimeridian rings, the poles", () => {
+    expect(reasonOfBundle(withBackground(triangle(-203.4, 85)))).toBeNull();
+    expect(reasonOfBundle(withBackground(triangle(360, 90)))).toBeNull();
+    expect(reasonOfBundle(withBackground(triangle(-360, -90)))).toBeNull();
+  });
+
+  it("bounds the lng and lat of every cell, but only requires a finite height", () => {
+    const cellsOf = (...values: number[]) =>
+      bundle({ cells: encodeCells(new Float32Array(values)) });
+    expect(reasonOfBundle(cellsOf(3e38, 0, 0))).toMatch(/cells.*range/i);
+    expect(reasonOfBundle(cellsOf(0, 91, 0))).toMatch(/cells.*range/i);
+    expect(reasonOfBundle(cellsOf(10, 20, 5, 0, -90.5, 0))).toMatch(/cells.*range/i);
+    expect(reasonOfBundle(cellsOf(1e300, 0, 0))).toMatch(/cells.*finite/i);
+    expect(reasonOfBundle(cellsOf(-360, 90, 1e30))).toBeNull();
+  });
+
+  it("finds a non-finite number at any depth in a feature's properties, without overflowing the stack", () => {
+    const text = JSON.stringify(bundle());
+    const background = '"background":{"type":"FeatureCollection","features":[';
+    const feature = (nested: string) =>
+      `${background}{"type":"Feature","properties":{"deep":${nested}},"geometry":{"type":"Polygon","coordinates":[[[0,0],[10,0],[10,7.123],[0,0]]]}},`;
+    const nest = (depth: number) => `${"[".repeat(depth)}1e999${"]".repeat(depth)}`;
+    expect(text).toContain(background);
+    expect(reasonOf(text.replace(background, feature(nest(20))))).toMatch(
+      /background feature 0.*finite/i
+    );
+    expect(reasonOf(text.replace(background, feature(nest(50_000))))).toMatch(
+      /background feature 0.*finite/i
+    );
+  });
+});
+
+describe("parseWorldBundleJson accepts only bundles the importer can use", () => {
+  it("takes exactly 500 slots and refuses 501", () => {
+    const slots = (n: number) => Array.from({ length: n }, (_, i) => slot(i + 1));
+    expect(reasonOfBundle(bundle({ slots: slots(MAX_WORLD_BUNDLE_SLOTS) }))).toBeNull();
+    expect(reasonOfBundle(bundle({ slots: slots(MAX_WORLD_BUNDLE_SLOTS + 1) }))).toMatch(
+      /more than 500/
+    );
+  });
+
+  it("needs a political layer in a preset world", () => {
+    const { political: _political, ...physical } = bundle().layers;
+    expect(reasonOfBundle(bundle({ layers: physical }))).toMatch(/preset.*political/i);
+  });
+
+  it("refuses a bundle with no cells", () => {
+    expect(reasonOfBundle(bundle({ cells: "" }))).toMatch(/no cells/i);
+  });
+
+  it("refuses two slots with the same name, ignoring case and surrounding spaces", () => {
+    const twin = { ...slot(2), name: "  NATION 1 " };
+    expect(reasonOfBundle(bundle({ slots: [slot(1), twin] }))).toMatch(
+      /nation 1.*twice|twice.*nation 1/i
+    );
+  });
+});
+
+describe("the decompressed cap", () => {
+  it("is 48 MB, a few times the largest legitimate bundle", () => {
+    expect(MAX_WORLD_BUNDLE_JSON_BYTES).toBe(48 * 1024 * 1024);
+  });
+
+  it("stops a bomb at the real cap, before the JSON is parsed", () => {
+    const bomb = gzipSync(Buffer.alloc(MAX_WORLD_BUNDLE_JSON_BYTES + 1));
+    expect(bomb.length).toBeLessThan(200_000);
+    expect(parseWorldBundle(bomb)).toEqual({
+      ok: false,
+      reason: expect.stringMatching(/more than 48 MB/),
+    });
   });
 });
 

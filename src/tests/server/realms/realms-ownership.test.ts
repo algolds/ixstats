@@ -1,3 +1,4 @@
+import { assignClaimedNation } from "~/server/modules/realms/realms.ownership";
 import {
   activateOwnedNation,
   assignNation,
@@ -89,6 +90,46 @@ describe("assignNation", () => {
     expect(t.user.updateMany).toHaveBeenCalledWith({
       where: { id: "u1", countryId: null },
       data: { countryId: "c1" },
+    });
+  });
+});
+
+describe("assignClaimedNation", () => {
+  const claimable = { ...unowned, claimable: true };
+
+  it("hands over a claimable country, guarding the write on claimable as well as on the owner", async () => {
+    const t = tx(claimable);
+    await assignClaimedNation(t, { userId: "u1", countryId: "c1" });
+    expect(t.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c1", ownerUserId: null, claimable: true },
+      data: { ownerUserId: "u1" },
+    });
+  });
+
+  it("refuses a country made scenery, with its own code, and writes nothing", async () => {
+    const t = tx({ ...unowned, claimable: false });
+    await expect(assignClaimedNation(t, { userId: "u1", countryId: "c1" })).rejects.toMatchObject({
+      code: "NOT_CLAIMABLE",
+    });
+    expect(t.country.updateMany).not.toHaveBeenCalled();
+    expect(t.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("loses a flip to scenery that lands between its read and its write: the guarded write matches nothing", async () => {
+    const t = tx(claimable);
+    t.country.updateMany.mockResolvedValue({ count: 0 });
+    await expect(assignClaimedNation(t, { userId: "u1", countryId: "c1" })).rejects.toBeInstanceOf(
+      NationOwnershipError
+    );
+    expect(t.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("is the only assignment that refuses scenery: an admin's plain assignNation does not", async () => {
+    const t = tx({ ...unowned, claimable: false });
+    await assignNation(t, { userId: "u1", countryId: "c1" });
+    expect(t.country.updateMany).toHaveBeenCalledWith({
+      where: { id: "c1", ownerUserId: null },
+      data: { ownerUserId: "u1" },
     });
   });
 });

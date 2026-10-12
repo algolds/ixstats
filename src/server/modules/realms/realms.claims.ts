@@ -30,7 +30,7 @@ import {
   fillEmptyFromPrefill,
   findUnclaimedNation,
   hasMapRegion,
-  nationOfPageWhere,
+  nationTakenMessage,
 } from "./realms.handover";
 import { assignClaimedNation, isUnclaimable, NationOwnershipError } from "./realms.ownership";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
@@ -251,17 +251,6 @@ interface HandOver {
   mapRealmId: string | null;
 }
 
-/** Whether the page's nation exists (by page reference, or by name for a nation without one). */
-async function nationExists(
-  client: Pick<PrismaClient, "country">,
-  page: NationPage
-): Promise<boolean> {
-  return !!(await client.country.findFirst({
-    where: nationOfPageWhere(page),
-    select: { id: true },
-  }));
-}
-
 const nationTaken = () =>
   new NationOwnershipError("ALREADY_OWNED", "This nation already belongs to another player");
 
@@ -316,7 +305,7 @@ async function createNationCountry(
   page: NationPage,
   prefill: NationPagePrefill | null
 ) {
-  if (await nationExists(tx, page)) throw nationTaken();
+  if (await nationTakenMessage(tx, page)) throw nationTaken();
   const slug = await freeNationSlug(tx, page);
   const identity = prefill && Object.keys(prefill.identity).length > 0 ? prefill.identity : null;
   return tx.country
@@ -485,7 +474,7 @@ function claimTarget(claim: {
 /** A race lost inside an auto-approval surfaces as the matching claim error, never as a 500. */
 function ownershipAsClaimError(error: Error): never {
   if (error instanceof NationOwnershipError && error.code !== "COUNTRY_NOT_FOUND") {
-    throw new ClaimError(error.code, error.message);
+    throw new ClaimError(error.code === "NOT_CLAIMABLE" ? "NOT_FOUND" : error.code, error.message);
   }
   throw error;
 }
@@ -777,8 +766,8 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
     // The realm's source sync may have created the nation, unclaimed: the claim is then a claim on that country.
     const unclaimed = await findUnclaimedNation(db, nationPage);
     if (unclaimed) return { page: nationPage, realm: page.realm, unclaimedCountryId: unclaimed.id };
-    if (await nationExists(db, nationPage))
-      throw new ClaimError("ALREADY_OWNED", "This nation already belongs to another player");
+    const taken = await nationTakenMessage(db, nationPage);
+    if (taken) throw new ClaimError("ALREADY_OWNED", taken);
     await assertUnderCap(actor, realmId, page.realm.settings);
     return { page: nationPage, realm: page.realm };
   }

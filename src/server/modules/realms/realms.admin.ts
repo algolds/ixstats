@@ -18,12 +18,16 @@ const CLAIM_IN_PLAY = {
   status: { in: ["pending", "approved"] },
 } satisfies Prisma.RealmClaimWhereInput;
 
-/** The nations that keep a realm from being deleted: every one but an unowned generated slot with no claim in play. */
+/**
+ * The nations that keep a realm from being deleted: every one but an unowned generated slot with no claim in play.
+ * A slot that once answered a blurb keeps its row too: `blurb_responses` restricts the country's deletion.
+ */
 const BLOCKING_NATION_WHERE = {
   OR: [
     { worldgen: false },
     { ownerUserId: { not: null } },
     { realmClaims: { some: CLAIM_IN_PLAY } },
+    { blurbResponses: { some: {} } },
   ],
 } satisfies Prisma.CountryWhereInput;
 
@@ -79,6 +83,7 @@ export async function deleteRealm(
         worldgen: true,
         ownerUserId: null,
         realmClaims: { none: CLAIM_IN_PLAY },
+        blurbResponses: { none: {} },
       },
     });
     const board = await tx.realmBoard.findUnique({

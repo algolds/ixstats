@@ -7,7 +7,7 @@
 model MapImportJob {
   id          String    @id @default(cuid())
   realmId     String // Realm.id
-  kind        String // png | svg | geojson
+  kind        String // png | svg | geojson | world (a gzip world bundle, applied from the map editor)
   status      String    @default("queued") // queued | running | succeeded | failed | cancelled
   progress    Int       @default(0) // 0-100
   stage       String? // what the job is doing now, for the wizard

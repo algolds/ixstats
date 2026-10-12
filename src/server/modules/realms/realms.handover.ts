@@ -75,6 +75,24 @@ export async function findUnclaimedNation(
 }
 
 /**
+ * Why the page's nation can't be claimed when a country already carries it (by page reference, or by name for a
+ * nation without one): owned by a player, or a generated scenery slot of that name. Null when no country does.
+ */
+export async function nationTakenMessage(
+  client: Pick<Prisma.TransactionClient, "country">,
+  page: NationPageRef
+): Promise<string | null> {
+  const country = await client.country.findFirst({
+    where: nationOfPageWhere(page),
+    select: { claimable: true },
+  });
+  if (!country) return null;
+  return country.claimable === false
+    ? "That name belongs to scenery in this realm and can't be claimed"
+    : "This nation already belongs to another player";
+}
+
+/**
  * The wiki page an existing nation's claim reads its infobox from: only outside Ixnay (an Ixnay country's
  * claim never read one), and only for a nation with a page.
  */

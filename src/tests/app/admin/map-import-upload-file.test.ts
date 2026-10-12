@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * The generic map import wizard's upload refuses a world bundle: it is applied through the map editor's World tab.
  */
@@ -13,12 +14,10 @@ const info = (kind: string) => ({
 });
 
 function respondWith(status: number, body: object) {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: status < 400,
-    status,
-    json: () => Promise.resolve(body),
-  }) as unknown as typeof fetch;
+  jest.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(body, { status }));
 }
+
+afterEach(() => jest.restoreAllMocks());
 
 describe("uploadMapFile", () => {
   it("returns what the server says about a map file", async () => {

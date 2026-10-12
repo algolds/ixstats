@@ -933,6 +933,7 @@ describe("deleting a realm (AT-8)", () => {
                     { worldgen: false },
                     { ownerUserId: { not: null } },
                     { realmClaims: { some: { status: { in: ["pending", "approved"] } } } },
+                    { blurbResponses: { some: {} } },
                   ],
                 },
               },
@@ -952,6 +953,7 @@ describe("deleting a realm (AT-8)", () => {
         worldgen: true,
         ownerUserId: null,
         realmClaims: { none: { status: { in: ["pending", "approved"] } } },
+        blurbResponses: { none: {} },
       },
     });
     expect(db.country.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(

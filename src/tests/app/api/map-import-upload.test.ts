@@ -18,7 +18,7 @@ jest.mock("~/lib/cache", () => ({
   rateLimiter: { check: jest.fn().mockResolvedValue({ success: true }) },
 }));
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -159,19 +159,23 @@ describe("POST /api/admin/map-import/upload with a world bundle", () => {
     expect(body.uploadId).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("refuses other gzip, naming why", async () => {
+  it("refuses other gzip, naming why, and stores nothing", async () => {
+    const stored = readdirSync(dir);
     const notBundle = new File([gzipSync("hello")], "notes.gz");
     const response = await POST(request({ realm: "r1", file: notBundle }).req);
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(/not a world bundle.*not valid JSON/i);
+    expect(readdirSync(dir)).toEqual(stored);
   });
 
   it("refuses a gzip bundle that breaks a rule, with the rule's reason", async () => {
     const hostile = { ...worldBundle, slots: [{ key: "slot_1" }] };
     const file = new File([gzipSync(JSON.stringify(hostile))], "world.json.gz");
+    const stored = readdirSync(dir);
     const response = await POST(request({ realm: "r1", file }).req);
     expect(response.status).toBe(400);
     expect((await response.json()).error).toMatch(/not a world bundle.*slots/i);
+    expect(readdirSync(dir)).toEqual(stored);
   });
 });
 

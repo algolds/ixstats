@@ -7,6 +7,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { canModerateRealm, isRealmOpen, isRealmPublished, type RealmActor } from "./realms.access";
 import { nationPageTaken } from "./realms.handover";
+import { isUnclaimable } from "./realms.ownership";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 type HubDb = Pick<PrismaClient, "realm" | "realmPage">;
@@ -24,9 +25,9 @@ export async function getRealmHub(db: HubDb, slug: string, viewer: RealmActor | 
       status: true,
       visibility: true,
       countries: {
-        where: { claimable: true },
         orderBy: { name: "asc" },
         select: {
+          claimable: true,
           id: true,
           name: true,
           slug: true,
@@ -53,19 +54,22 @@ export async function getRealmHub(db: HubDb, slug: string, viewer: RealmActor | 
     _count.pages > 0
       ? await db.realmPage.findFirst({ where: { realmId: realm.id }, select: { wikiSource: true } })
       : null;
-  // A page is taken by the country carrying its page reference, even after a rename (by name without one).
+  // A page is taken by the country carrying its page reference, even after a rename (by name without one); a
+  // scenery slot (claimable false) takes its page too, though it is not listed as a nation.
   const taken = nationPageTaken(countries.map((c) => ({ ...c, realmId: realm.id })));
   return {
     ...rest,
     claimsOpen: isRealmOpen(realm.id, realm.status),
     // Public endpoint: expose "claimed" and "mine", never internal user ids.
-    countries: countries.map(
-      ({ ownerUserId, wikiSource: _source, wikiPageTitle: _title, ...c }) => ({
-        ...c,
-        claimed: ownerUserId !== null,
-        mine: viewerId !== null && ownerUserId === viewerId,
-      })
-    ),
+    countries: countries
+      .filter((c) => !isUnclaimable(c))
+      .map(
+        ({ ownerUserId, wikiSource: _source, wikiPageTitle: _title, claimable: _open, ...c }) => ({
+          ...c,
+          claimed: ownerUserId !== null,
+          mine: viewerId !== null && ownerUserId === viewerId,
+        })
+      ),
     nationPages: pages.filter((page) => !taken({ ...page, realmId: realm.id })),
     lorePageCount: _count.pages,
     loreSource: lore?.wikiSource ?? null,

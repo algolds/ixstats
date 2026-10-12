@@ -103,12 +103,30 @@ describe("realms.getBySlug", () => {
     await expect(caller(findUnique).getBySlug({ slug: "nowhere" })).resolves.toBeNull();
   });
 
-  it("lists only the realm's claimable nations: generated scenery slots are not nations of the realm", async () => {
-    const findUnique = jest.fn().mockResolvedValue(null);
-    await caller(findUnique).getBySlug({ slug: "eurth" });
-    expect(findUnique.mock.calls[0]![0].select.countries).toEqual(
-      expect.objectContaining({ where: { claimable: true }, orderBy: { name: "asc" } })
-    );
+  it("lists only the realm's claimable nations, but a scenery slot still takes the page of its name", async () => {
+    const findUnique = jest.fn().mockResolvedValue({
+      id: "eurth-id",
+      slug: "eurth",
+      name: "Eurth",
+      description: null,
+      thumbnail: null,
+      status: "active",
+      visibility: "public",
+      countries: [
+        { id: "s1", name: "Aurelia", slug: null, flag: null, ownerUserId: null, claimable: false },
+        { id: "c2", name: "Borea", slug: "borea", flag: null, ownerUserId: null, claimable: true },
+      ],
+      pages: [
+        { title: "Aurelia", wikiSource: "iiwiki" },
+        { title: "Corvania", wikiSource: "iiwiki" },
+      ],
+      _count: { pages: 2 },
+    });
+    const realmPage = { findFirst: jest.fn().mockResolvedValue({ wikiSource: "iiwiki" }) };
+    const realm = await caller(findUnique, realmPage).getBySlug({ slug: "eurth" });
+    expect(realm?.countries.map((c) => c.id)).toEqual(["c2"]);
+    expect(realm?.nationPages.map((p) => p.title)).toEqual(["Corvania"]);
+    expect(JSON.stringify(realm)).not.toContain("claimable");
   });
 
   it("lists the nation pages no country of the realm has taken, and the size and source of the lore index", async () => {

@@ -14,8 +14,11 @@ import type { WorldGenParams } from "~/lib/worldgen/v2/types";
 export const WORLD_BUNDLE_VERSION = 1;
 export const MAX_WORLD_BUNDLE_CELLS = 200_000;
 export const MAX_WORLD_BUNDLE_SLOTS = 500;
-/** What a gunzipped bundle may measure: a zip-bomb cap, well over a 200,000-cell world's JSON. */
-export const MAX_WORLD_BUNDLE_JSON_BYTES = 160 * 1024 * 1024;
+/**
+ * What a gunzipped bundle may measure: a zip-bomb cap. The largest world the generator makes (150,000 cells) is
+ * 13.4 MB of JSON; this is 3.5 times that, so a hostile bundle can hold a request for a second or two, not five.
+ */
+export const MAX_WORLD_BUNDLE_JSON_BYTES = 48 * 1024 * 1024;
 
 export const WORLD_BUNDLE_LAYERS = [
   "background",
@@ -95,6 +98,14 @@ export const worldGenParamsSchema: z.ZodType<WorldGenParams> = z.object({
 /** Base64 length of the most cells a bundle may hold: 12 bytes (three float32) per cell. */
 const MAX_CELLS_BASE64_LENGTH = (MAX_WORLD_BUNDLE_CELLS * 12 * 4) / 3;
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
+/**
+ * The reach of a coordinate: the generator's antimeridian rings run to about -203 degrees of longitude, so the
+ * bound is a full turn either way. Anything wider cannot be projected (PostGIS fails on it later, uncaught by a
+ * validity check).
+ */
+const MAX_LNG = 360;
+const MAX_LAT = 90;
+const inReach = (lng: number, lat: number) => Math.abs(lng) <= MAX_LNG && Math.abs(lat) <= MAX_LAT;
 const CHUNK = 0x2000;
 
 /** The generator's packed cells as base64 little-endian Float32 (the bundle's `cells`). */
@@ -126,6 +137,10 @@ export function decodeCells(base64: string): CellsDecode {
     const value = view.getFloat32(i * 4, true);
     if (!Number.isFinite(value)) return fail("cells hold a value that is not finite");
     cells[i] = value;
+  }
+  for (let i = 0; i < cells.length; i += 3) {
+    if (!inReach(cells[i]!, cells[i + 1]!))
+      return fail("cells hold a longitude or latitude out of range");
   }
   return { ok: true, cells };
 }
@@ -169,25 +184,37 @@ const envelopeSchema = z.object({
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
-/** Whether a number anywhere in the value (properties are shallow; the depth bound is for hostile nesting) is not finite. */
-function holdsNonFinite(value: JsonValue, depth = 0): boolean {
-  if (typeof value === "number") return !Number.isFinite(value);
-  if (value === null || typeof value !== "object" || depth > 4) return false;
-  const items: JsonValue[] = Array.isArray(value) ? value : Object.values(value);
-  return items.some((item) => holdsNonFinite(item, depth + 1));
+/** Whether a number anywhere in the value is not finite. Iterative: a hostile bundle can nest 50,000 levels. */
+function holdsNonFinite(root: JsonValue): boolean {
+  const pending: JsonValue[] = [root];
+  for (let item = pending.pop(); item !== undefined; item = pending.pop()) {
+    if (typeof item === "number") {
+      if (!Number.isFinite(item)) return true;
+    } else if (item !== null && typeof item === "object") {
+      for (const child of Array.isArray(item) ? item : Object.values(item)) pending.push(child);
+    }
+  }
+  return false;
 }
 
-const finitePosition = (position: Position) =>
-  Array.isArray(position) && position.length >= 2 && position.every((n) => Number.isFinite(n));
+const BAD_COORDINATE =
+  "a coordinate is not a finite lng/lat pair in range (lng within 360, lat within 90)";
+
+/** A finite (lng, lat) within reach; any further ordinate (height) only has to be finite. */
+const reachablePosition = (position: Position) =>
+  Array.isArray(position) &&
+  position.length >= 2 &&
+  position.every((n) => Number.isFinite(n)) &&
+  inReach(position[0]!, position[1]!);
 
 function lineProblem(line: Position[]): string | null {
   if (!Array.isArray(line) || line.length < 2) return "a line has fewer than 2 points";
-  return line.every(finitePosition) ? null : "a coordinate is not a finite number pair";
+  return line.every(reachablePosition) ? null : BAD_COORDINATE;
 }
 
 function ringProblem(ring: Position[]): string | null {
   if (!Array.isArray(ring) || ring.length < 4) return "a ring has fewer than 4 points";
-  if (!ring.every(finitePosition)) return "a coordinate is not a finite number pair";
+  if (!ring.every(reachablePosition)) return BAD_COORDINATE;
   const first = ring[0]!;
   const last = ring[ring.length - 1]!;
   return first[0] === last[0] && first[1] === last[1] ? null : "a ring is not closed";
@@ -280,7 +307,8 @@ function sourceProblem(
   layers: Record<string, FeatureCollection>,
   slots: WorldBundleSlot[]
 ): string | null {
-  if (source !== "realm-map") return null;
+  if (source === "preset")
+    return layers.political ? null : "A preset world bundle needs a political layer";
   if (layers.political)
     return "A realm map bundle keeps the realm's borders: it has no political layer";
   return slots.length > 0
@@ -293,6 +321,17 @@ function duplicateSlotKey(slots: WorldBundleSlot[]): string | null {
   for (const { key } of slots) {
     if (seen.has(key)) return key;
     seen.add(key);
+  }
+  return null;
+}
+
+/** The name two slots share, compared as the importer will (case and surrounding spaces ignored), or null. */
+function duplicateSlotName(slots: WorldBundleSlot[]): string | null {
+  const seen = new Set<string>();
+  for (const { name } of slots) {
+    const folded = name.trim().toLowerCase();
+    if (seen.has(folded)) return name;
+    seen.add(folded);
   }
   return null;
 }
@@ -319,9 +358,12 @@ export function parseWorldBundleJson(text: string): WorldBundleParse {
 
   const decoded = decodeCells(cells);
   if (!decoded.ok) return fail(decoded.reason);
+  if (decoded.cells.length === 0) return fail("The bundle has no cells");
   const twice = duplicateSlotKey(slots);
+  const sameName = duplicateSlotName(slots);
   const problem =
     (twice && `Slot ${twice} appears twice`) ||
+    (sameName && `Two slots are named ${sameName}: a nation name is used twice`) ||
     layerSetProblem(layers) ||
     sourceProblem(source, layers, slots) ||
     layersProblem(layers, new Set(slots.map((s) => s.key)));
@@ -356,7 +398,7 @@ export function parseWorldBundleJson(text: string): WorldBundleParse {
 export const isGzip = (bytes: Uint8Array) =>
   bytes.length >= 3 && bytes[0] === 0x1f && bytes[1] === 0x8b && bytes[2] === 0x08;
 
-async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array<ArrayBuffer>> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let length = 0;
@@ -374,7 +416,7 @@ async function collect(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> 
 }
 
 /** The bundle as the upload sends it: its JSON, gzipped with the platform's CompressionStream. */
-export async function encodeWorldBundle(bundle: WorldBundle): Promise<Uint8Array> {
+export async function encodeWorldBundle(bundle: WorldBundle): Promise<Uint8Array<ArrayBuffer>> {
   const compression = new CompressionStream("gzip");
   const compressed = collect(compression.readable);
   const writer = compression.writable.getWriter();

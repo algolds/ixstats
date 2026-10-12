@@ -8,7 +8,8 @@ import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 
 type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
 
-type NationOwnershipErrorCode = "COUNTRY_NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED";
+type NationOwnershipErrorCode =
+  "COUNTRY_NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED" | "NOT_CLAIMABLE";
 
 export class NationOwnershipError extends Error {
   constructor(
@@ -43,7 +44,7 @@ async function assign(
   });
   if (!country) throw new NationOwnershipError("COUNTRY_NOT_FOUND", "Country not found");
   if (claim && isUnclaimable(country))
-    throw new NationOwnershipError("COUNTRY_NOT_FOUND", "This nation is no longer open for claims");
+    throw new NationOwnershipError("NOT_CLAIMABLE", "This nation is no longer open for claims");
   if (country.ownerUserId && country.ownerUserId !== input.userId) throw alreadyOwned();
   if (!country.ownerUserId) {
     const capacity = await nationCapacity(tx, {
@@ -53,9 +54,10 @@ async function assign(
     });
     if (!capacity.canTakeAnother)
       throw new NationOwnershipError("CAP_REACHED", capReachedMessage(capacity));
-    // Conditional write: at READ COMMITTED a concurrent assignment may have taken the nation since the read above.
+    // Conditional write: at READ COMMITTED a concurrent assignment may have taken the nation, or the founder made it
+    // scenery, since the read above.
     const { count } = await tx.country.updateMany({
-      where: { id: country.id, ownerUserId: null },
+      where: { id: country.id, ownerUserId: null, ...(claim && { claimable: true }) },
       data: { ownerUserId: input.userId },
     });
     if (count === 0) throw alreadyOwned();
