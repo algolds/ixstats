@@ -35,6 +35,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   hasLakes: true,
   useMarkovNaming: true,
   lloydIterations: 5,
+  developmentLevel: "industrial",
 };
 
 /**

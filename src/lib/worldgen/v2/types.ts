@@ -216,6 +216,9 @@ export interface Settlement {
 
 // Generation Parameters
 
+/** Development level a generated world's nation slots start at (sets the GDP-per-capita base). */
+export type DevelopmentLevel = "developing" | "industrial" | "modern";
+
 export interface WorldGenParams {
   /** Deterministic seed */
   seed: number;
@@ -261,6 +264,8 @@ export interface WorldGenParams {
   useMarkovNaming: boolean;
   /** Lloyd relaxation iterations for mesh (1-5, default 5) */
   lloydIterations: number;
+  /** Development level of the nation slots (default "industrial") */
+  developmentLevel: DevelopmentLevel;
 }
 
 // Generation Output
