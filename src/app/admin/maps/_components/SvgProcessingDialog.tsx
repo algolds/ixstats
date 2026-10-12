@@ -72,9 +72,8 @@ export function SvgProcessingDialog({
     onSuccess: () => {
       utils.geoCore.getMapStats.invalidate();
       utils.geoAdmin.getSvgUploadHistory.invalidate();
-      utils.geoCore.getWorldMap.invalidate();
-      utils.geoCore.getWorldMapPacked.invalidate();
-      utils.geoCore.getMapBundle.invalidate();
+      utils.realms.map.version.invalidate();
+      utils.geoCore.getMapBundleMarkers.invalidate();
       utils.geoCore.getMapBundleDetail.invalidate();
       onCommitted();
     },

@@ -13,6 +13,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { clearLayerCache, layerCache } from "~/server/shared/layer-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
+import { loadLayerWithFallback } from "~/server/api/routers/geo/core/layer-loader";
+import { realmMapRouter } from "~/server/api/routers/realms/map";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
 import { discoveryProcedures } from "~/server/api/routers/geo/core/discovery";
 import { statsProcedures } from "~/server/api/routers/geo/core/stats";
@@ -132,36 +134,39 @@ beforeEach(() => {
 });
 
 describe("/maps shows only the viewed realm's map", () => {
-  it("an Eurth viewer's world map reads Eurth layers and never Ixnay's static files", async () => {
+  it("an Eurth map's layers read Eurth rows and never Ixnay's static files", async () => {
     const db = emptyDb();
-    const map = await geoCaller(ctxFor(db, eurthViewer())).getWorldMap({
-      layers: ["background", "political"],
-    });
+    const layers = await Promise.all(
+      ["background", "political"].map((layer) => loadLayerWithFallback(db, layer, 1, EURTH))
+    );
 
     expect(wheres(db, "mapLayer").map(realmOf)).toEqual([EURTH, EURTH]);
-    expect(map).toEqual({
-      background: { type: "FeatureCollection", features: [] },
-      political: { type: "FeatureCollection", features: [] },
-    });
+    expect(layers).toEqual([
+      { type: "FeatureCollection", features: [] },
+      { type: "FeatureCollection", features: [] },
+    ]);
     expect(readFile).not.toHaveBeenCalled();
   });
 
-  it("?realm= picks the realm over the viewer's active nation", async () => {
+  it("the map's version, which names its layer URLs, is the viewed realm's; ?realm= wins over the viewer's active nation", async () => {
     const db = emptyDb();
-    (readFile as unknown as jest.Mock).mockRejectedValue(new Error("ENOENT"));
-    await geoCaller(ctxFor(db, eurthViewer())).getWorldMap({ layers: ["lakes"], realm: "ixnay" });
+    const version = createCallerFactory(createTRPCRouter({ version: realmMapRouter.version }));
+    const caller = version(ctxFor(db, eurthViewer()));
 
-    expect(wheres(db, "mapLayer").map(realmOf)).toEqual([DEFAULT_REALM_ID]);
+    await expect(caller.version({})).resolves.toMatchObject({ realmId: EURTH });
+    await expect(caller.version({ realm: "ixnay" })).resolves.toMatchObject({
+      realmId: DEFAULT_REALM_ID,
+    });
   });
 
-  it("the map bundle's cities, POIs, subdivisions and capitals belong to the realm's countries", async () => {
+  it("the map's POIs, capitals, cities and subdivisions belong to the realm's countries", async () => {
     const db = emptyDb();
     const caller = geoCaller(ctxFor(db, eurthViewer()));
-    const bundle = await caller.getMapBundle({ layers: ["political"] });
+    const markers = await caller.getMapBundleMarkers();
     await caller.getMapBundleDetail({});
 
-    // the resolved realm travels with the bundle so the client caches it under the right realm
-    expect(bundle.realmId).toBe(EURTH);
+    // the resolved realm travels with the markers so the client can name it
+    expect(markers.realmId).toBe(EURTH);
 
     expect(
       [...wheres(db, "city"), ...wheres(db, "pointOfInterest"), ...wheres(db, "subdivision")].map(

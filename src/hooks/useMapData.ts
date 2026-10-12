@@ -3,13 +3,8 @@
 /**
  * useMapData - Hook for fetching and managing world map layer data.
  *
- * Uses a two-tier cache strategy:
- * 1. IndexedDB (persistent) — survives page refreshes, 24h TTL; per realm, read-only here
- *    (useMapDataBatched writes it)
- * 2. React Query (in-memory) — instant during SPA navigation, 30min stale
- *
- * On first load: check IndexedDB → use as initialData → background refresh from server.
- * On subsequent loads within session: React Query serves from memory instantly.
+ * The layers download as packed JSON from the versioned layer route (`useMapLayerData`): the URL names the realm's
+ * map version, so a repeat load finds them in the browser cache and a changed map is a new URL.
  */
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -17,8 +12,7 @@ import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { getCachedMapLayers, type MapCacheScope } from "~/lib/maps/map-idb-cache";
-import { useViewerRealmId } from "~/hooks/useViewerRealmId";
+import { useMapLayerData } from "~/hooks/useMapLayerData";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 import { TILED_LAYERS, isTiledLayer } from "~/lib/maps/decorative-tiles";
 
@@ -48,7 +42,7 @@ export const CRITICAL_LAYERS: MapLayerType[] = [
   "icecaps",
 ];
 
-/** Shared query options for map data - long cache, no refetching */
+/** Query options for the map's POIs, capitals, cities and subdivisions - long cache, no refetching */
 export const MAP_QUERY_OPTIONS = {
   staleTime: 30 * 60 * 1000, // 30 min - map data rarely changes
   gcTime: 2 * 60 * 60 * 1000, // 2 hours - keep in cache long after unmount
@@ -56,17 +50,6 @@ export const MAP_QUERY_OPTIONS = {
   refetchOnMount: false,
   refetchOnReconnect: false,
 } as const;
-
-/** Merge per-layer `getWorldMap*` results into one record (undefined until any arrives). */
-export function mergeLayerResults<T>(
-  results: ReadonlyArray<{ data?: Record<string, T> }>
-): Record<string, T> | undefined {
-  let merged: Record<string, T> | undefined;
-  for (const r of results) {
-    if (r.data) merged = { ...merged, ...r.data };
-  }
-  return merged;
-}
 
 const EMPTY_COLLECTION: FeatureCollection = { type: "FeatureCollection", features: [] };
 
@@ -85,27 +68,6 @@ export function useMapData(
     () => new Set(initialLayers ?? DEFAULT_VISIBLE)
   );
 
-  // IndexedDB cached data for the realm this map shows (only in browser, once that realm is known).
-  // Read-only here: getWorldMap doesn't report the realm it resolved, so only useMapDataBatched —
-  // whose bundle does — writes entries.
-  const viewerRealmId = useViewerRealmId();
-  const cacheScope = useMemo<MapCacheScope>(
-    () => ({ realm, viewerRealmId }),
-    [realm, viewerRealmId]
-  );
-  const [idbData, setIdbData] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setIdbData(null);
-    getCachedMapLayers(cacheScope).then((cached) => {
-      if (cached && !cancelled) setIdbData(cached);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [cacheScope]);
-
   const allRequestedLayers = useMemo(() => {
     const layers = new Set([...ALL_PREFETCH_LAYERS, ...visibleLayers]);
     return Array.from(layers).filter((layer) => !(deferTiled && isTiledLayer(layer)));
@@ -113,26 +75,17 @@ export function useMapData(
 
   // One query per layer (the same keys /maps uses), so switching a layer on fetches only that
   // layer instead of every visible layer again under a new combined key.
-  const layerData = api.useQueries(
-    (t) =>
-      allRequestedLayers.map((layer) =>
-        t.geoCore.getWorldMapPacked({ layers: [layer], realm }, { ...MAP_QUERY_OPTIONS })
-      ),
-    { combine: mergeLayerResults }
-  );
+  const { packed } = useMapLayerData({ layers: allRequestedLayers, realm, bucket: 1 });
 
-  // Server layers over the IndexedDB cache, which fills in whatever hasn't arrived yet. Tiled
-  // layers are listed (empty) until their GeoJSON arrives, so their visibility still applies.
+  // The layers that have arrived, decoded. Tiled layers are listed (empty) until their GeoJSON
+  // arrives, so their visibility still applies.
   const effectiveData = useMemo(() => {
-    const merged: Record<string, unknown> = {
-      ...idbData,
-      ...(layerData && unpackLayers(layerData)),
-    };
+    const merged: Record<string, unknown> = { ...(packed && unpackLayers(packed)) };
     for (const type of TILED_LAYERS) merged[type] ??= EMPTY_COLLECTION;
     return merged;
-  }, [idbData, layerData]);
+  }, [packed]);
 
-  // Transform tRPC data into MapLayerData format
+  // Transform the layers into MapLayerData format
   const mapLayers: MapLayerData[] = useMemo(() => {
     return Object.entries(effectiveData)
       .filter(
@@ -183,12 +136,11 @@ export function useMapPrefetch() {
   const utils = api.useUtils();
   const warmedRef = useRef(false);
 
-  // Same key useMapDataBatched requests first (zoom omitted = undefined), so /maps reads this entry.
-  const { data: bundle } = api.geoCore.getMapBundle.useQuery(
-    { layers: CRITICAL_LAYERS },
-    { ...MAP_QUERY_OPTIONS, enabled: !warmedRef.current }
-  );
-  const worldMap = bundle?.worldMap;
+  // The political layer /maps downloads first (same URL, same query key), so /maps reads this entry.
+  const { packed: worldMap } = useMapLayerData({
+    layers: ["political"],
+    enabled: !warmedRef.current,
+  });
 
   // After political layer is available, warm ALL per-country data
 

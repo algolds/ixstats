@@ -70,7 +70,7 @@ Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the
 | Identity | `country.nationalIdentity` (via `countries.getByIdWithEconomicData`), then `wikiCache.getCountryProfile` infobox |
 | Lore (prologue + chapters) | `wikios.getWikitext` (IxWiki; follows `#REDIRECT`), split by section heading; non-IxWiki falls back to the `wikiCache.getCountryProfile` overview |
 | Vitals, pulse, condition, economy trend | `countries.getByIdWithEconomicData` (via `CountryDataProvider`) |
-| Land (map, capital, cities, regions, story pins, geo profile, neighbours) | `countryGeo.getCountryGeoBundle`; map embed `CountryMapEmbed` (+ `geoCore.getWorldMap`) |
+| Land (map, capital, cities, regions, story pins, geo profile, neighbours) | `countryGeo.getCountryGeoBundle`; map embed `CountryMapEmbed` (+ the political layer from `/api/map-layers`) |
 | Directives, issue outcomes | `countries.getPublicRecord`; owner counts `intent.getTree` + `nationalIssues.getPendingCount` (owner only) |
 | Government, parliament | `government.getByCountryId` (budget redacted for visitors), `elections.getElectionStatus` |
 | Country DNA, world | `mycountry.getRankings`, `diplomaticCore.getRelationships`, `diplomaticEmbassies.getEmbassies` |
@@ -125,7 +125,7 @@ countries/
 | `api.activities.getCountryActivity` | Activity tab |
 | `api.government.getByCountryId` | Overview government structure (via `useMyCountryMetrics`) |
 | `api.wikiCache.getCountryProfile` | Overview wiki content (via `useMyCountryMetrics`) |
-| `api.countryGeo.getCountryGeoBundle`, `api.geoCore.getWorldMap` | Map embeds (via `useCountryMapEmbed`) |
+| `api.countryGeo.getCountryGeoBundle`, `GET /api/map-layers` (political layer) | Map embeds (via `useCountryMapEmbed`) |
 | `api.system.getCurrentIxTime` | Time context |
 | `api.users.getProfile`, `api.countries.getByIdAtTime` | Viewer identity (`useUserCountry`) |
 

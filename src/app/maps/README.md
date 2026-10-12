@@ -79,7 +79,7 @@ The geo API is split into **6 router namespaces** (91 procedures across 37 files
 
 | Namespace | Approx. procs | Representative endpoints (verified in use) |
 |-----------|---------------|--------------------------------------------|
-| `geoCore` | 24 | `getWorldMap`, `getWorldMapAsOf`, `getCountryGeometry`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
+| `geoCore` | 24 | `getMapBundleMarkers`, `getMapBundleDetail`, `getWorldMapAsOf`, `getCountryGeometry`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
 | `geoFeatures` | 29 | `createCity`, `updateCity`, `updatePOI`, `getAllMapLabels`, `updateMapLabel`, `getAllStoryPins`, `getStoryPinFull`, `updateStoryPin`, `createPeak`, `createNamedRiver`, `createNamedLake`, `simplifySubdivisions` |
 | `geoEditor` | 19 | `assignCountryGeometry`, `createCountryFromShape`, `updateFeatureProperties`, `getFeatureDetails`, `validateLinkage`, `repairLinkage`, `unlinkCountryGeometry`, `runPipeline`, `importPipelineResult` |
 | `geoAdmin` | 11 | `processSvgUpload`, `commitSvgUpload`, `parseProvinceUpload`, `commitProvinceImport`, `parseCitySvg`, `commitCityImport` |

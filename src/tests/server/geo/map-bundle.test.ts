@@ -2,18 +2,15 @@
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("fs/promises", () => ({ readFile: jest.fn() }));
-
-import { readFile } from "fs/promises";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
-import { clearLayerCache } from "~/server/shared/layer-cache";
 import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
+import { MAP_TRPC_KEYS } from "~/server/shared/map-invalidation";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 
 type ModelMock = Record<string, jest.Mock>;
 
-/** Every model answers empty unless overridden; no map layer rows, so Ixnay reads its static files. */
+/** Every model answers empty unless overridden. */
 function dbWith(overrides: Record<string, Partial<ModelMock>> = {}) {
   const models = new Map<string, ModelMock>();
   return new Proxy({} as Record<string, ModelMock>, {
@@ -51,33 +48,62 @@ const square = (lng: number, lat: number, d: number) => ({
 
 beforeEach(() => {
   clearTrpcMemoryCache();
-  clearLayerCache();
   jest.spyOn(console, "error").mockImplementation(() => {});
-  (readFile as unknown as jest.Mock).mockResolvedValue(
-    JSON.stringify({
-      type: "FeatureCollection",
-      features: [{ type: "Feature", properties: {}, geometry: square(10, 10, 1) }],
-    })
-  );
 });
 
 afterEach(() => jest.restoreAllMocks());
 
-describe("geoCore.getMapBundle", () => {
-  it("keeps the base layers when an overlay query fails", async () => {
+describe("geoCore.getMapBundleMarkers", () => {
+  it("sends no POIs or capitals, rather than failing, when their queries fail", async () => {
     const broken = jest.fn().mockRejectedValue(new Error('column "realmId" does not exist'));
     const db = dbWith({ city: { findMany: broken }, pointOfInterest: { findMany: broken } });
 
-    const bundle = await caller(ctxFor(db)).getMapBundle({ layers: ["lakes"] });
+    const markers = await caller(ctxFor(db)).getMapBundleMarkers();
 
-    expect(unpackLayers(bundle.worldMap).lakes?.features).toHaveLength(1);
-    expect(bundle.features.pois.features).toEqual([]);
-    expect(bundle.capitals.features).toEqual([]);
+    expect(markers.features.pois.features).toEqual([]);
+    expect(markers.capitals.features).toEqual([]);
   });
 
-  it("leaves cities and subdivisions to getMapBundleDetail", async () => {
-    const bundle = await caller(ctxFor(dbWith())).getMapBundle({ layers: ["lakes"] });
-    expect(Object.keys(bundle.features)).toEqual(["pois"]);
+  it("carries no layers: those come from the versioned layer route", async () => {
+    const markers = await caller(ctxFor(dbWith())).getMapBundleMarkers();
+    expect(Object.keys(markers).sort()).toEqual(["capitals", "features", "realmId"]);
+    expect(Object.keys(markers.features)).toEqual(["pois"]);
+  });
+
+  it("sends capital coordinates at map precision, tagged with their country", async () => {
+    const db = dbWith({
+      city: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: "c1",
+            name: "Urceopolis",
+            coordinates: [12.345678901234, -45.678901234567],
+            country: { name: "Urcea", slug: "urcea" },
+          },
+        ]),
+      },
+    });
+
+    const { capitals } = await caller(ctxFor(db)).getMapBundleMarkers();
+
+    expect(capitals.features[0]!.geometry.coordinates).toEqual([12.34568, -45.6789]);
+    expect(capitals.features[0]!.properties).toMatchObject({ countryName: "Urcea" });
+  });
+});
+
+describe("map invalidation", () => {
+  it("drops the cached markers and detail with the map's other cached reads (keys match by substring)", () => {
+    for (const procedure of ["geoCore.getMapBundleMarkers", "geoCore.getMapBundleDetail"]) {
+      expect(MAP_TRPC_KEYS.some((key) => procedure.includes(key))).toBe(true);
+    }
+  });
+});
+
+describe("the geometry layers", () => {
+  it("are no longer tRPC procedures: the layer route serves them", () => {
+    expect(Object.keys(worldMapProcedures)).toEqual(
+      expect.not.arrayContaining(["getWorldMap", "getWorldMapPacked", "getMapBundle"])
+    );
   });
 });
 

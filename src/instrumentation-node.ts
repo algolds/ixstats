@@ -24,7 +24,7 @@ export async function registerNode() {
         console.warn("[Instrumentation] Cache warm-up failed (non-fatal):", cacheError);
       }
 
-      // Warm up geo layer cache (pre-load all 7 map layers into memory)
+      // Warm up the packed map layers /maps downloads first (Ixnay), so the first load finds them cached
       try {
         const { db } = await import("./server/db");
         const { warmGeoCache } = await import("./server/api/routers/geo/core");
@@ -64,8 +64,7 @@ export async function registerNode() {
       console.warn("[Instrumentation] Dev memory monitoring setup failed (non-fatal):", error);
     }
 
-    // Warm critical geo layers in dev so the first map load is instant.
-    // Altitudes (4068 features) takes ~2s to query+compress — do it at startup, not on first request.
+    // Warm the first-paint geo layers in dev so the first map load is quick (political alone is ~100 ms to build).
     try {
       const { db } = await import("./server/db");
       const { warmGeoCacheDev } = await import("./server/api/routers/geo/core");

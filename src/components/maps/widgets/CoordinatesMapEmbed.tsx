@@ -5,8 +5,8 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
+import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
-import type { FeatureCollection } from "geojson";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { addGeoLayers } from "~/components/maps/shared/geo-layers";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -101,16 +101,14 @@ export function CoordinatesMapEmbed({
     );
   const realm = explicitRealm ?? wikiRealm?.slug ?? undefined;
 
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ["political"], realm },
-    {
-      enabled: isInViewport && (!lookupRealm || wikiRealmFetched),
-      staleTime: 30 * 60_000,
-      gcTime: 2 * 60 * 60_000,
-    }
-  );
+  // The political layer /maps downloads (same packed URL, same cache)
+  const { layers: worldMap } = useDecodedMapLayers({
+    layers: ["political"],
+    realm,
+    enabled: isInViewport && (!lookupRealm || wikiRealmFetched),
+  });
 
-  const worldPolitical = (worldMap as any)?.political as FeatureCollection | undefined;
+  const worldPolitical = worldMap?.political;
 
   useEffect(() => {
     const el = elementRef.current;

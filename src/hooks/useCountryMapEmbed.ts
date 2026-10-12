@@ -10,6 +10,7 @@
 
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
+import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
 
 /** The subdivision fields the embed maps draw. */
 interface EmbedSubdivision {
@@ -29,11 +30,8 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
     { enabled, ...MAP_CACHE }
   );
 
-  // Fetch world political layer for neighbor rendering (shared cache with main map, 30m staleTime)
-  const { data: worldMap } = api.geoCore.getWorldMap.useQuery(
-    { layers: ["political"] },
-    { enabled, ...MAP_CACHE }
-  );
+  // World political layer for neighbor rendering: the packed layer /maps downloads (same URL, same cache)
+  const { layers: worldMap } = useDecodedMapLayers({ layers: ["political"], enabled });
 
   return useMemo(() => {
     const cities = bundle?.cities ?? [];
@@ -46,7 +44,7 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
 
     // Derived neighbor feature collection for greyed-out neighbor rendering
     const worldPolitical =
-      ((worldMap as Record<string, unknown>)?.political as import("geojson").FeatureCollection) ??
+      worldMap?.political ??
       (bundle?.neighbors?.length
         ? ({
             type: "FeatureCollection",

@@ -1,63 +1,21 @@
 import { z } from "zod";
 import { cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
-import type { FeatureCollection } from "geojson";
 import type { PrismaClient } from "@prisma/client";
-import { MAP_LAYER_TYPES } from "~/lib/maps/map-config";
 import { compressFeatureCollection } from "~/lib/maps/geojson-compress";
-import { packFeatureCollection, type PackedFeatureCollection } from "~/lib/maps/geojson-pack";
+import { packFeatureCollection } from "~/lib/maps/geojson-pack";
 import { getCompressionForLayer, getZoomBucket, type ZoomBucket } from "./cache";
-import { loadLayerWithFallback } from "./layer-loader";
 
-const DEFAULT_WORLD_MAP_LAYERS = [
-  "background",
-  "political",
-  "lakes",
-  "rivers",
-  "icecaps",
-  "country_labels",
-];
-
-const worldMapInput = z
+// The map's geometry layers (political, background, ...) are not tRPC procedures: they are served as packed JSON by
+// the versioned GET /api/map-layers route (src/server/modules/maps/layer-delivery.ts). What stays here is what
+// the layers do not carry: points, capitals, cities and subdivisions.
+const zoomInput = z
   .object({
-    layers: z.array(z.enum(MAP_LAYER_TYPES as unknown as [string, ...string[]])).optional(),
     /** Current map zoom level for LOD-based geometry simplification */
     zoom: z.number().min(0).max(20).optional(),
     ...realmScopeInput.shape,
   })
   .optional();
-
-/** The realm's requested layers (DB first; Ixnay alone falls back to its static files). */
-async function loadWorldMapLayers(
-  db: Parameters<typeof loadLayerWithFallback>[0],
-  layers: string[],
-  zoomBucket: ZoomBucket,
-  realmId: string
-): Promise<Record<string, FeatureCollection>> {
-  const results: Record<string, FeatureCollection> = {};
-  await Promise.all(
-    layers.map(async (layer) => {
-      const data = await loadLayerWithFallback(db, layer, zoomBucket, realmId);
-      if (data) results[layer] = data;
-    })
-  );
-  return results;
-}
-
-/** Layers in the packed wire format, each at the precision its LOD already truncates it to. */
-function packLayers(
-  layers: Record<string, FeatureCollection>,
-  zoomBucket: ZoomBucket
-): Record<string, PackedFeatureCollection> {
-  const out: Record<string, PackedFeatureCollection> = {};
-  for (const [layer, fc] of Object.entries(layers)) {
-    out[layer] = packFeatureCollection(
-      fc,
-      getCompressionForLayer(layer, zoomBucket).coordinatePrecision
-    );
-  }
-  return out;
-}
 
 const hasPoint = (c: { coordinates: unknown }) =>
   Array.isArray(c.coordinates) && (c.coordinates as number[]).length >= 2;
@@ -209,86 +167,60 @@ async function loadSubdivisions(db: PrismaClient, inRealm: InRealm, zoomBucket: 
 }
 
 export const worldMapProcedures = {
-  getWorldMap: cachedPublicProcedure.input(worldMapInput).query(async ({ ctx, input }) => {
-    const realmId = await viewerRealmId(ctx, input?.realm);
-    return loadWorldMapLayers(
-      ctx.db,
-      input?.layers ?? DEFAULT_WORLD_MAP_LAYERS,
-      getZoomBucket(input?.zoom),
-      realmId
-    );
-  }),
-
-  /** getWorldMap in the packed wire format (decode with `unpackLayers`): /maps and the map editor. */
-  getWorldMapPacked: cachedPublicProcedure.input(worldMapInput).query(async ({ ctx, input }) => {
-    const realmId = await viewerRealmId(ctx, input?.realm);
-    const zoomBucket = getZoomBucket(input?.zoom);
-    return packLayers(
-      await loadWorldMapLayers(
-        ctx.db,
-        input?.layers ?? DEFAULT_WORLD_MAP_LAYERS,
-        zoomBucket,
-        realmId
-      ),
-      zoomBucket
-    );
-  }),
-
   /**
-   * Batched first-load map data: the requested layers (packed; decode with `unpackLayers`), POIs
-   * and capitals. Cities and subdivisions only draw from zoom 4, so they come from
-   * getMapBundleDetail once the viewer zooms in.
+   * What /maps draws on top of the layers on first load: POIs and capitals, and the realm they were resolved for.
+   * Cities and subdivisions only draw from zoom 4, so they come from getMapBundleDetail once the viewer zooms in.
    */
-  getMapBundle: cachedPublicProcedure.input(worldMapInput).query(async ({ ctx, input }) => {
-    const realmId = await viewerRealmId(ctx, input?.realm);
-    const inRealm = { country: { realmId } };
-    const zoomBucket = getZoomBucket(input?.zoom);
+  getMapBundleMarkers: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const realmId = await viewerRealmId(ctx, input?.realm);
+      const inRealm = { country: { realmId } };
 
-    const [worldMap, pois, capitalCities] = await Promise.all([
-      loadWorldMapLayers(ctx.db, input?.layers ?? DEFAULT_WORLD_MAP_LAYERS, zoomBucket, realmId),
-      loadPois(ctx.db, inRealm),
+      const [pois, capitalCities] = await Promise.all([
+        loadPois(ctx.db, inRealm),
 
-      orNone(
-        ctx.db.city.findMany({
-          where: { isNationalCapital: true, status: "approved", ...inRealm },
-          select: {
-            id: true,
-            name: true,
-            coordinates: true,
-            population: true,
-            wikiPageTitle: true,
-            countryId: true,
-            country: { select: { name: true, slug: true } },
+        orNone(
+          ctx.db.city.findMany({
+            where: { isNationalCapital: true, status: "approved", ...inRealm },
+            select: {
+              id: true,
+              name: true,
+              coordinates: true,
+              population: true,
+              wikiPageTitle: true,
+              countryId: true,
+              country: { select: { name: true, slug: true } },
+            },
+          }),
+          "capitals"
+        ),
+      ]);
+
+      // Format capitals as GeoJSON
+      const capitals = {
+        type: "FeatureCollection" as const,
+        features: capitalCities.filter(hasPoint).map((c) => ({
+          type: "Feature" as const,
+          geometry: toPoint(c.coordinates),
+          properties: {
+            id: c.id,
+            name: c.name,
+            countryId: c.countryId,
+            countryName: c.country.name,
+            countrySlug: c.country.slug,
+            population: c.population,
+            wikiPageTitle: c.wikiPageTitle,
           },
-        }),
-        "capitals"
-      ),
-    ]);
+        })),
+      };
 
-    // Format capitals as GeoJSON
-    const capitals = {
-      type: "FeatureCollection" as const,
-      features: capitalCities.filter(hasPoint).map((c) => ({
-        type: "Feature" as const,
-        geometry: toPoint(c.coordinates),
-        properties: {
-          id: c.id,
-          name: c.name,
-          countryId: c.countryId,
-          countryName: c.country.name,
-          countrySlug: c.country.slug,
-          population: c.population,
-          wikiPageTitle: c.wikiPageTitle,
-        },
-      })),
-    };
+      // realmId: the realm these were resolved for, so clients can name it
+      return { features: { pois }, capitals, realmId };
+    }),
 
-    // realmId: the realm these layers were resolved for, so clients can cache them under it
-    return { worldMap: packLayers(worldMap, zoomBucket), features: { pois }, capitals, realmId };
-  }),
-
-  /** The zoom-4 overlays the first-load bundle leaves out: cities, and subdivisions (packed). */
-  getMapBundleDetail: cachedPublicProcedure.input(worldMapInput).query(async ({ ctx, input }) => {
+  /** The zoom-4 overlays the first-load markers leave out: cities, and subdivisions (packed). */
+  getMapBundleDetail: cachedPublicProcedure.input(zoomInput).query(async ({ ctx, input }) => {
     const inRealm = { country: { realmId: await viewerRealmId(ctx, input?.realm) } };
     const zoomBucket = getZoomBucket(input?.zoom);
     const [cities, subdivisions] = await Promise.all([

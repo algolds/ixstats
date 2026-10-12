@@ -6,9 +6,9 @@ export function invalidateMapViews(
   { list = false, stats = false } = {}
 ) {
   if (list) utils.geoCore.listCountries.invalidate();
-  utils.geoCore.getWorldMap.invalidate();
-  utils.geoCore.getWorldMapPacked.invalidate();
-  utils.geoCore.getMapBundle.invalidate();
+  // the new map version names new layer URLs, so the layers download again
+  utils.realms.map.version.invalidate();
+  utils.geoCore.getMapBundleMarkers.invalidate();
   utils.geoCore.getMapBundleDetail.invalidate();
   if (stats) utils.geoCore.getMapStats.invalidate();
 }

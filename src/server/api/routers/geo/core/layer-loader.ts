@@ -22,79 +22,7 @@ import {
 } from "./cache";
 import { centroidLngLat, computeApproxAreaForFeature, computeVisualCenter } from "./geometry";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-
-/** Warms Ixnay's layers only — other realms build on first request. */
-export async function warmGeoCache(db: any): Promise<void> {
-  const start = Date.now();
-  const layers = [
-    "background",
-    "altitudes",
-    "political",
-    "rivers",
-    "icecaps",
-    "climate",
-    "lakes",
-    "country_labels",
-  ];
-  let warmed = 0;
-
-  console.log(`[GeoCache] Warming cache for ${layers.length} layers...`);
-  const zoomBuckets: ZoomBucket[] = [0, 1, 2];
-
-  let totalBytes = 0;
-  for (const zoomBucket of zoomBuckets) {
-    console.log(`[GeoCache]   Zoom Bucket ${zoomBucket}:`);
-    for (const layerType of layers) {
-      try {
-        const result = await loadLayerFromDB(db, layerType, zoomBucket, DEFAULT_REALM_ID);
-        if (result) {
-          warmed++;
-          const bytes = JSON.stringify(result).length;
-          totalBytes += bytes;
-          console.log(
-            `[GeoCache]     ${layerType}: ${(bytes / 1024 / 1024).toFixed(2)}MB, ${result.features.length} features`
-          );
-        }
-      } catch (err) {
-        console.warn(`[GeoCache] Failed to warm ${layerType} (z${zoomBucket}):`, err);
-      }
-    }
-  }
-
-  console.log(
-    `[GeoCache] Warmed ${warmed} layer-zoom combinations in ${Date.now() - start}ms — total ${(totalBytes / 1024 / 1024).toFixed(2)}MB`
-  );
-}
-
-/**
- * Lightweight cache warm-up for dev mode.
- * Only warms critical layers at default zoom bucket (1) — 4 queries instead of 24.
- * Runs as fire-and-forget at startup so the first map load is instant.
- */
-export async function warmGeoCacheDev(db: any): Promise<void> {
-  const start = Date.now();
-  const criticalLayers = ["background", "altitudes", "political", "country_labels"];
-  const defaultZoom: ZoomBucket = 1;
-
-  console.log(
-    `[GeoCache] Dev warm-up: ${criticalLayers.length} critical layers at z${defaultZoom}...`
-  );
-
-  await Promise.all(
-    criticalLayers.map(async (layerType) => {
-      try {
-        const result = await loadLayerFromDB(db, layerType, defaultZoom, DEFAULT_REALM_ID);
-        if (result) {
-          console.log(`[GeoCache]   ${layerType}: ${result.features.length} features`);
-        }
-      } catch (err) {
-        console.warn(`[GeoCache] Failed to warm ${layerType}:`, err);
-      }
-    })
-  );
-
-  console.log(`[GeoCache] Dev warm-up done in ${Date.now() - start}ms`);
-}
+import { simplifyLayerCoverage } from "~/server/modules/maps/coverage-simplify";
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
 
@@ -138,22 +66,37 @@ export async function loadLayerWithFallback(
   db: Parameters<typeof loadLayerFromDB>[0],
   layerType: string,
   zoomBucket: ZoomBucket = 1,
-  realmId: string = DEFAULT_REALM_ID
+  realmId: string = DEFAULT_REALM_ID,
+  version?: number
 ): Promise<FeatureCollection | null> {
-  const fromDb = await loadLayerFromDB(db, layerType, zoomBucket, realmId);
+  const fromDb = await loadLayerFromDB(db, layerType, zoomBucket, realmId, version);
   if (fromDb) return fromDb;
   if (realmId !== DEFAULT_REALM_ID) return { type: "FeatureCollection", features: [] };
   return loadGeoJSONFromFile(layerType).catch(() => null);
+}
+
+/** Assembled layers are cached per bucket and realm. Layer delivery also names the realm's map version, so a
+ * version bumped by another process (the cron worker's imports, which cannot clear this process's memory) builds
+ * fresh instead of reusing this process's copy. */
+function layerCacheKey(
+  layerType: string,
+  zoomBucket: ZoomBucket,
+  realmId: string,
+  version?: number
+): string {
+  const versioned = version === undefined ? "" : `v${version}:`;
+  return `${layerType}:z${zoomBucket}:${versioned}${realmId}`;
 }
 
 export async function loadLayerFromDB(
   db: any,
   layerType: string,
   zoomBucket: ZoomBucket = 1,
-  realmId: string = DEFAULT_REALM_ID
+  realmId: string = DEFAULT_REALM_ID,
+  version?: number
 ): Promise<FeatureCollection | null> {
   // Check cache with a zoom- and realm-aware key (layer type first for the TTLs, realm last for clearRealmLayerCache)
-  const cacheKey = `${layerType}:z${zoomBucket}:${realmId}`;
+  const cacheKey = layerCacheKey(layerType, zoomBucket, realmId, version);
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
@@ -165,7 +108,8 @@ export async function loadLayerFromDB(
     layerType,
     zoomBucket,
     realmId,
-    cacheKey
+    cacheKey,
+    version
   ).finally(() => {
     // Identity check: a cache clear may have replaced this entry with a newer build
     if (layerInflight.get(cacheKey) === promise) layerInflight.delete(cacheKey);
@@ -190,9 +134,10 @@ async function buildCountryLabels(
   db: LayerDb,
   zoomBucket: ZoomBucket,
   realmId: string,
-  cacheKey: string
+  cacheKey: string,
+  version?: number
 ): Promise<FeatureCollection | null> {
-  const politicalFC = await loadLayerFromDB(db, "political", zoomBucket, realmId);
+  const politicalFC = await loadLayerFromDB(db, "political", zoomBucket, realmId, version);
   if (!politicalFC) return null;
 
   // One entry per country name, keeping the polygon with the biggest outline
@@ -356,14 +301,52 @@ function resolveRootSovereign(
   return parent ? resolveRootSovereign(subjectMap, parent.sovereignCountryId, visited) : countryId;
 }
 
+/** Polygon layers whose shapes abut: simplified as one coverage in PostGIS, so a border two shapes share keeps the
+ * same vertices on both sides. The decorative polygon layers (altitudes, climate, lakes) are drawn from tiles and gain
+ * nothing from it: on Ixnay a coverage drops no more of their vertices than turf does. */
+const COVERAGE_LAYERS = new Set(["political"]);
+
+/** Layer rows as map features, and the ones whose geometry the coverage already simplified. */
+function layerFeatures(
+  layers: LayerRow[],
+  isPolitical: boolean,
+  props: { sovereignty: Awaited<ReturnType<typeof loadSovereignty>>; colors: Map<string, string> },
+  coverage: Map<string, Geometry> | null
+): { features: Feature[]; simplified: Set<Feature> } {
+  const simplified = new Set<Feature>();
+  // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor and skip the
+  // raw SVG properties; the political layer carries full metadata for info panels and clicks.
+  const features = layers.map((layer, index) => {
+    const fromCoverage = coverage?.get(layer.featureId);
+    const feature: Feature = {
+      type: "Feature" as const,
+      id: index,
+      geometry: fromCoverage ?? (layer.geometry as Geometry),
+      properties: isPolitical
+        ? politicalProperties(layer, props.sovereignty, props.colors)
+        : {
+            _id: layer.featureId,
+            _fillColor: layer.properties?.fill as string | undefined,
+            _areaSqKm: layer.areaSqKm ?? computeApproxAreaForFeature(layer.geometry as Geometry),
+          },
+    };
+    if (fromCoverage) simplified.add(feature);
+    return feature;
+  });
+  return { features, simplified };
+}
+
 async function buildLayerFromDB(
   db: LayerDb,
   layerType: string,
   zoomBucket: ZoomBucket,
   realmId: string,
-  cacheKey: string
+  cacheKey: string,
+  version?: number
 ): Promise<FeatureCollection | null> {
-  if (layerType === "country_labels") return buildCountryLabels(db, zoomBucket, realmId, cacheKey);
+  if (layerType === "country_labels") {
+    return buildCountryLabels(db, zoomBucket, realmId, cacheKey, version);
+  }
 
   const isPolitical = layerType === "political";
   const layers: LayerRow[] = await db.mapLayer.findMany({
@@ -398,25 +381,31 @@ async function buildLayerFromDB(
     }
   }
 
-  // Decorative layers (altitudes, rivers, climate, etc.) only need _id + _fillColor and skip the
-  // raw SVG properties; the political layer carries full metadata for info panels and clicks.
-  const features: Feature[] = layers.map((layer, index) => ({
-    type: "Feature" as const,
-    id: index,
-    geometry: layer.geometry as Geometry,
-    properties: isPolitical
-      ? politicalProperties(layer, sovereignty, countryColorMap)
-      : {
-          _id: layer.featureId,
-          _fillColor: layer.properties?.fill as string | undefined,
-          _areaSqKm: layer.areaSqKm ?? computeApproxAreaForFeature(layer.geometry as Geometry),
-        },
-  }));
-  const fc: FeatureCollection = { type: "FeatureCollection", features };
-
   // Compress geometry for transport (simplify + truncate coords + dedup) with zoom-aware LOD:
   // globe view = aggressive, detail view = minimal
-  const compressed = compressFeatureCollection(fc, getCompressionForLayer(layerType, zoomBucket));
+  const compression = getCompressionForLayer(layerType, zoomBucket);
+  // Where PostGIS can, the abutting shapes are simplified together first; the rest (a row crossing the antimeridian,
+  // a layer without the function) is simplified one polygon at a time, from the stored GeoJSON.
+  const coverage =
+    COVERAGE_LAYERS.has(layerType) && compression.simplifyTolerance > 0
+      ? await simplifyLayerCoverage(db, {
+          layerType,
+          realmId,
+          tolerance: compression.simplifyTolerance,
+          decimals: compression.coordinatePrecision,
+        })
+      : null;
+  const { features, simplified } = layerFeatures(
+    layers,
+    isPolitical,
+    { sovereignty, colors: countryColorMap },
+    coverage
+  );
+  const compressed = compressFeatureCollection(
+    { type: "FeatureCollection", features },
+    compression,
+    (feature) => simplified.has(feature)
+  );
 
   // Split features crossing the antimeridian to prevent rendering artifacts
   const split = splitCollectionAtAntimeridian(compressed);

@@ -42,6 +42,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useMapState } from "./hooks/useMapState";
 import { useMapDataQueries } from "./hooks/useMapDataQueries";
 import { getZoomBand } from "~/hooks/useMapDataBatched";
+import { useRetryMapLayers } from "~/hooks/useMapLayerData";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
@@ -400,7 +401,7 @@ export function MapContainer({
   disableCountrySelect = false,
   realm,
 }: MapContainerProps) {
-  const utils = api.useUtils();
+  const retryMapLayers = useRetryMapLayers();
   const isAdmin = useIsAdmin();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
@@ -566,13 +567,7 @@ export function MapContainer({
   }, [userCountryId, handleOpenMyEditor, notify]);
 
   if (error) {
-    return (
-      <MapLoadError
-        className={className}
-        message={error.message}
-        onRetry={() => void utils.geoCore.getMapBundle.invalidate()}
-      />
-    );
+    return <MapLoadError className={className} message={error.message} onRetry={retryMapLayers} />;
   }
 
   const { countryPanelOpen, featurePanelOpen, sidePanelOpen } = getPanelFlags(

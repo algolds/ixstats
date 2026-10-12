@@ -129,27 +129,61 @@ export interface CompressOptions {
   stripProperties?: string[];
 }
 
+type SimplifyOptions = { tolerance: number; highQuality: boolean };
+
+/** One ring, simplified; as it was when turf rejects it (a ring with no area fails its coordinate clean-up). */
+function simplifyRing(ring: Position[], options: SimplifyOptions): Position[] {
+  try {
+    const out = simplify({ type: "Polygon", coordinates: [ring] }, options);
+    return out.coordinates[0] ?? ring;
+  } catch {
+    return ring;
+  }
+}
+
+/** Turf rejects a whole polygon for one degenerate ring; simplify the others and keep only that ring as it was. */
+function simplifyByRing(feature: Feature, options: SimplifyOptions): Feature {
+  const geometry = feature.geometry;
+  if (geometry.type === "Polygon") {
+    const coordinates = geometry.coordinates.map((ring) => simplifyRing(ring, options));
+    return { ...feature, geometry: { ...geometry, coordinates } };
+  }
+  if (geometry.type === "MultiPolygon") {
+    const coordinates = geometry.coordinates.map((poly) =>
+      poly.map((ring) => simplifyRing(ring, options))
+    );
+    return { ...feature, geometry: { ...geometry, coordinates } };
+  }
+  return feature;
+}
+
+/** Reduce a feature's vertex count (Douglas-Peucker via turf). */
+function simplifyFeature(feature: Feature, tolerance: number): Feature {
+  const options = { tolerance, highQuality: true };
+  try {
+    return simplify(feature, options) as Feature;
+  } catch {
+    return simplifyByRing(feature, options);
+  }
+}
+
 /**
  * Compress a FeatureCollection by simplifying geometry, truncating
  * coordinate precision, removing duplicate points, and stripping properties.
+ * `isSimplified` names features already simplified elsewhere (the coverage
+ * simplification in SQL): they skip the simplify step and are only truncated.
  */
 export function compressFeatureCollection(
   fc: FeatureCollection,
-  options: CompressOptions
+  options: CompressOptions,
+  isSimplified?: (feature: Feature) => boolean
 ): FeatureCollection {
   const features = fc.features.map((f) => {
     let feature: Feature = f;
 
-    // 1. Simplify geometry (reduce vertex count via Visvalingam-Whyatt)
-    if (options.simplifyTolerance > 0) {
-      try {
-        feature = simplify(feature, {
-          tolerance: options.simplifyTolerance,
-          highQuality: true,
-        }) as Feature;
-      } catch {
-        // Simplification can fail on degenerate geometries — keep original
-      }
+    // 1. Simplify geometry (reduce vertex count)
+    if (options.simplifyTolerance > 0 && !isSimplified?.(f)) {
+      feature = simplifyFeature(f, options.simplifyTolerance);
     }
 
     // 2. Truncate coordinate precision
