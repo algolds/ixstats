@@ -195,6 +195,8 @@ export async function loadAltitudeBands(
     select: { geometry: true, properties: true },
     // The same zone limits whichever order the database returns: the first feature of a zone that carries them wins
     orderBy: { featureId: "asc" },
+    // Past the database guard's 1000-row cap: Ixnay has 4068 bands
+    take: 50_000,
   });
   return rows.map((row): Feature<Geometry | null> => ({
     type: "Feature",

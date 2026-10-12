@@ -252,6 +252,7 @@ describe("loadAltitudeBands", () => {
       where: { realmId: "realm_1", layerType: "altitudes", isActive: true },
       select: { geometry: true, properties: true },
       orderBy: { featureId: "asc" },
+      take: 50_000,
     });
     expect(features).toEqual([
       {
@@ -260,5 +261,21 @@ describe("loadAltitudeBands", () => {
         geometry: { type: "Polygon", coordinates: [rect(0, 0, 1, 1)] },
       },
     ]);
+  });
+  it("reads past the database guard's 1000-row cap (Ixnay has 4068 bands)", async () => {
+    const db = fakeDb();
+    for (let i = 0; i < 1001; i++) {
+      db.mapLayer.rows.push({
+        realmId: "realm_1",
+        layerType: "altitudes",
+        isActive: true,
+        geometry: null,
+        properties: { zone: "zone_1" },
+      });
+    }
+    // What src/server/db.ts does to a findMany with no `take`
+    const read = db.mapLayer.findMany.getMockImplementation()!;
+    db.mapLayer.findMany.mockImplementation((args) => read({ ...args, take: args.take ?? 1000 }));
+    expect(await loadAltitudeBands(db, "realm_1")).toHaveLength(1001);
   });
 });
