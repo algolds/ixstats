@@ -3,6 +3,7 @@
  * `startMapImport`) and run off the request path:
  *
  *   - map-pipeline: a realm map pipeline run (realm-map-pipeline.job.ts), any of its steps, dry run or apply;
+ *   - world: a generated world bundle written into a realm (world-import.ts): its dry run, then its apply job;
  *   - analyse (dryRun): read the upload, run the engine (a worker thread under Bun), store the result file and a
  *     summary (regions, report, georeference, suggested mapping);
  *   - apply: plan the analysed result with the admin's mapping and write it (map-import.apply.ts).
@@ -60,6 +61,15 @@ import {
   runMapPipelineJob,
   type PipelineSummary,
 } from "./realm-map-pipeline.job";
+import { assertWorldImportAllowed } from "./world-import.guards";
+import {
+  rebuildRealmRelief,
+  runWorldJob,
+  type ReliefRebuild,
+  type WorldApplySummary,
+  type WorldDryRunSummary,
+  type WorldImportDeps,
+} from "./world-import";
 
 export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
 export const STALE_AFTER_MS = 10 * 60_000;
@@ -87,7 +97,8 @@ export interface ApplySummary extends AppliedImport {
   nations: number;
 }
 
-export type MapImportSummary = AnalyseSummary | ApplySummary | PipelineSummary;
+export type MapImportSummary =
+  AnalyseSummary | ApplySummary | PipelineSummary | WorldDryRunSummary | WorldApplySummary;
 
 export interface StartMapImportInput {
   realmId: string;
@@ -111,6 +122,8 @@ export interface MapImportDeps {
   ) => Promise<EngineResult>;
   /** A realm map pipeline run's replaceable parts (the CLI's local checkout, tests). */
   pipeline?: PipelineDeps;
+  /** A world import's replaceable parts (the relief build, tests). */
+  world?: WorldImportDeps;
 }
 
 async function defaultDb(): Promise<PrismaClient> {
@@ -172,6 +185,9 @@ export async function startMapImportApply(
   if (!parent.dryRun || parent.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "Only a finished analysis can be applied");
   }
+  if (parent.kind === "world") {
+    throw new MapImportError("BAD_REQUEST", "A world is applied with its own apply, not a mapping");
+  }
   const apply = mapImportApplySchema.parse(applyInput);
   const job = await db.mapImportJob.create({
     data: {
@@ -193,6 +209,66 @@ export async function startMapImportApply(
   });
   if (deps.kick !== false) kickMapImports(db, deps);
   return job.id;
+}
+
+/**
+ * Queue the apply of a checked world (the dry run of a `world` job that succeeded). The person must still be allowed
+ * to generate the realm's world; the apply job checks again when it runs, and its transaction once more.
+ */
+export async function startWorldApply(
+  db: PrismaClient,
+  actor: RealmActor,
+  parentJobId: string,
+  deps: MapImportDeps = {}
+): Promise<string> {
+  const parent = await db.mapImportJob.findUnique({ where: { id: parentJobId } });
+  if (!parent) throw new MapImportError("NOT_FOUND", "Import not found");
+  await assertWorldImportAllowed(db, actor, parent.realmId);
+  if (parent.kind !== "world" || !parent.dryRun || parent.status !== "succeeded") {
+    throw new MapImportError("BAD_REQUEST", "Only a world whose check has finished can be applied");
+  }
+  const job = await db.mapImportJob.create({
+    data: {
+      realmId: parent.realmId,
+      kind: "world",
+      dryRun: false,
+      options: {},
+      requestedBy: actor.clerkUserId,
+      parentJobId: parent.id,
+      uploadId: parent.uploadId,
+      filename: parent.filename,
+      stage: "Waiting to start",
+    },
+    select: { id: true },
+  });
+  if (deps.kick !== false) kickMapImports(db, deps);
+  return job.id;
+}
+
+/**
+ * Build a realm's relief again (the World tab's "Rebuild relief"), under the realm's job lease so it never overlaps
+ * an import. The same people as the apply, without the claim lock: relief leaves the nations alone.
+ */
+export async function rebuildWorldRelief(
+  db: PrismaClient,
+  actor: RealmActor,
+  realmId: string,
+  deps: MapImportDeps = {}
+): Promise<ReliefRebuild> {
+  await assertWorldImportAllowed(db, actor, realmId, { claims: false });
+  const outcome = await withJobLock(
+    db,
+    mapImportLockName(realmId),
+    () => rebuildRealmRelief(db, realmId, deps.world),
+    { timeoutMs: MAP_IMPORT_LOCK_MS }
+  );
+  if (!outcome.ran) {
+    throw new MapImportError(
+      "CONFLICT",
+      "Another import of this realm is running. Try again when it has finished"
+    );
+  }
+  return outcome.result;
 }
 
 export interface MapImportJobView {
@@ -283,6 +359,12 @@ export async function previewMapImport(
   const realm = await loadImportRealm(db, actor, job.realmId);
   if (!job.dryRun || job.status !== "succeeded") {
     throw new MapImportError("BAD_REQUEST", "The analysis has not finished");
+  }
+  if (job.kind === "world") {
+    throw new MapImportError(
+      "BAD_REQUEST",
+      "A world's changes are in its check result, not a preview"
+    );
   }
   const options = mapImportOptionsSchema.parse(job.options ?? {});
   const result = await readImportResult(job.id);
@@ -416,7 +498,7 @@ async function runApply(
   return { phase: "apply", nations: plan.features.length, ...applied };
 }
 
-/** The job's work by kind: a pipeline run, an analysis or an apply. */
+/** The job's work by kind: a pipeline run, a world, an analysis or an apply. */
 function runJob(
   db: PrismaClient,
   job: Prisma.MapImportJobGetPayload<object>,
@@ -424,6 +506,7 @@ function runJob(
   deps: MapImportDeps
 ): Promise<MapImportSummary> {
   if (job.kind === MAP_PIPELINE_KIND) return runMapPipelineJob(db, job, progress, deps.pipeline);
+  if (job.kind === "world") return runWorldJob(db, job, progress, deps.world);
   return job.dryRun ? runAnalyse(db, job, progress, deps) : runApply(db, job, progress);
 }
 

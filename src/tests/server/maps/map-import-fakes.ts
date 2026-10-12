@@ -54,6 +54,11 @@ function table(prefix: string, defaults: () => Row = () => ({})) {
       if (orderBy?.createdAt === "desc") list = [...list].sort((a, b) => b.createdAt - a.createdAt);
       return list.slice(0, take ?? list.length).map((r) => pick(r, select));
     }),
+    createMany: jest.fn(async ({ data }: Row) => {
+      for (const item of data as Row[])
+        rows.push({ id: newId(prefix), createdAt: new Date(), ...item });
+      return { count: (data as Row[]).length };
+    }),
     count: jest.fn(async ({ where }: Row = {}) => rows.filter((r) => matches(r, where)).length),
     update: jest.fn(async ({ where, data, select }: Row) => {
       const row = rows.find((r) => matches(r, where));
@@ -79,7 +84,13 @@ function table(prefix: string, defaults: () => Row = () => ({})) {
         Object.assign(row, update);
         return pick(row, select);
       }
-      const created = { id: newId(prefix), createdAt: new Date(), isActive: true, ...create };
+      const created = {
+        id: newId(prefix),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isActive: true,
+        ...create,
+      };
       rows.push(created);
       return pick(created, select);
     }),
@@ -93,11 +104,13 @@ export function fakeDb(): any {
     realm: table("r"),
     country: table("c"),
     realmPage: table("p"),
+    realmClaim: table("q", () => ({ status: "pending", countryId: null })),
     mapLayer: table("m", () => ({
       isActive: true,
       countryId: null,
       displayName: null,
       neighbors: null,
+      updatedAt: new Date(),
     })),
     mapImportJob: table("j", () => ({
       status: "queued",
@@ -119,8 +132,10 @@ export function fakeDb(): any {
     thinkpagesAccount: table("t"),
     $queryRawUnsafe: jest.fn(async () => []),
     $executeRawUnsafe: jest.fn(async () => 0),
-    // invalidateRealmMap's version bump: UPDATE "realms" SET "mapVersion" = "mapVersion" + 1 WHERE id = $1 RETURNING
-    $queryRaw: jest.fn(async (_sql: TemplateStringsArray, realmId: string) => {
+    // invalidateRealmMap's version bump: UPDATE "realms" SET "mapVersion" = "mapVersion" + 1 WHERE id = $1 RETURNING;
+    // a world import's row locks (SELECT ... FOR UPDATE) change nothing here, the test reads them from the calls
+    $queryRaw: jest.fn(async (sql: TemplateStringsArray, realmId: string) => {
+      if (sql.join("?").includes("FOR UPDATE")) return [];
       const realm = db.realm.rows.find((r: Row) => r.id === realmId);
       if (!realm) return [];
       realm.mapVersion = (realm.mapVersion ?? 0) + 1;

@@ -24,8 +24,10 @@ import {
   getMapImportJob,
   listMapImportJobs,
   previewMapImport,
+  rebuildWorldRelief,
   startMapImport,
   startMapImportApply,
+  startWorldApply,
 } from "~/server/modules/maps/map-import.jobs";
 import {
   loadImportRealm,
@@ -36,6 +38,7 @@ import {
 } from "~/server/modules/maps/map-import.realm";
 import { isUploadId } from "~/server/modules/maps/map-import.storage";
 import { startWikiMapImport } from "~/server/modules/maps/map-import.wiki";
+import { assertWorldImportAllowed } from "~/server/modules/maps/world-import.guards";
 
 function importError(error: unknown): never {
   if (error instanceof MapImportError)
@@ -68,7 +71,10 @@ export const geoEditorMapImportRouter = createTRPCRouter({
       };
     }),
 
-    /** Queue an analysis of an uploaded file. */
+    /**
+     * Queue an analysis of an uploaded file. A `world` file (the generator's bundle) is queued as the dry run of a
+     * world import: its result, polled with `job`, is the diff; `applyWorld` queues the write.
+     */
     start: rateLimitedMutationProcedure
       .input(
         z.object({
@@ -80,7 +86,11 @@ export const geoEditorMapImportRouter = createTRPCRouter({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        await loadImportRealm(ctx.db, ctx.user, input.realmId).catch(importError);
+        if (input.kind === "world") {
+          await assertWorldImportAllowed(ctx.db, ctx.user, input.realmId).catch(importError);
+        } else {
+          await loadImportRealm(ctx.db, ctx.user, input.realmId).catch(importError);
+        }
         const jobId = await startMapImport(
           {
             realmId: input.realmId,
@@ -129,6 +139,22 @@ export const geoEditorMapImportRouter = createTRPCRouter({
           db: ctx.db,
         }).catch(importError),
       })),
+
+    /** Queue the write of a checked world (the `world` job whose dry run succeeded); poll `job` for its result. */
+    applyWorld: rateLimitedMutationProcedure
+      .input(z.object({ jobId: id }))
+      .mutation(async ({ ctx, input }) => ({
+        jobId: await startWorldApply(ctx.db, ctx.user, input.jobId, { db: ctx.db }).catch(
+          importError
+        ),
+      })),
+
+    /** Build the realm's relief again: from its last world's cells when the map came from one, else its bands. */
+    rebuildRelief: rateLimitedMutationProcedure
+      .input(z.object({ realmId: id }))
+      .mutation(({ ctx, input }) =>
+        rebuildWorldRelief(ctx.db, ctx.user, input.realmId, { db: ctx.db }).catch(importError)
+      ),
 
     /** The lon/lat box an image of this size covers under a georeference (the wizard's preview). */
     previewGeoreference: protectedProcedure
