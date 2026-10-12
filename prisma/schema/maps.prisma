@@ -342,44 +342,46 @@ model MapEditorSession {
   @@map("map_editor_sessions")
 }
 
-/// IxMaps - World template for export/import (clone system)
-model WorldTemplate {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  version       String    @default("1.0.0")
-  createdBy     String    // Clerk userId
-  metadata      Json?     // { bounds, featureCounts, generatedFrom, etc. }
-  layers        Json      // Record<LayerType, GeoJSON.FeatureCollection>
-  countries     Json?     // Array<{ name, featureId, properties }>
-  sovereignty   Json?     // Array<{ sovereign, subject, type, autonomy }>
-  mapConfig     Json?     // { center, zoom, layerConfigs, colorPalette }
-  fileSizeBytes Int?
-  isPublic      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+/// World Studio preset (docs/specs/2026-10-12-atlas-studio-design.md): a named recipe without a seed that founders
+/// pick on the World tab. `params` of a version is `Partial<WorldGenParams>` minus `seed`. The three built-ins are
+/// seeded from `WORLD_PRESETS` on first read; a draft is an unpublished version, a publish stamps `publishedAt`.
+model WorldPreset {
+  id                 String    @id @default(cuid())
+  slug               String    @unique
+  name               String
+  description        String    @default("")
+  sortOrder          Int       @default(0)
+  builtIn            Boolean   @default(false)
+  publishedVersionId String?
+  draftVersionId     String?
+  archivedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  @@index([createdBy])
-  @@index([isPublic])
-  @@map("world_templates")
+  versions         WorldPresetVersion[] @relation("PresetVersions")
+  publishedVersion WorldPresetVersion?  @relation("PresetPublished", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  draftVersion     WorldPresetVersion?  @relation("PresetDraft", fields: [draftVersionId], references: [id], onDelete: SetNull)
+
+  @@index([archivedAt, sortOrder])
+  @@map("world_presets")
 }
 
-/// IxMaps - Procedurally generated worlds
-model ProceduralWorld {
-  id             String    @id @default(cuid())
-  seed           Int
-  parameters     Json      // WorldGenParams
-  status         String    @default("completed") // "generating", "completed", "failed"
-  generatedData  Json?     // Generated layers (FeatureCollections)
-  metadata       Json?     // Stats: landPercentage, countryCount, generationTimeMs, etc.
-  templateId     String?   // If saved as template
-  createdBy      String    // Clerk userId
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+model WorldPresetVersion {
+  id          String    @id @default(cuid())
+  presetId    String
+  params      Json
+  note        String?
+  createdBy   String    // Clerk userId, or "system" for the factory seed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt // a draft's last save
+  publishedAt DateTime?
 
-  @@index([seed])
-  @@index([createdBy])
-  @@map("procedural_worlds")
+  preset      WorldPreset   @relation("PresetVersions", fields: [presetId], references: [id], onDelete: Cascade)
+  publishedFor WorldPreset[] @relation("PresetPublished")
+  draftFor    WorldPreset[] @relation("PresetDraft")
+
+  @@index([presetId, createdAt])
+  @@map("world_preset_versions")
 }
 
 /// IxMaps - Sovereignty/dependency relationships between countries
@@ -529,7 +531,6 @@ model Realm {
   ownerId         String       // Clerk userId
   status          String       @default("draft") // draft, generating, active, archived
   visibility      String       @default("unlisted") // public | unlisted (never private — realms decision 19)
-  templateId      String?      // Source ProceduralWorld or WorldTemplate
   settings        Json?        // Realm-specific config overrides
   thumbnail       String?      // Preview image URL
   seed            Int?         // Master generation seed for reproducibility

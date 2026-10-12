@@ -49,9 +49,16 @@ describe("atlas ra migration", () => {
     );
   });
 
-  it("keeps the procedural world models and the realm template link (ruling A6)", () => {
-    expect(mapsSchema).toMatch(/model ProceduralWorld \{/);
-    expect(mapsSchema).toMatch(/model WorldTemplate \{/);
-    expect(mapsSchema.match(/model Realm \{([\s\S]*?)\n\}/)?.[1] ?? "").toMatch(/templateId\s/);
+  it("no longer has the procedural world models or the realm template link (dropped by atlas_studio)", () => {
+    const studio = readFileSync(
+      "prisma/migrations/20261023120000_atlas_studio/migration.sql",
+      "utf8"
+    );
+    expect(mapsSchema).not.toMatch(/model ProceduralWorld \{/);
+    expect(mapsSchema).not.toMatch(/model WorldTemplate \{/);
+    expect(mapsSchema.match(/model Realm \{([\s\S]*?)\n\}/)?.[1] ?? "").not.toMatch(/templateId\s/);
+    expect(studio).toContain('DROP TABLE IF EXISTS "procedural_worlds"');
+    expect(studio).toContain('DROP TABLE IF EXISTS "world_templates"');
+    expect(studio).toContain('DROP COLUMN IF EXISTS "templateId"');
   });
 });

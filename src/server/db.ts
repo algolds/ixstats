@@ -57,8 +57,8 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     `CountrySovereignty`,
     // SVG upload pipeline (admin map management)
     `SvgUpload MapLayer MapEditRequest`,
-    // Border editor, world templates, procedural generation
-    `MapEditorSession WorldTemplate ProceduralWorld MapStyleOverride`,
+    // Border editor, world presets (Atlas Studio), map style overrides
+    `MapEditorSession WorldPreset WorldPresetVersion MapStyleOverride`,
     // Transport infrastructure (generated routes, hubs)
     `TransportRoute TransportHub`,
     // Story pins & custom map labels

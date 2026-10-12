@@ -29,6 +29,12 @@ export const ATLAS_R0_SQL = "prisma/migrations/20261021120000_atlas_r0/migration
 /** Atlas Release A: Country.worldgen and Country.claimable; idempotent. */
 export const ATLAS_RA_SQL = "prisma/migrations/20261022120000_atlas_ra/migration.sql";
 
+/**
+ * Atlas and World Studio: the preset tables, and the drop of the dead procedural world models; idempotent. It runs
+ * BEFORE `db push`, which refuses to drop a non-empty table the schema no longer has.
+ */
+export const ATLAS_STUDIO_SQL = "prisma/migrations/20261023120000_atlas_studio/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -107,6 +113,7 @@ async function main(): Promise<void> {
     await db.$disconnect();
   }
 
+  run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", ATLAS_STUDIO_SQL]);
   run("bunx", ["prisma", "db", "push", "--skip-generate"]);
   console.log("🗺️  Installing the map geometry triggers and the Atlas functions...");
   for (const file of DB_SETUP_SQL_FILES) {

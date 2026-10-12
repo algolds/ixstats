@@ -25,4 +25,15 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(ra).toBeGreaterThan(r0);
     expect(build).toBeGreaterThan(ra);
   });
+
+  it("runs the Atlas Studio SQL before the schema push, after the backup, and stops the deploy if it fails", () => {
+    const backup = script.indexOf("bun run db:backup");
+    const studio = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(backup).toBeGreaterThanOrEqual(0);
+    expect(studio).toBeGreaterThan(backup);
+    expect(push).toBeGreaterThan(studio);
+  });
 });

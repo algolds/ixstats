@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import {
   ATLAS_R0_SQL,
   ATLAS_RA_SQL,
+  ATLAS_STUDIO_SQL,
   bootstrapRefusal,
   DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
@@ -43,6 +44,25 @@ describe("db:bootstrap guards", () => {
 describe("the SQL a fresh database needs besides db push", () => {
   it("runs the geometry triggers, then the Atlas R0 SQL (it backfills through them), then Atlas RA", () => {
     expect(DB_SETUP_SQL_FILES).toEqual([MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL]);
+  });
+
+  it("keeps the Atlas Studio SQL out of the after-push list: it runs before db push, which cannot drop a table", () => {
+    expect(DB_SETUP_SQL_FILES).not.toContain(ATLAS_STUDIO_SQL);
+    expect(ATLAS_STUDIO_SQL).toContain("20261023120000_atlas_studio");
+  });
+
+  it("runs the Atlas Studio SQL before the schema push", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    const studio = source.lastIndexOf('--file", ATLAS_STUDIO_SQL');
+    const push = source.indexOf('"db", "push"');
+    expect(studio).toBeGreaterThan(0);
+    expect(push).toBeGreaterThan(studio);
+  });
+
+  it("the Atlas Studio SQL is the idempotent one that creates the preset tables and drops the dead models", () => {
+    const sql = readFileSync(ATLAS_STUDIO_SQL, "utf8");
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS "world_presets"');
+    expect(sql).toContain('DROP TABLE IF EXISTS "procedural_worlds"');
   });
 
   it("the Atlas RA SQL is the idempotent one that adds the Country slot flags", () => {
