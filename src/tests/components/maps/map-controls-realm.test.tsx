@@ -93,6 +93,19 @@ describe("layer panel on a realm", () => {
     expect(onToggleLayer).toHaveBeenCalledWith("country_labels");
   });
 
+  it("lists the relief with the overlays, checked while the realm's choice has it on", () => {
+    const relief = art({ id: "relief", label: "Relief", kind: "overlay", order: 9 });
+    const on = raster({
+      layers: [relief],
+      selection: { base: null, overlays: ["relief"] },
+    });
+    const { panel } = openLayers({ layerTypes: ["political"], raster: on });
+    const row = within(panel).getByRole("checkbox", { name: "Relief" });
+    expect(row).toBeChecked();
+    fireEvent.click(row);
+    expect(on.onToggleOverlay).toHaveBeenCalledWith("relief");
+  });
+
   it("offers the country names switch only while a base map is shown", () => {
     const { panel } = openLayers({
       layerTypes: ["political"],

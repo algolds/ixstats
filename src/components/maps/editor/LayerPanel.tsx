@@ -26,6 +26,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import type { EditorFeature } from "./types/editor-state";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
+import { isMapSwitchedLayer } from "./utils/layer-rows";
 import {
   IconButton,
   ExpandButton,
@@ -120,7 +121,7 @@ const MINIMAL_GROUPS = [
 ];
 
 /** Layers that are toggled elsewhere and have neither a feature list nor a lock. */
-const isStaticLayer = (id: string) => id === "border" || id === "climate";
+const isStaticLayer = (id: string) => id === "border" || isMapSwitchedLayer(id);
 
 type FeatureAction = (feature: EditorFeature) => void;
 
