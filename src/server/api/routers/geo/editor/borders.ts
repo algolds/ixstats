@@ -6,6 +6,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { validateGeometryValid } from "~/lib/maps/geo-validation";
+import { restorableBorderDraft } from "~/lib/maps/border-draft";
 import { rebuildAdjacency } from "~/lib/maps/adjacency";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { editableMapRealmId, realmScopeInput } from "~/server/api/trpc/realm-scope";
@@ -43,6 +44,7 @@ export const geoEditorBordersRouter = createTRPCRouter({
             boundingBox: true,
             areaSqKm: true,
             countryId: true,
+            updatedAt: true,
           },
         }),
         `Feature not found: ${input.featureId}`
@@ -75,13 +77,15 @@ export const geoEditorBordersRouter = createTRPCRouter({
           .then((layers) => neighbourFeatures(layers, bbox, pad));
       }
 
-      // Create or resume session
+      // Create or resume session (feature ids repeat across realms, so the id names the realm)
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const userId = ctx.auth!.userId ?? "system";
+      const sessionId = `${userId}_${realmId}_${input.featureId}`;
       const session = await ctx.db.mapEditorSession.upsert({
-        where: { id: `${ctx.auth!.userId ?? "system"}_${input.featureId}` },
+        where: { id: sessionId },
         create: {
-          id: `${ctx.auth!.userId ?? "system"}_${input.featureId}`,
-          userId: ctx.auth!.userId ?? "system",
+          id: sessionId,
+          userId,
           featureId: input.featureId,
           sessionData: { undoStack: [], mode: "select" } as any,
           expiresAt,
@@ -90,7 +94,16 @@ export const geoEditorBordersRouter = createTRPCRouter({
       });
 
       return {
-        session: { id: session.id, sessionData: session.sessionData },
+        session: { id: session.id },
+        // Only this user's draft of this feature, newer than the feature's last save
+        draft: restorableBorderDraft({
+          sessionData: session.sessionData,
+          sessionUserId: session.userId,
+          sessionFeatureId: session.featureId,
+          userId,
+          featureId: input.featureId,
+          featureUpdatedAt: feature.updatedAt,
+        }),
         feature: {
           featureId: feature.featureId,
           displayName: feature.displayName,
@@ -117,7 +130,8 @@ export const geoEditorBordersRouter = createTRPCRouter({
       const { count } = await ctx.db.mapEditorSession.updateMany({
         where: { id: input.sessionId, userId: ctx.auth?.userId ?? "system" },
         data: {
-          sessionData: input.sessionData as any,
+          // Stamped here: a restore compares it with the feature's (server-side) updatedAt
+          sessionData: { ...input.sessionData, savedAt: Date.now() } as any,
           updatedAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },

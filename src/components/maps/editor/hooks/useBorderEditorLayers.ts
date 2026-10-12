@@ -8,9 +8,10 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
-import type { Position, Polygon, MultiPolygon, FeatureCollection } from "geojson";
+import type { Position, Polygon, MultiPolygon, Feature, FeatureCollection } from "geojson";
 import type { VertexRef } from "~/lib/maps/border-editor";
 import { getVertices, getAllRings } from "~/lib/maps/border-editor";
+import type { BorderDragFrame } from "~/lib/maps/border-drag";
 import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 import {
   EMPTY_FC,
@@ -20,14 +21,20 @@ import {
   midpointFeatures,
   pointFeature,
   upsertGeoJSONLayers,
+  type GeoJSONSourceOptions,
   type SourcelessLayer,
 } from "../utils/map-helpers";
 import { circle, fill, line } from "../utils/editor-layer-specs";
 import { createListeners } from "./map-interaction";
 import { coalesceToFrame } from "~/lib/frame-coalesce";
 
-/** Border-edit sources and their layers (z-order is array order). */
-const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
+/** The vertices' feature id property ("ring:vertex"), the key of their feature-state. */
+const VERTEX_ID = "vid";
+
+/** Border-edit sources, their layers (z-order is array order) and any source options. */
+const BORDER_SOURCES: Array<
+  [sourceId: string, layers: SourcelessLayer[], options?: GeoJSONSourceOptions]
+> = [
   [
     "neighbors",
     [
@@ -47,12 +54,22 @@ const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
     "vertices",
     [
       circle("vertices-circles", {
-        "circle-radius": ["case", ["==", ["get", "selected"], true], 7, 4],
-        "circle-color": ["case", ["==", ["get", "selected"], true], "#f6e05e", "#fff"],
+        "circle-radius": ["case", ["boolean", ["feature-state", "selected"], false], 7, 4],
+        "circle-color": [
+          "case",
+          ["boolean", ["feature-state", "selected"], false],
+          "#f6e05e",
+          "#fff",
+        ],
         "circle-stroke-color": "#000",
         "circle-stroke-width": 1,
+        // The vertex being dragged is drawn by the border-drag source instead
+        "circle-opacity": ["case", ["boolean", ["feature-state", "dragging"], false], 0, 1],
+        "circle-stroke-opacity": ["case", ["boolean", ["feature-state", "dragging"], false], 0, 1],
       }),
     ],
+    // Selection and drag are feature-state on this id, so neither resends the vertices
+    { promoteId: VERTEX_ID },
   ],
   [
     "midpoints",
@@ -64,6 +81,28 @@ const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
         "circle-stroke-width": 0.5,
         "circle-opacity": 0.6,
       }),
+    ],
+  ],
+  [
+    "border-drag",
+    [
+      line(
+        "border-drag-edges",
+        { "line-color": "#f6e05e", "line-width": 2 },
+        {
+          filter: ["==", "$type", "LineString"],
+        }
+      ),
+      circle(
+        "border-drag-vertex",
+        {
+          "circle-radius": 7,
+          "circle-color": "#f6e05e",
+          "circle-stroke-color": "#000",
+          "circle-stroke-width": 1,
+        },
+        ["==", "$type", "Point"]
+      ),
     ],
   ],
   [
@@ -110,7 +149,31 @@ const BORDER_SOURCES: Array<[sourceId: string, layers: SourcelessLayer[]]> = [
   ],
 ];
 
-const SNAP_TO_NEIGHBOR_DEGREES = 0.05;
+const vertexId = ({ ringIndex, vertexIndex }: Pick<VertexRef, "ringIndex" | "vertexIndex">) =>
+  `${ringIndex}:${vertexIndex}`;
+
+/** Sets or clears a vertex's `selected` / `dragging` feature-state (no-op once the source is gone). */
+function markVertex(
+  map: MapLibreMap,
+  vertex: Pick<VertexRef, "ringIndex" | "vertexIndex">,
+  key: "selected" | "dragging",
+  on: boolean
+) {
+  if (!map.getSource("vertices")) return;
+  const target = { source: "vertices", id: vertexId(vertex) };
+  if (on) map.setFeatureState(target, { [key]: true });
+  else map.removeFeatureState(target, key);
+}
+
+const featureOf = (geometry: Polygon | MultiPolygon): Feature => ({
+  type: "Feature",
+  geometry,
+  properties: {},
+});
+
+/** What the border-drag source shows: the dragged vertex and the edges around it. */
+const dragFeatures = ({ vertex, edges }: BorderDragFrame) =>
+  collection([pointFeature(vertex), ...edges.map((edge) => lineFeature(edge))]);
 
 function getCircleCoords(center: [number, number], radiusKm: number): number[][] {
   const steps = 64;
@@ -125,43 +188,21 @@ function getCircleCoords(center: [number, number], radiusKm: number): number[][]
   });
 }
 
-/** The nearest neighbour-border vertex within snapping range, or the point itself. */
-function snapToNeighborVertex(
-  point: Position,
-  neighbors: Array<{ geometry: Polygon | MultiPolygon | null | undefined }>
-): Position {
-  let best: Position = point;
-  let bestDist = Infinity;
-  for (const { geometry } of neighbors) {
-    if (!geometry) continue;
-    for (const coord of getAllRings(geometry).flat()) {
-      const dx = coord[0]! - point[0]!;
-      const dy = coord[1]! - point[1]!;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < SNAP_TO_NEIGHBOR_DEGREES && dist < bestDist) {
-        bestDist = dist;
-        best = [...coord];
-      }
-    }
-  }
-  return best;
-}
-
 interface UseBorderEditorLayersProps {
   map: MapLibreMap | null;
   isActive: boolean;
   geometry: Polygon | MultiPolygon | null;
-  neighborGeometries?: Array<{
-    featureId: string;
-    geometry: Polygon | MultiPolygon | null | undefined;
-  }>;
+  /** The neighbouring features' outlines as the editor holds them, by feature id. */
+  neighborGeometries?: Record<string, Polygon | MultiPolygon>;
   mode: string;
   splitLine: Position[];
   mergeTargets: string[];
   selectedVertex: VertexRef | null;
   onMapClick: (lng: number, lat: number) => void;
-  onVertexDrag: (ref: VertexRef, to: Position) => void;
-  onDragEnd?: () => void;
+  /** Moves the dragged vertex to the pointer; returns what to draw (editor state is not touched). */
+  onVertexDrag: (ref: VertexRef, pointer: Position) => BorderDragFrame | null;
+  /** Ends the drag; true when the vertex moved and the editor state was updated. */
+  onDragEnd?: () => boolean;
   brushRadius?: number;
   brushTargetId?: string | null;
   onBrushStroke?: (
@@ -208,7 +249,6 @@ export function useBorderEditorLayers({
     onToggleMergeTarget,
     onMapClick,
     onVertexDrag,
-    neighborGeometries,
   });
   // oxlint-disable-next-line -- latest-value ref read by the once-attached handlers
   latest.current = {
@@ -220,7 +260,6 @@ export function useBorderEditorLayers({
     onToggleMergeTarget,
     onMapClick,
     onVertexDrag,
-    neighborGeometries,
   };
 
   const safeSetData = useCallback(
@@ -228,14 +267,25 @@ export function useBorderEditorLayers({
     [map]
   );
 
+  /** The vertex whose own circle is hidden while the border-drag overlay stands in for it. */
+  const draggedVertex = useRef<VertexRef | null>(null);
+  /** Takes the drag overlay down (a no-op when none is up). */
+  const clearDragOverlay = useCallback(() => {
+    const shown = draggedVertex.current;
+    if (!map || !shown) return;
+    draggedVertex.current = null;
+    safeSetData("border-drag", EMPTY_FC);
+    markVertex(map, shown, "dragging", false);
+  }, [map, safeSetData]);
+
   // Attach / detach: sources, layers, and event handlers.
   useEffect(() => {
     if (!map || !isActive) return;
 
     const addSourcesAndLayers = () => {
       if (!map.getSource("neighbors")) {
-        for (const [sourceId, layers] of BORDER_SOURCES) {
-          upsertGeoJSONLayers(map, sourceId, EMPTY_FC, layers);
+        for (const [sourceId, layers, options] of BORDER_SOURCES) {
+          upsertGeoJSONLayers(map, sourceId, EMPTY_FC, layers, options);
         }
       }
       setReady(true);
@@ -283,13 +333,19 @@ export function useBorderEditorLayers({
       }
     };
 
-    // A vertex drag re-renders the editor, so it runs once per frame with the latest pointer
+    // A vertex drag runs once per frame with the latest pointer; the editor keeps the geometry in a
+    // ref and hands back the outline and the tiny overlay to draw, so React does not render
     const vertexDrag = coalesceToFrame((lngLat: [number, number]) => {
       const vertex = draggingVertex.current;
       if (!vertex) return;
-      const neighbors = latest.current.neighborGeometries;
-      const to = neighbors?.length ? snapToNeighborVertex(lngLat, neighbors) : lngLat;
-      latest.current.onVertexDrag(vertex, to);
+      const frame = latest.current.onVertexDrag(vertex, lngLat);
+      if (!frame) return;
+      if (!draggedVertex.current) {
+        draggedVertex.current = vertex;
+        markVertex(map, vertex, "dragging", true);
+      }
+      safeSetData("border-drag", dragFeatures(frame));
+      safeSetData("active-feature", collection([featureOf(frame.geometry)]));
     });
 
     const handleMousemove = (e: MapLayerMouseEvent) => {
@@ -340,7 +396,8 @@ export function useBorderEditorLayers({
       if (draggingVertex.current) {
         draggingVertex.current = null;
         canvas.style.cursor = "";
-        latest.current.onDragEnd?.();
+        // After a commit the overlay stays until the new outline reaches the vertex source
+        if (!latest.current.onDragEnd?.()) clearDragOverlay();
       }
       finishBrushing();
     };
@@ -382,15 +439,17 @@ export function useBorderEditorLayers({
       }
       if (canvas) canvas.style.cursor = "";
       draggingVertex.current = null;
+      draggedVertex.current = null;
       isBrushing.current = false;
       brushStrokePoints.current = [];
       setReady(false);
     };
-  }, [map, isActive, safeSetData]);
+  }, [map, isActive, safeSetData, clearDragOverlay]);
 
   useBorderLayerData({
     ready,
     safeSetData,
+    clearDragOverlay,
     map,
     geometry,
     neighborGeometries,
@@ -414,6 +473,7 @@ type BorderLayerDataProps = Pick<
 > & {
   ready: boolean;
   safeSetData: (sourceId: string, data: FeatureCollection) => void;
+  clearDragOverlay: () => void;
   traceStart: [number, number] | null;
 };
 
@@ -421,6 +481,7 @@ type BorderLayerDataProps = Pick<
 function useBorderLayerData({
   ready,
   safeSetData,
+  clearDragOverlay,
   map,
   geometry,
   neighborGeometries,
@@ -436,10 +497,7 @@ function useBorderLayerData({
 
   useEffect(() => {
     if (!ready) return;
-    safeSetData(
-      "active-feature",
-      collection(geometry ? [{ type: "Feature", geometry, properties: {} }] : [])
-    );
+    safeSetData("active-feature", collection(geometry ? [featureOf(geometry)] : []));
   }, [geometry, ready, safeSetData]);
 
   useEffect(() => {
@@ -453,9 +511,7 @@ function useBorderLayerData({
               pointFeature(v.coord, {
                 ringIndex: v.ringIndex,
                 vertexIndex: v.vertexIndex,
-                selected:
-                  selectedVertex?.ringIndex === v.ringIndex &&
-                  selectedVertex?.vertexIndex === v.vertexIndex,
+                [VERTEX_ID]: vertexId(v),
               })
             )
           : []
@@ -471,18 +527,29 @@ function useBorderLayerData({
           : []
       )
     );
-  }, [geometry, mode, selectedVertex, ready, safeSetData]);
+    // A dragged vertex now sits in the data: the drag overlay can go
+    clearDragOverlay();
+  }, [geometry, mode, ready, safeSetData, clearDragOverlay]);
+
+  // The selected vertex is feature-state on its id: choosing one does not resend the vertices
+  const selectedRing = selectedVertex?.ringIndex;
+  const selectedIndex = selectedVertex?.vertexIndex;
+  useEffect(() => {
+    if (!map || !ready || selectedRing === undefined || selectedIndex === undefined) return;
+    const vertex = { ringIndex: selectedRing, vertexIndex: selectedIndex };
+    markVertex(map, vertex, "selected", true);
+    return () => markVertex(map, vertex, "selected", false);
+  }, [map, ready, selectedRing, selectedIndex]);
 
   useEffect(() => {
     if (!ready) return;
     safeSetData(
       "neighbors",
       collection(
-        (neighborGeometries ?? []).flatMap((n) =>
-          n.geometry
-            ? [{ type: "Feature" as const, geometry: n.geometry, properties: { id: n.featureId } }]
-            : []
-        )
+        Object.entries(neighborGeometries ?? {}).map(([id, shape]) => ({
+          ...featureOf(shape),
+          properties: { id },
+        }))
       )
     );
   }, [neighborGeometries, ready, safeSetData]);
@@ -492,11 +559,10 @@ function useBorderLayerData({
     safeSetData(
       "merge-targets",
       collection(
-        (neighborGeometries ?? []).flatMap((n) =>
-          n.geometry && mergeTargets.includes(n.featureId)
-            ? [{ type: "Feature" as const, geometry: n.geometry, properties: {} }]
-            : []
-        )
+        mergeTargets.flatMap((id) => {
+          const shape = neighborGeometries?.[id];
+          return shape ? [featureOf(shape)] : [];
+        })
       )
     );
   }, [neighborGeometries, mergeTargets, ready, safeSetData]);

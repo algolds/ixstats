@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   MapPin,
   Component as Layers,
@@ -11,10 +11,7 @@ import {
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/maps/border-editor";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import {
-  formatPlanetArea,
-  useRealmPlanetRadius,
-} from "~/components/maps/core/hooks/useRealmMapDisplay";
+import { BorderAreaText } from "~/components/maps/editor/components/BorderAreaText";
 
 interface BorderEditorPanelProps {
   featureId: string | null;
@@ -44,8 +41,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
   brushTargetId,
   onBrushTargetChange,
 }: BorderEditorPanelProps) {
-  const radiusKm = useRealmPlanetRadius();
-  const vertices = geometry ? getVertices(geometry) : [];
+  const vertexCount = useMemo(() => (geometry ? getVertices(geometry).length : 0), [geometry]);
   const ringCount = geometry
     ? geometry.type === "Polygon"
       ? geometry.coordinates.length
@@ -75,7 +71,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
         <div className="border-separator space-y-1 border-t pt-2">
           <div className="text-label-secondary text-footnote flex items-center gap-2">
             <MapPin className="h-3.5 w-3.5" />
-            <span>{vertices.length} vertices</span>
+            <span>{vertexCount} vertices</span>
           </div>
           <div className="text-label-secondary text-footnote flex items-center gap-2">
             <Layers className="h-3.5 w-3.5" />
@@ -85,7 +81,7 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
           </div>
           {areaKm2 !== null && (
             <div className="text-label-secondary text-footnote">
-              Area: {formatPlanetArea(areaKm2, radiusKm)}
+              Area: <BorderAreaText committed={areaKm2} />
             </div>
           )}
         </div>

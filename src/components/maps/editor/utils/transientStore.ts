@@ -22,6 +22,8 @@ interface TransientEditorState {
   terrainInfo: LiveTerrainInfo | null;
   /** Current map zoom (updated on zoom end). */
   zoom: number | null;
+  /** Area of the border being dragged, live until the drag commits (km², null when idle). */
+  borderAreaKm2: number | null;
 }
 
 class TransientStore {
@@ -31,6 +33,7 @@ class TransientStore {
     cursorScreen: null,
     terrainInfo: null,
     zoom: null,
+    borderAreaKm2: null,
   };
 
   private listeners = new Set<() => void>();
@@ -88,6 +91,12 @@ class TransientStore {
     this.emitChange();
   };
 
+  public setBorderAreaKm2 = (area: number | null): void => {
+    if (this.state.borderAreaKm2 === area) return;
+    this.state = { ...this.state, borderAreaKm2: area };
+    this.emitChange();
+  };
+
   private emitChange(): void {
     if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
       this.flush();
@@ -114,4 +123,9 @@ export function useTransientMapStore<T>(selector: (state: TransientEditorState) 
     () => selector(transientMapStore.getSnapshot()),
     () => selector(transientMapStore.getSnapshot())
   );
+}
+
+/** The border area to show: the live one while a vertex is dragged, else the committed one. */
+export function useLiveBorderArea(committed: number | null): number | null {
+  return useTransientMapStore((s) => s.borderAreaKm2) ?? committed;
 }
