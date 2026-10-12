@@ -607,7 +607,7 @@ api.geoEditor.splitCountry.useMutation() // { featureId, splitLine, nameA, nameB
 api.geoEditor.mergeCountries.useMutation() // { featureIds, newName, realm? }
 api.geoEditor.repairBorderGeometry.useMutation() // { geometry }
 api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
-api.geoEditor.runPipeline.useMutation() // { source, svgContent?, worldGenParams?, targetLayers?, pngBase64?, pngConfig? }
+api.geoEditor.runPipeline.useMutation() // { source: "svg" | "png", svgContent?, targetLayers?, pngBase64?, pngConfig? }
 api.geoEditor.importPipelineResult.useMutation() // { layers, mode?, realmId? }
 ```
 

@@ -2,13 +2,13 @@
 
 The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedural realm map generator for IxStates. Located in [`src/lib/worldgen/v2/`](v2/), UPG v2 generates 100% topologically aligned, cartographically smooth, scientifically realistic fictional realm maps matching the aesthetic quality of the IxWorld reference map.
 
-It runs in the browser: the World tab of the world editor generates in a Web Worker ([`worker/`](worker/)), previews the result, and uploads it as a bundle that the server's `world` map import job writes (the server never generates). Everything under `src/lib/worldgen/` outside `v2/` is pure and shared by the worker and the server.
+It runs in the browser: the World tab of the world editor generates in a Web Worker ([`worker/`](worker/)), previews the result, and uploads it as a bundle that the server's `world` map import job writes (the server never generates). The generator and its pure helpers (`land-mask`, `baseline`, `relief*`, `world-stats`) are shared by the worker and the server; `worker/` runs only in the browser, as do the World tab's own helpers (controls, draft recipe).
 
 ---
 
 ## Key Design Principles
 
-1. **Whole-globe Voronoi mesh**: a latitude-compensated jittered grid (≈ ⅔ of `cellCount` cells, ~3,700 km² each at the default) with 5 Lloyd passes, covering ±90° and stitched across the antimeridian, so continents, rivers and borders cross ±180° without a seam. All noise is evaluated on the unit sphere (no seam, no polar pinching).
+1. **Whole-globe Voronoi mesh**: a latitude-compensated jittered grid (66,626 cells at the default `cellCount`, ~7,650 km² each) with 5 Lloyd passes, covering ±90° and stitched across the antimeridian, so continents, rivers and borders cross ±180° without a seam. All noise is evaluated on the unit sphere (no seam, no polar pinching).
 2. **Controlled landmasses**: `continentCount` continents are grown from centres inside `continentLatitudeRange` over a noisy cost field (size spread `continentSizeVariance`, an ocean gap between them), optional Antarctica-style `polarLand` caps, and `islandShare` of the land as archipelagos and volcanic arcs. Land is exactly `1 − oceanPercentage` of the globe.
 3. **Hypsometric elevation**: land cells are ranked by relief (distance inland + convergent-boundary mountain belts + noise) and mapped onto the `hypsometry` curve, so the share of land in each of the 9 zones matches the target while mountains stay on the tectonic belts.
 4. **Climate from physics, classified by Trewartha's rules**: zonal temperature with lapse rate and continentality, Coriolis wind belts, an upwind trace for onshore rain, continentality and distance-fading rain shadows, then month counts of a seasonal temperature curve decide the 12 Trewartha types. `temperatureOffset` and `precipitationScale` tune a world warmer/colder or wetter/drier.
@@ -228,7 +228,7 @@ The World tab's "This realm's map" source uses this; the worker rasterises the l
 [`relief.ts`](relief.ts) (pure, shared by the worker and the server tiles):
 
 - **Heights from cells** (`heightsFromCells`): the cell triangulation (d3-delaunay, with copies across the antimeridian) rasterised to a 2048×1024 equirectangular grid.
-- **Heights from bands** (`heightsFromBands`, Ixnay and any realm with altitude bands): the stored bands drawn in zone order, then interpolated between each band's floor and ceiling by distance transforms. Eurth has no altitude bands stored yet, so it has no relief until it gets them.
+- **Heights from bands** (`heightsFromBands`, Ixnay and any realm with altitude bands): the stored bands drawn in zone order, then interpolated between each band's floor and ceiling by distance transforms. A realm with no altitude bands has no relief to build; the pipeline's `relief` step reports it as skipped.
 - **Detail** (`addDetail`, [`relief-noise.ts`](relief-noise.ts)): a tileable 256² fractal texture scaled by altitude, at a fixed ruggedness of 1.
 - **Hillshade** (`hillshade`): light from the northwest (315°) at 45°, slope scaled by metres per pixel at each latitude; shadows black up to alpha 0.55, lit slopes white up to 0.2, flat land and sea transparent.
 

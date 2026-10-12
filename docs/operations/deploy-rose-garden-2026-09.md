@@ -81,8 +81,8 @@ Read it end to end once before starting. Every command here is meant to be run b
   - Atlas Release A (2026-10-22, additive): `Country.worldgen` (default false) and `Country.claimable` (default true),
     which world generation and the claim flow read (`prisma/migrations/20261022120000_atlas_ra/migration.sql`,
     idempotent; `db push` adds the same two columns). Apply that file with the Release 0 one (step 5a), and build
-    Ixnay's relief once after the deploy (step 5c). The `procedural_worlds` table stays: the release does not drop
-    `ProceduralWorld`, `WorldTemplate` or `Realm.templateId`
+    Ixnay's and Eurth's relief once after the deploy (step 5c). The `procedural_worlds` table stays: the release does
+    not drop `ProceduralWorld`, `WorldTemplate` or `Realm.templateId`
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -339,23 +339,33 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 #   expect: 0, or only rows whose GeoJSON is invalid (the run printed a WARNING naming each)
 ```
 
-### 5c. Ixnay's relief (after the deploy script)
+### 5c. Relief for Ixnay and Eurth (after the deploy script)
 
 Atlas Release A draws a hillshade over the land (the raster layer `relief`). Generated worlds build theirs when they
-are applied; Ixnay's comes from its stored altitude bands and is built once, by hand, on the server itself (the
-command writes to the database it is connected to). It needs no map pipeline config. `MAP_RASTER_DIR` must be the same
-absolute folder for the web app, the IxWorld standalone (maps.ixwiki.com) and the shell that runs the command
-([realm-maps.md](../systems/realm-maps.md#7-production-notes)); a generated world's relief is built by its apply job in
-the web process, so the web app writes there too.
+are applied; Ixnay's and Eurth's come from their stored altitude bands and are built once, by hand, on the server
+itself (the command writes to the database it is connected to). The step needs no stored map pipeline. The web app
+serves the tiles from `MAP_RASTER_DIR` and the command writes there ([realm-maps.md](../systems/realm-maps.md#7-production-notes)),
+so both need the same absolute path; a generated world's relief is built by its apply job in the web process, so the
+web app writes there too. The IxWorld deploy copies `data/` into the standalone (`scripts/deploy-ixworld.sh`), which
+includes the default `data/map-rasters`: with the default folder, redeploy IxWorld after this step so maps.ixwiki.com
+has the tiles.
 
 ```bash
 cd /ixwiki/public/projects/ixstats
-bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief            # dry run: reports what it would build
-bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief --apply    # about 4 s; 490 tiles, about 3 MB
-#   expect: "Relief [built]"; a second run reports "unchanged"
+bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief            # dry run
+bun scripts/realms/build-realm-map.ts --realm ixnay --steps relief --apply
+bun scripts/realms/build-realm-map.ts --realm eurth --steps relief            # dry run
+bun scripts/realms/build-realm-map.ts --realm eurth --steps relief --apply
 ```
 
-Eurth has no altitude bands stored, so the same command reports `skipped` for it until it does.
+Each run prints the step's status in brackets, then the job's result. Expect:
+
+- the dry run: `Relief [would-change]` and `relief: version <hash>, z0–5, tiles to build`;
+- the apply: `Relief [changed]` and `relief: version <hash>, z0–5: <n> tiles written, <m> fully transparent left out`
+  (Ixnay on the local clone: 490 tiles, about 3 MB, about 4 s), then `run <id>: succeeded`;
+- a second run: `Relief [unchanged]`;
+- a realm with no stored altitude bands: `Relief [skipped]` and `No altitude bands to shade`. Nothing is written, and
+  there is nothing to do for that realm.
 
 ## 6. Smoke checks (browser)
 

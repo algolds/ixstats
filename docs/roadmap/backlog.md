@@ -254,7 +254,7 @@ From the [platform audit](../history/roadmap/platform-audit/README.md) and its a
 items not already listed above:
 
 - **PR #49 known gaps:** no region filter on rankings (`mycountry.getRankings` takes only `countryId`); DMs can't be sent as a persona or country; appointed chambers are still seated by the vote simulation.
-- **Atlas:** geography modifiers (profiles, resources, climate) are displayed but never read by the economy; every map feature needs a country; no GeoJSON/Azgaar import or export; the only terrain raster is the hillshade `relief` layer (Atlas Release A; Eurth has none until it gets altitude bands) (atlas report).
+- **Atlas:** geography modifiers (profiles, resources, climate) are displayed but never read by the economy; every map feature needs a country; no GeoJSON/Azgaar import or export; the only terrain raster is the hillshade `relief` layer (Atlas Release A) (atlas report).
 - **Two sources of truth:** projected vs stored country stats; `ixTimeTimestamp` columns with two meanings (MC-16 fixed the wall-clock writers); Clerk ids and internal ids mixed across tables (for example, sports club notifications keyed by internal id never show in the tray list — [notifications.md](../systems/notifications.md#8-known-gaps)).
 - **Country where the platform should be:** the dividend and many achievements still need a country; personas live in ThinkPages rather than IxnayID.
 - **Five nations per realm:** a platform default of 5 with a tier-aware cap (`min(realm cap, tier cap)`) tied to one premium definition; decide dividends and achievements per account or per nation (PA §7).
@@ -268,10 +268,10 @@ From code audit §8 (2026-09-30, 332 models then; 338 now). 57 models had no acc
 Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archetypes 3, security/logging 3, maps 5,
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
 them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop the force-structure models (`MilitaryBranch`,
-`MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events would use until that is decided. `ProceduralWorld`, `WorldTemplate` and
-`Realm.templateId` stay while AT-15 is open. **The 13 Exchange models are off the drop list (D5 decided "build",
-2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`, `SectorIndexHistory`, `SectorPosition` and
-`CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
+`MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events would use until
+that is decided. `ProceduralWorld`, `WorldTemplate` and `Realm.templateId` stay while AT-15 is open. **The 13 Exchange
+models are off the drop list (D5 decided "build", 2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`,
+`SectorIndexHistory`, `SectorPosition` and `CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the
 [history copy](../history/roadmap/code-audit-2026-09-30.md#8-dead-schema).
 

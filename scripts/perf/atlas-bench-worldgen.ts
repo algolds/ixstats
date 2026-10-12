@@ -39,7 +39,8 @@ export const WORLDGEN_RUN_FLAG = "--worldgen-run";
 const FIRST_LIMIT_MS = 1000;
 const SLIDER_LIMIT_MS = 600;
 const REROLL_LIMIT_MS = 900;
-const CHILD_TIMEOUT_MS = 300_000;
+/** A child takes about 4 s (a generation under 2 s, the rest loading modules); a hung one must not stall the run. */
+const CHILD_TIMEOUT_MS = 60_000;
 
 const SEED = 7;
 const REROLL_SEEDS = [8, 9, 10, 11, 12] as const;
@@ -61,13 +62,13 @@ const messageSchema = z.object({
   copyMs: z.number(),
   postGenerateMs: z.number(),
 });
-const directSchema = z.object({
+export const directSchema = z.object({
   cellCount: z.number(),
   firstMs: z.number(),
   sliderMs: z.array(z.number()),
   rerollMs: z.array(z.number()),
 });
-const runnerSchema = z.object({
+export const runnerSchema = z.object({
   first: messageSchema,
   slider: z.array(messageSchema),
   reroll: z.array(messageSchema),
@@ -267,6 +268,18 @@ export function runnerTargets(run: RunnerRun | null): TargetResult[] {
   ];
 }
 
+/** The child's result line; null when it printed none, a cut-off one, or one of the wrong shape. */
+export function readRun<T>(stdout: string, schema: z.ZodType<T>): T | null {
+  const payload = markedPayload(stdout);
+  if (payload === null) return null;
+  try {
+    const parsed = schema.safeParse(JSON.parse(payload));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Runs one measurement in a fresh process; null when it failed or printed nothing readable. */
 function childRun<T>(entry: string, mode: string, schema: z.ZodType<T>): T | null {
   const child = spawnSync(process.execPath, [entry, WORLDGEN_RUN_FLAG, mode], {
@@ -274,11 +287,9 @@ function childRun<T>(entry: string, mode: string, schema: z.ZodType<T>): T | nul
     encoding: "utf8",
     timeout: CHILD_TIMEOUT_MS,
   });
-  const payload = markedPayload(child.stdout ?? "");
-  const parsed = payload === null ? null : schema.safeParse(JSON.parse(payload));
-  if (!parsed?.success)
-    log(`world generator (${mode}): the child run failed\n${child.stderr ?? ""}`);
-  return parsed?.success ? parsed.data : null;
+  const run = readRun(child.stdout ?? "", schema);
+  if (run === null) log(`world generator (${mode}): the child run failed\n${child.stderr ?? ""}`);
+  return run;
 }
 
 /** The generator's gated lines and the runner's informational ones; `entry` is atlas-bench.ts, which runs the children. */

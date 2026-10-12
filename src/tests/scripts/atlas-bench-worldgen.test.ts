@@ -1,11 +1,13 @@
 /**
  * @jest-environment node
  */
-import { exitCode } from "../../../scripts/perf/atlas-bench-report";
+import { exitCode, RESULT_MARKER } from "../../../scripts/perf/atlas-bench-report";
 import {
+  directSchema,
   directTargets,
   measureDirect,
   measureRunner,
+  readRun,
   runnerTargets,
   type DirectRun,
   type MessageRun,
@@ -38,6 +40,23 @@ const runner = (): RunnerRun => ({
 });
 
 const verdicts = (run: DirectRun | null) => directTargets(run).map((result) => result.pass);
+
+describe("readRun", () => {
+  const run = { cellCount: 66626, firstMs: 850, sliderMs: [300], rerollMs: [600] };
+
+  it("reads the marked line among whatever else the child printed", () => {
+    const stdout = `loading\n${RESULT_MARKER}${JSON.stringify(run)}\n`;
+    expect(readRun(stdout, directSchema)).toEqual(run);
+  });
+
+  it("is null, not a throw, for a child that printed nothing, a cut-off line or the wrong shape", () => {
+    expect(readRun("", directSchema)).toBeNull();
+    expect(readRun(`${RESULT_MARKER}${JSON.stringify(run).slice(0, 20)}`, directSchema)).toBeNull();
+    expect(
+      readRun(`${RESULT_MARKER}${JSON.stringify({ ...run, firstMs: null })}`, directSchema)
+    ).toBeNull();
+  });
+});
 
 describe("directTargets", () => {
   it("gates the first generation, a slider change and a reroll, in that order", () => {

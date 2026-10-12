@@ -24,7 +24,7 @@ src/
 │   ├── maps/                         # Interactive IxWorld map viewer (also maps.ixwiki.com)
 │   ├── countries/                    # Public Factbook country profiles (/countries/[slug])
 │   ├── builder/                      # Nation creation & editing wizard
-│   ├── labs/                         # Experimental suites (Onoma, Vexel, Map Pipeline)
+│   ├── labs/                         # Experimental suites (Onoma, Vexel)
 │   └── admin/                        # 40+ admin CMS interfaces (RBAC guarded)
 ├── components/                       # Shared UI and domain presentation components
 │   ├── ui/                           # Base design primitives (buttons, dialogs, badges)

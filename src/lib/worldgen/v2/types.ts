@@ -3,7 +3,6 @@
  *
  * Complete data model for the Unified Physical Geography Engine.
  * All per-cell data stored as parallel typed arrays indexed by cell ID.
- * Replaces the v1 PackedGraph with richer physical geography support.
  */
 
 // Core Data Model
