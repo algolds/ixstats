@@ -19,6 +19,9 @@ export const RASTER_TILE_SIZE = 256;
  */
 export const RELIEF_LAYER_ID = "relief";
 
+/** The zoom the relief layer is built to (MapLibre overzooms past it): no relief tile exists above it. */
+export const RELIEF_MAX_ZOOM = 5;
+
 /** The first zoom whose world (256·2^z px) is at least as wide as the image; MapLibre overzooms past it. */
 export function rasterMaxZoom(imageWidth: number): number {
   let z = 0;

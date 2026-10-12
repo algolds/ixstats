@@ -304,6 +304,32 @@ describe("map pipeline runs", () => {
     expect(run.result?.steps.map((s) => s.status)).toEqual(["failed", "would-change"]);
   });
 
+  it("fails a queued run of any step but relief once the realm has no pipeline", async () => {
+    // Queued while the realm had a pipeline, run after it was cleared
+    const db = runDb({});
+    for (const [id, steps] of [
+      ["jobgone01", ["labels"]],
+      ["jobgone02", ["relief", "labels"]],
+    ] as const) {
+      db.mapImportJob.rows.push({
+        id,
+        realmId: "r1",
+        kind: "map-pipeline",
+        status: "queued",
+        dryRun: true,
+        options: { steps, dryRun: true },
+        requestedBy: "admin_1",
+        createdAt: new Date(),
+        progress: 0,
+      });
+      await runMapImportJob(db, id);
+      const run = await getMapPipelineRun(db, admin, id);
+      expect(run.status).toBe("failed");
+      expect(run.error).toMatch(/no map pipeline/);
+      expect(run.result).toBeNull();
+    }
+  });
+
   it("skips the steps the pipeline does not configure", async () => {
     const db = runDb(withPipeline({}));
     const { jobId } = await startMapPipelineRun(

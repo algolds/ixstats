@@ -19,6 +19,7 @@ import { z } from "zod";
 import { realmLabelSeedFileSchema } from "./realm-labels";
 import { artKeySchema, artSourceSchema } from "./realm-map-art";
 import { MAP_DEFAULTS } from "./map-config";
+import { RELIEF_LAYER_ID } from "./raster-tiles";
 import { RealmRasterLayerSchema } from "./realm-map-settings";
 import { layerConfigArt, realmLayerConfigSchema } from "./import/realm-layer-config";
 
@@ -98,6 +99,9 @@ const pipelineObjectSchema = z.object({
     .default([])
     .refine((layers) => new Set(layers.map((l) => l.id)).size === layers.length, {
       message: "Raster layer ids must be unique",
+    })
+    .refine((layers) => layers.every((l) => l.id !== RELIEF_LAYER_ID), {
+      message: `The raster layer id "${RELIEF_LAYER_ID}" is reserved for the realm's relief`,
     }),
   physical: realmLayerConfigSchema.optional(),
   labels: pipelineLabelsSchema.optional(),

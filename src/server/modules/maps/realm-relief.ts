@@ -13,7 +13,12 @@
  * `world` job, the pipeline's `relief` step and the World tab's "Rebuild relief" all call this. Server only.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { RELIEF_LAYER_ID, sameRasterLayer, withRasterLayer } from "~/lib/maps/raster-tiles";
+import {
+  RELIEF_LAYER_ID,
+  RELIEF_MAX_ZOOM,
+  sameRasterLayer,
+  withRasterLayer,
+} from "~/lib/maps/raster-tiles";
 import {
   parseRealmMapSettings,
   RealmMapSettingsSchema,
@@ -45,7 +50,7 @@ const RUGGEDNESS = 1;
 const LAYER = { label: "Relief", kind: "overlay", order: 10 } as const;
 /** Zoom range and encoding of the tiles: past z5 MapLibre overzooms, and shading is smooth enough for lossy WebP. */
 const TILES = {
-  maxZoom: 5,
+  maxZoom: RELIEF_MAX_ZOOM,
   lossy: { quality: 70, alphaQuality: 60 },
   skipTransparent: true,
 } as const satisfies Partial<RasterBuildInput>;

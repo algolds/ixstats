@@ -64,6 +64,21 @@ describe("realm map pipeline config", () => {
     ).toThrow(/unique/);
   });
 
+  it("keeps the id relief for the realm's own relief layer", () => {
+    const parse = (id: string) =>
+      realmMapPipelineSchema.safeParse({
+        art: { geo: { repoPath: "geo.png" } },
+        rasters: [{ id, label: "Shading", kind: "overlay", art: "geo" }],
+      });
+    const refused = parse("relief");
+    expect(refused.success).toBe(false);
+    expect(refused.error?.issues[0]).toMatchObject({
+      path: ["rasters"],
+      message: expect.stringMatching(/relief.*reserved/),
+    });
+    expect(parse("shading").success).toBe(true);
+  });
+
   it("takes labels typed in as a seed list", () => {
     const pipeline = realmMapPipelineSchema.parse({
       labels: {

@@ -32,12 +32,11 @@ const SEAM_TOLERANCE_PX = 0.5;
 
 /**
  * The ring with its longitudes continuous: a step of more than 180 degrees is a crossing of the antimeridian, not a
- * long edge, so it is taken the short way round. A ring that does not close up after that circles a pole (its
- * coast runs the whole way round, then back along the pole): it is left as it is.
+ * long edge, so it is taken the short way round. Null for a ring that does not close up after that: it circles a
+ * pole (its coast runs the whole way round, then back along the pole), and is drawn as it is.
  */
-function continuousRing(ring: readonly Position[]): Position[] {
-  const first = ring[0];
-  if (!first) return [];
+function unwrapRing(ring: readonly Position[]): Position[] | null {
+  const first = ring[0]!;
   let lng = first[0]!;
   const out: Position[] = [[lng, first[1]!]];
   for (let i = 1; i < ring.length; i++) {
@@ -45,7 +44,41 @@ function continuousRing(ring: readonly Position[]): Position[] {
     lng += step > 180 ? step - 360 : step < -180 ? step + 360 : step;
     out.push([lng, ring[i]![1]!]);
   }
-  return Math.abs(out[out.length - 1]![0]! - first[0]!) < 180 ? out : ring.map((p) => [...p]);
+  return Math.abs(out[out.length - 1]![0]! - first[0]!) < 180 ? out : null;
+}
+
+const copyRing = (ring: readonly Position[]): Position[] => ring.map((p) => [...p]);
+
+/** The middle of a ring's longitudes. */
+function midLongitude(ring: readonly Position[]): number {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const [lng] of ring) {
+    if (lng! < min) min = lng!;
+    if (lng! > max) max = lng!;
+  }
+  return (min + max) / 2;
+}
+
+/**
+ * A polygon's rings with continuous longitudes, the holes on the outer ring's side of the seam. Each ring is
+ * unwrapped from its own first vertex, which can leave a hole a whole turn (360 degrees) from its outer ring; with
+ * even-odd fill it would then not overlap the ring it is cut from. So a hole moves by whole turns until its first
+ * vertex is within 180 degrees of the middle of the outer ring.
+ */
+function continuousPolygon(rings: readonly (readonly Position[])[]): Position[][] {
+  const [outerRing, ...holes] = rings;
+  if (!outerRing || outerRing.length < 4) return [];
+  const outer = unwrapRing(outerRing) ?? copyRing(outerRing);
+  const middle = midLongitude(outer);
+  const placed = holes.flatMap((hole) => {
+    if (hole.length < 4) return [];
+    const ring = unwrapRing(hole);
+    if (!ring) return [copyRing(hole)];
+    const turns = Math.round((middle - ring[0]![0]!) / 360);
+    return [ring.map(([lng, lat]) => [lng! + turns * 360, lat!])];
+  });
+  return [outer, ...placed];
 }
 
 /** The SVG path (pixel space) of a feature's polygons, and how far it reaches either side of the map. */
@@ -56,13 +89,12 @@ function featurePath(
 ): { d: string; minX: number; maxX: number } | null {
   const polygons = toPolygonal(geometry);
   if (!polygons) return null;
-  const rings = polygons.type === "Polygon" ? polygons.coordinates : polygons.coordinates.flat();
+  const list = polygons.type === "Polygon" ? [polygons.coordinates] : polygons.coordinates;
   let minX = Infinity;
   let maxX = -Infinity;
   const parts: string[] = [];
-  for (const ring of rings) {
-    if (ring.length < 4) continue;
-    const points = continuousRing(ring).map(([lng, lat]) => {
+  for (const ring of list.flatMap(continuousPolygon)) {
+    const points = ring.map(([lng, lat]) => {
       const x = ((lng! + 180) / 360) * width;
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
@@ -161,6 +193,8 @@ export async function loadAltitudeBands(
   const rows = await db.mapLayer.findMany({
     where: { realmId, layerType: "altitudes", isActive: true },
     select: { geometry: true, properties: true },
+    // The same zone limits whichever order the database returns: the first feature of a zone that carries them wins
+    orderBy: { featureId: "asc" },
   });
   return rows.map((row): Feature<Geometry | null> => ({
     type: "Feature",

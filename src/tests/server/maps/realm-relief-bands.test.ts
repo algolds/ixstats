@@ -159,6 +159,42 @@ describe("rasterizeBands", () => {
     expect(painted(g.zoneGrid, py(-60))).toBe(0);
   });
 
+  it("keeps a hole across the antimeridian cut out of its band, whichever side its first vertex is on", async () => {
+    // Outer 170°E to 170°W, hole 177°E to 177°W, both stored with longitudes that jump 180 to -180
+    const outer: Position[] = [
+      [170, -10],
+      [170, 10],
+      [-170, 10],
+      [-170, -10],
+      [170, -10],
+    ];
+    const holes: Record<string, Position[]> = {
+      "east of the seam": [
+        [177, -3],
+        [177, 3],
+        [-177, 3],
+        [-177, -3],
+        [177, -3],
+      ],
+      "west of the seam": [
+        [-177, -3],
+        [177, -3],
+        [177, 3],
+        [-177, 3],
+        [-177, -3],
+      ],
+    };
+    for (const [first, hole] of Object.entries(holes)) {
+      const g = await grid([band(4, [outer, hole])]);
+      const seen = (lng: number, lat: number) => [first, g.at(lng, lat)];
+      expect(seen(172, 0)).toEqual([first, 5]); // the band east of the hole
+      expect(seen(-172, 0)).toEqual([first, 5]); // and west of it
+      expect(seen(180, 6)).toEqual([first, 5]); // above the hole, on the seam
+      expect(seen(179, 0)).toEqual([first, 0]); // the hole, east of the seam
+      expect(seen(-179, 0)).toEqual([first, 0]); // and west of it
+    }
+  });
+
   it("leaves a hole where a ring is cut out of a band", async () => {
     const g = await grid([band(4, [rect(-50, -30, 50, 30), rect(-10, -10, 10, 10)])]);
     expect(g.at(-30, 0)).toBe(5);
@@ -215,6 +251,7 @@ describe("loadAltitudeBands", () => {
     expect(db.mapLayer.findMany).toHaveBeenCalledWith({
       where: { realmId: "realm_1", layerType: "altitudes", isActive: true },
       select: { geometry: true, properties: true },
+      orderBy: { featureId: "asc" },
     });
     expect(features).toEqual([
       {

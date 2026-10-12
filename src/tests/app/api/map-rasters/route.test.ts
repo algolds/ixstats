@@ -162,6 +162,12 @@ describe("GET /api/map-rasters", () => {
       expect((await tile("r_eurth", "relief", VERSION, "2", "4", "0")).status).toBe(404);
     });
 
+    it("is only answered up to the layer's zoom ceiling (z5), a 404 for a tile that cannot exist", async () => {
+      expect((await tile("r_eurth", "relief", VERSION, "5", "31", "31")).status).toBe(200);
+      expect((await tile("r_eurth", "relief", VERSION, "6", "0", "0")).status).toBe(404);
+      expect((await tile("r_eurth", "relief", VERSION, "7", "100", "50")).status).toBe(404);
+    });
+
     it("keeps the realm's access rules", async () => {
       realmFind.mockResolvedValue({ id: "r_eurth", status: "draft", ownerId: "clerk_owner" });
       expect((await tile("r_eurth", "relief", VERSION, "2", "0", "0")).status).toBe(404);
