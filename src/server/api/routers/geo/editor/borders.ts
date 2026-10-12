@@ -30,7 +30,7 @@ async function realmAreaOf(
 interface NeighbourRow {
   featureId: string;
   displayName: string | null;
-  geometry: unknown;
+  geometry: Prisma.JsonValue;
   updatedAt: Date;
 }
 

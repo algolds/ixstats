@@ -75,18 +75,21 @@ export const borderHistoryProcedures = {
     }),
 
   /**
-   * Slider domain: earliest BorderHistory timestamp + current IxTime ("now").
-   * Returns `minTime: null` when there is no history yet (caller should hide
+   * Slider domain: earliest BorderHistory timestamp of the viewed realm + current IxTime ("now").
+   * Returns `minTime: null` when the realm has no history yet (caller should hide
    * the scrubber in that case).
    */
-  getHistoryRange: cachedPublicProcedure.query(async ({ ctx }) => {
-    const earliest = await ctx.db.borderHistory.findFirst({
-      orderBy: { changedAt: "asc" },
-      select: { changedAt: true },
-    });
-    return {
-      minTime: earliest?.changedAt.getTime() ?? null,
-      maxTime: IxTime.getCurrentIxTime(),
-    };
-  }),
+  getHistoryRange: cachedPublicProcedure
+    .input(realmScopeInput.optional())
+    .query(async ({ ctx, input }) => {
+      const earliest = await ctx.db.borderHistory.findFirst({
+        where: { country: { realmId: await viewerRealmId(ctx, input?.realm) } },
+        orderBy: { changedAt: "asc" },
+        select: { changedAt: true },
+      });
+      return {
+        minTime: earliest?.changedAt.getTime() ?? null,
+        maxTime: IxTime.getCurrentIxTime(),
+      };
+    }),
 };

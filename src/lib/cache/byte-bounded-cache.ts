@@ -74,6 +74,18 @@ export class ByteBoundedCache<V> {
     return dropped;
   }
 
+  /** Drop every entry past its lifetime without reading it (a periodic sweep); returns how many went. */
+  deleteExpired(): number {
+    const now = this.now();
+    let dropped = 0;
+    for (const [key, entry] of this.entries) {
+      if (entry.expires > now) continue;
+      this.remove(key, entry);
+      dropped++;
+    }
+    return dropped;
+  }
+
   private remove(key: string, entry: Entry<V>): void {
     this.entries.delete(key);
     this.held -= entry.bytes;

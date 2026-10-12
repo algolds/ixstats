@@ -151,7 +151,7 @@ describe("createCacheMiddlewareFactory (memory tier bounds)", () => {
     let mod!: typeof import("~/lib/cache/trpc-cache");
     jest.isolateModules(() => {
       jest.doMock("~/lib/system/dev-memory-config", () => ({
-        memoryConfig: { trpc: { maxCacheBytes } },
+        memoryConfig: { trpc: { maxCacheBytes, defaultTTLSeconds: 60 } },
       }));
       jest.doMock("~/lib/cache/redis-client", () => ({
         getSharedRedis: () => null,

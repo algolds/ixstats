@@ -93,4 +93,21 @@ describe("ByteBoundedCache", () => {
     expect(c.totalBytes).toBe(30);
     expect(c.size).toBe(1);
   });
+
+  it("deleteExpired drops only the entries past their lifetime, unread, and gives their bytes back", () => {
+    const { cache: c, clock } = cache(100, 1_000);
+    c.set("short", "S", 10, 200);
+    c.set("default", "D", 10);
+
+    clock.now = 500;
+    expect(c.deleteExpired()).toBe(1);
+    expect(c.size).toBe(1);
+    expect(c.totalBytes).toBe(10);
+    expect(c.get("default")).toBe("D");
+
+    clock.now = 1_000;
+    expect(c.deleteExpired()).toBe(1);
+    expect(c.size).toBe(0);
+    expect(c.totalBytes).toBe(0);
+  });
 });

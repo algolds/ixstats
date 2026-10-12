@@ -24,32 +24,29 @@ import { memoryConfig } from "~/lib/system/dev-memory-config";
 import { getSharedRedis, isRedisReady, deleteKeysByPattern } from "./redis-client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { roundToIxDay } from "~/lib/ixtime/day";
-import { ByteLru } from "~/server/shared/byte-lru";
+import { ByteBoundedCache } from "./byte-bounded-cache";
 
 // Type for the tRPC middleware context
 type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
 /**
- * The memory fallback: each entry is the serialised result behind its expiry (`<epoch ms>:<json>`), so the cache
- * is sized by what it holds (a map layer read is megabytes) and a hit is a fresh copy, like a Redis hit.
+ * The memory fallback: each entry is the serialised result, so the cache is sized by what it holds (a map layer
+ * read is megabytes) and a hit is a fresh copy, like a Redis hit. UTF-16 strings take two bytes per character.
  */
-const memoryCache = new ByteLru<string>(memoryConfig.trpc.maxCacheBytes);
-
-const EXPIRY_SEPARATOR = ":";
+const memoryCache = new ByteBoundedCache<string>({
+  maxBytes: memoryConfig.trpc.maxCacheBytes,
+  defaultTtlMs: memoryConfig.trpc.defaultTTLSeconds * 1000,
+});
 
 // Clean up expired entries periodically
 let cleanupInterval: NodeJS.Timeout | null = null;
-
-const isExpired = (entry: string, now: number) =>
-  Number(entry.slice(0, entry.indexOf(EXPIRY_SEPARATOR))) <= now;
 
 function startMemoryCacheCleanup() {
   if (cleanupInterval) return;
   if (process.env.NODE_ENV === "test" || typeof process.env.JEST_WORKER_ID !== "undefined") return;
 
   cleanupInterval = setInterval(() => {
-    const now = Date.now();
-    const deleted = memoryCache.deleteWhere((_key, entry) => isExpired(entry, now));
+    const deleted = memoryCache.deleteExpired();
 
     if (deleted > 0 && process.env.NODE_ENV === "development") {
       console.log(`[TRPC_CACHE] Cleaned up ${deleted} expired memory cache entries`);
@@ -149,8 +146,8 @@ export function shouldSkipCache(
   return skipPatterns?.some((p) => p.test(path)) ?? false;
 }
 
-/** A cached value as stored (the Redis value, and the memory entry behind its expiry). */
-const encodePayload = (value: unknown): string => JSON.stringify(superjson.serialize(value));
+/** A cached value as stored (the Redis value, and the memory entry). */
+const encodePayload = <T>(value: T): string => JSON.stringify(superjson.serialize(value));
 
 /** Decode a value written by encodePayload; null for legacy/invalid payloads. */
 function decodePayload<T>(raw: string): T | null {
@@ -177,12 +174,7 @@ async function getCachedValue<T>(key: string): Promise<T | null> {
 
   // Try memory cache
   const entry = memoryCache.get(key);
-  if (entry === undefined) return null;
-  if (isExpired(entry, Date.now())) {
-    memoryCache.delete(key);
-    return null;
-  }
-  return decodePayload<T>(entry.slice(entry.indexOf(EXPIRY_SEPARATOR) + 1));
+  return entry === undefined ? null : decodePayload<T>(entry);
 }
 
 /**
@@ -202,8 +194,8 @@ async function setCachedValue<T>(key: string, value: T, ttlSeconds: number): Pro
   }
 
   try {
-    const expiry = Date.now() + ttlSeconds * 1000;
-    memoryCache.set(key, `${expiry}${EXPIRY_SEPARATOR}${encodePayload(value)}`);
+    const payload = encodePayload(value);
+    memoryCache.set(key, payload, payload.length * 2, ttlSeconds * 1000);
   } catch (err) {
     // Unserializable (e.g. circular) values: skip caching rather than failing the request
     console.warn("[TRPC_CACHE] Memory set error, value not cached:", err);

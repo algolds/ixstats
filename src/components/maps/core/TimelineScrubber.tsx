@@ -14,11 +14,13 @@ import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetMaterial } from "~/components/ui/facet";
 
-interface TimelineScrubberProps {
+export interface TimelineScrubberProps {
   /** Current scrubber value (epoch ms). `null` = at "now", show live data. */
   value: number | null;
   /** Notify host of new scrub position. `null` means "now". */
   onChange: (value: number | null) => void;
+  /** Realm slug the map shows (`?realm=`); undefined = the viewer's realm. The range is that realm's history. */
+  realm?: string;
   /** Optional: hide entirely (e.g. when no history exists). */
   hidden?: boolean;
   /** Extra positioning classes from the host (e.g. shift clear of an open side panel). */
@@ -27,14 +29,23 @@ interface TimelineScrubberProps {
 
 const SCRUB_DEBOUNCE_MS = 200;
 
-export function TimelineScrubber({ value, onChange, hidden, className }: TimelineScrubberProps) {
+export function TimelineScrubber({
+  value,
+  onChange,
+  realm,
+  hidden,
+  className,
+}: TimelineScrubberProps) {
   // Collapsed to a small pill by default so the card doesn't sit over the map; it stays open
   // while a past date is selected.
   const [expanded, setExpanded] = useState(false);
-  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
+  const { data: range, isLoading: rangeLoading } = api.geoCore.getHistoryRange.useQuery(
+    { realm },
+    {
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+    }
+  );
 
   const hasHistory = !!range && range.minTime !== null;
   const effectivelyHidden = hidden || rangeLoading || !hasHistory;
