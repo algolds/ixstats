@@ -105,7 +105,12 @@ describe("worldgen/calibration-distance", () => {
     const real = measures({ landShare: 0.4 });
     const { distance, parts } = calibrationDistance(world, real);
     const mean =
-      (parts.land + parts.hypsometry + parts.climate + parts.nations + parts.coastline) / 5;
+      (parts.land +
+        parts.hypsometry +
+        parts.climate +
+        (parts.nations ?? Number.NaN) +
+        parts.coastline) /
+      5;
     expect(distance).toBeCloseTo(100 * mean, 10);
     expect(distance).toBeCloseTo(20, 10);
   });
