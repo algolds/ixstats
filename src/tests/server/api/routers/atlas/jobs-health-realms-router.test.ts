@@ -78,10 +78,10 @@ describe("Atlas server procedures", () => {
     expect(realms.map((r) => r.slug)).toEqual(["alpha"]);
   });
 
-  it("get answers the realm with its recent jobs", async () => {
+  it("get answers the realm and its latest import, without a second copy of its jobs", async () => {
     const result = await caller(admin, seeded()).realms.get({ realm: "alpha" });
     expect(result.realm.id).toBe("a");
-    expect(result.recentJobs.map((j) => j.id)).toEqual(["job00000001"]);
+    expect(result).not.toHaveProperty("recentJobs");
     expect(result.latestImport).toBeNull();
   });
 

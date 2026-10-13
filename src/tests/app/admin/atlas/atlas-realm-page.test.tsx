@@ -52,7 +52,6 @@ function loadRealm(canRollBack = true) {
     }),
     partial: false,
     layerCounts: { political: 40, rivers: 0 },
-    recentJobs: [],
     latestImport: latestImport(canRollBack),
   };
   state.recentJobs = [jobRow({ id: "recent_1", kind: "world", dryRun: true })];
