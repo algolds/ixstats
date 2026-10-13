@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useStudioCountryPick } from "~/hooks/useStudioCountryPick";
 import { useStudioDiagnostics } from "~/hooks/useStudioDiagnostics";
 import { useStudioFit } from "~/hooks/useStudioFit";
 import { useStudioGeneration } from "~/hooks/useStudioGeneration";
@@ -18,6 +19,7 @@ import {
   type StudioGenerator,
   type StudioRealm,
 } from "./StudioContext";
+import { StudioCountryCard } from "./StudioCountryCard";
 import { StudioInspector } from "./StudioInspector";
 import { StudioRail } from "./StudioRail";
 import { StudioTopBar } from "./StudioTopBar";
@@ -62,6 +64,7 @@ export function StudioWorkspace({
   const diagnostics = useStudioDiagnostics(worldGenerator);
   const [projection, setProjection] = useState<StudioProjection>("globe");
   const { containerRef, map } = useStudioMap(projection);
+  const pick = useStudioCountryPick(map, worldGenerator.result);
 
   // Ice caps are drawn from the start, climate zones only when asked
   const [visible, setVisible] = useState<Partial<Record<DraftLayerKey, boolean>>>({
@@ -176,6 +179,7 @@ export function StudioWorkspace({
                 Loading the map.
               </p>
             )}
+            {pick.slot && <StudioCountryCard slot={pick.slot} onClose={pick.clear} />}
           </div>
           <StudioInspector />
         </div>

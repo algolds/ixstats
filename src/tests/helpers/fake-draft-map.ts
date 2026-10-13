@@ -20,7 +20,14 @@ export type FakeSource = {
 };
 
 /** The parts of a MapLibre event the preview reads (`error` events carry the id of a failing source too). */
-type MapEvent = { sourceId?: string; isSourceLoaded?: boolean; error?: Error };
+type MapEvent = {
+  sourceId?: string;
+  isSourceLoaded?: boolean;
+  error?: Error;
+  point?: { x: number; y: number };
+};
+/** A rendered feature as a pointer query returns it */
+type RenderedFeature = { properties: Record<string, string> };
 type Handler = (event: MapEvent) => void;
 
 export function fakeDraftMap(live: (string | { id: string; visibility: string })[] = []) {
@@ -28,6 +35,7 @@ export function fakeDraftMap(live: (string | { id: string; visibility: string })
   const layers = new Map<string, { spec: Spec; layout: Record<string, string> }>();
   const sources = new Map<string, FakeSource>();
   const handlers = new Map<string, Set<Handler>>();
+  const canvas = document.createElement("canvas");
   const style = { _loaded: true };
 
   const putLayer = (spec: Spec, before?: string) => {
@@ -84,6 +92,9 @@ export function fakeDraftMap(live: (string | { id: string; visibility: string })
     off: jest.fn((type: string, handler: Handler) => {
       handlers.get(type)?.delete(handler);
     }),
+    getCanvas: () => canvas,
+    /** The features under a pointer: none, unless a test says so */
+    queryRenderedFeatures: jest.fn((): RenderedFeature[] => []),
   };
 
   return {

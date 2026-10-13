@@ -14,9 +14,9 @@ const EMPTY = "–";
 const range = (values: MinMax, format: (value: number) => string) =>
   values.min === values.max ? format(values.min) : `${format(values.min)} to ${format(values.max)}`;
 
-const dollars = (value: number) => `$${Math.round(value).toLocaleString("en-US")}`;
+export const dollars = (value: number) => `$${Math.round(value).toLocaleString("en-US")}`;
 
-function StatRow({ label, value }: { label: string; value: string }) {
+export function StatRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="text-label-secondary">{label}</dt>

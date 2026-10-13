@@ -212,6 +212,9 @@ function layerSpecs(type: DraftType): LayerSpecification[] {
 /** Whether a generated world is drawn on the map as a draft (the editor pauses hover hit-testing then). */
 export const isWorldDraftShown = (map: MapLibreMap): boolean => !!map.getSource(DRAFT_RELIEF_ID);
 
+/** The fill layer of the draft's countries, which the Studio picks a country from. */
+export const DRAFT_POLITICAL_ID = sourceIdOf("political");
+
 export class WorldDraft {
   private shown: WorldGenResult | null = null;
   /** Live layer id to the visibility it had before it was hidden (undefined = the default, visible) */

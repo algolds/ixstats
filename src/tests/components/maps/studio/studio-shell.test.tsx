@@ -440,6 +440,28 @@ describe("the Layers tab", () => {
     expect(requests()).toHaveLength(before);
   });
 
+  it("shows a country clicked on the map, and nothing for the sea", () => {
+    renderStudio();
+    land({
+      slots: [
+        {
+          key: "slot_4",
+          name: "Varenia",
+          colour: "#aa3355",
+          cells: 40,
+          areaKm2: 312_000,
+          population: 8_400_000,
+          gdpPerCapita: 21_500,
+        },
+      ],
+    });
+    rig.fake.queryRenderedFeatures.mockReturnValueOnce([{ properties: { slotKey: "slot_4" } }]);
+    act(() => rig.emit("click", { point: { x: 10, y: 10 } }));
+    expect(screen.getByLabelText("Varenia")).toHaveTextContent("312k km²");
+    act(() => rig.emit("click", { point: { x: 20, y: 20 } }));
+    expect(screen.queryByLabelText("Varenia")).not.toBeInTheDocument();
+  });
+
   describe("diagnostics", () => {
     const diagnostics = () => screen.getByRole("region", { name: "Diagnostics" });
     const choose = (name: string) =>
