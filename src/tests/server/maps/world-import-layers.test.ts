@@ -21,6 +21,7 @@ jest.mock("~/lib/system/job-lock", () => ({
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
 import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { rollbackMapImport } from "~/server/modules/maps/map-import.history";
 import { applyWorld, rebuildRealmRelief, runWorldDryRun } from "~/server/modules/maps/world-import";
@@ -222,6 +223,45 @@ describe("a layer choice: the apply", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("fitted") });
     expect(JSON.stringify(db.mapLayer.rows)).toBe(before);
+  });
+});
+
+describe("rolling back a layer choice", () => {
+  const reliefEntry = {
+    id: "relief",
+    label: "Relief",
+    kind: "overlay" as const,
+    version: "a".repeat(8),
+    maxZoom: 5,
+    order: 10,
+  };
+  const settingsWithRelief = { map: { rasterLayers: [reliefEntry] } };
+  const reliefLayers = (db: Db) => parseRealmMapSettings(db.realm.rows[0].settings).rasterLayers;
+
+  it("leaves the relief entry alone when the elevation was not ticked", async () => {
+    // The recorded version's tiles are gone from disk, so a restore would remove the entry
+    const db = drawnRealm({ settings: settingsWithRelief });
+    const result = await applyWorld(
+      db,
+      jobFor(await realmMap(), chooseApply(["climate"])),
+      undefined,
+      { runRelief: relief() }
+    );
+    await rollbackMapImport(db, admin, result.mapImportId!);
+    expect(reliefLayers(db)).toEqual([reliefEntry]);
+  });
+
+  it("still restores the relief entry when the elevation was ticked", async () => {
+    const db = drawnRealm({ settings: settingsWithRelief });
+    const result = await applyWorld(
+      db,
+      jobFor(await realmMap(), chooseApply(["altitudes"])),
+      undefined,
+      { runRelief: relief() }
+    );
+    await rollbackMapImport(db, admin, result.mapImportId!);
+    // The tiles of the recorded version are not on disk here, so the entry goes rather than serve 404s
+    expect(reliefLayers(db)).toBeUndefined();
   });
 });
 

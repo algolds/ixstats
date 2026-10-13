@@ -380,7 +380,11 @@ export async function applyWorld(
     scopes.push({ layerType: "political", keys, wholeLayer: false, countryIds: [] });
   }
   const snapshot = await captureMapSnapshot(db, realm.id, scopes);
-  snapshot.realm = await captureRealmState(db, realm.id);
+  // A layer choice that leaves the elevation alone never touches the relief: a rollback must not put its entry back
+  // (or remove it, when the version it recorded has been pruned from disk since)
+  if (!chosen || chosen.includes("altitudes")) {
+    snapshot.realm = await captureRealmState(db, realm.id);
+  }
 
   progress.write(30, chosen ? "Keeping the nations" : "Creating nations");
   const step = chosen
