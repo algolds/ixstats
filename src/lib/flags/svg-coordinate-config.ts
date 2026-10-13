@@ -1,15 +1,8 @@
 /**
  * SVG Coordinate Configuration
  *
- * Defines the mapping from SVG coordinate space to WGS84 geographic coordinates.
- *
- * The IxEarth SVG (viewBox 25625×15729) uses a simple affine transform to WGS84:
- *   lng = 0.04392139 * svgX - 153.9062
- *   lat = -0.04392143 * svgY + 110.1222
- *
- * This was empirically derived by matching SVG path coordinates to the
- * existing QGIS-exported GeoJSON data (scripts/geojson_fixed/).
- * The scale is isotropic: ~22.768 pixels per degree in both axes.
+ * Defines the mapping from SVG coordinate space to WGS84 geographic coordinates: an affine transform, either given
+ * (a georeference's control points, `createConfigFromCalibration`) or fitted to matched points.
  */
 
 export interface SvgCoordinateConfig {
@@ -30,30 +23,6 @@ export interface SvgCoordinateConfig {
 }
 
 /**
- * IxEarth default coordinate configuration.
- *
- * Empirically derived from matching SVG path start coordinates to
- * GeoJSON feature coordinates across 10+ countries:
- *   lng = 0.04392139 * svgX + (-153.9062)
- *   lat = -0.04392143 * svgY + 110.1222
- *
- * Expressed in the equator/PM form:
- *   equatorY = 110.1222 / 0.04392143 ≈ 2507.58  (Y where lat = 0)
- *   primeMeridianX = 153.9062 / 0.04392139 ≈ 3505.11  (X where lng = 0)
- *   pixelsPerLng = 1 / 0.04392139 ≈ 22.768
- *   pixelsPerLat = 1 / 0.04392143 ≈ 22.768
- */
-export const IXEARTH_SVG_CONFIG: SvgCoordinateConfig = {
-  viewBoxWidth: 25625,
-  viewBoxHeight: 15729,
-  equatorY: 110.1222 / 0.04392143, // ≈ 2507.58
-  primeMeridianX: 153.9062 / 0.04392139, // ≈ 3505.11
-  pixelsPerLng: 1 / 0.04392139, // ≈ 22.768
-  pixelsPerLat: 1 / 0.04392143, // ≈ 22.768
-  primeMeridianReferenceLng: 0, // PM is at lng = 0
-};
-
-/**
  * Convert SVG coordinates to WGS84 [longitude, latitude].
  *
  * Formula:
@@ -63,87 +32,13 @@ export const IXEARTH_SVG_CONFIG: SvgCoordinateConfig = {
 export function svgToWgs84(
   svgX: number,
   svgY: number,
-  config: SvgCoordinateConfig = IXEARTH_SVG_CONFIG
+  config: SvgCoordinateConfig
 ): [number, number] {
   const lat = (config.equatorY - svgY) / config.pixelsPerLat;
   const lng =
     (svgX - config.primeMeridianX) / config.pixelsPerLng + config.primeMeridianReferenceLng;
 
   return [lng, lat];
-}
-
-/**
- * Convert WGS84 [longitude, latitude] to SVG coordinates.
- * Inverse of svgToWgs84.
- */
-export function wgs84ToSvg(
-  lng: number,
-  lat: number,
-  config: SvgCoordinateConfig = IXEARTH_SVG_CONFIG
-): [number, number] {
-  const svgY = config.equatorY - lat * config.pixelsPerLat;
-  const svgX =
-    (lng - config.primeMeridianReferenceLng) * config.pixelsPerLng + config.primeMeridianX;
-
-  return [svgX, svgY];
-}
-
-/**
- * Create a coordinate config from a simple bounding box mapping.
- * Useful for non-IxEarth SVGs where the admin specifies geographic bounds.
- *
- * When `preserveAspectRatio` is true (default), uses the same scale factor
- * for both axes so shapes aren't distorted. The content is centered within
- * the geographic bounds, with unused margins on the shorter axis.
- */
-export function createConfigFromBounds(
-  viewBoxWidth: number,
-  viewBoxHeight: number,
-  geoBounds: {
-    minLng: number;
-    maxLng: number;
-    minLat: number;
-    maxLat: number;
-  },
-  options?: { preserveAspectRatio?: boolean }
-): SvgCoordinateConfig {
-  const lngRange = geoBounds.maxLng - geoBounds.minLng;
-  const latRange = geoBounds.maxLat - geoBounds.minLat;
-
-  let pixelsPerLng = viewBoxWidth / lngRange;
-  let pixelsPerLat = viewBoxHeight / latRange;
-
-  if (options?.preserveAspectRatio !== false) {
-    // Isotropic scaling: use uniform scale so shapes maintain correct proportions.
-    // Pick the larger value so the entire SVG fits within the geographic bounds.
-    const uniformScale = Math.max(pixelsPerLng, pixelsPerLat);
-    pixelsPerLng = uniformScale;
-    pixelsPerLat = uniformScale;
-  }
-
-  // With isotropic scaling the SVG may not fill the full geo bounds on one axis.
-  // Center the content within the bounds.
-  const effectiveLngRange = viewBoxWidth / pixelsPerLng;
-  const effectiveLatRange = viewBoxHeight / pixelsPerLat;
-  const lngOffset = (lngRange - effectiveLngRange) / 2;
-  const latOffset = (latRange - effectiveLatRange) / 2;
-  const effectiveMinLng = geoBounds.minLng + lngOffset;
-  const effectiveMaxLat = geoBounds.minLat + latOffset + effectiveLatRange;
-
-  // Equator (lat=0): svgY where lat = (equatorY - svgY) / pixelsPerLat = 0
-  const equatorY = effectiveMaxLat * pixelsPerLat;
-  // Prime meridian (lng=0): svgX where (svgX - primeMeridianX) / pixelsPerLng = 0
-  const primeMeridianX = -effectiveMinLng * pixelsPerLng;
-
-  return {
-    viewBoxWidth,
-    viewBoxHeight,
-    equatorY,
-    primeMeridianX,
-    pixelsPerLng,
-    pixelsPerLat,
-    primeMeridianReferenceLng: 0,
-  };
 }
 
 /**

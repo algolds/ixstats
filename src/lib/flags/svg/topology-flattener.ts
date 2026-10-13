@@ -120,25 +120,6 @@ export function extractFillRule(el: XmlElement): FillRule | undefined {
   return undefined;
 }
 
-/**
- * Extract stroke color from an SVG element.
- */
-export function extractStrokeColor(el: XmlElement, style: string): string | undefined {
-  const styleMatch = style.match(/(?:^|;)\s*stroke\s*:\s*([^;]+)/i);
-  if (styleMatch?.[1]) {
-    const val = normalizeColor(styleMatch[1]);
-    if (isValidColor(val)) return val;
-  }
-
-  const strokeAttr = el.getAttribute("stroke");
-  if (strokeAttr) {
-    const val = normalizeColor(strokeAttr);
-    if (isValidColor(val)) return val;
-  }
-
-  return undefined;
-}
-
 function isValidColor(val: string): boolean {
   if (!val || val === "none" || val === "inherit" || val === "transparent") {
     return false;

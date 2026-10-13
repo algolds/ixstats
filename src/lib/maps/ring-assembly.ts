@@ -1,5 +1,5 @@
 /**
- * Polygon assembly from a flat list of rings: an SVG path's subpaths, a potrace trace, a flattened GeoJSON
+ * Polygon assembly from a flat list of rings: an SVG path's subpaths, a flattened GeoJSON
  * geometry. A ring's role comes from containment, never from its winding alone, so a lake is a hole whichever way
  * the drawing tool wound it:
  *   - "evenodd" (the default, also used when a path names no fill rule): a ring inside an odd number of other

@@ -1,158 +1,28 @@
 /**
- * SVG Parser - Converts Inkscape SVG files to GeoJSON FeatureCollections.
+ * SVG metadata and the SVG helpers the province importer and the SVG import engine share.
  *
- * Server-side only. Handles:
- * - Parsing SVG XML structure with @xmldom/xmldom
- * - Extracting layer groups and path features
- * - Flattening cubic bezier curves to line segments
- * - Converting SVG coordinates to WGS84 via configurable affine transform
- * - Calculating centroids, bounding boxes, and areas
- * - Fuzzy-matching political features to Country records
+ * Server-side only. The SVG to GeoJSON parser that lived here served the old Labs map pipeline and went with it; the
+ * province importer (lib/maps/province-importer) and the import engine (lib/maps/import/svg-engine) read SVG themselves.
  */
 
 import { DOMParser } from "@xmldom/xmldom";
 
-import { type SvgPathCommand, pathCommandsToRings } from "./svg/command-evaluator";
+import { pathCommandsToRings } from "./svg/command-evaluator";
 import {
-  ringArea,
   calculateCentroid,
   calculateBoundingBox,
-  calculateApproxArea,
   extractFillColor,
-  extractStrokeColor,
 } from "./svg/topology-flattener";
-import type { SvgCoordinateConfig } from "./svg-coordinate-config";
-import { IXEARTH_SVG_CONFIG } from "./svg-coordinate-config";
-import type { Feature, FeatureCollection, Polygon, MultiPolygon } from "geojson";
 import { SVG_NS, INKSCAPE_NS } from "./svg/xml";
-import { readViewBox, resolveCoordinateConfig } from "./svg/coordinate-calibration";
-import { selectTargetLayer } from "./svg/layer-selection";
-import { buildReferenceGeometryMap } from "./svg/reference-geometry";
-import { extractFeatures, featureIdToDisplayName } from "./svg/feature-extraction";
 
-export type { SvgPathCommand };
-export {
-  pathCommandsToRings,
-  ringArea,
-  calculateCentroid,
-  calculateBoundingBox,
-  calculateApproxArea,
-  extractFillColor,
-  extractStrokeColor,
-  featureIdToDisplayName,
-};
-
-export interface SvgParseConfig {
-  /** Coordinate conversion config (defaults to IxEarth) */
-  coordinateConfig?: SvgCoordinateConfig;
-  /** Specific layer ID to extract (e.g., "political"). If null, extracts all layers. */
-  targetLayerId?: string;
-  /** Number of line segments to use when flattening each cubic bezier curve */
-  bezierSegments?: number;
-  /** Minimum number of coordinates for a valid polygon ring */
-  minRingSize?: number;
-  /**
-   * Reference GeoJSON for auto-calibrating the coordinate mapping.
-   * When provided, the parser matches SVG feature IDs to reference features
-   * and derives the correct affine transform from matched pairs.
-   * This is the most accurate method when existing map data exists.
-   */
-  referenceGeoJson?: FeatureCollection;
-}
-
-export interface ParsedFeature {
-  featureId: string;
-  displayName: string;
-  geometry: Polygon | MultiPolygon;
-  properties: Record<string, unknown>;
-  centroid: [number, number]; // [lng, lat]
-  boundingBox: [number, number, number, number]; // [minLng, minLat, maxLng, maxLat]
-  areaSqKm: number;
-}
-
-interface SvgParseResult {
-  features: ParsedFeature[];
-  featureCollection: FeatureCollection;
-  layersFound: string[];
-  viewBox: { width: number; height: number };
-  log: string[];
-}
-
-// SVG Parsing
+export { pathCommandsToRings, calculateCentroid, calculateBoundingBox, extractFillColor };
 
 /**
- * Main entry point: parse SVG content string into GeoJSON.
+ * Convert feature ID to display name: "New_Harren" → "New Harren"
  */
-export function parseSvgToGeoJson(
-  svgContent: string,
-  layerType: string,
-  config: SvgParseConfig = {}
-): SvgParseResult {
-  const log: string[] = [];
-  const baseCoordConfig = config.coordinateConfig ?? IXEARTH_SVG_CONFIG;
-  const bezierSegments = config.bezierSegments ?? 8;
-  const minRingSize = config.minRingSize ?? 4;
-  const targetLayerId = config.targetLayerId ?? layerType;
-
-  log.push(`Parsing SVG for layer type: ${layerType}`);
-
-  // Parse SVG XML
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgContent, "image/svg+xml");
-  const svgRoot = doc.documentElement;
-
-  if (!svgRoot) {
-    throw new Error("Failed to parse SVG: no root element found");
-  }
-
-  const viewBox = readViewBox(svgRoot, baseCoordConfig, log);
-  const coordConfig = resolveCoordinateConfig(
-    svgRoot,
-    viewBox,
-    baseCoordConfig,
-    config.referenceGeoJson,
-    log
-  );
-
-  const { targetGroup, layersFound } = selectTargetLayer(svgRoot, targetLayerId, log);
-  log.push(`Extracting features from layer: ${targetGroup.getAttribute("id")}`);
-
-  // Prefer exact coordinates from the reference GeoJSON over converted SVG coordinates.
-  const refGeometryMap = buildReferenceGeometryMap(config.referenceGeoJson, log);
-  const { features, pathCount, refUsedCount } = extractFeatures(
-    targetGroup,
-    { coordConfig, bezierSegments, minRingSize, refGeometryMap },
-    log
-  );
-
-  log.push(`Extracted ${features.length} features from ${pathCount} paths`);
-  if (refUsedCount > 0) {
-    log.push(
-      `Used reference geometry for ${refUsedCount} features (${features.length - refUsedCount} from SVG conversion)`
-    );
-  }
-
-  // Build FeatureCollection
-  const featureCollection: FeatureCollection = {
-    type: "FeatureCollection",
-    features: features.map((f): Feature => ({
-      type: "Feature",
-      id: f.featureId,
-      geometry: f.geometry,
-      properties: f.properties,
-    })),
-  };
-
-  return {
-    features,
-    featureCollection,
-    layersFound,
-    viewBox,
-    log,
-  };
+export function featureIdToDisplayName(id: string): string {
+  return id.replace(/_/g, " ").replace(/-/g, " ");
 }
-
-// Layer type auto-detection
 
 /**
  * Extract SVG metadata (viewBox, dimensions, layer list).

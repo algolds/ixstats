@@ -16,6 +16,11 @@ const REMOVED_FILES = [
   "src/app/admin/realms/_components/map-pipeline/MapPipelineTab.tsx",
   "src/components/maps/editor/panels/WorldCalibration.tsx",
   "src/lib/worldgen/world-calibration.ts",
+  "src/lib/maps/map-pipeline.ts",
+  "src/lib/flags/svg/layer-selection.ts",
+  "src/lib/flags/svg/coordinate-calibration.ts",
+  "src/lib/flags/svg/reference-geometry.ts",
+  "src/lib/flags/svg/feature-extraction.ts",
 ];
 
 /** Names that must no longer appear in any source file. */
@@ -38,6 +43,10 @@ const REMOVED_NAMES = [
   /\b(?:processSvgUpload|previewSvgUpload|commitSvgUpload|rollbackSvgUpload|deleteSvgUpload|getSvgUploadHistory)\b/,
   /\bimportPipelineResult\b/,
   /api\/admin\/upload-svg/,
+  // The Labs map pipeline reached its SVG and PNG converters through dynamic imports, which the removal grep missed
+  /lib\/maps\/map-pipeline\b/,
+  /\bparseSvgToGeoJson\b/,
+  /\bconvertPngToSvg\b/,
 ];
 
 const EDITOR_DIRS = ["src/components/maps/editor", "src/app/admin/maps/editor"];

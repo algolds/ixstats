@@ -1,6 +1,6 @@
 /**
- * The per-feature metrics the SVG parser computes (svg/feature-extraction: centroid, bounding box, approximate
- * area with holes subtracted), recomputed from a polygon geometry so an import can persist them.
+ * The per-feature metrics an import persists (centroid, bounding box, approximate area with holes subtracted),
+ * computed from a polygon geometry.
  */
 import type { Geometry, Position } from "geojson";
 import {

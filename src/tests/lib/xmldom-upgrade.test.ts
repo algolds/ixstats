@@ -9,7 +9,7 @@ import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { describe, expect, it } from "@jest/globals";
 import { DOMParser } from "@xmldom/xmldom";
 import { htmlToDiscordMarkdown } from "~/lib/discord/ixtwitter-sync";
-import { parseSvgToGeoJson } from "~/lib/flags/svg-parser";
+import { extractSvgMetadata } from "~/lib/flags/svg-parser";
 
 describe("xmldom upgrade — behavior pinning", () => {
   it("htmlToDiscordMarkdown renders bold/italic the same as before the upgrade", () => {
@@ -26,22 +26,19 @@ describe("xmldom upgrade — behavior pinning", () => {
     expect(result).toBe("**unclosed**");
   });
 
-  it("parseSvgToGeoJson extracts at least one feature from a minimal valid SVG", () => {
-    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><g><path d="M0 0 L1 0 L1 1 Z"/></g></svg>';
-    const result = parseSvgToGeoJson(svg, "test");
-    expect(result.features.length).toBeGreaterThanOrEqual(1);
+  it("extractSvgMetadata finds the layer and its path in a minimal valid SVG", () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 5"><g id="political"><path d="M0 0 L1 0 L1 1 Z"/></g></svg>';
+    expect(extractSvgMetadata(svg)).toMatchObject({
+      viewBox: { x: 0, y: 0, width: 10, height: 5 },
+      layers: [{ id: "political", childCount: 1 }],
+    });
   });
 
-  it("records the outcome class for malformed SVG (throws vs empty result)", () => {
-    // Outcome class pinned as "throws" on both 0.8.15 and 0.9.x, though the
-    // specific error changed: on 0.8.15 xmldom does not treat the unclosed <g>
-    // as fatal (it emits a non-fatal warning and returns a lenient document),
-    // so parseSvgToGeoJson's own "layer not found" guard throws instead. On
-    // 0.9.x xmldom reports the mismatched tag as a fatalError and throws a
-    // ParseError directly from parseFromString. Either way the caller sees a
-    // thrown error, never a silent empty result.
-    const malformed = "<svg><g></svg>";
-    expect(() => parseSvgToGeoJson(malformed, "test")).toThrow();
+  it("records the outcome class for malformed SVG (throws, never a silent empty result)", () => {
+    // On 0.9.x xmldom reports the mismatched tag as a fatalError and throws a ParseError from parseFromString
+    // (0.8.15 was lenient there); either way the caller sees a thrown error.
+    expect(() => extractSvgMetadata("<svg><g></svg>")).toThrow();
   });
 
   it("parses an attack-shaped input (many duplicated attributes) without quadratic blowup", () => {
