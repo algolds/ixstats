@@ -14,16 +14,18 @@ import { StudioRealmApply } from "./StudioRealmApply";
  * again.
  */
 export function StudioApplySection() {
-  const { source, realms, realmsState, params } = useStudio();
+  const { source, realms, realmsState, generator } = useStudio();
   const fitting = source.kind === "fit";
   const [picked, setPicked] = useState<string | null>(null);
   const [layers, setLayers] = useState<PhysicalLayer[]>([]);
   const wanted = fitting ? source.realm : picked;
   const target = realms.find((realm) => realm.slug === wanted) ?? null;
-  // A layer switched off in the rail is dropped from the choice: the world has none, and writing it would wipe the realm's
+  // A layer the world in view was made without is dropped from the choice: it has none, and writing it would wipe the
+  // realm's. The world's own switches decide, not the rail's, which may be ahead of the world until it is made again
+  const made = generator.result?.params;
   const unavailable = Object.fromEntries(
     LAYER_CHOICES.flatMap(({ layer }) => {
-      const reason = layerUnavailable(layer, params);
+      const reason = made ? layerUnavailable(layer, made) : null;
       return reason ? [[layer, reason]] : [];
     })
   ) as Partial<Record<PhysicalLayer, string>>;

@@ -19,12 +19,12 @@ const LAYER_SWITCH = { rivers: "hasRivers", lakes: "hasLakes", icecaps: "hasIcec
 type LayerSwitches = Pick<StudioParams, (typeof LAYER_SWITCH)[keyof typeof LAYER_SWITCH]>;
 
 /**
- * Why a layer can't be ticked, or null when it can. A layer switched off in the rail leaves the world with none of
- * it, and writing it would only remove the realm's own (the server refuses that too).
+ * Why a layer can't be ticked, or null when it can. A layer the world in view was made without (its switch was off)
+ * has none of it, and writing it would only remove the realm's own (the server refuses that too).
  */
 export function layerUnavailable(layer: PhysicalLayer, params: LayerSwitches): string | null {
   const key = layer in LAYER_SWITCH ? LAYER_SWITCH[layer as keyof typeof LAYER_SWITCH] : null;
-  return key && !params[key] ? "Switched off in the rail, so the world has none to write." : null;
+  return key && !params[key] ? "This world was made without it, so there is none to write." : null;
 }
 
 interface ApplyChoice {

@@ -283,29 +283,55 @@ describe("Studio Ship tab: apply to a realm", () => {
     expect(start.mock.calls[0]![0]).not.toHaveProperty("options");
   });
 
-  it("disables a layer the rail has switched off, with the reason, and never sends it", async () => {
-    const base = studioValue(fitted("ixnay"));
-    const value = studioValue({
-      ...fitted("ixnay"),
-      params: { ...base.params, hasIcecaps: false, hasLakes: false },
+  /** A context whose rail and whose world in view disagree on the layer switches */
+  const withSwitches = (
+    realm: string,
+    rail: Partial<Record<"hasRivers" | "hasLakes" | "hasIcecaps", boolean>>,
+    world: Partial<Record<"hasRivers" | "hasLakes" | "hasIcecaps", boolean>>
+  ) => {
+    const base = studioValue(fitted(realm));
+    return studioValue({
+      ...fitted(realm),
+      params: { ...base.params, ...rail },
+      generator: {
+        ...base.generator,
+        result: worldResult({ params: { ...base.generator.result!.params, ...world } }),
+      },
     });
-    renderTab(<StudioShipTab />, value);
+  };
+
+  it("disables a layer the world in view was made without, with the reason, and never sends it", async () => {
+    renderTab(<StudioShipTab />, withSwitches("ixnay", {}, { hasIcecaps: false, hasLakes: false }));
     for (const name of ["Ice", "Lakes"]) {
       const box = screen.getByRole("checkbox", { name });
       expect(box).toBeDisabled();
-      expect(box).toHaveAccessibleDescription(/Switched off in the rail/);
+      expect(box).toHaveAccessibleDescription(/made without it/);
     }
     expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeEnabled();
     fireEvent.click(screen.getByRole("checkbox", { name: "Ice" }));
     expect(screen.getByText("Tick at least one layer to write to Ixnay.")).toBeInTheDocument();
   });
 
-  it("drops a ticked layer from the choice once the rail switches it off", async () => {
-    const base = studioValue(fitted("eurth"));
+  it("follows the world in view, not a rail change that has not made a new world yet", () => {
+    // Rail: rivers off, but the world in view has rivers; and the reverse for lakes
+    renderTab(
+      <StudioShipTab />,
+      withSwitches(
+        "eurth",
+        { hasRivers: false, hasLakes: true },
+        { hasRivers: true, hasLakes: false }
+      )
+    );
+    expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: "Lakes" })).toBeDisabled();
+  });
+
+  it("drops a ticked layer from the choice once the world in view is made without it", () => {
+    const base = withSwitches("eurth", {}, {});
     const { rerenderWith } = renderTab(<StudioShipTab />, base);
     fireEvent.click(screen.getByRole("checkbox", { name: "Ice" }));
     expect(screen.getByRole("checkbox", { name: "Ice" })).toBeChecked();
-    rerenderWith({ ...base, params: { ...base.params, hasIcecaps: false } });
+    rerenderWith(withSwitches("eurth", {}, { hasIcecaps: false }));
     expect(screen.getByRole("checkbox", { name: "Ice" })).not.toBeChecked();
     expect(applyStatusQuery).toHaveBeenLastCalledWith(
       { realm: "r_eurth", layers: false },
