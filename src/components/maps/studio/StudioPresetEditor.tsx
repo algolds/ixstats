@@ -140,6 +140,7 @@ export function StudioPresetEditor({
         onSubmit={onRename}
       />
       <NameForm
+        key={`new:${preset.slug}`}
         label="Save the rail as a new preset"
         action="Save as new"
         initial=""

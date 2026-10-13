@@ -122,6 +122,27 @@ describe("Studio Presets tab", () => {
     await waitFor(() => expect(value.pickPreset).toHaveBeenCalledWith("dry-world"));
   });
 
+  it("empties the new-preset name once the saved preset is the selected one", () => {
+    const value = withPreset("badlands");
+    const view = renderTab(<StudioPresetsTab />, value);
+    const field = () => screen.getByLabelText("Save the rail as a new preset");
+    fireEvent.change(field(), { target: { value: "Dry world" } });
+    expect(field()).toHaveValue("Dry world");
+
+    // Another save the preset list has not caught up with keeps the text for a retry
+    view.rerenderWith({ ...value });
+    expect(field()).toHaveValue("Dry world");
+
+    const dry = { ...BADLANDS, slug: "dry-world", name: "Dry world", published: false };
+    view.rerenderWith({
+      ...value,
+      presets: [...PRESETS, dry],
+      presetSlug: "dry-world",
+      presetParams: paramsForPreset(dry.params),
+    });
+    expect(field()).toHaveValue("");
+  });
+
   it("loads a new preset whether the list or the write's answer arrives first", async () => {
     let resolve!: (value: object) => void;
     presetWrites.create.mockReturnValue(new Promise((r) => (resolve = r)));
