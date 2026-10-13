@@ -2,6 +2,7 @@
 
 import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
+import type { StudioParams } from "./studio-fields";
 
 /** The physical layers an admin can choose to write, in the order the Ship tab lists them. */
 export const LAYER_CHOICES: ReadonlyArray<{ layer: PhysicalLayer; label: string }> = [
@@ -11,6 +12,20 @@ export const LAYER_CHOICES: ReadonlyArray<{ layer: PhysicalLayer; label: string 
   { layer: "lakes", label: "Lakes" },
   { layer: "icecaps", label: "Ice" },
 ];
+
+/** The generator switch behind a layer that can be switched off in the rail; the rest are always drawn. */
+const LAYER_SWITCH = { rivers: "hasRivers", lakes: "hasLakes", icecaps: "hasIcecaps" } as const;
+
+type LayerSwitches = Pick<StudioParams, (typeof LAYER_SWITCH)[keyof typeof LAYER_SWITCH]>;
+
+/**
+ * Why a layer can't be ticked, or null when it can. A layer switched off in the rail leaves the world with none of
+ * it, and writing it would only remove the realm's own (the server refuses that too).
+ */
+export function layerUnavailable(layer: PhysicalLayer, params: LayerSwitches): string | null {
+  const key = layer in LAYER_SWITCH ? LAYER_SWITCH[layer as keyof typeof LAYER_SWITCH] : null;
+  return key && !params[key] ? "Switched off in the rail, so the world has none to write." : null;
+}
 
 interface ApplyChoice {
   sourceKind: "preset" | "fit";

@@ -119,6 +119,24 @@ describe("a layer choice: the check", () => {
     expect(diff.chosen).toEqual(["climate"]);
   });
 
+  it.each(["lakes", "icecaps"] as const)(
+    "refuses a ticked %s layer the world has none of, rather than wipe the realm's",
+    async (empty) => {
+      const db = drawnRealm();
+      db.mapLayer.rows.push(mapRow(empty, "own"));
+      const before = rowsOf(db, [empty]);
+      const upload = await realmMap();
+      const message = new RegExp(`no ${empty} features`);
+      await expect(
+        runWorldDryRun(db, jobFor(upload, choose([empty, "rivers"])))
+      ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(message) });
+      await expect(
+        applyWorld(db, jobFor(upload, chooseApply([empty])), undefined, { runRelief: relief() })
+      ).rejects.toMatchObject({ message: expect.stringMatching(message) });
+      expect(rowsOf(db, [empty])).toBe(before);
+    }
+  );
+
   it("is refused for a founder, for a preset world, and for an archived realm", async () => {
     const db = drawnRealm();
     await expect(

@@ -336,6 +336,15 @@ export async function prepareWorld(
     );
   }
 
+  // A ticked layer replaces the realm's, so one the world has nothing of (its rail switch is off) would only wipe it
+  for (const layer of chosen ?? []) {
+    if ((bundle.layers[layer]?.features.length ?? 0) === 0) {
+      problems.push(
+        `The world has no ${layer} features, so writing ${layer} would only remove the realm's. Untick ${layer}, or turn it on in the generator`
+      );
+    }
+  }
+
   // A world fitted to the realm's map writes the physical layers the realm has none of, and never its land;
   // a layer choice writes exactly the ticked layers instead
   const have = bundle.source === "realm-map" ? await realmLayers(db, realm.id) : [];

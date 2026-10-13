@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ValueSelect } from "~/components/ui/value-select";
 import type { PhysicalLayer } from "~/lib/maps/import/options";
-import { applyBlock } from "~/lib/worldgen/studio-apply";
+import { applyBlock, layerUnavailable, LAYER_CHOICES } from "~/lib/worldgen/studio-apply";
 import { useStudio } from "./StudioContext";
 import { StudioLayerChoice } from "./StudioLayerChoice";
 import { StudioRealmApply } from "./StudioRealmApply";
@@ -14,13 +14,20 @@ import { StudioRealmApply } from "./StudioRealmApply";
  * again.
  */
 export function StudioApplySection() {
-  const { source, realms, realmsState } = useStudio();
+  const { source, realms, realmsState, params } = useStudio();
   const fitting = source.kind === "fit";
   const [picked, setPicked] = useState<string | null>(null);
   const [layers, setLayers] = useState<PhysicalLayer[]>([]);
   const wanted = fitting ? source.realm : picked;
   const target = realms.find((realm) => realm.slug === wanted) ?? null;
-  const chosen = fitting ? layers : [];
+  // A layer switched off in the rail is dropped from the choice: the world has none, and writing it would wipe the realm's
+  const unavailable = Object.fromEntries(
+    LAYER_CHOICES.flatMap(({ layer }) => {
+      const reason = layerUnavailable(layer, params);
+      return reason ? [[layer, reason]] : [];
+    })
+  ) as Partial<Record<PhysicalLayer, string>>;
+  const chosen = fitting ? layers.filter((layer) => !unavailable[layer]) : [];
   const block = applyBlock({ sourceKind: source.kind, target, layers: chosen });
 
   return (
@@ -37,6 +44,7 @@ export function StudioApplySection() {
             value={layers}
             onChange={setLayers}
             required={target?.isIxnay === true}
+            unavailable={unavailable}
           />
         </>
       ) : (

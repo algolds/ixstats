@@ -253,6 +253,36 @@ describe("Studio Ship tab: apply to a realm", () => {
     expect(start.mock.calls[0]![0]).not.toHaveProperty("options");
   });
 
+  it("disables a layer the rail has switched off, with the reason, and never sends it", async () => {
+    const base = studioValue(fitted("ixnay"));
+    const value = studioValue({
+      ...fitted("ixnay"),
+      params: { ...base.params, hasIcecaps: false, hasLakes: false },
+    });
+    renderTab(<StudioShipTab />, value);
+    for (const name of ["Ice", "Lakes"]) {
+      const box = screen.getByRole("checkbox", { name });
+      expect(box).toBeDisabled();
+      expect(box).toHaveAccessibleDescription(/Switched off in the rail/);
+    }
+    expect(screen.getByRole("checkbox", { name: "Rivers" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Ice" }));
+    expect(screen.getByText("Tick at least one layer to write to Ixnay.")).toBeInTheDocument();
+  });
+
+  it("drops a ticked layer from the choice once the rail switches it off", async () => {
+    const base = studioValue(fitted("eurth"));
+    const { rerenderWith } = renderTab(<StudioShipTab />, base);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Ice" }));
+    expect(screen.getByRole("checkbox", { name: "Ice" })).toBeChecked();
+    rerenderWith({ ...base, params: { ...base.params, hasIcecaps: false } });
+    expect(screen.getByRole("checkbox", { name: "Ice" })).not.toBeChecked();
+    expect(applyStatusQuery).toHaveBeenLastCalledWith(
+      { realm: "r_eurth", layers: false },
+      expect.anything()
+    );
+  });
+
   it("asks the lock of a layer choice without claims, and of a plain apply with them", async () => {
     applyStatusQuery.mockImplementation((input: { layers: boolean }) => ({
       data: input.layers
