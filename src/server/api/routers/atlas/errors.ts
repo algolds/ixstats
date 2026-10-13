@@ -18,7 +18,7 @@ export function atlasError(error: Error): never {
   if (error instanceof ZodError) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "The job's stored settings are not valid",
+      message: "The stored settings are not valid",
     });
   }
   throw error;

@@ -35,7 +35,7 @@ describe("atlasError", () => {
       expect(error).toBeInstanceOf(TRPCError);
       expect(error).toMatchObject({
         code: "BAD_REQUEST",
-        message: expect.stringMatching(/stored settings/i),
+        message: "The stored settings are not valid",
       });
     }
     expect.assertions(2);
