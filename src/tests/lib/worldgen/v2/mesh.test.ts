@@ -5,6 +5,7 @@
 // @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import {
+  mercatorY,
   createMesh,
   cellAreaKm2,
   cellLng,
@@ -138,10 +139,18 @@ describe("v2/mesh cellAreaKm2", () => {
 });
 
 describe("v2/mesh Lloyd relaxation", () => {
-  /** The straightforward relaxation: centroid of each cellPolygon, a fresh triangulation per pass. */
+  const DEGREES = 180 / Math.PI;
+
+  /**
+   * The straightforward relaxation, in Mercator as the mesh relaxes (the bounds' edges are the poles): centroid of
+   * each cellPolygon, a fresh triangulation per pass, then back to latitude.
+   */
   function relaxed(start: Float64Array, passes: number): Float64Array {
-    const bounds = [-180, -90, 180, 90];
+    const poleY = mercatorY(89.95);
+    const siteY = mercatorY(89.9);
+    const bounds = [-180, -poleY, 180, poleY];
     const points = start.slice();
+    for (let i = 1; i < points.length; i += 2) points[i] = mercatorY(points[i]!);
     let voronoi = new Delaunay(points.slice()).voronoi(bounds);
     for (let pass = 0; pass < passes; pass++) {
       for (let i = 0; i < points.length / 2; i++) {
@@ -161,17 +170,48 @@ describe("v2/mesh Lloyd relaxation", () => {
         area /= 2;
         if (Math.abs(area) < 1e-10) continue;
         points[i * 2] = Math.max(-179.95, Math.min(179.95, cx / (6 * area)));
-        points[i * 2 + 1] = Math.max(-89.9, Math.min(89.9, cy / (6 * area)));
+        points[i * 2 + 1] = Math.max(-siteY, Math.min(siteY, cy / (6 * area)));
       }
       voronoi = new Delaunay(points.slice()).voronoi(bounds);
+    }
+    for (let i = 1; i < points.length; i += 2) {
+      points[i] = DEGREES * (2 * Math.atan(Math.exp(points[i]! / DEGREES)) - Math.PI / 2);
     }
     return points;
   }
 
-  it("moves every cell centre exactly as centroid relaxation of the jittered grid does", () => {
+  it("moves every cell centre as centroid relaxation of the jittered grid in Mercator does", () => {
+    // The start goes to latitude and back once more than the mesh's own points: equal to rounding
     const start = createMesh(TEST_SEED, 2000, 0).cells.p;
     const mesh = createMesh(TEST_SEED, 2000, 3);
-    expect(Array.from(mesh.cells.p)).toEqual(Array.from(relaxed(start, 3)));
+    const want = relaxed(start, 3);
+    expect(mesh.cells.p).toHaveLength(want.length);
+    const worst = Math.max(...Array.from(mesh.cells.p, (v, i) => Math.abs(v - want[i]!)));
+    expect(worst).toBeLessThan(1e-9);
+  });
+
+  it("keeps cells about square on the globe and about equal in area at every latitude", () => {
+    const mesh = createMesh(TEST_SEED, 20000, 5);
+    const bands = [0, 0, 0, 0].map(() => ({ area: 0, ratio: 0, count: 0 }));
+    for (let i = 0; i < mesh.cells.n; i++) {
+      const lat = mesh.cells.p[i * 2 + 1]!;
+      const ring = mesh.cells.vertices[i]!;
+      const xs = ring.map(([x]) => x);
+      const ys = ring.map(([, y]) => y);
+      const wide = Math.max(...xs) - Math.min(...xs);
+      if (wide > 180 || Math.abs(lat) > 85) continue;
+      const band = bands[Math.min(3, Math.floor(Math.abs(lat) / 22.5))]!;
+      band.area += sphericalRingAreaSqKm(ring, EARTH_RADIUS_KM);
+      band.ratio += (wide * Math.cos(lat / DEGREES)) / (Math.max(...ys) - Math.min(...ys));
+      band.count++;
+    }
+    const equator = bands[0]!.area / bands[0]!.count;
+    for (const band of bands) {
+      // The polar band (67.5° to 85°) was 0.26 wide for 1 tall when the mesh was relaxed in longitude and latitude
+      expect(band.ratio / band.count).toBeGreaterThan(0.85);
+      expect(band.area / band.count / equator).toBeGreaterThan(0.9);
+      expect(band.area / band.count / equator).toBeLessThan(1.1);
+    }
   });
 });
 

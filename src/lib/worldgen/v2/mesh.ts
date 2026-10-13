@@ -7,6 +7,11 @@
  *
  * Every cell receives exactly ONE of each attribute (elevation, biome,
  * country, etc.), guaranteeing no layer intersections.
+ *
+ * The triangulation and the relaxation run in Mercator coordinates (x = longitude, y = Mercator northing in
+ * degrees), which keep shapes true at every latitude: a cell near a pole is as square on the globe as one at the
+ * equator, where a mesh built in longitude and latitude makes polar cells thin north-south slivers. The grid's
+ * density keeps every cell's true area about the same, and the cells come back in longitude and latitude.
  */
 
 // @ts-expect-error d3-delaunay has no declaration file
@@ -37,8 +42,10 @@ export function createMesh(
   const points = generateJitteredGrid(cellCount, rng);
   const n = points.length / 2;
 
-  // Step 2: Delaunay + Voronoi over the whole globe (cells at ±180 are stitched in Step 7)
-  const bounds: [number, number, number, number] = [-180, -90, 180, 90];
+  // Step 2: Delaunay + Voronoi over the whole globe in Mercator coordinates (cells at ±180 are stitched in Step 6;
+  // the top and bottom of the bounds are the poles)
+  for (let i = 0; i < n; i++) points[i * 2 + 1] = mercatorY(points[i * 2 + 1]!);
+  const bounds: [number, number, number, number] = [-180, -POLE_Y, 180, POLE_Y];
   // The triangulation owns a copy of the points: relaxation writes `points` while it reads them
   const delaunay = new Delaunay(points.slice());
   const voronoi = delaunay.voronoi(bounds);
@@ -56,7 +63,7 @@ export function createMesh(
 
       // Clamp to bounds
       const cx = Math.max(-179.95, Math.min(179.95, centroid.cx / (6 * area)));
-      const cy = Math.max(-89.9, Math.min(89.9, centroid.cy / (6 * area)));
+      const cy = Math.max(-SITE_Y, Math.min(SITE_Y, centroid.cy / (6 * area)));
 
       points[i * 2] = cx;
       points[i * 2 + 1] = cy;
@@ -77,10 +84,12 @@ export function createMesh(
     neighbors[i] = nbs;
   }
 
-  // Step 5: Extract cell polygon vertices (d3 hands out fresh rings)
+  // Step 5: Extract cell polygon vertices (d3 hands out fresh rings) and bring them and the sites back to latitude
   const vertices: [number, number][][] = new Array(n);
   for (let i = 0; i < n; i++) {
-    vertices[i] = voronoi.cellPolygon(i) ?? [[0, 0]];
+    const ring: [number, number][] | null = voronoi.cellPolygon(i);
+    vertices[i] = ring ? ring.map(([x, y]) => [x, latitudeOf(y)]) : [[0, 0]];
+    points[i * 2 + 1] = latitudeOf(points[i * 2 + 1]!);
   }
 
   const graph = createEmptyWorldGraph(n, {
@@ -102,6 +111,24 @@ export function createMesh(
   }
 
   return graph;
+}
+
+const DEGREES = 180 / Math.PI;
+
+/** Mercator northing of a latitude, in degrees (equal to the latitude near the equator). */
+export function mercatorY(lat: number): number {
+  return DEGREES * Math.log(Math.tan(Math.PI / 4 + lat / (2 * DEGREES)));
+}
+
+/** The mesh's poles: the bounds' top and bottom edges stand for latitude ±90. */
+const POLE_Y = mercatorY(89.95);
+/** Sites stay within the latitudes the grid uses. */
+const SITE_Y = mercatorY(89.9);
+
+/** Latitude of a Mercator northing; the bounds' edges are the poles. */
+function latitudeOf(y: number): number {
+  if (Math.abs(y) >= POLE_Y - 1e-9) return Math.sign(y) * 90;
+  return DEGREES * (2 * Math.atan(Math.exp(y / DEGREES)) - Math.PI / 2);
 }
 
 /**
@@ -319,10 +346,9 @@ function generateJitteredGrid(targetCount: number, rng: () => number): Float64Ar
     const lat = -90 + (row + 0.5) * cellH;
     const latRad = (Math.abs(lat) * Math.PI) / 180;
 
-    // Latitude density compensation: at high latitudes, cells cover
-    // less actual area, so we space them closer in longitude
-    const densityFactor = Math.max(0.3, Math.cos(latRad));
-    const effectiveCols = Math.max(3, Math.round(cols * densityFactor));
+    // Latitude density compensation: a degree of longitude shrinks with cos(latitude), so a row has that
+    // many fewer cells and every cell covers about the same true area, up to the poles
+    const effectiveCols = Math.max(3, Math.round(cols * Math.cos(latRad)));
     const effectiveCellW = 360 / effectiveCols;
 
     for (let col = 0; col < effectiveCols; col++) {

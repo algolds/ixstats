@@ -41,7 +41,7 @@ describe("worldgen/render-png", () => {
     const { p, isLand, neighbors } = graph.cells;
     let deepSea = 0;
     let inland = 0;
-    for (let c = 0; c < graph.cells.n && deepSea + inland < 300; c++) {
+    for (let c = 0; c < graph.cells.n && (deepSea < 150 || inland < 150); c++) {
       const at = pixel(flat, p[c * 2]!, p[c * 2 + 1]!);
       const around = neighbors[c]!;
       if (isLand[c] === 0 && around.every((n) => isLand[n] === 0)) {

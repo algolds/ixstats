@@ -11,6 +11,7 @@
 import { Delaunay as DelaunayImpl } from "d3-delaunay";
 import { kmPerDegree, kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 import { DETAIL_SIZE, detailTexture } from "./relief-noise";
+import { mercatorY } from "./v2/mesh";
 
 export type HeightGrid = {
   width: number;
@@ -41,6 +42,9 @@ const MIN_COS = 0.02;
  * triangulation is not periodic, so without the copies the strip between the westmost and eastmost cells would be
  * missing. The margin is a few cell spacings, widened towards the poles where a row holds fewer cells.
  */
+/** Points along each pole's edge of the grid, so the triangles reach the poles (the cells' sites stop short). */
+const POLE_POINTS = 16;
+
 function pixelPoints(
   cells: Float32Array,
   width: number,
@@ -48,11 +52,13 @@ function pixelPoints(
   floorAtZero: boolean
 ): PixelPoints {
   const n = Math.floor(cells.length / 3);
-  const xy = new Float64Array(n * 4);
-  const z = new Float32Array(n * 2);
+  const xy = new Float64Array(n * 4 + (POLE_POINTS + 1) * 4);
+  const z = new Float32Array(n * 2 + (POLE_POINTS + 1) * 2);
   const spacing = SEAM_SPACINGS * Math.sqrt(REFERENCE_CELLS / n);
   let count = 0;
   let valid = 0;
+  // The value of the site nearest each pole
+  const pole = { north: { lat: -Infinity, h: 0 }, south: { lat: Infinity, h: 0 } };
   const push = (x: number, y: number, h: number) => {
     xy[count * 2] = x;
     xy[count * 2 + 1] = y;
@@ -68,10 +74,19 @@ function pixelPoints(
     const h = floorAtZero && !(value > 0) ? 0 : value;
     push(x, y, h);
     valid++;
+    if (lat > pole.north.lat) pole.north = { lat, h };
+    if (lat < pole.south.lat) pole.south = { lat, h };
     const cos = Math.max(MIN_COS, Math.cos((lat * Math.PI) / 180));
     const margin = Math.min(width / 2, ((spacing / cos) * width) / 360);
     if (x < margin) push(x + width, y, h);
     else if (x > width - margin) push(x - width, y, h);
+  }
+  if (valid >= 3) {
+    for (let k = 0; k <= POLE_POINTS; k++) {
+      const x = (k / POLE_POINTS) * width;
+      push(x, 0, pole.north.h);
+      push(x, height, pole.south.h);
+    }
   }
   return { xy, z, count, cells: valid };
 }
@@ -146,12 +161,27 @@ function fillTriangle(
   }
 }
 
+/**
+ * The points with their rows moved to Mercator northing (at the columns' scale), so the triangulation is the mesh's
+ * own: the mesh is built in Mercator, and a triangulation in longitude and latitude joins polar cells that are not
+ * neighbours. The triangles are still drawn at the points' longitude and latitude.
+ */
+function mercatorPoints({ xy, count }: PixelPoints, width: number, height: number): Float64Array {
+  const out = xy.slice(0, count * 2);
+  const pixelsPerDegree = width / 360;
+  for (let i = 0; i < count; i++) {
+    const lat = Math.max(-89.95, Math.min(89.95, 90 - (out[i * 2 + 1]! / height) * 180));
+    out[i * 2 + 1] = -mercatorY(lat) * pixelsPerDegree;
+  }
+  return out;
+}
+
 function rasterizeCells(cells: Float32Array, width: number, floorAtZero: boolean): HeightGrid {
   const height = width >> 1;
   const metres = new Float32Array(width * height);
   const points = pixelPoints(cells, width, height, floorAtZero);
   if (points.cells < 3) return { width, height, metres };
-  const { triangles } = new Delaunay(points.xy.subarray(0, points.count * 2));
+  const { triangles } = new Delaunay(mercatorPoints(points, width, height));
   for (let t = 0; t < triangles.length; t += 3) {
     fillTriangle(
       metres,

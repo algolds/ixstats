@@ -140,7 +140,8 @@ function cellsByState(world: ReturnType<typeof generateWorld>): Map<number, numb
 describe("v2/export political areas", () => {
   const worlds = [
     generateWorld({ ...WORLD_PRESETS.eurth, seed: 7, cellCount: 8000 }),
-    generateWorld({ ...WORLD_PRESETS.ixnay, seed: 4, cellCount: 8000 }),
+    // A seed with nations across the antimeridian, so the area check covers them
+    generateWorld({ ...WORLD_PRESETS.ixnay, seed: 1, cellCount: 8000 }),
   ];
 
   /**
@@ -174,12 +175,13 @@ describe("v2/export political areas", () => {
   });
 
   it("includes antimeridian slots among the ones it measures", () => {
-    const world = worlds[1]!;
-    const { cells } = world.graph!;
-    const byState = cellsByState(world);
-    const seam = measurable(world).filter((slot) => {
-      const lngs = byState.get(Number(slot.key.slice(5)))!.map((i) => cells.p[i * 2]!);
-      return lngs.some((x) => x < -170) && lngs.some((x) => x > 170);
+    const seam = worlds.flatMap((world) => {
+      const { cells } = world.graph!;
+      const byState = cellsByState(world);
+      return measurable(world).filter((slot) => {
+        const lngs = byState.get(Number(slot.key.slice(5)))!.map((i) => cells.p[i * 2]!);
+        return lngs.some((x) => x < -170) && lngs.some((x) => x > 170);
+      });
     });
     expect(seam.length).toBeGreaterThan(2);
   });
