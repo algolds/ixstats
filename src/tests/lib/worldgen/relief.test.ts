@@ -138,6 +138,23 @@ describe("relief/heightsFromCells", () => {
     const g = heightsFromCells(cells, 256);
     expect(g.metres[64 * 256 + 128]).toBeCloseTo(300, 1);
   });
+
+  it("carries the site nearest a pole to that pole's edge, only when a site is within a degree of it", () => {
+    // Land from 60S to 60N: nothing is drawn beyond, so the sea at the poles stays flat
+    const short: number[] = [];
+    for (let lat = -60; lat <= 60; lat += 10) {
+      for (let lng = -175; lng <= 175; lng += 10) short.push(lng, lat, 400);
+    }
+    const g = heightsFromCells(Float32Array.from(short), 256);
+    expect(g.metres[0 * 256 + 128]).toBe(0);
+    expect(g.metres[127 * 256 + 128]).toBe(0);
+    // A mesh reaches the poles: its polar sites' heights reach the top and bottom rows
+    const polar = [...short, -120, 89.8, 700, 0, 89.8, 700, 120, 89.8, 700];
+    polar.push(-120, -89.8, 900, 0, -89.8, 900, 120, -89.8, 900);
+    const reached = heightsFromCells(Float32Array.from(polar), 256);
+    expect(reached.metres[0 * 256 + 128]).toBeGreaterThan(650);
+    expect(reached.metres[127 * 256 + 128]).toBeGreaterThan(850);
+  });
 });
 
 describe("relief/heightsFromBands", () => {

@@ -44,6 +44,11 @@ const MIN_COS = 0.02;
  */
 /** Points along each pole's edge of the grid, so the triangles reach the poles (the cells' sites stop short). */
 const POLE_POINTS = 16;
+/**
+ * A pole gets its edge points only when a site is this close to it (a generator mesh's are within a fraction of a
+ * degree); a set of cells that stops short of a pole, such as a realm's, is left as it is, unfilled beyond its sites.
+ */
+const POLE_REACH = 89;
 
 function pixelPoints(
   cells: Float32Array,
@@ -81,12 +86,10 @@ function pixelPoints(
     if (x < margin) push(x + width, y, h);
     else if (x > width - margin) push(x - width, y, h);
   }
-  if (valid >= 3) {
-    for (let k = 0; k <= POLE_POINTS; k++) {
-      const x = (k / POLE_POINTS) * width;
-      push(x, 0, pole.north.h);
-      push(x, height, pole.south.h);
-    }
+  for (let k = 0; valid >= 3 && k <= POLE_POINTS; k++) {
+    const x = (k / POLE_POINTS) * width;
+    if (pole.north.lat >= POLE_REACH) push(x, 0, pole.north.h);
+    if (pole.south.lat <= -POLE_REACH) push(x, height, pole.south.h);
   }
   return { xy, z, count, cells: valid };
 }
