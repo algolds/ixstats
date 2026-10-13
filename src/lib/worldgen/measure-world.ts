@@ -10,7 +10,7 @@
  */
 
 import type { Feature, Geometry, Position } from "geojson";
-import { climateZoneOf } from "~/lib/maps/climate-zones";
+import { climateZoneOf, normalizeHexColor } from "~/lib/maps/climate-zones";
 import { resolveClimateFromColor, trewarthaCodeOf } from "~/lib/maps/geo-analytics";
 import { EARTH_RADIUS_KM, haversineKm, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
@@ -160,7 +160,7 @@ function trewarthaCodeOfClimate(
   if (zone) return trewarthaCodeOf(zone.code);
   if (typeof properties.climateId === "string") return trewarthaCodeOf(properties.climateId);
   const fill = typeof properties.fill === "string" ? properties.fill : null;
-  const named = fill ? resolveClimateFromColor(fill.slice(0, 7)) : null;
+  const named = fill ? resolveClimateFromColor(normalizeHexColor(fill).slice(0, 7)) : null;
   return named ? (/\((\w+)\)$/.exec(named)?.[1] ?? null) : null;
 }
 

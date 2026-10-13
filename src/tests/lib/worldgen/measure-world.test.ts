@@ -149,6 +149,46 @@ describe("measureWorld: climate", () => {
     }
   });
 
+  it("matches a key colour whatever its spelling: case, short form, an opaque alpha", () => {
+    // Neither colour is near a Trewartha colour, so only the key can name them
+    const climateKey: ClimateKey = {
+      system: "Koppen",
+      zones: [
+        { code: "Cfb", name: "Oceanic", color: "#A8C995" },
+        { code: "BWh", name: "Hot desert", color: "#aabbcc" },
+      ],
+    };
+    const spelled = (west: string, east: string) =>
+      measureWorld(
+        halves(
+          feature(polygon(box(0, 0, 20, 40)), { fill: west }),
+          feature(polygon(box(20, 0, 40, 40)), { fill: east })
+        ),
+        { climateKey }
+      ).climate;
+    for (const [west, east] of [
+      ["#a8c995", "#aabbcc"],
+      ["#a8c995ff", "#AABBCCFF"],
+      ["#A8C995", "#abc"],
+      ["#a8c995ff", "#abcf"],
+    ] as const) {
+      const climate = spelled(west, east);
+      expect(climate.D).toBeCloseTo(0.5, 10);
+      expect(climate.B).toBeCloseTo(0.5, 10);
+    }
+  });
+
+  it("reads a colour-only feature with an opaque alpha or a short form as its colour", () => {
+    const fill = (value: string) =>
+      measureWorld({
+        political: land,
+        climate: layer(feature(polygon(box(0, 0, 40, 40)), { fill: value })),
+      }).climate;
+    // #990000 is the canonical Ar; #900 is its short form near it, and ff is opaque
+    expect(fill("#990000ff").A).toBeCloseTo(1, 6);
+    expect(fill("#900").A).toBeCloseTo(1, 6);
+  });
+
   it("maps Koppen's cold and polar types to Trewartha's boreal and polar groups", () => {
     const { climate } = measureWorld(
       halves(
