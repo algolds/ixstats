@@ -24,6 +24,7 @@ export const invalidate = {
   presetsList: jest.fn(),
   presetsVersions: jest.fn(),
   applyStatus: jest.fn(),
+  realmMeasures: jest.fn(),
   overview: jest.fn(),
 };
 
@@ -55,7 +56,10 @@ export const api = {
         list: { invalidate: invalidate.presetsList },
         versions: { invalidate: invalidate.presetsVersions },
       },
-      studio: { applyStatus: { invalidate: invalidate.applyStatus } },
+      studio: {
+        applyStatus: { invalidate: invalidate.applyStatus },
+        realmMeasures: { invalidate: invalidate.realmMeasures },
+      },
       realms: { overview: { invalidate: invalidate.overview } },
     },
   }),

@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { ConfirmButton } from "./ConfirmButton";
+import { ROLLBACK_EFFECT } from "./rollback-copy";
 import type { JobRow } from "./job-labels";
 
 type Actionable = Pick<JobRow, "id" | "canCancel" | "canRetry" | "canRollBack" | "importId">;
@@ -74,7 +75,7 @@ export function JobActions({ job }: { job: Actionable }) {
         <ConfirmButton
           label="Roll back"
           title="Roll back this import?"
-          description="The borders it changed go back to how they were, the ones it created are removed, and the land areas it filled are cleared again."
+          description={ROLLBACK_EFFECT}
           disabled={rollback.isPending}
           icon={<Undo />}
           onConfirm={() => rollback.mutate({ importId: job.importId! })}

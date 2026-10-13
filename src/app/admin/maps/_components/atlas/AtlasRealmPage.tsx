@@ -14,6 +14,7 @@ import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { MapPipelinePanel } from "~/app/admin/realms/_components/map-pipeline/MapPipelinePanel";
 import { ConfirmButton } from "./ConfirmButton";
+import { ROLLBACK_EFFECT } from "./rollback-copy";
 import { JobDetailSheet } from "./JobDetailSheet";
 import { JobsTable } from "./JobsTable";
 import { RealmFigures } from "./RealmFigures";
@@ -75,7 +76,7 @@ function RealmActions({
       <ConfirmButton
         label="Roll back last import"
         title="Roll back the last import?"
-        description="The borders it changed go back to how they were, the ones it created are removed, and the land areas it filled are cleared again."
+        description={ROLLBACK_EFFECT}
         confirmLabel="Roll back"
         disabled={importId === null || rollback.isPending}
         onConfirm={() => {

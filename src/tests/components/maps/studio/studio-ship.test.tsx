@@ -384,6 +384,8 @@ describe("Studio Ship tab: apply to a realm", () => {
     );
     await screen.findByText("The world is applied");
     expect(invalidate.applyStatus).toHaveBeenCalled();
+    // The Calibration tab reads the realm again rather than showing its figures from before the apply
+    expect(invalidate.realmMeasures).toHaveBeenCalled();
     expect(invalidate.overview).toHaveBeenCalled();
   });
 });

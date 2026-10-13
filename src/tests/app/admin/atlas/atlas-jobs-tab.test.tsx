@@ -145,6 +145,9 @@ describe("job actions", () => {
     fireEvent.click(
       within(rowOf("Open Apply (PNG) done")).getByRole("button", { name: "Roll back" })
     );
+    expect(screen.getByRole("alertdialog")).toHaveTextContent(
+      "nations or slots it made are removed"
+    );
     fireEvent.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
     );

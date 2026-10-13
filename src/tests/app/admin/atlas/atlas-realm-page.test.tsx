@@ -122,6 +122,14 @@ describe("the realm page actions", () => {
     expect(calls).toEqual([["atlas.jobs.rollback", { importId: "imp_9" }]]);
   });
 
+  it("says in general terms what the roll back undoes, not only borders", () => {
+    render(<AtlasRealmPage slug="eurth" />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
+    const text = within(screen.getByRole("alertdialog")).getByText(/Everything it wrote is undone/);
+    expect(text).toHaveTextContent("layers it wrote go back");
+    expect(text).toHaveTextContent("nations or slots it made are removed");
+  });
+
   it("turns Roll back off when the latest import cannot be undone", () => {
     loadRealm(false);
     render(<AtlasRealmPage slug="eurth" />);

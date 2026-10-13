@@ -50,6 +50,7 @@ export function StudioRealmApply({ realm, source, layers }: StudioRealmApplyProp
       // The world stays in the Studio, which is not a draft of that realm; what changed is the realm's status and map
       onDiscardDraft={() => {
         void utils.atlas.studio.applyStatus.invalidate();
+        void utils.atlas.studio.realmMeasures.invalidate();
         void utils.atlas.realms.overview.invalidate();
       }}
     />

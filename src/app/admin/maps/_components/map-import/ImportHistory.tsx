@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import type { MapImportContext } from "~/hooks/useMapImportJob";
+import { ROLLBACK_EFFECT } from "../atlas/rollback-copy";
 
 type ImportRow = MapImportContext["imports"][number];
 
@@ -72,10 +73,7 @@ export function ImportHistory({ realmId, imports }: { realmId: string; imports: 
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Roll back this import?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        The borders it changed go back to how they were, the ones it created are
-                        removed, and the land areas it filled are cleared again.
-                      </AlertDialogDescription>
+                      <AlertDialogDescription>{ROLLBACK_EFFECT}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Keep it</AlertDialogCancel>
