@@ -55,6 +55,8 @@ async function keptUploads(db: PruneDb): Promise<Set<string>> {
     where: { rolledBackAt: null },
     orderBy: { createdAt: "desc" },
     select: { realmId: true, jobId: true, layerTypes: true, summary: true },
+    // Past the guarded client's 1000-row cap: a realm whose latest world import is older than the newest 1000 imports
+    take: 50_000,
   });
   const jobs = await db.mapImportJob.findMany({
     where: { id: { in: keptJobs(imports) } },

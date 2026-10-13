@@ -385,14 +385,18 @@ export async function buildSyncPlan(
         materialHold: { select: { countryId: true } },
         nationalIdentity: { select: { capitalCity: true, officialName: true } },
       },
+      // Past the guarded client's 1000-row cap: Eurth has 2,750 realm pages, and the plan must see them all
+      take: 50_000,
     }),
     db.realmPage.findMany({
       where: { realmId },
       select: { title: true, kind: true, wikiSource: true },
+      take: 50_000,
     }),
     db.mapLayer.findMany({
       where: { realmId, layerType: "political", isActive: true },
       select: { featureId: true, countryId: true, properties: true },
+      take: 50_000,
     }),
     db.alliance.findMany({
       where: { realmId },
@@ -405,6 +409,7 @@ export async function buildSyncPlan(
         externalSourceKey: true,
         members: { where: { isActive: true }, select: { countryId: true } },
       },
+      take: 50_000,
     }),
   ]);
   const linkedFeatureByCountry: Record<string, string> = {};

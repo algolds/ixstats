@@ -103,6 +103,25 @@ describe("pruneWorldUploads", () => {
     expect(existsSync(uploadFile(other))).toBe(true);
   });
 
+  it("keeps the bundle of a realm whose latest world import is older than the newest 1000 imports", async () => {
+    const db = fakeDb();
+    const mine = await bundle("an old realm's world", 40);
+    appliedWorld(db, "r1", mine, { day: 40 });
+    for (let i = 0; i < 1001; i++) {
+      db.mapImport.rows.push({
+        id: `busy_${i}`,
+        realmId: "busy",
+        jobId: null,
+        layerTypes: ["political"],
+        summary: { source: "pipeline" },
+        rolledBackAt: null,
+        createdAt: new Date(NOW - DAY + i),
+      });
+    }
+    await pruneWorldUploads(db, NOW);
+    expect(existsSync(uploadFile(mine))).toBe(true);
+  });
+
   it("keeps the bundle the relief rebuild reads when a later world kept the realm's elevation", async () => {
     const db = fakeDb();
     const shaded = await bundle("world with elevation", 40);
