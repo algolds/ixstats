@@ -17,6 +17,7 @@ jest.mock("~/lib/maps/import/world-bundle", () => ({
   encodeWorldBundle: jest.fn(),
 }));
 
+import { ENCODE_FAILED } from "~/lib/worldgen/worker/world-query-errors";
 import { StudioShipTab } from "~/components/maps/studio/StudioShipTab";
 import { start } from "~/tests/helpers/fake-map-import";
 import {
@@ -147,7 +148,7 @@ describe("Studio Ship tab: export", () => {
 
   it("says inline that the browser could not make an image this large, and downloads nothing", async () => {
     const value = studioValue();
-    jest.mocked(value.generator.renderPng).mockRejectedValue(new Error("canvas too large"));
+    jest.mocked(value.generator.renderPng).mockRejectedValue(new Error(ENCODE_FAILED));
     renderTab(<StudioShipTab />, value);
     fireEvent.click(screen.getByRole("radio", { name: "8192 px" }));
     fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
@@ -167,6 +168,31 @@ describe("Studio Ship tab: export", () => {
     renderTab(<StudioShipTab />, value);
     fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The world changed while the image");
+  });
+
+  it("says why the image failed when it was not the encode, and keeps the limit message for the encode", async () => {
+    const value = studioValue();
+    jest.mocked(value.generator.renderPng).mockRejectedValueOnce(new Error("Ran out of memory"));
+    renderTab(<StudioShipTab />, value);
+    fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Ran out of memory");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Your browser could not make");
+
+    jest.mocked(value.generator.renderPng).mockRejectedValueOnce(new Error(ENCODE_FAILED));
+    fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Your browser could not make an image")
+    );
+  });
+
+  it("will not draw an image while the generator is in the error state", () => {
+    const base = studioValue();
+    renderTab(
+      <StudioShipTab />,
+      studioValue({ generator: { ...base.generator, state: "error", error: "mesh exploded" } })
+    );
+    expect(screen.getByRole("button", { name: "Download PNG" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Download GeoJSON/ })).toBeEnabled();
   });
 
   it("exports nothing without a world", () => {
@@ -246,7 +272,11 @@ describe("Studio Ship tab: apply to a realm", () => {
       screen.getByText(/With none ticked, only layers the realm does not have yet are added/)
     ).toBeInTheDocument();
     expect(screen.getByText(/replace the realm's current layers of that kind/)).toBeInTheDocument();
-    expect(screen.getByText(/Land, borders and nations are never written/)).toBeInTheDocument();
+    // The founder's apply behind it makes a nation for each region that has none
+    expect(
+      screen.getByText(/a nation is created for each region that has none/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Land and borders are never written/)).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: "Use this world" }));
     await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
     expect(start.mock.calls[0]![0]).toMatchObject({ realmId: "r_eurth", fittedMapVersion: 5 });

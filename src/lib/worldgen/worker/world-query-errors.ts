@@ -4,4 +4,12 @@
  * once the new world lands. Matches the messages `WorldGenSession` rejects with.
  */
 export const isOutrunMessage = (message: string): boolean =>
-  /world changed|was restarted|no world to draw/i.test(message);
+  /world (has )?changed|was restarted|no world to draw/i.test(message);
+
+/**
+ * What the worker answers when the pixels were drawn but the browser could not encode them as a PNG (in practice its
+ * canvas limit at that width). Any other failed render answers with its own message.
+ */
+export const ENCODE_FAILED = "The image could not be encoded";
+
+export const isEncodeFailure = (message: string): boolean => message === ENCODE_FAILED;

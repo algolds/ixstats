@@ -10,6 +10,7 @@ import type {
   WorldWorkerResponse,
 } from "~/lib/worldgen/worker/world-messages";
 import { createWorldRunner, type PngEncoder } from "~/lib/worldgen/worker/world-runner";
+import { ENCODE_FAILED } from "~/lib/worldgen/worker/world-query-errors";
 import { encodePng } from "~/lib/worldgen/worker/encode-png";
 
 type Posted = { message: WorldWorkerResponse; transfer: ArrayBuffer[] };
@@ -137,7 +138,7 @@ describe("worldgen/world-runner queries", () => {
     });
   });
 
-  it("answers a render the encoder cannot make with a request error", async () => {
+  it("answers a render the encoder cannot make with the encode failure, whatever the encoder said", async () => {
     const { posted, run } = harness(() => Promise.reject(new Error("canvas too large")));
     run(generateRequest());
     run({ type: "render", requestId: 3, world: 1, width: 8192, politics: false });
@@ -145,7 +146,7 @@ describe("worldgen/world-runner queries", () => {
     expect(last(posted)).toEqual({
       type: "request-error",
       requestId: 3,
-      message: "canvas too large",
+      message: ENCODE_FAILED,
     });
   });
 

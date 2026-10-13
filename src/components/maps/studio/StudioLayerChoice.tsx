@@ -15,8 +15,9 @@ interface StudioLayerChoiceProps {
 }
 
 /**
- * The admin layer choice: which physical layers of a world fitted to a realm's map replace the realm's own. Land,
- * borders and nations are never written. Site admins only: the founder's apply region has no such controls.
+ * The admin layer choice: which physical layers of a world fitted to a realm's map replace the realm's own. Land and
+ * borders are never written; with no layer ticked, nations are created for the regions that have none. Site admins
+ * only: the founder's apply region has no such controls.
  */
 export function StudioLayerChoice({
   value,
@@ -31,7 +32,7 @@ export function StudioLayerChoice({
       <p id={hintId} className="text-label-secondary text-caption">
         {required
           ? "Ticked layers replace Ixnay's current layers of that kind. Land, borders and nations are never written."
-          : "Ticked layers replace the realm's current layers of that kind. With none ticked, only layers the realm does not have yet are added and its own are kept. Land, borders and nations are never written."}
+          : "Ticked layers replace the realm's current layers of that kind. With none ticked, only layers the realm does not have yet are added and its own are kept, and a nation is created for each region that has none. Land and borders are never written."}
       </p>
       {LAYER_CHOICES.map(({ layer, label }) => (
         <div key={layer}>

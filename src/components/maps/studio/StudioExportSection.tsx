@@ -12,13 +12,21 @@ import {
   geojsonZip,
   pngFailureText,
 } from "~/lib/worldgen/world-export";
-import { isOutrunMessage } from "~/lib/worldgen/worker/world-query-errors";
+import { isEncodeFailure, isOutrunMessage } from "~/lib/worldgen/worker/world-query-errors";
 import { useStudio } from "./StudioContext";
 
 // The same names as `PNG_WIDTHS` (render-png.ts, the worker's drawing code, which the page does not import)
 const WIDTHS = ["2048", "4096", "8192"] as const;
 const widthOf = (value: (typeof WIDTHS)[number]): PngWidth =>
   value === "2048" ? 2048 : value === "4096" ? 4096 : 8192;
+
+/** What a failed render means to the admin: the browser's limit only when the encode failed, else its own reason. */
+function pngErrorText(message: string, size: PngWidth): string {
+  if (isOutrunMessage(message))
+    return "The world changed while the image was being made. Try again.";
+  if (isEncodeFailure(message)) return pngFailureText(size);
+  return message || "The image could not be made.";
+}
 
 /** Export: the world's layers as one zip of GeoJSON files, or an equirectangular PNG of it. */
 export function StudioExportSection() {
@@ -52,12 +60,7 @@ export function StudioExportSection() {
       const png = await generator.renderPng(size, politics);
       downloadBlob(png, exportFileName(source.preset, result.seed, size));
     } catch (failure) {
-      const message = failure instanceof Error ? failure.message : "";
-      setError(
-        isOutrunMessage(message)
-          ? "The world changed while the image was being made. Try again."
-          : pngFailureText(size)
-      );
+      setError(pngErrorText(failure instanceof Error ? failure.message : "", size));
     } finally {
       setRendering(false);
     }
@@ -101,7 +104,7 @@ export function StudioExportSection() {
         <Button
           size="sm"
           variant="outline"
-          disabled={!result || rendering || generator.state === "generating"}
+          disabled={!result || rendering || generator.state !== "ready"}
           onClick={() => void exportPng()}
         >
           <Download aria-hidden />

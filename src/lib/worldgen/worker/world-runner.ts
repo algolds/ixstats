@@ -20,6 +20,7 @@ import { renderMap, type RenderedMap } from "~/lib/worldgen/render-png";
 import { previewRelief } from "~/lib/worldgen/relief-preview";
 import { computeWorldStats } from "~/lib/worldgen/world-stats";
 import { encodePng } from "./encode-png";
+import { ENCODE_FAILED } from "./world-query-errors";
 import type {
   WorldGenerateRequest,
   WorldWorkerRequest,
@@ -184,7 +185,7 @@ export function createWorldRunner(
         const image = renderMap(world.graph, width, { politics });
         toPng(image)
           .then((png) => post({ type: "render-result", requestId, world: world.id, width, png }))
-          .catch((error) => fail(messageOf(error, "The image could not be encoded")));
+          .catch(() => fail(ENCODE_FAILED));
         return;
       }
     }
