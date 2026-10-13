@@ -26,6 +26,7 @@ jest.mock("~/components/ui/value-select", () =>
 );
 
 import { WorldDraft } from "~/lib/maps/world-draft-layers";
+import { layerJson, resultMessage } from "~/tests/helpers/fake-world-worker";
 import { studioRecipeKey } from "~/lib/worldgen/studio-recipe";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 import {
@@ -77,6 +78,49 @@ describe("the top bar", () => {
     expect(lastRequest().params).toMatchObject({ oceanPercentage: 0.771, temperatureOffset: 1.5 });
   });
 
+  describe("switching presets", () => {
+    const choose = (slug: string) =>
+      fireEvent.change(screen.getByLabelText("Preset"), { target: { value: slug } });
+
+    it("asks before replacing edits, and keeps them when cancelled", () => {
+      renderStudio();
+      land();
+      step("Ocean");
+      land();
+      choose("ixnay");
+      expect(screen.getByRole("alertdialog")).toHaveTextContent(
+        /replace the parameters you changed/i
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Keep my changes" }));
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Preset")).toHaveValue("earthlike");
+      expect(requests()).toHaveLength(2);
+      expect(screen.getByRole("slider", { name: "Ocean" })).toHaveAttribute(
+        "aria-valuenow",
+        "0.71"
+      );
+    });
+
+    it("switches once confirmed", () => {
+      renderStudio();
+      land();
+      step("Ocean");
+      land();
+      choose("ixnay");
+      fireEvent.click(screen.getByRole("button", { name: "Switch preset" }));
+      expect(screen.getByLabelText("Preset")).toHaveValue("ixnay");
+      expect(lastRequest().params).toMatchObject({ oceanPercentage: 0.771 });
+    });
+
+    it("switches without asking when the parameters are the preset's own", () => {
+      renderStudio();
+      land();
+      choose("ixnay");
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(lastRequest().params).toMatchObject({ oceanPercentage: 0.771 });
+    });
+  });
+
   it("takes a typed seed, and rerolls", () => {
     renderStudio();
     land();
@@ -98,6 +142,24 @@ describe("the top bar", () => {
       fireEvent.blur(screen.getByLabelText("Seed"));
     }
     expect(requests()).toHaveLength(1);
+  });
+
+  it("puts the real seed back in the field when the text is not a seed, and says why", () => {
+    renderStudio();
+    land();
+    const seed = lastRequest().seed;
+    const field = screen.getByLabelText("Seed");
+    fireEvent.change(field, { target: { value: "3000000000" } });
+    fireEvent.blur(field);
+    expect(field).toHaveValue(seed);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "A seed is a whole number from 1 to 2147483647."
+    );
+
+    fireEvent.change(field, { target: { value: "77" } });
+    fireEvent.blur(field);
+    expect(screen.queryByText(/A seed is a whole number/)).not.toBeInTheDocument();
+    expect(lastRequest().seed).toBe(77);
   });
 
   describe("status", () => {
@@ -300,6 +362,35 @@ function layersQueryRealm() {
 }
 
 describe("the Layers tab", () => {
+  it("draws ice caps from the start and climate zones only when asked, without a new world", () => {
+    const setVisible = jest.spyOn(WorldDraft.prototype, "setVisible");
+    renderStudio();
+    land({
+      layers: {
+        ...resultMessage(1).layers,
+        climate: layerJson("climate"),
+        icecaps: layerJson("icecaps"),
+      },
+    });
+    const layers = () => screen.getByRole("region", { name: "World layers" });
+    expect(within(layers()).getByRole("switch", { name: "Ice caps" })).toBeChecked();
+    expect(within(layers()).getByRole("switch", { name: "Climate zones" })).not.toBeChecked();
+    expect(rig.layers.has("worldgen-draft-icecaps")).toBe(true);
+    expect(rig.layers.has("worldgen-draft-climate")).toBe(false);
+    const before = requests().length;
+
+    setVisible.mockClear();
+    fireEvent.click(within(layers()).getByRole("switch", { name: "Climate zones" }));
+    expect(setVisible).toHaveBeenCalledWith("climate", true);
+    expect(rig.layers.has("worldgen-draft-climate")).toBe(true);
+
+    fireEvent.click(within(layers()).getByRole("switch", { name: "Ice caps" }));
+    expect(setVisible).toHaveBeenCalledWith("icecaps", false);
+    expect(rig.layers.has("worldgen-draft-icecaps")).toBe(false);
+    expect(screen.queryByText(/not drawn/)).not.toBeInTheDocument();
+    expect(requests()).toHaveLength(before);
+  });
+
   it("switches each world layer off and on in the draft, without a new world", () => {
     const setVisible = jest.spyOn(WorldDraft.prototype, "setVisible");
     renderStudio();
@@ -485,8 +576,11 @@ describe("the saved recipe", () => {
     expect(screen.getByRole("slider", { name: "Ocean" })).toHaveAttribute("aria-valuenow", "0.71");
   });
 
-  it("is kept under the admin's own key", () => {
+  it("is kept under the admin's own key, and written by the first change, not by opening", () => {
     renderStudio();
+    expect(window.localStorage.getItem(studioRecipeKey("user_1"))).toBeNull();
+    land();
+    step("Ocean");
     expect(window.localStorage.getItem(studioRecipeKey("user_1"))).not.toBeNull();
     expect(Object.keys(window.localStorage)).toEqual(["studio:user_1"]);
   });

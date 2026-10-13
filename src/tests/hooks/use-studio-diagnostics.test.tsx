@@ -161,4 +161,14 @@ describe("useStudioDiagnostics", () => {
     expect(result.current.diagnostics.seeds).toBeNull();
     expect(workers[0]!.posted).toHaveLength(1);
   });
+
+  it("returns the same object while nothing it holds has changed", () => {
+    const { result, rerender, generated } = setup();
+    generated(1);
+    const first = result.current.diagnostics;
+    rerender();
+    expect(result.current.diagnostics).toBe(first);
+    act(() => result.current.diagnostics.setSeedsOn(true));
+    expect(result.current.diagnostics).not.toBe(first);
+  });
 });

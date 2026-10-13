@@ -6,6 +6,7 @@ import { render, screen } from "@testing-library/react";
 
 let mockPathname = "/admin/maps/studio";
 let mockSearch = "";
+let mockRole = "admin";
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
   useSearchParams: () => new URLSearchParams(mockSearch),
@@ -20,12 +21,12 @@ jest.mock("~/components/maps/studio/WorldStudio", () => ({
 }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/context/auth-context", () => ({
-  useUser: () => ({ user: { id: "u", publicMetadata: { role: "admin" } }, isLoaded: true }),
+  useUser: () => ({ user: { id: "u", publicMetadata: { role: mockRole } }, isLoaded: true }),
   useAuth: () => ({ signOut: jest.fn() }),
   SignInButton: () => null,
 }));
 jest.mock("~/hooks/usePermissions", () => ({
-  usePermissions: () => ({ user: { role: { name: "admin" } }, isLoading: false }),
+  usePermissions: () => ({ user: { role: { name: mockRole } }, isLoading: false }),
 }));
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
 jest.mock("~/components/providers/PortalTintSync", () => ({ PortalTintSync: () => null }));
@@ -65,6 +66,24 @@ describe("the admin layout", () => {
       expect(screen.getByTestId("status-strip")).toBeInTheDocument();
     }
   );
+});
+
+describe("the admin guard", () => {
+  afterEach(() => {
+    mockRole = "admin";
+  });
+
+  it("still runs for the bare Studio route: a member gets Access denied, not the Studio", () => {
+    mockRole = "member";
+    mockPathname = "/admin/maps/studio";
+    render(
+      <AdminLayout>
+        <p>child</p>
+      </AdminLayout>
+    );
+    expect(screen.getByText("Access denied")).toBeInTheDocument();
+    expect(screen.queryByText("child")).not.toBeInTheDocument();
+  });
 });
 
 describe("the Studio page", () => {

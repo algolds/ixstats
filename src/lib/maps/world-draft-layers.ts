@@ -41,7 +41,14 @@ const DRAFT_SEEDS_ID = `${DRAFT_PREFIX}seeds`;
  * in the result for the bundle but are not drawn.
  */
 const DRAFT_TYPES = ["background", "altitudes", "political", "lakes", "rivers"] as const;
-type DraftType = (typeof DRAFT_TYPES)[number];
+/**
+ * Layers drawn only when the Studio switches them on (`setVisible(key, true)`): the founder's preview never asks, so
+ * it looks as it always did. They are not drawn at all while off (nothing to parse), and come with their layer config.
+ */
+const OPT_IN_TYPES = ["climate", "icecaps"] as const;
+const ALL_TYPES = [...DRAFT_TYPES, ...OPT_IN_TYPES] as const;
+type DraftType = (typeof ALL_TYPES)[number];
+const isOptIn = (type: DraftType): boolean => OPT_IN_TYPES.some((optIn) => optIn === type);
 
 const sourceIdOf = (type: DraftType) => `${DRAFT_PREFIX}${type}`;
 const strokeIdOf = (type: DraftType) => `${sourceIdOf(type)}-stroke`;
@@ -54,8 +61,10 @@ const strokeIdOf = (type: DraftType) => `${sourceIdOf(type)}-stroke`;
 const STACK: readonly string[] = [
   sourceIdOf("background"),
   sourceIdOf("altitudes"),
+  sourceIdOf("climate"),
   DRAFT_DIAGNOSTIC_ID,
   DRAFT_RELIEF_ID,
+  sourceIdOf("icecaps"),
   sourceIdOf("political"),
   strokeIdOf("political"),
   sourceIdOf("lakes"),
@@ -64,10 +73,10 @@ const STACK: readonly string[] = [
 ];
 
 /** What the Studio's Layers tab can switch on and off. */
-export type DraftLayerKey = (typeof DRAFT_TYPES)[number] | "relief" | "diagnostic" | "seeds";
+export type DraftLayerKey = DraftType | "relief" | "diagnostic" | "seeds";
 
 export const DRAFT_LAYER_KEYS: readonly DraftLayerKey[] = [
-  ...DRAFT_TYPES,
+  ...ALL_TYPES,
   "relief",
   "diagnostic",
   "seeds",
@@ -75,6 +84,10 @@ export const DRAFT_LAYER_KEYS: readonly DraftLayerKey[] = [
 
 /** A diagnostic image to draw: straight RGBA in Web Mercator rows, pinned like the relief. */
 export type DraftImage = { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
+
+/** Whether a layer is shown when nothing says otherwise: all but climate and ice caps, which are opt-in. */
+export const isShownByDefault = (key: DraftLayerKey): boolean =>
+  !OPT_IN_TYPES.some((optIn) => optIn === key);
 
 /** The map layers behind each switch. */
 function layerIdsOf(key: DraftLayerKey): string[] {
@@ -207,7 +220,7 @@ export class WorldDraft {
   private readonly imageOn = new WeakMap<ImageSource, ImageData>();
   private diagnostic: DraftImage | null = null;
   private seeds: string | null = null;
-  /** Layers the Studio switched off; everything else is shown */
+  /** Layers the Studio switched on or off; the rest are shown, but for the opt-in ones, which are drawn only when on */
   private readonly switched = new Map<DraftLayerKey, boolean>();
 
   constructor(private readonly map: MapLibreMap) {}
@@ -219,8 +232,11 @@ export class WorldDraft {
 
   /** Shows or hides one of the draft's layers; kept across worlds and style reloads. */
   setVisible(key: DraftLayerKey, visible: boolean): void {
+    const before = this.switched.get(key);
     this.switched.set(key, visible);
-    if (isMapStyleReady(this.map)) this.applyVisibility();
+    // An opt-in layer is added or dropped, not hidden
+    if (before !== visible && OPT_IN_TYPES.some((optIn) => optIn === key)) this.push();
+    else if (isMapStyleReady(this.map)) this.applyVisibility();
   }
 
   /** Puts a diagnostic image under the relief (null removes it); it stays across worlds until it is changed. */
@@ -249,7 +265,7 @@ export class WorldDraft {
     if (isMapStyleReady(map)) {
       for (const id of STACK) if (map.getLayer(id)) map.removeLayer(id);
       for (const id of [
-        ...DRAFT_TYPES.map(sourceIdOf),
+        ...ALL_TYPES.map(sourceIdOf),
         DRAFT_RELIEF_ID,
         DRAFT_DIAGNOSTIC_ID,
         DRAFT_SEEDS_ID,
@@ -273,9 +289,10 @@ export class WorldDraft {
       const ids = map.getLayersOrder();
       // Under the first live layer: the draft takes the place of the live stack
       const anchor = ids.find(isLiveRealmLayer);
-      for (const type of DRAFT_TYPES) {
+      for (const type of ALL_TYPES) {
         const json = shown.layers[type];
-        if (json === undefined) this.removeType(type);
+        if (json === undefined || (isOptIn(type) && this.switched.get(type) !== true))
+          this.removeType(type);
         else this.pushType(type, json, anchor);
       }
       this.pushImage(DRAFT_DIAGNOSTIC_ID, this.diagnostic, anchor);

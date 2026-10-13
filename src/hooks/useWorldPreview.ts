@@ -3,6 +3,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import {
   DRAFT_LAYER_KEYS,
+  isShownByDefault,
   WorldDraft,
   type DraftImage,
   type DraftLayerKey,
@@ -11,7 +12,7 @@ import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
 
 /** What the Studio adds to the preview; all of it is optional and none of it regenerates the world. */
 export type WorldOverlays = {
-  /** Draft layers by key; one that is missing (or true) is shown, false hides it */
+  /** Draft layers by key; one that is missing is shown (but climate and ice caps, which are drawn only when true), false hides it */
   visible?: Partial<Record<DraftLayerKey, boolean>>;
   /** A diagnostic image drawn under the relief (a `DiagnosticResult` fits); null or missing for none */
   diagnostic?: DraftImage | null;
@@ -60,7 +61,8 @@ export function useWorldPreview(
   }, [map, result]);
 
   useEffect(() => {
-    for (const key of DRAFT_LAYER_KEYS) draft.current?.setVisible(key, visible?.[key] ?? true);
+    for (const key of DRAFT_LAYER_KEYS)
+      draft.current?.setVisible(key, visible?.[key] ?? isShownByDefault(key));
   }, [map, visible]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticKind, DiagnosticResult, WorldGenerator } from "~/hooks/useWorldGenerator";
 
@@ -89,13 +89,10 @@ export function useStudioDiagnostics({
     };
   }, [settled, result, seedsOn, nationSeeds]);
 
-  return {
-    kind,
-    setKind,
-    image: kind !== null && drawn?.kind === kind ? drawn : null,
-    seedsOn,
-    setSeedsOn,
-    seeds: seedsOn ? placed : null,
-    error: failure,
-  };
+  const image = kind !== null && drawn?.kind === kind ? drawn : null;
+  const seeds = seedsOn ? placed : null;
+  return useMemo(
+    () => ({ kind, setKind, image, seedsOn, setSeedsOn, seeds, error: failure }),
+    [kind, setKind, image, seedsOn, setSeedsOn, seeds, failure]
+  );
 }

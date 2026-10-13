@@ -21,12 +21,15 @@ const PRESETS: readonly StudioPreset[] = [
   },
 ];
 
-const mount = (over: { fitParam?: string | null; presets?: readonly StudioPreset[] } = {}) =>
+const mount = (
+  over: { fitParam?: string | null; presets?: readonly StudioPreset[]; persist?: boolean } = {}
+) =>
   renderHook(() =>
     useStudioRecipe({
       userId: "user_1",
       presets: over.presets ?? PRESETS,
       fitParam: over.fitParam ?? null,
+      persist: over.persist ?? true,
     })
   );
 
@@ -138,7 +141,12 @@ describe("useStudioRecipe", () => {
   it("follows the preset's values when the list changes under it (a draft saved elsewhere)", () => {
     const { result, rerender } = renderHook(
       (props: { presets: readonly StudioPreset[] }) =>
-        useStudioRecipe({ userId: "user_1", presets: props.presets, fitParam: null }),
+        useStudioRecipe({
+          userId: "user_1",
+          presets: props.presets,
+          fitParam: null,
+          persist: true,
+        }),
       { initialProps: { presets: PRESETS } }
     );
     act(() => result.current.pickPreset("badlands"));
@@ -172,5 +180,39 @@ describe("useStudioRecipe", () => {
     act(() => result.current.setParams({ plateCount: 12 }));
     act(() => result.current.setSeed(31));
     expect(stored()).toMatchObject({ seed: 31, preset: "earthlike", params: { plateCount: 12 } });
+  });
+
+  describe("what is written", () => {
+    it("writes nothing on mount: opening the Studio, or ?fit=, saves no recipe", () => {
+      mount();
+      expect(stored()).toBeNull();
+      mount({ fitParam: "ixnay" });
+      expect(stored()).toBeNull();
+    });
+
+    it("writes the first change, ?fit= included", () => {
+      const { result } = mount({ fitParam: "ixnay" });
+      act(() => result.current.setParams({ plateCount: 12 }));
+      expect(stored()).toMatchObject({
+        mode: "fit",
+        fitRealm: "ixnay",
+        params: { plateCount: 12 },
+      });
+    });
+
+    it("writes nothing while the built-in presets stand in, and keeps the saved preset slug", () => {
+      saveStudioRecipe("user_1", {
+        seed: 5,
+        preset: "badlands",
+        mode: "preset",
+        fitRealm: null,
+        params: paramsForPreset({ plateCount: 20 }),
+      });
+      const { result } = mount({ presets: FACTORY_STUDIO_PRESETS, persist: false });
+      expect(result.current.presetSlug).toBe("earthlike");
+      act(() => result.current.setParams({ cellCount: 5000 }));
+      act(() => result.current.setSeed(99));
+      expect(stored()).toMatchObject({ seed: 5, preset: "badlands" });
+    });
   });
 });

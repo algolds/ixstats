@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { NavArrowDown, NavArrowRight, Undo } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
@@ -22,7 +23,7 @@ interface StudioRailGroupProps {
 }
 
 /** One stage's parameters, folded away or open, with a reset for the whole group. */
-export function StudioRailGroup({
+function StudioRailGroupView({
   group,
   params,
   base,
@@ -69,3 +70,6 @@ export function StudioRailGroup({
     </Collapsible>
   );
 }
+
+/** Memoised: a progress tick of the generator renders the Studio, and the rail's groups have not changed. */
+export const StudioRailGroup = memo(StudioRailGroupView);

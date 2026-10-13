@@ -25,6 +25,11 @@ interface UseStudioRecipeArgs {
   presets: readonly StudioPreset[];
   /** `?fit=<realm slug>`: start fitted to that realm */
   fitParam: string | null;
+  /**
+   * The recipe may be written. False while the built-in presets stand in for ones that could not be read: the preset
+   * slug they replaced must not be saved over the admin's own.
+   */
+  persist: boolean;
 }
 
 /** The recipe a fresh start makes: Earth-like (or the first preset there is) and a new seed. */
@@ -48,7 +53,7 @@ function startRecipe(args: UseStudioRecipeArgs): StudioRecipe {
   return args.fitParam ? { ...withPreset, mode: "fit", fitRealm: args.fitParam } : withPreset;
 }
 
-interface StudioRecipeApi {
+export interface StudioRecipeApi {
   seed: number;
   /** The parameters now asked for; a new object on every change, the same one while nothing changes */
   params: StudioParams;
@@ -76,12 +81,14 @@ interface StudioRecipeApi {
  * parameters as they were makes no new object, so it asks for no new world.
  */
 export function useStudioRecipe(args: UseStudioRecipeArgs): StudioRecipeApi {
-  const { userId, presets } = args;
-  const [recipe, setRecipe] = useState<StudioRecipe>(() => startRecipe(args));
+  const { userId, presets, persist } = args;
+  const [start] = useState<StudioRecipe>(() => startRecipe(args));
+  const [recipe, setRecipe] = useState<StudioRecipe>(start);
 
+  // Only a change is written: opening the Studio (or `?fit=`) leaves what was saved alone
   useEffect(() => {
-    saveStudioRecipe(userId, recipe);
-  }, [userId, recipe]);
+    if (persist && recipe !== start) saveStudioRecipe(userId, recipe);
+  }, [userId, recipe, start, persist]);
 
   const presetParams = useMemo(
     () => paramsForPreset(findStudioPreset(presets, recipe.preset)?.params ?? {}),

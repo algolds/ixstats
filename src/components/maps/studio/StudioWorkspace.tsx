@@ -6,6 +6,7 @@ import { useStudioFit } from "~/hooks/useStudioFit";
 import { useStudioGeneration } from "~/hooks/useStudioGeneration";
 import { useStudioMap } from "~/hooks/useStudioMap";
 import { useStudioRecipe } from "~/hooks/useStudioRecipe";
+import { useStudioSource } from "~/hooks/useStudioSource";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
 import { useWorldPreview, type WorldOverlays } from "~/hooks/useWorldPreview";
 import type { DraftLayerKey } from "~/lib/maps/world-draft-layers";
@@ -14,8 +15,8 @@ import type { WorldWorkerFactory } from "~/lib/worldgen/worker/world-messages";
 import {
   StudioProvider,
   type StudioContextValue,
+  type StudioGenerator,
   type StudioRealm,
-  type StudioSource,
 } from "./StudioContext";
 import { StudioInspector } from "./StudioInspector";
 import { StudioRail } from "./StudioRail";
@@ -47,21 +48,24 @@ export function StudioWorkspace({
   fitParam,
   createWorker,
 }: StudioWorkspaceProps) {
-  const recipe = useStudioRecipe({ userId, presets, fitParam });
-  const generator = useWorldGenerator(createWorker);
+  const recipe = useStudioRecipe({ userId, presets, fitParam, persist: !presetsFallback });
+  const worldGenerator = useWorldGenerator(createWorker);
   const fitting = recipe.mode === "fit";
   const fit = useStudioFit(fitting ? recipe.fitRealm : null);
   const { stale, regenerate } = useStudioGeneration({
-    generator,
+    generator: worldGenerator,
     params: recipe.params,
     seed: recipe.seed,
     fitting,
     fit,
   });
-  const diagnostics = useStudioDiagnostics(generator);
+  const diagnostics = useStudioDiagnostics(worldGenerator);
   const { containerRef, map } = useStudioMap();
 
-  const [visible, setVisible] = useState<Partial<Record<DraftLayerKey, boolean>>>({});
+  // Ice caps are drawn from the start, climate zones only when asked
+  const [visible, setVisible] = useState<Partial<Record<DraftLayerKey, boolean>>>({
+    icecaps: true,
+  });
   const setLayerVisible = useCallback(
     (key: DraftLayerKey, on: boolean) => setVisible((current) => ({ ...current, [key]: on })),
     []
@@ -70,49 +74,70 @@ export function StudioWorkspace({
     () => ({ visible, diagnostic: diagnostics.image, seeds: diagnostics.seeds }),
     [visible, diagnostics.image, diagnostics.seeds]
   );
-  useWorldPreview(map, generator.result, overlays);
+  useWorldPreview(map, worldGenerator.result, overlays);
 
-  const { mode, fitRealm, presetSlug, setMode, setFitRealm } = recipe;
-  const source = useMemo<StudioSource>(
-    () =>
-      mode === "fit"
-        ? { kind: "fit", preset: presetSlug, realm: fitRealm }
-        : { kind: "preset", preset: presetSlug },
-    [mode, fitRealm, presetSlug]
-  );
-  const setSource = useCallback(
-    (next: StudioSource) => {
-      setMode(next.kind);
-      if (next.kind === "fit" && next.realm !== null) setFitRealm(next.realm);
-    },
-    [setMode, setFitRealm]
+  const { source, setSource } = useStudioSource(recipe);
+
+  // The hook hands back a new object on every render; the tabs get one that changes only when something in it does
+  const { state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng } =
+    worldGenerator;
+  const generator = useMemo<StudioGenerator>(
+    () => ({ state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng }),
+    [state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng]
   );
 
-  const value: StudioContextValue = {
-    params: recipe.params,
-    setParams: recipe.setParams,
-    resetFields: recipe.resetFields,
-    seed: recipe.seed,
-    setSeed: recipe.setSeed,
-    reroll: recipe.reroll,
-    presets,
-    presetsFallback,
-    presetSlug,
-    presetParams: recipe.presetParams,
-    pickPreset: recipe.pickPreset,
-    source,
-    setSource,
-    realms,
-    realmsState,
-    fit,
-    generator,
-    stale,
-    regenerate,
-    map,
-    visible,
-    setLayerVisible,
-    diagnostics,
-  };
+  const value = useMemo<StudioContextValue>(
+    () => ({
+      params: recipe.params,
+      setParams: recipe.setParams,
+      resetFields: recipe.resetFields,
+      seed: recipe.seed,
+      setSeed: recipe.setSeed,
+      reroll: recipe.reroll,
+      presets,
+      presetsFallback,
+      presetSlug: recipe.presetSlug,
+      presetParams: recipe.presetParams,
+      pickPreset: recipe.pickPreset,
+      source,
+      setSource,
+      realms,
+      realmsState,
+      fit,
+      generator,
+      stale,
+      regenerate,
+      map,
+      visible,
+      setLayerVisible,
+      diagnostics,
+    }),
+    [
+      recipe.params,
+      recipe.setParams,
+      recipe.resetFields,
+      recipe.seed,
+      recipe.setSeed,
+      recipe.reroll,
+      recipe.presetSlug,
+      recipe.presetParams,
+      recipe.pickPreset,
+      presets,
+      presetsFallback,
+      source,
+      setSource,
+      realms,
+      realmsState,
+      fit,
+      generator,
+      stale,
+      regenerate,
+      map,
+      visible,
+      setLayerVisible,
+      diagnostics,
+    ]
+  );
 
   return (
     <StudioProvider value={value}>
@@ -127,6 +152,11 @@ export function StudioWorkspace({
           <StudioRail />
           <div className="rounded-card relative min-h-0 overflow-hidden">
             <div ref={containerRef} className="absolute inset-0" data-testid="studio-map" />
+            {map === null && (
+              <p className="text-label-secondary text-footnote pointer-events-none absolute inset-0 flex items-center justify-center">
+                Loading the map.
+              </p>
+            )}
           </div>
           <StudioInspector />
         </div>

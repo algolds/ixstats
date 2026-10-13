@@ -3,7 +3,7 @@
 import { SwitchRow } from "~/components/maps/editor/panels/WorldControlParts";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import type { DiagnosticKind } from "~/lib/worldgen/diagnostics";
-import type { DraftLayerKey } from "~/lib/maps/world-draft-layers";
+import { isShownByDefault, type DraftLayerKey } from "~/lib/maps/world-draft-layers";
 import { useStudio } from "./StudioContext";
 import { StudioLegend } from "./StudioLegend";
 
@@ -11,8 +11,10 @@ import { StudioLegend } from "./StudioLegend";
 const WORLD_LAYERS: ReadonlyArray<{ key: DraftLayerKey; label: string }> = [
   { key: "political", label: "Political" },
   { key: "relief", label: "Relief" },
+  { key: "icecaps", label: "Ice caps" },
   { key: "background", label: "Land" },
   { key: "altitudes", label: "Elevation" },
+  { key: "climate", label: "Climate zones" },
   { key: "rivers", label: "Rivers" },
   { key: "lakes", label: "Lakes" },
 ];
@@ -43,13 +45,10 @@ export function StudioLayersTab() {
           <SwitchRow
             key={key}
             label={label}
-            checked={visible[key] ?? true}
+            checked={visible[key] ?? isShownByDefault(key)}
             onCheckedChange={(on) => setLayerVisible(key, on)}
           />
         ))}
-        <p className="text-label-secondary text-caption">
-          Climate and ice caps are part of the world but are not drawn.
-        </p>
       </section>
 
       <section aria-label="Diagnostics" className="space-y-2">

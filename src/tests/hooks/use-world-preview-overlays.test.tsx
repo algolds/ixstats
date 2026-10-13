@@ -136,4 +136,87 @@ describe("useWorldPreview overlays", () => {
     // Only the diagnostic's source is new
     expect(rig.fake.addSource.mock.calls.length).toBe(adds + 1);
   });
+
+  describe("climate and ice caps", () => {
+    const extras = ["worldgen-draft-climate", "worldgen-draft-icecaps"];
+
+    it("are not drawn for a preview that asks for nothing (the founder's World tab)", () => {
+      const rig = mount();
+      for (const id of extras) {
+        expect(rig.sources.has(id)).toBe(false);
+        expect(rig.layers.has(id)).toBe(false);
+      }
+      // What was drawn before is still drawn
+      expect(rig.draftIds()).toEqual(
+        expect.arrayContaining([
+          "worldgen-draft-background",
+          "worldgen-draft-altitudes",
+          "worldgen-draft-relief",
+          "worldgen-draft-political",
+        ])
+      );
+    });
+
+    it("are not drawn while switched off", () => {
+      const rig = mount({ visible: { climate: false, icecaps: false } });
+      for (const id of extras) expect(rig.layers.has(id)).toBe(false);
+    });
+
+    it("are drawn when switched on: climate by its biome colours, softly, and ice over the relief", () => {
+      const rig = mount({ visible: { climate: true, icecaps: true } });
+      const climate = rig.layers.get("worldgen-draft-climate")!.spec as unknown as {
+        type: string;
+        paint: Record<string, unknown>;
+      };
+      expect(climate.type).toBe("fill");
+      expect(climate.paint["fill-color"]).toEqual(["coalesce", ["get", "_fillColor"], "#e8e5da"]);
+      expect(climate.paint["fill-opacity"]).toBe(0.35);
+      const ice = rig.layers.get("worldgen-draft-icecaps")!.spec as unknown as {
+        paint: Record<string, unknown>;
+      };
+      expect(ice.paint["fill-color"]).toBe("#f0f4f8");
+
+      const at = (id: string) => rig.order.indexOf(id);
+      expect(at("worldgen-draft-altitudes")).toBeLessThan(at("worldgen-draft-climate"));
+      expect(at("worldgen-draft-climate")).toBeLessThan(at("worldgen-draft-relief"));
+      expect(at("worldgen-draft-relief")).toBeLessThan(at("worldgen-draft-icecaps"));
+      expect(at("worldgen-draft-icecaps")).toBeLessThan(at("worldgen-draft-political"));
+    });
+
+    it("come and go with their switches, and survive a style reload", () => {
+      const rig = mount({ visible: { icecaps: true } });
+      expect(rig.layers.has("worldgen-draft-icecaps")).toBe(true);
+      expect(rig.layers.has("worldgen-draft-climate")).toBe(false);
+
+      act(() => rig.set({ visible: { icecaps: true, climate: true } }));
+      expect(rig.layers.has("worldgen-draft-climate")).toBe(true);
+      act(() => rig.set({ visible: { icecaps: false, climate: true } }));
+      expect(rig.layers.has("worldgen-draft-icecaps")).toBe(false);
+      expect(rig.sources.has("worldgen-draft-icecaps")).toBe(false);
+
+      rig.reload(["background", ...LIVE]);
+      act(() => rig.emit("styledata"));
+      expect(rig.layers.has("worldgen-draft-climate")).toBe(true);
+      expect(rig.layers.has("worldgen-draft-icecaps")).toBe(false);
+    });
+
+    it("are left out when the world has none (no ice caps asked of the generator)", () => {
+      const { icecaps: _ice, ...layers } = world.layers;
+      const rig = fakeDraftMap(["background", ...LIVE]);
+      renderHook(() =>
+        useWorldPreview(
+          rig.map as MapLibreMap,
+          { ...world, layers },
+          { visible: { icecaps: true } }
+        )
+      );
+      expect(rig.layers.has("worldgen-draft-icecaps")).toBe(false);
+    });
+
+    it("are removed with the rest when the draft is cleared", () => {
+      const rig = mount({ visible: { climate: true, icecaps: true } });
+      rig.unmount();
+      for (const id of extras) expect(rig.sources.has(id)).toBe(false);
+    });
+  });
 });

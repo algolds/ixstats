@@ -1,53 +1,49 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { DiceFive, NavArrowLeft, SystemRestart } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { ValueSelect } from "~/components/ui/value-select";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { useStudio } from "./StudioContext";
+import { StudioPresetPicker } from "./StudioPresetPicker";
 
 const MAX_SEED = 2 ** 31 - 1;
 
-function PresetPicker() {
-  const { presets, presetSlug, pickPreset } = useStudio();
-  return (
-    <ValueSelect
-      aria-label="Preset"
-      size="sm"
-      value={presetSlug}
-      options={presets.map((preset): [string, string] => [
-        preset.slug,
-        preset.hasDraft ? `${preset.name} (draft)` : preset.name,
-      ])}
-      onValueChange={pickPreset}
-    />
-  );
-}
+const SEED_RULE = `A seed is a whole number from 1 to ${MAX_SEED}.`;
 
 function SeedField() {
   const { seed, setSeed, reroll } = useStudio();
   const seedId = useId();
+  const ruleId = useId();
+  const input = useRef<HTMLInputElement>(null);
+  const [refused, setRefused] = useState(false);
   const commit = (text: string) => {
     const next = Number(text);
-    if (Number.isInteger(next) && next >= 1 && next <= MAX_SEED && next !== seed) setSeed(next);
+    const valid = text.trim() !== "" && Number.isInteger(next) && next >= 1 && next <= MAX_SEED;
+    setRefused(!valid);
+    // What is shown is the seed in use: text that is not one is put back
+    if (!valid && input.current) input.current.value = String(seed);
+    else if (next !== seed) setSeed(next);
   };
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       <label htmlFor={seedId} className="text-label-secondary text-footnote">
         Seed
       </label>
       {/* Re-keyed by the seed, so a reroll replaces what was typed */}
       <Input
         key={seed}
+        ref={input}
         id={seedId}
         type="number"
         inputMode="numeric"
         min={1}
         max={MAX_SEED}
         defaultValue={seed}
+        aria-describedby={refused ? ruleId : undefined}
+        onChange={() => setRefused(false)}
         onBlur={(event) => commit(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Enter") commit(event.currentTarget.value);
@@ -64,6 +60,11 @@ function SeedField() {
       >
         <DiceFive aria-hidden />
       </Button>
+      {refused && (
+        <p id={ruleId} role="alert" className="text-destructive text-caption">
+          {SEED_RULE}
+        </p>
+      )}
     </div>
   );
 }
@@ -119,7 +120,7 @@ export function StudioTopBar() {
         </Link>
       </Button>
       <h1 className="text-headline">World Studio</h1>
-      <PresetPicker />
+      <StudioPresetPicker />
       <SeedField />
       <div className="ml-auto">
         <DraftStatus />
