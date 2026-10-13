@@ -1,7 +1,9 @@
 import type { MapImportJobView, useMapImportJob } from "~/hooks/useMapImportJob";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import {
   draftKey,
   failureOf,
+  layersKeyOf,
   type WorldFailure,
   type WorldFailureStage,
 } from "~/lib/worldgen/world-apply";
@@ -29,6 +31,8 @@ export interface Sent {
   key: string;
   /** Picked up again from the stored job, not started in this tab */
   resumed: boolean;
+  /** `layersKeyOf` the admin layer choice the world was sent with; absent for the founder's flow */
+  layers?: string;
 }
 
 /** Where the flow is. The check and the apply are of the world that was sent, whatever the draft becomes. */
@@ -89,10 +93,18 @@ function progressOf(job: MapImportJobView | undefined, waiting: string) {
   return { progress: job.progress, message: message ?? waiting };
 }
 
-/** Whether the draft on the map is the world that was sent. A flow picked up again has no draft to compare. */
-export function isSentDraft(sent: Sent, current: WorldGenResult | null, source: WorldSource) {
-  if (sent.draft) return sent.draft === current;
-  return current === null || draftKey(current, source) === sent.key;
+/**
+ * Whether the draft on the map, with the layer choice now made, is the world that was sent. A flow picked up again has
+ * no draft to compare: its key holds the choice.
+ */
+export function isSentDraft(
+  sent: Sent,
+  current: WorldGenResult | null,
+  source: WorldSource,
+  layers?: readonly PhysicalLayer[]
+) {
+  if (sent.draft) return sent.draft === current && (sent.layers ?? "") === layersKeyOf(layers);
+  return current === null || draftKey(current, source, layers) === sent.key;
 }
 
 /**
@@ -110,9 +122,15 @@ export function worldApplyView(
   flow: Flow,
   check: Polled,
   apply: Polled,
-  now: { realmId: string; draft: WorldGenResult | null; source: WorldSource; mapVersion?: number }
+  now: {
+    realmId: string;
+    draft: WorldGenResult | null;
+    source: WorldSource;
+    mapVersion?: number;
+    layers?: readonly PhysicalLayer[];
+  }
 ): WorldApplyView {
-  const { realmId, draft: current, source } = now;
+  const { realmId, draft: current, source, layers } = now;
   switch (flow.step) {
     case "idle":
     case "sending":
@@ -136,7 +154,7 @@ export function worldApplyView(
       return {
         stage: "review",
         diff: outcome.result,
-        outdated: !isSentDraft(flow.sent, current, source),
+        outdated: !isSentDraft(flow.sent, current, source, layers),
         mapMoved: mapMovedSince(outcome.result.mapVersion, now.mapVersion),
       };
     }

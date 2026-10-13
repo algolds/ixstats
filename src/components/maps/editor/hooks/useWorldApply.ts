@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { useMapImportJob } from "~/hooks/useMapImportJob";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import { encodeWorldBundle } from "~/lib/maps/import/world-bundle";
 import { uploadWorldBundle } from "~/lib/maps/import/upload-client";
 import type { WorldSource } from "~/lib/worldgen/world-controls";
-import { buildWorldBundle, draftKey, failureOf } from "~/lib/worldgen/world-apply";
+import { buildWorldBundle, draftKey, failureOf, layersKeyOf } from "~/lib/worldgen/world-apply";
 import { clearWorldJob, loadWorldJob, saveWorldJob } from "~/lib/worldgen/world-draft-recipe";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
 import { isSentDraft, resumedFlow, worldApplyView, type Flow, type Sent } from "./world-apply-flow";
@@ -22,6 +23,11 @@ interface UseWorldApplyArgs {
   mapVersion?: number;
   /** The world is applied: drop the draft from the map and the stored recipe */
   onApplied: () => void;
+  /**
+   * The admin layer choice (World Studio): only these physical layers of a world fitted to the realm's map are
+   * written, which is also how Ixnay is applied to. Founders pass none.
+   */
+  layers?: readonly PhysicalLayer[];
 }
 
 /**
@@ -39,6 +45,7 @@ export function useWorldApply({
   source,
   mapVersion,
   onApplied,
+  layers,
 }: UseWorldApplyArgs) {
   const [flow, setFlow] = useState<Flow>(() => resumedFlow(loadWorldJob(realmId)));
   const utils = api.useUtils();
@@ -49,7 +56,13 @@ export function useWorldApply({
   const applyJobId = flow.step === "applying" ? flow.applyJobId : null;
   const check = useMapImportJob(checkJobId);
   const apply = useMapImportJob(applyJobId);
-  const view = worldApplyView(flow, check, apply, { realmId, draft: result, source, mapVersion });
+  const view = worldApplyView(flow, check, apply, {
+    realmId,
+    draft: result,
+    source,
+    mapVersion,
+    layers,
+  });
   // A call that is under way: a second press in the same moment, before the view has caught up, is ignored
   const calling = useRef(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -57,6 +70,7 @@ export function useWorldApply({
   const latest = useLatest({
     flow,
     mapVersion,
+    layers,
     busy: view.stage === "sending" || view.stage === "applying",
     result,
     source,
@@ -75,11 +89,17 @@ export function useWorldApply({
       source: from,
       realmId: realm,
       mapVersion: fitted,
+      layers: chosen,
     } = latest.current;
     if (!draft || busy || calling.current) return;
     calling.current = true;
     setCancelError(null);
-    const sent: Sent = { draft, key: draftKey(draft, from), resumed: false };
+    const sent: Sent = {
+      draft,
+      key: draftKey(draft, from, chosen),
+      resumed: false,
+      layers: layersKeyOf(chosen),
+    };
     setFlow({ step: "sending", sent });
     try {
       const bytes = await encodeWorldBundle(buildWorldBundle(draft, from));
@@ -91,6 +111,7 @@ export function useWorldApply({
         filename: `world-${draft.seed}.json.gz`,
         // The map the draft was fitted to (a draft that is not stale is fitted to the map as the browser has it)
         fittedMapVersion: fitted,
+        ...(chosen?.length && { options: { layers: [...chosen] } }),
       });
       saveWorldJob(realm, { checkJobId: jobId, applyJobId: null, draftKey: sent.key });
       setFlow({ step: "checking", sent, checkJobId: jobId });
@@ -161,10 +182,11 @@ export function useWorldApply({
       realmId: realm,
       onApplied: applied,
       utils: cache,
+      layers: chosen,
     } = latest.current;
     if (stage === "idle" || stage === "done" || stage === "failed") clearWorldJob(realm);
     if (stage === "done") {
-      if (now.step === "applying" && isSentDraft(now.sent, draft, from)) applied();
+      if (now.step === "applying" && isSentDraft(now.sent, draft, from, chosen)) applied();
       void cache.realms.map.version.invalidate();
       void cache.realms.map.display.invalidate();
     }

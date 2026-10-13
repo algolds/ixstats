@@ -1,12 +1,20 @@
 "use client";
 
-import { StudioTabPlaceholder } from "./StudioTabPlaceholder";
+import { StudioApplySection } from "./StudioApplySection";
+import { StudioExportSection } from "./StudioExportSection";
+import { StudioNewRealmSection } from "./StudioNewRealmSection";
 
-/** Ship: export GeoJSON and PNG, apply to a realm, make a new realm. Not built yet. */
+/** Ship: take the world out as files, put it on a realm, or start a realm from it. */
 export function StudioShipTab() {
   return (
-    <StudioTabPlaceholder title="Ship">
-      Export this world, apply it to a realm, or start a new realm from it.
-    </StudioTabPlaceholder>
+    <div className="space-y-5 p-3">
+      <StudioExportSection />
+      <div className="border-separator border-t pt-4">
+        <StudioApplySection />
+      </div>
+      <div className="border-separator border-t pt-4">
+        <StudioNewRealmSection />
+      </div>
+    </div>
   );
 }

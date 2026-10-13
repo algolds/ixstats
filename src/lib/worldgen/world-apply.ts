@@ -10,6 +10,7 @@ import {
   type WorldBundleLayerName,
 } from "~/lib/maps/import/world-bundle";
 import { MapUploadError } from "~/lib/maps/import/upload-client";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import type { WorldSource } from "./world-controls";
 import type { WorldGenResult } from "./worker/world-messages";
 
@@ -65,8 +66,23 @@ export function buildWorldBundle(result: WorldGenResult, source: WorldSource): W
  * What makes a draft the world it is: its source, seed and parameters. A world checked and a draft made again from
  * the same recipe (a reopened tab) have the same key, though they are different objects.
  */
-export const draftKey = (result: WorldGenResult, source: WorldSource): string =>
-  JSON.stringify([source, result.seed, result.params]);
+export const draftKey = (
+  result: WorldGenResult,
+  source: WorldSource,
+  layers?: readonly PhysicalLayer[]
+): string =>
+  JSON.stringify(
+    layers?.length
+      ? [source, result.seed, result.params, layersKeyOf(layers)]
+      : [source, result.seed, result.params]
+  );
+
+/**
+ * The admin layer choice as a string, in a fixed order; empty for no choice (every founder). It is part of what a check
+ * was made for: a different choice is a different check.
+ */
+export const layersKeyOf = (layers?: readonly PhysicalLayer[]): string =>
+  layers?.length ? [...layers].sort().join(",") : "";
 
 // A refusal
 

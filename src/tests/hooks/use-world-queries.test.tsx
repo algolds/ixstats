@@ -8,6 +8,7 @@ import { act, renderHook } from "@testing-library/react";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticLegend } from "~/lib/worldgen/diagnostics";
+import type { WorldMeasures } from "~/lib/worldgen/measure-world";
 import type { DiagnosticResult } from "~/lib/worldgen/worker/world-messages";
 import {
   fakeWorldWorkers,
@@ -158,6 +159,40 @@ describe("useWorldGenerator queries", () => {
       workers[0]!.say({ type: "seeds-result", requestId, world: 1, seeds });
       await expect(pending).resolves.toEqual(seeds);
     });
+  });
+
+  it("asks for the measures of the world in view and resolves them", async () => {
+    const { result, workers } = withWorld();
+    let pending!: Promise<WorldMeasures>;
+    act(() => {
+      pending = result.current.measure();
+    });
+    expect(lastQuery(workers[0]!)).toMatchObject({ type: "measure", world: 1 });
+    const { requestId } = lastQuery(workers[0]!);
+    const measures: WorldMeasures = {
+      landShare: 0.3,
+      hypsometry: [1, 0, 0, 0, 0, 0, 0, 0, 0],
+      climate: { A: 0, B: 0, C: 0, D: 1, E: 0, F: 0, H: 0 },
+      unclassifiedShare: 0,
+      nations: { count: 3, medianKm2: 1, p90Km2: 2 },
+      coastlineKm: 5,
+    };
+    await act(async () => {
+      workers[0]!.say({ type: "measure-result", requestId, world: 1, measures });
+      await expect(pending).resolves.toEqual(measures);
+    });
+  });
+
+  it("rejects a measure in flight when a newer generate starts, and without a world", async () => {
+    const { result } = withWorld();
+    let pending!: Promise<WorldMeasures>;
+    act(() => {
+      pending = result.current.measure();
+    });
+    const rejection = expect(pending).rejects.toThrow("changed");
+    act(() => result.current.generate({ seed: 9 }, 9));
+    await rejection;
+    await expect(setup().result.current.measure()).rejects.toThrow("no world");
   });
 
   it("rejects with the worker's message when it refuses", async () => {

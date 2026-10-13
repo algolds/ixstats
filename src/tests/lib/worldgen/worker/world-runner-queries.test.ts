@@ -82,6 +82,40 @@ describe("worldgen/world-runner queries", () => {
     expect(message.seeds.features[0]!.geometry.type).toBe("Point");
   });
 
+  it("measures the held world once, without generating, and again after the next generate", () => {
+    const { posted, run, generates } = harness();
+    run(generateRequest());
+    run({ type: "measure", requestId: 1, world: 1 });
+    const first = last(posted);
+    if (first.type !== "measure-result") throw new Error(`got ${first.type}`);
+    expect(first).toMatchObject({ requestId: 1, world: 1 });
+    expect(first.measures.landShare).toBeGreaterThan(0.05);
+    expect(first.measures.landShare).toBeLessThan(0.6);
+    expect(first.measures.hypsometry).toHaveLength(9);
+    expect(first.measures.nations.count).toBeGreaterThan(0);
+    expect(generates()).toBe(1);
+
+    // Taken once per world: the second answer is the same object, not a new measurement
+    run({ type: "measure", requestId: 2, world: 1 });
+    const again = last(posted);
+    if (again.type !== "measure-result") throw new Error(`got ${again.type}`);
+    expect(again.measures).toBe(first.measures);
+
+    run(generateRequest({ id: 2, params: { cellCount: 2500, oceanPercentage: 0.9 } }));
+    run({ type: "measure", requestId: 3, world: 2 });
+    const next = last(posted);
+    if (next.type !== "measure-result") throw new Error(`got ${next.type}`);
+    expect(next.measures.landShare).toBeLessThan(first.measures.landShare);
+  });
+
+  it("refuses a measure for a world it no longer holds", () => {
+    const { posted, run } = harness();
+    run(generateRequest());
+    run(generateRequest({ id: 2 }));
+    run({ type: "measure", requestId: 1, world: 1 });
+    expect(last(posted)).toMatchObject({ type: "request-error", requestId: 1 });
+  });
+
   it("renders a PNG with the encoder it is given", async () => {
     const encoded: { width: number; height: number; length: number }[] = [];
     const png = new Blob(["fake png"], { type: "image/png" });

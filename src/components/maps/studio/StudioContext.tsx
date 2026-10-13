@@ -39,6 +39,7 @@ export type StudioGenerator = Pick<
   | "result"
   | "diagnostic"
   | "nationSeeds"
+  | "measure"
   | "renderPng"
 >;
 

@@ -5,7 +5,7 @@
  * a run that takes too long in the error state. The last good world stays in the view through all of it.
  *
  *
- * Diagnostic, seeds and render requests are separate: they have ids of their own, are settled as promises, and are
+ * Diagnostic, seeds, measure and render requests are separate: they have ids of their own, are settled as promises, and are
  * never dropped for a newer generate id. They are answered from the world the worker finished last, so they are
  * refused while a generate runs (the worker holds no world then) and rejected when the worker is replaced.
  *
@@ -15,6 +15,7 @@
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticKind } from "../diagnostics";
 import type { LandMaskLayers } from "../land-mask";
+import type { WorldMeasures } from "../measure-world";
 import type { PngWidth } from "../render-png";
 import type { WorldGenParams } from "../v2/types";
 import type {
@@ -134,6 +135,13 @@ export class WorldGenSession {
     return this.query("seeds-result", (q) => ({ type: "seeds", ...q })).then(({ seeds }) => seeds);
   }
 
+  /** The world's calibration figures, measured by the worker on its layers. */
+  measure(): Promise<WorldMeasures> {
+    return this.query("measure-result", (q) => ({ type: "measure", ...q })).then(
+      ({ measures }) => measures
+    );
+  }
+
   /** The world as an equirectangular PNG, drawn and encoded in the worker. */
   renderPng(width: PngWidth, politics: boolean): Promise<Blob> {
     return this.query("render-result", (q) => ({ type: "render", width, politics, ...q })).then(
@@ -186,7 +194,7 @@ export class WorldGenSession {
     });
   }
 
-  /** The answer to a diagnostic, seeds or render request, by its own id. */
+  /** The answer to a diagnostic, seeds, measure or render request, by its own id. */
   private settle(message: Extract<WorldWorkerResponse, { requestId: number }>): void {
     const waiting = this.pending.get(message.requestId);
     if (!waiting) return;

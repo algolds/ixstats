@@ -460,7 +460,7 @@ describe("the Layers tab", () => {
 });
 
 describe("the inspector", () => {
-  it("has Layers, Calibration, Presets and Ship, with the three last in slots of their own", () => {
+  it("has Layers, Calibration, Presets and Ship (the last three are tested in studio-calibration, -presets and -ship)", () => {
     renderStudio();
     const tabs = within(screen.getByRole("tablist", { name: "Inspector" })).getAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
@@ -469,11 +469,6 @@ describe("the inspector", () => {
       "Presets",
       "Ship",
     ]);
-    for (const name of ["Calibration", "Presets", "Ship"]) {
-      fireEvent.mouseDown(screen.getByRole("tab", { name }));
-      fireEvent.click(screen.getByRole("tab", { name }));
-      expect(screen.getByRole("heading", { name })).toBeInTheDocument();
-    }
   });
 });
 

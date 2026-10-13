@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticKind } from "~/lib/worldgen/diagnostics";
+import type { WorldMeasures } from "~/lib/worldgen/measure-world";
 import type { PngWidth } from "~/lib/worldgen/render-png";
 import type { WorldGenParams } from "~/lib/worldgen/v2/types";
 import type { DiagnosticResult, WorldWorkerFactory } from "~/lib/worldgen/worker/world-messages";
@@ -42,6 +43,8 @@ export interface WorldGenerator extends WorldGenView {
   diagnostic(kind: DiagnosticKind): Promise<DiagnosticResult>;
   /** The nations' seeds of the world in `result`: a GeoJSON point at each capital. Rejects like `diagnostic`. */
   nationSeeds(): Promise<FeatureCollection<Point>>;
+  /** The world in `result` measured for calibration, by the worker (never on the main thread). Rejects like `diagnostic`. */
+  measure(): Promise<WorldMeasures>;
   /**
    * The world in `result` as an equirectangular PNG (ocean, land by height band, lakes, rivers, relief, and with
    * `politics` the fills and borders), drawn and encoded in the worker. Rejects like `diagnostic`; a generate that
@@ -87,6 +90,10 @@ export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenera
     () => session.current?.nationSeeds() ?? noWorld(),
     []
   );
+  const measure = useCallback<WorldGenerator["measure"]>(
+    () => session.current?.measure() ?? noWorld(),
+    []
+  );
   const renderPng = useCallback<WorldGenerator["renderPng"]>(
     (width, politics) => session.current?.renderPng(width, politics) ?? noWorld(),
     []
@@ -101,5 +108,5 @@ export function useWorldGenerator(createWorker: WorldWorkerFactory): WorldGenera
     };
   }, []);
 
-  return { ...view, generate, cancel, reset, diagnostic, nationSeeds, renderPng };
+  return { ...view, generate, cancel, reset, diagnostic, nationSeeds, measure, renderPng };
 }

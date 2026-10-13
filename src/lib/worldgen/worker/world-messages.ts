@@ -9,6 +9,7 @@
 import type { FeatureCollection, Point } from "geojson";
 import type { DiagnosticKind, DiagnosticLegend } from "../diagnostics";
 import type { LandMaskLayers } from "../land-mask";
+import type { WorldMeasures } from "../measure-world";
 import type { PngWidth } from "../render-png";
 import type { StageId } from "../v2/stages";
 import type { ProgressCallback, WorldGenParams, WorldSlot } from "../v2/types";
@@ -17,7 +18,7 @@ import type { WorldPreviewStats } from "../world-stats";
 export type WorldGenStage = Parameters<ProgressCallback>[0];
 
 /**
- * Diagnostic, seeds and render requests are answered from the world the worker last finished. They have ids of
+ * Diagnostic, seeds, measure and render requests are answered from the world the worker last finished. They have ids of
  * their own (`requestId`, counted apart from the generate ids), so a newer generate never makes the session drop
  * their answers, and `world` is the id of the generate whose result the asker is looking at: a request for any other
  * world gets an `request-error`, because the worker's graph is the newest one (or none, after a failed run).
@@ -28,6 +29,7 @@ export type WorldWorkerRequest =
   | WorldGenerateRequest
   | ({ type: "diagnostic"; kind: DiagnosticKind } & WorldQuery)
   | ({ type: "seeds" } & WorldQuery)
+  | ({ type: "measure" } & WorldQuery)
   | ({ type: "render"; width: PngWidth; politics: boolean } & WorldQuery);
 
 export type WorldGenerateRequest = {
@@ -76,6 +78,7 @@ export type WorldWorkerResponse =
   | { type: "diagnostic-result"; requestId: number; world: number; image: DiagnosticPayload }
   | { type: "seeds-result"; requestId: number; world: number; seeds: FeatureCollection<Point> }
   | { type: "render-result"; requestId: number; world: number; width: number; png: Blob }
+  | { type: "measure-result"; requestId: number; world: number; measures: WorldMeasures }
   | { type: "request-error"; requestId: number; message: string };
 
 /** A diagnostic as posted: the pixels are a buffer of their own, transferred. */
@@ -95,7 +98,7 @@ export type DiagnosticResult = Omit<DiagnosticPayload, "rgba"> & {
 /** What the worker was asked for, by message type. */
 export type WorldQueryResponse = Extract<
   WorldWorkerResponse,
-  { type: "diagnostic-result" | "seeds-result" | "render-result" }
+  { type: "diagnostic-result" | "seeds-result" | "render-result" | "measure-result" }
 >;
 
 /** A finished generation as the editor holds it. */

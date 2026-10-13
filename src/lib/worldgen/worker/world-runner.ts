@@ -15,6 +15,7 @@ import {
   type DiagnosticKind,
 } from "~/lib/worldgen/diagnostics";
 import { rasterizeLandMask, type LandMask } from "~/lib/worldgen/land-mask";
+import { measureWorld, type MeasureLayers, type WorldMeasures } from "~/lib/worldgen/measure-world";
 import { renderMap, type RenderedMap } from "~/lib/worldgen/render-png";
 import { previewRelief } from "~/lib/worldgen/relief-preview";
 import { computeWorldStats } from "~/lib/worldgen/world-stats";
@@ -47,8 +48,12 @@ type HeldWorld = {
   /** The id of the generate request that made it */
   id: number;
   graph: WorldGraph;
+  /** The layers calibration reads (the others enter no measure) */
+  layers: MeasureLayers;
   /** Each diagnostic once drawn, until the next generate */
   diagnostics: Map<DiagnosticKind, DiagnosticImage>;
+  /** The world's measures once taken, until the next generate */
+  measures: WorldMeasures | null;
 };
 
 export function createWorldRunner(
@@ -94,7 +99,18 @@ export function createWorldRunner(
     }
 
     const graph = world.graph;
-    held = { id, graph, diagnostics: new Map() };
+    held = {
+      id,
+      graph,
+      layers: {
+        background: world.layers.background,
+        political: world.layers.political,
+        altitudes: world.layers.altitudes,
+        climate: world.layers.climate,
+      },
+      diagnostics: new Map(),
+      measures: null,
+    };
     const relief = previewRelief(world.cells);
     const cells = ownBuffer(world.cells);
     const rgba = ownBuffer(relief.rgba);
@@ -157,6 +173,10 @@ export function createWorldRunner(
       }
       case "seeds":
         post({ type: "seeds-result", requestId, world: world.id, seeds: nationSeeds(world.graph) });
+        return;
+      case "measure":
+        world.measures ??= measureWorld(world.layers);
+        post({ type: "measure-result", requestId, world: world.id, measures: world.measures });
         return;
       case "render": {
         const { width, politics } = request;

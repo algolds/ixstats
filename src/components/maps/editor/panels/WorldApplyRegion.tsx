@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import type { PhysicalLayer } from "~/lib/maps/import/options";
 import type { RouterOutputs } from "~/trpc/react";
 import type { WorldSource } from "~/lib/worldgen/world-controls";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
@@ -42,6 +43,11 @@ export interface WorldApplyRegionProps {
   lock: WorldLock;
   /** Drops the draft from the map and the stored recipe: called once the world has been applied */
   onDiscardDraft: () => void;
+  /**
+   * The admin layer choice, sent with the check (World Studio). It has no controls here: the Studio shows them, and
+   * the founder's World tab never passes it.
+   */
+  layers?: readonly PhysicalLayer[];
 }
 
 /** Why the realm can't take a world now (its claims, its status), or null when it can. */
@@ -68,13 +74,15 @@ function draftBlock({ result, generating, stale }: WorldApplyRegionProps): strin
  * failed.
  */
 export function WorldApplyRegion(props: WorldApplyRegionProps) {
-  const { realm, result, source, generating, stale, mapVersion, lock, onDiscardDraft } = props;
+  const { realm, result, source, generating, stale, mapVersion, lock, onDiscardDraft, layers } =
+    props;
   const { view, cancelError, begin, confirm, cancel, close } = useWorldApply({
     realmId: realm.id,
     result,
     source,
     mapVersion,
     onApplied: onDiscardDraft,
+    layers,
   });
   const lockedBy = lockBlock(lock);
   const reviewOutdated =
