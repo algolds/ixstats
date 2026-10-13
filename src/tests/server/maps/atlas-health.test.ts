@@ -107,6 +107,29 @@ describe("atlasHealth storage", () => {
     expect(walk).toHaveBeenCalledTimes(3);
   });
 
+  it("lets concurrent requests share one walk of each folder", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const walk = jest.fn(async () => {
+      await gate;
+      return { bytes: 9, skipped: 0 };
+    });
+    const deps = { now: () => NOW, cache: new Map<string, StorageFigure>(), walk };
+    const both = Promise.all([atlasHealth(atlasFakeDb(), deps), atlasHealth(atlasFakeDb(), deps)]);
+    // Let both requests reach their walk before it finishes
+    await new Promise((resolve) => setImmediate(resolve));
+    release();
+    const [first, second] = await both;
+    // Three folders, each walked once for the two requests
+    expect(walk).toHaveBeenCalledTimes(3);
+    expect(first.storage.tiles.bytes).toBe(9);
+    expect(second.storage).toEqual(first.storage);
+
+    // A walk that has finished is not shared: the next request after the cache expires walks again
+    await atlasHealth(atlasFakeDb(), { ...deps, now: () => NOW + STORAGE_CACHE_MS });
+    expect(walk).toHaveBeenCalledTimes(6);
+  });
+
   it("keeps a measurement for ten minutes", async () => {
     const cache = new Map<string, StorageFigure>();
     const walk = jest.fn(async () => ({ bytes: 7, skipped: 0 }));

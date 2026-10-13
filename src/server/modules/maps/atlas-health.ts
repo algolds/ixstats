@@ -43,11 +43,14 @@ export interface HealthDeps {
   budgetMs?: number;
   /** Measured sizes by folder, kept for STORAGE_CACHE_MS. */
   cache?: Map<string, StorageFigure>;
+  /** Walks under way by folder: a request for a folder being walked waits for that walk (tests pass their own). */
+  inFlight?: Map<string, Promise<StorageFigure>>;
   /** Total bytes under a folder; `expired()` turns true once the budget has passed (tests replace it). */
   walk?: (dir: string, expired: () => boolean) => Promise<WalkResult | null>;
 }
 
 const sharedCache = new Map<string, StorageFigure>();
+const sharedInFlight = new Map<string, Promise<StorageFigure>>();
 
 /**
  * The bytes of every file under `dir` (0 when it does not exist), counting a folder that cannot be read as skipped;
@@ -86,13 +89,26 @@ export async function folderBytes(dir: string, expired: () => boolean): Promise<
   return { bytes: total, skipped };
 }
 
-/** One folder's size, from the cache when it is under ten minutes old, else walked within the budget. */
+/**
+ * One folder's size, from the cache when it is under ten minutes old, else walked within the budget. Requests that
+ * arrive while the folder is being walked share that walk instead of each walking it.
+ */
 async function measureFolder(dir: string, deps: HealthDeps): Promise<StorageFigure> {
   const now = deps.now ?? Date.now;
-  const cache = deps.cache ?? sharedCache;
-  const hit = cache.get(dir);
+  const hit = (deps.cache ?? sharedCache).get(dir);
   if (hit && now() - hit.measuredAt.getTime() < STORAGE_CACHE_MS) return hit;
+  const inFlight = deps.inFlight ?? sharedInFlight;
+  const running = inFlight.get(dir);
+  if (running) return running;
+  const walking = walkFolder(dir, deps).finally(() => inFlight.delete(dir));
+  inFlight.set(dir, walking);
+  return walking;
+}
 
+/** Walks the folder within the budget and keeps the figure in the cache. */
+async function walkFolder(dir: string, deps: HealthDeps): Promise<StorageFigure> {
+  const now = deps.now ?? Date.now;
+  const cache = deps.cache ?? sharedCache;
   let over = false;
   const expired = () => over;
   const walk = deps.walk ?? folderBytes;
