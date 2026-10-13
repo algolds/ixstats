@@ -353,6 +353,7 @@ describe("runSourceSync", () => {
     expect(db.realmPage.findMany).toHaveBeenCalledWith({
       where: { realmId: "eurth-id" },
       select: { title: true, kind: true, wikiSource: true },
+      take: 50_000,
     });
     expect(db.realmSyncRun.update).toHaveBeenCalledWith(
       expect.objectContaining({

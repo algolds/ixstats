@@ -30,7 +30,7 @@ const config: SourceSyncConfig = {
   intervalHours: 24,
   options: DEFAULT_SYNC_OPTIONS,
   continentMap: {},
-  overrides: {},
+  overrides: { nations: {}, organizations: {} },
 };
 
 describe("buildSyncPlan reads every row", () => {
