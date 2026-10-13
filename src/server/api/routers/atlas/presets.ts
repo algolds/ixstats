@@ -3,9 +3,9 @@
  * ~/server/modules/maps/world-presets.ts. Founders read the published presets through `realms.map.worldPresets`.
  */
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { worldPresetParamsSchema } from "~/lib/maps/import/world-bundle";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { atlasError } from "./errors";
 import {
   createWorldPreset,
   listWorldPresets,
@@ -17,14 +17,7 @@ import {
   restoreWorldPresetVersion,
   saveWorldPresetDraft,
   setWorldPresetArchived,
-  WorldPresetError,
 } from "~/server/modules/maps/world-presets";
-
-function presetError(error: Error): never {
-  if (error instanceof WorldPresetError)
-    throw new TRPCError({ code: error.code, message: error.message });
-  throw error;
-}
 
 const slug = z.string().min(1).max(64);
 const name = z.string().trim().min(1).max(60);
@@ -47,26 +40,26 @@ export const atlasPresetsRouter = createTRPCRouter({
       })
     )
     .mutation(({ ctx, input }) =>
-      createWorldPreset(ctx.db, ctx.user.clerkUserId, input).catch(presetError)
+      createWorldPreset(ctx.db, ctx.user.clerkUserId, input).catch(atlasError)
     ),
 
   /** The name and, when given, the description; the slug stays, since saved recipes hold it. */
   rename: adminProcedure
     .input(z.object({ slug, name, description: description.optional() }))
     .mutation(({ ctx, input }) =>
-      renameWorldPreset(ctx.db, input.slug, input.name, input.description).catch(presetError)
+      renameWorldPreset(ctx.db, input.slug, input.name, input.description).catch(atlasError)
     ),
 
   /** The presets in the given order (archived ones not listed follow). Returns every preset, archived included. */
   reorder: adminProcedure
     .input(z.object({ slugs: z.array(slug).min(1).max(200) }))
-    .mutation(({ ctx, input }) => reorderWorldPresets(ctx.db, input.slugs).catch(presetError)),
+    .mutation(({ ctx, input }) => reorderWorldPresets(ctx.db, input.slugs).catch(atlasError)),
 
   /** Archives a preset, or brings it back with `archived: false`. A built-in cannot be archived. */
   archive: adminProcedure
     .input(z.object({ slug, archived: z.boolean().default(true) }))
     .mutation(({ ctx, input }) =>
-      setWorldPresetArchived(ctx.db, input.slug, input.archived).catch(presetError)
+      setWorldPresetArchived(ctx.db, input.slug, input.archived).catch(atlasError)
     ),
 
   /** Writes the draft: the recipe, without a seed (a `seed` key is rejected). */
@@ -79,27 +72,27 @@ export const atlasPresetsRouter = createTRPCRouter({
         input.slug,
         input.params,
         input.note
-      ).catch(presetError)
+      ).catch(atlasError)
     ),
 
   /** Makes the draft the published version founders get. */
   publish: adminProcedure
     .input(z.object({ slug, note }))
     .mutation(({ ctx, input }) =>
-      publishWorldPreset(ctx.db, input.slug, input.note).catch(presetError)
+      publishWorldPreset(ctx.db, input.slug, input.note).catch(atlasError)
     ),
 
   /** The published versions, newest first. */
   versions: adminProcedure
     .input(z.object({ slug }))
-    .query(({ ctx, input }) => listWorldPresetVersions(ctx.db, input.slug).catch(presetError)),
+    .query(({ ctx, input }) => listWorldPresetVersions(ctx.db, input.slug).catch(atlasError)),
 
   /** A new draft from a published version. */
   restore: adminProcedure
     .input(z.object({ slug, versionId: z.string().min(1).max(64) }))
     .mutation(({ ctx, input }) =>
       restoreWorldPresetVersion(ctx.db, ctx.user.clerkUserId, input.slug, input.versionId).catch(
-        presetError
+        atlasError
       )
     ),
 
@@ -107,6 +100,6 @@ export const atlasPresetsRouter = createTRPCRouter({
   resetToFactory: adminProcedure
     .input(z.object({ slug }))
     .mutation(({ ctx, input }) =>
-      resetWorldPresetToFactory(ctx.db, ctx.user.clerkUserId, input.slug).catch(presetError)
+      resetWorldPresetToFactory(ctx.db, ctx.user.clerkUserId, input.slug).catch(atlasError)
     ),
 });

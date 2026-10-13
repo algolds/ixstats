@@ -1,16 +1,12 @@
 /** Atlas, World Studio: realm measures for calibration, applying a world to any realm, a new realm from one. Site admins only. */
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { atlasError } from "./errors";
 import { isIxnaySlug } from "~/lib/realms/realm-ids";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
-import { MapImportError } from "~/server/modules/maps/map-import.realm";
 import { measureRealm } from "~/server/modules/maps/realm-calibration";
 import { adminWorldStatus } from "~/server/modules/maps/world-import.status";
-import {
-  createRealmFromWorld,
-  RealmCreateError,
-} from "~/server/modules/realms/realms.create-from-world";
+import { createRealmFromWorld } from "~/server/modules/realms/realms.create-from-world";
 
 const realmRef = z.string().trim().min(1).max(64);
 
@@ -28,12 +24,7 @@ export const atlasStudioRouter = createTRPCRouter({
   applyStatus: adminProcedure
     .input(z.object({ realm: realmRef, layers: z.boolean().optional() }))
     .query(({ ctx, input }) =>
-      adminWorldStatus(ctx.db, input.realm, { layers: input.layers }).catch((error: Error) => {
-        if (error instanceof MapImportError) {
-          throw new TRPCError({ code: error.code, message: error.message });
-        }
-        throw error;
-      })
+      adminWorldStatus(ctx.db, input.realm, { layers: input.layers }).catch(atlasError)
     ),
 
   /**
@@ -50,12 +41,5 @@ export const atlasStudioRouter = createTRPCRouter({
           .refine((slug) => !isIxnaySlug(slug), "That slug names Ixnay"),
       })
     )
-    .mutation(({ ctx, input }) =>
-      createRealmFromWorld(ctx.db, ctx.user, input).catch((error: Error) => {
-        if (error instanceof RealmCreateError) {
-          throw new TRPCError({ code: error.code, message: error.message });
-        }
-        throw error;
-      })
-    ),
+    .mutation(({ ctx, input }) => createRealmFromWorld(ctx.db, ctx.user, input).catch(atlasError)),
 });
