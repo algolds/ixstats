@@ -364,7 +364,53 @@ describe("retryAtlasJob", () => {
         layers: ["rivers", "altitudes"],
         fittedMapVersion: 2,
       });
+      // That check finishes before the next retry: a second one while it ran would be refused
+      created.status = "succeeded";
     }
+  });
+
+  it("refuses a second retry while the first job on the file is queued or running", async () => {
+    const db = world();
+    const failed = seed(db, { status: "failed" });
+    const first = await retryAtlasJob(db, admin, failed.id, deps);
+    const before = db.mapImportJob.rows.length;
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "A job for this file is already running",
+    });
+    expect(db.mapImportJob.rows).toHaveLength(before);
+
+    // Running counts too; once it has finished (or failed) a retry is allowed again
+    db.mapImportJob.rows.find((r: any) => r.id === first.jobId).status = "running";
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toThrow(/already running/i);
+    db.mapImportJob.rows.find((r: any) => r.id === first.jobId).status = "failed";
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).resolves.toMatchObject({
+      retryAs: "analysis",
+    });
+  });
+
+  it("does not hold a retry back for a job on another file or in another realm", async () => {
+    const db = world();
+    const failed = seed(db, { status: "failed" });
+    seed(db, { status: "running", uploadId: "e".repeat(64) });
+    seed(db, { status: "running", realmId: "b" });
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).resolves.toMatchObject({
+      retryAs: "analysis",
+    });
+  });
+
+  it("refuses a second pipeline retry for the realm while a run is queued or running", async () => {
+    const db = world();
+    jest.mocked(startMapPipelineRun).mockResolvedValue({ jobId: "new1" });
+    const failed = seed(db, {
+      kind: "map-pipeline",
+      status: "failed",
+      uploadId: null,
+      options: { steps: ["relief"], dryRun: false },
+    });
+    seed(db, { kind: "map-pipeline", status: "queued", uploadId: null });
+    await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toThrow(/already running/i);
+    expect(startMapPipelineRun).not.toHaveBeenCalled();
   });
 
   it("starts a failed world check again as a check", async () => {

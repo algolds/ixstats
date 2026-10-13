@@ -146,6 +146,33 @@ async function retryBlocker(
   return null;
 }
 
+/**
+ * Why a failed job cannot be started again right now, or null: another job of the realm is already queued or
+ * running on the same upload (a pipeline run has none: the same kind), so a second click would make two.
+ */
+async function retryInFlight(
+  db: PrismaClient,
+  job: Pick<JobRecord, "id" | "kind" | "realmId" | "uploadId">
+): Promise<string | null> {
+  const same =
+    job.kind !== MAP_PIPELINE_KIND && job.uploadId
+      ? { uploadId: job.uploadId }
+      : { kind: job.kind };
+  const running = await db.mapImportJob.findFirst({
+    where: {
+      realmId: job.realmId,
+      id: { not: job.id },
+      status: { in: ["queued", "running"] },
+      ...same,
+    },
+    select: { id: true },
+  });
+  if (!running) return null;
+  return job.kind === MAP_PIPELINE_KIND
+    ? "A map pipeline run for this realm is already running"
+    : "A job for this file is already running";
+}
+
 /** The imports of these jobs, and which of them is its realm's latest still in place (two queries, whatever the page). */
 async function rollbackStates(db: PrismaClient, jobIds: string[]) {
   const imports = await db.mapImport.findMany({
@@ -360,6 +387,8 @@ export async function retryAtlasJob(
   if (!job) throw new MapImportError("NOT_FOUND", "Job not found");
   const blocked = await retryBlocker(job);
   if (blocked) throw new MapImportError("BAD_REQUEST", blocked);
+  const inFlight = await retryInFlight(db, job);
+  if (inFlight) throw new MapImportError("BAD_REQUEST", inFlight);
   const as = retryAs(job);
   // Who may import into the realm, and not into an archived one; a world also has its own guard below
   if (job.kind !== "world") await loadImportRealm(db, actor, job.realmId);
