@@ -323,28 +323,67 @@ describe("useWorldGenerator", () => {
     expect(workers.flatMap((w) => w.posted).map((r) => r.id)).toEqual([1, 2, 3]);
   });
 
-  it("a timeout, a cancel and a reset clear the queued generate", () => {
+  it("a timeout with a generate queued starts it on a fresh worker, sending the fit layers again", () => {
+    const { result, workers } = setup();
+    const landMaskLayers = { background: { type: "FeatureCollection" as const, features: [] } };
+    const fit = { landMaskLayers, keepBorders: true, maskKey: "realm:1" };
+    act(() => result.current.generate({}, 1, fit));
+    act(() => result.current.generate({ continentCount: 3 }, 2, fit));
+    act(() => {
+      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
+    });
+
+    expect(workers).toHaveLength(2);
+    expect(workers[0]!.terminated).toBe(true);
+    expect(workers[0]!.posted).toHaveLength(1);
+    expect(workers[1]!.posted).toEqual([
+      {
+        type: "generate",
+        id: 2,
+        params: { continentCount: 3 },
+        seed: 2,
+        landMaskLayers,
+        keepBorders: true,
+        maskKey: "realm:1",
+      },
+    ]);
+    // Not an error: the queued run is the one in view, and the timed-out worker's late answer is dropped
+    expect(result.current.state).toBe("generating");
+    act(() => workers[0]!.say(resultMessage(1, { seed: 999 })));
+    expect(result.current.state).toBe("generating");
+    act(() => workers[1]!.say(resultMessage(2, { seed: 8 })));
+    expect(result.current).toMatchObject({ state: "ready" });
+    expect(result.current.result!.seed).toBe(8);
+  });
+
+  it("a queued generate that is itself too slow times out on its own clock", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
     act(() => result.current.generate({}, 2));
     act(() => {
       jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
     });
+    expect(workers).toHaveLength(2);
+    act(() => {
+      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
+    });
     expect(result.current.state).toBe("error");
-    act(() => workers[0]!.say(resultMessage(1)));
-    expect(workers[0]!.posted).toHaveLength(1);
+    expect(workers[1]!.terminated).toBe(true);
+  });
 
+  it("a cancel and a reset clear the queued generate", () => {
+    const { result, workers } = setup();
     act(() => result.current.generate({}, 3));
     act(() => result.current.generate({}, 4));
     act(() => result.current.cancel());
-    act(() => workers[1]!.say(resultMessage(3)));
-    expect(workers[1]!.posted).toHaveLength(1);
+    act(() => workers[0]!.say(resultMessage(3)));
+    expect(workers[0]!.posted).toHaveLength(1);
 
     act(() => result.current.generate({}, 5));
     act(() => result.current.generate({}, 6));
     act(() => result.current.reset());
-    act(() => workers[2]!.say(resultMessage(5)));
-    expect(workers[2]!.posted).toHaveLength(1);
+    act(() => workers[1]!.say(resultMessage(5)));
+    expect(workers[1]!.posted).toHaveLength(1);
     expect(result.current.state).toBe("idle");
   });
 

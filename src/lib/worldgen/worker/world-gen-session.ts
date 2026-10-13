@@ -3,8 +3,9 @@
  * mask) survive a slider change, queues the newest request while a run is in flight (a message cannot interrupt the
  * synchronous generator, and a replacement worker would start from the mesh with no cache) and posts it to the same
  * worker when the run answers, drops the answer of the run that was overtaken, and ends a run that takes too long
- * in the error state. A newer request replaces an older queued one. Cancel, reset, dispose and the timeout
- * terminate the worker and clear the queue. The last good world stays in the view through all of it.
+ * in the error state, or, with a newer request queued behind it, starts that request on a fresh worker. A newer
+ * request replaces an older queued one. Cancel, reset, dispose and the timeout terminate the worker and clear the
+ * queue (a timeout then runs the request it took from it). The last good world stays in the view through all of it.
  *
  * Diagnostic, seeds, measure and render requests are separate: they have ids of their own, are settled as promises, and are
  * never dropped for a newer generate id. They are answered from the world the worker finished last, so they are
@@ -309,6 +310,14 @@ export class WorldGenSession {
 
   private timeOut(id: number): void {
     if (id !== this.runningId) return;
+    // A newer request waits behind the run that took too long: it starts on a fresh worker (which gets the layers
+    // again) instead of being dropped, and the run that timed out is not reported
+    const next = this.queued;
+    if (next) {
+      this.discardWorker();
+      this.run(next);
+      return;
+    }
     // Whatever the terminated worker still delivers is for a request nobody waits for
     this.latestId++;
     this.discardWorker();
