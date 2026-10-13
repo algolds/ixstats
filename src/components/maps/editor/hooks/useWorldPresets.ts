@@ -14,10 +14,15 @@ export interface WorldPresets {
  * The presets the World tab offers: the published, unarchived ones from the database, in the admin's order. If they
  * cannot be read, the three built-ins from code stand in (`fallback`), so a founder can still make a world; the
  * recipe is not saved meanwhile, since the stand-in is not the founder's choice. Every caller shares one query, which
- * is read again each time the tab opens (the default staleTime holds it fresh for 30 seconds).
+ * is read again each time the tab opens (the default staleTime holds it fresh for 30 seconds). The server hands them
+ * to the realm's map editors only, so the realm is named; a tab with no realm slug has no one to ask.
  */
-export function useWorldPresets(): WorldPresets {
-  const query = api.realms.map.worldPresets.useQuery(undefined, { retry: 1 });
+export function useWorldPresets(realmSlug: string | null): WorldPresets {
+  const query = api.realms.map.worldPresets.useQuery(
+    { realm: realmSlug ?? "" },
+    { enabled: !!realmSlug, retry: 1 }
+  );
+  if (!realmSlug) return { presets: FACTORY_PRESETS, fallback: true };
   if (query.data) return { presets: query.data, fallback: false };
   return query.isError
     ? { presets: FACTORY_PRESETS, fallback: true }

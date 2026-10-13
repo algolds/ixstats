@@ -74,6 +74,13 @@ describe("the presets of the World tab", () => {
     expect(screen.queryByRole("radio", { name: "Ixnay" })).toBeNull();
   });
 
+  it("asks for the presets of the realm the tab edits, in both pickers", () => {
+    presetsQuery.mockReturnValue({ data: published, isError: false });
+    renderPanel();
+    expect(presetsQuery).toHaveBeenCalledWith({ realm: "eurth" }, expect.anything());
+    expect(presetsQuery).not.toHaveBeenCalledWith(undefined, expect.anything());
+  });
+
   it("gives the generator a picked preset's values, those no control names among them", async () => {
     presetsQuery.mockReturnValue({ data: published, isError: false });
     renderPanel();

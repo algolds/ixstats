@@ -22,7 +22,14 @@ const presetsOf = (count: number): readonly WorldPresetOption[] =>
 
 function show(count: number, onValueChange = jest.fn()) {
   jest.mocked(useWorldPresets).mockReturnValue({ presets: presetsOf(count), fallback: false });
-  render(<WorldPresetPicker aria-label="Preset" value="preset-0" onValueChange={onValueChange} />);
+  render(
+    <WorldPresetPicker
+      aria-label="Preset"
+      realmSlug="eurth"
+      value="preset-0"
+      onValueChange={onValueChange}
+    />
+  );
   return onValueChange;
 }
 

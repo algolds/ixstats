@@ -16,7 +16,8 @@ export function WorldAdvancedSection({
   available,
   onLive,
   onCommit,
-}: ControlSectionProps) {
+  realmSlug,
+}: ControlSectionProps & { realmSlug: string | null }) {
   const profileId = useId();
   const limits = CONTROL_LIMITS;
   const [south, north] = controls.latitudeBand;
@@ -85,6 +86,7 @@ export function WorldAdvancedSection({
           </span>
           <WorldPresetPicker
             aria-labelledby={profileId}
+            realmSlug={realmSlug}
             value={controls.hypsometry}
             onValueChange={(hypsometry) => onCommit({ hypsometry })}
           />

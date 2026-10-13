@@ -24,6 +24,8 @@ import { useWorldPresets } from "./useWorldPresets";
 interface UseWorldRecipeArgs {
   /** Where the recipe is kept: the realm's id */
   scope: string;
+  /** The realm's slug, to read the published presets for it; null when it has none */
+  realmSlug: string | null;
   /** The realm has borders to build on (a political layer) */
   hasRealmMap: boolean;
   /** Every layer of its map has settled (arrived, or come back empty), so a world can be fitted to them */
@@ -75,6 +77,7 @@ interface LastRun {
  */
 export function useWorldRecipe({
   scope,
+  realmSlug,
   hasRealmMap,
   realmMapReady,
   realmMapLayers,
@@ -91,7 +94,7 @@ export function useWorldRecipe({
       seed: usable?.seed ?? newWorldSeed(),
     };
   });
-  const { presets, fallback } = useWorldPresets();
+  const { presets, fallback } = useWorldPresets(realmSlug);
   const [stored, setControls] = useState<WorldControls>(start.controls);
   // What was asked for, as the published presets make it: a preset that has since been archived or unpublished is
   // Earth-like, and controls nobody has moved yet are the published Earth-like preset's values, not the factory ones

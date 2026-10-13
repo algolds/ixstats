@@ -19,6 +19,7 @@ import {
   deleteWorldSlot,
   getRealmWorldStatus,
   getWorldSlot,
+  requireWorldEditor,
   setSlotClaimable,
 } from "~/server/modules/realms/realms.world-slots";
 import {
@@ -115,9 +116,14 @@ export const realmMapRouter = createTRPCRouter({
 
   /**
    * The presets the World tab offers: published and unarchived, in the admin's order, each by slug and name with its
-   * published recipe (no seed). Drafts never leave the admin's `atlas.presets` procedures.
+   * published recipe (no seed). Drafts never leave the admin's `atlas.presets` procedures. The realm's map editors
+   * only, like the rest of the World tab (`worldStatus`).
    */
-  worldPresets: protectedProcedure.query(({ ctx }) => listPublishedWorldPresets(ctx.db)),
+  worldPresets: protectedProcedure.input(realmInput).query(async ({ ctx, input }) => {
+    const realmId = await mutationRealmId(ctx, input.realm);
+    await requireWorldEditor(ctx.db, ctx.user, realmId).catch(mapError);
+    return listPublishedWorldPresets(ctx.db);
+  }),
 
   /** A country as a generated nation slot, for the Properties inspector's slot tools. */
   worldSlot: protectedProcedure

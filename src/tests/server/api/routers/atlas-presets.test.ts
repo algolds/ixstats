@@ -18,7 +18,7 @@ const presetsCaller = createCallerFactory(atlasPresetsRouter);
 const mapCaller = createCallerFactory(realmMapRouter);
 
 // The audit log middleware writes through `auditLog`; the preset tables are the fake's
-const ctxFor = (db: ReturnType<typeof createPresetDb>["db"], admin: boolean) =>
+const ctxFor = (db: ReturnType<typeof createPresetDb>["db"], admin: boolean, realm = null) =>
   createMockRouterContext({
     auth: { userId: admin ? "admin_1" : "user_1" },
     user: {
@@ -26,8 +26,19 @@ const ctxFor = (db: ReturnType<typeof createPresetDb>["db"], admin: boolean) =>
       clerkUserId: admin ? "admin_1" : "user_1",
       role: admin ? { name: "admin", level: 10 } : { name: "user", level: 100 },
     },
-    db: Object.assign(db, { auditLog: { create: jest.fn().mockResolvedValue({}) } }),
+    db: Object.assign(db, {
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+      realm: { findUnique: jest.fn().mockResolvedValue(realm) },
+    }),
   });
+
+/** A realm row as the access checks read it: `founder` owns it, `officers` hold powers in it */
+const realmRow = (founder: string, officers: { userId: string; powers: string[] }[] = []) => ({
+  id: "r_eurth",
+  status: "active",
+  ownerId: founder,
+  officers,
+});
 
 describe("atlas.presets auth", () => {
   const calls: [string, (c: ReturnType<typeof presetsCaller>) => Promise<unknown>][] = [
@@ -88,18 +99,39 @@ describe("atlas.presets auth", () => {
 });
 
 describe("realms.map.worldPresets", () => {
-  it("gives a signed-in user the published presets, not the draft", async () => {
+  it("gives the realm's founder the published presets, not the draft", async () => {
     const { db } = createPresetDb();
     const admin = presetsCaller(ctxFor(db, true) as never);
     await admin.saveDraft({ slug: "eurth", params: { riverDensity: 2 } });
-    const list = await mapCaller(ctxFor(db, false) as never).worldPresets();
+    const founder = ctxFor(db, false, realmRow("user_1") as never);
+    const list = await mapCaller(founder as never).worldPresets({ realm: "eurth" });
     expect(list.map((p) => p.slug)).toEqual(["earthlike", "ixnay", "eurth"]);
     expect(list.find((p) => p.slug === "eurth")?.params).not.toEqual({ riverDensity: 2 });
+  });
+
+  it("is refused to a member without map access to the realm", async () => {
+    const { db } = createPresetDb();
+    const member = ctxFor(db, false, realmRow("someone_else") as never);
+    await expect(mapCaller(member as never).worldPresets({ realm: "eurth" })).rejects.toMatchObject(
+      { code: "FORBIDDEN" }
+    );
+  });
+
+  it("is refused to an officer without the Map power, and given to one with it", async () => {
+    const { db } = createPresetDb();
+    const without = ctxFor(db, false, realmRow("f", [{ userId: "user_1", powers: ["claims"] }]));
+    await expect(
+      mapCaller(without as never).worldPresets({ realm: "eurth" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const withMap = ctxFor(db, false, realmRow("f", [{ userId: "user_1", powers: ["map"] }]));
+    await expect(
+      mapCaller(withMap as never).worldPresets({ realm: "eurth" })
+    ).resolves.toHaveLength(3);
   });
 
   it("is refused to someone who is not signed in", async () => {
     const { db } = createPresetDb();
     const ctx = createMockRouterContext({ auth: null, user: null, db });
-    await expect(mapCaller(ctx as never).worldPresets()).rejects.toThrow();
+    await expect(mapCaller(ctx as never).worldPresets({ realm: "eurth" })).rejects.toThrow();
   });
 });

@@ -27,7 +27,7 @@ export interface RealmWorldStatus {
 }
 
 /** The realm's status and the viewer's powers in it, once `actor` is known to edit its map and it is not Ixnay. */
-async function requireWorldEditor(db: ReadDb, actor: RealmActor, realmId: string) {
+export async function requireWorldEditor(db: ReadDb, actor: RealmActor, realmId: string) {
   if (realmId === DEFAULT_REALM_ID) {
     throw new RealmRegionError("FORBIDDEN", "Ixnay's map has no generated world");
   }

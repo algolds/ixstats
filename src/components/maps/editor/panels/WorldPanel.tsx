@@ -82,6 +82,7 @@ function RealmWorldPanel({
   const retryMap = useRetryMapLayers();
   const recipe = useWorldRecipe({
     scope: display.realmId,
+    realmSlug: display.realmSlug,
     hasRealmMap,
     realmMapReady,
     realmMapLayers,
@@ -151,6 +152,7 @@ function RealmWorldPanel({
         onCommit={recipe.apply}
       />
       <WorldAdvancedSection
+        realmSlug={display.realmSlug}
         controls={controls}
         available={available}
         onLive={recipe.setLive}

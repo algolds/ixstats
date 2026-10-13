@@ -92,6 +92,7 @@ export function WorldSourceSection({
         {controls.source === "preset" && (
           <WorldPresetPicker
             aria-label="Preset"
+            realmSlug={realmSlug}
             value={controls.preset}
             onValueChange={onPickPreset}
           />
