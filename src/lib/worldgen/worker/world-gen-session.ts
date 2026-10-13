@@ -1,9 +1,10 @@
 /**
- * One editor's use of the generator worker: keeps an idle worker so its mesh cache survives a slider change,
- * replaces a worker that is still busy when a newer request arrives (a message cannot interrupt the synchronous
- * generator, so terminating is the only way to cancel), drops answers to anything but the latest request, and ends
- * a run that takes too long in the error state. The last good world stays in the view through all of it.
- *
+ * One editor's use of the generator worker: keeps its worker for the editor's life so the stage cache (and the land
+ * mask) survive a slider change, queues the newest request while a run is in flight (a message cannot interrupt the
+ * synchronous generator, and a replacement worker would start from the mesh with no cache) and posts it to the same
+ * worker when the run answers, drops the answer of the run that was overtaken, and ends a run that takes too long
+ * in the error state. A newer request replaces an older queued one. Cancel, reset, dispose and the timeout
+ * terminate the worker and clear the queue. The last good world stays in the view through all of it.
  *
  * Diagnostic, seeds, measure and render requests are separate: they have ids of their own, are settled as promises, and are
  * never dropped for a newer generate id. They are answered from the world the worker finished last, so they are
@@ -78,9 +79,19 @@ const RUNNING_VIEW = {
 
 type Pending = { resolve: (message: WorldQueryResponse) => void; reject: (error: Error) => void };
 
+type QueuedRequest = {
+  id: number;
+  params: Partial<WorldGenParams>;
+  seed: number;
+  options: WorldGenerateOptions;
+};
+
 export class WorldGenSession {
   private worker: WorldWorkerHandle | null = null;
   private latestId = 0;
+  /** The id of the run the worker is on; differs from `latestId` while a newer request is queued */
+  private runningId = 0;
+  private queued: QueuedRequest | null = null;
   private busy = false;
   /** The `maskKey` the current worker has been sent the layers of */
   private maskKeySent: string | null = null;
@@ -107,11 +118,20 @@ export class WorldGenSession {
     this.heldWorld = null;
     // An answer about the world being replaced must not be taken for the next one's, whichever worker draws it
     this.rejectPending("The world changed before the answer came");
-    // A worker still busy cannot take another request; its answer is no longer wanted
-    if (this.busy) this.discardWorker();
+    // A busy worker cannot take another request: the newest waits for its answer, which is then dropped as stale
+    if (this.busy) {
+      this.queued = { id, params, seed, options };
+      this.update(RUNNING_VIEW);
+      return;
+    }
+    this.run({ id, params, seed, options });
+  }
+
+  private run({ id, params, seed, options }: QueuedRequest): void {
     try {
       const worker = (this.worker ??= this.start());
       this.busy = true;
+      this.runningId = id;
       this.clock = setTimeout(() => this.timeOut(id), WORLD_GEN_TIMEOUT_MS);
       this.update(RUNNING_VIEW);
       worker.post({ type: "generate", id, params, seed, ...this.maskRequest(options) });
@@ -238,7 +258,10 @@ export class WorldGenSession {
       this.settle(message);
       return;
     }
-    if (message.id !== this.latestId) return;
+    if (message.id !== this.latestId) {
+      this.runQueued(message);
+      return;
+    }
     if (message.type === "progress") {
       this.update({ stage: message.stage, pct: message.pct, message: message.message });
       return;
@@ -274,8 +297,18 @@ export class WorldGenSession {
     });
   }
 
+  /** The overtaken run has answered: the worker is free for the request that waited. */
+  private runQueued(message: Exclude<WorldWorkerResponse, { requestId: number }>): void {
+    const next = this.queued;
+    if (!next || message.type === "progress" || message.id !== this.runningId) return;
+    this.queued = null;
+    this.stopClock();
+    this.busy = false;
+    this.run(next);
+  }
+
   private timeOut(id: number): void {
-    if (id !== this.latestId) return;
+    if (id !== this.runningId) return;
     // Whatever the terminated worker still delivers is for a request nobody waits for
     this.latestId++;
     this.discardWorker();
@@ -292,6 +325,7 @@ export class WorldGenSession {
     this.worker?.terminate();
     this.worker = null;
     this.maskKeySent = null;
+    this.queued = null;
     this.busy = false;
     this.heldWorld = null;
     this.rejectPending("The world generator was restarted");

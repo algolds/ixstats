@@ -3,7 +3,7 @@
  * generator worker the tests speak for, and the render helpers. The test file mocks `~/trpc/react` (with
  * `fake-map-import`), `useWorldPreview`, `useMapLayerData` and the apply region before importing this.
  */
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { FeatureCollection } from "geojson";
 import { api } from "~/trpc/react";
 import { useWorldPreview } from "~/hooks/useWorldPreview";
@@ -12,7 +12,7 @@ import { WorldApplyRegion } from "~/components/maps/editor/panels/WorldApplyRegi
 import { WorldPanel } from "~/components/maps/editor/panels/WorldPanel";
 import { transientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { FACTORY_PRESETS } from "~/lib/worldgen/world-presets";
-import { fakeWorldWorkers } from "~/tests/helpers/fake-world-worker";
+import { fakeWorldWorkers, resultMessage } from "~/tests/helpers/fake-world-worker";
 import { resetFakeMapImport } from "~/tests/helpers/fake-map-import";
 
 export const displayQuery = jest.mocked(api.realms.map.display.useQuery as unknown as jest.Mock);
@@ -132,6 +132,21 @@ export const requestCount = () => workers.reduce((n, w) => n + w.posted.length, 
 export async function generateFirst() {
   fireEvent.click(screen.getByRole("button", { name: "Generate preview" }));
   return lastRequest();
+}
+
+/**
+ * The first preview, answered. A change made while a run is in flight waits for it, so a test that then changes
+ * something and reads the request it caused starts from an idle worker.
+ */
+export function settle() {
+  const request = lastRequest();
+  act(() => workers.at(-1)!.say(resultMessage(request.id, { seed: request.seed })));
+  return request;
+}
+
+export async function generateSettled() {
+  await generateFirst();
+  return settle();
 }
 
 /** One key press on a slider: the keys commit when they come up. */

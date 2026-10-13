@@ -40,6 +40,8 @@ import {
   cleanUpPanelTests,
   factory,
   generateFirst,
+  generateSettled,
+  settle,
   lastRequest,
   presetsQuery,
   REALM,
@@ -75,7 +77,7 @@ describe("the presets of the World tab", () => {
   it("gives the generator a picked preset's values, those no control names among them", async () => {
     presetsQuery.mockReturnValue({ data: published, isError: false });
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     fireEvent.click(screen.getByRole("radio", { name: "Badlands" }));
     expect(lastRequest().params).toMatchObject({
       continentCount: 4,
@@ -165,7 +167,7 @@ describe("the presets of the World tab", () => {
   it("generates from the built-ins when the presets cannot be read, so Generate still works", async () => {
     presetsQuery.mockReturnValue({ data: undefined, isError: true });
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     expect(requestCount()).toBe(1);
   });
 
@@ -178,6 +180,7 @@ describe("the presets of the World tab", () => {
     renderPanel();
     // The preview is made, as Earth-like, but the stored choice stays the founder's
     expect(requestCount()).toBe(1);
+    settle();
     expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands", rivers: 1.3 });
     fireEvent.click(screen.getByRole("radio", { name: "Eurth" }));
     expect(requestCount()).toBe(2);

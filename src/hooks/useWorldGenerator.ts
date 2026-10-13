@@ -23,8 +23,9 @@ export type { PngWidth } from "~/lib/worldgen/render-png";
 
 export interface WorldGenerator extends WorldGenView {
   /**
-   * Generate a world. Replaces any generation in flight (that worker is terminated); the last good `result`
-   * stays until the new one lands. Not debounced: call it when a slider is released.
+   * Generate a world. A generation in flight is not interrupted: the newest request waits for it (replacing an
+   * older waiting one) and runs on the same worker when it answers, so the stage cache is kept. The last good
+   * `result` stays until the new one lands. Not debounced: call it when a slider is released.
    */
   generate(params: Partial<WorldGenParams>, seed: number, options?: WorldGenerateOptions): void;
   /** Ends the generation in flight and goes back to the last good world (or idle). */

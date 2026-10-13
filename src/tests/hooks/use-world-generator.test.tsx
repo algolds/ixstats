@@ -1,5 +1,5 @@
 /**
- * The world generator hook: one worker for the editor's life, a new generate replacing any in flight, stale
+ * The world generator hook: one worker for the editor's life, the newest generate queued behind one in flight, stale
  * answers dropped, and a failed run leaving the last good world in place.
  */
 import { Activity, StrictMode } from "react";
@@ -109,9 +109,16 @@ describe("useWorldGenerator", () => {
     expect(workers[0]!.posted[2]).toHaveProperty("landMaskLayers");
     expect(workers[0]!.posted[3]).toHaveProperty("landMaskLayers");
 
-    // A worker replaced while busy has not seen the layers
+    // A request queued behind a run goes to the same worker, which has the layers already
     generate("realm:2");
     expect(workers[0]!.posted[4]).not.toHaveProperty("landMaskLayers");
+    generate("realm:2");
+    expect(workers).toHaveLength(1);
+    act(() => workers[0]!.say(resultMessage(lastId(workers[0]!))));
+    expect(workers[0]!.posted[5]).not.toHaveProperty("landMaskLayers");
+
+    // A new worker (after a crash) has not seen them
+    act(() => workers[0]!.listener.onCrash("boom"));
     generate("realm:2");
     expect(workers).toHaveLength(2);
     expect(workers[1]!.posted[0]).toHaveProperty("landMaskLayers");
@@ -134,15 +141,55 @@ describe("useWorldGenerator", () => {
     expect(workers[0]!.posted.map((r) => r.id)).toEqual([1, 2]);
   });
 
-  it("terminates the worker of a generate still in flight and starts a fresh one", () => {
+  it("queues a generate that arrives while one is in flight and posts it to the same worker when that answers", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
     act(() => result.current.generate({}, 2));
 
-    expect(workers).toHaveLength(2);
-    expect(workers[0]!.terminated).toBe(true);
-    expect(workers[1]!.terminated).toBe(false);
-    expect(workers[1]!.posted[0]).toMatchObject({ id: 2, seed: 2 });
+    expect(workers).toHaveLength(1);
+    expect(workers[0]!.terminated).toBe(false);
+    expect(workers[0]!.posted.map((r) => r.id)).toEqual([1]);
+    expect(result.current.state).toBe("generating");
+
+    act(() => workers[0]!.say(resultMessage(1, { seed: 111 })));
+    expect(workers).toHaveLength(1);
+    expect(workers[0]!.posted).toHaveLength(2);
+    expect(workers[0]!.posted[1]).toMatchObject({ id: 2, seed: 2 });
+    // The overtaken answer never reaches the view
+    expect(result.current).toMatchObject({ state: "generating", result: null });
+
+    act(() => workers[0]!.say(resultMessage(2, { seed: 222 })));
+    expect(result.current.state).toBe("ready");
+    expect(result.current.result!.seed).toBe(222);
+  });
+
+  it("posts only the newest of several generates queued behind one in flight", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    act(() => result.current.generate({}, 2));
+    act(() => result.current.generate({}, 3));
+    act(() => result.current.generate({}, 4));
+    expect(workers[0]!.posted.map((r) => r.id)).toEqual([1]);
+
+    act(() => workers[0]!.say(resultMessage(1)));
+    expect(workers[0]!.posted.map((r) => [r.id, r.seed])).toEqual([
+      [1, 1],
+      [4, 4],
+    ]);
+    act(() => workers[0]!.say(resultMessage(4, { seed: 444 })));
+    expect(workers[0]!.posted).toHaveLength(2);
+    expect(result.current.result!.seed).toBe(444);
+    expect(workers).toHaveLength(1);
+  });
+
+  it("posts the queued generate when the overtaken run fails, and drops that failure", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    act(() => result.current.generate({}, 2));
+    act(() => workers[0]!.say({ type: "error", id: 1, message: "late failure" }));
+
+    expect(result.current).toMatchObject({ state: "generating", error: null });
+    expect(workers[0]!.posted.map((r) => r.id)).toEqual([1, 2]);
   });
 
   it("drops answers to a request that is no longer the latest", () => {
@@ -150,12 +197,18 @@ describe("useWorldGenerator", () => {
     act(() => result.current.generate({}, 1));
     act(() => result.current.generate({}, 2));
 
-    // The terminated worker had already queued these
     act(() =>
       workers[0]!.say({ type: "progress", id: 1, stage: "mesh", pct: 90, message: "late" })
     );
+    expect(result.current).toMatchObject({
+      state: "generating",
+      result: null,
+      error: null,
+      pct: 0,
+    });
+    // A progress message does not free the worker
+    expect(workers[0]!.posted).toHaveLength(1);
     act(() => workers[0]!.say(resultMessage(1, { seed: 111 })));
-    act(() => workers[0]!.say({ type: "error", id: 1, message: "late failure" }));
     expect(result.current).toMatchObject({
       state: "generating",
       result: null,
@@ -163,7 +216,7 @@ describe("useWorldGenerator", () => {
       pct: 0,
     });
 
-    act(() => workers[1]!.say(resultMessage(2, { seed: 222 })));
+    act(() => workers[0]!.say(resultMessage(2, { seed: 222 })));
     expect(result.current.state).toBe("ready");
     expect(result.current.result!.seed).toBe(222);
   });
@@ -240,31 +293,59 @@ describe("useWorldGenerator", () => {
     expect(result.current.state).toBe("generating");
   });
 
-  it("restarts the clock for a new generate and stops it when the result lands", () => {
+  it("starts the clock when a queued generate is posted and stops it when the result lands", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
     act(() => {
       jest.advanceTimersByTime(20_000);
     });
     act(() => result.current.generate({}, 2));
+    act(() => workers[0]!.say(resultMessage(1)));
     act(() => {
       jest.advanceTimersByTime(20_000);
     });
     expect(result.current.state).toBe("generating");
 
-    act(() => workers[1]!.say(resultMessage(2)));
+    act(() => workers[0]!.say(resultMessage(2)));
     act(() => {
       jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS * 2);
     });
     expect(result.current.state).toBe("ready");
   });
 
-  it("does not debounce: every generate goes straight to the worker", () => {
+  it("does not debounce: every generate on an idle worker goes straight to it", () => {
+    const { result, workers } = setup();
+    act(() => result.current.generate({}, 1));
+    act(() => workers[0]!.say(resultMessage(1)));
+    act(() => result.current.generate({}, 2));
+    act(() => workers[0]!.say(resultMessage(2)));
+    act(() => result.current.generate({}, 3));
+    expect(workers.flatMap((w) => w.posted).map((r) => r.id)).toEqual([1, 2, 3]);
+  });
+
+  it("a timeout, a cancel and a reset clear the queued generate", () => {
     const { result, workers } = setup();
     act(() => result.current.generate({}, 1));
     act(() => result.current.generate({}, 2));
+    act(() => {
+      jest.advanceTimersByTime(WORLD_GEN_TIMEOUT_MS);
+    });
+    expect(result.current.state).toBe("error");
+    act(() => workers[0]!.say(resultMessage(1)));
+    expect(workers[0]!.posted).toHaveLength(1);
+
     act(() => result.current.generate({}, 3));
-    expect(workers.flatMap((w) => w.posted).map((r) => r.id)).toEqual([1, 2, 3]);
+    act(() => result.current.generate({}, 4));
+    act(() => result.current.cancel());
+    act(() => workers[1]!.say(resultMessage(3)));
+    expect(workers[1]!.posted).toHaveLength(1);
+
+    act(() => result.current.generate({}, 5));
+    act(() => result.current.generate({}, 6));
+    act(() => result.current.reset());
+    act(() => workers[2]!.say(resultMessage(5)));
+    expect(workers[2]!.posted).toHaveLength(1);
+    expect(result.current.state).toBe("idle");
   });
 
   it("cancel terminates the work in flight and falls back to the last state", () => {

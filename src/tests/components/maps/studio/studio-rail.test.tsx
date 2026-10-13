@@ -155,6 +155,7 @@ describe("commit on release", () => {
     openStudio();
     fireEvent.click(within(rail()).getByRole("switch", { name: "Rivers" }));
     expect(lastRequest().params).toMatchObject({ hasRivers: false });
+    land();
     fireEvent.click(within(rail()).getByRole("switch", { name: "Ice caps" }));
     expect(lastRequest().params).toMatchObject({ hasRivers: false, hasIcecaps: false });
   });
@@ -248,6 +249,7 @@ describe("hypsometry", () => {
 
   it("commits on Enter", () => {
     renderStudio();
+    land();
     fireEvent.change(zone("Uplands"), { target: { value: "5" } });
     fireEvent.keyDown(zone("Uplands"), { key: "Enter" });
     expect(lastRequest().params.hypsometry?.[3]).toBe(5);
@@ -266,6 +268,7 @@ describe("hypsometry", () => {
 
   it("goes back to the preset's shares on reset", () => {
     renderStudio();
+    land();
     fireEvent.change(zone("Alpine"), { target: { value: "9" } });
     fireEvent.blur(zone("Alpine"));
     land();

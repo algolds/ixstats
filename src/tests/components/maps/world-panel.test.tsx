@@ -58,6 +58,8 @@ import {
   lastRequest,
   requestCount,
   generateFirst,
+  generateSettled,
+  settle,
   step,
   resetPanelTests,
   cleanUpPanelTests,
@@ -86,7 +88,7 @@ describe("generating", () => {
 
   it("asks for a new world when a slider is released, with that parameter changed", async () => {
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     const before = requestCount();
     step("Continents");
     expect(requestCount()).toBe(before + 1);
@@ -99,9 +101,10 @@ describe("generating", () => {
 
   it("keeps the seed through a slider change and gives a reroll a new one", async () => {
     renderPanel();
-    const first = await generateFirst();
+    const first = await generateSettled();
     step("Land share");
     expect(lastRequest().seed).toBe(first.seed);
+    settle();
     jest.spyOn(Math, "random").mockReturnValue(0.5);
     fireEvent.click(screen.getByRole("button", { name: "Reroll seed" }));
     expect(lastRequest().seed).toBe(1 + Math.floor(0.5 * (2 ** 31 - 1)));
@@ -110,7 +113,7 @@ describe("generating", () => {
 
   it("takes a seed typed in on Enter", async () => {
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     const field = screen.getByLabelText("Seed");
     fireEvent.change(field, { target: { value: "4242" } });
     fireEvent.keyDown(field, { key: "Enter" });
@@ -119,7 +122,7 @@ describe("generating", () => {
 
   it("moves every control to the preset's values when a preset is picked", async () => {
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Preset" })).getByRole("radio", {
         name: "Ixnay",
@@ -140,13 +143,14 @@ describe("generating", () => {
 
   it("keeps the development level when a preset is picked, and asks for a world when it changes", async () => {
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Development level" })).getByRole("radio", {
         name: "Modern",
       })
     );
     expect(lastRequest().params).toMatchObject({ developmentLevel: "modern" });
+    settle();
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Preset" })).getByRole("radio", {
         name: "Eurth",
@@ -157,13 +161,15 @@ describe("generating", () => {
 
   it("reaches the advanced controls through the Advanced section", async () => {
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     expect(screen.queryByRole("slider", { name: "Islands" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     step("Islands");
     expect(lastRequest().params).toMatchObject({ islandShare: 0.07 });
+    settle();
     fireEvent.click(screen.getByRole("switch", { name: "Polar land in the north" }));
     expect(lastRequest().params).toMatchObject({ polarLand: { north: true, south: true } });
+    settle();
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Elevation profile" })).getByRole("radio", {
         name: "Eurth",
@@ -316,7 +322,7 @@ describe("the draft recipe", () => {
     });
     renderPanel();
     expect(requestCount()).toBe(0);
-    await generateFirst();
+    await generateSettled();
     step("Continents");
     expect(lastRequest().params).toMatchObject({ continentCount: 7 });
   });
@@ -379,7 +385,7 @@ describe("the lock", () => {
   it("still lets a preview be made and tuned", async () => {
     statusQuery.mockReturnValue(LOCKED);
     renderPanel();
-    await generateFirst();
+    await generateSettled();
     step("Continents");
     expect(lastRequest().params).toMatchObject({ continentCount: 7 });
   });

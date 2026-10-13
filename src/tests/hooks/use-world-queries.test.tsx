@@ -248,17 +248,18 @@ describe("useWorldGenerator queries", () => {
     expect(workers[0]!.queries).toHaveLength(0);
   });
 
-  it("rejects what is in flight when the worker is replaced", async () => {
+  it("rejects what is in flight when a generate queues behind a busy worker", async () => {
     const { result, workers } = withWorld();
     let pending!: Promise<Blob>;
     act(() => {
       pending = result.current.renderPng(8192, true);
     });
-    // A busy worker is terminated by the next generate; the render goes with it
+    const rejection = expect(pending).rejects.toThrow("changed");
     act(() => result.current.generate({ seed: 2 }, 2));
     act(() => result.current.generate({ seed: 3 }, 3));
-    expect(workers[0]!.terminated).toBe(true);
-    await expect(pending).rejects.toThrow("changed");
+    // The busy worker is kept: the newest request waits for it
+    expect(workers[0]!.terminated).toBe(false);
+    await rejection;
   });
 
   it("rejects a diagnostic of a world that failed to generate", async () => {

@@ -59,10 +59,12 @@ describe("useStudioGeneration", () => {
   });
 
   it("makes a new world for a committed change, and for a new seed", () => {
-    const { rerender, posted } = setup(base);
+    const { rerender, posted, workers } = setup(base);
+    act(() => workers[0]!.say(resultMessage(1)));
     rerender({ ...base, params: { ...base.params, oceanPercentage: 0.5 } });
     expect(posted()).toHaveLength(2);
     expect(posted()[1]!.params).toMatchObject({ oceanPercentage: 0.5 });
+    act(() => workers[0]!.say(resultMessage(2)));
     rerender({ ...base, params: { ...base.params, oceanPercentage: 0.5 }, seed: 8 });
     expect(posted()).toHaveLength(3);
     expect(posted()[2]!.seed).toBe(8);
@@ -88,7 +90,8 @@ describe("useStudioGeneration", () => {
   });
 
   it("asks again for Retry", () => {
-    const { result, posted } = setup(base);
+    const { result, posted, workers } = setup(base);
+    act(() => workers[0]!.say(resultMessage(1)));
     act(() => result.current.regenerate());
     expect(posted()).toHaveLength(2);
     expect(posted()[1]).toMatchObject({ seed: 7, params: base.params });
@@ -123,6 +126,7 @@ describe("useStudioGeneration", () => {
       expect(posted()[1]).toMatchObject({ keepBorders: true, maskKey: "eurth:3" });
       expect(posted()[1]).not.toHaveProperty("landMaskLayers");
 
+      act(() => workers[0]!.say(resultMessage(2)));
       rerender({ ...fitted(ready(4)), params: edited });
       expect(posted()).toHaveLength(3);
       expect(posted()[2]).toMatchObject({ maskKey: "eurth:4", landMaskLayers: { political } });
