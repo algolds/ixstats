@@ -55,6 +55,8 @@ type HeldWorld = {
   diagnostics: Map<DiagnosticKind, DiagnosticImage>;
   /** The world's measures once taken, until the next generate */
   measures: WorldMeasures | null;
+  /** The world was made with ice caps (`hasIcecaps`), so a render draws them */
+  icecaps: boolean;
 };
 
 export function createWorldRunner(
@@ -111,6 +113,7 @@ export function createWorldRunner(
       },
       diagnostics: new Map(),
       measures: null,
+      icecaps: world.params.hasIcecaps,
     };
     const relief = previewRelief(world.cells);
     const cells = ownBuffer(world.cells);
@@ -182,7 +185,7 @@ export function createWorldRunner(
       case "render": {
         const { width, politics } = request;
         // The pixels are made now, from the graph as it is; only the encoding waits
-        const image = renderMap(world.graph, width, { politics });
+        const image = renderMap(world.graph, width, { politics, icecaps: world.icecaps });
         toPng(image)
           .then((png) => post({ type: "render-result", requestId, world: world.id, width, png }))
           .catch(() => fail(ENCODE_FAILED));

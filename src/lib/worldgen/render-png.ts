@@ -1,6 +1,7 @@
 /**
  * The Studio's PNG render: a generated world as one equirectangular image, 2048, 4096 or 8192 px wide. Layers, bottom
- * to top: ocean, land by height band, optional political fills, the relief, lakes, optional borders, rivers.
+ * to top: ocean, land by height band, optional political fills, the relief, ice caps (when the world has them), lakes,
+ * optional borders, rivers.
  *
  * Pure (RGBA out, no DOM, no canvas), so jest runs it; the worker hands the pixels to `OffscreenCanvas` to encode.
  * The layout is the relief's (row 0 is 90N, column 0 is 180W; see raster-draw.ts), not the map's Web Mercator.
@@ -22,6 +23,7 @@ import {
   type Rgba,
 } from "./raster-draw";
 import { addDetail, heightsFromCells, hillshade } from "./relief";
+import { ICE_CAP_BIOME } from "./v2/export";
 import type { WorldGraph } from "./v2/types";
 
 export const PNG_WIDTHS = [2048, 4096, 8192] as const;
@@ -30,6 +32,8 @@ export type PngWidth = (typeof PNG_WIDTHS)[number];
 export interface RenderOptions {
   /** Political fills and borders */
   politics: boolean;
+  /** The world has ice caps (`hasIcecaps`): its ice cap cells are drawn, as the Studio map draws the layer */
+  icecaps: boolean;
 }
 
 export interface RenderedMap {
@@ -44,6 +48,8 @@ const RELIEF_WIDTH = 2048;
 const FILL_ALPHA = 118;
 const LAKE: Rgba = [...hexToRgb(LAKE_COLOR), 255];
 const RIVER: Rgba = [...hexToRgb(RIVER_COLOR), 235];
+/** The ice cap layer's fill and opacity on the Studio map (`icecaps` in map-config.ts) */
+const ICE: Rgba = [...hexToRgb("#f0f4f8"), Math.round(0.7 * 255)];
 const BORDER: Rgba = [38, 38, 52, 215];
 
 /** The hillshade at `width`, as signed shade per pixel: white lit slopes are positive alpha, black shadows negative. */
@@ -158,6 +164,16 @@ function drawBorders(raster: Raster, graph: WorldGraph): void {
   }
 }
 
+/** Ice caps: the cells the ice cap layer is made of, over the land. */
+function drawIcecaps(raster: Raster, graph: WorldGraph): void {
+  const { cells } = graph;
+  for (let c = 0; c < cells.n; c++) {
+    if (cells.isLand[c] === 1 && cells.biome[c] === ICE_CAP_BIOME) {
+      fillRing(raster, cells.vertices[c]!, ICE);
+    }
+  }
+}
+
 /** Lakes: the cells of each lake, flat. */
 function drawLakes(raster: Raster, graph: WorldGraph): void {
   const { cells } = graph;
@@ -170,6 +186,7 @@ function drawLakes(raster: Raster, graph: WorldGraph): void {
 export function renderMap(graph: WorldGraph, width: number, options: RenderOptions): RenderedMap {
   const raster = newRaster(width);
   paintLand(raster, graph, options);
+  if (options.icecaps) drawIcecaps(raster, graph);
   drawLakes(raster, graph);
   if (options.politics) drawBorders(raster, graph);
   const scale = width / RELIEF_WIDTH;

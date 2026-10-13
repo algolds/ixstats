@@ -12,8 +12,8 @@ const SEA = [0xb3, 0xcd, 0xe0, 255];
 
 describe("worldgen/render-png", () => {
   const graph = worldGraph();
-  const flat = renderMap(graph, 2048, { politics: false });
-  const political = renderMap(graph, 2048, { politics: true });
+  const flat = renderMap(graph, 2048, { politics: false, icecaps: false });
+  const political = renderMap(graph, 2048, { politics: true, icecaps: false });
 
   const pixel = (image: { rgba: Uint8ClampedArray; width: number }, lng: number, lat: number) => {
     const x = Math.floor(((lng + 180) / 360) * image.width);
@@ -33,7 +33,7 @@ describe("worldgen/render-png", () => {
   });
 
   it("is deterministic", () => {
-    const again = renderMap(graph, 2048, { politics: false });
+    const again = renderMap(graph, 2048, { politics: false, icecaps: false });
     expect(Buffer.from(again.rgba).equals(Buffer.from(flat.rgba))).toBe(true);
   });
 
@@ -93,10 +93,39 @@ describe("worldgen/render-png", () => {
     expect(at[2]!).toBeGreaterThan(at[0]!);
   });
 
+  it("draws ice cap cells in the ice colour when the world has ice caps, and not when it has none", () => {
+    // Make one inland land cell an ice cap cell for the test, and put it back after
+    const { cells } = graph;
+    const cell = [...cells.isLand].findIndex(
+      (land, c) =>
+        land === 1 &&
+        cells.biome[c] !== 10 &&
+        cells.neighbors[c]!.every((n) => cells.isLand[n] === 1)
+    );
+    expect(cell).toBeGreaterThanOrEqual(0);
+    const was = cells.biome[cell]!;
+    cells.biome[cell] = 10;
+    try {
+      const withIce = renderMap(graph, 2048, { politics: false, icecaps: true });
+      const without = renderMap(graph, 2048, { politics: false, icecaps: false });
+      const at = [cells.p[cell * 2]!, cells.p[cell * 2 + 1]!] as const;
+      const bare = pixel(flat, ...at);
+      // Off: nothing changes. On: the cell is the ice colour (#f0f4f8 at 70 %) over what was there
+      expect(pixel(without, ...at)).toEqual(bare);
+      const iced = pixel(withIce, ...at);
+      const expected = [0xf0, 0xf4, 0xf8].map((ice, k) => 0.7 * ice + 0.3 * bare[k]!);
+      iced
+        .slice(0, 3)
+        .forEach((value, k) => expect(Math.abs(value - expected[k]!)).toBeLessThan(2));
+    } finally {
+      cells.biome[cell] = was;
+    }
+  });
+
   it("covers 8192 px within the budget, and the pure compose of a default world stays under 2 s", () => {
     const world = generateWorldStaged({}, undefined, { cache: new StageCache() }).graph;
     const started = performance.now();
-    const image = renderMap(world, 8192, { politics: true });
+    const image = renderMap(world, 8192, { politics: true, icecaps: false });
     const took = performance.now() - started;
     expect(image.width).toBe(8192);
     expect(image.height).toBe(4096);

@@ -305,16 +305,16 @@ function exportLakes(graph: WorldGraph, corners: Uint8Array): FeatureCollection 
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
+/** The biome of an ice cap cell (Fi): what the ice cap layer and the PNG render draw as ice. */
+export const ICE_CAP_BIOME = 10;
+
 function exportIcecaps(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
 
   const iceCells: number[] = [];
   for (let i = 0; i < cells.n; i++) {
-    if (cells.biome[i] === 10) {
-      // 10 = Fi Ice Cap
-      iceCells.push(i);
-    }
+    if (cells.biome[i] === ICE_CAP_BIOME) iceCells.push(i);
   }
 
   if (iceCells.length > 0) {
