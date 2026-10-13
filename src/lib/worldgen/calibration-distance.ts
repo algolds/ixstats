@@ -5,6 +5,8 @@
  * land share, hypsometry (half the summed differences of the nine zone shares, so lifting all land by a zone scores
  * 1), the climate mix (the same over the seven groups; 1 when only one side has classified land), the nations (mean
  * of the relative gaps of count, median and p90 area) and the coastline. A relative gap is |a - b| / max(|a|, |b|).
+ * A world fitted to a realm keeps that realm's borders and has no nations, which no parameter can change: for it the
+ * caller passes `{ nations: false }`, the nations part is `null` and the distance is the mean of the other four.
  * Pure and symmetric.
  */
 
@@ -14,8 +16,14 @@ export interface DistanceParts {
   land: number;
   hypsometry: number;
   climate: number;
-  nations: number;
+  /** Null when the nations are left out */
+  nations: number | null;
   coastline: number;
+}
+
+export interface DistanceOptions {
+  /** Score the nations (default true); false for a world that has none of its own */
+  nations?: boolean;
 }
 
 export interface CalibrationDistance {
@@ -57,14 +65,18 @@ function nationsGap(a: WorldMeasures["nations"], b: WorldMeasures["nations"]): n
   );
 }
 
-export function calibrationDistance(a: WorldMeasures, b: WorldMeasures): CalibrationDistance {
+export function calibrationDistance(
+  a: WorldMeasures,
+  b: WorldMeasures,
+  { nations = true }: DistanceOptions = {}
+): CalibrationDistance {
   const parts: DistanceParts = {
     land: relativeGap(a.landShare, b.landShare),
     hypsometry: shareGap(a.hypsometry, b.hypsometry),
     climate: climateGap(a.climate, b.climate),
-    nations: nationsGap(a.nations, b.nations),
+    nations: nations ? nationsGap(a.nations, b.nations) : null,
     coastline: relativeGap(a.coastlineKm, b.coastlineKm),
   };
-  const sum = parts.land + parts.hypsometry + parts.climate + parts.nations + parts.coastline;
-  return { distance: (sum / 5) * 100, parts };
+  const scored = Object.values(parts).filter((part): part is number => part !== null);
+  return { distance: (scored.reduce((sum, part) => sum + part, 0) / scored.length) * 100, parts };
 }

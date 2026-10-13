@@ -23,8 +23,8 @@ export function StudioLayerChoice({ value, onChange, required }: StudioLayerChoi
       <legend className="text-footnote font-medium">Layers to write</legend>
       <p id={hintId} className="text-label-secondary text-caption">
         {required
-          ? "Ixnay takes only the layers you tick. Land, borders and nations are never written."
-          : "Tick layers to write only those. With none ticked, all of the world's physical layers are written. Land, borders and nations are never written from a fitted world."}
+          ? "Ticked layers replace Ixnay's current layers of that kind. Land, borders and nations are never written."
+          : "Ticked layers replace the realm's current layers of that kind. With none ticked, only layers the realm does not have yet are added and its own are kept. Land, borders and nations are never written."}
       </p>
       {LAYER_CHOICES.map(({ layer, label }) => (
         <label key={layer} className="text-footnote flex items-center gap-2">

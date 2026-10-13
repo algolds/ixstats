@@ -3,7 +3,7 @@
  * to factory and archiving ask first; built-ins cannot be archived; what a restore or a reset writes goes into the
  * rail; and nothing is written while the presets are the built-ins from code.
  */
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => jest.requireActual("~/tests/helpers/fake-studio-trpc"));
 jest.mock("~/components/ui/value-select", () =>
@@ -120,6 +120,39 @@ describe("Studio Presets tab", () => {
       ],
     });
     await waitFor(() => expect(value.pickPreset).toHaveBeenCalledWith("dry-world"));
+  });
+
+  it("loads a new preset whether the list or the write's answer arrives first", async () => {
+    let resolve!: (value: object) => void;
+    presetWrites.create.mockReturnValue(new Promise((r) => (resolve = r)));
+    const value = withPreset("badlands");
+    const view = renderTab(<StudioPresetsTab />, value);
+    fireEvent.change(screen.getByLabelText("Save the rail as a new preset"), {
+      target: { value: "Dry world" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save as new" }));
+
+    // The refetched list is in before the write has answered
+    view.rerenderWith({
+      ...value,
+      presets: [...PRESETS, { ...BADLANDS, slug: "dry-world", name: "Dry world" }],
+    });
+    expect(value.pickPreset).not.toHaveBeenCalled();
+    await act(async () => resolve(summary({ slug: "dry-world", name: "Dry world" })));
+    await waitFor(() => expect(value.pickPreset).toHaveBeenCalledWith("dry-world"));
+    expect(value.pickPreset).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes the confirm button of archive and reset destructive, and publish not", () => {
+    const open = (name: string) => {
+      fireEvent.click(screen.getByRole("button", { name }));
+      return within(screen.getByRole("alertdialog")).getAllByRole("button").at(-1)!;
+    };
+    const { unmount } = renderTab(<StudioPresetsTab />, withPreset("badlands"));
+    expect(open("Archive").className).toContain("bg-destructive");
+    unmount();
+    renderTab(<StudioPresetsTab />, withPreset("eurth"));
+    expect(open("Reset to factory").className).toContain("bg-destructive");
   });
 
   it("asks before publishing, and publishes the saved draft", async () => {

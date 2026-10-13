@@ -60,7 +60,7 @@ export function StudioApplySection() {
       ) : (
         target && (
           <StudioRealmApply
-            // A new choice of realm or layers starts the flow over
+            // A new realm starts the flow over; a new layer choice only marks a check out of date
             key={`${target.id}:${source.kind}`}
             realm={{ id: target.id, slug: target.slug }}
             source={fitting ? "realm-map" : "preset"}

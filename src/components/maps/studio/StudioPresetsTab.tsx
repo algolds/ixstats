@@ -21,14 +21,15 @@ export function StudioPresetsTab() {
     useStudio();
   const actions = useStudioPresetActions();
   const [notice, setNotice] = useState<string | null>(null);
-  // A preset just made is not in `presets` until the list has been read again
-  const loadSlug = useRef<string | null>(null);
+  // A preset just made is picked once the refetched list holds it, whichever of the two arrives first
+  const [wanted, setWanted] = useState<string | null>(null);
+  const picked = useRef<string | null>(null);
   useEffect(() => {
-    const wanted = loadSlug.current;
-    if (wanted === null || !presets.some((preset) => preset.slug === wanted)) return;
-    loadSlug.current = null;
+    if (wanted === null || picked.current === wanted) return;
+    if (!presets.some((preset) => preset.slug === wanted)) return;
+    picked.current = wanted;
     pickPreset(wanted);
-  }, [presets, pickPreset]);
+  }, [wanted, presets, pickPreset]);
 
   const selected = findStudioPreset(presets, presetSlug);
   const locked = presetsFallback || actions.busy;
@@ -96,9 +97,7 @@ export function StudioPresetsTab() {
           void settle(
             actions.create(name, presetParamsOf(params)),
             `Saved ${name} as a new preset.`,
-            (made) => {
-              loadSlug.current = made.slug;
-            }
+            (made) => setWanted(made.slug)
           )
         }
         onPublish={() => void settle(actions.publish(slug), "Published.")}

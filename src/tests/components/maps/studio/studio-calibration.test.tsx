@@ -3,7 +3,7 @@
  * two realms' (Ixnay and Eurth to start, any realm on request), each figure with its gap and one distance per realm,
  * and a realm that cannot be measured saying why while the others still show.
  */
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, renderHook, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({ api: { useQueries: jest.fn() } }));
 jest.mock("~/components/ui/value-select", () =>
@@ -11,7 +11,9 @@ jest.mock("~/components/ui/value-select", () =>
 );
 
 import { StudioCalibrationTab } from "~/components/maps/studio/StudioCalibrationTab";
+import { useStudioCalibration } from "~/hooks/useStudioCalibration";
 import { api } from "~/trpc/react";
+import { calibrationDistance } from "~/lib/worldgen/calibration-distance";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 import {
   IXNAY_MEASURES,
@@ -181,13 +183,68 @@ describe("Studio Calibration tab", () => {
     const value = studioValue();
     const none = studioValue({ generator: { ...value.generator, result: null, state: "idle" } });
     const view = renderTab(<StudioCalibrationTab />, none);
-    expect(screen.getByText("There is no world to measure yet.")).toBeInTheDocument();
+    expect(screen.getByText("There is no current world to measure.")).toBeInTheDocument();
     expect(none.generator.measure).not.toHaveBeenCalled();
 
     view.rerenderWith(value);
     await screen.findByText("31.2%");
     view.rerenderWith(studioValue({ generator: value.generator, stale: true }));
     expect(screen.getByText(/being made again/)).toBeInTheDocument();
+  });
+
+  it("never compares a realm with itself: the other slot's pick leaves the list", async () => {
+    renderTab(<StudioCalibrationTab />);
+    await screen.findByText("31.2%");
+    const first = screen.getByRole("combobox", { name: "First realm to compare with" });
+    const second = screen.getByRole("combobox", { name: "Second realm to compare with" });
+    expect(within(second).queryByRole("option", { name: "Ixnay" })).toBeNull();
+    expect(within(first).queryByRole("option", { name: "Eurth" })).toBeNull();
+
+    // With the second slot cleared, Eurth can go first, and then it is not offered second
+    fireEvent.change(second, { target: { value: "none" } });
+    fireEvent.change(first, { target: { value: "eurth" } });
+    expect(within(second).queryByRole("option", { name: "Eurth" })).toBeNull();
+    expect(asked.at(-1)).toEqual(["eurth"]);
+    expect(screen.getAllByRole("columnheader", { name: /Eurth/ })).toHaveLength(1);
+  });
+
+  it("the hook clears the other slot when a realm is chosen in this one", () => {
+    const value = studioValue();
+    const { result } = renderHook(() => useStudioCalibration(value.generator, value.realms));
+    expect(result.current.chosen).toEqual(["ixnay", "eurth"]);
+    act(() => result.current.choose(0, "eurth"));
+    expect(result.current.chosen).toEqual(["eurth", null]);
+    act(() => result.current.choose(1, "eurth"));
+    expect(result.current.chosen).toEqual([null, "eurth"]);
+  });
+
+  it("stops saying it is measuring when the generator ends in error with a world never measured", async () => {
+    const value = studioValue();
+    const view = renderTab(
+      <StudioCalibrationTab />,
+      studioValue({ generator: { ...value.generator, state: "generating" } })
+    );
+    expect(screen.getByText("Measuring the world.")).toBeInTheDocument();
+    view.rerenderWith(
+      studioValue({ generator: { ...value.generator, state: "error", error: "exploded" } })
+    );
+    expect(screen.queryByText("Measuring the world.")).toBeNull();
+    expect(screen.getByText("There is no current world to measure.")).toBeInTheDocument();
+  });
+
+  it("leaves the nations out of the distance of a fitted world, and says so", async () => {
+    const none = { ...MEASURES, nations: { count: 0, medianKm2: 0, p90Km2: 0 } };
+    const value = studioValue({ source: { kind: "fit", preset: "earthlike", realm: "ixnay" } });
+    jest.mocked(value.generator.measure).mockResolvedValue(none);
+    renderTab(<StudioCalibrationTab />, value);
+    await screen.findByText(/keeps that realm's borders/);
+    expect(screen.getByText(/the distance leaves the nations out/)).toBeInTheDocument();
+    // Without the nations part, the distance is the mean of the four others
+    const distance = Number(
+      /Distance (\d+)/.exec(screen.getByText(/^Distance \d+$/).textContent!)![1]
+    );
+    const withNations = calibrationDistance(none, IXNAY_MEASURES).distance;
+    expect(distance).toBeLessThan(Math.round(withNations));
   });
 
   it("notes that a fitted world keeps the realm's borders", async () => {

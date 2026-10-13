@@ -43,9 +43,19 @@ const FIGURES: readonly FigureRow[] = [
 interface StudioCalibrationTableProps {
   world: WorldMeasures;
   columns: readonly RealmFigures[];
+  /** The world is fitted to a realm's borders and has no nations: the distance leaves them out */
+  skipNations: boolean;
 }
 
-function ColumnHead({ column, world }: { column: RealmFigures; world: WorldMeasures }) {
+function ColumnHead({
+  column,
+  world,
+  skipNations,
+}: {
+  column: RealmFigures;
+  world: WorldMeasures;
+  skipNations: boolean;
+}) {
   return (
     <th scope="col" className="px-1 pb-2 text-left align-bottom font-medium">
       <span className="block truncate" title={column.name}>
@@ -53,7 +63,10 @@ function ColumnHead({ column, world }: { column: RealmFigures; world: WorldMeasu
       </span>
       {column.state === "ready" && (
         <span className="text-label-secondary text-caption block font-normal tabular-nums">
-          Distance {Math.round(calibrationDistance(world, column.measures).distance)}
+          Distance{" "}
+          {Math.round(
+            calibrationDistance(world, column.measures, { nations: !skipNations }).distance
+          )}
         </span>
       )}
       {column.state === "loading" && (
@@ -77,7 +90,11 @@ function ColumnHead({ column, world }: { column: RealmFigures; world: WorldMeasu
  * The scalar figures, the world beside each realm, each realm cell with the gap (world minus realm) under its value.
  * A realm without figures keeps its column, with the reason in its heading.
  */
-export function StudioCalibrationTable({ world, columns }: StudioCalibrationTableProps) {
+export function StudioCalibrationTable({
+  world,
+  columns,
+  skipNations,
+}: StudioCalibrationTableProps) {
   return (
     <table className="text-footnote w-full table-fixed">
       <caption className="sr-only">This world beside the chosen realms</caption>
@@ -90,7 +107,7 @@ export function StudioCalibrationTable({ world, columns }: StudioCalibrationTabl
             World
           </th>
           {columns.map((column) => (
-            <ColumnHead key={column.slug} column={column} world={world} />
+            <ColumnHead key={column.slug} column={column} world={world} skipNations={skipNations} />
           ))}
         </tr>
       </thead>

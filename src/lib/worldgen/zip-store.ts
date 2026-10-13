@@ -22,7 +22,7 @@ const CRC_TABLE: Uint32Array = (() => {
 /** CRC-32 (IEEE) of `bytes`, as an unsigned integer. */
 export function crc32(bytes: Uint8Array): number {
   let c = 0xffffffff;
-  for (const byte of bytes) c = CRC_TABLE[(c ^ byte) & 0xff]! ^ (c >>> 8);
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]!) & 0xff]! ^ (c >>> 8);
   return (c ^ 0xffffffff) >>> 0;
 }
 
@@ -50,7 +50,10 @@ interface Placed {
 }
 
 /** The files as one zip archive, each stored as it is, in the order given. */
-export function zipStore(entries: readonly ZipEntry[], modified: Date = new Date()): Uint8Array {
+export function zipStore(
+  entries: readonly ZipEntry[],
+  modified: Date = new Date()
+): Uint8Array<ArrayBuffer> {
   if (entries.length > MAX_ENTRIES) throw new Error("Too many files for one zip archive");
   const encoder = new TextEncoder();
   const seen = new Set<string>();
@@ -69,7 +72,7 @@ export function zipStore(entries: readonly ZipEntry[], modified: Date = new Date
   const total = directoryAt + directorySize + END_RECORD;
   if (total > MAX_32) throw new Error("The archive is too large for a zip file");
 
-  const out = new Uint8Array(total);
+  const out = new Uint8Array(new ArrayBuffer(total));
   const view = new DataView(out.buffer);
   const { time, day } = dosStamp(modified);
   let at = 0;

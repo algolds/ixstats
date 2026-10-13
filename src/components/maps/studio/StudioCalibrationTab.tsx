@@ -19,14 +19,18 @@ function RealmPickers({
   choose,
 }: Pick<ReturnType<typeof useStudioCalibration>, "chosen" | "choose">) {
   const { realms, realmsState } = useStudio();
-  const options = realms.map((realm): [string, string] => [realm.slug, realm.name]);
+  // The other slot's realm is not offered: a realm is never compared with itself
+  const optionsFor = (other: string | null) =>
+    realms
+      .filter((realm) => realm.slug !== other)
+      .map((realm): [string, string] => [realm.slug, realm.name]);
   return (
     <div className="grid grid-cols-2 gap-2">
       <ValueSelect
         aria-label="First realm to compare with"
         size="sm"
         value={chosen[0] ?? NONE}
-        options={[[NONE, "No realm"], ...options]}
+        options={[[NONE, "No realm"], ...optionsFor(chosen[1])]}
         onValueChange={(slug) => choose(0, slug === NONE ? null : slug)}
         disabled={realmsState !== "ready"}
       />
@@ -34,7 +38,7 @@ function RealmPickers({
         aria-label="Second realm to compare with"
         size="sm"
         value={chosen[1] ?? NONE}
-        options={[[NONE, "No second realm"], ...options]}
+        options={[[NONE, "No second realm"], ...optionsFor(chosen[0])]}
         onValueChange={(slug) => choose(1, slug === NONE ? null : slug)}
         disabled={realmsState !== "ready"}
       />
@@ -63,6 +67,7 @@ function Unclassified({ world, columns }: { world: number; columns: readonly Rea
 export function StudioCalibrationTab() {
   const { generator, realms, realmsState, stale, source } = useStudio();
   const { world, columns, chosen, choose, retry } = useStudioCalibration(generator, realms);
+  const fitted = source.kind === "fit";
 
   return (
     <div className="space-y-4 p-3">
@@ -70,7 +75,8 @@ export function StudioCalibrationTab() {
         <h3 className="text-headline">Calibration</h3>
         <p className="text-label-secondary text-caption">
           The distance is the mean of five gaps (land share, elevation, climate, nations and
-          coastline) on a scale of 0, the same map, to 100, nothing in common.
+          coastline) on a scale of 0, the same map, to 100, nothing in common. A fitted world has no
+          nations of its own, so its distance is the mean of four.
         </p>
         {realmsState === "failed" && (
           <p role="alert" className="text-destructive text-caption">
@@ -82,7 +88,7 @@ export function StudioCalibrationTab() {
 
       {world.state === "none" && (
         <p role="status" className="text-label-secondary text-footnote">
-          There is no world to measure yet.
+          There is no current world to measure.
         </p>
       )}
       {world.state === "measuring" && (
@@ -102,14 +108,18 @@ export function StudioCalibrationTab() {
       )}
       {world.state === "ready" && (
         <>
-          {(stale || source.kind === "fit") && (
+          {stale && (
             <p className="text-label-secondary text-caption">
-              {stale
-                ? "The world is being made again; these figures are for the one before."
-                : "A world fitted to a realm keeps that realm's borders, so it has no nations of its own."}
+              The world is being made again; these figures are for the one before.
             </p>
           )}
-          <StudioCalibrationTable world={world.measures} columns={columns} />
+          {fitted && (
+            <p className="text-label-secondary text-caption">
+              A world fitted to a realm keeps that realm&apos;s borders, so it has no nations of its
+              own and the distance leaves the nations out.
+            </p>
+          )}
+          <StudioCalibrationTable world={world.measures} columns={columns} skipNations={fitted} />
           <StudioCalibrationBars
             title="Land by elevation"
             labels={ZONE_NAMES}

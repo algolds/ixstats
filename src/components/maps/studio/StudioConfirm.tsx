@@ -21,7 +21,10 @@ interface StudioConfirmProps {
   confirmLabel?: string;
   onConfirm: () => void;
   disabled?: boolean;
+  /** The opening button's style */
   variant?: ComponentProps<typeof Button>["variant"];
+  /** The answer's style: destructive for what retires or replaces work */
+  confirmVariant?: ComponentProps<typeof Button>["variant"];
 }
 
 /** A button that asks before it acts: for the writes that publish, replace or retire something others rely on. */
@@ -33,6 +36,7 @@ export function StudioConfirm({
   onConfirm,
   disabled,
   variant = "outline",
+  confirmVariant = "default",
 }: StudioConfirmProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -49,6 +53,7 @@ export function StudioConfirm({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
+              variant={confirmVariant}
               onClick={() => {
                 setOpen(false);
                 onConfirm();

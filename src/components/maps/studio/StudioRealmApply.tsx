@@ -1,5 +1,6 @@
 "use client";
 
+import { keepPreviousData } from "@tanstack/react-query";
 import { WorldApplyRegion, type WorldLock } from "~/components/maps/editor/panels/WorldApplyRegion";
 import type { PhysicalLayer } from "~/lib/maps/import/options";
 import type { WorldSource } from "~/lib/worldgen/world-controls";
@@ -23,7 +24,8 @@ export function StudioRealmApply({ realm, source, layers }: StudioRealmApplyProp
   const utils = api.useUtils();
   const status = api.atlas.studio.applyStatus.useQuery(
     { realm: realm.id, layers: layers !== undefined },
-    { retry: false, staleTime: 15_000 }
+    // A layer choice changes the question (claims lock a plain apply, not a choice): keep the last answer meanwhile
+    { retry: false, staleTime: 15_000, placeholderData: keepPreviousData }
   );
   const lock: WorldLock = status.isError
     ? {

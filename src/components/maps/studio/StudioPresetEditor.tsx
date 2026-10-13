@@ -114,6 +114,7 @@ export function StudioPresetEditor({
             label="Reset to factory"
             title={`Reset ${preset.name} to factory?`}
             description="This starts a new draft from the values in code and replaces the draft now saved. The published version stays until you publish."
+            confirmVariant="destructive"
             disabled={locked}
             onConfirm={onReset}
           />
@@ -124,6 +125,7 @@ export function StudioPresetEditor({
             title={`Archive ${preset.name}?`}
             description="Founders can no longer pick it and it leaves this list. Its versions are kept."
             variant="destructive"
+            confirmVariant="destructive"
             disabled={locked}
             onConfirm={onArchive}
           />

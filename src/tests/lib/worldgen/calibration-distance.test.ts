@@ -109,4 +109,16 @@ describe("worldgen/calibration-distance", () => {
     expect(distance).toBeCloseTo(100 * mean, 10);
     expect(distance).toBeCloseTo(20, 10);
   });
+
+  it("leaves the nations out when asked: no nations part, and the mean of the other four", () => {
+    const none = measures({ nations: { count: 0, medianKm2: 0, p90Km2: 0 } });
+    const real = measures({ landShare: 0.6, coastlineKm: 300_000 });
+    const full = calibrationDistance(none, real);
+    expect(full.parts.nations).toBe(1);
+    const skipped = calibrationDistance(none, real, { nations: false });
+    expect(skipped.parts.nations).toBeNull();
+    const { land, hypsometry, climate, coastline } = skipped.parts;
+    expect(skipped.distance).toBeCloseTo(((land + hypsometry + climate + coastline) / 4) * 100, 10);
+    expect(skipped.distance).toBeLessThan(full.distance);
+  });
 });

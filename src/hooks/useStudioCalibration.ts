@@ -4,10 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { StudioRealm } from "~/components/maps/studio/StudioContext";
 import type { WorldGenerator, WorldGenResult } from "~/hooks/useWorldGenerator";
 import type { WorldMeasures } from "~/lib/worldgen/measure-world";
+import { isOutrunMessage } from "~/lib/worldgen/worker/world-query-errors";
 import { api } from "~/trpc/react";
-
-/** A request the world outran (see `useStudioDiagnostics`): dropped without a word, asked again for the new world. */
-const OUTRUN = /world changed|was restarted|no world to draw/i;
 
 type Source = Pick<WorldGenerator, "state" | "result" | "measure">;
 
@@ -67,7 +65,7 @@ export function useStudioCalibration(
         if (current) setOutcome({ of: result, measures });
       },
       (error: Error) => {
-        if (current && !OUTRUN.test(error.message))
+        if (current && !isOutrunMessage(error.message))
           setOutcome({ of: result, error: error.message });
       }
     );
@@ -83,6 +81,9 @@ export function useStudioCalibration(
       setPicked((now) => {
         const next: [string | null, string | null] = [...(now ?? defaultChoice(realms))];
         next[slot] = slug;
+        // A realm is never compared with itself: choosing it in one slot takes it out of the other
+        const other = slot === 0 ? 1 : 0;
+        if (slug !== null && next[other] === slug) next[other] = null;
         return next;
       }),
     [realms]
@@ -106,11 +107,16 @@ export function useStudioCalibration(
 
   const world = useMemo<WorldFigures>(() => {
     if (!result) return { state: "none" };
-    if (outcome?.of !== result) return { state: "measuring" };
+    if (outcome?.of !== result) {
+      // A world is being measured only while it is the one in view: after an error there is no asking the worker
+      return state === "ready" || state === "generating"
+        ? { state: "measuring" }
+        : { state: "none" };
+    }
     return "error" in outcome
       ? { state: "failed", error: outcome.error }
       : { state: "ready", measures: outcome.measures };
-  }, [result, outcome]);
+  }, [result, outcome, state]);
 
   return { world, columns, chosen, choose, retry };
 }

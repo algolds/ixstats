@@ -79,11 +79,22 @@ export function StudioWorkspace({
   const { source, setSource } = useStudioSource(recipe);
 
   // The hook hands back a new object on every render; the tabs get one that changes only when something in it does
-  const { state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng } =
-    worldGenerator;
+  const { state, stage, pct, message, error, result } = worldGenerator;
+  const { diagnostic, nationSeeds, measure, renderPng } = worldGenerator;
   const generator = useMemo<StudioGenerator>(
-    () => ({ state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng }),
-    [state, stage, pct, message, error, result, diagnostic, nationSeeds, renderPng]
+    () => ({
+      state,
+      stage,
+      pct,
+      message,
+      error,
+      result,
+      diagnostic,
+      nationSeeds,
+      measure,
+      renderPng,
+    }),
+    [state, stage, pct, message, error, result, diagnostic, nationSeeds, measure, renderPng]
   );
 
   const value = useMemo<StudioContextValue>(

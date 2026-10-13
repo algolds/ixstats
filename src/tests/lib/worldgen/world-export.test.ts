@@ -6,7 +6,6 @@ import {
   downloadBlob,
   exportFileName,
   geojsonZip,
-  isOutrunMessage,
   layerFiles,
   pngFailureText,
 } from "~/lib/worldgen/world-export";
@@ -42,13 +41,6 @@ describe("worldgen/world-export", () => {
   it("names the files for the preset and the seed", () => {
     expect(exportFileName("eurth", 1234)).toBe("world-eurth-1234.zip");
     expect(exportFileName("eurth", 1234, 4096)).toBe("world-eurth-1234-4096.png");
-  });
-
-  it("tells a render the world outran from a real failure", () => {
-    expect(isOutrunMessage("The world changed before the answer came")).toBe(true);
-    expect(isOutrunMessage("The world generator was restarted")).toBe(true);
-    expect(isOutrunMessage("There is no world to draw")).toBe(true);
-    expect(isOutrunMessage("canvas too large")).toBe(false);
   });
 
   it("words a failed image by its width", () => {

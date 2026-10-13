@@ -10,9 +10,9 @@ import {
   downloadBlob,
   exportFileName,
   geojsonZip,
-  isOutrunMessage,
   pngFailureText,
 } from "~/lib/worldgen/world-export";
+import { isOutrunMessage } from "~/lib/worldgen/worker/world-query-errors";
 import { useStudio } from "./StudioContext";
 
 // The same names as `PNG_WIDTHS` (render-png.ts, the worker's drawing code, which the page does not import)

@@ -14,7 +14,7 @@ export function layerFiles(result: Pick<WorldGenResult, "layers">): ZipEntry[] {
 }
 
 /** The world's layers as a zip archive. */
-export const geojsonZip = (result: Pick<WorldGenResult, "layers">): Uint8Array =>
+export const geojsonZip = (result: Pick<WorldGenResult, "layers">): Uint8Array<ArrayBuffer> =>
   zipStore(layerFiles(result));
 
 /** `world-<preset>-<seed>.zip`, or `world-<preset>-<seed>-<width>.png` with a width. */
@@ -23,10 +23,6 @@ export function exportFileName(preset: string, seed: number, extra?: PngWidth): 
     ? `world-${preset}-${seed}.zip`
     : `world-${preset}-${seed}-${extra}.png`;
 }
-
-/** A render the world outran: a newer generate replaced it, or the worker was replaced. */
-export const isOutrunMessage = (message: string): boolean =>
-  /world changed|was restarted|no world to draw/i.test(message);
 
 /** What the image failing means to the admin: the browser's canvas limit, by width. */
 export function pngFailureText(width: PngWidth): string {

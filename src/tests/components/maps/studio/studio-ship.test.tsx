@@ -4,6 +4,7 @@
  * `options.layers`; the lock from `atlas.studio.applyStatus`), and a new realm made from the world.
  */
 import { TextDecoder, TextEncoder } from "util";
+import { keepPreviousData } from "@tanstack/react-query";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => jest.requireActual("~/tests/helpers/fake-studio-trpc"));
@@ -208,6 +209,7 @@ describe("Studio Ship tab: apply to a realm", () => {
     renderTab(<StudioShipTab />, studioValue(fitted("ixnay")));
     expect(screen.getByText("Tick at least one layer to write to Ixnay.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Use this world" })).toBeNull();
+    expect(screen.getByText(/replace Ixnay's current layers of that kind/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Rivers" }));
     fireEvent.click(screen.getByRole("checkbox", { name: "Elevation" }));
@@ -234,11 +236,17 @@ describe("Studio Ship tab: apply to a realm", () => {
     expect(screen.queryByRole("button", { name: "Apply this world" })).toBeNull();
   });
 
-  it("offers the layer choice for any realm with the fit source, and applies the whole world with none ticked", async () => {
+  it("offers the layer choice for any realm with the fit source, and sends no choice with none ticked", async () => {
     renderTab(<StudioShipTab />, studioValue(fitted("eurth")));
     expect(screen.getByText(/can only go to Eurth/)).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Realm to apply to" })).toBeNull();
     expect(screen.getByRole("checkbox", { name: "Ice" })).toBeInTheDocument();
+    // What none ticked means: only what the realm lacks is added, and what it has is kept
+    expect(
+      screen.getByText(/With none ticked, only layers the realm does not have yet are added/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/replace the realm's current layers of that kind/)).toBeInTheDocument();
+    expect(screen.getByText(/Land, borders and nations are never written/)).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: "Use this world" }));
     await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
     expect(start.mock.calls[0]![0]).toMatchObject({ realmId: "r_eurth", fittedMapVersion: 5 });
@@ -258,6 +266,12 @@ describe("Studio Ship tab: apply to a realm", () => {
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Lakes" }));
     expect(await screen.findByRole("button", { name: "Use this world" })).toBeEnabled();
+  });
+
+  it("keeps the last status while the lock is asked again for a changed layer choice", () => {
+    renderTab(<StudioShipTab />, studioValue(fitted("eurth")));
+    const options = applyStatusQuery.mock.calls.at(-1)![1] as { placeholderData: unknown };
+    expect(options.placeholderData).toBe(keepPreviousData);
   });
 
   it("holds the apply while the lock cannot be read, and offers to ask again", async () => {

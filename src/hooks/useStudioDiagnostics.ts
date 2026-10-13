@@ -2,15 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FeatureCollection, Point } from "geojson";
+import { isOutrunMessage } from "~/lib/worldgen/worker/world-query-errors";
 import type { DiagnosticKind, DiagnosticResult, WorldGenerator } from "~/hooks/useWorldGenerator";
-
-/**
- * A request the world outran: a newer generate replaced the one it asked about, or the worker was replaced. The
- * answer is for a world no one is looking at, so it is dropped without a word; ask again once the new world lands.
- */
-const OUTRUN = /world changed|was restarted|no world to draw/i;
-
-const isOutrun = (error: Error): boolean => OUTRUN.test(error.message);
 
 type Source = Pick<WorldGenerator, "state" | "result" | "diagnostic" | "nationSeeds">;
 
@@ -65,7 +58,7 @@ export function useStudioDiagnostics({
         setFailure(null);
       },
       (error: Error) => {
-        if (current && !isOutrun(error)) setFailure(error.message);
+        if (current && !isOutrunMessage(error.message)) setFailure(error.message);
       }
     );
     return () => {
@@ -81,7 +74,7 @@ export function useStudioDiagnostics({
         if (current) setPlaced(seeds);
       },
       (error: Error) => {
-        if (current && !isOutrun(error)) setFailure(error.message);
+        if (current && !isOutrunMessage(error.message)) setFailure(error.message);
       }
     );
     return () => {
