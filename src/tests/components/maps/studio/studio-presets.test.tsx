@@ -15,6 +15,7 @@ import { paramsForPreset, type StudioParams } from "~/lib/worldgen/studio-fields
 import { FACTORY_STUDIO_PRESETS, type StudioPreset } from "~/lib/worldgen/studio-presets";
 import {
   invalidate,
+  presetsListQuery,
   presetWrites,
   resetStudioTrpc,
   versionsQuery,
@@ -301,8 +302,26 @@ describe("Studio Presets tab", () => {
     expect(presetWrites.archive).not.toHaveBeenCalled();
     confirm("Archive");
     await screen.findByText("Archived.");
-    expect(presetWrites.archive).toHaveBeenCalledWith({ slug: "badlands" });
+    expect(presetWrites.archive).toHaveBeenCalledWith({ slug: "badlands", archived: true });
     expect(value.pickPreset).toHaveBeenCalledWith("earthlike");
+  });
+
+  it("lists archived presets only with the switch on, and Restore brings one back", async () => {
+    presetsListQuery.mockReturnValue({
+      data: [summary(), summary({ slug: "old-lands", name: "Old lands", archived: true })],
+      isError: false,
+      isLoading: false,
+    });
+    renderTab(<StudioPresetsTab />, withPreset("badlands"));
+    expect(screen.queryByText("Old lands")).toBeNull();
+    expect(presetsListQuery).toHaveBeenCalledWith({ includeArchived: true }, { enabled: false });
+
+    fireEvent.click(screen.getByRole("switch", { name: "Show archived" }));
+    expect(screen.getByText("Old lands")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Restore Badlands" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Restore Old lands" }));
+    await screen.findByText("Restored.");
+    expect(presetWrites.archive).toHaveBeenCalledWith({ slug: "old-lands", archived: false });
   });
 
   it("renames the selected preset", async () => {

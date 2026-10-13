@@ -19,7 +19,8 @@ export interface StudioPresetActions {
   resetToFactory: (slug: string) => Promise<PresetSummary | null>;
   rename: (slug: string, name: string) => Promise<PresetSummary | null>;
   reorder: (slugs: string[]) => Promise<PresetSummary[] | null>;
-  archive: (slug: string) => Promise<PresetSummary | null>;
+  /** `archived: false` brings an archived preset back; it is as it was */
+  archive: (slug: string, archived?: boolean) => Promise<PresetSummary | null>;
 }
 
 /**
@@ -71,6 +72,6 @@ export function useStudioPresetActions(): StudioPresetActions {
     resetToFactory: (slug) => run(() => resetToFactory.mutateAsync({ slug })),
     rename: (slug, name) => run(() => rename.mutateAsync({ slug, name })),
     reorder: (slugs) => run(() => reorder.mutateAsync({ slugs })),
-    archive: (slug) => run(() => archive.mutateAsync({ slug })),
+    archive: (slug, archived = true) => run(() => archive.mutateAsync({ slug, archived })),
   };
 }

@@ -7,6 +7,7 @@ import { presetParamsOf } from "~/lib/worldgen/studio-preset-params";
 import { findStudioPreset } from "~/lib/worldgen/studio-presets";
 import { FALLBACK_PRESET_SLUG } from "~/lib/worldgen/world-presets";
 import { useStudio } from "./StudioContext";
+import { StudioArchivedPresets } from "./StudioArchivedPresets";
 import { StudioPresetEditor } from "./StudioPresetEditor";
 import { StudioPresetList } from "./StudioPresetList";
 import { StudioPresetVersions } from "./StudioPresetVersions";
@@ -108,6 +109,10 @@ export function StudioPresetsTab() {
         onArchive={() =>
           void settle(actions.archive(slug), "Archived.", () => pickPreset(FALLBACK_PRESET_SLUG))
         }
+      />
+      <StudioArchivedPresets
+        locked={locked}
+        onRestore={(restored) => void settle(actions.archive(restored, false), "Restored.")}
       />
       <StudioPresetVersions
         key={slug}
