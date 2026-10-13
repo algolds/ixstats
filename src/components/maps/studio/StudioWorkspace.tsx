@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useStudioDiagnostics } from "~/hooks/useStudioDiagnostics";
 import { useStudioFit } from "~/hooks/useStudioFit";
 import { useStudioGeneration } from "~/hooks/useStudioGeneration";
-import { useStudioMap } from "~/hooks/useStudioMap";
+import { useStudioMap, type StudioProjection } from "~/hooks/useStudioMap";
 import { useStudioRecipe } from "~/hooks/useStudioRecipe";
 import { useStudioSource } from "~/hooks/useStudioSource";
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";
@@ -60,7 +60,8 @@ export function StudioWorkspace({
     fit,
   });
   const diagnostics = useStudioDiagnostics(worldGenerator);
-  const { containerRef, map } = useStudioMap();
+  const [projection, setProjection] = useState<StudioProjection>("globe");
+  const { containerRef, map } = useStudioMap(projection);
 
   // Ice caps are drawn from the start, climate zones only when asked
   const [visible, setVisible] = useState<Partial<Record<DraftLayerKey, boolean>>>({
@@ -119,6 +120,8 @@ export function StudioWorkspace({
       stale,
       regenerate,
       map,
+      projection,
+      setProjection,
       visible,
       setLayerVisible,
       diagnostics,
@@ -144,6 +147,7 @@ export function StudioWorkspace({
       stale,
       regenerate,
       map,
+      projection,
       visible,
       setLayerVisible,
       diagnostics,
@@ -162,7 +166,11 @@ export function StudioWorkspace({
         <div className="grid min-h-0 flex-1 grid-cols-[20rem_minmax(0,1fr)_22rem] gap-2 p-2">
           <StudioRail />
           <div className="rounded-card relative min-h-0 overflow-hidden">
-            <div ref={containerRef} className="absolute inset-0 h-full w-full" data-testid="studio-map" />
+            <div
+              ref={containerRef}
+              className="absolute inset-0 h-full w-full"
+              data-testid="studio-map"
+            />
             {map === null && (
               <p className="text-label-secondary text-footnote pointer-events-none absolute inset-0 flex items-center justify-center">
                 Loading the map.

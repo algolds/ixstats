@@ -13,6 +13,7 @@ jest.mock("~/lib/maps/load-maplibre", () => {
     handlers = new Map<string, () => void>();
     remove = jest.fn();
     resize = jest.fn();
+    setProjection = jest.fn();
     constructor(readonly options: Record<string, unknown>) {
       maps.push(this);
     }
@@ -23,7 +24,7 @@ jest.mock("~/lib/maps/load-maplibre", () => {
   return { loadMaplibre: jest.fn(async () => ({ Map: FakeMap })), maps };
 });
 
-import { useStudioMap } from "~/hooks/useStudioMap";
+import { useStudioMap, type StudioProjection } from "~/hooks/useStudioMap";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 type FakeMapInstance = {
@@ -31,6 +32,7 @@ type FakeMapInstance = {
   handlers: Map<string, () => void>;
   remove: jest.Mock;
   resize: jest.Mock;
+  setProjection: jest.Mock;
 };
 const { maps } = jest.requireMock("~/lib/maps/load-maplibre") as { maps: FakeMapInstance[] };
 
@@ -47,8 +49,8 @@ class FakeResizeObserver {
 }
 
 let seen: MapLibreMap | null = null;
-function Host() {
-  const { containerRef, map } = useStudioMap();
+function Host({ projection = "flat" }: { projection?: StudioProjection }) {
+  const { containerRef, map } = useStudioMap(projection);
   seen = map;
   return <div ref={containerRef} data-testid="host" />;
 }
@@ -71,6 +73,23 @@ describe("useStudioMap", () => {
     expect(maps[0]!.options.container).toBe(view.getByTestId("host"));
     expect(maps[0]!.options.style.projection).toEqual({ type: "mercator" });
     expect(maps[0]!.options.renderWorldCopies).toBe(false);
+  });
+
+  it("builds the globe as the world map does: a globe zoomed out, flat once zoomed in", async () => {
+    render(<Host projection="globe" />);
+    await settle();
+    expect(maps[0]!.options.style.projection).toEqual({
+      type: ["interpolate", ["linear"], ["zoom"], 2.5, "globe", 5.5, "mercator"],
+    });
+  });
+
+  it("changes the loaded map's projection without building another", async () => {
+    const view = render(<Host projection="globe" />);
+    await settle();
+    act(() => maps[0]!.handlers.get("load")!());
+    view.rerender(<Host projection="flat" />);
+    expect(maps).toHaveLength(1);
+    expect(maps[0]!.setProjection).toHaveBeenLastCalledWith({ type: "mercator" });
   });
 
   it("hands the map out once its style has loaded", async () => {

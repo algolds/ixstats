@@ -42,6 +42,7 @@ import {
   rig,
   step,
   studioElement,
+  studioMap,
   workers,
 } from "~/tests/helpers/studio-fixtures";
 
@@ -422,6 +423,21 @@ describe("the Layers tab", () => {
     fireEvent.click(screen.getByRole("switch", { name: "Relief" }));
     expect(setVisible).toHaveBeenCalledWith("relief", true);
     expect(rig.visibility("worldgen-draft-relief")).toBe("visible");
+  });
+
+  it("starts on the globe and goes flat when asked, without a new world", () => {
+    renderStudio();
+    land();
+    const before = requests().length;
+    const projection = within(screen.getByRole("region", { name: "Map" })).getByRole("radiogroup", {
+      name: "Projection",
+    });
+    expect(within(projection).getByRole("radio", { name: "Globe" })).toBeChecked();
+    expect(studioMap).toHaveBeenLastCalledWith("globe");
+    fireEvent.click(within(projection).getByRole("radio", { name: "Flat" }));
+    expect(studioMap).toHaveBeenLastCalledWith("flat");
+    expect(screen.getByText("The flat map stretches land near the poles.")).toBeInTheDocument();
+    expect(requests()).toHaveLength(before);
   });
 
   describe("diagnostics", () => {

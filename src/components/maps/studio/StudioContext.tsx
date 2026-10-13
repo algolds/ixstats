@@ -4,6 +4,7 @@ import { createContext, useContext } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { StudioDiagnostics } from "~/hooks/useStudioDiagnostics";
 import type { StudioFit } from "~/hooks/useStudioFit";
+import type { StudioProjection } from "~/hooks/useStudioMap";
 import type { WorldGenerator } from "~/hooks/useWorldGenerator";
 import type { DraftLayerKey } from "~/lib/maps/world-draft-layers";
 import type { StudioKey, StudioParams } from "~/lib/worldgen/studio-fields";
@@ -84,6 +85,9 @@ export interface StudioContextValue {
   // The map
   /** The Studio's own map, null until its style has loaded */
   map: MapLibreMap | null;
+  /** The map's projection: the globe (the default) or flat Mercator */
+  projection: StudioProjection;
+  setProjection: (projection: StudioProjection) => void;
   /** Layer switches by draft layer; a missing key means shown */
   visible: Partial<Record<DraftLayerKey, boolean>>;
   setLayerVisible: (key: DraftLayerKey, visible: boolean) => void;

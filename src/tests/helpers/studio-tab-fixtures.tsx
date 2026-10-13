@@ -97,6 +97,8 @@ export function studioValue(over: Partial<StudioContextValue> = {}): StudioConte
     stale: false,
     regenerate: jest.fn(),
     map: null,
+    projection: "globe",
+    setProjection: jest.fn(),
     visible: {},
     setLayerVisible: jest.fn(),
     diagnostics: {

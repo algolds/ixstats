@@ -159,7 +159,7 @@ export function mapHomeCenter(ixnay: boolean): [number, number] {
 export type ProjectionMode = "dynamic" | "globe" | "mercator";
 
 /** Get the MapLibre projection specification for a given mode */
-function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
+export function getProjectionSpec(mode: ProjectionMode): { type: unknown } {
   switch (mode) {
     case "globe":
       return { type: "globe" };
