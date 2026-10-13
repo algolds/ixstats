@@ -16,7 +16,7 @@ The admin console at `/admin` is the operator surface for IxStats. It exposes **
 - Labs panels: MyLeague, Onoma, Facet lab
 
 ## Admin Directories
-All routes below render `AdminRouter`; the section panel is chosen by `AdminRouter.renderContent()`. Only `maps/editor` and `maps/style-editor` render their own page content.
+All routes below render `AdminRouter`; the section panel is chosen by `AdminRouter.renderContent()`. Only `maps/editor`, `maps/style-editor` and `maps/studio` render their own page content (`maps/realms/[slug]` has its own `page.tsx` but renders inside the admin shell).
 
 | Directory | Section panel / purpose |
 | --- | --- |
@@ -29,7 +29,7 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 | `logs/` | System / calculation / user log viewer (`LogsPanel`) |
 | `realms/` | Realms, nation claims queue + user→realm assignments |
 | `storyteller/` | Storyteller world events / event chains |
-| `maps/` | Atlas panel and realm pages; `maps/editor/` and `maps/style-editor/` are full-page editors (own error boundary) |
+| `maps/` | Atlas panel (realm overview, jobs, edit queue, map style, import) and realm pages (`maps/realms/[slug]`); `maps/editor/`, `maps/style-editor/` and `maps/studio/` (World Studio) are full-page tools |
 | `reference-data/` | Reference data management hub |
 | `national-issues/` | National issues templates |
 | `rings-audit/` | Health-ring data audit |
@@ -67,7 +67,7 @@ All routes below render `AdminRouter`; the section panel is chosen by `AdminRout
 - **Shared layout guard** — `src/app/admin/layout.tsx` enforces access before rendering any admin route. It requires a signed-in Clerk user who is either a system owner (`isSystemOwner(user.id)`) **or** has a role `∈ {admin, owner, staff}` in Clerk `publicMetadata.role` or in the database role. Anyone else sees the `AccessDeniedScreen`; signed-out users get a sign-in modal.
 - **System owner** — `src/lib/auth/system-owner-constants.ts` defines `SYSTEM_OWNER_IDS` and `isSystemOwner()`, which audit-logs owner access in production.
 - **Section router**: `_components/AdminRouter.tsx` + `_components/AdminNavigationContext.tsx` (`useAdminNavigation`) derive the active section straight from the pathname (no state copy, so a new page never renders the previous section) and set the per-section document title; the dashboard's tiles can also switch section in place with `pushState`. Section panels are `dynamic()`-imported (`ssr: false`) for code-splitting. The sidebar's Admin area list in `app-sections.ts` is the only navigation between sections.
-- **Exceptions to the router** — `maps/editor` and `maps/style-editor` bypass the sidebar layout and render inside an `AdminErrorBoundary` directly.
+- **Exceptions to the router** — `maps/editor`, `maps/style-editor` and `maps/studio` bypass the sidebar layout (`FULL_SCREEN_PATHS` in `layout.tsx`) and render inside an `AdminErrorBoundary` directly.
 
 ## Data Sources
 
@@ -86,7 +86,7 @@ The admin tRPC router was split by domain on 2026-06-13 and recombined with `mer
 | `thinkpages.ts` | ThinkPages content settings |
 | `thinkpagesDiscordFeed.ts` | Thinkpages → Discord feed configuration |
 
-`_config-kv.ts` is a shared helper, not a router. `api.admin.*` exposes ~78 procedures across these files. Map admin is served separately by `geoAdmin` (`geo/admin` + `geo/admin/cities`). Supplemental user analytics/assignment endpoints live in `api.users.*` and `api.countries.*`.
+`_config-kv.ts` is a shared helper, not a router. `api.admin.*` exposes ~78 procedures across these files. Map admin is served separately by `geoAdmin` (`geo/admin` province and city imports) and the `atlas` router (`routers/atlas/`: `studio`, `presets`, `jobs`, `realms`, `health`). Supplemental user analytics/assignment endpoints live in `api.users.*` and `api.countries.*`.
 
 ## Maintenance
 

@@ -582,15 +582,14 @@ map thumbnail, for the colour to nation step; a complete answer is cached for an
 
 ### 6.1 Import the map (the realm map import)
 
-> **Warning: don't use Quick Update for Eurth.** The Import Pipeline tab opens in **Quick Update** mode, and Quick
-> Update always writes **Ixnay's** map. Realm maps go through **Full pipeline** → **Realm map**, or the realm's
-> Manage tab → **Map import** (the founder and Map officers).
+> Realm maps go through Atlas → **Import a map** (site admins pick the realm), or the realm's Manage tab →
+> **Map import** (the founder and Map officers). Quick Update, which always wrote **Ixnay's** map, no longer exists.
 
 1. **The file:** a **flat-colour political map** (PNG best; JPEG works, its compression noise is cleaned up), an
    **SVG** with one shape or group per nation (named by `<title>`, Inkscape label or id), or a **GeoJSON**
    FeatureCollection in WGS84. At most **40 MB** and **64 megapixels**. Several colours may be one nation; black (or
    dark grey) border lines are removed so neighbours touch. Or use **Import this map** on the wiki card (§6.0).
-2. `/admin/maps` → **Import pipeline** → **Full pipeline** → **Realm map (PNG, SVG, GeoJSON)** → realm `Eurth` →
+2. `/admin/maps` → **Import a map** → realm `Eurth` →
    **Choose a file**. (Founders: `/r/eurth/manage` → **Map import**, realm fixed.)
 3. **Settings:** where the map lies on the globe: **Whole globe** (an equirectangular 2:1 world map, the default),
    **Crop bounds** (west, south, east, north of a cropped map) or **Control points** (three or more pixels and the
@@ -666,7 +665,7 @@ Eurth's map is fully isolated from Ixnay's — features are keyed per-realm
 | Reload the preset over Eurth's edited config | `bun scripts/realms/sync-realm-source.ts --realm eurth --preset eurth-map --force-preset` (otherwise it fills only empty values) |
 | Correct a continent, exclude or match a map entry, pin a field | `/admin/realms` → Source sync (or `/r/eurth/manage` → Source sync): continent table, the diff's buttons |
 | See Eurth's realm row / edit name, description, visibility, status, nations per player | `/admin/realms` → Realms tab → pencil |
-| Import a realm map from an image (no source) | `/admin/maps` → Import Pipeline → **Full Pipeline** → Target realm (never Quick Update) |
+| Import a realm map from an image (no source) | `/admin/maps` → **Import a map** → realm |
 | Review or approve/reject a pending nation claim | `/admin/realms` → Claims tab (site admins), or `/r/eurth/manage` → Claims (founder, Claims officers) |
 | Hand Eurth to its leader | `/admin/realms` → Realms tab → Transfer Eurth (5.1); later, the founder uses `/r/eurth/manage` → Hand over |
 | Let a player review claims | `/r/eurth/manage` → Officers → tick **Claims** (5.2) |

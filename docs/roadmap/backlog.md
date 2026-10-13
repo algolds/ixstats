@@ -68,7 +68,7 @@ partly done item.
 
 | ID | Type | Item | Evidence | Size |
 |---|---|---|---|---|
-| AT-15 | DEAD | Unused map models (`Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read. Atlas Release A kept `WorldTemplate`, `ProceduralWorld` and `Realm.templateId` instead of dropping them: `procedural_worlds` holds real rows (38 on the local clone) that the deploy's `db push` would delete, so dropping them is the owner's call | `maps.prisma` | S |
+| AT-15 | DEAD | Unused map models (`Transport*` segments, `ElevationZone`, `Territory`); `SharedVertex` written, never read. `WorldTemplate`, `ProceduralWorld` (38 rows on the local clone) and `Realm.templateId` were dropped by the Atlas and World Studio overhaul (`prisma/migrations/20261023120000_atlas_studio/migration.sql`, run before `db push`) | `maps.prisma` | S |
 
 ### WikiOS, forum, help & admin (WK)
 
@@ -269,7 +269,7 @@ Exchange 11, diplomacy 7, economy modelling 7, social 5, media player 4, archety
 cards 3, military 1), 7 are read but never written, and about 16 are written only by the old demo seed. Dropping
 them needs backups (done) and decisions D1, D2, D5 and D9. Don't drop the force-structure models (`MilitaryBranch`,
 `MilitaryUnit`, `MilitaryAsset`, live since MC-3 closed on 2026-10-06), or models that crisis events would use until
-that is decided. `ProceduralWorld`, `WorldTemplate` and `Realm.templateId` stay while AT-15 is open. **The 13 Exchange
+that is decided. `ProceduralWorld`, `WorldTemplate` and `Realm.templateId` are already gone (Atlas and World Studio). **The 13 Exchange
 models are off the drop list (D5 decided "build", 2026-10-06):** 9 are in use since the Exchange MVP, and `SectorIndex`,
 `SectorIndexHistory`, `SectorPosition` and `CompanyDecision` are kept for its phase 2. `CraftingRecipe` and `CraftingHistory` join the
 list while crafting is deprecated (2026-10-05); drop them only after that backup decision. The full list is in the

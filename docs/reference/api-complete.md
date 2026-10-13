@@ -5,14 +5,15 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1066 Endpoints)
+### Live tRPC API Inventory (80 Routers, 1095 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 5 | 2 | 0 | **7** | `src/server/api/routers/achievements/index.ts` |
-| **`api.actionLinks`** | 5 | 5 | 0 | **10** | `src/server/api/routers/actionLinks.ts` |
+| **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
 | **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
+| **`api.atlas`** | 0 | 0 | 0 | **5** | `src/server/api/routers/atlas/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
 | **`api.autosaveHistory`** | 2 | 0 | 0 | **2** | `src/server/api/routers/autosaveHistory.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
@@ -41,9 +42,10 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
 | **`api.exchange`** | 8 | 26 | 0 | **34** | `src/server/api/routers/exchange/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
-| **`api.geoAdmin`** | 3 | 8 | 0 | **11** | `src/server/api/routers/geo/admin/cities.ts` |
+| **`api.frontPage`** | 1 | 0 | 0 | **1** | `src/server/api/routers/frontPage.ts` |
+| **`api.geoAdmin`** | 1 | 4 | 0 | **5** | `src/server/api/routers/geo/admin/cities.ts` |
 | **`api.geoCore`** | 0 | 0 | 0 | **0** | `src/server/api/routers/geo/core/index.ts` |
-| **`api.geoEditor`** | 5 | 16 | 0 | **21** | `src/server/api/routers/geo/editor/index.ts` |
+| **`api.geoEditor`** | 5 | 14 | 0 | **19** | `src/server/api/routers/geo/editor/index.ts` |
 | **`api.geoFeatures`** | 5 | 34 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
 | **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
 | **`api.geoWiki`** | 3 | 0 | 0 | **3** | `src/server/api/routers/geo/wiki.ts` |
@@ -78,7 +80,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 1 | 4 | 0 | **5** | `src/server/api/routers/taxSystem/index.ts` |
 | **`api.thinkpages`** | 20 | 28 | 0 | **48** | `src/server/api/routers/thinkpages/index.ts` |
-| **`api.thinkpagesForum`** | 10 | 7 | 0 | **17** | `src/server/api/routers/thinkpagesForum/index.ts` |
+| **`api.thinkpagesForum`** | 24 | 22 | 0 | **46** | `src/server/api/routers/thinkpagesForum/index.ts` |
 | **`api.thinkpagesForumMod`** | 8 | 11 | 0 | **19** | `src/server/api/routers/thinkpagesForum/mod.ts` |
 | **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
@@ -87,7 +89,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 26 | 19 | 0 | **45** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **506** | **551** | **0** | **1066** | **78 registered namespaces** |
+| **TOTALS** | **521** | **560** | **0** | **1095** | **80 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
@@ -550,14 +552,14 @@ api.scheduledChanges.getPendingChanges.useQuery()
 
 ## Maps & Geography
 
-### geoCore Router (22 procedures)
+### geoCore Router (20 procedures)
 
 The former `geo`, `mapEditor` and `mapMonitoring` routers are replaced by the `geo*` namespaces (`geoCore`, `geoFeatures`, `geoEditor`, `geoAdmin`, `geoSovereignty`, `geoWiki`); see the inventory table for the rest.
 
 The map's geometry layers are not tRPC procedures (Atlas Release 0 removed `getWorldMap`, `getWorldMapPacked` and `getMapBundle`): they are served as packed JSON by `GET /api/map-layers/<realm>/<version>/<layer>`, and the decorative layers as vector tiles by `GET /api/map-tiles/<realm>/<version>/f<format>/<layer>/<z>/<x>/<y>`. The map version comes from `api.realms.map.version`. See [maps.md](../systems/maps.md#map-delivery-atlas-release-0).
 
 ```typescript
-// Queries (20)
+// Queries (18)
 api.geoCore.getMapBundleMarkers.useQuery({ realm?, version? }) // POIs and capitals
 api.geoCore.getMapBundleDetail.useQuery({ zoom?, realm?, version? }) // cities and subdivisions
 api.geoCore.getAllMapFeatures.useQuery({ realm? })
@@ -570,9 +572,7 @@ api.geoCore.getCountryLinkage.useQuery({ countryId })
 api.geoCore.getNeighbors.useQuery({ countryId })
 api.geoCore.getPointInfo.useQuery({ lng, lat, realm? })
 api.geoCore.listCountries.useQuery({ realm? })
-api.geoCore.getLayerInfo.useQuery({ realm? })
 api.geoCore.searchFeatures.useQuery({ query, types?, limit?, realm? })
-api.geoCore.getMapStats.useQuery({ realm? })
 api.geoCore.getCountryGeoProfile.useQuery({ countryId })
 api.geoCore.getRegionalChoropleth.useQuery({ metric, groupBy?, realm? })
 api.geoCore.getCanonDensity.useQuery({ realm? })
@@ -592,7 +592,7 @@ api.geoEditor.getFeatureDetails.useQuery({ featureId, realm? })
 api.geoEditor.validateLinkage.useQuery({ realm? })
 api.geoEditor.getEditQueue.useQuery({ status?, limit?, offset? })
 
-// Mutations (16)
+// Mutations (14)
 api.geoEditor.assignCountryGeometry.useMutation() // { featureId, countryId, realm? }
 api.geoEditor.unlinkCountryGeometry.useMutation() // { featureId, realm? }
 api.geoEditor.updateFeatureProperties.useMutation() // { featureId, displayName?, countryId?, properties?, wikiPageTitle?, realm? }
@@ -607,8 +607,6 @@ api.geoEditor.splitCountry.useMutation() // { featureId, splitLine, nameA, nameB
 api.geoEditor.mergeCountries.useMutation() // { featureIds, newName, realm? }
 api.geoEditor.repairBorderGeometry.useMutation() // { geometry }
 api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
-api.geoEditor.runPipeline.useMutation() // { source: "svg" | "png", svgContent?, targetLayers?, pngBase64?, pngConfig? }
-api.geoEditor.importPipelineResult.useMutation() // { layers, mode?, realmId? }
 ```
 
 ---

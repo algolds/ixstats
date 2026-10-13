@@ -81,8 +81,19 @@ Read it end to end once before starting. Every command here is meant to be run b
   - Atlas Release A (2026-10-22, additive): `Country.worldgen` (default false) and `Country.claimable` (default true),
     which world generation and the claim flow read (`prisma/migrations/20261022120000_atlas_ra/migration.sql`,
     idempotent; `db push` adds the same two columns). Apply that file with the Release 0 one (step 5a), and build
-    Ixnay's and Eurth's relief once after the deploy (step 5c). The `procedural_worlds` table stays: the release does
-    not drop `ProceduralWorld`, `WorldTemplate` or `Realm.templateId`
+    Ixnay's and Eurth's relief once after the deploy (step 5c)
+  - Atlas and World Studio (2026-10-23, **drops data**): new `world_presets` and `world_preset_versions` tables (the
+    built-in presets are seeded on first read, no rows are inserted), and the models `ProceduralWorld`
+    (`procedural_worlds`, 38 rows on the local clone), `WorldTemplate` (`world_templates`) and `Realm.templateId` are
+    gone from the schema. `prisma/migrations/20261023120000_atlas_studio/migration.sql` (idempotent) creates the new
+    tables and drops the old ones. **Apply it BEFORE `db:push:force`** (step 5a): `db push` without
+    `--accept-data-loss` refuses to drop the non-empty `procedural_worlds` and would stop the deploy. The deploy
+    script, `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run it before their push too
+  - map import snapshots read every row (2026-10-23, code only, no schema change): `captureMapSnapshot`, the world
+    import diff and the other import, apply and rollback reads took at most 1,000 rows per layer. A snapshot taken by
+    the older code for a layer with more rows than that is missing the rest, so rolling back an import made before this
+    deploy restores only part of such a layer. Snapshots taken after it hold every row. Rollback of a large layer
+    (Ixnay's altitudes have 4,068 rows) needs the new code
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -101,8 +112,8 @@ Read it end to end once before starting. Every command here is meant to be run b
   `WIKI_SYNC_WEBHOOK_SECRET`, `IXTIME_BOT_SECRET`, `WS_ALLOWED_ORIGINS`, `NEXT_PUBLIC_APP_URL`, `REDIS_ENABLED` or
   `CRON_ENABLED_JOBS`.
 - **Deploy script:** `scripts/deploy-production.sh` fetches the checkout's current branch from the remote named
-  `master` and hard-resets to it. It then runs `bun install --frozen-lockfile`, `db:generate`, and
-  **`prisma db push` against the prod database**, builds, reloads PM2 and runs `start-production.sh`. `db push`
+  `master` and hard-resets to it. It then runs `bun install --frozen-lockfile`, `db:generate`, takes a backup, applies
+  the Atlas and World Studio SQL, and runs **`prisma db push` against the prod database**, builds, reloads PM2 and runs `start-production.sh`. `db push`
   applies the schema changes above by itself. It aborts the deploy if a change would lose data, which is what the
   dedupe step below prevents.
 
@@ -227,13 +238,21 @@ git checkout -B master master/master     # the deploy script deploys the checkou
 
 `rose-garden` includes the Realms work (`docs/architecture/realms-framework-spec.md`). Its schema change **drops**
 `world_configs` (1 row) and `territory_claims` (0 rows) and adds two unique constraints, so the deploy script's own
-`db push` would stop on the data-loss warning. Apply it by hand first, then the one-off ownership backfill:
+`db push` would stop on the data-loss warning. Apply it by hand first, then the one-off ownership backfill. The
+Atlas and World Studio SQL goes **before** that push, for the same reason: it creates `world_presets` and
+`world_preset_versions` and **drops `procedural_worlds`, `world_templates` and `realms."templateId"`** (the schema no
+longer has them, and `db push` stops on the non-empty `procedural_worlds`). The step 1 backup covers the dropped rows:
 
 ```bash
 bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT count(*) FROM map_layers WHERE \"worldId\" IS NULL; SELECT id, slug, \"ownerId\" FROM realms;"
 #   expect: a count (compare with the backfill's map-layer line) and the row  default|default|system
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261023120000_atlas_studio/migration.sql      # BEFORE db:push:force; idempotent
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT to_regclass('world_presets') IS NOT NULL, to_regclass('world_preset_versions') IS NOT NULL, to_regclass('procedural_worlds') IS NULL, to_regclass('world_templates') IS NULL, NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'realms' AND column_name = 'templateId');"
+#   expect: t|t|t|t|t
 bun run db:push:force        # answer yes: the world_configs drop, the two Realms unique constraints and WikiOS v1's five are expected
 bun scripts/realms/backfill-foundation.ts                  # dry run
 ```
@@ -293,6 +312,10 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT to_regprocedure('atlas_country_union(text,text)') IS NOT NULL, (SELECT count(*) FROM \"Country\" WHERE geometry IS NOT NULL AND geom_postgis IS NULL);"
 #   expect: t|0, or t and a count of only countries whose stored outline is invalid (the run printed a WARNING naming each)
 ```
+
+(The Atlas and World Studio SQL ran above, before the push. `./scripts/deploy-production.sh` runs it again before its own
+`db:push:force`, and so do `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap, which a local
+database that still has `procedural_worlds` rows needs: without it dev startup aborts like the deploy would.)
 
 Then the Atlas Release A file the same way: two `ADD COLUMN IF NOT EXISTS` on `"Country"` (`worldgen`, `claimable`).
 `db push` adds them too and the deploy script runs the file after its push, so this too is only for the order, SQL first:
@@ -394,6 +417,10 @@ the realm's settings) answers 200, not 404. Repeat with a test realm's first app
 - **Country editor** (`/mycountry/editor`): change a slider, and an amber dot plus "1 change" appear. Undo reverts it.
 - **Vault:** place a bid on a test auction; the balance moves, and cancelling refunds it.
 - **Map editor:** click two points on one river, and the edge follows the river.
+- **Atlas:** `/admin/maps` opens the realm overview under the health strip, and `/admin/maps/studio` opens World Studio
+  (site admins only). The Earth-like, Ixnay and Eurth presets appear in the Studio and in a founder's World tab after
+  the first read (they are seeded then). On Ixnay's realm page, **Rebuild relief** works for a site admin and builds from
+  Ixnay's altitude bands.
 - **Relief:** Ixnay's hillshade shows on `/maps` (the Relief toggle in the layer controls). On a test realm where you are
   the founder, `/maps?realm=<slug>&editor=world` opens the World tab; generating and rerolling work, and nothing is applied
   until Use this world. After you apply a world on that realm, its relief shows on `maps.ixwiki.com` too (the shared

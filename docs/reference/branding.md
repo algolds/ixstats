@@ -114,7 +114,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 | **Nav icon**     | Compass (Lucide)                                                                                                                               |
 | **Accent hex**   | `#06b6d4` (cyan-500)                                                                                                                           |
 | **Standalone**   | IxWorld — `maps.ixwiki.com` (port 3002/3003, `NEXT_PUBLIC_IXWORLD_STANDALONE`)                                                                 |
-| **Prisma**       | `maps.prisma` (ProceduralWorld, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
+| **Prisma**       | `maps.prisma` (WorldPreset, WorldPresetVersion, Realm, CountrySovereignty, TransportRoute, TransportHub, StoryPin, ElevationZone, City, PointOfInterest, etc.) |
 | **Key files**    | `src/app/maps/`, `src/components/maps/{core,editor,overlays,pipeline,shared,widgets}/`, `src/lib/maps/`                                                     |
 | **Map overlays** | Choropleth, Geopolitical, RiskHeatmap, TradeRoute, Transport                                                                                   |
 | **Map widgets**  | CountryMapEmbed, DashboardMapWidget, MiniWorldMap                                                                                              |

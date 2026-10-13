@@ -36,7 +36,7 @@ live demo: **Eurth** (eurth.org — Discourse forum; lore on iiwiki `Portal:Eurt
 | 7 | Seed lore | Application may link an iiwiki or althistory page; on approval it is imported **once**, crawling sub-categories (visited-set, depth ≤ 5, ≤ 2,000 pages, no wiki-global categories, admin preview first) |
 | 8 | Imported nations | Tagged *claimable*; a `Country` row is created only when someone claims one (builder, prefilled) |
 | 9 | Map | Generated (UPG v2) or an uploaded image |
-| 10–11 | Image maps | Auto-vectorised by the IxMap pipeline (`runMapPipeline`: PNG → potrace → SVG → GeoJSON); the admin runs `PipelineWizard` at approval and maps colours → nations. Founders supply a clean flat-colour political PNG |
+| 10–11 | Image maps | Imported by the realm map import (a PNG, SVG or GeoJSON file: colours → nations, dry run, apply, rollback); the admin runs it from Atlas → **Import a map** at approval. Founders supply a clean flat-colour political PNG |
 | 12 | Membership | Owning a nation in a realm = membership. Founder = `Realm.ownerId`; no other roles yet |
 | 13–14 | Claims | Claim anything that already exists (nation page, territory, existing country); create new nations freely. Founder (site admins for Ixnay) approves; **auto-approved** when the claimant is the verified creator of the nation's wiki page. Wiki accounts are verified by a token on the user page (ixwiki, iiwiki, althistory) |
 | 15 | Nations per person | One per realm by default; founder may raise the cap (`Realm.settings.maxNationsPerUser`) — today site admins set it in `/admin/realms` (1–20); founder tooling is planned. The effective cap is min(realm cap, tier cap): 1 for free accounts, 5 for MyCountry Premium (`realms.nation-cap.ts`) |
@@ -110,8 +110,9 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
 - Country-facing queries and caches made realm-correct (name lookups resolve within one realm; a nation
   name a player types — block, mute — is looked up in their own realm before any slug; admin tools and the
   admin flag warmers opt into every realm via `realm: "*"`; Ixnay's cache keys are unaffected) (E3, E-s).
-- Map layers and the pipeline wizard are realm-scoped: the **Full Pipeline** mode imports into a chosen
-  target realm and refuses an unknown one, while **Quick Update** always edits Ixnay's map. The world
+- Map layers and the map import wizard are realm-scoped: it imports into a chosen
+  target realm and refuses an unknown one (Quick Update, which always edited Ixnay's map, was removed with
+  the Atlas overhaul). The world
   editor's realm follows the map it's drawn over; the country editor always works in the realm of the
   viewer's own nation, even when opened from another realm's map (E4, E-t).
 - This runbook, [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md) (E7).

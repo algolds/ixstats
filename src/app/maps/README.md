@@ -11,7 +11,9 @@ For the full system guide (component catalog, procedural worldgen, classificatio
 | Route | File | Purpose |
 |-------|------|---------|
 | `/maps` | `src/app/maps/page.tsx` | Public world map viewer (this route) |
-| `/admin/maps` | `src/app/admin/maps/` | Admin map management, SVG upload, Import Pipeline (SVG/PNG/procedural, realm-targeted) |
+| `/admin/maps` | `src/app/admin/maps/` | Atlas: realm overview, jobs, edit queue, map style, map import (PNG/SVG/GeoJSON, realm-targeted) |
+| `/admin/maps/realms/<slug>` | `src/app/admin/maps/realms/[slug]/page.tsx` | A realm's page in Atlas |
+| `/admin/maps/studio` | `src/app/admin/maps/studio/page.tsx` | World Studio: design, calibrate, export and apply worlds (site admins) |
 | `/admin/maps/editor` | `src/app/admin/maps/editor/page.tsx` | Admin world editor (`?realm=<slug>` edits that realm's map) |
 
 Players edit their own nation in place: the country editor (`MapEditorOverlay`) opens over the map from `/maps`.
@@ -75,14 +77,14 @@ The viewer is tuned so pan, zoom and hover do no React work and no redundant Map
 
 ## Data sources (tRPC geo routers)
 
-The geo API is split into **6 router namespaces** (91 procedures across 37 files under `src/server/api/routers/geo/`), registered in `src/server/api/root.ts`:
+The geo API is split into **6 router namespaces** (81 procedures across 36 files under `src/server/api/routers/geo/`), registered in `src/server/api/root.ts`:
 
 | Namespace | Approx. procs | Representative endpoints (verified in use) |
 |-----------|---------------|--------------------------------------------|
-| `geoCore` | 24 | `getMapBundleMarkers`, `getMapBundleDetail`, `getWorldMapAsOf`, `getCountryGeometry`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
+| `geoCore` | 22 | `getMapBundleMarkers`, `getMapBundleDetail`, `getWorldMapAsOf`, `getCountryGeometry`, `getPointInfo`, `listCountries`, `searchFeatures`, `getCountryGeoProfile`, `getRegionalChoropleth`, `getCrisisRiskMap`, `getGeopoliticalOverlay`, `getHistoryRange` |
 | `geoFeatures` | 29 | `createCity`, `updateCity`, `updatePOI`, `getAllMapLabels`, `updateMapLabel`, `getAllStoryPins`, `getStoryPinFull`, `updateStoryPin`, `createPeak`, `createNamedRiver`, `createNamedLake`, `simplifySubdivisions` |
-| `geoEditor` | 19 | `assignCountryGeometry`, `createCountryFromShape`, `updateFeatureProperties`, `getFeatureDetails`, `validateLinkage`, `repairLinkage`, `unlinkCountryGeometry`, `runPipeline`, `importPipelineResult` |
-| `geoAdmin` | 11 | `processSvgUpload`, `commitSvgUpload`, `parseProvinceUpload`, `commitProvinceImport`, `parseCitySvg`, `commitCityImport` |
+| `geoEditor` | 19 | `assignCountryGeometry`, `createCountryFromShape`, `updateFeatureProperties`, `getFeatureDetails`, `validateLinkage`, `repairLinkage`, `unlinkCountryGeometry`, `mapImport.*` |
+| `geoAdmin` | 5 | `parseProvinceUpload`, `commitProvinceImport`, `parseCitySvg`, `commitCityImport` |
 | `geoSovereignty` | 5 | `getSovereigntyRelations`, `createSovereignty`, `updateSovereignty`, `deleteSovereignty` |
 | `geoWiki` | 3 | `getFeatureWikiIntro`, `parseWikiInfobox`, `searchWikiPages` |
 

@@ -103,7 +103,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **MyCountry Builder (Core System):** `/builder` — nation creation and editor flows.
 
-**Admin CMS (Core System):** `/admin` — administrative dashboards and tooling; `/admin/maps` — map management, SVG upload, world generation.
+**Admin CMS (Core System):** `/admin` — administrative dashboards and tooling; `/admin/maps` — Atlas, the admin home for every realm's map; `/admin/maps/studio` — World Studio for designing worlds.
 
 **Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/explore`, `/countries`, `/feed`, `/leaderboards`.
 
@@ -130,7 +130,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->76<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,030<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,095<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
@@ -146,7 +146,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 ### Database & Data Flow
 
-- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->357<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->23<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
+- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->376<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite October 2025)

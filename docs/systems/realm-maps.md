@@ -127,7 +127,7 @@ no repair run is needed after a sync.
 
 ### Admin panel (Map)
 
-`/admin/realms` → **Map** (site admins, any realm) and `/r/<realm>/manage` → **Map pipeline** (the founder and Map officers;
+the realm's page in Atlas, `/admin/maps/realms/<slug>` (site admins, any realm; `/admin/realms` → **Map** links to it) and `/r/<realm>/manage` → **Map pipeline** (the founder and Map officers;
 Ixnay stays with site admins; an archived realm is read-only).
 
 #### In the admin panel

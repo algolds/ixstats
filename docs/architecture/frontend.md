@@ -208,7 +208,7 @@ There is one navigation: the app sidebar, a source list built from `src/lib/navi
 row and the current app discloses its sections; Admin and Settings use area mode. There are no per-app sidebars,
 rails or hidden sub-navigation.
 
-- **Chromeless routes:** `/maps`, `/mycountry/map-editor`, `/admin/maps/editor` and `/admin/maps/style-editor`
+- **Chromeless routes:** `/maps`, `/mycountry/map-editor`, `/admin/maps/editor`, `/admin/maps/style-editor` and `/admin/maps/studio`
   (`isChromelessPath`) get no canvas wash; Halo hides on `/maps`, where `MapDynamicIsland` takes over.
 - **Page titles:** `PageHeader` (`~/components/shell`) renders the one `<h1>`, a back button and trailing actions in
   a sticky toolbar that collapses to a compact title on scroll.

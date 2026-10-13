@@ -2,7 +2,7 @@
 
 The **Unified Physical Geography Engine (UPG v2)** is the high-fidelity procedural realm map generator for IxStates. Located in [`src/lib/worldgen/v2/`](v2/), UPG v2 generates 100% topologically aligned, cartographically smooth, scientifically realistic fictional realm maps matching the aesthetic quality of the IxWorld reference map.
 
-It runs in the browser: the World tab of the world editor generates in a Web Worker ([`worker/`](worker/)), previews the result, and uploads it as a bundle that the server's `world` map import job writes (the server never generates). The generator and its pure helpers (`land-mask`, `baseline`, `relief*`, `world-stats`) are shared by the worker and the server; `worker/` runs only in the browser, as do the World tab's own helpers (controls, draft recipe).
+It runs in the browser: the World tab of the world editor and the admin [World Studio](../../../docs/systems/maps.md#atlas-and-world-studio) generate in a Web Worker ([`worker/`](worker/)), preview the result, and upload it as a bundle that the server's `world` map import job writes (the server never generates). The generator and its pure helpers (`land-mask`, `baseline`, `relief*`, `world-stats`, `measure-world`) are shared by the worker and the server; `worker/` runs only in the browser, as do the World tab's and the Studio's own helpers (controls, draft recipes, fields, diagnostics, PNG render).
 
 ---
 
@@ -18,7 +18,9 @@ It runs in the browser: the World tab of the world editor generates in a Web Wor
 
 ## Realm Presets
 
-`WORLD_PRESETS` in [`v2/config.ts`](v2/config.ts) reproduce the shape statistics of the two hand-drawn realm maps (measured 2026-10-11 from each realm's `map_layers` on a 0.5° grid):
+`WORLD_PRESETS` in [`v2/config.ts`](v2/config.ts) are the factory defaults. The presets people use live in the database (`WorldPreset`, seeded from `WORLD_PRESETS` on first read; draft, publish and versions in World Studio; see [Presets](../../../docs/systems/maps.md#presets)); `WORLD_PRESETS` stays in code as what "Reset to factory" goes back to, the test fixtures and the fallback when the database cannot be read. [`world-presets.ts`](world-presets.ts) holds the pure side (`FACTORY_PRESETS`, `resolvePreset`). A preset is a `WorldPresetParams` (`Partial<Omit<WorldGenParams, "seed">>`): a recipe without a seed.
+
+`WORLD_PRESETS` reproduce the shape statistics of the two hand-drawn realm maps (measured 2026-10-11 from each realm's `map_layers` on a 0.5° grid, summing overlapping climate polygon areas):
 
 |         | Land  | Continents                      | Polar land | Land < 100 m | Climate (ref.)                    |
 | ------- | ----- | ------------------------------- | ---------- | ------------ | --------------------------------- |
@@ -32,7 +34,7 @@ import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 const ixnayLike = generateWorld({ ...WORLD_PRESETS.ixnay, seed: 7 });
 ```
 
-`src/tests/lib/worldgen/v2/presets.test.ts` holds the presets to those targets. Known gap: Eurth packs more continental (D) land into 40–60°N than the generator reliably does, so generated Eurth-likes run ~10 points low on D and high on A/B depending on seed.
+`src/tests/lib/worldgen/v2/presets.test.ts` holds the presets to those targets. The Studio's Calibration tab measures with [`measure-world.ts`](measure-world.ts) instead, on painted land only (see [Measuring a world](#measuring-a-world)), so its climate figures are not comparable with this table: on the local clone Ixnay reads A 25, B 19, C 31, D 21, E 2, F 0.2, H 1. Known gap: Eurth packs more continental (D) land into 40–60°N than the generator reliably does, so generated Eurth-likes run ~10 points low on D and high on A/B depending on seed.
 
 ---
 
@@ -78,6 +80,24 @@ const ixnayLike = generateWorld({ ...WORLD_PRESETS.ixnay, seed: 7 });
                        │ 3-Stage Vector Synthesis & GeoJSON Export│
                        └─────────────────────────────────────────┘
 ```
+
+### Staged generation
+
+[`v2/stages.ts`](v2/stages.ts) groups the eight stages above into five restart points, so a changed parameter reruns only what reads it. `generateWorldStaged(params, onProgress, { cache })` takes a `StageCache` and returns the world with `restartedAt` and the finished `graph`; `generateWorld` is a full run of the same code.
+
+| Restart point | Runs                                    | Reads (`STAGE_FIELDS`)                                                                                                                                                                                           |
+| ------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mesh`        | 1. Mesh                                 | `seed`, `cellCount`, `lloydIterations`                                                                                                                                                                           |
+| `land`        | 2. Tectonics, 3. Terrain, 4. Coastlines | `seed`, `plateCount`, `continentCount`, `continentLatitudeRange`, `continentSizeVariance`, `islandShare`, `polarLand`, `oceanPercentage`, `terrainRoughness`, `coastlineComplexity`, `hypsometry`, the land mask |
+| `climate`     | 5. Hydro-Climate, 6. Quality Gate       | `temperatureOffset`, `precipitationScale`, `riverDensity`, `lakeCoverage`, `hasRivers`, `hasLakes`                                                                                                               |
+| `nations`     | 7. Politics                             | `seed`, `countryCountRange`, `useMarkovNaming`, keep-borders                                                                                                                                                     |
+| `output`      | 8. Export, slots, packed cells          | `hasIcecaps`, `developmentLevel` (read only after export, by `buildSlots`)                                                                                                                                       |
+
+`planRestart(prev, next)` returns the first stage whose inputs differ (the land mask by identity), and `output` when nothing did. Every stage seeds its own random stream from `seed + offset` and writes only the arrays it owns, so a restarted run equals a full run; `stages.test.ts` pins that for every stage, both seeds, Ixnay and Eurth, with and without a mask, for every single parameter and for chains of changes.
+
+The cache holds at most one snapshot per stage, copies of the cell arrays the later stages write: the land snapshot (17 bytes per cell) and the climate snapshot (56; the climate stage rewrites `h`, `isLand` and `elevZone`, so each owns its copy), and for nations the finished graph itself (60, no copy). Restoring copies out of a snapshot and never hands one out. `begin()` marks the cache unusable until `finish()`, so a half-finished run can never be restarted from, and a restart that throws is run again in full once (the worker runner does that; a failed first run is not repeated). The worker also keeps one rasterised land mask per `maskKey` (`<realm slug>:<mapVersion>`) so a realm's mask is not rasterised on every request.
+
+On this machine, default size, Eurth, under Bun, restart time of the call (median of 5 warm): mesh 593 ms, land 307, climate 139, nations 76, output 64. Limits 1000, 600, 250, 250 and 200 ms, gated by `bun run perf:atlas`.
 
 ### Stage Details
 
@@ -219,9 +239,23 @@ The World tab's "This realm's map" source uses this; the worker rasterises the l
 
 `buildSlots` (in `politics.ts`) applies it to each generated country; areas are geodesic (they match PostGIS within about 1%). The server re-checks the figures against the measured area before it writes a slot. [`world-stats.ts`](world-stats.ts) summarises a world for the World tab: land share, continents, climate mix, slot count and the baseline range.
 
+## Diagnostics and the PNG Render
+
+All drawn from a finished graph by the worker, as images. [`diagnostics.ts`](diagnostics.ts) draws one of `height`, `temperature`, `rainfall`, `flow` or `cells` at 2048 px wide (rasterised with [`raster-draw.ts`](raster-draw.ts), then warped to Web Mercator rows with the relief's step so MapLibre can place it) with a legend (`{ kind, title, unit, domain, scale, stops, clipped }`: temperature fixed at -30 to 38 °C, rainfall 0 to 4500 mm a year, flow log over this world's river cells, height from the elevation zones). `seeds` returns each nation's capital cell as a point collection. [`render-png.ts`](render-png.ts) composes an equirectangular map at 2048, 4096 or 8192 px wide (ocean, land by band, optional political fills, relief, lakes, borders, rivers); the relief is made at up to 2048 px and upsampled, and `worker/encode-png.ts` encodes with `OffscreenCanvas.convertToBlob`, detaching the RGBA buffer first. Composing 8192 px takes about 0.8 s with politics and 0.5 s without; 8192 × 4096 is over iOS Safari's canvas limit. Both are pure up to the canvas, so jest runs them with a stub encoder. Land and political edges in the images are Voronoi-cell shaped; the exported layers are spline-smoothed.
+
+The worker answers `diagnostic`, `seeds`, `render` and `measure` requests apart from generate requests, by their own request ids. The runner holds the last finished graph and cached diagnostics, clears them when any generate starts, and rejects a request for a world it no longer holds; the session rejects every pending request when a newer generate starts.
+
+## Measuring a World
+
+[`measure-world.ts`](measure-world.ts) (`measureWorld`, pure, no `node:*`) is the one sampler behind the Studio's Calibration tab, run on both sides. It rasterises a world's (or a realm's) layers on a 0.5° grid (720 × 360, cos(lat) weights; land and elevation zones through `rasterizeLandMask`, climate through `rasterizeValues`, both in [`land-mask.ts`](land-mask.ts)) and returns the land share, nine hypsometry shares, the climate mix over the seven Trewartha groups (and `unclassifiedShare`), the nation count with median and p90 area, and the coastline length (ring edges not shared by two rings). The worker measures a generated world in about 100 ms; the server measures a stored realm from its `geometry` JSON (`src/server/modules/maps/realm-calibration.ts`, cached by map version). Climate encodings are normalised to Trewartha groups: `properties.code`, then `biomeId`, then `climateId` or colour through the realm's key, then nearest colour.
+
+## Studio Helpers
+
+World Studio's own pure modules sit beside the founder's: `studio-fields.ts` (every parameter by stage group, ranges pinned to the zod schema, which fields a fitted map decides), `studio-recipe.ts` (browser storage per user), `studio-presets.ts` (the preset list as the Studio shows it), `calibration-distance.ts` (the single distance per realm), `studio-apply.ts` (what the Ship tab may apply where), `world-export.ts` (layer files, download names, blob download) and `zip-store.ts`, a store-only zip writer with CRC32 and no dependency, behind the GeoJSON export.
+
 ## Mesh Cache and Speed
 
-`MeshCache` (in [`v2/mesh.ts`](v2/mesh.ts)) keeps the geometry of the last two meshes by `(seed, cellCount, lloydIterations)`, so a slider change, which keeps all three, skips the mesh (about 0.35 s of a 0.85 s first generation). Each `get` returns a fresh graph that shares the geometry; the stages write the attribute arrays and never the geometry. Other speed-ups: terrain noise and step costs precomputed in typed arrays, Lloyd relaxation updated in place, polygon merge on integer vertex ids. At the default size (66,626 cells) on this machine, under Bun: first generation about 0.85 s, slider change about 0.3 s, reroll about 0.6 s (targets 1.0, 0.6 and 0.9 s). `bun run perf:atlas` gates these ([`scripts/perf/atlas-bench-worldgen.ts`](../../../scripts/perf/atlas-bench-worldgen.ts)) and prints the worker's end-to-end time per message.
+`MeshCache` (in [`v2/mesh.ts`](v2/mesh.ts)) keeps the geometry of the last two meshes by `(seed, cellCount, lloydIterations)`, so a slider change, which keeps all three, skips the mesh (about 0.35 s of a 0.85 s first generation). Each `get` returns a fresh graph that shares the geometry; the stages write the attribute arrays and never the geometry. Other speed-ups: terrain noise and step costs precomputed in typed arrays, Lloyd relaxation updated in place, polygon merge on integer vertex ids. At the default size (66,626 cells) on this machine, under Bun: first generation about 0.87 s and reroll about 0.7 s (targets 1.0 and 0.9 s), and the per-stage restarts above. `bun run perf:atlas` gates these ([`scripts/perf/atlas-bench-worldgen.ts`](../../../scripts/perf/atlas-bench-worldgen.ts)) and prints the worker's end-to-end time per message.
 
 ## Relief
 
@@ -236,7 +270,7 @@ The server builds it as the raster layer `relief` (`src/server/modules/maps/real
 
 ## The Worker
 
-[`worker/`](worker/): `world.worker.ts` connects the Web Worker scope to `world-runner.ts` (`createWorldRunner`, callable directly), which owns the `MeshCache`, rasterises the land mask, calls `generateWorld`, then returns the layers as JSON strings, the slots, the stats, the packed cells and the preview relief (cells and relief transferred). `world-gen-session.ts` is the lifecycle behind `useWorldGenerator`: an idle worker is reused (its mesh cache survives slider changes), a worker still busy is terminated when a newer request arrives (a message cannot interrupt the synchronous generator), answers to anything but the latest request are dropped, and a run that takes more than 30 s ends in the error state. `create-world-worker.ts` is the only file with `import.meta.url`, so tests inject a fake worker.
+[`worker/`](worker/): `world.worker.ts` connects the Web Worker scope to `world-runner.ts` (`createWorldRunner`, callable directly), which owns the `MeshCache`, rasterises the land mask, calls `generateWorld`, then returns the layers as JSON strings, the slots, the stats, the packed cells and the preview relief (cells and relief transferred). `world-gen-session.ts` is the lifecycle behind `useWorldGenerator`: an idle worker is reused (its mesh cache survives slider changes), a worker still busy is terminated when a newer request arrives (a message cannot interrupt the synchronous generator), answers to anything but the latest request are dropped, and a run that takes more than 30 s ends in the error state. `create-world-worker.ts` is the only file with `import.meta.url`, so tests inject a fake worker. The runner owns a `StageCache` and the mask cache, and `useWorldGenerator` also exposes `diagnostic`, `nationSeeds`, `renderPng` and `measure`, which the Studio calls.
 
 ---
 
@@ -261,5 +295,6 @@ bun run perf:atlas
 - `integration.test.ts`: Multi-seed end-to-end pipeline validation across seeds `1`, `42`, `100`, `256`, `777`.
 - `multi-seed-audit.test.ts`: 10-seed scientific composite score enforcement ($\ge 85\%$).
 - `generate-to-fit.test.ts`: land mask and kept borders. `polygon-merge.test.ts`: the integer-key merge against the string-key reference. `performance.test.ts`: the cached-mesh slider change within budget.
+- `stages.test.ts`: `planRestart` for every field and a restart equals a full run for every stage. `diagnostics.test.ts`, `raster-draw.test.ts`, `render-png.test.ts`: the diagnostic images, the rasteriser and the PNG layout. `measure-world.test.ts`, `zip-store.test.ts`, `studio-*.test.ts`: the sampler, the zip writer and the Studio's pure modules.
 - `export.test.ts`, `ring-geometry.test.ts`, `ring-smooth.test.ts`: valid exported polygons, shared borders identical, areas within tolerance.
 - `baseline.test.ts`, `land-mask.test.ts`, `relief.test.ts`, `relief-preview.test.ts`, `world-stats.test.ts`, `worker/*`: the pure modules and the runner.
