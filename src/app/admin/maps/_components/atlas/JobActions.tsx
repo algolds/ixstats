@@ -1,18 +1,31 @@
 "use client";
 
+import { useContext } from "react";
+import { useRouter } from "next/navigation";
 import { Refresh, Undo } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { ConfirmButton } from "./ConfirmButton";
+import { ImportLauncherContext, importJobHref } from "./import-launcher";
 import { ROLLBACK_EFFECT } from "./rollback-copy";
 import type { JobRow } from "./job-labels";
 
+type RetryAs = JobRow["retryAs"];
+
 type Actionable = Pick<JobRow, "id" | "canCancel" | "canRetry" | "canRollBack" | "importId">;
 
+interface JobActionsProps {
+  job: Actionable;
+  /** A retry started this job; a retried analysis also opens the import wizard on it, before this is called */
+  onRetried?: (started: { jobId: string; retryAs: RetryAs }) => void;
+}
+
 /** Cancel, Retry and Roll back for one job, each only where the server says the job allows it. */
-export function JobActions({ job }: { job: Actionable }) {
+export function JobActions({ job, onRetried }: JobActionsProps) {
   const notify = useNotify();
+  const router = useRouter();
+  const launchImport = useContext(ImportLauncherContext);
   const utils = api.useUtils();
   const refresh = () => {
     void utils.atlas.jobs.invalidate();
@@ -29,9 +42,15 @@ export function JobActions({ job }: { job: Actionable }) {
     onError: (error) => notify.error("Could not cancel the job", error.message),
   });
   const retry = api.atlas.jobs.retry.useMutation({
-    onSuccess: ({ note }) => {
+    onSuccess: ({ jobId, retryAs, note }) => {
       notify.success("Job started again", note);
       refresh();
+      // An analysis is continued in the import wizard, a world check by applying it from its sheet
+      if (retryAs === "analysis") {
+        if (launchImport) launchImport(jobId);
+        else router.push(importJobHref(jobId));
+      }
+      onRetried?.({ jobId, retryAs });
     },
     onError: (error) => notify.error("Could not start the job again", error.message),
   });

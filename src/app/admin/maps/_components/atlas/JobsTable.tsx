@@ -63,7 +63,12 @@ export function JobsTable({ jobs, onOpen, showRealm = true }: JobsTableProps) {
             </TableCell>
             <TableCell>{timeAgo(job.createdAt)}</TableCell>
             <TableCell>
-              <JobActions job={job} />
+              <JobActions
+                job={job}
+                onRetried={({ jobId, retryAs }) => {
+                  if (retryAs === "world-check") onOpen(jobId);
+                }}
+              />
             </TableCell>
           </TableRow>
         ))}

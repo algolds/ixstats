@@ -101,7 +101,7 @@ export function AtlasJobsTab() {
           {jobs.isFetchingNextPage ? "Loading" : "Load more"}
         </Button>
       )}
-      <JobDetailSheet jobId={openJob} onClose={() => setOpenJob(null)} />
+      <JobDetailSheet jobId={openJob} onClose={() => setOpenJob(null)} onOpenJob={setOpenJob} />
     </div>
   );
 }

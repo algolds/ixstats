@@ -291,9 +291,26 @@ export async function getAtlasJob(db: PrismaClient, jobId: string) {
     ...row!,
     result,
     options,
+    canApply: await canApplyWorldCheck(db, job),
     fittedMapVersion: fitted,
     retryNote: RETRY_NOTES[retryAs(job)] + (fitted === null ? "" : FITTED_NOTE),
   };
+}
+
+/**
+ * A world check that succeeded and has no apply job yet can still be applied (`startWorldApply`, which checks every
+ * guard again): the case after a retry started a new check, which nothing else in the UI would continue.
+ */
+async function canApplyWorldCheck(
+  db: PrismaClient,
+  job: { id: string; kind: string; dryRun: boolean; status: string }
+): Promise<boolean> {
+  if (job.kind !== "world" || !job.dryRun || job.status !== "succeeded") return false;
+  const applied = await db.mapImportJob.findFirst({
+    where: { parentJobId: job.id, dryRun: false },
+    select: { id: true },
+  });
+  return applied === null;
 }
 
 /** The map version a world job (or the check it was applied from) was fitted to. */

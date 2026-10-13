@@ -2,9 +2,19 @@
  * The Atlas page: its header, health strip, tabs (Realms by default), and the import wizard that `?importJob` opens.
  */
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { healthSummary, realmRow, resetFakeAtlas, state } from "~/tests/helpers/fake-atlas-ui";
+import {
+  healthSummary,
+  jobRow,
+  realmRow,
+  resetFakeAtlas,
+  responses,
+  state,
+} from "~/tests/helpers/fake-atlas-ui";
 
 jest.mock("~/trpc/react", () => ({ api: jest.requireActual("~/tests/helpers/fake-atlas-ui").api }));
+jest.mock("~/hooks/useNotify", () => ({
+  useNotify: () => jest.requireActual("~/tests/helpers/fake-atlas-ui").notify,
+}));
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
 jest.mock("~/components/shell/PageHeader", () => ({
@@ -85,6 +95,23 @@ describe("the Atlas page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getByRole("button", { name: "Import a map" }));
     expect(screen.getByText("import wizard new")).toBeInTheDocument();
+  });
+
+  it("opens the wizard on the analysis a retry started, replacing a fresh wizard", () => {
+    state.jobPages = [
+      {
+        jobs: [jobRow({ id: "failed", dryRun: true, status: "failed", canRetry: true })],
+        nextCursor: null,
+      },
+    ];
+    responses["atlas.jobs.retry"] = { jobId: "job_new", retryAs: "analysis", note: "Again" };
+    render(<AtlasPanel />);
+    fireEvent.click(screen.getByRole("button", { name: "Import a map" }));
+    expect(screen.getByText("import wizard new")).toBeInTheDocument();
+    openTab("Jobs");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(screen.getByText("import wizard job_new")).toBeInTheDocument();
+    expect(screen.queryByText("import wizard new")).toBeNull();
   });
 
   it("opens the wizard on the job in ?importJob", () => {

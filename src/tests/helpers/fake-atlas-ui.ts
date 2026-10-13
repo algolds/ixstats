@@ -87,7 +87,7 @@ export interface AtlasState {
   jobPages: Array<{ jobs: JobRow[]; nextCursor: string | null }>;
   /** What `atlas.jobs.list` answers to a plain query (the realm page) */
   recentJobs: JobRow[];
-  jobDetail: (JobRow & { result: object | null; retryNote: string }) | undefined;
+  jobDetail: (JobRow & { result: object | null; retryNote: string; canApply: boolean }) | undefined;
   realm: Atlas["realms"]["get"] | undefined;
   realmError: string | null;
   /** Read errors by query: the query answers no data and this message */
@@ -215,5 +215,10 @@ export const api = {
       rollback: mutation("atlas.jobs.rollback"),
     },
   },
-  geoEditor: { mapImport: { rebuildRelief: mutation("geoEditor.mapImport.rebuildRelief") } },
+  geoEditor: {
+    mapImport: {
+      rebuildRelief: mutation("geoEditor.mapImport.rebuildRelief"),
+      applyWorld: mutation("geoEditor.mapImport.applyWorld"),
+    },
+  },
 };

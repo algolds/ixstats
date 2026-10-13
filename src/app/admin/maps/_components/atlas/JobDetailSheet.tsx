@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Signal } from "~/components/ui/signal";
@@ -13,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import { ConfirmButton } from "./ConfirmButton";
 import { JobActions } from "./JobActions";
 import { STATUS_LABELS, statusTone, summarizeResult } from "./job-labels";
 
@@ -27,7 +29,48 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function JobDetail({ jobId }: { jobId: string }) {
+interface JobDetailProps {
+  jobId: string;
+  onClose: () => void;
+  onOpenJob: (jobId: string) => void;
+}
+
+/** Applies a world check that succeeded: the check's result above is the summary of what it will write. */
+function ApplyCheck({
+  jobId,
+  summary,
+  onOpenJob,
+}: {
+  jobId: string;
+  summary: Array<[label: string, value: string]>;
+  onOpenJob: (jobId: string) => void;
+}) {
+  const notify = useNotify();
+  const utils = api.useUtils();
+  const apply = api.geoEditor.mapImport.applyWorld.useMutation({
+    onSuccess: ({ jobId: applyJobId }) => {
+      notify.success("Apply started", "The world is being written to the realm");
+      void utils.atlas.jobs.invalidate();
+      void utils.atlas.realms.invalidate();
+      onOpenJob(applyJobId);
+    },
+    onError: (error) => notify.error("Could not apply the world", error.message),
+  });
+  const found = summary.map(([label, value]) => `${label}: ${value}`).join(", ");
+  return (
+    <ConfirmButton
+      label="Apply this check"
+      title="Apply this world to the realm?"
+      description={`${found ? `The check found ${found}. ` : ""}Applying writes what the check lists. Every guard runs again first, and the apply is refused if the map has changed since the check.`}
+      confirmLabel="Apply"
+      keepLabel="Not now"
+      disabled={apply.isPending}
+      onConfirm={() => apply.mutate({ jobId })}
+    />
+  );
+}
+
+function JobDetail({ jobId, onClose, onOpenJob }: JobDetailProps) {
   const { data: job, error } = api.atlas.jobs.get.useQuery(
     { jobId },
     {
@@ -94,7 +137,16 @@ function JobDetail({ jobId }: { jobId: string }) {
         </section>
       )}
       <section className="flex flex-col gap-2">
-        <JobActions job={job} />
+        <div className="flex flex-wrap items-center gap-2">
+          <JobActions
+            job={job}
+            onRetried={({ jobId: startedId, retryAs }) => {
+              if (retryAs === "analysis") onClose();
+              if (retryAs === "world-check") onOpenJob(startedId);
+            }}
+          />
+          {job.canApply && <ApplyCheck jobId={job.id} summary={result} onOpenJob={onOpenJob} />}
+        </div>
         {job.canRetry && <p className="text-label-secondary text-footnote">{job.retryNote}</p>}
         {job.status === "failed" && job.retryBlocked && (
           <p className="text-label-secondary text-footnote">{job.retryBlocked}</p>
@@ -105,7 +157,16 @@ function JobDetail({ jobId }: { jobId: string }) {
 }
 
 /** One job's stage, progress, result summary and error, with the actions it allows. */
-export function JobDetailSheet({ jobId, onClose }: { jobId: string | null; onClose: () => void }) {
+export function JobDetailSheet({
+  jobId,
+  onClose,
+  onOpenJob,
+}: {
+  jobId: string | null;
+  onClose: () => void;
+  /** Show another job in the sheet: the check a retry started, or the apply started from a check */
+  onOpenJob: (jobId: string) => void;
+}) {
   return (
     <Sheet open={jobId !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent>
@@ -115,7 +176,7 @@ export function JobDetailSheet({ jobId, onClose }: { jobId: string | null; onClo
             Where the job is, what it produced and what can be done.
           </SheetDescription>
         </SheetHeader>
-        {jobId && <JobDetail jobId={jobId} />}
+        {jobId && <JobDetail jobId={jobId} onClose={onClose} onOpenJob={onOpenJob} />}
       </SheetContent>
     </Sheet>
   );

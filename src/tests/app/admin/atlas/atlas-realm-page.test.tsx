@@ -15,6 +15,8 @@ import {
 } from "~/tests/helpers/fake-atlas-ui";
 
 jest.mock("~/trpc/react", () => ({ api: jest.requireActual("~/tests/helpers/fake-atlas-ui").api }));
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => jest.requireActual("~/tests/helpers/fake-atlas-ui").notify,
 }));

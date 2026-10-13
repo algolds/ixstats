@@ -236,6 +236,25 @@ describe("getAtlasJob", () => {
     expect(detail.retryNote).toMatch(/fails if the map has changed/i);
     await expect(getAtlasJob(db, "missing")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
+
+  it("offers Apply only for a succeeded world check that nothing has been applied from", async () => {
+    const db = world();
+    const fresh = seed(db, { kind: "world" });
+    expect((await getAtlasJob(db, fresh.id)).canApply).toBe(true);
+
+    const used = seed(db, { kind: "world" });
+    seed(db, { kind: "world", dryRun: false, status: "failed", parentJobId: used.id });
+    expect((await getAtlasJob(db, used.id)).canApply).toBe(false);
+
+    for (const other of [
+      seed(db, { kind: "world", status: "failed" }),
+      seed(db, { kind: "world", status: "running" }),
+      seed(db, { kind: "world", dryRun: false }),
+      seed(db, { kind: "png" }),
+    ]) {
+      expect((await getAtlasJob(db, other.id)).canApply).toBe(false);
+    }
+  });
 });
 
 describe("retryAtlasJob", () => {

@@ -118,7 +118,7 @@ function RecentJobs({ slug }: { slug: string }) {
           <JobsTable jobs={data.jobs} onOpen={setOpenJob} showRealm={false} />
         )}
       </Card>
-      <JobDetailSheet jobId={openJob} onClose={() => setOpenJob(null)} />
+      <JobDetailSheet jobId={openJob} onClose={() => setOpenJob(null)} onOpenJob={setOpenJob} />
     </section>
   );
 }

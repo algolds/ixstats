@@ -16,6 +16,8 @@ import {
 } from "~/tests/helpers/fake-atlas-ui";
 
 jest.mock("~/trpc/react", () => ({ api: jest.requireActual("~/tests/helpers/fake-atlas-ui").api }));
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => jest.requireActual("~/tests/helpers/fake-atlas-ui").notify,
 }));
@@ -207,6 +209,64 @@ describe("the jobs read error", () => {
   });
 });
 
+describe("continuing a retried job", () => {
+  beforeEach(() => mockPush.mockClear());
+
+  it("opens the import wizard's page on a retried analysis, which nothing else could finish", () => {
+    state.jobPages = [
+      page(jobRow({ id: "failed", dryRun: true, status: "failed", canRetry: true })),
+    ];
+    responses["atlas.jobs.retry"] = { jobId: "an 2", retryAs: "analysis", note: "Again" };
+    render(<AtlasJobsTab />);
+    fireEvent.click(
+      within(rowOf("Open Analysis (PNG) failed")).getByRole("button", { name: "Retry" })
+    );
+    expect(mockPush).toHaveBeenCalledWith("/admin/maps?importJob=an%202");
+  });
+
+  it("opens a retried world check, which can then be applied after asking", () => {
+    state.jobPages = [
+      page(jobRow({ id: "failed", kind: "world", status: "failed", canRetry: true })),
+    ];
+    responses["atlas.jobs.retry"] = { jobId: "check_2", retryAs: "world-check", note: "New check" };
+    responses["geoEditor.mapImport.applyWorld"] = { jobId: "apply_3" };
+    state.jobDetail = {
+      ...jobRow({ id: "check_2", kind: "world", dryRun: true }),
+      result: { layers: ["a", "b"], nations: 3 },
+      retryNote: "",
+      canApply: true,
+    };
+    render(<AtlasJobsTab />);
+    fireEvent.click(
+      within(rowOf("Open World apply failed")).getByRole("button", { name: "Retry" })
+    );
+    expect(mockPush).not.toHaveBeenCalled();
+    const sheet = screen.getByRole("dialog");
+    expect(within(sheet).getByText("Job check_2")).toBeInTheDocument();
+
+    fireEvent.click(within(sheet).getByRole("button", { name: "Apply this check" }));
+    expect(calls.filter(([name]) => name === "geoEditor.mapImport.applyWorld")).toEqual([]);
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Layers: 2 items, Nations: 3");
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Apply" }));
+    expect(calls).toContainEqual(["geoEditor.mapImport.applyWorld", { jobId: "check_2" }]);
+    // The sheet follows to the apply job
+    expect(screen.getByText("Job apply_3")).toBeInTheDocument();
+  });
+
+  it("offers no Apply on a check that cannot be applied", () => {
+    state.jobPages = [page(jobRow({ id: "done", kind: "world", dryRun: true }))];
+    state.jobDetail = {
+      ...jobRow({ id: "done", kind: "world", dryRun: true }),
+      result: null,
+      retryNote: "",
+      canApply: false,
+    };
+    render(<AtlasJobsTab />);
+    fireEvent.click(screen.getByRole("button", { name: "Open World check done" }));
+    expect(screen.queryByRole("button", { name: "Apply this check" })).toBeNull();
+  });
+});
+
 describe("the detail sheet", () => {
   it("opens a job with its error, result summary and the retry note", () => {
     state.jobPages = [page(jobRow({ id: "failed", status: "failed", canRetry: true }))];
@@ -214,6 +274,7 @@ describe("the detail sheet", () => {
       ...jobRow({ id: "failed", status: "failed", canRetry: true, error: "The upload is gone" }),
       result: { written: 12, warnings: ["a", "b"], summary: { x: 1 } },
       retryNote: "Starts again from the same upload.",
+      canApply: false,
     };
     render(<AtlasJobsTab />);
     fireEvent.click(screen.getByRole("button", { name: "Open Apply (PNG) failed" }));
@@ -233,6 +294,7 @@ describe("the detail sheet", () => {
       ...jobRow({ id: "failed", status: "failed", retryBlocked: "The upload is gone" }),
       result: null,
       retryNote: "",
+      canApply: false,
     };
     render(<AtlasJobsTab />);
     fireEvent.click(screen.getByRole("button", { name: "Open Apply (PNG) failed" }));
