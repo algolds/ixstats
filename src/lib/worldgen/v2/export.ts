@@ -29,7 +29,7 @@ import type {
   MultiPolygon,
   Position,
 } from "geojson";
-import { ELEVATION_ZONES, TREWARTHA_BIOMES } from "./config";
+import { ELEVATION_ZONES, ICE_CAP_BIOME, TREWARTHA_BIOMES } from "./config";
 import { coastCorners, mergeCells, type MergedPolygon } from "./helpers/polygon-merge";
 import { catmullRomSmoothLine } from "./helpers/chaikin";
 import { smoothRing } from "./helpers/ring-smooth";
@@ -304,9 +304,6 @@ function exportLakes(graph: WorldGraph, corners: Uint8Array): FeatureCollection 
 
   return { type: "FeatureCollection", features: geoFeatures };
 }
-
-/** The biome of an ice cap cell (Fi): what the ice cap layer and the PNG render draw as ice. */
-export const ICE_CAP_BIOME = 10;
 
 function exportIcecaps(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
   const { cells } = graph;

@@ -45,6 +45,15 @@ afterAll(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
+/** Moves a job the fake holds to another status, as the worker would. */
+function setStatus(db: Fake, id: string, status: string) {
+  const row = (db.mapImportJob.rows as Array<{ id: string; status: string }>).find(
+    (r) => r.id === id
+  );
+  if (!row) throw new Error(`No job ${id}`);
+  row.status = status;
+}
+
 const GONE = "f".repeat(64);
 let n = 0;
 function seed(db: Fake, job: Record<string, unknown>) {
@@ -381,9 +390,9 @@ describe("retryAtlasJob", () => {
     expect(db.mapImportJob.rows).toHaveLength(before);
 
     // Running counts too; once it has finished (or failed) a retry is allowed again
-    db.mapImportJob.rows.find((r: any) => r.id === first.jobId).status = "running";
+    setStatus(db, first.jobId, "running");
     await expect(retryAtlasJob(db, admin, failed.id, deps)).rejects.toThrow(/already running/i);
-    db.mapImportJob.rows.find((r: any) => r.id === first.jobId).status = "failed";
+    setStatus(db, first.jobId, "failed");
     await expect(retryAtlasJob(db, admin, failed.id, deps)).resolves.toMatchObject({
       retryAs: "analysis",
     });

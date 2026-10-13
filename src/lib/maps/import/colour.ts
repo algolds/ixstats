@@ -18,6 +18,19 @@ export function normalizeHex(input: string): string | null {
   return `#${body.toLowerCase()}`;
 }
 
+const OPAQUE_HEX = /^#(?:([0-9a-f]{3})f|([0-9a-f]{6})ff)$/i;
+
+/**
+ * A fill colour as one spelling to compare by: `normalizeHex`'s, with an opaque alpha dropped first (`#A8C995FF` and
+ * `#abcf` are `#a8c995` and `#aabbcc`). Anything that is not a hex colour is only trimmed and lower-cased.
+ */
+export function normalizeHexColor(input: string): string {
+  const trimmed = input.trim();
+  const opaque = OPAQUE_HEX.exec(trimmed);
+  const body = opaque ? `#${opaque[1] ?? opaque[2]!}` : trimmed;
+  return normalizeHex(body) ?? trimmed.toLowerCase();
+}
+
 export const hexToRgb = (hex: string): Rgb => hexToRgbArray(hex);
 export const rgbHex = (rgb: Rgb): string => rgbToHex(rgb[0], rgb[1], rgb[2]);
 

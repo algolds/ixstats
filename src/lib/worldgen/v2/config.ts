@@ -176,6 +176,9 @@ interface TrewarthaBiome {
   color: string;
 }
 
+/** Biome id of permanent ice (Fi): the ice cap layer, the PNG render and nation siting all read it. */
+export const ICE_CAP_BIOME = 10;
+
 export const TREWARTHA_BIOMES: TrewarthaBiome[] = [
   { id: 0, code: "Ar", name: "Tropical Wet", color: "#960000" },
   { id: 1, code: "Aw", name: "Tropical Dry", color: "#ff0000" },

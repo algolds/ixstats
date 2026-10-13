@@ -93,16 +93,9 @@ describe("worldgen/render-png", () => {
     expect(at[2]!).toBeGreaterThan(at[0]!);
   });
 
-  it("draws ice cap cells in the ice colour when the world has ice caps, and not when it has none", () => {
-    // Make one inland land cell an ice cap cell for the test, and put it back after
+  /** Makes `cell` an ice cap cell for the test and checks the render with and without ice caps. */
+  function expectIce(cell: number) {
     const { cells } = graph;
-    const cell = [...cells.isLand].findIndex(
-      (land, c) =>
-        land === 1 &&
-        cells.biome[c] !== 10 &&
-        cells.neighbors[c]!.every((n) => cells.isLand[n] === 1)
-    );
-    expect(cell).toBeGreaterThanOrEqual(0);
     const was = cells.biome[cell]!;
     cells.biome[cell] = 10;
     try {
@@ -120,6 +113,26 @@ describe("worldgen/render-png", () => {
     } finally {
       cells.biome[cell] = was;
     }
+  }
+
+  const interior = (land: 0 | 1) => {
+    const { cells } = graph;
+    const cell = [...cells.isLand].findIndex(
+      (value, c) =>
+        value === land &&
+        cells.biome[c] !== 10 &&
+        cells.neighbors[c]!.every((n) => cells.isLand[n] === land)
+    );
+    expect(cell).toBeGreaterThanOrEqual(0);
+    return cell;
+  };
+
+  it("draws ice cap cells in the ice colour when the world has ice caps, and not when it has none", () => {
+    expectIce(interior(1));
+  });
+
+  it("draws sea ice too, as the ice cap layer holds every ice biome cell, land or water", () => {
+    expectIce(interior(0));
   });
 
   it("covers 8192 px within the budget, and the pure compose of a default world stays under 2 s", () => {

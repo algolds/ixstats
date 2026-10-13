@@ -369,6 +369,11 @@ describe("useWorldGenerator", () => {
     });
     expect(result.current.state).toBe("error");
     expect(workers[1]!.terminated).toBe(true);
+
+    // With nothing queued behind it, the timed-out worker's late answer is dropped too
+    act(() => workers[1]!.say(resultMessage(2, { seed: 999 })));
+    expect(result.current.state).toBe("error");
+    expect(result.current.result).toBeNull();
   });
 
   it("a cancel and a reset clear the queued generate", () => {

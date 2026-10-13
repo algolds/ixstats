@@ -19,7 +19,7 @@ import {
   type WorldGraph,
   type WorldSlot,
 } from "./types";
-import { QUALITY_THRESHOLDS, TREWARTHA_BIOMES } from "./config";
+import { ICE_CAP_BIOME, QUALITY_THRESHOLDS, TREWARTHA_BIOMES } from "./config";
 import { makeRng, hslToHex } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2, cellVectors, chord2 } from "./mesh";
 import { dijkstraMultiSource } from "./helpers/flood-fill";
@@ -476,8 +476,6 @@ function buildStateEntities(
 
 /** Land above this height (m) is too high to settle. */
 const HABITABLE_MAX_M = 3000;
-/** Biome id of permanent ice. */
-const ICE_CAP_BIOME = 10;
 /** Land within this many cells of the sea counts as coastal. */
 const COASTAL_HOPS = 1;
 

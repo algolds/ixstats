@@ -31,6 +31,7 @@ jest.mock("~/components/maps/editor/panels/WorldApplyRegion", () => {
   return { ...actual, WorldApplyRegion: jest.fn(actual.WorldApplyRegion) };
 });
 
+import { retryPresets } from "~/components/maps/editor/hooks/useWorldPresets";
 import { WorldPanel } from "~/components/maps/editor/panels/WorldPanel";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 import { controlsForPreset } from "~/lib/worldgen/world-controls";
@@ -200,5 +201,15 @@ describe("the presets of the World tab", () => {
     await generateFirst();
     fireEvent.click(screen.getByRole("radio", { name: "Badlands" }));
     expect(loadWorldRecipe(REALM)?.controls).toMatchObject({ preset: "badlands" });
+  });
+});
+
+describe("retryPresets", () => {
+  it("retries a failure once, but not a client error the server will only repeat", () => {
+    expect(retryPresets(0, { data: { httpStatus: 500 } })).toBe(true);
+    expect(retryPresets(0, { data: null })).toBe(true);
+    expect(retryPresets(1, { data: { httpStatus: 500 } })).toBe(false);
+    expect(retryPresets(0, { data: { httpStatus: 403 } })).toBe(false);
+    expect(retryPresets(0, { data: { httpStatus: 404 } })).toBe(false);
   });
 });

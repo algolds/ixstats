@@ -10,7 +10,8 @@
  */
 
 import type { Feature, Geometry, Position } from "geojson";
-import { climateZoneOf, normalizeHexColor } from "~/lib/maps/climate-zones";
+import { climateZoneOf } from "~/lib/maps/climate-zones";
+import { normalizeHexColor } from "~/lib/maps/import/colour";
 import { resolveClimateFromColor, trewarthaCodeOf } from "~/lib/maps/geo-analytics";
 import { EARTH_RADIUS_KM, haversineKm, sphericalRingAreaSqKm } from "~/lib/maps/planet";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";

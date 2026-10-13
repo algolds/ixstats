@@ -23,7 +23,7 @@ import {
   type Rgba,
 } from "./raster-draw";
 import { addDetail, heightsFromCells, hillshade } from "./relief";
-import { ICE_CAP_BIOME } from "./v2/export";
+import { ICE_CAP_BIOME } from "./v2/config";
 import type { WorldGraph } from "./v2/types";
 
 export const PNG_WIDTHS = [2048, 4096, 8192] as const;
@@ -164,13 +164,11 @@ function drawBorders(raster: Raster, graph: WorldGraph): void {
   }
 }
 
-/** Ice caps: the cells the ice cap layer is made of, over the land. */
+/** Ice caps: every cell the ice cap layer is made of (sea ice at the poles too, as the Studio map shows it). */
 function drawIcecaps(raster: Raster, graph: WorldGraph): void {
   const { cells } = graph;
   for (let c = 0; c < cells.n; c++) {
-    if (cells.isLand[c] === 1 && cells.biome[c] === ICE_CAP_BIOME) {
-      fillRing(raster, cells.vertices[c]!, ICE);
-    }
+    if (cells.biome[c] === ICE_CAP_BIOME) fillRing(raster, cells.vertices[c]!, ICE);
   }
 }
 

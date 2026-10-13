@@ -11,6 +11,18 @@ export interface WorldPresets {
 }
 
 /**
+ * One more try after a failure, unless the server answered with a client error (FORBIDDEN, NOT_FOUND, ...): asking
+ * again cannot change that answer.
+ */
+export function retryPresets(
+  failures: number,
+  error: { data?: { httpStatus?: number } | null }
+): boolean {
+  const status = error.data?.httpStatus ?? 0;
+  return failures < 1 && !(status >= 400 && status < 500);
+}
+
+/**
  * The presets the World tab offers: the published, unarchived ones from the database, in the admin's order. If they
  * cannot be read, the three built-ins from code stand in (`fallback`), so a founder can still make a world; the
  * recipe is not saved meanwhile, since the stand-in is not the founder's choice. Every caller shares one query, which
@@ -20,7 +32,7 @@ export interface WorldPresets {
 export function useWorldPresets(realmSlug: string | null): WorldPresets {
   const query = api.realms.map.worldPresets.useQuery(
     { realm: realmSlug ?? "" },
-    { enabled: !!realmSlug, retry: 1 }
+    { enabled: !!realmSlug, retry: retryPresets }
   );
   if (!realmSlug) return { presets: FACTORY_PRESETS, fallback: true };
   if (query.data) return { presets: query.data, fallback: false };
