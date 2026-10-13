@@ -7,6 +7,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/flags/png-to-svg", () => ({ extractProvincesFromPng: jest.fn() }));
 
 import { createCallerFactory } from "~/server/api/trpc";
+import { geoAdminRouter } from "~/server/api/routers/geo/admin";
 import { geoAdminProvincesRouter } from "~/server/api/routers/geo/admin/provinces";
 import { extractProvincesFromPng } from "~/lib/flags/png-to-svg";
 import { MAX_PNG_BASE64_LENGTH, PngDecodeError } from "~/lib/maps/png-realm-map";
@@ -71,5 +72,11 @@ describe("geoAdmin.parseProvinceUpload — upload limits", () => {
     const result = await caller().parseProvinceUpload({ countryId: "c1", svgContent: PNG_BASE64 });
     expect(result.viewBox).toEqual({ width: 40, height: 20 });
     expect(extractMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the geo admin router", () => {
+  it("is the province router itself, not a one-router merge", () => {
+    expect(geoAdminRouter).toBe(geoAdminProvincesRouter);
   });
 });
