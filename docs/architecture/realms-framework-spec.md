@@ -117,9 +117,10 @@ verification fix; the local, gitignored ledgers (`.superpowers/sdd/2026-09-27-re
   viewer's own nation, even when opened from another realm's map (E4, E-t).
 - This runbook, [`docs/systems/realms-eurth-onboarding.md`](../systems/realms-eurth-onboarding.md) (E7).
 
-- Image maps (decisions 10–11): the **Full Pipeline** takes a flat-colour PNG/JPEG (≤ 25 MB), detects its
+- Image maps (decisions 10–11): the **realm map import wizard** (Atlas, Import a map; the Full Pipeline of the
+  removed `PipelineWizard` did this before it) takes a flat-colour PNG/JPEG (≤ 40 MB), detects its
   colours, lets the admin map each colour to one of the target realm's nations (existing countries and
-  claimable nation pages) or ignore it, and vectorises only the mapped colours into regions named after
+  claimable nation pages) or ignore it, and builds regions for the mapped colours named after
   their nations. Approving a nation-page claim links the new country to its realm's unlinked region of
   that name and syncs its geometry in the approving transaction (E8).
 
@@ -164,7 +165,7 @@ fix round carries the remaining final-wave code items so the docs describe the f
 the admin nation-cap setting, the backfill preflight and duplicate report, the unknown-realm import guard,
 and the country editor's realm (E-t). Task E8 (PNG maps through the Full Pipeline with colour → nation
 mapping) was added because decisions 10–11 were otherwise unmet (E-u); potrace loads at runtime in every
-runtime (E-v); colour analysis only detects colours, imported regions keep their metrics, and unreadable or
+runtime (E-v; since removed: the Full Pipeline and its `potrace` tracer are gone, and the import engine traces colours itself); colour analysis only detects colours, imported regions keep their metrics, and unreadable or
 oversized map images are refused (E-w).
 
 The final whole-branch review added five more; F-6 later tightened F-3. **F-1:** `assignNation` makes a nation the active one only

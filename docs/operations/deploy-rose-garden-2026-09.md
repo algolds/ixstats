@@ -244,7 +244,7 @@ Atlas and World Studio SQL goes **before** that push, for the same reason: it cr
 longer has them, and `db push` stops on the non-empty `procedural_worlds`). The step 1 backup covers the dropped rows:
 
 ```bash
-bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace
+bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace (since removed: the dependency and the code that used it are gone)
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT count(*) FROM map_layers WHERE \"worldId\" IS NULL; SELECT id, slug, \"ownerId\" FROM realms;"
 #   expect: a count (compare with the backfill's map-layer line) and the row  default|default|system
