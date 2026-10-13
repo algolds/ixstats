@@ -162,7 +162,7 @@ export function StudioWorkspace({
         <div className="grid min-h-0 flex-1 grid-cols-[20rem_minmax(0,1fr)_22rem] gap-2 p-2">
           <StudioRail />
           <div className="rounded-card relative min-h-0 overflow-hidden">
-            <div ref={containerRef} className="absolute inset-0" data-testid="studio-map" />
+            <div ref={containerRef} className="absolute inset-0 h-full w-full" data-testid="studio-map" />
             {map === null && (
               <p className="text-label-secondary text-footnote pointer-events-none absolute inset-0 flex items-center justify-center">
                 Loading the map.
