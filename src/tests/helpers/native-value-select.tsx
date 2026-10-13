@@ -9,6 +9,7 @@ interface NativeValueSelectProps {
   placeholder?: string;
   id?: string;
   "aria-label"?: string;
+  "aria-labelledby"?: string;
 }
 
 export function ValueSelect({
@@ -18,11 +19,13 @@ export function ValueSelect({
   placeholder,
   id,
   "aria-label": label,
+  "aria-labelledby": labelledBy,
 }: NativeValueSelectProps) {
   return (
     <select
       id={id}
       aria-label={label}
+      aria-labelledby={labelledBy}
       value={value ?? ""}
       onChange={(event) => onValueChange?.(event.target.value)}
     >
