@@ -110,7 +110,9 @@ describe("useWorldPreview", () => {
     // Climate and ice caps are not drawn (the live map hides them by default)
     expect(rig.sources.has("worldgen-draft-climate")).toBe(false);
     expect(rig.sources.has("worldgen-draft-icecaps")).toBe(false);
-    expect(created).toHaveLength(5);
+    // The political stroke draws from its own outline, without the antimeridian cut
+    expect(rig.sources.has("worldgen-draft-political-outline")).toBe(true);
+    expect(created).toHaveLength(6);
     expect(created.every((c) => c.type === "application/geo+json" && c.size > 0)).toBe(true);
   });
 
@@ -358,12 +360,12 @@ describe("useWorldPreview", () => {
       // Other sources are still loading
       expect(rig.listeners("sourcedata")).toBe(1);
 
-      for (const type of ["altitudes", "political", "lakes", "rivers"]) {
+      for (const type of ["altitudes", "political", "political-outline", "lakes", "rivers"]) {
         act(() =>
           rig.emit("sourcedata", { sourceId: `worldgen-draft-${type}`, isSourceLoaded: true })
         );
       }
-      expect(revoked).toHaveLength(5);
+      expect(revoked).toHaveLength(6);
       expect(rig.listeners("sourcedata")).toBe(0);
     });
 
@@ -394,10 +396,11 @@ describe("useWorldPreview", () => {
       const rig = mount();
       act(() => rig.show(worldResult()));
       const political = String(rig.sources.get("worldgen-draft-political")!.spec.data);
+      const outline = String(rig.sources.get("worldgen-draft-political-outline")!.spec.data);
       const { political: _political, ...layers } = worldResult().layers;
       act(() => rig.show(worldResult({ layers })));
 
-      expect(revoked).toEqual([political]);
+      expect(revoked).toEqual([political, outline]);
     });
 
     it("are revoked when their source fails to load, and only that source's", () => {
@@ -413,10 +416,10 @@ describe("useWorldPreview", () => {
       expect(revoked).toEqual([lakes]);
       expect(rig.listeners("error")).toBe(1);
 
-      for (const type of ["background", "altitudes", "political", "rivers"]) {
+      for (const type of ["background", "altitudes", "political", "political-outline", "rivers"]) {
         act(() => rig.emit("error", { sourceId: `worldgen-draft-${type}` }));
       }
-      expect(revoked).toHaveLength(5);
+      expect(revoked).toHaveLength(6);
       expect(rig.listeners("error")).toBe(0);
       expect(rig.listeners("sourcedata")).toBe(0);
     });
@@ -534,7 +537,8 @@ describe("useWorldPreview", () => {
           rig.fake.setLayoutProperty,
         ].map((fn) => fn.mock.calls.length)
       ).toEqual(calls);
-      expect(created).toHaveLength(5);
+      // Nor outline the polygons again
+      expect(created).toHaveLength(6);
     });
 
     it("ignores styledata when no world is shown", () => {

@@ -29,6 +29,7 @@ import type {
 import { isMapStyleReady } from "~/lib/maps/geojson-layer-helpers";
 import { LAYER_CONFIGS } from "~/lib/maps/map-config";
 import { MERCATOR_MAX_LAT } from "~/lib/maps/realm-map-settings";
+import { seamlessOutline } from "~/lib/maps/seam-outline";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
 
 const DRAFT_PREFIX = "worldgen-draft-";
@@ -52,6 +53,13 @@ const isOptIn = (type: DraftType): boolean => OPT_IN_TYPES.some((optIn) => optIn
 
 const sourceIdOf = (type: DraftType) => `${DRAFT_PREFIX}${type}`;
 const strokeIdOf = (type: DraftType) => `${sourceIdOf(type)}-stroke`;
+/** The stroke's own source: the outline without the antimeridian cut, which the globe would show */
+const outlineIdOf = (type: DraftType) => `${sourceIdOf(type)}-outline`;
+/** Polygon layers drawn with a stroke */
+const hasOutline = (type: DraftType): boolean => {
+  const config = LAYER_CONFIGS[type];
+  return config.type !== "line" && !!config.strokeColor;
+};
 
 /**
  * Draft layers, bottom to top. The relief sits over the elevation and under the countries, as the live overlay does;
@@ -190,7 +198,7 @@ function layerSpecs(type: DraftType): LayerSpecification[] {
     specs.push({
       id: strokeIdOf(type),
       type: "line",
-      source,
+      source: outlineIdOf(type),
       paint: {
         "line-color": config.strokeColor,
         "line-width": config.strokeWidth ?? 1,
@@ -210,6 +218,8 @@ export class WorldDraft {
   private readonly hidden = new Map<string, VisibilitySpecification | undefined>();
   /** The JSON last given to each draft source, so an unchanged layer is not parsed again */
   private readonly pushed = new Map<string, string>();
+  /** The polygons each outline source was made from, so an unchanged layer is not outlined again */
+  private readonly outlined = new Map<string, string>();
   /** Blob URLs handed to a source and not yet revoked, by source */
   private readonly pending = new Map<string, string[]>();
   private listening = false;
@@ -262,10 +272,12 @@ export class WorldDraft {
     this.shown = null;
     this.images.clear();
     this.pushed.clear();
+    this.outlined.clear();
     if (isMapStyleReady(map)) {
       for (const id of STACK) if (map.getLayer(id)) map.removeLayer(id);
       for (const id of [
         ...ALL_TYPES.map(sourceIdOf),
+        ...ALL_TYPES.map(outlineIdOf),
         DRAFT_RELIEF_ID,
         DRAFT_DIAGNOSTIC_ID,
         DRAFT_SEEDS_ID,
@@ -307,6 +319,7 @@ export class WorldDraft {
 
   private pushType(type: DraftType, json: string, anchor: string | undefined): void {
     this.pushSource(sourceIdOf(type), json);
+    if (hasOutline(type)) this.pushOutline(type, json);
     for (const spec of layerSpecs(type)) {
       if (!this.map.getLayer(spec.id)) this.map.addLayer(spec, this.beforeFor(spec.id, anchor));
     }
@@ -321,6 +334,14 @@ export class WorldDraft {
     if (source) void source.setData(url).catch(() => {});
     else map.addSource(sourceId, { type: "geojson", data: url, ...GEOJSON_OPTIONS });
     this.pushed.set(sourceId, json);
+  }
+
+  /** The stroke's source, made from the polygons in `json` when they or the source are new. */
+  private pushOutline(type: DraftType, json: string): void {
+    const id = outlineIdOf(type);
+    if (this.map.getSource(id) && this.outlined.get(id) === json) return;
+    this.pushSource(id, JSON.stringify(seamlessOutline(JSON.parse(json) as FeatureCollection)));
+    this.outlined.set(id, json);
   }
 
   private pushSeeds(anchor: string | undefined): void {
@@ -355,9 +376,12 @@ export class WorldDraft {
     for (const id of [strokeIdOf(type), sourceIdOf(type)]) {
       if (map.getLayer(id)) map.removeLayer(id);
     }
-    if (map.getSource(sourceIdOf(type))) map.removeSource(sourceIdOf(type));
-    this.pushed.delete(sourceIdOf(type));
-    this.release(sourceIdOf(type));
+    for (const id of [sourceIdOf(type), outlineIdOf(type)]) {
+      if (map.getSource(id)) map.removeSource(id);
+      this.pushed.delete(id);
+      this.outlined.delete(id);
+      this.release(id);
+    }
   }
 
   /** An image source pinned at the Mercator corners: added, fed its pixels once, and removed when `pixels` is null. */
