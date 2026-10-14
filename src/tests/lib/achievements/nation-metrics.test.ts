@@ -40,7 +40,7 @@ const COMPLETE_IDENTITY = {
 };
 
 function setup(country: Record<string, unknown> | null = {}) {
-  const db = createMockPrisma();
+  const db = createMockPrisma({ $queryRaw: jest.fn().mockResolvedValue([]) });
   db.country.findUnique.mockResolvedValue(
     country && { ownedSince: null, coatOfArms: null, nationalIdentity: null, ...country }
   );
@@ -130,43 +130,39 @@ describe("nationLoader", () => {
 });
 
 describe("story pins", () => {
-  const pin = (monthsAgo: number, year: number | null) => ({
-    createdAt: ago(monthsAgo * MONTH_MS),
-    ixTimeYear: year,
-  });
-  /** 25 pins over 6 real months and 5 in-world years. */
-  const chronicle = () => Array.from({ length: 25 }, (_, i) => pin((i % 6) + 1, 2000 + (i % 5)));
+  const totals = (pins: number, months: number, years: number) => [
+    { pins: BigInt(pins), months: BigInt(months), years: BigInt(years) },
+  ];
 
-  it("asks for the country's approved pins", async () => {
+  it("reads one aggregate over the country's approved pins, not the rows", async () => {
     const { db, load } = setup();
+    db.$queryRaw.mockResolvedValue(totals(25, 6, 5));
     await load();
-    expect(db.storyPin.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1", status: "approved" } })
-    );
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(db.storyPin.findMany).not.toHaveBeenCalled();
+    const [strings, ...values] = db.$queryRaw.mock.calls[0] as [string[], ...string[]];
+    expect(values).toEqual(["c1"]);
+    expect(strings.join("?")).toMatch(/story_pins/);
+    expect(strings.join("?")).toMatch(/status = 'approved'/);
   });
 
   it("storyPinsApproved counts the pins once they span 6 different real months, else 0", async () => {
     const { db, load } = setup();
-    db.storyPin.findMany.mockResolvedValue(chronicle());
+    db.$queryRaw.mockResolvedValue(totals(25, 6, 5));
     const metrics = await load();
     expect(metrics.storyPinsApproved).toBe(25);
     expect(metrics.storyPinYears).toBe(5);
 
-    db.storyPin.findMany.mockResolvedValue(
-      chronicle().map((p, i) => pin(1 + (i % 5), p.ixTimeYear ?? 0))
-    );
+    db.$queryRaw.mockResolvedValue(totals(25, 5, 5));
     expect((await load()).storyPinsApproved).toBe(0);
   });
 
-  it("storyPinYears counts different in-world years once each and skips pins with no year", async () => {
+  it("storyPinYears is the distinct in-world years, and 0 pins reads 0", async () => {
     const { db, load } = setup();
-    db.storyPin.findMany.mockResolvedValue([
-      pin(1, 1900),
-      pin(1, 1900),
-      pin(2, 1901),
-      pin(3, null),
-    ]);
+    db.$queryRaw.mockResolvedValue(totals(4, 2, 2));
     expect((await load()).storyPinYears).toBe(2);
+    db.$queryRaw.mockResolvedValue(totals(0, 0, 0));
+    expect((await load()).storyPinsApproved).toBe(0);
   });
 });
 

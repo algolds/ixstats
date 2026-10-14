@@ -26,6 +26,7 @@ import type {
 import { diplomacyLoader } from "~/lib/achievements/metrics/diplomacy";
 import { nationAccountLoader, nationLoader } from "~/lib/achievements/metrics/nation";
 import { METRIC_LOADERS, type MetricContext } from "~/lib/achievements/metrics/registry";
+import { distinctBuckets, monthKey } from "~/lib/achievements/time-buckets";
 import { achievementRequiresCountry } from "~/lib/achievements/scope";
 import { achievementService } from "~/lib/achievements/service";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
@@ -222,7 +223,7 @@ function scene(realScale: number) {
   const real = (ixDays: number) =>
     new Date(NOW.getTime() - (ixDays / IXTIME_SPEED) * realScale * DAY_MS);
   const ixDays = 20 * 30.44; // 20 IxTime months: past every month floor that Stewardship II and Old friends set
-  const db = createMockPrisma();
+  const db = createMockPrisma({ $queryRaw: jest.fn() });
 
   db.country.findUnique.mockResolvedValue({
     ownedSince: real(ixDays),
@@ -233,6 +234,7 @@ function scene(realScale: number) {
     Array.from({ length: 10 }, (_, i) => ({
       id: `e${i}`,
       guestCountryId: "c1",
+      hostCountryId: `h${i}`,
       status: "active",
       establishedAt: real(ixDays),
       ixTimeTimestamp: ixDays,
@@ -268,17 +270,22 @@ function scene(realScale: number) {
       return {
         id: `m${i}`,
         culturalExchangeId: `x${i}`,
-        startedAt: new Date(completed.getTime() - (4 / IXTIME_SPEED) * realScale * DAY_MS),
-        completesAt: completed,
+        createdAt: new Date(completed.getTime() - (4 / IXTIME_SPEED) * realScale * DAY_MS),
+        updatedAt: completed,
       };
     })
   );
-  db.storyPin.findMany.mockResolvedValue(
-    Array.from({ length: 25 }, (_, i) => ({
-      createdAt: new Date(NOW.getTime() - (i % 6) * 35 * (realScale / IXTIME_SPEED) * DAY_MS),
-      ixTimeYear: 2000 + (i % 5),
-    }))
+  const pinDates = Array.from(
+    { length: 25 },
+    (_, i) => new Date(NOW.getTime() - (i % 6) * 35 * (realScale / IXTIME_SPEED) * DAY_MS)
   );
+  db.$queryRaw.mockResolvedValue([
+    {
+      pins: BigInt(pinDates.length),
+      months: BigInt(distinctBuckets(pinDates, monthKey)),
+      years: BigInt(5), // in-world years follow the IxTime clock: always 5
+    },
+  ]);
   return db;
 }
 

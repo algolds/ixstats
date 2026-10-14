@@ -26,7 +26,12 @@ const PEACEKEEPING_MIN_MS = 15 * DAY_MS;
 
 const before = (now: Date, ms: number) => new Date(now.getTime() - ms);
 
-/** Embassies the country runs (it is the guest) that stayed open 6 real months with no closure event since. */
+/**
+ * Embassies the country runs (it is the guest) that stayed open 6 real months. `embassy_closed`
+ * events carry only the country pair (no embassyId), and reopening keeps `establishedAt`, so a
+ * closure is any closed or severed event for the pair since `establishedAt`, or any
+ * `embassy_reopened` for the embassy (which only follows a closure).
+ */
 async function embassiesLasting(db: PrismaClient, countryId: string, now: Date): Promise<number> {
   const embassies = await db.embassy.findMany({
     where: {
@@ -34,19 +39,30 @@ async function embassiesLasting(db: PrismaClient, countryId: string, now: Date):
       status: "active",
       establishedAt: { lte: before(now, EMBASSY_LASTING_MS) },
     },
-    select: { id: true },
+    select: { id: true, hostCountryId: true, establishedAt: true },
   });
   if (embassies.length === 0) return 0;
-  // Reopening an embassy keeps establishedAt, so any past closure disqualifies it.
-  const closures = await db.diplomaticEvent.findMany({
+  const events = await db.diplomaticEvent.findMany({
     where: {
-      embassyId: { in: embassies.map((e) => e.id) },
-      eventType: { in: EMBASSY_CLOSED_EVENTS },
+      OR: [
+        { embassyId: { in: embassies.map((e) => e.id) }, eventType: "embassy_reopened" },
+        {
+          country1Id: countryId,
+          country2Id: { in: embassies.map((e) => e.hostCountryId) },
+          eventType: { in: EMBASSY_CLOSED_EVENTS },
+        },
+      ],
     },
-    select: { embassyId: true },
+    select: { embassyId: true, country2Id: true, createdAt: true },
   });
-  const closed = new Set(closures.map((e) => e.embassyId));
-  return embassies.filter((e) => !closed.has(e.id)).length;
+  return embassies.filter(
+    (embassy) =>
+      !events.some(
+        (event) =>
+          event.createdAt >= embassy.establishedAt &&
+          (event.embassyId === embassy.id || event.country2Id === embassy.hostCountryId)
+      )
+  ).length;
 }
 
 /** Accepted cooperative actions toward nations that another player owns. */
@@ -67,20 +83,22 @@ const npcInvitesAccepted = (db: PrismaClient, countryId: string) =>
   });
 
 /**
- * Completed embassy missions that ran 3 real days or longer, one per cultural exchange (an
+ * Completed embassy missions that really ran 3 days or longer, one per cultural exchange (an
  * exchange mints a mission for every embassy at once), once they completed in 3 different months.
+ * `startedAt`/`completesAt` are player-typed dates, so real time is the row's `createdAt` and the
+ * `updatedAt` the completion sweep writes.
  */
 async function missionsCompleted(db: PrismaClient, countryId: string): Promise<number> {
   const missions = await db.embassyMission.findMany({
     where: { status: "completed", embassy: { guestCountryId: countryId } },
-    select: { id: true, culturalExchangeId: true, startedAt: true, completesAt: true },
+    select: { id: true, culturalExchangeId: true, createdAt: true, updatedAt: true },
   });
   const lasting = missions.filter(
-    (m) => m.completesAt.getTime() - m.startedAt.getTime() >= MISSION_MIN_MS
+    (m) => m.updatedAt.getTime() - m.createdAt.getTime() >= MISSION_MIN_MS
   );
   const units = new Set(lasting.map((m) => m.culturalExchangeId ?? m.id));
   const months = distinctBuckets(
-    lasting.map((m) => m.completesAt),
+    lasting.map((m) => m.updatedAt),
     monthKey
   );
   return months >= MISSION_MIN_MONTHS ? units.size : 0;

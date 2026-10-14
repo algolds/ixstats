@@ -41,6 +41,25 @@ describe("diplomacyLoader", () => {
 });
 
 describe("embassiesLasting6m", () => {
+  const embassy = (id: string, host: string, establishedMonthsAgo = 8) => ({
+    id,
+    hostCountryId: host,
+    establishedAt: ago(establishedMonthsAgo * MONTH_MS),
+  });
+  /** The event `closeEmbassy` writes: the country pair, and no embassyId. */
+  const closed = (host: string, monthsAgo: number, eventType = "embassy_closed") => ({
+    embassyId: null,
+    country2Id: host,
+    createdAt: ago(monthsAgo * MONTH_MS),
+    eventType,
+  });
+  /** The event `reopenEmbassy` writes: the pair and the embassyId. */
+  const reopened = (id: string, host: string, monthsAgo: number) => ({
+    embassyId: id,
+    country2Id: host,
+    createdAt: ago(monthsAgo * MONTH_MS),
+  });
+
   it("asks for the embassies the country runs, active, established 6 real months ago or earlier", async () => {
     const { db, load } = setup();
     await load();
@@ -55,20 +74,54 @@ describe("embassiesLasting6m", () => {
     );
   });
 
-  it("does not count an embassy that was closed or severed and reopened (reopening keeps establishedAt)", async () => {
+  it("asks for closures by country pair (closed events carry no embassyId) and for reopenings", async () => {
     const { db, load } = setup();
-    db.embassy.findMany.mockResolvedValue([{ id: "e1" }, { id: "e2" }, { id: "e3" }]);
-    db.diplomaticEvent.findMany.mockResolvedValue([{ embassyId: "e2" }, { embassyId: "e2" }]);
-
-    expect((await load()).embassiesLasting6m).toBe(2);
+    db.embassy.findMany.mockResolvedValue([embassy("e1", "h1"), embassy("e2", "h2")]);
+    await load();
     expect(db.diplomaticEvent.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          embassyId: { in: ["e1", "e2", "e3"] },
-          eventType: { in: ["embassy_closed", "embassy_severed"] },
+          OR: [
+            { embassyId: { in: ["e1", "e2"] }, eventType: "embassy_reopened" },
+            {
+              country1Id: "c1",
+              country2Id: { in: ["h1", "h2"] },
+              eventType: { in: ["embassy_closed", "embassy_severed"] },
+            },
+          ],
         },
       })
     );
+  });
+
+  it("does not count an embassy that was closed and reopened (the closed event has no embassyId)", async () => {
+    const { db, load } = setup();
+    db.embassy.findMany.mockResolvedValue([
+      embassy("e1", "h1"),
+      embassy("e2", "h2"),
+      embassy("e3", "h3"),
+    ]);
+    // e2: closed (pair event) then reopened; e3: a reopening alone still proves a closure.
+    db.diplomaticEvent.findMany.mockResolvedValue([
+      closed("h2", 5),
+      reopened("e2", "h2", 4),
+      reopened("e3", "h3", 3),
+    ]);
+    expect((await load()).embassiesLasting6m).toBe(1);
+  });
+
+  it("does not count an embassy severed since it was established", async () => {
+    const { db, load } = setup();
+    db.embassy.findMany.mockResolvedValue([embassy("e1", "h1"), embassy("e2", "h2")]);
+    db.diplomaticEvent.findMany.mockResolvedValue([closed("h1", 2, "embassy_severed")]);
+    expect((await load()).embassiesLasting6m).toBe(1);
+  });
+
+  it("ignores a closure from before this embassy was established (a severed one was deleted and rebuilt)", async () => {
+    const { db, load } = setup();
+    db.embassy.findMany.mockResolvedValue([embassy("e1", "h1", 8)]);
+    db.diplomaticEvent.findMany.mockResolvedValue([closed("h1", 9)]);
+    expect((await load()).embassiesLasting6m).toBe(1);
   });
 
   it("is 0 without embassies and skips the event query", async () => {
@@ -116,6 +169,7 @@ describe("npcInvitesAccepted", () => {
 });
 
 describe("missionsCompleted", () => {
+  /** Real server timestamps: created `startDaysAgo` days ago, completed by the sweep `lengthDays` later. */
   const mission = (
     id: string,
     exchange: string | null,
@@ -124,8 +178,8 @@ describe("missionsCompleted", () => {
   ) => ({
     id,
     culturalExchangeId: exchange,
-    startedAt: ago(startDaysAgo * DAY_MS),
-    completesAt: ago((startDaysAgo - lengthDays) * DAY_MS),
+    createdAt: ago(startDaysAgo * DAY_MS),
+    updatedAt: ago((startDaysAgo - lengthDays) * DAY_MS),
   });
   /** 20 missions of 7 days, one per exchange, completing in 3 different months. */
   const twentyOverThreeMonths = () =>
@@ -159,19 +213,32 @@ describe("missionsCompleted", () => {
     expect((await load()).missionsCompleted).toBe(21);
   });
 
+  it("ignores the player-typed dates: a backdated 3-day exchange completed at once is not 3 real days", async () => {
+    const { db, load } = setup();
+    db.embassyMission.findMany.mockResolvedValue(
+      twentyOverThreeMonths().map((m) => ({
+        ...m,
+        startedAt: ago(200 * DAY_MS),
+        completesAt: ago(197 * DAY_MS),
+        updatedAt: new Date(m.createdAt.getTime() + 60_000),
+      }))
+    );
+    expect((await load()).missionsCompleted).toBe(0);
+  });
+
   it("ignores missions that ran under 3 real days (3 days exactly counts)", async () => {
     const { db, load } = setup();
     const missions = twentyOverThreeMonths();
     db.embassyMission.findMany.mockResolvedValue(
       missions.map((m, i) =>
-        i === 0 ? { ...m, completesAt: new Date(m.startedAt.getTime() + 3 * DAY_MS - 1) } : m
+        i === 0 ? { ...m, updatedAt: new Date(m.createdAt.getTime() + 3 * DAY_MS - 1) } : m
       )
     );
     expect((await load()).missionsCompleted).toBe(19);
 
     db.embassyMission.findMany.mockResolvedValue(
       missions.map((m, i) =>
-        i === 0 ? { ...m, completesAt: new Date(m.startedAt.getTime() + 3 * DAY_MS) } : m
+        i === 0 ? { ...m, updatedAt: new Date(m.createdAt.getTime() + 3 * DAY_MS) } : m
       )
     );
     expect((await load()).missionsCompleted).toBe(20);

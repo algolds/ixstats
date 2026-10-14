@@ -6,7 +6,8 @@
  * alongside a floor of real months.
  */
 import { RENDERED_IMAGE_URL } from "~/lib/heraldry/constants";
-import { distinctBuckets, monthKey, MONTH_MS } from "../time-buckets";
+import type { PrismaClient } from "@prisma/client";
+import { MONTH_MS } from "../time-buckets";
 import type { MetricLoader } from "./registry";
 
 const CHRONICLER_MIN_MONTHS = 6;
@@ -89,6 +90,21 @@ const IDENTITY_SELECT = {
   nationalSport: true,
 } as const;
 
+/** Approved pins with their distinct real creation months (UTC) and in-world years, in one aggregate. */
+async function pinTotals(db: PrismaClient, countryId: string) {
+  const [row] = await db.$queryRaw<{ pins: bigint; months: bigint; years: bigint }[]>`
+    SELECT count(*) AS pins,
+           count(DISTINCT date_trunc('month', "createdAt" AT TIME ZONE 'UTC')) AS months,
+           count(DISTINCT "ixTimeYear") AS years
+    FROM story_pins
+    WHERE "countryId" = ${countryId} AND status = 'approved'`;
+  return {
+    pins: Number(row?.pins ?? 0),
+    months: Number(row?.months ?? 0),
+    years: Number(row?.years ?? 0),
+  };
+}
+
 export const nationLoader: MetricLoader = {
   id: "nation",
   scope: "country",
@@ -104,23 +120,15 @@ export const nationLoader: MetricLoader = {
           nationalIdentity: { select: IDENTITY_SELECT },
         },
       }),
-      db.storyPin.findMany({
-        where: { countryId, status: "approved" },
-        select: { createdAt: true, ixTimeYear: true },
-      }),
+      pinTotals(db, countryId),
     ]);
-    const months = distinctBuckets(
-      pins.map((p) => p.createdAt),
-      monthKey
-    );
-    const years = new Set(pins.flatMap((p) => (p.ixTimeYear === null ? [] : [p.ixTimeYear])));
     return {
       ownedMonths: ownedMonths(country?.ownedSince ?? null, now),
       identityComplete: isIdentityComplete(country?.nationalIdentity ?? null) ? 1 : 0,
       // Wiki imports also fill coatOfArms; only the Vexel render writes this URL shape.
       armsAttached: RENDERED_IMAGE_URL.test(country?.coatOfArms ?? "") ? 1 : 0,
-      storyPinsApproved: months >= CHRONICLER_MIN_MONTHS ? pins.length : 0,
-      storyPinYears: years.size,
+      storyPinsApproved: pins.months >= CHRONICLER_MIN_MONTHS ? pins.pins : 0,
+      storyPinYears: pins.years,
     };
   },
 };
