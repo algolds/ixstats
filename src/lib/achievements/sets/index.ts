@@ -11,6 +11,7 @@ import { endOfDays } from "./end-of-days";
 import { EXECUTIVE_DEFINITIONS } from "./executive";
 import { LEGACY_DEFINITIONS } from "./legacy";
 import { NATION_DEFINITIONS } from "./nation";
+import { PLATFORM_DEFINITIONS } from "./platform";
 import { POLITICS_DEFINITIONS } from "./politics";
 
 export const ALL_DEFINITIONS: AchievementDefinition[] = [
@@ -22,5 +23,6 @@ export const ALL_DEFINITIONS: AchievementDefinition[] = [
   ...POLITICS_DEFINITIONS,
   ...DIPLOMACY_DEFINITIONS,
   ...NATION_DEFINITIONS,
+  ...PLATFORM_DEFINITIONS,
   endOfDays(() => ALL_DEFINITIONS),
 ];

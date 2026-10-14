@@ -13,6 +13,7 @@ import type { PrismaClient } from "@prisma/client";
 import { diplomacyLoader } from "./diplomacy";
 import { nationAccountLoader, nationLoader } from "./nation";
 import { EXECUTIVE_LOADERS } from "./executive";
+import { PLATFORM_LOADERS } from "./platform";
 import { POLITICS_LOADERS } from "./politics";
 
 export type MetricScope = "account" | "country";
@@ -43,4 +44,5 @@ export const METRIC_LOADERS: MetricLoader[] = [
   diplomacyLoader,
   nationLoader,
   nationAccountLoader,
+  ...PLATFORM_LOADERS,
 ];
