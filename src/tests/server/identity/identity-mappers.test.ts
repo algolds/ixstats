@@ -13,7 +13,6 @@ import {
   filterByRealm,
   paginateEvents,
   primaryNationOf,
-  toAwardHistory,
   toRealmMemberships,
 } from "~/server/modules/identity/identity.mappers";
 import type { IdentityCountry } from "~/server/modules/identity/identity.selects";
@@ -118,17 +117,6 @@ describe("primaryNationOf", () => {
 
   it("is null when no nation is held", () => {
     expect(primaryNationOf([], "c_small")).toBeNull();
-  });
-});
-
-describe("toAwardHistory", () => {
-  it("reports the winner's page and score, else the runner-up's", () => {
-    const [won, placed] = toAwardHistory(
-      [award({}), award({ id: "a2", winnerUser: "Someone" })],
-      "alex"
-    );
-    expect(won).toMatchObject({ role: "winner", page: "Winner Page", score: 90 });
-    expect(placed).toMatchObject({ role: "runner-up", page: "Runner Page", score: 40 });
   });
 });
 

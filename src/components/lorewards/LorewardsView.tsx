@@ -12,9 +12,12 @@ import { CONTEST_PATH, VAULT_TROPHIES_PATH } from "./format";
 export interface LorewardsViewProps {
   /** `contest` leads with today's race, the standings and the history; `you` leads with the player's trophies. */
   focus: "contest" | "you";
-  /** `you` only: show this wiki user's public trophies (the Passport) instead of the viewer's. */
+  /**
+   * A wiki user whose public trophies to show: instead of the viewer's (`you`, the Passport), or above the
+   * race (`contest`, from an article's Loreward badge).
+   */
   username?: string;
-  /** `you` only: the trophy card to mark, when an article badge linked to it. */
+  /** The trophy card to mark, when an article badge linked to it. */
   highlightCardId?: string;
 }
 
@@ -38,6 +41,9 @@ export function LorewardsView({ focus, username, highlightCardId }: LorewardsVie
       </div>
       {contest ? (
         <>
+          {username && (
+            <YourLorewards username={username} highlightCardId={highlightCardId} trophiesOnly />
+          )}
           <TodayRace />
           <Standings />
           <RecentWinners />

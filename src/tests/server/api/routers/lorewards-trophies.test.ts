@@ -8,11 +8,15 @@ import { beforeEach, describe, expect, it } from "@jest/globals";
 jest.mock("~/lib/lorewards", () => ({ syncCurrentWinners: jest.fn() }));
 jest.mock("~/lib/lorewards/today-race", () => ({ getTodayRace: jest.fn() }));
 jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/server/modules/identity/identity.privacy", () => ({
+  loadPassportSettings: jest.fn(),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsTrophiesRouter } from "~/server/api/routers/lorewards/trophies";
 import { lorewardsLeaderboardsRouter } from "~/server/api/routers/lorewards/leaderboards";
 import { getTodayRace } from "~/lib/lorewards/today-race";
+import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -41,6 +45,9 @@ const RACE = {
   ],
 };
 
+const settings = (vaultCards: boolean) =>
+  ({ visibility: { vaultCards }, signature: null, pinnedRibbonKeys: [] }) as never;
+
 let db: ReturnType<typeof createMockPrisma>;
 
 function viewer(over: Record<string, unknown> = {}) {
@@ -59,7 +66,9 @@ const signedOut = () =>
 
 beforeEach(() => {
   db = createMockPrisma();
+  jest.useRealTimers();
   jest.mocked(getTodayRace).mockResolvedValue(RACE);
+  jest.mocked(loadPassportSettings).mockResolvedValue(settings(true));
   db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Ada", userId: "u1" });
   db.lorewardUserStats.findFirst.mockResolvedValue(STATS);
   db.cardOwnership.findMany.mockResolvedValue([
@@ -120,6 +129,25 @@ describe("lorewards.getMyTrophies", () => {
     expect((await viewer().getMyTrophies()).todayRank).toBeNull();
   });
 
+  it("still returns the trophies and payouts when today's race fails", async () => {
+    jest.mocked(getTodayRace).mockRejectedValue(new Error("scoring weights unreadable"));
+
+    const mine = await viewer().getMyTrophies();
+    expect(mine).toMatchObject({ wikiUsername: "Ada", paid: 2150, todayRank: null });
+    expect(mine.cards).toHaveLength(2);
+  });
+
+  it("does not wait on a cold race: the rank is left out after two seconds", async () => {
+    jest.useFakeTimers();
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.mocked(getTodayRace).mockReturnValue(new Promise(() => undefined));
+
+    const pending = viewer().getMyTrophies();
+    await jest.advanceTimersByTimeAsync(2_000);
+    expect(await pending).toMatchObject({ paid: 2150, todayRank: null });
+    logSpy.mockRestore();
+  });
+
   it("is empty, with no wiki name, for a viewer with no verified wiki link", async () => {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
 
@@ -165,6 +193,20 @@ describe("lorewards.getTrophies", () => {
       ],
     });
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
+  });
+
+  it("returns the counts but no cards when the owner hides Vault cards on their passport", async () => {
+    jest.mocked(loadPassportSettings).mockResolvedValue(settings(false));
+
+    const theirs = await signedOut().getTrophies({ username: "Ada" });
+    expect(loadPassportSettings).toHaveBeenCalledWith("u1");
+    expect(theirs).toMatchObject({
+      wins: { daily: 6, weekly: 1, monthly: 0 },
+      runnerUps: 2,
+      streak: 3,
+    });
+    expect(theirs.cards).toEqual([]);
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
   it("shows no cards for a wiki name with no verified link", async () => {

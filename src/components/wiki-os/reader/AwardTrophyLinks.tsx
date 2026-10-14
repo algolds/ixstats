@@ -1,29 +1,33 @@
 import Link from "next/link";
-import { VAULT_TROPHIES_PATH } from "~/components/lorewards/format";
-import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
+import { CONTEST_PATH } from "~/components/lorewards/format";
 
 interface AwardTrophyLinksProps {
-  awards: Array<{ category: string; trophyCardId?: string | null }>;
+  awards: Array<{ category: string; recipientUsers?: string[]; trophyCardId?: string | null }>;
 }
 
 const LINK = "text-caption text-tint duration-fast hover:text-tint-hover transition-colors";
 
-/** Where a Loreward badge leads: the winner's trophies in the Vault and, once minted, the trophy card. */
+/** The Lorewards page opened on a winner's trophies, and on their trophy card when there is one. */
+const trophiesHref = (winner: string, cardId?: string | null) => {
+  const params = new URLSearchParams({ user: winner });
+  if (cardId) params.set("card", cardId);
+  return `${CONTEST_PATH}?${params}`;
+};
+
+/** Where a Loreward badge leads: the winner's trophies and, once minted, the winner's trophy card. */
 export function AwardTrophyLinks({ awards }: AwardTrophyLinksProps) {
-  const loreward = awards.filter((a) => a.category === "LOREWARD");
-  if (loreward.length === 0) return null;
-  const cardId = loreward.find((a) => a.trophyCardId)?.trophyCardId;
+  const wins = awards.filter((a) => a.category === "LOREWARD" && a.recipientUsers?.[0]);
+  const win = wins.find((a) => a.trophyCardId) ?? wins[0];
+  const winner = win?.recipientUsers?.[0];
+  if (!win || !winner) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <Link href={ixstatesLinkHref(VAULT_TROPHIES_PATH)} className={LINK}>
+      <Link href={trophiesHref(winner)} className={LINK}>
         View trophies
       </Link>
-      {cardId && (
-        <Link
-          href={ixstatesLinkHref(`${VAULT_TROPHIES_PATH}&card=${encodeURIComponent(cardId)}`)}
-          className={LINK}
-        >
+      {win.trophyCardId && (
+        <Link href={trophiesHref(winner, win.trophyCardId)} className={LINK}>
           View trophy card
         </Link>
       )}

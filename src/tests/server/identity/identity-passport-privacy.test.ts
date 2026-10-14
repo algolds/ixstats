@@ -181,7 +181,6 @@ describe("toPassportSettings", () => {
 describe("redactPassportSections", () => {
   const sections: PassportSections = {
     lorewards: { ...LORE_STATS, rank: 4 },
-    awardHistory: [{ id: "1", date: "d", type: "daily", role: "winner", page: null, score: 1 }],
     forumStats: { messageCount: 1, threadCount: 2 },
     vault: VAULT,
     achievements: SHOWCASE,
@@ -203,7 +202,6 @@ describe("getPassport enforces privacy server-side", () => {
     const passport = await getPassport(asViewer(null), forum);
     expect(passport?.privacy).toEqual(DEFAULT_PASSPORT_VISIBILITY);
     expect(passport?.wiki.lorewards?.totalScore).toBe(900);
-    expect(passport?.wiki.awardHistory).toHaveLength(1);
     expect(passport?.forum.stats).toEqual({ messageCount: 120, threadCount: 7 });
     expect(forum.getActivity).toHaveBeenCalledWith(owner.id);
     // The old forum account is read from the kept columns only.
@@ -217,7 +215,6 @@ describe("getPassport enforces privacy server-side", () => {
     const passport = await getPassport(asViewer("someone_else"), forum);
 
     expect(passport?.wiki.lorewards).toBeNull();
-    expect(passport?.wiki.awardHistory).toEqual([]);
     expect(passport?.forum.stats).toBeNull();
     expect(passport?.vault).toBeNull();
     expect(passport?.showcase.achievements).toBeNull();

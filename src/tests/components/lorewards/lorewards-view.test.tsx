@@ -153,6 +153,24 @@ describe("contest focus", () => {
   });
 });
 
+describe("contest focus with a winner", () => {
+  it("shows that winner's public trophies above the race, without calendar or history", () => {
+    jest.mocked(useUser).mockReturnValue({ user: null, isLoaded: true } as never);
+    render(<LorewardsView focus="contest" username="Ada" highlightCardId="card2" />);
+
+    expect(headings().slice(0, 2)).toEqual(["Trophies of Ada", "Today's race"]);
+    expect(lore.getTrophies.useQuery).toHaveBeenCalledWith(
+      { username: "Ada" },
+      expect.objectContaining({ enabled: true })
+    );
+    expect(lore.getMyTrophies.useQuery).toHaveBeenCalledWith(undefined, { enabled: false });
+    const shelf = within(screen.getByRole("region", { name: "Trophies of Ada" }));
+    expect(shelf.getByText("Tide Charts").closest("[data-highlighted]")).not.toBeNull();
+    expect(screen.queryByRole("region", { name: "History" })).toBeNull();
+    expect(screen.queryByText("IxCredits paid")).toBeNull();
+  });
+});
+
 describe("you focus", () => {
   it("leads with the viewer's trophies, streak, payouts and trophy cards", () => {
     render(<LorewardsView focus="you" />);

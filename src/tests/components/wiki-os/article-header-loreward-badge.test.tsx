@@ -1,6 +1,6 @@
 /**
- * The "Loreward winner" badge of an article leads to the winner's trophies in the Vault and, once the trophy
- * card is minted, to that card.
+ * The "Loreward winner" badge of an article leads to the winner's trophies on the Lorewards page and, once the
+ * trophy card is minted, to that card there (a reader who is not the winner sees the winner's, not their own).
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
@@ -56,11 +56,11 @@ describe.each([
 
     expect(screen.getByRole("link", { name: /view trophies/i })).toHaveAttribute(
       "href",
-      expect.stringContaining("/vault/achievements?tab=lorewards")
+      "/util/lorewards?user=Ada"
     );
     expect(screen.getByRole("link", { name: /view trophy card/i })).toHaveAttribute(
       "href",
-      expect.stringContaining("/vault/achievements?tab=lorewards&card=card-e1")
+      "/util/lorewards?user=Ada&card=card-e1"
     );
   });
 

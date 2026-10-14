@@ -19,6 +19,8 @@ interface YourLorewardsProps {
   /** Another author's wiki name (the Passport): their public trophies instead of the viewer's. */
   username?: string;
   highlightCardId?: string;
+  /** Leave out the streak calendar and the history. */
+  trophiesOnly?: boolean;
 }
 
 function TrophyFigures({
@@ -65,7 +67,7 @@ function TrophyFigures({
 }
 
 /** The trophies pane and what hangs off it: calendar and history, for the viewer or for `username`. */
-export function YourLorewards({ username, highlightCardId }: YourLorewardsProps) {
+export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourLorewardsProps) {
   const { user, isLoaded } = useUser();
   const signedIn = Boolean(user);
 
@@ -152,7 +154,7 @@ export function YourLorewards({ username, highlightCardId }: YourLorewardsProps)
           </Card>
         )}
       </LorewardsSection>
-      {wikiUsername && (
+      {wikiUsername && !trophiesOnly && (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <StreakCalendar username={wikiUsername} />
