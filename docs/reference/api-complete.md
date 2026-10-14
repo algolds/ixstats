@@ -225,7 +225,7 @@ api.admin.controlBotProcess.useMutation() // { processName, action }
 api.admin.simulateBotCommand.useMutation() // { commandName, subcommand?, options?, user? }
 api.admin.assignUserToCountry.useMutation() // { userId, countryId }
 api.admin.unassignUserFromCountry.useMutation() // { userId, countryId }
-api.admin.updateNavigationSettings.useMutation() // { showWikiTab, showCardsTab, showLabsTab, showIntelligenceTab, showDefenseTab, showMapsTab, showForumTab, showHelpTab }
+api.admin.updateNavigationSettings.useMutation() // { showWikiTab, showLabsTab, showIntelligenceTab, showDefenseTab, showMapsTab, showForumTab, showHelpTab }
 api.admin.inviteUserToBypassWaitlist.useMutation() // { emailAddress, reservedNationName, role? }
 api.admin.linkUserWiki.useMutation() // { userId, wikiUsername }
 api.admin.unlinkUserWiki.useMutation() // { userId, source? }

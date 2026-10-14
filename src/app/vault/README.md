@@ -16,16 +16,18 @@ IxVault is the trading-card and virtual-economy product in IxStats. Players earn
 | `/vault/lore-gallery`                             | `VaultCardsSection`       | Gallery sub-tab                                                               |
 | `/vault/ns-library`                               | `VaultCardsSection`       | Gallery sub-tab                                                               |
 | `/vault/lore-generator`                           | `LoreCardGenerator`       | Request generation of a lore card                                             |
-| `/vault/marketplace`                              | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links)                    |
+| `/vault/store`                                    | `VaultMarketplaceSection` | Tabs: Vault Shop / Auctions / Trading (`?tab=` deep-links)                    |
+| `/vault/achievements`                             | Achievements page         | The Achievements page (a re-export until the Vault version replaces it)       |
 | `/vault/crafting`                                 | `EmptyState`              | "Crafting is retired for now" notice (crafting deprecated 2026-10-05)         |
 | `/vault/exchange`                                 | `VaultExchangeSection`    | The Exchange (₷): wallet and IxC conversion, companies, contracts             |
 | `/vault/import`                                   | `VaultImportSection`      | NationStates deck import wizard                                               |
 | `/vault/ns-deck`                                  | `ImportWizard`            | Legacy NS deck import wizard (the source list uses `/vault/import`)           |
 | `/vault/ns-deck/[nation]`                         | NS deck viewer            | Public NS deck for a nation                                                   |
 | `/vault/admin`                                    | admin gate                | Admin-only vault tools (`useIsAdmin`)                                         |
-| `/vault/market`, `/vault/packs`, `/vault/trading` | —                         | **Redirect stubs** → `/vault/marketplace?tab=auctions\|store\|trading`        |
+| `/vault/marketplace`                              | —                         | **Redirect stub** → `/vault/store`, keeping the query                         |
+| `/vault/market`, `/vault/packs`, `/vault/trading` | —                         | **Redirect stubs** → `/vault/store?tab=auctions\|store\|trading`               |
 
-There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the Vault dashboard (`/vault`, `VaultWalletCard`). The sidebar footer carries a compact copy of the balance, today's earnings and the daily reward control (`SidebarVaultCard`, with a wallet button on the collapsed rail); both follow the Vault app's visibility.
+There is no Vault rail: the global source list (`src/lib/navigation/app-sections.ts`) lists the sections. `/achievements` and `/leaderboards` render in their own page container. The daily reward, balance, today's earnings and treasury revenue live in the wallet card on the Vault dashboard (`/vault`, `VaultWalletCard`). The sidebar footer carries a compact copy of the balance, today's earnings and the daily reward control (`SidebarVaultCard`, with a wallet button on the collapsed rail); both show for every signed-in player.
 
 ## Key Features
 
@@ -89,7 +91,7 @@ All registered in `src/server/api/root.ts`.
 The previous README described an architecture that no longer matches the code and was corrected:
 
 - **No `VaultRouter`, `VaultDashboard`, `VaultHeader`, `VaultNavigation`, or `QuickActions` components** exist: navigation is the shell sidebar, and the pages are a `layout.tsx` plus per-route section components.
-- Documented routes (`/vault/packs`, `/vault/market`) are now **redirect stubs** into `/vault/marketplace`; real routes include `crafting`, `import`, `ns-deck`, `lore-gallery`/`lore-generator`, `ns-library`, `admin`.
+- Documented routes (`/vault/packs`, `/vault/market`) are now **redirect stubs** into `/vault/store`; real routes include `crafting`, `import`, `ns-deck`, `lore-gallery`/`lore-generator`, `ns-library`, `admin`.
 - Marketplace is a single tabbed section (Shop/Auctions/Trading), not separate "Agent 1/2/3" components.
 - Auction/market endpoints live on `cardMarket` (not `market`); packs on `cardPacks`; NS on `nsImport`; crafting on `crafting`; trading on `trading` — the prior "API endpoints needed" wishlist is now live.
 - Dropped the stale "Agent 1/2/3", TODO, and testing-checklist sections.

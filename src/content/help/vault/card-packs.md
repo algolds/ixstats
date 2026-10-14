@@ -10,7 +10,7 @@ nextLabel: Vault Shop Items
 
 ## Where packs are
 
-Packs are sold in the **Vault Shop**: [Vault → Marketplace](/vault/marketplace?tab=store) → **Vault Shop**. The shop has four tabs: **Marketplace** (packs for sale), **My Packs** (packs you own but haven't opened), **Cosmetics** and **Account Upgrades**. Packs are bought with [IxCredits](/help/vault/ixcredits).
+Packs are sold in the **Vault Shop**: [Vault → Store](/vault/store?tab=store) → **Vault Shop**. The shop has four tabs: **Marketplace** (packs for sale), **My Packs** (packs you own but haven't opened), **Cosmetics** and **Account Upgrades**. Packs are bought with [IxCredits](/help/vault/ixcredits).
 
 ## How to buy and open a pack
 

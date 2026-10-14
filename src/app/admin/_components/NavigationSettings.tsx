@@ -20,7 +20,6 @@ export function NavigationSettings() {
   const notify = useNotify();
   const [localSettings, setLocalSettings] = useState({
     showWikiTab: true,
-    showCardsTab: true,
     showLabsTab: true,
     // No switches for these three: nothing reads them (Defense follows MyCountry Premium access; the Forum
     // tab belonged to the XenForo bridge app, retired in phase 4b). Their stored values round-trip.
@@ -77,7 +76,6 @@ export function NavigationSettings() {
   const hasChanges =
     navigationSettings &&
     (navigationSettings.showWikiTab !== localSettings.showWikiTab ||
-      navigationSettings.showCardsTab !== localSettings.showCardsTab ||
       navigationSettings.showLabsTab !== localSettings.showLabsTab ||
       navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab ||
       navigationSettings.showDefenseTab !== localSettings.showDefenseTab ||
@@ -138,31 +136,6 @@ export function NavigationSettings() {
             id="wiki-tab"
             checked={localSettings.showWikiTab}
             onCheckedChange={(checked) => handleToggle("showWikiTab", checked)}
-          />
-        </div>
-
-        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-control border-teal/20 bg-teal/10 border p-2">
-              {localSettings.showCardsTab ? (
-                <Eye className="text-teal h-4 w-4" />
-              ) : (
-                <EyeOff className="text-label-secondary h-4 w-4" />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="cards-tab" className="text-body font-medium">
-                Cards tab
-              </Label>
-              <p className="text-label-secondary text-footnote">
-                Show/hide the Cards navigation tab
-              </p>
-            </div>
-          </div>
-          <Switch
-            id="cards-tab"
-            checked={localSettings.showCardsTab}
-            onCheckedChange={(checked) => handleToggle("showCardsTab", checked)}
           />
         </div>
 

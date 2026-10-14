@@ -82,12 +82,13 @@ describe("Home, Messages, Sports and Help in the map", () => {
     expect(getActiveSectionId(app("home"), "/messages/abc", null)).toBe("messages");
   });
 
-  it("no longer lists Activity or Achievements, though Home still owns their routes", () => {
+  it("no longer lists Activity or Achievements; Home owns /feed, and /achievements is the Vault's", () => {
     const ids = app("home").sections.map((s) => s.id);
     expect(ids).not.toContain("feed");
     expect(ids).not.toContain("achievements");
     expect(getAppForPath("/feed")?.id).toBe("home");
-    expect(getAppForPath("/achievements")?.id).toBe("home");
+    expect(getAppForPath("/achievements")).toBeUndefined();
+    expect(getAppForPath("/vault/achievements")?.id).toBe("vault");
   });
 
   it("moves Sports under Labs as sections in Labs' own colour", () => {

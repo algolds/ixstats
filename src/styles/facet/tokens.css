@@ -594,22 +594,6 @@
     --tint-dark-strong: #f9b5e5;
     --on-tint-dark: #0b0c0f;
   }
-  [data-app="vault"] {
-    --tint-light: #993582;
-    --tint-light-strong: #862270;
-    --on-tint-light: #ffffff;
-    --tint-dark: #ed96d4;
-    --tint-dark-strong: #f9b5e5;
-    --on-tint-dark: #0b0c0f;
-  }
-  [data-app="vault"] {
-    --tint-light: #a03273;
-    --tint-light-strong: #8c1d62;
-    --on-tint-light: #ffffff;
-    --tint-dark: #f494c6;
-    --tint-dark-strong: #feb4d9;
-    --on-tint-dark: #0b0c0f;
-  }
 
   :root,
   [data-app] {

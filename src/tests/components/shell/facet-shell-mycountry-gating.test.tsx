@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 let premium = false;
 let betaTester = false;
-let navSettings: { showCardsTab?: boolean } | undefined;
+let navSettings: { showWikiTab?: boolean; showLabsTab?: boolean } | undefined;
 type NavRealm = { slug: string; name: string; emblemUrl: string | null; thumbnail: string | null };
 let navFlags:
   { realmMember: boolean; forumModerator: boolean; realm?: NavRealm | null } | undefined;
@@ -104,7 +104,7 @@ describe("FacetShell MyCountry Defense gating", () => {
 });
 
 describe("FacetShell Vault visibility", () => {
-  it("shows the Vault card in the sidebar footer while the Vault app is visible", () => {
+  it("shows the Vault card in the sidebar footer for a signed-in player", () => {
     const { container } = render(
       <AppShell>
         <p>Page</p>
@@ -113,16 +113,15 @@ describe("FacetShell Vault visibility", () => {
     expect(container.querySelector('[data-slot="sidebar-vault-card"]')).not.toBeNull();
   });
 
-  it("shows no Vault card and no Wallet rail link when the Vault app is switched off", () => {
-    navSettings = { showCardsTab: false };
+  it("shows the Vault card and the Wallet rail link whatever the navigation settings hide", () => {
+    navSettings = { showWikiTab: false, showLabsTab: false };
     const { container } = render(
       <AppShell>
         <p>Page</p>
       </AppShell>
     );
-    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).toBeNull();
-    expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
   });
 });
 

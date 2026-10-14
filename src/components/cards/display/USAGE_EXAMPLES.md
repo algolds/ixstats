@@ -107,12 +107,12 @@ export function InteractiveCardModal({
 
   const handleTrade = (card: CardInstance) => {
     // P2P trades live in the Vault marketplace (trading.createtradeOffer)
-    router.push("/vault/marketplace?tab=trading");
+    router.push("/vault/store?tab=trading");
   };
 
   const handleList = (card: CardInstance) => {
     // Auctions are created via cardMarket.createAuction (CreateAuctionModal)
-    router.push("/vault/marketplace?tab=auctions");
+    router.push("/vault/store?tab=auctions");
   };
 
   const handleViewCollection = (countryId: string) => {
