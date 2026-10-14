@@ -277,19 +277,26 @@ function DailyRewardDialog({
     setIsOpen(true);
   }, [autoOpen, userId, canClaim, setIsOpen]);
 
+  // A claim (or a refused one) moves the balance, the statement and today's earnings.
+  const refreshVault = () => {
+    void utils.vault.getBalance.invalidate();
+    void utils.vault.getTransactions.invalidate();
+    void utils.vault.getTodayEarnings.invalidate();
+  };
+
   const claimMutation = api.vault.claimCombinedDailyClaim.useMutation({
     onSuccess: (data) => {
       setClaiming(null);
       setClaimResult(data);
       soundCues?.reveal?.();
-      void utils.vault.getBalance.invalidate();
+      refreshVault();
       void utils.cards.getMyCards.invalidate();
     },
     onError: (err) => {
       setClaiming(null);
       vaultNotify.error(err.message || "Couldn't claim the daily reward");
       // The server refuses a second claim (another tab, another device): resync and close.
-      void utils.vault.getBalance.invalidate();
+      refreshVault();
       if (/already/i.test(err.message)) setIsOpen(false);
     },
   });

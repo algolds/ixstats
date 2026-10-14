@@ -10,6 +10,8 @@ let balance: {
 } = { canClaimDailyBonus: true, loginStreak: 4 };
 const mutate = jest.fn();
 const invalidateBalance = jest.fn();
+const invalidateTransactions = jest.fn();
+const invalidateEarnings = jest.fn();
 let mutationOptions: {
   onSuccess: (data: unknown) => void;
   onError: (err: { message: string }) => void;
@@ -19,7 +21,11 @@ jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: mockUserId }) }));
 jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({
-      vault: { getBalance: { invalidate: invalidateBalance } },
+      vault: {
+        getBalance: { invalidate: invalidateBalance },
+        getTransactions: { invalidate: invalidateTransactions },
+        getTodayEarnings: { invalidate: invalidateEarnings },
+      },
       cards: { getMyCards: { invalidate: jest.fn() } },
     }),
     vault: {
@@ -65,6 +71,8 @@ beforeEach(() => {
   mutate.mockClear();
   reveal.mockClear();
   invalidateBalance.mockClear();
+  invalidateTransactions.mockClear();
+  invalidateEarnings.mockClear();
   window.localStorage.clear();
 });
 
@@ -119,11 +127,22 @@ describe("DailyRewardProvider", () => {
     );
   });
 
+  it("refreshes the statement and today's earnings after a claim", () => {
+    render(<Widget />);
+    fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
+    act(() => mutationOptions.onSuccess({ creditsAwarded: 40, streak: 5 }));
+    expect(invalidateBalance).toHaveBeenCalledTimes(1);
+    expect(invalidateTransactions).toHaveBeenCalledTimes(1);
+    expect(invalidateEarnings).toHaveBeenCalledTimes(1);
+  });
+
   it("closes and resyncs when the claim was already made elsewhere", async () => {
     render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
     act(() => mutationOptions.onError({ message: "Daily reward already claimed" }));
     expect(invalidateBalance).toHaveBeenCalled();
+    expect(invalidateTransactions).toHaveBeenCalled();
+    expect(invalidateEarnings).toHaveBeenCalled();
     await act(async () => {});
     expect(screen.queryByRole("dialog")).toBeNull();
   });
