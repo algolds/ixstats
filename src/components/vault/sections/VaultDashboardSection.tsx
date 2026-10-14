@@ -11,7 +11,8 @@ import { VaultStatement } from "./dashboard/VaultStatement";
  */
 export function VaultDashboardSection() {
   const { stats, loading, error } = useVaultStats();
-  const deckValue: Figure = error ? null : loading ? undefined : stats.deckValue;
+  const figure = (value: number): Figure => (error ? null : loading ? undefined : value);
+  const deckValue = figure(stats.deckValue);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
@@ -20,7 +21,7 @@ export function VaultDashboardSection() {
       </div>
       <div className="lg:col-start-3 lg:row-start-2">
         <VaultHoldings
-          totalCards={stats.totalCards}
+          totalCards={figure(stats.totalCards)}
           deckValue={deckValue}
           unopenedPacks={stats.unopenedPacks}
         />

@@ -139,6 +139,16 @@ describe("VaultHoldings", () => {
     expect(linkTo(/Cards/).querySelector('[aria-label="Unavailable"]')).not.toBeNull();
   });
 
+  it("shows no card count while the stats load, and says unavailable when they failed", () => {
+    const { unmount } = renderHoldings({ totalCards: undefined, deckValue: undefined });
+    expect(linkTo(/Cards/).textContent).not.toMatch(/\d+ cards/);
+    expect(linkTo(/Cards/).textContent).not.toContain("Unavailable");
+    unmount();
+    renderHoldings({ totalCards: null, deckValue: null });
+    expect(linkTo(/Cards/).textContent).toContain("Unavailable");
+    expect(linkTo(/Cards/).textContent).not.toMatch(/\d+ cards/);
+  });
+
   describe("Lorewards", () => {
     it("shows wins, runner-ups and today's rank, and links to the Lorewards tab", () => {
       renderHoldings();

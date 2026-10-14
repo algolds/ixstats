@@ -13,7 +13,8 @@ import { pickFeaturedStoreItem } from "~/lib/vault/featured-store-item";
 import { Credits, CreditsFigure, formatCredits, type Figure } from "./credits";
 
 interface VaultHoldingsProps {
-  totalCards: number;
+  /** The card count: undefined while the stats load, null if they failed. */
+  totalCards: Figure;
   /** The card deck's value: undefined while the stats load, null if they failed. */
   deckValue: Figure;
   unopenedPacks: number;
@@ -117,7 +118,13 @@ function LorewardsHolding() {
 function CardsHolding({ totalCards, deckValue, unopenedPacks }: VaultHoldingsProps) {
   return (
     <Holding href="/vault/cards" title="Cards" icon={<MultiplePages />}>
-      <p className="text-body tabular-nums">{totalCards.toLocaleString()} cards</p>
+      {totalCards === undefined ? (
+        <Skeleton className="h-6 w-20" />
+      ) : totalCards === null ? (
+        <p className="text-footnote text-label-secondary">Unavailable</p>
+      ) : (
+        <p className="text-body tabular-nums">{totalCards.toLocaleString()} cards</p>
+      )}
       <p className="text-footnote text-label-secondary flex items-center gap-1.5 tabular-nums">
         <CreditsFigure amount={deckValue} skeletonClassName="h-4 w-16" />
         <span>deck value</span>
