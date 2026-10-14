@@ -9,7 +9,7 @@ Read it end to end once before starting. Every command here is meant to be run b
 ## What this release changes (why the steps below matter)
 
 - **Money and jobs:** vault credit moves run inside their callers' transactions, payouts are
-  idempotent (the passive-income job has since been replaced by the Vault dividend, step 5d), and `cron-runner.mjs` is now the only scheduler. It runs only the jobs named in `CRON_ENABLED_JOBS`
+  idempotent (the passive-income job has since been replaced by the Vault dividend, step 5a), and `cron-runner.mjs` is now the only scheduler. It runs only the jobs named in `CRON_ENABLED_JOBS`
   and runs none by default.
 - **Security:**
   - Every country-scoped mutation checks ownership.
@@ -99,7 +99,7 @@ Read it end to end once before starting. Every command here is meant to be run b
     `showCardsTab` setting (`prisma/migrations/20261024120000_vault_hub/migration.sql`, idempotent). **Apply it BEFORE
     `db:push:force`** (step 5a), after the Atlas and World Studio file: `db push` without `--accept-data-loss` refuses
     the column drop. The deploy script, `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run
-    it before their push too. The rest of the hub is steps 5d and 7
+    it before their push too. The rest of the hub is steps 5a (cron swap), 5d and 7
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -340,6 +340,14 @@ docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
 #   expect: 2
 ```
 
+Then swap the cron job **before** the deploy script, because the script reloads `ixstats-cron` at its end and
+`cron-runner.mjs` exits 1 on an unknown job name. The `passive-income` job no longer exists. In `CRON_ENABLED_JOBS` in
+`ecosystem.config.cjs`, **replace `passive-income` with `vault-dividend`** (midnight UTC, the nightly Vault dividend);
+if `passive-income` is not listed yet, there is nothing to replace and `vault-dividend` joins the list in step 7. Do not
+restart yet. An admin cron override saved under `cronSchedule_passiveIncome` is orphaned (nothing reads it); re-save the
+schedule in Admin, which stores it under `cronSchedule_vaultDividend`. The first run records the start day in the
+SystemConfig row `vault_dividend_started_on` and pays only the day just ended; it never settles an earlier day.
+
 Then run the deploy script — its `db push` is now a no-op:
 
 ```bash
@@ -416,18 +424,11 @@ Then check the folder is the shared one: `ls "$MAP_RASTER_DIR"/ixnay/relief` lis
 request to maps.ixwiki.com for that version (`/api/map-rasters/ixnay/relief/<version>/0/0/0`, with the version from
 the realm's settings) answers 200, not 404. Repeat with a test realm's first applied world in step 6.
 
-### 5d. Vault hub: cron swap, backfills, restart (after the deploy script)
+### 5d. Vault hub: backfills and restart (after the deploy script)
 
-Do these in this order. Step 1 of the hub is the SQL of step 5a, already applied before `db:push:force`.
+Do these in this order. The hub's SQL (step 5a) and the cron swap (before the deploy script, step 5a) are already done.
 
-1. **Cron swap.** The `passive-income` job no longer exists and the runner exits on an unknown job name. In
-   `CRON_ENABLED_JOBS` in `ecosystem.config.cjs`, **replace `passive-income` with `vault-dividend`** (midnight UTC, the
-   nightly Vault dividend); if `passive-income` is not listed yet, there is nothing to replace and `vault-dividend` joins
-   the list in step 7. Do not restart yet. An admin cron override saved under `cronSchedule_passiveIncome` is orphaned
-   (nothing reads it); re-save the schedule in Admin, which stores it under `cronSchedule_vaultDividend`. The first run
-   records the start day in the SystemConfig row `vault_dividend_started_on` and pays only the day just ended; it never
-   settles an earlier day.
-2. **`ownedSince` backfill**, then 3. **trophy card backfill.** Both need the new columns and the new code, so they run
+1. **`ownedSince` backfill**, then 2. **trophy card backfill.** Both need the new columns and the new code, so they run
    after the deploy script. Both are dry runs by default, idempotent, and print what they would do before you add
    `--apply`.
 
@@ -446,7 +447,7 @@ Do these in this order. Step 1 of the hub is the SQL of step 5a, already applied
    - **Trophy cards** mint one card per recorded Loreward place back to 2017 (about 2,800 places on the local clone),
      with no IxCredits, and give each to its winner when that wiki account has a verified IxWiki link; the rest wait
      unowned and are granted by the Lorewards sync once the account is linked.
-4. **Restart**, last: `pm2 restart ixstats-cron --update-env`, and the web app and `ixstats-ws` as in the deploy. The
+3. **Restart**, last: `pm2 restart ixstats-cron --update-env`, and the web app and `ixstats-ws` as in the deploy. The
    achievement sync at boot (`syncAchievements`) marks the 47 Legacy definitions inactive and creates the new ones; until
    it has run, `achievements.getAllWithStatus` also re-syncs when it finds the table behind the registry.
 
@@ -535,7 +536,7 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `vault-dividend` (last).
 
-The `passive-income` job was deleted with the Vault hub; its replacement `vault-dividend` and the swap are in step 5d.
+The `passive-income` job was deleted with the Vault hub; its replacement `vault-dividend` and the swap are in step 5a.
 
 The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still listed in `CRON_ENABLED_JOBS`, remove it
 before deploying: the runner exits on an unknown job name.
