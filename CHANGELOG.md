@@ -1711,7 +1711,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Achievements Header Streamlining (`/achievements`)**:
   - **Visual Hierarchy Refinement**: Simplified [page.tsx](src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
   - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](src/components/achievements/FloatingRibbonRack.tsx) and `ForumRibbonRack.tsx` for displaying achievement ribbons across user profiles and forum embeds.
-  - **Documentation**: Updated [src/app/achievements/README.md](src/app/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
+  - **Documentation**: Updated [src/app/vault/achievements/README.md](src/app/vault/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
 
 ### Refactored (Thinkpages Social Knowledge Suite — Component Modularization & Architecture Audit)
 
