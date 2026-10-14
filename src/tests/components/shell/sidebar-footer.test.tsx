@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 
 import { BUILD_VERSION } from "~/lib/buildVersion";
 
@@ -14,6 +14,17 @@ let earnings:
   sources: [{ type: "daily", label: "Daily", amount: 250 }],
 };
 const earningsQuery = jest.fn();
+let summary:
+  { unlocked: number; activeTotal: number; points: number; rank: number | null } | undefined = {
+  unlocked: 12,
+  activeTotal: 80,
+  points: 340,
+  rank: 7,
+};
+let wikiLinks:
+  { source: string; username: string; verified: boolean; pending: boolean }[] | undefined = [
+  { source: "ixwiki", username: "Diplomat", verified: true, pending: false },
+];
 
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "u1" }) }));
 jest.mock("~/trpc/react", () => ({
@@ -27,6 +38,8 @@ jest.mock("~/trpc/react", () => ({
         },
       },
     },
+    achievements: { getMySummary: { useQuery: () => ({ data: summary }) } },
+    ixnayid: { listWikiLinks: { useQuery: () => ({ data: wikiLinks }) } },
   },
 }));
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
@@ -55,11 +68,13 @@ beforeEach(() => {
   };
   earnings = { total: 250, sources: [{ type: "daily", label: "Daily", amount: 250 }] };
   earningsQuery.mockClear();
+  summary = { unlocked: 12, activeTotal: 80, points: 340, rank: 7 };
+  wikiLinks = [{ source: "ixwiki", username: "Diplomat", verified: true, pending: false }];
 });
 
 describe("SidebarVaultCard", () => {
   it("shows the balance, today's earnings and the daily reward, linking to the Vault", () => {
-    const { container } = render(<SidebarVaultCard />);
+    const { container } = render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
     const link = screen.getByRole("link", { name: /IxCredits/ });
     expect(link).toHaveAttribute("href", "/vault");
     expect(link).toHaveTextContent("12,345");
@@ -70,20 +85,129 @@ describe("SidebarVaultCard", () => {
   });
 
   it("keeps the reward control outside the link (no nested interactive elements)", () => {
-    render(<SidebarVaultCard />);
+    render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
     const link = screen.getByRole("link", { name: /IxCredits/ });
     expect(within(link).queryByRole("button")).toBeNull();
   });
 
   it("omits earnings when there are none today", () => {
     earnings = { total: 0, sources: [] };
-    render(<SidebarVaultCard />);
+    render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
     expect(screen.getByRole("link", { name: /IxCredits/ })).not.toHaveTextContent("today");
   });
 
   it("renders nothing while the balance loads, so the footer does not jump", () => {
     balance = { data: undefined, isLoading: true };
-    const { container } = render(<SidebarVaultCard />);
+    const { container } = render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("SidebarVaultCard disclosure", () => {
+  const open = (props: { expanded?: boolean; onToggle?: () => void } = {}) =>
+    render(
+      <SidebarVaultCard
+        expanded={props.expanded ?? true}
+        onToggle={props.onToggle ?? (() => undefined)}
+      />
+    );
+
+  it("has a chevron button that reports its state and toggles the card", () => {
+    const onToggle = jest.fn();
+    const { rerender } = open({ expanded: false, onToggle });
+    const chevron = screen.getByRole("button", { name: /earnings and progress/i });
+    expect(chevron).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(chevron);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    rerender(<SidebarVaultCard expanded onToggle={onToggle} />);
+    expect(screen.getByRole("button", { name: /earnings and progress/i })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
+  });
+
+  it("keeps the details out of the closed card", () => {
+    open({ expanded: false });
+    expect(screen.queryByRole("link", { name: "Cards" })).toBeNull();
+    expect(screen.queryByText(/unlocked/)).toBeNull();
+  });
+
+  it("lists each earning source for today", () => {
+    earnings = {
+      total: 400,
+      sources: [
+        { type: "daily", label: "Daily login", amount: 250 },
+        { type: "wiki", label: "Wiki contributions", amount: 150 },
+      ],
+    };
+    open();
+    expect(screen.getByText("Daily login")).toBeInTheDocument();
+    expect(screen.getByText("Wiki contributions")).toBeInTheDocument();
+    expect(screen.getByText("+150")).toBeInTheDocument();
+  });
+
+  it("says so when nothing has been earned today", () => {
+    earnings = { total: 0, sources: [] };
+    open();
+    expect(screen.getByText("Nothing earned yet today")).toBeInTheDocument();
+  });
+
+  it("shows achievement progress, points and rank", () => {
+    open();
+    expect(screen.getByText("12 of 80 unlocked")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "12");
+    expect(screen.getByText(/340 points/)).toBeInTheDocument();
+    expect(screen.getByText(/Rank 7/)).toBeInTheDocument();
+  });
+
+  it("omits the rank for a player who has not ranked yet", () => {
+    summary = { unlocked: 0, activeTotal: 80, points: 0, rank: null };
+    open();
+    expect(screen.queryByText(/Rank/)).toBeNull();
+  });
+
+  it("never offers a closest-to-unlocking list, a dividend or a yield", () => {
+    open();
+    expect(screen.queryByText(/closest/i)).toBeNull();
+    expect(screen.queryByText(/dividend|yield|interest/i)).toBeNull();
+  });
+
+  it("links into the Vault", () => {
+    open();
+    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute("href", "/vault/cards");
+    expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
+    expect(screen.getByRole("link", { name: "Achievements" })).toHaveAttribute(
+      "href",
+      "/vault/achievements"
+    );
+  });
+
+  it("asks to link a wiki account only when none is verified", () => {
+    wikiLinks = [{ source: "ixwiki", username: "Diplomat", verified: false, pending: true }];
+    open();
+    expect(
+      screen.getByRole("link", { name: "Link your wiki account to earn from edits" })
+    ).toHaveAttribute("href", "/settings?tab=account");
+  });
+
+  it("treats a verified link to another wiki as no ixwiki link", () => {
+    wikiLinks = [{ source: "iiwiki", username: "Diplomat", verified: true, pending: false }];
+    open();
+    expect(screen.getByRole("link", { name: /Link your wiki account/ })).toBeInTheDocument();
+  });
+
+  it("does not nag with a verified link, or before the links have loaded", () => {
+    open();
+    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
+    wikiLinks = undefined;
+    cleanup();
+    open();
+    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
+  });
+
+  it("renders nothing without a balance, open or closed", () => {
+    balance = { data: undefined, isLoading: true };
+    const { container } = open();
     expect(container).toBeEmptyDOMElement();
   });
 });

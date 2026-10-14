@@ -103,7 +103,14 @@ export function FacetShell() {
             badges={badges}
             onAction={onAction}
             signedIn={signedIn}
-            vaultCard={signedIn ? <SidebarVaultCard /> : undefined}
+            vaultCard={
+              signedIn ? (
+                <SidebarVaultCard
+                  expanded={expanded.has("vault-card")}
+                  onToggle={() => toggle("vault-card")}
+                />
+              ) : undefined
+            }
             account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
           />
           <TabBar
