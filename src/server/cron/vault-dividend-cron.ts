@@ -1,6 +1,7 @@
 import { db } from "~/server/db";
 import { shiftDay, utcDay } from "~/lib/vault/vault-dividend";
 import {
+  recordDividendStart,
   settleDividendDay,
   settleMissedDividends,
 } from "~/server/modules/vault/vault-dividend-settle";
@@ -9,6 +10,7 @@ import {
 export async function runVaultDividend() {
   const now = new Date();
   const day = shiftDay(utcDay(now), -1);
+  await recordDividendStart(db, day);
   const settled = await settleDividendDay(db, day);
   const missed = await settleMissedDividends(db, now);
   console.log(

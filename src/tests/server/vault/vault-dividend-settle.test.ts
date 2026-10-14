@@ -13,6 +13,7 @@ import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
 import { earnCreditsOnce } from "~/lib/vault/vault-service";
 import {
   settleDividendDay,
+  recordDividendStart,
   settleMissedDividends,
 } from "~/server/modules/vault/vault-dividend-settle";
 
@@ -48,6 +49,8 @@ const D = "2026-10-20";
 
 let world: World;
 let ledger: Set<string>;
+let config: Map<string, string>;
+const START_KEY = "vault_dividend_started_on";
 let rows: { userId: string; amount: number; idempotencyKey: string; metadata?: object }[];
 let db: PrismaClient;
 
@@ -92,6 +95,17 @@ function buildDb(): PrismaClient {
         [...ledger].some((k) => k.endsWith(where.idempotencyKey.endsWith)) ? { id: "x" } : null
       ),
     },
+    systemConfig: {
+      findMany: jest.fn(async ({ where }: { where: { key: { in: string[] } } }) =>
+        where.key.in.filter((k) => config.has(k)).map((key) => ({ key, value: config.get(key) }))
+      ),
+      upsert: jest.fn(
+        async ({ where, create }: { where: { key: string }; create: { value: string } }) => {
+          config.set(where.key, config.get(where.key) ?? create.value);
+        }
+      ),
+    },
+    $transaction: jest.fn(async (ops: Promise<void>[]) => Promise.all(ops)),
     cardOwnership: { findMany: jest.fn(async () => world.ownerships) },
   };
   return fake as unknown as PrismaClient;
@@ -112,6 +126,7 @@ beforeEach(() => {
     ownerships: [],
   };
   ledger = new Set();
+  config = new Map();
   rows = [];
   db = buildDb();
   jest.mocked(scoreDailyWikiOS).mockResolvedValue({ candidates: [] } as never);
@@ -296,6 +311,8 @@ describe("settleMissedDividends", () => {
   // The job settles yesterday (2026-10-20 when it runs at 2026-10-21 00:00). Missed days are the 7 before it.
   const now = at("2026-10-21T00:00:00");
 
+  beforeEach(() => config.set(START_KEY, "2026-10-01"));
+
   it("settles each unsettled day from that day's own activity, not today's", async () => {
     vault("u1");
     world.users.push({ id: "u1", clerkUserId: "c1" });
@@ -334,8 +351,55 @@ describe("settleMissedDividends", () => {
     ]);
   });
 
+  it("never settles a day before the recorded start", async () => {
+    config.set(START_KEY, "2026-10-17");
+    expect((await settleMissedDividends(db, now)).days).toEqual([
+      "2026-10-17",
+      "2026-10-18",
+      "2026-10-19",
+    ]);
+  });
+
+  it("settles no missed day when no start has been recorded", async () => {
+    config.clear();
+    expect((await settleMissedDividends(db, now)).days).toEqual([]);
+  });
+
   it("settles nothing when every day is already settled", async () => {
     for (let d = 13; d <= 19; d++) ledger.add(dividendKey("x", `2026-10-${d}`));
     expect((await settleMissedDividends(db, now)).days).toEqual([]);
+  });
+});
+
+describe("recordDividendStart", () => {
+  it("stores the first day it is given and returns it", async () => {
+    expect(await recordDividendStart(db, "2026-10-20")).toBe("2026-10-20");
+    expect(config.get(START_KEY)).toBe("2026-10-20");
+  });
+
+  it("never moves the start later once set", async () => {
+    await recordDividendStart(db, "2026-10-20");
+    expect(await recordDividendStart(db, "2026-10-25")).toBe("2026-10-20");
+    expect(config.get(START_KEY)).toBe("2026-10-20");
+  });
+
+  it("a first run settles only yesterday, then a later run with a gap fills back to the start", async () => {
+    vault("u1");
+    deck("u1", 2000);
+    // Deploy night (2026-10-21 00:00): no key yet, so no earlier day is back-paid.
+    await recordDividendStart(db, "2026-10-20");
+    await settleDividendDay(db, "2026-10-20");
+    expect((await settleMissedDividends(db, at("2026-10-21T00:00:00"))).days).toEqual([]);
+    expect(rowsFor("u1").map((r) => r.idempotencyKey)).toEqual([dividendKey("u1", "2026-10-20")]);
+
+    // The job missed 22nd and 23rd; the 24th run fills them but not the days before the start.
+    await recordDividendStart(db, "2026-10-24");
+    await settleDividendDay(db, "2026-10-24");
+    expect((await settleMissedDividends(db, at("2026-10-25T00:00:00"))).days).toEqual([
+      "2026-10-21",
+      "2026-10-22",
+      "2026-10-23",
+    ]);
+    expect(config.get(START_KEY)).toBe("2026-10-20");
   });
 });

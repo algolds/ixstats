@@ -11,6 +11,7 @@ import {
 } from "~/lib/vault/vault-dividend";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
 import { earnCreditsOnce } from "~/lib/vault/vault-service";
+import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 
 /** Per-user figures keyed by `User.id`. */
 type Counts = Map<string, number>;
@@ -18,6 +19,8 @@ type DayRange = { gte: Date; lt: Date };
 
 const CARD_SALE_SOURCES = ["card_sale_auction", "card_sale_buyout"];
 const DIVIDEND_SOURCE = "VAULT_DIVIDEND";
+/** SystemConfig key holding the first day the dividend settled (`yyyy-mm-dd`); no earlier day is ever settled. */
+const DIVIDEND_START_KEY = "vault_dividend_started_on";
 
 function dayRange(day: string): DayRange {
   const gte = new Date(`${day}T00:00:00.000Z`);
@@ -219,19 +222,40 @@ async function isDaySettled(db: PrismaClient, day: string): Promise<boolean> {
   return row !== null;
 }
 
+async function readDividendStart(db: PrismaClient): Promise<string | null> {
+  return (await readConfigKeys(db, [DIVIDEND_START_KEY]))[DIVIDEND_START_KEY] ?? null;
+}
+
+/**
+ * Record `day` as the dividend's start on the first run and return the stored start. An existing start is never
+ * moved, so deploy night does not back-pay days the old nation job already paid.
+ */
+export async function recordDividendStart(db: PrismaClient, day: string): Promise<string> {
+  const stored = await readDividendStart(db);
+  if (stored) return stored;
+  await writeConfigKeys(
+    db,
+    [{ key: DIVIDEND_START_KEY, value: day }],
+    () => "First day the Vault dividend settled; earlier days are never back-paid"
+  );
+  return day;
+}
+
 /**
  * The nightly job settles yesterday; this settles the unsettled days among the 7 before it, oldest first, each
- * from that day's own activity. Returns the days it settled.
+ * from that day's own activity, and never a day earlier than the recorded start. Returns the days it settled.
  */
 export async function settleMissedDividends(
   db: PrismaClient,
   now: Date
 ): Promise<{ days: string[] }> {
-  const yesterday = shiftDay(utcDay(now), -1);
+  const start = await readDividendStart(db);
   const days: string[] = [];
+  if (!start) return { days };
+  const yesterday = shiftDay(utcDay(now), -1);
   for (let back = DIVIDEND.MISSED_DAYS; back >= 1; back--) {
     const day = shiftDay(yesterday, -back);
-    if (await isDaySettled(db, day)) continue;
+    if (day < start || (await isDaySettled(db, day))) continue;
     await settleDividendDay(db, day);
     days.push(day);
   }
