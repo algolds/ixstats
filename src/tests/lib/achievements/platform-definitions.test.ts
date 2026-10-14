@@ -26,9 +26,6 @@ import { achievementService } from "~/lib/achievements/service";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
 import { PLATFORM_DEFINITIONS } from "~/lib/achievements/sets/platform";
 
-/** Task 14's nation loader owns this account key; "first approved map edit" rules on it. */
-const MAP_EDIT_KEY = "mapEditsApproved";
-
 const SPEC: Record<string, { category: string; rarity: string }> = {
   "wiki-first-edit": { category: "Wiki", rarity: "Common" },
   "wiki-edits-10": { category: "Wiki", rarity: "Uncommon" },
@@ -73,12 +70,8 @@ const SPEC: Record<string, { category: string; rarity: string }> = {
 const PRODUCED = METRIC_LOADERS.filter((l) => l.scope === "account").flatMap((l) => l.keys);
 const RULE_DEFINITIONS = PLATFORM_DEFINITIONS.filter((d) => d.rule);
 
-/** `mapEditsApproved` is account-level only once Task 14's loader is registered, so it is given a country meanwhile. */
 const unlocks = (id: string, metrics: Record<string, number>) =>
-  achievementService.evaluateCondition(
-    { key: id, conditionJson: null },
-    MAP_EDIT_KEY in metrics ? { country: { id: "c1" } as never, metrics } : { metrics }
-  );
+  achievementService.evaluateCondition({ key: id, conditionJson: null }, { metrics });
 
 describe("platform definitions", () => {
   it("are registered with the spec's categories, rarities and an icon the UI draws", () => {
@@ -105,7 +98,8 @@ describe("platform definitions", () => {
   it("rules read a key an account loader produces, and every platform key is used", () => {
     const used = RULE_DEFINITIONS.map((d) => d.rule![1]);
     for (const metric of used) {
-      if (metric !== MAP_EDIT_KEY) expect(PRODUCED).toContain(metric);
+      // includes mapEditsApproved, which the nation loaders own
+      expect(PRODUCED).toContain(metric);
     }
     // lorewardDailyWins etc. also feed the "First Loreward" condition
     const platformKeys = PLATFORM_LOADERS.flatMap((l) => l.keys);
@@ -114,7 +108,6 @@ describe("platform definitions", () => {
 
   it("evaluate without a country", () => {
     for (const def of PLATFORM_DEFINITIONS) {
-      if (def.rule && def.rule[1] === MAP_EDIT_KEY) continue; // account-level once Task 14's loader is registered
       expect(achievementRequiresCountry({ key: def.id })).toBe(false);
     }
   });

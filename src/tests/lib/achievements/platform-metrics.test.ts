@@ -7,7 +7,8 @@
 import type { MetricContext } from "~/lib/achievements/metrics/registry";
 import {
   PLATFORM_LOADERS,
-  cardsLoader,
+  cardsActivityLoader,
+  cardsDeckLoader,
   creationsLoader,
   effectiveClaimStreak,
   forumLoader,
@@ -15,7 +16,6 @@ import {
   lorewardsLoader,
   postingStreakLoader,
   renaissanceLoader,
-  renaissanceWeek,
   thinkTankLoader,
   wikiLoader,
 } from "~/lib/achievements/metrics/platform";
@@ -27,6 +27,17 @@ const NOW = new Date("2026-10-14T12:00:00.000Z");
 const day = (n: number, hour = 9) => new Date(Date.UTC(2026, 9, n, hour));
 
 type Db = ReturnType<typeof createMockPrisma>;
+/** A mock client whose `$queryRaw` resolves each call to the next given result. */
+const rawDb = (...results: unknown[]): Db => {
+  const $queryRaw = jest.fn();
+  for (const result of results) $queryRaw.mockResolvedValueOnce(result);
+  return createMockPrisma({ $queryRaw });
+};
+/** The SQL text and bound parameters of one `$queryRaw` tagged-template call. */
+const sqlOf = (db: Db, call = 0) => {
+  const [strings, ...params] = db.$queryRaw.mock.calls[call]!;
+  return { sql: (strings as string[]).join("?"), params };
+};
 const ctx = (db: Db): MetricContext => ({
   db: db as never,
   clerkUserId: "clerk",
@@ -38,6 +49,13 @@ const ctx = (db: Db): MetricContext => ({
 const linked = (db: Db, username = "Urcea") =>
   db.wikiAccountLink.findFirst.mockResolvedValue({ username });
 const unlinked = (db: Db) => db.wikiAccountLink.findFirst.mockResolvedValue(null);
+
+/** What each raw-query loader's single aggregate returns in the declared-keys check. */
+const RAW_ROWS: Record<string, unknown[]> = {
+  "platform-wiki": [{ edits: 0, created: 0, pages: 0 }],
+  "platform-cards-deck": [{ value: 0 }],
+  "platform-renaissance": [{ weeks: 0 }],
+};
 
 describe("registry shape", () => {
   it("every loader is account-scope and its keys are unique across the set", () => {
@@ -53,12 +71,11 @@ describe("registry shape", () => {
     expect(keys).not.toContain("mapEditsApproved");
   });
 
-  it("each loader returns exactly its declared keys", async () => {
+  it("each loader returns exactly its declared keys, in at most 3 queries and no row lists", async () => {
     for (const loader of PLATFORM_LOADERS) {
-      const db = createMockPrisma();
+      const db = rawDb(RAW_ROWS[loader.id] ?? []);
       linked(db);
       for (const model of [
-        "wikiRevision",
         "forumThread",
         "forumPost",
         "thinktankGroup",
@@ -72,16 +89,39 @@ describe("registry shape", () => {
       ]) {
         db[model]!.count!.mockResolvedValue(0);
       }
-      db.wikiRevision.groupBy.mockResolvedValue([]);
+      db.myVault.findUnique.mockResolvedValue(null);
       const result = await loader.load(ctx(db));
       expect(Object.keys(result).sort()).toEqual([...loader.keys].sort());
+
+      const queries = Object.entries(db).flatMap(([name, delegate]) =>
+        name === "$queryRaw"
+          ? [db.$queryRaw]
+          : typeof delegate === "object" && delegate !== null
+            ? Object.values(delegate as Record<string, jest.Mock>)
+            : []
+      );
+      const calls = queries.reduce((n, fn) => n + (fn.mock?.calls.length ?? 0), 0);
+      expect(calls).toBeLessThanOrEqual(3);
+      for (const model of ["wikiRevision", "thinkpagesPost"]) {
+        expect(db[model]?.findMany?.mock.calls.length ?? 0).toBe(0);
+        expect(db[model]?.groupBy?.mock.calls.length ?? 0).toBe(0);
+      }
     }
+  });
+
+  it("resolves the verified wiki username once per evaluation, whichever loaders ask", async () => {
+    const db = rawDb([{ edits: 1, created: 0, pages: 1 }], [{ weeks: 0 }]);
+    linked(db);
+    db.lorewardUserStats.findFirst.mockResolvedValue(null);
+    const shared = ctx(db);
+    await Promise.all([wikiLoader, lorewardsLoader, renaissanceLoader].map((l) => l.load(shared)));
+    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledTimes(1);
   });
 });
 
 describe("wiki loader", () => {
   it("is zero and queries no revisions without a verified link", async () => {
-    const db = createMockPrisma();
+    const db = rawDb();
     unlinked(db);
     const result = await wikiLoader.load(ctx(db));
     expect(result).toEqual({ wikiEdits: 0, wikiArticlesCreated: 0, wikiDistinctPages: 0 });
@@ -90,38 +130,34 @@ describe("wiki loader", () => {
       source: "ixwiki",
       verifiedAt: { not: null },
     });
-    expect(db.wikiRevision.count).not.toHaveBeenCalled();
-    expect(db.wikiRevision.groupBy).not.toHaveBeenCalled();
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 
-  it("matches revisions by the link's username exactly (authorId is never set)", async () => {
-    const db = createMockPrisma();
+  it("aggregates edits, created articles and distinct pages in one query on the link's username", async () => {
+    const db = rawDb([{ edits: 120, created: 11, pages: 50 }]);
     linked(db, "Urcea");
-    db.wikiRevision.count.mockResolvedValueOnce(120).mockResolvedValueOnce(11);
-    db.wikiRevision.groupBy.mockResolvedValue(
-      Array.from({ length: 50 }, (_, i) => ({ articleId: `a${i}` }))
-    );
     const result = await wikiLoader.load(ctx(db));
 
     expect(result).toEqual({ wikiEdits: 120, wikiArticlesCreated: 11, wikiDistinctPages: 50 });
-    const base = { author: "Urcea", source: "ixwiki", parked: false, userDeleted: false };
-    expect(db.wikiRevision.count.mock.calls[0]![0].where).toEqual(base);
-    expect(db.wikiRevision.count.mock.calls[1]![0].where).toEqual({
-      ...base,
-      parentRevisionId: null,
-      article: { namespace: 0, redirectTargetSlug: null },
-    });
-    expect(db.wikiRevision.groupBy.mock.calls[0]![0]).toEqual({ by: ["articleId"], where: base });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const { sql, params } = sqlOf(db);
+    expect(params).toEqual(["Urcea"]);
+    expect(sql).toContain('COUNT(DISTINCT r."articleId")');
+    expect(sql).toContain("r.author = ?");
+    expect(sql).toContain("r.parked = false");
+    expect(sql).toContain('r."userDeleted" = false');
+    expect(sql).toContain('r."parentRevisionId" IS NULL AND a.namespace = 0');
+    expect(sql).toContain('a."redirectTargetSlug" IS NULL');
   });
 
-  it("counts 49 distinct pages as 49", async () => {
-    const db = createMockPrisma();
+  it("is zero when the aggregate returns no row", async () => {
+    const db = rawDb([]);
     linked(db);
-    db.wikiRevision.count.mockResolvedValue(60);
-    db.wikiRevision.groupBy.mockResolvedValue(
-      Array.from({ length: 49 }, (_, i) => ({ articleId: `a${i}` }))
-    );
-    expect((await wikiLoader.load(ctx(db))).wikiDistinctPages).toBe(49);
+    expect(await wikiLoader.load(ctx(db))).toEqual({
+      wikiEdits: 0,
+      wikiArticlesCreated: 0,
+      wikiDistinctPages: 0,
+    });
   });
 });
 
@@ -135,12 +171,10 @@ describe("forum loader", () => {
       forumReplies: 100,
       repliesReceived: 7,
     });
-
     db.forumThread.count.mockResolvedValue(3);
     db.forumPost.count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
     expect((await forumLoader.load(ctx(db))).forumReplies).toBe(0);
   });
-
   it("filters hidden rows and counts replies received from other authors on the user's threads", async () => {
     const db = createMockPrisma();
     db.forumThread.count.mockResolvedValue(0);
@@ -161,7 +195,6 @@ describe("forum loader", () => {
     });
   });
 });
-
 describe("ThinkTank loader", () => {
   it("counts groups founded and joined by Clerk id, leaving out realm boards and own groups", async () => {
     const db = createMockPrisma();
@@ -183,7 +216,6 @@ describe("ThinkTank loader", () => {
     });
   });
 });
-
 describe("posting streak", () => {
   it("longestDayRun: 7 consecutive UTC days is 7, 6 is 6, a gap breaks the run", () => {
     const run = (days: number[]) => longestDayRun(days.map((n) => day(n)));
@@ -201,35 +233,26 @@ describe("posting streak", () => {
     ).toBe(2);
   });
 
-  it("merges human ThinkPages posts and visible forum posts from the last 14 days", async () => {
-    const db = createMockPrisma();
-    db.thinkpagesPost.findMany.mockResolvedValue(
-      [8, 9, 10, 11].map((n) => ({ createdAt: day(n) }))
-    );
-    db.forumPost.findMany.mockResolvedValue([12, 13, 14].map((n) => ({ createdAt: day(n) })));
+  it("reads the distinct days of human ThinkPages posts and visible forum posts from the last 14 days", async () => {
+    const db = rawDb([8, 9, 10, 11, 12, 13, 14].map((n) => ({ day: day(n) })));
 
     expect(await postingStreakLoader.load(ctx(db))).toEqual({ postingStreakDays: 7 });
 
-    const since = new Date(Date.UTC(2026, 9, 1));
-    expect(db.thinkpagesPost.findMany.mock.calls[0]![0].where).toEqual({
-      isAutoGenerated: false,
-      repostOfId: null,
-      account: { clerkUserId: "clerk" },
-      createdAt: { gte: since },
-    });
-    expect(db.forumPost.findMany.mock.calls[0]![0].where).toEqual({
-      authorUserId: "u1",
-      hidden: false,
-      createdAt: { gte: since },
-    });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const { sql, params } = sqlOf(db);
+    expect(params).toEqual([
+      "clerk",
+      new Date(Date.UTC(2026, 9, 1)),
+      "u1",
+      new Date(Date.UTC(2026, 9, 1)),
+    ]);
+    expect(sql).toContain('p."isAutoGenerated" = false');
+    expect(sql).toContain('p."repostOfId" IS NULL');
+    expect(sql).toContain("f.hidden = false");
   });
 
   it("a streak broken by one missing day is not 7", async () => {
-    const db = createMockPrisma();
-    db.thinkpagesPost.findMany.mockResolvedValue(
-      [8, 9, 10, 12, 13, 14].map((n) => ({ createdAt: day(n) }))
-    );
-    db.forumPost.findMany.mockResolvedValue([]);
+    const db = rawDb([8, 9, 10, 12, 13, 14].map((n) => ({ day: day(n) })));
     expect((await postingStreakLoader.load(ctx(db))).postingStreakDays).toBe(3);
   });
 });
@@ -249,29 +272,16 @@ describe("claim streak", () => {
   });
 });
 
-describe("cards loader", () => {
-  function setup() {
+describe("cards activity loader", () => {
+  it("counts packs opened, accepted trades and completed auction sales", async () => {
     const db = createMockPrisma();
     db.userPack.count.mockResolvedValue(25);
     db.tradeOffer.count.mockResolvedValue(10);
     db.cardAuction.count.mockResolvedValue(1);
-    db.cardOwnership.count.mockResolvedValue(1);
-    db.cardOwnership.findMany.mockResolvedValue([]);
-    db.myVault.findUnique.mockResolvedValue({ loginStreak: 7, lastLoginDate: day(14, 2) });
-    return db;
-  }
-
-  it("reads packs, trades, sales, Legendaries and the effective claim streak", async () => {
-    const db = setup();
-    const result = await cardsLoader.load(ctx(db));
-
-    expect(result).toEqual({
+    expect(await cardsActivityLoader.load(ctx(db))).toEqual({
       packsOpened: 25,
       tradesCompleted: 10,
       auctionSales: 1,
-      legendaryOwned: 1,
-      deckValueExTrophy: 0,
-      claimStreakDays: 7,
     });
     expect(db.userPack.count.mock.calls[0]![0].where).toEqual({ userId: "u1", isOpened: true });
     expect(db.tradeOffer.count.mock.calls[0]![0].where).toEqual({
@@ -283,10 +293,28 @@ describe("cards loader", () => {
       status: "COMPLETED",
     });
   });
+});
+
+describe("cards deck loader", () => {
+  function setup(deck: unknown = [{ value: 0 }]) {
+    const db = rawDb(deck);
+    db.cardOwnership.count.mockResolvedValue(1);
+    db.myVault.findUnique.mockResolvedValue({ loginStreak: 7, lastLoginDate: day(14, 2) });
+    return db;
+  }
+
+  it("reads Legendaries, the trophy-excluding deck value and the effective claim streak", async () => {
+    const db = setup([{ value: 10_000 }]);
+    expect(await cardsDeckLoader.load(ctx(db))).toEqual({
+      legendaryOwned: 1,
+      deckValueExTrophy: 10_000,
+      claimStreakDays: 7,
+    });
+  });
 
   it("a Legendary counts only from a pack or trade, never a trophy, retired or imported card", async () => {
     const db = setup();
-    await cardsLoader.load(ctx(db));
+    await cardsDeckLoader.load(ctx(db));
     expect(db.cardOwnership.count.mock.calls[0]![0].where).toEqual({
       ownerId: "u1",
       cards: { rarity: "LEGENDARY", isRetired: false, lorewardEntryId: null },
@@ -294,25 +322,23 @@ describe("cards loader", () => {
     });
   });
 
-  it("deck value sums market value times quantity and asks the database to leave trophy cards out", async () => {
-    const db = setup();
-    db.cardOwnership.findMany.mockResolvedValue([
-      { quantity: 2, cards: { marketValue: 100 } },
-      { quantity: 1, cards: { marketValue: 9800 } },
-    ]);
-    const result = await cardsLoader.load(ctx(db));
-
-    expect(result.deckValueExTrophy).toBe(10_000);
-    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
-      ownerId: "u1",
-      cards: { isRetired: false, lorewardEntryId: null },
-    });
+  it("sums deck value in the database over live, non-trophy cards, with the user id bound", async () => {
+    const db = setup([{ value: 9800 }]);
+    await cardsDeckLoader.load(ctx(db));
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+    const { sql, params } = sqlOf(db);
+    expect(params).toEqual(["u1"]);
+    expect(sql).toContain('SUM(c."marketValue" * o.quantity)');
+    expect(sql).toContain('c."isRetired" = false');
+    expect(sql).toContain('c."lorewardEntryId" IS NULL');
   });
 
-  it("claim streak is zero for a user with no vault", async () => {
-    const db = setup();
+  it("deck value is 0 when the aggregate returns no row, and the claim streak is 0 without a vault", async () => {
+    const db = setup([]);
     db.myVault.findUnique.mockResolvedValue(null);
-    expect((await cardsLoader.load(ctx(db))).claimStreakDays).toBe(0);
+    const result = await cardsDeckLoader.load(ctx(db));
+    expect(result.deckValueExTrophy).toBe(0);
+    expect(result.claimStreakDays).toBe(0);
   });
 });
 
@@ -369,75 +395,54 @@ describe("creations loader", () => {
   });
 });
 
-describe("Renaissance week", () => {
-  const wiki = [day(13)];
-  const posts = [day(14)];
-  const cards = [day(12)];
+describe("Renaissance week loader", () => {
+  const since = new Date(NOW.getTime() - 14 * DAY);
 
-  it("needs a wiki edit, a post and card activity in one ISO week", () => {
-    expect(renaissanceWeek({ wiki, posts, cards }, NOW)).toBe(1);
-    expect(renaissanceWeek({ wiki: [], posts, cards }, NOW)).toBe(0);
-    expect(renaissanceWeek({ wiki, posts: [], cards }, NOW)).toBe(0);
-    expect(renaissanceWeek({ wiki, posts, cards: [] }, NOW)).toBe(0);
-  });
-
-  it("does not combine activity from different weeks", () => {
-    // Sunday 11 Oct is last week, Monday 12 Oct this week
-    expect(renaissanceWeek({ wiki: [day(11)], posts, cards }, NOW)).toBe(0);
-  });
-
-  it("counts the previous week, but not the one before it", () => {
-    expect(renaissanceWeek({ wiki: [day(6)], posts: [day(7)], cards: [day(11)] }, NOW)).toBe(1);
-    expect(renaissanceWeek({ wiki: [day(4)], posts: [day(5)], cards: [day(1)] }, NOW)).toBe(0);
-  });
-
-  it("loads the three activity streams since 14 days back, wiki only through a link", async () => {
-    const db = createMockPrisma();
+  it("is 1 when one aggregate query finds an ISO week with all three kinds of activity", async () => {
+    const db = rawDb([{ weeks: 1 }]);
     linked(db, "Urcea");
-    db.wikiRevision.findMany.mockResolvedValue([{ createdAt: day(13) }]);
-    db.thinkpagesPost.findMany.mockResolvedValue([{ createdAt: day(14) }]);
-    db.forumPost.findMany.mockResolvedValue([]);
-    db.userPack.findMany.mockResolvedValue([{ openedAt: day(12) }, { openedAt: null }]);
-    db.tradeOffer.findMany.mockResolvedValue([]);
-    db.cardAuction.findMany.mockResolvedValue([]);
-
     expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 1 });
 
-    const since = new Date(NOW.getTime() - 14 * DAY);
-    expect(db.wikiRevision.findMany.mock.calls[0]![0].where).toEqual({
-      author: "Urcea",
-      source: "ixwiki",
-      parked: false,
-      userDeleted: false,
-      createdAt: { gte: since },
-    });
-    expect(db.userPack.findMany.mock.calls[0]![0].where).toEqual({
-      userId: "u1",
-      isOpened: true,
-      openedAt: { gte: since },
-    });
-    expect(db.tradeOffer.findMany.mock.calls[0]![0].where).toEqual({
-      status: "ACCEPTED",
-      respondedAt: { gte: since },
-      OR: [{ initiatorId: "u1" }, { recipientId: "u1" }],
-    });
-    expect(db.cardAuction.findMany.mock.calls[0]![0].where).toEqual({
-      sellerId: "u1",
-      status: "COMPLETED",
-      endTime: { gte: since, lte: NOW },
-    });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const { sql, params } = sqlOf(db);
+    // wiki author, ThinkPages clerk id + since, forum user + since, packs, trades x2 + since, sales, week keys
+    expect(params).toEqual([
+      "Urcea",
+      since,
+      "clerk",
+      since,
+      "u1",
+      since,
+      "u1",
+      since,
+      "u1",
+      "u1",
+      since,
+      "u1",
+      since,
+      NOW,
+      "2026-W42",
+      "2026-W41",
+    ]);
+    expect(sql).toContain("HAVING COUNT(DISTINCT kind) = 3");
+    expect(sql).toContain('IYYY-"W"IW');
+    expect(sql).toContain('p."isAutoGenerated" = false');
+    expect(sql).toContain("r.parked = false");
   });
 
-  it("is 0 without a verified link, whatever else the user did", async () => {
-    const db = createMockPrisma();
-    unlinked(db);
-    db.thinkpagesPost.findMany.mockResolvedValue([{ createdAt: day(14) }]);
-    db.forumPost.findMany.mockResolvedValue([]);
-    db.userPack.findMany.mockResolvedValue([{ openedAt: day(12) }]);
-    db.tradeOffer.findMany.mockResolvedValue([]);
-    db.cardAuction.findMany.mockResolvedValue([]);
-
+  it("is 0 when no week holds all three", async () => {
+    const db = rawDb([{ weeks: 0 }]);
+    linked(db);
     expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 0 });
-    expect(db.wikiRevision.findMany).not.toHaveBeenCalled();
+    const empty = rawDb([]);
+    linked(empty);
+    expect(await renaissanceLoader.load(ctx(empty))).toEqual({ renaissanceWeek: 0 });
+  });
+
+  it("is 0 without a verified link and runs no activity query", async () => {
+    const db = rawDb();
+    unlinked(db);
+    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 0 });
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 });
