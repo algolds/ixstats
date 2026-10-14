@@ -3,20 +3,12 @@
 import React from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
-import {
-  City as Building2,
-  ShieldCheck,
-  NavArrowRight as ChevronRight,
-  CreditCard,
-} from "iconoir-react";
+import { City as Building2, ShieldCheck, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import Link from "next/link";
 import { getStandingBand, getSynergyBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
-import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
@@ -92,13 +84,6 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   isOwner,
   onClick,
 }: EmbassyCardProps) {
-  const { country } = useCountryData();
-  const myName = country?.name;
-  const partnerCountry =
-    myName && embassy.hostCountry.toLowerCase() === myName.toLowerCase()
-      ? embassy.guestCountry
-      : embassy.hostCountry;
-
   const asymmetry = React.useMemo(() => {
     const viewedIsHost = embassy.role === "host";
     return calculateRelativeDevelopment(
@@ -206,15 +191,6 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {isOwner && (
           <div className="border-separator space-y-2 border-t pt-3">
-            <Button variant="outline" size="sm" className="w-full" asChild>
-              <Link
-                href={`/vault/market?nation=${encodeURIComponent(partnerCountry)}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <CreditCard className="h-3.5 w-3.5" />
-                Trade Cards with {partnerCountry}
-              </Link>
-            </Button>
             <p className="text-label-secondary text-footnote flex items-center justify-center gap-1">
               Open for embassy details
               <ChevronRight className="h-3 w-3" />

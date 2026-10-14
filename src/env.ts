@@ -113,7 +113,6 @@ export const env = createEnv({
     // National issues gameplay flags ("0"/"false" off, "1"/"true" on; see gameplay-flags.ts)
     ISSUES_AUTO_GENERATE: z.string().optional(),
     ISSUES_ENFORCE_DEADLINES: z.string().optional(),
-    ISSUES_AWARD_CREDITS: z.string().optional(),
     // Neighbor-aware national issues; on unless "0"/"false" (national-issues/neighbors.ts)
     ISSUES_NEIGHBORS: z.string().optional(),
     // Sports commentary LLM (lib/sports/commentary/narrator.ts); "true" enables commentary
@@ -242,7 +241,6 @@ export const env = createEnv({
     TRPC_VERBOSE: process.env.TRPC_VERBOSE,
     ISSUES_AUTO_GENERATE: process.env.ISSUES_AUTO_GENERATE,
     ISSUES_ENFORCE_DEADLINES: process.env.ISSUES_ENFORCE_DEADLINES,
-    ISSUES_AWARD_CREDITS: process.env.ISSUES_AWARD_CREDITS,
     ISSUES_NEIGHBORS: process.env.ISSUES_NEIGHBORS,
     SPORTS_LLM_COMMENTARY: process.env.SPORTS_LLM_COMMENTARY,
     SPORTS_LLM_API_KEY: process.env.SPORTS_LLM_API_KEY,
