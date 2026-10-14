@@ -91,7 +91,7 @@ const data: PassportPayload = {
   realmCount: 0,
   nationCount: 0,
   recruitedCount: 0,
-  wiki: { linked: false, username: null, lorewards: null, awardHistory: [] },
+  wiki: { linked: false, username: null, lorewards: null },
   forum: { linked: false, username: null, stats: null },
   vault: null,
   showcase: {

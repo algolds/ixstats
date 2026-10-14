@@ -198,7 +198,6 @@ describe("Lorewards and wiki attribution", () => {
     withConfig({ showWikiAttribution: false });
     const passport = await getPassport(asViewer("visitor"), forum);
     expect(passport?.wiki.lorewards).toBeNull();
-    expect(passport?.wiki.awardHistory).toEqual([]);
     expect(loadLoreStats).not.toHaveBeenCalled();
     expect(loadLoreAwards).not.toHaveBeenCalled();
   });

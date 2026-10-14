@@ -82,15 +82,6 @@ export interface AuthoredArticle {
   updatedAt: Date;
 }
 
-export interface AwardHistoryItem {
-  id: string;
-  date: string;
-  type: string;
-  role: "winner" | "runner-up";
-  page: string | null;
-  score: number | null;
-}
-
 /** Lorewards standing shown on the passport. */
 export interface PassportLorewards {
   totalScore: number;

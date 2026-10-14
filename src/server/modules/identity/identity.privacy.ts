@@ -7,12 +7,12 @@
  */
 import { db } from "~/server/db";
 import type { PassportAchievementsShowcase } from "./identity.showcase";
-import type { AwardHistoryItem, PassportForumStats, PassportLorewards } from "./identity.types";
+import type { PassportForumStats, PassportLorewards } from "./identity.types";
 import type { PassportVaultSummary } from "./identity.vault";
 
 /** The toggleable passport sections, keyed as the passport UI names them. */
 export interface PassportVisibility {
-  /** Lorewards score, rank, laurels and award history. */
+  /** Lorewards score, rank and laurels. */
   accolades: boolean;
   /** Collection category breadth ("Focus"). */
   impact: boolean;
@@ -159,7 +159,6 @@ export async function savePassportSettings(
 /** The passport sections privacy settings can strip. */
 export interface PassportSections {
   lorewards: PassportLorewards | null;
-  awardHistory: AwardHistoryItem[];
   forumStats: PassportForumStats | null;
   vault: PassportVaultSummary | null;
   achievements: PassportAchievementsShowcase | null;
@@ -176,7 +175,6 @@ export function redactPassportSections(
   const out = { ...sections };
   if (!visibility.accolades) {
     out.lorewards = null;
-    out.awardHistory = [];
   }
   if (!visibility.forumStats) out.forumStats = null;
   if (!visibility.vaultCards) out.vault = null;

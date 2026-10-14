@@ -52,6 +52,7 @@ describe("/vault/achievements", () => {
     expect(screen.getByText("340")).toBeInTheDocument();
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
       "All",
+      "Lorewards",
       "Showcase",
       "Leaderboard",
     ]);

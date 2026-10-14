@@ -60,7 +60,6 @@ const passport: PassportPayload = {
     linked: true,
     username: "Alex",
     lorewards: null,
-    awardHistory: [],
   },
   forum: {
     linked: false,

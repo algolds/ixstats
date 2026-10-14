@@ -2,10 +2,8 @@
  * Pure mappers from resolved identity rows to the passport's Realms and History payloads.
  */
 import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
-import { isAwardWinner, type LoreAwardRow } from "./identity.feed";
 import type { IdentityCountry } from "./identity.selects";
 import type {
-  AwardHistoryItem,
   IdentityEventPayload,
   IdentityHistoryPage,
   RealmMembership,
@@ -61,31 +59,6 @@ export function toRealmMemberships(
 export function filterByRealm(memberships: RealmMembership[], realm: string): RealmMembership[] {
   const key = realm.toLowerCase();
   return memberships.filter((m) => m.slug.toLowerCase() === key || m.id.toLowerCase() === key);
-}
-
-export function toAwardHistory(
-  awards: LoreAwardRow[],
-  wikiName: string | null
-): AwardHistoryItem[] {
-  return awards.map((award) => {
-    const isWinner = isAwardWinner(award, wikiName);
-    return {
-      id: award.id,
-      date: award.date,
-      type: award.type,
-      role: isWinner ? "winner" : "runner-up",
-      page:
-        (isWinner ? award.winnerPage : award.runnerUpPage) ||
-        award.winnerPage ||
-        award.runnerUpPage ||
-        null,
-      score:
-        (isWinner ? award.winnerScore : award.runnerUpScore) ||
-        award.winnerScore ||
-        award.runnerUpScore ||
-        null,
-    };
-  });
 }
 
 export interface DirectiveRow {

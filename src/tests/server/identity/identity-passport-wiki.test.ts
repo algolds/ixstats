@@ -125,7 +125,7 @@ describe("getPassport wiki identity", () => {
     (loadWikiInfo as jest.Mock).mockClear().mockResolvedValue(LIVE);
     const passport = await getPassport({ handle: "kir-republic", viewerClerkId: null }, forum);
     expect(Object.keys(passport?.wiki ?? {}).sort()).toEqual(
-      ["awardHistory", "linked", "lorewards", "username"].sort()
+      ["linked", "lorewards", "username"].sort()
     );
     expect(loadWikiInfo).not.toHaveBeenCalled();
   });

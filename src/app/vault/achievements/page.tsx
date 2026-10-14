@@ -11,6 +11,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Card } from "~/components/ui/card";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
+import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
 
 export default function VaultAchievementsPage() {
   useEffect(() => {
@@ -98,7 +99,11 @@ export default function VaultAchievementsPage() {
         </Card>
       )}
 
-      <AchievementsTabs achievements={achievements} isLoading={achievements === undefined} />
+      <AchievementsTabs
+        achievements={achievements}
+        isLoading={achievements === undefined}
+        lorewardsPanel={<VaultLorewardsPanel />}
+      />
     </div>
   );
 }

@@ -26,7 +26,6 @@ import {
   filterByRealm,
   paginateEvents,
   primaryNationOf,
-  toAwardHistory,
   toRealmMemberships,
 } from "./identity.mappers";
 import { loadRecruitedCount } from "./identity.invites";
@@ -41,7 +40,6 @@ import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
   AuthoredArticle,
-  AwardHistoryItem,
   IdentityForumActivity,
   IdentityForumGateway,
   IdentityHistoryPage,
@@ -162,7 +160,7 @@ function passportWiki(
   identity: ResolvedIdentity,
   wikiInfo: WikiInfo,
   verifiedWikiName: string | null,
-  sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards" | "awardHistory">
+  sections: Pick<ReturnType<typeof redactPassportSections>, "lorewards">
 ) {
   return {
     // A user's wiki is "linked" only through a verified link (a legacy `User.wikiUsername` proves
@@ -170,7 +168,6 @@ function passportWiki(
     linked: identity.user ? Boolean(verifiedWikiName) : Boolean(wikiInfo?.exists),
     username: identity.wikiName,
     lorewards: sections.lorewards,
-    awardHistory: sections.awardHistory,
   };
 }
 
@@ -178,7 +175,6 @@ function passportWiki(
 const HIDDEN_WIKI = {
   linked: false,
   lorewards: null,
-  awardHistory: [] as AwardHistoryItem[],
 };
 
 /** The old forum account (the kept `forumUserId` / `forumUsername` columns, or an imported name) and counters. */
@@ -215,7 +211,6 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     wikiInfo,
     verifiedWikiName,
     loreStats,
-    awards,
     forumActivity,
     persona,
     clerk,
@@ -228,7 +223,6 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     user ? null : loadWikiInfo(wikiName),
     loadVerifiedWikiName(user?.id),
     showLore ? loadLoreStats(wikiName) : null,
-    showLore ? loadLoreAwards(wikiName) : [],
     shown.forumStats && user ? forum.getActivity(user.id).catch(() => null) : null,
     loadPersonalPersona(user),
     loadClerkProfile(identity),
@@ -250,7 +244,6 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const sections = redactPassportSections(
     {
       lorewards: toLorewards(loreStats, loreRank),
-      awardHistory: toAwardHistory(awards, wikiName),
       forumStats,
       vault,
       achievements,
