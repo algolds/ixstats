@@ -54,9 +54,8 @@ export async function validatePostActionTokens(
 }
 
 /**
- * Replaces the post's links with the tokens in its text and reports the activity ids whose link row this call
- * inserted. `createManyAndReturn` with `skipDuplicates` returns only the inserted rows, so two saves racing on one
- * post cannot both claim the same link as new.
+ * Replaces the post's links with the tokens in its text. `skipDuplicates` keeps two saves racing on one post from
+ * failing on the same new link.
  */
 export async function syncPostActionLinks(
   db: LinksDb,
@@ -67,21 +66,19 @@ export async function syncPostActionLinks(
     body: string;
     keep?: readonly string[];
   }
-): Promise<{ created: string[] }> {
+): Promise<void> {
   const { postSource, postRef, countryId: owner, keep } = input;
   const ids = await validatePostActionTokens(db, input);
   const fresh = ids.filter((id) => !keep?.includes(id));
-  return db.$transaction(async (tx) => {
+  await db.$transaction(async (tx) => {
     await tx.postActionLink.deleteMany({
       where: { postSource, postRef, activityId: { notIn: ids } },
     });
-    if (fresh.length === 0 || !owner) return { created: [] };
-    const rows = await tx.postActionLink.createManyAndReturn({
+    if (fresh.length === 0 || !owner) return;
+    await tx.postActionLink.createMany({
       data: fresh.map((activityId) => ({ postSource, postRef, activityId, countryId: owner })),
       skipDuplicates: true,
-      select: { activityId: true },
     });
-    return { created: rows.map((row) => row.activityId) };
   });
 }
 

@@ -95,9 +95,7 @@ function writeDb(opts: Opts = {}) {
     },
     postActionLink: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
-      createManyAndReturn: jest.fn(async (args: { data: Array<{ activityId: string }> }) =>
-        args.data.map((d) => ({ activityId: d.activityId }))
-      ),
+      createMany: jest.fn(async () => ({ count: 0 })),
     },
   };
   const db = {
@@ -356,10 +354,9 @@ describe("createThread", () => {
       activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
     });
     await createThread(db as never, user, { ...NEW_THREAD, html: "<p>We act [ixaction=a1]</p>" });
-    expect(tx.postActionLink.createManyAndReturn).toHaveBeenCalledWith({
+    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
       data: [{ postSource: "native", postRef: "p_new", activityId: "a1", countryId: "c1" }],
       skipDuplicates: true,
-      select: { activityId: true },
     });
   });
 
@@ -533,10 +530,9 @@ describe("editPost", () => {
     expect(update.data.contentHtml).toBe("<p>Now [ixaction=a1]</p>");
     expect(update.data.plainText).toBe("Now [ixaction=a1]");
     expect(update.data.editedAt).toBeInstanceOf(Date);
-    expect(tx.postActionLink.createManyAndReturn).toHaveBeenCalledWith({
+    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
       data: [{ postSource: "native", postRef: "p1", activityId: "a1", countryId: "c1" }],
       skipDuplicates: true,
-      select: { activityId: true },
     });
   });
 
@@ -560,7 +556,7 @@ describe("editPost", () => {
       message:
         "This post changed since you opened it (a moderator's edit or another tab). Reload to see the latest version.",
     });
-    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
     expect(tx.postActionLink.deleteMany).not.toHaveBeenCalled();
   });
 
@@ -1488,7 +1484,7 @@ describe("Find a Realm adverts", () => {
       expect(kept.db.postActionLink.deleteMany).toHaveBeenLastCalledWith({
         where: { postSource: "native", postRef: "p1", activityId: { notIn: ["a1", "a2"] } },
       });
-      expect(kept.tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+      expect(kept.tx.postActionLink.createMany).not.toHaveBeenCalled();
       const removed = advertEdit(linked, adOfficer);
       await removed.run({ ...edit, html: "<p>Join [ixaction=a2]</p>" });
       expect(removed.db.postActionLink.deleteMany).toHaveBeenLastCalledWith({
@@ -1516,7 +1512,7 @@ describe("Find a Realm adverts", () => {
         activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
       });
       await own.run({ ...edit, html: "<p>Join [ixaction=a1]</p>" });
-      expect(own.tx.postActionLink.createManyAndReturn).toHaveBeenCalled();
+      expect(own.tx.postActionLink.createMany).toHaveBeenCalled();
       expect(own.db.postActionLink.deleteMany).not.toHaveBeenCalled();
     });
   });

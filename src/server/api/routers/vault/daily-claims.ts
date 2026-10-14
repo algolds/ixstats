@@ -129,34 +129,6 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
     }),
 
   /**
-   * Spend IxCredits
-   */
-  checkDailyCap: protectedProcedure
-    .input(
-      z.object({
-        earnType: z.enum(["EARN_ACTIVE", "EARN_SOCIAL"]),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          throw new Error("User ID not found in authentication context");
-        }
-
-        const capCheck = await vaultService.checkDailyCap(
-          ctx.auth.userId,
-          input.earnType,
-          ctx.db as any
-        );
-
-        return capCheck;
-      } catch (error) {
-        console.error("[Vault Router] Error checking daily cap:", error);
-        throw new Error("Failed to check daily earning cap", { cause: error });
-      }
-    }),
-
-  /**
    * Earn IxCredits (internal use by other systems)
    * Admin-only endpoint
    */

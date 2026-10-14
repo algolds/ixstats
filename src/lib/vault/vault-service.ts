@@ -8,7 +8,6 @@
 import { Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
 import {
-  checkDailyCap as ledgerCheckDailyCap,
   earnCredits as ledgerEarnCredits,
   spendCredits as ledgerSpendCredits,
   earnCreditsTx as ledgerEarnCreditsTx,
@@ -97,10 +96,6 @@ export async function earnCreditsOnce(
 }
 
 export class VaultService {
-  checkDailyCap(userId: string, earnType: "EARN_ACTIVE" | "EARN_SOCIAL", db: PrismaClient) {
-    return ledgerCheckDailyCap(userId, earnType, db);
-  }
-
   earnCredits(
     userId: string,
     amount: number,

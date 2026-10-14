@@ -8,16 +8,11 @@ import { MAX_ACTIONS_PER_POST } from "~/lib/action-links";
 
 type Row = { id: string; countryId: string; visibility: string };
 
-function fakeDb(activities: Row[], alreadyLinked: string[] = []) {
+function fakeDb(activities: Row[]) {
   const tx = {
     postActionLink: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
-      // The rows this call inserted: skipDuplicates leaves out the ones that already exist.
-      createManyAndReturn: jest.fn(async (args: { data: Array<{ activityId: string }> }) =>
-        args.data
-          .filter((d) => !alreadyLinked.includes(d.activityId))
-          .map((d) => ({ activityId: d.activityId }))
-      ),
+      createMany: jest.fn(async () => ({ count: 0 })),
     },
   };
   return {
@@ -48,39 +43,23 @@ function fakeDb(activities: Row[], alreadyLinked: string[] = []) {
 const POST = { postSource: "native" as const, postRef: "p1", countryId: "c1" };
 
 describe("syncPostActionLinks", () => {
-  it("links the poster's own public actions and reports them as created", async () => {
+  it("links the poster's own public actions", async () => {
     const { db, tx } = fakeDb([{ id: "a1", countryId: "c1", visibility: "public" }]);
     await expect(
       syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a1]" })
-    ).resolves.toEqual({
-      created: ["a1"],
-    });
-    expect(tx.postActionLink.createManyAndReturn).toHaveBeenCalledWith({
+    ).resolves.toBeUndefined();
+    expect(tx.postActionLink.createMany).toHaveBeenCalledWith({
       data: [{ postSource: "native", postRef: "p1", activityId: "a1", countryId: "c1" }],
       skipDuplicates: true,
-      select: { activityId: true },
     });
-  });
-
-  it("reports only the links this save inserted, not the ones the post already had", async () => {
-    const { db } = fakeDb(
-      [
-        { id: "a1", countryId: "c1", visibility: "public" },
-        { id: "a2", countryId: "c1", visibility: "public" },
-      ],
-      ["a1"]
-    );
-    await expect(
-      syncPostActionLinks(db as never, { ...POST, body: "[ixaction=a1] and [ixaction=a2]" })
-    ).resolves.toEqual({ created: ["a2"] });
   });
 
   it("creates nothing for a post whose poster has no country", async () => {
     const { db, tx } = fakeDb([]);
     await expect(
       syncPostActionLinks(db as never, { ...POST, countryId: null, body: "plain" })
-    ).resolves.toEqual({ created: [] });
-    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+    ).resolves.toBeUndefined();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
 
   it("rejects another country's action", async () => {
@@ -127,13 +106,13 @@ describe("syncPostActionLinks", () => {
 
   it("removes every link when the edit drops all tokens", async () => {
     const { db, tx } = fakeDb([]);
-    await expect(syncPostActionLinks(db as never, { ...POST, body: "no tokens" })).resolves.toEqual(
-      { created: [] }
-    );
+    await expect(
+      syncPostActionLinks(db as never, { ...POST, body: "no tokens" })
+    ).resolves.toBeUndefined();
     expect(tx.postActionLink.deleteMany).toHaveBeenCalledWith({
       where: { postSource: "native", postRef: "p1", activityId: { notIn: [] } },
     });
-    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
 });
 
@@ -144,7 +123,7 @@ describe("validatePostActionTokens", () => {
       validatePostActionTokens(db as never, { countryId: "c1", body: "[ixaction=a1]" })
     ).resolves.toEqual(["a1"]);
     expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
 
   it("skips the ownership query for a body with no tokens", async () => {

@@ -8,9 +8,7 @@ function fakeDb(activities: Activity[]) {
   const tx = {
     postActionLink: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
-      createManyAndReturn: jest.fn(async (args: { data: Array<{ activityId: string }> }) =>
-        args.data.map((d) => ({ activityId: d.activityId }))
-      ),
+      createMany: jest.fn(async () => ({ count: 0 })),
     },
   };
   const db = {
@@ -61,13 +59,13 @@ describe("an author's edit of a post that already links an action", () => {
     expect(tx.postActionLink.deleteMany).toHaveBeenCalledWith({
       where: { postSource: "native", postRef: "p1", activityId: { notIn: ["dir-1"] } },
     });
-    expect(tx.postActionLink.createManyAndReturn).not.toHaveBeenCalled();
+    expect(tx.postActionLink.createMany).not.toHaveBeenCalled();
   });
 
   it("links a new public token added in the same edit", async () => {
     const { db, tx } = fakeDb([WITHDRAWN, { id: "dir-2", countryId: "c1", visibility: "public" }]);
     await syncEditLinks(db, AUTHOR, POST, "[ixaction=dir-1] [ixaction=dir-2]");
-    expect(tx.postActionLink.createManyAndReturn).toHaveBeenCalledWith(
+    expect(tx.postActionLink.createMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: [{ postSource: "native", postRef: "p1", activityId: "dir-2", countryId: "c1" }],
       })

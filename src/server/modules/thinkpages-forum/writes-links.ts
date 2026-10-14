@@ -41,7 +41,7 @@ export function syncLinks(
   postId: string,
   plainText: string,
   keep?: readonly string[]
-): Promise<{ created: string[] }> {
+): Promise<void> {
   return asForumRefusal(() =>
     syncPostActionLinks(db, {
       postSource: "native",
