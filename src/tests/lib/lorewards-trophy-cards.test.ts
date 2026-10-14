@@ -5,6 +5,7 @@
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
+import { ConflictError } from "~/lib/app-error";
 import {
   backfillTrophyCards,
   grantUnownedTrophyCards,
@@ -51,6 +52,7 @@ let ownerships: OwnershipRow[];
 let links: Map<string, string>;
 let creditWrites: string[];
 let failNextCardCreate: boolean;
+let failNextCardCreateAsConflict: boolean;
 
 const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
   id: "e1",
@@ -102,6 +104,10 @@ function buildDb(): PrismaClient {
         cards.find((c) => c.id === where.id)
       ),
       create: jest.fn(async ({ data }: { data: Omit<CardRow, "id"> }) => {
+        if (failNextCardCreateAsConflict) {
+          failNextCardCreateAsConflict = false;
+          throw new ConflictError("Unique constraint failed");
+        }
         if (failNextCardCreate) {
           failNextCardCreate = false;
           throw new Prisma.PrismaClientKnownRequestError("unique", {
@@ -159,6 +165,7 @@ beforeEach(() => {
   links = new Map();
   creditWrites = [];
   failNextCardCreate = false;
+  failNextCardCreateAsConflict = false;
   db = buildDb();
 });
 
@@ -270,6 +277,13 @@ describe("mintTrophyCards", () => {
 
   it("counts a place another run already minted as not minted", async () => {
     failNextCardCreate = true;
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toEqual([]);
+  });
+
+  it("counts a unique violation surfaced as a ConflictError as not minted", async () => {
+    failNextCardCreateAsConflict = true;
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
     expect(cards).toEqual([]);

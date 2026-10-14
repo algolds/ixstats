@@ -8,6 +8,7 @@
  * will not make a second card of that page (`checkCardExists`); that is intended.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { newCardOwnershipId } from "~/lib/cards/ownership-id";
@@ -59,8 +60,10 @@ interface TrophyEntry {
 const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {};
 
+/** A unique violation: `P2002` from a raw client, a `ConflictError` once it passes through `~/server/db`. */
 const isUniqueViolation = (error: Error) =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+  (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") ||
+  error instanceof ConflictError;
 
 const ownershipData = (cardId: string, userId: string, serialNumber: number) => ({
   id: newCardOwnershipId(),
