@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import {
   Lock,
@@ -18,6 +18,7 @@ import {
   Hexagon,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
+import type { RouterOutputs } from "~/trpc/react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -40,7 +41,9 @@ import { Card } from "~/components/ui/card";
 const MotionCard = motion.create(Card);
 
 interface AllAchievementsTabProps {
-  achievements: any[] | undefined;
+  achievements: RouterOutputs["achievements"]["getAllWithStatus"] | undefined;
+  /** An achievement to open: its series card opens on that tier and scrolls into view. */
+  focusKey?: string;
 }
 
 /** Trophy tier chip: a Badge variant plus an icon (colour never carries meaning alone). */
@@ -81,13 +84,20 @@ function GroupedSeriesCard({
   selectedRarity,
   revealedSecrets,
   toggleSecretReveal,
+  focusKey,
 }: {
   item: GroupedAchievementItem;
   selectedRarity: string;
   revealedSecrets: Set<string>;
   toggleSecretReveal: (k: string) => void;
+  /** Set on the one card holding the opened achievement. */
+  focusKey?: string;
 }) {
-  const [inspectedIndex, setInspectedIndex] = useState(item.currentTierIndex);
+  const focusIndex = focusKey ? item.levels.findIndex((l) => l.key === focusKey) : -1;
+  const [inspectedIndex, setInspectedIndex] = useState(
+    focusIndex === -1 ? item.currentTierIndex : focusIndex
+  );
+  const cardRef = useRef<HTMLDivElement>(null);
   const [shakingTierKey, setShakingTierKey] = useState<string | null>(null);
   const [isPedestalShaking, setIsPedestalShaking] = useState(false);
 
@@ -103,6 +113,14 @@ function GroupedSeriesCard({
     }
     setInspectedIndex(item.currentTierIndex);
   }, [selectedRarity, item.currentTierIndex, item.levels]);
+
+  // Declared after the effect above so a deep link wins on mount; a later rarity change still re-aims it.
+  useEffect(() => {
+    if (focusIndex === -1) return;
+    // oxlint-disable-next-line
+    setInspectedIndex(focusIndex);
+    cardRef.current?.scrollIntoView?.({ block: "center" });
+  }, [focusIndex]);
 
   const triggerLockedShake = (key?: string) => {
     if (key) {
@@ -134,12 +152,14 @@ function GroupedSeriesCard({
     // Unlocked achievements lift on hover and carry the aurora / foil
     // backdrop; locked ones stay a dashed opaque slot.
     <MotionCard
+      ref={cardRef}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
       interactive={isUnlocked}
       className={cn(
         "flex flex-col justify-between overflow-hidden p-5",
+        focusIndex !== -1 && "outline-tint outline-2 outline-offset-2",
         isUnlocked
           ? categoryTheme.cardBorderHover
           : "bg-surface-secondary border-dashed shadow-none select-none"
@@ -337,7 +357,7 @@ function GroupedSeriesCard({
   );
 }
 
-export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
+export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTabProps) {
   const [selectedRarity, setSelectedRarity] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -462,6 +482,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
               selectedRarity={selectedRarity}
               revealedSecrets={revealedSecrets}
               toggleSecretReveal={toggleSecretReveal}
+              focusKey={item.levels.some((l) => l.key === focusKey) ? focusKey : undefined}
             />
           ))}
         </div>

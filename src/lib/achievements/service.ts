@@ -278,7 +278,8 @@ class AchievementService {
                   userId,
                   userRecord.countryId,
                   achievement.title,
-                  achievement.description || `Unlocked ${achievement.rarity} achievement`
+                  achievement.description || `Unlocked ${achievement.rarity} achievement`,
+                  achievement.key
                 ).catch((err) => console.error("Failed to create achievement activity:", err));
               }
 
@@ -426,7 +427,10 @@ class AchievementService {
       db.storyline
         .count({ where: { countryId, kind: "chain", status: "approved" } })
         .catch((error) => {
-          console.warn(`[Achievements] story chain count for ${countryId} unavailable, using 0:`, error);
+          console.warn(
+            `[Achievements] story chain count for ${countryId} unavailable, using 0:`,
+            error
+          );
           return 0;
         }),
     ]);

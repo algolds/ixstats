@@ -10,6 +10,8 @@
  * `/r/[realm]/[username]` have no `loading.tsx` above them. `/r`'s loading UI sits in the realm's
  * `(region)` group instead, below the legacy path.
  *
+ * `/achievements` redirects to `/vault/achievements` (keeping `?a=<key>`), so it has no `loading.tsx` either.
+ *
  * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page of the retired
  * XenForo bridge calls `permanentRedirect()` before rendering anything, so the `(forum)` group has no `loading.tsx`
  * and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
@@ -35,9 +37,13 @@ const NOT_LOADING_SEGMENTS = new Set([
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
 /** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
-const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages"]);
+const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages", "achievements"]);
 /** The redirect pages, relative to src/app. */
-const REDIRECT_PAGES = ["id/[username]/page.tsx", "r/[realm]/[username]/page.tsx"];
+const REDIRECT_PAGES = [
+  "id/[username]/page.tsx",
+  "r/[realm]/[username]/page.tsx",
+  "achievements/page.tsx",
+];
 
 const LOADING_FILE = /^loading\.(?:tsx?|jsx?)$/;
 const PAGE_FILE = /^page\.(?:tsx?|jsx?)$/;

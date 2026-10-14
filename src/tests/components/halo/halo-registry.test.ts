@@ -32,6 +32,10 @@ describe("Halo registry: ThinkPages destinations", () => {
     });
   });
 
+  it("finds Achievements in the Vault, where they live now", () => {
+    expect(command("Achievements and trophies")).toMatchObject({ path: "/vault/achievements" });
+  });
+
   it("points no entry at a moved feed page under /thinkpages", () => {
     const moved = /^\/thinkpages\/(feed|post|profile|saved|thinkshare|forum)(\/|$)/;
     expect(CORE_COMMANDS.filter((entry) => entry.path && moved.test(entry.path))).toEqual([]);

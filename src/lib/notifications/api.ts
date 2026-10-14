@@ -116,6 +116,8 @@ interface NotificationTriggerOptions {
 
   // Achievement notifications
   achievement?: {
+    /** The achievement's key; the notification opens it in the Vault. */
+    key: string;
     name: string;
     description: string;
     category: string;
@@ -351,7 +353,7 @@ class NotificationAPIService {
 
     // Achievement notifications
     if (options.achievement) {
-      const { name, description, category, userId } = options.achievement;
+      const { key, name, description, category, userId } = options.achievement;
 
       return this.create({
         title: `🏆 Achievement Unlocked: ${name}`,
@@ -360,7 +362,7 @@ class NotificationAPIService {
         category: "achievement",
         type: "success",
         priority: "low",
-        href: withBasePath("/achievements"),
+        href: withBasePath(`/vault/achievements?a=${encodeURIComponent(key)}`),
         source: "achievement-system",
         actionable: true,
         metadata: { achievementName: name, achievementCategory: category },
