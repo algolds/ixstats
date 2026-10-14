@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/component
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { IconWell } from "./IconWell";
 import {
   describeRow,
   groupStatement,
@@ -105,14 +106,9 @@ function RowIcon({ row }: { row: StatementRow }) {
   const key = rowIconKey(row);
   const Icon = ROW_ICONS[key];
   return (
-    <span
-      aria-hidden
-      data-slot="statement-icon"
-      data-icon={key}
-      className="facet-well rounded-row text-tint flex size-8 shrink-0 items-center justify-center [&_svg]:size-4"
-    >
+    <IconWell data-slot="statement-icon" data-icon={key}>
       <Icon />
-    </span>
+    </IconWell>
   );
 }
 

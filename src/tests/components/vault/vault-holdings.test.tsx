@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 jest.mock("~/components/vault/IxCreditsSymbol", () => ({ IxCreditsSymbol: () => <i /> }));
 jest.mock("next/link", () => ({
@@ -38,9 +38,9 @@ const STORE_ITEMS = [
   { id: "fancy", name: "Aurora frame", price: 1200, quality: "EPIC", category: "cosmetics" },
 ];
 
-const linkTo = (name: RegExp | string) => screen.getByRole("link", { name });
+const row = (name: RegExp | string) => screen.getByRole("link", { name });
 
-describe("VaultHoldings", () => {
+describe("VaultHoldings (Your Vault)", () => {
   beforeEach(() => {
     mockErrors = new Set();
     mockData = {
@@ -53,143 +53,93 @@ describe("VaultHoldings", () => {
         cards: [],
         todayRank: 4,
       },
-      getMySummary: { unlocked: 42, activeTotal: 180, points: 1240, rank: 17 },
+      getMySummary: { unlocked: 42, activeTotal: 180, points: 1240, rank: 17, latest: null },
       listStoreItems: STORE_ITEMS,
       getPurchasedItems: { purchasedItemIds: [], purchaseCounts: {} },
-      listWikiLinks: [{ source: "ixwiki", username: "Ixnay", verified: true, pending: false }],
     };
   });
 
-  const renderHoldings = (props: Partial<React.ComponentProps<typeof VaultHoldings>> = {}) =>
-    render(<VaultHoldings totalCards={312} deckValue={6440} unopenedPacks={0} {...props} />);
-
-  it("shows achievement progress and links to the achievements page", () => {
-    renderHoldings();
-    const link = linkTo(/Achievements/);
-    expect(link.getAttribute("href")).toBe("/vault/achievements");
-    expect(link.textContent).toContain("42 of 180");
-    expect(link.textContent).toContain("1,240 points");
-    expect(link.textContent).toContain("Rank 17");
+  it("is an inset list headed Your Vault with the four homes in order", () => {
+    const { container } = render(<VaultHoldings />);
+    expect(screen.getByRole("heading", { level: 2, name: "Your Vault" })).not.toBeNull();
+    expect(container.querySelector('[data-slot="facet-list"]')).not.toBeNull();
+    const titles = screen.getAllByRole("link").map((link) => link.textContent);
+    expect(titles[0]).toMatch(/^Achievements/);
+    expect(titles[1]).toMatch(/^Lorewards/);
+    expect(titles[2]).toMatch(/^Cards/);
+    expect(titles[3]).toMatch(/^Store/);
+    expect(titles).toHaveLength(4);
   });
 
-  it("leaves the rank out for an unranked player and offers no closest-to-unlocking line", () => {
-    mockData.getMySummary = { unlocked: 0, activeTotal: 180, points: 0, rank: null };
-    renderHoldings();
-    const link = linkTo(/Achievements/);
-    expect(link.textContent).not.toContain("Rank");
-    expect(link.textContent).not.toMatch(/closest/i);
+  it("gives every row a tinted icon and a chevron", () => {
+    render(<VaultHoldings />);
+    for (const link of screen.getAllByRole("link")) {
+      expect(link.querySelector('[data-slot="facet-row-leading"] svg')).not.toBeNull();
+      expect(link.querySelector('[data-slot="facet-row-leading"] .text-tint')).not.toBeNull();
+      expect(link.querySelectorAll("svg").length).toBeGreaterThanOrEqual(2);
+    }
   });
 
-  it("shows the card count and deck value and links to Cards", () => {
-    renderHoldings();
-    const link = linkTo(/Cards/);
-    expect(link.getAttribute("href")).toBe("/vault/cards");
-    expect(link.textContent).toContain("312 cards");
-    expect(link.textContent).toContain("6,440");
-    expect(link.textContent).not.toMatch(/sets? in progress/i);
-  });
+  describe("Achievements", () => {
+    it("shows unlocked of the total, points and rank with a progress bar", () => {
+      render(<VaultHoldings />);
+      const link = row(/Achievements/);
+      expect(link.getAttribute("href")).toBe("/vault/achievements");
+      expect(link.textContent).toContain("42 of 180");
+      expect(link.textContent).toContain("1,240 points");
+      expect(link.textContent).toContain("#17");
+      const bar = within(link).getByRole("progressbar");
+      expect(bar.getAttribute("aria-valuenow")).toBe("42");
+      expect(bar.getAttribute("aria-valuemax")).toBe("180");
+    });
 
-  it("mentions waiting packs only when there are some", () => {
-    const { unmount } = renderHoldings();
-    expect(linkTo(/Cards/).textContent).not.toMatch(/waiting/);
-    unmount();
-    renderHoldings({ unopenedPacks: 2 });
-    expect(linkTo(/Cards/).textContent).toContain("2 packs waiting");
-  });
+    it("leaves the rank out for an unranked player", () => {
+      mockData.getMySummary = {
+        unlocked: 0,
+        activeTotal: 180,
+        points: 0,
+        rank: null,
+        latest: null,
+      };
+      render(<VaultHoldings />);
+      expect(row(/Achievements/).textContent).not.toContain("#");
+    });
 
-  it("features one store item and links to the Store", () => {
-    renderHoldings();
-    const link = linkTo(/Store/);
-    expect(link.getAttribute("href")).toBe("/vault/store");
-    expect(link.textContent).toContain("Aurora frame");
-    expect(link.textContent).toContain("1,200");
-    expect(link.textContent).not.toContain("Plain frame");
-  });
+    it("shows a skeleton while loading and no figures when the query fails", () => {
+      delete mockData.getMySummary;
+      const { unmount } = render(<VaultHoldings />);
+      expect(row(/Achievements/).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+      unmount();
 
-  it("falls back to a plain Store link when nothing is left to feature", () => {
-    mockData.getPurchasedItems = {
-      purchasedItemIds: ["cheap", "fancy"],
-      purchaseCounts: { cheap: 1, fancy: 1 },
-    };
-    renderHoldings();
-    expect(linkTo(/Store/).textContent).toContain("Browse the store");
-  });
-
-  it("prompts to link a wiki account only when none is verified", () => {
-    const { unmount } = renderHoldings();
-    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
-    unmount();
-
-    mockData.listWikiLinks = [
-      { source: "ixwiki", username: "Ixnay", verified: false, pending: true },
-    ];
-    renderHoldings();
-    const prompt = screen.getByRole("link", { name: /Link your wiki account/ });
-    expect(prompt.getAttribute("href")).toBe("/settings?tab=account");
-  });
-
-  it("stays quiet about the wiki link while the links load", () => {
-    delete mockData.listWikiLinks;
-    renderHoldings();
-    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
-  });
-
-  it("shows a dash for the deck value when the stats failed", () => {
-    renderHoldings({ deckValue: null });
-    expect(linkTo(/Cards/).querySelector('[aria-label="Unavailable"]')).not.toBeNull();
-  });
-
-  it("shows no card count while the stats load, and says unavailable when they failed", () => {
-    const { unmount } = renderHoldings({ totalCards: undefined, deckValue: undefined });
-    expect(linkTo(/Cards/).textContent).not.toMatch(/\d+ cards/);
-    expect(linkTo(/Cards/).textContent).not.toContain("Unavailable");
-    unmount();
-    renderHoldings({ totalCards: null, deckValue: null });
-    expect(linkTo(/Cards/).textContent).toContain("Unavailable");
-    expect(linkTo(/Cards/).textContent).not.toMatch(/\d+ cards/);
-  });
-
-  it("uses the singular for a single card", () => {
-    renderHoldings({ totalCards: 1 });
-    expect(linkTo(/Cards/).textContent).toContain("1 card");
-    expect(linkTo(/Cards/).textContent).not.toContain("1 cards");
-  });
-
-  it("uses the singular for a single waiting pack", () => {
-    renderHoldings({ unopenedPacks: 1 });
-    expect(linkTo(/Cards/).textContent).toContain("1 pack waiting");
-  });
-
-  it("nests no block element inside a paragraph, loaded or loading", () => {
-    const { container, rerender } = renderHoldings({ unopenedPacks: 2 });
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
-    rerender(<VaultHoldings totalCards={undefined} deckValue={undefined} unopenedPacks={2} />);
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+      mockErrors = new Set(["getMySummary"]);
+      render(<VaultHoldings />);
+      expect(row(/Achievements/).textContent).toContain("Unavailable");
+      expect(row(/Achievements/).textContent).not.toMatch(/\d/);
+    });
   });
 
   describe("Lorewards", () => {
-    it("shows wins, runner-ups and today's rank, and links to the Lorewards tab", () => {
-      renderHoldings();
-      const link = linkTo(/Lorewards/);
+    it("shows wins and today's rank, and links to the Lorewards tab", () => {
+      render(<VaultHoldings />);
+      const link = row(/Lorewards/);
       expect(link.getAttribute("href")).toBe("/vault/achievements?tab=lorewards");
       expect(link.textContent).toContain("4 wins");
-      expect(link.textContent).toContain("3 daily, 1 weekly");
-      expect(link.textContent).not.toContain("monthly");
-      expect(link.textContent).toContain("2 runner-ups");
-      expect(link.textContent).toContain("Today's race: #4");
+      expect(link.textContent).toContain("Today #4");
     });
 
-    it("leaves today's rank out when it is not known", () => {
+    it("uses the singular for one win and leaves today's rank out when unknown", () => {
       mockData.getMyTrophies = {
         ...(mockData.getMyTrophies as object),
+        wins: { daily: 1, weekly: 0, monthly: 0 },
         todayRank: null,
       };
-      renderHoldings();
-      expect(linkTo(/Lorewards/).textContent).not.toContain("Today's race");
+      render(<VaultHoldings />);
+      expect(row(/Lorewards/).textContent).toContain("1 win");
+      expect(row(/Lorewards/).textContent).not.toContain("1 wins");
+      expect(row(/Lorewards/).textContent).not.toContain("Today");
     });
 
-    it("says nothing about wins for an unlinked wiki account, leaving the prompt to carry it", () => {
+    it("says only that a wiki account is needed when none is linked", () => {
       mockData.getMyTrophies = {
         wikiUsername: null,
         wins: { daily: 0, weekly: 0, monthly: 0 },
@@ -199,32 +149,72 @@ describe("VaultHoldings", () => {
         cards: [],
         todayRank: null,
       };
-      renderHoldings();
-      const text = linkTo(/Lorewards/).textContent ?? "";
-      expect(text).not.toMatch(/\d+ wins?|runner-up/);
+      render(<VaultHoldings />);
+      const text = row(/Lorewards/).textContent ?? "";
       expect(text).toContain("Needs a linked wiki account");
+      expect(text).not.toMatch(/\d/);
     });
 
     it("shows a skeleton while loading and no figures when the query fails", () => {
       delete mockData.getMyTrophies;
-      const { unmount } = renderHoldings();
-      expect(linkTo(/Lorewards/).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+      const { unmount } = render(<VaultHoldings />);
+      expect(row(/Lorewards/).querySelector('[data-slot="skeleton"]')).not.toBeNull();
       unmount();
 
       mockErrors = new Set(["getMyTrophies"]);
-      renderHoldings();
-      const link = linkTo(/Lorewards/);
-      expect(link.querySelector('[data-slot="skeleton"]')).toBeNull();
-      expect(link.textContent).toContain("Unavailable");
-      expect(link.textContent).not.toMatch(/\d/);
+      render(<VaultHoldings />);
+      expect(row(/Lorewards/).querySelector('[data-slot="skeleton"]')).toBeNull();
+      expect(row(/Lorewards/).textContent).toContain("Unavailable");
+      expect(row(/Lorewards/).textContent).not.toMatch(/\d/);
+    });
+  });
+
+  it("links Cards to the card hub with no figures", () => {
+    render(<VaultHoldings />);
+    const link = row(/^Cards/);
+    expect(link.getAttribute("href")).toBe("/vault/cards");
+    expect(link.textContent).toContain("Gallery, inventory and collections");
+    expect(link.textContent).not.toMatch(/\d/);
+  });
+
+  describe("Store", () => {
+    it("features one item with its price and links to the Store", () => {
+      render(<VaultHoldings />);
+      const link = row(/^Store/);
+      expect(link.getAttribute("href")).toBe("/vault/store");
+      expect(link.textContent).toContain("Aurora frame");
+      expect(link.textContent).toContain("1,200");
+      expect(link.textContent).not.toContain("Plain frame");
     });
 
-    it("sits between Achievements and Cards", () => {
-      const { container } = renderHoldings();
-      const titles = Array.from(container.querySelectorAll('[data-slot="card-title"]')).map(
-        (el) => el.textContent
-      );
-      expect(titles).toEqual(["Achievements", "Lorewards", "Cards", "Store"]);
+    it("falls back to a plain line when nothing is left to feature", () => {
+      mockData.getPurchasedItems = {
+        purchasedItemIds: ["cheap", "fancy"],
+        purchaseCounts: { cheap: 1, fancy: 1 },
+      };
+      render(<VaultHoldings />);
+      expect(row(/^Store/).textContent).toContain("Browse the store");
     });
+
+    it("shows a skeleton while the items load", () => {
+      delete mockData.listStoreItems;
+      render(<VaultHoldings />);
+      expect(row(/^Store/).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    });
+  });
+
+  it("no longer carries the wiki prompt, packs or deck value", () => {
+    const { container } = render(<VaultHoldings />);
+    expect(container.textContent).not.toMatch(/Link your wiki account|pack|deck value/i);
+  });
+
+  it("nests no block element inside a paragraph, loaded or loading", () => {
+    const { container, unmount } = render(<VaultHoldings />);
+    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    unmount();
+    mockData = {};
+    const loading = render(<VaultHoldings />);
+    expect(loading.container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+    expect(loading.container.querySelectorAll("p div")).toHaveLength(0);
   });
 });

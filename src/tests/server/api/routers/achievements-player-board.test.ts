@@ -17,10 +17,28 @@ const totals = (
   rareAchievements: number
 ) => ({ userId, totalPoints, achievementCount, rareAchievements });
 
+const LATEST_UNLOCK = {
+  unlockedAt: new Date("2026-10-13T10:00:00Z"),
+  achievement: {
+    key: "first-trade",
+    title: "First trade",
+    rarity: "Rare",
+    category: "Cards",
+    iconUrl: "Cart",
+    rewardsJson: JSON.stringify({ credits: 25, cardIds: [] }),
+  },
+};
+
 function makeDb() {
   return {
     achievement: { count: jest.fn().mockResolvedValue(40) },
-    userAchievement: { findMany: jest.fn() },
+    userAchievement: {
+      findMany: jest.fn(),
+      // The newest unlock of an active achievement, for the caller only.
+      findFirst: jest.fn(({ where }: { where: { userId: string } }) =>
+        Promise.resolve(where.userId === "u_me" ? LATEST_UNLOCK : null)
+      ),
+    },
     // The database's aggregate, already ordered: points, then active count, then user id.
     $queryRaw: jest
       .fn()
@@ -72,15 +90,52 @@ describe("achievements.getMySummary", () => {
     const summary = await callerFor(db).getMySummary();
 
     // 2 active unlocks of "N of 40"; the Legacy unlock adds its 40 points but no count
-    expect(summary).toEqual({ unlocked: 2, activeTotal: 40, points: 100, rank: 2 });
+    expect(summary).toMatchObject({ unlocked: 2, activeTotal: 40, points: 100, rank: 2 });
     expect(db.achievement.count).toHaveBeenCalledWith({ where: { isActive: true } });
+  });
+
+  it("names the caller's newest unlock of an active achievement, with its credit reward", async () => {
+    const db = makeDb();
+    const { latest } = await callerFor(db).getMySummary();
+
+    expect(latest).toEqual({
+      key: "first-trade",
+      title: "First trade",
+      rarity: "Rare",
+      category: "Cards",
+      iconUrl: "Cart",
+      reward: 25,
+    });
+    expect(db.userAchievement.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "u_me", achievement: { isActive: true } },
+        orderBy: { unlockedAt: "desc" },
+      })
+    );
+  });
+
+  it("has no reward when the achievement pays no credits or its rewards are unreadable", async () => {
+    for (const rewardsJson of [null, "not json", JSON.stringify({ credits: 0, cardIds: [] })]) {
+      const db = makeDb();
+      db.userAchievement.findFirst.mockResolvedValue({
+        ...LATEST_UNLOCK,
+        achievement: { ...LATEST_UNLOCK.achievement, rewardsJson },
+      });
+      expect((await callerFor(db).getMySummary()).latest?.reward).toBeNull();
+    }
   });
 
   it("gives a caller with no unlocks zeros and no rank", async () => {
     const db = makeDb();
     const summary = await callerFor(db, "u_new").getMySummary();
 
-    expect(summary).toEqual({ unlocked: 0, activeTotal: 40, points: 0, rank: null });
+    expect(summary).toEqual({
+      unlocked: 0,
+      activeTotal: 40,
+      points: 0,
+      rank: null,
+      latest: null,
+    });
   });
 
   it("rejects a signed-out caller", async () => {

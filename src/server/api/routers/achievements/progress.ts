@@ -136,6 +136,12 @@ function parseRewards(rewardsJson: string | null) {
   }
 }
 
+/** The IxCredits an achievement pays on unlock; null when it pays none. */
+function creditReward(rewardsJson: string | null): number | null {
+  const rewards: { credits?: number } | null = parseRewards(rewardsJson);
+  return rewards?.credits && rewards.credits > 0 ? rewards.credits : null;
+}
+
 async function standardAchievements(
   db: PrismaClient,
   targetUserId: string | undefined,
@@ -340,16 +346,43 @@ async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
 export const achievementsProgressRouter = createTRPCRouter({
   /** The signed-in player's achievement standing: unlocks of active achievements, their points and rank. */
   getMySummary: protectedProcedure.query(async ({ ctx }) => {
-    const [activeTotal, totals] = await Promise.all([
+    const [activeTotal, totals, newest] = await Promise.all([
       ctx.db.achievement.count({ where: { isActive: true } }),
       playerTotals(ctx.db),
+      ctx.db.userAchievement.findFirst({
+        where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
+        orderBy: { unlockedAt: "desc" },
+        select: {
+          achievement: {
+            select: {
+              key: true,
+              title: true,
+              rarity: true,
+              category: true,
+              iconUrl: true,
+              rewardsJson: true,
+            },
+          },
+        },
+      }),
     ]);
     const mine = totals.find((t) => t.userId === ctx.user.clerkUserId);
+    const unlock = newest?.achievement;
     return {
       unlocked: mine?.achievementCount ?? 0,
       activeTotal,
       points: mine?.totalPoints ?? 0,
       rank: mine?.rank ?? null,
+      latest: unlock
+        ? {
+            key: unlock.key,
+            title: unlock.title,
+            rarity: unlock.rarity,
+            category: unlock.category,
+            iconUrl: unlock.iconUrl,
+            reward: creditReward(unlock.rewardsJson),
+          }
+        : null,
     };
   }),
 
