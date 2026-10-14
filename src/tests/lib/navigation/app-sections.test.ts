@@ -128,7 +128,17 @@ describe("app section map routes", () => {
     expect(realms.sections.map((section) => [section.label, section.href])).toEqual([
       ["My realm", "/countries"],
       ["Explore", "/realms"],
+      ["Realm admin", "/admin/realms"],
     ]);
+  });
+
+  it("lists Realm admin under Realms for admins only", () => {
+    const sections = (isAdmin: boolean) =>
+      getVisibleApps({ signedIn: true, isAdmin })
+        .find((app) => app.id === "countries")
+        ?.sections.map((s) => s.id);
+    expect(sections(false)).toEqual(["my-realm", "explore"]);
+    expect(sections(true)).toEqual(["my-realm", "explore", "realm-admin"]);
   });
 
   it("lists neither ThinkTanks, Accounts nor ThinkPages under Home", () => {

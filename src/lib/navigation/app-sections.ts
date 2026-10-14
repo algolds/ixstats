@@ -155,9 +155,10 @@ interface AppSection {
 /**
  * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `realm-member`: the viewer's
  * primary nation sits in a realm. `forum-moderator`: site staff or any forum category or realm moderator.
- * `signed-in`: any signed-in member.
+ * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher).
  */
-type SectionRequirement = "mycountry-premium" | "realm-member" | "forum-moderator" | "signed-in";
+type SectionRequirement =
+  "mycountry-premium" | "realm-member" | "forum-moderator" | "signed-in" | "admin";
 
 export interface AppDefinition {
   id: AppId;
@@ -455,6 +456,13 @@ export const APPS: readonly AppDefinition[] = [
       // The nations of the viewer's realm (/countries follows the active nation's realm).
       { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
       { id: "explore", label: "Explore", href: "/realms", icon: Search, match: ["/r"] },
+      {
+        id: "realm-admin",
+        label: "Realm admin",
+        href: "/admin/realms",
+        icon: ShieldCheck,
+        requires: "admin",
+      },
     ],
   },
   {
@@ -824,6 +832,7 @@ export function getVisibleApps({
     "realm-member": realmMember,
     "forum-moderator": forumModerator,
     "signed-in": signedIn,
+    admin: isAdmin,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
