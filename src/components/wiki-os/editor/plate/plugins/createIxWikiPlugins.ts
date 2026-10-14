@@ -8,6 +8,7 @@
  * required, they render via `renderLeaf` in PlateWikiEditor.
  */
 
+import type { ComponentType } from "react";
 import { createPlatePlugin } from "platejs/react";
 import type { Editor, NodeEntry } from "slate";
 import { removeEmptyLink } from "../link-normalizer";
@@ -73,9 +74,19 @@ export function createIxWikiPlugins() {
   ];
 }
 
-/** Element-type → React component map consumed by `createPlateEditor`. */
-export function getIxWikiComponents() {
+/**
+ * Element-type → React component map consumed by `createPlateEditor`. A registered plugin renders through this map,
+ * never through `renderElement`, so every registered type without a component of its own (files, refs, template
+ * chips, links, rules) gets `fallback`; left out, Plate draws an empty div for it.
+ */
+export function getIxWikiComponents(fallback: ComponentType<never>) {
   return {
+    ...Object.fromEntries(
+      [...VOID_BLOCK_ELEMENTS, ...VOID_INLINE_ELEMENTS, ...INLINE_ELEMENTS].map((key) => [
+        key,
+        fallback,
+      ])
+    ),
     [ELEMENT_RAW_HTML]: PlateInteractiveTemplateElement,
     [ELEMENT_INFOBOX]: PlateInteractiveTemplateElement,
     [ELEMENT_INFOBOX_BLOCK]: PlateInteractiveTemplateElement,

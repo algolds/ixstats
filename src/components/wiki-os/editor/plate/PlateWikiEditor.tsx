@@ -296,7 +296,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
   onSelectionChangeRef.current = onSelectionChange;
 
   const plugins = useMemo(() => createIxWikiPlugins(), []);
-  const components = useMemo(() => getIxWikiComponents(), []);
+  const components = useMemo(() => getIxWikiComponents(ElementRenderer), []);
 
   const editor = usePlateEditor(
     {
