@@ -113,12 +113,17 @@ const STORE_TABS = [
   { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
 ];
 
-export function VaultStoreTab() {
+type StoreView = (typeof STORE_TABS)[number]["id"];
+
+/** The store sub-tab a `view` URL param names; the marketplace by default. */
+export function resolveStoreView(view: string | null | undefined): StoreView {
+  return STORE_TABS.find((tab) => tab.id === view)?.id ?? "boosters";
+}
+
+export function VaultStoreTab({ initialView }: { initialView?: string | null }) {
   const notify = useNotify();
 
-  const [storeTab, setStoreTab] = useState<"my-packs" | "boosters" | "cosmetics" | "upgrades">(
-    "boosters"
-  );
+  const [storeTab, setStoreTab] = useState<StoreView>(() => resolveStoreView(initialView));
   const [openingPack, setOpeningPack] = useState<{ id: string; packType: string } | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [activeCheckoutItem, setActiveCheckoutItem] = useState<StoreItem | null>(null);

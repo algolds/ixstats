@@ -23,6 +23,8 @@ const SUB_TABS = [
 
 interface VaultMarketplaceSectionProps {
   initialTab?: string | null;
+  /** The Vault shop sub-tab to open on, e.g. "my-packs". */
+  initialView?: string | null;
 }
 
 function resolveInitialTab(tab: string | null | undefined): SubTab {
@@ -31,7 +33,7 @@ function resolveInitialTab(tab: string | null | undefined): SubTab {
   return "store";
 }
 
-export function VaultMarketplaceSection({ initialTab }: VaultMarketplaceSectionProps) {
+export function VaultMarketplaceSection({ initialTab, initialView }: VaultMarketplaceSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>(() => resolveInitialTab(initialTab));
 
   const handleTabChange = (tab: SubTab) => {
@@ -63,7 +65,7 @@ export function VaultMarketplaceSection({ initialTab }: VaultMarketplaceSectionP
           transition={springSmooth}
           className="outline-none"
         >
-          {activeTab === "store" && <VaultStoreTab />}
+          {activeTab === "store" && <VaultStoreTab initialView={initialView} />}
           {activeTab === "auctions" && <VaultAuctionsTab />}
           {activeTab === "trading" && <VaultTradingTab />}
         </motion.div>

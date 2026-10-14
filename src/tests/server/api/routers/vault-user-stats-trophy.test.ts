@@ -2,11 +2,7 @@
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
 jest.mock("~/lib/vault/vault-service", () => ({
   __esModule: true,
-  vaultService: { getCardCapacityBoost: jest.fn().mockResolvedValue(0) },
-}));
-jest.mock("~/lib/cards/general-settings", () => ({
-  __esModule: true,
-  baseCardCapacity: jest.fn().mockResolvedValue(100),
+  vaultService: {},
 }));
 jest.mock("~/lib/cache/advanced-cache-system", () => ({
   __esModule: true,

@@ -1,74 +1,55 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 
 const BALANCE = 12345;
-const DECK_VALUE = 5000;
 
 jest.mock("~/components/vault/IxCreditsSymbol", () => ({ IxCreditsSymbol: () => <i /> }));
-// NumberFlow renders inside a shadow root; render plain text so the figures are countable.
-jest.mock("~/components/ui/number-flow", () => ({
-  NumberFlowDisplay: ({ value }: { value: number }) => <span>{value.toLocaleString()}</span>,
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
-jest.mock("~/context/auth-context", () => ({ useUser: () => ({ user: { id: "user-1" } }) }));
-let statsError = false;
+jest.mock("~/components/vault/DailyRewardProvider", () => ({
+  useDailyReward: () => ({ open: jest.fn() }),
+}));
+// The statement has its own suite; its rows would repeat the balance as running totals.
+jest.mock("~/components/vault/sections/dashboard/VaultStatement", () => ({
+  VaultStatement: () => <section data-slot="vault-statement" />,
+}));
 jest.mock("~/hooks/vault/useVaultStats", () => ({
   useVaultStats: () => ({
     loading: false,
-    error: statsError,
-    stats: {
-      deckValue: 5000,
-      totalCards: 12,
-      cardCapacity: 160,
-      unopenedPacks: 3,
-      activeAuctions: 2,
-    },
+    error: false,
+    stats: { deckValue: 5000, totalCards: 12, unopenedPacks: 3 },
   }),
-}));
-jest.mock("~/hooks/vault/useRecentActivity", () => ({
-  useRecentActivity: () => ({
-    loading: false,
-    activities: [
-      {
-        id: "a1",
-        type: "EARN_BONUS",
-        amount: 5000,
-        source: "bonus:new_player",
-        createdAt: new Date(Date.now() - 3 * 3600 * 1000),
-      },
-    ],
-  }),
-}));
-jest.mock("~/components/vault/DailyRewardProvider", () => ({
-  DailyRewardStatus: () => <button type="button">Daily reward</button>,
-}));
-jest.mock("~/components/vault/sections/dashboard/VaultShowcaseGrid", () => ({
-  VaultShowcaseGrid: () => null,
 }));
 
-let loadingQueries = new Set<string>();
-let errorQueries = new Set<string>();
-const queryData: Record<string, unknown> = {
+const mockRouters = new Set<string>();
+const mockData: Record<string, unknown> = {
   getBalance: { credits: 12345, canClaimDailyBonus: true, loginStreak: 1 },
   getVaultLevel: { vaultLevel: 4 },
+  getTodayEarnings: { total: 0, sources: [], transactionCount: 0 },
+  getMySummary: { unlocked: 1, activeTotal: 2, points: 3, rank: 4 },
+  listStoreItems: [],
+  getPurchasedItems: { purchasedItemIds: [], purchaseCounts: {} },
+  listWikiLinks: [],
 };
-const leaf = (name: string) => ({
-  useQuery: () => {
-    const isLoading = loadingQueries.has(name);
-    const isError = errorQueries.has(name);
-    return {
-      data: isLoading || isError ? undefined : queryData[name],
-      isLoading,
-      isError,
-      refetch: jest.fn(),
-    };
-  },
-  useMutation: () => ({ mutate: jest.fn(), isPending: false }),
-});
 jest.mock("~/trpc/react", () => ({
   api: new Proxy(
     {},
     {
-      get: () => new Proxy({}, { get: (_target, name: string) => leaf(name) }),
+      get: (_target, router: string) => {
+        mockRouters.add(router);
+        return new Proxy(
+          {},
+          {
+            get: (_t, name: string) => ({
+              useQuery: () => ({ data: mockData[name], isLoading: false, isError: false }),
+            }),
+          }
+        );
+      },
     }
   ),
 }));
@@ -77,83 +58,45 @@ import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboar
 
 const occurrences = (haystack: string, needle: string) => haystack.split(needle).length - 1;
 
-describe("Vault dashboard", () => {
-  beforeEach(() => {
-    loadingQueries = new Set();
-    errorQueries = new Set();
-    statsError = false;
-  });
+describe("Vault Wallet page", () => {
+  beforeEach(() => mockRouters.clear());
 
-  it("shows the IxCredits balance once, in the Wallet card", () => {
+  it("shows the IxCredits balance once, in the account hero", () => {
     const { container } = render(<VaultDashboardSection />);
     expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(1);
-    const wallet = screen.getByText("Wallet").closest(".facet-pane");
-    expect(wallet?.textContent).toContain(BALANCE.toLocaleString());
+    const hero = container.querySelector('[data-slot="vault-account-hero"]');
+    expect(hero?.textContent).toContain(BALANCE.toLocaleString());
   });
 
-  it("gives the Collection card deck value, net worth and the counts", () => {
-    render(<VaultDashboardSection />);
-    const collection = screen.getByText("Collection").closest(".facet-pane") as HTMLElement;
-    const text = collection.textContent ?? "";
-    expect(text).toContain(DECK_VALUE.toLocaleString());
-    expect(text).toContain((BALANCE + DECK_VALUE).toLocaleString());
-    expect(text).toContain("Net worth");
-    expect(text).toContain("Card deck value");
-    expect(text).toContain("Tier 4 account");
-    expect(text).toContain("12 / 160");
-    expect(text).toMatch(/Packs:\s*3/);
-    expect(text).toMatch(/Auctions:\s*2/);
-    expect(text).not.toContain("Available balance");
-  });
-
-  it("shows no yield projections, which no longer read a nation", () => {
+  it("is hero, holdings, statement in the DOM, which is the phone order", () => {
     const { container } = render(<VaultDashboardSection />);
-    expect(container.textContent).not.toMatch(/treasury revenue|yield/i);
-  });
-
-  it("has one daily claim control, the Wallet's daily reward", () => {
-    render(<VaultDashboardSection />);
-    expect(screen.queryByRole("button", { name: /claim daily bonus/i })).toBeNull();
-    expect(screen.getAllByRole("button", { name: "Daily reward" })).toHaveLength(1);
-  });
-
-  it("labels recent activity in words with a relative time", () => {
-    render(<VaultDashboardSection />);
-    expect(screen.getByText("New player bonus")).not.toBeNull();
-    expect(screen.queryByText(/bonus:new/)).toBeNull();
-    expect(screen.getByText("3h ago")).not.toBeNull();
-  });
-
-  it("does not show the deck value as net worth while the balance loads", () => {
-    loadingQueries = new Set(["getBalance"]);
-    render(<VaultDashboardSection />);
-    const collection = screen.getByText("Collection").closest(".facet-pane") as HTMLElement;
-    expect(collection.textContent).toContain("Net worth");
-    expect(collection.textContent).toContain(DECK_VALUE.toLocaleString());
-    // Only the deck value figure is present; no second figure standing in for net worth.
-    expect(occurrences(collection.textContent ?? "", DECK_VALUE.toLocaleString())).toBe(1);
+    const slots = ["vault-account-hero", "vault-holdings", "vault-statement"].map((slot) =>
+      container.querySelector(`[data-slot="${slot}"]`)
+    );
+    slots.forEach((el) => expect(el).not.toBeNull());
+    const [hero, holdings, statement] = slots as Element[];
     expect(
-      collection.querySelector('[data-slot="stat-value"] [data-slot="skeleton"]')
-    ).not.toBeNull();
+      hero!.compareDocumentPosition(holdings!) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      holdings!.compareDocumentPosition(statement!) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
-  it("shows a dash, not a skeleton, for net worth when the balance query fails", () => {
-    errorQueries = new Set(["getBalance"]);
-    render(<VaultDashboardSection />);
-    const collection = screen.getByText("Collection").closest(".facet-pane") as HTMLElement;
-    const netWorth = screen.getByText("Net worth").closest('[data-slot="stat"]') as HTMLElement;
-    expect(netWorth.querySelector('[data-slot="skeleton"]')).toBeNull();
-    expect(netWorth.querySelector('[data-slot="stat-value"]')?.textContent).toBe("–");
-    expect(collection.textContent).toContain(DECK_VALUE.toLocaleString());
+  it("puts the holdings in two columns on a phone and the statement beside them from lg", () => {
+    const { container } = render(<VaultDashboardSection />);
+    const holdings = container.querySelector('[data-slot="vault-holdings"]');
+    expect(holdings?.className).toContain("grid-cols-2");
+    expect(holdings?.className).toContain("lg:grid-cols-1");
+    expect(holdings?.parentElement?.className).toContain("lg:col-start-3");
+    const statement = container.querySelector('[data-slot="vault-statement"]');
+    expect(statement?.parentElement?.className).toContain("lg:col-span-2");
   });
 
-  it("shows dashes for deck value and net worth when the stats query fails", () => {
-    statsError = true;
-    render(<VaultDashboardSection />);
-    for (const label of ["Card deck value", "Net worth"]) {
-      const stat = screen.getByText(label).closest('[data-slot="stat"]') as HTMLElement;
-      expect(stat.querySelector('[data-slot="skeleton"]')).toBeNull();
-      expect(stat.querySelector('[data-slot="stat-value"]')?.textContent).toBe("–");
-    }
+  it("reads no country and no nation data", () => {
+    const { container } = render(<VaultDashboardSection />);
+    expect(container.textContent).not.toMatch(/country|nation|treasury|yield/i);
+    for (const router of ["users", "realms", "countries"])
+      expect(mockRouters.has(router)).toBe(false);
   });
 });
