@@ -16,7 +16,6 @@ jest.mock("~/trpc/react", () => {
     achievementRare: 500,
     achievementEpic: 1000,
     achievementLegendary: 2500,
-    loreward: 2500,
     forumActionReward: 5,
     forumActionDailyCap: 3,
   };
