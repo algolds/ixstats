@@ -15,6 +15,7 @@ import { vaultService } from "~/lib/vault/vault-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { baseCardCapacity } from "~/lib/cards/general-settings";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
+import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
 import { globalCache } from "~/lib/cache";
 import { sentenceCase } from "~/lib/format/sentence-case";
 
@@ -140,6 +141,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           cards: {
             select: {
               marketValue: true,
+              lorewardEntryId: true,
             },
           },
         },
@@ -148,6 +150,12 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const deckValue = ownerships.reduce((sum, own) => {
         return sum + (own.cards?.marketValue ?? 0) * own.quantity;
       }, 0);
+      // The figure the economy and deck-value achievements read: Loreward trophy cards do not count.
+      const deckValueExTrophy = ownerships.reduce((sum, own) => {
+        return own.cards && !isTrophyCard(own.cards)
+          ? sum + own.cards.marketValue * own.quantity
+          : sum;
+      }, 0);
 
       const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
       const cardCapacity = (await baseCardCapacity(ctx.db)) + capacityBoost;
@@ -155,6 +163,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const stats = {
         totalCards,
         deckValue,
+        deckValueExTrophy,
         collectorLevel: ctx.user.collectorLevel ?? 1,
         collectorXp: ctx.user.collectorXp ?? 0,
         capacityBoost,

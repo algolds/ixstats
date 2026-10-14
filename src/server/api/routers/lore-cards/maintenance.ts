@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
+import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 
 type WikiSrc = "ixwiki" | "iiwiki";
 
@@ -135,7 +136,7 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
       }> = await ctx.db.$queryRawUnsafe(`
         SELECT "wikiArticleTitle", "wikiSource", COUNT(*)::int as count
         FROM "cards"
-        WHERE "wikiArticleTitle" IS NOT NULL AND "wikiArticleTitle" != ''
+        WHERE "wikiArticleTitle" IS NOT NULL AND "wikiArticleTitle" != '' AND "lorewardEntryId" IS NULL
         GROUP BY "wikiArticleTitle", "wikiSource"
         HAVING COUNT(*) > 1
         ORDER BY count DESC
@@ -184,7 +185,8 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
     }),
 
   /**
-   * Purge duplicate cards, safely consolidating CardOwnership, auctions, and history to keeper cards
+   * Purge duplicate cards, safely consolidating CardOwnership, auctions, and history to keeper cards.
+   * Loreward trophy cards are one-of-one and never part of a duplicate group.
    */
   // `mode` is accepted for API compatibility; both modes purge duplicate wiki lore cards.
   purgeDuplicateCards: adminProcedure
@@ -198,7 +200,7 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
         .db.$queryRawUnsafe(`
         SELECT "wikiArticleTitle", "wikiSource"
         FROM "cards"
-        WHERE "wikiArticleTitle" IS NOT NULL AND "wikiArticleTitle" != ''
+        WHERE "wikiArticleTitle" IS NOT NULL AND "wikiArticleTitle" != '' AND "lorewardEntryId" IS NULL
         GROUP BY "wikiArticleTitle", "wikiSource"
         HAVING COUNT(*) > 1;
       `);
@@ -207,7 +209,11 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
       for (const group of duplicateLoreGroups) {
         const purged = await ctx.db.$transaction(async (tx) => {
           const cards = await tx.card.findMany({
-            where: { wikiArticleTitle: group.wikiArticleTitle, wikiSource: group.wikiSource },
+            where: {
+              wikiArticleTitle: group.wikiArticleTitle,
+              wikiSource: group.wikiSource,
+              ...EXCLUDE_TROPHY_CARDS,
+            },
             orderBy: [
               { CardOwnership: { _count: "desc" } },
               { level: "desc" },

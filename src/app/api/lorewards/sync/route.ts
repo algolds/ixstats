@@ -2,7 +2,7 @@
 // Called daily by cron (1:00 AM ET) or manually. Requires API key or admin auth.
 
 import { NextRequest, NextResponse } from "next/server";
-import { syncFromStateFile, grantLorewardBonuses } from "~/lib/lorewards";
+import { syncFromStateFile, grantLorewardBonuses, syncTrophyCards } from "~/lib/lorewards";
 import { safeEqual } from "~/lib/security/safe-equal";
 
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -20,10 +20,12 @@ export async function POST(req: NextRequest) {
   try {
     const synced = await syncFromStateFile();
     const bonusesGranted = await grantLorewardBonuses();
+    const trophyCards = await syncTrophyCards();
     return NextResponse.json({
       success: true,
       syncedEntries: synced,
       bonusesGranted,
+      trophyCards,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
