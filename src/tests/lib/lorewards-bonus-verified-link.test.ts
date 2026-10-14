@@ -38,7 +38,9 @@ type Entry = {
   date: string;
   dateEnd: string | null;
   winnerUser: string | null;
+  winnerPage?: string | null;
   runnerUpUser: string | null;
+  runnerUpPage?: string | null;
 };
 
 const daily = (over: Partial<Entry> = {}): Entry => ({
@@ -56,6 +58,36 @@ function grants() {
     .mocked(grantBonus)
     .mock.calls.map(([, userId, source, amount]) => [userId, source, amount]);
 }
+
+describe("grantLorewardBonuses page metadata", () => {
+  beforeEach(() => {
+    jest.mocked(grantBonus).mockReset().mockResolvedValue({ granted: true, amount: 1 });
+    jest
+      .mocked(getBonusConfig)
+      .mockReset()
+      .mockResolvedValue({ enabled: 1 } as never);
+    mocked.systemConfig.findMany.mockReset().mockResolvedValue([]);
+    mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
+    jest.spyOn(console, "log").mockImplementation(() => undefined);
+  });
+
+  const metadataOf = (call: number) => jest.mocked(grantBonus).mock.calls[call]?.[4]?.metadata;
+
+  it("records each place's own page, and omits a missing one", async () => {
+    mocked.lorewardEntry.findMany.mockResolvedValue([
+      daily({
+        winnerPage: "Kir Republic",
+        runnerUpUser: "Other",
+        runnerUpPage: "Other page",
+      }),
+      daily({ id: "e2", winnerUser: "NoPage", winnerPage: null }),
+    ]);
+    await grantLorewardBonuses();
+    expect(metadataOf(0)).toMatchObject({ place: "winner", page: "Kir Republic" });
+    expect(metadataOf(1)).toMatchObject({ place: "runner-up", page: "Other page" });
+    expect(metadataOf(2)).not.toHaveProperty("page");
+  });
+});
 
 describe("grantLorewardBonuses", () => {
   beforeEach(() => {

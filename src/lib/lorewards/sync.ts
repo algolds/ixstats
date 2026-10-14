@@ -544,7 +544,9 @@ export async function grantLorewardBonuses(): Promise<number> {
       dateEnd: true,
       type: true,
       winnerUser: true,
+      winnerPage: true,
       runnerUpUser: true,
+      runnerUpPage: true,
     },
   });
 
@@ -555,6 +557,7 @@ export async function grantLorewardBonuses(): Promise<number> {
 
     for (const place of PAID_PLACES) {
       const wikiUser = place === "winner" ? e.winnerUser : e.runnerUpUser;
+      const page = place === "winner" ? e.winnerPage : e.runnerUpPage;
       const amount = payouts[e.type][place];
       if (!wikiUser || amount <= 0) continue;
       const userId = await resolveLorewardUser(db, wikiUser);
@@ -569,6 +572,7 @@ export async function grantLorewardBonuses(): Promise<number> {
           place,
           wikiUser,
           winnerUser: e.winnerUser,
+          ...(page ? { page } : {}),
         },
       });
       if (res.granted) granted++;
