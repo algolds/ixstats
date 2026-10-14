@@ -33,7 +33,7 @@ describe("per-app sidebars are migrated to the source list", () => {
     ]) {
       expect(read(p)).not.toMatch(/VaultSidebarLayout|DashboardColumn/);
     }
-    expect(read("src/components/vault/sections/dashboard/VaultAccountHero.tsx")).toMatch(
+    expect(read("src/components/vault/sections/dashboard/VaultWalletHeader.tsx")).toMatch(
       /useDailyReward/
     );
     expect(read("src/components/thinktanks/ThinktankLayout.tsx")).toMatch(/<Inspector\b/);

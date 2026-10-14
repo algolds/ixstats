@@ -10,6 +10,9 @@ jest.mock("next/link", () => ({
     <a href={href}>{children}</a>
   ),
 }));
+jest.mock("~/components/ui/number-flow", () => ({
+  NumberFlowDisplay: ({ value }: { value: number }) => <span>{value.toLocaleString()}</span>,
+}));
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
   useDailyReward: () => ({ open: jest.fn() }),
 }));
@@ -61,16 +64,16 @@ const occurrences = (haystack: string, needle: string) => haystack.split(needle)
 describe("Vault Wallet page", () => {
   beforeEach(() => mockRouters.clear());
 
-  it("shows the IxCredits balance once, in the account hero", () => {
+  it("shows the IxCredits balance only in the balance card: its lead figure and the credits share of net worth", () => {
     const { container } = render(<VaultDashboardSection />);
-    expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(1);
-    const hero = container.querySelector('[data-slot="vault-account-hero"]');
-    expect(hero?.textContent).toContain(BALANCE.toLocaleString());
+    expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(2);
+    const card = container.querySelector('[data-slot="vault-balance-card"]');
+    expect(occurrences(card?.textContent ?? "", BALANCE.toLocaleString())).toBe(2);
   });
 
-  it("is hero, holdings, statement in the DOM, which is the phone order", () => {
+  it("is balance, holdings, statement in the DOM, which is the phone order", () => {
     const { container } = render(<VaultDashboardSection />);
-    const slots = ["vault-account-hero", "vault-holdings", "vault-statement"].map((slot) =>
+    const slots = ["vault-balance-card", "vault-holdings", "vault-statement"].map((slot) =>
       container.querySelector(`[data-slot="${slot}"]`)
     );
     slots.forEach((el) => expect(el).not.toBeNull());

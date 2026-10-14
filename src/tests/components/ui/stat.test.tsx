@@ -18,6 +18,11 @@ describe("Stat", () => {
     expect(screen.getByText("$1.2T")).toHaveClass("text-title-3");
   });
 
+  it("uses text-large-title for the large size", () => {
+    render(<Stat label="GDP" value="$1.2T" size="lg" />);
+    expect(screen.getByText("$1.2T")).toHaveClass("text-large-title");
+  });
+
   it.each([
     ["up", "Up", "text-success"],
     ["down", "Down", "text-destructive"],

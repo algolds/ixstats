@@ -28,14 +28,15 @@ interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> 
   value: React.ReactNode;
   delta?: StatDelta;
   hint?: React.ReactNode;
-  /** `md` (default): `text-title-1` value. `sm`: `text-title-3` value for dense grids. */
-  size?: "sm" | "md";
+  /** `md` (default): `text-title-1` value. `sm`: `text-title-3` value for dense grids. `lg`: `text-large-title` value for a card's lead figure. */
+  size?: "sm" | "md" | "lg";
   /** Decorative glyph in the label row (14px, `aria-hidden`). */
   icon?: React.ReactNode;
   /** `leading` (default): before the label. `trailing`: at the end of the label row. */
   iconPlacement?: "leading" | "trailing";
 }
 
+const VALUE_SIZE = { sm: "text-title-3", md: "text-title-1", lg: "text-large-title" } as const;
 const DIRECTION_ICON = { up: ArrowUp, down: ArrowDown, neutral: Minus } as const;
 const DIRECTION_LABEL = { up: "Up", down: "Down", neutral: "No change" } as const;
 const DEFAULT_SENTIMENT = { up: "positive", down: "negative", neutral: "neutral" } as const;
@@ -88,10 +89,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
           data-slot="stat-value"
-          className={cn(
-            "text-tint min-w-0 truncate tabular-nums",
-            size === "sm" ? "text-title-3" : "text-title-1"
-          )}
+          className={cn("text-tint min-w-0 truncate tabular-nums", VALUE_SIZE[size])}
         >
           {value}
         </span>

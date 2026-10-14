@@ -1,4 +1,5 @@
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Skeleton } from "~/components/ui/skeleton";
 
 export const formatCredits = (amount: number) => Math.round(amount).toLocaleString();
@@ -13,18 +14,24 @@ export function sumFigures(a: Figure, b: Figure): Figure {
   return a + b;
 }
 
-/** An IxCredits amount with the currency mark. */
+/** An IxCredits amount with the currency mark; `animate` counts the figure up or down when it changes. */
 export function Credits({
   amount,
   symbolClassName = "size-3",
+  animate = false,
 }: {
   amount: number;
   symbolClassName?: string;
+  animate?: boolean;
 }) {
   return (
     <>
       <IxCreditsSymbol decorative className={`${symbolClassName} shrink-0`} />
-      {formatCredits(amount)}
+      {animate ? (
+        <NumberFlowDisplay value={Math.round(amount)} className="font-semibold" />
+      ) : (
+        formatCredits(amount)
+      )}
     </>
   );
 }
@@ -34,16 +41,18 @@ export function CreditsFigure({
   amount,
   symbolClassName,
   skeletonClassName = "h-8 w-28",
+  animate = false,
 }: {
   amount: Figure;
   symbolClassName?: string;
   skeletonClassName?: string;
+  animate?: boolean;
 }) {
   if (amount === undefined) return <Skeleton className={skeletonClassName} />;
   if (amount === null) return <span aria-label="Unavailable">–</span>;
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Credits amount={amount} symbolClassName={symbolClassName} />
+      <Credits amount={amount} symbolClassName={symbolClassName} animate={animate} />
     </span>
   );
 }

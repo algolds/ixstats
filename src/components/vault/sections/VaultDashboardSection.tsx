@@ -1,8 +1,9 @@
 import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import type { Figure } from "./dashboard/credits";
-import { VaultAccountHero } from "./dashboard/VaultAccountHero";
+import { VaultBalanceCard } from "./dashboard/VaultBalanceCard";
 import { VaultHoldings } from "./dashboard/VaultHoldings";
 import { VaultStatement } from "./dashboard/VaultStatement";
+import { VaultWalletHeader } from "./dashboard/VaultWalletHeader";
 
 /**
  * The Wallet page: the account hero across the top, then the holdings and the statement. The DOM
@@ -17,16 +18,19 @@ export function VaultDashboardSection() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
       <div className="lg:col-span-3">
-        <VaultAccountHero deckValue={deckValue} unopenedPacks={stats.unopenedPacks} />
+        <VaultWalletHeader />
       </div>
-      <div className="lg:col-start-3 lg:row-start-2">
+      <div className="lg:col-span-3">
+        <VaultBalanceCard totalCards={figure(stats.totalCards)} deckValue={deckValue} />
+      </div>
+      <div className="lg:col-start-3 lg:row-start-3">
         <VaultHoldings
           totalCards={figure(stats.totalCards)}
           deckValue={deckValue}
           unopenedPacks={stats.unopenedPacks}
         />
       </div>
-      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2">
+      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-3">
         <VaultStatement />
       </div>
     </div>
