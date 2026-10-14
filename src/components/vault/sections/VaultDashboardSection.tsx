@@ -1,172 +1,32 @@
-import { useMemo, useState } from "react";
 import { useVaultStats } from "~/hooks/vault/useVaultStats";
-import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
-import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
-import type { CardInstance } from "~/types/cards-display";
-import { VaultCollectionCard } from "./dashboard/VaultCollectionCard";
-import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRecentActivityCard";
-import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
-import { VaultWalletCard } from "./dashboard/VaultWalletCard";
-import { DailyRewardStatus } from "~/components/vault/DailyRewardProvider";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import type { Figure } from "./dashboard/credits";
+import { VaultAccountHero } from "./dashboard/VaultAccountHero";
+import { VaultHoldings } from "./dashboard/VaultHoldings";
+import { VaultStatement } from "./dashboard/VaultStatement";
 
-interface VaultDashboardSectionProps {
-  onNavigate?: (section: any) => void;
-}
-
-const figure = (loading: boolean, failed: boolean, value: number): number | null | undefined =>
-  failed ? null : loading ? undefined : value;
-
-export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps) {
-  const { user } = useUser();
-  const { stats, loading: statsLoading, error: statsError } = useVaultStats();
-  const { activities, loading: activitiesLoading } = useRecentActivity() as {
-    activities: ActivityEntry[] | undefined;
-    loading: boolean;
-  };
-
-  const { data: hasImported } = api.nsImport.hasImported.useQuery(undefined, {
-    enabled: !!user,
-    refetchOnWindowFocus: false,
-  });
-
-  const [isNoticeDismissed, setIsNoticeDismissed] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("ns-import-notice-dismissed") === "true";
-    }
-    return false;
-  });
-
-  const handleDismissNotice = () => {
-    setIsNoticeDismissed(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("ns-import-notice-dismissed", "true");
-    }
-  };
-
-  const { data: todayEarnings, isLoading: earningsLoading } = api.vault.getTodayEarnings.useQuery(
-    undefined,
-    { enabled: !!user }
-  );
-
-  const {
-    data: balanceData,
-    isLoading: balanceLoading,
-    isError: balanceError,
-  } = api.vault.getBalance.useQuery(undefined, { enabled: !!user?.id });
-
-  const { data: levelData } = api.vault.getVaultLevel.useQuery(undefined, {
-    enabled: !!user?.id,
-  });
-
-  const { data: topCardsData, isLoading: topCardsLoading } = api.cards.getMyCards.useQuery(
-    { sortBy: "value" },
-    { enabled: !!user }
-  );
-
-  const { data: userData } = api.users.getProfile.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  const { data: myAchievements } = api.achievements.getAllByCountry.useQuery(
-    { countryId: userData?.countryId || "" },
-    { enabled: !!userData?.countryId }
-  );
-
-  const { data: leaderboard } = api.achievements.getLeaderboard.useQuery(
-    { limit: 100 },
-    { enabled: !!userData?.countryId }
-  );
-
-  type TopCardItem = NonNullable<typeof topCardsData>[number];
-
-  const featuredCards: CardInstance[] = useMemo(
-    () =>
-      topCardsData?.slice(0, 3).map((ownership: TopCardItem) => {
-        const cardObj = (ownership.cards || {}) as any;
-        return {
-          id: cardObj.id ?? ownership.id,
-          title: cardObj.title ?? "Unknown",
-          description: cardObj.description || "",
-          artwork: cardObj.artwork || CARD_ARTWORK_PLACEHOLDER,
-          artworkVariants: cardObj.artworkVariants || null,
-          cardType: cardObj.cardType ?? "NS_IMPORT",
-          rarity: cardObj.rarity ?? "COMMON",
-          season: cardObj.season ?? 1,
-          nsCardId: cardObj.nsCardId || null,
-          nsSeason: cardObj.nsSeason || null,
-          nsData: cardObj.nsData || null,
-          wikiSource: cardObj.wikiSource || null,
-          wikiArticleTitle: cardObj.wikiArticleTitle || null,
-          wikiUrl: cardObj.wikiUrl || null,
-          countryId: cardObj.countryId ?? null,
-          stats: cardObj.stats || {},
-          marketValue: cardObj.marketValue || 0,
-          totalSupply: cardObj.totalSupply || 0,
-          level: ownership.level || 1,
-          evolutionStage: cardObj.evolutionStage || 0,
-          enhancements: cardObj.enhancements || null,
-          createdAt: cardObj.createdAt ?? new Date(),
-          updatedAt: cardObj.updatedAt ?? new Date(),
-          lastTrade: cardObj.lastTrade || null,
-          country: cardObj.country ?? null,
-          owners: [],
-        };
-      }) || [],
-    [topCardsData]
-  );
-
-  const loading = statsLoading || activitiesLoading || earningsLoading;
-
-  // undefined: still loading (skeleton); null: the query failed (a dash).
-  const collectionValuation = figure(statsLoading, statsError, stats?.deckValue ?? 0);
-  const liquidCredits = figure(balanceLoading, balanceError, balanceData?.credits ?? 0);
-  const netWorth =
-    collectionValuation === null || liquidCredits === null
-      ? null
-      : collectionValuation === undefined || liquidCredits === undefined
-        ? undefined
-        : collectionValuation + liquidCredits;
+/**
+ * The Wallet page: the account hero across the top, then the holdings and the statement. The DOM
+ * order is the phone order (hero, holdings, statement); from `lg` the statement takes the left two
+ * thirds and the holdings the right column beside it.
+ */
+export function VaultDashboardSection() {
+  const { stats, loading, error } = useVaultStats();
+  const deckValue: Figure = error ? null : loading ? undefined : stats.deckValue;
 
   return (
-    <div className="space-y-6">
-      {/* 2-Column Premium Banking Grid Layout */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6">
-        {/* Left Column (Financial Center & Ledger) */}
-        <div className="flex flex-col space-y-6 lg:col-span-2">
-          <VaultWalletCard
-            reward={<DailyRewardStatus />}
-            credits={balanceData?.credits}
-            balanceLoading={balanceLoading}
-            todayEarnings={todayEarnings}
-          />
-
-          <VaultCollectionCard
-            vaultLevel={levelData?.vaultLevel ?? 1}
-            netWorth={netWorth}
-            collectionValuation={collectionValuation}
-            totalCards={stats?.totalCards ?? 0}
-            cardCapacity={stats?.cardCapacity ?? null}
-            unopenedPacks={stats?.unopenedPacks ?? 0}
-            activeAuctions={stats?.activeAuctions ?? 0}
-          />
-
-          <VaultRecentActivityCard loading={loading} activities={activities} />
-        </div>
-
-        {/* Right Sidebar Column (Card Holdings Top Right + rank) */}
-        <VaultShowcaseGrid
-          hasImported={hasImported}
-          isNoticeDismissed={isNoticeDismissed}
-          onDismissNotice={handleDismissNotice}
-          onNavigate={onNavigate}
-          featuredCards={featuredCards}
-          topCardsLoading={topCardsLoading}
-          myAchievements={myAchievements}
-          leaderboard={leaderboard}
-          userCountryId={userData?.countryId}
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
+      <div className="lg:col-span-3">
+        <VaultAccountHero deckValue={deckValue} unopenedPacks={stats.unopenedPacks} />
+      </div>
+      <div className="lg:col-start-3 lg:row-start-2">
+        <VaultHoldings
+          totalCards={stats.totalCards}
+          deckValue={deckValue}
+          unopenedPacks={stats.unopenedPacks}
         />
+      </div>
+      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2">
+        <VaultStatement />
       </div>
     </div>
   );

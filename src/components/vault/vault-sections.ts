@@ -1,5 +1,4 @@
 import { stripBasePath } from "~/lib/base-path";
-export type VaultSection = "dashboard" | "cards" | "import";
 
 /** Map a pathname to the sub-tab within its section */
 export function getSubTabFromPathname(rawPathname: string): string | null {

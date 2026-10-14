@@ -8,7 +8,6 @@ interface VaultStats {
   totalCards: number;
   deckValue: number;
   unopenedPacks: number;
-  activeAuctions: number;
   /** Base capacity (admin card setting) plus Vault upgrades; null until loaded. */
   cardCapacity: number | null;
 }
@@ -32,10 +31,6 @@ export function useVaultStats() {
     { isOpened: false },
     { enabled: !!userId }
   );
-
-  const { data: myAuctionsData } = api.cardMarket.getMyActiveAuctions.useQuery(undefined, {
-    enabled: !!userId,
-  });
 
   const refreshMutation = api.nsImport.refreshCardValues.useMutation({
     onSuccess: () => {
@@ -61,7 +56,6 @@ export function useVaultStats() {
     totalCards: userData?.totalCards ?? 0,
     deckValue: userData?.deckValue ?? 0,
     unopenedPacks: myPacksData?.packs?.length ?? 0,
-    activeAuctions: myAuctionsData?.auctions?.length ?? 0,
     cardCapacity: userData?.cardCapacity ?? null,
   };
 
