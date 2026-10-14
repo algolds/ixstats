@@ -156,7 +156,10 @@ export function PageHeader({
             "flex h-14 items-center gap-2",
             backdrop != null ? "px-4" : "px-2",
             hasToolbarContent ? "relative" : "absolute inset-x-0 top-0",
-            !hasToolbarContent && !collapsed && "pointer-events-none"
+            !hasToolbarContent && !collapsed && "pointer-events-none",
+            // Below lg the band beside Halo is too narrow for actions (half of what the reserve
+            // leaves), so they take a second toolbar line instead of sliding under the pill.
+            actions && "max-lg:h-auto max-lg:flex-wrap max-lg:pb-2"
           )}
         >
           <span
@@ -189,11 +192,18 @@ export function PageHeader({
               {title}
             </span>
           </div>
-          <div aria-hidden className="w-(--shell-halo-reserve) shrink" />
+          <div aria-hidden className="h-14 w-(--shell-halo-reserve) shrink" />
           {actions && (
-            <div className="relative flex min-w-0 flex-1 items-center justify-end gap-2">
-              {typeof actions === "function" ? actions({ collapsed }) : actions}
-            </div>
+            <>
+              <div
+                aria-hidden
+                data-slot="page-header-halo-spacer"
+                className="hidden flex-1 max-lg:block"
+              />
+              <div className="relative flex min-w-0 flex-1 items-center justify-end gap-2 max-lg:basis-full max-lg:flex-wrap">
+                {typeof actions === "function" ? actions({ collapsed }) : actions}
+              </div>
+            </>
           )}
         </div>
       </div>

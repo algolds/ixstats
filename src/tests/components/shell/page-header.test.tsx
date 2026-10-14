@@ -165,6 +165,29 @@ describe("PageHeader backdrop", () => {
     expect(screen.getByRole("button", { name: "compact" })).toBeInTheDocument();
   });
 
+  it("moves actions to their own toolbar line below lg, so they never sit under Halo", () => {
+    // Below lg the toolbar shares Halo's band and only half the width beside the 11rem reserve is
+    // free (75px on a 390px phone), so wider actions used to overflow left under the pill.
+    const { container } = render(
+      <PageHeader title="Wallet" actions={<button type="button">Claim daily reward</button>} />
+    );
+    const row = container.querySelector('[data-slot="page-header-toolbar"] > div')!;
+    expect(row).toHaveClass("max-lg:flex-wrap", "max-lg:h-auto");
+    const actions = screen.getByRole("button", { name: "Claim daily reward" }).parentElement!;
+    expect(actions).toHaveClass("max-lg:basis-full", "justify-end");
+    // The first line keeps the reserve centred: a spacer mirrors the left side below lg.
+    const spacer = container.querySelector('[data-slot="page-header-halo-spacer"]')!;
+    expect(spacer).toHaveClass("hidden", "max-lg:block", "flex-1");
+    // The reserve holds the band's height, so the first line stays level with Halo.
+    const reserve = spacer.previousElementSibling!;
+    expect(reserve).toHaveClass("w-(--shell-halo-reserve)", "h-14");
+  });
+
+  it("keeps a single toolbar line without actions", () => {
+    const { container } = render(<PageHeader title="Help" back={{ href: "/" }} />);
+    expect(container.querySelector('[data-slot="page-header-halo-spacer"]')).toBeNull();
+  });
+
   it("is unchanged without a backdrop", () => {
     const { container } = render(<PageHeader title="Help" />);
     expect(container.querySelector('[data-slot="page-header-backdrop"]')).toBeNull();
