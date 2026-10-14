@@ -5,11 +5,7 @@
  */
 
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  rateLimitedMutationProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 
@@ -130,31 +126,4 @@ export const nsImportVerificationRouter = createTRPCRouter({
         nationName: verification.nationName,
       };
     }),
-
-  // ─── Region Discovery ────────────────────────────────────────────
-
-  /**
-   * Check if user has already verified/imported any NS nation
-   */
-  hasImported: protectedProcedure.query(async ({ ctx }) => {
-    // Check if they have verified ownership of any nation
-    const verification = await ctx.db.nSVerification.findFirst({
-      where: {
-        userId: ctx.user.id,
-        verified: true,
-      },
-    });
-    if (verification) return true;
-
-    // Check if they have any card from NS_IMPORT type
-    const cardCount = await ctx.db.cardOwnership.count({
-      where: {
-        userId: ctx.user.id,
-        cards: {
-          cardType: "NS_IMPORT",
-        },
-      },
-    });
-    return cardCount > 0;
-  }),
 });

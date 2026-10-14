@@ -29,7 +29,7 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): the Wallet page, see [below](#the-wallet-page)
   - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections
-  - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/store?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening), Auctions, P2P Trading
+  - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/store?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening; `?view=my-packs` opens the shop on My packs, which the Wallet's "Open N packs" action uses), Auctions, P2P Trading
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
   - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
