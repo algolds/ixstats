@@ -54,7 +54,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | Job | Default schedule | Override key |
 | --- | --- | --- |
 | `auction-completion` | `* * * * *` | — |
-| `passive-income` | `0 0 * * *` | `cronSchedule_passiveIncome` |
+| `vault-dividend` | `0 0 * * *` | `cronSchedule_vaultDividend` |
 | `card-values` | `0 */6 * * *` | `cronSchedule_cardValue` |
 | `lore-card-generation` | `0 2 * * *` | — |
 | `lorewards-full-sync` | `0 6 * * *` | `cronSchedule_lorewardsScoring` |

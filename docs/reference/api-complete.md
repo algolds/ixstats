@@ -256,7 +256,7 @@ api.admin.syncWikiTemplateByName.useMutation() // { name }
 api.admin.syncWikiTemplatesByCategory.useMutation() // { category }
 api.admin.saveStashConfig.useMutation() // { maxStashCount, offlineCacheEnabled, autoCategorization, highlightTracking, welcomeVersion? }
 api.admin.saveThinkPagesConfig.useMutation() // { maxAccountsPerUser, maxCharLength, autoNewsElections, autoNewsPolicies, commentAttachments, feedLimit }
-api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cronSchedule_passiveIncome, cronSchedule_cardValue }
+api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cronSchedule_vaultDividend, cronSchedule_cardValue }
 ```
 
 ---

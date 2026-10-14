@@ -121,13 +121,13 @@ export function SystemTuningSection() {
   // Cron schedule editor
   const { data: cronSchedules, refetch: refetchCron } = api.admin.getCronSchedules.useQuery();
   const [cronScoring, setCronScoring] = useState("");
-  const [cronIncome, setCronIncome] = useState("");
+  const [cronDividend, setCronDividend] = useState("");
   const [cronCard, setCronCard] = useState("");
 
   useEffect(() => {
     if (cronSchedules) {
       setCronScoring(cronSchedules.cronSchedule_lorewardsScoring);
-      setCronIncome(cronSchedules.cronSchedule_passiveIncome);
+      setCronDividend(cronSchedules.cronSchedule_vaultDividend);
       setCronCard(cronSchedules.cronSchedule_cardValue);
     }
   }, [cronSchedules]);
@@ -144,7 +144,7 @@ export function SystemTuningSection() {
     e.preventDefault();
     saveCronMutation.mutate({
       cronSchedule_lorewardsScoring: cronScoring,
-      cronSchedule_passiveIncome: cronIncome,
+      cronSchedule_vaultDividend: cronDividend,
       cronSchedule_cardValue: cronCard,
     });
   };
@@ -363,11 +363,11 @@ export function SystemTuningSection() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-label text-caption">Passive income schedule</label>
+                <label className="text-label text-caption">Vault dividend schedule</label>
                 <Input
                   placeholder="e.g. 0 0 * * *"
-                  value={cronIncome}
-                  onChange={(e) => setCronIncome(e.target.value)}
+                  value={cronDividend}
+                  onChange={(e) => setCronDividend(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                   required
                 />

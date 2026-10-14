@@ -3,6 +3,7 @@ import { sentenceCase } from "~/lib/format/sentence-case";
 /** Human labels for ledger `source` keys shown in the Vault's recent activity. Only keys whose label differs from the sentence-cased key; the rest fall through. */
 const LABELS: Record<string, string> = {
   DAILY_DIVIDEND: "Daily nation dividend",
+  VAULT_DIVIDEND: "Vault dividend",
   DAILY_LOGIN: "Daily reward",
   DAILY_LOGIN_CREDITS: "Daily reward",
   DAILY_LOGIN_CARD: "Daily reward card",
