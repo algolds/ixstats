@@ -19,6 +19,7 @@ jest.mock("~/lib/notifications/hooks", () => ({
 }));
 
 import { getAchievementById } from "~/lib/achievements/definitions";
+import { METRIC_LOADERS } from "~/lib/achievements/metrics/registry";
 import { ACCOUNT_LEVEL_METRICS, achievementRequiresCountry } from "~/lib/achievements/scope";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
 import { syncAchievements } from "~/lib/achievements/sync";
@@ -129,7 +130,12 @@ describe("achievement scope", () => {
     const conditions = await syncedConditions();
     for (const id of ACCOUNT_LEVEL_IDS) {
       const rule = JSON.parse(conditions.get(id) ?? "{}");
-      if (rule.metric) expect(ACCOUNT_LEVEL_METRICS.has(rule.metric)).toBe(true);
+      if (rule.metric) {
+        const accountLoaderKey = METRIC_LOADERS.some(
+          (loader) => loader.scope === "account" && loader.keys.includes(rule.metric)
+        );
+        expect(ACCOUNT_LEVEL_METRICS.has(rule.metric) || accountLoaderKey).toBe(true);
+      }
     }
   });
 
