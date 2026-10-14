@@ -153,7 +153,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Open card packs",
-    path: "/vault/packs",
+    path: "/vault/store?tab=store",
     icon: Page,
     category: "Vault",
     description: "Open booster packs for collectible lore cards",
@@ -161,7 +161,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Marketplace and auctions",
-    path: "/vault/marketplace",
+    path: "/vault/store",
     icon: Shop,
     category: "Vault",
     description: "Buy, sell and bid on cards with credits",
@@ -328,7 +328,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Achievements and trophies",
-    path: "/achievements",
+    path: "/vault/achievements",
     icon: Medal,
     category: "Community",
     description: "Milestones, badges and Loreward trophies",
@@ -464,7 +464,7 @@ export const CORE_FEATURES: FeatureEntry[] = [
   },
   {
     name: "Open card packs",
-    path: "/vault/packs",
+    path: "/vault/store?tab=store",
     icon: Page,
     category: "Vault",
     description: "Open booster packs for collectible lore cards",

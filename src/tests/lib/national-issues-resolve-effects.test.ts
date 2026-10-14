@@ -118,6 +118,17 @@ describe("NationalIssuesConsequences.resolveIssue", () => {
     ]);
   });
 
+  it("resolves without any IxCredits field on the result or the issue update", async () => {
+    const db = makeDb({ consequences: [approval] });
+
+    const result = await NationalIssuesConsequences.resolveIssue(ISSUE, "opt-1", db as any);
+
+    expect(result.success).toBe(true);
+    expect(result).not.toHaveProperty("ixCreditsAwarded");
+    const { data } = db.nationalIssue.update.mock.calls[0]![0] as { data: Record<string, unknown> };
+    expect(data).not.toHaveProperty("ixCreditsAwarded");
+  });
+
   it("turns GDP-growth and GDP consequences into StorytellerEffects, not field writes", async () => {
     const db = makeDb({ consequences: [growth, gdpShock] });
 

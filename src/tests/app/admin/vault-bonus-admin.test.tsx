@@ -15,7 +15,6 @@ jest.mock("~/trpc/react", () => {
     achievementRare: 500,
     achievementEpic: 1000,
     achievementLegendary: 2500,
-    loreward: 2500,
   };
   const refetch = jest.fn();
   return {

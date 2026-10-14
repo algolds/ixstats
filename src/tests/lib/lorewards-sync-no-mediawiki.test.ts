@@ -12,7 +12,7 @@ jest.mock("~/server/db", () => ({
   },
 }));
 jest.mock("~/lib/vault/vault-bonus", () => ({
-  getBonusConfig: jest.fn().mockResolvedValue({ enabled: false, loreward: 0 }),
+  getBonusConfig: jest.fn().mockResolvedValue({ enabled: false }),
   grantBonus: jest.fn(),
 }));
 

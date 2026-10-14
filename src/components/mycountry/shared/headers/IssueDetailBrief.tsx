@@ -27,7 +27,6 @@ import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useNotify } from "~/hooks/useNotify";
-import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { Card } from "~/components/ui/card";
 
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> = {
@@ -188,12 +187,6 @@ function OutcomeCard({
         <span className="text-label text-headline">
           {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
         </span>
-        {issue.ixCreditsAwarded > 0 && (
-          <Badge variant="warning">
-            +{issue.ixCreditsAwarded}
-            <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-          </Badge>
-        )}
       </div>
       {issue.consequenceLog && (
         <p className="text-label-secondary text-footnote leading-relaxed whitespace-pre-line">

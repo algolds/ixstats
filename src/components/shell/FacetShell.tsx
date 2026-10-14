@@ -87,9 +87,6 @@ export function FacetShell() {
       navigationSettings,
     ]
   );
-  // The Vault card and rail wallet follow the Vault app's visibility (prod hides it with
-  // showCardsTab), not just the session, so they never advertise a surface the nav hides.
-  const vaultVisible = apps.some((app) => app.id === "vault");
 
   return (
     <>
@@ -106,7 +103,14 @@ export function FacetShell() {
             badges={badges}
             onAction={onAction}
             signedIn={signedIn}
-            vaultCard={vaultVisible ? <SidebarVaultCard /> : undefined}
+            vaultCard={
+              signedIn ? (
+                <SidebarVaultCard
+                  expanded={expanded.has("vault-card")}
+                  onToggle={() => toggle("vault-card")}
+                />
+              ) : undefined
+            }
             account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
           />
           <TabBar

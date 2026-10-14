@@ -60,7 +60,7 @@ export const cardsSettingsRouter = createTRPCRouter({
     return getBonusConfig(ctx.db);
   }),
 
-  /** Update vault-bonus config fields (new player, imports, achievements, lorewards). */
+  /** Update vault-bonus config fields (new player, imports, achievements). */
   setBonusConfig: adminProcedure
     .input(
       z
@@ -74,7 +74,6 @@ export const cardsSettingsRouter = createTRPCRouter({
           achievementRare: z.number().min(0),
           achievementEpic: z.number().min(0),
           achievementLegendary: z.number().min(0),
-          loreward: z.number().min(0),
         })
         .partial()
     )

@@ -36,10 +36,10 @@ function setup(pathname: string, opts: { expanded?: string[]; badges?: NavBadges
 
 describe("SourceList", () => {
   it("lists every main app and opens only the current one", () => {
-    const { nav } = setup("/vault/marketplace");
+    const { nav } = setup("/vault/store");
     expect(within(nav).getByRole("link", { name: "Vault" })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Wiki" })).toBeInTheDocument();
-    expect(within(nav).getByRole("link", { name: "Marketplace" })).toHaveAttribute(
+    expect(within(nav).getByRole("link", { name: "Store" })).toHaveAttribute(
       "aria-current",
       "page"
     );
@@ -82,7 +82,7 @@ describe("SourceList", () => {
     const vault = setup("/vault", { expanded: ["home", "countries"] });
     const current = within(vault.nav).getAllByRole("link", { current: "page" });
     expect(current).toHaveLength(1);
-    expect(current[0]).toHaveTextContent("Dashboard");
+    expect(current[0]).toHaveTextContent("Wallet");
     expect(current[0]).toHaveAttribute(
       "href",
       apps.find((a) => a.id === "vault")!.sections.find((s) => s.id === "dashboard")!.href
@@ -206,10 +206,10 @@ describe("SourceList", () => {
     expect(within(otherNav).queryByRole("link", { current: "page" })).toBeNull();
     other.unmount();
 
-    renderPopover("/vault/marketplace");
+    renderPopover("/vault/store");
     const nav = screen.getByRole("navigation", { name: "Vault" });
     expect(nav).toHaveAttribute("data-mode", "popover");
-    expect(within(nav).getByRole("link", { name: "Marketplace" })).toHaveAttribute(
+    expect(within(nav).getByRole("link", { name: "Store" })).toHaveAttribute(
       "aria-current",
       "page"
     );
@@ -381,7 +381,7 @@ describe("SourceList icon colour", () => {
   afterEach(cleanup);
 
   it("tints every row's icon, not just the current one: apps, sections and footer links", () => {
-    const { nav } = setup("/vault/marketplace", { expanded: ["home", "mycountry"] });
+    const { nav } = setup("/vault/store", { expanded: ["home", "mycountry"] });
     const grey = within(nav)
       .getAllByRole("link")
       .filter((link) => {

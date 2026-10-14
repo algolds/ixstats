@@ -85,3 +85,22 @@ describe("CountryActionsMenu while a congratulation is sending", () => {
     });
   });
 });
+
+describe("CountryActionsMenu management links", () => {
+  it("does not link into the Vault", () => {
+    createPost.isPending = false;
+    render(
+      <CountryActionsMenu
+        targetCountryId="t1"
+        targetCountryName="Pelaxia"
+        viewerCountryId="t1"
+        isOwnCountry
+        isOpen
+        onClose={jest.fn()}
+      />
+    );
+    expect(screen.getByText("MyCountry dashboard")).toBeTruthy();
+    expect(screen.queryByText(/IxVault/)).toBeNull();
+    expect(screen.queryByText(/market/i)).toBeNull();
+  });
+});

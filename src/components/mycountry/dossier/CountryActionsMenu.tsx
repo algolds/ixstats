@@ -18,7 +18,6 @@ import {
   Page as ScrollText,
   Tournament as Swords,
   Map,
-  Wallet,
   Trophy,
   Calendar,
 } from "iconoir-react";
@@ -77,7 +76,6 @@ const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
   [ScrollText, "Executive actions", "/mycountry/executive"],
   [Handshake, "Manage diplomacy", "/mycountry/diplomacy"],
   [Map, "Map & territory editor", "/mycountry/editor"],
-  [Wallet, "IxVault cards & market", "/vault"],
   [Scale, "Politics & elections", "/mycountry/politics"],
 ];
 

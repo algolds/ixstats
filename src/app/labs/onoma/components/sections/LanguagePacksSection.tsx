@@ -134,7 +134,7 @@ export function LanguagePacksSection({
 
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
-          href="/vault/marketplace?tab=store"
+          href="/vault/store?tab=store"
           className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
         >
           <Shop className="text-yellow h-4 w-4" />

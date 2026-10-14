@@ -8,8 +8,16 @@ import * as fs from "fs";
 import * as path from "path";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
-import { getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
-import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import {
+  getBonusConfig,
+  getLorewardPayouts,
+  grantBonus,
+  LOREWARD_PAYOUT_START,
+  lorewardBonusKey,
+  type LorewardPlace,
+  type LorewardType,
+} from "~/lib/vault/vault-bonus";
+import { resolveLorewardUser } from "./resolve-user";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
@@ -499,42 +507,70 @@ export async function syncCurrentWinners(force = false): Promise<void> {
   }
 }
 
+const PAID_PLACES: LorewardPlace[] = ["winner", "runner-up"];
+
+function isPaidType(type: string): type is LorewardType {
+  return type === "daily" || type === "weekly" || type === "monthly";
+}
+
+/** The day an entry counts from for the payout start: a daily's `date`, a weekly or monthly's `dateEnd`. */
+function payoutDay(entry: { type: string; date: string; dateEnd: string | null }): string {
+  return entry.type === "daily" ? entry.date : (entry.dateEnd ?? entry.date);
+}
+
 /**
- * Grant the Loreward-winner credit bonus to any winning entry whose wiki winnerUser
- * maps to a platform account through a VERIFIED ixwiki `WikiAccountLink` (token proven on the wiki user
- * page, or admin-verified). The legacy `User.wikiUsername` column is deliberately not consulted: it can hold
- * values that were never proven, so paying through it would pay whoever squatted the name.
- * Idempotent: grantBonus(oneTime) keys
- * off `bonus:loreward:<entryId>`, so re-running after each sync only pays new wins.
+ * Pay the winner and the runner-up of every approved daily, weekly and monthly entry from the payout start
+ * (`LOREWARD_PAYOUT_START`) on, by contest and place. A wiki name maps to a platform account only through a
+ * VERIFIED ixwiki `WikiAccountLink` (see `resolveLorewardUser`); entries before the start are never paid, so
+ * a link made later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
+ * `lorewardBonusKey(entryId, place)`, so re-running after each sync only pays new places.
  * Returns the number of newly-granted bonuses.
  */
 export async function grantLorewardBonuses(): Promise<number> {
   const cfg = await getBonusConfig(db);
-  if (!cfg.enabled || cfg.loreward <= 0) return 0;
+  if (!cfg.enabled) return 0;
+  const payouts = await getLorewardPayouts(db);
 
   const entries = await db.lorewardEntry.findMany({
-    where: { winnerUser: { not: null }, status: "approved" },
-    select: { id: true, winnerUser: true, date: true, type: true },
+    where: {
+      status: "approved",
+      OR: [{ winnerUser: { not: null } }, { runnerUpUser: { not: null } }],
+    },
+    select: {
+      id: true,
+      date: true,
+      dateEnd: true,
+      type: true,
+      winnerUser: true,
+      runnerUpUser: true,
+    },
   });
 
   let granted = 0;
   for (const e of entries) {
-    if (!e.winnerUser) continue;
-    const link = await db.wikiAccountLink.findFirst({
-      where: {
-        source: "ixwiki",
-        verifiedAt: { not: null },
-        username: { equals: normalizeWikiUsername(e.winnerUser), mode: "insensitive" },
-      },
-      select: { userId: true },
-    });
-    if (!link) continue; // winner has no verified platform account — skip
+    if (!isPaidType(e.type)) continue;
+    if (payoutDay(e) < LOREWARD_PAYOUT_START) continue;
 
-    const res = await grantBonus(db, link.userId, `bonus:loreward:${e.id}`, cfg.loreward, {
-      oneTime: true,
-      metadata: { entryId: e.id, date: e.date, type: e.type, winnerUser: e.winnerUser },
-    });
-    if (res.granted) granted++;
+    for (const place of PAID_PLACES) {
+      const wikiUser = place === "winner" ? e.winnerUser : e.runnerUpUser;
+      const amount = payouts[e.type][place];
+      if (!wikiUser || amount <= 0) continue;
+      const userId = await resolveLorewardUser(db, wikiUser);
+      if (!userId) continue; // no verified platform account: skip
+
+      const res = await grantBonus(db, userId, lorewardBonusKey(e.id, place), amount, {
+        oneTime: true,
+        metadata: {
+          entryId: e.id,
+          date: e.date,
+          type: e.type,
+          place,
+          wikiUser,
+          winnerUser: e.winnerUser,
+        },
+      });
+      if (res.granted) granted++;
+    }
   }
   console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
   return granted;

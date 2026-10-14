@@ -227,7 +227,7 @@ if [ "${DATABASE_READONLY:-}" != "true" ] && [ "${SKIP_DB_PUSH:-}" != "1" ] && [
         echo -e "${CYAN}🔄 Schema modification detected.${RESET} Syncing database schema..."
         # The Atlas Studio SQL drops the dead procedural_worlds table, which db push refuses to do when it has rows
         # (idempotent; see scripts/deploy-production.sh)
-        if bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql && bun run db:push:force; then
+        if bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql && bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql && bun run db:push:force; then
             touch "$STAMP_FILE"
             echo -e "   ${EMERALD}✓ Schema synchronized successfully${RESET}"
         fi

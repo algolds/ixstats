@@ -11,7 +11,7 @@ The pack opening system provides an immersive, cinematic experience for opening 
 - GPU-accelerated animations (60fps target)
 - Full tRPC integration with existing card-packs API
 
-> **Verified September 2026.** Production integration: `src/components/vault/sections/marketplace/VaultStoreTab.tsx` (Vault Shop at `/vault/marketplace?tab=store`) buys packs with `cardPacks.purchasePack` and lazy-loads `PackOpeningSequence`. There is no barrel `index.ts` and no `PackPurchaseModal` — import components from their own files.
+> **Verified September 2026.** Production integration: `src/components/vault/sections/marketplace/VaultStoreTab.tsx` (Vault Shop at `/vault/store?tab=store`) buys packs with `cardPacks.purchasePack` and lazy-loads `PackOpeningSequence`. There is no barrel `index.ts` and no `PackPurchaseModal` — import components from their own files.
 
 ## Components
 

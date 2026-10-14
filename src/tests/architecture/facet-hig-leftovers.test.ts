@@ -65,8 +65,8 @@ describe("Facet 3.1 HIG leftovers", () => {
     expect(read("components/passport/MidRibbonPassportDocument.tsx")).toMatch(/role="tabpanel"/);
   });
 
-  it("always renders an h1 on /achievements, not only with a profile", () => {
-    const page = read("app/achievements/page.tsx");
+  it("always renders an h1 on /vault/achievements, not only with a profile", () => {
+    const page = read("app/vault/achievements/page.tsx");
     expect(page).toMatch(/<PageHeader\s+title="Achievements"/);
   });
 

@@ -17,6 +17,7 @@ import {
   isChromelessPath,
   matchesPrefix,
   splitTabBarApps,
+  type NavigationVisibilitySettings,
 } from "~/lib/navigation/app-sections";
 import { SETTINGS_TAB_IDS } from "~/app/settings/_lib/sections";
 
@@ -240,6 +241,64 @@ describe("app section map routes", () => {
   });
 });
 
+describe("Vault app", () => {
+  it("lists the Wallet, Daily reward, Achievements, Cards and Store rows, in that order", () => {
+    expect(
+      getApp("vault").sections.map((section) => [section.id, section.label, section.href])
+    ).toEqual([
+      ["dashboard", "Wallet", "/vault"],
+      ["daily-reward", "Daily reward", "/vault"],
+      ["achievements", "Achievements", "/vault/achievements"],
+      ["cards", "Cards", "/vault/cards"],
+      ["store", "Store", "/vault/store"],
+    ]);
+  });
+
+  it("matches each row's other routes", () => {
+    const matches = Object.fromEntries(
+      getApp("vault").sections.map((section) => [section.id, section.match])
+    );
+    expect(matches.achievements).toEqual(["/vault/achievements"]);
+    expect(matches.cards).toEqual([
+      "/vault/inventory",
+      "/vault/collections",
+      "/vault/lore-gallery",
+      "/vault/ns-library",
+      "/vault/ns-deck",
+      "/vault/import",
+    ]);
+    expect(matches.store).toEqual([
+      "/vault/marketplace",
+      "/vault/market",
+      "/vault/packs",
+      "/vault/trading",
+    ]);
+  });
+
+  it.each([
+    ["/vault/collections", "cards"],
+    ["/vault/import", "cards"],
+    ["/vault/marketplace", "store"],
+    ["/vault/market", "store"],
+    ["/vault/packs", "store"],
+    ["/vault/achievements", "achievements"],
+    ["/vault/achievements/anything", "achievements"],
+  ])("puts %s under the %s row", (pathname, sectionId) => {
+    expect(getActiveSectionId(getApp("vault"), pathname, null)).toBe(sectionId);
+  });
+
+  it("is gated by no navigation setting: every signed-in player sees it", () => {
+    expect(APPS.map((app) => app.navSetting as string | undefined)).not.toContain("showCardsTab");
+    const ids = (navigationSettings: NavigationVisibilitySettings) =>
+      getVisibleApps({ signedIn: true, isAdmin: false, navigationSettings }).map((app) => app.id);
+    expect(ids({})).toContain("vault");
+    expect(ids({ showWikiTab: false, showLabsTab: false, showMapsTab: false })).toContain("vault");
+    expect(getVisibleApps({ signedIn: false, isAdmin: false }).map((app) => app.id)).not.toContain(
+      "vault"
+    );
+  });
+});
+
 describe("admin sections", () => {
   it("lists the admin console's full set of pages", () => {
     const admin = APPS.find((app) => app.id === "admin")!;
@@ -294,7 +353,7 @@ describe("app section map resolvers", () => {
     expect(getActiveSectionId(mycountry, "/mycountry/economy", null)).toBe("economy");
     expect(getActiveSectionId(mycountry, "/mycountry/builder", null)).toBeUndefined();
     const vault = getApp("vault");
-    expect(getActiveSectionId(vault, "/vault/trading", null)).toBe("marketplace");
+    expect(getActiveSectionId(vault, "/vault/trading", null)).toBe("store");
     expect(getActiveSectionId(vault, "/vault/inventory", null)).toBe("cards");
   });
 

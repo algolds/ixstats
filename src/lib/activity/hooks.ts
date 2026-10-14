@@ -226,7 +226,8 @@ class UserActivityHooks {
     userId: string,
     countryId: string,
     achievementName: string,
-    achievementDescription: string
+    achievementDescription: string,
+    achievementKey: string
   ): Promise<void> {
     await guarded("achievement unlocked", async () => {
       const [country] = await findCountries(countryId);
@@ -239,7 +240,7 @@ class UserActivityHooks {
         title: `${country.name} Unlocks Achievement: ${achievementName}`,
         description: achievementDescription,
         eventType: "achievement_unlocked",
-        meta: { achievementName },
+        meta: { achievementName, achievementKey },
         priority: "medium",
         related: [countryId],
       });

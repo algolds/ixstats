@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 
 const percentOf = (count: number, total: number) =>
   Math.min(100, parseFloat(((count / total) * 100).toFixed(1)));
@@ -287,7 +291,83 @@ async function wikiAwardAchievements(
   }));
 }
 
+interface PlayerTotals {
+  userId: string;
+  totalPoints: number;
+  achievementCount: number;
+  rareAchievements: number;
+  rank: number;
+}
+
+const RARE_PLUS = new Set(["Rare", "Epic", "Legendary"]);
+
+/** Every player with an unlock of an active achievement, best first; players on equal points share a rank. */
+async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
+  const unlocks = await db.userAchievement.findMany({
+    where: { achievement: { isActive: true } },
+    select: { userId: true, achievement: { select: { points: true, rarity: true } } },
+  });
+  const byUser = new Map<string, Omit<PlayerTotals, "rank">>();
+  for (const { userId, achievement } of unlocks) {
+    const row = byUser.get(userId) ?? {
+      userId,
+      totalPoints: 0,
+      achievementCount: 0,
+      rareAchievements: 0,
+    };
+    row.totalPoints += achievement.points;
+    row.achievementCount += 1;
+    if (RARE_PLUS.has(achievement.rarity)) row.rareAchievements += 1;
+    byUser.set(userId, row);
+  }
+  const sorted = [...byUser.values()].sort(
+    (a, b) => b.totalPoints - a.totalPoints || b.achievementCount - a.achievementCount
+  );
+  let rank = 0;
+  return sorted.map((row, i) => {
+    if (i === 0 || row.totalPoints !== sorted[i - 1]!.totalPoints) rank = i + 1;
+    return { ...row, rank };
+  });
+}
+
 export const achievementsProgressRouter = createTRPCRouter({
+  /** The signed-in player's achievement standing: unlocks of active achievements, their points and rank. */
+  getMySummary: protectedProcedure.query(async ({ ctx }) => {
+    const [activeTotal, totals] = await Promise.all([
+      ctx.db.achievement.count({ where: { isActive: true } }),
+      playerTotals(ctx.db),
+    ]);
+    const mine = totals.find((t) => t.userId === ctx.user.clerkUserId);
+    return {
+      unlocked: mine?.achievementCount ?? 0,
+      activeTotal,
+      points: mine?.totalPoints ?? 0,
+      rank: mine?.rank ?? null,
+    };
+  }),
+
+  /** Ranked players by achievement points; names come from the account, never a Clerk id. */
+  getPlayerLeaderboard: rateLimitedPublicProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(100).default(25) }))
+    .query(async ({ ctx, input }) => {
+      const top = (await playerTotals(ctx.db)).slice(0, input.limit);
+      const users = await ctx.db.user.findMany({
+        where: { clerkUserId: { in: top.map((t) => t.userId) } },
+        select: { clerkUserId: true, handle: true, forumUsername: true },
+      });
+      const userById = new Map(users.map((u) => [u.clerkUserId, u]));
+      const viewerId = ctx.user?.clerkUserId;
+      return top.map(({ userId, ...row }) => {
+        const account = userById.get(userId);
+        return {
+          ...row,
+          name: account?.handle ?? account?.forumUsername ?? "Player",
+          handle: account?.handle ?? null,
+          isViewer: userId === viewerId,
+        };
+      });
+    }),
+
   getAllWithStatus: rateLimitedPublicProcedure
     .input(
       z.object({

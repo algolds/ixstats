@@ -144,6 +144,15 @@ function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulle
   );
 }
 
+/** The item's open link: its wiki page or forum thread, else (an unlock) the achievement in the Vault. */
+function openUrlOf(metadata: Record<string, string | undefined>) {
+  const external = metadata.wikiUrl ?? metadata.forumUrl;
+  if (external) return external;
+  return metadata.achievementKey
+    ? `/vault/achievements?a=${encodeURIComponent(metadata.achievementKey)}`
+    : undefined;
+}
+
 function ActivityCard({ activity }: { activity: any }) {
   const source = activity.source ?? "activity";
   const badge =
@@ -182,7 +191,7 @@ function ActivityCard({ activity }: { activity: any }) {
             label={badge.label}
             sportsBulletin={sportsBulletin}
             titleHtml={title ? formatThinkpagesContentForDisplay(title) : ""}
-            externalUrl={metadata.wikiUrl ?? metadata.forumUrl}
+            externalUrl={openUrlOf(metadata)}
           />
           <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
             <Byline activity={activity} />

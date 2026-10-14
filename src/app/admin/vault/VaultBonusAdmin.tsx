@@ -10,7 +10,6 @@ import {
   UserBadgeCheck as UserCheck,
   Globe,
   Trophy,
-  Trophy as Award,
 } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -75,19 +74,6 @@ const GROUPS: BonusGroup[] = [
       { key: "achievementRare", label: "Rare unlock" },
       { key: "achievementEpic", label: "Epic unlock" },
       { key: "achievementLegendary", label: "Legendary unlock" },
-    ],
-  },
-  {
-    title: "Loreward Metagame Payouts",
-    description: "Competitive lore creation and community showcase rewards",
-    icon: Award,
-    accentColor: "text-purple",
-    fields: [
-      {
-        key: "loreward",
-        label: "Per-Win Payout",
-        hint: "Granted to winners of mapped wiki lore challenges",
-      },
     ],
   },
 ];

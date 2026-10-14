@@ -11,11 +11,9 @@
  * - Consequence audit trail (NationalIssueConsequence records)
  * - Follow-up issue chain generation
  * - Activity feed and news generation side effects
- * - IxCredits rewards
  */
 
 import { IxTime } from "~/lib/ixtime";
-import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import {
   NationalIssuesEngine,
   type ResponseOptionTemplate,
@@ -44,7 +42,6 @@ interface ResolveResult {
   consequences: AppliedConsequence[];
   consequenceLog: string;
   followUpIssueIds: string[];
-  ixCreditsAwarded: number;
   recommendedDirective?: string;
   error?: string;
 }
@@ -67,7 +64,6 @@ export class NationalIssuesConsequences {
       consequences: [],
       consequenceLog: "",
       followUpIssueIds: [],
-      ixCreditsAwarded: 0,
     };
 
     try {
@@ -198,9 +194,6 @@ export class NationalIssuesConsequences {
         }
       }
 
-      // Calculate IxCredits reward
-      result.ixCreditsAwarded = this.calculateIxCredits(issue, isAutoResolve);
-
       // Build consequence log
       result.consequenceLog = this.buildConsequenceLog(
         chosenOption,
@@ -220,7 +213,6 @@ export class NationalIssuesConsequences {
           respondedIxTime: currentIxTime,
           appliedConsequences: JSON.stringify(result.consequences),
           consequenceLog: result.consequenceLog,
-          ixCreditsAwarded: result.ixCreditsAwarded,
         },
       });
 
@@ -437,48 +429,6 @@ export class NationalIssuesConsequences {
       description,
       effectType: "projection",
     };
-  }
-
-  private static calculateIxCredits(
-    issue:
-      | {
-          priority?: string | null;
-          severity?: string | null;
-          deadlineIxTime?: number | null;
-          createdIxTime?: number | null;
-        }
-      | any,
-    isAutoResolve: boolean
-  ): number {
-    if (!GAMEPLAY_FLAGS.issuesAwardCredits) return 0; // narrative mode: no reward farming
-    if (isAutoResolve) return 0; // No reward for inaction
-
-    const severityRewards: Record<string, number> = {
-      critical: 25,
-      CRITICAL: 25,
-      high: 15,
-      HIGH: 15,
-      medium: 8,
-      MEDIUM: 8,
-      low: 3,
-      LOW: 3,
-    };
-
-    const sevKey = issue.severity || issue.priority || "medium";
-    const base = severityRewards[sevKey as string] ?? 5;
-
-    // Bonus for resolving before deadline
-    if (issue.deadlineIxTime && issue.createdIxTime) {
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const remainingTime = issue.deadlineIxTime - currentIxTime;
-      const totalTime = issue.deadlineIxTime - issue.createdIxTime;
-      if (totalTime > 0) {
-        const timeRatio = remainingTime / totalTime;
-        if (timeRatio > 0.5) return base + 5; // Early resolution bonus
-      }
-    }
-
-    return base;
   }
 
   /**

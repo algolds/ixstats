@@ -3,7 +3,7 @@
  *
  * One idempotent, admin-tunable entry point (grantBonus) for every "reward" path:
  * new-player onboarding, wiki country import, NS deck import, achievement unlocks,
- * Loreward wins, etc. Config is SystemConfig-backed (`vault_bonus_*`), same pattern as
+ * Loreward wins and runner-up places, etc. Config is SystemConfig-backed (`vault_bonus_*`), same pattern as
  * exchange-config / card-valuation.
  *
  * All bonuses post as VaultTransactionType.EARN_BONUS — deliberately outside the
@@ -27,7 +27,6 @@ export interface VaultBonusConfig {
   achievementRare: number;
   achievementEpic: number;
   achievementLegendary: number;
-  loreward: number;
 }
 
 export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
@@ -40,7 +39,6 @@ export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
   achievementRare: 500,
   achievementEpic: 1000,
   achievementLegendary: 2500,
-  loreward: 2500,
 };
 
 const KEY = {
@@ -53,7 +51,6 @@ const KEY = {
   achievementRare: "vault_bonus_achievement_rare",
   achievementEpic: "vault_bonus_achievement_epic",
   achievementLegendary: "vault_bonus_achievement_legendary",
-  loreward: "vault_bonus_loreward",
 } as const satisfies Record<keyof VaultBonusConfig, string>;
 
 let cache: { value: VaultBonusConfig; expires: number } | null = null;
@@ -95,6 +92,50 @@ export async function setBonusConfig(
     update: { value: String(value) },
   });
   cache = null;
+}
+
+export type LorewardType = "daily" | "weekly" | "monthly";
+export type LorewardPlace = "winner" | "runner-up";
+
+/** Credits per contest and place. SystemConfig `vault_bonus_loreward_<type>_<place>` overrides a cell. */
+export const LOREWARD_PAYOUTS: Record<LorewardType, Record<LorewardPlace, number>> = {
+  daily: { winner: 500, "runner-up": 150 },
+  weekly: { winner: 1500, "runner-up": 400 },
+  monthly: { winner: 4000, "runner-up": 1000 },
+};
+
+/** First day paid by the table: a daily entry's `date`, a weekly or monthly entry's `dateEnd`, from here on. */
+export const LOREWARD_PAYOUT_START = "2026-10-15";
+
+/** The grant source and idempotency key of one place in one entry; the winner keeps its original key. */
+export function lorewardBonusKey(entryId: string, place: LorewardPlace): string {
+  return place === "winner" ? `bonus:loreward:${entryId}` : `bonus:loreward:${entryId}:runner-up`;
+}
+
+function lorewardPayoutConfigKey(type: LorewardType, place: LorewardPlace): string {
+  return `vault_bonus_loreward_${type}_${place.replace("-", "_")}`;
+}
+
+/** The payout table with SystemConfig overrides applied (non-numeric or negative values are ignored). */
+export async function getLorewardPayouts(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<typeof LOREWARD_PAYOUTS> {
+  const rows = await db.systemConfig.findMany({
+    where: { key: { startsWith: "vault_bonus_loreward_" } },
+    select: { key: true, value: true },
+  });
+  const byKey = new Map(rows.map((r) => [r.key, r.value]));
+
+  const payouts = structuredClone(LOREWARD_PAYOUTS);
+  for (const type of Object.keys(payouts) as LorewardType[]) {
+    for (const place of Object.keys(payouts[type]) as LorewardPlace[]) {
+      const parsed = Number(byKey.get(lorewardPayoutConfigKey(type, place)));
+      if (byKey.has(lorewardPayoutConfigKey(type, place)) && parsed >= 0) {
+        payouts[type][place] = parsed;
+      }
+    }
+  }
+  return payouts;
 }
 
 /** Credits for unlocking an achievement of the given rarity (case-insensitive). */

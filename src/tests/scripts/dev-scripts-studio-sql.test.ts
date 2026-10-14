@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 
 const SQL = "prisma/migrations/20261023120000_atlas_studio/migration.sql";
 const RUN = `bunx prisma db execute --schema prisma/schema --file ${SQL}`;
+const VAULT_SQL = "prisma/migrations/20261024120000_vault_hub/migration.sql";
+const VAULT_RUN = `bunx prisma db execute --schema prisma/schema --file ${VAULT_SQL}`;
 
 describe.each([
   ["start-development.sh", "start-development.sh"],
@@ -17,9 +19,19 @@ describe.each([
     expect(push).toBeGreaterThan(studio);
   });
 
+  it("runs the Vault hub SQL right after the Atlas Studio SQL, before the push", () => {
+    const studio = script.indexOf(RUN);
+    const vault = script.indexOf(VAULT_RUN);
+    const push = script.indexOf("bun run db:push:force");
+    expect(vault).toBeGreaterThan(studio);
+    expect(push).toBeGreaterThan(vault);
+  });
+
   it("does not go on to the push if the SQL fails", () => {
     const line = script.split("\n").find((l) => l.includes(RUN)) ?? "";
     // Either the script stops on any failure, or the push is chained behind the SQL
-    expect(/^set -e/m.test(script) || line.includes(`${SQL} && bun run db:push:force`)).toBe(true);
+    expect(
+      /^set -e/m.test(script) || line.includes(`${SQL} && ${VAULT_RUN} && bun run db:push:force`)
+    ).toBe(true);
   });
 });

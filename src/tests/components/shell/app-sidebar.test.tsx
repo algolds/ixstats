@@ -190,9 +190,9 @@ describe("AppSidebar", () => {
       fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
       const nav = await screen.findByRole("navigation", { name: "Vault" });
       expect(nav).toHaveAttribute("data-mode", "popover");
-      expect(within(nav).getByRole("link", { name: "Marketplace" })).toHaveAttribute(
+      expect(within(nav).getByRole("link", { name: "Store" })).toHaveAttribute(
         "href",
-        "/vault/marketplace"
+        "/vault/store"
       );
       expect(within(nav).queryByRole("link", { current: "page" })).toBeNull();
     });
@@ -224,7 +224,7 @@ describe("AppSidebar", () => {
       const { rail } = renderSidebar({ collapsed: true });
       fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
       const nav = await screen.findByRole("navigation", { name: "Vault" });
-      const link = within(nav).getByRole("link", { name: "Marketplace" });
+      const link = within(nav).getByRole("link", { name: "Store" });
       // jsdom does not navigate; the click handler is what closes the popover.
       link.addEventListener("click", (event) => event.preventDefault());
       fireEvent.click(link);
