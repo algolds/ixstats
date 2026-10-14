@@ -81,15 +81,25 @@ interface Candidate {
   hasNewArticle: boolean;
 }
 
-function aggregateCandidates(revRows: any[]): Candidate[] {
+/** The revision columns `scoreDailyWikiOS` reads. */
+interface RevisionRow {
+  articleId: string;
+  author: string | null;
+  byteSize: number;
+  byteDelta: number;
+  minor: boolean;
+  article: { title: string };
+}
+
+function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
   const byUserPage = new Map<string, Candidate>();
 
   for (const row of revRows) {
     const user = String(row.author || "Anonymous");
     if (/bot$/i.test(user)) continue;
 
-    const page = String(row.article?.title || "Untitled").replace(/_/g, " ");
-    const diff = Number(row.byteDelta || 0);
+    const page = String(row.article.title || "Untitled").replace(/_/g, " ");
+    const diff = row.byteDelta;
     const key = `${user}|${page}`;
     let entry = byUserPage.get(key);
     if (!entry) {
@@ -139,10 +149,10 @@ const candidateBase = (c: Candidate) => ({
 
 /** Full quality-signal scoring (prose, edit depth, novelty, inlink importance) for a top candidate. */
 async function enrichCandidate(c: Candidate, weights: ScoringWeights): Promise<CandidateScore> {
-  const inlinks: number = await (db as any).wikiLink
+  const inlinks = await db.wikiLink
     .count({ where: { targetSlug: toArticleSlug(c.page) } })
     .catch(() => 0);
-  const depth: number = await (db as any).wikiRevision
+  const depth = await db.wikiRevision
     .count({ where: { articleId: c.articleId, author: c.user } })
     .catch(() => 1);
 
@@ -226,15 +236,21 @@ export async function loadScoringWeights(
   return weights;
 }
 
+/**
+ * Score a UTC day's edits. Only the top ten candidates get the full quality signals (and are returned) unless
+ * `enrichAll` is set, which the Vault dividend uses to score every editor.
+ */
 export async function scoreDailyWikiOS(
   dateStr: string,
-  weightsOverride?: ScoringWeights
+  weightsOverride?: ScoringWeights,
+  options: { enrichAll?: boolean } = {}
 ): Promise<WikiOSScoringResult> {
+  const enrichCount = options.enrichAll ? Infinity : ENRICHED_COUNT;
   const weights = weightsOverride ?? (await loadScoringWeights());
   const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
   const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
-  const revRows: any[] = await (db as any).wikiRevision
+  const revRows: RevisionRow[] = await db.wikiRevision
     .findMany({
       where: {
         createdAt: { gte: startOfDay, lte: endOfDay },
@@ -249,7 +265,6 @@ export async function scoreDailyWikiOS(
         byteDelta: true,
         minor: true,
         createdAt: true,
-        wikitext: true,
         article: { select: { id: true, title: true, slug: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -258,9 +273,8 @@ export async function scoreDailyWikiOS(
 
   const candidates = aggregateCandidates(revRows);
   const scored: CandidateScore[] = [];
-  for (const c of candidates.slice(0, ENRICHED_COUNT))
-    scored.push(await enrichCandidate(c, weights));
-  for (const c of candidates.slice(ENRICHED_COUNT)) scored.push(unenrichedScore(c, weights));
+  for (const c of candidates.slice(0, enrichCount)) scored.push(await enrichCandidate(c, weights));
+  for (const c of candidates.slice(enrichCount)) scored.push(unenrichedScore(c, weights));
   scored.sort((a, b) => b.finalScore - a.finalScore);
 
   let winner: CandidateScore | null = null;
@@ -279,7 +293,7 @@ export async function scoreDailyWikiOS(
     date: dateStr,
     winner,
     runnerUp,
-    candidates: scored.slice(0, ENRICHED_COUNT),
+    candidates: scored.slice(0, enrichCount),
     editCount: revRows.length,
     weights,
   };

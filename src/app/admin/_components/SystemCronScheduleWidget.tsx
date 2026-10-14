@@ -27,9 +27,9 @@ const CRON_JOBS = [
     color: "text-yellow border-yellow/20 bg-yellow/5",
   },
   {
-    id: "passive-income",
-    title: "Passive Income Distribution",
-    description: "Calculates and deposits passive income for all qualifying nations daily.",
+    id: "vault-dividend",
+    title: "Vault Dividend",
+    description: "Pays each vault its daily dividend: collection interest plus platform activity.",
     expression: "0 0 * * *",
     icon: Coins,
     color: "text-green border-green/20 bg-green/5",
