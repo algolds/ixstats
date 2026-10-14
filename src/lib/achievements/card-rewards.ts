@@ -52,35 +52,6 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     description: "Master collector! This legendary card recognizes your achievement mastery.",
   },
 
-  // ECONOMIC EXCELLENCE
-  {
-    achievementId: "econ-economic-powerhouse",
-    cardId: "card-achievement-economic-titan",
-    description: "$100 billion GDP milestone! Your economic prowess is commemorated forever.",
-  },
-  {
-    achievementId: "econ-tier-advancement",
-    cardId: "card-achievement-tier1-master",
-    description: "Tier 1 economic status achieved! Join the elite ranks of global leaders.",
-  },
-  {
-    achievementId: "econ-ultra-prosperity",
-    cardId: "card-achievement-prosperity-peak",
-    description: "$100K per capita! Your citizens enjoy unparalleled prosperity.",
-  },
-
-  // DIPLOMATIC MASTERY
-  {
-    achievementId: "dip-embassy-network",
-    cardId: "card-achievement-diplomatic-architect",
-    description: "25 embassies established! Your diplomatic network spans the globe.",
-  },
-  {
-    achievementId: "dip-trade-hub",
-    cardId: "card-achievement-trade-nexus",
-    description: "50 trade partnerships! You've become a central hub of global commerce.",
-  },
-
   // SOCIAL INFLUENCE
   {
     achievementId: "social-popular",
@@ -91,13 +62,6 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     achievementId: "social-prolific-author",
     cardId: "card-achievement-thought-leader",
     description: "50 ThinkPages published! Your intellectual contributions are legendary.",
-  },
-
-  // MILITARY STRENGTH
-  {
-    achievementId: "mil-global-force",
-    cardId: "card-achievement-military-superpower",
-    description: "5M military personnel! Your armed forces are a global superpower.",
   },
 
   // SPECIAL COMBINATIONS
@@ -165,36 +129,6 @@ export const COMMEMORATIVE_CARD_DEFINITIONS: CommemorativeCardDefinition[] = [
     "Commemorates unlocking 50 achievements."
   ),
   commemorative(
-    "card-achievement-economic-titan",
-    "Economic Titan",
-    "RARE",
-    "Commemorates ranking in the top 25% of nations by total GDP."
-  ),
-  commemorative(
-    "card-achievement-tier1-master",
-    "Tier 1 Master",
-    "EPIC",
-    "Commemorates reaching Tier 1 economic status."
-  ),
-  commemorative(
-    "card-achievement-prosperity-peak",
-    "Prosperity Peak",
-    "EPIC",
-    "Commemorates ranking in the top 10% of nations by GDP per capita."
-  ),
-  commemorative(
-    "card-achievement-diplomatic-architect",
-    "Diplomatic Architect",
-    "EPIC",
-    "Commemorates establishing 25 embassies."
-  ),
-  commemorative(
-    "card-achievement-trade-nexus",
-    "Trade Nexus",
-    "EPIC",
-    "Commemorates establishing 50 trade partnerships."
-  ),
-  commemorative(
     "card-achievement-influencer",
     "Influencer",
     "RARE",
@@ -205,12 +139,6 @@ export const COMMEMORATIVE_CARD_DEFINITIONS: CommemorativeCardDefinition[] = [
     "Thought Leader",
     "RARE",
     "Commemorates publishing 50 ThinkPages."
-  ),
-  commemorative(
-    "card-achievement-military-superpower",
-    "Military Superpower",
-    "LEGENDARY",
-    "Commemorates recruiting 5,000,000 military personnel."
   ),
 ];
 

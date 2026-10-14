@@ -141,7 +141,7 @@ const DARK_OVERRIDE_ALLOWED = new Set([
  * Gradients come from sanctioned classes, not ad-hoc palette stops. The interaction sheet
  * (styles/facet/interaction.css) owns the primary and gold paints, the layer sheet
  * (styles/facet/layers.css) owns the pane wash, and the content-art sheet (styles/card-art.css)
- * owns the aurora, foil and jewel paints and `card-art-linear-*`; raw gradient utilities are only
+ * owns the aurora and foil paints and `card-art-linear-*`; raw gradient utilities are only
  * image scrims on role/black/white/transparent stops.
  */
 const SANCTIONED_GRADIENT_CLASSES = [
@@ -149,7 +149,6 @@ const SANCTIONED_GRADIENT_CLASSES = [
   "facet-gold",
   "facet-aurora",
   "facet-foil",
-  "facet-jewel",
 ] as const;
 
 /** Tailwind palette stops (`from-amber-500`, `via-blue-400/20`…) — the "ad-hoc palette gradient". */
