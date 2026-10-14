@@ -20,9 +20,27 @@ describe("Store redirects", () => {
     ["market", MarketPage, "/vault/store?tab=auctions"],
     ["packs", PacksPage, "/vault/store?tab=store"],
     ["trading", TradingPage, "/vault/store?tab=trading"],
-  ])("sends /vault/%s to the matching Store tab", (_name, Page, target) => {
-    expect(() => Page()).toThrow(`redirect:${target}`);
+  ])("sends /vault/%s to the matching Store tab", async (_name, Page, target) => {
+    await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow(`redirect:${target}`);
   });
+
+  it.each([
+    ["market", MarketPage, "auctions"],
+    ["packs", PacksPage, "store"],
+    ["trading", TradingPage, "trading"],
+  ])(
+    "keeps the query /vault/%s came with, and its own tab wins over an incoming tab",
+    async (_name, Page, tab) => {
+      const failure = await Page({
+        searchParams: Promise.resolve({ tab: "wrong", item: "a b", id: ["x", "y"] }),
+      }).catch((error: Error) => error);
+      const url = new URL((failure as Error).message.replace("redirect:", ""), "http://x");
+      expect(url.pathname).toBe("/vault/store");
+      expect(url.searchParams.getAll("tab")).toEqual([tab]);
+      expect(url.searchParams.get("item")).toBe("a b");
+      expect(url.searchParams.getAll("id")).toEqual(["x", "y"]);
+    }
+  );
 
   it("sends /vault/marketplace to /vault/store, keeping the query", async () => {
     await expect(
