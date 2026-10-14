@@ -190,16 +190,21 @@ describe("AppSidebar footer", () => {
       expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
     });
 
-    it("is not rendered when the Vault app is hidden", () => {
+    it("is rendered for a signed-in user whatever the navigation settings hide", () => {
       renderSidebar({
         collapsed: true,
         apps: getVisibleApps({
           signedIn: true,
           isAdmin: false,
-          navigationSettings: { showCardsTab: false },
+          navigationSettings: { showWikiTab: false, showLabsTab: false, showMapsTab: false },
         }),
       });
-      expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
+      expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
+    });
+
+    it("does not depend on the app list", () => {
+      renderSidebar({ collapsed: true, apps: [] });
+      expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
     });
   });
 });

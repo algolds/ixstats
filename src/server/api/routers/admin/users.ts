@@ -138,12 +138,11 @@ export const adminUsersRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Get navigation settings (wiki/cards/labs visibility)
+  // Get navigation settings (wiki/labs visibility)
   getNavigationSettings: publicProcedure.query(async ({ ctx }) => {
     try {
       const stored = await readConfigKeys(ctx.db, [
         "showWikiTab",
-        "showCardsTab",
         "showLabsTab",
         "showIntelligenceTab",
         "showDefenseTab",
@@ -157,7 +156,6 @@ export const adminUsersRouter = createTRPCRouter({
 
       return {
         showWikiTab: settingsMap.showWikiTab ?? true,
-        showCardsTab: settingsMap.showCardsTab ?? true,
         showLabsTab: settingsMap.showLabsTab ?? true,
         showIntelligenceTab: settingsMap.showIntelligenceTab ?? false,
         showDefenseTab: settingsMap.showDefenseTab ?? false,
@@ -169,7 +167,6 @@ export const adminUsersRouter = createTRPCRouter({
       console.error("Failed to get navigation settings:", error);
       return {
         showWikiTab: true,
-        showCardsTab: true,
         showLabsTab: true,
         showIntelligenceTab: false,
         showDefenseTab: false,
@@ -180,12 +177,11 @@ export const adminUsersRouter = createTRPCRouter({
     }
   }),
 
-  // Update navigation settings (wiki/cards/labs visibility)
+  // Update navigation settings (wiki/labs visibility)
   updateNavigationSettings: adminProcedure
     .input(
       z.object({
         showWikiTab: z.boolean(),
-        showCardsTab: z.boolean(),
         showLabsTab: z.boolean(),
         showIntelligenceTab: z.boolean(),
         showDefenseTab: z.boolean(),
@@ -198,7 +194,6 @@ export const adminUsersRouter = createTRPCRouter({
       try {
         const configUpdates = [
           { key: "showWikiTab", value: input.showWikiTab.toString() },
-          { key: "showCardsTab", value: input.showCardsTab.toString() },
           { key: "showLabsTab", value: input.showLabsTab.toString() },
           { key: "showIntelligenceTab", value: input.showIntelligenceTab.toString() },
           { key: "showDefenseTab", value: input.showDefenseTab.toString() },

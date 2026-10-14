@@ -31,7 +31,6 @@ import {
 } from "~/lib/thinkpages-forum/links";
 import {
   Activity,
-  Archive,
   Bell,
   Bookmark,
   BookStack,
@@ -47,7 +46,6 @@ import {
   Cpu,
   Crown,
   Database,
-  Download,
   Eye,
   Folder,
   Gamepad,
@@ -117,7 +115,6 @@ type AppId =
 /** Admin navigation settings (`api.admin.getNavigationSettings`) that can hide an app. */
 export interface NavigationVisibilitySettings {
   showWikiTab?: boolean;
-  showCardsTab?: boolean;
   showLabsTab?: boolean;
   showMapsTab?: boolean;
   showHelpTab?: boolean;
@@ -202,8 +199,8 @@ export const APPS: readonly AppDefinition[] = [
     label: "Home",
     href: "/dashboard",
     icon: HomeSimple,
-    // /feed, /achievements and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
-    match: ["/", "/dashboard", "/feed", "/achievements", "/hashtags", "/messages"],
+    // /feed and /hashtags are not listed but stay Home's, so the sidebar keeps its place.
+    match: ["/", "/dashboard", "/feed", "/hashtags", "/messages"],
     requiresAuth: true,
     inline: true,
     sections: [
@@ -287,10 +284,8 @@ export const APPS: readonly AppDefinition[] = [
     tint: "vault",
     match: ["/vault"],
     requiresAuth: true,
-    navSetting: "showCardsTab",
-    // Achievements lives under Home → Achievements, not here.
     sections: [
-      { id: "dashboard", label: "Dashboard", href: "/vault", icon: Wallet, exact: true },
+      { id: "dashboard", label: "Wallet", href: "/vault", icon: Wallet, exact: true },
       {
         id: "daily-reward",
         label: "Daily reward",
@@ -300,23 +295,33 @@ export const APPS: readonly AppDefinition[] = [
         badge: "daily-reward",
       },
       {
+        id: "achievements",
+        label: "Achievements",
+        href: "/vault/achievements",
+        icon: Trophy,
+        match: ["/vault/achievements"],
+      },
+      {
         id: "cards",
         label: "Cards",
         href: "/vault/cards",
         icon: MultiplePages,
-        match: ["/vault/inventory", "/vault/lore-gallery", "/vault/ns-library", "/vault/ns-deck"],
+        match: [
+          "/vault/inventory",
+          "/vault/collections",
+          "/vault/lore-gallery",
+          "/vault/ns-library",
+          "/vault/ns-deck",
+          "/vault/import",
+        ],
       },
-      { id: "collections", label: "Collections", href: "/vault/collections", icon: Archive },
       {
-        id: "marketplace",
-        label: "Marketplace",
-        href: "/vault/marketplace",
+        id: "store",
+        label: "Store",
+        href: "/vault/store",
         icon: Cart,
-        // /vault/packs redirects into the marketplace store.
-        match: ["/vault/market", "/vault/trading", "/vault/packs"],
+        match: ["/vault/marketplace", "/vault/market", "/vault/packs", "/vault/trading"],
       },
-      { id: "exchange", label: "Exchange", href: "/vault/exchange", icon: Coins },
-      { id: "import", label: "Import", href: "/vault/import", icon: Download },
     ],
   },
   {

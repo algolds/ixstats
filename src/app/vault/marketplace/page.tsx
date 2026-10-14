@@ -1,11 +1,13 @@
-"use client";
+import { redirect } from "next/navigation";
+import { withQuery, type PageQuery } from "~/lib/thinkpages-forum/links";
 
-import { useSearchParams } from "next/navigation";
-import { VaultMarketplaceSection } from "~/components/vault/sections/VaultMarketplaceSection";
+interface VaultMarketplaceRedirectProps {
+  searchParams: Promise<PageQuery>;
+}
 
-export default function VaultMarketplacePage() {
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
-
-  return <VaultMarketplaceSection initialTab={tab} />;
+/** The marketplace is the Store now; the Store, Auctions and Trading `?tab=` values carry over. */
+export default async function VaultMarketplacePage({
+  searchParams,
+}: VaultMarketplaceRedirectProps) {
+  redirect(withQuery("/vault/store", await searchParams));
 }
