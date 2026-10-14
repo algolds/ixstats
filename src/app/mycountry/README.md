@@ -56,7 +56,6 @@ Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/
 - **Defense:** `api.security.getSecurityAssessment` / `getMilitaryBranches` / `getBorderSecurity` / `getConflicts` / `getOperations`, plus the military-asset, operation and conflict mutations
 - **Politics:** `api.elections.getElections` / `getCurrentParliament` / `getLegislature` / `getParties`
 - **Government:** `api.government.getByCountryId` / `getFullByCountryId` / `getCivilServiceStatus`, `api.autosaveHistory.getAutosaveHistory` / `getAutosaveStats`
-- **Vault / budget:** `api.vault.getBalance` / `getBudgetMultiplier` / `getTodayEarnings` / `calculatePassiveIncome`
 - **Map editor:** `api.countryGeo.*` (geo bundle, compliance, subdivisions, cities, wiki populate, rollup), `api.geoCore.getCountryGeoProfile`, `api.geoFeatures.update`, `api.cardImages.*`
 - **System:** `api.system.getCurrentIxTime`, `api.users.getProfile` / `getMembershipStatus`, `api.admin.getNavigationSettings`, `api.wikios.getSectionContent`
 
@@ -65,7 +64,6 @@ Verified `api.*` calls used by this route (`src/app/mycountry`, `src/components/
 - **Builder** — `/mycountry/editor` mounts `BuilderRouter` in edit mode (editor header, section tiles with change counts, persistent save bar; see [Country Editor](../../../docs/systems/builder.md#country-editor-edit-mode)); redirects to `/mycountry/builder` if the user has no country.
 - **Maps / IxWorld** — map-editor section and `countryGeo`/`geoCore`/`geoFeatures` routers tie nation territory to the geo system.
 - **ThinkPages / canon** — `getCanonFeed` surfaces narrative output on the overview.
-- **Vault** — budget multipliers and passive income feed executive economics.
 - **Halo** (formerly Dynamic Island) — `MyCountryHalo` registers in the layout; national-issue alerts pushed via `useNationalIssuesToast`.
 
 See `docs/systems/mycountry.md` for the authoritative system guide and executive-action/effect details.

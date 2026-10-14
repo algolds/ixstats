@@ -59,7 +59,7 @@ The system is backed by Prisma models in `prisma/schema/core.prisma` and `prisma
 - `UserAchievement`: User-level unlock (denormalized title/category/rarity, `metadata`, `unlockedAt`), unique per `userId` + `achievementId`
 - `LorewardEntry`, `LorewardUserStats`, `LorewardCrossValidation`: Wiki contribution awards and scoring
 
-Categories are plain strings (`Economic`, `Military`, `Diplomatic`, `Government`, `Social`, `General`); there are no separate category or per-country progress tables — progress is evaluated from live account data and, when the user has one, live country data.
+Categories are plain strings: `Executive`, `Politics`, `Diplomacy`, `Defense`, `Nation`, `Social`, `Wiki`, `Cards`, `Lorewards`, `General`; there are no separate category or per-country progress tables — progress is evaluated from live account data and, when the user has one, live country data.
 
 ---
 

@@ -29,7 +29,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 Linked to an IxStates country via `Card.countryId`:
 - **Stats**: Shared Force / Wealth / Influence / Legacy stat set (`src/lib/cards/stat-config.ts`; special stats via `src/lib/country-geo/special-stats-populator.ts`)
 - **Valuation**: The `card-values` cron (`src/lib/lorewards/card-value-cron.ts`, every 6 hours) records the market value of NATION cards in `CardValueHistory` and flags changes over 20%. A value comes from rarity and type (`getCardMarketValue`); the former GDP correlation was dead code and is gone. In practice it does nothing today: no NATION card has a `countryId`.
-- **Royalty**: when a NATION card sells at auction, 2% goes to the owner of its nation (`auction-service.ts`), the one place a country feeds the Vault economy.
+- **Royalty**: when a NATION card sells at auction, 2% goes to the owner of its nation, else the earliest human puller of the card (`auction-service.ts`), the one place a country feeds the Vault economy.
 - **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation (and, before crafting was retired, crafting results, which defaulted to `cardType: "NATION"`).
 
 ### 2. LORE Cards

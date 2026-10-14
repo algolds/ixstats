@@ -71,7 +71,7 @@ Versioning communicates:
  │ 4. 💎 VAULT — Collectathon Hub: Wallet, Achievements, Cards & Store (v3)                       │
  │    Action: COLLECT | Domain Accent: Raspberry (`APP_TINTS.vault`) | Route: /vault              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Wallet (v3)              │ Bank-statement page: account hero, statement with running balance │
+ │ • Wallet                   │ Bank-statement page: account hero, statement with running balance │
  │                            │ and a holdings column; shown in the sidebar for every player.     │
  │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and the       │
  │                            │ nightly Vault dividend (collection interest plus activity).       │

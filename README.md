@@ -108,10 +108,10 @@ A complete cartography, spatial analytics, and procedural world generation suite
 
 ### 🎴 Vault — Collectible Cards, Economy & Rewards
 
-A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v2):
+A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v3):
 
 - **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
-  - `NATION`: Country cards with Force / Wealth / Influence / Legacy stats, re-priced daily against their country's GDP and growth by the `card-values` cron.
+  - `NATION`: Country cards with Force / Wealth / Influence / Legacy stats, valued by rarity and type; the `card-values` cron (every 6 hours) records their value history and does no GDP re-pricing.
   - `LORE`: Generated from WikiOS articles; rarity is suggested from wiki signals (word count, links, edit count, category breadth, images, article age) and admins can override it.
   - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
   - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.

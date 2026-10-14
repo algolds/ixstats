@@ -1,6 +1,6 @@
 # IxCredits (IxC) Virtual Currency Engine
 
-**Last updated:** September 2026  
+**Last updated:** 2026-10-14  
 **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby")  
 **Hierarchy:** Currency & Earning Engine of **IxVault** (`IXVAULT_VERSION = 3`).
 
@@ -81,7 +81,7 @@ Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the dai
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped. The dividend, bonuses and card earnings are outside them.
 
 ### Card sales and trades
-- Selling cards through auctions and trades pays the seller (`EARN_CARDS`), and junking a card pays its junk value. A **nation card** sold at auction pays a 2% royalty to the nation's owner (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
+- Selling cards through auctions and trades pays the seller (`EARN_CARDS`), and junking a card pays its junk value. A **nation card** sold at auction pays a 2% royalty to the nation's owner (else the earliest human puller of the card) (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
 
 ---
 

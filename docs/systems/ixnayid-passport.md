@@ -1,6 +1,6 @@
 # IxnayID Passport
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-14
 
 **Routes:** `/@user`, `/id/[username]`, `/r/[realm]/@user` (rewrites to `/r/[realm]/u/[username]`; the old `/r/[realm]/[username]` 301s) | **Module:** `src/server/modules/identity/` | **Router:** `api.ixnayid` (`src/server/api/routers/ixnayid/`) | **UI:** `src/components/passport/`
 

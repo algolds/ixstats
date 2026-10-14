@@ -8,8 +8,8 @@ Read it end to end once before starting. Every command here is meant to be run b
 
 ## What this release changes (why the steps below matter)
 
-- **Money and jobs:** vault credit moves run inside their callers' transactions, passive-income payouts are
-  idempotent, and `cron-runner.mjs` is now the only scheduler. It runs only the jobs named in `CRON_ENABLED_JOBS`
+- **Money and jobs:** vault credit moves run inside their callers' transactions, payouts are
+  idempotent (the passive-income job has since been replaced by the Vault dividend, step 5d), and `cron-runner.mjs` is now the only scheduler. It runs only the jobs named in `CRON_ENABLED_JOBS`
   and runs none by default.
 - **Security:**
   - Every country-scoped mutation checks ownership.
@@ -56,7 +56,7 @@ Read it end to end once before starting. Every command here is meant to be run b
     `updatedAt` columns plus `issuerCompanyId`/`winnerCompanyId` indexes; `SPEND_EXCHANGE` and `EARN_EXCHANGE` in the
     vault transaction enum. The Exchange is on by default (`vault_isExchangeEnabled`; Admin → Vault and economy →
     System config). New ₷ wallets now start at 1,000 instead of 10,000. **No data fix:** existing wallets keep their
-    balance, and seeded ₷ can't be converted to IxCredits (only ₷ converted in can go back out)
+    balance, and seeded ₷ can't be converted to IxCredits (the conversion has since been removed altogether)
   - Exchange phase 2 (2026-10-06, additive, VT-16): `exchange_companies.tradingOpen` (default false) and
     `decisionValue`; `exchange_contracts.issuerCountryId`, `fundedBy` and a `(status, endIxTime)` index;
     `exchange_sector_indices.fundSovereigns` and `unitsOutstanding`; new tables `exchange_share_listings` and
@@ -94,7 +94,7 @@ Read it end to end once before starting. Every command here is meant to be run b
     the older code for a layer with more rows than that is missing the rest, so rolling back an import made before this
     deploy restores only part of such a layer. Snapshots taken after it hold every row. Rollback of a large layer
     (Ixnay's altitudes have 4,068 rows) needs the new code
-  - Vault collectathon hub (2026-10-24, **drops one column**): adds `Country.ownedSince`, `cards.lorewardEntryId` and
+  - Vault collectathon hub (migration `20261024120000`, **drops one column**): adds `Country.ownedSince`, `cards.lorewardEntryId` and
     `cards.lorewardEdition` (unique together), drops `national_issues.ixCreditsAwarded`, and deletes the stored
     `showCardsTab` setting (`prisma/migrations/20261024120000_vault_hub/migration.sql`, idempotent). **Apply it BEFORE
     `db:push:force`** (step 5a), after the Atlas and World Studio file: `db push` without `--accept-data-loss` refuses
@@ -416,34 +416,43 @@ Then check the folder is the shared one: `ls "$MAP_RASTER_DIR"/ixnay/relief` lis
 request to maps.ixwiki.com for that version (`/api/map-rasters/ixnay/relief/<version>/0/0/0`, with the version from
 the realm's settings) answers 200, not 404. Repeat with a test realm's first applied world in step 6.
 
-### 5d. Vault hub backfills (after the deploy script)
+### 5d. Vault hub: cron swap, backfills, restart (after the deploy script)
 
-The Vault hub SQL ran in step 5a, before the push. These two backfills need the new columns and the new code, so they
-run after the deploy script. Both are dry runs by default, idempotent, and print what they would do before you add
-`--apply`.
+Do these in this order. Step 1 of the hub is the SQL of step 5a, already applied before `db:push:force`.
 
-```bash
-cd /ixwiki/public/projects/ixstats
-bun scripts/backfill-country-owned-since.ts                # dry run: dates per owned nation, and any it cannot date
-bun scripts/backfill-country-owned-since.ts --apply
-bun scripts/backfill-loreward-trophy-cards.ts              # dry run: trophy cards missing per contest
-bun scripts/backfill-loreward-trophy-cards.ts --apply
-```
+1. **Cron swap.** The `passive-income` job no longer exists and the runner exits on an unknown job name. In
+   `CRON_ENABLED_JOBS` in `ecosystem.config.cjs`, **replace `passive-income` with `vault-dividend`** (midnight UTC, the
+   nightly Vault dividend); if `passive-income` is not listed yet, there is nothing to replace and `vault-dividend` joins
+   the list in step 7. Do not restart yet. An admin cron override saved under `cronSchedule_passiveIncome` is orphaned
+   (nothing reads it); re-save the schedule in Admin, which stores it under `cronSchedule_vaultDividend`. The first run
+   records the start day in the SystemConfig row `vault_dividend_started_on` and pays only the day just ended; it never
+   settles an earlier day.
+2. **`ownedSince` backfill**, then 3. **trophy card backfill.** Both need the new columns and the new code, so they run
+   after the deploy script. Both are dry runs by default, idempotent, and print what they would do before you add
+   `--apply`.
 
-- **`ownedSince`** is the latest approved realm claim by the current owner (`reviewedAt`), else the nation's first
-  `CountryChangeLog` row. A nation with neither is listed and left empty (it counts as 0 months owned for the
-  Stewardship achievements); set it by hand. **Run it after any `scripts/identity/audit-leader-ownership.ts --apply`**,
-  because that script sets `ownerUserId` without `ownedSince`.
-- **Trophy cards** mint one card per recorded Loreward place back to 2017 (about 2,800 places on the local clone),
-  with no IxCredits, and give each to its winner when that wiki account has a verified IxWiki link; the rest wait unowned
-  and are granted by the Lorewards sync once the account is linked.
-- **Restart** after the backfills and the cron change in step 7: `pm2 restart ixstats-cron --update-env`, and the web
-  app and `ixstats-ws` as in the deploy. The achievement sync at boot (`syncAchievements`) marks the 47 Legacy
-  definitions inactive and creates the new ones; until it has run, `achievements.getAllWithStatus` also re-syncs when it
-  finds the table behind the registry.
-- **Loreward payouts** use the tiered table for entries dated 2026-10-15 or later (`LOREWARD_PAYOUT_START`); earlier
-  entries keep what they paid. If the deploy lands after that date, the first sync pays the new table, runner-ups
-  included, for the days since.
+   ```bash
+   cd /ixwiki/public/projects/ixstats
+   bun scripts/backfill-country-owned-since.ts                # dry run: dates per owned nation, and any it cannot date
+   bun scripts/backfill-country-owned-since.ts --apply
+   bun scripts/backfill-loreward-trophy-cards.ts              # dry run: trophy cards missing per contest
+   bun scripts/backfill-loreward-trophy-cards.ts --apply
+   ```
+
+   - **`ownedSince`** is the latest approved realm claim by the current owner (`reviewedAt`), else the nation's first
+     `CountryChangeLog` row. A nation with neither is listed and left empty (it counts as 0 months owned for the
+     Stewardship achievements); set it by hand. **Run it after any `scripts/identity/audit-leader-ownership.ts --apply`**,
+     because that script sets `ownerUserId` without `ownedSince`.
+   - **Trophy cards** mint one card per recorded Loreward place back to 2017 (about 2,800 places on the local clone),
+     with no IxCredits, and give each to its winner when that wiki account has a verified IxWiki link; the rest wait
+     unowned and are granted by the Lorewards sync once the account is linked.
+4. **Restart**, last: `pm2 restart ixstats-cron --update-env`, and the web app and `ixstats-ws` as in the deploy. The
+   achievement sync at boot (`syncAchievements`) marks the 47 Legacy definitions inactive and creates the new ones; until
+   it has run, `achievements.getAllWithStatus` also re-syncs when it finds the table behind the registry.
+
+**Loreward payouts** use the tiered table for entries dated 2026-10-15 or later (`LOREWARD_PAYOUT_START`); earlier
+entries keep what they paid. If the deploy lands after that date, the first sync pays the new table, runner-ups
+included, for the days since.
 
 ## 6. Smoke checks (browser)
 
@@ -526,12 +535,7 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
 `policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `vault-dividend` (last).
 
-The `passive-income` job was deleted with the Vault hub (2026-10-24): the runner exits on an unknown job name, so in
-`CRON_ENABLED_JOBS` **replace `passive-income` with `vault-dividend`** before restarting `ixstats-cron`. `vault-dividend`
-(midnight UTC) pays the nightly Vault dividend. Its first run records the start day in the SystemConfig row
-`vault_dividend_started_on` and pays only the day just ended; it never settles an earlier day. An admin cron override
-saved under `cronSchedule_passiveIncome` is orphaned (nothing reads it); re-save the schedule in Admin, which stores it
-under `cronSchedule_vaultDividend`.
+The `passive-income` job was deleted with the Vault hub; its replacement `vault-dividend` and the swap are in step 5d.
 
 The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still listed in `CRON_ENABLED_JOBS`, remove it
 before deploying: the runner exits on an unknown job name.

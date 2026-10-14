@@ -13,11 +13,88 @@ export const metadata: Metadata = {
 
 const RELEASES: Release[] = [
   {
-    version: "1.4.1",
+    version: "1.5.0",
     releaseName: "Lobster Crosby",
     date: "October 2026",
     channel: "Release Candidate",
     isCurrent: true,
+    tagline:
+      "The Vault becomes a collectathon hub: achievements, cards and the store in one place, for every player.",
+    items: [
+      {
+        id: "v150-vault-hub",
+        category: "feature",
+        title: "The Vault for everyone",
+        description:
+          "The Vault is in the sidebar for every signed-in player, with five rows: Wallet, Daily reward, Achievements, Cards and Store.",
+        highlights: [
+          "Collections and import now live inside Cards",
+          "The marketplace is now the Store, and old links redirect to it",
+          "The sidebar wallet card opens to today's earnings and achievement progress",
+        ],
+        link: { href: "/vault", label: "Open the Vault" },
+      },
+      {
+        id: "v150-wallet",
+        category: "improvement",
+        title: "The Wallet as a bank statement",
+        description:
+          "Your balance, net worth and streak sit above a statement of every change to your IxCredits, with the balance after each one.",
+        highlights: [
+          "Filter the statement to earned or spent",
+          "Open a Vault dividend row to see how it was worked out",
+          "Holdings for achievements, Lorewards, cards and the Store",
+        ],
+        link: { href: "/vault", label: "See your Wallet" },
+      },
+      {
+        id: "v150-dividend",
+        category: "improvement",
+        title: "The nightly Vault dividend",
+        description:
+          "IxCredits now come from platform activity, not from your nation. Each night you earn interest on your card collection plus credit for wiki edits, posts and card activity, up to 150 a day.",
+        highlights: [
+          "Link your wiki account so your edits count",
+          "A login streak raises the activity parts by up to half",
+          "Nation rewards for embassies, exchanges and scenarios are gone",
+        ],
+        link: { href: "/help/vault/ixcredits", label: "How IxCredits work" },
+      },
+      {
+        id: "v150-achievements",
+        category: "feature",
+        title: "Achievements in the Vault",
+        description:
+          "Achievements moved to the Vault with a Lorewards tab. Nation achievements were rebuilt around the live MyCountry systems and measured in real time, and there are new ones for the wiki, the community, cards and Lorewards.",
+        highlights: [
+          "Older achievements that could not be earned fairly are now Legacy: you keep what you unlocked",
+          "Stewardship achievements track how long you have owned your nation",
+        ],
+        link: { href: "/vault/achievements", label: "Browse achievements" },
+      },
+      {
+        id: "v150-lorewards",
+        category: "feature",
+        title: "Lorewards payouts and trophy cards",
+        description:
+          "Daily, weekly and monthly winners and runner-ups are paid by tier, and every place becomes a one-of-one trophy card of the winning page. Today's race and the standings have their own page in WikiOS.",
+        link: { href: "/util/lorewards", label: "See today's race" },
+      },
+      {
+        id: "v150-exchange",
+        category: "improvement",
+        title: "The Exchange moves to Labs",
+        description:
+          "The Exchange now lives in Labs, and IxCredits can no longer be converted to Sovereigns or back.",
+        link: { href: "/labs/exchange", label: "Open the Exchange" },
+      },
+    ],
+  },
+  {
+    version: "1.4.1",
+    releaseName: "Lobster Crosby",
+    date: "October 2026",
+    channel: "Release Candidate",
     tagline: "Fuller realm pages, Eurth's nations and map, and a round of realm fixes.",
     items: [
       {
