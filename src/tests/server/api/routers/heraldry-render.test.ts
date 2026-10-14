@@ -12,7 +12,7 @@ import os from "os";
 import path from "path";
 import sharp from "sharp";
 import { heraldryMutationsRouter } from "~/server/api/routers/heraldry/mutations";
-import { RENDERED_IMAGE_URL } from "~/server/api/routers/heraldry/render";
+import { RENDERED_IMAGE_URL } from "~/lib/heraldry/constants";
 import {
   CALLER_CLERK_ID,
   CALLER_COUNTRY,

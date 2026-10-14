@@ -496,7 +496,7 @@ describe("leaving a realm", () => {
     await callerAs(OFFICER, db).region.abandonNation({ countryId: "c5", confirmName: " aurelia " });
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: "c5" },
-      data: { ownerUserId: null },
+      data: { ownerUserId: null, ownedSince: null },
     });
     expect(db.user.updateMany).toHaveBeenCalledWith({
       where: { countryId: "c5" },

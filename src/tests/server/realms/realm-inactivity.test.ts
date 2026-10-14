@@ -99,7 +99,7 @@ describe("runRealmInactivity", () => {
     );
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: "gone" },
-      data: { ownerUserId: null },
+      data: { ownerUserId: null, ownedSince: null },
     });
     expect(deps.notify).toHaveBeenCalledWith(
       expect.objectContaining({

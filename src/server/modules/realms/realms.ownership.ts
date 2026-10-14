@@ -1,6 +1,7 @@
 /**
  * The only writer of Country.ownerUserId and User.countryId (spec invariant I3).
  * ownerUserId = who owns the nation; User.countryId = the nation the user is acting as.
+ * ownedSince = when the current owner took it (real time; the Stewardship achievements read it).
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
@@ -58,7 +59,7 @@ async function assign(
     // scenery, since the read above.
     const { count } = await tx.country.updateMany({
       where: { id: country.id, ownerUserId: null, ...(claim && { claimable: true }) },
-      data: { ownerUserId: input.userId },
+      data: { ownerUserId: input.userId, ownedSince: new Date() },
     });
     if (count === 0) throw alreadyOwned();
   }
@@ -82,9 +83,12 @@ export const assignClaimedNation = (
   input: { userId: string; countryId: string }
 ) => assign(tx, input, true);
 
-/** Take the nation away from its owner; anyone acting as it stops doing so. */
+/** Take the nation away from its owner (and reset its stewardship clock); anyone acting as it stops doing so. */
 export async function releaseNation(tx: OwnershipTx, countryId: string): Promise<void> {
-  await tx.country.update({ where: { id: countryId }, data: { ownerUserId: null } });
+  await tx.country.update({
+    where: { id: countryId },
+    data: { ownerUserId: null, ownedSince: null },
+  });
   await tx.user.updateMany({ where: { countryId }, data: { countryId: null } });
 }
 

@@ -143,7 +143,7 @@ describe("claimCountry", () => {
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
     expect(deps.fetchPageCreator).toHaveBeenCalledWith("ixwiki", "Aurelia");
@@ -241,7 +241,7 @@ describe("claimCountry", () => {
     expect(db.realmClaim.create).not.toHaveBeenCalled();
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(deps.onNationAssigned).toHaveBeenCalledTimes(1);
   });
@@ -584,7 +584,7 @@ describe("claimNationPage", () => {
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "new-c", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(db.realmClaim.update).toHaveBeenCalledWith({
       where: { id: "cl1" },
@@ -861,7 +861,7 @@ describe("reviewClaim — nation page claims", () => {
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "new-c", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(db.realmClaim.update).toHaveBeenCalledWith({
       where: { id: "cl1" },

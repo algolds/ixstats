@@ -9,7 +9,8 @@ import { isSystemOwner } from "~/lib/auth";
 import { invalidateCache } from "~/lib/cache";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
-import { RENDERED_IMAGE_URL, renderAchievementImages } from "./render";
+import { RENDERED_IMAGE_URL } from "~/lib/heraldry/constants";
+import { renderAchievementImages } from "./render";
 
 const MAX_CHARGE_SVG_BYTES = 512 * 1024;
 
