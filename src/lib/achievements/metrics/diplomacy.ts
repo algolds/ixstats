@@ -76,11 +76,14 @@ const cooperativeAccepted = (db: PrismaClient, countryId: string, userId: string
     },
   });
 
-/** NPC nations (no owner) that accepted this country's alliance invites. */
-const npcInvitesAccepted = (db: PrismaClient, countryId: string) =>
-  db.allianceMember.count({
+/** Distinct NPC nations (no owner) that accepted this country's alliance invites, however many alliances. */
+async function npcInvitesAccepted(db: PrismaClient, countryId: string): Promise<number> {
+  const nations = await db.allianceMember.groupBy({
+    by: ["countryId"],
     where: { invitedByCountryId: countryId, ...ACTIVE_MEMBER, country: { ownerUserId: null } },
   });
+  return nations.length;
+}
 
 /**
  * Completed embassy missions that really ran 3 days or longer, one per cultural exchange (an

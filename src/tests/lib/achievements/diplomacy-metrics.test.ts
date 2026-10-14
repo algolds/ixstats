@@ -16,6 +16,7 @@ const ago = (ms: number) => new Date(NOW.getTime() - ms);
 function setup() {
   const db = createMockPrisma();
   db.country.findUnique.mockResolvedValue({ ownedSince: ago(24 * MONTH_MS) });
+  db.allianceMember.groupBy.mockResolvedValue([]);
   const ctx: MetricContext = {
     db: db as never,
     clerkUserId: "clerk_1",
@@ -149,15 +150,18 @@ describe("cooperativeAccepted", () => {
 });
 
 describe("npcInvitesAccepted", () => {
-  it("counts active memberships this country invited whose country has no owner (an NPC)", async () => {
+  it("counts distinct NPC nations (no owner) with an active membership this country invited", async () => {
     const { db, load } = setup();
-    db.allianceMember.count.mockImplementation(
+    db.allianceMember.groupBy.mockImplementation(
       async (args: { where: { invitedByCountryId?: string } }) =>
-        args.where.invitedByCountryId === "c1" ? 3 : 1
+        args.where.invitedByCountryId === "c1"
+          ? [{ countryId: "npc1" }, { countryId: "npc2" }, { countryId: "npc3" }]
+          : [{ countryId: "other" }]
     );
 
     expect((await load()).npcInvitesAccepted).toBe(3);
-    expect(db.allianceMember.count).toHaveBeenCalledWith({
+    expect(db.allianceMember.groupBy).toHaveBeenCalledWith({
+      by: ["countryId"],
       where: {
         invitedByCountryId: "c1",
         isActive: true,
@@ -165,6 +169,14 @@ describe("npcInvitesAccepted", () => {
         country: { ownerUserId: null },
       },
     });
+  });
+
+  it("counts one NPC that accepted into three alliances once", async () => {
+    const { db, load } = setup();
+    // The group-by collapses the NPC's three memberships to one row.
+    db.allianceMember.groupBy.mockResolvedValue([{ countryId: "npc1" }]);
+
+    expect((await load()).npcInvitesAccepted).toBe(1);
   });
 });
 
@@ -279,7 +291,9 @@ describe("proposalsApproved", () => {
   it("is 0 without proposals and skips the member query", async () => {
     const { db, load } = setup();
     expect((await load()).proposalsApproved).toBe(0);
-    expect(db.allianceMember.groupBy).not.toHaveBeenCalled();
+    expect(db.allianceMember.groupBy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ by: ["allianceId"] })
+    );
   });
 });
 
