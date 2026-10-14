@@ -5,6 +5,7 @@ describe("activitySourceLabel", () => {
     ["bonus:new_player", "New player bonus"],
     ["bonus:loreward:abc123", "Loreward bonus"],
     ["DAILY_DIVIDEND", "Daily nation dividend"],
+    ["VAULT_DIVIDEND", "Vault dividend"],
     ["DAILY_NATION_DIVIDEND", "Daily nation dividend"],
     ["DAILY_LOGIN", "Daily reward"],
     ["DAILY_LOGIN_CREDITS", "Daily reward"],

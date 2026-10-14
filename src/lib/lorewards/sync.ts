@@ -18,6 +18,7 @@ import {
   type LorewardType,
 } from "~/lib/vault/vault-bonus";
 import { resolveLorewardUser } from "./resolve-user";
+import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
@@ -414,6 +415,7 @@ export async function fullSync(): Promise<{
   const users = await recomputeAllStats();
   // Re-apply medal scores from main page (they're canonical, overwrite computed values)
   await syncFromMainOOLPage();
+  await syncTrophyCards();
   return { stateEntries, oolEntries, users, members };
 }
 
@@ -542,7 +544,9 @@ export async function grantLorewardBonuses(): Promise<number> {
       dateEnd: true,
       type: true,
       winnerUser: true,
+      winnerPage: true,
       runnerUpUser: true,
+      runnerUpPage: true,
     },
   });
 
@@ -553,6 +557,7 @@ export async function grantLorewardBonuses(): Promise<number> {
 
     for (const place of PAID_PLACES) {
       const wikiUser = place === "winner" ? e.winnerUser : e.runnerUpUser;
+      const page = place === "winner" ? e.winnerPage : e.runnerUpPage;
       const amount = payouts[e.type][place];
       if (!wikiUser || amount <= 0) continue;
       const userId = await resolveLorewardUser(db, wikiUser);
@@ -567,6 +572,7 @@ export async function grantLorewardBonuses(): Promise<number> {
           place,
           wikiUser,
           winnerUser: e.winnerUser,
+          ...(page ? { page } : {}),
         },
       });
       if (res.granted) granted++;
@@ -574,4 +580,15 @@ export async function grantLorewardBonuses(): Promise<number> {
   }
   console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
   return granted;
+}
+
+/**
+ * Trophy cards for the recorded Loreward places: mint the ones that have no card yet, then give each unowned
+ * card to its winner once that wiki account is verified-linked. Idempotent, and writes no IxCredits.
+ */
+export async function syncTrophyCards(): Promise<{ minted: number; granted: number }> {
+  const { minted } = await mintTrophyCards(db);
+  const { granted } = await grantUnownedTrophyCards(db);
+  console.log(`[Lorewards] Minted ${minted} trophy cards, granted ${granted}.`);
+  return { minted, granted };
 }

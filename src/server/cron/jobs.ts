@@ -47,6 +47,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/economy/auction-completion-cron")).processExpiredAuctions,
   },
   {
+    // Midnight UTC: the Vault dividend for the day just ended, plus any of the last 7 days still unsettled.
+    name: "vault-dividend",
+    defaultSchedule: "0 0 * * *",
+    scheduleConfigKey: "cronSchedule_vaultDividend",
+    lockName: "vault-dividend",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/cron/vault-dividend-cron",
+    exportName: "runVaultDividend",
+    load: async () => (await import("~/server/cron/vault-dividend-cron")).runVaultDividend,
+  },
+  {
     name: "card-values",
     defaultSchedule: "0 */6 * * *",
     scheduleConfigKey: "cronSchedule_cardValue",

@@ -6,7 +6,7 @@ import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 const CRON_SCHEDULE_DEFAULTS: Record<string, string> = {
   cronSchedule_lorewardsScoring: "0 6 * * *",
-  cronSchedule_passiveIncome: "0 0 * * *",
+  cronSchedule_vaultDividend: "0 0 * * *",
   cronSchedule_cardValue: "0 */6 * * *",
 };
 
@@ -20,7 +20,7 @@ export const adminCronRouter = createTRPCRouter({
     .input(
       z.object({
         cronSchedule_lorewardsScoring: z.string(),
-        cronSchedule_passiveIncome: z.string(),
+        cronSchedule_vaultDividend: z.string(),
         cronSchedule_cardValue: z.string(),
       })
     )

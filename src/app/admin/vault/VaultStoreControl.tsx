@@ -76,7 +76,7 @@ export function VaultStoreControl() {
     cosmeticKind: "avatarGlow" as "avatarGlow" | "neonFrame" | "chatBadge",
     effectColor: "#f59e0b",
     effectIcon: "Crown",
-    yieldBoostPct: 0, // % bonus to passive income
+    yieldBoostPct: 0, // % bonus to the Vault dividend
     cardCapacity: 0, // extra card slots
     loreTokens: 0, // extra lore tokens
   });
@@ -556,7 +556,7 @@ export function VaultStoreControl() {
               {formData.category === "upgrades" ? (
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fx-yield">Yield Boost (%)</Label>
+                    <Label htmlFor="fx-yield">Dividend boost (%)</Label>
                     <Input
                       id="fx-yield"
                       type="number"

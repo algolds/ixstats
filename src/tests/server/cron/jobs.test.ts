@@ -32,6 +32,17 @@ describe("CRON_JOBS", () => {
     expect(lockOf("lorewards-state-sync")).toBe("lorewards");
   });
 
+  it("settles the Vault dividend at midnight UTC under its own lease", () => {
+    const job = CRON_JOBS.find((j) => j.name === "vault-dividend");
+    expect(job).toMatchObject({
+      defaultSchedule: "0 0 * * *",
+      lockName: "vault-dividend",
+      scheduleConfigKey: "cronSchedule_vaultDividend",
+      exportName: "runVaultDividend",
+    });
+    expect(CRON_JOBS.some((j) => j.name === "passive-income")).toBe(false);
+  });
+
   it("runs the geo profile recalculation under its own lease", () => {
     const job = CRON_JOBS.find((j) => j.name === "geo-profiles");
     expect(job).toMatchObject({

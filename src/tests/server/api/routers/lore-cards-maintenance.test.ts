@@ -181,6 +181,28 @@ describe("purgeDuplicateCards", () => {
     expect(db.cardOwnership.delete).not.toHaveBeenCalled();
   });
 
+  it("leaves a trophy card that shares a page and wiki with a lore card untouched", async () => {
+    const stored = [
+      { id: "keep", lorewardEntryId: null },
+      { id: "dup", lorewardEntryId: null },
+      { id: "trophy", lorewardEntryId: "e1" },
+    ];
+    db.$queryRawUnsafe.mockResolvedValue([{ wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" }]);
+    db.card.findMany.mockImplementation(async ({ where }: any) =>
+      stored.filter((c) => where.lorewardEntryId !== null || c.lorewardEntryId === null)
+    );
+    db.cardOwnership.findMany.mockResolvedValue([]);
+
+    await callerAs(db, "admin").purgeDuplicateCards({});
+
+    expect(db.card.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ["dup"] } } });
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { cardId: "trophy" } })
+    );
+    // A page whose only duplicate is a trophy is not a duplicate group at all.
+    expect(String(db.$queryRawUnsafe.mock.calls[0]?.[0])).toContain('"lorewardEntryId" IS NULL');
+  });
+
   it("merges and deletes each group inside one transaction", async () => {
     db.$queryRawUnsafe.mockResolvedValue([{ wikiArticleTitle: "Caphiria", wikiSource: "ixwiki" }]);
     db.card.findMany.mockResolvedValue([{ id: "keep" }, { id: "dup" }]);
