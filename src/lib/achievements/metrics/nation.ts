@@ -109,7 +109,7 @@ export const nationLoader: MetricLoader = {
   id: "nation",
   scope: "country",
   keys: ["ownedMonths", "identityComplete", "armsAttached", "storyPinsApproved", "storyPinYears"],
-  async load({ db, countryId, now }) {
+  async load({ db, countryId, now }): Promise<Record<string, number>> {
     if (!countryId) return {};
     const [country, pins] = await Promise.all([
       db.country.findUnique({
@@ -137,7 +137,7 @@ export const nationAccountLoader: MetricLoader = {
   id: "nation-account",
   scope: "account",
   keys: ["heraldryPublishedInstitutions", "mapEditsApproved"],
-  async load({ db, clerkUserId }) {
+  async load({ db, clerkUserId }): Promise<Record<string, number>> {
     const [heraldryPublishedInstitutions, mapEditsApproved] = await Promise.all([
       db.heraldryAchievement.count({
         where: {

@@ -212,7 +212,7 @@ export const diplomacyLoader: MetricLoader = {
     "pacifist12m",
     "peacekeeping15d",
   ],
-  async load({ db, countryId, userId, now }: MetricContext) {
+  async load({ db, countryId, userId, now }: MetricContext): Promise<Record<string, number>> {
     if (!countryId) return {};
     const [
       embassiesLasting6m,
