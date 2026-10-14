@@ -328,7 +328,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Achievements and trophies",
-    path: "/achievements",
+    path: "/vault/achievements",
     icon: Medal,
     category: "Community",
     description: "Milestones, badges and Loreward trophies",

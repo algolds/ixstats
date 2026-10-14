@@ -120,6 +120,7 @@ async function onAchievementUnlock(params: {
 
   await notificationAPI.trigger({
     achievement: {
+      key: params.achievementId,
       name: `${emoji} ${params.name}`,
       description: params.description,
       category: params.category,

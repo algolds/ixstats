@@ -51,6 +51,25 @@ describe("ActivityHooks producers", () => {
     });
   });
 
+  it("an achievement unlock carries the achievement key so the feed can open it", async () => {
+    await ActivityHooks.User.onAchievementUnlocked(
+      "clerk_1",
+      "c1",
+      "First Million",
+      "d",
+      "econ-1m"
+    );
+    expect(lastActivity()).toMatchObject({
+      type: "achievement",
+      title: "Arcadia Unlocks Achievement: First Million",
+    });
+    expect(JSON.parse(lastActivity().metadata as string)).toMatchObject({
+      eventType: "achievement_unlocked",
+      achievementName: "First Million",
+      achievementKey: "econ-1m",
+    });
+  });
+
   it("a law with an economic effect files under Economic, others under Achievements", async () => {
     await ActivityHooks.Government.onLawPassed("c1", "Tariff Act", 0.5);
     expect(lastActivity().type).toBe("economic");
