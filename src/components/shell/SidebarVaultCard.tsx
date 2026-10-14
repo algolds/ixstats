@@ -33,7 +33,9 @@ const VAULT_LINKS = [
 
 function Earnings() {
   const { data: earnings } = api.vault.getTodayEarnings.useQuery();
-  if (!earnings?.sources.length) {
+  // Nothing while loading or failed: "nothing earned" would be a claim the query has not made.
+  if (!earnings) return null;
+  if (!earnings.sources.length) {
     return <p className="text-footnote text-label-secondary">Nothing earned yet today</p>;
   }
   return (

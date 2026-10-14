@@ -146,6 +146,12 @@ describe("SidebarVaultCard disclosure", () => {
     expect(screen.getByText("+150")).toBeInTheDocument();
   });
 
+  it("shows no earnings line while the earnings are loading or failed", () => {
+    earnings = undefined;
+    open();
+    expect(screen.queryByText("Nothing earned yet today")).toBeNull();
+  });
+
   it("says so when nothing has been earned today", () => {
     earnings = { total: 0, sources: [] };
     open();
