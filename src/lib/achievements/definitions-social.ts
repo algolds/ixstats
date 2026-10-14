@@ -1,7 +1,6 @@
 /**
- * Social achievement definitions (ThinkPages, story chains, followers, trending posts).
- * Spread into ACHIEVEMENT_DEFINITIONS in ./definitions: SOCIAL_ACHIEVEMENTS at the Social
- * position, RECRUITER_ACHIEVEMENTS at the end of the list.
+ * Social achievement definitions (ThinkPages, story chains, followers, trending posts, recruiting).
+ * Spread into ALL_DEFINITIONS in ./sets.
  */
 
 import type { AchievementDefinition } from "./definitions";
@@ -14,8 +13,8 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Common",
     points: 10,
-    iconUrl: "📝",
-    condition: (data) => (data.thinkpageCount ?? 0) >= 1,
+    icon: "PageEdit",
+    rule: ["SOCIAL", "thinkpageCount", ">=", 1],
   },
   {
     id: "social-thinkpage-author",
@@ -24,8 +23,8 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Uncommon",
     points: 30,
-    iconUrl: "✍️",
-    condition: (data) => (data.thinkpageCount ?? 0) >= 10,
+    icon: "EditPencil",
+    rule: ["SOCIAL", "thinkpageCount", ">=", 10],
   },
   {
     id: "social-prolific-author",
@@ -34,8 +33,8 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Rare",
     points: 60,
-    iconUrl: "📚",
-    condition: (data) => (data.thinkpageCount ?? 0) >= 50,
+    icon: "Journal",
+    rule: ["SOCIAL", "thinkpageCount", ">=", 50],
   },
   {
     id: "story-chain-1",
@@ -44,7 +43,7 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Common",
     points: 10,
-    iconUrl: "📜",
+    icon: "Notes",
     condition: (data) => (data.storyChainCount ?? 0) >= 1,
   },
   {
@@ -54,7 +53,7 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Rare",
     points: 30,
-    iconUrl: "📚",
+    icon: "Book",
     condition: (data) => (data.storyChainCount ?? 0) >= 5,
   },
   {
@@ -64,7 +63,7 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Legendary",
     points: 100,
-    iconUrl: "🏛️",
+    icon: "Bank",
     condition: (data) => (data.storyChainCount ?? 0) >= 25,
   },
   {
@@ -74,8 +73,8 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Rare",
     points: 50,
-    iconUrl: "🌟",
-    condition: (data) => (data.followerCount ?? 0) >= 100,
+    icon: "Star",
+    rule: ["SOCIAL", "followerCount", ">=", 100],
   },
   {
     id: "social-trending",
@@ -84,8 +83,8 @@ export const SOCIAL_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Epic",
     points: 80,
-    iconUrl: "🔥",
-    condition: (data) => (data.trendingPostCount ?? 0) >= 1,
+    icon: "Flare",
+    rule: ["SOCIAL", "trendingPostCount", ">=", 1],
   },
 ];
 
@@ -98,8 +97,8 @@ export const RECRUITER_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Common",
     points: 10,
-    iconUrl: "📨",
-    condition: (data) => (data.recruitedCount ?? 0) >= 1,
+    icon: "Mail",
+    rule: ["SOCIAL", "recruitedCount", ">=", 1],
   },
   {
     id: "social-envoy",
@@ -108,8 +107,8 @@ export const RECRUITER_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Uncommon",
     points: 30,
-    iconUrl: "🕊️",
-    condition: (data) => (data.recruitedCount ?? 0) >= 5,
+    icon: "Send",
+    rule: ["SOCIAL", "recruitedCount", ">=", 5],
   },
   {
     id: "social-founders-hand",
@@ -118,7 +117,7 @@ export const RECRUITER_ACHIEVEMENTS: AchievementDefinition[] = [
     category: "Social",
     rarity: "Rare",
     points: 60,
-    iconUrl: "🏰",
-    condition: (data) => (data.recruitedCount ?? 0) >= 25,
+    icon: "Home",
+    rule: ["SOCIAL", "recruitedCount", ">=", 25],
   },
 ];

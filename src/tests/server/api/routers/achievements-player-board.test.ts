@@ -10,9 +10,9 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const createCaller = createCallerFactory(achievementsProgressRouter);
 
-const unlock = (userId: string, points: number, rarity = "Common") => ({
+const unlock = (userId: string, points: number, rarity = "Common", isActive = true) => ({
   userId,
-  achievement: { points, rarity },
+  achievement: { points, rarity, isActive },
 });
 
 function makeDb() {
@@ -24,9 +24,10 @@ function makeDb() {
         .mockResolvedValue([
           unlock("u_me", 10),
           unlock("u_me", 50, "Epic"),
+          unlock("u_me", 40, "Rare", false),
           unlock("u_top", 250, "Legendary"),
           unlock("u_top", 10),
-          unlock("u_tie", 60, "Rare"),
+          unlock("u_tie", 100, "Rare"),
           unlock("u_low", 5),
         ]),
     },
@@ -51,15 +52,13 @@ function callerFor(db: ReturnType<typeof makeDb>, clerkUserId: string | null = "
 }
 
 describe("achievements.getMySummary", () => {
-  it("counts the caller's unlocks of active achievements, their points and their rank", async () => {
+  it("counts the caller's unlocks of active achievements, all their points (Legacy too) and their rank", async () => {
     const db = makeDb();
     const summary = await callerFor(db).getMySummary();
 
-    expect(summary).toEqual({ unlocked: 2, activeTotal: 40, points: 60, rank: 2 });
+    // 2 active unlocks of "N of 40"; the Legacy unlock adds its 40 points but no count
+    expect(summary).toEqual({ unlocked: 2, activeTotal: 40, points: 100, rank: 2 });
     expect(db.achievement.count).toHaveBeenCalledWith({ where: { isActive: true } });
-    expect(db.userAchievement.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { achievement: { isActive: true } } })
-    );
   });
 
   it("gives a caller with no unlocks zeros and no rank", async () => {
@@ -77,14 +76,14 @@ describe("achievements.getMySummary", () => {
 });
 
 describe("achievements.getPlayerLeaderboard", () => {
-  it("ranks players by achievement points, ties sharing a rank, with names from the account", async () => {
+  it("ranks players by achievement points (Legacy included), ties sharing a rank, with names from the account", async () => {
     const db = makeDb();
     const board = await callerFor(db).getPlayerLeaderboard({ limit: 10 });
 
     expect(board.map((r) => [r.rank, r.name, r.totalPoints])).toEqual([
       [1, "topdog", 260],
-      [2, "MeForum", 60],
-      [2, "Player", 60],
+      [2, "MeForum", 100],
+      [2, "Player", 100],
       [4, "lowly", 5],
     ]);
     expect(board[0]).toMatchObject({ achievementCount: 2, rareAchievements: 1, isViewer: false });

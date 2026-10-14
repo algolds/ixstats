@@ -7,11 +7,6 @@ import { accentColor } from "~/lib/design/identity";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
-/** The icon as a CSS mask image, for the jewel layer (`--heraldry-mask`). */
-function maskVar(iconPath: string): string {
-  return `url("${iconPath.replace(/"/g, '\\"')}")`;
-}
-
 /**
  * The aurora's secondary hue (`--facet-accent-2`).
  */
@@ -20,49 +15,28 @@ function auroraStyle(categoryTheme: CategoryTheme): CSSProperties {
 }
 
 /**
- * Jewel achievement icon: the achievement icon filled with a category-tuned metallic gem gradient (`facet-jewel`, styles/card-art.css). Locked: a
- * faint blurred icon under a lock.
+ * The achievement's icon, in the colour of the pedestal it sits on. Locked: a faint blurred icon
+ * under a lock.
  */
-export function JewelAchievementIcon({
-  iconPath,
-  categoryTheme,
+export function AchievementIcon({
+  icon: Icon,
   isUnlocked,
-  className = "h-7.5 w-7.5",
+  className = "size-7.5",
 }: {
-  iconPath: string;
-  categoryTheme: CategoryTheme;
+  icon: React.ComponentType<{ className?: string }>;
   isUnlocked: boolean;
   className?: string;
 }) {
   if (!isUnlocked) {
     return (
       <div className="relative flex h-full w-full items-center justify-center">
-        <img
-          src={iconPath}
-          alt=""
-          className="size-6 object-contain opacity-20 blur-[1.5px]"
-          loading="lazy"
-        />
+        <Icon aria-hidden className="size-6 opacity-20 blur-[1.5px]" />
         <Lock role="img" aria-label="Locked" className="text-label-secondary absolute size-5" />
       </div>
     );
   }
 
-  const [from, via, to] = categoryTheme.jewel;
-  return (
-    <div
-      aria-hidden
-      className={cn(className, "facet-jewel drop-shadow-md")}
-      style={
-        {
-          "--heraldry-mask": maskVar(iconPath),
-          "--jewel-from": from,
-          "--jewel-via": via,
-          "--jewel-to": to,
-        } as CSSProperties
-      }
-    />
-  );
+  return <Icon aria-hidden className={cn(className, "drop-shadow-md")} />;
 }
 
 /**

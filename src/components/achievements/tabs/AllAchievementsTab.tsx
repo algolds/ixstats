@@ -16,8 +16,9 @@ import {
   OnePointCircle as CircleDot,
   Component as Layers,
   Hexagon,
+  Hourglass,
 } from "iconoir-react";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import type { RouterOutputs } from "~/trpc/react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -31,11 +32,10 @@ import {
   getTrophyTier,
   type TrophyTier,
   groupAchievements,
-  getAchievementGameIconPath,
   getCategoryTheme,
   type GroupedAchievementItem,
 } from "../constants";
-import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
+import { AchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
 import { Card } from "~/components/ui/card";
 
 const MotionCard = motion.create(Card);
@@ -77,7 +77,7 @@ const RARITY_CONFIG: Record<
 const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 
 /**
- * Grouped Achievement Series Card with Unified Jewel Icon & Aurora-Watermark Backdrop
+ * Grouped Achievement Series Card with an icon and an aurora-watermark backdrop
  */
 function GroupedSeriesCard({
   item,
@@ -143,9 +143,7 @@ function GroupedSeriesCard({
   const isUltraRare = (activeLevel.globalUnlockPercent ?? 100) < 5;
   const categoryTheme = getCategoryTheme(item.category);
   const CategoryIcon = categoryTheme.icon;
-  const rawIconPath =
-    item.iconPath || getAchievementGameIconPath(activeLevel.key, activeLevel.category);
-  const iconPath = createUrl(rawIconPath);
+  const isLegacy = item.isLegacy;
   const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
   return (
@@ -156,12 +154,13 @@ function GroupedSeriesCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
-      interactive={isUnlocked}
+      interactive={isUnlocked && !isLegacy}
       className={cn(
         "flex flex-col justify-between overflow-hidden p-5",
         focusIndex !== -1 && "outline-tint outline-2 outline-offset-2",
+        isLegacy && "opacity-70 grayscale",
         isUnlocked
-          ? categoryTheme.cardBorderHover
+          ? !isLegacy && categoryTheme.cardBorderHover
           : "bg-surface-secondary border-dashed shadow-none select-none"
       )}
     >
@@ -179,6 +178,13 @@ function GroupedSeriesCard({
               <TierIcon aria-hidden />
               <span>{tierConfig.label}</span>
             </Badge>
+
+            {isLegacy && (
+              <Badge variant="default">
+                <Hourglass aria-hidden />
+                <span>Legacy</span>
+              </Badge>
+            )}
 
             {isUltraRare && (
               <Badge variant="info" className="tabular-nums">
@@ -209,12 +215,7 @@ function GroupedSeriesCard({
                 : "border-separator bg-fill-4 text-label-tertiary cursor-not-allowed border border-dashed"
             )}
           >
-            <JewelAchievementIcon
-              iconPath={iconPath}
-              categoryTheme={categoryTheme}
-              isUnlocked={!!isUnlocked}
-              className="size-7.5"
-            />
+            <AchievementIcon icon={item.icon} isUnlocked={!!isUnlocked} className="size-7.5" />
           </motion.div>
 
           <div className="min-w-0 flex-1 space-y-1">
@@ -257,7 +258,7 @@ function GroupedSeriesCard({
                 aria-label="Tiers"
                 className="bg-fill-3 rounded-control flex items-center gap-1 p-0.5"
               >
-                {item.levels.map((lvl: any, idx: number) => {
+                {item.levels.map((lvl, idx) => {
                   const lvlUnlocked = lvl.isUnlocked;
                   const isCurrent = inspectedIndex === idx;
                   const isShaking = shakingTierKey === lvl.key;
@@ -377,12 +378,13 @@ export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTa
     return groupAchievements(achievements || []);
   }, [achievements]);
 
-  // Counts per rarity for badges in toggle
+  // Counts per rarity for badges in toggle: active achievements only, Legacy counts in no total
   const rarityCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: groupedItems.length };
+    const active = groupedItems.filter((item) => !item.isLegacy);
+    const counts: Record<string, number> = { all: active.length };
     for (const r of rarities) {
       if (r === "all") continue;
-      counts[r] = groupedItems.filter((item) => item.levels.some((l) => l.rarity === r)).length;
+      counts[r] = active.filter((item) => item.levels.some((l) => l.rarity === r)).length;
     }
     return counts;
   }, [groupedItems]);

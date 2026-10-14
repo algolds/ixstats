@@ -1,12 +1,14 @@
 /**
  * Which achievements belong to the account (IxnayID) and which need a country.
  *
- * Account-level achievements read only data that follows the person — tenure, other
- * unlocks, their own ThinkPages posts and their card collection — so they evaluate and
- * unlock for a user with no country. Everything else (GDP, population, military,
- * embassies, government, followers of a country) keeps needing one.
+ * Account-level achievements read only data that follows the person: tenure, other unlocks, their
+ * own ThinkPages posts, their card collection, and the metrics of every account-scope loader
+ * (`metrics/registry.ts`). They evaluate and unlock for a user with no country. A definition is
+ * account-level when its rule reads such a metric, or when it says `accountLevel`; everything else
+ * (GDP, military, embassies, government, followers of a country, country-scope loaders) needs one.
  */
 import { getAchievementById } from "./definitions";
+import { METRIC_LOADERS } from "./metrics/registry";
 
 /** Metrics computed from the user, never from a country. */
 export const ACCOUNT_LEVEL_METRICS: ReadonlySet<string> = new Set([
@@ -28,49 +30,30 @@ export const RECRUITER_ACHIEVEMENT_IDS: ReadonlySet<string> = new Set([
   "social-founders-hand",
 ]);
 
-/** Built-in definitions whose condition reads only account-level metrics. */
-export const ACCOUNT_LEVEL_ACHIEVEMENT_IDS: ReadonlySet<string> = new Set([
-  // General: sign-up, tenure, achievement count
-  "gen-welcome",
-  "gen-one-week",
-  "gen-one-month",
-  "gen-three-months",
-  "gen-one-year",
-  "gen-achievement-hunter",
-  "gen-achievement-master",
-  "gen-achievement-legend",
-  "vid-end-of-days",
-  "vid-annual",
-  "meme-ns-ref",
-  // Social: the user's own ThinkPages posts
-  "social-first-thinkpage",
-  "social-thinkpage-author",
-  "social-prolific-author",
-  "social-trending",
-  "lore-scholar",
-  // Vault collection
-  "collect-lore-keeper",
-  "collect-archaeologist",
-  "collect-diplomat",
-  // Recruiting: approved claims filed through the user's invite links
-  ...RECRUITER_ACHIEVEMENT_IDS,
-]);
+/** True when the metric follows the user rather than a country. */
+function isAccountMetric(metric: string): boolean {
+  return (
+    ACCOUNT_LEVEL_METRICS.has(metric) ||
+    METRIC_LOADERS.some((loader) => loader.scope === "account" && loader.keys.includes(metric))
+  );
+}
 
 /**
- * True when the achievement needs country data to evaluate. Built-in definitions use the
- * id list above; an admin-authored row without a built-in definition is account-level
- * when its `conditionJson` rule reads an account-level metric.
+ * True when the achievement needs country data to evaluate. Built-in definitions decide by their
+ * rule's metric (or `accountLevel`); an admin-authored row without a built-in definition is
+ * account-level when its `conditionJson` rule reads an account-level metric.
  */
 export function achievementRequiresCountry(achievement: {
   key: string;
   conditionJson?: string | null;
 }): boolean {
-  if (ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has(achievement.key)) return false;
-  if (getAchievementById(achievement.key)) return true;
+  const definition = getAchievementById(achievement.key);
+  if (definition)
+    return definition.rule ? !isAccountMetric(definition.rule[1]) : !definition.accountLevel;
   if (achievement.conditionJson) {
     try {
       const rule = JSON.parse(achievement.conditionJson);
-      if (rule && typeof rule.metric === "string") return !ACCOUNT_LEVEL_METRICS.has(rule.metric);
+      if (rule && typeof rule.metric === "string") return !isAccountMetric(rule.metric);
     } catch {
       // unparseable rule: treat as country-bound
     }

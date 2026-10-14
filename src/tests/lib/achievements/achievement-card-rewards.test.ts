@@ -17,10 +17,6 @@ jest.mock("~/lib/activity", () => ({
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
 }));
-jest.mock("~/lib/achievements/scaling", () => ({
-  ...jest.requireActual("~/lib/achievements/scaling"),
-  getScaleThresholds: jest.fn().mockResolvedValue({}),
-}));
 
 import {
   COMMEMORATIVE_CARD_DEFINITIONS,
