@@ -6,11 +6,6 @@ jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
 }));
 
-jest.mock("~/components/mycountry/shared/primitives", () => {
-  const actual = jest.requireActual("~/components/mycountry/shared/primitives");
-  return { ...actual, useCountryData: () => ({ country: { name: "Alpha" } }) };
-});
-
 import { EmbassyCard } from "~/components/mycountry/domains/diplomacy/embassy-network/EmbassyCard";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
 
@@ -89,5 +84,14 @@ describe("EmbassyCard asymmetry badge", () => {
       />
     );
     expect(screen.getByText("Resource Synergist")).toBeTruthy();
+  });
+});
+
+describe("EmbassyCard for the owner", () => {
+  it("offers embassy details and no Vault card trading link", () => {
+    const { container } = render(<EmbassyCard embassy={embassy()} isOwner onClick={() => {}} />);
+    expect(container.textContent).toContain("Open for embassy details");
+    expect(container.textContent).not.toMatch(/Trade Cards/);
+    expect(container.querySelector('a[href*="/vault"]')).toBeNull();
   });
 });

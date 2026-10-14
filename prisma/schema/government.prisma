@@ -712,7 +712,6 @@ model NationalIssue {
   // See plans/statecraft-stage1.md.
   reconReadyIxTime    Float?
   createdIxTime       Float
-  ixCreditsAwarded    Int       @default(0)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
