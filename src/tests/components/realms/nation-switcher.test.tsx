@@ -43,10 +43,7 @@ describe("NationSwitcher", () => {
   it("renders nothing for a player with fewer than two nations", () => {
     mockData = {
       activeCountryId: "c1",
-      dividendCountryId: "c1",
-      realms: [
-        { id: "default", slug: "ixnay", name: "Ixnay", nations: [nation("c1", "Aurelia")] },
-      ],
+      realms: [{ id: "default", slug: "ixnay", name: "Ixnay", nations: [nation("c1", "Aurelia")] }],
     };
     const { container } = render(<NationSwitcher />);
     expect(container).toBeEmptyDOMElement();
@@ -55,7 +52,6 @@ describe("NationSwitcher", () => {
   it("lists nations grouped by realm, marks the active one, and switches to another", async () => {
     mockData = {
       activeCountryId: "c1",
-      dividendCountryId: "c1",
       realms: [
         { id: "default", slug: "ixnay", name: "Ixnay", nations: [nation("c1", "Aurelia")] },
         {
@@ -87,7 +83,6 @@ describe("NationSwitcher", () => {
   it("reports a refused switch", () => {
     mockData = {
       activeCountryId: null,
-      dividendCountryId: "c1",
       realms: [
         {
           id: "default",

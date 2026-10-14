@@ -8,11 +8,6 @@
 jest.mock("~/lib/vault/vault-service", () => ({
   getVaultConfig: jest.fn(),
 }));
-// vault-ledger <-> vault-passive-income import each other; without this mock the
-// re-entrant require would spread a half-initialised ledger (TDZ on LedgerError).
-jest.mock("~/lib/vault/vault-passive-income", () => ({
-  catchUpPassiveIncome: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/lib/vault/vault-ledger", () => ({
   ...jest.requireActual("~/lib/vault/vault-ledger"),
   earnCreditsTx: jest.fn(),

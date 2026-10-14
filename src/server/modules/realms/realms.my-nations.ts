@@ -4,10 +4,9 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { resolveDividendCountryId } from "~/lib/vault/dividend-nation";
 
 type MyNationsDb = {
-  country: Pick<PrismaClient["country"], "findMany" | "findFirst">;
+  country: Pick<PrismaClient["country"], "findMany">;
 };
 
 interface MyNation {
@@ -29,25 +28,20 @@ export async function listMyNations(
   user: { id: string; countryId: string | null }
 ): Promise<{
   activeCountryId: string | null;
-  /** The nation that pays the account's daily dividend (resolveDividendCountryId). */
-  dividendCountryId: string | null;
   realms: MyNationsRealm[];
 }> {
-  const [owned, dividendCountryId] = await Promise.all([
-    db.country.findMany({
-      where: { ownerUserId: user.id },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        flag: true,
-        realmId: true,
-        realm: { select: { slug: true, name: true } },
-      },
-    }),
-    resolveDividendCountryId(db, user),
-  ]);
+  const owned = await db.country.findMany({
+    where: { ownerUserId: user.id },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      flag: true,
+      realmId: true,
+      realm: { select: { slug: true, name: true } },
+    },
+  });
 
   const byRealm = new Map<string, MyNationsRealm>();
   for (const { realmId, realm, ...nation } of owned) {
@@ -69,5 +63,5 @@ export async function listMyNations(
       Number(b.id === DEFAULT_REALM_ID) - Number(a.id === DEFAULT_REALM_ID) ||
       a.name.localeCompare(b.name)
   );
-  return { activeCountryId: user.countryId, dividendCountryId, realms };
+  return { activeCountryId: user.countryId, realms };
 }

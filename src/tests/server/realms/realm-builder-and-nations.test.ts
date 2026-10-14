@@ -133,7 +133,7 @@ describe("resolveBuilderRealm", () => {
 });
 
 describe("listMyNations", () => {
-  it("groups the player's nations by realm (Ixnay first), with the active and dividend nations", async () => {
+  it("groups the player's nations by realm (Ixnay first), with the active nation", async () => {
     const owned = [
       {
         id: "c1",
@@ -169,17 +169,13 @@ describe("listMyNations", () => {
       },
     ];
     const db = {
-      country: {
-        findMany: jest.fn().mockResolvedValue(owned),
-        findFirst: jest.fn().mockResolvedValue({ id: "c1" }),
-      },
+      country: { findMany: jest.fn().mockResolvedValue(owned) },
     } as any;
     const result = await listMyNations(db, { id: "u1", countryId: "e2" });
     expect(db.country.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { ownerUserId: "u1" } })
     );
     expect(result.activeCountryId).toBe("e2");
-    expect(result.dividendCountryId).toBe("c1");
     expect(result.realms.map((r) => [r.id, r.nations.map((n) => n.id)])).toEqual([
       ["default", ["c1"]],
       ["alpha", ["a1"]],
@@ -190,14 +186,10 @@ describe("listMyNations", () => {
 
   it("an account with no nations gets an empty list", async () => {
     const db = {
-      country: {
-        findMany: jest.fn().mockResolvedValue([]),
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
+      country: { findMany: jest.fn().mockResolvedValue([]) },
     } as any;
     await expect(listMyNations(db, { id: "u1", countryId: null })).resolves.toEqual({
       activeCountryId: null,
-      dividendCountryId: null,
       realms: [],
     });
   });

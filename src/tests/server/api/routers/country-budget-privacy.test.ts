@@ -30,13 +30,6 @@ jest.mock("~/server/shared/mycountry-helpers", () => {
     calculateVitalityScores: jest.fn(() => ({ overallScore: 70 })),
   };
 });
-jest.mock("~/lib/economy/budget-vault-calculator", () => ({
-  __esModule: true,
-  budgetVaultCalculator: {
-    calculateBudgetMultiplier: jest.fn(async () => 1.2),
-    getMultiplierDescription: jest.fn(() => "Boosted"),
-  },
-}));
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -47,9 +40,7 @@ import { electionsBrokersRouter } from "~/server/api/routers/elections/brokers";
 import { securityDefenseRouter } from "~/server/api/routers/security/defense";
 import { securityMilitaryRouter } from "~/server/api/routers/security/military";
 import { diplomaticEmbassiesQueriesEmbassyListingsRouter } from "~/server/api/routers/diplomacy/embassies/queries/embassyListings";
-import { vaultBalanceCreditsRouter } from "~/server/api/routers/vault/balance-credits";
 import { transportRouteQueriesRouter } from "~/server/api/routers/transport/routeQueries";
-import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
 import { isBudgetLedgerRow, redactEconomicBudget } from "~/lib/country/public-record";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -303,7 +294,6 @@ const brokers = createCallerFactory(electionsBrokersRouter);
 const defense = createCallerFactory(securityDefenseRouter);
 const military = createCallerFactory(securityMilitaryRouter);
 const embassies = createCallerFactory(diplomaticEmbassiesQueriesEmbassyListingsRouter);
-const vault = createCallerFactory(vaultBalanceCreditsRouter);
 const transport = createCallerFactory(transportRouteQueriesRouter);
 
 const OWNERS: Array<[string, Ctx]> = [
@@ -442,11 +432,6 @@ const OWNER_ONLY: Array<[string, Call, (db: Db) => jest.Mock]> = [
     "government.getCivilServiceStatus",
     (ctx) => governmentComponents(ctx).getCivilServiceStatus({ countryId: COUNTRY }),
     (db) => db.governmentComponent.findMany,
-  ],
-  [
-    "vault.getBudgetMultiplier",
-    (ctx) => vault(ctx).getBudgetMultiplier({ countryId: COUNTRY }),
-    () => budgetVaultCalculator.calculateBudgetMultiplier as unknown as jest.Mock,
   ],
 ];
 

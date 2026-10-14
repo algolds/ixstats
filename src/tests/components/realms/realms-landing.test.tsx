@@ -112,7 +112,7 @@ describe("realms landing hero", () => {
 
   it("offers Join a realm to a signed-in player with no nation", () => {
     auth = { isLoaded: true, isSignedIn: true };
-    queries["realms.myNations"] = { activeCountryId: null, dividendCountryId: null, realms: [] };
+    queries["realms.myNations"] = { activeCountryId: null, realms: [] };
     render(<RealmsLandingPage />);
     expect(screen.getByRole("link", { name: "Join a realm" }).getAttribute("href")).toBe(
       "#open-to-join"
@@ -125,7 +125,6 @@ describe("realms landing hero", () => {
     queries["realms.directory"] = [{ ...EURTH, myNationCount: 2 }, QUIET];
     queries["realms.myNations"] = {
       activeCountryId: "n1",
-      dividendCountryId: "n1",
       realms: [
         {
           id: "eurth",
@@ -284,7 +283,6 @@ describe("realms landing sections", () => {
     auth = { isLoaded: true, isSignedIn: true };
     queries["realms.myNations"] = {
       activeCountryId: null,
-      dividendCountryId: null,
       realms: [
         {
           id: "eurth",

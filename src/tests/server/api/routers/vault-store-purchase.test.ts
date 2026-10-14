@@ -4,9 +4,6 @@
  * the amount, type and metadata from the client, is gone.
  */
 
-jest.mock("~/lib/vault/vault-passive-income", () => ({
-  catchUpPassiveIncome: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/lib/vault/vault-ledger", () => ({
   ...jest.requireActual("~/lib/vault/vault-ledger"),
   getOrCreateVault: jest.fn(),

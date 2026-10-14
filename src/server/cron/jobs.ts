@@ -6,8 +6,7 @@
  *
  * Adding a job: add a row here (jobs.test.ts checks `modulePath` and `exportName` against the
  * source), then the operator adds its name to CRON_ENABLED_JOBS. Lock names are shared with any
- * manual trigger of the same job (e.g. `manualDistribution` uses "passive-income"); never
- * rename one without updating those callers.
+ * manual trigger of the same job; never rename one without updating those callers.
  *
  * Static imports stay out of this file: `load` imports each job lazily so the table can be read
  * without loading Prisma.
@@ -46,17 +45,6 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     exportName: "processExpiredAuctions",
     load: async () =>
       (await import("~/lib/economy/auction-completion-cron")).processExpiredAuctions,
-  },
-  {
-    name: "passive-income",
-    defaultSchedule: "0 0 * * *",
-    scheduleConfigKey: "cronSchedule_passiveIncome",
-    lockName: "passive-income",
-    timeoutMs: 30 * MINUTE,
-    modulePath: "~/lib/economy/passive-income-distribution-cron",
-    exportName: "distributePassiveIncome",
-    load: async () =>
-      (await import("~/lib/economy/passive-income-distribution-cron")).distributePassiveIncome,
   },
   {
     name: "card-values",

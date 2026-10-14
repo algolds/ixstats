@@ -50,9 +50,6 @@ let errorQueries = new Set<string>();
 const queryData: Record<string, unknown> = {
   getBalance: { credits: 12345, canClaimDailyBonus: true, loginStreak: 1 },
   getVaultLevel: { vaultLevel: 4 },
-  myNations: { dividendCountryId: "country-1" },
-  calculatePassiveIncome: { dailyDividend: 8, weeklyDividend: 7777, monthlyDividend: 33333 },
-  getBudgetMultiplier: { percentChange: 2 },
 };
 const leaf = (name: string) => ({
   useQuery: () => {
@@ -109,13 +106,9 @@ describe("Vault dashboard", () => {
     expect(text).not.toContain("Available balance");
   });
 
-  it("keeps treasury revenue in the yields card, not the Wallet", () => {
+  it("shows no yield projections, which no longer read a nation", () => {
     const { container } = render(<VaultDashboardSection />);
-    const wallet = screen.getByText("Wallet").closest(".facet-pane") as HTMLElement;
-    expect(wallet.textContent).not.toContain("Treasury revenue");
-    expect(wallet.textContent).not.toContain("7,777");
-    expect(occurrences(container.textContent ?? "", "7,777")).toBe(1);
-    expect(occurrences(container.textContent ?? "", "33,333")).toBe(1);
+    expect(container.textContent).not.toMatch(/treasury revenue|yield/i);
   });
 
   it("has one daily claim control, the Wallet's daily reward", () => {

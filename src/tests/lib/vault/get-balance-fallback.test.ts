@@ -3,12 +3,6 @@
  * the claim would then fail (or double-fire) against a database that is down.
  */
 
-// vault-ledger <-> vault-passive-income import each other; mock one side to
-// avoid the re-entrant require.
-jest.mock("~/lib/vault/vault-passive-income", () => ({
-  catchUpPassiveIncome: jest.fn().mockResolvedValue(undefined),
-}));
-
 import type { PrismaClient } from "@prisma/client";
 import { getBalance } from "~/lib/vault/vault-ledger";
 

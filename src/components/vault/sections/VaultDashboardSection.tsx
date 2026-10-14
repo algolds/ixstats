@@ -5,7 +5,6 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import type { CardInstance } from "~/types/cards-display";
 import { VaultCollectionCard } from "./dashboard/VaultCollectionCard";
-import { VaultYieldProjectionsCard } from "./dashboard/VaultYieldProjectionsCard";
 import { VaultRecentActivityCard, type ActivityEntry } from "./dashboard/VaultRecentActivityCard";
 import { VaultShowcaseGrid } from "./dashboard/VaultShowcaseGrid";
 import { VaultWalletCard } from "./dashboard/VaultWalletCard";
@@ -78,30 +77,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
   const { data: leaderboard } = api.achievements.getLeaderboard.useQuery(
     { limit: 100 },
     { enabled: !!userData?.countryId }
-  );
-
-  // The dividend is paid from the account's primary nation, not necessarily the active one.
-  const { data: myNations } = api.realms.myNations.useQuery(undefined, { enabled: !!user });
-  const dividendCountryId = myNations?.dividendCountryId ?? null;
-
-  const { data: passiveIncomeData } = api.vault.calculatePassiveIncome.useQuery(
-    { countryId: dividendCountryId ?? "" },
-    { enabled: !!dividendCountryId }
-  );
-
-  const { data: budgetMultiplierData } = api.vault.getBudgetMultiplier.useQuery(
-    { countryId: dividendCountryId ?? "" },
-    { enabled: !!dividendCountryId }
-  );
-
-  const { data: activeCapData, isLoading: activeCapLoading } = api.vault.checkDailyCap.useQuery(
-    { earnType: "EARN_ACTIVE" },
-    { enabled: !!user }
-  );
-
-  const { data: socialCapData, isLoading: socialCapLoading } = api.vault.checkDailyCap.useQuery(
-    { earnType: "EARN_SOCIAL" },
-    { enabled: !!user }
   );
 
   type TopCardItem = NonNullable<typeof topCardsData>[number];
@@ -177,19 +152,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
             activeAuctions={stats?.activeAuctions ?? 0}
           />
 
-          <VaultYieldProjectionsCard
-            loading={loading}
-            passiveIncomeData={passiveIncomeData}
-            loginStreak={balanceData?.loginStreak ?? 0}
-            budgetMultiplierPercent={budgetMultiplierData?.percentChange ?? 0}
-            vaultLevel={levelData?.vaultLevel ?? 1}
-            activeCapLoading={activeCapLoading}
-            activeCapData={activeCapData}
-            socialCapLoading={socialCapLoading}
-            socialCapData={socialCapData}
-          />
-
-          {/* Activity placed directly under Treasury Revenue & Yields */}
           <VaultRecentActivityCard loading={loading} activities={activities} />
         </div>
 

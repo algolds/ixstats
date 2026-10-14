@@ -26,10 +26,6 @@ import {
   updateLoginStreak as bonusUpdateLoginStreak,
 } from "./vault-daily-bonus";
 import {
-  calculatePassiveIncome as incomeCalculatePassiveIncome,
-  catchUpPassiveIncome as incomeCatchUpPassiveIncome,
-} from "./vault-passive-income";
-import {
   getPurchasedItemsEffects as perksGetPurchasedItemsEffects,
   clearUserPerksCache as perksClearUserPerksCache,
   getCardCapacityBoost as perksGetCardCapacityBoost,
@@ -167,14 +163,6 @@ export class VaultService {
 
   updateLoginStreak(userId: string, db: PrismaClient) {
     return bonusUpdateLoginStreak(userId, db);
-  }
-
-  calculatePassiveIncome(countryId: string, db: PrismaClient) {
-    return incomeCalculatePassiveIncome(countryId, db);
-  }
-
-  catchUpPassiveIncome(userId: string, db: PrismaClient) {
-    return incomeCatchUpPassiveIncome(userId, db);
   }
 
   getEarningsSummary(userId: string, db: PrismaClient) {

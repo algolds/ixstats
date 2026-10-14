@@ -3,11 +3,6 @@
  * Every transition is a conditional updateMany checked through `count`.
  */
 
-// vault-ledger <-> vault-passive-income import each other; without this mock the
-// re-entrant require would spread a half-initialised ledger (TDZ on LedgerError).
-jest.mock("~/lib/vault/vault-passive-income", () => ({
-  catchUpPassiveIncome: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/lib/vault/vault-ledger", () => ({
   ...jest.requireActual("~/lib/vault/vault-ledger"),
   earnCreditsTx: jest.fn(),
@@ -126,7 +121,13 @@ describe("transferCardsTx", () => {
 
     expect(tx.cardOwnership.updateMany.mock.calls[0][0]).toEqual({
       where: { id: { in: ["c1", "c2"] }, ownerId: "from_1", isLocked: false },
-      data: { ownerId: "to_1", userId: "to_1", isLocked: false, acquiredAt: NOW, lastSaleDate: NOW },
+      data: {
+        ownerId: "to_1",
+        userId: "to_1",
+        isLocked: false,
+        acquiredAt: NOW,
+        lastSaleDate: NOW,
+      },
     });
   });
 
@@ -211,7 +212,9 @@ describe("transferCreditsTx", () => {
       source: "P2P_TRADE",
       metadata: { tradeId: "trade_1" },
     });
-    expect(spendMock.mock.invocationCallOrder[0]).toBeLessThan(earnMock.mock.invocationCallOrder[0]);
+    expect(spendMock.mock.invocationCallOrder[0]).toBeLessThan(
+      earnMock.mock.invocationCallOrder[0]
+    );
   });
 
   it("rethrows non-ledger errors unchanged", async () => {

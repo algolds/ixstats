@@ -10,16 +10,13 @@
  * - Vault level and earnings summaries
  */
 
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { baseCardCapacity } from "~/lib/cards/general-settings";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
-import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
 import { sentenceCase } from "~/lib/format/sentence-case";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
@@ -113,36 +110,6 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   }),
 
   /**
-   * Calculate passive income for a country
-   */
-  calculatePassiveIncome: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Derived from the nation's budget (the budget multiplier): owner/privileged only.
-      await assertCountryWriteAccess(ctx, input.countryId);
-      try {
-        const dailyDividend = await vaultService.calculatePassiveIncome(
-          input.countryId,
-          ctx.db as any
-        );
-
-        return {
-          countryId: input.countryId,
-          dailyDividend,
-          weeklyDividend: dailyDividend * 7,
-          monthlyDividend: dailyDividend * 30,
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error calculating passive income:", error);
-        throw new Error("Failed to calculate passive income", { cause: error });
-      }
-    }),
-
-  /**
    * Admin: Adjust a user's login streak (absolute delta applied)
    */
   getUserStats: protectedProcedure.query(async ({ ctx }) => {
@@ -202,35 +169,4 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       throw new Error("Failed to retrieve user stats", { cause: error });
     }
   }),
-
-  /**
-   * Get budget multiplier for passive income
-   */
-  getBudgetMultiplier: protectedProcedure
-    .input(
-      z.object({
-        countryId: z.string().min(1, "Country ID is required"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      // Read off the nation's budget allocations: owner/privileged only.
-      await assertCountryWriteAccess(ctx, input.countryId);
-      try {
-        const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
-          input.countryId,
-          ctx.db as any
-        );
-        const description = budgetVaultCalculator.getMultiplierDescription(multiplier);
-
-        return {
-          countryId: input.countryId,
-          multiplier,
-          description,
-          percentChange: Math.round((multiplier - 1.0) * 100),
-        };
-      } catch (error) {
-        console.error("[Vault Router] Error getting budget multiplier:", error);
-        throw new Error("Failed to retrieve budget multiplier", { cause: error });
-      }
-    }),
 });

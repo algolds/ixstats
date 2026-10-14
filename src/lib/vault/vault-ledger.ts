@@ -1,6 +1,5 @@
 import { type Prisma, type PrismaClient, type VaultTransactionType } from "@prisma/client";
 import { getVaultConfig, type VaultConfig } from "~/lib/vault/vault-perks";
-import { catchUpPassiveIncome } from "~/lib/vault/vault-passive-income";
 import { computeNextStreak } from "~/lib/vault/daily-roll";
 
 type LedgerErrorCode =
@@ -396,8 +395,6 @@ export async function getBalance(userId: string, db: PrismaClient) {
   try {
     const vault = await getOrCreateVault(userId, db);
     await checkAndResetDailyEarnings(vault, db);
-
-    await catchUpPassiveIncome(userId, db);
 
     const updatedVault =
       (await db.myVault.findUnique({

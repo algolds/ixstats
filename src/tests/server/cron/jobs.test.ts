@@ -28,7 +28,6 @@ describe("CRON_JOBS", () => {
 
   it("keeps the lock names that manual triggers share (plan 328)", () => {
     const lockOf = (name: string) => CRON_JOBS.find((job) => job.name === name)?.lockName;
-    expect(lockOf("passive-income")).toBe("passive-income");
     expect(lockOf("lorewards-full-sync")).toBe("lorewards");
     expect(lockOf("lorewards-state-sync")).toBe("lorewards");
   });
