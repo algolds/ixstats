@@ -231,16 +231,16 @@ export async function grantBonus(
 }
 
 /**
- * Ledger source of the one-time new-player bonus. The country builder and realm claims
- * use the same source (and so the same idempotency key, `bonus:new_player:<User.id>`),
- * so whichever path runs first pays and every later one is a no-op.
+ * Ledger source of the one-time new-player bonus. It fires on account creation and on the
+ * first Vault open only (no country action pays it); both paths share the idempotency key
+ * `bonus:new_player:<User.id>`, so whichever runs first pays and the other is a no-op.
  */
 export const NEW_PLAYER_BONUS_SOURCE = "bonus:new_player";
 
 /**
  * Also pay the bonus the first time an existing account opens its Vault, so accounts
  * created before the bonus moved to sign-up (and never took a country) are not left out.
- * Set to false to pay it only at account creation and on a country's creation or claim.
+ * Set to false to pay it only at account creation.
  */
 export const NEW_PLAYER_BONUS_ON_VAULT_OPEN = true;
 
