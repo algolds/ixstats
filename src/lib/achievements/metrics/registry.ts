@@ -10,6 +10,8 @@
  * and one entry to `METRIC_LOADERS` below.
  */
 import type { PrismaClient } from "@prisma/client";
+import { EXECUTIVE_LOADERS } from "./executive";
+import { POLITICS_LOADERS } from "./politics";
 
 export type MetricScope = "account" | "country";
 
@@ -33,4 +35,4 @@ export interface MetricLoader {
   load(ctx: MetricContext): Promise<Record<string, number>>;
 }
 
-export const METRIC_LOADERS: MetricLoader[] = [];
+export const METRIC_LOADERS: MetricLoader[] = [...EXECUTIVE_LOADERS, ...POLITICS_LOADERS];
