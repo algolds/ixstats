@@ -63,6 +63,18 @@ export const lorewardsAwardsRouter = createTRPCRouter({
         }),
       ]);
 
+      // The winner's trophy card, once minted, for each of this article's Loreward wins
+      const trophyCards = lorewardEntries.length
+        ? await db.card.findMany({
+            where: {
+              lorewardEntryId: { in: lorewardEntries.map((e) => e.id) },
+              lorewardEdition: "winner",
+            },
+            select: { id: true, lorewardEntryId: true },
+          })
+        : [];
+      const trophyCardByEntry = new Map(trophyCards.map((c) => [c.lorewardEntryId, c.id]));
+
       const normalizedLorewards = (lorewardEntries as LorewardEntry[]).map((e: LorewardEntry) => {
         let label = "Daily Loreward";
         if (e.type === "weekly") label = "Weekly Loreward";
@@ -78,6 +90,7 @@ export const lorewardsAwardsRouter = createTRPCRouter({
           recipientUsers: e.winnerUser ? [e.winnerUser] : [],
           awardedAt: new Date(e.date),
           metadata: e.metadata ?? null,
+          trophyCardId: trophyCardByEntry.get(e.id) ?? null,
         };
       });
 
@@ -90,6 +103,7 @@ export const lorewardsAwardsRouter = createTRPCRouter({
           recipientUsers: (w.recipientUsers as string[]) || [],
           awardedAt: w.awardedAt,
           metadata: w.metadata ?? null,
+          trophyCardId: null,
         })
       );
 

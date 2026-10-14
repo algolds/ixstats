@@ -20,6 +20,7 @@ import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { TocButton } from "./ArticleToc";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
+import { AwardTrophyLinks } from "./AwardTrophyLinks";
 import { focusRing } from "~/components/ui/button";
 
 type ArticleThemeColors =
@@ -68,6 +69,8 @@ export interface ArticleHeaderProps {
       recipientUsers: string[];
       awardedAt: string;
       metadata: string | null;
+      /** A Loreward win's trophy card, once minted. */
+      trophyCardId?: string | null;
     }>;
   } | null;
   /** Number of headings in the article; the Contents button hides at 0. */
@@ -419,12 +422,13 @@ export function WikiOSHeader({
                       );
                     })}
                   </div>
-                  <div className="border-separator flex justify-end border-t pt-2">
+                  <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+                    <AwardTrophyLinks awards={awardsData.awards} />
                     <Link
                       href="/util/lorewards"
-                      className="text-caption text-tint duration-fast hover:text-tint-hover transition-colors"
+                      className="text-caption text-tint duration-fast hover:text-tint-hover ml-auto transition-colors"
                     >
-                      View Leaderboard &rarr;
+                      View leaderboard &rarr;
                     </Link>
                   </div>
                 </PopoverContent>

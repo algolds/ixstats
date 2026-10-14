@@ -9,6 +9,7 @@ import type { ArticleHeaderProps } from "../ArticleHeader";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { WatchButton } from "../WatchButton";
 import { TocButton } from "../ArticleToc";
+import { AwardTrophyLinks } from "../AwardTrophyLinks";
 
 interface EditorialMastheadProps extends ArticleHeaderProps {
   primaryAward: any;
@@ -121,6 +122,7 @@ function AwardsBadge({
             </div>
           ))}
         </div>
+        <AwardTrophyLinks awards={awardsData.awards} />
       </PopoverContent>
     </Popover>
   );
