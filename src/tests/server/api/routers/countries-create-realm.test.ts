@@ -147,7 +147,7 @@ describe("countries.createCountry — realm and cap", () => {
     });
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c_new", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(db.user.update).toHaveBeenCalledWith({
       where: { id: "u1" },
