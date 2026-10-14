@@ -5,11 +5,11 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (80 Routers, 1095 Endpoints)
+### Live tRPC API Inventory (80 Routers, 1094 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`api.achievements`** | 5 | 2 | 0 | **7** | `src/server/api/routers/achievements/index.ts` |
+| **`api.achievements`** | 7 | 2 | 0 | **9** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
 | **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
@@ -40,10 +40,10 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
 | **`api.economics`** | 2 | 3 | 0 | **5** | `src/server/api/routers/economics/index.ts` |
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
-| **`api.exchange`** | 8 | 26 | 0 | **34** | `src/server/api/routers/exchange/index.ts` |
+| **`api.exchange`** | 8 | 25 | 0 | **33** | `src/server/api/routers/exchange/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
 | **`api.frontPage`** | 1 | 0 | 0 | **1** | `src/server/api/routers/frontPage.ts` |
-| **`api.geoAdmin`** | 1 | 4 | 0 | **5** | `src/server/api/routers/geo/admin/cities.ts` |
+| **`api.geoAdmin`** | 0 | 2 | 0 | **2** | `src/server/api/routers/geo/admin/cities.ts` |
 | **`api.geoCore`** | 0 | 0 | 0 | **0** | `src/server/api/routers/geo/core/index.ts` |
 | **`api.geoEditor`** | 5 | 14 | 0 | **19** | `src/server/api/routers/geo/editor/index.ts` |
 | **`api.geoFeatures`** | 5 | 34 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
@@ -58,7 +58,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 14 | 9 | 0 | **23** | `src/server/api/routers/lore-cards/index.ts` |
-| **`api.lorewards`** | 7 | 4 | 0 | **11** | `src/server/api/routers/lorewards/index.ts` |
+| **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
 | **`api.militaryEquipment`** | 5 | 6 | 0 | **11** | `src/server/api/routers/militaryEquipment/index.ts` |
@@ -86,10 +86,10 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
-| **`api.vault`** | 26 | 19 | 0 | **45** | `src/server/api/routers/vault/index.ts` |
+| **`api.vault`** | 23 | 19 | 0 | **42** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **521** | **560** | **0** | **1095** | **80 registered namespaces** |
+| **TOTALS** | **523** | **557** | **0** | **1094** | **80 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
@@ -613,20 +613,17 @@ api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
 
 ## IxVault (Cards & Credits)
 
-### vault Router (44 procedures)
+### vault Router (42 procedures)
 
 Balance, level and transaction reads use the signed-in user (no `userId` input).
 
 ```typescript
-// Queries (25)
+// Queries (22)
 api.vault.getBalance.useQuery()
 api.vault.getVaultLevel.useQuery()
 api.vault.getTodayEarnings.useQuery()
-api.vault.calculatePassiveIncome.useQuery({ countryId })
 api.vault.getUserStats.useQuery()
-api.vault.getBudgetMultiplier.useQuery({ countryId })
-api.vault.checkDailyCap.useQuery({ earnType })
-api.vault.getTransactions.useQuery({ limit?, offset?, type? })
+api.vault.getTransactions.useQuery({ limit?, offset?, type?, direction? }) // direction: "earned" | "spent"; rows include metadata
 api.vault.getPurchasedItems.useQuery()
 api.vault.listStoreItems.useQuery()
 api.vault.getEquippedCosmetics.useQuery()
@@ -688,7 +685,7 @@ api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
 // Mutations (11)
 api.cards.junkCards.useMutation() // { ownershipIds }
 api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation?, junkRate? }
-api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, wikiImport?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary?, loreward? }
+api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
 api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, maxJunkBatchSize?, autoGenerateLoreThumbnails? }
 api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
 api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
@@ -1040,6 +1037,17 @@ const { data: profile } = api.users.getProfile.useQuery();
 ```typescript
 const { data } = api.achievements.getAllByCountry.useQuery({ countryId: "clx..." });
 // Recent unlocks: api.achievements.getRecentByCountry.useQuery({ countryId, limit? })
+```
+
+### achievements and lorewards: Vault hub procedures
+
+```typescript
+api.achievements.getMySummary.useQuery()                       // { unlocked, activeTotal, points, rank } for the signed-in user
+api.achievements.getPlayerLeaderboard.useQuery({ limit? })      // players by achievement points (ties share a rank); the Vault Leaderboard tab
+api.lorewards.getTodayRace.useQuery()                           // top 10 of the current UTC day, cached 10 minutes
+api.lorewards.getStandings.useQuery({ limit? })                 // all-time standings by Loreward score
+api.lorewards.getTrophies.useQuery({ username })                // a wiki user's wins, streak and trophy cards (cards hidden when the holder hides Vault cards)
+api.lorewards.getMyTrophies.useQuery()                          // the viewer's trophies, what Loreward payouts paid, and today's rank
 ```
 
 ### admin.getSystemStatus — System Status (Admin Only)

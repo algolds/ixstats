@@ -141,7 +141,7 @@ stateDiagram-v2
 ### Stage 5: Gamification, Evolution & Canonization (The Legacy)
 * **Active Routes:** `/util/lorewards`, `/vault`, `/util/history/[slug]`, `/util/diff`
 * **Workflow:**
-  1. **Lorewards Scoring**: The scoring engine (`src/lib/lorewards/scoring.ts`) weighs bytes added, prose ratio, edit depth, new-article novelty, inbound-link importance, and cross-country collaboration. Daily/weekly/monthly results and streaks are synced from the Discord Lorewards bot.
+  1. **Lorewards Scoring**: The scoring engine (`src/lib/lorewards/scoring.ts`) weighs bytes added, prose ratio, edit depth, new-article novelty, inbound-link importance, and cross-country collaboration. Daily/weekly/monthly results and streaks are synced from the Discord Lorewards bot. Every recorded place pays tiered IxCredits (daily 500 / 150, weekly 1,500 / 400, monthly 4,000 / 1,000 for winner / runner-up, from 2026-10-15) and mints a one-of-one trophy card; the view is shared by WikiOS (`/util/lorewards`) and the Vault (the Lorewards tab of `/vault/achievements`).
   2. **IxVault Lore Cards**: Wiki articles can be turned into collectible **Lore Cards** (`lore-cards` router) that are collected and traded in IxVault. *(Slotting cards into government portfolios for passive boosts is not implemented.)*
   3. **Continuous Revision History**: Revisions are tracked with visual diffs (`/util/diff`), allowing rollbacks and transparent audit trails as world lore evolves.
 

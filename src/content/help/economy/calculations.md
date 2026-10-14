@@ -38,11 +38,11 @@ Population grows at your population growth rate each IxTime year, plus any popul
 | World events run by admins | Government component choices |
 | Admin corrections | Defense operations |
 
-Taxes, budgets and components do change other figures: revenue, spending, unemployment, inflation, your government effectiveness and your IxCredit dividend. They just don't feed GDP growth yet.
+Taxes, budgets and components do change other figures: revenue, spending, unemployment, inflation and your government effectiveness. They just don't feed GDP growth yet.
 
 ## When stored figures update
 
-MyCountry always shows the live projection. Rankings, vitality scores and your IxCredit dividend read the figures stored on your nation, which are refreshed every few hours by a background job (when it's enabled on the server) and whenever an admin runs a recalculation. So a ranking can lag your MyCountry figures by a few hours.
+MyCountry always shows the live projection. Rankings and vitality scores read the figures stored on your nation, which are refreshed every few hours by a background job (when it's enabled on the server) and whenever an admin runs a recalculation. So a ranking can lag your MyCountry figures by a few hours.
 
 ## Vitality scores
 

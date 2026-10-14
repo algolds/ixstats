@@ -16,7 +16,7 @@ IxStates (dev codename: IxStats) is an alternate-history and nation-simulation p
 | Nation Executive | Real-time intel, compliance, defense posture, elections | `/mycountry`, `/mycountry/intelligence`, `/mycountry/politics` |
 | Game Master | Monitoring, audit scripts, environment management | `/admin`, `scripts/audit` |
 | Analyst / Researcher | Economic stats, diplomacy data, exports | `/dashboard`, `/leaderboards`, `/thinkpages` |
-| Collector / Trader | Card packs, trading, IxVault management, marketplace | `/vault`, `/vault/cards`, `/vault/marketplace` |
+| Collector / Trader | Card packs, trading, IxVault management, marketplace | `/vault`, `/vault/cards`, `/vault/store` |
 | New Player | Guided onboarding, documentation, tutorials | `/setup`, `/help`, `/help/getting-started/*`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
@@ -26,17 +26,17 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.4.0 "Lobster Crosby"** | **Release Candidate** |
-| **Apps** | IxWorld | v2 | Standalone & Embedded Maps Engine |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.0 "Lobster Crosby"** | **Release Candidate** |
+| **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
-| | IxVault | v2 | Cards, Credits & Marketplace |
+| | IxVault | v3 | Wallet, Achievements, Cards & Store |
 | **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
 | | Concord Engine | v2 | Living World Simulation & Events |
 | | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
 | **Systems** | MyCountry UI | v6 | 4-Tier Command Architecture |
 | | Nation Builder | v4 | Statecraft & Tax Builder Subsystems |
 | | ThinkPages | v2 | Social Knowledge & Feed Components |
-| | Achievements | v2 | Awards & LoreWards Resync |
+| | Achievements | v3 | Achievements, Lorewards & Legacy |
 | | Stash | v1 | Article Stashing (was LoreStash) |
 | | Repository | v2 | Commons Media Explorer |
 | | Halo | v6 | Contextual Overlay System |
@@ -99,7 +99,7 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **ThinkPages (Core System):** `/thinkpages` — the community forum (sitewide and realm boards, moderation). The persona feed and Accounts are on the Dashboard (`/dashboard`, `/dashboard/accounts`); ThinkShare messaging is `/messages`, ThinkTanks `/thinktanks`, and the IxTwitter sync mirrors the feed to Discord.
 
-**Achievements & Awards (Core System):** `/achievements` — achievement explorer and detail views.
+**Achievements & Awards (Core System):** `/vault/achievements` — achievement explorer, Lorewards, showcase and leaderboard, inside the Vault (`/achievements` redirects).
 
 **MyCountry Builder (Core System):** `/builder` — nation creation and editor flows.
 
@@ -130,7 +130,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,095<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,094<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 

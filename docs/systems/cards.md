@@ -1,11 +1,11 @@
 # 💎 Vault Cards & Booster Packs Engine
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-14
 
-**Parent App Suite:** Vault (`IXVAULT_VERSION = 2`, dev codename `IxVault`)  
+**Parent App Suite:** Vault (`IXVAULT_VERSION = 3`, dev codename `IxVault`)  
 **Subsystems:** 3D Card Engine, Booster Pack Gacha, Recycling, NS Import Bridge (crafting is retired for now)  
-**Primary Action:** `COLLECT` | **Domain Accent:** Burnished Copper (`#D97706` / `--color-amber-600`)  
-**Route:** `/vault/cards`, `/vault/marketplace?tab=store` (`/vault/packs` redirects here) | **Status:** Release Candidate (platform 1.4.0) — see [Known Gaps](#known-gaps)  
+**Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`)  
+**Route:** `/vault/cards`, `/vault/store?tab=store` (`/vault/packs` and `/vault/marketplace` redirect here) | **Status:** Release Candidate (platform 1.5.0) — see [Known Gaps](#known-gaps)  
 
 The Vault Cards system provides 3D holographic collectibles integrating sovereign states, MediaWiki historical lore, NationStates imports, and milestone editions with wiki-signal rarity suggestions and a cinematic pack-opening sequence.
 
@@ -28,7 +28,8 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 ### 1. NATION Cards
 Linked to an IxStates country via `Card.countryId`:
 - **Stats**: Shared Force / Wealth / Influence / Legacy stat set (`src/lib/cards/stat-config.ts`; special stats via `src/lib/country-geo/special-stats-populator.ts`)
-- **Valuation**: The daily `card-values` cron (`src/lib/lorewards/card-value-cron.ts`) re-prices NATION cards against their country's GDP and growth, but in practice does nothing today: no NATION card has a `countryId`.
+- **Valuation**: The `card-values` cron (`src/lib/lorewards/card-value-cron.ts`, every 6 hours) records the market value of NATION cards in `CardValueHistory` and flags changes over 20%. A value comes from rarity and type (`getCardMarketValue`); the former GDP correlation was dead code and is gone. In practice it does nothing today: no NATION card has a `countryId`.
+- **Royalty**: when a NATION card sells at auction, 2% goes to the owner of its nation (`auction-service.ts`), the one place a country feeds the Vault economy.
 - **Minting**: There is no automatic per-country card generator; NATION cards come from admin creation (and, before crafting was retired, crafting results, which defaulted to `cardType: "NATION"`).
 
 ### 2. LORE Cards
@@ -42,6 +43,13 @@ Synchronized from the official NationStates per-season card dumps (`cardlist_S{s
 - **Streaming Proxy (`/api/proxy-ns-image`)**: Server-side proxy (nationstates.net / Wikimedia only, 24h cache, placeholder fallback on 403).
 - **Attribution Footer (`NationStatesAttribution.tsx`)**: Pinned footer inside `CardDetailsModal` with fan-site attribution copy and takedown trigger.
 - **Self-Service Takedown**: Nation owners verify identity via NS checksum (site-specific HMAC-MD5 token) to retire cards (`nsImport.requestSelfServiceTakedown`).
+
+### Loreward trophy cards
+Every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a one-of-one, tradeable LORE card of the winning page (`src/lib/lorewards/trophy-cards.ts`):
+- **Identity:** `Card.lorewardEntryId` and `Card.lorewardEdition` (`winner` or `runner-up`), unique together. The card carries the contest, place, date and winner in its metadata. Rarity: Legendary for a monthly winner; Epic for a weekly winner and a monthly runner-up; Rare for the rest. A place without a recorded page (weekly and monthly entries, and some older dailies) is titled by contest and date.
+- **Minting and granting:** `syncTrophyCards` (called by the Lorewards `fullSync` and `/api/lorewards/sync`, not by the 10-minute state sync) mints the missing cards, then gives each unowned card to its winner once that wiki account has a verified IxWiki link (`resolveLorewardUser`). With no link the card waits unowned; it is granted once and never re-granted.
+- **Backfill:** `bun scripts/backfill-loreward-trophy-cards.ts [--apply]` mints a card for every recorded place back to 2017 with no credits (dry run by default, idempotent).
+- **Economy:** a trophy card is a real holding, so the Wallet's deck value and net worth count it, but it is left out of the dividend's collection interest and of the deck-value achievements (`EXCLUDE_TROPHY_CARDS`, `deckValueExTrophy`). Admin duplicate cleanup (`purgeDuplicateCards`) never deletes one.
 
 ### 4. SPECIAL & COMMUNITY Cards
 Commemorative milestone editions (e.g. *IxStates 1.0 Ogma Launch*), contest winners, and alliance commemoratives.

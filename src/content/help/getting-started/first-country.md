@@ -32,8 +32,6 @@ Your draft saves as you go, so you can leave and come back. Switch the builder t
 2. Search for your country's page and select it.
 3. Check the preview of what was read from the infobox, then continue into the builder to fill in anything missing.
 
-Importing a country from a wiki pays a one-time 2,500 IxCredit bonus (default amount).
-
 ## Claim an existing nation
 
 1. Go to [Setup](/setup) and choose **Link to Existing Country**, or open a realm from the [realm directory](/realms) and use its claim list.

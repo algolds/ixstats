@@ -24,10 +24,10 @@ The sidebar on the left lists the areas ("apps") of IxStats. Selecting one opens
 | **Home** | [Dashboard](/dashboard), [Messages](/messages), ThinkTanks, ThinkPages, and What's new when there's an update |
 | **MyCountry** | Your nation: Overview, Directives, Economy, Diplomacy, Politics and Defense (Defense with [Premium](/help/getting-started/premium)) |
 | **Maps** | The world map |
-| **Vault** | IxCredits, your daily reward, cards, collections, the marketplace and import |
+| **Vault** | Your wallet, daily reward, achievements, cards (with collections and import) and the store |
 | **Wiki** | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
 | **Realms** | My realm ([/countries](/countries)) and Explore ([/realms](/realms)) |
-| **Labs** | Onoma, Vexel, MyLeague and MyClub |
+| **Labs** | Onoma, Vexel, MyLeague, MyClub and the Exchange |
 | **Help** | These guides, What's new, and the Ixnay Discord |
 | **Settings** | Every [settings panel](/help/getting-started/settings) |
 

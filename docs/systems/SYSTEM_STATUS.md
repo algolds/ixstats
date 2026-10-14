@@ -1,7 +1,7 @@
 # IxStates System Status
 
-**Platform:** 1.4.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
-**Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit)
+**Platform:** 1.5.0 "Lobster Crosby", Release Candidate (integration branch `rose-garden`)
+**Last verified:** 2026-10-05, against the code at `rose-garden` @ `6d53b0c` (after PRs #48–#49 and the 2026-10-05 docs audit); the Vault, Lorewards and Exchange rows were updated on 2026-10-14 for the collectathon hub release
 **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts) · **Versioning spec:** [`docs/reference/revision.md`](../reference/revision.md)
 **Open work:** [`ROADMAP.md`](../roadmap/ROADMAP.md) (the plan) · [`pending-features.md`](../history/roadmap/pending-features.md) · [`code-audit-2026-09-30.md`](../history/roadmap/code-audit-2026-09-30.md)
 
@@ -69,23 +69,23 @@ found several that are partly built, read-only, or broken, so each row now carri
 | MediaWiki export | — | — | `services/mirror-worker.ts` (+ `mirror-outbox.ts`, `mirror-queue.ts`) | ✅ Live | Durable outbox (`wiki_mirror_jobs`), per-title FIFO, backoff and dead letter; revisions imported with the real author (plan 407) |
 | Margin | — | `/wiki/*?margin` | `components/wiki-os/margin/` | 🟡 Partial | No comment reactions or deletion; no Stash tab; Inspect tab hidden |
 | Stash | v1 | `/stashes` | `wikios/stash.ts`, `forum/stash.ts` | 🟡 Partial | Share links are not read. Also written by forum, Onoma and the media editor |
-| Lorewards & article awards | Achievements v2 | `/util/lorewards` | `lorewards/` | ✅ Live | |
+| Lorewards & article awards | Achievements v3 | `/util/lorewards`, `/vault/achievements` (Lorewards tab) | `lorewards/` | ✅ Live | One `LorewardsView` in WikiOS and the Vault; tiered payouts and trophy cards. Weekly and monthly runner-ups are not recorded, so only recorded places pay or mint ([achievements.md](achievements.md#lorewards)) |
 | Repository (Commons) | v2 | `/util/repository` | `commons.ts` | ✅ Live | |
 | Guardian | — | — | `guardian/cloudflare-guardian.ts` | 🟡 Partial | No CAPTCHA (Turnstile removed, plan 416: edits are rate-limited and rights-checked); no abuse filter |
 | WikiOS standalone takeover of `/wiki/*` (replaces Stage 3) | — | `/wiki/*` | `scripts/deploy-wikios.sh`, `scripts/ops/nginx/wikios-takeover.conf`, `scripts/ops/mediawiki/wikios-localsettings.php`, `src/lib/system/wikios-standalone.ts` | 🟡 Merged, off | Kit merged with WikiOS v1 (2026-10-06), nothing applied on the server; steps in [`docs/operations/wikios-v1-cutover.md`](../operations/wikios-v1-cutover.md) |
 
-## 💎 Vault — credits, cards, achievements
+## 💎 Vault — wallet, cards, achievements, store
 
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| IxCredits ledger | IxVault v2 | `/vault` | `vault/`, `src/lib/vault/` | 🟡 Partial | Passive income + catch-up, daily streak, `EARN_BONUS`. Pack purchases (`SPEND_PACKS`), junk payouts (`EARN_CARDS`) and lore-card requests and refunds (`SPEND_MARKET` / `REFUND`) all go through the ledger |
-| Cards | IxVault v2 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types. NATION cards are not auto-minted; the `card-values` job (every 6 h, off by default) finds no NATION card with a `countryId`, so it does no real work |
-| Pack store & opening | IxVault v2 | `/vault/marketplace?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
-| Marketplace (auctions) & trading | IxVault v2 | `/vault/marketplace`, `/vault/trading` | `card-market/`, `trading/` | 🟡 Partial | Escrow-locked, but settlement (auction completion, trade expiry) runs only through crons that are off unless listed in `CRON_ENABLED_JOBS` |
-| The Exchange (₷) | — | `/vault/exchange` | `exchange/`, `src/lib/exchange/` | 🟡 MVP + phase 2 | Sovereign wallet (conditional, idempotent spends), IxC ⇄ ₷ conversion, companies, B2B contracts and B2G tenders with escrow and admin dispute decisions, a fixed-price share market with dividends, sector indices with zero-sum sector funds, company decisions, notifications; on by default behind `vault_isExchangeEnabled`. Jobs `exchange-market` and `exchange-contract-expiry` are off until named in `CRON_ENABLED_JOBS` ([exchange.md](exchange.md)) |
+| IxCredits ledger & Wallet | IxVault v3 | `/vault` | `vault/`, `src/lib/vault/` | 🟡 Partial | Bank-statement Wallet page; the nightly Vault dividend (`vault-dividend` job, off until named in `CRON_ENABLED_JOBS`) replaced the country dividend; daily streak, `EARN_BONUS`. No country action pays IxCredits. Pack purchases (`SPEND_PACKS`), junk payouts (`EARN_CARDS`) and lore-card requests and refunds (`SPEND_MARKET` / `REFUND`) all go through the ledger |
+| Cards | IxVault v3 | `/vault/cards` | `cards/`, `lore-cards/` | ✅ Live | 5 card types; Loreward trophy cards. NATION cards are not auto-minted; the `card-values` job (every 6 h, off by default) finds no NATION card with a `countryId`, so it does no real work |
+| Pack store & opening | IxVault v3 | `/vault/store?tab=store` | `card-packs/` | 🟡 Partial | `guaranteedRarity` and `themeFilter` not enforced; Keep/List quick actions only log |
+| Store: auctions & trading | IxVault v3 | `/vault/store?tab=auctions`, `/vault/store?tab=trading` | `card-market/`, `trading/` | 🟡 Partial | Escrow-locked, but settlement (auction completion, trade expiry) runs only through crons that are off unless listed in `CRON_ENABLED_JOBS` |
+| The Exchange (₷) | — | `/labs/exchange` (Labs-gated; `/vault/exchange` redirects) | `exchange/`, `src/lib/exchange/` | 🟡 MVP + phase 2 | Sovereign wallet (conditional, idempotent spends; the IxC ⇄ ₷ conversion was removed), companies, B2B contracts and B2G tenders with escrow and admin dispute decisions, a fixed-price share market with dividends, sector indices with zero-sum sector funds, company decisions, notifications; on by default behind `vault_isExchangeEnabled`. Jobs `exchange-market` and `exchange-contract-expiry` are off until named in `CRON_ENABLED_JOBS` ([exchange.md](exchange.md)) |
 | Crafting | — | `/vault/crafting` (retired notice only) | `crafting/` | 💤 Retired | Deprecated by the owner on 2026-10-05: every `crafting.*` call refuses, the workbench and its nav entries are gone; schema and rows stay until the schema-drop decision |
 | NationStates import | — | `/vault/import`, `/vault/ns-deck` | `ns-import/` | ✅ Live | Dump sync is admin-triggered |
-| Achievements | v2 | `/achievements`, `/leaderboards` | `achievements/` | ✅ Live | Account-level achievements work without a country; background evaluation via event hooks and the `achievements-evaluate` cron. Ribbons are derived from unlocks and shown on the passport and country pages |
+| Achievements | v3 | `/vault/achievements`, `/leaderboards` | `achievements/` | ✅ Live | 114 active and 47 Legacy definitions (`sets/`); account-level achievements work without a country; background evaluation via event hooks and the `achievements-evaluate` cron. Ribbons are derived from unlocks and shown on the passport and country pages |
 | Premium tiers | — | — | `premiumProcedure`, `PremiumPreviewFrame` | 🟡 Partial | Only Defense and 10 security procedures are gated; no payments |
 
 ## 💬 ThinkPages — social

@@ -41,7 +41,7 @@ Switch persona in the composer with one click. Each persona has a profile at `/d
 3. Add **#hashtags**. Each hashtag has its own page at `/hashtags/<tag>`.
 4. Publish. Public posts are also shared to the community Discord's IxTwitter channel by default.
 
-Your first 5 original posts each day earn 1 IxCredit each.
+Your posts count toward the nightly [Vault dividend](/help/vault/ixcredits#the-vault-dividend): 2 IxCredits per post, up to 20 a day, alongside your forum posts and replies.
 
 ## Engaging
 

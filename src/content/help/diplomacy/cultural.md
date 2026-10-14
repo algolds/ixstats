@@ -18,7 +18,7 @@ A cultural exchange is a program your nation hosts with other nations: a festiva
 2. Choose a type: festival, exhibition, education, cuisine, arts, sports, technology, diplomacy, music, film, environmental, science, trade, humanitarian, agriculture, heritage or youth.
 3. Give it a title, description and objectives, set start and end dates, and choose whether it's public.
 4. Optionally name a partner nation and a maximum number of participants.
-5. Create it. You earn 12 IxCredits for organising an exchange (part of the 100 IxC daily active-earning cap).
+5. Create it.
 
 ## Taking part
 

@@ -37,7 +37,7 @@ The builder and claims both check this.
 
 ## Playing more than one nation
 
-If you own several nations, choose which one you're playing as with the nation switcher in the user menu, or **Play as** on a realm page. MyCountry, directives and proposals act as that nation. Your daily IxCredit dividend always comes from your first (earliest-created) nation, whichever one you're playing as.
+If you own several nations, choose which one you're playing as with the nation switcher in the user menu, or **Play as** on a realm page. MyCountry, directives and proposals act as that nation.
 
 ## Realm boards
 

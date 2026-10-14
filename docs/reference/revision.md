@@ -1,8 +1,8 @@
 # IxStates Versioning & Release Architecture
 
 **Status:** Canonical Standard v2  
-**Platform Release:** IxStates 1.4.1 "Lobster Crosby" (Release Candidate)  
-**Last Updated:** September 2026  
+**Platform Release:** IxStates 1.5.0 "Lobster Crosby" (Release Candidate)  
+**Last Updated:** October 2026  
 
 ---
 
@@ -23,7 +23,7 @@ Versioning communicates:
 
 ```text
 ====================================================================================================
-                            IXSTATES 1.4.1 "LOBSTER CROSBY" — OPERATING TAXONOMY
+                            IXSTATES 1.5.0 "LOBSTER CROSBY" — OPERATING TAXONOMY
 ====================================================================================================
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -61,23 +61,25 @@ Versioning communicates:
  │ • Margin                   │ Split-canvas inspector, text markup, gutter pins, and threaded    │
  │                            │ discussions directly on article text.                             │
  │ • Canvas Editor (v1)       │ Visual rich-text authoring with modular content blocks.           │
- │ • Wiki Awards (LoreWards)  │ Editor milestone trophies, peer citations, and author medals.     │
+ │ • Wiki Awards (LoreWards)  │ Daily, weekly and monthly contests with tiered payouts and trophy │
+ │                            │ cards; one view shared with the Vault (/util/lorewards).          │
  │ • Stash System (v1)        │ Save articles, quotes, media, and forum threads for later.        │
  │ • Image Repository (v2)    │ Shared image and media library with instant card generators.      │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 4. 💎 VAULT — Metagame Incentives, Social Economy & Collectibles (v2)                          │
- │    Action: COLLECT | Domain Accent: Burnished Copper (#D97706) | Route: /vault                 │
+ │ 4. 💎 VAULT — Collectathon Hub: Wallet, Achievements, Cards & Store (v3)                       │
+ │    Action: COLLECT | Domain Accent: Raspberry (`APP_TINTS.vault`) | Route: /vault              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Metagame Incentive Hub   │ Engagement and reward engine driving player progression across    │
- │                            │ governance, lore writing, and community activity.                 │
- │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and passive   │
- │                            │ nation dividend yields.                                           │
+ │ • Wallet (v3)              │ Bank-statement page: account hero, statement with running balance │
+ │                            │ and a holdings column; shown in the sidebar for every player.     │
+ │ • Atomic Credit Ledger (v2)│ Safe virtual currency ledger, daily streak bonuses, and the       │
+ │                            │ nightly Vault dividend (collection interest plus activity).       │
  │ • Cards System (v2)        │ 3D holographic cards across 5 editions: Nation, Lore, Import,     │
  │                            │ Special, and Community with physics pack opening.                 │
- │ • Marketplace Trading Desk │ Live auction bidding, instant buyout escrow, and peer trading.    │
- │ • Achievements System (v2) │ Platform milestone showcase, category trophy racks, and unlocks.  │
+ │ • Store, Auctions & Trading│ Packs and cosmetics, live auction bidding, and peer trading.      │
+ │ • Achievements System (v3) │ Nation, platform and Loreward achievements, Legacy unlocks,       │
+ │                            │ showcase and leaderboard (/vault/achievements).                   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -94,7 +96,7 @@ Versioning communicates:
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
- │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.4)                                  │
+ │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
  │    Action: DEBATE | Domain Accent: Warm Orange (#F97316) | Route: /forum                       │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • XenForo Native Bridge    │ Thread synchronization, category boards, and sovereign dispatches.│
@@ -126,6 +128,7 @@ Versioning communicates:
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Onoma Studio (v4)        │ Linguistic engine, phonetic Markov chains, Kokoro TTS (/labs/onoma)
  │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/myleague, /myclub)
+ │ • Exchange (Sovereigns)    │ Companies, contracts, shares and sector funds (/labs/exchange)
  │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -139,11 +142,11 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.4.1 "Lobster Crosby"`** (Channel: *Release Candidate*).
-2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 2`).
+   *Current:* **`IxStates 1.5.0 "Lobster Crosby"`** (Channel: *Release Candidate*).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION = 3`, `WIKIOS_VERSION = 1`, `IXVAULT_VERSION = 3`).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`).
-4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 2` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
-5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.4`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION = 6`, `BUILDER_VERSION = 4`, `THINKPAGES_VERSION = 2`, `ACHIEVEMENTS_VERSION = 3` (incl. LoreWards / Wiki Awards), `STASH_VERSION = 1`, `REPOSITORY_VERSION = 2`, `HALO_VERSION = 6`, `ONOMA_VERSION = 4`), the design system (`FACET_VERSION = 4`) and the WikiOS sub-system `CANVAS_VERSION = 1`.
+5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`1.5`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---
 

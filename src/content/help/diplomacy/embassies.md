@@ -10,7 +10,7 @@ nextLabel: Cultural Exchanges
 
 ## What embassies do
 
-An embassy is your nation's permanent mission in another country. Each active embassy raises your Diplomatic vitality score (+2 each, up to +20, counting both your embassies abroad and other nations' embassies in your country), notifies the host nation, gets a news item, and counts toward diplomatic achievements. Opening one also earns 15 IxCredits (part of the 100 IxC daily active-earning cap). You manage them in [MyCountry → Diplomacy](/mycountry/diplomacy) → **Embassy Network**.
+An embassy is your nation's permanent mission in another country. Each active embassy raises your Diplomatic vitality score (+2 each, up to +20, counting both your embassies abroad and other nations' embassies in your country), notifies the host nation, gets a news item, and counts toward diplomatic achievements. Opening one does not earn IxCredits. You manage them in [MyCountry → Diplomacy](/mycountry/diplomacy) → **Embassy Network**.
 
 ## How to open an embassy
 

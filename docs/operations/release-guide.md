@@ -280,7 +280,7 @@ Start with `db-backup` (daily dump) and `log-retention`. Then follow the
 [runbook's order](deploy-rose-garden-2026-09.md#7-turn-cron-jobs-on-one-per-cycle), and add
 `budget-year-rollover` (new-fiscal-year reminders) once B4's remap is applied. The #49 jobs come last:
 `thinkpages-trending`, `achievements-evaluate`, then `stat-progression` (take a `db:backup` first). Before the money jobs
-(`auction-completion`, `trade-expiry`, `policy-maintenance`, `passive-income`), size their backlogs as the
+(`auction-completion`, `trade-expiry`, `policy-maintenance`, `vault-dividend`), size their backlogs as the
 runbook describes.
 
 ### B6. After this release

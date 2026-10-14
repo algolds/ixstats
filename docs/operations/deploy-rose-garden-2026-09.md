@@ -94,6 +94,12 @@ Read it end to end once before starting. Every command here is meant to be run b
     the older code for a layer with more rows than that is missing the rest, so rolling back an import made before this
     deploy restores only part of such a layer. Snapshots taken after it hold every row. Rollback of a large layer
     (Ixnay's altitudes have 4,068 rows) needs the new code
+  - Vault collectathon hub (2026-10-24, **drops one column**): adds `Country.ownedSince`, `cards.lorewardEntryId` and
+    `cards.lorewardEdition` (unique together), drops `national_issues.ixCreditsAwarded`, and deletes the stored
+    `showCardsTab` setting (`prisma/migrations/20261024120000_vault_hub/migration.sql`, idempotent). **Apply it BEFORE
+    `db:push:force`** (step 5a), after the Atlas and World Studio file: `db push` without `--accept-data-loss` refuses
+    the column drop. The deploy script, `start-development.sh`, `scripts/refresh-local-db.sh` and the dev bootstrap run
+    it before their push too. The rest of the hub is steps 5d and 7
 - **Profile URLs:** `/@user` becomes the canonical profile URL.
 - **WikiOS v1 ships switched off.** `WIKIOS_V1_ENABLED` is unset, so WikiOS reads but takes no edits (MediaWiki's
   `readonly` error; people edit on classic MediaWiki), `/w/api.php` answers `readonly`, and the mirror and background
@@ -241,7 +247,8 @@ git checkout -B master master/master     # the deploy script deploys the checkou
 `db push` would stop on the data-loss warning. Apply it by hand first, then the one-off ownership backfill. The
 Atlas and World Studio SQL goes **before** that push, for the same reason: it creates `world_presets` and
 `world_preset_versions` and **drops `procedural_worlds`, `world_templates` and `realms."templateId"`** (the schema no
-longer has them, and `db push` stops on the non-empty `procedural_worlds`). The step 1 backup covers the dropped rows:
+longer has them, and `db push` stops on the non-empty `procedural_worlds`). The Vault hub SQL follows it, also before the
+push: it **drops `national_issues."ixCreditsAwarded"`**. The step 1 backup covers the dropped rows:
 
 ```bash
 bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace (since removed: the dependency and the code that used it are gone)
@@ -253,6 +260,11 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT to_regclass('world_presets') IS NOT NULL, to_regclass('world_preset_versions') IS NOT NULL, to_regclass('procedural_worlds') IS NULL, to_regclass('world_templates') IS NULL, NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'realms' AND column_name = 'templateId');"
 #   expect: t|t|t|t|t
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261024120000_vault_hub/migration.sql         # Vault hub: BEFORE db:push:force; idempotent
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
+  "SELECT (SELECT count(*) FROM information_schema.columns WHERE (table_name, column_name) IN (('Country','ownedSince'),('cards','lorewardEntryId'),('cards','lorewardEdition'))), NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'national_issues' AND column_name = 'ixCreditsAwarded'), NOT EXISTS (SELECT 1 FROM \"SystemConfig\" WHERE key = 'showCardsTab');"
+#   expect: 3|t|t
 bun run db:push:force        # answer yes: the world_configs drop, the two Realms unique constraints and WikiOS v1's five are expected
 bun scripts/realms/backfill-foundation.ts                  # dry run
 ```
@@ -404,6 +416,35 @@ Then check the folder is the shared one: `ls "$MAP_RASTER_DIR"/ixnay/relief` lis
 request to maps.ixwiki.com for that version (`/api/map-rasters/ixnay/relief/<version>/0/0/0`, with the version from
 the realm's settings) answers 200, not 404. Repeat with a test realm's first applied world in step 6.
 
+### 5d. Vault hub backfills (after the deploy script)
+
+The Vault hub SQL ran in step 5a, before the push. These two backfills need the new columns and the new code, so they
+run after the deploy script. Both are dry runs by default, idempotent, and print what they would do before you add
+`--apply`.
+
+```bash
+cd /ixwiki/public/projects/ixstats
+bun scripts/backfill-country-owned-since.ts                # dry run: dates per owned nation, and any it cannot date
+bun scripts/backfill-country-owned-since.ts --apply
+bun scripts/backfill-loreward-trophy-cards.ts              # dry run: trophy cards missing per contest
+bun scripts/backfill-loreward-trophy-cards.ts --apply
+```
+
+- **`ownedSince`** is the latest approved realm claim by the current owner (`reviewedAt`), else the nation's first
+  `CountryChangeLog` row. A nation with neither is listed and left empty (it counts as 0 months owned for the
+  Stewardship achievements); set it by hand. **Run it after any `scripts/identity/audit-leader-ownership.ts --apply`**,
+  because that script sets `ownerUserId` without `ownedSince`.
+- **Trophy cards** mint one card per recorded Loreward place back to 2017 (about 2,800 places on the local clone),
+  with no IxCredits, and give each to its winner when that wiki account has a verified IxWiki link; the rest wait unowned
+  and are granted by the Lorewards sync once the account is linked.
+- **Restart** after the backfills and the cron change in step 7: `pm2 restart ixstats-cron --update-env`, and the web
+  app and `ixstats-ws` as in the deploy. The achievement sync at boot (`syncAchievements`) marks the 47 Legacy
+  definitions inactive and creates the new ones; until it has run, `achievements.getAllWithStatus` also re-syncs when it
+  finds the table behind the registry.
+- **Loreward payouts** use the tiered table for entries dated 2026-10-15 or later (`LOREWARD_PAYOUT_START`); earlier
+  entries keep what they paid. If the deploy lands after that date, the first sync pays the new table, runner-ups
+  included, for the days since.
+
 ## 6. Smoke checks (browser)
 
 - `/`, `/dashboard`, `/mycountry`, `/maps` load, and the console shows no errors.
@@ -416,6 +457,12 @@ the realm's settings) answers 200, not 404. Repeat with a test realm's first app
   toggles.
 - **Country editor** (`/mycountry/editor`): change a slider, and an amber dot plus "1 change" appear. Undo reverts it.
 - **Vault:** place a bid on a test auction; the balance moves, and cancelling refunds it.
+- **Vault hub:** the sidebar shows Vault with five rows (Wallet, Daily reward, Achievements, Cards, Store) for a signed-in
+  player with no nation; `/vault` is the statement page; `/vault/achievements` has its four tabs and `/achievements`
+  redirects to it; `/util/lorewards` shows today's race. **Exchange is behind the Labs gate:** `/labs/exchange` gives a
+  user without Labs access a 404 (Labs is open to every signed-in user while the `showLabsTab` setting is on, its default;
+  with it off, only admins and `labs.access` holders get in), and so does every Exchange notification link; `/vault/exchange` redirects to it. The day after step 7, `/vault` shows a
+  "Vault dividend" row for players with activity or a card collection.
 - **Map editor:** click two points on one river, and the edge follows the river.
 - **Atlas:** `/admin/maps` opens the realm overview under the health strip, and `/admin/maps/studio` opens World Studio
   (site admins only). The Earth-like, Ixnay and Eurth presets appear in the Studio and in a founder's World tab after
@@ -477,7 +524,14 @@ plan 327 (auctions, trades, crafting charges). Then add one name per full cycle 
 
 `wiki-recentchanges` → `lore-card-generation` → `card-values` → `sports-season-advance` → `national-issues` →
 `politics-drift` → `diplomatic-drift` → `elections` → `trade-expiry` → `auction-completion` →
-`policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `passive-income` (last).
+`policy-maintenance` (it debits treasuries) → `lorewards-full-sync` → `lorewards-state-sync` → `vault-dividend` (last).
+
+The `passive-income` job was deleted with the Vault hub (2026-10-24): the runner exits on an unknown job name, so in
+`CRON_ENABLED_JOBS` **replace `passive-income` with `vault-dividend`** before restarting `ixstats-cron`. `vault-dividend`
+(midnight UTC) pays the nightly Vault dividend. Its first run records the start day in the SystemConfig row
+`vault_dividend_started_on` and pays only the day just ended; it never settles an earlier day. An admin cron override
+saved under `cronSchedule_passiveIncome` is orphaned (nothing reads it); re-save the schedule in Admin, which stores it
+under `cronSchedule_vaultDividend`.
 
 The `scheduled-changes` job was deleted on 2026-10-06 (D11). If it is still listed in `CRON_ENABLED_JOBS`, remove it
 before deploying: the runner exits on an unknown job name.

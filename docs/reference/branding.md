@@ -155,7 +155,7 @@ the version registry is an open owner decision (`docs/reference/revision.md` is 
 | Sub-system           | Description                                                                                               |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
 | **IxCards**          | Trading card game — Phase 1, replaces legacy IxBank. Card types: Nation, Lore, NS Import, Special.        |
-| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`, `src/lib/economy/budget-vault-calculator.ts`)       |
+| **IxCredits**        | Virtual currency (`src/components/vault/IxCreditsSymbol.tsx`)       |
 | **Card Crafting**    | Retired for now (2026-10-05); every call refuses. Prisma: `CraftingRecipe`, `CraftingHistory` (kept). tRPC: `crafting/`. |
 | **Card Trading**     | Peer-to-peer trades. Prisma: `CardTrade`, `TradeOffer`. tRPC: `trading/`.                               |
 | **Card Marketplace** | Auction & trading platform. Prisma: `CardAuction`, `AuctionBid`. tRPC: `card-market/`.                  |
@@ -318,8 +318,8 @@ First-class systems within the IxStates platform.
 | **Default trophy**  | 🏆                                                                 |
 | **Featured**        | ⭐ / 📝                                                            |
 | **Locked**          | 🔒                                                                 |
-| **Definition file** | `src/lib/achievements/definitions.ts` (991 lines, 76 achievements) |
-| **Categories**      | Economic, Military, Diplomatic, Government, Social, General        |
+| **Definition files** | `src/lib/achievements/sets/` (161 definitions, 114 active and 47 Legacy) |
+| **Categories**      | Executive, Politics, Diplomacy, Defense, Nation, Social, Wiki, Cards, Lorewards, General |
 
 #### Category Icons
 

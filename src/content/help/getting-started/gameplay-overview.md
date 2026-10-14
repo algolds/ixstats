@@ -10,7 +10,7 @@ nextLabel: Finding Your Way Around
 
 ## The short version
 
-There is no win condition. You build a nation, make decisions for it over time, and tell its story alongside other players. Your decisions move your nation's numbers (GDP, population, approval, stability, relations), those numbers show up in rankings and on your public profile, and the things you do earn IxCredits for the Vault.
+There is no win condition. You build a nation, make decisions for it over time, and tell its story alongside other players. Your decisions move your nation's numbers (GDP, population, approval, stability, relations), those numbers show up in rankings and on your public profile, and your activity on the platform earns IxCredits for the Vault.
 
 ## The systems and where they live
 
@@ -33,11 +33,11 @@ There is no win condition. You build a nation, make decisions for it over time, 
 - **Growth over time.** GDP per person and population grow from your starting figures at your growth rate, capped by your [economic tier](/help/economy/tiers).
 - **Directives and issue outcomes.** Economic directives and many issue responses add effects that phase in over time (for example, a GDP change spread over one IxTime year). Others change approval or stability straight away.
 - **World events.** Admins can run world events that raise or lower growth for affected nations. See [Crises & World Events](/help/gameplay/world-events).
-- **Things that don't (yet).** Tax rates and budget splits change your revenue and spending figures and your daily IxCredit dividend, but they do not change GDP growth. See [How Your Economy Is Calculated](/help/economy/calculations).
+- **Things that don't (yet).** Tax rates and budget splits change your revenue and spending figures, but they do not change GDP growth. See [How Your Economy Is Calculated](/help/economy/calculations).
 
 ## Rewards
 
-- **IxCredits** come from a daily dividend based on your economy, a once-a-day reward, achievements and some actions. See [IxCredits](/help/vault/ixcredits).
+- **IxCredits** come from a nightly dividend on your card collection and platform activity, a once-a-day reward, achievements and Lorewards. Your nation doesn't earn them. See [IxCredits](/help/vault/ixcredits).
 - **Achievements** unlock automatically and pay IxCredits. See [Achievements & Ribbons](/help/gameplay/achievements).
 - **Cards** come from packs, the daily reward, trades and imports. See [Your Vault](/help/vault/overview).
 

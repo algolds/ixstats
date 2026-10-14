@@ -5,14 +5,100 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.4 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
+**IxStates 1.5 "Lobster Crosby"**, channel Release Candidate), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
-## [Unreleased] — `rose-garden` (1.4 RC2)
+## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (2026-09-30 → 2026-10-05) is listed first, then
-2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22 work. The version registry (`src/lib/buildVersion.ts`)
-reads 1.4.1 (the realms audit below); RC2 is not cut yet.
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the Vault collectathon hub, 2026-10-14) is listed
+first, then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 💎 Vault Collectathon Hub (2026-10-14) — platform 1.5.0
+
+The Vault becomes the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the
+sidebar for every signed-in player, with Lorewards shared between the Vault and WikiOS. IxCredits are now **pure
+metagame**: they reward platform activity, and a player's country plays no part in them. Design:
+[the Vault hub spec](docs/specs/2026-10-14-vault-collectathon-hub-design.md).
+
+- **Versions:** platform **1.4.1 → 1.5.0** (`VERSIONS.platform.minor`; the release name stays "Lobster Crosby", the channel
+  Release Candidate). **IxVault 2 → 3** (`VERSIONS.apps.ixvault`) and **Achievements 2 → 3**
+  (`VERSIONS.systems.achievements`, which covers Lorewards / Wiki Awards). No other capability integer moves.
+- **Vault in the sidebar for everyone:** the `showCardsTab` navigation setting is gone end to end (the type, the admin
+  switch, the `vaultVisible` plumbing and the stored settings row); the rail wallet and sidebar card show for any
+  signed-in player. The Vault group has five rows: **Wallet**, **Daily reward**, **Achievements**, **Cards** and **Store**.
+  Collections and Import fold into Cards. `/vault/marketplace` is now `/vault/store` (the Store, Auctions and Trading
+  `?tab=` values carry over); `/vault/market`, `/vault/packs` and `/vault/trading` redirect into it. The tint block of
+  `[data-app="vault"]` is defined once, with the `APP_TINTS.vault` values.
+- **Achievements in the Vault:** `/vault/achievements` with four tabs (All, Lorewards, Showcase, Leaderboard); the
+  Leaderboard tab ranks achievement points (`achievements.getPlayerLeaderboard`) and `achievements.getMySummary` feeds
+  the standing card. `/achievements` redirects, keeping `?a=<key>`. The nation boards (GDP, population, density, growth)
+  stay at `/leaderboards`. Unlock notifications, Home-feed unlock items and Halo link to the new page.
+- **Exchange moves to Labs:** `/labs/exchange` (a Labs row in the sidebar); `/vault/exchange` redirects. It is behind the
+  Labs gate, so a user without Labs access gets a 404 there, including from Exchange notification links. **The IxCredits
+  and Sovereigns conversion is cut both ways**: `exchange.convert`, `src/lib/exchange/conversion.ts`, the convert card and
+  the `exchange_convert_*` and `exchange_revenue_*` settings are gone; old `SPEND_EXCHANGE` / `EARN_EXCHANGE` rows stay as
+  history.
+- **Expandable sidebar wallet card:** the card keeps its closed form (balance, "+N today", daily reward) and opens to
+  today's earnings by source, achievement progress (unlocked, points, rank) and links to Cards, Store and Achievements.
+  It shows no dividend figure, and the open state is remembered with the sidebar's expanded set.
+- **The Wallet page (`/vault`) as a bank statement:** an account hero (balance, level, "+N today", net worth, streak, the
+  actions that apply), a statement with a running balance grouped by UTC day (filters All, Earned, Spent; "Show earlier";
+  a Vault dividend row expands to its stored breakdown; Loreward and achievement rows name what they paid for), and a
+  holdings column (Achievements, Lorewards, Cards, Store, and a prompt to link a wiki account). `vault.getTransactions`
+  gains an earned or spent filter and returns each row's metadata. The wallet, collection, yield, recent-activity and
+  showcase cards are removed.
+- **The nightly Vault dividend replaces the country dividend:** one itemised, idempotent payout per user per UTC day from
+  the new `vault-dividend` cron job: collection interest (0.25% of deck value, cap 25, trophy cards excluded), wiki (the
+  Lorewards engine's score for the day, 1 credit per 80 points, cap 30, through a verified wiki link), ThinkPages and
+  forum posts (2 each, cap 20), card activity (2 per pack, 5 per trade, 3 per sale, cap 20), a login-streak bonus on the
+  activity parts (up to +50%), the store's dividend boost, and a total cap of 150. It settles up to 7 missed days and never
+  a day before the recorded start (`vault_dividend_started_on`). Removed with it: the `passive-income` job, the country
+  dividend and its primary-nation rule, the budget multiplier, the missed-day catch-up in `getBalance`, the yield
+  projections and `vault.calculatePassiveIncome`, `vault.getBudgetMultiplier` and `vault.checkDailyCap`, and the dead GDP
+  correlation in the card-value job.
+- **IxCredits earnings from country play removed:** embassy and cultural exchange rewards, diplomatic scenario rewards,
+  the per-post ThinkPages reward, the forum action reward (it supersedes the credit reward in the ThinkPages block above),
+  the wiki-import bonus, and the new-player bonus triggers on country creation and realm claims (the bonus is still paid at
+  account creation and on first Vault open). The phantom "IxCredits awarded" on national issues is gone with
+  `NationalIssue.ixCreditsAwarded` and the `ISSUES_AWARD_CREDITS` flag, and the Vault links in the country actions menu and
+  the embassy card are removed. Kept: the daily claim, achievement unlocks, NS deck import, Loreward payouts, card sales,
+  trades and junking, the nation card royalty (2% of a nation card's auction sale to the nation's owner), and admin
+  grants.
+- **Lorewards, shared:** one `LorewardsView` in two homes: WikiOS `/util/lorewards` (now a real page: today's race,
+  standings, recent winners) and the Vault's Lorewards tab (your trophies, streak, payouts and trophy cards). The Passport
+  modal renders the same view, and the article's "Loreward winner" badge opens that winner's trophies
+  (`/util/lorewards?user=<winner>`). New procedures `lorewards.getTodayRace`, `getStandings`, `getTrophies` and
+  `getMyTrophies`; `wiki.awardHistory` is removed from the passport payload.
+- **Tiered Loreward payouts:** by contest and place, for entries dated 2026-10-15 or later: daily 500 winner / 150
+  runner-up, weekly 1,500 / 400, monthly 4,000 / 1,000 (SystemConfig can override a cell; the single
+  `vault_bonus_loreward` setting is gone). Weekly and monthly runner-ups are not recorded in the data, so only recorded
+  places pay.
+- **Trophy cards:** every recorded Loreward place mints a one-of-one lore card of the winning page (Legendary for a
+  monthly winner, Epic for a weekly winner and a monthly runner-up, Rare otherwise), given to the winner through a
+  verified wiki link or held unowned until one exists. `Card.lorewardEntryId` and `Card.lorewardEdition` are new. They
+  count in the Wallet's deck value and net worth but not in collection interest or deck-value achievements.
+- **Nation achievements rebuilt:** around the live MyCountry systems and long-term play, measured in real time so realms
+  with other clocks are on equal footing. One early milestone per system, then late-stage ones: Executive 16, Politics 8,
+  Diplomacy 10, Defense 2, Nation 12 (including Stewardship I to III on the new `Country.ownedSince`). Gameable keys carry
+  real-time floors. A metric-loader registry (`src/lib/achievements/metrics/`) computes the numbers, and the definitions
+  live in `src/lib/achievements/sets/`.
+- **New platform achievements:** Wiki 7, Social 20, Cards 15, Lorewards 8 and General 16, evaluated at account level
+  (62 of the 114 active achievements need no country). Every icon is an iconoir key rendered through one map.
+- **Legacy achievements:** 47 retired definitions (GDP, GDP per capita and population tiers, unwinnable economic and
+  military ones, embassy-count, treaty, trade and alliance-count tiers, atomic components, government types) stop
+  evaluating but keep their unlocks, points and credits, show greyed out, count toward the "unlock N achievements" tiers
+  and are left out of "N of total".
+- **Docs:** `docs/systems/` (Vault, IxCredits, Achievements with Lorewards, Cards, Exchange, status page, passport), the help
+  articles, the WikiOS route table and the API reference describe the above; the spec gains an Implementation notes
+  section listing where execution departed from its text.
+- **Production steps (in order):** apply `prisma/migrations/20261024120000_vault_hub/migration.sql` **before**
+  `db:push:force` (it adds `Country.ownedSince` and the two `cards` columns, drops `national_issues.ixCreditsAwarded`,
+  deletes the `showCardsTab` row); in `CRON_ENABLED_JOBS` replace `passive-income` with `vault-dividend`; run
+  `bun scripts/backfill-country-owned-since.ts --apply` (after any `audit-leader-ownership.ts` run, which sets owners
+  without `ownedSince`); run `bun scripts/backfill-loreward-trophy-cards.ts --apply`; restart (the boot sync retires the
+  Legacy achievements). An admin cron override saved under `cronSchedule_passiveIncome` is orphaned; re-save it under
+  `cronSchedule_vaultDividend`. The full steps are in `docs/operations/deploy-rose-garden-2026-09.md` (5a, 5d and 7).
 
 ### 💬 ThinkPages Becomes the IxStates Forum (2026-10-07 → 10-11)
 

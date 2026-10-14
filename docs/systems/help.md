@@ -74,7 +74,7 @@ To retire an article, delete the file, remove its registry entry, add the old pa
 
 - Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
 - A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty). The crafting article was removed when crafting was retired (2026-10-05). Remove those notes when the gaps close.
-- `/util/lorewards` (and `/wiki/lorewards`) redirect to `/achievements?tab=wiki-lore`, but that page has no tabs and no Lorewards; the Lorewards article sends players to the passport instead.
+- `/util/lorewards` (and `/wiki/lorewards`) is a real page now (today's race, standings, recent winners); the player's own trophies are the Lorewards tab of `/vault/achievements`, and the Lorewards article describes both.
 
 ---
 

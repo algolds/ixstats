@@ -62,7 +62,7 @@ Each panel says so when there's nothing to show yet.
 
 ## The Achievements showcase shelf
 
-The [Achievements](/achievements) page has its own **Showcase shelf** switch in the header. When it's on, a **Rare achievements showcase** shows the unlocked achievements the fewest players have, three at a time; choose **Show top 9** to see more. This shelf is only on your Achievements page, and the switch is remembered on the device you set it on.
+The [Achievements](/vault/achievements) page has a **Showcase** tab. Its **Rare achievements showcase** shows the unlocked achievements the fewest players have, three at a time; choose **Show top 9** to see more. This shelf is only on your Achievements page. Retired Legacy achievements you unlocked appear greyed out.
 
 ## Privacy
 

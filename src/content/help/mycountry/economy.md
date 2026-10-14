@@ -13,7 +13,7 @@ nextLabel: Politics & Elections
 The Economy section of MyCountry ([/mycountry/economy](/mycountry/economy)) shows how your economy is doing and holds your fiscal controls: department budgets, tax rates and tariffs, plus your trade partners. It has four tabs: **Economic Report**, **National Budget**, **Fiscal Policy** and **Trade & Commerce**. The headline strip at the top shows total GDP, GDP growth, your Economic vitality score and government efficiency.
 
 > [!WARNING]
-> **Budgets and tax rates don't change GDP growth today.** They change your revenue and spending figures and your daily IxCredit dividend. GDP moves with your growth rate, tier, directives, issue outcomes and world events. See [How Your Economy Is Calculated](/help/economy/calculations).
+> **Budgets and tax rates don't change GDP growth today.** They change your revenue and spending figures. GDP moves with your growth rate, tier, directives, issue outcomes and world events. See [How Your Economy Is Calculated](/help/economy/calculations).
 
 ## Economic Report
 
@@ -27,7 +27,7 @@ Your government budget split across departments, and the cost of maintaining inf
 2. Adjust how much each department receives.
 3. Watch the totals and the revenue banner to see whether you're spending more than you raise.
 
-How you split the budget feeds into your daily IxCredit dividend through a budget multiplier: each department's sub-budgets carry a multiplier, weighted by that department's share of the budget (1× when you have no departments set up). Some [directives](/help/mycountry/executive) also nudge department allocations.
+Your budget split does not earn IxCredits. Some [directives](/help/mycountry/executive) also nudge department allocations.
 
 ## Fiscal Policy
 

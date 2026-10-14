@@ -74,5 +74,5 @@ A team page has six sections:
 
 ### Money
 
-- **Sovereigns (₷)** are the sports currency, kept apart from IxCredits. Training a player costs ₷25, a team session ₷100, and stadium expansion and transfer bids are paid in Sovereigns too. Your Sovereign wallet starts with a balance set by the admins. You can't convert IxCredits into Sovereigns yet.
+- **Sovereigns (₷)** are the sports currency, kept apart from IxCredits. Training a player costs ₷25, a team session ₷100, and stadium expansion and transfer bids are paid in Sovereigns too. Your Sovereign wallet starts with a balance set by the admins. IxCredits and Sovereigns can't be converted into each other.
 - **Match revenue** goes into your club's budget when you collect it in **Management**: ticket sales and your sponsor's base fee for each completed home match, plus the sponsor's bonus for each win. Each match pays once.

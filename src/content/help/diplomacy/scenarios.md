@@ -28,10 +28,9 @@ Scenarios have an expiry date; expired ones disappear from the active list.
 ## What a response does
 
 - Your choice and its estimated cultural, diplomatic and economic impact are recorded in your diplomatic history.
-- You earn IxCredits: 10 for responding, +5 for a high-stakes event, and +2, +5 or +8 for a medium, high or extreme-risk response (10 to 23 IxC, within the 100 IxC daily active-earning cap).
 - Responses don't currently change relationship strength or your economy.
 
 ## Tips
 
-- Riskier responses pay a few more IxCredits and make for a more dramatic story; they don't cost you anything else today.
+- Riskier responses make for a more dramatic story; they don't cost you anything else today.
 - Write up what happened on the [feed](/help/social/thinkpages) or in the [wiki](/help/wiki/wikios) to make it part of your nation's story.

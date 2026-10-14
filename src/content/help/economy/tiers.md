@@ -8,21 +8,19 @@ nextLabel: How Your Economy Is Calculated
 
 ## What tiers are
 
-Every nation sits in one of seven economic tiers, set by its **GDP per person**. Your tier matters mainly because it **caps how fast your GDP per person can grow**: poorer nations can grow quickly, rich ones slowly. It also sets your IxCredit dividend multiplier and is shown on your profile, in Explore and on the leaderboards. Your tier updates automatically when your GDP per person crosses a boundary.
+Every nation sits in one of seven economic tiers, set by its **GDP per person**. Your tier matters mainly because it **caps how fast your GDP per person can grow**: poorer nations can grow quickly, rich ones slowly. It is shown on your profile, in Explore and on the leaderboards. Your tier updates automatically when your GDP per person crosses a boundary.
 
 ## The seven tiers
 
-| Tier | GDP per person | Max growth per IxTime year | Dividend multiplier |
-| --- | --- | --- | --- |
-| Impoverished | under $10,000 | 10% | 0.5× |
-| Developing | $10,000 – $24,999 | 7.5% | 1.0× |
-| Developed | $25,000 – $34,999 | 5% | 2.0× |
-| Healthy | $35,000 – $44,999 | 3.5% | 1.5× |
-| Strong | $45,000 – $54,999 | 2.75% | 2.5× |
-| Very Strong | $55,000 – $64,999 | 1.5% | 3.0× |
-| Extravagant | $65,000 and up | 0.5% | 3.5× |
-
-The dividend multiplier is one part of your daily IxCredit dividend; see [IxCredits](/help/vault/ixcredits).
+| Tier | GDP per person | Max growth per IxTime year |
+| --- | --- | --- |
+| Impoverished | under $10,000 | 10% |
+| Developing | $10,000 – $24,999 | 7.5% |
+| Developed | $25,000 – $34,999 | 5% |
+| Healthy | $35,000 – $44,999 | 3.5% |
+| Strong | $45,000 – $54,999 | 2.75% |
+| Very Strong | $55,000 – $64,999 | 1.5% |
+| Extravagant | $65,000 and up | 0.5% |
 
 Above $60,000 per person, growth is damped further (diminishing returns), so the richest nations grow very slowly.
 

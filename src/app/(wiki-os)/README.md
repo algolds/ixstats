@@ -33,7 +33,7 @@ The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/
 | `/util/categories`, `/util/categories/[...slug]` | `util/categories/…` | Category index and recursive category browser |
 | `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
 | `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
-| `/util/lorewards` | `util/lorewards/page.tsx` | Sends a signed-in reader to their IxnayID passport (Lorewards panel) |
+| `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards: today's race, the all-time standings and recent winners (`LorewardsView focus="contest"`). `?user=<wiki name>` (and `&card=<id>`) opens that winner's trophies above the race, which is where an article's Loreward badge links; `/wiki/lorewards` redirects here |
 | `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`), with an Upload button |
 | `/util/upload` | `util/upload/page.tsx` | Special:Upload: upload a file (`POST /api/wiki/upload`, plan 411) |
 | `/util/templates` | `util/templates/page.tsx` | Template browser |

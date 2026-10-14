@@ -28,7 +28,6 @@ In the Government section's **Departments** tab (Advanced mode in the builder; a
 
 The **Budget** tab sets your total government budget and how it's split between departments. After launch, adjust the split in [Economy & Budget → National Budget](/help/mycountry/economy#national-budget).
 
-- The split feeds your daily IxCredit dividend through a budget multiplier.
 - Some [directives](/help/mycountry/executive) shift department allocations slightly.
 - At the start of each new IxTime year you may get a reminder to set that year's budget.
 

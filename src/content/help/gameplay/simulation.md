@@ -17,8 +17,8 @@ The world runs on [IxTime](/help/getting-started/ixtime), at twice real speed. S
 | What | How often |
 | --- | --- |
 | Your GDP per person and population, projected from your growth rate | Continuously; MyCountry always shows the current projection |
-| Stored figures used by rankings, vitality and dividends | Refreshed every few hours by a background job |
-| Your daily IxCredit dividend | Once a day; missed days are paid when you next open the Vault |
+| Stored figures used by rankings and vitality | Refreshed every few hours by a background job |
+| Your nightly Vault dividend | Once a night (UTC), for the day just ended; days a night missed are paid on the next run |
 | New national issues | Generated regularly, within your weekly limit |
 | Elections that are due | Counted automatically (or with **Count votes**) |
 | Relationship strength drifting toward both sides' stances | Regularly |

@@ -1,29 +1,31 @@
 # The Exchange (₷ Sovereigns)
 
-**Last updated:** 2026-10-06 · **Status:** 🟡 MVP and phase 2 live behind a vault flag (on by default): conversion,
-companies, B2B contracts and B2G tenders, the share market and dividends, sector indices and funds, company decisions.
-The two Exchange cron jobs are off until named in `CRON_ENABLED_JOBS`. Design, phase 2 and what is left:
+**Last updated:** 2026-10-14 · **Status:** 🟡 MVP and phase 2 live behind a vault flag (on by default), as a **Labs** section: companies,
+B2B contracts and B2G tenders, the share market and dividends, sector indices and funds, company decisions. The IxCredits
+conversion was removed (2026-10-14). The two Exchange cron jobs are off until named in `CRON_ENABLED_JOBS`. Design, phase 2 and what is left:
 [specs/2026-10-06-exchange-economy-design.md](../specs/2026-10-06-exchange-economy-design.md).
 
-The Exchange is the in-world capital economy, in its own currency, the Sovereign (₷). It is kept apart from
-[IxCredits](ixcredits.md): conversion is the only way between them, and ₷ can only go back to IxC up to what a player
-converted in plus a share of aged contract revenue. MyClub ([myleague.md](myleague.md)) also spends and earns ₷ through
-the same wallet.
+The Exchange is the in-world capital economy, in its own currency, the Sovereign (₷). It is kept entirely apart from
+[IxCredits](ixcredits.md): there is no conversion in either direction, so ₷ comes from the starting balance, contracts,
+shares, dividends, sector funds and MyClub. MyClub ([myleague.md](myleague.md)) also spends and earns ₷ through the
+same wallet.
+
+**Access:** the Exchange lives at `/labs/exchange` and is gated with Labs (`src/app/labs/layout.tsx`, rule in `src/lib/navigation/labs-gate.ts`: signed-out visitors go to sign-in). Labs is open to every signed-in user while the admin `showLabsTab` setting is on (the default); when it is off, only admins and holders of the `labs.access` permission (and everyone in a development build) get in, and anyone else gets a 404. That includes the links in Exchange notifications (`/labs/exchange`): a user without Labs access who follows one sees a 404. `/vault/exchange` redirects to `/labs/exchange`.
 
 ## Where it lives
 
 | Layer | Location |
 |---|---|
-| Page | `/vault/exchange` (`src/app/vault/exchange/page.tsx` → `VaultExchangeSection`); Vault sidebar entry "Exchange" |
-| UI | `src/components/vault/sections/exchange/`: `SovereignWalletCard` (balance, convert, recent activity), `CompaniesCard` (charter, deposit, withdraw, dissolve) + `CompanyControls` (trading switch, share issue, dividend, decisions), `ContractsCard` + `ContractRow` + `ContractForm` (open/mine lists, post a contract or a nation's tender, bid, award, complete, cancel, release, dispute), `SharesCard` (share market, my shares, list for sale), `SectorsCard` (indices with history, fund buy/sell) |
-| Admin | `/admin/vault` → **Exchange** tab (`src/app/admin/vault/ExchangeAdmin.tsx`): rates and limits, contract revenue share and hold, disputes, ₷ adjustments. On/off switch: **System config** → "Enable the Exchange" |
-| Router | `api.exchange.*` (`src/server/api/routers/exchange/`). `index.ts`: `getOverview`, `convert`, `listCompanies`, `foundCompany`, `depositToCompany`, `withdrawFromCompany`, `dissolveCompany`, `listContracts`, `createContract`, `placeBid`, `withdrawBid`, `awardContract`, `completeContract`, `cancelContract`, `releaseContract`, `disputeContract`. `markets.ts`: `getShareMarket`, `setShareTrading`, `issueShares`, `listShares`, `cancelShareListing`, `buyShares`, `declareDividend`, `getCompanyRecord`, `submitDecision`, `getSectors`, `buySectorUnits`, `sellSectorUnits`, `createTender`. `admin.ts`: `adminGetExchangeConfig`, `adminSaveExchangeConfig`, `adminListDisputes`, `adminResolveDispute`, `adminAdjustSovereigns` |
+| Page | `/labs/exchange` (`src/app/labs/exchange/page.tsx` → `ExchangeSection`); Labs sidebar entry "Exchange"; `/vault/exchange` redirects there |
+| UI | `src/components/exchange/`: `SovereignWalletCard` (balance, recent activity), `CompaniesCard` (charter, deposit, withdraw, dissolve) + `CompanyControls` (trading switch, share issue, dividend, decisions), `ContractsCard` + `ContractRow` + `ContractForm` (open/mine lists, post a contract or a nation's tender, bid, award, complete, cancel, release, dispute), `SharesCard` (share market, my shares, list for sale), `SectorsCard` (indices with history, fund buy/sell) |
+| Admin | `/admin/vault` → **Exchange** tab (`src/app/admin/vault/ExchangeAdmin.tsx`): charter fee, company cap and starting balance, disputes, ₷ adjustments. On/off switch: **System config** → "Enable the Exchange" |
+| Router | `api.exchange.*` (`src/server/api/routers/exchange/`). `index.ts`: `getOverview`, `listCompanies`, `foundCompany`, `depositToCompany`, `withdrawFromCompany`, `dissolveCompany`, `listContracts`, `createContract`, `placeBid`, `withdrawBid`, `awardContract`, `completeContract`, `cancelContract`, `releaseContract`, `disputeContract`. `markets.ts`: `getShareMarket`, `setShareTrading`, `issueShares`, `listShares`, `cancelShareListing`, `buyShares`, `declareDividend`, `getCompanyRecord`, `submitDecision`, `getSectors`, `buySectorUnits`, `sellSectorUnits`, `createTender`. `admin.ts`: `adminGetExchangeConfig`, `adminSaveExchangeConfig`, `adminListDisputes`, `adminResolveDispute`, `adminAdjustSovereigns` |
 | Wallet ledger | `src/lib/vault/exchange-service.ts`: `getOrCreateWallet`, `earnSovereignsTx`, `spendSovereignsTx`, `lockWallet`, `exchangeService.earn/spend` (MyClub's entry point) |
 | Config | `src/lib/vault/exchange-config.ts` (`exchange_*` SystemConfig keys, clamped); flag `isExchangeEnabled` in `src/lib/vault/vault-perks.ts` |
-| Logic | `src/lib/exchange/`: `conversion.ts`, `companies.ts`, `contracts.ts` (B2B and B2G), `shares.ts`, `dividends.ts`, `ownership.ts` (holders, company lock, exact pro rata split), `sectors.ts`, `decisions.ts`, `expiry.ts`, `market.ts`, `notify.ts`, `queries.ts`, `guards.ts`, `quote.ts` (pure, shared with the UI) |
+| Logic | `src/lib/exchange/`: `companies.ts`, `contracts.ts` (B2B and B2G), `shares.ts`, `dividends.ts`, `ownership.ts` (holders, company lock, exact pro rata split), `sectors.ts`, `decisions.ts`, `expiry.ts`, `market.ts`, `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` (pure, shared with the UI) |
 | Jobs | `exchange-market` (`7 */6 * * *`, `market.ts` `runExchangeMarketTick`) and `exchange-contract-expiry` (`*/15 * * * *`, `expiry.ts` `expireLapsedContracts`) in `src/server/cron/jobs.ts`; both off unless named in `CRON_ENABLED_JOBS` |
 | Schema | `prisma/schema/exchange.prisma` |
-| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (conversion, companies and contracts, shares and dividends, sectors and decisions, tenders and expiry, notifications), `src/tests/server/api/routers/exchange-router.test.ts` (in-memory database: `src/tests/helpers/fake-exchange-db.ts`) |
+| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (companies and contracts, shares and dividends, sectors and decisions, tenders and expiry, notifications), `src/tests/server/api/routers/exchange-router.test.ts` (in-memory database: `src/tests/helpers/fake-exchange-db.ts`) |
 
 ## Money rules
 
@@ -33,10 +35,7 @@ the same wallet.
   caller's transaction rolls back.
 - **Idempotency:** pass `idempotencyKey` (namespaced, e.g. `exchange:convert:<userId>:<requestId>`). The wallet row is
   locked, the key looked up, and the unique index on `exchange_transactions.idempotencyKey` is the backstop.
-- **Conversion:** rate (default 1 ₷ per IxC), 5% fee each way, 10,000 ₷ per user per UTC day, convert-out allowance =
-  ₷ converted in + `exchange_revenue_convertible_share` (default 0.5) of contract revenue completed at least
-  `exchange_revenue_hold_days` (default 7) ago − ₷ converted out. Vault types `SPEND_EXCHANGE` / `EARN_EXCHANGE`; the
-  vault earning kill switch stops conversion out.
+- **No conversion:** the IxCredits and Sovereigns bridge (`conversion.ts`, the convert UI, the `exchange.convert` procedure and the `exchange_convert_*` and `exchange_revenue_*` settings) was removed. `SPEND_EXCHANGE` and `EARN_EXCHANGE` vault rows and `CONVERT_IN` / `CONVERT_OUT` exchange rows from before stay in the ledgers as history; a leftover `exchange_convert_*` or `exchange_revenue_*` SystemConfig row is ignored.
 - **Companies:** charter fee 1,000 ₷ (burned), 3 active per player, 1,000 founder shares. Capital moves only with
   conditional updates; contracts escrow from it and pay into it. Once anyone else holds shares (or a new issue is on
   sale), the founder can't withdraw capital: it leaves only as dividends or on dissolution, pro rata.
@@ -58,7 +57,7 @@ the same wallet.
 
 ## Ledger types
 
-`ExchangeTransaction.type`: `CONVERT_IN`, `CONVERT_OUT`, `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`,
+`ExchangeTransaction.type`: `CONVERT_IN` and `CONVERT_OUT` (old rows only), `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`,
 `SHARE_BUY`/`SHARE_SELL` (share trades, source `SHARES:<companyId>`; MyClub also uses them for transfer escrow),
 `DIVIDEND` (dividends and liquidation payouts), `SECTOR_BUY`/`SECTOR_SELL` (source `SECTOR_FUND:<sector>`),
 `CONTRACT_ESCROW`/`CONTRACT_REFUND` (wallet-funded tenders), `CONTRACT_PAYOUT` (reserved), `ADMIN_ADJUSTMENT` (also
@@ -78,8 +77,7 @@ minimum urgency apply. They are sent after the transaction commits and never blo
 - `RND`, `ACQUIRE`, `LOBBY` and `PRICE` decisions, admin- or sim-issued tenders (a ₷ faucet), a nation ₷ treasury and an
   order book are not built (spec §8, "Still not built").
 - Sector indices follow Exchange activity, not `SectoralOutput`; nothing sets `SectorIndex.dmModifier` yet.
-- Two colluding accounts can move ₷ through contracts (and so some IxC through the relaxed out allowance), or drain a
-  company's capital through a contract to an accomplice; fees, the hold, the share and the daily cap bound it.
+- Two colluding accounts can drain a company's capital through a contract to an accomplice; fees bound it. ₷ can no longer be turned into IxC.
 - MyClub's ₷ spends ignore the Exchange flag and vault maintenance mode on purpose (they predate the Exchange).
 - There is no admin-registered event key for Exchange notifications; the notification guard treats `exchangeNotification`
   as enabled.

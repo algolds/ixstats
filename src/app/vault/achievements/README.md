@@ -9,19 +9,19 @@ the standalone `/leaderboards` page. See `docs/systems/achievements.md` for the 
 
 ## Routes
 
-| Path                           | Purpose                                                                             |
-| ------------------------------ | ----------------------------------------------------------------------------------- |
-| `/vault/achievements`          | Standing card + tabs (`AchievementsTabs`)                                           |
-| `/vault/achievements?tab=<id>` | `all` (default, bare path), `lorewards`, `showcase`, `leaderboard`                  |
-| `/vault/achievements?a=<key>`  | Opens that achievement in All: its series card shows the tier and scrolls into view |
-| `/achievements`                | Redirect to `/vault/achievements`, query kept                                       |
-| `/leaderboards`                | Nation boards (`CountryLeaderboards`)                                               |
-| `/wiki/lorewards`              | Wiki Lorewards (WikiOS)                                                             |
+| Path                           | Purpose                                                                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------ |
+| `/vault/achievements`          | Standing card + tabs (`AchievementsTabs`)                                                  |
+| `/vault/achievements?tab=<id>` | `all` (default, bare path), `lorewards`, `showcase`, `leaderboard`                         |
+| `/vault/achievements?a=<key>`  | Opens that achievement in All: its series card shows the tier and scrolls into view        |
+| `/achievements`                | Redirect to `/vault/achievements`, query kept                                              |
+| `/leaderboards`                | Nation boards (`CountryLeaderboards`)                                                      |
+| `/util/lorewards`              | Lorewards in WikiOS: today's race, standings, recent winners (`/wiki/lorewards` redirects) |
 
 ## Tabs
 
 - **All** (`AllAchievementsTab`): the catalogue, filterable by rarity, with search, grid or list, and secret reveal.
-- **Lorewards**: present only when the page passes `lorewardsPanel` to `AchievementsTabs`.
+- **Lorewards**: the page passes `VaultLorewardsPanel` (the shared `LorewardsView`, `focus="you"`) as `lorewardsPanel`; the tab is present only when a panel is passed.
 - **Showcase** (`ShowcaseTab`): the player's rarest unlocks.
 - **Leaderboard** (`LeaderboardTab`): players ranked by achievement points. It never queries the nation boards.
 

@@ -219,6 +219,9 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 | Daily awards | Scored daily winner and runner-up based on edit size and quality |
 | Leaderboards | Filterable by daily, weekly, monthly, and all-time periods |
 | Streak calendar | Calendar heatmap showing consecutive contribution days |
+| Today's race | The top ten editors of the current UTC day, scored live (`lorewards.getTodayRace`, cached 10 minutes) |
+| Payouts and trophy cards | Tiered IxCredits by contest and place and a one-of-one trophy card per recorded place; see [achievements.md](../achievements.md#lorewards) |
+| One view, two homes | `/util/lorewards` (WikiOS, `LorewardsView focus="contest"`) and the Vault's Lorewards tab; the passport modal and the article badge (`?user=<winner>`) open the same view |
 | User stats | Total wins, runner-up finishes, bytes contributed, current and longest streaks |
 | Scoring engine | Evaluates bytes added, prose ratio, edit depth, novelty and topic importance (`lib/lorewards/scoring.ts`); admins tune the weights in Admin → Wiki → Lorewards (`lorewardWeight_<field>`) |
 

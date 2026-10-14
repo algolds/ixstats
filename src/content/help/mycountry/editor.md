@@ -36,7 +36,7 @@ If you try to leave with unsaved changes, you're asked to **Save and leave**, **
 
 - **Identity** (names, flag, motto and so on) updates your profile and MyCountry.
 - **Government components** recalculate your government effectiveness, which feeds your Efficiency vitality ring and your executive bandwidth.
-- **Department budgets** change your spending figures and your daily IxCredit dividend.
+- **Department budgets** change your spending figures.
 - **Economic components** change maintenance costs, unemployment, inflation and tax revenue figures.
 - **Two components adjust tax revenue once, when added:** Social Democracy raises tax revenue as a share of GDP by ×1.2 (capped at 60% of GDP); a Free Market System lowers it by ×0.8 (with a floor of 15%).
 

@@ -50,7 +50,7 @@ Review the whole nation. When you create it:
 
 ## Importing from a wiki
 
-Choose the import option, pick **IIWiki** or **AltHistory Wiki**, search for the page and select it. The builder reads the infobox (name, capital, population, leader and similar fields), shows you what it found, and fills the matching builder fields. You review and complete the rest. A wiki import pays a one-time 2,500 IxCredit bonus by default.
+Choose the import option, pick **IIWiki** or **AltHistory Wiki**, search for the page and select it. The builder reads the infobox (name, capital, population, leader and similar fields), shows you what it found, and fills the matching builder fields. You review and complete the rest.
 
 ## Tips
 

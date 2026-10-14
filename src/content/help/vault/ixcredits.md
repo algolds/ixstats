@@ -10,29 +10,24 @@ nextLabel: Card Packs
 
 ## What IxCredits are
 
-IxCredits (IxC) are the platform currency, kept in your [Vault](/vault). You earn them from your nation's economy, a daily reward, achievements and some actions, and spend them on card packs, auctions, trades and shop items. Every change is recorded in your Vault's transaction history. The amounts below are defaults; admins can tune them.
+IxCredits (IxC) are the platform currency, kept in your [Vault](/vault). You earn them from platform activity (writing on the wiki, posting, card activity), a nightly dividend on your card collection, a daily reward, achievements and Lorewards, and spend them on card packs, auctions, trades and shop items. A nation doesn't earn or spend IxCredits. Every change is recorded in your Vault's statement. The amounts below are defaults; admins can tune them.
 
 ## Earning IxCredits
 
 | Source | Amount | Daily cap |
 | --- | --- | --- |
-| Daily dividend from your nation | Depends on your economy (see below) | None |
+| Vault dividend, every night | Up to 150 a day (see below) | None |
 | Daily reward, credits option | Random roll, scaled by Vault level and streak | Active cap (100) |
-| Opening an embassy | 15 | Active cap |
-| Organising a cultural exchange | 12 | Active cap |
-| Responding to a diplomatic event | 10 to 23 | Active cap |
-| Your own ThinkPages posts | 1 each, first 5 a day | Social cap (50) |
 | Achievements | 100 / 250 / 500 / 1,000 / 2,500 by rarity, once each | None |
 | New account welcome bonus | 5,000, once per account | None |
-| Importing your country from a wiki | 2,500, once | None |
 | Importing a NationStates deck | 50 per new card, up to 5,000, once per NationStates nation | None |
-| Winning a Loreward | 2,500 | None |
+| Lorewards | 500 / 150 for a daily win / runner-up, 1,500 / 400 weekly, 4,000 / 1,000 monthly | None |
+| Selling cards, trades and recycling | The price you get, minus fees | None |
 
 ## Daily caps
 
-- **Active earnings** (the daily reward's credits, embassies, exchanges, diplomatic events): 100 IxC per UTC day.
-- **Social earnings** (posts): 50 IxC per UTC day.
-- The dividend, achievements and one-time bonuses have no cap.
+- **Active earnings** (the daily reward's credits): 100 IxC per UTC day.
+- The dividend, achievements, Lorewards and one-time bonuses have no cap.
 
 If an earning would take you over a cap, you get whatever's left of the cap. Caps reset at midnight UTC.
 
@@ -45,18 +40,14 @@ Once per UTC day, claim either **IxCredits** or **one random card**:
 - The prompt opens by itself at most once a day. If you dismiss it, claim later from the Vault widget in the Vault or Dashboard sidebar.
 - Claiming on consecutive UTC days builds your streak. Miss a day and it resets to 1.
 
-## The daily dividend
+## The Vault dividend
 
-If you own a nation, it pays a dividend once a day:
+Every night (UTC) you can be paid a dividend for the day just ended. It has two kinds of part:
 
-**(base rate + population bonus + growth bonus) × budget multiplier**
+- **Collection interest:** 0.25% of the value of your cards a day, up to 25. Loreward trophy cards don't count.
+- **Activity:** 1 IxCredit for every 80 Loreward score points your wiki edits earned that day (up to 30; your IxWiki account must be [linked](/help/getting-started/ixnayid#link-your-wiki-accounts)), 2 for each of your ThinkPages posts and forum posts or replies (up to 20), and for card activity 2 per pack opened, 5 per completed trade and 3 per card sold (up to 20).
 
-- **Base rate:** GDP per person ÷ 10,000 × your [tier](/help/economy/tiers) multiplier (0.5× to 3.5×).
-- **Population bonus:** 0.01 per million people.
-- **Growth bonus:** +10% of the base rate if your growth rate is above 3%.
-- **Budget multiplier:** from your department budget split; 1× if you haven't set one up.
-
-The dividend comes from your first (earliest-created) nation, whichever nation you're playing as. If you miss days, they're paid when you next open the Vault. Your Vault dashboard shows the projected daily, weekly and monthly amounts.
+A login streak raises the activity parts by 5% for each day of streak, up to 10 days (so at most +50%). Account upgrades that boost the dividend multiply the total. The total is at most 150 a day. If a night is missed, the unpaid days from the last week are paid from that day's own activity. Open a **Vault dividend** row in your statement to see how that day's amount was worked out.
 
 ## Spending IxCredits
 
