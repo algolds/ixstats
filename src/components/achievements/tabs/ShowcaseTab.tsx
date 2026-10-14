@@ -3,20 +3,25 @@
 import { motion } from "motion/react";
 
 import React, { useState } from "react";
-import { Trophy, Sparks as Sparkles } from "iconoir-react";
-import { cn, createUrl } from "~/lib/utils";
+import { Hourglass, Trophy, Sparks as Sparkles } from "iconoir-react";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
-import { getRarityBadgeVariant, getAchievementGameIconPath, getCategoryTheme } from "../constants";
-import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
+import {
+  getAchievementIcon,
+  getCategoryTheme,
+  getRarityBadgeVariant,
+  type AchievementItem,
+} from "../constants";
+import { AchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
 import { Card } from "~/components/ui/card";
 
 const MotionCard = motion.create(Card);
 
 interface ShowcaseTabProps {
-  achievements: any[] | undefined;
+  achievements: AchievementItem[] | undefined;
 }
 
 export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
@@ -67,8 +72,8 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
             const isUnlocked = achievement.isUnlocked;
             const categoryTheme = getCategoryTheme(achievement.category);
             const CategoryIcon = categoryTheme.icon;
-            const rawIconPath = getAchievementGameIconPath(achievement.key, achievement.category);
-            const iconPath = createUrl(rawIconPath);
+            const icon = getAchievementIcon(achievement.iconUrl, achievement.category);
+            const isLegacy = achievement.isLegacy;
 
             let count = 0;
             if (achievement.metadata) {
@@ -91,7 +96,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
                 className={cn(
                   "flex flex-col justify-between overflow-hidden p-4",
-                  categoryTheme.cardBorderHover
+                  isLegacy ? "opacity-70 grayscale" : categoryTheme.cardBorderHover
                 )}
               >
                 <AchievementCardBackdrop
@@ -104,9 +109,17 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
                 <div className="relative">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <Badge variant={getRarityBadgeVariant(achievement.rarity, isUnlocked)}>
-                      {achievement.rarity}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getRarityBadgeVariant(achievement.rarity, isUnlocked)}>
+                        {achievement.rarity}
+                      </Badge>
+                      {isLegacy && (
+                        <Badge variant="default">
+                          <Hourglass aria-hidden />
+                          <span>Legacy</span>
+                        </Badge>
+                      )}
+                    </div>
                     <span className="text-label-secondary text-footnote tabular-nums">
                       {achievement.globalUnlockPercent !== undefined
                         ? `${achievement.globalUnlockPercent}% unlocked`
@@ -121,12 +134,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                         categoryTheme.pedestal
                       )}
                     >
-                      <JewelAchievementIcon
-                        iconPath={iconPath}
-                        categoryTheme={categoryTheme}
-                        isUnlocked={!!isUnlocked}
-                        className="size-6.5"
-                      />
+                      <AchievementIcon icon={icon} isUnlocked={!!isUnlocked} className="size-6.5" />
                       {isUnlocked && count > 1 && (
                         <Badge
                           variant="warning"

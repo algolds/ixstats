@@ -104,23 +104,4 @@
       transition: none;
     }
   }
-
-  /* The achievement's icon as a gem; the icon comes from `--heraldry-mask`. */
-  .facet-jewel {
-    -webkit-mask-image: var(--heraldry-mask);
-    mask-image: var(--heraldry-mask);
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-    mask-position: center;
-    /* A metallic gem gradient; `--jewel-from/-via/-to` recolour it. */
-    background-image: linear-gradient(
-      to top right,
-      var(--jewel-from, var(--gold)),
-      var(--jewel-via, #fef9c3),
-      var(--jewel-to, var(--gold))
-    );
-  }
 }

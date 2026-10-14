@@ -23,10 +23,6 @@ jest.mock("~/lib/activity", () => ({
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
 }));
-jest.mock("~/lib/achievements/scaling", () => ({
-  ...jest.requireActual("~/lib/achievements/scaling"),
-  getScaleThresholds: jest.fn().mockResolvedValue({}),
-}));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
@@ -37,9 +33,9 @@ import {
 } from "~/lib/achievements/definitions";
 import { queueAchievementCheck, resetAchievementQueue } from "~/lib/achievements/queue";
 import {
-  ACCOUNT_LEVEL_ACHIEVEMENT_IDS,
   ACCOUNT_LEVEL_METRICS,
   RECRUITER_ACHIEVEMENT_IDS,
+  achievementRequiresCountry,
 } from "~/lib/achievements/scope";
 import { syncAchievements } from "~/lib/achievements/sync";
 import { achievementService } from "~/lib/achievements/service";
@@ -87,6 +83,7 @@ interface SyncedRow {
 async function syncedRows(): Promise<Map<string, SyncedRow>> {
   jest.spyOn(console, "log").mockImplementation(() => {});
   mockDb.achievement.upsert.mockClear();
+  mockDb.achievement.findMany.mockResolvedValue([]); // no Legacy row is retired yet
   await syncAchievements(db);
   const rows: SyncedRow[] = mockDb.achievement.upsert.mock.calls.map(
     ([args]: [{ create: SyncedRow }]) => args.create
@@ -130,15 +127,16 @@ describe("recruiter achievement definitions", () => {
   it.each(LADDER)("%s (%s) unlocks at %d recruits, not one fewer", (id, title, threshold) => {
     const def = getAchievementById(id);
     expect(def).toMatchObject({ title, category: "Social" });
-    expect(def?.condition(withRecruits(threshold))).toBe(true);
-    expect(def?.condition(withRecruits(threshold - 1))).toBe(false);
-    expect(def?.condition(withRecruits())).toBe(false);
+    const stored = { key: id, conditionJson: null };
+    expect(achievementService.evaluateCondition(stored, withRecruits(threshold))).toBe(true);
+    expect(achievementService.evaluateCondition(stored, withRecruits(threshold - 1))).toBe(false);
+    expect(achievementService.evaluateCondition(stored, withRecruits())).toBe(false);
   });
 
   it("are account-level, read only recruitedCount and climb in rarity", () => {
     expect(ACCOUNT_LEVEL_METRICS.has("recruitedCount")).toBe(true);
     for (const [id] of LADDER) {
-      expect(ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has(id)).toBe(true);
+      expect(achievementRequiresCountry({ key: id })).toBe(false);
       expect(RECRUITER_ACHIEVEMENT_IDS.has(id)).toBe(true);
     }
     expect(LADDER.map(([id]) => getAchievementById(id)?.rarity)).toEqual([

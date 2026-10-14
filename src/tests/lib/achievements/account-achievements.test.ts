@@ -17,17 +17,10 @@ jest.mock("~/lib/activity", () => ({
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
 }));
-jest.mock("~/lib/achievements/scaling", () => ({
-  ...jest.requireActual("~/lib/achievements/scaling"),
-  getScaleThresholds: jest.fn().mockResolvedValue({}),
-}));
 
-import { ACHIEVEMENT_DEFINITIONS, getAchievementById } from "~/lib/achievements/definitions";
-import {
-  ACCOUNT_LEVEL_ACHIEVEMENT_IDS,
-  ACCOUNT_LEVEL_METRICS,
-  achievementRequiresCountry,
-} from "~/lib/achievements/scope";
+import { getAchievementById } from "~/lib/achievements/definitions";
+import { ACCOUNT_LEVEL_METRICS, achievementRequiresCountry } from "~/lib/achievements/scope";
+import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
 import { syncAchievements } from "~/lib/achievements/sync";
 import { achievementService } from "~/lib/achievements/service";
 import { getBonusConfig, grantBonus, VAULT_BONUS_DEFAULTS } from "~/lib/vault/vault-bonus";
@@ -71,42 +64,70 @@ beforeEach(() => {
   jest.mocked(getBonusConfig).mockResolvedValue(VAULT_BONUS_DEFAULTS);
 });
 
+/** Every definition that evaluates without a country, by the scope it derives. */
+const ACCOUNT_LEVEL_IDS = ALL_DEFINITIONS.filter(
+  (d) => !d.retired && !achievementRequiresCountry({ key: d.id })
+).map((d) => d.id);
+
 describe("achievement scope", () => {
-  it("lists only real definitions as account-level", () => {
-    for (const id of ACCOUNT_LEVEL_ACHIEVEMENT_IDS) {
-      expect(getAchievementById(id)).toBeDefined();
+  it("derives the account-level definitions from their rule metric or accountLevel flag", () => {
+    expect(ACCOUNT_LEVEL_IDS).toEqual(
+      expect.arrayContaining([
+        "gen-welcome",
+        "gen-one-week",
+        "gen-one-month",
+        "gen-three-months",
+        "gen-one-year",
+        "gen-achievement-hunter",
+        "gen-achievement-master",
+        "gen-achievement-legend",
+        "vid-end-of-days",
+        "vid-annual",
+        "meme-ns-ref",
+        "social-first-thinkpage",
+        "social-thinkpage-author",
+        "social-prolific-author",
+        "social-trending",
+        "lore-scholar",
+        "collect-lore-keeper",
+        "collect-archaeologist",
+        "collect-diplomat",
+        "social-recruiter",
+        "social-envoy",
+        "social-founders-hand",
+      ])
+    );
+  });
+
+  it("covers General, Social and Cards achievements", () => {
+    const categories = new Set(ACCOUNT_LEVEL_IDS.map((id) => getAchievementById(id)!.category));
+    for (const category of ["General", "Social", "Cards"] as const) {
+      expect(categories.has(category)).toBe(true);
     }
   });
 
-  it("covers General, Social and collection achievements", () => {
-    const categories = new Set(
-      [...ACCOUNT_LEVEL_ACHIEVEMENT_IDS].map((id) => getAchievementById(id)!.category)
-    );
-    expect(categories).toEqual(new Set(["General", "Social", "Diplomatic"]));
-    expect(ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has("gen-welcome")).toBe(true);
-    expect(ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has("collect-lore-keeper")).toBe(true);
-    expect(ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has("social-first-thinkpage")).toBe(true);
-  });
-
-  it("account-level conditions never read country data", () => {
+  it("account-level definitions evaluate without country data", () => {
     const data = {
       daysActive: 400,
       totalAchievements: 60,
+      existingKeys: [],
       thinkpageCount: 60,
       trendingPostCount: 1,
       loreCardCount: 60,
       retiredCardCount: 20,
       distinctCountryIdCount: 30,
     };
-    for (const id of ACCOUNT_LEVEL_ACHIEVEMENT_IDS) {
+    for (const id of ACCOUNT_LEVEL_IDS) {
       // `country` is undefined: a condition touching it would throw here
-      expect(() => getAchievementById(id)!.condition(data as never)).not.toThrow();
+      expect(() =>
+        achievementService.evaluateCondition({ key: id, conditionJson: null }, data)
+      ).not.toThrow();
     }
   });
 
   it("stored rules of account-level achievements read only account-level metrics", async () => {
     const conditions = await syncedConditions();
-    for (const id of ACCOUNT_LEVEL_ACHIEVEMENT_IDS) {
+    for (const id of ACCOUNT_LEVEL_IDS) {
       const rule = JSON.parse(conditions.get(id) ?? "{}");
       if (rule.metric) expect(ACCOUNT_LEVEL_METRICS.has(rule.metric)).toBe(true);
     }
@@ -114,10 +135,26 @@ describe("achievement scope", () => {
 
   it("keeps every other built-in achievement country-bound", async () => {
     const conditions = await syncedConditions();
-    const countryBound = ACHIEVEMENT_DEFINITIONS.filter(
-      (d) => !ACCOUNT_LEVEL_ACHIEVEMENT_IDS.has(d.id)
+    const countryBound = ALL_DEFINITIONS.filter(
+      (d) => !d.retired && !ACCOUNT_LEVEL_IDS.includes(d.id)
     );
-    expect(countryBound.length).toBe(ACHIEVEMENT_DEFINITIONS.length - 22);
+    expect(countryBound.map((d) => d.id)).toEqual(
+      expect.arrayContaining([
+        "meme-1337",
+        "meme-bankruptcy",
+        "meme-stonks",
+        "lore-collector",
+        "social-popular",
+        "story-chain-1",
+        "story-chain-5",
+        "story-chain-25",
+        "mil-first-branch",
+        "dip-first-embassy",
+        "gov-first-component",
+        "gen-first-country",
+        "vid-lightswitch",
+      ])
+    );
     for (const def of countryBound) {
       expect(
         achievementRequiresCountry({ key: def.id, conditionJson: conditions.get(def.id) ?? null })
@@ -125,7 +162,7 @@ describe("achievement scope", () => {
     }
     // e.g. followers belong to a country, GDP growth is a country stat
     expect(achievementRequiresCountry({ key: "social-popular" })).toBe(true);
-    expect(achievementRequiresCountry({ key: "econ-growth-rocket" })).toBe(true);
+    expect(achievementRequiresCountry({ key: "meme-stonks" })).toBe(true);
     expect(achievementRequiresCountry({ key: "gen-first-country" })).toBe(true);
   });
 
@@ -152,10 +189,10 @@ describe("AchievementService.evaluateCondition", () => {
   });
 
   it("never passes a country achievement without a country, whatever the data says", () => {
-    const growth = JSON.stringify({ metric: "adjustedGdpGrowth", operator: ">=", value: 10 });
+    const growth = JSON.stringify({ metric: "adjustedGdpGrowth", operator: "<", value: 0 });
     expect(
-      achievementService.evaluateCondition({ key: "econ-growth-rocket", conditionJson: growth }, {
-        adjustedGdpGrowth: 50,
+      achievementService.evaluateCondition({ key: "meme-stonks", conditionJson: growth }, {
+        adjustedGdpGrowth: -50,
       } as never)
     ).toBe(false);
     expect(
@@ -202,10 +239,7 @@ describe("AchievementService.checkAndUnlock without a country", () => {
         JSON.stringify({ metric: "totalAchievements", operator: ">=", value: 10 }),
         "Uncommon"
       ),
-      row(
-        "econ-growth-rocket",
-        JSON.stringify({ metric: "adjustedGdpGrowth", operator: ">=", value: 10 })
-      ),
+      row("meme-stonks", JSON.stringify({ metric: "adjustedGdpGrowth", operator: "<", value: 0 })),
       row(
         "gen-first-country",
         JSON.stringify({ metric: "countryClaimed", operator: "==", value: true })
@@ -276,7 +310,7 @@ describe("AchievementService.checkAndUnlock without a country", () => {
     const unlocked = await achievementService.checkAndUnlock(CLERK_ID, "gone", db as never);
 
     expect(unlocked).toContain("gen-welcome");
-    expect(unlocked).not.toContain("econ-growth-rocket");
+    expect(unlocked).not.toContain("meme-stonks");
   });
 });
 
@@ -290,21 +324,18 @@ describe("AchievementService.checkAndUnlock with a country", () => {
       currentGdpPerCapita: 20000,
       currentPopulation: 5e6,
       economicTier: "Tier 3",
-      adjustedGdpGrowth: 12,
+      adjustedGdpGrowth: -3,
       populationGrowthRate: 1,
-      actualGdpGrowth: 12,
+      actualGdpGrowth: -3,
       createdAt: new Date(),
     });
     db.embassy.count.mockResolvedValue(0);
-    db.militaryBranch.count.mockResolvedValue(0);
+    db.militaryBranch.findMany.mockResolvedValue([]);
     db.governmentComponent.count.mockResolvedValue(0);
     db.countryFollow.count.mockResolvedValue(0);
     db.thinkpagesPost.count.mockResolvedValue(0);
     db.achievement.findMany.mockResolvedValue([
-      row(
-        "econ-growth-rocket",
-        JSON.stringify({ metric: "adjustedGdpGrowth", operator: ">=", value: 10 })
-      ),
+      row("meme-stonks", JSON.stringify({ metric: "adjustedGdpGrowth", operator: "<", value: 0 })),
       row(
         "gen-first-country",
         JSON.stringify({ metric: "countryClaimed", operator: "==", value: true })
@@ -313,6 +344,6 @@ describe("AchievementService.checkAndUnlock with a country", () => {
 
     const unlocked = await achievementService.checkAndUnlock("clerk_1", "c1", db as never);
 
-    expect(unlocked.sort()).toEqual(["econ-growth-rocket", "gen-first-country"]);
+    expect(unlocked.sort()).toEqual(["gen-first-country", "meme-stonks"]);
   });
 });

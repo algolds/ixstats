@@ -16,7 +16,7 @@ const achievementView = (a: UserAchievement) => ({
   id: a.id,
   title: a.title,
   description: a.description,
-  icon: a.iconUrl || "🏆",
+  icon: a.iconUrl || "Trophy",
   unlockedAt: a.unlockedAt.toISOString(),
   category: a.category,
   rarity: a.rarity,

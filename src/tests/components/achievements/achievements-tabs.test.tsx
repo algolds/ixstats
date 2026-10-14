@@ -17,7 +17,7 @@ jest.mock("~/components/achievements/tabs/ShowcaseTab", () => ({
 
 import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
 
-/** The population series (4 tiers), all unlocked, so the card opens on tier IV by default. */
+/** The ThinkPages series (3 tiers), all unlocked, so the card opens on tier III by default. */
 const level = (key: string, title: string) => ({
   key,
   title,
@@ -31,10 +31,9 @@ const level = (key: string, title: string) => ({
   globalUnlockPercent: 50,
 });
 const ACHIEVEMENTS = [
-  level("pop-emerging", "Emerging Nation"),
-  level("pop-populous", "Populous Nation"),
-  level("pop-giant", "Giant Nation"),
-  level("pop-mega", "Mega Nation"),
+  level("social-first-thinkpage", "First Thinker"),
+  level("social-thinkpage-author", "Thought Author"),
+  level("social-prolific-author", "Prolific Thinker"),
   level("solo-one", "Standalone One"),
 ];
 
@@ -95,7 +94,7 @@ describe("AchievementsTabs", () => {
   });
 
   it("writes the chosen tab to the URL, dropping the achievement key", () => {
-    mockQuery = "a=pop-giant";
+    mockQuery = "a=social-prolific-author";
     renderTabs();
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Showcase" }), { button: 0 });
     expect(mockReplace).toHaveBeenCalledWith("/vault/achievements?tab=showcase", {
@@ -115,16 +114,16 @@ describe("?a=<key>", () => {
   const tierButton = (level: number) => screen.getByTitle(new RegExp(`^Level ${level}:`));
 
   it("opens the series card on the tier it names, in All", () => {
-    mockQuery = "a=pop-populous";
+    mockQuery = "a=social-thinkpage-author";
     renderTabs();
-    expect(screen.getByRole("heading", { name: "Populous Nation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Thought Author" })).toBeInTheDocument();
     expect(tierButton(2)).toHaveAttribute("aria-pressed", "true");
-    expect(tierButton(4)).toHaveAttribute("aria-pressed", "false");
+    expect(tierButton(3)).toHaveAttribute("aria-pressed", "false");
   });
 
   it("opens on the highest unlocked tier without a key", () => {
     renderTabs();
-    expect(screen.getByRole("heading", { name: "Mega Nation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Prolific Thinker" })).toBeInTheDocument();
   });
 
   it("scrolls the achievement's card into view", () => {
@@ -140,6 +139,6 @@ describe("?a=<key>", () => {
   it("ignores a key that matches nothing", () => {
     mockQuery = "a=nope";
     renderTabs();
-    expect(screen.getByRole("heading", { name: "Mega Nation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Prolific Thinker" })).toBeInTheDocument();
   });
 });

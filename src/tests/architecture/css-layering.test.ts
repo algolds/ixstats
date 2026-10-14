@@ -44,10 +44,10 @@ const CONDITIONAL_GROUP = /^@(media|supports|container)\b/;
 
 /**
  * Material/surface classes that must never set layout-affecting properties, including the content
- * art paints (flag watermark, aurora, foil, jewel), which the primitives place with utilities.
+ * art paints (flag watermark, aurora, foil), which the primitives place with utilities.
  */
 const MATERIAL_CLASS =
-  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal|tint-glow|refraction-line|acrylic-glow|flag-watermark|aurora|foil|jewel)(?![\w-])/;
+  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal|tint-glow|refraction-line|acrylic-glow|flag-watermark|aurora|foil)(?![\w-])/;
 
 /** `@utility` materials and Facet 3.1 identity utilities: paint only, like the classes above. */
 const MATERIAL_UTILITY = /^@utility (material-[\w-]+|facet-[\w-]+)$/;

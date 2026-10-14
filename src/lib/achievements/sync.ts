@@ -1,8 +1,8 @@
 import { type PrismaClient } from "@prisma/client";
-import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./definitions";
+import { ruleToJson, type AchievementDefinition } from "./definitions";
 import { getCardRewardForAchievement } from "./card-rewards";
-import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./scaling";
 import { RECRUITER_ACHIEVEMENT_IDS } from "./scope";
+import { ALL_DEFINITIONS } from "./sets";
 
 const CREDITS_BY_RARITY: Record<string, number> = {
   Common: 5,
@@ -34,25 +34,40 @@ function buildRewards(id: string, rarity: string) {
   return rewards;
 }
 
+/** Retired (Legacy) definitions, which are marked inactive once and then left alone. */
+export const RETIRED_IDS: ReadonlySet<string> = new Set(
+  ALL_DEFINITIONS.filter((def) => def.retired).map((def) => def.id)
+);
+
 export async function syncAchievements(db: PrismaClient): Promise<void> {
   if (!db?.achievement?.upsert) return;
 
   console.log("[Achievement Sync] Starting baseline synchronization...");
+  // Retired rows already marked inactive are unchanged: skip them so a sync stays cheap
+  const retiredDone = new Set(
+    (
+      await db.achievement.findMany({
+        where: { key: { in: [...RETIRED_IDS] }, isActive: false },
+        select: { key: true },
+      })
+    ).map((row) => row.key)
+  );
   let syncedCount = 0;
 
-  for (const def of ACHIEVEMENT_DEFINITIONS) {
-    const condition = determineCondition(def.id, def.rarity);
+  for (const def of ALL_DEFINITIONS) {
+    if (retiredDone.has(def.id)) continue;
+    const condition = determineCondition(def);
     const data = {
       title: def.title,
       description: def.description,
       category: def.category,
       rarity: def.rarity,
       points: def.points,
-      iconUrl: def.iconUrl,
+      iconUrl: def.icon,
       triggerType: condition.triggerType,
       conditionJson: JSON.stringify(condition.rules),
       rewardsJson: JSON.stringify(buildRewards(def.id, def.rarity)),
-      isActive: true,
+      isActive: !def.retired,
     };
 
     try {
@@ -68,107 +83,17 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
   }
 
   console.log(
-    `[Achievement Sync] Completed syncing ${syncedCount}/${ACHIEVEMENT_DEFINITIONS.length} achievements.`
+    `[Achievement Sync] Synced ${syncedCount} of ${ALL_DEFINITIONS.length} achievements (${retiredDone.size} Legacy already retired).`
   );
 }
 
 interface ConditionConfig {
   triggerType: string;
-  rules: any;
+  rules: Partial<ReturnType<typeof ruleToJson>>;
 }
 
-type FixedCondition = [
-  triggerType: string,
-  metric: string,
-  operator: string,
-  value: number | string | boolean,
-];
-
-/**
- * Baseline trigger per achievement id: [trigger type, metric, operator, threshold].
- * `vid-annual` (days active is a multiple of 365), `vid-lightswitch` (25+ embassies and no
- * military personnel) and `meme-1337` (GDP per capita floors to 1337) have no single-metric
- * rule; they sync as CUSTOM and unlock through their definition condition.
- */
-const FIXED_CONDITIONS: Record<string, FixedCondition> = {
-  "econ-growth-rocket": ["ECONOMIC", "adjustedGdpGrowth", ">=", 10],
-  "econ-boom-cycle": ["ECONOMIC", "adjustedGdpGrowth", ">=", 15],
-  "econ-full-employment": ["ECONOMIC", "unemploymentRate", "<", 3],
-  "econ-price-stability": ["ECONOMIC", "inflationRate", "<", 2],
-  "econ-tax-efficiency": ["ECONOMIC", "taxRevenueGDPPercent", ">=", 30],
-  "econ-tier-advancement": ["ECONOMIC", "economicTier", "==", "Tier 1"],
-  "mil-first-branch": ["MILITARY", "militaryBranchCount", ">=", 1],
-  "mil-armed-forces": ["MILITARY", "militaryBranchCount", ">=", 3],
-  "mil-full-spectrum": ["MILITARY", "militaryBranchCount", ">=", 5],
-  "mil-defense-commitment": ["MILITARY", "militarySpendingPercent", ">=", 1],
-  "mil-strong-defense": ["MILITARY", "militarySpendingPercent", ">=", 3],
-  "mil-military-superpower": ["MILITARY", "militarySpendingPercent", ">=", 5],
-  "mil-standing-army": ["MILITARY", "totalMilitaryPersonnel", ">=", 10000],
-  "mil-large-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 100000],
-  "mil-massive-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 1000000],
-  "mil-global-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 5000000],
-  "dip-first-embassy": ["DIPLOMATIC", "embassyCount", ">=", 1],
-  "dip-diplomatic-network": ["DIPLOMATIC", "embassyCount", ">=", 5],
-  "dip-global-presence": ["DIPLOMATIC", "embassyCount", ">=", 10],
-  "dip-embassy-network": ["DIPLOMATIC", "embassyCount", ">=", 25],
-  "dip-first-treaty": ["DIPLOMATIC", "treatyCount", ">=", 1],
-  "dip-treaty-network": ["DIPLOMATIC", "treatyCount", ">=", 10],
-  "dip-trade-partners": ["DIPLOMATIC", "tradePartnerCount", ">=", 25],
-  "dip-trade-hub": ["DIPLOMATIC", "tradePartnerCount", ">=", 50],
-  "dip-alliance-maker": ["DIPLOMATIC", "allianceCount", ">=", 5],
-  "dip-alliance-network": ["DIPLOMATIC", "allianceCount", ">=", 10],
-  "gov-first-component": ["GOVERNMENT", "atomicComponentCount", ">=", 1],
-  "gov-building-blocks": ["GOVERNMENT", "atomicComponentCount", ">=", 5],
-  "gov-sophisticated": ["GOVERNMENT", "atomicComponentCount", ">=", 10],
-  "gov-complex-system": ["GOVERNMENT", "atomicComponentCount", ">=", 15],
-  "gov-democracy": ["GOVERNMENT", "governmentType", "contains", "democracy"],
-  "gov-republic": ["GOVERNMENT", "governmentType", "contains", "republic"],
-  "gov-monarchy": ["GOVERNMENT", "governmentType", "contains", "monarchy"],
-  "gov-federation": ["GOVERNMENT", "governmentType", "contains", "federal"],
-  "gov-unitary": ["GOVERNMENT", "governmentType", "contains", "unitary"],
-  "gov-parliamentary": ["GOVERNMENT", "governmentType", "contains", "parliament"],
-  "social-first-thinkpage": ["SOCIAL", "thinkpageCount", ">=", 1],
-  "social-thinkpage-author": ["SOCIAL", "thinkpageCount", ">=", 10],
-  "social-prolific-author": ["SOCIAL", "thinkpageCount", ">=", 50],
-  "social-popular": ["SOCIAL", "followerCount", ">=", 100],
-  "social-trending": ["SOCIAL", "trendingPostCount", ">=", 1],
-  "gen-welcome": ["GENERAL", "always_true", "==", true],
-  "gen-first-country": ["GENERAL", "countryClaimed", "==", true],
-  "gen-one-week": ["GENERAL", "daysActive", ">=", 7],
-  "gen-one-month": ["GENERAL", "daysActive", ">=", 30],
-  "gen-three-months": ["GENERAL", "daysActive", ">=", 90],
-  "gen-one-year": ["GENERAL", "daysActive", ">=", 365],
-  "gen-achievement-hunter": ["GENERAL", "totalAchievements", ">=", 10],
-  "gen-achievement-master": ["GENERAL", "totalAchievements", ">=", 25],
-  "gen-achievement-legend": ["GENERAL", "totalAchievements", ">=", 50],
-  "vid-end-of-days": ["GENERAL", "totalAchievements", ">=", 30],
-  "meme-stonks": ["ECONOMIC", "adjustedGdpGrowth", "<", 0],
-  "meme-bankruptcy": ["ECONOMIC", "currentGdpPerCapita", "<=", 1],
-  "meme-ns-ref": ["GENERAL", "totalAchievements", ">=", 40],
-  "lore-scholar": ["SOCIAL", "thinkpageCount", ">=", 5],
-  "lore-collector": ["SOCIAL", "followerCount", ">=", 30],
-  "collect-lore-keeper": ["GENERAL", "loreCardCount", ">=", 50],
-  "collect-archaeologist": ["GENERAL", "retiredCardCount", ">=", 10],
-  "collect-diplomat": ["DIPLOMATIC", "distinctCountryIdCount", ">=", 20],
-  "social-recruiter": ["SOCIAL", "recruitedCount", ">=", 1],
-  "social-envoy": ["SOCIAL", "recruitedCount", ">=", 5],
-  "social-founders-hand": ["SOCIAL", "recruitedCount", ">=", 25],
-};
-
-function determineCondition(id: string, rarity?: AchievementRarity): ConditionConfig {
-  // Scale-based achievements (population / GDP / GDP-per-capita) are dynamic:
-  // the threshold is a percentile of the live country distribution, picked by
-  // rarity. No hardcoded absolute values — see achievement-scaling.ts.
-  const scaleMetric = SCALE_METRIC_BY_ID[id];
-  if (scaleMetric && rarity) {
-    return {
-      triggerType: scaleMetric === "currentPopulation" ? "GENERAL" : "ECONOMIC",
-      rules: { metric: scaleMetric, operator: ">=", percentile: RARITY_PERCENTILE[rarity] },
-    };
-  }
-
-  const fixed = FIXED_CONDITIONS[id];
-  if (!fixed) return { triggerType: "CUSTOM", rules: {} };
-  const [triggerType, metric, operator, value] = fixed;
-  return { triggerType, rules: { metric, operator, value } };
+/** The trigger and stored rule of a definition; one without a `rule` syncs as CUSTOM and unlocks through its `condition`. */
+function determineCondition(def: AchievementDefinition): ConditionConfig {
+  if (!def.rule) return { triggerType: "CUSTOM", rules: {} };
+  return { triggerType: def.rule[0], rules: ruleToJson(def.rule) };
 }

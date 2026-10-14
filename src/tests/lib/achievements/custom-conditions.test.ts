@@ -13,10 +13,6 @@ jest.mock("~/lib/vault/vault-bonus", () => ({
 jest.mock("~/lib/cards/card-service", () => ({ awardAchievementCard: jest.fn() }));
 jest.mock("~/lib/activity", () => ({ ActivityHooks: { User: {} } }));
 jest.mock("~/lib/notifications/hooks", () => ({ notificationHooks: {} }));
-jest.mock("~/lib/achievements/scaling", () => ({
-  ...jest.requireActual("~/lib/achievements/scaling"),
-  getScaleThresholds: jest.fn().mockResolvedValue({}),
-}));
 
 import type { ExtendedAchievementData } from "~/lib/achievements/definitions";
 import { syncAchievements } from "~/lib/achievements/sync";
@@ -56,7 +52,6 @@ function data(over: Partial<ExtendedAchievementData>, country = {}): ExtendedAch
 }
 
 const RULE_BACKED: Array<[string, Partial<ExtendedAchievementData>, object]> = [
-  ["vid-end-of-days", { totalAchievements: 30 }, {}],
   ["meme-stonks", {}, { adjustedGdpGrowth: -1 }],
   ["meme-bankruptcy", {}, { currentGdpPerCapita: 0 }],
   ["meme-ns-ref", { totalAchievements: 40 }, {}],
@@ -99,15 +94,21 @@ describe("formerly CUSTOM achievements", () => {
     expect(achievementService.evaluateCondition(row, locked)).toBe(false);
   });
 
-  it.each(DEFINITION_BACKED)("%s unlocks through its definition condition", async (key, extra, country) => {
-    const row = (await syncedRows()).get(key)!;
-    expect(achievementService.evaluateCondition(row, data(extra, country))).toBe(true);
-  });
+  it.each(DEFINITION_BACKED)(
+    "%s unlocks through its definition condition",
+    async (key, extra, country) => {
+      const row = (await syncedRows()).get(key)!;
+      expect(achievementService.evaluateCondition(row, data(extra, country))).toBe(true);
+    }
+  );
 
   it("vid-lightswitch needs zero military personnel, not just 25 embassies", async () => {
     const row = (await syncedRows()).get("vid-lightswitch")!;
     expect(
-      achievementService.evaluateCondition(row, data({ embassyCount: 25, totalMilitaryPersonnel: 5 }))
+      achievementService.evaluateCondition(
+        row,
+        data({ embassyCount: 25, totalMilitaryPersonnel: 5 })
+      )
     ).toBe(false);
   });
 });

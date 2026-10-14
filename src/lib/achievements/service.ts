@@ -15,11 +15,12 @@
 import { type Country, type PrismaClient } from "@prisma/client";
 import {
   getAchievementById,
+  ruleToJson,
   type AccountAchievementData,
   type CountryDataForAchievements,
   type ExtendedAchievementData,
 } from "./definitions";
-import { getScaleThresholds } from "./scaling";
+import { METRIC_LOADERS, type MetricContext, type MetricScope } from "./metrics/registry";
 import { achievementRequiresCountry } from "./scope";
 import { completeAchievementCheck, dequeueAchievementCheck, queueAchievementCheck } from "./queue";
 import { unlockAchievement } from "./unlock";
@@ -30,6 +31,80 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 
 /** Re-evaluation passes per check, so unlocks that raise `totalAchievements` can cascade. */
 const MAX_EVALUATION_PASSES = 3;
+
+type MetricValue = number | string | boolean;
+
+/** A stored rule: `Achievement.conditionJson`, or a definition's `rule` through `ruleToJson`. */
+interface RuleJson {
+  metric: string;
+  operator: string;
+  value?: MetricValue;
+}
+
+/** A metric's current value: loader metrics first, then the data's fields, then the country's. */
+function readMetric(
+  metric: string,
+  data: ExtendedAchievementData | AccountAchievementData
+): MetricValue | undefined {
+  // `gen-welcome`: the stored rule is { metric: "always_true", "==", true }
+  if (metric === "always_true") return true;
+  const fromMetrics = data.metrics?.[metric];
+  if (fromMetrics !== undefined) return fromMetrics;
+  if (metric in data) return Reflect.get(data, metric) as MetricValue | undefined;
+  return data.country && metric in data.country
+    ? (Reflect.get(data.country, metric) as MetricValue | undefined)
+    : undefined;
+}
+
+function compareMetric(operator: string, current: MetricValue, target: MetricValue): boolean {
+  switch (operator) {
+    case "==":
+    case "===":
+      return current === target;
+    case "!=":
+    case "!==":
+      return current !== target;
+    case "contains":
+      return (
+        typeof current === "string" &&
+        typeof target === "string" &&
+        current.toLowerCase().includes(target.toLowerCase())
+      );
+  }
+  if (typeof current !== "number" || typeof target !== "number") return false;
+  switch (operator) {
+    case ">=":
+      return current >= target;
+    case ">":
+      return current > target;
+    case "<=":
+      return current <= target;
+    case "<":
+      return current < target;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Run every loader of one scope once, in parallel, and merge their metrics. A failing loader
+ * contributes nothing (its rules then read as unmet) instead of failing the evaluation.
+ */
+async function runMetricLoaders(
+  scope: MetricScope,
+  ctx: MetricContext
+): Promise<Record<string, number>> {
+  const loaders = METRIC_LOADERS.filter((loader) => loader.scope === scope);
+  const results = await Promise.all(
+    loaders.map((loader) =>
+      loader.load(ctx).catch((error) => {
+        console.error(`[Achievement Service] Metric loader ${loader.id} failed:`, error);
+        return {} as Record<string, number>;
+      })
+    )
+  );
+  return Object.assign({}, ...results);
+}
 
 class AchievementService {
   private workerInterval: any = null;
@@ -122,21 +197,22 @@ class AchievementService {
   }
 
   /**
-   * Evaluate conditions using hybrid JSON rules engine + hardcoded definitions fallback.
-   * Without country data, only account-level achievements can pass.
+   * Evaluate conditions using hybrid JSON rules engine + definitions fallback (the definition's
+   * own rule, then its condition). Without country data, only account-level achievements can
+   * pass. A retired (Legacy) definition never passes.
    */
   evaluateCondition(
     achievement: { key: string; triggerType?: string; conditionJson: string | null },
     data: ExtendedAchievementData | AccountAchievementData
   ): boolean {
+    const definition = getAchievementById(achievement.key);
+    if (definition?.retired) return false;
     if (!data.country && achievementRequiresCountry(achievement)) return false;
 
     if (achievement.conditionJson) {
       try {
-        const rule = JSON.parse(achievement.conditionJson);
-        if (rule && rule.metric) {
-          return this.evaluateRule(rule, data);
-        }
+        const rule: Partial<RuleJson> | null = JSON.parse(achievement.conditionJson);
+        if (rule?.metric) return this.evaluateRule(rule as RuleJson, data);
       } catch (err) {
         console.error(
           `[Achievement Service] Failed to evaluate rules for ${achievement.key}:`,
@@ -145,11 +221,11 @@ class AchievementService {
       }
     }
 
-    const hardcoded = getAchievementById(achievement.key);
-    if (hardcoded && hardcoded.condition) {
+    if (definition?.rule) return this.evaluateRule(ruleToJson(definition.rule), data);
+    if (definition?.condition) {
       try {
         // Safe without a country: account-level conditions never read `data.country`
-        return hardcoded.condition(data as ExtendedAchievementData);
+        return definition.condition(data as ExtendedAchievementData);
       } catch (err) {
         console.error(
           `[Achievement Service] Failed hardcoded condition check for ${achievement.key}:`,
@@ -162,57 +238,12 @@ class AchievementService {
   }
 
   private evaluateRule(
-    rule: { metric: string; operator: string; value?: any; percentile?: number },
+    rule: RuleJson,
     data: ExtendedAchievementData | AccountAchievementData
   ): boolean {
-    const { metric, operator } = rule;
-    let currentValue: any = undefined;
-
-    if (metric === "always_true") {
-      // `gen-welcome`: the stored rule is { metric: "always_true", "==", true }
-      currentValue = true;
-    } else if (metric in data) {
-      currentValue = (data as any)[metric];
-    } else if (data.country && metric in data.country) {
-      currentValue = (data.country as any)[metric];
-    }
-
-    if (currentValue === undefined) {
-      return false;
-    }
-
-    // Dynamic, distribution-relative threshold (see achievement-scaling.ts).
-    // Resolved from the live percentile snapshot attached to the data.
-    let value = rule.value;
-    if (rule.percentile != null) {
-      value =
-        data.scaleThresholds?.[metric as keyof typeof data.scaleThresholds]?.[rule.percentile];
-      if (value == null) return false; // snapshot unavailable → don't unlock
-    }
-
-    switch (operator) {
-      case ">=":
-        return currentValue >= value;
-      case ">":
-        return currentValue > value;
-      case "<=":
-        return currentValue <= value;
-      case "<":
-        return currentValue < value;
-      case "==":
-      case "===":
-        return currentValue === value;
-      case "!=":
-      case "!==":
-        return currentValue !== value;
-      case "contains":
-        if (typeof currentValue === "string" && typeof value === "string") {
-          return currentValue.toLowerCase().includes(value.toLowerCase());
-        }
-        return false;
-      default:
-        return false;
-    }
+    const current = readMetric(rule.metric, data);
+    if (current === undefined || rule.value === undefined) return false;
+    return compareMetric(rule.operator, current, rule.value);
   }
 
   /**
@@ -238,9 +269,26 @@ class AchievementService {
         );
       }
 
-      const accountData = await this.gatherAccountData(userId, db);
-      const achievementData: ExtendedAchievementData | AccountAchievementData = country
-        ? { ...accountData, ...(await this.gatherCountryData(country, db)) }
+      const now = new Date();
+      const { internalUserId, ...accountData } = await this.gatherAccountData(
+        userId,
+        country?.id ?? null,
+        now,
+        db
+      );
+      const countryData = country
+        ? await this.gatherCountryData(country, db, {
+            clerkUserId: userId,
+            userId: internalUserId,
+            now,
+          })
+        : null;
+      const achievementData: ExtendedAchievementData | AccountAchievementData = countryData
+        ? {
+            ...accountData,
+            ...countryData,
+            metrics: { ...accountData.metrics, ...countryData.metrics },
+          }
         : { ...accountData, countryClaimed: false };
 
       const alreadyUnlocked = new Set<string>(accountData.existingKeys);
@@ -307,6 +355,10 @@ class AchievementService {
         if (newlyUnlocked === 0) break;
         achievementData.totalAchievements =
           (achievementData.totalAchievements ?? 0) + newlyUnlocked;
+        achievementData.existingKeys = [
+          ...(achievementData.existingKeys ?? []),
+          ...unlocked.slice(unlockedBefore),
+        ];
         achievementsToCheck = achievementsToCheck.filter((a) => !attempted.has(a.key));
       }
 
@@ -317,11 +369,16 @@ class AchievementService {
     }
   }
 
-  /** Metrics that follow the user (Clerk id), whether or not they have a country. */
+  /**
+   * Metrics that follow the user (Clerk id), whether or not they have a country. Also returns the
+   * internal `User.id` (null without a user row) for the country loaders.
+   */
   private async gatherAccountData(
     userId: string,
+    countryId: string | null,
+    now: Date,
     db: PrismaClient
-  ): Promise<AccountAchievementData & { existingKeys: string[] }> {
+  ): Promise<AccountAchievementData & { existingKeys: string[]; internalUserId: string | null }> {
     const [thinkpageCount, trendingPostCount, existingAchievements, user] = await Promise.all([
       db.thinkpagesPost.count({ where: { account: { clerkUserId: userId } } }).catch(() => 0),
       db.thinkpagesPost
@@ -338,16 +395,17 @@ class AchievementService {
     ]);
 
     const daysActive = user
-      ? Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor((now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
     let loreCardCount = 0;
     let retiredCardCount = 0;
     let distinctCountryIdCount = 0;
     let recruitedCount = 0;
+    let metrics: Record<string, number> = {};
 
     if (user?.id) {
-      const [loreCount, retiredCount, distinctCountries, recruited] = await Promise.all([
+      const [loreCount, retiredCount, distinctCountries, recruited, loaded] = await Promise.all([
         db.cardOwnership
           .count({
             where: {
@@ -375,12 +433,14 @@ class AchievementService {
           })
           .catch(() => 0),
         countRecruits(db, user.id).catch(() => 0),
+        runMetricLoaders("account", { db, clerkUserId: userId, userId: user.id, countryId, now }),
       ]);
 
       loreCardCount = loreCount;
       retiredCardCount = retiredCount;
       distinctCountryIdCount = distinctCountries;
       recruitedCount = recruited;
+      metrics = loaded;
     }
 
     return {
@@ -392,22 +452,26 @@ class AchievementService {
       retiredCardCount,
       distinctCountryIdCount,
       recruitedCount,
+      metrics,
       existingKeys: existingAchievements.map((a) => a.achievementId),
+      internalUserId: user?.id ?? null,
     };
   }
 
-  /** Metrics read from one country. */
+  /** Metrics read from one country, plus the country-scope loaders' (skipped without a user row). */
   private async gatherCountryData(
     country: Country,
-    db: PrismaClient
+    db: PrismaClient,
+    who: { clerkUserId: string; userId: string | null; now: Date }
   ): Promise<Partial<ExtendedAchievementData> & { country: CountryDataForAchievements }> {
     const countryId = country.id;
     const [
       embassyCount,
-      militaryBranchCount,
+      militaryBranches,
       governmentComponentCount,
       followerCount,
       storyChainCount,
+      metrics,
     ] = await Promise.all([
       db.embassy.count({
         where: {
@@ -415,8 +479,9 @@ class AchievementService {
           status: "active",
         },
       }),
-      db.militaryBranch.count({
+      db.militaryBranch.findMany({
         where: { countryId },
+        select: { activeDuty: true, reserves: true },
       }),
       db.governmentComponent.count({
         where: { countryId },
@@ -433,64 +498,24 @@ class AchievementService {
           );
           return 0;
         }),
+      who.userId
+        ? runMetricLoaders("country", {
+            db,
+            clerkUserId: who.clerkUserId,
+            userId: who.userId,
+            countryId,
+            now: who.now,
+          })
+        : Promise.resolve<Record<string, number>>({}),
     ]);
-
-    const militaryBranches = await db.militaryBranch.findMany({
-      where: { countryId },
-      select: {
-        activeDuty: true,
-        reserves: true,
-        civilianStaff: true,
-        annualBudget: true,
-      },
-    });
 
     const totalMilitaryPersonnel = militaryBranches.reduce(
       (sum, branch) => sum + branch.activeDuty + branch.reserves,
       0
     );
 
-    const totalMilitaryBudget = militaryBranches.reduce(
-      (sum, branch) => sum + (branch.annualBudget ?? 0),
-      0
-    );
-
-    const militarySpendingPercent =
-      country.currentTotalGdp > 0 ? (totalMilitaryBudget / country.currentTotalGdp) * 100 : 0;
-
-    const [treatyCount, tradePartnerCount, allianceCount] = await Promise.all([
-      db.treaty
-        .count({
-          where: {
-            parties: { contains: countryId },
-            status: "active",
-          },
-        })
-        .catch(() => 0),
-      db.diplomaticRelation
-        .count({
-          where: {
-            OR: [{ country1: countryId }, { country2: countryId }],
-            tradeVolume: { gt: 0 },
-            status: "active",
-          },
-        })
-        .catch(() => 0),
-      db.allianceMember
-        .count({
-          where: {
-            countryId,
-            isActive: true,
-          },
-        })
-        .catch(() => 0),
-    ]);
-
-    // Live percentile thresholds for scale achievements (cached, see scaling module)
-    const scaleThresholds = await getScaleThresholds(db).catch(() => ({}));
-
     return {
-      scaleThresholds,
+      metrics,
       country: {
         id: country.id,
         currentTotalGdp: country.currentTotalGdp,
@@ -509,14 +534,9 @@ class AchievementService {
       },
       countryClaimed: true,
       embassyCount,
-      treatyCount,
-      tradePartnerCount,
-      allianceCount,
-      militaryBranchCount,
-      militarySpendingPercent,
+      militaryBranchCount: militaryBranches.length,
       totalMilitaryPersonnel,
       atomicComponentCount: governmentComponentCount,
-      governmentType: country.governmentType ?? undefined,
       followerCount,
       storyChainCount,
     };

@@ -115,10 +115,14 @@ async function loadMasterAchievements(db: PrismaClient) {
   const load = () =>
     db.achievement.findMany({ where: { isActive: true }, orderBy: { key: "asc" } });
   const masters = await load();
-  // Auto-sync if the database is behind the definitions registry
-  const { ACHIEVEMENT_DEFINITIONS } = await import("~/lib/achievements/definitions");
-  if (masters.length >= ACHIEVEMENT_DEFINITIONS.length) return masters;
-  const { syncAchievements } = await import("~/lib/achievements/sync");
+  // Auto-sync if the database is behind the definitions registry, or still holds an active row
+  // of a retired definition. Retired definitions are not part of the active count.
+  const { ALL_DEFINITIONS } = await import("~/lib/achievements/sets");
+  const { RETIRED_IDS, syncAchievements } = await import("~/lib/achievements/sync");
+  const activeCount = ALL_DEFINITIONS.length - RETIRED_IDS.size;
+  if (masters.length >= activeCount && !masters.some((m) => RETIRED_IDS.has(m.key))) {
+    return masters;
+  }
   await syncAchievements(db);
   return load();
 }
@@ -142,13 +146,20 @@ async function standardAchievements(
     ? await db.userAchievement.findMany({ where: { userId: targetUserId } })
     : [];
   const unlockMap = new Map(unlocks.map((u) => [u.achievementId, u]));
+  // Legacy: retired achievements the player earned stay on show (greyed); the rest are gone
+  const legacy = unlocks.length
+    ? await db.achievement.findMany({
+        where: { isActive: false, key: { in: unlocks.map((u) => u.achievementId) } },
+        orderBy: { key: "asc" },
+      })
+    : [];
   const globalUnlocks = await db.userAchievement.groupBy({
     by: ["achievementId"],
     _count: { achievementId: true },
   });
   const countMap = new Map(globalUnlocks.map((g) => [g.achievementId, g._count.achievementId]));
 
-  return masters.map((m) => {
+  return [...masters, ...legacy].map((m) => {
     const unlock = unlockMap.get(m.key);
     return {
       key: m.key,
@@ -157,7 +168,8 @@ async function standardAchievements(
       category: m.category,
       rarity: m.rarity,
       points: m.points,
-      iconUrl: m.iconUrl || "🏆",
+      iconUrl: m.iconUrl || "Trophy",
+      isLegacy: !m.isActive,
       triggerType: m.triggerType,
       conditionJson: m.conditionJson,
       isUnlocked: !!unlock,
@@ -280,7 +292,7 @@ async function wikiAwardAchievements(
     category: "Wiki Milestones",
     rarity: wikiAwardRarity(a),
     points: 20,
-    iconUrl: a.category === "FEATURED" ? "⭐" : "📝",
+    iconUrl: a.category === "FEATURED" ? "Star" : "PageEdit",
     triggerType: "WIKI_AWARD",
     conditionJson: null,
     isUnlocked: true,
@@ -301,11 +313,16 @@ interface PlayerTotals {
 
 const RARE_PLUS = new Set(["Rare", "Epic", "Legendary"]);
 
-/** Every player with an unlock of an active achievement, best first; players on equal points share a rank. */
+/**
+ * Every player with an unlock, best first; players on equal points share a rank. Points count
+ * every unlock, Legacy included; the counts are of active achievements only.
+ */
 async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
   const unlocks = await db.userAchievement.findMany({
-    where: { achievement: { isActive: true } },
-    select: { userId: true, achievement: { select: { points: true, rarity: true } } },
+    select: {
+      userId: true,
+      achievement: { select: { points: true, rarity: true, isActive: true } },
+    },
   });
   const byUser = new Map<string, Omit<PlayerTotals, "rank">>();
   for (const { userId, achievement } of unlocks) {
@@ -316,8 +333,10 @@ async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
       rareAchievements: 0,
     };
     row.totalPoints += achievement.points;
-    row.achievementCount += 1;
-    if (RARE_PLUS.has(achievement.rarity)) row.rareAchievements += 1;
+    if (achievement.isActive) {
+      row.achievementCount += 1;
+      if (RARE_PLUS.has(achievement.rarity)) row.rareAchievements += 1;
+    }
     byUser.set(userId, row);
   }
   const sorted = [...byUser.values()].sort(
