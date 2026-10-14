@@ -5,6 +5,7 @@
 jest.mock("~/lib/lorewards", () => ({
   syncFromStateFile: jest.fn().mockResolvedValue(3),
   grantLorewardBonuses: jest.fn().mockResolvedValue(1),
+  syncTrophyCards: jest.fn().mockResolvedValue({ minted: 2, granted: 1 }),
   recomputeUserStats: jest.fn(),
 }));
 jest.mock("~/server/db", () => ({ db: {} }));
@@ -34,6 +35,20 @@ describe("/api/lorewards/sync", () => {
   it("accepts the secret as a bearer token or x-api-key", async () => {
     expect((await call({ authorization: `Bearer ${SECRET}` })).status).toBe(200);
     expect((await call({ "x-api-key": SECRET })).status).toBe(200);
+  });
+
+  it("mints and grants trophy cards after the payouts and reports both", async () => {
+    const lorewards = jest.requireMock("~/lib/lorewards") as {
+      grantLorewardBonuses: jest.Mock;
+      syncTrophyCards: jest.Mock;
+    };
+    const res = await call({ authorization: `Bearer ${SECRET}` });
+    const body = (await res.json()) as { bonusesGranted: number; trophyCards: object };
+
+    expect(body).toMatchObject({ bonusesGranted: 1, trophyCards: { minted: 2, granted: 1 } });
+    expect(lorewards.grantLorewardBonuses.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      lorewards.syncTrophyCards.mock.invocationCallOrder.at(-1)!
+    );
   });
 });
 

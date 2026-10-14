@@ -41,7 +41,11 @@ interface World {
   packs: { userId: string; openedAt: Date }[];
   trades: { initiatorId: string; recipientId: string; respondedAt: Date }[];
   sales: { vault: { userId: string }; createdAt: Date }[];
-  ownerships: { ownerId: string; quantity: number; cards: { marketValue: number } }[];
+  ownerships: {
+    ownerId: string;
+    quantity: number;
+    cards: { marketValue: number; lorewardEntryId: string | null };
+  }[];
 }
 
 const at = (iso: string) => new Date(`${iso}Z`);
@@ -106,7 +110,13 @@ function buildDb(): PrismaClient {
       ),
     },
     $transaction: jest.fn(async (ops: Promise<void>[]) => Promise.all(ops)),
-    cardOwnership: { findMany: jest.fn(async () => world.ownerships) },
+    cardOwnership: {
+      findMany: jest.fn(async ({ where }: { where: { cards: { lorewardEntryId?: null } } }) =>
+        world.ownerships.filter(
+          (o) => where.cards.lorewardEntryId !== null || o.cards.lorewardEntryId === null
+        )
+      ),
+    },
   };
   return fake as unknown as PrismaClient;
 }
@@ -148,8 +158,12 @@ beforeEach(() => {
 
 const vault = (userId: string, loginStreak = 0, lastLoginDate: Date | null = null) =>
   world.vaults.push({ userId, loginStreak, lastLoginDate });
-const deck = (ownerId: string, marketValue: number, quantity = 1) =>
-  world.ownerships.push({ ownerId, quantity, cards: { marketValue } });
+const deck = (
+  ownerId: string,
+  marketValue: number,
+  quantity = 1,
+  lorewardEntryId: string | null = null
+) => world.ownerships.push({ ownerId, quantity, cards: { marketValue, lorewardEntryId } });
 
 describe("settleDividendDay", () => {
   it("pays a user with only interest", async () => {
@@ -180,6 +194,24 @@ describe("settleDividendDay", () => {
     expect(await settleDividendDay(db, D)).toEqual({ paid: 2, skipped: 0 });
     expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 2 });
     expect(rows).toHaveLength(2);
+  });
+
+  it("leaves trophy cards out of the deck value that earns collection interest", async () => {
+    vault("u1");
+    deck("u1", 2000);
+    deck("u1", 50000, 1, "entry-1");
+
+    await settleDividendDay(db, D);
+
+    const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
+    expect(meta?.inputs).toMatchObject({ deckValue: 2000 });
+  });
+
+  it("pays nothing to a user whose whole deck is trophy cards", async () => {
+    vault("u1");
+    deck("u1", 50000, 1, "entry-1");
+
+    expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 0 });
   });
 
   it("stores the breakdown as the row's metadata and it round-trips", async () => {
