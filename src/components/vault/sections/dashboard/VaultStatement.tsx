@@ -2,7 +2,19 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { NavArrowDown, NavArrowRight, Wallet } from "iconoir-react";
+import {
+  Cart,
+  Coins,
+  DataTransferBoth,
+  Gift,
+  Medal,
+  NavArrowDown,
+  NavArrowRight,
+  Package,
+  ShoppingBag,
+  Trophy,
+  Wallet,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -14,7 +26,9 @@ import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import {
   describeRow,
   groupStatement,
+  rowIconKey,
   type RowDescription,
+  type RowIconKey,
   type StatementRow,
 } from "~/lib/vault/statement";
 import type { DividendLine } from "~/lib/vault/vault-dividend";
@@ -42,6 +56,18 @@ const LINE_LABELS: Record<DividendLine["key"], string> = {
   boost: "Dividend boost",
 };
 
+const ROW_ICONS: Record<RowIconKey, React.ComponentType> = {
+  dividend: Coins,
+  daily: Gift,
+  achievement: Trophy,
+  loreward: Medal,
+  pack: Package,
+  store: ShoppingBag,
+  market: Cart,
+  trade: DataTransferBoth,
+  other: Wallet,
+};
+
 const toDirection = (filter: Filter) => (filter === "all" ? undefined : filter);
 
 /** `rows` followed by `more`, each id once (a new transaction shifts later pages by one). */
@@ -62,7 +88,7 @@ function Credits({ value, className }: { value: number; className?: string }) {
 function DividendBreakdown({ lines }: { lines: DividendLine[] }) {
   return (
     <CollapsibleContent>
-      <ul className="border-separator mt-2 space-y-1 border-l pl-3">
+      <ul className="border-separator mt-2 ml-11 space-y-1 border-l pl-3">
         {lines.map((line) => (
           <li key={line.key} className="text-footnote flex justify-between gap-4">
             <span className="text-label-secondary">{LINE_LABELS[line.key]}</span>
@@ -71,6 +97,22 @@ function DividendBreakdown({ lines }: { lines: DividendLine[] }) {
         ))}
       </ul>
     </CollapsibleContent>
+  );
+}
+
+/** Where the credits came from, as a tinted icon in a small well. */
+function RowIcon({ row }: { row: StatementRow }) {
+  const key = rowIconKey(row);
+  const Icon = ROW_ICONS[key];
+  return (
+    <span
+      aria-hidden
+      data-slot="statement-icon"
+      data-icon={key}
+      className="facet-well rounded-row text-tint flex size-8 shrink-0 items-center justify-center [&_svg]:size-4"
+    >
+      <Icon />
+    </span>
   );
 }
 
@@ -90,8 +132,9 @@ function StatementRowItem({ row }: { row: StatementRow }) {
   return (
     <li data-row className="border-separator border-b py-3 last:border-b-0">
       <Collapsible>
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
+        <div className="flex items-start gap-3">
+          <RowIcon row={row} />
+          <div className="min-w-0 flex-1">
             <p>
               <RowTitle info={info} />
             </p>

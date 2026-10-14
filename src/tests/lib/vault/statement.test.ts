@@ -1,4 +1,4 @@
-import { describeRow, groupStatement, type StatementRow } from "~/lib/vault/statement";
+import { describeRow, groupStatement, rowIconKey, type StatementRow } from "~/lib/vault/statement";
 
 const NOW = new Date("2026-10-14T09:00:00.000Z");
 
@@ -182,5 +182,31 @@ describe("describeRow", () => {
     expect(describeRow(row({ source: "P2P_TRADE", credits: -50 }))).toEqual({
       title: "Player trade",
     });
+  });
+});
+
+describe("rowIconKey", () => {
+  it.each([
+    ["VAULT_DIVIDEND", "dividend"],
+    ["DAILY_DIVIDEND", "dividend"],
+    ["DAILY_LOGIN", "daily"],
+    ["DAILY_LOGIN_CREDITS", "daily"],
+    ["DAILY_LOGIN_CARD", "daily"],
+    ["bonus:achievement:first_post", "achievement"],
+    ["bonus:loreward:e1", "loreward"],
+    ["bonus:loreward:e1:runner-up", "loreward"],
+    ["PACK_PURCHASE", "pack"],
+    ["Purchase item: Gold frame", "store"],
+    ["card_sale_auction", "market"],
+    ["card_sale_buyout", "market"],
+    ["card_purchase_buyout", "market"],
+    ["auction_bid_reserve", "market"],
+    ["P2P_TRADE", "trade"],
+    ["retired_item_refund:frame", "other"],
+    ["exploit_correction:dup", "other"],
+    ["Admin Grant: Gold frame", "other"],
+    ["SOCIAL_POST", "other"],
+  ])("maps %s to %s", (source, key) => {
+    expect(rowIconKey(row({ source }))).toBe(key);
   });
 });

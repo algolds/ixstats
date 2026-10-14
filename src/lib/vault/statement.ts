@@ -146,3 +146,42 @@ export function describeRow(row: StatementRow): RowDescription {
   }
   return { title: activitySourceLabel(source) };
 }
+
+export type RowIconKey =
+  | "dividend"
+  | "daily"
+  | "achievement"
+  | "loreward"
+  | "pack"
+  | "store"
+  | "market"
+  | "trade"
+  | "other";
+
+const EXACT_ICON: Record<string, RowIconKey> = {
+  VAULT_DIVIDEND: "dividend",
+  DAILY_DIVIDEND: "dividend",
+  DIVIDEND: "dividend",
+  DAILY_LOGIN: "daily",
+  DAILY_LOGIN_CREDITS: "daily",
+  DAILY_LOGIN_CARD: "daily",
+  PACK_PURCHASE: "pack",
+  P2P_TRADE: "trade",
+  card_sale_auction: "market",
+  card_sale_buyout: "market",
+  card_purchase_buyout: "market",
+  auction_bid_reserve: "market",
+};
+
+const PREFIX_ICON: [prefix: string, key: RowIconKey][] = [
+  [ACHIEVEMENT_SOURCE, "achievement"],
+  [LOREWARD_SOURCE, "loreward"],
+  ["Purchase item:", "store"],
+];
+
+/** Which icon marks a statement row; refunds, corrections, admin grants and the rest share the neutral one. */
+export function rowIconKey(row: StatementRow): RowIconKey {
+  const exact = EXACT_ICON[row.source];
+  if (exact) return exact;
+  return PREFIX_ICON.find(([prefix]) => row.source.startsWith(prefix))?.[1] ?? "other";
+}

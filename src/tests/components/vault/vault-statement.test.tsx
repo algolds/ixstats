@@ -109,6 +109,33 @@ describe("VaultStatement", () => {
     expect(trade.textContent).toContain("1,000");
   });
 
+  it("marks each row with an icon for where the credits came from", () => {
+    pages = () => ({
+      transactions: [
+        tx("a", { source: "VAULT_DIVIDEND", metadata: JSON.stringify(DIVIDEND) }),
+        tx("b", { source: "DAILY_LOGIN_CREDITS" }),
+        tx("c", { source: "bonus:achievement:first_post" }),
+        tx("d", { source: "PACK_PURCHASE", credits: -750 }),
+        tx("e", { source: "SOCIAL_POST" }),
+      ],
+      hasMore: false,
+    });
+    const { container } = render(<VaultStatement />);
+    const icons = Array.from(container.querySelectorAll('[data-slot="statement-icon"]'));
+    expect(icons.map((icon) => icon.getAttribute("data-icon"))).toEqual([
+      "dividend",
+      "daily",
+      "achievement",
+      "pack",
+      "other",
+    ]);
+    for (const icon of icons) {
+      expect(icon.getAttribute("aria-hidden")).toBe("true");
+      expect(icon.querySelector("svg")).not.toBeNull();
+      expect(icon.className).toMatch(/text-tint/);
+    }
+  });
+
   it("says so when the statement is empty", () => {
     render(<VaultStatement />);
     expect(screen.getByText(/no transactions/i)).toBeTruthy();
