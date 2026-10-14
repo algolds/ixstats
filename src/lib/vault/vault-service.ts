@@ -15,6 +15,7 @@ import {
   LedgerError,
   type LedgerEarnInput,
   type LedgerSpendInput,
+  type TransactionDirection,
   getBalance as ledgerGetBalance,
   getTransactionHistory as ledgerGetTransactionHistory,
   getEarningsSummary as ledgerGetEarningsSummary,
@@ -143,9 +144,10 @@ export class VaultService {
     db: PrismaClient,
     limit: number = 50,
     offset: number = 0,
-    type?: VaultTransactionType
+    type?: VaultTransactionType,
+    direction?: TransactionDirection
   ) {
-    return ledgerGetTransactionHistory(userId, db, limit, offset, type);
+    return ledgerGetTransactionHistory(userId, db, limit, offset, type, direction);
   }
 
   claimDailyBonus(userId: string, db: PrismaClient) {
