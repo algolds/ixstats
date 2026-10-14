@@ -50,7 +50,12 @@ export function InWorldDateSection({
     mode === "fixed"
       ? { mode, label: label.trim(), asOf: asOf || null }
       : mode === "offset"
-        ? { mode, offset: Number(offset), era: era.trim() || null }
+        ? // A blank field is no offset (NaN fails the schema), not 0.
+          {
+            mode,
+            offset: offset.trim() === "" ? Number.NaN : Number(offset),
+            era: era.trim() || null,
+          }
         : null;
   const parsed = draft ? InWorldDateSchema.safeParse(draft) : null;
   const value = parsed?.success ? parsed.data : null;

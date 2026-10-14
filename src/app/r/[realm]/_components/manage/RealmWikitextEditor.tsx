@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Signal } from "~/components/ui/signal";
 
 // The WikiOS canvas editor is large; load it only when the Manage tab opens.
 const WikiVisualEditor = dynamic(
@@ -15,9 +16,12 @@ const WikiVisualEditor = dynamic(
   }
 );
 
+const NOOP = () => undefined;
+
 /**
  * Realm text written with the WikiOS canvas editor (or as wikitext source): the factbook and the rules. The
- * server renders and sanitizes what `onSave` sends.
+ * server renders and sanitizes what `onSave` sends. The canvas is hosted bare, as the forum composer hosts it:
+ * this Save is the only save, and the server text is always where it starts (no local wiki draft).
  */
 export function RealmWikitextEditor({
   editorKey,
@@ -41,6 +45,10 @@ export function RealmWikitextEditor({
   const [source, setSource] = useState(initialWikitext);
   // The editor's latest complete wikitext; a ref so it doesn't re-seed the editor on every keystroke.
   const live = useRef<string>(initialWikitext);
+  // False while some canvas content has no wikitext form: `live` is then behind the canvas, so neither
+  // saving nor switching to source may read it.
+  const [complete, setComplete] = useState(true);
+  const blocked = mode === "visual" && !complete;
   const current = () => (mode === "source" ? source : live.current);
   const switchMode = (next: "visual" | "source") => {
     if (next === "source") setSource(live.current);
@@ -58,30 +66,34 @@ export function RealmWikitextEditor({
           onValueChange={switchMode}
           options={[
             { value: "visual", label: "Canvas" },
-            { value: "source", label: "Wikitext" },
+            { value: "source", label: "Wikitext", disabled: blocked },
           ]}
         />
-        <Button size="sm" disabled={saving} onClick={() => onSave(current())}>
+        <Button size="sm" disabled={saving || blocked} onClick={() => onSave(current())}>
           {saveLabel}
         </Button>
       </div>
+      {blocked && (
+        <Signal tone="warning" title="Part of this cannot be saved yet" className="mb-3">
+          Something in it has no wikitext form. Remove or retype it to continue.
+        </Signal>
+      )}
       {mode === "visual" ? (
-        <div className="border-separator rounded-row min-h-[320px] border p-2">
+        <div className="border-separator rounded-row min-h-[320px] overflow-hidden border">
           <WikiVisualEditor
             key={editorKey}
+            bare
+            // The Manage column is too narrow for the full toolbar; link and image stay in view, the rest is under More.
+            compactToolbar
             initialWikitext={live.current}
             title={editorTitle}
-            onSave={async (wikitext) => {
-              live.current = wikitext;
-              onSave(wikitext);
-            }}
-            onCancel={() => undefined}
-            onSwitchToSource={(_dirty, content) => {
-              setSource(content);
-              setMode("source");
-            }}
+            restoreLocalDraft={false}
+            onSave={NOOP}
+            onCancel={NOOP}
+            onSwitchToSource={NOOP}
             onSerializedWikitext={(result) => {
               if (result.complete) live.current = result.wikitext;
+              setComplete(result.complete);
             }}
           />
         </div>
