@@ -61,10 +61,10 @@ export const thinkpagesForumBoardRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const actor = await actorOf(ctx.db, ctx.user);
-      const { message, reward } = await postBoardMessage(ctx.db, actor, input).catch(mapError);
+      const message = await postBoardMessage(ctx.db, actor, input).catch(mapError);
       void afterBoardMessage(ctx.db, actor, message.id).catch(hookFailed);
       void publishBoardPost(ctx.db, getThinkPagesBroadcaster(), message.id, "message");
-      return { message, reward };
+      return { message };
     }),
 
   /** The author's edit, within 15 minutes of posting. */

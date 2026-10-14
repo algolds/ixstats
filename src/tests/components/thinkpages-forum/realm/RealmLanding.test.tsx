@@ -202,12 +202,11 @@ jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => {
       onQuoteInserted: () => void;
       onClearReply: () => void;
       onTyping: (personaId: string | null) => void;
-      onSubmit: (input: object) => Promise<{ reward: { amount: number } | null }>;
+      onSubmit: (input: object) => Promise<void>;
       slowModeSeconds: number;
       docked?: boolean;
     }) => {
       React.useImperativeHandle(ref, () => ({ focus: composerFocus }), []);
-      const [earned, setEarned] = React.useState<number | null>(null);
       return (
         <div data-testid="composer" data-slow={slowModeSeconds} data-docked={String(!!docked)}>
           <span>{replyTo ? `replying:${replyTo.postId}:${replyTo.authorName}` : "no reply"}</span>
@@ -224,14 +223,13 @@ jest.mock("~/components/thinkpages-forum/realm/BoardComposer", () => {
           <button
             type="button"
             onClick={() =>
-              void onSubmit({ html: "<p>hi</p>", personaId: "ps1", replyToPostId: "p2" })
-                .then((result) => setEarned(result.reward?.amount ?? null))
-                .catch(() => undefined)
+              void onSubmit({ html: "<p>hi</p>", personaId: "ps1", replyToPostId: "p2" }).catch(
+                () => undefined
+              )
             }
           >
             submit
           </button>
-          {earned !== null ? <output data-testid="board-reward">{earned}</output> : null}
         </div>
       );
     },
@@ -700,31 +698,9 @@ describe("RealmLanding", () => {
       expect(screen.getByTestId("composer")).toHaveAttribute("data-slow", "30");
     });
 
-    it("hands the message's reward back to the composer", async () => {
-      state.mutations.postBoardMessage = jest
-        .fn()
-        .mockResolvedValue({ message: boardMessage({ id: "p3" }), reward: { amount: 7 } });
-      render(<RealmLanding realm="eurth" />);
-      fireEvent.click(screen.getByRole("button", { name: "submit" }));
-      expect(await screen.findByTestId("board-reward")).toHaveTextContent("7");
-    });
-
-    it("hands back no reward when the message earned none", async () => {
-      state.mutations.postBoardMessage = jest
-        .fn()
-        .mockResolvedValue({ message: boardMessage({ id: "p3" }), reward: null });
-      render(<RealmLanding realm="eurth" />);
-      fireEvent.click(screen.getByRole("button", { name: "submit" }));
-      await waitFor(() => expect(state.mutations.postBoardMessage).toHaveBeenCalled());
-      await act(async () => undefined);
-      expect(screen.queryByTestId("board-reward")).toBeNull();
-    });
-
     it("posts, puts the message at the top of the newest page, and shows it", async () => {
       const posted = boardMessage({ id: "p3", contentHtml: "hi", byViewer: true });
-      state.mutations.postBoardMessage = jest
-        .fn()
-        .mockResolvedValue({ message: posted, reward: null });
+      state.mutations.postBoardMessage = jest.fn().mockResolvedValue({ message: posted });
       render(<RealmLanding realm="eurth" />);
       fireEvent.click(screen.getByRole("button", { name: "submit" }));
       await waitFor(() =>

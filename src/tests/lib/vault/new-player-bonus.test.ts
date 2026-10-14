@@ -1,7 +1,7 @@
 /**
  * The 5,000 IxC new-player bonus is an IxnayID bonus: it is paid once per account at sign-up
- * (or on first Vault open for older accounts), needs no country, and the country builder /
- * realm-claim paths become no-ops once it is paid. The fake ledger below honours
+ * (or on first Vault open for older accounts) and needs no country. Building or claiming a
+ * nation pays nothing. The fake ledger below honours
  * idempotency keys the way `earnCreditsOnce` does.
  */
 
@@ -86,11 +86,10 @@ describe("grantNewPlayerBonus", () => {
     expect(db.country.findUnique).not.toHaveBeenCalled();
   });
 
-  it("makes the country builder / realm claim bonus a no-op afterwards", async () => {
+  it("makes a later grant of the same source a no-op", async () => {
     const { db, ledger } = setup();
     await grantNewPlayerBonus(db as never, USER_ID, "account_created");
 
-    // What countries/management/create.ts and realms onNationAssigned call
     const countryPath = await grantBonus(db as never, CLERK_ID, NEW_PLAYER_BONUS_SOURCE, 5000, {
       oneTime: true,
       metadata: { countryId: "c1" },

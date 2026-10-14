@@ -112,12 +112,12 @@ function AdvertComposer({
   const router = useRouter();
   const utils = api.useUtils();
   const { mutateAsync: createAdvert } = api.thinkpagesForum.createAdvert.useMutation();
-  // A thread whose first post is still being formatted, or that earned a reward the composer shows, opens on request.
+  // A thread whose first post is still being formatted opens on request.
   const [startedId, setStartedId] = useState<string | null>(null);
   const submit = useCallback(
     async (wikitext: string, { title }: CanvasSubmitMeta) => {
       try {
-        const { threadId, formatting, reward } = await createAdvert({
+        const { threadId, formatting } = await createAdvert({
           realm: realm.slug,
           title,
           wikitext,
@@ -125,9 +125,9 @@ function AdvertComposer({
         void utils.thinkpagesForum.category.invalidate();
         void utils.thinkpagesForum.categories.invalidate();
         void utils.thinkpagesForum.myAdvertRealms.invalidate();
-        if (formatting === "done" && !reward) router.push(threadHref(threadId));
+        if (formatting === "done") router.push(threadHref(threadId));
         else setStartedId(threadId);
-        return { formatting, reward };
+        return { formatting };
       } catch (cause) {
         const existing = cause instanceof Error ? advertThreadIdOf(cause) : null;
         if (existing) onRaced(existing);

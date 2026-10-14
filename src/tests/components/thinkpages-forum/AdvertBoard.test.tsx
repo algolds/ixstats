@@ -386,24 +386,6 @@ describe("NewAdvertForm", () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it("keeps the post open, and shows the reward, when the advert earned one", async () => {
-    mockState.realms = [EURTH];
-    mockCreate.mockResolvedValue({
-      threadId: "t_new",
-      postId: "p_new",
-      formatting: "done",
-      reward: { amount: 25 },
-    });
-    render(<NewAdvertForm realm="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    expect(await screen.findByTestId("stub-reward")).toHaveTextContent("25");
-    expect(screen.getByRole("link", { name: "Open the advert" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t_new"
-    );
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
   it("offers no composer for a realm whose advert a moderator hid", () => {
     mockState.realms = [HIDDEN];
     render(<NewAdvertForm realm="eurth" />);

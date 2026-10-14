@@ -2,19 +2,16 @@
  * Forum writes: start a thread, reply, edit. Bodies are sanitized HTML plus their plain text (ruling P3), from the
  * light editor or rendered from Canvas wikitext (writes-body.ts; the render runs after every access check). Action
  * tokens are validated before anything is written, so a refused link never leaves a post behind; the links are
- * synced once the post exists; a save that creates a link may pay the action reward (action-reward.ts), an edit never
- * does. A persona post needs an in-character category and the actor's own active persona
+ * synced once the post exists. A persona post needs an in-character category and the actor's own active persona
  * (P9), and a post inside a submitted or approved story chain can no longer change (P6). In a realm section,
  * starting, replying and editing all take realm posting access (D5, D13). A forum ban (site, realm or category)
  * refuses every write in its scope, sitewide edits included (T0-17). Writes follow the read rules: a hidden thread or
  * post, and another member's Reports thread (M8), read as not found.
  */
 import type { PrismaClient } from "@prisma/client";
-import type { ForumReward } from "~/lib/action-rewards";
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import type { RealmActor } from "~/server/modules/realms";
 import { canSeeThread } from "./access";
-import { rewardNewLinks } from "./action-reward";
 import {
   advertClosed,
   advertRealmHiddenFrom,
@@ -142,7 +139,6 @@ export async function createThread(
   threadId: string;
   postId: string;
   formatting: Formatting;
-  reward: ForumReward | null;
 }> {
   const title = prepareTitle(input.title);
   const { category, realm } = await loadCategory(db, actor, {
@@ -176,16 +172,15 @@ export async function createThread(
     await writeTemplates(tx, post.id, body.templates, false);
     return { threadId: thread.id, postId: post.id };
   });
-  const { created } = await syncLinks(db, actor, postId, body.plainText);
-  const reward = await rewardNewLinks(db, actor, postId, created);
-  return { threadId, postId, formatting: formattingOf(body), reward };
+  await syncLinks(db, actor, postId, body.plainText);
+  return { threadId, postId, formatting: formattingOf(body) };
 }
 
 export async function replyToThread(
   db: WritesDb,
   actor: ForumActor,
   input: PostInput & { threadId: string }
-): Promise<{ postId: string; formatting: Formatting; reward: ForumReward | null }> {
+): Promise<{ postId: string; formatting: Formatting }> {
   const thread = await db.forumThread.findUnique({
     where: { id: input.threadId },
     include: { category: true, advertRealm: { select: ADVERT_REALM_SELECT } },
@@ -222,9 +217,8 @@ export async function replyToThread(
     });
     return post.id;
   });
-  const { created } = await syncLinks(db, actor, postId, body.plainText);
-  const reward = await rewardNewLinks(db, actor, postId, created);
-  return { postId, formatting: formattingOf(body), reward };
+  await syncLinks(db, actor, postId, body.plainText);
+  return { postId, formatting: formattingOf(body) };
 }
 
 /** A Canvas post keeps its wikitext as the source and an HTML post its HTML: an edit cannot switch editors. */

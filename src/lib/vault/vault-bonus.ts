@@ -19,7 +19,6 @@ export interface VaultBonusConfig {
   /** Master toggle (1 = on, 0 = off). */
   enabled: number;
   newPlayer: number;
-  wikiImport: number;
   /** NS deck import: credits per card, capped at nsCap. */
   nsPerCard: number;
   nsCap: number;
@@ -29,16 +28,11 @@ export interface VaultBonusConfig {
   achievementEpic: number;
   achievementLegendary: number;
   loreward: number;
-  /** Forum: credits for the first post that links an action (once per action ever). */
-  forumActionReward: number;
-  /** Forum: rewarded actions per country per UTC day. */
-  forumActionDailyCap: number;
 }
 
 export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
   enabled: 1,
   newPlayer: 5000,
-  wikiImport: 2500,
   nsPerCard: 50,
   nsCap: 5000,
   achievementCommon: 100,
@@ -47,14 +41,11 @@ export const VAULT_BONUS_DEFAULTS: VaultBonusConfig = {
   achievementEpic: 1000,
   achievementLegendary: 2500,
   loreward: 2500,
-  forumActionReward: 5,
-  forumActionDailyCap: 3,
 };
 
 const KEY = {
   enabled: "vault_bonus_enabled",
   newPlayer: "vault_bonus_new_player",
-  wikiImport: "vault_bonus_wiki_import",
   nsPerCard: "vault_bonus_ns_per_card",
   nsCap: "vault_bonus_ns_cap",
   achievementCommon: "vault_bonus_achievement_common",
@@ -63,8 +54,6 @@ const KEY = {
   achievementEpic: "vault_bonus_achievement_epic",
   achievementLegendary: "vault_bonus_achievement_legendary",
   loreward: "vault_bonus_loreward",
-  forumActionReward: "vault_bonus_forum_action_reward",
-  forumActionDailyCap: "vault_bonus_forum_action_daily_cap",
 } as const satisfies Record<keyof VaultBonusConfig, string>;
 
 let cache: { value: VaultBonusConfig; expires: number } | null = null;

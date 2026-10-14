@@ -8,31 +8,25 @@ interface Meta {
   personaId: string | null;
   title: string;
 }
-type Submit = (
-  wikitext: string,
-  meta: Meta
-) => Promise<{ formatting: "done" | "pending"; reward?: { amount: number } | null }>;
+type Submit = (wikitext: string, meta: Meta) => Promise<{ formatting: "done" | "pending" }>;
 
 export const STUB_WIKITEXT = "New ''text''";
 
 function SubmitButton({ label, onSubmit }: { label: string; onSubmit: Submit }) {
   const [error, setError] = React.useState<string | null>(null);
-  // What the page handed back as the post's reward, so a test can see it reach the composer.
-  const [reward, setReward] = React.useState<number | null>(null);
   return (
     <>
       <button
         type="button"
         onClick={() =>
-          void onSubmit(STUB_WIKITEXT, { personaId: null, title: "Hello" })
-            .then((result) => setReward(result.reward?.amount ?? null))
-            .catch((e: Error) => setError(e.message))
+          void onSubmit(STUB_WIKITEXT, { personaId: null, title: "Hello" }).catch((e: Error) =>
+            setError(e.message)
+          )
         }
       >
         {label}
       </button>
       {error ? <p role="alert">{error}</p> : null}
-      {reward !== null ? <output data-testid="stub-reward">{reward}</output> : null}
     </>
   );
 }

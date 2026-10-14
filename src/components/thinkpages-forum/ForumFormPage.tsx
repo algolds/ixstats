@@ -22,7 +22,7 @@ export function ForumFormPage({
   );
 }
 
-/** A thread whose first post is still being formatted, or that earned a reward the composer shows, opens on request. */
+/** A thread whose first post is still being formatted opens on request. */
 export function OpenStartedLink({ href, label }: { href: string; label: string }) {
   return (
     <Button asChild variant="secondary" className="pointer-coarse:min-h-11">

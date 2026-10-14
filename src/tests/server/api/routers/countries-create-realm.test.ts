@@ -19,7 +19,6 @@ jest.mock("~/lib/cache", () => ({
   invalidateCache: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/lib/vault/vault-bonus", () => ({
-  getBonusConfig: jest.fn().mockResolvedValue({ newPlayer: 0, wikiImport: 0 }),
   grantBonus: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/server/shared/country-mutation-helpers", () => ({
@@ -35,6 +34,7 @@ jest.mock("~/server/shared/country-mutation-helpers", () => ({
 import { createTRPCRouter } from "~/server/api/trpc";
 import { managementCreateProcedures } from "~/server/api/routers/countries/management/create";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { grantBonus } from "~/lib/vault/vault-bonus";
 
 const router = createTRPCRouter(managementCreateProcedures);
 const CLERK_ID = "clerk_p1";
@@ -153,6 +153,12 @@ describe("countries.createCountry — realm and cap", () => {
       where: { id: "u1" },
       data: { countryId: "c_new" },
     });
+  });
+
+  it("founding a nation pays no bonus", async () => {
+    const { caller } = setup();
+    await caller.createCountry(input() as never);
+    expect(grantBonus).not.toHaveBeenCalled();
   });
 
   it("without a realmId it uses the realm of the nation the player acts as", async () => {

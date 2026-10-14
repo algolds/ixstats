@@ -308,46 +308,6 @@ describe("CanvasComposer", () => {
     expect(onWikitextChange).toHaveBeenLastCalledWith("draft");
   });
 
-  it("shows what the post earned and clears it on the next edit", async () => {
-    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: { amount: 5 } }));
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
-    write("We act");
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    expect(await screen.findByText("+5 IxC for posting your action")).toBeInTheDocument();
-    write("Another thought");
-    expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
-  });
-
-  it("shows the amount the server reported, not a fixed one", async () => {
-    const onSubmit = jest.fn(async () => ({
-      formatting: "done" as const,
-      reward: { amount: 2.5 },
-    }));
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
-    write("We act");
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    expect(await screen.findByText("+2.5 IxC for posting your action")).toBeInTheDocument();
-  });
-
-  it("keeps the reward line when the composer clears itself after the post", async () => {
-    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: { amount: 5 } }));
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
-    write("We act");
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    await screen.findByText("+5 IxC for posting your action");
-    expect(screen.getByTestId("canvas")).toHaveValue("");
-    expect(screen.getByText("+5 IxC for posting your action")).toBeInTheDocument();
-  });
-
-  it("shows no reward line when the post earned none", async () => {
-    const onSubmit = jest.fn(async () => ({ formatting: "done" as const, reward: null }));
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
-    write("Hello");
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
-    expect(screen.queryByText(/IxC for posting/)).toBeNull();
-  });
-
   describe("prefill from the address", () => {
     afterEach(() => {
       jest.useRealTimers();

@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
-import type { ForumReward } from "~/lib/action-rewards";
-import { useRewardLine } from "../composer/RewardSignal";
 import { retryAfterSecondsOf } from "./useSlowMode";
 
 interface BoardPostOptions<Input> {
   editorRef: RefObject<GlassPlateEditorRef | null>;
-  onSubmit: (input: Input) => Promise<{ reward: ForumReward | null }>;
+  onSubmit: (input: Input) => Promise<void>;
   /** Called once the message is posted, after the editor is cleared. */
   onPosted: () => void;
   /** Seconds of slow mode to start after a post (0 for none). */
@@ -17,7 +15,7 @@ interface BoardPostOptions<Input> {
 }
 
 /**
- * Sending a board message: pending, the server's refusal, and what the post earned. A slow-mode refusal starts the
+ * Sending a board message: pending and the server's refusal. A slow-mode refusal starts the
  * countdown instead of showing an error. The editor is read-only while a post is sent, which drops its focus: it is
  * taken back once the editor is writable again.
  */
@@ -30,7 +28,6 @@ export function useBoardPost<Input>({
 }: BoardPostOptions<Input>) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { reward, show: showReward, clear: clearReward } = useRewardLine();
   const refocus = useRef(false);
 
   useEffect(() => {
@@ -43,10 +40,8 @@ export function useBoardPost<Input>({
     async (input: Input) => {
       setPending(true);
       setError(null);
-      clearReward();
       try {
-        const posted = await onSubmit(input);
-        showReward(posted.reward);
+        await onSubmit(input);
         editorRef.current?.clear();
         onPosted();
         if (slowSeconds > 0) startSlow(slowSeconds);
@@ -59,8 +54,8 @@ export function useBoardPost<Input>({
         setPending(false);
       }
     },
-    [onSubmit, onPosted, slowSeconds, startSlow, clearReward, showReward, editorRef]
+    [onSubmit, onPosted, slowSeconds, startSlow, editorRef]
   );
 
-  return { pending, error, reward, clearReward, send };
+  return { pending, error, send };
 }

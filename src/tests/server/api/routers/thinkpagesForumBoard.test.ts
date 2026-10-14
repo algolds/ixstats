@@ -79,12 +79,11 @@ describe("thinkpagesForum board procedures", () => {
   it("posts, edits, continues and configures through the module", async () => {
     const store = withBoard();
     const c = caller(member, store.db);
-    const { message: posted, reward } = await c.postBoardMessage({
+    const { message: posted } = await c.postBoardMessage({
       realm: "eurth",
       html: "<p>Hello</p>",
       replyToPostId: "p1",
     });
-    expect(reward).toBeNull();
     expect(posted).toMatchObject({ contentHtml: "<p>Hello</p>", replyTo: { postId: "p1" } });
     const edited = await c.editBoardMessage({ postId: posted.id, html: "<p>Hello again</p>" });
     expect(edited.contentHtml).toBe("<p>Hello again</p>");

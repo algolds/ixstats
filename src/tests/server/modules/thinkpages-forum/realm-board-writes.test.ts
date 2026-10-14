@@ -33,14 +33,12 @@ import {
 } from "~/tests/helpers/forum-board-fake";
 import type { Value } from "~/tests/helpers/forum-store-fake";
 
-const post = async (store: ReturnType<typeof boardStore>, who: object, input: object) =>
-  (
-    await postBoardMessage(store.db as never, who as never, {
-      realm: "eurth",
-      html: "<p>Hello board</p>",
-      ...input,
-    })
-  ).message;
+const post = (store: ReturnType<typeof boardStore>, who: object, input: object) =>
+  postBoardMessage(store.db as never, who as never, {
+    realm: "eurth",
+    html: "<p>Hello board</p>",
+    ...input,
+  });
 const posts = (store: ReturnType<typeof boardStore>) => store.state.posts.length;
 const refusal = (code: string, message?: RegExp) =>
   expect.objectContaining({

@@ -4,8 +4,6 @@ import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
-import { vaultService } from "~/lib/vault/vault-service";
-
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -216,39 +214,7 @@ export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
         }
       }
 
-      // 💰 Award IxCredits for cultural exchange creation
-      let creditsEarned = 0;
-      if (ctx.auth?.userId) {
-        try {
-          const creditReward = 12; // 12 IxC for organizing cultural exchange
-
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "cultural_exchange_created",
-            ctx.db,
-            {
-              exchangeId: exchange.id,
-              exchangeTitle: input.title,
-              exchangeType: input.type,
-              hostCountryId: input.hostCountryId,
-              participantCountryId: input.participantCountryId,
-            }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for cultural exchange creation`
-            );
-          }
-        } catch (error) {
-          console.error("[Diplomatic] Failed to award cultural exchange credits:", error);
-        }
-      }
-
-      return { ...exchange, creditsEarned };
+      return exchange;
     }),
 
   joinCulturalExchange: rateLimitedMutationProcedure

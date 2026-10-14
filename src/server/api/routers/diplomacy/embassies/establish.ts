@@ -3,7 +3,6 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { TRPCError } from "@trpc/server";
 import { notificationAPI } from "~/lib/notifications/api";
 // oxlint-disable-next-line typescript/no-unused-vars
-import { vaultService } from "~/lib/vault/vault-service";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "~/lib/activity";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -100,39 +99,6 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         // Don't fail the embassy creation if notifications fail
       }
 
-      // 💰 Award IxCredits for embassy establishment
-      let creditsEarned = 0;
-      if (ctx.auth?.userId) {
-        try {
-          const creditReward = 15; // 15 IxC for establishing an embassy
-
-          const earnResult = await vaultService.earnCredits(
-            ctx.auth.userId,
-            creditReward,
-            "EARN_ACTIVE",
-            "embassy_established",
-            ctx.db,
-            {
-              embassyId: embassy.id,
-              embassyName: input.name,
-              hostCountryId: input.hostCountryId,
-              guestCountryId: input.guestCountryId,
-              hostCountryName,
-              guestCountryName,
-            }
-          );
-
-          if (earnResult.success) {
-            creditsEarned = creditReward;
-            console.log(
-              `[Diplomatic] Awarded ${creditReward} IxC to ${ctx.auth.userId} for embassy establishment`
-            );
-          }
-        } catch (error) {
-          console.error("[Diplomatic] Failed to award embassy establishment credits:", error);
-        }
-      }
-
       // 🤝 Ensure a DiplomaticRelation exists between the two countries.
       // Establishing an embassy is what opens formal relations — without this,
       // the Relations list and the Foreign Policy target dropdown stay empty.
@@ -186,7 +152,6 @@ export const diplomaticEmbassiesEstablishRouter = createTRPCRouter({
         ...embassy,
         hostCountryName,
         guestCountryName,
-        creditsEarned,
       };
     }),
 });

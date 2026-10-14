@@ -5,12 +5,7 @@ jest.mock("~/server/modules/thinkpages-forum/render", () => ({
 jest.mock("~/server/modules/thinkpages-forum/mention-links", () => ({
   withMentionLinks: jest.fn(async (_db: object, body: object) => body),
 }));
-jest.mock("~/server/modules/action-links", () => ({
-  ...jest.requireActual("~/server/modules/action-links"),
-  grantActionLinkRewards: jest.fn(async () => 0),
-}));
 import { REALM_CATEGORIES, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
-import { grantActionLinkRewards } from "~/server/modules/action-links";
 import {
   createThread,
   editPost,
@@ -200,7 +195,6 @@ describe("createThread", () => {
       threadId: "t_new",
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     // The first transaction writes the thread and post; the second is the link sync.
     expect(db.$transaction).toHaveBeenCalledTimes(2);
@@ -254,7 +248,6 @@ describe("createThread", () => {
       threadId: "t_new",
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     const refused = writeDb();
     await expect(
@@ -299,7 +292,6 @@ describe("createThread", () => {
       threadId: "t_new",
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
   });
 
@@ -396,70 +388,6 @@ describe("createThread", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.$transaction).not.toHaveBeenCalled();
   });
-
-  describe("the action reward", () => {
-    const linked = { ...NEW_THREAD, html: "<p>We act [ixaction=a1]</p>" };
-    const withAction = () =>
-      writeDb({
-        activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-        post: postBy("u_p"),
-      });
-
-    beforeEach(() => jest.mocked(grantActionLinkRewards).mockClear());
-
-    it("pays the new post's new links and returns the reward", async () => {
-      const { db } = withAction();
-      jest.mocked(grantActionLinkRewards).mockResolvedValueOnce(5);
-      await expect(createThread(db as never, user, linked)).resolves.toMatchObject({
-        threadId: "t_new",
-        reward: { amount: 5 },
-      });
-      expect(grantActionLinkRewards).toHaveBeenCalledWith(db, {
-        userId: "u_p",
-        countryId: "c1",
-        postSource: "native",
-        postRef: "p_new",
-        activityIds: ["a1"],
-      });
-    });
-
-    it("saves the thread with no reward when the reward step fails", async () => {
-      const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
-      const { db } = withAction();
-      jest.mocked(grantActionLinkRewards).mockRejectedValueOnce(new Error("ledger down"));
-      await expect(createThread(db as never, user, linked)).resolves.toMatchObject({
-        postId: "p_new",
-        reward: null,
-      });
-      log.mockRestore();
-    });
-
-    it("never calls the reward step for a post without links", async () => {
-      const { db } = writeDb();
-      await expect(createThread(db as never, user, NEW_THREAD)).resolves.toMatchObject({
-        reward: null,
-      });
-      expect(grantActionLinkRewards).not.toHaveBeenCalled();
-    });
-
-    it("pays the posting user for a persona post", async () => {
-      const { db } = writeDb({
-        activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-        post: postBy("u_p"),
-        persona: { id: "pa1" },
-      });
-      jest.mocked(grantActionLinkRewards).mockResolvedValueOnce(5);
-      await createThread(db as never, user, {
-        ...linked,
-        categoryKey: "side-games",
-        personaId: "pa1",
-      });
-      expect(grantActionLinkRewards).toHaveBeenCalledWith(
-        db,
-        expect.objectContaining({ userId: "u_p", countryId: "c1" })
-      );
-    });
-  });
 });
 
 describe("replyToThread", () => {
@@ -470,7 +398,6 @@ describe("replyToThread", () => {
     ).resolves.toEqual({
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     expect(db.$transaction).toHaveBeenCalledTimes(2);
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
@@ -526,7 +453,6 @@ describe("replyToThread", () => {
     ).resolves.toEqual({
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({ authorUserId: "u_a" });
   });
@@ -539,7 +465,7 @@ describe("replyToThread", () => {
         html: "<p>In character</p>",
         personaId: "pa1",
       })
-    ).resolves.toEqual({ postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     expect(db.thinkpagesAccount.findFirst).toHaveBeenCalledWith({
       where: {
         id: "pa1",
@@ -569,22 +495,6 @@ describe("replyToThread", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(tx.forumPost.create).not.toHaveBeenCalled();
     expect(tx.forumThread.update).not.toHaveBeenCalled();
-  });
-
-  describe("the action reward", () => {
-    beforeEach(() => jest.mocked(grantActionLinkRewards).mockClear());
-
-    it("pays the reply's new links and returns the reward", async () => {
-      const { db } = writeDb({
-        thread: threadIn("general"),
-        activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
-        post: postBy("u_p"),
-      });
-      jest.mocked(grantActionLinkRewards).mockResolvedValueOnce(5);
-      await expect(
-        replyToThread(db as never, user, { threadId: "t1", html: "<p>Done [ixaction=a1]</p>" })
-      ).resolves.toMatchObject({ postId: "p_new", reward: { amount: 5 } });
-    });
   });
 });
 
@@ -740,8 +650,7 @@ describe("editPost", () => {
     });
   });
 
-  it("pays nothing for a link an edit adds", async () => {
-    jest.mocked(grantActionLinkRewards).mockClear();
+  it("saves a link an edit adds", async () => {
     const { db } = writeDb({
       post: postBy("u_p"),
       activities: [{ id: "a1", countryId: "c1", visibility: "public" }],
@@ -752,7 +661,6 @@ describe("editPost", () => {
       html: "<p>Now [ixaction=a1]</p>",
     });
     expect(out).toEqual({ formatting: "done" });
-    expect(grantActionLinkRewards).not.toHaveBeenCalled();
   });
 });
 
@@ -811,7 +719,6 @@ describe("realm sections", () => {
         threadId: "t_new",
         postId: "p_new",
         formatting: "done",
-        reward: null,
       });
       expect(db.forumCategory.findFirst).toHaveBeenCalledWith({
         where: { scope: "realm", realmId: "r_eurth", key: "hub" },
@@ -841,7 +748,6 @@ describe("realm sections", () => {
         threadId: "t_new",
         postId: "p_new",
         formatting: "done",
-        reward: null,
       });
     });
 
@@ -852,7 +758,6 @@ describe("realm sections", () => {
           threadId: "t_new",
           postId: "p_new",
           formatting: "done",
-          reward: null,
         });
       }
     });
@@ -910,7 +815,6 @@ describe("realm sections", () => {
       await expect(replyToThread(free.db as never, officer, reply)).resolves.toEqual({
         postId: "p_new",
         formatting: "done",
-        reward: null,
       });
       const banned = writeDb({
         thread: realmThread("hub"),
@@ -1010,7 +914,7 @@ describe("forum bans on every write", () => {
     });
     await expect(
       createThread(db as never, user, { ...NEW_THREAD, categoryKey: "side-games" })
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
     const change = writeDb({ post: postBy("u_p"), bans: [ban] });
     await expect(editPost(change.db as never, user, edit)).rejects.toMatchObject({
       code: "FORBIDDEN",
@@ -1026,11 +930,10 @@ describe("forum bans on every write", () => {
       threadId: "t_new",
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     await expect(
       replyToThread(writeDb({ thread: threadIn("general"), bans }).db as never, user, reply)
-    ).resolves.toEqual({ postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     const change = writeDb({ post: postBy("u_p"), bans });
     await editPost(change.db as never, user, edit);
     expect(change.db.forumPost.updateMany).toHaveBeenCalled();
@@ -1043,7 +946,6 @@ describe("forum bans on every write", () => {
       threadId: "t_new",
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     expect(db.forumBan.findMany).not.toHaveBeenCalled();
     const change = writeDb({ post: postBy("u_a"), bans });
@@ -1084,7 +986,7 @@ describe("the Reports category (M8)", () => {
   it("lets a member reply in and edit within their own report thread", async () => {
     await expect(
       replyToThread(writeDb({ thread: reportThread("u_p") }).db as never, user, reply)
-    ).resolves.toEqual({ postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     const change = writeDb({ post: reportPost("u_p", "u_p") });
     await editPost(change.db as never, user, { postId: "p1", editedAt: null, html: "<p>x</p>" });
     expect(change.db.forumPost.updateMany).toHaveBeenCalled();
@@ -1094,7 +996,7 @@ describe("the Reports category (M8)", () => {
     for (const author of ["u_p", "u_other"]) {
       await expect(
         replyToThread(writeDb({ thread: reportThread(author) }).db as never, admin, reply)
-      ).resolves.toEqual({ postId: "p_new", formatting: "done", reward: null });
+      ).resolves.toEqual({ postId: "p_new", formatting: "done" });
     }
   });
 });
@@ -1122,7 +1024,6 @@ describe("Canvas wikitext writes", () => {
     await expect(replyToThread(db as never, user, WIKI)).resolves.toEqual({
       postId: "p_new",
       formatting: "done",
-      reward: null,
     });
     expect(renderMock).toHaveBeenCalledWith("'''Hi''' {{Flag}}", "t1", "u_p");
     expect(tx.forumPost.create.mock.calls[0]![0].data).toEqual({
@@ -1154,7 +1055,6 @@ describe("Canvas wikitext writes", () => {
     await expect(replyToThread(db as never, user, WIKI)).resolves.toEqual({
       postId: "p_new",
       formatting: "pending",
-      reward: null,
     });
     expect(tx.forumPost.create.mock.calls[0]![0].data).toMatchObject({
       contentWikitext: "'''Hi''' {{Flag}}",
@@ -1171,7 +1071,7 @@ describe("Canvas wikitext writes", () => {
         title: "Hello there",
         wikitext: "x",
       })
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
     expect(renderMock).toHaveBeenCalledWith("x", "new", "u_p");
     expect(tx.forumPostTemplate.createMany).toHaveBeenCalled();
   });
@@ -1470,7 +1370,7 @@ describe("Find a Realm adverts", () => {
     expect(tx.forumThread.create).not.toHaveBeenCalled();
   });
 
-  it("creates the advert with the realm id when the advert option is given, and still returns the reward", async () => {
+  it("creates the advert with the realm id when the advert option is given", async () => {
     const { db, tx } = writeDb();
     await expect(
       createThread(
@@ -1479,7 +1379,7 @@ describe("Find a Realm adverts", () => {
         { ...NEW_THREAD, categoryKey: "find-a-realm" },
         { advertRealmId: "r_eurth" }
       )
-    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done", reward: null });
+    ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
     expect(tx.forumThread.create.mock.calls[0]![0].data).toMatchObject({
       categoryId: "cat_find-a-realm",
       advertRealmId: "r_eurth",

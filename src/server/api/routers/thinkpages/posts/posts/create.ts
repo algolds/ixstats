@@ -4,7 +4,6 @@ import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { notificationHooks } from "~/lib/notifications/hooks";
 import { validateNoXSS } from "~/lib/utils";
-import { vaultService } from "~/lib/vault/vault-service";
 import { invalidateFeeds, personaDisplayName, postAuthorsInclude } from "../../post-utils";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ownHashtags } from "~/server/shared/realm-board";
@@ -182,36 +181,6 @@ async function recordMentions(
         contentId: post.id,
       })
       .catch(logNotifyFailure("mention"));
-  }
-}
-
-/** IxCredits for a social post: 1 IxC for each of the first 5 posts per day. Never blocks posting. */
-async function awardPostCredits(
-  db: PostDb,
-  clerkUserId: string,
-  post: { id: string },
-  meta: { postType: string; accountId: string }
-) {
-  try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const postsToday = await db.thinkpagesPost.count({
-      where: { accountId: meta.accountId, createdAt: { gte: today } },
-    });
-    if (postsToday > 5) return 0;
-
-    const earnResult = await vaultService.earnCredits(
-      clerkUserId,
-      1,
-      "EARN_SOCIAL",
-      "SOCIAL_POST",
-      db as any,
-      { postId: post.id, ...meta }
-    );
-    return earnResult.success ? 1 : 0;
-  } catch (error) {
-    console.error("[ThinkPages] Failed to award post credits:", error);
-    return 0;
   }
 }
 
@@ -413,16 +382,11 @@ export const thinkpagesPostsPostsCreateRouter = createTRPCRouter({
         }
       }
 
-      const creditsEarned = await awardPostCredits(db, clerkUserId, post, {
-        postType,
-        accountId: input.accountId,
-      });
-
       await mirrorToDiscord(db, post, account, input);
 
       queueAchievementCheck(clerkUserId);
       await invalidateFeeds();
 
-      return { ...post, creditsEarned };
+      return post;
     }),
 });

@@ -34,7 +34,6 @@ import { fetchNationPagePrefill } from "~/server/modules/realms/realms.prefill";
 import { fetchPageCreator } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { REALM_SLUG_PATTERN } from "~/lib/realms/realm-slug";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache, invalidateCache } from "~/lib/cache";
@@ -49,7 +48,7 @@ import { realmNationDefaultsRouter } from "./nation-defaults";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 /** The side effects linkCountry used to run when a nation changed hands; failures are logged, never thrown. */
-async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): Promise<void> {
+async function onNationAssigned(event: NationAssignedEvent): Promise<void> {
   await notificationHooks
     .onUserAccountChange({
       userId: event.clerkUserId,
@@ -59,14 +58,6 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
       metadata: { countryId: event.countryId, countryName: event.countryName },
     })
     .catch((e: Error) => console.error("[realms] claim notification failed:", e));
-  await getBonusConfig(db)
-    .then((cfg) =>
-      grantBonus(db, event.clerkUserId, NEW_PLAYER_BONUS_SOURCE, cfg.newPlayer, {
-        oneTime: true,
-        metadata: { countryId: event.countryId, countryName: event.countryName },
-      })
-    )
-    .catch((e: Error) => console.error("[realms] new-player bonus failed:", e));
   queueAchievementCheck(event.clerkUserId, event.countryId);
   // The inviter's recruiter achievements count approved invited claims (account-level, no country).
   queueAchievementCheck(event.inviterUserId);
@@ -81,7 +72,7 @@ async function onNationAssigned(db: PrismaClient, event: NationAssignedEvent): P
 const claims = (db: PrismaClient) =>
   createClaimsService(db, {
     fetchPageCreator,
-    onNationAssigned: (event) => onNationAssigned(db, event),
+    onNationAssigned,
     onClaimRejected: notifyClaimRejected,
     fetchNationPrefill: fetchNationPagePrefill,
     resolveInviter: resolveInviterUserId,

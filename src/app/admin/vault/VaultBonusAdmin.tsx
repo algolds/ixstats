@@ -4,7 +4,6 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  ChatBubble,
   Gift,
   Refresh as RefreshCw,
   FloppyDisk as Save,
@@ -26,12 +25,6 @@ interface BonusField {
   key: keyof BonusConfig;
   label: string;
   hint?: string;
-  /** The suffix shown inside the input; "Credits" when absent. */
-  unit?: string;
-  /** The server's upper bound; absent when the field has none. */
-  max?: number;
-  /** 1 makes the field a whole number; absent allows fractions. */
-  step?: number;
   icon?: React.ComponentType<{ className?: string }>;
 }
 
@@ -53,12 +46,7 @@ const GROUPS: BonusGroup[] = [
       {
         key: "newPlayer",
         label: "New player bonus",
-        hint: "Granted on first country link or account creation",
-      },
-      {
-        key: "wikiImport",
-        label: "Wiki country import",
-        hint: "Granted when founding from a canonical wiki nation",
+        hint: "Granted once, at account creation",
       },
     ],
   },
@@ -102,36 +90,7 @@ const GROUPS: BonusGroup[] = [
       },
     ],
   },
-  {
-    title: "Forum actions",
-    description: "Paid once per action, the first time a forum post links it",
-    icon: ChatBubble,
-    accentColor: "text-orange",
-    fields: [
-      {
-        key: "forumActionReward",
-        label: "Reward per action",
-        hint: "Credits for the first post that links an action",
-        max: 1000,
-      },
-      {
-        key: "forumActionDailyCap",
-        label: "Rewarded actions per day",
-        hint: "Per country, per UTC day (0 turns the reward off)",
-        unit: "per day",
-        max: 100,
-        step: 1,
-      },
-    ],
-  },
 ];
-
-/** The typed text as the number the server accepts: whole when the field is, never past its max. */
-function fieldValue(field: BonusField, text: string): number {
-  const parsed = parseFloat(text) || 0;
-  const value = field.step === 1 ? Math.round(parsed) : parsed;
-  return Math.min(Math.max(value, 0), field.max ?? Infinity);
-}
 
 export function VaultBonusAdmin() {
   const notify = useNotify();
@@ -219,19 +178,21 @@ export function VaultBonusAdmin() {
                     <div className="relative">
                       <Input
                         type="number"
-                        step={field.step ?? "any"}
+                        step="any"
                         min={0}
-                        max={field.max}
                         value={form[field.key] ?? ""}
                         onChange={(e) =>
-                          setForm((p) => ({ ...p, [field.key]: fieldValue(field, e.target.value) }))
+                          setForm((p) => ({
+                            ...p,
+                            [field.key]: Math.max(parseFloat(e.target.value) || 0, 0),
+                          }))
                         }
                         placeholder="0"
                         aria-label={field.label}
                         className="w-full font-mono"
                       />
                       <span className="text-label-secondary text-eyebrow absolute top-1/2 right-3 -translate-y-1/2 tabular-nums">
-                        {field.unit ?? "Credits"}
+                        Credits
                       </span>
                     </div>
                   </div>

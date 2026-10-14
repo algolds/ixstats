@@ -1,19 +1,13 @@
 /** @jest-environment node */
 /**
  * The readers that mirror the thread permalink rules (post-location.ts, reads.ts) also drop the advert of a realm the
- * viewer cannot see: "Discussed in" lists and counts, the reaction target, the action reward, notice recipients and
+ * viewer cannot see: "Discussed in" lists and counts, the reaction target, notice recipients and
  * report filing. One test per reader, each with a draft realm's advert, a published realm's advert and a plain thread.
  */
-jest.mock("~/server/modules/action-links", () => ({
-  grantActionLinkRewards: jest.fn(),
-}));
-
-import { grantActionLinkRewards } from "~/server/modules/action-links";
 import {
   discussionCountsOf,
   discussionsOf,
 } from "~/server/modules/thinkpages-forum/action-discussions";
-import { rewardNewLinks } from "~/server/modules/thinkpages-forum/action-reward";
 import { fileReport } from "~/server/modules/thinkpages-forum/mod-reports";
 import {
   readableUsers,
@@ -24,8 +18,6 @@ import {
   loadReadablePost,
   threadReactable,
 } from "~/server/modules/thinkpages-forum/reaction-target";
-
-const grant = jest.mocked(grantActionLinkRewards);
 
 const USER = { name: "user", level: 100 };
 const member = { id: "u_m", clerkUserId: "clerk_m", countryId: "c1", role: USER };
@@ -238,37 +230,6 @@ describe("reacting to an archived realm's advert", () => {
   });
 });
 
-describe("the action reward (isPubliclyReadable)", () => {
-  const actor = { id: "u_f", countryId: "c2" };
-  const db = (advertRealmId: string | null) => ({
-    forumPost: {
-      findUnique: jest.fn(async () => ({
-        hidden: false,
-        thread: { authorUserId: "u_f", hidden: false, advertRealmId, category: SITE },
-      })),
-    },
-    realm: realmTable(),
-  });
-
-  beforeEach(() => jest.resetAllMocks());
-
-  it("never pays for a draft realm's advert, even to its founder, who writes it but no signed-out reader can open it", async () => {
-    grant.mockResolvedValue(5);
-    await expect(rewardNewLinks(db("r_draft") as never, actor, "p1", ["a1"])).resolves.toBeNull();
-    expect(grant).not.toHaveBeenCalled();
-  });
-
-  it("pays for a published realm's advert and for an ordinary thread", async () => {
-    grant.mockResolvedValue(5);
-    await expect(rewardNewLinks(db("r_eurth") as never, actor, "p1", ["a1"])).resolves.toEqual({
-      amount: 5,
-    });
-    await expect(rewardNewLinks(db(null) as never, actor, "p1", ["a1"])).resolves.toEqual({
-      amount: 5,
-    });
-  });
-});
-
 describe("notice recipients (readableUsers)", () => {
   const person = (id: string, over: object = {}) => ({
     id,
@@ -282,7 +243,6 @@ describe("notice recipients (readableUsers)", () => {
     person("u_plain"),
     person("u_founder", { clerkUserId: "founder" }),
   ];
-  // Built per call: the reward suite's resetAllMocks would otherwise empty a table made when the file loads.
   const db = () => ({
     realm: realmTable(),
     realmOfficer: { findMany: jest.fn(async () => []) },

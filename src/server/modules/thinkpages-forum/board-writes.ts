@@ -7,7 +7,6 @@
  * Every write returns the stored message shaped as `getBoard` returns it, for the live publish.
  */
 import type { PrismaClient } from "@prisma/client";
-import type { ForumReward } from "~/lib/action-rewards";
 import {
   BOARD_EDIT_WINDOW_MS,
   BOARD_TOO_LONG,
@@ -18,7 +17,6 @@ import {
 import { isBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { hasRealmPower, isSiteAdmin } from "~/server/modules/realms";
 import type { ForumViewer } from "./access";
-import { rewardNewLinks } from "./action-reward";
 import {
   boardAccessFor,
   boardSettingsOf,
@@ -131,7 +129,7 @@ export async function postBoardMessage(
   db: BoardWritesDb,
   actor: ForumActor,
   input: { realm: string; html: string; personaId?: string | null; replyToPostId?: string | null }
-): Promise<{ message: BoardMessage; reward: ForumReward | null }> {
+): Promise<BoardMessage> {
   const place = await loadBoard(db, actor, { slug: input.realm });
   const settings = await boardSettingsOf(db, place.realm.id);
   const access = await boardAccessFor(db, actor, place.realm, settings, place.category);
@@ -164,11 +162,8 @@ export async function postBoardMessage(
     });
     return post.id;
   });
-  const { created } = await syncLinks(db, actor, postId, body.plainText);
-  // Read the message first: a failing read must not come after a reward that was already paid.
-  const message = await storedBoardMessage(db, actor, place, postId);
-  const reward = await rewardNewLinks(db, actor, postId, created);
-  return { message, reward };
+  await syncLinks(db, actor, postId, body.plainText);
+  return storedBoardMessage(db, actor, place, postId);
 }
 
 /**

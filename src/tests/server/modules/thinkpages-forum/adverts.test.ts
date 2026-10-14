@@ -86,7 +86,7 @@ function advertDb(over: Over = {}) {
 }
 
 const NEW = { realm: "eurth", title: "Join Eurth", wikitext: "Come and play." };
-const CREATED = { threadId: "t_new", postId: "p_new", formatting: "done" as const, reward: null };
+const CREATED = { threadId: "t_new", postId: "p_new", formatting: "done" as const };
 
 beforeEach(() => {
   jest.mocked(createThread).mockReset();
@@ -99,7 +99,7 @@ describe("createAdvert", () => {
     ["an officer with the appearance power", officer],
     ["a site admin", admin],
   ])(
-    "lets %s create the advert through createThread, fixed to Find a Realm and the realm, and returns its reward",
+    "lets %s create the advert through createThread, fixed to Find a Realm and the realm",
     async (_who, actor) => {
       const db = advertDb();
       await expect(createAdvert(db as never, actor, NEW)).resolves.toEqual(CREATED);

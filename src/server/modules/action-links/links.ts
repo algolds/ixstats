@@ -56,7 +56,7 @@ export async function validatePostActionTokens(
 /**
  * Replaces the post's links with the tokens in its text and reports the activity ids whose link row this call
  * inserted. `createManyAndReturn` with `skipDuplicates` returns only the inserted rows, so two saves racing on one
- * post cannot both claim the same link as new (the forum's reward step pays on this set).
+ * post cannot both claim the same link as new.
  */
 export async function syncPostActionLinks(
   db: LinksDb,

@@ -10,7 +10,7 @@ jest.mock("~/server/modules/thinkpages-forum", () => {
     createThread: jest.fn(async () => ({ threadId: "t_new", postId: "p_new", formatting: "done" })),
     replyToThread: jest.fn(async () => ({ postId: "p_reply", formatting: "done" })),
     editPost: jest.fn(async () => ({ formatting: "done" })),
-    postBoardMessage: jest.fn(async () => ({ message: { id: "m1" }, reward: null })),
+    postBoardMessage: jest.fn(async () => ({ id: "m1" })),
     editBoardMessage: jest.fn(async () => ({ id: "m1" })),
     publishBoardPost: jest.fn(async () => undefined),
     afterThreadStarted: jest.fn(async () => undefined),
@@ -84,15 +84,13 @@ describe("the write hooks", () => {
     expect(afterEdit).toHaveBeenCalledWith(db, actor, "m1");
   });
 
-  it("returns the board message with the reward its post earned", async () => {
+  it("returns the board message", async () => {
     await expect(caller().postBoardMessage({ realm: "eurth", html: "<p>Hi</p>" })).resolves.toEqual(
-      { message: { id: "m1" }, reward: null }
+      { message: { id: "m1" } }
     );
-    jest
-      .mocked(postBoardMessage)
-      .mockResolvedValueOnce({ message: { id: "m2" } as never, reward: { amount: 5 } });
+    jest.mocked(postBoardMessage).mockResolvedValueOnce({ id: "m2" } as never);
     await expect(caller().postBoardMessage({ realm: "eurth", html: "<p>Hi</p>" })).resolves.toEqual(
-      { message: { id: "m2" }, reward: { amount: 5 } }
+      { message: { id: "m2" } }
     );
     expect(afterBoardMessage).toHaveBeenLastCalledWith(db, actor, "m2");
   });

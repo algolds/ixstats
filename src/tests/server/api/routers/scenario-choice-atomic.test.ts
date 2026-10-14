@@ -1,6 +1,6 @@
 /**
  * Plan 331: recordChoice resolves a scenario with a conditional updateMany, so a
- * scenario can be completed (and paid) only once.
+ * scenario can be completed only once. It never pays IxCredits.
  */
 
 jest.mock("~/lib/vault/vault-service", () => ({
@@ -93,7 +93,7 @@ describe("diplomaticScenarios.recordChoice atomic resolution", () => {
     expect(vaultService.earnCredits).not.toHaveBeenCalled();
   });
 
-  it("resolves through a conditional updateMany (still open, not expired) and awards credits once", async () => {
+  it("resolves through a conditional updateMany (still open, not expired) and awards no credits", async () => {
     const { db, caller } = makeCaller();
     db.culturalScenario.updateMany = jest.fn().mockResolvedValue({ count: 1 } as never);
 
@@ -114,6 +114,7 @@ describe("diplomaticScenarios.recordChoice atomic resolution", () => {
     );
     expect(db.culturalScenario.update).not.toHaveBeenCalled();
     expect(db.culturalExchange.create).toHaveBeenCalledTimes(1);
-    expect(vaultService.earnCredits).toHaveBeenCalledTimes(1);
+    expect(vaultService.earnCredits).not.toHaveBeenCalled();
+    expect(result).not.toHaveProperty("creditsEarned");
   });
 });

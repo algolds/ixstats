@@ -545,27 +545,6 @@ describe("thread view", () => {
       personaId: null,
     });
   });
-
-  it("hands the reply's reward back to the composer", async () => {
-    set("thread", { data: threadData() });
-    mutations.reply = jest.fn(() =>
-      Promise.resolve({ postId: "p9", formatting: "done", reward: { amount: 7 } })
-    );
-    render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
-    expect(await screen.findByTestId("stub-reward")).toHaveTextContent("7");
-  });
-
-  it("hands back no reward when the reply earned none", async () => {
-    set("thread", { data: threadData() });
-    mutations.reply = jest.fn(() =>
-      Promise.resolve({ postId: "p9", formatting: "done", reward: null })
-    );
-    render(<ThreadPage threadId="t1" page={1} />);
-    fireEvent.click(within(screen.getByTestId("composer")).getByRole("button", { name: "Reply" }));
-    await waitFor(() => expect(router.push).toHaveBeenCalled());
-    expect(screen.queryByTestId("stub-reward")).toBeNull();
-  });
 });
 
 describe("load failures and out-of-range pages", () => {
@@ -678,21 +657,6 @@ describe("new thread", () => {
     expect(await screen.findByRole("link", { name: "Open the thread" })).toHaveAttribute(
       "href",
       "/thinkpages/t/t9"
-    );
-    expect(router.push).not.toHaveBeenCalled();
-  });
-
-  it("stays on the page when the thread earned a reward, with a way in", async () => {
-    set("category", { data: categoryData(true) });
-    mutations.createThread = jest.fn(() =>
-      Promise.resolve({ threadId: "t10", postId: "p10", formatting: "done", reward: { amount: 5 } })
-    );
-    router.push.mockClear();
-    render(<NewThreadForm categoryKey="general" />);
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    expect(await screen.findByRole("link", { name: "Open the thread" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t10"
     );
     expect(router.push).not.toHaveBeenCalled();
   });

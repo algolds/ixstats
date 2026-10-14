@@ -11,7 +11,6 @@ import { TRPCError } from "@trpc/server";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
-import { getBonusConfig, grantBonus, NEW_PLAYER_BONUS_SOURCE } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { IxTime } from "~/lib/ixtime";
@@ -386,31 +385,6 @@ async function ensureDefaultRole(
   }
 }
 
-/** One-time onboarding bonuses (a no-op if the account was already paid at sign-up); never fails the build. */
-async function grantOnboardingBonuses(
-  db: PrismaClient,
-  userId: string,
-  country: { id: string; name: string },
-  foundationRef: string | null
-) {
-  try {
-    const bcfg = await getBonusConfig(db);
-    const countryMeta = { countryId: country.id, countryName: country.name };
-    await grantBonus(db, userId, NEW_PLAYER_BONUS_SOURCE, bcfg.newPlayer, {
-      oneTime: true,
-      metadata: countryMeta,
-    });
-    if (foundationRef) {
-      await grantBonus(db, userId, "bonus:wiki_import", bcfg.wikiImport, {
-        oneTime: true,
-        metadata: { ...countryMeta, foundation: foundationRef },
-      });
-    }
-  } catch (bonusError) {
-    console.error("[createCountry] Failed to grant onboarding bonus:", bonusError);
-  }
-}
-
 async function prepareFounding(db: PrismaClient, input: CreateCountryInput) {
   const foundation = input.foundationCountry
     ? await findFoundation(db, input.foundationCountry)
@@ -562,7 +536,6 @@ export const managementCreateProcedures = {
         await invalidateCache(["countries.getAll"]);
         await globalCache.delete(`user_profile:${userId}`);
 
-        await grantOnboardingBonuses(ctx.db, userId, result, input.foundationCountry);
         queueAchievementCheck(userId, result.id);
         void ActivityHooks.User.onCountryLink(userId, result.id, true);
 

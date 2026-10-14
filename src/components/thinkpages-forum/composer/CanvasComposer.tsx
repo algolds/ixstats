@@ -13,7 +13,6 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/wiki-wikitext";
-import type { ForumReward } from "~/lib/action-rewards";
 import { cn } from "~/lib/utils/cn";
 import type { PostStyle } from "../thread/types";
 import { insertAtCaret } from "./canvas-ops";
@@ -21,7 +20,6 @@ import { PersonaSelect, type PersonaOption } from "./PersonaSelect";
 import type { QuoteRequest } from "./QuoteInsert";
 import { CanvasPreviewPane } from "./CanvasPreviewPane";
 import { FORMATTING_LATER } from "./canvas-copy";
-import { RewardSignal } from "./RewardSignal";
 import { useCanvasPreview } from "./useCanvasPreview";
 import { useCanvasQuote } from "./useCanvasQuote";
 import { useCanvasSend } from "./useCanvasSend";
@@ -52,13 +50,12 @@ export interface CanvasComposerProps {
   /** The thread the post is for: the preview renders as it would in that thread. */
   threadId?: string;
   /**
-   * Saves the post. Reject with the server's message to have it shown; a reply or thread is cleared on success. The
-   * result's `reward` (credits the post earned for linking an action) shows as a success Signal until the next edit.
+   * Saves the post. Reject with the server's message to have it shown; a reply or thread is cleared on success.
    */
   onSubmit: (
     wikitext: string,
     meta: CanvasSubmitMeta
-  ) => Promise<{ formatting: "done" | "pending"; reward?: ForumReward | null }>;
+  ) => Promise<{ formatting: "done" | "pending" }>;
   /** The member's personas for "Posting as"; omit where in-character posting is not allowed. */
   personas?: readonly PersonaOption[];
   /** A quote to add to the draft (a new object each time the Quote button is pressed). */
@@ -122,7 +119,7 @@ export function CanvasComposer({
     setTitle("");
     setEditorKey((k) => k + 1);
   }, []);
-  const { phase, reward, settle, send } = useCanvasSend(save, mode !== "edit", startBlank);
+  const { phase, settle, send } = useCanvasSend(save, mode !== "edit", startBlank);
 
   const sending = phase.kind === "sending";
   const hasText = doc.wikitext.trim().length > 0;
@@ -234,7 +231,6 @@ export function CanvasComposer({
       ) : null}
       {phase.kind === "error" ? <Signal tone="destructive" title={phase.message} /> : null}
       {phase.kind === "pending" ? <Signal tone="info" title={FORMATTING_LATER} /> : null}
-      <RewardSignal reward={reward} />
 
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         {personas.length > 0 && mode !== "edit" ? (

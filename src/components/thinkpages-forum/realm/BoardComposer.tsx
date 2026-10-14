@@ -17,7 +17,6 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
-import type { ForumReward } from "~/lib/action-rewards";
 import { getBasePath } from "~/lib/base-path";
 import { BOARD_MESSAGE_MAX, BOARD_TOO_LONG, slowModeNotice } from "~/lib/thinkpages-forum/board";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
@@ -25,7 +24,6 @@ import { cn } from "~/lib/utils/cn";
 import { BanNotice, NoticeText } from "../BanNotice";
 import { useMyPersonas, type PersonaOption } from "../composer/PersonaSelect";
 import { PostingAs } from "../composer/PostingAs";
-import { RewardSignal } from "../composer/RewardSignal";
 import { useMentionSource } from "../composer/useMentionSource";
 import { BottomDock } from "../shell";
 import type { BoardAccess, BoardQuote, ReplyTarget } from "./types";
@@ -72,8 +70,8 @@ interface BoardComposerProps {
   onQuoteInserted: () => void;
   /** The member is typing as `personaId` (null for themself); the live hook throttles what it sends. */
   onTyping: (personaId: string | null) => void;
-  /** Posts the message; resolves what it earned, rejects with the server's refusal. */
-  onSubmit: (input: BoardPostInput) => Promise<{ reward: ForumReward | null }>;
+  /** Posts the message; rejects with the server's refusal. */
+  onSubmit: (input: BoardPostInput) => Promise<void>;
   /** Phones: the composer is docked above the tab bar instead of sitting in the page. */
   docked?: boolean;
   ref?: Ref<BoardComposerHandle>;
@@ -244,7 +242,7 @@ function PostingComposer({
     setPlain("");
     onClearReply();
   }, [onClearReply]);
-  const { pending, error, reward, clearReward, send } = useBoardPost({
+  const { pending, error, send } = useBoardPost({
     editorRef,
     onSubmit,
     onPosted: resetDraft,
@@ -255,7 +253,7 @@ function PostingComposer({
   const { collapsed, surface } = useDockCollapse(
     docked,
     hasBody,
-    pending || replyTo !== null || error !== null || reward !== null
+    pending || replyTo !== null || error !== null
   );
 
   const submit = () => {
@@ -288,7 +286,6 @@ function PostingComposer({
             setHtml(nextHtml);
             setPlain(nextPlain);
             plainRef.current = nextPlain;
-            if (nextPlain.trim()) clearReward();
             if (nextPlain.trim()) onTyping(personaId);
           }}
           placeholder={`Say something to ${realmName}`}
@@ -303,7 +300,6 @@ function PostingComposer({
       </div>
 
       {error ? <Signal tone="destructive" title={error} /> : null}
-      <RewardSignal reward={reward} />
       {tooLong ? <p className="text-footnote text-label-secondary">{BOARD_TOO_LONG}</p> : null}
 
       <ComposerFooter

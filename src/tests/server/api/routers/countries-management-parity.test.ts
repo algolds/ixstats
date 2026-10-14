@@ -22,10 +22,6 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   ...jest.requireActual("~/server/shared/map-invalidation"),
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
-jest.mock("~/lib/vault/vault-bonus", () => ({
-  getBonusConfig: jest.fn().mockResolvedValue({ newPlayer: 0, wikiImport: 0 }),
-  grantBonus: jest.fn().mockResolvedValue(undefined),
-}));
 jest.mock("~/server/shared/country-mutation-helpers", () => ({
   syncNationalIdentity: jest.fn(),
   syncDemographics: jest.fn(),

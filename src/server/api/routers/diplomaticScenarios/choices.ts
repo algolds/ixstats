@@ -1,9 +1,8 @@
 import { z } from "zod";
-import type { CulturalScenario, PrismaClient } from "@prisma/client";
+import type { CulturalScenario } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
-import { vaultService } from "~/lib/vault/vault-service";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 type ChoiceOption = {
@@ -11,8 +10,6 @@ type ChoiceOption = {
   riskLevel?: string;
   effects?: { culturalImpact?: number; relationshipChange?: number; economicImpact?: number };
 };
-
-const RISK_BONUS: Record<string, number> = { low: 0, medium: 2, high: 5, extreme: 8 };
 
 /** Friendly pre-checks; the conditional updateMany in recordChoice is the authority. */
 function assertScenarioOpenFor(scenario: CulturalScenario, countryId: string) {
@@ -27,48 +24,6 @@ function assertScenarioOpenFor(scenario: CulturalScenario, countryId: string) {
   }
   if (scenario.expiresAt < new Date()) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Scenario has expired" });
-  }
-}
-
-/** IxCredits for taking part: 10 base, +5 for high-stakes scenarios, plus a risk bonus. Never blocks the choice. */
-async function awardScenarioCredits(
-  db: PrismaClient,
-  userId: string,
-  scenario: CulturalScenario,
-  choice: ChoiceOption,
-  input: { scenarioId: string; choiceId: string; choiceLabel: string }
-) {
-  try {
-    const isHighStakes = scenario.culturalImpact > 70 || scenario.diplomaticRisk > 70;
-    const riskLevel = choice.riskLevel || "medium";
-    const creditReward = 10 + (isHighStakes ? 5 : 0) + (RISK_BONUS[riskLevel] || 0);
-
-    const earnResult = await vaultService.earnCredits(
-      userId,
-      creditReward,
-      "EARN_ACTIVE",
-      "diplomatic_scenario",
-      db,
-      {
-        scenarioId: input.scenarioId,
-        scenarioType: scenario.type,
-        choiceId: input.choiceId,
-        choiceLabel: input.choiceLabel,
-        culturalImpact: scenario.culturalImpact,
-        diplomaticRisk: scenario.diplomaticRisk,
-        highStakes: isHighStakes,
-        riskLevel,
-      }
-    );
-    if (!earnResult.success) return 0;
-
-    console.log(
-      `[DIPLOMATIC_SCENARIOS] Awarded ${creditReward} IxC to ${userId} for scenario participation`
-    );
-    return creditReward;
-  } catch (error) {
-    console.error("[DIPLOMATIC_SCENARIOS] Failed to award scenario credits:", error);
-    return 0;
   }
 }
 
@@ -178,10 +133,6 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
           `[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`
         );
 
-        const creditsEarned = ctx.auth?.userId
-          ? await awardScenarioCredits(ctx.db, ctx.auth.userId, scenario, selectedChoice, input)
-          : 0;
-
         return {
           success: true,
           scenario: {
@@ -190,7 +141,6 @@ export const diplomaticScenariosChoicesRouter = createTRPCRouter({
             tags: updatedScenario.tags ? JSON.parse(updatedScenario.tags) : [],
           },
           effects: selectedChoice.effects,
-          creditsEarned,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

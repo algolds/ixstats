@@ -67,7 +67,6 @@ export const cardsSettingsRouter = createTRPCRouter({
         .object({
           enabled: z.number().min(0).max(1),
           newPlayer: z.number().min(0),
-          wikiImport: z.number().min(0),
           nsPerCard: z.number().min(0),
           nsCap: z.number().min(0),
           achievementCommon: z.number().min(0),
@@ -76,8 +75,6 @@ export const cardsSettingsRouter = createTRPCRouter({
           achievementEpic: z.number().min(0),
           achievementLegendary: z.number().min(0),
           loreward: z.number().min(0),
-          forumActionReward: z.number().min(0).max(1000),
-          forumActionDailyCap: z.number().int().min(0).max(100),
         })
         .partial()
     )

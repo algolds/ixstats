@@ -149,7 +149,7 @@ type Props = React.ComponentProps<typeof BoardComposer>;
 
 function renderComposer(props: Partial<Props> = {}) {
   const handlers = {
-    onSubmit: jest.fn().mockResolvedValue({ reward: null }),
+    onSubmit: jest.fn().mockResolvedValue(undefined),
     onTyping: jest.fn(),
     onClearReply: jest.fn(),
     onQuoteInserted: jest.fn(),
@@ -207,7 +207,7 @@ describe("BoardComposer on a phone", () => {
       onTyping: jest.fn(),
       onClearReply: jest.fn(),
       onQuoteInserted: jest.fn(),
-      onSubmit: jest.fn().mockResolvedValue({ reward: null }),
+      onSubmit: jest.fn().mockResolvedValue(undefined),
     };
     rerender(<BoardComposer {...props} docked />);
     expect(screen.getByTestId("editor")).toBe(editor);
@@ -395,8 +395,8 @@ describe("BoardComposer", () => {
     let finish: () => void = () => undefined;
     const onSubmit = jest.fn(
       () =>
-        new Promise<{ reward: null }>((resolve) => {
-          finish = () => resolve({ reward: null });
+        new Promise<void>((resolve) => {
+          finish = () => resolve();
         })
     );
     renderComposer({ onSubmit });
@@ -626,56 +626,8 @@ describe("BoardComposer", () => {
   });
 });
 
-describe("BoardComposer rewards and prefill", () => {
+describe("BoardComposer prefill", () => {
   afterEach(() => window.history.replaceState(null, "", "/"));
-
-  it("shows what the message earned and clears it when the next message is typed", async () => {
-    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 5 } }) });
-    type("We act");
-    fireEvent.click(post());
-    expect(await screen.findByText("+5 IxC for posting your action")).toBeInTheDocument();
-    type("More");
-    expect(screen.queryByText("+5 IxC for posting your action")).toBeNull();
-  });
-
-  it("shows the amount the server reported, not a fixed one", async () => {
-    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 2.5 } }) });
-    type("We act");
-    fireEvent.click(post());
-    expect(await screen.findByText("+2.5 IxC for posting your action")).toBeInTheDocument();
-  });
-
-  it("keeps the reward line when the editor clears itself after the post", async () => {
-    renderComposer({ onSubmit: jest.fn().mockResolvedValue({ reward: { amount: 5 } }) });
-    type("We act");
-    fireEvent.click(post());
-    await screen.findByText("+5 IxC for posting your action");
-    type("");
-    expect(screen.getByText("+5 IxC for posting your action")).toBeInTheDocument();
-  });
-
-  it("shows no reward line for a message that earned nothing", async () => {
-    const { onSubmit } = renderComposer();
-    type("Hello");
-    fireEvent.click(post());
-    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
-    expect(screen.queryByText(/IxC for posting/)).toBeNull();
-  });
-
-  it("never shows a reward beside a refusal", async () => {
-    const onSubmit = jest
-      .fn()
-      .mockResolvedValueOnce({ reward: { amount: 5 } })
-      .mockRejectedValueOnce(new Error("Nope"));
-    renderComposer({ onSubmit });
-    type("We act");
-    fireEvent.click(post());
-    await screen.findByText("+5 IxC for posting your action");
-    type("again");
-    fireEvent.click(post());
-    expect(await screen.findByText("Nope")).toBeInTheDocument();
-    expect(screen.queryByText(/IxC for posting/)).toBeNull();
-  });
 
   it("inserts the attached action into the editor once and removes the parameter", async () => {
     echo.inserts = true;
