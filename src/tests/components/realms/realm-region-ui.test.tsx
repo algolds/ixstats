@@ -480,16 +480,16 @@ describe("Manage tab", () => {
         .map((a) => a.textContent)
     ).toEqual([
       "Appearance",
+      "Advert",
       "Links",
       "In-world date",
       "Factbook",
       "Rules",
-      "Advert",
       "Officers",
       "Claims",
+      "Forum moderation",
       "Embassies",
       "Poll",
-      "Forum moderation",
       "Source sync",
       "Wiki",
       "Hand over",
@@ -510,7 +510,7 @@ describe("Manage tab", () => {
       within(nav)
         .getAllByRole("link")
         .map((a) => a.textContent)
-    ).toEqual(["Appearance", "Links", "In-world date", "Factbook", "Rules", "Advert", "Officers"]);
+    ).toEqual(["Appearance", "Advert", "Links", "In-world date", "Factbook", "Rules", "Officers"]);
   });
 
   it("leaves the hand-over out for site admins acting as founder", async () => {
