@@ -43,6 +43,7 @@ echo "🚀 Syncing database schema with codebase..."
 # The production dump still has procedural_worlds rows, which db push refuses to drop: the idempotent Atlas Studio SQL
 # creates the preset tables and drops the dead models first (as scripts/deploy-production.sh does)
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql
 bun run db:push:force
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL
