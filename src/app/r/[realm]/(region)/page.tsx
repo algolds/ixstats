@@ -22,6 +22,7 @@ import {
   OfficersPanel,
   PollPanel,
 } from "../_components/RealmSidebar";
+import { realmProseClassName } from "~/components/realms/realm-prose";
 
 function Section({
   title,
@@ -125,7 +126,7 @@ export default function RealmOverviewPage({ params }: { params: Promise<{ realm:
           >
             {factbook ? (
               <div
-                className="text-label text-body [&_a]:text-tint [&_h2]:text-title-3 [&_h3]:text-headline [&_h4]:text-headline space-y-3 leading-relaxed [&_a]:underline [&_h2]:mt-4 [&_h3]:mt-3 [&_h4]:mt-4 [&_li]:ml-5 [&_ol]:list-decimal [&_ul]:list-disc"
+                className={realmProseClassName}
                 // Rendered from wikitext and sanitized on save (updateRealmFactbook).
                 dangerouslySetInnerHTML={{ __html: factbook.html }}
               />

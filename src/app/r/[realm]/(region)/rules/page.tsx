@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { buttonVariants } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { realmProseClassName } from "~/components/realms/realm-prose";
 
 /**
  * The realm's rules, written by its founder or an appearance officer in Manage. Players confirm reading them
@@ -60,7 +61,7 @@ export default function RealmRulesPage({ params }: { params: Promise<{ realm: st
         )}
       </div>
       <div
-        className="text-label text-body [&_a]:text-tint [&_h2]:text-title-3 [&_h3]:text-headline [&_h4]:text-headline space-y-3 leading-relaxed [&_a]:underline [&_h2]:mt-4 [&_h3]:mt-3 [&_h4]:mt-4 [&_li]:ml-5 [&_ol]:list-decimal [&_ul]:list-disc"
+        className={realmProseClassName}
         // Rendered from wikitext and sanitized on save (updateRealmRules).
         dangerouslySetInnerHTML={{ __html: rules.html }}
       />
