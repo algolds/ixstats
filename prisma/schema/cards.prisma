@@ -84,11 +84,14 @@ model Card {
   metadata         Json?
   isRetired        Boolean         @default(false)
   retiredAt        DateTime?
+  lorewardEntryId  String?
+  lorewardEdition  String?
   CardOwnership    CardOwnership[]
   valueHistory     CardValueHistory[]
   watchlist        CardWatchlist[]
 
   @@unique([nsCardId, nsSeason])
+  @@unique([lorewardEntryId, lorewardEdition])
   @@index([cardType, rarity, season])
   @@index([category, rarity, season])
   @@index([marketValue])

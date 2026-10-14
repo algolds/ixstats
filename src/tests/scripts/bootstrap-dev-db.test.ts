@@ -7,6 +7,7 @@ import {
   bootstrapRefusal,
   DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
+  VAULT_HUB_SQL,
 } from "../../../scripts/setup/bootstrap-dev-db";
 
 const local = "postgresql://postgres:postgres@localhost:5433/ixstats";
@@ -57,6 +58,17 @@ describe("the SQL a fresh database needs besides db push", () => {
     const push = source.indexOf('"db", "push"');
     expect(studio).toBeGreaterThan(0);
     expect(push).toBeGreaterThan(studio);
+  });
+
+  it("runs the Vault hub SQL right after the Atlas Studio SQL, before the schema push", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    const studio = source.indexOf('--file", ATLAS_STUDIO_SQL');
+    const vault = source.indexOf('--file", VAULT_HUB_SQL');
+    const push = source.indexOf('"db", "push"');
+    expect(VAULT_HUB_SQL).toContain("20261024120000_vault_hub");
+    expect(studio).toBeGreaterThan(0);
+    expect(vault).toBeGreaterThan(studio);
+    expect(push).toBeGreaterThan(vault);
   });
 
   it("the Atlas Studio SQL is the idempotent one that creates the preset tables and drops the dead models", () => {

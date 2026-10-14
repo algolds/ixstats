@@ -36,4 +36,16 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(studio).toBeGreaterThan(backup);
     expect(push).toBeGreaterThan(studio);
   });
+
+  it("runs the Vault hub SQL right after the Atlas Studio SQL, before the schema push, and stops the deploy if it fails", () => {
+    const studio = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql || exit 1"
+    );
+    const vault = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(vault).toBeGreaterThan(studio);
+    expect(push).toBeGreaterThan(vault);
+  });
 });

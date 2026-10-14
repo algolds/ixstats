@@ -35,6 +35,9 @@ export const ATLAS_RA_SQL = "prisma/migrations/20261022120000_atlas_ra/migration
  */
 export const ATLAS_STUDIO_SQL = "prisma/migrations/20261023120000_atlas_studio/migration.sql";
 
+/** The Vault hub columns, the Lorewards index and the nav-tab reset; idempotent. It runs right after the Atlas Studio SQL. */
+export const VAULT_HUB_SQL = "prisma/migrations/20261024120000_vault_hub/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -114,6 +117,7 @@ async function main(): Promise<void> {
   }
 
   run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", ATLAS_STUDIO_SQL]);
+  run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", VAULT_HUB_SQL]);
   run("bunx", ["prisma", "db", "push", "--skip-generate"]);
   console.log("🗺️  Installing the map geometry triggers and the Atlas functions...");
   for (const file of DB_SETUP_SQL_FILES) {

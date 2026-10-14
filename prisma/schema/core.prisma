@@ -14,6 +14,7 @@ model Country {
   name                        String
   slug                        String?                   @unique
   isDemo                      Boolean                   @default(false)
+  ownedSince                  DateTime?
   continent                   String?
   region                      String?
   governmentType              String?

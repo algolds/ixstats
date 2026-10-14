@@ -167,6 +167,7 @@ fi
 # gone from the schema, db push refuses to drop the non-empty procedural_worlds table and would abort the deploy.
 echo "🔄 Applying the Atlas Studio SQL..."
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql || exit 1
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
