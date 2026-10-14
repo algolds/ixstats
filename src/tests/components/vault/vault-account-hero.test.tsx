@@ -105,6 +105,12 @@ describe("VaultAccountHero", () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
   });
 
+  it("nests no block element inside a paragraph while the figures load", () => {
+    mockLoading = new Set(["getBalance"]);
+    const { container } = renderHero({ deckValue: undefined, unopenedPacks: 1 });
+    expect(container.querySelectorAll("p div")).toHaveLength(0);
+  });
+
   it("shows dashes, not skeletons, when the balance query fails", () => {
     mockErrors = new Set(["getBalance"]);
     const { container } = renderHero();

@@ -149,6 +149,25 @@ describe("VaultHoldings", () => {
     expect(linkTo(/Cards/).textContent).not.toMatch(/\d+ cards/);
   });
 
+  it("uses the singular for a single card", () => {
+    renderHoldings({ totalCards: 1 });
+    expect(linkTo(/Cards/).textContent).toContain("1 card");
+    expect(linkTo(/Cards/).textContent).not.toContain("1 cards");
+  });
+
+  it("uses the singular for a single waiting pack", () => {
+    renderHoldings({ unopenedPacks: 1 });
+    expect(linkTo(/Cards/).textContent).toContain("1 pack waiting");
+  });
+
+  it("nests no block element inside a paragraph, loaded or loading", () => {
+    const { container, rerender } = renderHoldings({ unopenedPacks: 2 });
+    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    rerender(<VaultHoldings totalCards={undefined} deckValue={undefined} unopenedPacks={2} />);
+    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll("p div")).toHaveLength(0);
+  });
+
   describe("Lorewards", () => {
     it("shows wins, runner-ups and today's rank, and links to the Lorewards tab", () => {
       renderHoldings();

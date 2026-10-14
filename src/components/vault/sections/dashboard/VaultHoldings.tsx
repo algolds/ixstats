@@ -72,7 +72,8 @@ function AchievementsHolding() {
   );
 }
 
-const plural = (count: number, one: string) => `${count} ${one}${count === 1 ? "" : "s"}`;
+const plural = (count: number, one: string) =>
+  `${count.toLocaleString()} ${one}${count === 1 ? "" : "s"}`;
 
 /** "3 daily, 1 weekly": only the contests the player has won. */
 const winBreakdown = (wins: { daily: number; weekly: number; monthly: number }) =>
@@ -123,12 +124,12 @@ function CardsHolding({ totalCards, deckValue, unopenedPacks }: VaultHoldingsPro
       ) : totalCards === null ? (
         <p className="text-footnote text-label-secondary">Unavailable</p>
       ) : (
-        <p className="text-body tabular-nums">{totalCards.toLocaleString()} cards</p>
+        <p className="text-body tabular-nums">{plural(totalCards, "card")}</p>
       )}
-      <p className="text-footnote text-label-secondary flex items-center gap-1.5 tabular-nums">
+      <div className="text-footnote text-label-secondary flex items-center gap-1.5 tabular-nums">
         <CreditsFigure amount={deckValue} skeletonClassName="h-4 w-16" />
         <span>deck value</span>
-      </p>
+      </div>
       {unopenedPacks > 0 && (
         <p className="text-footnote text-tint">{plural(unopenedPacks, "pack")} waiting</p>
       )}
