@@ -136,7 +136,7 @@ describe("the tier cap is enforced by assignNation and claims", () => {
     await assignNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
   });
 

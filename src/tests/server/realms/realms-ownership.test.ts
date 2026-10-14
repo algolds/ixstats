@@ -53,7 +53,7 @@ describe("assignNation", () => {
     await assignNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     // Guarded on countryId: null — a player already acting as a nation (another realm's) keeps it.
     expect(t.user.updateMany).toHaveBeenCalledWith({
@@ -83,6 +83,19 @@ describe("assignNation", () => {
     expect(t.country.updateMany).not.toHaveBeenCalled();
   });
 
+  it("stamps ownedSince with the moment of the claim, and re-activating does not restamp it", async () => {
+    const before = Date.now();
+    const t = tx(unowned);
+    await assignNation(t, { userId: "u1", countryId: "c1" });
+    const stamped = t.country.updateMany.mock.calls[0][0].data.ownedSince as Date;
+    expect(stamped.getTime()).toBeGreaterThanOrEqual(before);
+    expect(stamped.getTime()).toBeLessThanOrEqual(Date.now());
+
+    const again = tx({ ...unowned, ownerUserId: "u1" });
+    await assignNation(again, { userId: "u1", countryId: "c1" });
+    expect(again.country.updateMany).not.toHaveBeenCalled();
+  });
+
   it("re-activating an owned country skips the cap and ownership write", async () => {
     const t = tx({ ...unowned, ownerUserId: "u1" }, 1);
     await assignNation(t, { userId: "u1", countryId: "c1" });
@@ -102,7 +115,7 @@ describe("assignClaimedNation", () => {
     await assignClaimedNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
   });
 
@@ -129,7 +142,7 @@ describe("assignClaimedNation", () => {
     await assignNation(t, { userId: "u1", countryId: "c1" });
     expect(t.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c1", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
   });
 });
@@ -157,7 +170,10 @@ describe("releaseNation / pointActiveNation", () => {
   it("clears owner and every active pointer at the country", async () => {
     const t = tx(unowned);
     await releaseNation(t, "c1");
-    expect(t.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(t.country.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerUserId: null, ownedSince: null },
+    });
     expect(t.user.updateMany).toHaveBeenCalledWith({ where: { countryId: "c1" }, data: { countryId: null } });
   });
 

@@ -24,10 +24,6 @@ export type RenderedImages = { thumbnailUrl: string; largeUrl: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** The only file names renderAchievementImages writes (served under UPLOADS_URL_PREFIX). */
-export const RENDERED_IMAGE_URL =
-  /^\/images\/uploads\/heraldry_[0-9a-f-]{36}_[0-9a-f]{16}_(?:256|1024)\.png$/;
-
 type RenderDb = Pick<PrismaClient, "heraldryCharge">;
 
 /** Stored SVGs for the composition's library charges (template charges need none). */

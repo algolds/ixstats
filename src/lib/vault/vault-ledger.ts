@@ -452,15 +452,24 @@ export async function getBalance(userId: string, db: PrismaClient) {
   }
 }
 
+export type TransactionDirection = "earned" | "spent";
+
+const DIRECTION_FILTER = {
+  earned: { gt: 0 },
+  spent: { lt: 0 },
+} as const;
+
 /**
- * Get transaction history with pagination
+ * Get transaction history with pagination. `direction` keeps only credits in (`earned`) or out
+ * (`spent`); spends are stored negative.
  */
 export async function getTransactionHistory(
   userId: string,
   db: PrismaClient,
   limit: number = 50,
   offset: number = 0,
-  type?: VaultTransactionType
+  type?: VaultTransactionType,
+  direction?: TransactionDirection
 ) {
   try {
     const vault = await getOrCreateVault(userId, db);
@@ -469,6 +478,7 @@ export async function getTransactionHistory(
       where: {
         vaultId: vault.id,
         ...(type ? { type } : {}),
+        ...(direction ? { credits: DIRECTION_FILTER[direction] } : {}),
       },
       orderBy: { createdAt: "desc" },
       take: Math.min(limit, 100),
@@ -482,7 +492,7 @@ export async function getTransactionHistory(
       balanceAfter: tx.balanceAfter,
       type: tx.type,
       source: tx.source,
-      metadata: tx.metadata as Record<string, unknown> | null,
+      metadata: tx.metadata,
       createdAt: new Date(tx.createdAt),
     }));
   } catch (error) {

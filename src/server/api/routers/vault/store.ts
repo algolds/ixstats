@@ -49,6 +49,7 @@ export const vaultStoreRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).optional().default(50),
         offset: z.number().min(0).optional().default(0),
         type: vaultTransactionTypeEnum.optional(),
+        direction: z.enum(["earned", "spent"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -59,10 +60,11 @@ export const vaultStoreRouter = createTRPCRouter({
 
         const transactions = await vaultService.getTransactionHistory(
           ctx.auth.userId,
-          ctx.db as any,
+          ctx.db,
           input.limit,
           input.offset,
-          input.type as VaultTransactionType | undefined
+          input.type as VaultTransactionType | undefined,
+          input.direction
         );
 
         return {

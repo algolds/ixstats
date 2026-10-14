@@ -87,7 +87,7 @@ describe("claiming an unclaimed nation the source sync created", () => {
     expect(db.country.create).not.toHaveBeenCalled();
     expect(db.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c-sync", ownerUserId: null, claimable: true },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     expect(db.realmClaim.create.mock.calls[0][0].data).toMatchObject({ countryId: "c-sync" });
     expect(deps.onNationAssigned).toHaveBeenCalledWith(expect.objectContaining({ countryId: "c-sync" }));

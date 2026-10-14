@@ -57,14 +57,14 @@ describe("adminAssignNation", () => {
     expect(d.country.update).toHaveBeenCalledTimes(1);
     expect(d.country.update).toHaveBeenCalledWith({
       where: { id: "c2" },
-      data: { ownerUserId: null },
+      data: { ownerUserId: null, ownedSince: null },
     });
     expect(d.country.findMany).not.toHaveBeenCalled();
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
     expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "c1" }, data: { countryId: null } });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     // The active pointer follows assignNation's rule: u1 keeps acting as c1.
     expect(d.user.updateMany).toHaveBeenCalledWith({
@@ -113,7 +113,7 @@ describe("adminAssignNation", () => {
     await expect(adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" })).rejects.toMatchObject({
       code: "CAP_REACHED",
     });
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
     expect(d.country.updateMany).not.toHaveBeenCalled();
   });
 
@@ -126,11 +126,11 @@ describe("adminAssignNation", () => {
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
     expect(d.country.count).toHaveBeenCalledWith({ where: { ownerUserId: "u1", realmId: "default" } });
     expect(d.country.update).toHaveBeenCalledTimes(1);
-    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "e1" }, data: { ownerUserId: null } });
+    expect(d.country.update).not.toHaveBeenCalledWith({ where: { id: "e1" }, data: { ownerUserId: null, ownedSince: null } });
     expect(d.user.updateMany).not.toHaveBeenCalledWith({ where: { countryId: "e1" }, data: { countryId: null } });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
     // The active pointer follows assignNation's rule: only set while the user acts as no nation.
     expect(d.user.updateMany).toHaveBeenCalledWith({
@@ -164,11 +164,11 @@ describe("adminAssignNation", () => {
     );
     await adminAssignNation(d, { clerkUserId: "clerk_u1", countryId: "c2" });
     expect(d.country.update).toHaveBeenCalledTimes(1);
-    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c2" }, data: { ownerUserId: null } });
+    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c2" }, data: { ownerUserId: null, ownedSince: null } });
     expect(d.user.updateMany).toHaveBeenCalledWith({ where: { id: "u1", countryId: null }, data: { countryId: "c2" } });
     expect(d.country.updateMany).toHaveBeenCalledWith({
       where: { id: "c2", ownerUserId: null },
-      data: { ownerUserId: "u1" },
+      data: { ownerUserId: "u1", ownedSince: expect.any(Date) },
     });
   });
 });
@@ -232,7 +232,7 @@ describe("admin.unassignUserFromCountry", () => {
     await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
     expect(d.country.update).toHaveBeenCalledWith({
       where: { id: "c1" },
-      data: { ownerUserId: null },
+      data: { ownerUserId: null, ownedSince: null },
     });
     expect(d.user.updateMany).toHaveBeenCalledWith({
       where: { countryId: "c1" },
@@ -250,7 +250,7 @@ describe("admin.unassignUserFromCountry", () => {
   it("releases an owned nation the user is not currently acting as (a player may own several)", async () => {
     const { caller, db: d } = setup({ id: "u1", countryId: "other" }, "u1");
     await caller.unassignUserFromCountry({ userId: "clerk_u1", countryId: "c1" });
-    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null } });
+    expect(d.country.update).toHaveBeenCalledWith({ where: { id: "c1" }, data: { ownerUserId: null, ownedSince: null } });
     expect(d.user.update).not.toHaveBeenCalled();
   });
 
