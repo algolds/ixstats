@@ -48,7 +48,7 @@ export function CreditsFigure({
   skeletonClassName?: string;
   animate?: boolean;
 }) {
-  if (amount === undefined) return <Skeleton className={skeletonClassName} />;
+  if (amount === undefined) return <Skeleton as="span" className={skeletonClassName} />;
   if (amount === null) return <span aria-label="Unavailable">–</span>;
   return (
     <span className="inline-flex items-center gap-1.5">

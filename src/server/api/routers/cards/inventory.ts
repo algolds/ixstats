@@ -149,7 +149,7 @@ export const cardsInventoryRouter = createTRPCRouter({
       ctx.db.cardOwnership.findMany({
         where: { ownerId: ctx.user.id, cards: { isRetired: false } },
         include: { cards: true },
-        orderBy: { cards: { marketValue: "desc" } },
+        orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }],
         distinct: ["cardId"],
         take: input.limit,
       })

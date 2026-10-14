@@ -17,15 +17,15 @@ const totals = (
   rareAchievements: number
 ) => ({ userId, totalPoints, achievementCount, rareAchievements });
 
+// What the unlock wrote: the credits actually paid, not the achievement's static rewards.
 const LATEST_UNLOCK = {
-  unlockedAt: new Date("2026-10-13T10:00:00Z"),
+  metadata: JSON.stringify({ points: 20, rewards: { credits: 25, cardIds: [] } }),
   achievement: {
     key: "first-trade",
     title: "First trade",
     rarity: "Rare",
     category: "Cards",
     iconUrl: "Cart",
-    rewardsJson: JSON.stringify({ credits: 25, cardIds: [] }),
   },
 };
 
@@ -114,13 +114,29 @@ describe("achievements.getMySummary", () => {
     );
   });
 
-  it("has no reward when the achievement pays no credits or its rewards are unreadable", async () => {
-    for (const rewardsJson of [null, "not json", JSON.stringify({ credits: 0, cardIds: [] })]) {
+  it("shows what the unlock actually paid, not the achievement's static reward", async () => {
+    const db = makeDb();
+    db.userAchievement.findFirst.mockResolvedValue({
+      ...LATEST_UNLOCK,
+      metadata: JSON.stringify({ rewards: { credits: 40 } }),
+      achievement: { ...LATEST_UNLOCK.achievement, rewardsJson: JSON.stringify({ credits: 5 }) },
+    });
+    expect((await callerFor(db).getMySummary()).latest?.reward).toBe(40);
+  });
+
+  it("has no reward when the unlock paid nothing or its metadata is absent, unreadable or not a number", async () => {
+    const metadatas = [
+      null,
+      "not json",
+      JSON.stringify({}),
+      JSON.stringify({ rewards: { credits: 0 } }),
+      JSON.stringify({ rewards: { credits: "25" } }),
+      JSON.stringify({ rewards: null }),
+      JSON.stringify([1, 2]),
+    ];
+    for (const metadata of metadatas) {
       const db = makeDb();
-      db.userAchievement.findFirst.mockResolvedValue({
-        ...LATEST_UNLOCK,
-        achievement: { ...LATEST_UNLOCK.achievement, rewardsJson },
-      });
+      db.userAchievement.findFirst.mockResolvedValue({ ...LATEST_UNLOCK, metadata });
       expect((await callerFor(db).getMySummary()).latest?.reward).toBeNull();
     }
   });

@@ -27,7 +27,11 @@ const CardDetailsModal = dynamic(
 );
 
 const SHOWCASE_SIZE = 3;
-const ART_FRAME = "rounded-row relative aspect-[4/3] w-full overflow-hidden";
+const ART_FRAME = "rounded-row relative w-full overflow-hidden";
+const CARD_ASPECT = "aspect-[5/7]";
+const PACK_ASPECT = "aspect-[3/4.2]";
+// Fixed collectible widths: a few tiles stay small instead of stretching across the page.
+const TILE_GRID = "grid grid-cols-[repeat(auto-fill,minmax(9.5rem,11rem))] gap-3";
 const MY_PACKS_HREF = "/vault/store?tab=store&view=my-packs";
 
 /** The card's own picture, else the procedural cover for its type and rarity. Never tinted. */
@@ -35,14 +39,14 @@ function CardArt({ card }: { card: OwnedCard["cards"] }) {
   const [failed, setFailed] = useState(false);
   const url = card.artworkUrl || card.artwork || card.wikiImageUrl;
   return (
-    <div className={ART_FRAME}>
+    <div className={cn(ART_FRAME, CARD_ASPECT)}>
       {url && !failed ? (
         <Image
           src={proxyNSImage(url)}
           alt={card.title}
           fill
-          sizes="(min-width: 768px) 25vw, 50vw"
-          className="object-cover"
+          sizes="176px"
+          className="object-contain"
           unoptimized
           onError={() => setFailed(true)}
         />
@@ -87,12 +91,12 @@ interface WaitingPack {
 function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
   return (
     <Link href={MY_PACKS_HREF} className={cn(focusRing, "rounded-cutout block")}>
-      <CutoutCard interactive className="h-full">
+      <CutoutCard interactive>
         <CutoutCardHeader as="h3">
           {count.toLocaleString()} {count === 1 ? "pack" : "packs"} waiting
         </CutoutCardHeader>
         <CutoutCardContent className="flex flex-col gap-2 p-3 pt-0">
-          <div className={ART_FRAME}>
+          <div className={cn(ART_FRAME, PACK_ASPECT)}>
             <PackHolographicCover
               packType={pack.packType}
               guaranteedRarity={pack.guaranteedRarity}
@@ -110,9 +114,13 @@ function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
 }
 
 function ShowcaseSkeleton() {
-  return Array.from({ length: SHOWCASE_SIZE }, (_, i) => (
-    <Skeleton key={i} className="rounded-cutout h-56" />
-  ));
+  return (
+    <div className={TILE_GRID}>
+      {Array.from({ length: SHOWCASE_SIZE }, (_, i) => (
+        <Skeleton key={i} className="rounded-cutout h-64" />
+      ))}
+    </div>
+  );
 }
 
 /** Your best cards by market value and, while any wait, your unopened packs. */
@@ -125,7 +133,12 @@ export function VaultShowcase() {
   const rows = top.data ?? [];
   const waiting = packs.data?.packs ?? [];
   const firstPack = waiting[0]?.pack;
-  const nothingToShow = !top.isLoading && !top.isError && rows.length === 0 && !firstPack;
+  const hasCards = rows.length > 0;
+  // Without cards, the packs decide what there is to show: wait for them, and never call the
+  // collection empty when they could not be read.
+  const unavailable = top.isError || (!hasCards && packs.isError);
+  const loading = top.isLoading || (!hasCards && packs.isLoading);
+  const empty = !hasCards && !firstPack;
   const detail: CardInstance | null = opened ? ownedCardToInstance(opened) : null;
 
   return (
@@ -134,9 +147,11 @@ export function VaultShowcase() {
         <MultiplePages aria-hidden className="text-tint" />
         Showcase
       </h2>
-      {top.isError ? (
+      {unavailable ? (
         <p className="text-footnote text-label-secondary">Your showcase is unavailable</p>
-      ) : nothingToShow ? (
+      ) : loading ? (
+        <ShowcaseSkeleton />
+      ) : empty ? (
         <EmptyState
           compact
           title="No cards yet"
@@ -149,16 +164,14 @@ export function VaultShowcase() {
         />
       ) : (
         <motion.div
-          className="grid grid-cols-2 gap-3 md:grid-cols-4"
+          className={TILE_GRID}
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
           transition={reduceMotion ? tweenFast : springGentle}
         >
-          {top.isLoading ? (
-            <ShowcaseSkeleton />
-          ) : (
-            rows.map((row) => <CardTile key={row.id} row={row} onOpen={setOpened} />)
-          )}
+          {rows.map((row) => (
+            <CardTile key={row.id} row={row} onOpen={setOpened} />
+          ))}
           {firstPack && <PackTile count={waiting.length} pack={firstPack} />}
         </motion.div>
       )}

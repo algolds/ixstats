@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { Medal, MultiplePages, ShoppingBag, Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
 import { pickFeaturedStoreItem } from "~/lib/vault/featured-store-item";
 import { Credits, formatCredits } from "./credits";
@@ -32,6 +31,23 @@ function Home({
 
 const Unavailable = () => <span>Unavailable</span>;
 
+/** A thin meter made of spans: a row subtitle is phrasing content, which `Progress` (a div) cannot sit in. */
+function UnlockedBar({ unlocked, total }: { unlocked: number; total: number }) {
+  const share = total > 0 ? Math.min(100, (unlocked / total) * 100) : 0;
+  return (
+    <span
+      role="progressbar"
+      aria-label="Achievements unlocked"
+      aria-valuemin={0}
+      aria-valuemax={total}
+      aria-valuenow={unlocked}
+      className="bg-fill-2 mt-1.5 block h-1 w-full overflow-hidden rounded-full"
+    >
+      <span className="bg-tint block h-full rounded-full" style={{ width: `${share}%` }} />
+    </span>
+  );
+}
+
 function AchievementsHome() {
   const { data: summary, isError } = api.achievements.getMySummary.useQuery();
   return (
@@ -42,17 +58,12 @@ function AchievementsHome() {
             {summary.unlocked} of {summary.activeTotal} · {formatCredits(summary.points)} points
             {summary.rank !== null && ` · #${summary.rank}`}
           </span>
-          <Progress
-            value={summary.unlocked}
-            max={summary.activeTotal}
-            aria-label="Achievements unlocked"
-            className="mt-1.5 h-1"
-          />
+          <UnlockedBar unlocked={summary.unlocked} total={summary.activeTotal} />
         </>
       ) : isError ? (
         <Unavailable />
       ) : (
-        <Skeleton className="mt-1 h-4 w-40" />
+        <Skeleton as="span" className="mt-1 h-4 w-40" />
       )}
     </Home>
   );
@@ -75,7 +86,7 @@ function LorewardsHome() {
       ) : isError ? (
         <Unavailable />
       ) : (
-        <Skeleton className="mt-1 h-4 w-32" />
+        <Skeleton as="span" className="mt-1 h-4 w-32" />
       )}
     </Home>
   );
@@ -96,7 +107,7 @@ function StoreHome() {
       ) : items && owned ? (
         <span>Browse the store</span>
       ) : (
-        <Skeleton className="mt-1 h-4 w-40" />
+        <Skeleton as="span" className="mt-1 h-4 w-40" />
       )}
     </Home>
   );

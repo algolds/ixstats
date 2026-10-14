@@ -136,10 +136,16 @@ function parseRewards(rewardsJson: string | null) {
   }
 }
 
-/** The IxCredits an achievement pays on unlock; null when it pays none. */
-function creditReward(rewardsJson: string | null): number | null {
-  const rewards: { credits?: number } | null = parseRewards(rewardsJson);
-  return rewards?.credits && rewards.credits > 0 ? rewards.credits : null;
+/** The IxCredits an unlock paid, as the unlock recorded them in its metadata; null when it paid none or the record is unreadable. */
+function paidCredits(metadata: string | null): number | null {
+  if (!metadata) return null;
+  try {
+    const parsed: { rewards?: { credits?: number | string } | null } | null = JSON.parse(metadata);
+    const credits = parsed?.rewards?.credits;
+    return typeof credits === "number" && credits > 0 ? credits : null;
+  } catch {
+    return null;
+  }
 }
 
 async function standardAchievements(
@@ -353,15 +359,9 @@ export const achievementsProgressRouter = createTRPCRouter({
         where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
         orderBy: { unlockedAt: "desc" },
         select: {
+          metadata: true,
           achievement: {
-            select: {
-              key: true,
-              title: true,
-              rarity: true,
-              category: true,
-              iconUrl: true,
-              rewardsJson: true,
-            },
+            select: { key: true, title: true, rarity: true, category: true, iconUrl: true },
           },
         },
       }),
@@ -380,7 +380,7 @@ export const achievementsProgressRouter = createTRPCRouter({
             rarity: unlock.rarity,
             category: unlock.category,
             iconUrl: unlock.iconUrl,
-            reward: creditReward(unlock.rewardsJson),
+            reward: paidCredits(newest?.metadata ?? null),
           }
         : null,
     };

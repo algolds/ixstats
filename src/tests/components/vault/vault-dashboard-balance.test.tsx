@@ -22,12 +22,13 @@ jest.mock("next/link", () => ({
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
   useDailyReward: () => ({ open: jest.fn() }),
 }));
-// The statement and the showcase have their own suites; their rows would repeat figures.
-jest.mock("~/components/vault/sections/dashboard/VaultStatement", () => ({
-  VaultStatement: () => <section data-slot="vault-statement" />,
+// The statement and the showcase render for real; only their data and heavy art are stubbed.
+jest.mock("next/dynamic", () => () => () => null);
+jest.mock("~/components/cards/display/CardHolographicCover", () => ({
+  CardHolographicCover: () => <div />,
 }));
-jest.mock("~/components/vault/sections/dashboard/VaultShowcase", () => ({
-  VaultShowcase: () => <section data-slot="vault-showcase" />,
+jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
+  PackHolographicCover: () => <div />,
 }));
 jest.mock("~/hooks/vault/useVaultStats", () => ({
   useVaultStats: () => ({
@@ -38,6 +39,7 @@ jest.mock("~/hooks/vault/useVaultStats", () => ({
 }));
 
 const mockRouters = new Set<string>();
+const mockFetch = jest.fn();
 const mockData: Record<string, unknown> = {};
 const LATEST = {
   key: "first-trade",
@@ -52,6 +54,8 @@ jest.mock("~/trpc/react", () => ({
     {},
     {
       get: (_target, router: string) => {
+        if (router === "useUtils")
+          return () => ({ vault: { getTransactions: { fetch: mockFetch } } });
         mockRouters.add(router);
         return new Proxy(
           {},
@@ -69,8 +73,14 @@ jest.mock("~/trpc/react", () => ({
 import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboardSection";
 
 const occurrences = (haystack: string, needle: string) => haystack.split(needle).length - 1;
+const statementCard = (container: HTMLElement) =>
+  Array.from(container.querySelectorAll('[data-slot="card-title"]'))
+    .find((title) => title.textContent === "Statement")
+    ?.closest('[data-slot="card"]') as HTMLElement;
 const slot = (container: HTMLElement, name: string) =>
-  container.querySelector(`[data-slot="${name}"]`) as HTMLElement;
+  name === "vault-statement"
+    ? statementCard(container)
+    : (container.querySelector(`[data-slot="${name}"]`) as HTMLElement);
 const follows = (a: Element, b: Element) =>
   Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
@@ -83,6 +93,37 @@ describe("Vault Wallet page", () => {
       getTodayEarnings: { total: 0, sources: [], transactionCount: 0 },
       getMySummary: { unlocked: 1, activeTotal: 2, points: 3, rank: 4, latest: LATEST },
       getMyTrophies: null,
+      getTransactions: {
+        hasMore: false,
+        transactions: [
+          {
+            id: "t1",
+            createdAt: new Date(),
+            credits: 100,
+            balanceAfter: 777,
+            type: "EARN_ACTIVE",
+            source: "DAILY_LOGIN_CREDITS",
+            metadata: null,
+          },
+        ],
+      },
+      getMyTopCards: [
+        {
+          id: "o1",
+          cards: {
+            id: "c1",
+            title: "Ostrozava 1st Ed.",
+            rarity: "LEGENDARY",
+            marketValue: 2400,
+            cardType: "NS_IMPORT",
+            artwork: "/art/c1.png",
+          },
+        },
+      ],
+      getMyPacks: {
+        success: true,
+        packs: [{ id: "up1", pack: { name: "Veteran", packType: "BASIC" } }],
+      },
       listStoreItems: [],
       getPurchasedItems: { purchasedItemIds: [], purchaseCounts: {} },
       listWikiLinks: [{ source: "ixwiki", username: "Ixnay", verified: true, pending: false }],
@@ -162,6 +203,6 @@ describe("Vault Wallet page", () => {
   it("nests no block element inside a paragraph anywhere on the page", () => {
     mockData.listWikiLinks = [];
     const { container } = render(<VaultDashboardSection />);
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
   });
 });

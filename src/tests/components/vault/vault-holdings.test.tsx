@@ -208,13 +208,13 @@ describe("VaultHoldings (Your Vault)", () => {
     expect(container.textContent).not.toMatch(/Link your wiki account|pack|deck value/i);
   });
 
-  it("nests no block element inside a paragraph, loaded or loading", () => {
+  it("nests no block element inside a paragraph or a span, loaded or loading", () => {
     const { container, unmount } = render(<VaultHoldings />);
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
     unmount();
     mockData = {};
     const loading = render(<VaultHoldings />);
     expect(loading.container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
-    expect(loading.container.querySelectorAll("p div")).toHaveLength(0);
+    expect(loading.container.querySelectorAll("p div, span div")).toHaveLength(0);
   });
 });

@@ -172,6 +172,42 @@ describe("VaultShowcase", () => {
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
+  it("does not call the collection empty while the packs load", () => {
+    mockTop = { data: [], isLoading: false, isError: false };
+    mockPacks = { data: undefined, isLoading: true, isError: false };
+    const { container } = render(<VaultShowcase />);
+    expect(screen.queryByText("No cards yet")).toBeNull();
+    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
+  });
+
+  it("does not call the collection empty when the packs could not be read", () => {
+    mockTop = { data: [], isLoading: false, isError: false };
+    mockPacks = { data: undefined, isLoading: false, isError: true };
+    render(<VaultShowcase />);
+    expect(screen.queryByText("No cards yet")).toBeNull();
+    expect(screen.getByText("Your showcase is unavailable")).not.toBeNull();
+  });
+
+  it("shows the cards at once while the packs load, and when the packs fail", () => {
+    mockPacks = { data: undefined, isLoading: true, isError: false };
+    const { unmount } = render(<VaultShowcase />);
+    expect(screen.getAllByRole("button")).toHaveLength(3);
+    unmount();
+    mockPacks = { data: undefined, isLoading: false, isError: true };
+    render(<VaultShowcase />);
+    expect(screen.getAllByRole("button")).toHaveLength(3);
+  });
+
+  it("keeps the tiles at a fixed collectible width and the art uncropped", () => {
+    const { container } = render(<VaultShowcase />);
+    const grid = container.querySelector(".grid") as HTMLElement;
+    expect(grid.getAttribute("style")).toMatch(/opacity/);
+    expect(grid.className).toMatch(/auto-fill,minmax\(9\.5rem,11rem\)/);
+    const img = screen.getByAltText("Ostrozava 1st Ed.");
+    expect(img.className).toContain("object-contain");
+    expect(img.parentElement!.className).toContain("aspect-[5/7]");
+  });
+
   it("shows only the pack card, not the empty state, for a player with packs but no cards", () => {
     mockTop = { data: [], isLoading: false, isError: false };
     mockPacks = { data: PACKS(3), isLoading: false, isError: false };
@@ -186,6 +222,8 @@ describe("VaultShowcase", () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
     expect(screen.queryByText("No cards yet")).toBeNull();
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+    // The entrance belongs to the cards, not the placeholders.
+    expect(container.querySelector(".grid")?.getAttribute("style") ?? "").toBe("");
   });
 
   it("says the showcase is unavailable when the cards fail to load", () => {

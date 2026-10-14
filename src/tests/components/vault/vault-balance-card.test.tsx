@@ -140,11 +140,11 @@ describe("VaultBalanceCard", () => {
     expect(screen.queryByRole("progressbar")).toBeNull();
   });
 
-  it("nests no block element inside a paragraph, loaded or loading", () => {
+  it("nests no block element inside a paragraph or a span, loaded or loading", () => {
     const { container, rerender } = renderCard();
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
     mockLoading = new Set(["getBalance"]);
     rerender(<VaultBalanceCard totalCards={undefined} deckValue={undefined} />);
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
   });
 });
