@@ -12,7 +12,7 @@ import { useVaultCardsState } from "./cards/useVaultCardsState";
 import { InventoryTab } from "./cards/InventoryTab";
 import { CollectionsTab } from "./cards/CollectionsTab";
 import { CardGalleryTab } from "./cards/CardGalleryTab";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { ownedCardToInstance } from "~/lib/cards/ownership-card";
 
 const LoreCardGenerator = dynamic(
   () => import("~/components/cards/lore/LoreCardGenerator").then((m) => m.LoreCardGenerator),
@@ -47,48 +47,10 @@ export function VaultCardsSection() {
     filterRarity: filters.rarity !== "all" ? filters.rarity : undefined,
   });
 
-  const allCards: CardInstance[] = useMemo(() => {
-    if (!ownerships) return [];
-    return ownerships.map((ownership) => {
-      const cardData = ownership.cards as unknown as Record<string, unknown>;
-      return {
-        id: String(cardData.id ?? ""),
-        ownershipId: ownership.id,
-        isLocked: ownership.isLocked,
-        title: String(cardData.title ?? ""),
-        description: String(cardData.description || ""),
-        artwork: String(cardData.artwork || CARD_ARTWORK_PLACEHOLDER),
-        artworkVariants: (cardData.artworkVariants as any) || null,
-        cardType: cardData.cardType as any,
-        rarity: cardData.rarity as any,
-        season: Number(cardData.season ?? 1),
-        nsCardId: (cardData.nsCardId as string) || null,
-        nsSeason: (cardData.nsSeason as number) || null,
-        nsData: (cardData.nsData as any) || null,
-        wikiSource: (cardData.wikiSource as string) || null,
-        wikiArticleTitle: (cardData.wikiArticleTitle as string) || null,
-        wikiUrl: (cardData.wikiUrl as string) || null,
-        countryId: (cardData.countryId as string) || null,
-        stats: (cardData.stats as any) || {},
-        baseStats: (cardData.stats as any) || {},
-        marketValue: Number(cardData.marketValue || 0),
-        totalSupply: Number(cardData.totalSupply || 0),
-        level: ownership.level ?? 1,
-        evolutionStage: Number(cardData.evolutionStage || 0),
-        enhancements: (cardData.enhancements as any) || null,
-        serialNumber: ownership.serialNumber,
-        experience: ownership.experience,
-        lastSalePrice: ownership.lastSalePrice,
-        lastSaleDate: ownership.lastSaleDate,
-        acquiredAt: ownership.acquiredAt,
-        createdAt: ownership.createdAt,
-        updatedAt: ownership.updatedAt,
-        lastTrade: (cardData.lastTrade as any) || null,
-        country: (cardData.country as any) || null,
-        owners: [],
-      } as CardInstance;
-    });
-  }, [ownerships]);
+  const allCards: CardInstance[] = useMemo(
+    () => (ownerships ?? []).map(ownedCardToInstance),
+    [ownerships]
+  );
 
   return (
     <div className="space-y-4">

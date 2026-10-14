@@ -2,6 +2,7 @@ import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import type { Figure } from "./dashboard/credits";
 import { VaultBalanceCard } from "./dashboard/VaultBalanceCard";
 import { VaultHoldings } from "./dashboard/VaultHoldings";
+import { VaultShowcase } from "./dashboard/VaultShowcase";
 import { VaultStatement } from "./dashboard/VaultStatement";
 import { VaultWalletHeader } from "./dashboard/VaultWalletHeader";
 
@@ -23,14 +24,17 @@ export function VaultDashboardSection() {
       <div className="lg:col-span-3">
         <VaultBalanceCard totalCards={figure(stats.totalCards)} deckValue={deckValue} />
       </div>
-      <div className="lg:col-start-3 lg:row-start-3">
+      <div className="lg:col-span-3">
+        <VaultShowcase />
+      </div>
+      <div className="lg:col-start-3 lg:row-start-4">
         <VaultHoldings
           totalCards={figure(stats.totalCards)}
           deckValue={deckValue}
           unopenedPacks={stats.unopenedPacks}
         />
       </div>
-      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-3">
+      <div className="lg:col-span-2 lg:col-start-1 lg:row-start-4">
         <VaultStatement />
       </div>
     </div>

@@ -13,6 +13,9 @@ jest.mock("next/link", () => ({
 jest.mock("~/components/ui/number-flow", () => ({
   NumberFlowDisplay: ({ value }: { value: number }) => <span>{value.toLocaleString()}</span>,
 }));
+jest.mock("~/components/vault/sections/dashboard/VaultShowcase", () => ({
+  VaultShowcase: () => <section data-slot="vault-showcase" />,
+}));
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
   useDailyReward: () => ({ open: jest.fn() }),
 }));

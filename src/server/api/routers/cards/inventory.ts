@@ -140,6 +140,22 @@ export const cardsInventoryRouter = createTRPCRouter({
     }),
 
   /**
+   * The caller's most valuable cards (the Wallet showcase): one ownership per card, trophy cards
+   * included, so the Vault page never loads the whole inventory for three of them.
+   */
+  getMyTopCards: protectedProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(12).default(3) }).default({ limit: 3 }))
+    .query(({ ctx, input }) =>
+      ctx.db.cardOwnership.findMany({
+        where: { ownerId: ctx.user.id, cards: { isRetired: false } },
+        include: { cards: true },
+        orderBy: { cards: { marketValue: "desc" } },
+        distinct: ["cardId"],
+        take: input.limit,
+      })
+    ),
+
+  /**
    * Get another user's card inventory (for trading/viewing collections)
    */
   getUserCards: protectedProcedure
