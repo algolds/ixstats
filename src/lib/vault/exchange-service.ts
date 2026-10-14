@@ -2,8 +2,8 @@
  * Exchange Service
  *
  * The Sovereign (₷) wallet ledger: the Exchange's own currency, isolated from
- * MyVault/IxCredits so market activity never touches the card economy. Conversion
- * (src/lib/exchange/conversion.ts) is the only valve between the two.
+ * MyVault/IxCredits so market activity never touches the card economy. Nothing converts
+ * between the two.
  *
  * Money safety (code audit VT-16):
  *   - Debits are conditional decrements (`sovereigns >= amount` in the UPDATE), so a

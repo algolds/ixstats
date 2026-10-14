@@ -15,7 +15,6 @@ const UNIQUE: Record<string, string[][]> = {
   user: [["id"], ["clerkUserId"]],
   exchangeWallet: [["userId"]],
   exchangeTransaction: [["idempotencyKey"]],
-  conversionLog: [["idempotencyKey"]],
   company: [["name"]],
   contract: [["idempotencyKey"]],
   contractBid: [["contractId", "companyId"]],

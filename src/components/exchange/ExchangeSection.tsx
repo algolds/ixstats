@@ -6,12 +6,12 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { Card, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
-import { CompaniesCard } from "./exchange/CompaniesCard";
-import { ContractsCard } from "./exchange/ContractsCard";
-import { SectorsCard } from "./exchange/SectorsCard";
-import { SharesCard } from "./exchange/SharesCard";
-import { SovereignWalletCard } from "./exchange/SovereignWalletCard";
-import { formatSovereigns, sectorLabel } from "./exchange/shared";
+import { CompaniesCard } from "./CompaniesCard";
+import { ContractsCard } from "./ContractsCard";
+import { SectorsCard } from "./SectorsCard";
+import { SharesCard } from "./SharesCard";
+import { SovereignWalletCard } from "./SovereignWalletCard";
+import { formatSovereigns, sectorLabel } from "./shared";
 
 function CompanyDirectory() {
   const companies = api.exchange.listCompanies.useQuery();
@@ -38,10 +38,10 @@ function CompanyDirectory() {
 }
 
 /**
- * The Exchange: the Sovereign (₷) wallet and IxCredits bridge, companies and contracts.
+ * The Exchange: the Sovereign (₷) wallet, companies, shares and contracts.
  * See docs/systems/exchange.md.
  */
-export function VaultExchangeSection() {
+export function ExchangeSection() {
   const utils = api.useUtils();
   const overview = api.exchange.getOverview.useQuery();
   const refresh = () => {
@@ -54,7 +54,7 @@ export function VaultExchangeSection() {
     <div className="space-y-6">
       <PageHeader
         title="Exchange"
-        subtitle="Sovereigns, companies, shares and contracts. Convert IxCredits to found a company, post work, bid on contracts and invest in companies and sectors."
+        subtitle="Sovereigns, companies, shares and contracts. Found a company, post work, bid on contracts and invest in companies and sectors."
       />
       {overview.isLoading ? (
         <Skeleton className="h-64 w-full" />
@@ -75,7 +75,7 @@ export function VaultExchangeSection() {
           )}
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="space-y-6">
-              <SovereignWalletCard overview={overview.data} onChanged={refresh} />
+              <SovereignWalletCard overview={overview.data} />
               <CompanyDirectory />
             </div>
             <div className="space-y-6 lg:col-span-2">

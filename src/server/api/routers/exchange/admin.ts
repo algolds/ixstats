@@ -1,5 +1,5 @@
 /**
- * Exchange admin procedures: the ₷ rates and limits, dispute decisions and balance
+ * Exchange admin procedures: the ₷ limits, dispute decisions and balance
  * adjustments. adminProcedure audit-logs every call; balance adjustments also carry the
  * admin and the reason in the ledger row's metadata, like vault.adminAdjustCredits.
  * The on/off flag is `isExchangeEnabled` in vault.adminSaveVaultConfig.
@@ -25,12 +25,7 @@ const bounded = (field: keyof ExchangeConfig) =>
 const configInput = z.object({
   charterFee: bounded("charterFee"),
   activeCompanyCap: bounded("activeCompanyCap").int(),
-  convertRate: bounded("convertRate"),
-  convertFee: bounded("convertFee"),
-  convertDailyLimit: bounded("convertDailyLimit"),
   seedSovereigns: bounded("seedSovereigns"),
-  revenueConvertibleShare: bounded("revenueConvertibleShare"),
-  revenueHoldDays: bounded("revenueHoldDays").int(),
 });
 
 export const exchangeAdminRouter = createTRPCRouter({

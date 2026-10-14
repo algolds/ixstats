@@ -27,7 +27,7 @@ import {
 import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 
 export const CONTRACT_STATUSES = ["OPEN", "AWARDED", "COMPLETED", "CANCELLED", "DISPUTED"] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];

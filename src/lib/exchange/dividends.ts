@@ -16,7 +16,7 @@ import { refreshFairValue, requireOwnedCompany } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 
 export interface DeclareDividendInput {
   userId: string;

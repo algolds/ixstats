@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-export { formatSovereigns } from "~/lib/exchange/quote";
+export { formatSovereigns } from "~/lib/exchange/amounts";
 
 export const SECTORS = [
   { value: "agriculture", label: "Agriculture" },

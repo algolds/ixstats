@@ -17,7 +17,7 @@ import { IxTime } from "~/lib/ixtime";
 import { ExchangeError } from "~/lib/vault/exchange-service";
 import { DAY_MS, refundIssuer, transition } from "./contracts";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 
 /** Real days an issuer has to award after bidding closes, before the contract expires. */
 export const AWARD_GRACE_DAYS = 3;

@@ -9,7 +9,7 @@ import { ExchangeError } from "~/lib/vault/exchange-service";
 
 export type Db = PrismaClient | Prisma.TransactionClient;
 
-export { floor2, round2 } from "./quote";
+export { round2 } from "./amounts";
 export { lockWallet } from "~/lib/vault/exchange-service";
 
 /**
@@ -25,11 +25,4 @@ export async function assertExchangeOpen(db: Db): Promise<void> {
   if (!cfg.isExchangeEnabled) {
     throw new ExchangeError("DISABLED", "The Exchange is closed right now.");
   }
-}
-
-/** Midnight UTC today: daily caps reset here, like the vault's daily earning caps. */
-export function startOfUtcDay(now = new Date()): Date {
-  const d = new Date(now);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
 }

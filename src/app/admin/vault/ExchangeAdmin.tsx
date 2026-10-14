@@ -11,18 +11,9 @@ import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 
 const CONFIG_FIELDS = [
-  { key: "convertRate", label: "Sovereigns per IxCredit", step: "0.01" },
-  { key: "convertFee", label: "Conversion fee (0.05 = 5%)", step: "0.01" },
-  { key: "convertDailyLimit", label: "Daily conversion limit (₷)", step: "1" },
   { key: "charterFee", label: "Company charter fee (₷)", step: "1" },
   { key: "activeCompanyCap", label: "Active companies per player", step: "1" },
   { key: "seedSovereigns", label: "Starting balance for new wallets (₷)", step: "1" },
-  {
-    key: "revenueConvertibleShare",
-    label: "Share of contract revenue convertible to IxC (0 to 1)",
-    step: "0.05",
-  },
-  { key: "revenueHoldDays", label: "Days contract revenue waits before it converts", step: "1" },
 ] as const;
 
 type ConfigKey = (typeof CONFIG_FIELDS)[number]["key"];

@@ -26,7 +26,7 @@ describe("sendExchangeNotices", () => {
         userId: "u1",
         category: "economic",
         priority: "medium",
-        href: "/vault/exchange",
+        href: "/labs/exchange",
         source: "exchange",
       })
     );

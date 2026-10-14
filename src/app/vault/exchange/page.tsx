@@ -1,7 +1,5 @@
-"use client";
-
-import { VaultExchangeSection } from "~/components/vault/sections/VaultExchangeSection";
+import { redirect } from "next/navigation";
 
 export default function VaultExchangePage() {
-  return <VaultExchangeSection />;
+  redirect("/labs/exchange");
 }

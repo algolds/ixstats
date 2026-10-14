@@ -9,38 +9,21 @@ import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { listMyCompanies } from "./companies";
-import { convertOutAllowance, convertedToday, convertibleContractRevenue } from "./conversion";
 import { round2, type Db } from "./guards";
 
 /** Everything the Exchange page header needs in one round trip. */
 export async function getExchangeOverview(db: PrismaClient, userId: string) {
   const [vaultCfg, cfg] = await Promise.all([getVaultConfig(db), getExchangeConfig(db)]);
   const balance = await exchangeService.getBalance(userId, db);
-  const [today, allowance, revenue, companies, transactions, holdings, nations] = await Promise.all(
-    [
-      convertedToday(db, userId),
-      convertOutAllowance(db, userId),
-      convertibleContractRevenue(db, userId),
-      listMyCompanies(db, userId),
-      exchangeService.getTransactions(userId, db, 15),
-      listMyHoldings(db, userId),
-      listMyNations(db, userId),
-    ]
-  );
+  const [companies, transactions, holdings, nations] = await Promise.all([
+    listMyCompanies(db, userId),
+    exchangeService.getTransactions(userId, db, 15),
+    listMyHoldings(db, userId),
+    listMyNations(db, userId),
+  ]);
   return {
     isOpen: vaultCfg.isExchangeEnabled && !vaultCfg.isMaintenanceMode,
     wallet: balance,
-    conversion: {
-      rate: cfg.convertRate,
-      fee: cfg.convertFee,
-      dailyLimit: cfg.convertDailyLimit,
-      usedToday: round2(today),
-      remainingToday: Math.max(0, round2(cfg.convertDailyLimit - today)),
-      convertOutAllowance: allowance,
-      convertibleRevenue: revenue,
-      revenueShare: cfg.revenueConvertibleShare,
-      revenueHoldDays: cfg.revenueHoldDays,
-    },
     companyRules: { charterFee: cfg.charterFee, activeCompanyCap: cfg.activeCompanyCap },
     companies,
     transactions,

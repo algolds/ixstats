@@ -23,7 +23,7 @@ import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { lockCompany } from "./ownership";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 
 export const DECISION_TYPES = ["EXPAND", "ENTER_SECTOR"] as const;
 export type DecisionType = (typeof DECISION_TYPES)[number];

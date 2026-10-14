@@ -21,7 +21,7 @@ import {
 } from "~/lib/vault/exchange-service";
 import { assertExchangeOpen, lockWallet, round2, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 
 /** The four macro sectors, matching the SectorIndex rows. */

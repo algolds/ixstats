@@ -1,5 +1,5 @@
 /**
- * Exchange router: the Sovereign (₷) economy. Conversion, companies and contracts here; the
+ * Exchange router: the Sovereign (₷) economy. Companies and contracts here; the
  * share market, dividends, sector funds, decisions and tenders in markets.ts.
  * Spec: docs/specs/2026-10-06-exchange-economy-design.md; system doc: docs/systems/exchange.md.
  *
@@ -15,7 +15,6 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { convert } from "~/lib/exchange/conversion";
 import {
   SECTOR_KEYS,
   depositToCompany,
@@ -43,22 +42,10 @@ const requestId = z.string().min(8).max(64);
 const sovereigns = z.number().int().min(1).max(10_000_000);
 
 const exchangeUserRouter = createTRPCRouter({
-  /** Wallet, conversion terms and today's allowance, my companies, recent ledger rows. */
+  /** Wallet, my companies, holdings, recent ledger rows. */
   getOverview: protectedProcedure.query(({ ctx }) =>
     guard("load the Exchange", () => getExchangeOverview(ctx.db, ctx.user.id))
   ),
-
-  convert: rateLimitedMutationProcedure
-    .input(
-      z.object({
-        direction: z.enum(["CONVERT_IN", "CONVERT_OUT"]),
-        amount: z.number().int().min(1).max(1_000_000),
-        requestId,
-      })
-    )
-    .mutation(({ ctx, input }) =>
-      guard("convert", () => convert(ctx.db, { userId: ctx.user.id, ...input }))
-    ),
 
   listCompanies: protectedProcedure.query(({ ctx }) =>
     guard("list companies", () => listCompanies(ctx.db))

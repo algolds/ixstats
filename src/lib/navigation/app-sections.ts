@@ -466,6 +466,7 @@ export const APPS: readonly AppDefinition[] = [
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
       { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
+      { id: "exchange", label: "Exchange", href: "/labs/exchange", icon: Coins },
       { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
       { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
     ],

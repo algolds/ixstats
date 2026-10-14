@@ -70,12 +70,7 @@ describe("exchange router", () => {
       caller.adminSaveExchangeConfig({
         charterFee: 0,
         activeCompanyCap: 20,
-        convertRate: 100,
-        convertFee: 0,
-        convertDailyLimit: 1_000_000,
         seedSovereigns: 100_000,
-        revenueConvertibleShare: 1,
-        revenueHoldDays: 1,
       })
     ).rejects.toThrow(/Admin privileges required/);
   });
@@ -83,19 +78,19 @@ describe("exchange router", () => {
   it("maps a closed Exchange to PRECONDITION_FAILED", async () => {
     const caller = setup({ vault_isExchangeEnabled: "false" });
     await expect(
-      caller.convert({ direction: "CONVERT_IN", amount: 10, requestId: "request-0001" })
+      caller.foundCompany({ name: "Closed Co", sectorKey: "industry", requestId: "request-0001" })
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     const overview = await caller.getOverview();
     expect(overview.isOpen).toBe(false);
   });
 
-  it("converts for the signed-in user", async () => {
+  it("has no conversion between IxCredits and Sovereigns", async () => {
     const caller = setup();
-    await caller.convert({ direction: "CONVERT_IN", amount: 100, requestId: "request-0002" });
-    expect(fake.tables.myVault![0]!.credits).toBe(400);
+    expect(Object.keys(exchangeRouter._def.procedures)).not.toContain("convert");
     const overview = await caller.getOverview();
-    expect(overview.wallet.sovereigns).toBe(1095);
-    expect(overview.conversion.convertOutAllowance).toBe(95);
+    expect(overview).not.toHaveProperty("conversion");
+    expect(overview.wallet.sovereigns).toBe(1000);
+    expect(fake.tables.myVault![0]!.credits).toBe(500);
   });
 
   it("won't move another player's company capital", async () => {

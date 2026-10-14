@@ -20,7 +20,6 @@ import {
   placeBid,
   resolveDispute,
 } from "~/lib/exchange/contracts";
-import { convertOutAllowance } from "~/lib/exchange/conversion";
 import { AWARD_GRACE_DAYS, expireLapsedContracts } from "~/lib/exchange/expiry";
 import { notifyExchange } from "~/lib/exchange/notify";
 import { IxTime } from "~/lib/ixtime";
@@ -239,32 +238,5 @@ describe("expireLapsedContracts", () => {
     await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
     await expireLapsedContracts(fake.client, (contract(id).endIxTime as number) + ixDays(365));
     expect(contract(id)).toMatchObject({ status: "AWARDED", escrow: 400 });
-  });
-});
-
-describe("relaxed out allowance", () => {
-  it("counts a share of contract revenue once it has aged past the hold", async () => {
-    setup({ exchange_revenue_convertible_share: "0.5", exchange_revenue_hold_days: "7" });
-    const id = await tender(400);
-    const bobCo = await found("bob", "Bob Builders");
-    const bid = await placeBid(fake.client, {
-      userId: "bob",
-      contractId: id,
-      companyId: bobCo,
-      amount: 300,
-    });
-    await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
-    await completeContract(fake.client, { userId: "alice", contractId: id });
-    expect(await convertOutAllowance(fake.client, "bob")).toBe(0); // too fresh
-
-    contract(id).closedIxTime = IxTime.getCurrentIxTime() - ixDays(8);
-    expect(await convertOutAllowance(fake.client, "bob")).toBe(150);
-    expect(await convertOutAllowance(fake.client, "alice")).toBe(0); // the issuer earns nothing
-
-    // An admin can turn it off.
-    fake.tables.systemConfig!.find((r) => r.key === "exchange_revenue_convertible_share")!.value =
-      "0";
-    invalidateExchangeConfigCache();
-    expect(await convertOutAllowance(fake.client, "bob")).toBe(0);
   });
 });

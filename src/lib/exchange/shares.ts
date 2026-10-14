@@ -27,7 +27,7 @@ import { refreshFairValue, requireOwnedCompany } from "./companies";
 import { assertExchangeOpen, lockWallet, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, lockCompany, toCents } from "./ownership";
-import { formatSovereigns } from "./quote";
+import { formatSovereigns } from "./amounts";
 
 /** Most shares a company may ever have issued. */
 export const MAX_SHARES_ISSUED = 1_000_000;
