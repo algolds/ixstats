@@ -40,6 +40,9 @@ describe("FloatingRibbonRack", () => {
 
   it("styles the stripe by category and the device by rarity, with fallbacks", () => {
     expect(ribbonStripe("Military")).toContain("red");
+    expect(ribbonStripe("Economic")).toBe("bg-green");
+    expect(ribbonStripe("Executive")).toBe("bg-orange");
+    expect(ribbonStripe("Lorewards")).toBe("bg-mint");
     expect(ribbonStripe("Unknown")).toBe(ribbonStripe("General"));
     expect(ribbonDevice("Legendary")).not.toBe(ribbonDevice("Common"));
     expect(ribbonDevice("Mystery")).toBe(ribbonDevice("Common"));

@@ -8,6 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/comp
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { springSnappy } from "~/lib/design/motion";
+import type { FacetAccent } from "~/lib/design/tokens";
+import { getCategoryTheme } from "./constants";
 
 /**
  * A ribbon is an unlocked achievement (`UserAchievement`) worn as a service ribbon: the stripe comes
@@ -23,14 +25,18 @@ export interface RibbonView {
   pinned?: boolean;
 }
 
-/** Stripe colour per achievement category (system colours). */
-const RIBBON_STRIPES: Record<string, string> = {
-  Economic: "bg-green",
-  Military: "bg-red",
-  Diplomatic: "bg-teal",
-  Government: "bg-indigo",
-  Social: "bg-blue",
-  General: "bg-yellow",
+/** Solid stripe class per category accent (literal classes, so Tailwind keeps them). */
+const STRIPE_BY_ACCENT: Partial<Record<FacetAccent, string>> = {
+  red: "bg-red",
+  orange: "bg-orange",
+  yellow: "bg-yellow",
+  green: "bg-green",
+  mint: "bg-mint",
+  teal: "bg-teal",
+  blue: "bg-blue",
+  indigo: "bg-indigo",
+  purple: "bg-purple",
+  pink: "bg-pink",
 };
 
 /** Star device colour per rarity: bronze, silver, gold, then a bright platinum star. */
@@ -42,8 +48,9 @@ const RIBBON_DEVICES: Record<string, string> = {
   Legendary: "fill-white text-white",
 };
 
+/** The category's accent as the stripe; `UserAchievement.category` is a snapshot, so retired category names still resolve. */
 export function ribbonStripe(category: string): string {
-  return RIBBON_STRIPES[category] ?? RIBBON_STRIPES.General!;
+  return STRIPE_BY_ACCENT[getCategoryTheme(category).accent] ?? "bg-yellow";
 }
 
 export function ribbonDevice(rarity: string): string {
