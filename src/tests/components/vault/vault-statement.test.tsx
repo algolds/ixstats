@@ -207,4 +207,22 @@ describe("VaultStatement", () => {
     const list = screen.getByText("Today").closest("section") as HTMLElement;
     expect(within(list).getAllByText("Player trade")).toHaveLength(1);
   });
+
+  it("drops a page that arrives after the filter changed", async () => {
+    pages = (input) =>
+      input.direction === "spent"
+        ? { transactions: [tx("s1", { credits: -5, source: "P2P_TRADE" })], hasMore: false }
+        : { transactions: [tx("a"), tx("b")], hasMore: true };
+    let resolveLate: (page: Page) => void = () => undefined;
+    fetchMock.mockImplementationOnce(() => new Promise<Page>((resolve) => (resolveLate = resolve)));
+    render(<VaultStatement pageSize={2} />);
+    fireEvent.click(screen.getByRole("button", { name: /show earlier/i }));
+    fireEvent.click(screen.getByRole("radio", { name: "Spent" }));
+    await act(async () => {
+      resolveLate({ transactions: [tx("late", { source: "JUNK_CARDS" })], hasMore: true });
+    });
+    expect(screen.queryByText("Cards junked")).toBeNull();
+    expect(screen.getByText("Player trade")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /show earlier/i })).toBeNull();
+  });
 });

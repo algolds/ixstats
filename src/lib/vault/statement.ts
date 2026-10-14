@@ -108,9 +108,11 @@ function describeLoreward(source: string, metadata: MetadataRecord | null): RowD
         ? "runner-up"
         : "winner";
   const contest = text(metadata, "type");
+  const page = text(metadata, "page");
+  const date = text(metadata, "date");
   return {
     title: `Loreward: ${contest ? `${contest} ` : ""}${place}`,
-    detail: text(metadata, "date"),
+    detail: page && date ? `${page} on ${date}` : (page ?? date),
     href: "/vault/achievements?tab=lorewards",
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { NavArrowDown, NavArrowRight, Wallet } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -147,14 +147,20 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
   const days = useMemo(() => groupStatement(rows, now), [rows, now]);
   const hasMore = earlierHasMore ?? first.data?.hasMore ?? false;
 
+  // Bumped on every filter change so a page still in flight for the old filter is dropped on arrival.
+  const filterRun = useRef(0);
+
   const changeFilter = (next: Filter) => {
+    filterRun.current += 1;
     setFilter(next);
+    setLoadingMore(false);
     setEarlier([]);
     setEarlierHasMore(null);
     setLoadFailed(false);
   };
 
   const showEarlier = async () => {
+    const run = filterRun.current;
     setLoadingMore(true);
     setLoadFailed(false);
     try {
@@ -163,12 +169,13 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
         offset: rows.length,
         direction,
       });
+      if (run !== filterRun.current) return;
       setEarlier((current) => mergeRows(current, page.transactions));
       setEarlierHasMore(page.hasMore);
     } catch {
-      setLoadFailed(true);
+      if (run === filterRun.current) setLoadFailed(true);
     } finally {
-      setLoadingMore(false);
+      if (run === filterRun.current) setLoadingMore(false);
     }
   };
 

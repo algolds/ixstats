@@ -128,6 +128,23 @@ describe("describeRow", () => {
     expect(runnerUp.title).toBe("Loreward: weekly runner-up");
   });
 
+  it("names the winning page of a Loreward row when the payout recorded it", () => {
+    const out = describeRow(
+      row({
+        source: "bonus:loreward:e1",
+        metadata: { type: "daily", place: "winner", date: "2026-10-15", page: "Kir Republic" },
+      })
+    );
+    expect(out).toMatchObject({
+      title: "Loreward: daily winner",
+      detail: "Kir Republic on 2026-10-15",
+    });
+    expect(
+      describeRow(row({ source: "bonus:loreward:e1", metadata: { type: "daily", page: "Kir" } }))
+        .detail
+    ).toBe("Kir");
+  });
+
   it("falls back to the source suffix for a Loreward row paid before places were stored", () => {
     expect(
       describeRow(row({ source: "bonus:loreward:e1", metadata: { type: "daily" } })).title
