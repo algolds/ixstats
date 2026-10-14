@@ -21,7 +21,7 @@ jest.mock("~/hooks/vault/useVaultStats", () => ({
   useVaultStats: () => ({
     loading: false,
     error: false,
-    stats: { deckValue: 5000, totalCards: 12, cardCapacity: 160, unopenedPacks: 3 },
+    stats: { deckValue: 5000, totalCards: 12, unopenedPacks: 3 },
   }),
 }));
 

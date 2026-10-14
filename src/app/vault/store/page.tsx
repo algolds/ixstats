@@ -6,6 +6,7 @@ import { VaultMarketplaceSection } from "~/components/vault/sections/VaultMarket
 export default function VaultStorePage() {
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
+  const view = searchParams.get("view");
 
-  return <VaultMarketplaceSection initialTab={tab} />;
+  return <VaultMarketplaceSection initialTab={tab} initialView={view} />;
 }

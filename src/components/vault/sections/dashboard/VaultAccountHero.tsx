@@ -65,7 +65,9 @@ export function VaultAccountHero({ deckValue, unopenedPacks }: VaultAccountHeroP
         )}
         {unopenedPacks > 0 && (
           <Button asChild variant="secondary">
-            <Link href="/vault/store?tab=store">Open {plural(unopenedPacks, "pack")}</Link>
+            <Link href="/vault/store?tab=store&view=my-packs">
+              Open {plural(unopenedPacks, "pack")}
+            </Link>
           </Button>
         )}
         <Button asChild variant="outline">

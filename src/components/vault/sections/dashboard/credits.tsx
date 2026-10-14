@@ -13,19 +13,16 @@ export function sumFigures(a: Figure, b: Figure): Figure {
   return a + b;
 }
 
-/** An IxCredits amount with the currency mark; `prefix` is "+" or "~" for projected figures. */
+/** An IxCredits amount with the currency mark. */
 export function Credits({
   amount,
-  prefix = "",
   symbolClassName = "size-3",
 }: {
   amount: number;
-  prefix?: string;
   symbolClassName?: string;
 }) {
   return (
     <>
-      {prefix}
       <IxCreditsSymbol decorative className={`${symbolClassName} shrink-0`} />
       {formatCredits(amount)}
     </>

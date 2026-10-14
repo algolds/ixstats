@@ -92,7 +92,7 @@ describe("VaultAccountHero", () => {
 
     rerender(<VaultAccountHero deckValue={DECK} unopenedPacks={2} />);
     expect(screen.getByRole("link", { name: "Open 2 packs" }).getAttribute("href")).toBe(
-      "/vault/store?tab=store"
+      "/vault/store?tab=store&view=my-packs"
     );
     rerender(<VaultAccountHero deckValue={DECK} unopenedPacks={1} />);
     expect(screen.getByRole("link", { name: "Open 1 pack" })).not.toBeNull();

@@ -8,8 +8,6 @@ interface VaultStats {
   totalCards: number;
   deckValue: number;
   unopenedPacks: number;
-  /** Base capacity (admin card setting) plus Vault upgrades; null until loaded. */
-  cardCapacity: number | null;
 }
 
 /**
@@ -56,7 +54,6 @@ export function useVaultStats() {
     totalCards: userData?.totalCards ?? 0,
     deckValue: userData?.deckValue ?? 0,
     unopenedPacks: myPacksData?.packs?.length ?? 0,
-    cardCapacity: userData?.cardCapacity ?? null,
   };
 
   return {
