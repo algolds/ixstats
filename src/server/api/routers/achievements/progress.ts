@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -311,40 +311,28 @@ interface PlayerTotals {
   rank: number;
 }
 
-const RARE_PLUS = new Set(["Rare", "Epic", "Legendary"]);
+const RARE_PLUS = ["Rare", "Epic", "Legendary"];
 
 /**
  * Every player with an unlock, best first; players on equal points share a rank. Points count
- * every unlock, Legacy included; the counts are of active achievements only.
+ * every unlock, Legacy included; the counts are of active achievements only. One aggregate in the
+ * database, so the unlock table is never loaded into memory; ties on points break on the active
+ * count, then the user id, so the order is deterministic.
  */
 async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
-  const unlocks = await db.userAchievement.findMany({
-    select: {
-      userId: true,
-      achievement: { select: { points: true, rarity: true, isActive: true } },
-    },
-  });
-  const byUser = new Map<string, Omit<PlayerTotals, "rank">>();
-  for (const { userId, achievement } of unlocks) {
-    const row = byUser.get(userId) ?? {
-      userId,
-      totalPoints: 0,
-      achievementCount: 0,
-      rareAchievements: 0,
-    };
-    row.totalPoints += achievement.points;
-    if (achievement.isActive) {
-      row.achievementCount += 1;
-      if (RARE_PLUS.has(achievement.rarity)) row.rareAchievements += 1;
-    }
-    byUser.set(userId, row);
-  }
-  const sorted = [...byUser.values()].sort(
-    (a, b) => b.totalPoints - a.totalPoints || b.achievementCount - a.achievementCount
-  );
+  const rows = await db.$queryRaw<Omit<PlayerTotals, "rank">[]>(Prisma.sql`
+    SELECT ua."userId" AS "userId",
+           COALESCE(SUM(a."points"), 0)::int AS "totalPoints",
+           (COUNT(*) FILTER (WHERE a."isActive"))::int AS "achievementCount",
+           (COUNT(*) FILTER (WHERE a."isActive" AND a."rarity" IN (${Prisma.join(RARE_PLUS)})))::int AS "rareAchievements"
+    FROM "UserAchievement" ua
+    JOIN "Achievement" a ON a."key" = ua."achievementId"
+    GROUP BY ua."userId"
+    ORDER BY "totalPoints" DESC, "achievementCount" DESC, ua."userId" ASC
+  `);
   let rank = 0;
-  return sorted.map((row, i) => {
-    if (i === 0 || row.totalPoints !== sorted[i - 1]!.totalPoints) rank = i + 1;
+  return rows.map((row, i) => {
+    if (i === 0 || row.totalPoints !== rows[i - 1]!.totalPoints) rank = i + 1;
     return { ...row, rank };
   });
 }

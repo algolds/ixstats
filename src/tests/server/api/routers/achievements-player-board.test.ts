@@ -10,27 +10,26 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const createCaller = createCallerFactory(achievementsProgressRouter);
 
-const unlock = (userId: string, points: number, rarity = "Common", isActive = true) => ({
-  userId,
-  achievement: { points, rarity, isActive },
-});
+const totals = (
+  userId: string,
+  totalPoints: number,
+  achievementCount: number,
+  rareAchievements: number
+) => ({ userId, totalPoints, achievementCount, rareAchievements });
 
 function makeDb() {
   return {
     achievement: { count: jest.fn().mockResolvedValue(40) },
-    userAchievement: {
-      findMany: jest
-        .fn()
-        .mockResolvedValue([
-          unlock("u_me", 10),
-          unlock("u_me", 50, "Epic"),
-          unlock("u_me", 40, "Rare", false),
-          unlock("u_top", 250, "Legendary"),
-          unlock("u_top", 10),
-          unlock("u_tie", 100, "Rare"),
-          unlock("u_low", 5),
-        ]),
-    },
+    userAchievement: { findMany: jest.fn() },
+    // The database's aggregate, already ordered: points, then active count, then user id.
+    $queryRaw: jest
+      .fn()
+      .mockResolvedValue([
+        totals("u_top", 260, 2, 1),
+        totals("u_me", 100, 2, 1),
+        totals("u_tie", 100, 1, 1),
+        totals("u_low", 5, 1, 0),
+      ]),
     user: {
       findMany: jest.fn().mockResolvedValue([
         { clerkUserId: "u_top", handle: "topdog", forumUsername: "TopForum" },
@@ -50,6 +49,22 @@ function callerFor(db: ReturnType<typeof makeDb>, clerkUserId: string | null = "
   });
   return createCaller(ctx as never);
 }
+
+describe("playerTotals", () => {
+  it("is one grouped query over the joined rules, never a scan of the unlock rows", async () => {
+    const db = makeDb();
+    await callerFor(db).getMySummary();
+
+    expect(db.userAchievement.findMany).not.toHaveBeenCalled();
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const query = db.$queryRaw.mock.calls[0]![0] as { sql: string; values: string[] };
+    expect(query.sql).toMatch(/GROUP BY ua\."userId"/);
+    expect(query.sql).toMatch(
+      /ORDER BY "totalPoints" DESC, "achievementCount" DESC, ua\."userId" ASC/
+    );
+    expect(query.values).toEqual(["Rare", "Epic", "Legendary"]);
+  });
+});
 
 describe("achievements.getMySummary", () => {
   it("counts the caller's unlocks of active achievements, all their points (Legacy too) and their rank", async () => {
