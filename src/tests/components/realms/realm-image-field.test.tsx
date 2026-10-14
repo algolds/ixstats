@@ -1,6 +1,7 @@
 /**
  * Realm banner and thumbnail field: a file goes through the site's image upload route and its address fills the
- * field; the typed address is checked; files that are not images or exceed 5MB never leave the browser.
+ * field, or an image is picked from the repository; the typed address is checked; files that are not images or
+ * exceed 5MB never leave the browser.
  */
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
@@ -8,6 +9,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 const notify = { success: jest.fn(), error: jest.fn(), info: jest.fn() };
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => notify }));
 jest.mock("~/lib/media/upload-image", () => ({ uploadImageFile: jest.fn() }));
+// The repository picker: a stand-in that picks one downloaded image.
+jest.mock("next/dynamic", () => () => (props: { onImageSelect: (url: string) => void }) => (
+  <button type="button" onClick={() => props.onImageSelect("/images/downloaded/downloaded_ab.png")}>
+    Pick
+  </button>
+));
 
 import { uploadImageFile } from "~/lib/media/upload-image";
 import { RealmImageField } from "~/app/r/[realm]/_components/manage/RealmImageField";
@@ -72,9 +79,20 @@ describe("RealmImageField", () => {
     );
   });
 
+  it("fills the field with an image picked from the repository", () => {
+    const onChange = renderField();
+    fireEvent.click(screen.getByRole("button", { name: "Repository" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pick" }));
+    expect(onChange).toHaveBeenCalledWith("/images/downloaded/downloaded_ab.png");
+  });
+
   it("flags an address that is neither https nor an upload", () => {
     renderField("http://img.example/banner.png");
-    expect(screen.getByText("Use an https:// image address or upload an image.")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Use an https:// image address, upload an image or pick one from the repository."
+      )
+    ).toBeTruthy();
     expect(screen.queryByAltText("Banner image preview")).toBeNull();
   });
 });

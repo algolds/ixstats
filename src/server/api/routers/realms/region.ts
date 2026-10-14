@@ -76,7 +76,10 @@ const realmImage = z
   .string()
   .trim()
   .max(1000)
-  .refine(isRealmImageUrl, "Use an https:// image address or upload an image");
+  .refine(
+    isRealmImageUrl,
+    "Use an https:// image address, upload an image or pick one from the repository"
+  );
 
 export const realmRegionRouter = createTRPCRouter({
   /** The front page and header: banner, stats, factbook, officers, embassies, poll, board preview. */

@@ -1,22 +1,30 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload } from "iconoir-react";
+import dynamic from "next/dynamic";
+import { MediaImage, Upload } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { assetUrl } from "~/lib/base-path";
+import { assetUrl, stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { uploadImageFile } from "~/lib/media/upload-image";
 import { isRealmImageUrl } from "~/lib/realms/realm-region";
+
+// The repository picker is large; load it only when it opens.
+const MediaSearchModal = dynamic(
+  () =>
+    import("~/components/wiki-os/media-search/MediaSearchModal").then((m) => m.MediaSearchModal),
+  { ssr: false }
+);
 
 /** The image upload route's limit (`/api/upload/image` enforces it; this only saves a doomed upload). */
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /**
- * A realm image (banner or thumbnail): upload a file through the site's image upload route, or type an https://
- * address. Checked as typed, with a preview.
+ * A realm image (banner, thumbnail or emblem): upload a file through the site's image upload route, pick one from
+ * the image repository, or type an https:// address. Checked as typed, with a preview.
  */
 export function RealmImageField({
   id,
@@ -35,6 +43,7 @@ export function RealmImageField({
   const notify = useNotify();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const ok = isRealmImageUrl(value);
   const preview = ok ? assetUrl(value) : null;
 
@@ -61,9 +70,10 @@ export function RealmImageField({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Input
           id={id}
+          className="min-w-48 flex-1"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://"
@@ -78,6 +88,10 @@ export function RealmImageField({
           <Upload aria-hidden="true" />
           {uploading ? "Uploading…" : "Upload"}
         </Button>
+        <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
+          <MediaImage aria-hidden="true" />
+          Repository
+        </Button>
         <input
           ref={fileInput}
           type="file"
@@ -91,9 +105,17 @@ export function RealmImageField({
           }}
         />
       </div>
+      {pickerOpen && (
+        <MediaSearchModal
+          isOpen
+          onClose={() => setPickerOpen(false)}
+          // The picker's local paths carry the base path; the realm stores them without it.
+          onImageSelect={(url) => onChange(stripBasePath(url))}
+        />
+      )}
       {!ok && (
         <p className="text-destructive text-footnote">
-          Use an https:// image address or upload an image.
+          Use an https:// image address, upload an image or pick one from the repository.
         </p>
       )}
       {preview && (

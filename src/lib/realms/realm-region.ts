@@ -76,19 +76,24 @@ export const HAPPENING_KIND_LABELS: Record<HappeningKind, string> = {
 };
 
 /**
- * An image uploaded through `/api/upload/image` (which checks the type and the 5MB limit, and sanitizes SVG): it
- * is served from `UPLOADS_URL_PREFIX` (`src/server/shared/upload-storage.ts`) under a generated `uploaded_…` name.
+ * Images the site serves itself, stored without the base path: an upload through `/api/upload/image` (type, 5MB
+ * limit and SVG sanitizing checked there; served from `UPLOADS_URL_PREFIX`, `src/server/shared/upload-storage.ts`,
+ * under a generated `uploaded_…` name), an outside image the repository picker copied in
+ * (`/api/download/external-image`, `downloaded_…`), or a wiki file through the image-only MediaWiki media proxy.
  */
-const UPLOADED_IMAGE = /^\/images\/uploads\/uploaded_[A-Za-z0-9_.-]+$/;
+const SITE_IMAGES = [
+  /^\/images\/(?:uploads\/uploaded|downloaded\/downloaded)_[A-Za-z0-9_.-]+$/,
+  /^\/api\/mediawiki\/[a-z]+\/[^\s\\?#]+$/,
+];
 
 /**
- * A realm banner or thumbnail: an `https://` image address, or an image uploaded through the image upload route.
- * Empty means "none".
+ * A realm banner, thumbnail or emblem: an `https://` image address, or an image the site serves (an upload or an
+ * image picked from the repository). Empty means "none".
  */
 export function isRealmImageUrl(url: string): boolean {
   const value = url.trim();
   if (value === "") return true;
-  if (UPLOADED_IMAGE.test(value)) return !value.includes("..");
+  if (SITE_IMAGES.some((pattern) => pattern.test(value))) return !value.includes("..");
   return /^https:\/\/[^\s]+$/i.test(value);
 }
 
