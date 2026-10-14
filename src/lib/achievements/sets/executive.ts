@@ -161,7 +161,8 @@ export const EXECUTIVE_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "exec-fiscal-steward",
     title: "Fiscal Steward",
-    description: "Set a budget for every budget year that overlaps the last 18 months",
+    description:
+      "Own your nation for 18 months or more with a budget set for every budget year in that time",
     category: "Executive",
     rarity: "Epic",
     points: 100,

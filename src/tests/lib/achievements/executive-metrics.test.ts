@@ -262,43 +262,32 @@ describe("a clock running 4x does not clear a real-time floor", () => {
 });
 
 describe("fiscal steward", () => {
-  const written = (years: number[], at = new Date("2026-01-01T00:00:00Z")) =>
-    new Map(years.map((year) => [year, at]));
+  const covered = new Set([2040, 2041, 2042, 2043]);
+  const owned = (months: number) => new Date(NOW.getTime() - months * MONTH_MS);
 
   it("maps budget years to real dates: the 18 months before March 2027 touch years 2040 to 2043", () => {
     expect(fiscalWindowYears(NOW)).toEqual([2040, 2041, 2042, 2043]);
   });
 
-  it("is 1 when every overlapping year has an allocation written within the year", () => {
-    const first = new Map([
-      [2040, new Date("2025-08-01T00:00:00Z")],
-      [2041, new Date("2026-02-01T00:00:00Z")],
-      [2042, new Date("2026-08-01T00:00:00Z")],
-      [2043, new Date("2027-02-01T00:00:00Z")],
-    ]);
-    expect(fiscalStewardFlag(NOW, first)).toBe(1);
+  it("is 1 with every overlapping year budgeted and the nation owned for 18 months", () => {
+    expect(fiscalStewardFlag(NOW, covered, owned(18))).toBe(1);
+    expect(fiscalStewardFlag(NOW, covered, owned(40))).toBe(1);
+  });
+
+  it("is 0 when the nation was claimed 17 months ago, or the ownership date is unknown", () => {
+    expect(fiscalStewardFlag(NOW, covered, owned(17))).toBe(0);
+    expect(fiscalStewardFlag(NOW, covered, new Date(owned(18).getTime() + 1))).toBe(0);
+    expect(fiscalStewardFlag(NOW, covered, null)).toBe(0);
   });
 
   it("is 0 when a year has no allocation", () => {
-    expect(fiscalStewardFlag(NOW, written([2040, 2041, 2043]))).toBe(0);
-  });
-
-  it("is 0 when a year's allocation was only written after the year ended", () => {
-    const late = new Map([
-      [2040, new Date("2025-08-01T00:00:00Z")],
-      [2041, new Date("2027-02-01T00:00:00Z")],
-      [2042, new Date("2026-08-01T00:00:00Z")],
-      [2043, new Date("2027-02-01T00:00:00Z")],
-    ]);
-    expect(fiscalStewardFlag(NOW, late)).toBe(0);
+    expect(fiscalStewardFlag(NOW, new Set([2040, 2041, 2043]), owned(30))).toBe(0);
   });
 
   it("is 0 while the window still reaches back before the mapped years", () => {
     const now = new Date("2026-10-14T12:00:00Z");
     expect(fiscalWindowYears(now)[0]).toBeLessThan(2040);
-    expect(
-      fiscalStewardFlag(now, written([2040, 2041, 2042], new Date("2025-08-01T00:00:00Z")))
-    ).toBe(0);
+    expect(fiscalStewardFlag(now, new Set([2040, 2041, 2042]), new Date("2020-01-01Z"))).toBe(0);
   });
 });
 
@@ -383,26 +372,43 @@ describe("loaders", () => {
     expect(db.budgetAllocation.findFirst.mock.calls[0]![0].where.budgetYear).toEqual({ lte: 2043 });
   });
 
-  it("budget: counts this game year's allocations and flags a covered window", async () => {
-    const db = createMockPrisma();
-    db.budgetAllocation.count.mockResolvedValue(4);
-    db.budgetAllocation.groupBy.mockResolvedValue([
-      { budgetYear: 2040, _min: { createdAt: new Date("2025-08-01T00:00:00Z") } },
-      { budgetYear: 2041, _min: { createdAt: new Date("2026-02-01T00:00:00Z") } },
-      { budgetYear: 2042, _min: { createdAt: new Date("2026-08-01T00:00:00Z") } },
-      { budgetYear: 2043, _min: { createdAt: new Date("2027-02-01T00:00:00Z") } },
-    ]);
+  describe("budget", () => {
+    function budgetDb(ownedSince: Date | null | undefined) {
+      const db = createMockPrisma();
+      db.budgetAllocation.count.mockResolvedValue(4);
+      // Rows the builder just rewrote are fine: only the year is read, never createdAt.
+      db.budgetAllocation.groupBy.mockResolvedValue(
+        [2040, 2041, 2042, 2043].map((budgetYear) => ({ budgetYear }))
+      );
+      db.country.findUnique.mockResolvedValue(ownedSince === undefined ? null : { ownedSince });
+      return db;
+    }
+    const months = (n: number) => new Date(NOW.getTime() - n * MONTH_MS);
 
-    const result = await budgetLoader.load(ctx(db));
+    it("counts this game year's allocations and flags covered years of an 18 month owner", async () => {
+      const db = budgetDb(months(20));
 
-    expect(result).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 1 });
-    expect(db.budgetAllocation.count.mock.calls[0]![0].where).toEqual({
-      governmentStructure: { countryId: "c1" },
-      budgetYear: 2043,
+      const result = await budgetLoader.load(ctx(db));
+
+      expect(result).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 1 });
+      expect(db.budgetAllocation.count.mock.calls[0]![0].where).toEqual({
+        governmentStructure: { countryId: "c1" },
+        budgetYear: 2043,
+      });
+      const grouped = db.budgetAllocation.groupBy.mock.calls[0]![0];
+      expect(grouped.where.budgetYear).toEqual({ gte: 2040, lte: 2043 });
+      expect(grouped._min).toBeUndefined();
+      expect(db.country.findUnique.mock.calls[0]![0]).toEqual({
+        where: { id: "c1" },
+        select: { ownedSince: true },
+      });
     });
-    expect(db.budgetAllocation.groupBy.mock.calls[0]![0].where.budgetYear).toEqual({
-      gte: 2040,
-      lte: 2043,
+
+    it("withholds the flag for a 17 month owner, an unknown ownership date or a missing country row", async () => {
+      for (const ownedSince of [months(17), null, undefined]) {
+        const result = await budgetLoader.load(ctx(budgetDb(ownedSince)));
+        expect(result).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 0 });
+      }
     });
   });
 });

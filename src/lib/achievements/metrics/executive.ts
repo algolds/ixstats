@@ -258,21 +258,25 @@ export function fiscalWindowYears(now: Date): number[] {
 }
 
 /**
- * 1 when every budget year overlapping the last 18 months has an allocation that was written
- * before the year ended (a past year cannot be filled in afterwards). The years are contiguous,
- * so the first one holds the window start; if it predates the mappable years the window is not
- * covered yet.
+ * 1 when every budget year overlapping the last 18 months has an allocation and the country has
+ * been owned for 18 months or more (`ownedSince`; null is not met). Allocation rows are rewritten
+ * whenever the builder saves, so their `createdAt` says nothing; ownership stops a new owner from
+ * claiming a history they did not keep. The years are contiguous, so the first one holds the
+ * window start; if it predates the mappable years the window is not covered yet.
  */
-export function fiscalStewardFlag(now: Date, firstWritten: ReadonlyMap<number, Date>): number {
+export function fiscalStewardFlag(
+  now: Date,
+  budgetYears: ReadonlySet<number>,
+  ownedSince: Date | null
+): number {
   const years = fiscalWindowYears(now);
-  const covered =
-    years.length > 0 &&
-    years[0]! >= FISCAL_FIRST_MAPPED_YEAR &&
-    years.every((year) => {
-      const written = firstWritten.get(year);
-      return written !== undefined && written.getTime() < budgetYearSpan(year).end;
-    });
-  return Number(covered);
+  const owned = ownedSince !== null && ownedSince.getTime() <= now.getTime() - FISCAL_WINDOW_MS;
+  return Number(
+    owned &&
+      years.length > 0 &&
+      years[0]! >= FISCAL_FIRST_MAPPED_YEAR &&
+      years.every((year) => budgetYears.has(year))
+  );
 }
 
 const BUDGET_KEYS = ["budgetCurrentYear", "fiscalSteward18m"] as const;
@@ -280,7 +284,7 @@ const BUDGET_KEYS = ["budgetCurrentYear", "fiscalSteward18m"] as const;
 async function loadBudgetMetrics({ db, countryId, now }: MetricContext) {
   if (!countryId) return zeroed(BUDGET_KEYS);
   const years = fiscalWindowYears(now);
-  const [current, written] = await Promise.all([
+  const [current, withBudget, country] = await Promise.all([
     db.budgetAllocation.count({
       where: { governmentStructure: { countryId }, budgetYear: gameYearAt(now) },
     }),
@@ -290,13 +294,14 @@ async function loadBudgetMetrics({ db, countryId, now }: MetricContext) {
         governmentStructure: { countryId },
         budgetYear: { gte: years[0] ?? 0, lte: years[years.length - 1] ?? 0 },
       },
-      _min: { createdAt: true },
     }),
+    db.country.findUnique({ where: { id: countryId }, select: { ownedSince: true } }),
   ]);
-  const firstWritten = new Map(
-    written.flatMap((g) => (g._min.createdAt ? [[g.budgetYear, g._min.createdAt] as const] : []))
-  );
-  return { budgetCurrentYear: current, fiscalSteward18m: fiscalStewardFlag(now, firstWritten) };
+  const budgetYears = new Set(withBudget.map((g) => g.budgetYear));
+  return {
+    budgetCurrentYear: current,
+    fiscalSteward18m: fiscalStewardFlag(now, budgetYears, country?.ownedSince ?? null),
+  };
 }
 
 export const budgetLoader: MetricLoader = {
