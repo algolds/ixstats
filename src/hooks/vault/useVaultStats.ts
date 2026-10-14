@@ -7,7 +7,6 @@ import { useAuth } from "@clerk/nextjs";
 interface VaultStats {
   totalCards: number;
   deckValue: number;
-  unopenedPacks: number;
 }
 
 /**
@@ -24,11 +23,6 @@ export function useVaultStats() {
     isError: userError,
     refetch: refetchStats,
   } = api.vault.getUserStats.useQuery(undefined, { enabled: !!userId });
-
-  const { data: myPacksData } = api.cardPacks.getMyPacks.useQuery(
-    { isOpened: false },
-    { enabled: !!userId }
-  );
 
   const refreshMutation = api.nsImport.refreshCardValues.useMutation({
     onSuccess: () => {
@@ -53,7 +47,6 @@ export function useVaultStats() {
   const stats: VaultStats = {
     totalCards: userData?.totalCards ?? 0,
     deckValue: userData?.deckValue ?? 0,
-    unopenedPacks: myPacksData?.packs?.length ?? 0,
   };
 
   return {
