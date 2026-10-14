@@ -16,8 +16,13 @@ jest.mock("next/link", () => ({
 }));
 
 let mockData: Record<string, unknown> = {};
+let mockErrors = new Set<string>();
 const mockLeaf = (name: string) => ({
-  useQuery: () => ({ data: mockData[name], isLoading: mockData[name] === undefined }),
+  useQuery: () => ({
+    data: mockData[name],
+    isLoading: mockData[name] === undefined && !mockErrors.has(name),
+    isError: mockErrors.has(name),
+  }),
 });
 jest.mock("~/trpc/react", () => ({
   api: new Proxy(
@@ -37,7 +42,17 @@ const linkTo = (name: RegExp | string) => screen.getByRole("link", { name });
 
 describe("VaultHoldings", () => {
   beforeEach(() => {
+    mockErrors = new Set();
     mockData = {
+      getMyTrophies: {
+        wikiUsername: "Ixnay",
+        wins: { daily: 3, weekly: 1, monthly: 0 },
+        runnerUps: 2,
+        streak: 2,
+        paid: 4000,
+        cards: [],
+        todayRank: 4,
+      },
       getMySummary: { unlocked: 42, activeTotal: 180, points: 1240, rank: 17 },
       listStoreItems: STORE_ITEMS,
       getPurchasedItems: { purchasedItemIds: [], purchaseCounts: {} },
@@ -122,5 +137,65 @@ describe("VaultHoldings", () => {
   it("shows a dash for the deck value when the stats failed", () => {
     renderHoldings({ deckValue: null });
     expect(linkTo(/Cards/).querySelector('[aria-label="Unavailable"]')).not.toBeNull();
+  });
+
+  describe("Lorewards", () => {
+    it("shows wins, runner-ups and today's rank, and links to the Lorewards tab", () => {
+      renderHoldings();
+      const link = linkTo(/Lorewards/);
+      expect(link.getAttribute("href")).toBe("/vault/achievements?tab=lorewards");
+      expect(link.textContent).toContain("4 wins");
+      expect(link.textContent).toContain("3 daily, 1 weekly");
+      expect(link.textContent).not.toContain("monthly");
+      expect(link.textContent).toContain("2 runner-ups");
+      expect(link.textContent).toContain("Today's race: #4");
+    });
+
+    it("leaves today's rank out when it is not known", () => {
+      mockData.getMyTrophies = {
+        ...(mockData.getMyTrophies as object),
+        todayRank: null,
+      };
+      renderHoldings();
+      expect(linkTo(/Lorewards/).textContent).not.toContain("Today's race");
+    });
+
+    it("says nothing about wins for an unlinked wiki account, leaving the prompt to carry it", () => {
+      mockData.getMyTrophies = {
+        wikiUsername: null,
+        wins: { daily: 0, weekly: 0, monthly: 0 },
+        runnerUps: 0,
+        streak: 0,
+        paid: 0,
+        cards: [],
+        todayRank: null,
+      };
+      renderHoldings();
+      const text = linkTo(/Lorewards/).textContent ?? "";
+      expect(text).not.toMatch(/\d+ wins?|runner-up/);
+      expect(text).toContain("Needs a linked wiki account");
+    });
+
+    it("shows a skeleton while loading and no figures when the query fails", () => {
+      delete mockData.getMyTrophies;
+      const { unmount } = renderHoldings();
+      expect(linkTo(/Lorewards/).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+      unmount();
+
+      mockErrors = new Set(["getMyTrophies"]);
+      renderHoldings();
+      const link = linkTo(/Lorewards/);
+      expect(link.querySelector('[data-slot="skeleton"]')).toBeNull();
+      expect(link.textContent).toContain("Unavailable");
+      expect(link.textContent).not.toMatch(/\d/);
+    });
+
+    it("sits between Achievements and Cards", () => {
+      const { container } = renderHoldings();
+      const titles = Array.from(container.querySelectorAll('[data-slot="card-title"]')).map(
+        (el) => el.textContent
+      );
+      expect(titles).toEqual(["Achievements", "Lorewards", "Cards", "Store"]);
+    });
   });
 });

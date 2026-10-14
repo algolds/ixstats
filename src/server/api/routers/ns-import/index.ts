@@ -6,7 +6,7 @@
  *
  * Domains:
  *  - verification: nation ownership verification flow (verifyNation, requestVerification,
- *                  checkVerification, hasImported)
+ *                  checkVerification)
  *  - decks:        single-nation deck operations (fetchPublicDeck, previewDeck, importDeck)
  *  - sync:         admin bulk-region sync control plane (getSyncHealth, getSyncLogs,
  *                  fetchRegionCards, getRegionSyncStatus, getActiveJobs, pauseRegionFetch,

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { MultiplePages, ShoppingBag, Trophy } from "iconoir-react";
+import { Medal, MultiplePages, ShoppingBag, Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
@@ -71,6 +71,49 @@ function AchievementsHolding() {
   );
 }
 
+const plural = (count: number, one: string) => `${count} ${one}${count === 1 ? "" : "s"}`;
+
+/** "3 daily, 1 weekly": only the contests the player has won. */
+const winBreakdown = (wins: { daily: number; weekly: number; monthly: number }) =>
+  (["daily", "weekly", "monthly"] as const)
+    .filter((contest) => wins[contest] > 0)
+    .map((contest) => `${wins[contest]} ${contest}`)
+    .join(", ");
+
+function LorewardsHolding() {
+  const { data: trophies, isError } = api.lorewards.getMyTrophies.useQuery();
+  const totalWins = trophies
+    ? trophies.wins.daily + trophies.wins.weekly + trophies.wins.monthly
+    : 0;
+  return (
+    <Holding href="/vault/achievements?tab=lorewards" title="Lorewards" icon={<Medal />}>
+      {trophies ? (
+        trophies.wikiUsername === null ? (
+          <p className="text-footnote text-label-secondary">Needs a linked wiki account</p>
+        ) : (
+          <>
+            <p className="text-body tabular-nums">{plural(totalWins, "win")}</p>
+            <p className="text-footnote text-label-secondary tabular-nums">
+              {[winBreakdown(trophies.wins), plural(trophies.runnerUps, "runner-up")]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {trophies.todayRank !== null && (
+              <p className="text-footnote text-tint tabular-nums">
+                Today&apos;s race: #{trophies.todayRank}
+              </p>
+            )}
+          </>
+        )
+      ) : isError ? (
+        <p className="text-footnote text-label-secondary">Unavailable</p>
+      ) : (
+        <Skeleton className="h-12 w-full" />
+      )}
+    </Holding>
+  );
+}
+
 function CardsHolding({ totalCards, deckValue, unopenedPacks }: VaultHoldingsProps) {
   return (
     <Holding href="/vault/cards" title="Cards" icon={<MultiplePages />}>
@@ -80,9 +123,7 @@ function CardsHolding({ totalCards, deckValue, unopenedPacks }: VaultHoldingsPro
         <span>deck value</span>
       </p>
       {unopenedPacks > 0 && (
-        <p className="text-footnote text-tint">
-          {unopenedPacks} {unopenedPacks === 1 ? "pack" : "packs"} waiting
-        </p>
+        <p className="text-footnote text-tint">{plural(unopenedPacks, "pack")} waiting</p>
       )}
     </Holding>
   );
@@ -131,6 +172,7 @@ export function VaultHoldings(props: VaultHoldingsProps) {
   return (
     <div data-slot="vault-holdings" className="grid grid-cols-2 gap-3 lg:grid-cols-1">
       <AchievementsHolding />
+      <LorewardsHolding />
       <CardsHolding {...props} />
       <StoreHolding />
       <WikiLinkPrompt />
