@@ -5,6 +5,7 @@ import { LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
 import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
+import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { grantCardXp } from "./xp-utils";
 import { newCardOwnershipId } from "./ownership-id";
 import { baseCardCapacity } from "./general-settings";
@@ -230,7 +231,7 @@ export function generatePackCards(pack: {
 
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
- * theme, never SPECIAL (achievement / event rewards) and never crafted.
+ * theme, never SPECIAL (achievement / event rewards), never crafted and never a Loreward trophy.
  */
 async function packPoolWhere(
   tx: Prisma.TransactionClient,
@@ -252,6 +253,7 @@ async function packPoolWhere(
   const and: Prisma.CardWhereInput[] = [
     { isRetired: false },
     { cardType: { not: "SPECIAL" } },
+    EXCLUDE_TROPHY_CARDS,
     ...themeFilterWhere(pack.themeFilter),
   ];
   if (pack.cardType) and.push({ cardType: pack.cardType });

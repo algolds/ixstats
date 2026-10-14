@@ -5,6 +5,7 @@ import { grantCardXp } from "~/lib/cards/xp-utils";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
 
 export function startOfUtcDay(now: Date): Date {
@@ -163,14 +164,17 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
   );
 }
 
-/** Random non-retired card, falling back to any card; null when none exist. */
+/** Random non-retired card, falling back to any card; never a Loreward trophy; null when none exist. */
 async function pickRandomCard(db: PrismaClient) {
-  const activeCount = await db.card.count({ where: { isRetired: false } });
-  const total = activeCount > 0 ? activeCount : await db.card.count();
+  const activeCount = await db.card.count({
+    where: { isRetired: false, ...EXCLUDE_TROPHY_CARDS },
+  });
+  const total =
+    activeCount > 0 ? activeCount : await db.card.count({ where: EXCLUDE_TROPHY_CARDS });
   if (total === 0) return null;
 
   return db.card.findFirst({
-    where: activeCount > 0 ? { isRetired: false } : {},
+    where: activeCount > 0 ? { isRetired: false, ...EXCLUDE_TROPHY_CARDS } : EXCLUDE_TROPHY_CARDS,
     skip: Math.floor(Math.random() * total),
   });
 }

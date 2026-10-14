@@ -29,6 +29,7 @@ interface FakeCard {
   description?: string | null;
   totalSupply?: number | null;
   metadata?: any;
+  lorewardEntryId?: string | null;
 }
 
 /** Evaluates the subset of Prisma CardWhereInput the pack pool uses. */
@@ -187,6 +188,20 @@ describe("openPack", () => {
     ]);
     const pulled = await openPack(db, USER, USER_PACK_ID);
     expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
+  });
+
+  it("never pulls a Loreward trophy card", async () => {
+    const { db } = makeDb([
+      { id: "trophy", rarity: "COMMON", cardType: "LORE", lorewardEntryId: "e1" },
+      { id: "ok", rarity: "COMMON", cardType: "LORE" },
+    ]);
+    const pulled = await openPack(db, USER, USER_PACK_ID);
+    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
+    expect(db.card.count).toHaveBeenCalledWith({
+      where: {
+        AND: [{ AND: expect.arrayContaining([{ lorewardEntryId: null }]) }, expect.anything()],
+      },
+    });
   });
 
   it("falls back to the next-lower rarity when a tier is empty", async () => {
