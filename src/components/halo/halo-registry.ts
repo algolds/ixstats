@@ -214,7 +214,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     path: "/builder",
     icon: Building,
     category: "Geography",
-    description: "Start a new nation from a custom or real-world template",
+    description: "Choose a kind of nation, name it and found it",
     keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
   },
 

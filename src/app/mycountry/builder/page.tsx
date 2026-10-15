@@ -1,11 +1,17 @@
-"use client";
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
+interface MyCountryBuilderRedirectProps {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}
 
-export default function CreateCountryBuilder() {
-  usePageTitle({ title: "MyCountry builder" });
-
-  return <BuilderRouter mode="create" />;
+/** Founding lives at `/builder`; old links (including `?section=import`) land there. */
+export default async function MyCountryBuilderRedirect({
+  searchParams,
+}: MyCountryBuilderRedirectProps) {
+  const params = searchParams ? await searchParams : {};
+  const query = new URLSearchParams();
+  if (params.section === "import") query.set("import", "1");
+  if (typeof params.step === "string") query.set("step", params.step);
+  const qs = query.toString();
+  redirect(qs ? `/builder?${qs}` : "/builder");
 }
