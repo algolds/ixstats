@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import {
   StatUp as TrendingUp,
   Bank as Landmark,
@@ -25,6 +26,7 @@ import {
 } from "~/lib/economy/country-relations";
 import { Card } from "~/components/ui/card";
 import { SheetSection } from "./SheetSection";
+import { isEconomyTab, type EconomyTab } from "~/lib/mycountry/routes";
 
 const BudgetManagementDashboard = dynamic(
   () =>
@@ -114,7 +116,7 @@ function giniLabel(raw: number | null): string {
 type Country = ReturnType<typeof useCountryData>["country"];
 type Dashboard = RouterOutputs["mycountry"]["getCountryDashboard"];
 
-const TABS = [
+const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = [
   { id: "macro" as const, label: "Economic report", icon: TrendingUp },
   { id: "fiscal" as const, label: "National budget", icon: Landmark },
   { id: "monetary" as const, label: "Fiscal policy", icon: Coins },
@@ -330,7 +332,11 @@ interface EconomyDrillDownProps {
 
 /** Economy drill-down: macro, fiscal, monetary and trade tabs. Shared between the drill sheet and the full-page economy surface. */
 function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.JSX.Element {
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]["id"]>("macro");
+  // `?tab=` opens a console directly (the First steps links); the bar takes over from there.
+  const tabParam = useSearchParams()?.get("tab");
+  const [activeTab, setActiveTab] = useState<EconomyTab>(() =>
+    isEconomyTab(tabParam) ? tabParam : "macro"
+  );
   const { country } = useCountryData();
   const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
     { countryId },

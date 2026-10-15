@@ -97,6 +97,8 @@ model Country {
   usesAtomicGovernment        Boolean                   @default(true)
   hideDiplomaticOps           Boolean                   @default(false)
   hideStratcommIntel          Boolean                   @default(false)
+  /// When the owner hid MyCountry's "First steps" card for this nation; null while it shows.
+  firstStepsDismissedAt       DateTime?
   lastCalculated              DateTime                  @default(now())
   baselineDate                DateTime                  @default(now())
   createdAt                   DateTime                  @default(now())

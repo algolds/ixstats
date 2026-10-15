@@ -29,6 +29,9 @@ jest.mock("~/components/mycountry/shell/DomainPeeksCard", () => ({
 jest.mock("~/components/mycountry/shell/IntelligenceAlertsCard", () => ({
   IntelligenceAlertsCard: stub("alerts"),
 }));
+jest.mock("~/components/mycountry/shell/FirstStepsCard", () => ({
+  FirstStepsCard: stub("first-steps"),
+}));
 
 import { ExecutiveHome } from "~/components/mycountry/shell/ExecutiveHome";
 
@@ -46,6 +49,18 @@ describe("ExecutiveHome", () => {
     const hero = screen.getByTestId("hero");
     expect(crisis.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(crisis.parentElement?.firstElementChild).toBe(crisis);
+  });
+
+  it("puts the first steps card right under the crisis signal", () => {
+    render(
+      <ExecutiveHome
+        countryId="c1"
+        onDeclare={() => undefined}
+        onOpenDrill={() => undefined}
+        onOpenIntent={() => undefined}
+      />
+    );
+    expect(screen.getByTestId("crisis").nextElementSibling).toBe(screen.getByTestId("first-steps"));
   });
 
   it("tops the rail with the intelligence alerts card (MC-17)", () => {
