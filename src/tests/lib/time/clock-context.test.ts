@@ -1,6 +1,8 @@
 /** @jest-environment node */
 /** Which clock a page greets by: its realm inside realms, real time outside (realm clocks spec §4). */
-import { clockContextForPath } from "~/lib/time/clock-context";
+import fs from "fs";
+import path from "path";
+import { clockContextForPath, STANDALONE_APP_ROUTES } from "~/lib/time/clock-context";
 
 describe("clockContextForPath", () => {
   it.each([
@@ -23,5 +25,28 @@ describe("clockContextForPath", () => {
     ["/something/unknown", null, { kind: "real" }],
   ])("%s (realm=%s)", (path, realm, expected) => {
     expect(clockContextForPath(path, realm)).toEqual(expected);
+  });
+});
+
+describe("clockContextForPath on the maps host (maps.ixwiki.com)", () => {
+  it.each([
+    // next.config.js rewrites a root-level slug to that country's page.
+    ["/aurelia", { kind: "realm", country: "aurelia" }],
+    ["/vault", { kind: "real" }],
+    ["/maps", { kind: "realm", active: true }],
+    ["/r/eurth", { kind: "realm", realm: "eurth" }],
+  ])("%s", (pathname, expected) => {
+    expect(clockContextForPath(pathname, null, true)).toEqual(expected);
+  });
+
+  it("knows the same app routes as the host's rewrite", () => {
+    const config = fs.readFileSync(path.join(process.cwd(), "next.config.js"), "utf8");
+    const routes = /\/:slug\(\(\?!([^)]*)\)/.exec(config)?.[1] ?? "";
+    expect([...STANDALONE_APP_ROUTES].sort()).toEqual(
+      routes
+        .split("|")
+        .map((r) => r.replace(/\\\\\./g, "."))
+        .sort()
+    );
   });
 });

@@ -26,7 +26,9 @@ interface RealmTime {
   skipsCooldown: boolean;
 }
 
-const day = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+/** The viewer's own calendar day ("21 October 2026"). */
+const day = (ms: number) =>
+  new Date(ms).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 
 /** Today with the old yearly in-world offset applied (years 1 to 9999), the start date's default. */
 function defaultStartDate(legacy: InWorldDate | null): string {
@@ -234,7 +236,13 @@ export function RealmTimeSection({ slug, time }: { slug: string; time: RealmTime
           Ixnay runs on global IxTime, which site staff set in Admin.
         </p>
       ) : time.clock ? (
-        <RunningClock slug={slug} clock={time.clock} skipsCooldown={time.skipsCooldown} />
+        <RunningClock
+          // A clock changed elsewhere (staff, another tab) starts the form over from it.
+          key={`${time.clock.changedAt}:${time.clock.era}`}
+          slug={slug}
+          clock={time.clock}
+          skipsCooldown={time.skipsCooldown}
+        />
       ) : (
         <StartClock slug={slug} legacy={time.legacy} />
       )}

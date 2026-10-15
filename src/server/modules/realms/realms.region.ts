@@ -301,6 +301,8 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       ? { label: formatRealmDate(clock, Date.now()), asOf: null }
       : formatInWorldDate(realmInWorldDate(realm.settings)),
     speed: clock?.multiplier ?? null,
+    /** The realm's own clock, so the header's date runs live; null on global IxTime. */
+    clock,
     officers: realm.officers.map((o) => ({
       title: o.title,
       powers: o.powers,

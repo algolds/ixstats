@@ -77,6 +77,7 @@ function overview(overrides: Record<string, unknown> = {}) {
     links: [],
     inWorldDate: null,
     speed: null,
+    clock: null,
     officers: [
       {
         title: "Foreign Minister",

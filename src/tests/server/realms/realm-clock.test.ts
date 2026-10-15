@@ -86,23 +86,25 @@ describe("realm clock actions", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("holds the founder to one speed change a week, never staff, and never for an era edit", async () => {
+  it("holds the founder to one speed change a week, to the millisecond; never staff, never an era edit", async () => {
     const { db, row } = makeDb();
     const t0 = Date.now();
     jest.useFakeTimers({ now: t0 });
     await caller(FOUNDER, db).startClock(START);
+    // An era edit a day later leaves the week where it was.
+    jest.setSystemTime(t0 + 24 * 60 * 60 * 1000);
     await caller(FOUNDER, db).updateClock({ slug: "eurth", era: "New Era" });
+    expect(realmClock(row.settings as never)?.changedAt).toBe(t0);
     jest.setSystemTime(t0 + SPEED_CHANGE_COOLDOWN_MS - 1);
     await expect(
       caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 6 })
-    ).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    await caller(ADMIN, db).updateClock({ slug: "eurth", multiplier: 0 });
-    expect(realmClock(row.settings as never)).toMatchObject({ multiplier: 0, era: "New Era" });
-    jest.setSystemTime(t0 + 2 * SPEED_CHANGE_COOLDOWN_MS);
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/UTC$/) });
+    jest.setSystemTime(t0 + SPEED_CHANGE_COOLDOWN_MS);
     await caller(FOUNDER, db).updateClock({ slug: "eurth", multiplier: 6 });
-    expect(realmClock(row.settings as never)?.multiplier).toBe(6);
+    expect(realmClock(row.settings as never)).toMatchObject({ multiplier: 6, era: "New Era" });
+    // Site staff are never held, even straight after the founder's change.
+    await caller(ADMIN, db).updateClock({ slug: "eurth", multiplier: 0 });
+    expect(realmClock(row.settings as never)?.multiplier).toBe(0);
     jest.useRealTimers();
   });
 

@@ -72,6 +72,22 @@ describe("RealmTimeSection", () => {
     expect(screen.getByText("Pauses once saved.")).toBeTruthy();
   });
 
+  it("refreshes the form when the clock changes under it (a staff change elsewhere)", () => {
+    const clock = createRealmClock({
+      globalNowMs: Date.UTC(2041, 0, 1),
+      realNowMs: Date.now(),
+      startDate: "1203-03-14",
+      era: "AE",
+      multiplier: 3,
+    });
+    const { rerender } = render(<RealmTimeSection slug="eurth" time={{ ...base, clock }} />);
+    const changed = { ...clock, era: "NE", multiplier: 0, changedAt: clock.changedAt + 1 };
+    rerender(<RealmTimeSection slug="eurth" time={{ ...base, clock: changed }} />);
+    expect((screen.getByLabelText("Era") as HTMLInputElement).value).toBe("NE");
+    expect((screen.getByLabelText("Speed") as HTMLInputElement).value).toBe("0");
+    expect(screen.getByRole("button", { name: "Save time" })).toBeDisabled();
+  });
+
   it("shows Ixnay as global IxTime, with no controls", () => {
     render(<RealmTimeSection slug="ixnay" time={{ ...base, clock: null, isIxnay: true }} />);
     expect(screen.getByText(/global IxTime/)).toBeTruthy();
@@ -90,7 +106,8 @@ describe("RealmTimeSection", () => {
     expect(screen.getByLabelText("Speed")).toBeDisabled();
     expect(
       screen.getByText(
-        `The speed can change again on ${new Date(clock.changedAt + SPEED_CHANGE_COOLDOWN_MS).toISOString().slice(0, 10)}.`
+        // The viewer's own calendar day, not the UTC one.
+        `The speed can change again on ${new Date(clock.changedAt + SPEED_CHANGE_COOLDOWN_MS).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}.`
       )
     ).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Era"), { target: { value: "NE" } });

@@ -73,7 +73,9 @@ On phones (below 1024px) the sidebar panels stack under the main column in the o
   officer holding that power. Claims review is the `claims` power (site admins, the founder, or an officer granted
   it in the claim's realm); an officer can't approve their own claim.
 - Procedures (rate-limited mutations): factbook and appearance update, rules, community links and in-world date
-  (`updateRules`, `updateLinks`, `updateInWorldDate`; `appearance` power), officer appoint/update/remove, embassy
+  (`updateRules`, `updateLinks`, `updateInWorldDate`; `appearance` power; `updateInWorldDate` superseded on
+  2026-10-14 by the realm clock, see [realm clocks](../superpowers/specs/2026-10-14-realm-clocks-design.md)), officer
+  appoint/update/remove, embassy
   propose/accept/close, poll create/close/vote, board mute/ban/lift, `leaveRealm` (release own nation, confirmed),
   admin `adminTransferOwner` and founder `handOver` (both confirmed by the slug, audited), directory with
   tags/search/sort.

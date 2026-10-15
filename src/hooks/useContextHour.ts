@@ -6,6 +6,7 @@ import { useHydrated } from "~/hooks/useHydrated";
 import { stripBasePath } from "~/lib/base-path";
 import { realmCalendarMs } from "~/lib/realms/realm-clock";
 import { clockContextForPath } from "~/lib/time/clock-context";
+import { isStandaloneClient } from "~/lib/system/standalone-detection";
 import { useIxTimeStore } from "~/stores/ixtime-store";
 
 /**
@@ -16,8 +17,9 @@ import { useIxTimeStore } from "~/stores/ixtime-store";
 export function useContextHour(): number | null {
   const pathname = stripBasePath(usePathname() ?? "/");
   const realmParam = useSearchParams()?.get("realm") ?? null;
-  const context = clockContextForPath(pathname, realmParam);
   const hydrated = useHydrated();
+  // The maps host is known only in the browser; nothing depends on it before hydration (the hour is null).
+  const context = clockContextForPath(pathname, realmParam, hydrated && isStandaloneClient());
   const { kind: _kind, ...input } = context;
   const { data } = api.realms.region.contextClock.useQuery(input, {
     enabled: hydrated && context.kind === "realm",

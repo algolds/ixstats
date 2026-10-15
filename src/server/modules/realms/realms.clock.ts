@@ -66,7 +66,7 @@ export async function updateRealmClock(
     if (!isSiteAdmin(actor) && now < next)
       throw new RealmRegionError(
         "BAD_REQUEST",
-        `The speed can change again on ${new Date(next).toISOString().slice(0, 10)}`
+        `The speed can change again on ${new Date(next).toISOString().slice(0, 10)} UTC`
       );
     clock = withSpeed(clock, input.multiplier, now);
   }
