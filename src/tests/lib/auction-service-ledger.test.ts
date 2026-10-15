@@ -32,6 +32,7 @@ const BALANCE = {
   vaultXp: 0,
   loginStreak: 0,
   canClaimDailyBonus: false,
+  claimStreak: 0,
   premiumMultiplier: 1,
   isPremium: false,
 };
@@ -266,9 +267,9 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
       [{ credits: VAULT_CONFIG_DEFAULTS.activeDailyCap }] // EARN_ACTIVE cap saturated
     );
 
-    await expect(
-      service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)
-    ).resolves.toEqual({ success: true });
+    await expect(service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)).resolves.toEqual({
+      success: true,
+    });
 
     expect(h.tx.cardAuction.updateMany).toHaveBeenCalledWith({
       where: { id: "a1", status: "ACTIVE", sellerId: "s", bidCount: 0 },

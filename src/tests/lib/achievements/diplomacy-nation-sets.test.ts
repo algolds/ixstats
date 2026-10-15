@@ -19,10 +19,7 @@ jest.mock("~/lib/notifications/hooks", () => ({
 }));
 
 import { ACHIEVEMENT_ICON_MAP } from "~/components/achievements/constants";
-import type {
-  AchievementDefinition,
-  ExtendedAchievementData,
-} from "~/lib/achievements/definitions";
+import type { AccountAchievementData, AchievementDefinition } from "~/lib/achievements/definitions";
 import { diplomacyLoader } from "~/lib/achievements/metrics/diplomacy";
 import { nationAccountLoader, nationLoader } from "~/lib/achievements/metrics/nation";
 import { METRIC_LOADERS, type MetricContext } from "~/lib/achievements/metrics/registry";
@@ -157,7 +154,9 @@ describe("vid-end-of-days", () => {
   const active = ALL_DEFINITIONS.filter((d) => !d.retired && d.id !== "vid-end-of-days");
   const treeIds = active.filter((d) => trees.has(d.category)).map((d) => d.id);
   const unlock = (held: string[]) =>
-    achievementService.evaluateCondition(stored, { existingKeys: held } as ExtendedAchievementData);
+    achievementService.evaluateCondition(stored, {
+      existingKeys: held,
+    } satisfies AccountAchievementData);
 
   it("wants this task's Diplomacy achievements, and not its Defense or Nation ones", () => {
     for (const def of DIPLOMACY_DEFINITIONS.filter((d) => d.category === "Diplomacy"))
