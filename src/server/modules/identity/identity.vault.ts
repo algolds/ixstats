@@ -7,7 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 import type { CardInstance } from "~/types/cards-display";
-import { publicArticleUrl } from "~/lib/wiki-os/config";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 
 const CARD_SELECT = {
   id: true,
@@ -90,9 +90,10 @@ export function toVaultFocus(
   return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
-function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
+/** Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`). */
+export function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
   if (!card.wikiArticleTitle) return null;
-  return publicArticleUrl(card.wikiArticleTitle, card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki");
+  return wikiReaderPath(card.wikiArticleTitle, card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki");
 }
 
 /** Shape an owned card for `CardDisplay`; JSON columns are passed through as stored. */

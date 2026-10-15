@@ -74,7 +74,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
           )}
         >
           <Globe className="h-3 w-3" />
-          {card.wikiSource === "iiwiki" ? "IIWiki" : "IxWiki"}
+          {card.wikiSource === "iiwiki" ? "IIWiki" : "Wiki"}
         </span>
 
         {resolvedCategory && categoryLabel && (

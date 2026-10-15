@@ -11,7 +11,7 @@ type Claim = RouterOutputs["realms"]["listClaims"][number];
 type Claimant = Claim["user"];
 
 const WIKI_LABELS: Record<string, string> = {
-  ixwiki: "IxWiki",
+  ixwiki: "Wiki",
   iiwiki: "IIWiki",
   althistory: "AltHistory",
 };

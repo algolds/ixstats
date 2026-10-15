@@ -147,7 +147,7 @@ export function WikiAndStashPopovers({
                     : "border-neutral-200 text-neutral-500 hover:bg-neutral-50 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/5"
                 )}
               >
-                IxWiki
+                Wiki
               </button>
               <button
                 type="button"

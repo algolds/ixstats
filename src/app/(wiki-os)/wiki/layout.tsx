@@ -6,12 +6,12 @@ import { type Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | IxWiki",
-    default: "IxWiki | WikiOS",
+    template: "%s | WikiOS",
+    default: "WikiOS",
   },
-  description: "IxWiki, powered by WikiOS: a wiki for collaborative worldbuilding",
+  description: "WikiOS: a wiki for collaborative worldbuilding",
   openGraph: {
-    siteName: "IxWiki",
+    siteName: "WikiOS",
     type: "website",
   },
   robots: {

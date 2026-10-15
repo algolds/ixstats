@@ -66,7 +66,7 @@ export function CardImportStudio({
     {
       id: "wiki" as ImportSubtab,
       label: "Wiki lore importer",
-      description: "Batch generate & scrape lore cards from IxWiki, IIWiki & WikiOS",
+      description: "Batch generate & scrape lore cards from the wiki, IIWiki & WikiOS",
       icon: BookOpen,
       badge: pendingRequestsCount > 0 ? `${pendingRequestsCount} requests` : undefined,
       badgeVariant: "default" as const,

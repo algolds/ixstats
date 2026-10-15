@@ -10,11 +10,11 @@ nextLabel: Stash
 
 ## What Lorewards are
 
-Lorewards are the community's awards for writing on IxWiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStats copies the approved results so your laurels, score and streak show across the platform. Nothing here needs to be claimed: you write on the wiki, and the results come to you.
+Lorewards are the community's awards for writing on the wiki. Every day the community's Lorewards bot picks a **winner** and a **runner-up** from that day's wiki edits, and there are also weekly, monthly and yearly winners. Weekly and monthly results record a winner; runner-up places are recorded for the daily contest. Results are published on the wiki's `IxWiki:OOL` pages. IxStats copies the approved results so your laurels, score and streak show across the platform. Nothing here needs to be claimed: you write on the wiki, and the results come to you.
 
 ## Winning a Loreward
 
-1. Write on IxWiki, in [WikiOS](/help/wiki/wikios) or on the classic wiki.
+1. Write on the wiki, in [WikiOS](/help/wiki/wikios) or on the classic wiki.
 2. The Lorewards bot reviews the day's edits and announces the winner and runner-up. Only approved results count.
 3. IxStats copies new results on a schedule, so a new win can take up to a day to show.
 
@@ -30,7 +30,7 @@ A Loreward pays by contest and place, into your [Vault](/help/vault/overview):
 
 Each place pays once. These amounts apply to results dated 15 October 2026 or later; earlier results keep what they paid, and yearly winners don't pay. Runner-up places are only paid where the results record them, which today is the daily contest. Admins can change the amounts.
 
-You're only paid if IxStats can match the winner to your account through a **verified** IxWiki link. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
+You're only paid if IxStats can match the winner to your account through a **verified** wiki link. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
 
 ## Trophy cards
 
@@ -72,5 +72,5 @@ Lore Medals don't pay IxCredits, don't count toward your achievement points and 
 
 ## Good to know
 
-- Your passport looks up Lorewards by your wiki username, so link your IxWiki account to make sure the right record shows.
+- Your passport looks up Lorewards by your wiki username, so link your wiki account to make sure the right record shows.
 - The full results and rankings are also on the wiki's `IxWiki:OOL` pages.

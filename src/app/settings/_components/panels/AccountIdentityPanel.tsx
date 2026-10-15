@@ -360,7 +360,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               </div>
               <div className="min-w-0 flex-1 space-y-3">
                 <div className="text-label text-headline">Wikis</div>
-                <WikiAccountVerifyRow source="ixwiki" label="IxWiki" link={linkFor("ixwiki")} />
+                <WikiAccountVerifyRow source="ixwiki" label="Wiki" link={linkFor("ixwiki")} />
                 <WikiAccountVerifyRow source="iiwiki" label="IIWiki" link={linkFor("iiwiki")} />
                 <WikiAccountVerifyRow
                   source="althistory"

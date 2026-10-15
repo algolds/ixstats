@@ -14,7 +14,7 @@ You need a nation to use [MyCountry](/mycountry). There are three ways to get on
 
 - **Build a new nation** in the Country Builder, starting from a real-world template or from scratch.
 - **Import a factbook** from an IIWiki or AltHistory Wiki country page, then adjust it in the builder.
-- **Claim an existing nation** that is already on the roster, for example your IxWiki nation. Choose **Link to Existing Country** in Setup, or use the claim list on a [realm page](/help/world/realms).
+- **Claim an existing nation** that is already on the roster, for example your nation from the wiki. Choose **Link to Existing Country** in Setup, or use the claim list on a [realm page](/help/world/realms).
 
 ## Build a new nation
 

@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { ArticleFooter } from "~/components/wiki-os/reader/ArticleFooter";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 describe("ArticleFooter: View on original wiki", () => {
   it("links another wiki's page to that wiki", () => {
@@ -11,11 +10,12 @@ describe("ArticleFooter: View on original wiki", () => {
     );
   });
 
-  it("links an IxWiki page to IxWiki, as before", () => {
+  it("offers no original-wiki link for a page of the main wiki, which is read here already", () => {
     render(<ArticleFooter title="United Kingdom of Aurelia" lastModified={null} />);
-    expect(screen.getByRole("link", { name: "View on original wiki" })).toHaveAttribute(
-      "href",
-      `${mediaWikiOrigin()}/wiki/United_Kingdom_of_Aurelia`
+    expect(screen.queryByRole("link", { name: "View on original wiki" })).toBeNull();
+    render(
+      <ArticleFooter title="United Kingdom of Aurelia" lastModified={null} wikiSource="ixwiki" />
     );
+    expect(screen.queryByRole("link", { name: "View on original wiki" })).toBeNull();
   });
 });

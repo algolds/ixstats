@@ -119,10 +119,10 @@ describe("createExportWriter", () => {
     expect(byName(elements, "origin").map((p) => p.text)).toEqual(["455", "456"]);
   });
 
-  it("writes IxWiki's siteinfo, the main namespace as an empty element", async () => {
+  it("writes the site's siteinfo, the main namespace as an empty element", async () => {
     const elements = parseElements(await dump([]));
 
-    expect(byName(elements, "sitename")[0]?.text).toBe("IxWiki");
+    expect(byName(elements, "sitename")[0]?.text).toBe("WikiOS");
     expect(byName(elements, "generator")[0]?.text).toBe("WikiOS 1");
     const namespaces = byName(elements, "namespace");
     expect(namespaces[0]).toMatchObject({ attributes: { key: "-2" }, text: "Media" });

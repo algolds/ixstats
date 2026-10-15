@@ -143,7 +143,7 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
               value={wikiSource}
               onValueChange={setWikiSource}
               options={[
-                { value: "ixwiki", label: "IxWiki" },
+                { value: "ixwiki", label: "Wiki" },
                 { value: "iiwiki", label: "IIWiki" },
               ]}
             />

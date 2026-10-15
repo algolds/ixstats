@@ -8,7 +8,7 @@ nextLabel: Lorewards
 
 ## What the wiki is
 
-**Wiki** in the top menu opens WikiOS at [/wiki](/wiki), IxStats' reader and editor for the community wiki (IxWiki): nation articles, history, people, organisations and everything else written about the world. Anyone can read it. Signed-in players can edit articles, discuss them and keep a watchlist. Edits made here are copied to the classic wiki in the background, and edits made on the classic wiki are pulled in.
+**Wiki** in the top menu opens WikiOS at [/wiki](/wiki), IxStats' reader and editor for the community wiki: nation articles, history, people, organisations and everything else written about the world. Anyone can read it. Signed-in players can edit articles, discuss them and keep a watchlist. Edits made here are copied to the classic wiki in the background, and edits made on the classic wiki are pulled in.
 
 ## Reading and finding articles
 
@@ -43,7 +43,7 @@ A player's wiki user profile now opens their [IxnayID passport](/help/getting-st
 
 ## Lorewards
 
-Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits once your IxWiki account is linked, every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
+Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits once your wiki account is linked, every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
 
 ## Good to know
 

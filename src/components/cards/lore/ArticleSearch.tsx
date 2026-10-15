@@ -98,7 +98,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder={`Search ${wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"} articles...`}
+          placeholder={`Search ${wikiSource === "ixwiki" ? "wiki" : "IIWiki"} articles...`}
           className="border-separator bg-fill-3 rounded-control text-label placeholder:text-label-tertiary w-full border px-4 py-3 pr-10"
         />
 

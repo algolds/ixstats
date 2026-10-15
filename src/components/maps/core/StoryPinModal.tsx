@@ -163,7 +163,7 @@ function WikiIntroCard({ intro, wikiUrl }: { intro: string; wikiUrl: string | nu
     <Card variant="well" className="p-4">
       <Eyebrow className="mb-2 flex items-center gap-2">
         <BookOpen className="h-3.5 w-3.5" aria-hidden />
-        From IxWiki
+        From the wiki
       </Eyebrow>
       <p className="text-label text-footnote leading-relaxed">{intro}</p>
       {wikiUrl && (
@@ -234,7 +234,7 @@ function StoryPinFooter({
       {wikiUrl && (
         <WikiLinkButton url={wikiUrl} variant="outline" size="sm">
           <BookOpen aria-hidden />
-          Read on IxWiki
+          Read on WikiOS
         </WikiLinkButton>
       )}
       {pin.country.slug && (

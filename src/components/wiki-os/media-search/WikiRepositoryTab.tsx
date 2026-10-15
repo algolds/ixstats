@@ -41,7 +41,7 @@ type WikiSourceTab = "commons" | "wiki" | "stash";
 const PICKER_PAGE_SIZE = 30;
 
 const SUB_SOURCE_PLACEHOLDERS: Record<WikiSubSource, string> = {
-  ixwiki: "Search IxWiki files...",
+  ixwiki: "Search wiki files...",
   iiwiki: "Search IIWiki files...",
   forum: "Search images from the old forum...",
   mine: "Search your uploads...",
@@ -151,7 +151,7 @@ export function WikiRepositoryTab({
               ]}
             />
 
-            {/* Scope toggle: IxWiki, IIWiki, the old forum, and (signed in) your own uploads */}
+            {/* Scope toggle: the wiki, IIWiki, the old forum, and (signed in) your own uploads */}
             {wikiSource === "wiki" && (
               <SegmentedControl
                 aria-label="Wiki source selection"
@@ -159,7 +159,7 @@ export function WikiRepositoryTab({
                 value={wikiSubSource}
                 onValueChange={handleSubSourceChange}
                 options={[
-                  { value: "ixwiki", label: "IxWiki" },
+                  { value: "ixwiki", label: "Wiki" },
                   { value: "iiwiki", label: "IIWiki" },
                   { value: "forum", label: "Forum" },
                   ...(signedIn ? [{ value: "mine" as const, label: "My uploads" }] : []),

@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/texture-overlay";
 import { FACET_ACCENTS, accentColor, facetAccentStyle, isFacetAccent } from "~/lib/design/identity";
 import { DURATION_FAST } from "~/lib/design/motion";
+import { BNB_GLYPH } from "~/lib/navigation/icons/VaultLogomark";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { SYSTEM_COLORS, TEXT_STYLES } from "~/lib/design/tokens";
 import { Card } from "~/components/ui/card";
@@ -231,6 +232,30 @@ describe("achievement aurora follows the card's accent", () => {
     expect(styleVar(aurora, "--accent-2")).toBe("");
   });
 
+  it("AchievementCardBackdrop draws its dots in the category accent when unlocked, neutral and fainter when locked", () => {
+    const theme = getCategoryTheme("Economic");
+    const unlocked = render(
+      <Card>
+        <AchievementCardBackdrop categoryTheme={theme} isUnlocked />
+      </Card>
+    );
+    const wrap = unlocked.container.querySelector('[data-slot="achievement-texture"]')!;
+    expect(styleVar(wrap, "--facet-texture-color")).toBe(accentColor(theme.accent));
+    const dots = wrap.querySelector(".texture-overlay") as HTMLElement;
+    expect(dots.className).toContain("facet-texture-dots");
+    expect(Number(dots.style.opacity)).toBeLessThanOrEqual(TEXTURE_MAX_OPACITY);
+    unlocked.unmount();
+
+    const locked = render(
+      <Card>
+        <AchievementCardBackdrop categoryTheme={theme} isUnlocked={false} />
+      </Card>
+    );
+    expect(locked.container.querySelector('[data-slot="achievement-texture"]')).toBeNull();
+    const faint = locked.container.querySelector(".texture-overlay") as HTMLElement;
+    expect(Number(faint.style.opacity)).toBeLessThan(TEXTURE_MAX_OPACITY);
+  });
+
   it("no consumer bridges --accent onto the layers any more", () => {
     for (const file of [
       "src/components/achievements/AchievementDecorations.tsx",
@@ -247,6 +272,24 @@ describe("Halo walkthrough highlight", () => {
     const source = fs.readFileSync(path.join(ROOT, "src/components/halo/index.tsx"), "utf8");
     expect(source).not.toMatch(/repeat:\s*Infinity/);
     expect(source).toContain('isTourActive && "ring-tint/50 ring-2"');
+  });
+});
+
+describe("IxCreditsSymbol glyph", () => {
+  it("draws the bare BNB glyph in currentColor", () => {
+    render(<IxCreditsSymbol data-testid="ixc" />);
+    const svg = screen.getByTestId("ixc");
+    expect(svg.getAttribute("viewBox")).toBe(BNB_GLYPH.viewBox);
+    expect(svg.getAttribute("fill")).toBe("currentColor");
+    const paths = svg.querySelectorAll("path");
+    expect(paths).toHaveLength(1);
+    expect(paths[0]!.getAttribute("d")).toBe(BNB_GLYPH.path);
+    expect(svg.getAttribute("width")).toBe("1em");
+  });
+
+  it("takes the size prop", () => {
+    render(<IxCreditsSymbol size={20} data-testid="ixc" />);
+    expect(screen.getByTestId("ixc").getAttribute("height")).toBe("20");
   });
 });
 

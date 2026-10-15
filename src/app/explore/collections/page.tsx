@@ -8,7 +8,7 @@ import { CollectionGallery } from "~/components/cards/collections/CollectionGall
 
 export const metadata: Metadata = {
   title: "Browse Collections | IxStates",
-  description: "Explore public card collections from the IxWiki community",
+  description: "Explore public card collections from the wiki community",
 };
 
 export default function CollectionsBrowsePage() {
@@ -18,7 +18,7 @@ export default function CollectionsBrowsePage() {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-large-title text-label mb-2">Browse collections</h1>
         <p className="text-body text-label-secondary">
-          Discover amazing card collections from the IxWiki community
+          Discover amazing card collections from the wiki community
         </p>
       </div>
 

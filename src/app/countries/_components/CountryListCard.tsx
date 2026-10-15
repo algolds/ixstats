@@ -81,7 +81,7 @@ export function CountryListCard({ country, flagUrl, flagLoading }: CountryListCa
   const detailHref = `/countries/${country.slug}`;
 
   return (
-    // The card is a stretched link on the name (its ::after covers the card) and the IxWiki button
+    // The card is a stretched link on the name (its ::after covers the card) and the wiki button
     // sits above it; the card draws the focus ring when the link has keyboard focus.
     <Card
       className={cn(
@@ -143,7 +143,7 @@ export function CountryListCard({ country, flagUrl, flagLoading }: CountryListCa
                 e.stopPropagation();
                 router.push(wikiUrl);
               }}
-              aria-label={`View ${country.name} on IxWiki`}
+              aria-label={`View ${country.name} on the wiki`}
               className="relative z-10 h-7 w-7"
             >
               <BookOpen aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />

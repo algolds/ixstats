@@ -129,4 +129,40 @@ describe("WikiAccountVerifyRow", () => {
     // come from the mutation's own response, not from `link`.
     expect(screen.getByText(/Kir/)).toBeInTheDocument();
   });
+
+  it("calls the main wiki plain Wiki, never IxWiki, across its prompts", () => {
+    mockStartMutate.mockImplementation(() => {
+      startOnSuccess?.({
+        token: "ABC123",
+        username: "Kir",
+        expiresAt: "2026-01-01T00:00:00Z",
+        userPageUrl: "https://ixwiki.com/wiki/User:Kir",
+      });
+    });
+    const { container } = render(
+      <WikiAccountVerifyRow source="ixwiki" label="Wiki" link={undefined} />
+    );
+    expect(screen.getByPlaceholderText("Wiki username")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText("Wiki username"), { target: { value: "Kir" } });
+    fireEvent.click(screen.getByRole("button", { name: /get code/i }));
+
+    expect(screen.getByRole("link", { name: "Open your wiki user page" })).toHaveAttribute(
+      "href",
+      "https://ixwiki.com/wiki/User:Kir"
+    );
+    expect(container.textContent).toMatch(/your wiki user page/);
+    expect(container.textContent).not.toMatch(/IxWiki/);
+  });
+
+  it("shows the verified main wiki account as Wiki", () => {
+    render(
+      <WikiAccountVerifyRow
+        source="ixwiki"
+        label="Wiki"
+        link={{ source: "ixwiki", username: "Kir", verified: true, pending: false }}
+      />
+    );
+    expect(screen.getByText(/^Wiki:/)).toBeInTheDocument();
+  });
 });

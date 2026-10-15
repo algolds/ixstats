@@ -262,7 +262,7 @@ function ShareAction({ title, wikiHref }: { title: string; wikiHref: string }) {
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title, text: `Check out ${title} on IxWiki`, url });
+        await navigator.share({ title, text: `Check out ${title} on the wiki`, url });
         return;
       } catch {
         // Fall through to clipboard

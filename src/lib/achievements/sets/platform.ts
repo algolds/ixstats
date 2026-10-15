@@ -11,7 +11,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-first-edit",
     title: "First Edit",
-    description: "Make an edit on IxWiki with your verified wiki account",
+    description: "Make an edit on the wiki with your verified wiki account",
     category: "Wiki",
     rarity: "Common",
     points: 10,
@@ -21,7 +21,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-edits-10",
     title: "Regular Editor",
-    description: "Make 10 edits on IxWiki",
+    description: "Make 10 edits on the wiki",
     category: "Wiki",
     rarity: "Uncommon",
     points: 30,
@@ -31,7 +31,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-edits-100",
     title: "Dedicated Editor",
-    description: "Make 100 edits on IxWiki",
+    description: "Make 100 edits on the wiki",
     category: "Wiki",
     rarity: "Rare",
     points: 50,
@@ -41,7 +41,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-edits-1000",
     title: "Wiki Stalwart",
-    description: "Make 1,000 edits on IxWiki",
+    description: "Make 1,000 edits on the wiki",
     category: "Wiki",
     rarity: "Epic",
     points: 100,
@@ -51,7 +51,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-first-article",
     title: "First Article",
-    description: "Create an article on IxWiki",
+    description: "Create an article on the wiki",
     category: "Wiki",
     rarity: "Common",
     points: 10,
@@ -61,7 +61,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-articles-10",
     title: "Prolific Creator",
-    description: "Create 10 articles on IxWiki",
+    description: "Create 10 articles on the wiki",
     category: "Wiki",
     rarity: "Rare",
     points: 50,
@@ -71,7 +71,7 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-fifty-pages",
     title: "Wide Reach",
-    description: "Edit 50 different pages on IxWiki",
+    description: "Edit 50 different pages on the wiki",
     category: "Wiki",
     rarity: "Rare",
     points: 50,

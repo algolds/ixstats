@@ -10,7 +10,7 @@ nextLabel: Importing NationStates Cards
 
 ## What lore cards are
 
-A lore card is a card made from a wiki article (IxWiki or IIWiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links back to it, and has a category (military, diplomacy, geography, religion, culture, government, people, economy, science, history and others). Browse them in the [Lore Gallery](/vault/lore-gallery) or the **Card Gallery** tab of [Vault → Cards](/vault/cards).
+A lore card is a card made from a wiki article (from the wiki or IIWiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links to it in WikiOS (IIWiki articles open there too, read-only), and has a category (military, diplomacy, geography, religion, culture, government, people, economy, science, history and others). Browse them in the [Lore Gallery](/vault/lore-gallery) or the **Card Gallery** tab of [Vault → Cards](/vault/cards).
 
 ## How lore cards are made
 

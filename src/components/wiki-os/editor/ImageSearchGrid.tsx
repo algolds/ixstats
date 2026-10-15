@@ -103,7 +103,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
         }))
       : commons.results;
 
-  const sourceName = tab === "ixwiki" ? "IxWiki" : "Wikimedia Commons";
+  const sourceName = tab === "ixwiki" ? "the wiki" : "Wikimedia Commons";
   const isLoading = tab === "ixwiki" ? ixwikiQuery.isLoading : commons.isLoading;
   const hasError = tab === "ixwiki" ? ixwikiQuery.isError : commons.error !== null;
   const errorText =
@@ -136,7 +136,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
             setExpandedImage(null);
           }}
           options={[
-            { value: "ixwiki", label: "IxWiki", icon: <Database /> },
+            { value: "ixwiki", label: "Wiki", icon: <Database /> },
             { value: "commons", label: "Commons", icon: <Globe /> },
           ]}
         />
@@ -148,7 +148,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
             setQuery("");
             setDebouncedQuery("");
           }}
-          placeholder={tab === "ixwiki" ? "Search IxWiki files..." : "Search Wikimedia Commons..."}
+          placeholder={tab === "ixwiki" ? "Search wiki files..." : "Search Wikimedia Commons..."}
           aria-label="Search images"
           containerClassName="min-w-0 flex-1"
         />
@@ -180,7 +180,9 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
           <h3>Search for images</h3>
           <p>
             Find images from{" "}
-            {tab === "ixwiki" ? "IxWiki's local uploads" : "Wikimedia Commons' free media library"}
+            {tab === "ixwiki"
+              ? "the wiki's local uploads"
+              : "Wikimedia Commons' free media library"}
           </p>
         </div>
       )}

@@ -200,7 +200,7 @@ export const CardDesignerStudio: React.FC = () => {
         onSelect={handleSelectIcon}
       />
 
-      {/* Lore Import Suite Modal (IxWiki / IIWiki / WikiOS / Stash) */}
+      {/* Lore Import Suite Modal (WikiOS / IIWiki / Stash) */}
       <LoreImportDrawer
         isOpen={loreDrawerOpen}
         onClose={() => setLoreDrawerOpen(false)}

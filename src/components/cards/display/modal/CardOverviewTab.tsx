@@ -146,7 +146,7 @@ export function CardOverviewTab({
               Market value
             </div>
             <div className={cn("text-title-2 mt-1 flex items-baseline gap-1", rarityConfig.color)}>
-              <IxCreditsSymbol size="1em" variant="ic" />
+              <IxCreditsSymbol size="1em" />
               {card.marketValue.toLocaleString()}
             </div>
           </div>
@@ -196,7 +196,7 @@ export function CardOverviewTab({
               Last sale
             </div>
             <div className="text-label text-headline mt-1 flex items-baseline gap-1">
-              <IxCreditsSymbol size="0.8em" variant="ic" />
+              <IxCreditsSymbol size="0.8em" />
               {card.lastSalePrice.toLocaleString()}
               {card.lastSaleDate && (
                 <span className="text-label-secondary text-footnote ml-2 font-normal">
@@ -307,7 +307,7 @@ export function CardOverviewTab({
                       <IIWikiBadge size="sm" />
                     ) : (
                       <span className="text-wiki text-footnote inline-flex items-center gap-1 font-semibold">
-                        <Globe className="h-3 w-3" /> IxWiki
+                        <Globe className="h-3 w-3" /> Wiki
                       </span>
                     )}
                   </div>

@@ -140,6 +140,17 @@ describe("platform definitions", () => {
   });
 });
 
+describe("platform achievement copy", () => {
+  it("calls the wiki the wiki, never IxWiki", () => {
+    const wiki = PLATFORM_DEFINITIONS.filter((d) => d.id.startsWith("wiki-"));
+    expect(wiki.length).toBeGreaterThan(0);
+    for (const def of wiki) {
+      expect(def.description).toMatch(/on the wiki/);
+      expect(def.description).not.toMatch(/IxWiki/i);
+    }
+  });
+});
+
 function getRule(id: string) {
   return PLATFORM_DEFINITIONS.find((d) => d.id === id)?.rule;
 }

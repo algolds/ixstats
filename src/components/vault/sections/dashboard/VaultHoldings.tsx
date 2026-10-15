@@ -8,6 +8,8 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { pickFeaturedStoreItem } from "~/lib/vault/featured-store-item";
 import { Credits, formatCredits } from "./credits";
 import { IconWell } from "./IconWell";
+import { DailyRewardTile } from "./DailyRewardTile";
+import { VaultTitle } from "./VaultTitle";
 
 const plural = (count: number, one: string) =>
   `${count.toLocaleString()} ${one}${count === 1 ? "" : "s"}`;
@@ -31,35 +33,15 @@ function Home({
 
 const Unavailable = () => <span>Unavailable</span>;
 
-/** A thin meter made of spans: a row subtitle is phrasing content, which `Progress` (a div) cannot sit in. */
-function UnlockedBar({ unlocked, total }: { unlocked: number; total: number }) {
-  const share = total > 0 ? Math.min(100, (unlocked / total) * 100) : 0;
-  return (
-    <span
-      role="progressbar"
-      aria-label="Achievements unlocked"
-      aria-valuemin={0}
-      aria-valuemax={total}
-      aria-valuenow={unlocked}
-      className="bg-fill-2 mt-1.5 block h-1 w-full overflow-hidden rounded-full"
-    >
-      <span className="bg-tint block h-full rounded-full" style={{ width: `${share}%` }} />
-    </span>
-  );
-}
-
 function AchievementsHome() {
   const { data: summary, isError } = api.achievements.getMySummary.useQuery();
   return (
     <Home href="/vault/achievements" title="Achievements" icon={<Trophy />}>
       {summary ? (
-        <>
-          <span className="tabular-nums">
-            {summary.unlocked} of {summary.activeTotal} · {formatCredits(summary.points)} points
-            {summary.rank !== null && ` · #${summary.rank}`}
-          </span>
-          <UnlockedBar unlocked={summary.unlocked} total={summary.activeTotal} />
-        </>
+        <span className="tabular-nums">
+          {summary.unlocked} of {summary.activeTotal} · {formatCredits(summary.points)} points
+          {summary.rank !== null && ` · #${summary.rank}`}
+        </span>
       ) : isError ? (
         <Unavailable />
       ) : (
@@ -69,14 +51,21 @@ function AchievementsHome() {
   );
 }
 
+const LINK_WIKI_HREF = "/settings?tab=account#ixnayid-card";
+
 function LorewardsHome() {
   const { data: trophies, isError } = api.lorewards.getMyTrophies.useQuery();
   const wins = trophies ? trophies.wins.daily + trophies.wins.weekly + trophies.wins.monthly : 0;
+  const unlinked = trophies?.wikiUsername === null;
   return (
-    <Home href="/vault/achievements?tab=lorewards" title="Lorewards" icon={<Medal />}>
+    <Home
+      href={unlinked ? LINK_WIKI_HREF : "/vault/achievements?tab=lorewards"}
+      title="Lorewards"
+      icon={<Medal />}
+    >
       {trophies ? (
-        trophies.wikiUsername === null ? (
-          <span>Needs a linked wiki account</span>
+        unlinked ? (
+          <span>Link your wiki account to take part</span>
         ) : (
           <span className="tabular-nums">
             {plural(wins, "win")}
@@ -113,12 +102,16 @@ function StoreHome() {
   );
 }
 
-/** Where the player's things live in the Vault: one row per home, each a link with its status. */
+/** Where the player's things live in the Vault: the page title over one row per home, each a link with its status. */
 export function VaultHoldings() {
   return (
     <div data-slot="vault-holdings">
+      <VaultTitle />
+      <div className="pb-4 empty:hidden">
+        <DailyRewardTile />
+      </div>
       <FacetList>
-        <FacetListSection header="Your Vault" headerAs="h2">
+        <FacetListSection aria-label="Your Vault">
           <AchievementsHome />
           <LorewardsHome />
           <Home href="/vault/cards" title="Cards" icon={<MultiplePages />}>

@@ -105,9 +105,9 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
 export function mirrorMissingSettings(): string[] {
   const missing: string[] = [];
   // Read from the environment, not wikiosConfig (frozen at module load), so the answer follows the current process.
+  // The api.php the mirror writes to is not asked for: without WIKIOS_MEDIAWIKI_API it is the internal one.
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_USER?.trim()) missing.push("WIKIOS_MEDIAWIKI_BOT_USER");
   if (!process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN) missing.push("WIKIOS_MEDIAWIKI_BOT_TOKEN");
-  if (!process.env.WIKIOS_MEDIAWIKI_API) missing.push("WIKIOS_MEDIAWIKI_API");
   return missing;
 }
 

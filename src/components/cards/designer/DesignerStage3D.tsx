@@ -20,6 +20,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Card3DViewer } from "~/components/cards/display/Card3DViewer";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import type { CardInstance } from "~/types/cards-display";
 import type { CardDesignState } from "./types";
 import type { CardRarity } from "@prisma/client";
@@ -64,7 +65,10 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
       wikiArticleTitle: state.wikiArticleTitle || state.title,
       wikiExcerpt: textContent,
       wikiUrl: state.wikiArticleTitle
-        ? `/wikios/${encodeURIComponent(state.wikiArticleTitle)}`
+        ? wikiReaderPath(
+            state.wikiArticleTitle,
+            state.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
+          )
         : null,
       countryId: null,
       stats: { power: 100, defense: 100, diplomaticImpact: 100 },

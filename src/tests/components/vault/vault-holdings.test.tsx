@@ -15,6 +15,10 @@ jest.mock("next/link", () => ({
   ),
 }));
 
+jest.mock("~/components/vault/DailyRewardProvider", () => ({
+  useDailyReward: () => ({ open: jest.fn() }),
+}));
+
 let mockData: Record<string, unknown> = {};
 let mockErrors = new Set<string>();
 const mockLeaf = (name: string) => ({
@@ -54,14 +58,30 @@ describe("VaultHoldings (Your Vault)", () => {
         todayRank: 4,
       },
       getMySummary: { unlocked: 42, activeTotal: 180, points: 1240, rank: 17, latest: null },
+      getBalance: { credits: 10, canClaimDailyBonus: true, loginStreak: 3 },
       listStoreItems: STORE_ITEMS,
       getPurchasedItems: { purchasedItemIds: [], purchaseCounts: {} },
     };
   });
 
-  it("is an inset list headed Your Vault with the four homes in order", () => {
+  it("is titled Vault with the mark, over an inset list named Your Vault with the four homes in order", () => {
     const { container } = render(<VaultHoldings />);
-    expect(screen.getByRole("heading", { level: 2, name: "Your Vault" })).not.toBeNull();
+    expect(screen.queryByRole("heading", { level: 2, name: "Your Vault" })).toBeNull();
+    expect(screen.getByRole("list", { name: "Your Vault" })).not.toBeNull();
+    const title = screen.getByRole("heading", { level: 1, name: "Vault" });
+    // The in-column title is the page's own title: hidden wherever the shell header shows.
+    const row = title.closest("[data-shell-page-title]") as HTMLElement;
+    expect(row).not.toBeNull();
+    const tile = row.querySelector("span.bg-tint-fill") as HTMLElement;
+    expect(tile.getAttribute("aria-hidden")).toBe("true");
+    expect(tile.className).toContain("size-12");
+    expect(tile.querySelector("svg")!.getAttribute("aria-hidden")).toBe("true");
+    expect(tile.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The daily reward tile is the first item under the title, above the list.
+    const tileEl = container.querySelector('[data-slot="daily-reward-tile"]') as HTMLElement;
+    const list = container.querySelector('[data-slot="facet-list"]') as HTMLElement;
+    expect(row.nextElementSibling!.contains(tileEl)).toBe(true);
+    expect(tileEl.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(container.querySelector('[data-slot="facet-list"]')).not.toBeNull();
     const titles = screen.getAllByRole("link").map((link) => link.textContent);
     expect(titles[0]).toMatch(/^Achievements/);
@@ -81,16 +101,14 @@ describe("VaultHoldings (Your Vault)", () => {
   });
 
   describe("Achievements", () => {
-    it("shows unlocked of the total, points and rank with a progress bar", () => {
+    it("shows unlocked of the total, points and rank, with no progress bar", () => {
       render(<VaultHoldings />);
       const link = row(/Achievements/);
       expect(link.getAttribute("href")).toBe("/vault/achievements");
       expect(link.textContent).toContain("42 of 180");
       expect(link.textContent).toContain("1,240 points");
       expect(link.textContent).toContain("#17");
-      const bar = within(link).getByRole("progressbar");
-      expect(bar.getAttribute("aria-valuenow")).toBe("42");
-      expect(bar.getAttribute("aria-valuemax")).toBe("180");
+      expect(within(link).queryByRole("progressbar")).toBeNull();
     });
 
     it("leaves the rank out for an unranked player", () => {
@@ -139,7 +157,7 @@ describe("VaultHoldings (Your Vault)", () => {
       expect(row(/Lorewards/).textContent).not.toContain("Today");
     });
 
-    it("says only that a wiki account is needed when none is linked", () => {
+    it("asks an unlinked player to link a wiki account, and links to the account settings", () => {
       mockData.getMyTrophies = {
         wikiUsername: null,
         wins: { daily: 0, weekly: 0, monthly: 0 },
@@ -150,9 +168,10 @@ describe("VaultHoldings (Your Vault)", () => {
         todayRank: null,
       };
       render(<VaultHoldings />);
-      const text = row(/Lorewards/).textContent ?? "";
-      expect(text).toContain("Needs a linked wiki account");
-      expect(text).not.toMatch(/\d/);
+      const link = row(/Lorewards/);
+      expect(link.getAttribute("href")).toBe("/settings?tab=account#ixnayid-card");
+      expect(link.textContent).toContain("Link your wiki account to take part");
+      expect(link.textContent).not.toMatch(/\d/);
     });
 
     it("shows a skeleton while loading and no figures when the query fails", () => {
@@ -203,18 +222,30 @@ describe("VaultHoldings (Your Vault)", () => {
     });
   });
 
-  it("no longer carries the wiki prompt, packs or deck value", () => {
+  it("carries no wiki prompt while the account is linked, and no packs or deck value", () => {
     const { container } = render(<VaultHoldings />);
     expect(container.textContent).not.toMatch(/Link your wiki account|pack|deck value/i);
   });
 
+  it("marks each home with a tinted icon tile under a dots texture", () => {
+    const { container } = render(<VaultHoldings />);
+    const tiles = container.querySelectorAll("span.bg-tint-fill.overflow-hidden");
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of Array.from(tiles)) {
+      expect(tile.querySelector(".facet-texture-dots")).not.toBeNull();
+      expect(tile.querySelector("svg")).not.toBeNull();
+    }
+  });
+
   it("nests no block element inside a paragraph or a span, loaded or loading", () => {
     const { container, unmount } = render(<VaultHoldings />);
-    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div:not(.texture-overlay)")).toHaveLength(0);
     unmount();
     mockData = {};
     const loading = render(<VaultHoldings />);
     expect(loading.container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
-    expect(loading.container.querySelectorAll("p div, span div")).toHaveLength(0);
+    expect(
+      loading.container.querySelectorAll("p div, span div:not(.texture-overlay)")
+    ).toHaveLength(0);
   });
 });

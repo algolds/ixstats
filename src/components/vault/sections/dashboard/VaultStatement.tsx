@@ -26,6 +26,7 @@ import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { IconWell } from "./IconWell";
 import {
   describeRow,
+  formatAmount,
   groupStatement,
   rowIconKey,
   type RowDescription,
@@ -81,7 +82,7 @@ function Credits({ value, className }: { value: number; className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-0.5 tabular-nums", className)}>
       <IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
-      {value.toLocaleString()}
+      {formatAmount(value)}
     </span>
   );
 }
@@ -89,7 +90,7 @@ function Credits({ value, className }: { value: number; className?: string }) {
 function DividendBreakdown({ lines }: { lines: DividendLine[] }) {
   return (
     <CollapsibleContent>
-      <ul className="border-separator mt-2 ml-11 space-y-1 border-l pl-3">
+      <ul className="border-separator mb-2 ml-9 space-y-1 border-l pl-3">
         {lines.map((line) => (
           <li key={line.key} className="text-footnote flex justify-between gap-4">
             <span className="text-label-secondary">{LINE_LABELS[line.key]}</span>
@@ -114,47 +115,51 @@ function RowIcon({ row }: { row: StatementRow }) {
 
 function RowTitle({ info }: { info: RowDescription }) {
   return info.href ? (
-    <Link href={info.href} className="text-label font-semibold underline-offset-4 hover:underline">
+    <Link href={info.href} className="text-label underline-offset-4 hover:underline">
       {info.title}
     </Link>
   ) : (
-    <span className="text-label font-semibold">{info.title}</span>
+    <span className="text-label">{info.title}</span>
   );
 }
 
+/** One compact data row: icon, description with its detail, the signed amount and the running balance. */
 function StatementRowItem({ row }: { row: StatementRow }) {
   const info = describeRow(row);
   const earned = row.credits > 0;
   return (
-    <li data-row className="border-separator border-b py-3 last:border-b-0">
+    <li data-row className="border-separator border-t first:border-t-0">
       <Collapsible>
-        <div className="flex items-start gap-3">
+        <div className="flex min-h-9 items-center gap-3 py-1">
           <RowIcon row={row} />
-          <div className="min-w-0 flex-1">
-            <p>
-              <RowTitle info={info} />
-            </p>
-            {info.detail && <p className="text-label-secondary text-footnote">{info.detail}</p>}
-            {info.lines && (
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="xs" className="group mt-1 -ml-2 px-2">
-                  <NavArrowRight aria-hidden className="size-3 group-data-[state=open]:hidden" />
-                  <NavArrowDown aria-hidden className="size-3 group-data-[state=closed]:hidden" />
-                  Breakdown
-                </Button>
-              </CollapsibleTrigger>
+          <div className="text-callout min-w-0 flex-1 truncate">
+            <RowTitle info={info} />
+            {info.detail && (
+              <span className="text-label-secondary text-footnote ml-2">{info.detail}</span>
             )}
           </div>
-          <div className="shrink-0 text-right">
-            <p
-              className={cn("text-body font-semibold", earned ? "text-green-ink" : "text-red-ink")}
+          {info.lines && (
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="xs" className="group shrink-0 px-2">
+                <NavArrowRight aria-hidden className="size-3 group-data-[state=open]:hidden" />
+                <NavArrowDown aria-hidden className="size-3 group-data-[state=closed]:hidden" />
+                Breakdown
+              </Button>
+            </CollapsibleTrigger>
+          )}
+          <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center sm:gap-3">
+            <span
+              className={cn("text-callout text-right", earned ? "text-success-ink" : "text-label")}
             >
               {earned ? "+" : "-"}
               <Credits value={Math.abs(row.credits)} />
-            </p>
-            <p className="text-label-secondary text-footnote tabular-nums">
-              Balance {row.balanceAfter.toLocaleString()}
-            </p>
+            </span>
+            <span
+              data-slot="statement-balance"
+              className="text-label-secondary text-footnote text-right tabular-nums sm:w-24"
+            >
+              {formatAmount(row.balanceAfter)}
+            </span>
           </div>
         </div>
         {info.lines && <DividendBreakdown lines={info.lines} />}
@@ -167,7 +172,7 @@ function StatementRowItem({ row }: { row: StatementRow }) {
  * The Wallet's bank statement: ledger rows grouped by UTC day, each with its signed amount and the
  * running balance. Pages load by offset; "Show earlier" fetches the next one.
  */
-export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
+export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
   const utils = api.useUtils();
   const [now] = useState(() => new Date());
   const [filter, setFilter] = useState<Filter>("all");
@@ -219,8 +224,8 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
   };
 
   return (
-    <Card content="data" padding="lg">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <Card content="data" padding="md">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <CardTitle icon={<Wallet />}>Statement</CardTitle>
         <SegmentedControl
           aria-label="Filter the statement"
@@ -232,9 +237,9 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
       </div>
 
       {first.isLoading ? (
-        <div className="space-y-2">
+        <div className="space-y-1">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="rounded-card h-12 w-full" />
+            <Skeleton key={i} className="rounded-row h-9 w-full" />
           ))}
         </div>
       ) : first.isError ? (
@@ -244,10 +249,10 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
       ) : days.length === 0 ? (
         <p className="text-label-secondary text-footnote py-8 text-center">{EMPTY[filter]}</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {days.map((day) => (
             <section key={day.key} aria-labelledby={`statement-${day.key}`}>
-              <h3 id={`statement-${day.key}`} className="text-label-secondary text-footnote mb-1">
+              <h3 id={`statement-${day.key}`} className="text-label-secondary text-caption pt-1">
                 {day.label}
               </h3>
               <ul>
@@ -266,8 +271,8 @@ export function VaultStatement({ pageSize = 25 }: { pageSize?: number }) {
         </p>
       )}
       {hasMore && !first.isLoading && (
-        <div className="mt-4 flex justify-center">
-          <Button variant="outline" size="sm" disabled={loadingMore} onClick={showEarlier}>
+        <div className="mt-3 flex justify-center">
+          <Button variant="ghost" size="sm" disabled={loadingMore} onClick={showEarlier}>
             {loadingMore ? "Loading" : "Show earlier"}
           </Button>
         </div>

@@ -71,30 +71,24 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
             wikiUrl
               .split(/\/(?:wiki|w)\//)
               .pop()
+              ?.replace(/\?.*$/, "")
               ?.replace(/_/g, " ") ||
             ""
           }
           wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
         >
-          {card.wikiSource === "ixwiki" ? (
+          <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
             <Link
               href={wikiUrl}
-              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
+              className="text-tint text-footnote inline-flex items-center gap-2 font-semibold hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Read full article on IxWiki
+              Read the full article
             </Link>
-          ) : (
-            <a
-              href={wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Read full article on IIWiki
-            </a>
-          )}
+            {card.wikiSource === "iiwiki" && (
+              <span className="text-label-secondary text-footnote">From IIWiki</span>
+            )}
+          </span>
         </WikiLinkPreview>
       )}
     </div>

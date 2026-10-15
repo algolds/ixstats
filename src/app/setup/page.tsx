@@ -87,7 +87,7 @@ const setupIntroSteps = [
   },
   {
     title: "IxnayID",
-    short_description: "One sign-in for every IxWiki service",
+    short_description: "One sign-in for every IxStates service",
     full_description:
       "IxnayID links your country across the wiki, the maps and IxStats. Check that your connections are verified in your account settings.",
     media: {
@@ -585,7 +585,7 @@ export default function SetupPage() {
                             ],
                             [
                               "Image repository: ",
-                              "Search images from Wiki Commons, IxWiki and IIWiki.",
+                              "Search images from Wiki Commons, the wiki and IIWiki.",
                             ],
                           ].map(([label, text]) => (
                             <li key={label} className="flex items-start gap-3">

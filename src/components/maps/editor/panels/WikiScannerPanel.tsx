@@ -3,7 +3,7 @@
 /**
  * WikiScannerPanel — the editor's "Wiki" tab.
  *
- * Scans features without a wiki link against IxWiki search, offers the best
+ * Scans features without a wiki link against wiki search, offers the best
  * matches as one-click links, then compares linked features with their wiki
  * infoboxes (population, coordinates, area) and lists disagreements.
  */
@@ -85,7 +85,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
           </div>
           <p className="text-label-secondary">
             {scanning
-              ? `Searching IxWiki… ${scanProgress}%`
+              ? `Searching the wiki… ${scanProgress}%`
               : "Checking linked pages for conflicts…"}
           </p>
           {scanning && (
@@ -99,7 +99,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
 
       {!scanning && !hasScanned && (
         <p className="text-label-secondary rounded-control-sm border border-dashed px-3 py-4 text-center">
-          Scan to find IxWiki pages for features that are not linked yet. Searches run three at a
+          Scan to find wiki pages for features that are not linked yet. Searches run three at a
           time, so large maps take a moment.
         </p>
       )}

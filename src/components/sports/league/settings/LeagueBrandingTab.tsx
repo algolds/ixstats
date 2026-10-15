@@ -61,9 +61,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
           placeholder="e.g. Liga_Ixnay"
           maxLength={100}
         />
-        <p className="text-label-secondary text-footnote">
-          Links this league to its IxWiki article.
-        </p>
+        <p className="text-label-secondary text-footnote">Links this league to its wiki article.</p>
       </div>
 
       <div className="space-y-2">

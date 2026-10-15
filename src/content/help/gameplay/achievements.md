@@ -14,7 +14,7 @@ Achievements are milestones that unlock automatically; you never claim them. The
 
 ## Account and nation achievements
 
-- **Account achievements** follow you, with or without a nation: joining, time on the platform (a week, a year and so on), how many achievements you hold, wiki edits and articles (once your IxWiki account is linked), ThinkPages and forum activity, your card collection and packs, trades and sales, daily-claim streaks, and Lorewards.
+- **Account achievements** follow you, with or without a nation: joining, time on the platform (a week, a year and so on), how many achievements you hold, wiki edits and articles (once your wiki account is linked), ThinkPages and forum activity, your card collection and packs, trades and sales, daily-claim streaks, and Lorewards.
 - **Nation achievements** are checked against the nation you're playing as. Each system has one early milestone, such as answering a national issue, committing a directive, holding an election or opening an embassy. The rest are long-term and measured in real weeks and months of play: answering issues week after week, steady directives, laws and cabinet meetings, elections, lasting embassies and alliances, and how long you have owned your nation (Stewardship).
 - Time-based achievements count real time, so a realm with a faster or slower clock isn't at an advantage.
 

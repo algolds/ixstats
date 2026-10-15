@@ -1,3 +1,5 @@
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { articleHref } from "~/lib/wiki-os/wiki-path";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 
 export const CONTEST_LABEL: Record<LorewardType, string> = {
@@ -11,13 +13,17 @@ export const PLACE_LABEL: Record<LorewardPlace, string> = {
   "runner-up": "runner-up",
 };
 
+/** The WikiOS article path for a title; a title MediaWiki would refuse falls back to its plain encoding. */
+function articlePath(title: string): string {
+  const canon = canonicalizeTitle(title);
+  return canon ? articleHref(canon) : `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+}
+
 /** The wiki page of an IxWiki user. */
-export const wikiUserHref = (name: string) =>
-  `/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`;
+export const wikiUserHref = (name: string) => articlePath(`User:${name}`);
 
 /** The wiki article with this title. */
-export const wikiPageHref = (title: string) =>
-  `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+export const wikiPageHref = (title: string) => articlePath(title);
 
 /** Where the Vault keeps a player's trophies (`ixstatesLinkHref` makes it a link in either build). */
 export const VAULT_TROPHIES_PATH = "/vault/achievements?tab=lorewards";

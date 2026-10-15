@@ -20,8 +20,21 @@ jest.mock("next/dynamic", () => () => {
     open && card ? <div role="dialog">Details of {card.title}</div> : null;
   return Modal;
 });
-jest.mock("~/components/cards/display/CardHolographicCover", () => ({
-  CardHolographicCover: ({ title }: { title?: string }) => <div data-testid="cover">{title}</div>,
+// The Cards gallery's own tile; the Showcase must render it, not a copy of it.
+jest.mock("~/components/cards/display/CardDisplay", () => ({
+  CardDisplay: ({
+    card,
+    size,
+    onClick,
+  }: {
+    card: { title: string; rarity: string };
+    size: string;
+    onClick: (card: unknown) => void;
+  }) => (
+    <div data-testid="gallery-card" data-size={size} onClick={() => onClick(card)}>
+      {card.title} {card.rarity}
+    </div>
+  ),
 }));
 jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
   PackHolographicCover: ({ packName }: { packName?: string }) => (
@@ -95,6 +108,8 @@ const PACKS = (count: number) => ({
   })),
 });
 
+const galleryCards = () => screen.getAllByTestId("gallery-card");
+
 describe("VaultShowcase", () => {
   beforeEach(() => {
     mockTopQuery.mockClear();
@@ -102,58 +117,144 @@ describe("VaultShowcase", () => {
     mockPacks = { data: PACKS(0), isLoading: false, isError: false };
   });
 
-  it("headlines the section Showcase, in sentence case, with no eyebrow", () => {
+  it("is a full Card titled Showcase with an All cards link to the Cards page", () => {
     const { container } = render(<VaultShowcase />);
-    const heading = screen.getByRole("heading", { level: 2, name: "Showcase" });
-    expect(heading.className).not.toMatch(/uppercase|eyebrow/);
-    expect(
-      container.querySelector('[data-slot="vault-showcase"]')?.getAttribute("data-content")
-    ).toBe("collectible");
+    const root = container.querySelector('[data-slot="vault-showcase"]') as HTMLElement;
+    expect(root.getAttribute("data-content")).toBe("collectible");
+    const title = within(root).getByText("Showcase");
+    expect(title.getAttribute("data-slot")).toBe("card-title");
+    expect(title.className).not.toMatch(/uppercase|eyebrow/);
+    expect(within(root).getByRole("link", { name: "All cards" }).getAttribute("href")).toBe(
+      "/vault/cards"
+    );
   });
 
-  it("asks for the three most valuable cards and shows each with title, rarity and value", () => {
+  it("sits on a paper grain texture, with the strip above it", () => {
+    const { container } = render(<VaultShowcase />);
+    const root = container.querySelector('[data-slot="vault-showcase"]') as HTMLElement;
+    expect(root.className).toContain("overflow-hidden");
+    expect(root.querySelector(":scope > .facet-texture-paper-grain")).not.toBeNull();
+    const strip = root.querySelector('[data-slot="showcase-strip"]') as HTMLElement;
+    expect(strip.closest(".relative")).not.toBeNull();
+    expect(strip.querySelector(".facet-texture-paper-grain")).toBeNull();
+  });
+
+  it("asks for the four most valuable cards", () => {
     render(<VaultShowcase />);
-    expect(mockTopQuery).toHaveBeenCalledWith({ limit: 3 });
-    const cards = screen.getAllByRole("button");
-    expect(cards.map((card) => card.getAttribute("aria-label"))).toEqual([
-      "View Ostrozava 1st Ed.",
-      "View Velarc Throne",
-      "View Kirav Lighthouse",
+    expect(mockTopQuery).toHaveBeenCalledWith({ limit: 4 });
+  });
+
+  it("renders each top card with the gallery's card tile at its medium size", () => {
+    render(<VaultShowcase />);
+    const tiles = galleryCards();
+    expect(tiles.map((tile) => tile.textContent)).toEqual([
+      "Ostrozava 1st Ed. LEGENDARY",
+      "Velarc Throne EPIC",
+      "Kirav Lighthouse ULTRA_RARE",
     ]);
-    expect(cards[0]!.textContent).toContain("Legendary");
-    expect(cards[0]!.textContent).toContain("2,400");
-    expect(cards[2]!.textContent).toContain("Ultra rare");
-    expect(cards[2]!.textContent).toContain("820");
+    for (const tile of tiles) expect(tile.getAttribute("data-size")).toBe("medium");
   });
 
-  it("shows the card's real art with alt text, and the procedural cover when it has none", () => {
-    render(<VaultShowcase />);
-    const first = screen.getByRole("button", { name: "View Ostrozava 1st Ed." });
-    expect(within(first).getByAltText("Ostrozava 1st Ed.").getAttribute("src")).toContain("c1.png");
-    const bare = screen.getByRole("button", { name: "View Kirav Lighthouse" });
-    expect(within(bare).getByTestId("cover").textContent).toBe("Kirav Lighthouse");
+  it("lays the tiles in a horizontal scrolling strip that snaps on phones", () => {
+    const { container } = render(<VaultShowcase />);
+    const strip = container.querySelector('[data-slot="showcase-strip"]') as HTMLElement;
+    expect(strip.className).toMatch(/\bflex\b/);
+    expect(strip.className).toContain("overflow-x-auto");
+    expect(strip.className).toContain("gap-3");
+    expect(strip.className).toContain("snap-x");
+    expect(strip.getAttribute("style")).toMatch(/opacity/);
+    expect(within(strip).getAllByTestId("gallery-card")).toHaveLength(3);
   });
 
   it("opens a card's detail when it is chosen", () => {
     render(<VaultShowcase />);
     expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "View Velarc Throne" }));
+    fireEvent.click(screen.getAllByTestId("gallery-card")[1]!);
     expect(screen.getByRole("dialog").textContent).toBe("Details of Velarc Throne");
   });
 
-  it("adds no pack card when no pack is waiting", () => {
+  it("makes each tile a focusable named button that Enter or Space opens", () => {
     render(<VaultShowcase />);
-    expect(screen.queryByText(/waiting/)).toBeNull();
-    expect(screen.queryByRole("link")).toBeNull();
+    const tiles = screen.getAllByRole("button", { name: /^View / });
+    expect(tiles.map((tile) => tile.getAttribute("aria-label"))).toEqual([
+      "View Ostrozava 1st Ed.",
+      "View Velarc Throne",
+      "View Kirav Lighthouse",
+    ]);
+    for (const tile of tiles) {
+      expect(tile.getAttribute("tabindex")).toBe("0");
+      expect(tile.className).toContain("focus-visible:");
+    }
+    tiles[0]!.focus();
+    expect(document.activeElement).toBe(tiles[0]);
+    fireEvent.keyDown(tiles[0]!, { key: "Enter" });
+    expect(screen.getByRole("dialog").textContent).toBe("Details of Ostrozava 1st Ed.");
+    fireEvent.keyDown(tiles[1]!, { key: " " });
+    expect(screen.getByRole("dialog").textContent).toBe("Details of Velarc Throne");
   });
 
-  it("adds one pack card linking to My packs when packs are waiting", () => {
-    mockPacks = { data: PACKS(2), isLoading: false, isError: false };
+  it("ignores a key pressed inside the tile, such as Enter on a link in a card's excerpt", () => {
     render(<VaultShowcase />);
+    const tile = screen.getByRole("button", { name: "View Velarc Throne" });
+    fireEvent.keyDown(within(tile).getByTestId("gallery-card"), { key: "Enter" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("opens once per click, and ignores keys other than Enter and Space", () => {
+    render(<VaultShowcase />);
+    const tile = screen.getByRole("button", { name: "View Velarc Throne" });
+    fireEvent.keyDown(tile, { key: "a" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(within(tile).getByTestId("gallery-card"));
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+  });
+
+  it("adds no pack tile when no pack is waiting", () => {
+    render(<VaultShowcase />);
+    expect(screen.queryByText(/waiting/)).toBeNull();
+    expect(screen.queryByRole("link", { name: /waiting/ })).toBeNull();
+  });
+
+  it("adds one pack tile linking to My packs, after the cards, when packs are waiting", () => {
+    mockPacks = { data: PACKS(2), isLoading: false, isError: false };
+    const { container } = render(<VaultShowcase />);
     const link = screen.getByRole("link", { name: /2 packs waiting/ });
     expect(link.getAttribute("href")).toBe("/vault/store?tab=store&view=my-packs");
     expect(within(link).getByTestId("pack-art").textContent).toBe("Season III Veteran Pack");
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(link.className).toContain("w-48");
+    expect(link.className).toContain("h-[269px]");
+    const strip = container.querySelector('[data-slot="showcase-strip"]') as HTMLElement;
+    const tiles = Array.from(strip.children);
+    // Cards, then the pack tile, then the Store tile (this player has fewer than four cards).
+    expect(tiles.indexOf(link)).toBe(3);
+    expect(tiles.at(-1)).toBe(screen.getByRole("link", { name: /Find more cards/ }));
+  });
+
+  it("ends a strip of fewer than four cards with a Find more cards tile linking to the Store", () => {
+    const { container } = render(<VaultShowcase />);
+    const link = screen.getByRole("link", { name: /Find more cards/ });
+    expect(link.getAttribute("href")).toBe("/vault/store");
+    expect(link.textContent).toContain("Packs and listings in the Store");
+    expect(link.className).toContain("w-48");
+    expect(link.className).toContain("h-[269px]");
+    expect(link.querySelector("svg")).not.toBeNull();
+    // A tinted grid texture, and the icon in a tinted tile.
+    expect(link.querySelector(".facet-texture-grid")).not.toBeNull();
+    expect(link.querySelector("svg")!.closest("span.bg-tint-fill")).not.toBeNull();
+    const strip = container.querySelector('[data-slot="showcase-strip"]') as HTMLElement;
+    expect(strip.lastElementChild).toBe(link);
+    expect(link.querySelector('[data-slot="card"]')?.getAttribute("data-variant")).toBe("well");
+  });
+
+  it("leaves the Find more cards tile off once there are four cards", () => {
+    mockTop = {
+      data: [...TOP, ownership("c4", "Fourth Card", "RARE", 300)],
+      isLoading: false,
+      isError: false,
+    };
+    render(<VaultShowcase />);
+    expect(galleryCards()).toHaveLength(4);
+    expect(screen.queryByRole("link", { name: /Find more cards/ })).toBeNull();
   });
 
   it("uses the singular for one waiting pack", () => {
@@ -164,12 +265,14 @@ describe("VaultShowcase", () => {
 
   it("says what is missing, with one action to the Store, for an empty collection", () => {
     mockTop = { data: [], isLoading: false, isError: false };
-    render(<VaultShowcase />);
+    const { container } = render(<VaultShowcase />);
     expect(screen.getByText("No cards yet")).not.toBeNull();
-    const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(1);
-    expect(links[0]!.getAttribute("href")).toBe("/vault/store");
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    const body = container.querySelector('[data-slot="vault-showcase"]') as HTMLElement;
+    const hrefs = within(body)
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual(["/vault/cards", "/vault/store"]);
+    expect(screen.queryAllByTestId("gallery-card")).toHaveLength(0);
   });
 
   it("does not call the collection empty while the packs load", () => {
@@ -191,24 +294,14 @@ describe("VaultShowcase", () => {
   it("shows the cards at once while the packs load, and when the packs fail", () => {
     mockPacks = { data: undefined, isLoading: true, isError: false };
     const { unmount } = render(<VaultShowcase />);
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(galleryCards()).toHaveLength(3);
     unmount();
     mockPacks = { data: undefined, isLoading: false, isError: true };
     render(<VaultShowcase />);
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(galleryCards()).toHaveLength(3);
   });
 
-  it("keeps the tiles at a fixed collectible width and the art uncropped", () => {
-    const { container } = render(<VaultShowcase />);
-    const grid = container.querySelector(".grid") as HTMLElement;
-    expect(grid.getAttribute("style")).toMatch(/opacity/);
-    expect(grid.className).toMatch(/auto-fill,minmax\(9\.5rem,11rem\)/);
-    const img = screen.getByAltText("Ostrozava 1st Ed.");
-    expect(img.className).toContain("object-contain");
-    expect(img.parentElement!.className).toContain("aspect-[5/7]");
-  });
-
-  it("shows only the pack card, not the empty state, for a player with packs but no cards", () => {
+  it("shows only the pack tile, not the empty state, for a player with packs but no cards", () => {
     mockTop = { data: [], isLoading: false, isError: false };
     mockPacks = { data: PACKS(3), isLoading: false, isError: false };
     render(<VaultShowcase />);
@@ -221,9 +314,9 @@ describe("VaultShowcase", () => {
     const { container } = render(<VaultShowcase />);
     expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
     expect(screen.queryByText("No cards yet")).toBeNull();
-    expect(screen.queryAllByRole("button")).toHaveLength(0);
+    expect(screen.queryAllByTestId("gallery-card")).toHaveLength(0);
     // The entrance belongs to the cards, not the placeholders.
-    expect(container.querySelector(".grid")?.getAttribute("style") ?? "").toBe("");
+    expect(container.querySelector('[data-slot="showcase-strip"]')).toBeNull();
   });
 
   it("says the showcase is unavailable when the cards fail to load", () => {
@@ -234,9 +327,9 @@ describe("VaultShowcase", () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0);
   });
 
-  it("nests no block element inside a paragraph", () => {
+  it("nests no block element inside a paragraph or a span", () => {
     mockPacks = { data: PACKS(2), isLoading: false, isError: false };
     const { container } = render(<VaultShowcase />);
-    expect(container.querySelectorAll("p div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div:not(.texture-overlay)")).toHaveLength(0);
   });
 });

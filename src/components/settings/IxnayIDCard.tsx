@@ -191,7 +191,7 @@ export function IxnayIDCard({ hasDiscordAccount }: IxnayIDCardProps) {
               <div className="mt-2">
                 <WikiAccountVerifyRow
                   source="ixwiki"
-                  label="IxWiki"
+                  label="Wiki"
                   link={wikiLinks.data?.find((l) => l.source === "ixwiki")}
                 />
               </div>

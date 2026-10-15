@@ -104,7 +104,7 @@ export default function CategoriesIndexPage() {
                 Category directory
               </h1>
               <p className="text-label-secondary text-body leading-relaxed">
-                Explore IxWiki articles through structured worldbuilding domains, sovereign nation
+                Explore wiki articles through structured worldbuilding domains, sovereign nation
                 portals, and encyclopedic topic classifications.
               </p>
             </div>

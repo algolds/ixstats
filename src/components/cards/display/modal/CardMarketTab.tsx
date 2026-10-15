@@ -56,7 +56,7 @@ export function CardMarketTab({
           <div className="bg-surface-secondary border-separator rounded-control border p-4">
             <p className="text-label-secondary text-footnote mb-1">Current value</p>
             <p className={cn("text-title-1 flex items-baseline gap-1", rarityConfig.color)}>
-              <IxCreditsSymbol size="1em" variant="ic" />
+              <IxCreditsSymbol size="1em" />
               {card.marketValue.toLocaleString()}
             </p>
           </div>

@@ -23,7 +23,7 @@ import { getCurrentIxCardSeason } from "./season";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import type {
   MediaWikiPageItem,
   MediaWikiCategoryItem,
@@ -142,12 +142,6 @@ const BASE_MARKET_VALUE: Record<string, number> = {
   [CardRarity.LEGENDARY]: 600,
 };
 
-const WIKI_URL_BASES: Record<string, string> = {
-  ixwiki: `${process.env.BASE_PATH || ""}/w`,
-  iiwiki: "https://iiwiki.com/w",
-  althistory: "https://althistory.fandom.com/wiki",
-};
-
 const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
 const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
 
@@ -205,7 +199,7 @@ class WikiLoreCardGenerator {
         rarity,
         wikiSource,
         wikiArticleTitle: articleTitle,
-        wikiUrl: `${WIKI_URL_BASES[wikiSource]}/${encodeURIComponent(articleTitle)}`,
+        wikiUrl: wikiReaderPath(articleTitle, wikiSource),
         category,
         stats: this.calculateStats(quality, qualityScore, category),
         loreStats: this.calculateLoreStats(quality),

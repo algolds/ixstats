@@ -7,6 +7,7 @@
  */
 import { z } from "zod";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
+import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 
 /** IxWiki and every sister wiki WikiOS reads (`reader: true` in `wiki-hosts.ts`). */
@@ -37,15 +38,32 @@ export function normalizeWikiUsername(name: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/**
+ * Where a player saves the verification code. The proof reads classic MediaWiki's revision authors, so once WikiOS
+ * v1 is on (`/wiki/` is WikiOS then) the IxWiki page is the classic editor at `/classic/` (wikios-takeover.conf);
+ * before that, and for a sister wiki always, it is the wiki's own page.
+ */
 export function wikiUserPageUrl(source: ProofSource, username: string): string {
-  const title = `User:${normalizeWikiUsername(username)}`.replace(/ /g, "_");
-  return `${siteUrl(source)}/wiki/${encodeURI(title)}`;
+  const title = encodeURI(`User:${normalizeWikiUsername(username)}`.replace(/ /g, "_"));
+  if (source === "ixwiki" && isWikiosV1Enabled()) {
+    return `${siteUrl(source)}/classic/${title}?action=edit`;
+  }
+  return `${siteUrl(source)}/wiki/${title}`;
 }
 
 /** One api.php `action=query` read (formatversion 2) with the allowlisted UA, parsed by `schema`; throws WikiApiError. */
-export async function wikiQuery<T>(source: ProofSource, params: Record<string, string>, schema: z.ZodType<T>): Promise<T> {
+export async function wikiQuery<T>(
+  source: ProofSource,
+  params: Record<string, string>,
+  schema: z.ZodType<T>
+): Promise<T> {
   const url = new URL(apiUrl(source));
-  for (const [key, value] of Object.entries({ action: "query", format: "json", formatversion: "2", ...params })) {
+  for (const [key, value] of Object.entries({
+    action: "query",
+    format: "json",
+    formatversion: "2",
+    ...params,
+  })) {
     url.searchParams.set(key, value);
   }
   const res = await fetch(url, {
@@ -83,7 +101,10 @@ export interface WikiUser {
   editCount: number | null;
 }
 
-export async function fetchWikiUser(source: ProofSource, username: string): Promise<WikiUser | null> {
+export async function fetchWikiUser(
+  source: ProofSource,
+  username: string
+): Promise<WikiUser | null> {
   const data = await wikiQuery(
     source,
     { list: "users", ususers: normalizeWikiUsername(username), usprop: "editcount|registration" },

@@ -7,13 +7,6 @@ export const formatCredits = (amount: number) => Math.round(amount).toLocaleStri
 /** A figure that may still be loading (undefined) or have failed (null). */
 export type Figure = number | null | undefined;
 
-/** The figure when both are known; null if either failed, undefined while either loads. */
-export function sumFigures(a: Figure, b: Figure): Figure {
-  if (a === null || b === null) return null;
-  if (a === undefined || b === undefined) return undefined;
-  return a + b;
-}
-
 /** An IxCredits amount with the currency mark; `animate` counts the figure up or down when it changes. */
 export function Credits({
   amount,

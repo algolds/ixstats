@@ -36,7 +36,7 @@ interface WikiWorkspaceTabProps {
     timestamp?: string | null;
   }> | null;
   onClose: () => void;
-  /** Opens the page on its own wiki (IxWiki when none is given) */
+  /** Opens the page on its own wiki (the wiki when none is given) */
   onNavigateToArticle: (title: string, source?: WikiSource) => void;
 }
 
@@ -178,21 +178,22 @@ export function WikiWorkspaceTab({
         <div className="border-separator mb-3 border-b pb-3">
           <SectionHeader label="This page" />
           <div className="space-y-0.5">
-            {wikiSource === "ixwiki" && (
+            {wikiSource === "ixwiki" ? (
               <IxWikiPageActions isSignedIn={isSignedIn} slug={slug} onClose={onClose} />
+            ) : (
+              <QuickAction
+                icon={<ExternalLink />}
+                label="View on original wiki"
+                onClick={() => {
+                  onClose();
+                  if (articleTitle) {
+                    const mwBaseUrl = getWikiBaseUrl(wikiSource);
+                    const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
+                    window.open(targetUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}
+              />
             )}
-            <QuickAction
-              icon={<ExternalLink />}
-              label="View on original wiki"
-              onClick={() => {
-                onClose();
-                if (articleTitle) {
-                  const mwBaseUrl = getWikiBaseUrl(wikiSource);
-                  const targetUrl = `${mwBaseUrl.replace(/\/$/, "")}/wiki/${encodeURIComponent(articleTitle.replace(/ /g, "_"))}`;
-                  window.open(targetUrl, "_blank", "noopener,noreferrer");
-                }
-              }}
-            />
           </div>
         </div>
       )}
@@ -200,7 +201,7 @@ export function WikiWorkspaceTab({
   );
 }
 
-/** Edit, History and What links here act on the IxWiki page, so another wiki's page has none. */
+/** Edit, History and What links here act on the wiki's own page, so another wiki's page has none. */
 function IxWikiPageActions({
   isSignedIn,
   slug,

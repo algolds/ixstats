@@ -278,7 +278,7 @@ export function WikiOSMainPage() {
 
   return (
     <div className="wikios-main w-full pt-1 pb-3">
-      <h1 className="sr-only">IxWiki, the IxStats encyclopedia</h1>
+      <h1 className="sr-only">WikiOS, the IxStats encyclopedia</h1>
       <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-5">
         <header className="wikios-main-hero relative w-full">
           <div className="wikios-main-hero-inner w-full">

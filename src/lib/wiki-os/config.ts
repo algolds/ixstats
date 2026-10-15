@@ -94,7 +94,7 @@ export function buildWikiosConfig(input: WikiosConfigInput): WikiosConfig {
   const publicApiUrl = `${publicBaseUrl}/api.php`;
   const internalApiUrl = blankToUndefined(input.internalApiUrl) ?? publicApiUrl;
   return Object.freeze({
-    siteName: "IxWiki",
+    siteName: "WikiOS",
     projectNamespace: "IxWiki",
     publicBaseUrl,
     publicHost: hostOf(publicBaseUrl),

@@ -4,8 +4,8 @@
  * GlobalLinkTooltips — Intercepts ALL link hovers across the entire app.
  *
  * Uses document-level event delegation to detect any <a> pointing to:
- * - ixwiki.com/wiki/*       → Wiki article preview tooltip
- * - iiwiki.com/wiki/*       → IIWiki article preview tooltip
+ * - ixwiki.com/wiki/*       → Wiki article preview tooltip (the article opens in WikiOS)
+ * - iiwiki.com/wiki/*       → IIWiki article preview tooltip (the article opens in WikiOS)
  * - forum.ixwiki.com/threads/* → Forum thread preview tooltip
  * - maps.ixwiki.com/*       → Map link indicator
  *
@@ -26,8 +26,7 @@ import {
   ChatBubble as MessageSquare,
   Group as Users,
 } from "iconoir-react";
-import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { WIKI_SOURCES, mediaWikiHostPattern, wikiReaderPath } from "~/lib/wiki-os/config";
 
 type DetectedLink =
   { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
@@ -172,18 +171,13 @@ export function GlobalLinkTooltips() {
 function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
 
-  const articleUrl =
-    wiki === "ixwiki"
-      ? titleToWikiOSPath(title)
-      : `https://iiwiki.com/wiki/${encodeURIComponent(title)}`;
-
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <BookOpen className="text-tint size-3.5 shrink-0" aria-hidden="true" />
         <span className="text-label text-headline truncate">{title}</span>
         <Badge variant="default" className="ml-auto">
-          {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
+          {WIKI_SOURCES[wiki].name}
         </Badge>
       </div>
       {intro?.text ? (
@@ -194,13 +188,12 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
       ) : (
         <Skeleton className="rounded-control-sm h-10 w-full" />
       )}
-      <a
-        href={articleUrl}
-        {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+      <Link
+        href={wikiReaderPath(title, wiki)}
         className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
-        Read full article <ExternalLink className="size-3" />
-      </a>
+        Read full article
+      </Link>
     </div>
   );
 }

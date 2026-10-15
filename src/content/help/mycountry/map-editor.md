@@ -53,7 +53,7 @@ Open the editor's **Settings** menu to export your features as GeoJSON or import
 
 ## Linking to the wiki
 
-The **Wiki** tab scans your features for matching IxWiki pages, lets you link them in one click, and lists places where the map and the wiki disagree.
+The **Wiki** tab scans your features for matching wiki pages, lets you link them in one click, and lists places where the map and the wiki disagree.
 
 ## How your map data is used
 

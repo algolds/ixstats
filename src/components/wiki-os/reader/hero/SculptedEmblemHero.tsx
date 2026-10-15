@@ -98,7 +98,7 @@ export function SculptedEmblemHero({
     >
       <Link
         href="/wiki/Main_Page"
-        aria-label="IxWiki home"
+        aria-label="WikiOS home"
         className="group/brand rounded-card focus-visible:outline-tint mb-1 flex cursor-pointer flex-col items-center justify-center text-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-4"
       >
         <motion.div

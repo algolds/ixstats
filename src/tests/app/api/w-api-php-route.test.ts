@@ -72,7 +72,7 @@ describe("GET", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect((await json(response)).query.general.sitename).toBe("IxWiki");
+    expect((await json(response)).query.general.sitename).toBe("WikiOS");
   });
 
   it("reports an error as HTTP 200 with the code in the MediaWiki-API-Error header", async () => {

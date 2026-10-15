@@ -30,12 +30,12 @@ export function VaultLatestUnlock() {
     <Link
       href={`/vault/achievements?a=${encodeURIComponent(latest.key)}`}
       data-slot="vault-latest-unlock"
-      className={cn(focusRing, "rounded-cutout block")}
+      className={cn(focusRing, "rounded-cutout block h-full")}
     >
       <CutoutCard
         interactive
         style={facetAccentStyle(theme.accent)}
-        className="flex items-center gap-3 p-4"
+        className="flex h-full items-center gap-3 p-4"
       >
         <AchievementCardBackdrop
           categoryTheme={theme}

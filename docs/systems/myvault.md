@@ -5,7 +5,7 @@
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 3` → `VERSIONS.apps.ixvault` in `src/lib/buildVersion.ts`, dev codename `IxVault`)  
 **Subsystems:** Wallet, Achievements (`ACHIEVEMENTS_VERSION = 3`) and Lorewards, 3D Cards & Showcase, Booster Pack Gacha, Atomic Credit Ledger, Store, Auctions & Trading  
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`, `[data-app="vault"]` in `src/styles/facet/tokens.css`)  
-**Routes:** `/vault`, `/vault/achievements`, `/vault/cards`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)  
+**Routes:** `/vault`, `/vault/achievements`, `/vault/cards`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)
 
 The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty an auction pays the nation's owner. Design: [the 2026-10-14 spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
 
@@ -15,13 +15,13 @@ The Vault is the platform's collectathon hub: achievements, cards and the IxCred
 
 There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` + page container). Navigation is the shell sidebar's source list (Vault entry in `src/lib/navigation/app-sections.ts`), five rows:
 
-| Row | Route | Also matches |
-|---|---|---|
-| Wallet | `/vault` (exact) | |
-| Daily reward | the daily reward dialog (action, with a badge) | |
-| Achievements | `/vault/achievements` | |
-| Cards | `/vault/cards` | `/vault/inventory`, `/vault/collections`, `/vault/lore-gallery`, `/vault/ns-library`, `/vault/ns-deck`, `/vault/import` |
-| Store | `/vault/store` | `/vault/marketplace`, `/vault/market`, `/vault/packs`, `/vault/trading` |
+| Row          | Route                                          | Also matches                                                                                                            |
+| ------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Wallet       | `/vault` (exact)                               |                                                                                                                         |
+| Daily reward | the daily reward dialog (action, with a badge) |                                                                                                                         |
+| Achievements | `/vault/achievements`                          |                                                                                                                         |
+| Cards        | `/vault/cards`                                 | `/vault/inventory`, `/vault/collections`, `/vault/lore-gallery`, `/vault/ns-library`, `/vault/ns-deck`, `/vault/import` |
+| Store        | `/vault/store`                                 | `/vault/marketplace`, `/vault/market`, `/vault/packs`, `/vault/trading`                                                 |
 
 Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?tab=store|auctions|trading` values carry over), `/vault/market` → `/vault/store?tab=auctions`, `/vault/packs` → `/vault/store?tab=store`, `/vault/trading` → `/vault/store?tab=trading`, `/vault/exchange` → `/labs/exchange` ([Exchange](./exchange.md) is a Labs section now), `/achievements` → `/vault/achievements` (query kept).
 
@@ -37,9 +37,9 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
 
 ### The Wallet page
 
-`/vault` is a bank statement (cards of content type `data` and `collectible`, a `FacetList`, and a `Signal`). Desktop: the title with its actions, the balance card, the showcase, then the statement on the left two thirds and, on the right, the Your Vault list with the latest unlock. Phone: title, balance, showcase (two columns), Your Vault, latest unlock, statement.
+`/vault` is a bank statement (cards of content type `data` and `collectible`, a `FacetList`, and a `Signal`). Desktop: the balance card, the showcase, then the statement on the left two thirds and, on the right, the title over the Your Vault list with the latest unlock. Phone: title, balance, showcase (two columns), Your Vault, latest unlock, statement.
 
-- **Title and actions** (`dashboard/VaultWalletHeader.tsx`): "Wallet", with Claim daily reward (the one primary, only while claimable, through `DailyRewardProvider`) and Store.
+- **Title** (`dashboard/VaultTitle.tsx`): "Vault" with the Vault mark. On desktop it is the `<h1>` over the Your Vault list; on phones a phone-only `ShellPageHeader` (with `leading`) carries it. No toolbar actions; Claim daily reward (the one primary, only while claimable, through `DailyRewardProvider`) sits in the Balance card's header row.
 - **Balance card** (`dashboard/VaultBalanceCard.tsx`): the IxCredits balance as a large counting figure, the collector level, "+N today" and the login streak; below it one net worth well (credits plus deck value, trophy cards included) with a credits-versus-cards split bar and the card count and value. Figures count with the `number-flow` primitive. No country.
 - **Showcase** (`dashboard/VaultShowcase.tsx`): `cards.getMyTopCards` (the three most valuable owned cards, one per card, trophy cards included) as cutout cards on their real art (a card opens the card details modal), plus one pack card, "N packs waiting", linking to `/vault/store?tab=store&view=my-packs` while any are unopened. An empty collection shows an empty state with a link to the Store.
 - **Statement** (`dashboard/VaultStatement.tsx`, pure grouping and the row icon mapping in `src/lib/vault/statement.ts`): `vault.getTransactions` (offset paging; `direction: "earned" | "spent"` filter; returns each row's `metadata`), grouped by UTC day (Today, Yesterday, then dates), each row with a signed amount and the running balance from `balanceAfter`. A Vault dividend row expands to its stored breakdown; Loreward rows name the contest, place and date (and the page, for payouts made since the tiered table); achievement rows name the achievement and link to `/vault/achievements?a=<key>`. Filters All, Earned and Spent, and "Show earlier". Each row carries a tinted icon for its source (dividend, daily reward, achievement, Loreward, pack, store, market, trade, or a neutral one).
@@ -54,6 +54,7 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
 ## Economy Balancing & Feature Governance
 
 Administrators can toggle individual economic features at runtime (`VaultConfig` in `src/lib/vault/vault-perks.ts`, persisted as `vault_*` `SystemConfig` rows and edited from `/admin/vault` via `vault.adminSaveVaultConfig`):
+
 - `isEarningEnabled`: EARN_ACTIVE / EARN_SOCIAL / EARN_PASSIVE credit awards (the Vault dividend included)
 - `isStoreEnabled`: Cosmetic and boost purchases (`SPEND_COSMETIC`, `SPEND_BOOST`)
 - `isPacksEnabled`: Card pack purchases (`SPEND_PACKS`)
@@ -68,6 +69,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 ## Backend Routers (`src/server/api/routers/vault/`)
 
 Organized into modular sub-files:
+
 - `vault/index.ts` – Router combination
 - `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `deckValue`, which counts trophy cards, and `deckValueExTrophy`, which the dividend and deck-value achievements use). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
 - `vault/daily-claims.ts` – Daily bonus / combined daily claim

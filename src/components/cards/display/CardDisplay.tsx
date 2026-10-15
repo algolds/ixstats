@@ -274,6 +274,11 @@ function HoverStats({ stats, fontClass }: { stats: CardStats; fontClass: string 
   );
 }
 
+/** The archive line on a lore card's excerpt: card art typography, so upper case. */
+const ARCHIVE_LABELS: Record<string, string> = { ixwiki: "WIKI ARCHIVE", iiwiki: "IIWIKI ARCHIVE" };
+const wikiArchiveLabel = (source: string | null | undefined) =>
+  ARCHIVE_LABELS[source ?? "ixwiki"] ?? `${(source ?? "").toUpperCase()} ARCHIVE`;
+
 function ExcerptBox({ card, html }: { card: CardInstance; html: string }) {
   return (
     <div className="rounded-row pointer-events-auto mt-1 border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
@@ -282,7 +287,7 @@ function ExcerptBox({ card, html }: { card: CardInstance; html: string }) {
       </div>
       <div className="text-footnote mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-white/50">
         <span className="font-semibold tracking-wider text-amber-400 uppercase">
-          {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
+          {wikiArchiveLabel(card.wikiSource)}
         </span>
         <span className="flex items-center gap-0.5 font-mono font-bold text-white/70 tabular-nums">
           <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />

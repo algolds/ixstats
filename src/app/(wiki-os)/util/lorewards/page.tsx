@@ -6,7 +6,7 @@ import { LorewardsView } from "~/components/lorewards/LorewardsView";
 
 export const metadata: Metadata = {
   title: "Lorewards | WikiOS",
-  description: "Today's Loreward race, the standings and the recent winners of IxWiki.",
+  description: "Today's Loreward race, the standings and the recent winners of the wiki.",
 };
 
 type Param = string | string[] | undefined;

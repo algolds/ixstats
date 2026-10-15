@@ -23,7 +23,7 @@ import { NativeLoreCanvasModal } from "./dossier/NativeLoreCanvasModal";
 import { NativeLoreView } from "./NativeLoreView";
 import { useNativeLore, type LoreDraft } from "./useNativeLore";
 import { Card, CardContent } from "~/components/ui/card";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 
 /**
  * DossierTab Component
@@ -75,17 +75,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Handle wiki link clicks
   const handleWikiLinkClick = useCallback(
     (pageName: string) => {
-      const source = wikiData.wikiSource ?? "ixwiki";
-      if (source === "ixwiki") {
-        router.push(titleToWikiOSRoute(pageName));
-      } else {
-        let baseUrl = "https://iiwiki.com/wiki/";
-        if (source === "althistory") {
-          baseUrl = "https://althistory.fandom.com/wiki/";
-        }
-        const wikiUrl = `${baseUrl}${encodeURIComponent(pageName)}`;
-        window.open(wikiUrl, "_blank", "noopener,noreferrer");
-      }
+      router.push(wikiReaderPath(pageName, wikiData.wikiSource ?? "ixwiki"));
     },
     [wikiData.wikiSource, router]
   );

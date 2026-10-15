@@ -34,7 +34,7 @@ function articleMetadata(data: ArticleHtml): Metadata {
     ...(description ? { description } : {}),
     alternates: { canonical: url },
     openGraph: {
-      siteName: "IxWiki",
+      siteName: "WikiOS",
       type: "article",
       url,
       title: data.title,

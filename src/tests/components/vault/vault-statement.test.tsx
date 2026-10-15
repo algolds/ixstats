@@ -109,6 +109,93 @@ describe("VaultStatement", () => {
     expect(trade.textContent).toContain("1,000");
   });
 
+  it("lays rows out compactly: a 24px icon, the amount and the balance as right-aligned columns", () => {
+    pages = () => ({
+      transactions: [tx("a", { credits: 15, balanceAfter: 1015, source: "DAILY_LOGIN_CREDITS" })],
+      hasMore: false,
+    });
+    const { container } = render(<VaultStatement />);
+    const item = container.querySelector("[data-row]") as HTMLElement;
+    const icon = item.querySelector('[data-slot="statement-icon"]') as HTMLElement;
+    expect(icon.className).toContain("size-6");
+    expect(icon.className).toContain("bg-tint-fill");
+    expect(icon.querySelector(".facet-texture-dots")).not.toBeNull();
+    // The row itself carries no texture.
+    expect(item.querySelectorAll(".texture-overlay")).toHaveLength(1);
+    expect(item.querySelector(".min-h-9")).not.toBeNull();
+    const title = within(item).getByText("Daily reward");
+    expect(title.className).not.toMatch(/font-semibold|text-headline/);
+    expect(title.parentElement!.className).toContain("text-callout");
+    const amount = within(item).getByText(/^\+/);
+    expect(amount.className).toContain("text-success-ink");
+    expect(amount.className).toContain("text-right");
+    const balance = item.querySelector('[data-slot="statement-balance"]') as HTMLElement;
+    expect(balance.textContent).toBe("1,015");
+    expect(balance.className).toContain("text-right");
+    expect(balance.className).toContain("text-label-secondary");
+  });
+
+  it("formats amounts and balances alike: whole numbers, or exactly two decimals with cents", () => {
+    pages = () => ({
+      transactions: [
+        tx("a", { credits: 7.55, balanceAfter: 7122.85 }),
+        tx("b", { credits: 100, balanceAfter: 6515.3 }),
+        tx("c", { credits: -1250, balanceAfter: 1234567 }),
+      ],
+      hasMore: false,
+    });
+    const { container } = render(<VaultStatement />);
+    const rows = Array.from(container.querySelectorAll("[data-row]"));
+    const balances = rows.map(
+      (row) => row.querySelector('[data-slot="statement-balance"]')!.textContent
+    );
+    expect(balances).toEqual(["7,122.85", "6,515.30", "1,234,567"]);
+    expect(rows[0]!.textContent).toContain("+7.55");
+    expect(rows[1]!.textContent).toContain("+100");
+    expect(rows[2]!.textContent).toContain("-1,250");
+  });
+
+  it("stacks the balance under the amount on phones and gives it its own column from sm", () => {
+    pages = () => ({
+      transactions: [tx("a", { credits: 15, balanceAfter: 1015 })],
+      hasMore: false,
+    });
+    const { container } = render(<VaultStatement />);
+    const balance = container.querySelector('[data-slot="statement-balance"]') as HTMLElement;
+    const group = balance.parentElement!;
+    expect(group.className).toMatch(/\bflex-col\b/);
+    expect(group.className).toContain("items-end");
+    expect(group.className).toContain("sm:flex-row");
+    expect(group.contains(within(group).getByText(/^\+/))).toBe(true);
+    expect(balance.className).toContain("text-right");
+    expect(balance.className).toContain("sm:w-24");
+    expect(balance.className).not.toMatch(/(^|\s)w-\d/);
+  });
+
+  it("puts a row's detail inline after its title, as secondary text", () => {
+    pages = () => ({
+      transactions: [
+        tx("l", {
+          source: "bonus:loreward:e1",
+          metadata: JSON.stringify({
+            type: "daily",
+            place: "winner",
+            page: "Ixnay",
+            date: "2026-10-15",
+          }),
+        }),
+      ],
+      hasMore: false,
+    });
+    const { container } = render(<VaultStatement />);
+    const detail = within(container.querySelector("[data-row]") as HTMLElement).getByText(
+      "Ixnay on 2026-10-15"
+    );
+    expect(detail.tagName).toBe("SPAN");
+    expect(detail.className).toContain("text-label-secondary");
+    expect(detail.parentElement!.className).toContain("min-w-0");
+  });
+
   it("marks each row with an icon for where the credits came from", () => {
     pages = () => ({
       transactions: [
@@ -134,6 +221,30 @@ describe("VaultStatement", () => {
       expect(icon.querySelector("svg")).not.toBeNull();
       expect(icon.className).toMatch(/text-tint/);
     }
+  });
+
+  it("shows ten rows at first and asks the ledger for ten", () => {
+    pages = (input) => ({
+      transactions: Array.from({ length: input.limit }, (_, i) => tx(`r${i}`)),
+      hasMore: true,
+    });
+    const { container } = render(<VaultStatement />);
+    expect(queryInputs.at(-1)).toMatchObject({ limit: 10, offset: 0 });
+    expect(container.querySelectorAll("[data-row]")).toHaveLength(10);
+  });
+
+  it("loads ten more on Show earlier, from the end of what is shown", async () => {
+    pages = (input) => ({
+      transactions: Array.from({ length: 10 }, (_, i) => tx(`p${input.offset}-${i}`)),
+      hasMore: input.offset === 0,
+    });
+    const { container } = render(<VaultStatement />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /show earlier/i }));
+    });
+    await waitFor(() => expect(container.querySelectorAll("[data-row]")).toHaveLength(20));
+    expect(fetchMock).toHaveBeenCalledWith({ limit: 10, offset: 10 });
+    expect(screen.queryByRole("button", { name: /show earlier/i })).toBeNull();
   });
 
   it("says so when the statement is empty", () => {

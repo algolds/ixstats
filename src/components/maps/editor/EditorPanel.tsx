@@ -252,7 +252,7 @@ function TabBody({
         <div className={flexScroll}>
           {props.wikiContent ?? (
             <div className="text-label-secondary text-footnote flex flex-1 items-center justify-center px-3 py-8 text-center">
-              Select a country to scan its features for IxWiki pages.
+              Select a country to scan its features for wiki pages.
             </div>
           )}
         </div>

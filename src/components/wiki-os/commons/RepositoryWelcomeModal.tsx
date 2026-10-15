@@ -36,8 +36,9 @@ const MAIN_STEPS = [
     icon: Database,
     color: "text-indigo",
     bg: "bg-indigo/10",
-    title: "2. IxWiki Database",
-    description: "Switch to the Wiki tab to search and browse files uploaded to IxWiki or IIWiki.",
+    title: "2. Wiki database",
+    description:
+      "Switch to the Wiki tab to search and browse files uploaded to the wiki or IIWiki.",
   },
   {
     icon: SlidersHorizontal,

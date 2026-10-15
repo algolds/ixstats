@@ -74,7 +74,7 @@ describe("Halo wiki view: This page actions follow the page's wiki (ruling E-lâ€
     localStorage.clear();
   });
 
-  it("an IxWiki page keeps Edit, History and What links here, and opens on IxWiki", () => {
+  it("an IxWiki page keeps Edit, History and What links here, and has no link back out (it is WikiOS already)", () => {
     mockSource = "ixwiki";
     render(<WikiView onClose={jest.fn()} />);
 
@@ -83,11 +83,7 @@ describe("Halo wiki view: This page actions follow the page's wiki (ruling E-lâ€
     expect(screen.getByText("History")).toBeInTheDocument();
     expect(screen.getByText("What links here")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("View on original wiki"));
-    expect(open).toHaveBeenCalledWith(
-      expect.stringMatching(/^https:\/\/ixwiki\.com\/wiki\/Portal%3AEurth$/),
-      "_blank",
-      "noopener,noreferrer"
-    );
+    expect(screen.queryByText("View on original wiki")).not.toBeInTheDocument();
+    expect(open).not.toHaveBeenCalled();
   });
 });

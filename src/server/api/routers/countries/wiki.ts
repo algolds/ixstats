@@ -18,12 +18,7 @@ import {
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
 import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
-import {
-  getWikiBaseUrl,
-  parseWikiSource,
-  wikiReaderPath,
-  type WikiSource,
-} from "~/lib/wiki-os/config";
+import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 
 /** Common icon/template image filenames to exclude from media galleries. */
 const EXCLUDED_IMAGE_PATTERNS = [
@@ -126,10 +121,7 @@ async function fetchWikiIntro(
         return {
           extract: result.text.substring(0, 400),
           wikiSource: wiki,
-          wikiUrl:
-            wiki === "ixwiki"
-              ? `/wiki/${encodeURIComponent(result.title)}`
-              : `https://iiwiki.com/wiki/${encodeURIComponent(result.title)}`,
+          wikiUrl: wikiReaderPath(result.title, wiki),
         };
       }
     } catch (err) {
@@ -225,11 +217,9 @@ async function readArticle(
   return resolved ? { title: target.title, wikitext: resolved.wikitext } : null;
 }
 
-/** An article's link: IxWiki pages open in the WikiOS reader, a sister wiki's on that wiki. */
+/** An article's link: every wiki's articles open in the WikiOS reader, a sister wiki's with `?source=`. */
 function articleUrl(title: string, wiki: WikiSource): string {
-  return wiki === "ixwiki"
-    ? wikiReaderPath(title)
-    : `${getWikiBaseUrl(wiki)}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+  return wikiReaderPath(title, wiki);
 }
 
 /** The lead's paragraphs as HTML; its wiki links open `wiki`'s pages in the reader. */

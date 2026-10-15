@@ -212,7 +212,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               maxLength={100}
             />
             <p className="text-label-secondary text-footnote">
-              Links this team to its IxWiki article.
+              Links this team to its wiki article.
             </p>
           </div>
 

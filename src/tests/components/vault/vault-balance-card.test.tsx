@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 jest.mock("~/components/vault/IxCreditsSymbol", () => ({ IxCreditsSymbol: () => <i /> }));
 // The real flow renders into a shadow root; the plain text is what the figures say.
@@ -31,8 +31,8 @@ const renderCard = (props: Partial<React.ComponentProps<typeof VaultBalanceCard>
 
 const lead = (container: HTMLElement) =>
   container.querySelector('[data-slot="stat"]') as HTMLElement;
-const netWorth = (container: HTMLElement) =>
-  container.querySelector('[data-slot="net-worth"]') as HTMLElement;
+const deckLine = (container: HTMLElement) =>
+  container.querySelector('[data-slot="deck-line"]') as HTMLElement;
 
 describe("VaultBalanceCard", () => {
   beforeEach(() => {
@@ -51,10 +51,33 @@ describe("VaultBalanceCard", () => {
     expect(lead(container).textContent).toContain(BALANCE.toLocaleString());
     expect(lead(container).textContent).toContain("IxCredits");
     expect(lead(container).textContent).toContain("+265 today");
-    expect(lead(container).textContent).toContain("Day 6 streak");
+    // The streak is a pill beside the level, seen as "6d" and read as "6 day streak".
+    expect(container.querySelector("[data-slot='streak-pill']")?.textContent).toBe(
+      "6d6 day streak"
+    );
     expect(lead(container).querySelector('[data-slot="stat-value"]')).toHaveClass(
       "text-large-title"
     );
+  });
+
+  it("lays a tinted chevron texture across the card, under the content and not on the figures", () => {
+    const { container } = renderCard();
+    const root = container.querySelector('[data-slot="vault-balance-card"]') as HTMLElement;
+    expect(root.className).toContain("overflow-hidden");
+    const texture = root.querySelector(":scope > .facet-texture-chevron") as HTMLElement;
+    expect(texture).not.toBeNull();
+    expect(texture.className).toContain("[--facet-texture-color:var(--tint)]");
+    expect(root.querySelectorAll(".texture-overlay")).toHaveLength(1);
+    expect(texture.contains(lead(container))).toBe(false);
+    for (const content of Array.from(root.children).filter((el) => el !== texture)) {
+      expect(content.className).toContain("relative");
+    }
+  });
+
+  it("has no claim button: the daily reward lives in the Vault column", () => {
+    mockData.getBalance = { credits: BALANCE, canClaimDailyBonus: true, loginStreak: 6 };
+    renderCard();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("titles the card Balance", () => {
@@ -70,74 +93,65 @@ describe("VaultBalanceCard", () => {
     expect(container.textContent).not.toMatch(/today|streak|collector/);
   });
 
-  it("names net worth as the balance plus the deck value, in one well", () => {
+  it("has one headline figure, the spendable balance, and no net worth or split bar", () => {
     const { container } = renderCard();
-    const well = netWorth(container);
-    expect(well.getAttribute("data-variant")).toBe("well");
-    expect(well.textContent).toContain("Net worth");
-    expect(well.textContent).toContain((BALANCE + DECK).toLocaleString());
+    expect(container.querySelectorAll('[data-slot="stat"]')).toHaveLength(1);
+    expect(container.textContent).not.toMatch(/net worth/i);
+    expect(container.textContent).not.toContain((BALANCE + DECK).toLocaleString());
+    expect(container.querySelector('[data-slot="net-worth"]')).toBeNull();
+    expect(screen.queryByRole("progressbar")).toBeNull();
   });
 
-  it("splits net worth into credits and cards, with the card count and value", () => {
+  it("says what the deck is worth on one secondary line, in a md-padded card", () => {
     const { container } = renderCard();
-    const well = netWorth(container);
-    expect(within(well).getByText(/^Credits/).textContent).toContain(BALANCE.toLocaleString());
-    const cards = within(well).getByText(/12 cards/);
-    expect(cards.textContent).toContain(DECK.toLocaleString());
-    const bar = within(well).getByRole("progressbar");
-    expect(bar.getAttribute("aria-valuenow")).toBe(String(BALANCE));
-    expect(bar.getAttribute("aria-valuemax")).toBe(String(BALANCE + DECK));
+    const card = container.querySelector('[data-slot="vault-balance-card"]') as HTMLElement;
+    expect(card.className).toContain("p-4 md:p-5");
+    expect(deckLine(container).textContent).toBe(
+      `Your 12 cards are worth ${DECK.toLocaleString()}`
+    );
+    expect(card.contains(deckLine(container))).toBe(true);
   });
 
   it("uses the singular for a single card", () => {
     const { container } = renderCard({ totalCards: 1 });
-    expect(netWorth(container).textContent).toContain("1 card ");
-    expect(netWorth(container).textContent).not.toContain("1 cards");
+    expect(deckLine(container).textContent).toContain("Your 1 card is worth");
   });
 
-  it("has no separate pack or deck-value box", () => {
+  it("says No cards yet for an empty deck", () => {
+    const { container } = renderCard({ totalCards: 0, deckValue: 0 });
+    expect(deckLine(container).textContent).toBe("No cards yet");
+  });
+
+  it("has no separate pack box", () => {
     const { container } = renderCard();
-    expect(container.textContent).not.toMatch(/pack|deck value/i);
-  });
-
-  it("draws no split bar when there is nothing to split", () => {
-    mockData.getBalance = { credits: 0, canClaimDailyBonus: false, loginStreak: 0 };
-    renderCard({ deckValue: 0, totalCards: 0 });
-    expect(screen.queryByRole("progressbar")).toBeNull();
-  });
-
-  it("does not stand the deck value in for net worth while the balance loads", () => {
-    mockLoading = new Set(["getBalance"]);
-    const { container } = renderCard();
-    expect(container.textContent).not.toContain(DECK.toLocaleString() + " ");
-    expect(netWorth(container).textContent).not.toContain((BALANCE + DECK).toLocaleString());
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
-    expect(screen.queryByRole("progressbar")).toBeNull();
-    expect(container.textContent).not.toMatch(/\b0\b/);
+    expect(container.textContent).not.toMatch(/pack/i);
   });
 
   it("shows no card figures while the stats load", () => {
     const { container } = renderCard({ totalCards: undefined, deckValue: undefined });
-    expect(container.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0);
-    expect(netWorth(container).textContent).not.toMatch(/\d+ cards?/);
-    expect(netWorth(container).textContent).not.toContain((BALANCE + DECK).toLocaleString());
+    expect(deckLine(container).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(deckLine(container).textContent).not.toMatch(/\d|No cards/);
+  });
+
+  it("shows a skeleton, not a fake zero, for the balance while it loads", () => {
+    mockLoading = new Set(["getBalance"]);
+    const { container } = renderCard();
+    expect(lead(container).querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(lead(container).textContent).not.toMatch(/\b0\b/);
   });
 
   it("shows dashes, not skeletons, when the balance query fails", () => {
     mockErrors = new Set(["getBalance"]);
     const { container } = renderCard();
-    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0);
-    expect(screen.getAllByLabelText("Unavailable").length).toBeGreaterThanOrEqual(2);
+    expect(lead(container).querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0);
+    expect(lead(container).querySelector('[aria-label="Unavailable"]')).not.toBeNull();
     expect(container.textContent).not.toContain(BALANCE.toLocaleString());
   });
 
-  it("shows a dash for net worth and the card figures when the stats failed", () => {
+  it("shows a dash for the card line when the stats failed", () => {
     const { container } = renderCard({ deckValue: null, totalCards: null });
-    const well = netWorth(container);
-    expect(well.querySelectorAll('[aria-label="Unavailable"]').length).toBeGreaterThanOrEqual(2);
-    expect(well.textContent).not.toContain((BALANCE + DECK).toLocaleString());
-    expect(well.textContent).not.toMatch(/\d+ cards?/);
-    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(deckLine(container).querySelector('[aria-label="Unavailable"]')).not.toBeNull();
+    expect(deckLine(container).textContent).not.toMatch(/\d+ cards?/);
   });
 
   it("nests no block element inside a paragraph or a span, loaded or loading", () => {

@@ -466,7 +466,7 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
 
     await expect(caller().getArticleHtml({ title: "Nowhere land" })).rejects.toMatchObject({
       code: "NOT_FOUND",
-      message: 'The page "Nowhere land" does not exist on IxWiki.',
+      message: 'The page "Nowhere land" does not exist on WikiOS.',
     });
 
     expect(syncSinglePage).toHaveBeenCalledTimes(1);

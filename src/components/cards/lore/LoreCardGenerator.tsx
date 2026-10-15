@@ -111,7 +111,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
             value={selectedWikiSource}
             onValueChange={setSelectedWikiSource}
             options={[
-              { value: "ixwiki", label: "IxWiki" },
+              { value: "ixwiki", label: "Wiki" },
               { value: "iiwiki", label: "IIWiki" },
             ]}
           />
@@ -200,7 +200,7 @@ export function LoreCardGenerator({ onRequestSubmitted }: LoreCardGeneratorProps
                 <div className="flex-1">
                   <div className="text-body text-label font-medium">{request.articleTitle}</div>
                   <div className="text-footnote text-label-secondary mt-1">
-                    {request.wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"}
+                    {request.wikiSource === "ixwiki" ? "Wiki" : "IIWiki"}
                   </div>
                 </div>
 

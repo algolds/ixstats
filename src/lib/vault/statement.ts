@@ -48,6 +48,19 @@ const MONTHS = [
 
 const DAY_MS = 86_400_000;
 
+/**
+ * A statement amount or balance: a whole number with thousands separators, or exactly two decimals
+ * when it has cents ("6,515.30", never "6,515.3"). Rounds to cents first so float noise shows no cents.
+ */
+export function formatAmount(value: number): string {
+  const cents = Math.round(value * 100) / 100;
+  const digits = Number.isInteger(cents) ? 0 : 2;
+  return cents.toLocaleString("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
 /** "14 October" for a `yyyy-mm-dd` day. */
 function formatDay(day: string): string {
   const [, month, date] = day.split("-").map(Number);

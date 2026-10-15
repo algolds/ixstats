@@ -32,7 +32,7 @@ export const contextualHelp: Record<BuilderSection, HelpStep[]> = {
     {
       title: "National symbols",
       description:
-        "Set the flag and coat of arms by uploading images or picking them from the IxWiki repository. They appear on your dashboard and on the map.",
+        "Set the flag and coat of arms by uploading images or picking them from the wiki repository. They appear on your dashboard and on the map.",
     },
     {
       title: "Government type",
@@ -108,7 +108,7 @@ export const contextualHelp: Record<BuilderSection, HelpStep[]> = {
     {
       title: "Choose a wiki",
       description:
-        "Pick IxWiki, IIWiki or AltHistory Wiki. Each wiki formats its articles differently, so the data you get varies.",
+        "Pick the wiki, IIWiki or AltHistory Wiki. Each wiki formats its articles differently, so the data you get varies.",
     },
     {
       title: "Find your nation",

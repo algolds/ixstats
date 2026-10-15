@@ -20,7 +20,7 @@ import { SECTION_ICONS } from "./constants";
 import { parseWikiContent, truncateContent } from "~/lib/builder";
 import type { WikiSection } from "~/lib/builder";
 import { resolveImageUrl } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
-import { publicArticleUrl, type WikiSource } from "~/lib/wiki-os/config";
+import { publicArticleUrl, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
 import { Card } from "~/components/ui/card";
 
@@ -216,33 +216,16 @@ export function WikiSectionCard({
             {/* Apple Action Toolbar & External Links */}
             <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-t pt-3">
               <div className="flex items-center gap-2">
-                {wikiSource === "ixwiki" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
-                  >
-                    <Link href={titleToWikiOSRoute(section.sourcePage || section.title)}>
-                      <ExternalLink className="h-3.5 w-3.5" /> View WikiOS source
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
-                  >
-                    <a
-                      href={`${wikiSource === "iiwiki" ? "https://iiwiki.com/wiki/" : "https://althistory.fandom.com/wiki/"}${encodeURIComponent(section.sourcePage || section.title)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" /> View external wiki source
-                    </a>
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="text-label-secondary hover:text-label border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-caption h-8 gap-2 border font-semibold transition-[background-color,border-color,transform] duration-150"
+                >
+                  <Link href={wikiReaderPath(section.sourcePage || section.title, wikiSource)}>
+                    <ExternalLink className="h-3.5 w-3.5" /> View WikiOS source
+                  </Link>
+                </Button>
               </div>
 
               {/* Section Metadata Footer */}

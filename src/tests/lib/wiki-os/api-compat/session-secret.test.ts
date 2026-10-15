@@ -105,7 +105,7 @@ describe.each([
     const siteinfo = (
       await call(wiki.deps, "action=query&meta=siteinfo&siprop=general&format=json")
     ).body as Body;
-    expect(siteinfo.query.general.sitename).toBe("IxWiki");
+    expect(siteinfo.query.general.sitename).toBe("WikiOS");
     const pages = (await call(wiki.deps, "action=query&list=allpages&format=json")).body as Body;
     expect(pages.query.allpages).toHaveLength(1);
     const user = (await call(wiki.deps, "action=query&meta=userinfo&format=json")).body as Body;

@@ -72,8 +72,9 @@ unless set to `true`** (`src/lib/wiki-os/v1-switch.ts`). Step 6b turns it on.
   the mirror, which copies it to classic MediaWiki. Inbound sync, background renders, search and the other readers stay
   on `WIKIOS_V1_ENABLED`. Add `wiki-mirror` to `CRON_ENABLED_JOBS` before the first flip; without it the outbox drains
   only through the in-process run a couple of seconds after each write.
-- **Precondition.** It cannot be turned on while any of `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN` or
-  `WIKIOS_MEDIAWIKI_API` is unset (step 3); the page lists the missing names.
+- **Precondition.** It cannot be turned on while `WIKIOS_MEDIAWIKI_BOT_USER` or `WIKIOS_MEDIAWIKI_BOT_TOKEN` is unset
+  (step 3c); the page lists the missing names. `WIKIOS_MEDIAWIKI_API` is optional: unset, the mirror writes to the
+  internal `api.php`.
 - **Protections caveat.** Run steps 1 (its default protections backfill) and 1b (the rights import, which also copies
   protections) before the first flip. The toggle does not check them. Until they have run, WikiOS knows only the
   protections it has seen in MediaWiki's log since its sync started: a page MediaWiki protected before then is

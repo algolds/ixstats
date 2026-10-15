@@ -32,7 +32,7 @@ export const SHELL_PAGE_TITLE_ATTRIBUTE = "data-shell-page-title";
 /** Spread onto a page's own title element to hide it where the `ShellPageHeader` shows. */
 export const shellPageTitleProps = { [SHELL_PAGE_TITLE_ATTRIBUTE]: "" } as const;
 
-interface ShellPageHeaderProps extends Pick<PageHeaderProps, "back" | "actions"> {
+interface ShellPageHeaderProps extends Pick<PageHeaderProps, "back" | "actions" | "leading"> {
   title: string;
   subtitle?: ReactNode;
   /** Show it below 1024px only (default). Set false for pages without their own title. */
@@ -45,6 +45,7 @@ export function ShellPageHeader({
   title,
   subtitle,
   back,
+  leading,
   actions,
   phoneOnly = true,
   className,
@@ -59,7 +60,13 @@ export function ShellPageHeader({
         className
       )}
     >
-      <PageHeader title={title} subtitle={subtitle} back={back} actions={actions} />
+      <PageHeader
+        title={title}
+        subtitle={subtitle}
+        back={back}
+        leading={leading}
+        actions={actions}
+      />
     </div>
   );
 }

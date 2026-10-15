@@ -245,7 +245,7 @@ export const CultureForm = React.memo(
                 "group border-separator bg-fill-3 rounded-control facet-press facet-press-sm facet-lift relative size-12 shrink-0 overflow-hidden border",
                 focusRing
               )}
-              title="Upload or search emblem on IxWiki"
+              title="Upload or search emblem on the wiki"
               aria-label={`${hasImage ? "Change" : "Choose"} image for ${label}`}
               data-cuelume-press
             >

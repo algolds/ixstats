@@ -113,7 +113,7 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     return (
       <EmptyState
         icon={<Trophy />}
-        title="Link your IxWiki account"
+        title="Link your wiki account"
         message="Trophies belong to your wiki account. Verify it in your settings and your Loreward wins, trophy cards and payouts appear here."
         action={
           <Button asChild>

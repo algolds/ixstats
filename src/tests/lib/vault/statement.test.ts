@@ -1,4 +1,10 @@
-import { describeRow, groupStatement, rowIconKey, type StatementRow } from "~/lib/vault/statement";
+import {
+  describeRow,
+  formatAmount,
+  groupStatement,
+  rowIconKey,
+  type StatementRow,
+} from "~/lib/vault/statement";
 
 const NOW = new Date("2026-10-14T09:00:00.000Z");
 
@@ -208,5 +214,28 @@ describe("rowIconKey", () => {
     ["SOCIAL_POST", "other"],
   ])("maps %s to %s", (source, key) => {
     expect(rowIconKey(row({ source }))).toBe(key);
+  });
+});
+
+describe("formatAmount", () => {
+  it.each([
+    [0, "0"],
+    [100, "100"],
+    [1250, "1,250"],
+    [1234567, "1,234,567"],
+    [7.55, "7.55"],
+    [6515.3, "6,515.30"],
+    [7122.85, "7,122.85"],
+    [0.5, "0.50"],
+    [-40.1, "-40.10"],
+    [-1250, "-1,250"],
+  ])("formats %p as %p", (value, expected) => {
+    expect(formatAmount(value)).toBe(expected);
+  });
+
+  it("rounds float noise to cents and shows no cents for a whole result", () => {
+    expect(formatAmount(0.1 + 0.2)).toBe("0.30");
+    expect(formatAmount(6515.299999999)).toBe("6,515.30");
+    expect(formatAmount(99.999999)).toBe("100");
   });
 });

@@ -7,7 +7,7 @@
  * Themed around scrolls / archives / wiki sources.
  *
  * Layer stack (bottom → top):
- *  1. Base gradient (wiki-source color: blue for IxWiki, green for IIWiki)
+ *  1. Base gradient (wiki-source color: blue for the wiki, green for IIWiki)
  *  2. Holographic pattern (rarity-driven intensity)
  *  3. Scroll / archive motifs (CSS geometric shapes)
  *  4. Foil shine sweep
@@ -51,7 +51,7 @@ const LORE_THEMES: Record<string, LoreTheme> = {
     accent: "rgba(59,130,246,0.4)",
     accentSoft: "rgba(59,130,246,0.1)",
     hueRotate: 0,
-    label: "IxWiki",
+    label: "Wiki",
   },
   iiwiki: {
     base: "from-emerald-950 via-teal-950 to-slate-950",

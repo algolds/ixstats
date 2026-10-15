@@ -41,7 +41,11 @@ export class WikiLinkError extends Error {
 
 export interface WikiLinkDeps {
   fetchWikiUser: (source: ProofSource, username: string) => Promise<WikiUser | null>;
-  fetchUserPageHistory: (source: ProofSource, username: string, since: Date) => Promise<UserPageHistory>;
+  fetchUserPageHistory: (
+    source: ProofSource,
+    username: string,
+    since: Date
+  ) => Promise<UserPageHistory>;
   now?: () => Date;
   newToken?: () => string;
 }
@@ -73,17 +77,28 @@ type TokenProof = "SAVED_BY_ACCOUNT" | "NOT_ON_PAGE" | "SAVED_BY_SOMEONE_ELSE" |
  */
 function proveToken(history: UserPageHistory, token: string, username: string): TokenProof {
   const { revisions, complete } = history;
-  if (!complete || revisions.some((r) => r.content === null || r.author === null)) return "UNATTRIBUTABLE";
+  if (!complete || revisions.some((r) => r.content === null || r.author === null))
+    return "UNATTRIBUTABLE";
   if (!revisions.at(-1)?.content?.includes(token)) return "NOT_ON_PAGE";
   const firstAppearance = revisions.find((r) => r.content?.includes(token));
   return firstAppearance?.author === username ? "SAVED_BY_ACCOUNT" : "SAVED_BY_SOMEONE_ELSE";
 }
 
+/** How a wiki reads in an error shown to the player: the main wiki is plain "wiki", a sister keeps its name. */
+const SOURCE_NAME: Record<ProofSource, string> = {
+  ixwiki: "wiki",
+  iiwiki: "IIWiki",
+  althistory: "AltHistory",
+};
+
 async function wikiCall<T>(call: () => Promise<T>): Promise<T> {
   try {
     return await call();
   } catch {
-    throw new WikiLinkError("WIKI_UNREACHABLE", "The wiki could not be reached. Try again in a few minutes.");
+    throw new WikiLinkError(
+      "WIKI_UNREACHABLE",
+      "The wiki could not be reached. Try again in a few minutes."
+    );
   }
 }
 
@@ -112,14 +127,20 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
 
   async function start(userId: string, source: ProofSource, rawUsername: string) {
     const wikiUser = await wikiCall(() => deps.fetchWikiUser(source, rawUsername));
-    if (!wikiUser) throw new WikiLinkError("WIKI_USER_NOT_FOUND", `No ${source} user named "${rawUsername}"`);
+    if (!wikiUser)
+      throw new WikiLinkError(
+        "WIKI_USER_NOT_FOUND",
+        `No ${SOURCE_NAME[source]} user named "${rawUsername}"`
+      );
     const username = normalizeWikiUsername(wikiUser.username);
     const token = newToken();
     const expiresAt = new Date(now().getTime() + TOKEN_TTL_MS);
     await db.$transaction(async (tx) => {
       // Re-check the holder inside the transaction: a verified row can only ever be taken over via
       // confirm's proof-of-ownership check, never here, however narrow the window looked outside a tx.
-      const holder = await tx.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
+      const holder = await tx.wikiAccountLink.findUnique({
+        where: { source_username: { source, username } },
+      });
       if (holder && holder.userId !== userId && holder.verifiedAt) {
         throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
       }
@@ -127,16 +148,32 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
       await tx.wikiAccountLink.deleteMany({ where: { userId, source, NOT: { username } } });
       await tx.wikiAccountLink.upsert({
         where: { source_username: { source, username } },
-        update: { userId, wikiUserId: wikiUser.userId, token, tokenExpiresAt: expiresAt, verifiedAt: null },
-        create: { userId, source, username, wikiUserId: wikiUser.userId, token, tokenExpiresAt: expiresAt },
+        update: {
+          userId,
+          wikiUserId: wikiUser.userId,
+          token,
+          tokenExpiresAt: expiresAt,
+          verifiedAt: null,
+        },
+        create: {
+          userId,
+          source,
+          username,
+          wikiUserId: wikiUser.userId,
+          token,
+          tokenExpiresAt: expiresAt,
+        },
       });
     });
     return { token, username, expiresAt, userPageUrl: wikiUserPageUrl(source, username) };
   }
 
   async function confirm(userId: string, source: ProofSource): Promise<{ username: string }> {
-    const link = await db.wikiAccountLink.findUnique({ where: { userId_source: { userId, source } } });
-    if (!link?.token || link.verifiedAt) throw new WikiLinkError("NO_PENDING", "Start verification first");
+    const link = await db.wikiAccountLink.findUnique({
+      where: { userId_source: { userId, source } },
+    });
+    if (!link?.token || link.verifiedAt)
+      throw new WikiLinkError("NO_PENDING", "Start verification first");
     if (!link.tokenExpiresAt || link.tokenExpiresAt < now()) {
       throw new WikiLinkError("EXPIRED", "That code expired — request a new one");
     }
@@ -145,7 +182,10 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     const history = await wikiCall(() => deps.fetchUserPageHistory(source, link.username, since));
     const proof = proveToken(history, token, link.username);
     if (proof === "UNATTRIBUTABLE") {
-      throw new WikiLinkError("TOKEN_NOT_FOUND", "Save the code on your user page yourself, then press Verify");
+      throw new WikiLinkError(
+        "TOKEN_NOT_FOUND",
+        "Save the code on your user page yourself, then press Verify"
+      );
     }
     if (proof !== "SAVED_BY_ACCOUNT") {
       throw new WikiLinkError(
@@ -204,7 +244,9 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
       );
     }
     await db.$transaction(async (tx) => {
-      const holder = await tx.wikiAccountLink.findUnique({ where: { source_username: { source, username } } });
+      const holder = await tx.wikiAccountLink.findUnique({
+        where: { source_username: { source, username } },
+      });
       if (holder && holder.userId !== userId && holder.verifiedAt) {
         throw new WikiLinkError("TAKEN", `${username} is already verified by another player`);
       }
@@ -230,7 +272,14 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
           mwRegisteredAt: null,
           mwEditCount: null,
         },
-        create: { userId, source, username, wikiUserId, verifiedAt, verifiedById: actor.adminUserId },
+        create: {
+          userId,
+          source,
+          username,
+          wikiUserId,
+          verifiedAt,
+          verifiedById: actor.adminUserId,
+        },
       });
       if (source === "ixwiki") {
         await syncIxwikiLegacyColumns(tx, userId, username, wikiUserId, verifiedAt);
@@ -243,14 +292,20 @@ export function createWikiLinkService(db: WikiLinkDb, deps: WikiLinkDeps) {
     await db.$transaction(async (tx) => {
       await tx.wikiAccountLink.deleteMany({ where: { userId, source } });
       if (source === "ixwiki") {
-        await tx.user.update({ where: { id: userId }, data: { wikiUsername: null, wikiUserId: null, lastWikiSync: null } });
+        await tx.user.update({
+          where: { id: userId },
+          data: { wikiUsername: null, wikiUserId: null, lastWikiSync: null },
+        });
       }
     });
   }
 
   /** `pending` only while the code can still be confirmed — an expired one offers a fresh start (ruling F-4). */
   async function list(userId: string): Promise<WikiLinkView[]> {
-    const links = await db.wikiAccountLink.findMany({ where: { userId }, orderBy: { source: "asc" } });
+    const links = await db.wikiAccountLink.findMany({
+      where: { userId },
+      orderBy: { source: "asc" },
+    });
     const at = now();
     return links.map((l) => ({
       source: l.source,

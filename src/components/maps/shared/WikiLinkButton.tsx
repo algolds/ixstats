@@ -31,10 +31,6 @@ export function WikiAnchor({
   );
 }
 
-/** Display name of the wiki a URL points at (in-app pages are IxWiki). */
-export const wikiSiteName = (url: string) =>
-  isInternalWikiUrl(url) || url.includes("ixwiki") ? "IxWiki" : "IIWiki";
-
 /** Wiki article link button; `externalIcon` marks new-tab links with an external-link glyph. */
 export function WikiLinkButton({
   url,

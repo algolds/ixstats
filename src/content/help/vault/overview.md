@@ -16,7 +16,7 @@ The Wallet is your account statement.
 
 - At the top: your **IxCredits** balance, **Vault level**, what you earned today, your net worth (credits plus the value of your cards) and your login **streak**, with a button to claim the daily reward or open waiting packs when they apply.
 - The **statement** lists every change to your balance, newest first and grouped by day, with the balance after each one. Filter it to **Earned** or **Spent**, and choose **Show earlier** for older rows. A **Vault dividend** row expands to show how that day's amount was worked out; Loreward rows name the contest and place.
-- Beside it, your **holdings**: achievements unlocked, Lorewards, cards and packs waiting, and a featured item from the Store. If your IxWiki account isn't linked, a prompt asks you to link it so your edits can earn.
+- Beside it, your **holdings**: achievements unlocked, Lorewards, cards and packs waiting, and a featured item from the Store. If your wiki account isn't linked, a prompt asks you to link it so your edits can earn.
 
 ## The daily reward
 

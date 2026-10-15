@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { AnimatePresence } from "motion/react";
 import {
   Globe,
@@ -23,7 +24,7 @@ import {
 } from "~/components/ui/dialog";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { Card } from "~/components/ui/card";
 import { SlidePage, TipCard, WelcomeFooter } from "~/components/maps/shared/WelcomeDialogParts";
 
@@ -180,7 +181,7 @@ function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
         <Tooltip
           content={
             <div className="text-footnote space-y-2">
-              <p className="font-semibold">IxWiki</p>
+              <p className="font-semibold">The wiki</p>
               <p className="text-label-secondary">
                 The collaborative wiki is the canonical source of truth. Country articles,
                 infoboxes, and coordinates feed directly into the map and stats engine. Edits on the
@@ -189,16 +190,11 @@ function WorldNotes({ currentIxTime }: { currentIxTime: string }) {
             </div>
           }
         >
-          <a
-            href={mediaWikiOrigin()}
-            target="_blank"
-            rel="noopener"
-            className={`hover:text-label ${TERM_CLASS}`}
-          >
-            IxWiki
-          </a>
-        </Tooltip>{" "}
-        is the canonical source of truth.
+          <Link href={wikiReaderPath("Main Page")} className={`hover:text-label ${TERM_CLASS}`}>
+            the wiki
+          </Link>
+        </Tooltip>
+        , the canonical source of truth.
       </div>
     </div>
   );
@@ -287,7 +283,7 @@ export function MapWelcomeModal({
           </AnimatePresence>
         </div>
 
-        {/* IxTime, the climate system and IxWiki are Ixnay's; another realm's map has its own. */}
+        {/* IxTime, the climate system and the wiki are Ixnay's; another realm's map has its own. */}
         {onStartTour && (
           <div className="px-6 pb-2">
             <WorldNotes currentIxTime={currentIxTime} />

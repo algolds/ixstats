@@ -184,7 +184,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             />
           )}
           <PreText className="text-label text-headline max-w-[200px] truncate" whiteSpace="nowrap">
-            {articleTitle || "IxWiki workspace"}
+            {articleTitle || "Wiki workspace"}
           </PreText>
         </div>
 

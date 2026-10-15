@@ -307,7 +307,7 @@ export function CardImageUploadModal({
             {/* Image Repository Tab */}
             <TabsContent value="search" className="mt-4 space-y-4">
               <p className="text-label-secondary text-body">
-                Search from Unsplash, Wiki Commons, IxWiki, or upload your own
+                Search from Unsplash, Wiki Commons, the wiki, or upload your own
               </p>
 
               {/* Selected Image Preview */}
@@ -333,7 +333,7 @@ export function CardImageUploadModal({
                   <ImageIcon className="text-label-secondary h-8 w-8" />
                   <span>Open image Repository</span>
                   <span className="text-label-secondary text-footnote">
-                    Unsplash, Wiki Commons, IxWiki, or Upload
+                    Unsplash, Wiki Commons, the wiki, or Upload
                   </span>
                 </div>
               </Button>

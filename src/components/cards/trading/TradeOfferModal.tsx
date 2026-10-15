@@ -30,6 +30,7 @@ import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { StepIndicator } from "~/components/ui/step-indicator";
+import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 interface TradeOfferModalProps {
@@ -41,8 +42,8 @@ interface TradeOfferModalProps {
 }
 
 /** A tradable card ownership row as the CardInstance the card picker renders. */
-function toCardInstance(ownership: any): CardInstance {
-  return {
+export function toCardInstance(ownership: any): CardInstance {
+  const card: CardInstance = {
     id: ownership.id,
     title: ownership.cards.title,
     description: ownership.cards.description || "",
@@ -70,6 +71,7 @@ function toCardInstance(ownership: any): CardInstance {
     country: ownership.cards.country,
     owners: [],
   };
+  return { ...card, wikiUrl: cardWikiHref(card) };
 }
 
 export const TradeOfferModal = React.memo<TradeOfferModalProps>(

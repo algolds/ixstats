@@ -193,7 +193,7 @@ function DetailPanelBody({ image, onClose }: CommonsDetailPanelProps) {
         : "Copy image to clipboard";
 
   const viewSourceLabel = isMediaWikiUrl(image.descriptionUrl)
-    ? "View on IxWiki"
+    ? "View on the wiki"
     : image.descriptionUrl.includes("iiwiki.com")
       ? "View on IIWiki"
       : "View on Commons";

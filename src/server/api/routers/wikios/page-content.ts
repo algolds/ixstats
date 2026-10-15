@@ -193,7 +193,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
       if (!view) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: `The page "${input.title}" does not exist on IxWiki.`,
+          message: `The page "${input.title}" does not exist on WikiOS.`,
         });
       }
 

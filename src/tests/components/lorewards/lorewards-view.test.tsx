@@ -244,7 +244,7 @@ describe("you focus", () => {
     );
     render(<LorewardsView focus="you" />);
 
-    expect(screen.getByText("Link your IxWiki account")).toBeInTheDocument();
+    expect(screen.getByText("Link your wiki account")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open settings" })).toHaveAttribute(
       "href",
       expect.stringContaining("/settings")

@@ -6,7 +6,7 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
-import { WikiAnchor, WikiLinkButton, wikiSiteName } from "~/components/maps/shared/WikiLinkButton";
+import { WikiAnchor, WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface CountryInfoTabProps {
@@ -131,7 +131,7 @@ export function CountryInfoTab({
           className="w-full"
         >
           <BookOpen aria-hidden />
-          Read full article on {wikiSiteName(wikiRichIntro.wikiUrl)}
+          Read full article on WikiOS
         </WikiLinkButton>
       )}
 

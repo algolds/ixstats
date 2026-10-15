@@ -107,7 +107,7 @@ describe("meta=siteinfo", () => {
     const { general, namespaces, namespacealiases, extensions } = body.query;
     expect(general.generator).toMatch(/^MediaWiki 1\.45\.1 \(WikiOS\)$/);
     expect(general).toMatchObject({
-      sitename: "IxWiki",
+      sitename: "WikiOS",
       mainpage: "Main Page",
       base: "https://ixwiki.com/wiki/Main_Page",
       case: "first-letter",

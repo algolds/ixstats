@@ -245,8 +245,8 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     onSelectFlag();
                   }}
                   className={cn(IMAGE_SCRIM_ACTION, IMAGE_SCRIM_TOUCH_ACTION)}
-                  title="Search the IxWiki repository"
-                  aria-label="Search the IxWiki repository"
+                  title="Search the wiki repository"
+                  aria-label="Search the wiki repository"
                 >
                   <ImageIcon aria-hidden />
                 </Button>

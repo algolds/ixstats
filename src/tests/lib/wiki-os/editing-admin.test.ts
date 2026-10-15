@@ -46,6 +46,14 @@ describe("editing admin", () => {
     });
   });
 
+  it("needs no WIKIOS_MEDIAWIKI_API: the mirror falls back to the internal api.php", async () => {
+    delete process.env.WIKIOS_MEDIAWIKI_API;
+    await expect(getEditingStatus()).resolves.toMatchObject({
+      mirrorConfigured: true,
+      missing: [],
+    });
+  });
+
   it("refuses to switch on when the mirror is not configured", async () => {
     delete process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
     await expect(setEditing(tx as never, actor, true)).rejects.toMatchObject({

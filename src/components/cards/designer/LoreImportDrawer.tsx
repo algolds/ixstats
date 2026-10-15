@@ -3,7 +3,7 @@
  * LoreImportDrawer Component
  *
  * Standard Facet Dialog for searching, previewing, and importing lore
- * from IxWiki, IIWiki, WikiOS, and LoreStash into the Card Designer.
+ * from WikiOS, IIWiki and LoreStash into the Card Designer.
  */
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -63,7 +63,7 @@ const SOURCE_CONFIGS: Record<
 > = {
   wikios: {
     name: "WikiOS",
-    label: "WikiOS / IxWiki",
+    label: "WikiOS",
     icon: Globe,
   },
   iiwiki: {

@@ -26,7 +26,7 @@ export default function LoreGeneratorPage() {
         <div className="mb-8">
           <h1 className="text-large-title text-label mb-2">Wiki lore card generator</h1>
           <p className="text-label-secondary">
-            Request custom lore cards from IxWiki and IIWiki articles
+            Request custom lore cards from wiki and IIWiki articles
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export default function LoreGeneratorPage() {
               <div>
                 <div className="text-label font-semibold">Search for an article</div>
                 <div className="text-body text-label-secondary">
-                  Find interesting wiki articles from IxWiki or IIWiki
+                  Find interesting articles on the wiki or IIWiki
                 </div>
               </div>
             </div>

@@ -19,7 +19,7 @@ describe("buildWikiosConfig", () => {
   it("defaults to the public IxWiki host with the internal API falling back to the public one", () => {
     const config = buildWikiosConfig({});
 
-    expect(config.siteName).toBe("IxWiki");
+    expect(config.siteName).toBe("WikiOS");
     expect(config.projectNamespace).toBe("IxWiki");
     expect(config.articlePath).toBe("/wiki/");
     expect(config.userAgent).toBe("IxStats-Builder");

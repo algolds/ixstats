@@ -267,7 +267,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Globe className="text-label-secondary h-3.5 w-3.5" />
-                    View on IxWiki
+                    View on the wiki
                     <ExternalLink className="text-label-secondary ml-auto h-3 w-3" />
                   </a>
                 </Button>

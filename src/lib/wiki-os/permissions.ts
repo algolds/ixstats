@@ -393,7 +393,7 @@ export async function assertPageVisible(
   if (!(await canSeeDeletedPages(ctx))) {
     throw new TRPCError({
       code: "NOT_FOUND",
-      message: `The page "${title}" does not exist on IxWiki.`,
+      message: `The page "${title}" does not exist on WikiOS.`,
     });
   }
 }

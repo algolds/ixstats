@@ -4,7 +4,7 @@ import React, { type CSSProperties } from "react";
 import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { accentColor } from "~/lib/design/identity";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { TEXTURE_MAX_OPACITY, TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
 /**
@@ -41,7 +41,7 @@ export function AchievementIcon({
 
 /**
  * Achievement card backdrop, layered from the content-art sheet (styles/card-art.css):
- * - the dot texture,
+ * - the dot texture, drawn in the category's accent on an unlocked card (neutral ink and fainter on a locked one),
  * - the multi-stop aurora mesh (`facet-aurora`: category → secondary hue, .4 → .75 on card hover),
  * - the holographic foil sheen on unlocked epic/legendary achievements (`facet-foil`).
  * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
@@ -60,7 +60,18 @@ export function AchievementCardBackdrop({
 }) {
   return (
     <>
-      <TextureOverlay texture="dots" opacity={0.035} />
+      {isUnlocked ? (
+        <span
+          aria-hidden
+          data-slot="achievement-texture"
+          className="pointer-events-none absolute inset-0"
+          style={{ "--facet-texture-color": accentColor(categoryTheme.accent) } as CSSProperties}
+        >
+          <TextureOverlay texture="dots" opacity={TEXTURE_MAX_OPACITY} />
+        </span>
+      ) : (
+        <TextureOverlay texture="dots" opacity={0.035} />
+      )}
 
       <span
         aria-hidden

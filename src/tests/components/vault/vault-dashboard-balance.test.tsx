@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, within } from "@testing-library/react";
 
 const BALANCE = 12345;
 
@@ -24,8 +24,10 @@ jest.mock("~/components/vault/DailyRewardProvider", () => ({
 }));
 // The statement and the showcase render for real; only their data and heavy art are stubbed.
 jest.mock("next/dynamic", () => () => () => null);
-jest.mock("~/components/cards/display/CardHolographicCover", () => ({
-  CardHolographicCover: () => <div />,
+jest.mock("~/components/cards/display/CardDisplay", () => ({
+  CardDisplay: ({ card }: { card: { title: string } }) => (
+    <div data-testid="gallery-card">{card.title}</div>
+  ),
 }));
 jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
   PackHolographicCover: () => <div />,
@@ -130,39 +132,69 @@ describe("Vault Wallet page", () => {
     });
   });
 
-  it("shows the IxCredits balance only in the balance card: its lead figure and the credits share of net worth", () => {
+  it("shows the IxCredits balance once, in the balance card, with no net worth anywhere", () => {
     const { container } = render(<VaultDashboardSection />);
-    expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(2);
+    expect(occurrences(container.textContent ?? "", BALANCE.toLocaleString())).toBe(1);
     expect(
       occurrences(slot(container, "vault-balance-card").textContent ?? "", BALANCE.toLocaleString())
-    ).toBe(2);
+    ).toBe(1);
+    expect(container.textContent).not.toMatch(/net worth/i);
   });
 
-  it("is title, balance, showcase, Your Vault, latest unlock, statement in the DOM, which is the phone order", () => {
+  it("is title, balance, latest unlock, Your Vault, showcase, statement in the DOM, which is the phone order", () => {
     const { container } = render(<VaultDashboardSection />);
     const order = [
       "shell-page-header",
       "vault-balance-card",
-      "vault-showcase",
-      "vault-holdings",
       "vault-latest-unlock",
+      "vault-holdings",
+      "vault-showcase",
       "vault-statement",
     ].map((name) => slot(container, name));
     order.forEach((el) => expect(el).not.toBeNull());
     order.slice(1).forEach((el, i) => expect(follows(order[i]!, el)).toBe(true));
   });
 
-  it("puts the statement in the left two thirds and the Vault list and latest unlock in the right column from lg", () => {
+  it("places the desktop grid explicitly while the DOM keeps the phone order", () => {
     const { container } = render(<VaultDashboardSection />);
-    const column = slot(container, "vault-holdings").parentElement!;
-    expect(column.className).toContain("lg:col-start-3");
-    expect(slot(container, "vault-latest-unlock").parentElement).toBe(column);
-    const statement = slot(container, "vault-statement").parentElement!;
-    expect(statement.className).toContain("lg:col-span-2");
-    expect(statement.className).toContain("lg:col-start-1");
-    expect(statement.className).toContain(
-      column.className.match(/lg:row-start-\d+/)?.[0] ?? "no-row"
+    const cell = (name: string) => slot(container, name).parentElement!;
+    const grid = cell("vault-balance-card").parentElement!;
+    expect(grid.className).toContain("lg:grid-cols-3");
+    expect(grid.className).toContain("lg:pt-14");
+    expect(grid.className).not.toMatch(/(^|\s)pt-/);
+    for (const name of [
+      "vault-balance-card",
+      "vault-latest-unlock",
+      "vault-holdings",
+      "vault-showcase",
+      "vault-statement",
+    ])
+      expect(cell(name).parentElement).toBe(grid);
+    const has = (name: string, ...classes: string[]) =>
+      classes.forEach((c) => expect(cell(name).className.split(/\s+/)).toContain(c));
+    // Balance and latest unlock side by side on row 1, stretched to one height.
+    has("vault-balance-card", "lg:col-start-1", "lg:row-start-1", "lg:self-stretch");
+    has("vault-latest-unlock", "lg:col-start-2", "lg:row-start-1", "lg:self-stretch");
+    // The showcase sits under both, the Vault column spans both rows, the statement spans the page.
+    has("vault-showcase", "lg:col-span-2", "lg:col-start-1", "lg:row-start-2");
+    has("vault-holdings", "lg:col-start-3", "lg:row-start-1", "lg:row-span-2");
+    has("vault-statement", "lg:col-span-3", "lg:row-start-3");
+    // Alone, the balance takes both left columns; beside an unlock it takes one.
+    has("vault-balance-card", "lg:col-span-2", "lg:has-[+div:not(:empty)]:col-span-1");
+    // The cards fill their cells so the two share a height.
+    expect(slot(container, "vault-balance-card").className).toContain("h-full");
+    expect(slot(container, "vault-latest-unlock").className).toContain("h-full");
+    expect(slot(container, "vault-latest-unlock").firstElementChild!.className).toContain(
+      "items-center"
     );
+  });
+
+  it("shows the real gallery card tiles in the showcase", () => {
+    const { container } = render(<VaultDashboardSection />);
+    const tiles = slot(container, "vault-showcase").querySelectorAll(
+      '[data-testid="gallery-card"]'
+    );
+    expect(Array.from(tiles).map((tile) => tile.textContent)).toEqual(["Ostrozava 1st Ed."]);
   });
 
   it("hides the latest unlock for a player with none", () => {
@@ -170,27 +202,57 @@ describe("Vault Wallet page", () => {
     const { container } = render(<VaultDashboardSection />);
     expect(slot(container, "vault-latest-unlock")).toBeNull();
     expect(slot(container, "vault-holdings")).not.toBeNull();
+    // Its cell stays in the DOM but empty and hidden, so the balance takes both columns.
+    const balanceCell = slot(container, "vault-balance-card").parentElement!;
+    const unlockCell = balanceCell.nextElementSibling as HTMLElement;
+    expect(unlockCell.childElementCount).toBe(0);
+    expect(unlockCell.className).toContain("empty:hidden");
   });
 
-  it("shows the wiki signal above the balance only while no wiki link is verified", () => {
-    const { container, unmount } = render(<VaultDashboardSection />);
-    expect(container.querySelector('[data-content="signal"]')).toBeNull();
-    unmount();
-
+  it("has no wiki signal, linked or not; the Lorewards row carries the prompt instead", () => {
     mockData.listWikiLinks = [];
-    const unlinked = render(<VaultDashboardSection />);
-    const signal = unlinked.container.querySelector('[data-content="signal"]')!;
-    expect(signal).not.toBeNull();
-    expect(follows(signal, slot(unlinked.container, "vault-balance-card"))).toBe(true);
-    expect(follows(slot(unlinked.container, "shell-page-header"), signal)).toBe(true);
+    mockData.getMyTrophies = {
+      wikiUsername: null,
+      wins: { daily: 0, weekly: 0, monthly: 0 },
+      todayRank: null,
+    };
+    const { container } = render(<VaultDashboardSection />);
+    expect(container.querySelector('[data-content="signal"]')).toBeNull();
+    expect(container.querySelector('[role="status"]')).toBeNull();
+    const row = within(slot(container, "vault-holdings")).getByRole("link", { name: /Lorewards/ });
+    expect(row.getAttribute("href")).toBe("/settings?tab=account#ixnayid-card");
+    expect(row.textContent).toContain("Link your wiki account to take part");
   });
 
-  it("has one primary action: the daily claim", () => {
+  it("has one primary action: the daily claim, in the Vault column", () => {
     const { container } = render(<VaultDashboardSection />);
     const primary = Array.from(container.querySelectorAll("button, a")).filter((el) =>
       /bg-primary-fill/.test(el.className)
     );
     expect(primary.map((el) => el.textContent)).toEqual(["Claim daily reward"]);
+    // In the Vault column, as the first item under the title, not in the Balance card.
+    expect(slot(container, "daily-reward-tile").contains(primary[0]!)).toBe(true);
+    expect(slot(container, "vault-holdings").contains(primary[0]!)).toBe(true);
+    expect(slot(container, "vault-balance-card").contains(primary[0]!)).toBe(false);
+  });
+
+  it("shows exactly one Vault title per width: a phone-only header and the column's own title", () => {
+    const { container } = render(<VaultDashboardSection />);
+    const headings = within(container).getAllByRole("heading", { level: 1, name: "Vault" });
+    expect(headings).toHaveLength(2);
+    const phone = slot(container, "shell-page-header");
+    expect(phone.getAttribute("data-shell-page-header")).toBe("phone");
+    expect(phone.className).toContain("lg:hidden");
+    expect(phone.contains(headings[0]!)).toBe(true);
+    expect(phone.querySelector("span.bg-tint-fill")!.getAttribute("aria-hidden")).toBe("true");
+    const own = headings[1]!.closest("[data-shell-page-title]");
+    expect(own).not.toBeNull();
+    expect(phone.contains(own)).toBe(false);
+    // The header carries no toolbar actions, and the Store is only a list row.
+    expect(phone.querySelector("button, a")).toBeNull();
+    expect(
+      within(slot(container, "vault-holdings")).getAllByRole("link", { name: /^Store/ })
+    ).toHaveLength(1);
   });
 
   it("reads no country and no nation data", () => {
@@ -203,6 +265,6 @@ describe("Vault Wallet page", () => {
   it("nests no block element inside a paragraph anywhere on the page", () => {
     mockData.listWikiLinks = [];
     const { container } = render(<VaultDashboardSection />);
-    expect(container.querySelectorAll("p div, span div")).toHaveLength(0);
+    expect(container.querySelectorAll("p div, span div:not(.texture-overlay)")).toHaveLength(0);
   });
 });

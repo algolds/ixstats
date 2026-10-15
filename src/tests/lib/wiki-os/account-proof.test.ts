@@ -4,6 +4,7 @@ import {
   fetchWikiUser,
   normalizeWikiUsername,
   WikiApiError,
+  wikiUserPageUrl,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 const json = (body: object) =>
@@ -170,5 +171,37 @@ describe("account-proof", () => {
       json: () => Promise.reject(new Error("html")),
     }) as any;
     await expect(fetchWikiUser("iiwiki", "Kir")).rejects.toBeInstanceOf(WikiApiError);
+  });
+
+  describe("wikiUserPageUrl", () => {
+    const original = process.env.WIKIOS_V1_ENABLED;
+    afterEach(() => {
+      if (original === undefined) delete process.env.WIKIOS_V1_ENABLED;
+      else process.env.WIKIOS_V1_ENABLED = original;
+    });
+
+    it("is the wiki's own user page while WikiOS v1 is off", () => {
+      delete process.env.WIKIOS_V1_ENABLED;
+      expect(wikiUserPageUrl("ixwiki", "some_user")).toMatch(
+        /^https:\/\/[^/]+\/wiki\/User:Some_user$/
+      );
+    });
+
+    it("is the classic MediaWiki editor once WikiOS v1 is on", () => {
+      process.env.WIKIOS_V1_ENABLED = "1";
+      expect(wikiUserPageUrl("ixwiki", "some user")).toMatch(
+        /^https:\/\/[^/]+\/classic\/User:Some_user\?action=edit$/
+      );
+    });
+
+    it("keeps a sister wiki's own page in both states", () => {
+      delete process.env.WIKIOS_V1_ENABLED;
+      const off = wikiUserPageUrl("iiwiki", "Kir");
+      process.env.WIKIOS_V1_ENABLED = "1";
+      expect(wikiUserPageUrl("iiwiki", "Kir")).toBe(off);
+      expect(off).toBe("https://iiwiki.com/wiki/User:Kir");
+      expect(wikiUserPageUrl("althistory", "Kir")).toMatch(/\/wiki\/User:Kir$/);
+      expect(wikiUserPageUrl("althistory", "Kir")).not.toContain("/classic/");
+    });
   });
 });

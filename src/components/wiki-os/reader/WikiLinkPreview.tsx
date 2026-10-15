@@ -6,6 +6,7 @@ import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -137,21 +138,18 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
   const summary = element.getAttribute("data-summary") || "";
   const imageUrl = element.getAttribute("data-imageurl") || "";
   const isIiwiki = element.getAttribute("data-source") === "iiwiki";
-  const path = `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
   return (
     <div key={index} className="my-3 select-none">
-      <a
-        href={isIiwiki ? `https://iiwiki.com${path}` : path}
-        target="_blank"
-        rel="noopener noreferrer"
+      <Link
+        href={wikiReaderPath(title, isIiwiki ? "iiwiki" : "ixwiki")}
         className="rounded-card border-separator bg-fill-4 hover:border-separator flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
       >
         <div className="min-w-0 flex-1 text-left">
           <div className="mb-1 flex items-center gap-2">
             <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
             <span className="text-eyebrow text-label-secondary">
-              {isIiwiki ? "IIWiki Article" : "IxWiki Article"}
+              {isIiwiki ? "From IIWiki" : "Wiki article"}
             </span>
           </div>
           <h4 className="text-headline text-label truncate leading-snug">{title}</h4>
@@ -166,7 +164,7 @@ function renderWikiEmbed(element: HTMLElement, index: number): React.ReactNode {
             alt=""
           />
         )}
-      </a>
+      </Link>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import {
   Download,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { publicArticleUrl } from "~/lib/wiki-os/config";
+import { cardWikiHref } from "./card-wiki-href";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";
@@ -108,18 +108,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       return !isLoreCard && (card.cardType === "NS_IMPORT" || Boolean(card.nsCardId));
     }, [card, isLoreCard]);
 
-    const wikiUrl = useMemo(() => {
-      if (!card) return null;
-      if (card.wikiUrl) return card.wikiUrl;
-
-      if (card.wikiArticleTitle) {
-        return publicArticleUrl(
-          card.wikiArticleTitle,
-          card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
-        );
-      }
-      return null;
-    }, [card]);
+    const wikiUrl = useMemo(() => cardWikiHref(card), [card]);
 
     const resolvedCategory = useMemo(() => {
       if (!card) return null;

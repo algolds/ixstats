@@ -40,7 +40,7 @@ Your Realms and Work tabs are always public.
 Linking proves you own a wiki account. It lets you edit your own `User:` page in the wiki, and it makes claims for nations whose wiki page you created approve instantly.
 
 1. Open [Settings](/settings) → **IxnayID & Passport** → **Linked Accounts** and choose **Manage**.
-2. Next to IxWiki, IIWiki or AltHistory, enter your wiki username and choose **Get code**.
+2. Next to Wiki, IIWiki or AltHistory, enter your wiki username and choose **Get code**.
 3. Paste the code anywhere on your user page on that wiki and save it while logged in as that user.
 4. Come back and choose **Verify**. The code works for 24 hours; if it expires, choose **New code**.
 

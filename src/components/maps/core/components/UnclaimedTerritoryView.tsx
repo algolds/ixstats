@@ -6,7 +6,7 @@ import { StatCard } from "~/components/maps/core/components/StatCard";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
-import { WikiLinkButton, wikiSiteName } from "~/components/maps/shared/WikiLinkButton";
+import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 import type { SelectedCountry } from "../IxWorldMap";
 
 interface UnclaimedTerritoryViewProps {
@@ -70,7 +70,7 @@ export function UnclaimedTerritoryView({
             className="w-full"
           >
             <BookOpen aria-hidden />
-            Read on {wikiSiteName(wikiRichIntro.wikiUrl)}
+            Read on WikiOS
           </WikiLinkButton>
         </div>
       )}

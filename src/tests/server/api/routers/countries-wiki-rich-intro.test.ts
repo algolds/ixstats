@@ -61,7 +61,7 @@ describe("countries.getWikiRichIntro", () => {
     const intro = await caller().getWikiRichIntro({ countryName: "Tagmatium", countryId: "c-tag" });
 
     expect(reads()).toEqual([["Tagmatine Empire", "iiwiki"]]);
-    expect(intro?.wikiUrl).toBe("https://iiwiki.com/wiki/Tagmatine_Empire");
+    expect(intro?.wikiUrl).toBe("/wiki/Tagmatine_Empire?source=iiwiki");
     expect(intro?.paragraphs[0]).toContain("Tagmatium");
     // A link in the intro opens that wiki's page in the reader, not IxWiki's page of the same title.
     expect(intro?.paragraphs[0]).toContain('href="/wiki/Alharu?source=iiwiki"');
@@ -80,7 +80,7 @@ describe("countries.getWikiRichIntro", () => {
       ["Mito", "iiwiki"],
       ["Mitō", "iiwiki"],
     ]);
-    expect(intro?.wikiUrl).toBe(`https://iiwiki.com/wiki/${encodeURIComponent("Mitō")}`);
+    expect(intro?.wikiUrl).toBe(`/wiki/${encodeURIComponent("Mitō")}?source=iiwiki`);
   });
 
   it("does not look the name up on other wikis when the referenced page is missing", async () => {
@@ -111,7 +111,7 @@ describe("countries.getWikiRichIntro", () => {
       ["Elmeria", "ixwiki"],
       ["Elmeria", "iiwiki"],
     ]);
-    expect(intro?.wikiUrl).toBe("https://iiwiki.com/wiki/Elmeria");
+    expect(intro?.wikiUrl).toBe("/wiki/Elmeria?source=iiwiki");
   });
 
   it("links an IxWiki page to the WikiOS reader", async () => {
@@ -159,7 +159,7 @@ describe("countries.getBulkWikiRichIntros", () => {
         ["Bulk Caphiria", "ixwiki"],
       ])
     );
-    expect(intros["Bulk Tagmatium"]?.wikiUrl).toBe("https://iiwiki.com/wiki/Tagmatium");
+    expect(intros["Bulk Tagmatium"]?.wikiUrl).toBe("/wiki/Tagmatium?source=iiwiki");
     expect(intros["Bulk Caphiria"]?.wikiUrl).toBe("/wiki/Bulk_Caphiria");
   });
 });

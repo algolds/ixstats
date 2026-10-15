@@ -17,6 +17,8 @@ interface WikiAccountVerifyRowProps {
 
 export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyRowProps) {
   const notify = useNotify();
+  // The main wiki reads as "the wiki" in a sentence; a sister wiki keeps its name.
+  const noun = source === "ixwiki" ? "wiki" : label;
   const utils = api.useUtils();
   const [username, setUsername] = useState("");
   const [code, setCode] = useState<{ token: string; userPageUrl: string; username: string } | null>(
@@ -33,7 +35,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode({ token: res.token, userPageUrl: res.userPageUrl, username: res.username });
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to start ${label} verification`),
+    onError: (err) => notify.error(err.message || `Failed to start ${noun} verification`),
   });
 
   const confirm = api.ixnayid.confirmWikiVerification.useMutation({
@@ -42,7 +44,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode(null);
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to verify ${label} account`),
+    onError: (err) => notify.error(err.message || `Failed to verify ${noun} account`),
   });
 
   const unlink = api.ixnayid.unlinkWikiAccount.useMutation({
@@ -50,7 +52,7 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       setCode(null);
       refresh();
     },
-    onError: (err) => notify.error(err.message || `Failed to unlink ${label} account`),
+    onError: (err) => notify.error(err.message || `Failed to unlink ${noun} account`),
   });
 
   if (link?.verified) {
@@ -76,18 +78,12 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
       <div className="flex flex-col gap-2">
         {code && (
           <p className="text-muted-foreground text-xs">
-            Paste{" "}
-            <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
-            your {label} user page and save it while logged in as{" "}
-            <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code
-            works for 24 hours.{" "}
-            <a
-              href={code.userPageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="underline"
-            >
-              Open your {label} user page
+            Paste <code className="bg-muted rounded px-1 font-mono">{code.token}</code> anywhere on
+            your {noun} user page and save it while logged in as{" "}
+            <strong>{code?.username ?? link?.username}</strong>, then press Verify. The code works
+            for 24 hours.{" "}
+            <a href={code.userPageUrl} target="_blank" rel="noreferrer" className="underline">
+              Open your {noun} user page
             </a>
             .
           </p>
@@ -126,7 +122,11 @@ export function WikiAccountVerifyRow({ source, label, link }: WikiAccountVerifyR
         onChange={(e) => setUsername(e.target.value)}
         placeholder={`${label} username`}
         className="h-8 text-xs"
-        onKeyDown={(e) => e.key === "Enter" && username.trim() && start.mutate({ source, username: username.trim() })}
+        onKeyDown={(e) =>
+          e.key === "Enter" &&
+          username.trim() &&
+          start.mutate({ source, username: username.trim() })
+        }
       />
       <Button
         size="sm"

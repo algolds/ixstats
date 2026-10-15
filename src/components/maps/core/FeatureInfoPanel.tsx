@@ -25,7 +25,6 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
 import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
-import { WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { useMapRealm } from "./MapRealmContext";
 
 interface FeatureInfoPanelProps {
@@ -217,7 +216,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           {wikiIntro?.wikiUrl && (
             <WikiLinkButton url={wikiIntro.wikiUrl} externalIcon variant="outline" size="sm">
               <BookOpen aria-hidden />
-              Read on {WIKI_SOURCES[wikiIntro.wikiSource].name}
+              Read on WikiOS
             </WikiLinkButton>
           )}
           {feature.countrySlug && (

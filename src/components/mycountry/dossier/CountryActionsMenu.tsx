@@ -338,7 +338,7 @@ export function CountryActionsMenu({
                   onClick={onClose}
                 >
                   <Globe className="text-label-secondary h-4 w-4" />
-                  View on IxWiki
+                  View on the wiki
                   <ExternalLink className="text-label-secondary ml-auto h-3.5 w-3.5" />
                 </Link>
               </WikiLinkPreview>

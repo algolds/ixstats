@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ComponentType, type ReactNode } from "react";
+import Link from "next/link";
 import {
   CheckCircle as CheckCircle2,
   Component as Layers,
@@ -31,7 +32,7 @@ import {
 } from "~/components/ui/dialog";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
-import { publicArticleUrl } from "~/lib/wiki-os/config";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import type { ArtworkPreview, BatchCandidate } from "./types";
 
 type Tone = "red" | "yellow" | "purple";
@@ -49,7 +50,7 @@ const TONE_ICON: Record<Tone, string> = {
 
 const SOURCE_OPTIONS = [
   { value: "all", label: "All sources" },
-  { value: "ixwiki", label: "IxWiki" },
+  { value: "ixwiki", label: "Wiki" },
   { value: "iiwiki", label: "IIWiki" },
 ] as const;
 
@@ -171,17 +172,15 @@ export function ArtworkPreviewDialog({
 
             <div className="border-separator bg-surface flex items-center justify-between border-t px-6 py-4">
               {preview.wikiSource ? (
-                <a
-                  href={publicArticleUrl(
+                <Link
+                  href={wikiReaderPath(
                     preview.title,
                     preview.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
                   )}
-                  target="_blank"
-                  rel="noreferrer"
                   className="text-tint text-caption inline-flex items-center gap-2 hover:underline"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> View wiki article
-                </a>
+                </Link>
               ) : (
                 <div />
               )}

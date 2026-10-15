@@ -20,6 +20,8 @@ jest.mock("~/trpc/react", () => ({
   api: { achievements: { getMySummary: { useQuery: () => mockSummary } } },
 }));
 
+import { getCategoryTheme } from "~/components/achievements/constants";
+import { accentColor } from "~/lib/design/identity";
 import { VaultLatestUnlock } from "~/components/vault/sections/dashboard/VaultLatestUnlock";
 
 const summary = (latest: unknown) => ({
@@ -49,6 +51,28 @@ describe("VaultLatestUnlock", () => {
     // The achievement backdrop: aurora, and the foil sheen on an epic unlock.
     expect(container.querySelector(".facet-aurora")).not.toBeNull();
     expect(container.querySelector(".facet-foil")).not.toBeNull();
+  });
+
+  it("themes the art by the achievement's category and draws its own icon on the pedestal", () => {
+    mockSummary = summary(LATEST);
+    const { container } = render(<VaultLatestUnlock />);
+    const theme = getCategoryTheme("Cards");
+    const aurora = container.querySelector(".facet-aurora") as HTMLElement;
+    expect(aurora.style.getPropertyValue("--facet-accent-2")).toBe(accentColor(theme.accent2));
+    const art = container.querySelector('[data-slot="vault-latest-unlock"] svg') as SVGElement;
+    expect(art.getAttribute("class")).toContain("drop-shadow-md");
+    expect(art.parentElement!.className).toContain(theme.pedestal);
+  });
+
+  it("falls back to the General theme and the trophy art for an unknown category and icon", () => {
+    mockSummary = summary({ ...LATEST, category: "Nonsense", iconUrl: null, rarity: "Rare" });
+    const { container } = render(<VaultLatestUnlock />);
+    const theme = getCategoryTheme("General");
+    const aurora = container.querySelector(".facet-aurora") as HTMLElement;
+    expect(aurora.style.getPropertyValue("--facet-accent-2")).toBe(accentColor(theme.accent2));
+    expect(container.querySelector(".facet-foil")).toBeNull();
+    const art = container.querySelector('[data-slot="vault-latest-unlock"] svg') as SVGElement;
+    expect(art.parentElement!.className).toContain(theme.pedestal);
   });
 
   it("leaves the foil off a common unlock and the reward off one that pays nothing", () => {

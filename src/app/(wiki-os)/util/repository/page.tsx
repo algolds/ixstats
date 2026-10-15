@@ -90,7 +90,7 @@ const EMPTY_TEXT: Partial<Record<UrlSource, string>> = {
 
 const SEARCH_PLACEHOLDERS: Record<UrlSource, string> = {
   commons: 'Search Commons... e.g. "medieval castle", "15th century portrait"',
-  ixwiki: 'Search IxWiki files... e.g. "map", "flag"',
+  ixwiki: 'Search wiki files... e.g. "map", "flag"',
   iiwiki: 'Search IIWiki files... e.g. "map", "flag"',
   forum: "Search images from the old forum...",
   mine: "Search your uploads...",
@@ -316,7 +316,7 @@ function RepositoryPageBody() {
               ]}
             />
 
-            {/* Scope toggle: IxWiki, IIWiki, the old forum, and (signed in) your own uploads */}
+            {/* Scope toggle: the wiki, IIWiki, the old forum, and (signed in) your own uploads */}
             {tab === "wiki" && (
               <SegmentedControl
                 aria-label="Wiki source selection"
@@ -324,7 +324,7 @@ function RepositoryPageBody() {
                 value={wikiSubSource}
                 onValueChange={changeSource}
                 options={[
-                  { value: "ixwiki", label: "IxWiki" },
+                  { value: "ixwiki", label: "Wiki" },
                   { value: "iiwiki", label: "IIWiki" },
                   { value: "forum", label: "Forum" },
                   ...(signedIn ? [{ value: "mine" as const, label: "My uploads" }] : []),

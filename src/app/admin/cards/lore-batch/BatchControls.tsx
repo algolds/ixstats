@@ -31,7 +31,7 @@ import type { useLoreBatchLoaders } from "./useLoreBatchLoaders";
 import type { useLoreBatchQueue } from "./useLoreBatchQueue";
 
 const SOURCE_OPTIONS = [
-  ["ixwiki", "IxWiki (Primary)"],
+  ["ixwiki", "Wiki (Primary)"],
   ["iiwiki", "IIWiki (Secondary)"],
 ] as const;
 

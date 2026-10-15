@@ -30,6 +30,18 @@ jest.mock("~/trpc/react", () => ({
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
 }));
+const inactiveFallback = {
+  active: false,
+  article: undefined,
+  loading: false,
+  missing: false,
+  failed: false,
+  retry: jest.fn(),
+};
+const mockFallback = jest.fn((..._args: unknown[]) => inactiveFallback);
+jest.mock("~/hooks/useIiwikiFallback", () => ({
+  useIiwikiFallback: (...args: unknown[]) => mockFallback(...args),
+}));
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
   useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: mockAuthLoaded }),
 }));
@@ -93,6 +105,7 @@ function found(title = article.title) {
 describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFallback.mockReturnValue(inactiveFallback);
     mockSearch = "";
     mockSignedIn = true;
     mockAuthLoaded = true;
@@ -428,7 +441,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       refetch: jest.fn(),
     });
     render(<Reader title="Nowhere" />);
-    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    expect(screen.getByText(/does not exist on WikiOS/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
     expect(mockEditor).toHaveBeenCalled();
   });
@@ -442,7 +455,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       refetch: jest.fn(),
     });
     render(<Reader title="Nowhere" />);
-    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    expect(screen.getByText(/does not exist on WikiOS/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
 
@@ -501,7 +514,7 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
         refetch: jest.fn(),
       });
       render(<Reader title="Nowhere" />);
-      expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+      expect(screen.getByText(/does not exist on WikiOS/)).toBeInTheDocument();
     });
   });
 
@@ -529,6 +542,59 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     render(<Reader wikiSource="iiwiki" />);
     expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
     expect(screen.getByText(/not the same as the page/)).toBeInTheDocument();
+  });
+
+  describe("an iiwiki page the server could not render", () => {
+    const failedOnServer = () =>
+      mockUseQuery.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        error: Object.assign(new Error("not found"), { data: { code: "NOT_FOUND" } }),
+        refetch: jest.fn(),
+      });
+    const fallback = (over: Partial<typeof inactiveFallback> & { article?: unknown }) =>
+      mockFallback.mockReturnValue({ ...inactiveFallback, active: true, ...over } as never);
+
+    it("asks the browser to render it only once the server has failed", () => {
+      failedOnServer();
+      render(<Reader title="Gylias" wikiSource="iiwiki" />);
+      expect(mockFallback).toHaveBeenCalledWith("Gylias", "iiwiki", true);
+    });
+
+    it("shows the browser's render of the page", () => {
+      failedOnServer();
+      fallback({ article: { ...article, title: "Gylias" } });
+      render(<Reader title="Gylias" wikiSource="iiwiki" />);
+      expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ title: "Gylias" }));
+      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+    });
+
+    it("says the page is missing when IIWiki itself says so", () => {
+      failedOnServer();
+      fallback({ missing: true });
+      render(<Reader title="Nowhere" wikiSource="iiwiki" />);
+      expect(screen.getByText(/does not exist on IIWiki/)).toBeInTheDocument();
+    });
+
+    it("links to the page on IIWiki when the browser is refused too", () => {
+      failedOnServer();
+      fallback({ failed: true });
+      render(<Reader title="Gylias" wikiSource="iiwiki" />);
+      expect(screen.getByText("IIWiki could not be reached")).toBeInTheDocument();
+      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Open on IIWiki" })).toHaveAttribute(
+        "href",
+        "https://iiwiki.com/wiki/Gylias"
+      );
+    });
+
+    it("shows the loading state while the browser renders", () => {
+      failedOnServer();
+      fallback({ loading: true });
+      render(<Reader title="Gylias" wikiSource="iiwiki" />);
+      expect(screen.getByText("Loading article...")).toBeInTheDocument();
+      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
+    });
   });
 
   it("the Main Page is the Main Page component (its own chunk), with no article query", async () => {

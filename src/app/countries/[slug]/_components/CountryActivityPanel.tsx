@@ -277,7 +277,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                 <FacetRow
                   href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}`}
                   leading={<BookOpen className="size-4" />}
-                  title="View on IxWiki"
+                  title="View on the wiki"
                 />
               </WikiLinkPreview>
             </FacetListSection>

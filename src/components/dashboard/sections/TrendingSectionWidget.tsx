@@ -20,6 +20,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { useWikiLeadImage } from "./feed/useWikiLeadImage";
 import { wikiTitleFromUrl } from "./feed/externalLinks";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
@@ -217,7 +218,7 @@ function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "
         <WikiOSLogomark aria-hidden className="text-wiki size-3.5 shrink-0" />
         <span className="text-label text-headline truncate">{title}</span>
         <Badge variant="default" className="ml-auto">
-          {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
+          {WIKI_SOURCES[wiki].name}
         </Badge>
       </div>
       <div className="flex items-start gap-2">

@@ -119,7 +119,7 @@ interface WikiFileRecord {
 
 /** Route direct wiki file URLs through the local MediaWiki proxy. */
 function proxyWikiFileUrl(rawUrl: string): string {
-  // IxWiki's files are on its configured public host (not necessarily ixwiki.com).
+  // The main wiki's files are on its configured public host (not necessarily ixwiki.com).
   if (isMediaWikiUrl(rawUrl)) {
     return withBasePath(rawUrl.replace(/^(?:https?:)?\/\/[^/]+\//, "/api/mediawiki/ixwiki/"));
   }
@@ -134,7 +134,7 @@ function proxyWikiFileUrl(rawUrl: string): string {
 }
 
 const SOURCE_DESCRIPTIONS: Record<WikiSubSource, string> = {
-  ixwiki: "Local upload on IxWiki",
+  ixwiki: "Local upload on the wiki",
   iiwiki: "External upload on IIWiki",
   forum: "Imported from the old forum",
   mine: "Your upload",
