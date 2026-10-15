@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import type { Prisma } from "@prisma/client";
 import { describe, it, expect } from "@jest/globals";
 import {
   DIVIDEND,
@@ -137,7 +138,8 @@ describe("parseDividendMetadata", () => {
   const meta = { day: "2026-10-20", lines: result.lines, inputs };
 
   it("round-trips an object", () => {
-    expect(parseDividendMetadata(meta)).toEqual(meta);
+    // `meta` is plain JSON, but its interface types carry no index signature, so it is not a Prisma.JsonObject
+    expect(parseDividendMetadata(meta as unknown as Prisma.JsonObject)).toEqual(meta);
   });
 
   it("reads the JSON string the ledger stores", () => {
