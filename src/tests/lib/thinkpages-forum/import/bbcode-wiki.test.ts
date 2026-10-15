@@ -1,4 +1,5 @@
 /** @jest-environment node */
+import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { MAX_BBCODE_LENGTH, transformBBCode } from "~/lib/thinkpages-forum/import/bbcode";
 import { importedPostBody } from "~/lib/thinkpages-forum/import/post-html";
 
@@ -156,6 +157,7 @@ describe("wiki BBCode on hostile input", () => {
     expect(bbcode.length).toBeLessThanOrEqual(MAX_BBCODE_LENGTH);
     const started = performance.now();
     transformBBCode(bbcode);
-    expect(performance.now() - started).toBeLessThan(150);
+    // Scaled like the other linear-time gates: CI runners run this up to about twice as slowly.
+    expect(performance.now() - started).toBeLessThan(150 * TIMING_BUDGET_SCALE);
   });
 });
