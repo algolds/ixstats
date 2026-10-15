@@ -10,6 +10,7 @@ import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 import { realmHref } from "~/lib/thinkpages-forum/links";
+import { formatRealmSpeed } from "~/lib/realms/realm-clock";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -111,7 +112,7 @@ export function RealmRegionHeader({
   openToClaim: number;
 }) {
   const pathname = usePathname();
-  const { realm, stats, founder, founderTitle, viewer, inWorldDate } = overview;
+  const { realm, stats, founder, founderTitle, viewer, inWorldDate, speed } = overview;
   const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
@@ -208,7 +209,10 @@ export function RealmRegionHeader({
             <StatItem
               label="In-world date"
               value={inWorldDate.label}
-              hint={asOfHint(inWorldDate.asOf)}
+              // A realm clock's speed when it is not Ixnay's ×2 ("Paused", "×6"); else the old label's date.
+              hint={
+                speed !== null && speed !== 2 ? formatRealmSpeed(speed) : asOfHint(inWorldDate.asOf)
+              }
             />
           )}
         </dl>

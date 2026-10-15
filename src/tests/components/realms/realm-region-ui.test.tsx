@@ -76,6 +76,7 @@ function overview(overrides: Record<string, unknown> = {}) {
     rules: null,
     links: [],
     inWorldDate: null,
+    speed: null,
     officers: [
       {
         title: "Foreign Minister",
@@ -151,6 +152,17 @@ describe("realm header", () => {
     expect(screen.getByText("In-world date")).toBeTruthy();
     expect(screen.getByText("14 Harvest 1203 AE")).toBeTruthy();
     expect(screen.getByText(/^as of /)).toBeTruthy();
+  });
+
+  it("shows the realm's own date with its speed when it is not Ixnay's ×2", () => {
+    render(
+      <RealmRegionHeader
+        openToClaim={0}
+        overview={overview({ inWorldDate: { label: "14 March 1203 AE", asOf: null }, speed: 0 })}
+      />
+    );
+    expect(screen.getByText("14 March 1203 AE")).toBeTruthy();
+    expect(screen.getByText("Paused")).toBeTruthy();
   });
 
   it("adds the Rules tab once the realm has rules, and for those who write them", () => {
