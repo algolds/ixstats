@@ -44,6 +44,7 @@ import { Button } from "~/components/ui/button";
 import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { SourceWikiNote } from "./SourceWikiNote";
 import { useEmbedAssets } from "./useEmbedAssets";
+import { useArticleAnnotations } from "./useArticleAnnotations";
 import {
   CoordinatesMapEmbed,
   MarginGutterPins,
@@ -53,8 +54,6 @@ import {
 } from "./article-lazy";
 import { cn } from "~/lib/utils";
 import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
-import { soundCues } from "~/lib/sound/cuelume";
-import { useNotify } from "~/hooks/useNotify";
 import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 import { heroCardInputs, mayNameCountry } from "~/lib/wiki-os/hero-card";
@@ -174,7 +173,6 @@ export function ArticleRenderer({
   const [draftQuote, setDraftQuote] = useState<string | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
-  const utils = api.useUtils();
 
   const slug = useMemo(() => encodeURIComponent(title.replace(/ /g, "_")), [title]);
 
@@ -228,51 +226,10 @@ export function ArticleRenderer({
   }, [toggleMargin, readOnly]);
 
   // Selection Capsule Handlers & Live Sync
-  const notify = useNotify();
-
-  const { data: annotationsData, refetch: refetchAnnotations } = api.wikios.getAnnotations.useQuery(
-    { pageTitle: title },
-    { enabled: marginEnabled && isAuthenticated, staleTime: 15_000 }
+  const { annotationsData, handleAddHighlight, handleStashQuote } = useArticleAnnotations(
+    title,
+    marginEnabled && isAuthenticated
   );
-
-  const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
-    onSuccess: () => {
-      soundCues?.success?.();
-      void utils.wikios.getAnnotations.invalidate({ pageTitle: title });
-      void utils.wikios.getStashItems.invalidate();
-      void utils.wikios.getStashes.invalidate();
-      void refetchAnnotations();
-    },
-    onError: (err: { message?: string }) => {
-      notify.error(err.message || "Failed to add highlight");
-    },
-  });
-
-  const stashPageMutation = api.wikios.stashPage.useMutation({
-    onSuccess: () => {
-      void utils.wikios.isStashed.invalidate({ pageTitle: title });
-      void utils.wikios.getStashes.invalidate();
-      void utils.wikios.getStashItems.invalidate();
-    },
-    onError: (err: { message?: string }) => {
-      notify.error(err.message || "Failed to stash page");
-    },
-  });
-
-  const handleAddHighlight = (payload: SelectionPayload, color: string) => {
-    addAnnotationMutation.mutate(
-      {
-        pageTitle: title,
-        selectedText: payload.text,
-        color,
-      },
-      {
-        onSuccess: () => {
-          notify.success("Highlight saved to Margin Markup");
-        },
-      }
-    );
-  };
 
   // Both open the Margin threads tab with the selection quoted in a new-thread draft.
   const handleOpenThreadDraft = (payload: SelectionPayload) => {
@@ -280,23 +237,6 @@ export function ArticleRenderer({
     setDraftQuote(payload.text);
     setMarginTab("threads");
     setMarginOpen(true);
-  };
-
-  const handleStashQuote = (payload: SelectionPayload) => {
-    addAnnotationMutation.mutate(
-      {
-        pageTitle: title,
-        selectedText: payload.text,
-        comment: "Saved quote",
-        color: "#f472b6",
-      },
-      {
-        onSuccess: () => {
-          notify.success("Quote saved to Stash & Margin");
-          stashPageMutation.mutate({ pageTitle: title });
-        },
-      }
-    );
   };
 
   const [sharePayload, setSharePayload] = useState<SelectionPayload | null>(null);
