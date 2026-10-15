@@ -14,6 +14,7 @@ import { ATOMIC_ECONOMIC_COMPONENTS_PART_3 } from "./components-part3";
 import { ATOMIC_ECONOMIC_COMPONENTS_PART_4 } from "./components-part4";
 import { ATOMIC_ECONOMIC_COMPONENTS_PART_5 } from "./components-part5";
 import { ATOMIC_ECONOMIC_COMPONENTS_PART_6 } from "./components-part6";
+import { ATOMIC_ECONOMIC_COMPONENTS_PART_7 } from "./components-part7";
 
 export const ATOMIC_ECONOMIC_COMPONENTS: Partial<
   Record<EconomicComponentType, AtomicEconomicComponent>
@@ -24,4 +25,5 @@ export const ATOMIC_ECONOMIC_COMPONENTS: Partial<
   ...ATOMIC_ECONOMIC_COMPONENTS_PART_4,
   ...ATOMIC_ECONOMIC_COMPONENTS_PART_5,
   ...ATOMIC_ECONOMIC_COMPONENTS_PART_6,
+  ...ATOMIC_ECONOMIC_COMPONENTS_PART_7,
 };
