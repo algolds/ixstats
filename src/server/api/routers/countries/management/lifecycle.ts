@@ -1,3 +1,5 @@
+import type { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { invalidateCache } from "~/lib/cache";
@@ -10,6 +12,29 @@ import {
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { evaluateThresholds } from "~/server/shared/intelligence-alert-thresholds";
+import {
+  checkCountryName,
+  normalizeCountryName,
+  renameCountryInTx,
+} from "~/server/shared/country-rename";
+
+/**
+ * The rename an update asks for, or null when it names no new name. Refuses (CONFLICT) a name the
+ * country cannot take.
+ */
+async function pendingRename(db: PrismaClient, id: string, rawName: unknown) {
+  if (typeof rawName !== "string") return null;
+  const current = await db.country.findUnique({
+    where: { id },
+    select: { name: true, slug: true, realmId: true },
+  });
+  if (!current || normalizeCountryName(rawName) === current.name) return null;
+  const check = await checkCountryName(db, { ...current, id }, rawName);
+  if (!check.available) {
+    throw new TRPCError({ code: "CONFLICT", message: check.reason ?? "Name not available" });
+  }
+  return { country: { id, slug: current.slug ?? null }, name: rawName };
+}
 
 export const managementLifecycleProcedures = {
   // General update mutation for country fields (used by editor)
@@ -30,6 +55,10 @@ export const managementLifecycleProcedures = {
         where: { clerkUserId: ctx.auth.userId },
       });
 
+      // A new name renames through the shared path, so the slug, its redirect and the identity's
+      // country name move with it. Checked before the try, so a taken name stays a CONFLICT.
+      const rename = await pendingRename(ctx.db, id, updates.name);
+
       try {
         const filteredUpdates = Object.fromEntries(
           Object.entries(updates).filter(([_, value]) => value !== undefined)
@@ -41,13 +70,24 @@ export const managementLifecycleProcedures = {
           ? await ctx.db.country.findUnique({ where: { id }, select: COUNTRY_MAP_SELECT })
           : null;
 
-        const updatedCountry = await ctx.db.country.update({
-          where: { id },
-          data: {
-            ...filteredUpdates,
-            updatedAt: new Date(),
-          },
-        });
+        const { name: _name, slug: _slug, ...otherUpdates } = filteredUpdates;
+        const updatedCountry = rename
+          ? await ctx.db.$transaction(
+              async (tx) =>
+                (
+                  await renameCountryInTx(tx, rename.country, rename.name, {
+                    ...otherUpdates,
+                    updatedAt: new Date(),
+                  })
+                ).country
+            )
+          : await ctx.db.country.update({
+              where: { id },
+              data: {
+                ...filteredUpdates,
+                updatedAt: new Date(),
+              },
+            });
 
         await invalidateCache(["countries."]);
         if (touchesMap && countryMapChanged(before, updatedCountry)) {

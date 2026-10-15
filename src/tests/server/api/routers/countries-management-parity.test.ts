@@ -341,6 +341,16 @@ const CASES: Array<[string, Econ]> = [
   ["empty", {}],
 ];
 
+/** The tables a rename touches (`renameCountryInTx`): the name check, the identity and the redirects. */
+const RENAME_TABLES = {
+  realmPage: { findFirst: jest.fn().mockResolvedValue(null) },
+  nationalIdentity: { upsert: jest.fn().mockResolvedValue({}) },
+  countrySlugRedirect: {
+    deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+    upsert: jest.fn().mockResolvedValue({}),
+  },
+};
+
 describe("countries.updateCountry field mapping matches the pre-refactor mapping", () => {
   const router = createTRPCRouter(managementUpdateProcedures);
 
@@ -349,7 +359,12 @@ describe("countries.updateCountry field mapping matches the pre-refactor mapping
     const db: any = {
       $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
       user: { findUnique: jest.fn().mockResolvedValue(null) },
-      country: { findUnique: jest.fn().mockResolvedValue(EXISTING), update },
+      country: {
+        findUnique: jest.fn().mockResolvedValue(EXISTING),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update,
+      },
+      ...RENAME_TABLES,
     };
     const caller = router.createCaller(makeCtx(db) as never);
 
@@ -393,12 +408,18 @@ describe("countries.updateCountry and the realm's map version", () => {
 
   async function save(name: string, geography: { continent: string; region: string }) {
     const update = jest.fn(({ data }: { data: object }) =>
-      Promise.resolve({ id: "c1", realmId: "r_eurth", ...data })
+      // Prisma returns the whole row: what the update left alone keeps its stored value.
+      Promise.resolve({ ...EXISTING, id: "c1", realmId: "r_eurth", ...data })
     );
     const db: any = {
       $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
       user: { findUnique: jest.fn().mockResolvedValue(null) },
-      country: { findUnique: jest.fn().mockResolvedValue(EXISTING), update },
+      country: {
+        findUnique: jest.fn().mockResolvedValue(EXISTING),
+        findFirst: jest.fn().mockResolvedValue(null),
+        update,
+      },
+      ...RENAME_TABLES,
     };
     await router.createCaller(makeCtx(db) as never).updateCountry({
       id: "c1",

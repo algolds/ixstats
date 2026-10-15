@@ -142,7 +142,18 @@ describe("Plan 332: countries.updateCountry requires country ownership", () => {
   });
 
   it.each(["member", "admin"] as const)("lets the %s reach the write", async (role) => {
-    const db = { $transaction: jest.fn(writeReached) };
+    // A new name is checked (free in the realm, not a lore nation) before the write.
+    const db = {
+      $transaction: jest.fn(writeReached),
+      country: {
+        findUnique: jest.fn(async ({ where }: { where: { id: string } }) => ({
+          id: where.id,
+          name: "Testland",
+        })),
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+      realmPage: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
     const target = role === "admin" ? FOREIGN_COUNTRY : CALLER_COUNTRY;
     const caller = router.createCaller(createIdorContext(db, role));
     await expect(caller.updateCountry(update(target))).rejects.toThrow("write path reached");

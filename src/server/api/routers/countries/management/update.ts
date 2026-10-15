@@ -9,7 +9,7 @@ import type { Country } from "@prisma/client";
 import { z } from "zod";
 import { IxTime } from "~/lib/ixtime";
 import { pct, type EconInputs, type NumberKey } from "./shared";
-import { generateSlug } from "~/lib/utils/slug-utils";
+import { TRPCError } from "@trpc/server";
 import { rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { invalidateCache, globalCache } from "~/lib/cache";
@@ -31,6 +31,11 @@ import {
   syncGovernmentComponents,
   syncEconomyBuilderState,
 } from "~/server/shared/country-mutation-helpers";
+import {
+  checkCountryName,
+  normalizeCountryName,
+  renameCountryInTx,
+} from "~/server/shared/country-rename";
 
 type NumberOverrides = { [K in NumberKey]?: Country[K] };
 type TextKey =
@@ -120,6 +125,15 @@ export const managementUpdateProcedures = {
         throw new Error("Country not found");
       }
 
+      // A new name renames through the shared path: slug, old-slug redirect and identity name.
+      const renaming = normalizeCountryName(input.name) !== existingCountry.name;
+      if (renaming) {
+        const check = await checkCountryName(ctx.db, existingCountry, input.name);
+        if (!check.available) {
+          throw new TRPCError({ code: "CONFLICT", message: check.reason ?? "Name not available" });
+        }
+      }
+
       const econ: EconInputs = input.economicInputs ?? {};
       const { coreIndicators, laborEmployment, demographics } = econ;
       const { fiscalSystem, incomeWealth, governmentSpending, nationalIdentity } = econ;
@@ -144,8 +158,6 @@ export const managementUpdateProcedures = {
           const country = await tx.country.update({
             where: { id: input.id },
             data: {
-              name: input.name,
-              slug: generateSlug(input.name),
               ...textOverrides,
               ...numberOverrides,
               baselinePopulation: existingCountry.baselinePopulation,
@@ -175,7 +187,10 @@ export const managementUpdateProcedures = {
           await syncGovernmentComponents(tx, country.id, input.governmentComponents);
           await syncEconomyBuilderState(tx, country.id, input.economyBuilderState);
 
-          return country;
+          // Last, so the new name wins over any countryName the identity payload carried.
+          return renaming
+            ? (await renameCountryInTx(tx, existingCountry, input.name)).country
+            : country;
         });
 
         await invalidateCache(["countries."]);

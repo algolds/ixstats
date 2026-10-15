@@ -139,7 +139,8 @@ model Country {
   militaryBranches            MilitaryBranch[]          @relation("CountryMilitaryBranches")
   personalityAssignment       NPCPersonalityAssignment?
   nationalIdentity            NationalIdentity?
-  securityAssessment          SecurityAssessment?       @relation("CountrySecurityAssessment")
+  slugRedirects               CountrySlugRedirect[]
+  securityAssessment         SecurityAssessment?       @relation("CountrySecurityAssessment")
   securityEvents              SecurityEvent[]           @relation("CountrySecurityEvents")
   securityThreats             SecurityThreat[]          @relation("CountrySecurityThreats")
   taxComponents               TaxComponent[]            @relation("CountryTaxComponents")
@@ -920,6 +921,7 @@ model NationalIdentity {
   nationalDrink        String?
   nationalInstrument   String?
   nationalSymbol       String?
+  nationalAnimal       String?
   nationalAnimalImage  String?
   nationalBirdImage    String?
   nationalFishImage    String?
@@ -936,6 +938,18 @@ model NationalIdentity {
   country              Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
   capitalCityRef       City?    @relation("NationalCapital", fields: [capitalCityId], references: [id])
   largestCityRef       City?    @relation("NationalLargestCity", fields: [largestCityId], references: [id])
+
+  @@index([countryId])
+}
+
+/// An address a country had before it was renamed: `/countries/<oldSlug>` redirects permanently to the
+/// country's current slug. Removed when a country takes the slug again.
+model CountrySlugRedirect {
+  id        String   @id @default(cuid())
+  oldSlug   String   @unique
+  countryId String
+  createdAt DateTime @default(now())
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
 
   @@index([countryId])
 }
