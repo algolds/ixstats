@@ -107,7 +107,7 @@ Server-side, one helper resolves a country's clock: `clockForCountry(country) �
 
 ## 5. Phases
 
-1. **Clock and calendar.** `Realm.settings.clock`, `realmClockNow`, Manage → Time (switch on, speed, pause,
+1. **Clock and calendar.** Done 2026-10-14 (commits ba829ab..ed44298, rose-garden). `Realm.settings.clock`, `realmClockNow`, Manage → Time (switch on, speed, pause,
    cooldown, bounds, founder/staff only), In-world date migration, the realm header and the header clock.
    Nothing simulates on it yet.
 2. **Simulation.** Everything in §2, server first, then the client per-country displays.
