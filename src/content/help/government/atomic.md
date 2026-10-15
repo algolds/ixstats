@@ -8,14 +8,14 @@ nextLabel: The Component Catalog
 
 ## How government works here
 
-Instead of picking one label like "republic" or "monarchy", you build your government from **components**: building blocks such as Federal System, Democratic Process, Independent Judiciary or Welfare State. You choose up to **15** of them in the Government step of the [Country Builder](/builder), and change them later in the [Country Editor](/help/mycountry/editor). Your choice produces a **government effectiveness** score from 0 to 100.
+Instead of picking one label like "republic" or "monarchy", you build your government from **components**: building blocks such as Federal System, Democratic Process, Independent Judiciary or Welfare State. When you [found a nation](/help/gameplay/country-building), your form of government brings a working set; you can change it under **Customise institutions**, and later in the [Country Editor](/help/mycountry/editor). A nation holds up to **15**. Your choice produces a **government effectiveness** score from 0 to 100.
 
 ## How to choose components
 
-1. Open the Government step (builder or editor) and the **Components** tab.
-2. Browse by category, or search. Each component shows its description and effectiveness.
-3. Select up to 15. As you pick, the builder flags pairs that **synergise** (work well together) and pairs that **conflict**.
-4. Watch your effectiveness score update, then save.
+1. Open **Customise institutions** on the Government step when founding, or the **Institutions** section of the editor.
+2. Start from a **policy preset** (55 ready-made sets) if you like; it replaces the whole set and asks first if you had chosen your own.
+3. Tick components under the plain headings. Each shows one line on what it does. As you pick, one list shows the pairs that **work well together** and the pairs that **work against each other**.
+4. In the editor, the line under the list shows what saving does to your effectiveness. Then save.
 
 Browse every component in [The Component Catalog](/help/government/components).
 
@@ -26,7 +26,7 @@ Browse every component in [The Component Catalog](/help/government/components).
 3. Subtract **15** for each conflicting pair.
 4. Keep the result between 0 and 100.
 
-There are 45 synergy pairs and 45 conflict pairs in all. See [Synergies & Conflicts](/help/government/synergy).
+There are 106 synergy pairs and 48 conflict pairs in all. Founding, the editor and the server's save all use this one formula and one list of pairs. See [Synergies & Conflicts](/help/government/synergy).
 
 ## What effectiveness affects
 

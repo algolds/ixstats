@@ -19,7 +19,7 @@ There is no win condition. You build a nation, make decisions for it over time, 
 | Directives | State a goal, pick a package, commit it (3 per IxTime week) | [MyCountry](/mycountry) | [Executive Directives](/help/mycountry/executive) |
 | National issues | Respond to situations that arise in your nation | [MyCountry](/mycountry) agenda | [National Issues](/help/gameplay/national-issues) |
 | Economy | Watch growth, set the budget and tax rates, manage trade | [Economy & Budget](/mycountry/economy) | [Economy & Budget](/help/mycountry/economy) |
-| Government | Choose components, departments and budget | [Country Editor](/mycountry/editor) | [Building Your Government](/help/government/atomic) |
+| Government | Choose your form of government and institutions | [Country Editor](/mycountry/editor) | [Building Your Government](/help/government/atomic) |
 | Politics | Parties, legislature, bills, elections | [Politics](/mycountry/politics) | [Politics & Elections](/help/mycountry/politics) |
 | Diplomacy | Embassies, stances, proposals, alliances, exchanges | [Diplomacy](/mycountry/diplomacy) | [Foreign Affairs](/help/mycountry/diplomacy) |
 | Defense (Premium) | Branches, forces, operations, stability | [Defense](/mycountry/defense) | [Defense & Security](/help/mycountry/defense) |

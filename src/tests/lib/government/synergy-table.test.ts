@@ -12,7 +12,6 @@ import {
   detectConflicts,
   detectSynergies,
 } from "~/lib/government/atomic-utils";
-import * as legacySynergy from "~/lib/government/synergy";
 import {
   GOVERNMENT_SYNERGY_TABLE,
   checkComponentSynergy,
@@ -102,10 +101,6 @@ describe("government synergy table", () => {
         }
       }
     }
-  });
-
-  it("keeps the legacy synergy module pointing at the same checker", () => {
-    expect(legacySynergy.checkComponentSynergy).toBe(checkComponentSynergy);
   });
 
   it("scores a selection the same way the server save does", () => {

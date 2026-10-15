@@ -633,6 +633,5 @@ Geography serves as the foundational data source across the platform:
 ## Related Documentation
 
 - [Oceanography Report](../reference/oceanography-report.md)
-- [Autosave Architecture](../architecture/autosave.md)
 - [Framework Specification (Realms)](../architecture/realms-framework-spec.md)
 - [API Reference: Maps & Geography](../reference/api-complete.md#maps--geography)

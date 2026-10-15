@@ -497,12 +497,13 @@ export default function SetupPage() {
                       <div>
                         <h2 className="text-title-2 text-label mb-2 flex items-center gap-3">
                           <Building2 aria-hidden className="text-tint size-5" />
-                          MyCountry® Builder
+                          Found a nation
                         </h2>
                         <p className="text-body text-label-secondary">
-                          The builder covers your government structure, economy, demographics,
-                          policies and diplomatic relations. The economic engine models real-world
-                          behavior with tier-based growth and time-synchronized calculations.
+                          Founding takes a few plain choices: the kind of nation, its name, its
+                          government and how big and wealthy it is. The economic engine models
+                          real-world behavior with tier-based growth and time-synchronized
+                          calculations.
                         </p>
                       </div>
 
@@ -512,25 +513,25 @@ export default function SetupPage() {
                             icon: Building2,
                             color: "text-blue bg-blue/10",
                             title: "National identity",
-                            body: "Set your country's name, flag, currency, language and national symbols.",
+                            body: "Name your nation and choose its flag, capital, language, currency and symbols.",
                           },
                           {
                             icon: Crown,
                             color: "text-purple bg-purple/10",
-                            title: "MyGovernment",
-                            body: "Set your political system, departments, budgets and policies.",
+                            title: "Government",
+                            body: "Pick a form of government, then rename its institutions or start from a policy preset.",
                           },
                           {
                             icon: TrendingUp,
                             color: "text-green bg-green/10",
-                            title: "MyEconomy",
-                            body: "Configure industry sectors, labor markets, income distribution and trade policy.",
+                            title: "Size and wealth",
+                            body: "Choose how big and how wealthy. Jobs, sectors and a balanced budget follow.",
                           },
                           {
                             icon: Users,
                             color: "text-orange bg-orange/10",
-                            title: "Tax builder",
-                            body: "Design a tax system with brackets, exemptions and deductions, connected to your economy.",
+                            title: "Then MyCountry",
+                            body: "Once founded, set your budget, tax rates and cabinet in MyCountry.",
                           },
                         ].map(({ icon: Icon, color, title, body }) => (
                           <div
@@ -560,8 +561,8 @@ export default function SetupPage() {
                               "Run your country with briefings and policies, watch your economy and deal with other nations.",
                             ],
                             [
-                              "MyCountry Builder: ",
-                              "Customize your government, economy, demographics and tax system.",
+                              "Founding: ",
+                              "Choose your nation's identity, government, size and wealth in a few plain steps.",
                             ],
                             [
                               "MyCountry Defense: ",

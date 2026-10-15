@@ -6,7 +6,7 @@ This guide documents the established patterns and best practices for refactoring
 
 ## Overview
 
-> **Note:** Code samples in the component-level sections are illustrative sketches of the pattern, not excerpts. Several file names they use (e.g. `synergy-calculator.ts`, `useIntelligenceMetrics.ts`, `EnhancedIntelligenceBriefing.tsx`, `src/components/tax-system/`) do not exist in the current tree. Real examples of the layout: `src/lib/government/synergy.ts` and `src/lib/economy/tax-builder-validation.ts` (logic), `src/hooks/useTaxBuilderState.ts` (state), `src/components/mycountry/domains/diplomacy/embassy-network/` (presentation + barrel), `src/components/mycountry/shell/MyCountryRouter.tsx` (orchestration).
+> **Note:** Code samples in the component-level sections are illustrative sketches of the pattern, not excerpts. Several file names they use (e.g. `synergy-calculator.ts`, `useIntelligenceMetrics.ts`, `EnhancedIntelligenceBriefing.tsx`, `src/components/tax-system/`, `src/lib/government/synergy.ts`, `src/lib/economy/tax-builder-validation.ts`, `src/hooks/useTaxBuilderState.ts`) do not exist in the current tree. Real examples of the layout: `src/lib/government/synergy-table.ts` and `src/lib/government/effectiveness.ts` (logic), `src/app/builder/_founding/hooks/useFoundingDraft.ts` (state), `src/components/mycountry/domains/diplomacy/embassy-network/` (presentation + barrel), `src/components/mycountry/shell/MyCountryRouter.tsx` (orchestration).
 
 The IxStats codebase follows a **modular architecture pattern** that separates complex components into distinct layers for maintainability, reusability, and performance. This guide provides concrete guidelines for applying these patterns when refactoring large or complex components.
 
@@ -60,7 +60,7 @@ export function calculateComponentSynergy(
   return synergyScore;
 }
 
-// src/lib/economy/tax-builder-validation.ts (illustrative — the real export is validateTaxBuilderState)
+// src/lib/economy/tax-builder-validation.ts (illustrative)
 /**
  * Validates tax bracket configuration
  */
@@ -691,7 +691,7 @@ Each phase should be a separate commit, making it easy to review and roll back i
 
 ## Code Examples
 
-> Illustrative only — the real logic lives in `src/lib/economy/tax-builder-validation.ts` (`validateTaxBuilderState`) and `src/components/tax-system/tax-builder/` does not exist; the real tax router is `api.taxSystem.*` (`getByCountryId`, `create`, `update`, `checkConflicts`).
+> Illustrative only: the tax-builder files named below do not exist; the real tax router is `api.taxSystem.*` (`getByCountryId`, `create`, `update`, `checkConflicts`).
 
 ### Before Refactoring (Anti-pattern)
 ```typescript
@@ -770,7 +770,7 @@ export function calculateTaxRevenue(brackets: TaxBracket[]): number {
   }, 0);
 }
 
-// ✅ State management extracted (src/hooks/useTaxBuilderState.ts)
+// ✅ State management extracted (src/hooks/useTaxBuilderState.ts — illustrative)
 /**
  * Hook for managing tax builder state and operations
  */

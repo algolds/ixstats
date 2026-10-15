@@ -1,6 +1,6 @@
 ---
 title: The Country Editor
-description: Change your nation's identity, government and economy after launch, with autosave and undo.
+description: Change your nation's name, identity, government and size, one section at a time.
 badge: MyCountry
 prevHref: /help/mycountry/intelligence
 prevLabel: Intelligence & Insights
@@ -10,38 +10,43 @@ nextLabel: Editing Your Territory
 
 ## What the editor is for
 
-The Country Editor at [/mycountry/editor](/mycountry/editor) is the [Country Builder](/help/gameplay/country-building) opened on your existing nation. Use it to change your name, symbols, government components, departments, budget, economic components, sectors and workforce. It works on the nation you're currently playing as.
+The Country Editor at [/mycountry/editor](/mycountry/editor) changes who your nation is: its name, identity, government and size. It works on the nation you're currently playing as. Budget, taxes, cabinet and economic policy are not edited here; they live in their own MyCountry consoles (see [Things the editor doesn't do](#things-the-editor-doesnt-do)).
 
 ## Finding your way
 
-- **Header:** a **← MyCountry** link back, your flag and name, and the save status.
-- **Section tiles:** **Identity**, **Government**, **Economy** and **Review**. Select a tile to jump to that section; each shows how many fields you've changed there.
-- **Previous / next** buttons at the bottom of each section.
+The page lists every section; the nav beside it (a scrolling row on phones) jumps to one, and Halo's **Jump to section** does the same. Each section has its own address, so a link such as `/mycountry/editor#institutions` opens it directly.
 
-The editor opens with every detail tab available (the builder's Advanced mode).
+| Group | Sections |
+| --- | --- |
+| Identity | Name, Flag and symbols, Capital and language, Culture, Civic standards |
+| Government | Form and institutions, Institutions |
+| Size | Population and wealth |
+| Managed elsewhere | Links to Budget, Tax policy, Cabinet, Economy, Geography and Map |
 
-## Saving, undo and discard
+## Saving
 
-- Your changes **autosave** about 1.5 seconds after each edit.
-- The **save bar** stays visible. It shows how many changes you've made and has **Undo**, **Discard** and **Save**. If a save fails, choose **Try again**.
-- Shortcuts: `Cmd`/`Ctrl` + `S` saves; `Cmd`/`Ctrl` + `Shift` + `D` discards. A discard can itself be undone.
+Each section saves on its own button, named for what it saves (**Save name**, **Save government**, **Save institutions**). The button stays disabled until you change something in that section. A save changes only that section; nothing else on your nation is rewritten, and there is no autosave.
 
-## Review and finish
+- **Name.** The editor checks the name is free in your realm as you type. Saving renames the nation everywhere, and links to the old address keep working.
+- **Institutions.** Choose up to 15, or apply one of 55 **policy presets** (it asks first before replacing your own choices). Before you save, the line under the list shows what saving does to your government effectiveness, from the same formula the save stores.
+- **Population and wealth.** Saving rescales your economy, and the section warns you before you do.
 
-**Review** lists what changed, section by section, with **Edit** links to jump back. Finish with **Save and return to MyCountry**.
+If the same section was saved in another tab after you opened the page, saving tells you and offers to reload just that section; your unsaved changes in other sections stay.
 
-If you try to leave with unsaved changes, you're asked to **Save and leave**, **Leave without saving** or **Stay**. If unsaved edits were left behind (for example after a crash or a failed save), a banner offers **Restore** or **Discard** next time you open the editor.
+## Leaving with unsaved changes
+
+If you follow a link or go back with unsaved changes, the editor asks **Leave without saving?** and lists the sections with changes. Choose **Stay** to keep editing.
 
 ## What changes when you save
 
 - **Identity** (names, flag, motto and so on) updates your profile and MyCountry.
-- **Government components** recalculate your government effectiveness, which feeds your Efficiency vitality ring and your executive bandwidth.
-- **Department budgets** change your spending figures.
-- **Economic components** change maintenance costs, unemployment, inflation and tax revenue figures.
-- **Two components adjust tax revenue once, when added:** Social Democracy raises tax revenue as a share of GDP by ×1.2 (capped at 60% of GDP); a Free Market System lowers it by ×0.8 (with a floor of 15%).
+- **Form and institutions** changes your government type and the titles of your leaders and branches.
+- **Institutions** recalculate your government effectiveness, which feeds your Efficiency vitality ring and your executive bandwidth.
+- **Population and wealth** set new baseline figures for your economy.
 
 ## Things the editor doesn't do
 
+- **Budget and departments** are in [Economy & Budget](/help/mycountry/economy).
 - **Tax rates** are set in [Economy & Budget → Fiscal Policy](/help/mycountry/economy).
+- **Cabinet, parties and the legislature** are in [Politics](/help/mycountry/politics).
 - **Territory** (cities, provinces, routes) is edited on the map; see [Editing Your Territory](/help/mycountry/map-editor).
-- **Parties and the legislature** are in [Politics](/help/mycountry/politics).

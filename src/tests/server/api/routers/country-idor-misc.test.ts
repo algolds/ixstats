@@ -19,10 +19,8 @@ jest.mock("~/server/db", () => ({
 }));
 
 import { db as moduleDb } from "~/server/db";
-import { createTRPCRouter } from "~/server/api/trpc";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { diplomaticCulturalExchangesCoreMutationsRouter } from "~/server/api/routers/diplomacy/cultural/exchanges/core/mutations";
-import { managementUpdateProcedures } from "~/server/api/routers/countries/management/update";
 import { wikiosDiscussionsRouter } from "~/server/api/routers/wikios/discussions";
 import { usersCountryLinkingRouter } from "~/server/api/routers/users/country-linking";
 import { securityConflictsRouter } from "~/server/api/routers/security/conflicts";
@@ -125,39 +123,6 @@ describe("Plan 332: diplomaticCultural.joinCulturalExchange requires country own
     );
     await caller.joinCulturalExchange(join(CALLER_COUNTRY));
     expect(db.culturalExchangeParticipant.create).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("Plan 332: countries.updateCountry requires country ownership", () => {
-  const router = createTRPCRouter(managementUpdateProcedures);
-  const update = (id: string) => ({ id, name: "Renamed", economicInputs: {} });
-
-  it("rejects a member updating another country", async () => {
-    const db = { $transaction: jest.fn(writeReached) };
-    const caller = router.createCaller(createIdorContext(db));
-    await expect(caller.updateCountry(update(FOREIGN_COUNTRY))).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(db.$transaction).not.toHaveBeenCalled();
-  });
-
-  it.each(["member", "admin"] as const)("lets the %s reach the write", async (role) => {
-    // A new name is checked (free in the realm, not a lore nation) before the write.
-    const db = {
-      $transaction: jest.fn(writeReached),
-      country: {
-        findUnique: jest.fn(async ({ where }: { where: { id: string } }) => ({
-          id: where.id,
-          name: "Testland",
-        })),
-        findFirst: jest.fn().mockResolvedValue(null),
-      },
-      realmPage: { findFirst: jest.fn().mockResolvedValue(null) },
-    };
-    const target = role === "admin" ? FOREIGN_COUNTRY : CALLER_COUNTRY;
-    const caller = router.createCaller(createIdorContext(db, role));
-    await expect(caller.updateCountry(update(target))).rejects.toThrow("write path reached");
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
   });
 });
 

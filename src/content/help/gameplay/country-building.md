@@ -1,6 +1,6 @@
 ---
 title: The Country Builder in Depth
-description: Every builder step, Standard vs Advanced mode, wiki import, and editing your nation later.
+description: Every founding step, the nation card, wiki import, and what is generated for you.
 badge: Start Here
 prevHref: /help/getting-started/first-country
 prevLabel: Create Your First Nation
@@ -8,53 +8,67 @@ nextHref: /help/getting-started/gameplay-overview
 nextLabel: How It All Fits Together
 ---
 
-## What the builder does
+## What founding does
 
-The Country Builder at [/builder](/builder) creates a nation in four steps: **Foundation**, **Government**, **Economics** and **Preview & Create**. The same component pickers and forms are used by the [Country Editor](/help/mycountry/editor) at [/mycountry/editor](/mycountry/editor) when you change your nation later (there the sections are called Identity, Government, Economy and Review, and changes autosave). For the short version, see [Create Your First Nation](/help/getting-started/first-country).
+[Found a nation](/builder) creates a nation from a few plain choices: **Start**, **Identity**, **Government**, **Economy** and **Review**, with a **Realm** step first when more than one realm has room for you. One stepper at the top and one footer (Back and Continue) move you through it; you can also jump to any step you have reached from the stepper or from Halo. For the short version, see [Create Your First Nation](/help/getting-started/first-country). To change a nation after founding, use the [Country Editor](/help/mycountry/editor).
 
-## Standard and Advanced mode
+## Realm
 
-The toggle at the top switches between two levels of detail:
+Shown only when you can found in more than one realm. Each realm is its own world with its own nations and clock. You can change it until you found.
 
-| Step | Standard | Advanced adds |
-| --- | --- | --- |
-| Government | **Components** | **Departments** (structure and names) and **Budget** |
-| Economics | **Components** | **Sectors** and **Workforce** |
+## Start
 
-You can switch at any time without losing work. The Country Editor always shows every tab.
+Twenty kinds of nation, each with a plain name, the size, wealth and form of government it starts with, and a **Details** sheet: what it fills in, the real country it is calibrated on, and its strengths and trade-offs. Ten are historical; switch between **Modern** and **Historical** above the grid. **Start blank** uses balanced defaults instead.
 
-## Step 1: Foundation
+Picking a different kind later asks first: switching replaces your size, wealth and government, but your name, flag and other identity stay.
 
-- **Starting point.** Pick a real-world country as a template, start from scratch, or import from a wiki. A template only supplies starting figures such as population, GDP per person and land area.
-- **Identity.** Name, official title, motto, leader, capital, flag and coat of arms. You can also set your government's name and the names of its head of state, legislature, cabinet and courts.
+## Identity
 
-## Step 2: Government
+Only the name is required. The essentials are your flag (upload, pick from the repository or paste an address), capital city, official language, currency and motto. **More details** holds your official name, demonym, national animal and flower, religion, anthem, calling code, internet domain, country code, driving side and the first day of the week.
 
-- Choose up to **15** components from the [catalog](/help/government/components) (64 components in 10 categories).
-- The builder calculates your **government effectiveness** (0 to 100) live: the average effectiveness of your components, **+10** for each synergy pair and **−15** for each conflicting pair. See [Synergies & Conflicts](/help/government/synergy).
-- In Advanced mode, set up departments and split your budget between them. See [Government Structure & Departments](/help/government/traditional).
+## Government
 
-## Step 3: Economics
+Pick the form closest to what you have in mind: a parliamentary, presidential or federal republic, a constitutional or absolute monarchy, a one-party state, military government, theocracy, technocracy, merchant oligarchy or confederation. It sets your leaders' titles and a working set of institutions.
 
-- Choose economic components (27 available), such as your economic model, sector focus, labor system and trade policy.
-- Your GDP per person sets your [economic tier](/help/economy/tiers), which caps how fast you can grow.
-- In Advanced mode, set sector shares and workforce figures.
+**Customise institutions** opens:
 
-## Step 4: Preview & Create
+- **Names and titles** for your head of state, head of government, legislature, cabinet and highest court.
+- **Policy presets**: 55 ready-made sets of institutions, such as Modern democracy or Welfare state. A preset replaces your set in one go, and asks first if you had chosen your own.
+- **Institutions**: every [government component](/help/government/atomic), grouped in plain headings, each with one line on what it does. Choose up to **15**. Pairs that work well together or against each other show in one list (see [Synergies & Conflicts](/help/government/synergy)). Conflicts are warnings; they never stop you continuing.
 
-Review the whole nation. When you create it:
+## Economy
 
-- Everything is saved in one go and the nation is assigned to you.
-- If several realms are open to you, a picker lets you choose where the nation lives. The builder refuses a name already used in that realm, or a nation beyond your nation limit there.
-- You are taken to [MyCountry](/mycountry).
+Choose your population (Small, Medium, Large or Very large) and wealth (Developing, Emerging, Wealthy or Very wealthy). Your starting kind fills both in. **Enter exact figure** takes a number instead, with the kind's own figure next to it and a reset.
+
+## Review
+
+A summary of every step, each with **Edit** (which brings you back here when you continue), your nation's figures, and what happens next. **Found nation** asks you to confirm the name and realm; nothing founds without that confirm, and no keyboard shortcut founds. If the server refuses (a realm at its limit, a name already taken), the message says which step fixes it.
+
+## The nation card
+
+The **Nation** button in the footer opens your nation's figures: GDP and GDP per person, the budget balance, stability, government effectiveness and expected growth. They are calculated by the same code that founds the nation, so the founded nation starts with exactly these figures.
+
+## What is generated for you
+
+Founding asks for no budget, departments, taxes, sectors or jobs. They are generated from your choices:
+
+- **Departments** come from your form of government.
+- **The budget** is set so that taxes cover spending at the start.
+- **Taxes** follow your starting kind's tax profile.
+- **Sectors, jobs and demographics** follow your starting kind, your size and your wealth.
+
+You adjust all of these after founding in their MyCountry consoles: [Economy & Budget](/help/mycountry/economy), [Taxes & Revenue](/help/economy/tax-system) and [Politics](/help/mycountry/politics).
 
 ## Importing from a wiki
 
-Choose the import option, pick **IIWiki** or **AltHistory Wiki**, search for the page and select it. The builder reads the infobox (name, capital, population, leader and similar fields), shows you what it found, and fills the matching builder fields. You review and complete the rest.
+On the Start step, choose **Import from the wiki**, pick **IIWiki** or **AltHistory**, search for the page and select it. The import reads the infobox and shows what it found, field by field, with a checkbox each: name, flag, capital, population, GDP per person, government, language, currency and motto. Unticked fields keep the defaults. The Start step then marks the closest kind of nation as **Suggested**.
+
+## Drafts
+
+Your whole draft (realm, kind, step and choices) is saved to your account two seconds after each change; the footer shows **Draft saved**, **Saving…** or a retry. Refreshing, a link to a step or another device brings you back to where you were. A link to a step you can't reach yet opens the first step still to do.
 
 ## Tips
 
-- **Drafts autosave.** Refreshing or leaving the page does not lose your work.
-- **Fewer, better components.** A small set of components that synergise scores higher than a long list with conflicts.
-- **Don't chase a template's numbers.** Starting GDP and population only set the baseline; your tier decides the growth ceiling.
-- **Nothing is permanent.** Identity, government and economy can all be changed later in the [Country Editor](/help/mycountry/editor).
+- **Fewer, better institutions.** A small set that works together scores higher than a long list with conflicts.
+- **Don't chase exact figures.** Size and wealth only set the baseline; your [economic tier](/help/economy/tiers) decides the growth ceiling.
+- **Nothing is permanent.** Name, identity, government and size can all be changed later in the [Country Editor](/help/mycountry/editor).

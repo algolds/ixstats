@@ -1321,14 +1321,14 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Flag Hook & RNG Deduplication**:
   - Migrated `MetricCardGrid.tsx` and `achievements/page.tsx` to canonical `useFlag` from `~/hooks/useUnifiedFlags`.
   - Deleted redundant `src/hooks/useSimpleFlag.ts` ($-135\text{L}$).
-  - Pruned unused `useCountryFlagsRouteAware` from [`src/hooks/useCountryFlagRouteAware.ts`](src/hooks/useCountryFlagRouteAware.ts).
+  - Pruned unused `useCountryFlagsRouteAware` from `src/hooks/useCountryFlagRouteAware.ts`.
   - Re-exported [`src/lib/worldgen/rng.ts`](src/lib/worldgen/rng.ts) from canonical `~/lib/worldgen/v2/helpers/rng`.
 
 - **Onoma Library Alignment**:
   - Relocated `language-families.ts` and `markov-naming.ts` into canonical [`src/lib/onoma/`](src/lib/onoma/) and updated worldgen call sites.
 
 - **Economy Builder Type Monolith Condensation**:
-  - Streamlined [`src/types/economy-builder.ts`](src/types/economy-builder.ts) from 1,053 lines down to **397 lines** ($-656\text{L}$).
+  - Streamlined `src/types/economy-builder.ts` from 1,053 lines down to **397 lines** ($-656\text{L}$).
   - Removed `src/types/economy-builder.ts` from `scripts/audit/arch-baseline.json`.
 
 
@@ -1349,10 +1349,10 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **Builder Monolith Decomposition**:
   - Extracted 2,540 lines of static component lookup tables from `src/app/builder/utils/atomicGovernmentIntegration.ts` into `src/app/builder/data/government-mappings.ts`, shrinking the logic module from 2,953 lines down to 433 lines ($-2,520\text{L}$).
-  - Extracted numeric and government type parsers into [`src/app/builder/lib/builder-parsers.ts`](src/app/builder/lib/builder-parsers.ts).
+  - Extracted numeric and government type parsers into `src/app/builder/lib/builder-parsers.ts`.
 
 - **Country Management Routers Payload Builder**:
-  - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and [`update.ts`](src/server/api/routers/countries/management/update.ts) ($-300\text{L}$).
+  - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and `update.ts` ($-300\text{L}$).
 
 
 ### ✂️ Gold Master Over-Engineering Prune, Dependency Trimming & Sports AST Router Splits (Plans 133–137)
@@ -1398,7 +1398,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
     - Deleted `src/lib/onoma/tavern-generator.ts` and `tavern-data.ts` (`-362L` non-standard fantasy generator).
   - **Monolith Reductions & Built-in Consolidations**:
     - Refactored [`src/lib/cards/category-enums.ts`](src/lib/cards/category-enums.ts) from 707 lines to 205 lines (`-502L`) using root keywords and algorithmic plural stem expansion.
-    - Created [`src/hooks/useGenericAutoSync.ts`](src/hooks/useGenericAutoSync.ts), consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
+    - Created `src/hooks/useGenericAutoSync.ts`, consolidating auto-sync debounce logic across `useNationalIdentityAutoSync`, `useEconomyBuilderAutoSync`, and `useBuilderAutoSync` (`-593L` boilerplate reduction).
 
 - **Strict Type Safety & Compiler Zero-Diagnostic Mandate (`/typescript-pro`, `/typescript-expert`)**:
   - **Eliminated `@ts-nocheck`**: Cleaned and strongly typed [`src/components/mycountry/domains/defense/StabilityPanel.tsx`](src/components/mycountry/domains/defense/StabilityPanel.tsx).
@@ -2094,7 +2094,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Achievements Auto-Resync (Achievements System v2)**:
   - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
 - **Editor Economy Styling Polish**:
-  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators ([PopulationSection.tsx](src/app/builder/components/enhanced/tabs/demographics/PopulationSection.tsx)) and geographic region rows ([GeographicSection.tsx](src/app/builder/components/enhanced/tabs/demographics/GeographicSection.tsx)) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
+  - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators (PopulationSection.tsx) and geographic region rows (GeographicSection.tsx) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
 
 ## [1.1.9 Ogma (Alpha)] - 2026-06-29
 
@@ -3955,7 +3955,7 @@ We applied several minor tweaks to ensure stability:
 
 - **`management.ts`**:
   - Stringified the `kpis` array parameters into valid JSON string representations before committing database updates.
-- **[useBuilderState.ts](src/app/builder/hooks/useBuilderState.ts)**:
+- **useBuilderState.ts**:
   - Safely parsed functions and KPI JSON strings back into valid arrays of objects on edit initialization.
 
 #### Phase 3: Wiki & Lore Tab Feature Expansion

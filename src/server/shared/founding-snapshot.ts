@@ -16,9 +16,13 @@
  * Exact economic inputs always win over generated values.
  */
 
-import type { ComponentType, Country, EconomicArchetype } from "@prisma/client";
+import type { Country, EconomicArchetype } from "@prisma/client";
 import type { z } from "zod";
-import { checkComponentSynergy } from "~/lib/government/synergy";
+import {
+  governmentEffectiveness,
+  NEW_COMPONENT_EFFECTIVENESS,
+  type ScoredComponent,
+} from "~/lib/government/effectiveness";
 import { getGovernmentForm, type GovernmentInstitutions } from "~/lib/government/forms";
 import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
 import { currentBudgetYear } from "~/lib/government/budget-year";
@@ -902,39 +906,21 @@ export function inferFormId(componentTypes: readonly string[]): string {
   return DEFAULT_FORM_ID;
 }
 
-/** Score adjustment per synergy type, as `syncGovernmentComponents` applies it. */
-function synergyScoreDelta(type: string, multiplier: number): number {
-  if (type === "CONFLICTING") return -15;
-  if (type === "ADDITIVE") return 10;
-  return type === "MULTIPLICATIVE" ? multiplier * 10 : 0;
-}
-
 /**
- * Government effectiveness of a new nation's components: the mean effectiveness score plus the
- * synergy adjustments between every pair, clamped to 0 to 100. Mirrors what
- * `syncGovernmentComponents` writes when the nation is created (same defaults, same order).
+ * Government effectiveness of a new nation's components: `governmentEffectiveness` over the rows
+ * `syncGovernmentComponents` creates for them (duplicates dropped, a missing score starts at
+ * `NEW_COMPONENT_EFFECTIVENESS`), so the preview shows the number the save writes.
  */
 export function foundingGovernmentEffectiveness(components: GovernmentComponentInput[]): number {
-  const records: Array<{ componentType: string; effectivenessScore: number }> = [];
+  const records: ScoredComponent[] = [];
   for (const comp of components) {
     if (records.some((r) => r.componentType === comp.componentType)) continue;
     records.push({
       componentType: comp.componentType,
-      effectivenessScore: comp.effectivenessScore ?? 50,
+      effectivenessScore: comp.effectivenessScore ?? NEW_COMPONENT_EFFECTIVENESS,
     });
   }
-  let synergyDelta = 0;
-  records.forEach((a, i) => {
-    for (const b of records.slice(i + 1)) {
-      const synergy = checkComponentSynergy(
-        a.componentType as ComponentType,
-        b.componentType as ComponentType
-      );
-      if (synergy) synergyDelta += synergyScoreDelta(synergy.type, synergy.multiplier);
-    }
-  });
-  const base = records.reduce((sum, r) => sum + r.effectivenessScore, 0) / (records.length || 1);
-  return clamp(base + synergyDelta, 0, 100);
+  return governmentEffectiveness(records);
 }
 
 /** The component set a government form starts with; empty for an unknown form id. */

@@ -17,7 +17,7 @@ The Economy section of MyCountry ([/mycountry/economy](/mycountry/economy)) show
 
 ## Economic Report
 
-A read-out of your economy: sector output, labor market (unemployment, youth unemployment, female participation, wages, informal work) and income and wealth distribution. Most of these figures come from what you entered in the builder; anything you haven't recorded shows "—". Change them in the [Country Editor](/help/mycountry/editor) (Advanced mode, Economics step).
+A read-out of your economy: sector output, labor market (unemployment, youth unemployment, female participation, wages, informal work) and income and wealth distribution. Most of these figures were generated from your choices when you founded your nation; anything not recorded shows "—".
 
 ## National Budget
 

@@ -1,8 +1,18 @@
 # Country builder and editor redesign (design)
 
 **Date:** 2026-10-15 · **Branch:** `docs/builder-editor-redesign-spec` (from `rose-garden` 5d6c53a)
-**Status:** Design. Stopgap for the worst data loss is [PR #78](https://github.com/algolds/ixstats/pull/78)
-(editor saves no longer wipe the cabinet, budget history or component effectiveness).
+**Status:** Implemented (phases 0 to 5, 2026-10-15). The stopgap was [PR #78](https://github.com/algolds/ixstats/pull/78).
+Deviations from this design:
+- Size and wealth bands are a `SegmentedControl` from 640px up and 2×2 radio cards below it, where four labels do not fit.
+- The government picker shows one combined synergy `Signal` listing every pair, not one `Signal` per pair.
+- Realm cards show the name and how many of the nations allowed there the player holds, without banner or clock.
+- The editor's leave guard covers links and browser Back, not programmatic `router.push`.
+- National symbol image fields (beyond flag and coat of arms) are not in the editor.
+- There is no `?` shortcuts sheet: founding has no keyboard shortcuts at all.
+- In the editor, a policy preset keeps older components that have no description (they stay, as they do on save).
+- Halo's builder plugin offers only Jump to section (founding steps, editor `#hash` sections).
+- The economic archetype and component usage counters (`incrementArchetypeUsage`, `incrementComponentUsage`) are
+  no longer called by any page; the procedures remain for the admin usage figures.
 **Replaces:** the flow described in `src/app/builder/README.md` and `docs/systems/builder.md`. The companion guide spec
 (`2026-09-08-builder-unified-companion-guide-design.md`) is superseded where they disagree.
 **Goal:** founding a nation takes a casual player about five minutes of plain-language choices and works one-handed on

@@ -10,7 +10,6 @@ import {
   getEconomicComponentEffect,
 } from "~/lib/economy/atomic-data";
 import { builtinArchetypes } from "~/lib/economy/archetypes/seed";
-import { detectEconomicConflicts, detectEconomicSynergies } from "~/lib/economy/atomic-utils";
 
 const ALL_TYPES = Object.values(EconomicComponentType);
 const definitionOf = (type: EconomicComponentType) => ATOMIC_ECONOMIC_COMPONENTS[type];
@@ -162,19 +161,6 @@ describe("economic component synergies and conflicts", () => {
       }
     }
     expect(oneSided).toEqual([]);
-  });
-
-  it("describe pairs in plain words using the written names", () => {
-    const [synergy] = detectEconomicSynergies([
-      EconomicComponentType.FREE_MARKET_SYSTEM,
-      EconomicComponentType.STARTUP_ECOSYSTEM,
-    ]);
-    expect(synergy?.description).toBe("Free market works well with startup support");
-    const [conflict] = detectEconomicConflicts([
-      EconomicComponentType.PLANNED_ECONOMY,
-      EconomicComponentType.FREE_MARKET_SYSTEM,
-    ]);
-    expect(conflict?.description).toBe("Central planning works against free market");
   });
 
   it("never list a pair as both a synergy and a conflict", () => {

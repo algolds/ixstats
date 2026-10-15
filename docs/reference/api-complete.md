@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (80 Routers, 1097 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1088 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -15,7 +15,6 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
 | **`api.atlas`** | 0 | 0 | 0 | **5** | `src/server/api/routers/atlas/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
-| **`api.autosaveHistory`** | 2 | 0 | 0 | **2** | `src/server/api/routers/autosaveHistory.ts` |
 | **`api.autosaveMonitoring`** | 5 | 0 | 0 | **5** | `src/server/api/routers/autosaveMonitoring.ts` |
 | **`api.blurbs`** | 9 | 6 | 0 | **15** | `src/server/api/routers/blurbs/index.ts` |
 | **`api.builderDraft`** | 1 | 2 | 0 | **3** | `src/server/api/routers/builderDraft.ts` |
@@ -29,7 +28,6 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
 | **`api.crafting`** | 2 | 1 | 0 | **3** | `src/server/api/routers/crafting/index.ts` |
 | **`api.crisisEvents`** | 2 | 0 | 0 | **2** | `src/server/api/routers/crisis-events.ts` |
-| **`api.customTypes`** | 2 | 2 | 0 | **4** | `src/server/api/routers/customTypes.ts` |
 | **`api.demoMode`** | 1 | 0 | 0 | **1** | `src/server/api/routers/demo-mode.ts` |
 | **`api.diplomaticCore`** | 4 | 3 | 0 | **7** | `src/server/api/routers/diplomacy/core/index.ts` |
 | **`api.diplomaticCultural`** | 2 | 8 | 0 | **10** | `src/server/api/routers/diplomacy/cultural/index.ts` |
@@ -38,7 +36,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.diplomaticScenarios`** | 4 | 4 | 0 | **8** | `src/server/api/routers/diplomaticScenarios/index.ts` |
 | **`api.economicArchetypes`** | 2 | 4 | 0 | **6** | `src/server/api/routers/economicArchetypes/index.ts` |
 | **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
-| **`api.economics`** | 2 | 3 | 0 | **5** | `src/server/api/routers/economics/index.ts` |
+| **`api.economics`** | 1 | 2 | 0 | **3** | `src/server/api/routers/economics/index.ts` |
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
 | **`api.exchange`** | 8 | 25 | 0 | **33** | `src/server/api/routers/exchange/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
@@ -87,9 +85,9 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 23 | 19 | 0 | **42** | `src/server/api/routers/vault/index.ts` |
-| **`api.wikiCache`** | 2 | 1 | 0 | **3** | `src/server/api/routers/wikiCache.ts` |
+| **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **525** | **558** | **0** | **1097** | **80 registered namespaces** |
+| **TOTALS** | **519** | **555** | **0** | **1088** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
@@ -100,12 +98,12 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 
 ## Core Systems
 
-### countries Router (29 procedures)
+### countries Router (34 procedures)
 
 Country reads are split across `list`, `economy`, `identity`, `management`, `wiki`, `atomic` and `flags` modules and spread into one namespace (`flags` is nested: `api.countries.flags.*`).
 
 ```typescript
-// Queries (24)
+// Queries (25)
 api.countries.getSelectList.useQuery({ search?, limit?, realm? })
 api.countries.getAll.useQuery({ limit?, offset?, search?, continent?, economicTier?, realm? })
 api.countries.getMapSummary.useQuery({ countryId })
@@ -115,7 +113,6 @@ api.countries.getTopCountriesByPopulation.useQuery({ limit?, realm? })
 api.countries.getRandomCountries.useQuery({ limit?, realm? })
 api.countries.getByIdWithEconomicData.useQuery({ id, timestamp?, realm? })
 api.countries.getByIdAtTime.useQuery({ id, timestamp? })
-api.countries.getEditorRelations.useQuery({ countryId })
 api.countries.getGlobalStats.useQuery({ realm? })
 api.countries.getTradeData.useQuery({ countryId })
 api.countries.getActivityRingsData.useQuery({ countryId })
@@ -127,14 +124,20 @@ api.countries.getWikiPageImages.useQuery({ countryName })
 api.countries.getWikiRichIntro.useQuery({ countryName })
 api.countries.getBulkWikiRichIntros.useQuery({ countryNames })
 api.countries.getWikiSectionPreviews.useQuery({ countryName })
-api.countries.getEligibleCountries.useQuery({ site })
+api.countries.previewFounding.useQuery({ ...founding draft }) // the nation card's figures; same calculation as createCountry
+api.countries.getEditorState.useQuery({ countryId })
+api.countries.checkNameAvailable.useQuery({ countryId, name })
 api.countries.getByNameWithAtomic.useQuery({ name, realm? })
 api.countries.flags.resolveBatch.useQuery({ countryNames, fallbackPolicy? })
 
-// Mutations (5)
+// Mutations (9)
 api.countries.update.useMutation() // { id, ...fields } (passthrough)
 api.countries.createCountry.useMutation() // { name, foundationCountry, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState?, archetypeId? }
-api.countries.updateCountry.useMutation() // { id, name, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState? }
+api.countries.rename.useMutation() // { countryId, name, expected: { name } }; the old slug redirects
+api.countries.saveIdentity.useMutation() // one editor section's identity fields, with the values it loaded
+api.countries.saveGovernmentForm.useMutation() // government type and institution names
+api.countries.saveGovernmentComponents.useMutation() // { countryId, componentTypes, expected }
+api.countries.saveSize.useMutation() // population and GDP per person, with the loaded baseline
 api.countries.searchWiki.useMutation() // { query, site, categoryFilter? }
 api.countries.parseInfobox.useMutation() // { pageName, site }
 ```
@@ -270,17 +273,15 @@ api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cr
 api.atomicGovernment.getComponents.useQuery({ countryId })
 ```
 
-### economics Router (5 procedures)
+### economics Router (3 procedures)
 
 ```typescript
-// Queries (2)
+// Queries (1)
 api.economics.getEconomyConfiguration.useQuery({ countryId })
-api.economics.getEconomyBuilderState.useQuery({ countryId })
 
-// Mutations (3)
+// Mutations (2)
 api.economics.updateEconomicProfile.useMutation() // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
 api.economics.updateFiscalSystem.useMutation() // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
-api.economics.autoSaveEconomyBuilder.useMutation() // { countryId, changes }
 ```
 
 ### taxSystem Router (5 procedures)
@@ -854,30 +855,14 @@ const mutation = api.countries.update.useMutation({
 
 ---
 
-## Autosave System
+## Autosave Monitoring
 
-Autosave events are recorded in the `AuditLog` table (actions such as `autosave:economy`); the two routers below read them back.
-
-### autosaveHistory Router (2 procedures)
-
-**User Autosave History:**
-```typescript
-// Get autosave history for country
-api.autosaveHistory.getAutosaveHistory.useQuery({
-  countryId: string,
-  limit?: number,
-  offset?: number
-})
-
-// Get autosave statistics
-api.autosaveHistory.getAutosaveStats.useQuery({ countryId: string })
-```
-
----
+Older builder autosaves were recorded in the `AuditLog` table (actions such as `autosave:economy`). Nothing autosaves a
+country any more: founding saves a server draft (`builderDraft`) and the country editor saves each section on its own
+button. The admin dashboard below still reads the recorded history.
 
 ### autosaveMonitoring Router (5 procedures, Admin Only)
 
-**Global Autosave Monitoring:**
 ```typescript
 // Get global autosave statistics
 api.autosaveMonitoring.getAutosaveStats.useQuery({ timeRange? })
@@ -894,35 +879,6 @@ api.autosaveMonitoring.getActiveUsers.useQuery({ timeRange? })
 // Get system health
 api.autosaveMonitoring.getSystemHealth.useQuery()
 ```
-
----
-
-### Autosave Mutations
-
-Only the Economy Builder autosaves; the government and tax builders save explicitly. (The old
-`useBuilderAutoSync.ts` hooks were deleted, and no client calls `api.government.create` / `update` or
-`api.taxSystem.create` / `update` today.)
-
-**Economy Builder:** `useEconomyAutoSync` (`src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`) →
-```typescript
-api.economics.autoSaveEconomyBuilder.useMutation()
-// Input: { countryId, changes }
-// Logs success/failure to AuditLog as "autosave:economy"
-```
-
-All three build on `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`).
-
-**Debounce Configuration:**
-`useGenericAutoSync` and the government/tax hooks default to a 2-second debounce; the economy builder uses 15 seconds.
-
-**Error Handling:**
-- Economy autosave failures are logged to the `AuditLog` table
-- Users see subtle error indicators, not intrusive alerts
-- Admins can monitor failures via `autosaveMonitoring` router
-
-**Security:**
-- All mutations verify user ownership before saving
-- Rate limiting applied to prevent abuse
 
 ---
 

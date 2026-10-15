@@ -5,7 +5,7 @@ import * as path from "path";
 import type { PersistentFlagCacheAdapter } from "./contracts";
 import { normalizeCountryName, normalizeFlagUrl } from "./normalization";
 import { withBasePath } from "~/lib/base-path";
-import economyData from "~/app/builder/lib/economy-data.json";
+import economyData from "~/lib/flags/benchmark-countries.json";
 
 interface FlagMetadataFile {
   flags?: Record<string, { fileName?: string }>;
@@ -59,7 +59,7 @@ class LocalFlagCacheAdapter implements PersistentFlagCacheAdapter {
       }
     }
 
-    // 3. Pre-populate from economy-data.json (210 real-world benchmark countries)
+    // 3. Pre-populate from benchmark-countries.json (210 real-world benchmark countries)
     for (const item of economyData as Array<{ name: string; countryCode?: string; flag?: string }>) {
       if (!item.name) continue;
       const normName = normalizeCountryName(item.name);

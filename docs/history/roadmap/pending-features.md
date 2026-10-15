@@ -65,7 +65,7 @@ masked in the admin config; sports season and simulation procedures require the 
 - **Relative-development asymmetry:** display-only; feed it into trade maths (vision audit :80).
 - **Embassy missions:** not playable.
 - **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
-- **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../../architecture/autosave.md)).
+- **Autosave rollout:** mount the government/tax hooks, add National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge (autosave.md).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../../systems/calculations.md)).
 - ~~**Delete dead code:** `src/lib/intelligence/calculator.ts` and `live-data-transformers.ts`~~ ✅ deleted. The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models they alone wrote are still in the schema.
 

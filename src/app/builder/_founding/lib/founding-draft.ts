@@ -357,6 +357,19 @@ export function toggleComponent(
 }
 
 /**
+ * A policy preset replaces the whole component set in one update (spec §4); the form's own set
+ * drops the draft's copy, as a toggle back to it does.
+ */
+export function applyPreset(
+  government: FoundingDraft["government"],
+  components: readonly ComponentType[]
+): FoundingDraft["government"] {
+  const next = [...new Set(components)].slice(0, MAX_GOVERNMENT_COMPONENTS);
+  const formSet = getGovernmentForm(government.formId)?.components ?? [];
+  return { ...government, components: sameSet(next, formSet) ? null : next };
+}
+
+/**
  * Sets one institution name; typing the form's own name back clears the rename. An emptied box
  * stays empty while the player types, and founds with the form's name.
  */

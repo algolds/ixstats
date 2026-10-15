@@ -33,7 +33,7 @@ How many nations you can hold in a realm is the lower of:
 - the **realm's limit** (set by its admins, 1 by default, up to 20), and
 - your **account limit**: 1 for free accounts, 5 for [Premium](/help/getting-started/premium).
 
-The builder and claims both check this.
+Founding and claims both check this.
 
 ## Playing more than one nation
 

@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { Prisma, PrismaClient, StorytellerEffect } from "@prisma/client";
 import {
   publicProcedure,
-  protectedProcedure,
   rateLimitedPublicProcedure,
   cachedStaticProcedure,
 } from "~/server/api/trpc";
@@ -22,10 +21,7 @@ import {
   getCountryComponentsStatsData,
   resolveCountryRefId,
 } from "./utils";
-import {
-  assertCountryWriteAccess,
-  hasCountryWriteAccess,
-} from "~/server/shared/country-authorization";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
 import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
 
@@ -343,44 +339,6 @@ export const economyProcedures = {
         country: country.name,
         timeElapsed: calculatedStats.timeElapsed,
         calculationDate: calculatedStats.calculationDate,
-      };
-    }),
-
-  // Editor-only loader: the relational subsystems the builder/editor needs to
-  // rehydrate state that getByIdAtTime (kept lean for its 14 hot-path callers)
-  // does not include. Owner/admin gated like updateCountry.
-  getEditorRelations: protectedProcedure
-    .input(z.object({ countryId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
-
-      const [
-        demographics,
-        incomeDistribution,
-        governmentBudget,
-        economicProfile,
-        governmentComponents,
-        economicComponents,
-      ] = await Promise.all([
-        ctx.db.demographics.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.incomeDistribution.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.governmentBudget.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.economicProfile.findUnique({ where: { countryId: input.countryId } }),
-        ctx.db.governmentComponent.findMany({
-          where: { countryId: input.countryId, isActive: true },
-        }),
-        ctx.db.economicComponent.findMany({
-          where: { countryId: input.countryId, isActive: true },
-        }),
-      ]);
-
-      return {
-        demographics,
-        incomeDistribution,
-        governmentBudget,
-        economicProfile,
-        governmentComponents,
-        economicComponents,
       };
     }),
 

@@ -1,212 +1,65 @@
 "use client";
 
 /**
- * BuilderHalo — Halo overlay plugin for the Nation Builder.
- *
- * Provides real-time step tracking, validation error counts,
- * manual save action trigger, and expanded builder modal views.
+ * BuilderHalo: the Halo plugin for founding (`/builder`) and the country editor
+ * (`/mycountry/editor`). It offers one command, "Jump to section"; the page keeps its own
+ * stepper or anchor nav, saves and validation.
  */
 
-import React, { useMemo, useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import {
-  useBuilderFilter,
-  type BuilderFilterState,
-} from "~/app/builder/components/builder-filter-context";
-import {
-  useBuilderContext,
-  type BuilderContextValue,
-} from "~/app/builder/components/enhanced/context/BuilderStateContext";
-import type { RealCountryData } from "~/types/builder";
-import { BuilderView } from "./views";
-import type { DIPlugin, DIViewProps } from "~/components/halo/types";
-import { PreText } from "~/components/ui/pretext";
-import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { notifyFromStore } from "~/hooks/useNotify";
-import { WarningCircle as AlertCircle, FloppyDisk as Save } from "iconoir-react";
+import type { DIPlugin } from "~/components/halo/types";
+import { JumpToSectionView } from "./views";
+import type { BuilderHaloContext, BuilderHaloSection } from "./types";
 
-interface BuilderCompactLabelProps {
-  step: string;
-  countryName: string;
+export interface BuilderHaloProps {
+  /** The pill's label, e.g. "Found a nation" or the nation's name. */
+  label: string;
+  /** Where the player can jump, in page order. */
+  sections: BuilderHaloSection[];
+  /** The section shown now, if the page knows it (founding's current step). */
+  currentId?: string | null;
+  /** Moves the page to a section (a founding step, or an editor `#hash`). */
+  onJump: (id: string) => void;
 }
 
-function BuilderCompactLabel({ step, countryName }: BuilderCompactLabelProps) {
-  const stepLabel = useMemo(() => {
-    switch (step) {
-      case "foundation":
-        return "Template";
-      case "core":
-      case "identity":
-        return "Identity";
-      case "government":
-        return "Government";
-      case "economics":
-        return "Economics";
-      case "preview":
-        return "Verify";
-      default:
-        return "Design";
-    }
-  }, [step]);
-
-  const fullLabel = countryName ? `${countryName} (${stepLabel})` : stepLabel;
-
+function BuilderHaloLabel({ label }: { label: string }) {
   return (
-    <span
-      className="flex max-w-[130px] min-w-0 items-center gap-2 overflow-hidden select-none sm:max-w-[180px]"
-      title={`Builder: ${fullLabel}`}
-    >
-      <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" />
-      <PreText className="text-label text-caption shrink-0 font-semibold" whiteSpace="nowrap">
-        Builder
-      </PreText>
-      <span className="text-label-tertiary text-footnote shrink-0">•</span>
-      <span className="text-label-secondary text-caption min-w-0 flex-1 truncate [mask-image:linear-gradient(to_right,black_85%,transparent_100%)]">
-        {fullLabel}
+    <span className="flex max-w-[180px] min-w-0 items-center gap-2 select-none" title={label}>
+      <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" aria-hidden />
+      <span className="text-label text-caption min-w-0 truncate font-semibold whitespace-nowrap">
+        {label}
       </span>
     </span>
   );
 }
 
-interface BuilderHaloInnerProps {
-  filter: BuilderFilterState;
-  context: BuilderContextValue;
-}
-
-function BuilderHaloInner({ filter, context }: BuilderHaloInnerProps) {
+export function BuilderHalo({ label, sections, currentId = null, onJump }: BuilderHaloProps) {
+  // The latest jump handler, so a new closure each render does not re-register the plugin.
+  const jumpRef = useRef(onJump);
   useEffect(() => {
-    if (context.builderState.step === "foundation") {
-      return;
-    }
+    jumpRef.current = onJump;
+  }, [onJump]);
 
-    if (context.builderState.selectedCountry) {
-      if (filter.selectedTemplate?.name !== context.builderState.selectedCountry.name) {
-        filter.setSelectedTemplate(context.builderState.selectedCountry);
-      }
-    } else if (context.builderState.economicInputs?.countryName) {
-      if (filter.selectedTemplate?.name !== context.builderState.economicInputs.countryName) {
-        const syntheticCountry: RealCountryData = {
-          name: context.builderState.economicInputs.countryName,
-          countryCode: context.builderState.economicInputs.nationalIdentity?.isoCode || "custom",
-          gdp: context.builderState.economicInputs.coreIndicators?.nominalGDP || 0,
-          gdpPerCapita: context.builderState.economicInputs.coreIndicators?.gdpPerCapita || 0,
-          unemploymentRate:
-            context.builderState.economicInputs.laborEmployment?.unemploymentRate || 0,
-          population: context.builderState.economicInputs.coreIndicators?.totalPopulation || 0,
-          continent: context.builderState.economicInputs.geography?.continent || "",
-          region: context.builderState.economicInputs.geography?.region || "",
-          flag: context.builderState.economicInputs.flagUrl || "",
-        };
-        filter.setSelectedTemplate(syntheticCountry);
-      }
-    } else if (filter.selectedTemplate !== null) {
-      filter.setSelectedTemplate(null);
-    }
-  }, [
-    context.builderState.step,
-    context.builderState.selectedCountry,
-    context.builderState.economicInputs?.countryName,
-    context.builderState.economicInputs?.nationalIdentity?.isoCode,
-    context.builderState.economicInputs?.coreIndicators?.nominalGDP,
-    context.builderState.economicInputs?.coreIndicators?.gdpPerCapita,
-    context.builderState.economicInputs?.laborEmployment?.unemploymentRate,
-    context.builderState.economicInputs?.coreIndicators?.totalPopulation,
-    context.builderState.economicInputs?.geography?.continent,
-    context.builderState.economicInputs?.geography?.region,
-    context.builderState.economicInputs?.flagUrl,
-    filter.selectedTemplate,
-    filter.setSelectedTemplate,
-  ]);
-
-  // Fine-grained selector subscribing only to the error count to minimize re-renders
-  const errorCount = useToastQueueStore((s) => s.queue.filter((t) => t.type === "error").length);
-  const hasError = errorCount > 0;
-
-  const isSaving = context.isAutoSaving || context.isSyncing;
-  const saveAction = useMemo(
+  const sectionsKey = JSON.stringify(sections);
+  const plugin = useMemo<DIPlugin<unknown, BuilderHaloContext>>(
     () => ({
-      id: "builder-save",
-      icon: Save,
-      label: isSaving ? "Saving…" : "Save progress",
-      onClick: async () => {
-        try {
-          await context.triggerManualSave();
-          notifyFromStore({
-            title: "Progress saved",
-            type: "success",
-            category: "system",
-          });
-        } catch (e) {
-          notifyFromStore({
-            title: "Save failed",
-            message: e instanceof Error ? e.message : "Could not save your changes.",
-            type: "error",
-            category: "system",
-          });
-        }
+      id: "builder",
+      // Above MyCountry and the wiki, so the editor and founding show their own sections.
+      priority: 20,
+      center: <BuilderHaloLabel label={label} />,
+      expandedViews: { sections: JumpToSectionView },
+      accentColor: "var(--color-yellow)",
+      stickyLabel: label,
+      context: {
+        sections: JSON.parse(sectionsKey) as BuilderHaloSection[],
+        currentId,
+        onJump: (id: string) => jumpRef.current(id),
       },
     }),
-    [context, isSaving]
+    [label, sectionsKey, currentId]
   );
-
-  const countryName =
-    context.builderState.economicInputs?.countryName ||
-    filter.selectedTemplate?.name ||
-    context.builderState.selectedCountry?.name ||
-    "";
-
-  const isFoundationStep = context.builderState.step === "foundation";
-
-  const plugin = useMemo<DIPlugin<BuilderFilterState, BuilderContextValue>>(() => {
-    return {
-      id: "builder",
-      priority: 20, // High priority to override mycountry/wiki default plugins
-      center: <BuilderCompactLabel step={context.builderState.step} countryName={countryName} />,
-      expandedViews: {
-        builder: BuilderView as React.ComponentType<
-          DIViewProps<BuilderFilterState, BuilderContextValue>
-        >,
-      },
-      accentColor: hasError ? "var(--color-error)" : "var(--color-yellow)",
-      stickyLabel: "Builder",
-      badge: hasError ? { color: "var(--color-error)", pulse: true } : undefined,
-      actions: [
-        ...(hasError
-          ? [
-              {
-                id: "builder-errors",
-                icon: AlertCircle,
-                label: `${errorCount} validation error${errorCount === 1 ? "" : "s"}`,
-                onClick: () => {
-                  window.dispatchEvent(new CustomEvent("ix:open-validation-toast"));
-                },
-                badge: errorCount,
-              },
-            ]
-          : []),
-        ...(!isFoundationStep ? [saveAction] : []),
-      ],
-      filter,
-      context,
-    };
-  }, [
-    context.builderState.step,
-    countryName,
-    hasError,
-    errorCount,
-    isFoundationStep,
-    saveAction,
-    filter,
-    context,
-  ]);
 
   useDIPlugin(plugin);
   return null;
-}
-
-export function BuilderHalo() {
-  const filter = useBuilderFilter();
-  const context = useBuilderContext();
-
-  return <BuilderHaloInner filter={filter} context={context} />;
 }

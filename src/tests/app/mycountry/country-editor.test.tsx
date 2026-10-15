@@ -1,8 +1,8 @@
 /**
  * The country editor page: one list drives the grouped nav and the sections, each section saves
  * on its own button (disabled until something changed) and sends only what changed with the values
- * it loaded for them, a conflict reloads only that section, and the leave guard names the sections
- * with unsaved changes.
+ * it loaded for them, a conflict reloads only that section, a policy preset replaces the
+ * institutions after a confirm, and the leave guard names the sections with unsaved changes.
  */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -92,6 +92,9 @@ jest.mock("~/context/auth-context", () => ({
   useUser: () => ({ user: { id: "user_1" }, isLoaded: true }),
 }));
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
+jest.mock("~/components/ui/value-select", () =>
+  jest.requireActual("~/tests/helpers/native-value-select")
+);
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
@@ -112,6 +115,7 @@ jest.mock("~/app/r/[realm]/_components/manage/RealmImageField", () => ({
 
 import MyCountryEditorPage from "~/app/mycountry/editor/page";
 import { editorGroups } from "~/app/mycountry/editor/_components/CountryEditor";
+import { getPolicyPreset } from "~/lib/government/policy-presets";
 
 beforeAll(() => {
   Element.prototype.scrollIntoView = jest.fn();
@@ -245,6 +249,21 @@ describe("the country editor", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Rule of law/i }));
     expect(screen.getByText(/Government effectiveness: 62 → \d+/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save institutions" })).toBeEnabled();
+  });
+
+  it("replaces the institutions with a policy preset after a confirm, then saves them", () => {
+    render(<MyCountryEditorPage />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Policy presets" }), {
+      target: { value: "technocracy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Use preset" }));
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toHaveTextContent("Technocracy replaces the 2 institutions you chose");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Replace" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Save institutions" }));
+    expect(lastSave().name).toBe("saveGovernmentComponents");
+    expect(lastSave().input.componentTypes).toEqual(getPolicyPreset("technocracy")!.components);
   });
 
   it("warns that saving the size rescales the economy", () => {

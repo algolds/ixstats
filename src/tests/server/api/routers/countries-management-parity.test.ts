@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /**
- * The table-driven createCountry / updateCountry field mapping must write exactly what the original
+ * The table-driven createCountry field mapping must write exactly what the original
  * hand-written mapping wrote: same keys, same fallbacks, 0 / "" handled the same way. The `old*` functions
  * below are the pre-refactor mapping, kept as the reference.
  */
@@ -34,9 +34,7 @@ jest.mock("~/server/shared/country-mutation-helpers", () => ({
 
 import { createTRPCRouter } from "~/server/api/trpc";
 import { managementCreateProcedures } from "~/server/api/routers/countries/management/create";
-import { managementUpdateProcedures } from "~/server/api/routers/countries/management/update";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 
 const CLERK_ID = "clerk_p1";
 
@@ -211,118 +209,6 @@ function oldCreateData(econ: Econ, taxRate: number | undefined, structureType: s
   };
 }
 
-const EXISTING = {
-  id: "c1",
-  name: "Old Name",
-  baselinePopulation: 7_000_000,
-  baselineGdpPerCapita: 20_000,
-  continent: "OldContinent",
-  region: "OldRegion",
-  governmentType: "OldGov",
-  religion: "OldReligion",
-  leader: "OldLeader",
-  flag: "old-flag.svg",
-  coatOfArms: "old-coa.svg",
-  adjustedGdpGrowth: 101,
-  actualGdpGrowth: 102,
-  realGDPGrowthRate: 103,
-  inflationRate: 104,
-  currencyExchangeRate: 105,
-  populationGrowthRate: 106,
-  lifeExpectancy: 107,
-  urbanPopulationPercent: 108,
-  ruralPopulationPercent: 109,
-  literacyRate: 110,
-  laborForceParticipationRate: 111,
-  employmentRate: 112,
-  unemploymentRate: 113,
-  averageWorkweekHours: 114,
-  minimumWage: 115,
-  averageAnnualIncome: 116,
-  taxRevenueGDPPercent: 117,
-  governmentRevenueTotal: 118,
-  taxRevenuePerCapita: 119,
-  governmentBudgetGDPPercent: 120,
-  budgetDeficitSurplus: 121,
-  internalDebtGDPPercent: 122,
-  externalDebtGDPPercent: 123,
-  totalDebtGDPRatio: 124,
-  debtPerCapita: 125,
-  interestRates: 126,
-  debtServiceCosts: 127,
-  povertyRate: 128,
-  incomeInequalityGini: 129,
-  socialMobilityIndex: 130,
-  totalGovernmentSpending: 131,
-  spendingGDPPercent: 132,
-  spendingPerCapita: 133,
-};
-
-/** Pre-refactor updateCountry column mapping (the `: undefined`-keeps-stored rule, per field). */
-function oldUpdateData(econ: Econ, taxRate: number | undefined, structureType: string | undefined) {
-  const core = econ.coreIndicators;
-  const labor = econ.laborEmployment;
-  const fiscal = econ.fiscalSystem;
-  const demo = econ.demographics;
-  const income = econ.incomeWealth;
-  const spending = econ.governmentSpending;
-  const identity = econ.nationalIdentity;
-  const geo = econ.geography;
-  const e = EXISTING;
-  const keep = <T>(v: T | undefined, stored: T) => (v !== undefined ? v : stored);
-  return {
-    continent: geo?.continent || e.continent,
-    region: geo?.region || e.region,
-    governmentType: identity?.governmentType || structureType || e.governmentType,
-    religion: identity?.nationalReligion || e.religion,
-    leader: identity?.leader || e.leader,
-    flag: econ.flagUrl || e.flag || undefined,
-    coatOfArms: econ.coatOfArmsUrl || e.coatOfArms || undefined,
-    adjustedGdpGrowth: keep(pct(core?.realGDPGrowthRate), e.adjustedGdpGrowth),
-    populationGrowthRate: keep(pct(demo?.populationGrowthRate), e.populationGrowthRate),
-    actualGdpGrowth: keep(pct(core?.realGDPGrowthRate), e.actualGdpGrowth),
-    realGDPGrowthRate: keep(pct(core?.realGDPGrowthRate), e.realGDPGrowthRate),
-    inflationRate: keep(pct(core?.inflationRate), e.inflationRate),
-    currencyExchangeRate: keep(core?.currencyExchangeRate, e.currencyExchangeRate),
-    laborForceParticipationRate: keep(
-      labor?.laborForceParticipationRate,
-      e.laborForceParticipationRate
-    ),
-    employmentRate: keep(labor?.employmentRate, e.employmentRate),
-    unemploymentRate: keep(labor?.unemploymentRate, e.unemploymentRate),
-    averageWorkweekHours: keep(labor?.averageWorkweekHours, e.averageWorkweekHours),
-    minimumWage: keep(labor?.minimumWage, e.minimumWage),
-    averageAnnualIncome: keep(labor?.averageAnnualIncome, e.averageAnnualIncome),
-    taxRevenueGDPPercent: keep(fiscal?.taxRevenueGDPPercent ?? taxRate, e.taxRevenueGDPPercent),
-    governmentRevenueTotal: keep(fiscal?.governmentRevenueTotal, e.governmentRevenueTotal),
-    taxRevenuePerCapita: keep(fiscal?.taxRevenuePerCapita, e.taxRevenuePerCapita),
-    governmentBudgetGDPPercent: keep(
-      fiscal?.governmentBudgetGDPPercent,
-      e.governmentBudgetGDPPercent
-    ),
-    budgetDeficitSurplus: keep(fiscal?.budgetDeficitSurplus, e.budgetDeficitSurplus),
-    internalDebtGDPPercent: keep(fiscal?.internalDebtGDPPercent, e.internalDebtGDPPercent),
-    externalDebtGDPPercent: keep(fiscal?.externalDebtGDPPercent, e.externalDebtGDPPercent),
-    totalDebtGDPRatio: keep(fiscal?.totalDebtGDPRatio, e.totalDebtGDPRatio),
-    debtPerCapita: keep(fiscal?.debtPerCapita, e.debtPerCapita),
-    interestRates: keep(fiscal?.interestRates, e.interestRates),
-    debtServiceCosts: keep(fiscal?.debtServiceCosts, e.debtServiceCosts),
-    povertyRate: keep(income?.povertyRate, e.povertyRate),
-    incomeInequalityGini: keep(
-      income?.incomeInequalityGini ?? pct(income?.giniIndex),
-      e.incomeInequalityGini
-    ),
-    socialMobilityIndex: keep(income?.socialMobilityIndex, e.socialMobilityIndex),
-    totalGovernmentSpending: keep(spending?.totalSpending, e.totalGovernmentSpending),
-    spendingGDPPercent: keep(spending?.spendingGDPPercent, e.spendingGDPPercent),
-    spendingPerCapita: keep(spending?.spendingPerCapita, e.spendingPerCapita),
-    lifeExpectancy: keep(demo?.lifeExpectancy, e.lifeExpectancy),
-    urbanPopulationPercent: keep(demo?.urbanRuralSplit?.urban, e.urbanPopulationPercent),
-    ruralPopulationPercent: keep(demo?.urbanRuralSplit?.rural, e.ruralPopulationPercent),
-    literacyRate: keep(demo?.literacyRate, e.literacyRate),
-  };
-}
-
 const withoutUndefined = (o: object) =>
   Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
 
@@ -340,112 +226,6 @@ const CASES: Array<[string, Econ]> = [
   ["populated", POPULATED_INPUT],
   ["empty", {}],
 ];
-
-/** The tables a rename touches (`renameCountryInTx`): the name check, the identity and the redirects. */
-const RENAME_TABLES = {
-  realmPage: { findFirst: jest.fn().mockResolvedValue(null) },
-  nationalIdentity: { upsert: jest.fn().mockResolvedValue({}) },
-  countrySlugRedirect: {
-    deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
-    upsert: jest.fn().mockResolvedValue({}),
-  },
-};
-
-describe("countries.updateCountry field mapping matches the pre-refactor mapping", () => {
-  const router = createTRPCRouter(managementUpdateProcedures);
-
-  it.each(CASES)("%s", async (_label, econ) => {
-    const update = jest.fn(({ data }: { data: object }) => Promise.resolve({ id: "c1", ...data }));
-    const db: any = {
-      $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
-      user: { findUnique: jest.fn().mockResolvedValue(null) },
-      country: {
-        findUnique: jest.fn().mockResolvedValue(EXISTING),
-        findFirst: jest.fn().mockResolvedValue(null),
-        update,
-      },
-      ...RENAME_TABLES,
-    };
-    const caller = router.createCaller(makeCtx(db) as never);
-
-    await caller.updateCountry({
-      id: "c1",
-      name: "New Name",
-      economicInputs: econ,
-      taxSystemData: { taxSystemName: "T", totalTaxRate: 33 },
-      governmentStructure: { governmentName: "G", governmentType: "Federation" },
-    } as never);
-
-    const written = update.mock.calls[0]![0].data as Record<string, unknown>;
-    const expected = oldUpdateData(econ, 33, "Federation");
-    for (const [key, value] of Object.entries(expected)) {
-      expect({ key, value: written[key] }).toEqual({ key, value });
-    }
-    // No stray columns beyond the old mapping plus the derived/baseline ones.
-    const derived = new Set([
-      "name",
-      "slug",
-      "baselinePopulation",
-      "baselineGdpPerCapita",
-      "currentPopulation",
-      "currentGdpPerCapita",
-      "currentTotalGdp",
-      "economicTier",
-      "populationTier",
-      "nominalGDP",
-      "totalWorkforce",
-      "lastCalculated",
-    ]);
-    const extra = Object.keys(withoutUndefined(written)).filter(
-      (k) => !(k in expected) && !derived.has(k)
-    );
-    expect(extra).toEqual([]);
-  });
-});
-
-describe("countries.updateCountry and the realm's map version", () => {
-  const router = createTRPCRouter(managementUpdateProcedures);
-
-  async function save(name: string, geography: { continent: string; region: string }) {
-    const update = jest.fn(({ data }: { data: object }) =>
-      // Prisma returns the whole row: what the update left alone keeps its stored value.
-      Promise.resolve({ ...EXISTING, id: "c1", realmId: "r_eurth", ...data })
-    );
-    const db: any = {
-      $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(db)),
-      user: { findUnique: jest.fn().mockResolvedValue(null) },
-      country: {
-        findUnique: jest.fn().mockResolvedValue(EXISTING),
-        findFirst: jest.fn().mockResolvedValue(null),
-        update,
-      },
-      ...RENAME_TABLES,
-    };
-    await router.createCaller(makeCtx(db) as never).updateCountry({
-      id: "c1",
-      name,
-      economicInputs: { geography },
-    } as never);
-    return db;
-  }
-
-  beforeEach(() => jest.mocked(invalidateRealmMap).mockClear());
-
-  it("leaves the map alone when nothing the political layer reads changed", async () => {
-    await save("Old Name", { continent: "OldContinent", region: "OldRegion" });
-    expect(invalidateRealmMap).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["name", "Renamed", "OldContinent", "OldRegion"],
-    ["continent", "Old Name", "NewContinent", "OldRegion"],
-    ["region", "Old Name", "OldContinent", "NewRegion"],
-  ])("bumps the country's realm when its %s changes", async (_field, name, continent, region) => {
-    const db = await save(name, { continent, region });
-    expect(invalidateRealmMap).toHaveBeenCalledTimes(1);
-    expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
-  });
-});
 
 describe("countries.createCountry field mapping matches the pre-refactor mapping", () => {
   const router = createTRPCRouter(managementCreateProcedures);

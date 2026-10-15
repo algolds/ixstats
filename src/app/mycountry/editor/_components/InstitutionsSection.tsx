@@ -21,6 +21,7 @@ import {
 } from "~/lib/government/effectiveness";
 import { MAX_DEFINED_COMPONENTS } from "~/lib/mycountry/editor-fields";
 import { cn } from "~/lib/utils";
+import { PolicyPresetPicker } from "~/components/shared/government/PolicyPresetPicker";
 import { EditorSection, SaveButton, useSaveHandlers } from "./EditorSection";
 import { useEditor, useReportDirty, type EditorState } from "./editor-context";
 
@@ -107,6 +108,14 @@ export function InstitutionsSection({
         {definedCount} of {MAX_DEFINED_COMPONENTS} chosen
         {overCap && ". Remove some to save."}
       </p>
+
+      <PolicyPresetPicker
+        idPrefix="editor"
+        currentChoices={selected}
+        // Older institutions without a description stay; the preset replaces the rest.
+        onApply={(preset) => setSelected([...undescribed, ...preset])}
+        componentName={componentName}
+      />
 
       {conflicts.length > 0 ? (
         <Signal

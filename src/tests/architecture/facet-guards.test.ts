@@ -42,8 +42,6 @@ const MICRO_TYPE_ALLOWED = new Set([
   "components/cards/display/CardDisplay.tsx: text-[7px]", // card-face stat glyph
   "components/cards/display/CardBack.tsx: text-[8.5px]", // card-back art label
   "components/cards/pack-opening/PackHolographicCover.tsx: text-[7px]", // size="sm" pack art
-  "app/builder/components/enhanced/national-identity/CurrencyIcon.tsx: text-[8.5px]", // long symbols
-  "app/builder/components/enhanced/national-identity/CurrencyIcon.tsx: text-[9.5px]",
   "components/thinkpages/composer/ComposerActionBar.tsx: text-[7px]", // 14px count badge
   "components/thinkpages/post/PostComposers.tsx: text-[7px]", // 14px count badge
 ]);
@@ -56,9 +54,7 @@ const ANIMATE_PULSE_CEILING = 84;
 const FACET_CONVERTED = [
   "components/mycountry/",
   "components/maps/",
-  "components/shared/atomic-picker/",
   "app/help/",
-  "app/builder/components/editor/",
   // Facet 3 navigation shell (spec §7.4, Phase 3).
   "components/shell/",
   "lib/navigation/",
@@ -119,10 +115,9 @@ const FACET_CONVERTED = [
   "lib/tier-utils.ts",
   // Phase 4 primitives: the shared UI kit itself (status inks, no glass/v2 classes).
   "components/ui/",
-  // Phase 4 re-check: MyCountry routes, executive panels, the atomic selector, maps routes.
+  // Phase 4 re-check: MyCountry routes, executive panels, maps routes.
   "app/mycountry/",
   "components/executive/",
-  "components/shared/atomic/",
   "app/maps/",
 ].map((dir) => dir.split("/").join(path.sep));
 

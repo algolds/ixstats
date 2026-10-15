@@ -8,27 +8,25 @@ prevLabel: Synergies & Conflicts
 
 ## What this covers
 
-Alongside [components](/help/government/atomic), your government has a **structure**: what it's called, who leads it, the names of its branches, and the departments that spend its budget. You set these in the [Country Builder](/builder) and change them in the [Country Editor](/help/mycountry/editor). The structure is shown on your profile and used across MyCountry (for example, department names in the budget and your cabinet in Politics).
+Alongside [components](/help/government/atomic), your government has a **structure**: what it's called, who leads it, the names of its branches, and the departments that spend its budget. Your form of government sets them when you [found a nation](/help/gameplay/country-building); you change the names and titles in the [Country Editor](/help/mycountry/editor). The structure is shown on your profile and used across MyCountry (for example, department names in the budget and your cabinet in Politics).
 
 ## Names and titles
 
-In the Foundation (or Identity) section you can set:
+Under **Customise institutions** when founding, and in the editor's **Form and institutions** section, you can set:
 
-- the government's name (for example, "Imperial Government of Caphiria") and type (for example, "Unitary Quaternalist Republic");
+- the form of government, which sets your government type;
 - the head of state and head of government titles;
-- the names of the legislature, the executive (cabinet) and the courts.
+- the names of the legislature, the executive (cabinet) and the highest court.
 
 These are descriptive: they don't change your numbers. Your actual legislature (chambers, seats, electoral system) is set up in [Politics](/help/mycountry/politics).
 
 ## Departments
 
-In the Government section's **Departments** tab (Advanced mode in the builder; always shown in the editor), add the departments your government runs, such as defense, education or health, with their details. Cabinet appointments in [Politics](/help/mycountry/politics) are made to these departments.
+Your departments are generated when you found, from your form of government (five to nine, such as defence, education or health, named to suit the form). Cabinet appointments in [Politics](/help/mycountry/politics) are made to these departments.
 
 ## The government budget
 
-The **Budget** tab sets your total government budget and how it's split between departments. After launch, adjust the split in [Economy & Budget → National Budget](/help/mycountry/economy#national-budget).
+Founding sets your starting budget so that taxes cover spending, split between departments by your starting kind's priorities. Adjust the split in [Economy & Budget → National Budget](/help/mycountry/economy#national-budget).
 
 - Some [directives](/help/mycountry/executive) shift department allocations slightly.
 - At the start of each new IxTime year you may get a reminder to set that year's budget.
-
-The builder warns you if the budget is unrealistic for your GDP.

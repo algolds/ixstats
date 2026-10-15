@@ -129,7 +129,7 @@ $$\text{PII} = (\text{LaborProductivity} \times 0.35) + (\text{CapitalEfficiency
 ## Synergy Calculations
 
 ### Government Component Synergy (live)
-Within one government, `calculateGovernmentEffectiveness` (`src/lib/government/synergy.ts`) averages component effectiveness, adds **+10** per additive pair and subtracts **15** per conflicting pair, then clamps to 0–100. The 45 additive + 45 conflicting pairs are listed in the [Synergy Reference](../reference/synergies.md).
+Within one government, `governmentEffectiveness` (`src/lib/government/effectiveness.ts`) averages component effectiveness, adds **+10** per additive pair and subtracts **15** per conflicting pair from the shared table (`src/lib/government/synergy-table.ts`), then clamps to 0–100. Founding, the editor's preview and the server save all use it. The 106 additive and 48 conflicting pairs are listed in the [Synergy Reference](../reference/synergies.md).
 
 ### Embassy Synergy Match (reference)
 *Admin Calculation Lab formula — not wired into the embassy routers.* Synergies would activate when nations share atomic government or economic components.
@@ -182,7 +182,7 @@ $$\text{Total Tax} = \sum_{i=1}^{n} \max\left(0, \min(\text{Income}, \text{Brack
 ## Code Locations
 - `src/lib/economy/calculations.ts` – Base `IxStatsCalculator` class (tiers, growth caps, population)
 - `src/lib/economy/modeling-engine.ts` – Sandbox what-if modeling engine
-- `src/lib/government/synergy.ts` – Government component synergy/conflict scoring
+- `src/lib/government/synergy-table.ts` and `src/lib/government/effectiveness.ts` – Government component synergy/conflict pairs and the effectiveness formula
 - `src/lib/government/tax/atomic-tax-components.ts` – Atomic tax components, synergies and revenue effects (`atomic-tax-integration.ts` was deleted)
 - `src/app/admin/calculations/system-formulas.ts` – Reference formulas shown in the admin Calculation Lab (ERI, embassy synergy, projections)
 - `src/server/shared/mycountry-helpers.ts` – Server-side vitality calculations

@@ -16,7 +16,7 @@ Your nation has a **baseline** (population, GDP per person and growth rates, set
 
 Each IxTime year, GDP per person grows by your effective growth rate:
 
-1. Start from your nation's real GDP growth rate (set in the builder).
+1. Start from your nation's real GDP growth rate (set when you founded it).
 2. Multiply by the global growth factor (1.0321, set by admins) and by your nation's local growth factor (usually 1).
 3. Apply world-event effects that add to or scale the growth rate.
 4. Cap it at your tier's maximum (10% for Impoverished down to 0.5% for Extravagant), with a floor of −10%.

@@ -13,7 +13,7 @@ IxStats is a nation-building and worldbuilding platform. You create a country, r
 ## Your first ten minutes
 
 1. **Sign in.** Your account is your [IxnayID](/help/getting-started/ixnayid). New accounts get a one-time welcome bonus of 5,000 IxCredits (the default amount).
-2. **Get a nation.** Build one in the [Country Builder](/builder), import one from an IIWiki or AltHistory Wiki page, or claim an existing nation. See [Create Your First Nation](/help/getting-started/first-country).
+2. **Get a nation.** [Found one](/builder) in a few plain choices, import one from an IIWiki or AltHistory Wiki page, or claim an existing nation. See [Create Your First Nation](/help/getting-started/first-country).
 3. **Open [MyCountry](/mycountry).** This is your nation's home page. Read the [MyCountry overview](/help/mycountry/overview) to learn what each part does.
 4. **Make a decision.** Answer a [national issue](/help/gameplay/national-issues) or declare a [directive](/help/mycountry/executive).
 5. **Look around.** Find yourself on the [world map](/maps), browse [other countries](/countries), and post on the [feed](/dashboard).

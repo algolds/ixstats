@@ -1,2 +1,1 @@
-export { BuilderView } from "./BuilderView";
-export { BuilderProgressView } from "./BuilderProgressView";
+export { JumpToSectionView } from "./JumpToSectionView";

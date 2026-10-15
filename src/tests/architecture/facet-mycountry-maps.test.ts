@@ -16,8 +16,6 @@ const AREAS = [
   "components/maps",
   "app/maps",
   "components/executive",
-  "components/shared/atomic",
-  "components/shared/atomic-picker",
 ];
 
 function listFiles(target: string): string[] {

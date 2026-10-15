@@ -54,7 +54,7 @@ Domain tiles on the home page link to Politics, Economy, Diplomacy and Defense. 
 | Politics   | [/mycountry/politics](/mycountry/politics)     | Cabinet, parties, legislature, bills  | [Politics & Elections](/help/mycountry/politics)     |
 | Diplomacy  | [/mycountry/diplomacy](/mycountry/diplomacy)   | Embassies, relations, alliances       | [Foreign Affairs](/help/mycountry/diplomacy)         |
 | Defense    | [/mycountry/defense](/mycountry/defense)       | Military and security (Premium)       | [Defense & Security](/help/mycountry/defense)        |
-| Editor     | [/mycountry/editor](/mycountry/editor)         | Change identity, government, economy  | [The Country Editor](/help/mycountry/editor)         |
+| Editor     | [/mycountry/editor](/mycountry/editor)         | Change name, identity, government, size | [The Country Editor](/help/mycountry/editor)         |
 | Map editor | [/mycountry/map-editor](/mycountry/map-editor) | Your territory                        | [Editing Your Territory](/help/mycountry/map-editor) |
 
 ## World Census

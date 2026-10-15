@@ -22,7 +22,7 @@ function walk(dir: string): string[] {
 describe("Facet 3.1 HIG leftovers", () => {
   it("keeps builder hover-reveal image actions visible on touch screens", () => {
     // Every hover-revealed image overlay (opacity-0 until group-hover) carries a coarse-pointer
-    // variant from image-scrim.ts, so touch screens (no hover) still see the action.
+    // variant, so touch screens (no hover) still see the action.
     const offenders: string[] = [];
     for (const file of walk(path.join(srcDir, "app/builder"))) {
       const source = fs.readFileSync(file, "utf8");
@@ -37,18 +37,7 @@ describe("Facet 3.1 HIG leftovers", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("gives the builder's pages one h1: the studio header, foundation sub-steps and import", () => {
-    const h1 = /<h1\b/g;
-    for (const rel of [
-      "app/builder/components/BuilderStudioHeader.tsx",
-      "app/builder/components/FoundationHero.tsx",
-      "app/builder/components/enhanced/steps/foundation/FoundationPathSelector.tsx",
-      "app/builder/components/enhanced/steps/foundation/ArchetypeGrid.tsx",
-      "app/builder/components/sections/ImportSection.tsx",
-      "app/builder/components/editor/EditorHeader.tsx",
-    ]) {
-      expect([rel, (read(rel).match(h1) ?? []).length]).toEqual([rel, 1]);
-    }
+  it("gives the founding flow one h1, its PageHeader", () => {
     // The founding flow at /builder: PageHeader is its one h1; no step renders another.
     expect(read("app/builder/_founding/FoundingFlow.tsx")).toMatch(/<PageHeader\b/);
     const foundingH1 = walk(path.join(srcDir, "app/builder/_founding")).filter((file) =>

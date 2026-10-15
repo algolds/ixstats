@@ -1,12 +1,16 @@
 /**
  * The founding draft's rules: step gating and the prerequisite redirect, the archetype switch
  * (identity survives), reading stored drafts, the payload (never the explicit regime's
- * payloads), and the wiki import's mapping and archetype suggestion.
+ * payloads), policy presets replacing the component set, and the wiki import's mapping and
+ * archetype suggestion.
  */
 import { getGovernmentForm } from "~/lib/government/forms";
 import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
+import { getPolicyPreset } from "~/lib/government/policy-presets";
 import {
+  activeComponents,
   applyImport,
+  applyPreset,
   applyStart,
   emptyFoundingDraft,
   firstIncompleteStep,
@@ -119,6 +123,19 @@ describe("starting points", () => {
     const added = toggleComponent(government, "SURVEILLANCE_SYSTEM");
     expect(added.components).toContain("SURVEILLANCE_SYSTEM");
     expect(toggleComponent(added, "SURVEILLANCE_SYSTEM").components).toBeNull();
+  });
+
+  it("replaces the whole component set with a policy preset in one update", () => {
+    const { government } = namedDraft();
+    const customised = toggleComponent(government, "SURVEILLANCE_SYSTEM");
+    const preset = getPolicyPreset("technocracy")!.components;
+    const applied = applyPreset(customised, [...preset, preset[0]!]);
+    expect(activeComponents(applied)).toEqual(preset);
+    expect(applied.institutions).toEqual(customised.institutions);
+    expect(applied.formId).toBe(customised.formId);
+    // A preset equal to the form's own set leaves nothing to keep.
+    const formSet = getGovernmentForm(government.formId)!.components;
+    expect(applyPreset(customised, [...formSet]).components).toBeNull();
   });
 
   it("keeps only real institution renames", () => {
