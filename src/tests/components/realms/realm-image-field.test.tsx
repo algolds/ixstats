@@ -79,6 +79,28 @@ describe("RealmImageField", () => {
     );
   });
 
+  it("previews an outside image without a referrer, which hotlink-protected hosts refuse", () => {
+    renderField("https://eurth.org/uploads/default/original/2X/b/emblem.png");
+    expect(screen.getByAltText("Banner image preview").getAttribute("referrerpolicy")).toBe(
+      "no-referrer"
+    );
+  });
+
+  it("hides the address box for an uploaded image, offering Replace and Remove", () => {
+    const onChange = renderField("/images/uploads/uploaded_1_ab_banner.png");
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByRole("group", { name: "Banner image" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Replace" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("keeps the address box for an https image, with no Remove", () => {
+    renderField("https://img.example/banner.png");
+    expect(screen.getByRole("textbox", { name: "Banner image" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Remove" })).toBeNull();
+  });
+
   it("fills the field with an image picked from the repository", () => {
     const onChange = renderField();
     fireEvent.click(screen.getByRole("button", { name: "Repository" }));

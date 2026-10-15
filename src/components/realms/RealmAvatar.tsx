@@ -2,7 +2,10 @@ import { Globe } from "iconoir-react";
 import { assetUrl } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 
-/** A realm's thumbnail, or a globe when it has none. */
+/**
+ * A realm's thumbnail, or a globe when it has none. Realm images load without a referrer, like every realm image:
+ * community hosts behind hotlink protection (eurth.org) answer 403 to another site's referrer.
+ */
 export function RealmAvatar({
   thumbnail,
   className,
@@ -18,7 +21,12 @@ export function RealmAvatar({
       )}
     >
       {thumbnail ? (
-        <img src={assetUrl(thumbnail) ?? ""} alt="" className="h-full w-full object-cover" />
+        <img
+          src={assetUrl(thumbnail) ?? ""}
+          referrerPolicy="no-referrer"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       ) : (
         <Globe className="text-label-secondary size-5" aria-hidden="true" />
       )}

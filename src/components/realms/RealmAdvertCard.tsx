@@ -90,6 +90,7 @@ export function RealmAdvertCard({ overview }: { overview: AdvertOverview }) {
         <div className="bg-fill-3 h-32 sm:h-40">
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
+            referrerPolicy="no-referrer"
             alt=""
             className="h-full w-full object-cover"
           />

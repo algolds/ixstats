@@ -30,7 +30,7 @@ function Emblem({ url }: { url: string | null }) {
   return (
     <div className="bg-tint-fill text-tint rounded-card flex size-16 shrink-0 items-center justify-center overflow-hidden">
       {src ? (
-        <img src={src} alt="" className="size-full object-cover" />
+        <img src={src} referrerPolicy="no-referrer" alt="" className="size-full object-cover" />
       ) : (
         <Community aria-hidden className="size-8" />
       )}

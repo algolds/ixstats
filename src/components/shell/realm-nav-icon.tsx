@@ -9,7 +9,14 @@ const YOUR_REALM_ID = "your-realm";
 /** An image drawn where a row's icon goes: decorative, since the row's label names it, and sized by the row. */
 function imageIcon(src: string): NavIcon {
   return function RealmMark({ className }: SVGProps<SVGSVGElement>) {
-    return <img src={src} alt="" className={cn("rounded-sm object-cover", className)} />;
+    return (
+      <img
+        src={src}
+        referrerPolicy="no-referrer"
+        alt=""
+        className={cn("rounded-sm object-cover", className)}
+      />
+    );
   };
 }
 

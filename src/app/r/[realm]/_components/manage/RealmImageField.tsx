@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { MediaImage, Upload } from "iconoir-react";
+import { MediaImage, Trash, Upload } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -45,6 +45,8 @@ export function RealmImageField({
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const ok = isRealmImageUrl(value);
+  // An uploaded or repository image is a site path nobody needs to read: no address box, a Remove button instead.
+  const hosted = ok && value.trim().startsWith("/");
   const preview = ok ? assetUrl(value) : null;
 
   async function upload(file: File) {
@@ -69,16 +71,24 @@ export function RealmImageField({
 
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="flex flex-wrap gap-2">
-        <Input
-          id={id}
-          className="min-w-48 flex-1"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="https://"
-          aria-invalid={!ok}
-        />
+      <Label id={`${id}-label`} htmlFor={hosted ? undefined : id}>
+        {label}
+      </Label>
+      <div
+        className="flex flex-wrap gap-2"
+        role={hosted ? "group" : undefined}
+        aria-labelledby={hosted ? `${id}-label` : undefined}
+      >
+        {!hosted && (
+          <Input
+            id={id}
+            className="min-w-48 flex-1"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="https://"
+            aria-invalid={!ok}
+          />
+        )}
         <Button
           type="button"
           variant="outline"
@@ -86,12 +96,18 @@ export function RealmImageField({
           onClick={() => fileInput.current?.click()}
         >
           <Upload aria-hidden="true" />
-          {uploading ? "Uploading…" : "Upload"}
+          {uploading ? "Uploading…" : hosted ? "Replace" : "Upload"}
         </Button>
         <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
           <MediaImage aria-hidden="true" />
           Repository
         </Button>
+        {hosted && (
+          <Button type="button" variant="ghost" onClick={() => onChange("")}>
+            <Trash aria-hidden="true" />
+            Remove
+          </Button>
+        )}
         <input
           ref={fileInput}
           type="file"
@@ -121,6 +137,7 @@ export function RealmImageField({
       {preview && (
         <img
           src={preview}
+          referrerPolicy="no-referrer"
           alt={`${label} preview`}
           className={cn("border-separator rounded-row mt-1 border object-cover", previewClassName)}
         />
