@@ -130,6 +130,7 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 
 | Document | Scope | Status |
 | --- | --- | :---: |
+| [specs/2026-10-15-country-builder-editor-redesign-design.md](specs/2026-10-15-country-builder-editor-redesign-design.md) | Country builder and editor redesign: archetype-led founding, live nation card, Manage-style editor | 📐 Design |
 | [specs/2026-09-27-realms-foundation-design.md](specs/2026-09-27-realms-foundation-design.md) | Realms Phase 1 foundation | ✅ Implemented |
 | [specs/2026-09-28-realms-eurth-design.md](specs/2026-09-28-realms-eurth-design.md) | Eurth first-realm slice | ✅ Implemented |
 | [specs/2026-09-12-route-travel-time-design.md](specs/2026-09-12-route-travel-time-design.md) | Route travel time | ✅ Implemented |
