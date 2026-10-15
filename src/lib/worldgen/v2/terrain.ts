@@ -14,13 +14,14 @@
  *    with distance from land. The mask's altitude bands, when it has them, pull the ranking.
  *
  * Unit-sphere coordinates and the noise fields the flood fills read per edge are computed once per
- * cell into typed arrays.
+ * cell into typed arrays. Noise depends on the mesh and the seed alone, so the fields (NoiseField) are kept with
+ * the mesh and a slider change on a cached mesh reads them instead of recomputing them.
  */
 
 import type { WorldGraph, WorldGenParams } from "./types";
 import { ELEVATION_ZONES, TECTONIC_CONSTANTS, getElevationZone } from "./config";
 import { makeRng } from "./helpers/rng";
-import { buildNoiseConfig, fractalNoise, ridgedNoise } from "./helpers/noise";
+import { NoiseField } from "./helpers/noise";
 import { MinHeap } from "./helpers/heap";
 import { computeCoastalDistance } from "./helpers/flood-fill";
 import { cellLat, cellLng, cellVectors, chord2, lngDelta } from "./mesh";
@@ -36,15 +37,6 @@ const MAX_CONTINENT_LAT = 80;
 const MOUNTAIN_BELT_HOPS = 6;
 /** Relief score added at the mask's highest altitude band (a convergent ridge adds up to 3). */
 const MASK_ZONE_PULL = 2;
-
-type NoiseConfig = ReturnType<typeof buildNoiseConfig>;
-
-/** Noise at every cell, from the packed unit-sphere coordinates. */
-function noiseField(sphere: Float64Array, config: NoiseConfig): Float64Array {
-  const field = new Float64Array(sphere.length / 3);
-  for (let i = 0; i < field.length; i++) field[i] = fractalNoise(sphere, i, config);
-  return field;
-}
 
 /** Land and altitude band per cell, read from a realm's land mask at the cell centres. */
 function maskedLand(graph: WorldGraph, mask: LandMask): { owner: Uint16Array; zone?: Uint8Array } {
@@ -119,9 +111,8 @@ function growLandmasses(
   const K = Math.max(1, Math.round(params.continentCount));
   const POLAR = K + 1;
   const ISLAND = K + 2;
-  const shape = buildNoiseConfig(params.seed + 21, 4, 2.2, 2.2, 0.55);
-  const coast = buildNoiseConfig(params.seed + 26, 5, 6, 2.1, 0.6);
-  const shapeNoise = noiseField(sphere, shape);
+  const shapeNoise = new NoiseField(sphere, params.seed + 21, 4, 2.2, 2.2, 0.55);
+  const coast = new NoiseField(sphere, params.seed + 26, 5, 6, 2.1, 0.6);
   // Without a cap, a hemisphere's continents stay equatorward of MAX_CONTINENT_LAT
   const latOk = (lat: number) =>
     lat > 0
@@ -133,7 +124,7 @@ function growLandmasses(
   // Polar caps
   for (let i = 0; i < n; i++) {
     const lat = cellLat(graph, i);
-    const edge = POLAR_CAP_LAT + 4 * shapeNoise[i]!;
+    const edge = POLAR_CAP_LAT + 4 * shapeNoise.at(i);
     if ((params.polarLand.south && lat < -edge) || (params.polarLand.north && lat > edge)) {
       owner[i] = POLAR;
       budget--;
@@ -164,7 +155,7 @@ function growLandmasses(
   const stepNoise = new Float64Array(n);
   const stepBand = new Float64Array(n);
   for (let i = 0; i < n; i++) {
-    stepNoise[i] = Math.exp(2.2 * shapeNoise[i]!);
+    stepNoise[i] = Math.exp(2.2 * shapeNoise.at(i));
     stepBand[i] = bandPenalty(cellLat(graph, i));
   }
   const region = new Uint16Array(n);
@@ -216,7 +207,7 @@ function growLandmasses(
     if (take === 0) continue;
     const scale = Math.max(1e-9, cost[list[take - 1]!]!);
     for (const c of list) {
-      score[c] = (cost[c]! / scale) * (1 - roughness * fractalNoise(sphere, c, coast));
+      score[c] = (cost[c]! / scale) * (1 - roughness * coast.at(c));
     }
     list.sort((a, b) => score[a]! - score[b]!);
     for (let j = 0; j < take; j++) owner[list[j]!] = k;
@@ -356,7 +347,7 @@ function placeIslands(
   if (budget <= 0) return;
   const { cells } = graph;
   const n = cells.n;
-  const noise = buildNoiseConfig(params.seed + 22, 3, 14, 2.0, 0.5);
+  const noise = new NoiseField(sphere, params.seed + 22, 3, 14, 2.0, 0.5);
   const landDist = hopsFrom(graph, (i) => owner[i]! > 0, 12);
   const cluster = new Int32Array(n);
 
@@ -369,8 +360,7 @@ function placeIslands(
   const seeds: { cell: number; score: number }[] = [];
   for (let i = 0; i < n; i++) {
     if (!open(i, -1)) continue;
-    const score =
-      fractalNoise(sphere, i, noise) + 1.2 * Math.exp(-landDist[i]! / 4) + 0.8 * mountain[i]!;
+    const score = noise.at(i) + 1.2 * Math.exp(-landDist[i]! / 4) + 0.8 * mountain[i]!;
     seeds.push({ cell: i, score });
   }
   seeds.sort((a, b) => b.score - a.score);
@@ -457,11 +447,11 @@ function convergentMountainField(
     }
   }
 
-  const ridges = buildNoiseConfig(seed + 23, 4, 9, 2.2, 0.55);
+  const ridges = new NoiseField(sphere, seed + 23, 4, 9, 2.2, 0.55, true);
   const field = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     if (dist[i] === 65535) continue;
-    const crest = 0.55 + 0.45 * ridgedNoise(sphere, i, ridges);
+    const crest = 0.55 + 0.45 * ridges.at(i);
     field[i] = strength[i]! * Math.exp(-dist[i]! / 2.5) * crest;
   }
   return field;
@@ -492,8 +482,8 @@ function shapeElevation(
 ): void {
   const { cells } = graph;
   const n = cells.n;
-  const hills = buildNoiseConfig(params.seed + 24, 4, 10, 2.1, 0.5);
-  const macro = buildNoiseConfig(params.seed + 25, 3, 3, 2.0, 0.5);
+  const hills = new NoiseField(sphere, params.seed + 24, 4, 10, 2.1, 0.5);
+  const macro = new NoiseField(sphere, params.seed + 25, 3, 3, 2.0, 0.5);
   const roughness = params.terrainRoughness;
 
   // Relief score: inland and mountainous cells rank higher; noise breaks up the plains
@@ -503,8 +493,8 @@ function shapeElevation(
     const score =
       0.5 * Math.min(1, cells.coastDist[i]! / 10) +
       3 * mountain[i]! +
-      0.35 * fractalNoise(sphere, i, macro) +
-      0.45 * roughness * fractalNoise(sphere, i, hills) +
+      0.35 * macro.at(i) +
+      0.45 * roughness * hills.at(i) +
       (zone ? (MASK_ZONE_PULL * zone[i]!) / (ELEVATION_ZONES.length - 1) : 0);
     land.push({ cell: i, score });
   }
@@ -540,7 +530,7 @@ function shapeElevation(
   for (let i = 0; i < n; i++) {
     if (cells.isLand[i]) continue;
     const d = dist[i] === 65535 ? 20 : dist[i]!;
-    const depth = 60 + 4800 * (1 - Math.exp(-(d - 1) / 4)) + 350 * fractalNoise(sphere, i, macro);
+    const depth = 60 + 4800 * (1 - Math.exp(-(d - 1) / 4)) + 350 * macro.at(i);
     cells.h[i] = -Math.max(1, depth);
   }
 }

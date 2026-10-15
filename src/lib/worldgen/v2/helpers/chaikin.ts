@@ -72,20 +72,31 @@ function splineMidpoint(
 
 /** One refinement pass: every segment gains the spline point halfway along it. */
 function refine(points: [number, number][], closed: boolean, bounds?: Bounds): [number, number][] {
-  // A closed ring repeats its first point at the end; an open chain keeps its ends fixed
+  // A closed ring repeats its first point at the end (wrapping round it); an open chain keeps its ends fixed
   const n = closed ? points.length - 1 : points.length;
-  const at = (i: number) =>
-    closed ? points[(i + n) % n]! : points[Math.max(0, Math.min(n - 1, i))]!;
+  const last = n - 1;
+  const segments = closed ? n : n - 1;
   const refined: [number, number][] = [];
-  for (let i = 0; i < (closed ? n : n - 1); i++) {
-    const mid = splineMidpoint(at(i - 1), at(i), at(i + 1), at(i + 2));
+  for (let i = 0; i < segments; i++) {
+    let before = i - 1;
+    let next = i + 1;
+    let after = i + 2;
+    if (closed) {
+      if (before < 0) before += n;
+      if (next >= n) next -= n;
+      if (after >= n) after -= n;
+    } else {
+      if (before < 0) before = 0;
+      if (after > last) after = last;
+    }
+    const mid = splineMidpoint(points[before]!, points[i]!, points[next]!, points[after]!);
     if (bounds) {
       mid[0] = holdInside(mid[0], bounds.minX, bounds.maxX, bounds.inset);
       mid[1] = holdInside(mid[1], bounds.minY, bounds.maxY, bounds.inset);
     }
     refined.push(points[i]!, mid);
   }
-  refined.push(closed ? [refined[0]![0], refined[0]![1]] : points[n - 1]!);
+  refined.push(closed ? [refined[0]![0], refined[0]![1]] : points[last]!);
   return refined;
 }
 
@@ -251,17 +262,29 @@ export function perturbRing(
   amplitude: number = 0.008
 ): [number, number][] {
   if (ring.length < 3) return ring;
+  return perturbPoints(ring, seed, frequency, amplitude);
+}
 
+/**
+ * The perturbation of `perturbRing`, point by point and whatever the number of points: a point moves by a
+ * function of where it is alone, so a stretch of a ring can be perturbed on its own.
+ */
+export function perturbPoints(
+  points: readonly [number, number][],
+  seed: number,
+  frequency: number,
+  amplitude: number
+): [number, number][] {
   const perturbed: [number, number][] = [];
-  const len = ring.length;
+  const seedLat = seed * 0.5;
+  const seedLng2 = seed * 1.3;
+  const seedLat2 = seed * 2.1;
 
-  for (let i = 0; i < len; i++) {
-    const [lng, lat] = ring[i]!;
-    const n1 = Math.sin(lng * frequency + seed) * Math.cos(lat * frequency + seed * 0.5);
+  for (let i = 0; i < points.length; i++) {
+    const [lng, lat] = points[i]!;
+    const n1 = Math.sin(lng * frequency + seed) * Math.cos(lat * frequency + seedLat);
     const n2 =
-      Math.sin(lng * frequency * 2.5 - seed * 1.3) *
-      Math.cos(lat * frequency * 2.5 + seed * 2.1) *
-      0.5;
+      Math.sin(lng * frequency * 2.5 - seedLng2) * Math.cos(lat * frequency * 2.5 + seedLat2) * 0.5;
 
     const dx = (n1 + n2) * amplitude;
     const dy = (n2 - n1) * amplitude * 0.8;

@@ -119,3 +119,55 @@ export function ridgedNoise(sphere: Float64Array, i: number, config: NoiseConfig
   }
   return maxAmp > 0 ? sum / maxAmp : 0;
 }
+
+/** Noise values of a mesh by configuration; NaN marks a cell not asked for yet. */
+const fields = new WeakMap<Float64Array, Map<string, Float64Array>>();
+/** Configurations kept per mesh: the generator uses about ten for one seed. */
+const MAX_FIELDS_PER_MESH = 24;
+
+/**
+ * Fractal (or ridged) noise of one configuration at the cells of a mesh, remembered cell by cell. Noise depends
+ * on the mesh and the configuration's seed alone, so a run on a cached mesh with the same seed (a slider change)
+ * reads the values the previous run computed. The values are those of `fractalNoise` / `ridgedNoise`.
+ */
+export class NoiseField {
+  private readonly values: Float64Array;
+  private readonly config: NoiseConfig;
+
+  constructor(
+    private readonly sphere: Float64Array,
+    seed: number,
+    octaves: number,
+    baseFrequency: number,
+    lacunarity: number,
+    persistence: number,
+    private readonly ridged = false
+  ) {
+    this.config = buildNoiseConfig(seed, octaves, baseFrequency, lacunarity, persistence);
+    const key = `${ridged ? "r" : "f"}:${seed}:${octaves}:${baseFrequency}:${lacunarity}:${persistence}`;
+    let byKey = fields.get(sphere);
+    if (!byKey) {
+      byKey = new Map();
+      fields.set(sphere, byKey);
+    }
+    let values = byKey.get(key);
+    if (!values) {
+      if (byKey.size >= MAX_FIELDS_PER_MESH) byKey.clear();
+      values = new Float64Array(sphere.length / 3).fill(NaN);
+      byKey.set(key, values);
+    }
+    this.values = values;
+  }
+
+  /** Noise at cell i. */
+  at(i: number): number {
+    let value = this.values[i]!;
+    if (value !== value) {
+      value = this.ridged
+        ? ridgedNoise(this.sphere, i, this.config)
+        : fractalNoise(this.sphere, i, this.config);
+      this.values[i] = value;
+    }
+    return value;
+  }
+}
