@@ -19,7 +19,7 @@
 import type { ComponentType, Country, EconomicArchetype } from "@prisma/client";
 import type { z } from "zod";
 import { checkComponentSynergy } from "~/lib/government/synergy";
-import { getGovernmentForm } from "~/lib/government/forms";
+import { getGovernmentForm, type GovernmentInstitutions } from "~/lib/government/forms";
 import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import {
@@ -83,6 +83,8 @@ export interface FoundingSnapshotInput {
   populationBand?: PopulationBandId;
   wealthBand?: WealthBandId;
   governmentFormId?: string | null;
+  /** Institution names the player renamed; any left out take the form's names. */
+  institutionNames?: Partial<GovernmentInstitutions> | null;
   governmentComponents?: GovernmentComponentInput[];
   taxSystemData?: TaxInput | null;
   governmentStructure?: GovernmentStructureInput | null;
@@ -965,7 +967,8 @@ function buildGovernmentStructure(
   name: string,
   formId: string,
   totalBudget: number,
-  budgetYear: number
+  budgetYear: number,
+  renamed?: Partial<GovernmentInstitutions> | null
 ): GovernmentStructureInput {
   const departments = departmentsForForm(formId);
   let allocated = 0;
@@ -980,7 +983,11 @@ function buildGovernmentStructure(
       allocatedPercent: round2(dept.spendingShare * 100),
     };
   });
-  const institutions = getGovernmentForm(formId)?.institutions;
+  const named = getGovernmentForm(formId)?.institutions;
+  const institutions = named && {
+    ...named,
+    ...Object.fromEntries(Object.entries(renamed ?? {}).filter(([, value]) => value?.trim())),
+  };
   return {
     governmentName: `Government of ${name}`,
     governmentType: governmentTypeForForm(formId) ?? "Parliamentary Republic",
@@ -1323,7 +1330,8 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
         input.name,
         governmentFormId,
         numbers.totalGovernmentSpending,
-        budgetYear
+        budgetYear,
+        input.institutionNames
       );
 
   // Tax: as sent, else the archetype's profile scaled to the country's revenue.

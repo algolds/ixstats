@@ -216,6 +216,22 @@ describe("computeFoundingSnapshot: inputs", () => {
     });
   });
 
+  it("renamed institutions replace only the names the player changed", () => {
+    const snapshot = computeFoundingSnapshot({
+      name: "Crown",
+      archetype: nordic,
+      foundation: null,
+      governmentFormId: "absolute-monarchy",
+      institutionNames: { headOfStateTitle: "Grand Duke", legislatureName: "  " },
+    });
+    const form = getGovernmentForm("absolute-monarchy")!;
+    expect(snapshot.governmentStructure).toMatchObject({
+      headOfState: "Grand Duke",
+      legislatureName: form.institutions.legislatureName,
+      judicialName: form.institutions.judicialName,
+    });
+  });
+
   it("an archetype with no bands chosen starts at its typical size, wealth and form", () => {
     const display = getArchetypeDisplay("nordic")!;
     const snapshot = computeFoundingSnapshot({
