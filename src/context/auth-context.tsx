@@ -13,6 +13,7 @@ import type { GetTokenOptions, SignOutOptions } from "@clerk/types";
 import { Link as Link2 } from "iconoir-react";
 import { IxnayIDCard } from "~/components/settings/IxnayIDCard";
 import { initConsoleCapture } from "~/lib/logging";
+import { useHydrated } from "~/hooks/useHydrated";
 
 if (typeof window !== "undefined") {
   initConsoleCapture();
@@ -61,20 +62,25 @@ function assertClerkConfigured(component: string) {
 }
 
 // Conditional AuthProvider that only uses Clerk hooks when Clerk is configured
-function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
+export function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
   const clerkUser = useClerkUser();
   const clerkAuth = useClerkAuth();
+  // The server never knows the user (the root layout passes Clerk no auth state), so the hydrating
+  // pass must not either: a hydration that runs after Clerk loaded (late or retried) would otherwise
+  // render signed-in over signed-out server HTML. The live state applies right after hydration.
+  const hydrated = useHydrated();
 
   // Memoize auth value to prevent unnecessary re-renders
   const authValue: AuthContextType = useMemo(() => {
+    const live = hydrated && clerkUser.isLoaded;
     return {
-      user: clerkUser.user ?? null,
-      isLoaded: clerkUser.isLoaded,
-      isSignedIn: Boolean(clerkUser.isSignedIn),
+      user: live ? (clerkUser.user ?? null) : null,
+      isLoaded: live,
+      isSignedIn: live && Boolean(clerkUser.isSignedIn),
       signOut: clerkAuth.signOut,
       getToken: clerkAuth.getToken,
     };
-  }, [clerkUser, clerkAuth]);
+  }, [hydrated, clerkUser, clerkAuth]);
 
   return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
 }

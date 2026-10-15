@@ -34,7 +34,7 @@ import {
   DynamicStatSpan,
 } from "./ArticlePlaceholders";
 import { useStatValues } from "./useStatValues";
-import { useHydrated } from "./useHydrated";
+import { useHydrated } from "~/hooks/useHydrated";
 import { useScrollSpy } from "./useScrollSpy";
 import { leanElementId, parseLeanMarker, resolveLeanHtml } from "~/lib/wiki-os/lean-article";
 import { CategoriesBar } from "./ArticleCategories";

@@ -33,6 +33,7 @@ import { ShellHalo } from "./ShellHalo";
 import { realmMarkSrc, withRealmMark } from "./realm-nav-icon";
 import { useForumNavFlags } from "./use-forum-nav-flags";
 import { useNavBadges } from "./use-nav-badges";
+import { useHydrated } from "~/hooks/useHydrated";
 
 export function FacetShell() {
   const pathname = stripBasePath(usePathname() || "/");
@@ -58,6 +59,9 @@ export function FacetShell() {
   };
 
   const signedIn = Boolean(user);
+  // The server renders the nav knowing nothing (signed out, no queries); the hydrating pass matches it even when a
+  // query already answered (a late or retried hydration), and the live nav follows right after.
+  const hydrated = useHydrated();
   // Once here so the sidebar and the More sheet never run the queries twice.
   const badges = useNavBadges(signedIn);
   const { realmMember, forumModerator, realm } = useForumNavFlags(signedIn);
@@ -65,18 +69,23 @@ export function FacetShell() {
   const apps = useMemo(
     () =>
       withRealmMark(
-        getVisibleApps({
-          signedIn,
-          isAdmin,
-          hasLabsAccess,
-          hasMycountryPremium,
-          realmMember,
-          forumModerator,
-          navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
-        }),
-        realmMark
+        getVisibleApps(
+          hydrated
+            ? {
+                signedIn,
+                isAdmin,
+                hasLabsAccess,
+                hasMycountryPremium,
+                realmMember,
+                forumModerator,
+                navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
+              }
+            : { signedIn: false, isAdmin: false }
+        ),
+        hydrated ? realmMark : null
       ),
     [
+      hydrated,
       signedIn,
       isAdmin,
       hasLabsAccess,
