@@ -8,17 +8,14 @@
  *  - profile: economic profile, labor market, demographics (core get/update)
  *  - fiscal:  fiscal system, income distribution, government budget (get/update)
  *  - config:  comprehensive economy configuration save/get (transaction endpoints)
- *  - builder: economy builder live wiring — state save/get + autosave
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { economicsProfileRouter } from "./profile";
 import { economicsFiscalRouter } from "./fiscal";
 import { economicsConfigRouter } from "./config";
-import { economicsBuilderRouter } from "./builder";
 
 export const economicsRouter = mergeRouters(
   economicsProfileRouter,
   economicsFiscalRouter,
-  economicsConfigRouter,
-  economicsBuilderRouter
+  economicsConfigRouter
 );

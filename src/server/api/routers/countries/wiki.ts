@@ -16,7 +16,6 @@ import {
   type UnifiedInfoboxData,
 } from "~/lib/wiki-os/adapters/ixstates/unified-parser";
 import { wikiCacheService } from "~/lib/wiki-os/adapters/ixstates/cache-service";
-import { getEligibleCountries } from "~/lib/wiki-os/adapters/ixstates/eligible-country-service";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 
@@ -539,17 +538,6 @@ export const wikiProcedures = {
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to parse infobox: ${error instanceof Error ? error.message : "Unknown error"}`,
         });
-      }
-    }),
-
-  getEligibleCountries: cachedStaticProcedure
-    .input(z.object({ site: z.enum(["iiwiki", "althistory"]) }))
-    .query(async ({ input }) => {
-      try {
-        return await getEligibleCountries(input.site);
-      } catch (err) {
-        console.error(`[Wiki] Error fetching eligible countries for ${input.site}:`, err);
-        return [];
       }
     }),
 };

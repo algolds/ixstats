@@ -13,7 +13,6 @@ import { achievementsRouter } from "./routers/achievements";
 import { userLoggingRouter } from "./routers/user-logging";
 import { demoModeRouter } from "./routers/demo-mode";
 import { systemValidationRouter } from "./routers/system-validation";
-import { autosaveHistoryRouter } from "./routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "./routers/autosaveMonitoring";
 import { builderDraftRouter } from "./routers/builderDraft";
 import { onomaRouter } from "./routers/onoma";
@@ -29,7 +28,6 @@ import { governmentComponentsRouter } from "./routers/governmentComponents";
 import { policiesRouter } from "./routers/policies";
 import { legislationRouter } from "./routers/legislation";
 import { electionsRouter } from "./routers/elections";
-import { customTypesRouter } from "./routers/customTypes";
 import { quickActionsRouter } from "./routers/quickactions";
 import { nationalIssuesRouter } from "./routers/national-issues";
 import { diplomaticCoreRouter } from "./routers/diplomacy/core";
@@ -97,7 +95,6 @@ export const appRouter = createTRPCRouter({
   userLogging: userLoggingRouter,
   demoMode: demoModeRouter,
   systemValidation: systemValidationRouter,
-  autosaveHistory: autosaveHistoryRouter,
   autosaveMonitoring: autosaveMonitoringRouter,
   builderDraft: builderDraftRouter,
   economics: economicsRouter,
@@ -111,7 +108,6 @@ export const appRouter = createTRPCRouter({
   policies: policiesRouter,
   legislation: legislationRouter,
   elections: electionsRouter,
-  customTypes: customTypesRouter,
   quickActions: quickActionsRouter,
   nationalIssues: nationalIssuesRouter,
   intent: intentRouter,

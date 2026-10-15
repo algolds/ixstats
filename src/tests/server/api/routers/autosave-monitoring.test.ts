@@ -1,16 +1,14 @@
 /** @jest-environment node */
 /**
- * Autosave routers: a country's autosave history and stats need write access to that country;
- * the system-wide monitoring dashboard is admin only and summarises AuditLog rows correctly.
+ * Autosave monitoring: the system-wide dashboard is admin only and summarises AuditLog rows
+ * correctly.
  */
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
-import { autosaveHistoryRouter } from "~/server/api/routers/autosaveHistory";
 import { autosaveMonitoringRouter } from "~/server/api/routers/autosaveMonitoring";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
-const history = createCallerFactory(autosaveHistoryRouter);
 const monitoring = createCallerFactory(autosaveMonitoringRouter);
 
 const USER = { name: "user", level: 100 };
@@ -33,74 +31,6 @@ beforeEach(() => {
   db.country.findUnique.mockResolvedValue({ id: "country_other", ownerUserId: "someone_else" });
   db.auditLog.count.mockResolvedValue(0);
   db.auditLog.groupBy.mockResolvedValue([]);
-});
-
-describe("autosaveHistory", () => {
-  it("refuses another player's country", async () => {
-    const caller = history(ctx(db, "u1"));
-    await expect(caller.getAutosaveHistory({ countryId: "country_other" })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    await expect(caller.getAutosaveStats({ countryId: "country_other" })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(db.auditLog.findMany).not.toHaveBeenCalled();
-    expect(db.auditLog.groupBy).not.toHaveBeenCalled();
-  });
-
-  it("rejects signed-out callers", async () => {
-    await expect(
-      history(ctx(db, null)).getAutosaveHistory({ countryId: "country_mine" })
-    ).rejects.toThrow(/Authentication required/);
-  });
-
-  it("pages the player's own autosaves", async () => {
-    db.auditLog.count.mockResolvedValue(45);
-    db.auditLog.findMany.mockResolvedValue([{ id: "a1" }]);
-
-    const result = await history(ctx(db, "u1")).getAutosaveHistory({
-      countryId: "country_mine",
-      limit: 20,
-      offset: 20,
-    });
-
-    expect(db.auditLog.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { target: "country_mine", action: { startsWith: "autosave:" } },
-        take: 20,
-        skip: 20,
-      })
-    );
-    expect(result).toEqual({ autosaves: [{ id: "a1" }], total: 45, hasMore: true });
-  });
-
-  it("caps the page size", async () => {
-    await expect(
-      history(ctx(db, "u1")).getAutosaveHistory({ countryId: "country_mine", limit: 101 })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
-  it("sums grouped autosaves into success, failure and section counts", async () => {
-    const last = new Date("2026-10-01T00:00:00Z");
-    db.auditLog.groupBy.mockResolvedValue([
-      { action: "autosave:nationalIdentity", success: true, _count: { _all: 3 } },
-      { action: "autosave:government", success: false, _count: { _all: 2 } },
-      { action: "autosave:tax", success: true, _count: { _all: 1 } },
-    ]);
-    db.auditLog.findFirst.mockResolvedValue({ timestamp: last });
-
-    const stats = await history(ctx(db, "admin", ADMIN)).getAutosaveStats({
-      countryId: "country_other",
-    });
-
-    expect(stats).toEqual({
-      totalAutosaves: 6,
-      successCount: 4,
-      failureCount: 2,
-      lastAutosave: last,
-      sectionBreakdown: { identity: 3, government: 2, tax: 1, economy: 0 },
-    });
-  });
 });
 
 describe("autosaveMonitoring", () => {

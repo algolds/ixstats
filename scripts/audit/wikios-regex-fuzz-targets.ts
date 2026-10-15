@@ -1105,7 +1105,7 @@ export const SKIPPED: ReadonlyArray<readonly [name: string, reason: string]> = [
     "cache and network I/O",
   ],
   [
-    "adapters/mediawiki/**, adapters/ixstates/(eligible-country, user-sync, ixworld-mapper, lore-card-generator, entity-parser)",
+    "adapters/mediawiki/**, adapters/ixstates/(user-sync, ixworld-mapper, lore-card-generator, entity-parser)",
     "database, fetch, or country objects rather than page text",
   ],
   [
