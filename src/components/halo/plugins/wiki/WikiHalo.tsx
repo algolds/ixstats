@@ -12,7 +12,8 @@ import dynamic from "next/dynamic";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
-import { useIxTimeStore } from "~/stores/ixtime-store";
+import { useContextHour } from "~/hooks/useContextHour";
+import { greetingForHour } from "~/lib/time/greeting";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
 import { PlayPauseMorph } from "./components/PlayPauseMorph";
@@ -33,14 +34,6 @@ const WikiNarratorView = dynamic(
   { ssr: false }
 );
 
-function getGreeting(ixTime: number): string {
-  const hour = new Date(ixTime).getUTCHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 21) return "Good evening";
-  return "Good night";
-}
-
 function getRgbaColor(colorStr: string, opacity: number): string {
   if (colorStr.startsWith("#")) {
     const cleanHex = colorStr.replace("#", "");
@@ -57,7 +50,7 @@ function getRgbaColor(colorStr: string, opacity: number): string {
 
 function WikiBreadcrumb() {
   const { user } = useUser();
-  const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
+  const hour = useContextHour();
   const {
     articleTitle,
     activeSectionId,
@@ -70,10 +63,9 @@ function WikiBreadcrumb() {
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const greetingText = useMemo(() => {
-    // oxlint-disable-next-line
-    const timeGreeting = getGreeting(ixTimeTimestamp || Date.now());
+    const timeGreeting = hour === null ? "Welcome" : greetingForHour(hour);
     return `${timeGreeting}${user?.firstName ? `, ${user.firstName}` : ""}`;
-  }, [ixTimeTimestamp, user?.firstName]);
+  }, [hour, user?.firstName]);
 
   const hasNarratorAccess = useHasNarratorAccess();
 

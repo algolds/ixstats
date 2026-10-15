@@ -3,14 +3,6 @@
 import { Globe, MapPin, Hexagon, Bank as Landmark } from "iconoir-react";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 
-export const getGreeting = (ixTime: number): string => {
-  const date = new Date(ixTime);
-  const hour = date.getUTCHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 21) return "Good evening";
-  return "Good night";
-};
 export const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = {
   country: { icon: Globe, label: "Countries" },
   city: { icon: MapPin, label: "Cities" },

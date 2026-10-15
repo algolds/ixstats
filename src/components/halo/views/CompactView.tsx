@@ -8,7 +8,8 @@ import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { Search, Bell, Settings } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { useUser } from "~/context/auth-context";
-import { useIxTimeStore } from "~/stores/ixtime-store";
+import { useContextHour } from "~/hooks/useContextHour";
+import { greetingForHour } from "~/lib/time/greeting";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
@@ -19,14 +20,6 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
-
-const getGreeting = (ixTime: number): string => {
-  const hour = new Date(ixTime).getUTCHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 21) return "Good evening";
-  return "Good night";
-};
 
 function CompactViewComponent({
   mode,
@@ -59,7 +52,7 @@ function CompactViewComponent({
 
   const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "var(--color-blue)";
 
-  const ixTimeTimestamp = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 30000) * 30000);
+  const hour = useContextHour();
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
@@ -122,9 +115,10 @@ function CompactViewComponent({
   // Time
 
   useEffect(() => {
-    const greeting = getGreeting(ixTimeTimestamp);
+    if (hour === null) return;
+    const greeting = greetingForHour(hour);
     setCurrentTime((prev) => (prev.greeting !== greeting ? { greeting } : prev));
-  }, [ixTimeTimestamp]);
+  }, [hour]);
 
   useEffect(() => {
     setMounted(true);

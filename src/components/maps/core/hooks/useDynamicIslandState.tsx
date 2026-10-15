@@ -4,14 +4,14 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import { useTheme } from "~/context/theme-context";
-import { useIxTimeStore } from "~/stores/ixtime-store";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { api } from "~/trpc/react";
-import { getGreeting } from "../utils/dynamic-island-helpers";
+import { useContextHour } from "~/hooks/useContextHour";
+import { greetingForHour } from "~/lib/time/greeting";
 import type { MapSearchResult } from "../MapDynamicIsland";
 
 interface UseDynamicIslandStateProps {
@@ -28,9 +28,10 @@ export function useDynamicIslandState({ onSearchResult, realm }: UseDynamicIslan
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { user, isLoaded } = useUser();
-  // Select only the greeting string: subscribing to the raw IxTime timestamp re-rendered the
-  // island (and re-measured its motion `layout` animations) every second.
-  const greeting = useIxTimeStore((st) => getGreeting(st.ixTimeTimestamp));
+  // The hour only (useContextHour re-renders on an hour change): subscribing to the raw IxTime timestamp
+  // re-rendered the island (and re-measured its motion `layout` animations) every second.
+  const hour = useContextHour();
+  const greeting = hour === null ? "Welcome" : greetingForHour(hour);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
