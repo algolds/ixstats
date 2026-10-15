@@ -18,7 +18,10 @@ function context() {
     throw new Error("the database must not be reached");
   });
   const db = new Proxy({}, { get: touched });
-  return { ctx: createMockRouterContext({ auth: { userId: "clerk_u1" }, user: player, db }), touched };
+  return {
+    ctx: createMockRouterContext({ auth: { userId: "clerk_u1" }, user: player, db }),
+    touched,
+  };
 }
 
 describe("rate-limited realm and wiki-link mutations (F-5.4)", () => {
@@ -26,31 +29,50 @@ describe("rate-limited realm and wiki-link mutations (F-5.4)", () => {
 
   beforeEach(() => {
     jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
-    check = jest
-      .spyOn(rateLimiter, "check")
-      .mockResolvedValue({ success: false, remaining: 0, resetAt: new Date("2026-09-29T12:00:00Z") });
+    check = jest.spyOn(rateLimiter, "check").mockResolvedValue({
+      success: false,
+      remaining: 0,
+      resetAt: new Date("2026-09-29T12:00:00Z"),
+    });
     jest.spyOn(console, "warn").mockImplementation(() => undefined);
   });
   afterEach(() => jest.restoreAllMocks());
 
   const calls: Array<[string, (ctx: ReturnType<typeof context>["ctx"]) => Promise<object>]> = [
-    ["realms.claimCountry", (ctx) => realmsRouter.createCaller(ctx as never).claimCountry({ countryId: "c1" })],
+    [
+      "realms.claimCountry",
+      (ctx) =>
+        realmsRouter
+          .createCaller(ctx as never)
+          .claimCountry({ countryId: "c1", consent: { accepted: true } }),
+    ],
     [
       "realms.claimNationPage",
-      (ctx) => realmsRouter.createCaller(ctx as never).claimNationPage({ realmSlug: "eurth", title: "Aurelia" }),
+      (ctx) =>
+        realmsRouter.createCaller(ctx as never).claimNationPage({
+          realmSlug: "eurth",
+          title: "Aurelia",
+          consent: { accepted: true },
+        }),
     ],
     [
       "ixnayid.startWikiVerification",
       (ctx) =>
-        ixnayidLinkingRouter.createCaller(ctx as never).startWikiVerification({ source: "iiwiki", username: "Kir" }),
+        ixnayidLinkingRouter
+          .createCaller(ctx as never)
+          .startWikiVerification({ source: "iiwiki", username: "Kir" }),
     ],
     [
       "ixnayid.confirmWikiVerification",
-      (ctx) => ixnayidLinkingRouter.createCaller(ctx as never).confirmWikiVerification({ source: "iiwiki" }),
+      (ctx) =>
+        ixnayidLinkingRouter
+          .createCaller(ctx as never)
+          .confirmWikiVerification({ source: "iiwiki" }),
     ],
     [
       "users.setActiveNation",
-      (ctx) => usersCountryLinkingRouter.createCaller(ctx as never).setActiveNation({ countryId: "e1" }),
+      (ctx) =>
+        usersCountryLinkingRouter.createCaller(ctx as never).setActiveNation({ countryId: "e1" }),
     ],
   ];
 
