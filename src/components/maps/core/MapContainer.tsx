@@ -19,11 +19,6 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
 import { MapControls, type RasterControls } from "./MapControls";
 import { useIsMobile } from "~/hooks/useIsMobile";
-import { CountryInfoPanel } from "./CountryInfoPanel";
-import { FeatureInfoPanel } from "./FeatureInfoPanel";
-import { StoryPinModal } from "./StoryPinModal";
-import { RouteInfoPanel } from "./RouteInfoPanel";
-import MapPinInfoPanel from "./MapPinInfoPanel";
 import { MapDynamicIsland } from "./MapDynamicIsland";
 import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool } from "./MeasureTool";
@@ -46,6 +41,7 @@ import { useRetryMapLayers } from "~/hooks/useMapLayerData";
 import { useMapTour } from "./hooks/useMapTour";
 import { TourHUD } from "./components/TourHUD";
 import { MapFailureOverlay, MapLoadError } from "./components/MapNotices";
+import { MapInfoPanels } from "./components/MapInfoPanels";
 import { useHistoricalMapLayers } from "./hooks/useHistoricalMapLayers";
 import { isIxnayView } from "~/lib/realms/realm-ids";
 import {
@@ -93,15 +89,6 @@ interface MapContainerProps {
 type MapState = ReturnType<typeof useMapState>;
 type MapPin = ReturnType<typeof useMapPinInfo>;
 
-interface MapInfoPanelsProps {
-  state: MapState;
-  pin: MapPin;
-  mapRef: RefObject<IxWorldMapRef | null>;
-  countryPanelOpen: boolean;
-  featurePanelOpen: boolean;
-  canEdit: boolean;
-}
-
 const whenTrue = <T,>(condition: boolean, value: T) => (condition ? value : undefined);
 
 const selectedMapId = (country: SelectedCountry | null) => country?.countryId || country?.featureId;
@@ -115,69 +102,6 @@ function getPanelFlags(allowed: boolean, country: unknown, feature: unknown) {
     featurePanelOpen,
     sidePanelOpen: countryPanelOpen || featurePanelOpen,
   };
-}
-
-function MapInfoPanels({
-  state,
-  pin,
-  mapRef,
-  countryPanelOpen,
-  featurePanelOpen,
-  canEdit,
-}: MapInfoPanelsProps) {
-  const { selectedCountry, selectedFeature, storyPinModalId, selectedRouteId } = state;
-  return (
-    <>
-      {pin.isPinToolActive && pin.pinPosition && (
-        <MapPinInfoPanel
-          pinPosition={pin.pinPosition}
-          clientResult={pin.clientResult}
-          serverResult={pin.serverResult}
-          isServerLoading={pin.isServerLoading}
-          onClose={pin.clearPin}
-        />
-      )}
-
-      {countryPanelOpen && selectedCountry && (
-        <CountryInfoPanel
-          key={selectedCountry.featureId}
-          country={selectedCountry}
-          onClose={state.handleClosePanel}
-          onNeighborClick={state.handleNeighborClick}
-          onGeographyFilter={state.setGeographyFilter}
-          onEditMap={state.handleEditMap}
-        />
-      )}
-
-      {featurePanelOpen && selectedFeature && (
-        <FeatureInfoPanel
-          feature={selectedFeature}
-          onClose={() => state.setSelectedFeature(null)}
-          onOpenStoryModal={(pinId) => {
-            state.setStoryPinModalId(pinId);
-            state.setSelectedFeature(null);
-          }}
-        />
-      )}
-
-      {storyPinModalId && (
-        <StoryPinModal
-          pinId={storyPinModalId}
-          onClose={() => state.setStoryPinModalId(null)}
-          onFlyTo={(lng, lat) => mapRef.current?.flyTo(lng, lat, 8)}
-          onNavigateToPin={state.setStoryPinModalId}
-        />
-      )}
-
-      {selectedRouteId && !state.isEditing && (
-        <RouteInfoPanel
-          routeId={selectedRouteId}
-          onClose={() => state.setSelectedRouteId(null)}
-          canEdit={canEdit}
-        />
-      )}
-    </>
-  );
 }
 
 interface MapEditorsProps {
