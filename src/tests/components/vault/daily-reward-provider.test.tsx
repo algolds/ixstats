@@ -152,7 +152,19 @@ describe("DailyRewardProvider", () => {
     render(<Widget />);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByText("Daily claimed")).toBeInTheDocument();
-    expect(screen.getByText("· 4d streak")).toBeInTheDocument();
+    const pill = document.querySelector("[data-slot='streak-pill']");
+    // Seen as "4d"; read as "4 day streak".
+    expect(pill?.textContent).toBe("4d4 day streak");
+    expect(pill).not.toHaveAttribute("data-peak");
+    expect(pill).toHaveAttribute("title", "The boost peaks on day 30");
+  });
+
+  it("shows a full streak pill once the boost peaks", () => {
+    balance = { canClaimDailyBonus: false, loginStreak: 42 };
+    render(<Widget />);
+    const pill = document.querySelector("[data-slot='streak-pill']");
+    expect(pill).toHaveAttribute("data-peak", "true");
+    expect(pill).toHaveAttribute("title", "Streak boost at its peak");
   });
 
   it("shows the claimed state at once after Collect, without the claimable trigger", async () => {

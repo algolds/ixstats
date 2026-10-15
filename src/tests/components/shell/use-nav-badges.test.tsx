@@ -92,7 +92,7 @@ describe("useNavBadges", () => {
     const { result } = renderHook(() => useNavBadges(true));
     expect(result.current).toEqual({
       "diplomacy-inbox": { kind: "count", value: 3 },
-      "daily-reward": { kind: "action", label: "4d" },
+      "daily-reward": { kind: "action", label: "4d", streak: 4 },
     });
   });
 

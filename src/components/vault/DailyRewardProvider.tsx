@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
-import { Trophy, FireFlame as Flame, SystemRestart as Loader } from "iconoir-react";
+import { Trophy, SystemRestart as Loader } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "~/compone
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { CardBack } from "~/components/cards/display/CardBack";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { StreakPill } from "~/components/vault/StreakPill";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springGentle, springSmooth } from "~/lib/design/motion";
@@ -468,7 +469,7 @@ export function DailyRewardStatus() {
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
         <span className="flex-1">Daily claimed</span>
-        {streak > 0 && <span className="tabular-nums">· {streak}d streak</span>}
+        {streak > 0 && <StreakPill streak={streak} />}
       </div>
     );
   }
@@ -484,12 +485,7 @@ export function DailyRewardStatus() {
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
         <span className="flex-1 text-left">Daily reward</span>
-        {streak > 0 && (
-          <span className="flex items-center gap-1 tabular-nums">
-            <Flame aria-hidden className="size-3" />
-            {streak}d
-          </span>
-        )}
+        {streak > 0 && <StreakPill streak={streak} />}
       </Button>
     </div>
   );

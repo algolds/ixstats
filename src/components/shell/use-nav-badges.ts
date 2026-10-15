@@ -79,6 +79,7 @@ export function useNavBadges(signedIn: boolean): NavBadges {
       badges["daily-reward"] = {
         kind: "action",
         label: balance.loginStreak > 0 ? `${balance.loginStreak}d` : "New",
+        ...(balance.loginStreak > 0 && { streak: balance.loginStreak }),
       };
     }
     return badges;

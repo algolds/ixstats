@@ -13,6 +13,7 @@ import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { springSmooth } from "~/lib/design/motion";
 import { countLabel } from "~/lib/thinkpages-forum/unread";
+import { StreakPill } from "~/components/vault/StreakPill";
 import {
   getActiveSectionId,
   getVisibleAppForPath,
@@ -106,7 +107,8 @@ function Trailing({ badge, badgeKey }: { badge: NavBadge | undefined; badgeKey?:
       </span>
     ) : null;
   }
-  // Only the `action` kind is left (the union is count | action), so the label is its text.
+  // Only the `action` kind is left (the union is count | action): the streak pill, else the label as text.
+  if (badge.streak) return <StreakPill streak={badge.streak} />;
   return <span className="text-footnote text-label-secondary tabular-nums">{badge.label}</span>;
 }
 

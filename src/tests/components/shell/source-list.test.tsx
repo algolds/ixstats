@@ -96,6 +96,15 @@ describe("SourceList", () => {
     expect(current[0]).toHaveAttribute("href", "/dashboard");
   });
 
+  it("shows the reward row's login streak as the streak pill", () => {
+    const { nav } = setup("/vault", {
+      badges: { "daily-reward": { kind: "action", label: "12d", streak: 12 } },
+    });
+    const row = within(nav).getByRole("button", { name: /Daily reward/ });
+    expect(row.querySelector("[data-slot='streak-pill']")).not.toBeNull();
+    expect(within(row).getByText("12 day streak")).toBeInTheDocument();
+  });
+
   it("closes a hosting sheet or popover when an action row is used", () => {
     const { nav, onAction, onNavigate } = setup("/vault", {
       badges: { "daily-reward": { kind: "action", label: "4d" } },

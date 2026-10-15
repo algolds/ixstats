@@ -93,7 +93,9 @@ export type NavBadgeKey =
   | "forum-watched-unread"
   | "forum-realm-board";
 export type NavAction = "daily-reward";
-export type NavBadge = { kind: "count"; value: number } | { kind: "action"; label: string };
+/** `streak`: the action's row shows the login streak as a pill instead of `label` (the daily reward). */
+export type NavBadge =
+  { kind: "count"; value: number } | { kind: "action"; label: string; streak?: number };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
