@@ -3,26 +3,27 @@
 import Link from "next/link";
 import { skipToken } from "@tanstack/react-query";
 import { Community, NavArrowRight } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
-import { Card } from "~/components/ui/card";
 import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
+import { assetUrl } from "~/lib/base-path";
 import { timeAgo } from "~/lib/format/compact";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
 import { countLabel } from "~/lib/thinkpages-forum/unread";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName } from "../AuthorName";
-import { IconTile } from "../shell";
+import { IconTile, RailPanel } from "../shell";
 
 type HubThread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
 const MINE_HREF = "/thinkpages/r/mine";
 
 /**
- * "Your realm", for a signed-in member of a realm: its name and its Hub's latest thread, linking to
- * `/thinkpages/r/mine`. Nothing for anyone else.
+ * The rail's "Your realm" panel, for a signed-in member of a realm: its name, what is new on its board and its Hub's
+ * latest thread, linking to `/thinkpages/r/mine`. Nothing for anyone else.
  */
-export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
-  const { realmMember } = useForumNavFlags(signedIn);
+export function YourRealmPanel({ signedIn }: { signedIn: boolean }) {
+  const { realmMember, realm } = useForumNavFlags(signedIn);
+  // The realm's uploaded emblem, else its thumbnail; the realms icon when it has neither.
+  const mark = assetUrl(realm?.emblemUrl) ?? assetUrl(realm?.thumbnail);
   const realms = api.thinkpagesForum.realms.useQuery(undefined, { enabled: realmMember });
   const slug = realmMember ? realms.data?.defaultSlug : undefined;
   const hub = api.thinkpagesForum.category.useQuery(
@@ -43,26 +44,32 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
   );
 
   return (
-    <Card content="entity" className="overflow-hidden">
+    <RailPanel title="Your realm" icon={<Community />}>
       <Link
         href={MINE_HREF}
-        className="hover:bg-fill-4 focus-visible:outline-tint flex items-center gap-3.5 px-4 py-4 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-5 pointer-coarse:min-h-11"
+        className="hover:bg-fill-4 focus-visible:outline-tint rounded-control-sm -mx-2 flex items-center gap-3 px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
       >
-        <IconTile size="lg" texture="paperGrain">
-          <Community />
-        </IconTile>
+        {mark ? (
+          <img
+            src={mark}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="rounded-row size-10 shrink-0 object-cover"
+          />
+        ) : (
+          <IconTile texture="paperGrain">
+            <Community />
+          </IconTile>
+        )}
         <span className="min-w-0 flex-1">
-          <span className="text-title-3 flex items-center gap-2">
-            <span className="min-w-0 truncate">{name}</span>
-            <Badge variant="secondary">Your realm</Badge>
-          </span>
+          <span className="text-body text-label block truncate font-medium">{name}</span>
           {counts.data && counts.data.realmBoardNew > 0 ? (
-            <span className="text-callout text-tint block font-medium tabular-nums">
+            <span className="text-footnote text-tint block font-medium tabular-nums">
               {`${countLabel(counts.data.realmBoardNew)} new on the board`}
             </span>
           ) : null}
           {latest && hub.data ? (
-            <span className="text-callout text-label-secondary flex min-w-0 items-center gap-1">
+            <span className="text-footnote text-label-secondary flex min-w-0 items-center gap-1">
               <span className="text-label min-w-0 truncate">{latest.title}</span>
               <span aria-hidden>·</span>
               <AuthorName
@@ -77,6 +84,6 @@ export function YourRealmCard({ signedIn }: { signedIn: boolean }) {
         </span>
         <NavArrowRight aria-hidden className="text-label-tertiary size-4 shrink-0" />
       </Link>
-    </Card>
+    </RailPanel>
   );
 }

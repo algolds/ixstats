@@ -1,10 +1,7 @@
 "use client";
 /** Live values for the source list's badge keys. Signed out, or still loading, means no badges. */
 import { useMemo, useSyncExternalStore } from "react";
-import { usePathname } from "next/navigation";
 import { api } from "~/trpc/react";
-import { stripBasePath } from "~/lib/base-path";
-import { isForumPath } from "~/lib/thinkpages-forum/links";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import type { NavBadges } from "~/lib/navigation/app-sections";
@@ -13,9 +10,6 @@ import {
   readSeenVersion,
   subscribeSeenVersion,
 } from "~/lib/navigation/seen-version";
-
-const FORUM_POLL_MS = 60_000;
-const ELSEWHERE_POLL_MS = 300_000;
 
 export function useNavBadges(signedIn: boolean): NavBadges {
   const { country } = useUserCountry();
@@ -43,17 +37,6 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     { countryId: countryId ?? "" },
     forCountry
   );
-  // Unread watched threads and new realm board messages (they change slowly; the bell is the alert): a poll a minute
-  // while the member is in the forum, one every five minutes anywhere else.
-  const inForum = isForumPath(stripBasePath(usePathname() || "/"));
-  const forumPoll = inForum ? FORUM_POLL_MS : ELSEWHERE_POLL_MS;
-  const { data: forumCounts } = api.thinkpagesForum.navCounts.useQuery(undefined, {
-    enabled: signedIn,
-    staleTime: 60_000,
-    refetchInterval: forumPoll,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
   // The server snapshot is the running build, so the flag never renders (or mismatches) before hydration.
   const seenVersion = useSyncExternalStore(
     subscribeSeenVersion,
@@ -70,10 +53,6 @@ export function useNavBadges(signedIn: boolean): NavBadges {
     if (unread > 0) badges["messages-unread"] = { kind: "count", value: unread };
     const issues = pendingIssues?.total ?? 0;
     if (issues > 0) badges["issues-pending"] = { kind: "count", value: issues };
-    const watched = forumCounts?.watchedUnread ?? 0;
-    if (watched > 0) badges["forum-watched-unread"] = { kind: "count", value: watched };
-    const board = forumCounts?.realmBoardNew ?? 0;
-    if (board > 0) badges["forum-realm-board"] = { kind: "count", value: board };
     if (unseenBuild) badges["whats-new"] = { kind: "action", label: "New" };
     if (balance?.canClaimDailyBonus) {
       badges["daily-reward"] = {
@@ -83,14 +62,5 @@ export function useNavBadges(signedIn: boolean): NavBadges {
       };
     }
     return badges;
-  }, [
-    signedIn,
-    inbox.count,
-    balance,
-    folderCounts?.inbox,
-    pendingIssues?.total,
-    forumCounts?.watchedUnread,
-    forumCounts?.realmBoardNew,
-    unseenBuild,
-  ]);
+  }, [signedIn, inbox.count, balance, folderCounts?.inbox, pendingIssues?.total, unseenBuild]);
 }

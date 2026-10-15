@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
@@ -10,10 +11,12 @@ export function PlayAsNation({
   countryId,
   countryName,
   active,
+  label = `Play as ${countryName}`,
 }: {
   countryId: string;
   countryName: string;
   active: boolean;
+  label?: ReactNode;
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -33,7 +36,7 @@ export function PlayAsNation({
       disabled={playAs.isPending}
       onClick={() => playAs.mutate({ countryId })}
     >
-      Play as {countryName}
+      {label}
     </Button>
   );
 }

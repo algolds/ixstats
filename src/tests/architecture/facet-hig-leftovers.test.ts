@@ -62,7 +62,7 @@ describe("Facet 3.1 HIG leftovers", () => {
 
   it("always renders an h1 on /vault/achievements, not only with a profile", () => {
     const page = read("app/vault/achievements/page.tsx");
-    expect(page).toMatch(/<PageHeader\s+title="Achievements"/);
+    expect(page).toMatch(/<h1 className="sr-only">Achievements<\/h1>/);
   });
 
   it("draws the map island popover triggers' focus rings inside the clipping pill", () => {

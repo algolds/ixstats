@@ -95,7 +95,6 @@ describe("thinkpagesForum stash procedures", () => {
     await expect(c.isThreadStashed({ threadId: "t1" })).rejects.toMatchObject({
       cause: { code: "UNAUTHORIZED" },
     });
-    await expect(c.stashedThreads()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
   });
 
   it("stashes a visible thread with the server's title", async () => {
@@ -161,20 +160,10 @@ describe("thinkpagesForum stash procedures", () => {
       stashes: [{ id: "stash_1", name: "My Stash", color: null }],
     });
     expect(items).toHaveLength(1);
-    await expect(c.stashedThreads()).resolves.toEqual([
-      {
-        id: "item_1",
-        threadId: "t1",
-        title: "Hello there",
-        href: "/thinkpages/t/t1",
-        savedAt: new Date("2026-10-01"),
-      },
-    ]);
   });
 
   it("bounds the inputs", async () => {
     const c = caller(member, stashDb().db);
     await expect(c.stashThread({ threadId: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(c.stashedThreads({ limit: 1000 })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

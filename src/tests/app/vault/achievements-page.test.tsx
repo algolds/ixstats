@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 
-const getMySummary = jest.fn();
 const sync = jest.fn();
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
@@ -20,18 +19,9 @@ jest.mock("~/trpc/react", () => ({
     users: { getProfile: { useQuery: () => ({ data: { countryId: "c1" } }) } },
     achievements: {
       getAllWithStatus: { useQuery: () => ({ data: [] }) },
-      getMySummary: { useQuery: () => getMySummary() },
       syncMyCollectorAchievements: { useMutation: () => ({ mutate: sync }) },
     },
   },
-}));
-jest.mock("~/components/shell/PageHeader", () => ({
-  PageHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
-    <header>
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </header>
-  ),
 }));
 jest.mock("~/components/achievements/tabs/AllAchievementsTab", () => ({
   AllAchievementsTab: () => <div data-testid="catalogue" />,
@@ -42,14 +32,12 @@ jest.mock("~/components/achievements/tabs/LeaderboardTab", () => ({ LeaderboardT
 import VaultAchievementsPage from "~/app/vault/achievements/page";
 
 describe("/vault/achievements", () => {
-  it("shows the player's standing above the tabs, and syncs on load", () => {
-    getMySummary.mockReturnValue({ data: { unlocked: 12, activeTotal: 48, points: 340, rank: 7 } });
+  it("titles the page for assistive tech, opens on the tabs with no standing hero, and syncs on load", () => {
     render(<VaultAchievementsPage />);
 
-    expect(screen.getByRole("heading", { name: "Achievements" })).toBeInTheDocument();
-    expect(screen.getByText("25% mastered")).toBeInTheDocument();
-    expect(screen.getByText("of 48")).toBeInTheDocument();
-    expect(screen.getByText("340")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Achievements" })).toHaveClass("sr-only");
+    expect(screen.queryByText("Achievements unlocked")).toBeNull();
+    expect(screen.queryByText(/mastered/)).toBeNull();
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
       "All",
       "Lorewards",
@@ -58,11 +46,5 @@ describe("/vault/achievements", () => {
     ]);
     expect(screen.getByTestId("catalogue")).toBeInTheDocument();
     expect(sync).toHaveBeenCalled();
-  });
-
-  it("calls an unranked player unranked", () => {
-    getMySummary.mockReturnValue({ data: { unlocked: 0, activeTotal: 48, points: 0, rank: null } });
-    render(<VaultAchievementsPage />);
-    expect(screen.getByText("Unranked")).toBeInTheDocument();
   });
 });

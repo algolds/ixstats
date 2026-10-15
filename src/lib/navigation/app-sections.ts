@@ -23,12 +23,7 @@ import { RealmsLogomark } from "./icons/RealmsLogomark";
 import { VaultLogomark } from "./icons/VaultLogomark";
 import { Compass as SolidCompass, RoundFlask as SolidRoundFlask } from "iconoir-react/solid";
 import { WikiLogomark } from "./icons/WikiLogomark";
-import {
-  FORUM_HOME,
-  NEW_POSTS_HREF,
-  STASHED_HREF,
-  WATCHED_HREF,
-} from "~/lib/thinkpages-forum/links";
+import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import {
   Activity,
   Bell,
@@ -46,7 +41,6 @@ import {
   Cpu,
   Crown,
   Database,
-  Eye,
   Folder,
   Gamepad,
   Gift,
@@ -55,6 +49,7 @@ import {
   HelpCircle,
   HomeSimple,
   Journal,
+  Leaderboard,
   LightBulbOn,
   List,
   Lock,
@@ -65,14 +60,12 @@ import {
   MultiplePages,
   OpenBook,
   Package,
-  Page,
   Palette,
   Search,
   Server,
   Settings,
   Shield,
   ShieldCheck,
-  Shuffle,
   Sparks,
   StatsReport,
   Terminal,
@@ -85,13 +78,7 @@ import {
 export type NavIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
 export type NavBadgeKey =
-  | "diplomacy-inbox"
-  | "daily-reward"
-  | "messages-unread"
-  | "issues-pending"
-  | "whats-new"
-  | "forum-watched-unread"
-  | "forum-realm-board";
+  "diplomacy-inbox" | "daily-reward" | "messages-unread" | "issues-pending" | "whats-new";
 export type NavAction = "daily-reward";
 /** `streak`: the action's row shows the login streak as a pill instead of `label` (the daily reward). */
 export type NavBadge =
@@ -155,12 +142,11 @@ interface AppSection {
 }
 
 /**
- * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `realm-member`: the viewer's
- * primary nation sits in a realm. `forum-moderator`: site staff or any forum category or realm moderator.
+ * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `forum-moderator`: site staff
+ * or any forum category or realm moderator.
  * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher).
  */
-type SectionRequirement =
-  "mycountry-premium" | "realm-member" | "forum-moderator" | "signed-in" | "admin";
+type SectionRequirement = "mycountry-premium" | "forum-moderator" | "signed-in" | "admin";
 
 export interface AppDefinition {
   id: AppId;
@@ -285,7 +271,7 @@ export const APPS: readonly AppDefinition[] = [
     href: "/vault",
     icon: VaultLogomark,
     tint: "vault",
-    match: ["/vault"],
+    match: ["/vault", "/leaderboards"],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Wallet", href: "/vault", icon: Wallet, exact: true },
@@ -304,6 +290,8 @@ export const APPS: readonly AppDefinition[] = [
         icon: Trophy,
         match: ["/vault/achievements"],
       },
+      // The nation boards (GDP, population, density, growth); achievement points rank on Achievements.
+      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
       {
         id: "cards",
         label: "Cards",
@@ -336,7 +324,9 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
     // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs. WikiOS has no rail
-    // of its own: search is a section here, and page creation and page tools live in the page header.
+    // of its own: search is a section here, and page creation and page tools live in the page header. The rest of
+    // the tools (Random, Contributions, Watchlist, ...) open from the Utilities hub; /stashes and /blurbs stay in
+    // the app without a row (Stash is in the account menu).
     sections: [
       {
         id: "main",
@@ -366,16 +356,6 @@ export const APPS: readonly AppDefinition[] = [
         icon: BookStack,
         match: ["/wiki/categories"],
       },
-      { id: "random", label: "Random article", href: "/util/random", icon: Shuffle },
-      { id: "watchlist", label: "Watchlist", href: "/util/watchlist", icon: Bookmark },
-      {
-        id: "history",
-        label: "Contributions",
-        href: "/util/contributions",
-        icon: Journal,
-        match: ["/wiki/contributions"],
-      },
-      { id: "stashes", label: "Stashes", href: "/stashes", icon: Bookmark },
       {
         id: "repository",
         label: "Repository",
@@ -383,14 +363,12 @@ export const APPS: readonly AppDefinition[] = [
         icon: MediaImage,
         match: ["/wiki/repository"],
       },
-      { id: "blurbs", label: "Blurbs", href: "/blurbs", icon: Page },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
   },
   {
     // The forum, ThinkTanks and the member's ThinkPages accounts. FORUM_HOME is the prefix of every forum route (c, t,
-    // r, mod, post); signed-out visitors keep Forums and ThinkTanks (the others need a sign-in, a realm or a moderator
-    // role). /dashboard/accounts outranks Home's /dashboard because the longest prefix wins.
+    // r, mod, post); signed-out visitors keep Forums and ThinkTanks (the others need a sign-in or a moderator role). /dashboard/accounts outranks Home's /dashboard because the longest prefix wins.
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
@@ -405,36 +383,6 @@ export const APPS: readonly AppDefinition[] = [
         label: "Accounts",
         href: "/dashboard/accounts",
         icon: Group,
-        requires: "signed-in",
-      },
-      {
-        id: "your-realm",
-        label: "Your realm",
-        href: "/thinkpages/r/mine",
-        icon: RealmsLogomark,
-        requires: "realm-member",
-        badge: "forum-realm-board",
-      },
-      {
-        id: "new-posts",
-        label: "New posts",
-        href: NEW_POSTS_HREF,
-        icon: ChatLines,
-        requires: "signed-in",
-      },
-      {
-        id: "watched",
-        label: "Watched",
-        href: WATCHED_HREF,
-        icon: Eye,
-        requires: "signed-in",
-        badge: "forum-watched-unread",
-      },
-      {
-        id: "stashed",
-        label: "Stashed",
-        href: STASHED_HREF,
-        icon: Bookmark,
         requires: "signed-in",
       },
       {
@@ -453,9 +401,9 @@ export const APPS: readonly AppDefinition[] = [
     href: "/realms",
     icon: RealmsLogomark,
     tint: "realms",
-    match: ["/realms", "/r", "/countries", "/explore", "/leaderboards"],
+    match: ["/realms", "/r", "/countries", "/explore"],
     sections: [
-      // The nations of the viewer's realm (/countries follows the active nation's realm).
+      // The viewer's realm's Nations tab: /countries resolves the active nation's realm and redirects there.
       { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
       { id: "explore", label: "Explore", href: "/realms", icon: Search, match: ["/r"] },
       {
@@ -812,8 +760,6 @@ interface AppVisibilityContext {
   hasLabsAccess?: boolean;
   /** MyCountry Premium (the premium ability) or a beta tester: sees `requires: "mycountry-premium"` sections. */
   hasMycountryPremium?: boolean;
-  /** The viewer has a realm (`realm-member` sections). */
-  realmMember?: boolean;
   /** Site staff or a forum moderator (`forum-moderator` sections). */
   forumModerator?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
@@ -825,13 +771,11 @@ export function getVisibleApps({
   isAdmin,
   hasLabsAccess = false,
   hasMycountryPremium = false,
-  realmMember = false,
   forumModerator = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
   const granted: Record<SectionRequirement, boolean> = {
     "mycountry-premium": hasMycountryPremium,
-    "realm-member": realmMember,
     "forum-moderator": forumModerator,
     "signed-in": signedIn,
     admin: isAdmin,

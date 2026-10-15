@@ -68,8 +68,8 @@ function isRedirectStub(file: string): boolean {
   return forwards && !/return\s*\(?\s*</.test(source);
 }
 
-/** Rows that open a server resolver on purpose: it redirects each viewer to a page of their own ("Your realm"). */
-const RESOLVER_HREFS = new Set(["/thinkpages/r/mine"]);
+/** Rows that open a server resolver on purpose: it redirects each viewer to a page of their own ("My realm"). */
+const RESOLVER_HREFS = new Set(["/countries"]);
 
 const allLinks = APPS.flatMap((app) => [
   { owner: app.id, href: app.href },
@@ -148,7 +148,7 @@ describe("app section map routes", () => {
     expect(home.match).not.toContain("/thinktanks");
   });
 
-  it("makes ThinkPages its own app with Forums, ThinkTanks, Accounts, Your realm, New posts, Watched, Stashed and Moderation sections", () => {
+  it("makes ThinkPages its own app with Forums, ThinkTanks, Accounts and Moderation sections", () => {
     const forum = getApp("thinkpages");
     expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
     expect(forum.match).toEqual(["/thinkpages", "/thinktanks", "/dashboard/accounts"]);
@@ -158,43 +158,21 @@ describe("app section map routes", () => {
       ["forums", "Forums", "/thinkpages", true, undefined, undefined],
       ["thinktanks", "ThinkTanks", "/thinktanks", undefined, undefined, undefined],
       ["accounts", "Accounts", "/dashboard/accounts", undefined, "signed-in", undefined],
-      [
-        "your-realm",
-        "Your realm",
-        "/thinkpages/r/mine",
-        undefined,
-        "realm-member",
-        "forum-realm-board",
-      ],
-      ["new-posts", "New posts", "/thinkpages/new", undefined, "signed-in", undefined],
-      ["watched", "Watched", "/thinkpages/watched", undefined, "signed-in", "forum-watched-unread"],
-      ["stashed", "Stashed", "/thinkpages/stashed", undefined, "signed-in", undefined],
       ["moderation", "Moderation", "/thinkpages/mod", undefined, "forum-moderator", undefined],
     ]);
   });
 
-  it("lists New posts, Watched and Stashed only for a signed-in member", () => {
+  it("lists Accounts only for a signed-in member", () => {
     const labels = (signedIn: boolean) =>
       getVisibleApps({ signedIn, isAdmin: false })
         .find((app) => app.id === "thinkpages")!
         .sections.map((s) => s.label);
     expect(labels(false)).toEqual(["Forums", "ThinkTanks"]);
-    expect(labels(true)).toEqual([
-      "Forums",
-      "ThinkTanks",
-      "Accounts",
-      "New posts",
-      "Watched",
-      "Stashed",
-    ]);
+    expect(labels(true)).toEqual(["Forums", "ThinkTanks", "Accounts"]);
   });
 
   it.each([
     ["/thinkpages", "forums"],
-    ["/thinkpages/r/mine", "your-realm"],
-    ["/thinkpages/new", "new-posts"],
-    ["/thinkpages/watched", "watched"],
-    ["/thinkpages/stashed", "stashed"],
     ["/thinkpages/mod", "moderation"],
     ["/thinkpages/mod/reports", "moderation"],
   ])("resolves %s to the ThinkPages app's %s section in the app tint", (pathname, sectionId) => {
@@ -252,13 +230,14 @@ describe("app section map routes", () => {
 });
 
 describe("Vault app", () => {
-  it("lists the Wallet, Daily reward, Achievements, Cards and Store rows, in that order", () => {
+  it("lists the Wallet, Daily reward, Achievements, Leaderboards, Cards and Store rows, in that order", () => {
     expect(
       getApp("vault").sections.map((section) => [section.id, section.label, section.href])
     ).toEqual([
       ["dashboard", "Wallet", "/vault"],
       ["daily-reward", "Daily reward", "/vault"],
       ["achievements", "Achievements", "/vault/achievements"],
+      ["leaderboards", "Leaderboards", "/leaderboards"],
       ["cards", "Cards", "/vault/cards"],
       ["store", "Store", "/vault/store"],
     ]);
@@ -293,6 +272,7 @@ describe("Vault app", () => {
     ["/vault/packs", "store"],
     ["/vault/achievements", "achievements"],
     ["/vault/achievements/anything", "achievements"],
+    ["/leaderboards", "leaderboards"],
   ])("puts %s under the %s row", (pathname, sectionId) => {
     expect(getActiveSectionId(getApp("vault"), pathname, null)).toBe(sectionId);
   });
@@ -371,7 +351,8 @@ describe("app section map resolvers", () => {
     const wiki = getApp("wiki");
     expect(getActiveSectionId(wiki, "/wiki/Main_Page", null)).toBe("main");
     expect(getActiveSectionId(wiki, "/wiki/Some_Article", null)).toBeUndefined();
-    expect(getActiveSectionId(wiki, "/stashes", null)).toBe("stashes");
+    // Stash moved to the account menu: the page stays in the Wiki app, with no row of its own.
+    expect(getActiveSectionId(wiki, "/stashes", null)).toBeUndefined();
     expect(getAppForPath("/labs/onoma/studio")?.id).toBe("labs");
     expect(getActiveSectionId(getApp("labs"), "/labs/onoma/studio", null)).toBe("onoma");
   });
@@ -520,38 +501,11 @@ describe("app visibility and the tab bar", () => {
       "forums",
       "thinktanks",
       "accounts",
-      "new-posts",
-      "watched",
-      "stashed",
-    ]);
-    expect(sections({ signedIn: true, isAdmin: false, realmMember: true })).toEqual([
-      "forums",
-      "thinktanks",
-      "accounts",
-      "your-realm",
-      "new-posts",
-      "watched",
-      "stashed",
     ]);
     expect(sections({ signedIn: true, isAdmin: false, forumModerator: true })).toEqual([
       "forums",
       "thinktanks",
       "accounts",
-      "new-posts",
-      "watched",
-      "stashed",
-      "moderation",
-    ]);
-    expect(
-      sections({ signedIn: true, isAdmin: true, realmMember: true, forumModerator: true })
-    ).toEqual([
-      "forums",
-      "thinktanks",
-      "accounts",
-      "your-realm",
-      "new-posts",
-      "watched",
-      "stashed",
       "moderation",
     ]);
   });
@@ -560,7 +514,6 @@ describe("app visibility and the tab bar", () => {
     const granted = getVisibleApps({
       signedIn: true,
       isAdmin: false,
-      realmMember: true,
       forumModerator: true,
     }).find((app) => app.id === "thinkpages");
     expect(granted).toBe(getApp("thinkpages"));

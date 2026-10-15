@@ -9,11 +9,7 @@ let pendingIssues: { total: number; urgent: number } | undefined;
 const issuesQuery = jest.fn();
 const balanceQuery = jest.fn();
 const folderCountsQuery = jest.fn();
-let forumCounts: { watchedUnread: number; realmBoardNew: number } | undefined;
-const forumCountsQuery = jest.fn();
 
-let pathname: string | null = "/dashboard";
-jest.mock("next/navigation", () => ({ usePathname: () => pathname }));
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ country }) }));
 jest.mock("~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox", () => ({
   useDiplomacyInboxCount: (_id: string | undefined, enabled: boolean) => {
@@ -39,14 +35,6 @@ jest.mock("~/trpc/react", () => ({
         },
       },
     },
-    thinkpagesForum: {
-      navCounts: {
-        useQuery: (_input: undefined, opts: { enabled: boolean }) => {
-          forumCountsQuery(opts);
-          return { data: opts.enabled ? forumCounts : undefined };
-        },
-      },
-    },
     vault: {
       getBalance: {
         useQuery: (_input: unknown, opts: { enabled: boolean }) => {
@@ -62,7 +50,6 @@ import { useNavBadges } from "~/components/shell/use-nav-badges";
 import { markVersionSeen } from "~/lib/navigation/seen-version";
 
 beforeEach(() => {
-  pathname = "/dashboard";
   country = { id: "c1", name: "Caphiria", flag: "flag.png" };
   inboxCount = 3;
   balance = { credits: 1240.7, canClaimDailyBonus: true, loginStreak: 4 };
@@ -71,8 +58,6 @@ beforeEach(() => {
   issuesQuery.mockClear();
   balanceQuery.mockClear();
   folderCountsQuery.mockClear();
-  forumCounts = undefined;
-  forumCountsQuery.mockClear();
   inboxEnabled.mockClear();
   // A build the user has already seen, so only the what's-new tests see that badge.
   markVersionSeen();
@@ -163,40 +148,5 @@ describe("useNavBadges", () => {
       { countryId: "c1" },
       expect.objectContaining({ enabled: true })
     );
-  });
-
-  it("maps the watched and realm board counts to their badges, and omits a zero count", () => {
-    forumCounts = { watchedUnread: 3, realmBoardNew: 5 };
-    const { result, rerender } = renderHook(() => useNavBadges(true));
-    expect(result.current["forum-watched-unread"]).toEqual({ kind: "count", value: 3 });
-    expect(result.current["forum-realm-board"]).toEqual({ kind: "count", value: 5 });
-    forumCounts = { watchedUnread: 0, realmBoardNew: 0 };
-    rerender();
-    expect(result.current["forum-watched-unread"]).toBeUndefined();
-    expect(result.current["forum-realm-board"]).toBeUndefined();
-  });
-
-  it("polls the forum counts every minute under the forum, for a signed-in member only", () => {
-    pathname = "/thinkpages/c/general";
-    renderHook(() => useNavBadges(false));
-    expect(forumCountsQuery).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
-    renderHook(() => useNavBadges(true));
-    expect(forumCountsQuery).toHaveBeenLastCalledWith(
-      expect.objectContaining({ enabled: true, staleTime: 60_000, refetchInterval: 60_000 })
-    );
-  });
-
-  it("polls the forum counts every five minutes elsewhere, and still not when signed out", () => {
-    renderHook(() => useNavBadges(true));
-    expect(forumCountsQuery).toHaveBeenLastCalledWith(
-      expect.objectContaining({ enabled: true, refetchInterval: 300_000 })
-    );
-    pathname = null;
-    renderHook(() => useNavBadges(true));
-    expect(forumCountsQuery).toHaveBeenLastCalledWith(
-      expect.objectContaining({ refetchInterval: 300_000 })
-    );
-    renderHook(() => useNavBadges(false));
-    expect(forumCountsQuery).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
   });
 });

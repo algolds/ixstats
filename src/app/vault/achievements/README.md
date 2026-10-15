@@ -3,9 +3,9 @@
 **Last updated:** October 2026
 
 This directory holds the React view for `/vault/achievements`, the achievements home inside the
-Vault: a standing card (unlocked, points, rank) above four tabs. `/achievements` redirects here,
-keeping its query string, so old links and saved notifications still open. The nation boards live on
-the standalone `/leaderboards` page. See `docs/systems/achievements.md` for the full guide.
+Vault: four tabs under a visually hidden `h1` (the sidebar row names the page on screen). `/achievements` redirects
+here, keeping its query string, so old links and saved notifications still open. The nation boards live on the
+standalone `/leaderboards` page, the Vault sidebar's Leaderboards row. See `docs/systems/achievements.md` for the full guide.
 
 ## Routes
 
@@ -29,7 +29,7 @@ the standalone `/leaderboards` page. See `docs/systems/achievements.md` for the 
 
 - `api.users.getProfile`: `countryId` (country achievements are added when there is one)
 - `api.achievements.getAllWithStatus`: the catalogue with the player's unlocks
-- `api.achievements.getMySummary`: `{ unlocked, activeTotal, points, rank }`, keyed by the Clerk user id
+- `api.achievements.getMySummary`: invalidated after the sync (the Vault dashboard shows it)
 - `api.achievements.getPlayerLeaderboard({ limit })`: ranked players (ties share a rank; names are the passport handle, else the forum name)
 - `api.achievements.syncMyCollectorAchievements`: evaluates the player's achievements on load
 - `api.achievements.getLeaderboard` and `getCountryLeaderboard`: nation boards on `/leaderboards` only

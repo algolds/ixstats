@@ -8,7 +8,7 @@ prevLabel: Ribbons & Your Showcase
 
 ## What the leaderboards show
 
-The [Leaderboards](/leaderboards) page ranks nations on a choice of measures. Open it from **Global Leaderboards** on the [Achievements](/vault/achievements) page, or search for it with `Ctrl`/`Cmd` + `K`. Anyone can view it.
+The [Leaderboards](/leaderboards) page ranks nations on a choice of measures. Open it from **Leaderboards** under **Vault** in the sidebar, or search for it with `Ctrl`/`Cmd` + `K`. Anyone can view it.
 
 ## Measures
 

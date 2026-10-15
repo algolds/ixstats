@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
@@ -36,7 +36,7 @@ export function ClaimNationButton({
   realmSlug: string;
   countryId: string;
   countryName: string;
-  label?: string;
+  label?: ReactNode;
   size?: "xs" | "sm";
 }) {
   const { isSignedIn } = useAuth();

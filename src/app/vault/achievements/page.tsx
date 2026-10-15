@@ -1,15 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import Link from "next/link";
-import { Trophy as Award } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { Button } from "~/components/ui/button";
-import { Stat } from "~/components/ui/stat";
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { Card } from "~/components/ui/card";
-import { PageHeader } from "~/components/shell/PageHeader";
 import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
 import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
 
@@ -27,10 +20,6 @@ export default function VaultAchievementsPage() {
     { countryId: userProfile?.countryId || undefined },
     { enabled: hasProfile }
   );
-  const { data: summary } = api.achievements.getMySummary.useQuery(undefined, {
-    enabled: hasProfile,
-  });
-
   const utils = api.useUtils();
   const { mutate: syncAchievements } = api.achievements.syncMyCollectorAchievements.useMutation({
     onSuccess: () => {
@@ -45,60 +34,10 @@ export default function VaultAchievementsPage() {
     }
   }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
-  const completionPercent = summary
-    ? Math.round((summary.unlocked / Math.max(summary.activeTotal, 1)) * 100)
-    : 0;
-
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Achievements"
-        subtitle={summary ? `${completionPercent}% mastered` : undefined}
-        actions={
-          <Button asChild variant="secondary" size="sm">
-            <Link href="/leaderboards">
-              <Award aria-hidden />
-              <span>Global leaderboards</span>
-            </Link>
-          </Button>
-        }
-      />
-
-      {summary && (
-        <Card padding="lg">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Stat
-              label="Achievements unlocked"
-              value={<NumberFlowDisplay value={summary.unlocked} />}
-              hint={`of ${summary.activeTotal}`}
-            />
-            <Stat
-              label="Achievement points"
-              value={
-                <span className="flex items-baseline gap-1">
-                  <span className="text-success-ink">
-                    <NumberFlowDisplay value={summary.points} />
-                  </span>
-                  <span className="text-footnote text-label-secondary">pts</span>
-                </span>
-              }
-            />
-            <Stat
-              label="Rank"
-              value={
-                summary.rank ? (
-                  <span className="flex items-baseline">
-                    #<NumberFlowDisplay value={summary.rank} />
-                  </span>
-                ) : (
-                  "Unranked"
-                )
-              }
-            />
-          </div>
-        </Card>
-      )}
-
+      {/* The page's title for assistive tech; the sidebar's Achievements row names it on screen. */}
+      <h1 className="sr-only">Achievements</h1>
       <AchievementsTabs
         achievements={achievements}
         isLoading={achievements === undefined}

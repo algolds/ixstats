@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
@@ -21,11 +21,13 @@ export function LeaveRealmButton({
   realmName,
   countryId,
   countryName,
+  label = "Leave realm",
 }: {
   slug: string;
   realmName: string;
   countryId: string;
   countryName: string;
+  label?: ReactNode;
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -48,7 +50,7 @@ export function LeaveRealmButton({
   return (
     <>
       <Button size="xs" variant="ghost" onClick={() => setOpen(true)}>
-        Leave realm
+        {label}
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className="sm:max-w-md">

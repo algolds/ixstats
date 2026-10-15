@@ -10,6 +10,7 @@ import {
   Globe,
   Megaphone,
   NavArrowDown,
+  NavArrowRight,
   Page,
   Search,
   ShieldCheck,
@@ -22,6 +23,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/component
 import { timeAgo } from "~/lib/format/compact";
 import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import type { RouterOutputs } from "~/trpc/react";
+import type { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
+import { cn } from "~/lib/utils/cn";
 import { AuthorFlag } from "../AuthorMark";
 import { ForumAvatar } from "../ForumAvatar";
 import { IconTile, RISE_ITEM, RISE_LIST } from "../shell";
@@ -38,6 +41,17 @@ const BOARD_ICONS: Record<string, typeof Folder> = {
   "side-games": Gamepad,
 };
 
+/** Each board's own texture on its tile, so boards are told apart at a glance; any other board has dots. */
+const BOARD_TEXTURES: Record<string, (typeof SANCTIONED_TEXTURES)[number]> = {
+  rules: "grid",
+  staff: "grid",
+  announcements: "chevron",
+  reports: "chevron",
+  "find-a-realm": "dots",
+  "side-games": "dots",
+  general: "paperGrain",
+};
+
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** A count with its unit, the figure over the unit (md and up). */
@@ -50,36 +64,56 @@ function Count({ value, one, many }: { value: number; one: string; many: string 
   );
 }
 
-/** The board's newest thread as a pressable Well: its title, who posted last (avatar and flag), and when. */
+/**
+ * The board's newest thread as a pressable Well: its title, who posted last (avatar and flag), and when, with the last
+ * poster's flag fading in from the right edge as a watermark and an arrow that nudges on hover.
+ */
 function LatestPreview({ latest }: { latest: Board["latest"] }) {
   if (!latest) return <p className="text-callout text-label-tertiary">No threads yet</p>;
   const author = latest.author?.name ?? "Member";
+  const flagUrl = latest.author?.flagUrl;
   return (
-    <Card variant="well" padding="none" interactive className="max-w-xl">
+    <Card
+      variant="well"
+      padding="none"
+      interactive
+      className="has-[:focus-visible]:outline-tint relative max-w-xl overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+    >
+      {flagUrl ? (
+        <img
+          data-slot="thread-card-flag"
+          src={flagUrl}
+          alt=""
+          className="pointer-events-none absolute inset-y-0 right-0 w-1/3 mask-l-from-30% object-cover opacity-20 select-none"
+        />
+      ) : null}
       <Link
         href={threadHref(latest.threadId)}
-        className="flex min-w-0 items-center gap-3 px-3 py-2.5 after:absolute after:inset-0 focus-visible:outline-none"
+        className="group/thread relative flex min-w-0 items-center gap-3 px-3 py-2.5 after:absolute after:inset-0 focus-visible:outline-none"
       >
         <span className="inline-flex shrink-0 items-center gap-1.5">
           <ForumAvatar name={author} avatarUrl={latest.author?.avatarUrl} size="sm" />
           {latest.author?.flagUrl ? <AuthorFlag url={latest.author.flagUrl} /> : null}
         </span>
         <span className="min-w-0">
-          <span className="text-callout text-label block truncate font-medium">
-            {latest.threadTitle}
-          </span>
+          <span className="text-headline text-label block truncate">{latest.threadTitle}</span>
           <span className="text-footnote text-label-secondary block truncate tabular-nums">
             {`${author} · ${timeAgo(latest.at)}`}
           </span>
         </span>
+        <NavArrowRight
+          aria-hidden
+          className="text-label-tertiary duration-fast ease-out-facet ml-auto size-4 shrink-0 transition-transform motion-safe:group-hover/thread:translate-x-0.5"
+        />
       </Link>
     </Card>
   );
 }
 
 /**
- * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state, description,
- * counts, and the latest thread's preview, which sits above the row link as its own link.
+ * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (a dot, an "N new"
+ * badge and a tint rule down the row's left edge), description, counts, and the latest thread's preview, which sits
+ * above the row link as its own link.
  */
 function BoardRow({ board }: { board: Board }) {
   const Icon = BOARD_ICONS[board.key] ?? Folder;
@@ -87,9 +121,13 @@ function BoardRow({ board }: { board: Board }) {
   return (
     <motion.li
       variants={RISE_ITEM}
-      className="hover:bg-fill-4 relative flex gap-3.5 px-4 py-4 sm:px-5"
+      className={cn(
+        "hover:bg-fill-4 relative flex gap-3.5 px-4 py-4 sm:px-5",
+        unread &&
+          "before:bg-tint before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full"
+      )}
     >
-      <IconTile>
+      <IconTile size="lg" texture={BOARD_TEXTURES[board.key] ?? "dots"}>
         <Icon />
       </IconTile>
       <div className="flex min-w-0 flex-1 flex-col gap-3">

@@ -28,14 +28,14 @@ export function RegionLayoutClient({
 
   if (isLoading)
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
+      <div className="flex w-full flex-col gap-6 p-4 md:p-8">
         <Skeleton className="rounded-card h-72 w-full" />
       </div>
     );
   // A missing or hidden realm is a 404; a failed load (network, rate limit) is not.
   if (error && error.data?.code !== "NOT_FOUND")
     return (
-      <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
+      <div className="w-full p-4 md:p-8">
         <EmptyState
           title="This realm could not be loaded"
           message={error.message}
@@ -53,7 +53,7 @@ export function RegionLayoutClient({
     : 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-8">
+    <div className="flex w-full flex-col gap-6 p-4 md:p-8">
       <RealmRegionHeader overview={overview} openToClaim={openToClaim} />
       {children}
     </div>

@@ -30,7 +30,6 @@ import { AppSidebar } from "./AppSidebar";
 import { SidebarVaultCard } from "./SidebarVaultCard";
 import { TabBar } from "./TabBar";
 import { ShellHalo } from "./ShellHalo";
-import { realmMarkSrc, withRealmMark } from "./realm-nav-icon";
 import { useForumNavFlags } from "./use-forum-nav-flags";
 import { useNavBadges } from "./use-nav-badges";
 import { useHydrated } from "~/hooks/useHydrated";
@@ -64,25 +63,20 @@ export function FacetShell() {
   const hydrated = useHydrated();
   // Once here so the sidebar and the More sheet never run the queries twice.
   const badges = useNavBadges(signedIn);
-  const { realmMember, forumModerator, realm } = useForumNavFlags(signedIn);
-  const realmMark = realmMarkSrc(realm);
+  const { forumModerator } = useForumNavFlags(signedIn);
   const apps = useMemo(
     () =>
-      withRealmMark(
-        getVisibleApps(
-          hydrated
-            ? {
-                signedIn,
-                isAdmin,
-                hasLabsAccess,
-                hasMycountryPremium,
-                realmMember,
-                forumModerator,
-                navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
-              }
-            : { signedIn: false, isAdmin: false }
-        ),
-        hydrated ? realmMark : null
+      getVisibleApps(
+        hydrated
+          ? {
+              signedIn,
+              isAdmin,
+              hasLabsAccess,
+              hasMycountryPremium,
+              forumModerator,
+              navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
+            }
+          : { signedIn: false, isAdmin: false }
       ),
     [
       hydrated,
@@ -90,9 +84,7 @@ export function FacetShell() {
       isAdmin,
       hasLabsAccess,
       hasMycountryPremium,
-      realmMember,
       forumModerator,
-      realmMark,
       navigationSettings,
     ]
   );

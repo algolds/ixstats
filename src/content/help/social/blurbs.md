@@ -8,7 +8,7 @@ prevLabel: ThinkPages (the forum)
 
 ## What Blurbs are
 
-[Blurbs](/blurbs) are short community prompts, an in-house "Topic Tuesday". A prompt is an open question about your nation's culture, daily life, history or lore ("What does a typical breakfast look like?"). Players answer from their nation's point of view, and everyone can read the answers. You'll find Blurbs in the sidebar under **Wiki**, on the wiki's main page and on the dashboard, which shows a prompt of the day.
+[Blurbs](/blurbs) are short community prompts, an in-house "Topic Tuesday". A prompt is an open question about your nation's culture, daily life, history or lore ("What does a typical breakfast look like?"). Players answer from their nation's point of view, and everyone can read the answers. You'll find Blurbs on the wiki's main page and on the dashboard, which shows a prompt of the day.
 
 Anyone can read prompts and answers. To answer, you need to be signed in and have a nation.
 

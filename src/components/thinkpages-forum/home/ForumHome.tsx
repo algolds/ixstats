@@ -9,6 +9,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useUser } from "~/context/auth-context";
+import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
 import { isArchiveCategory } from "~/lib/thinkpages-forum/categories";
 import { modHref } from "~/lib/thinkpages-forum/links";
 import { api } from "~/trpc/react";
@@ -18,14 +19,33 @@ import { StandingPanel } from "../StandingPanel";
 import { BoardList } from "./BoardList";
 import { FindARealmPanel, LatestActivityPanel, ThinkTanksPanel, TrendingPanel } from "./HomeRail";
 import { useHomeRail } from "./useHomeRail";
-import { YourRealmCard } from "./YourRealmCard";
+import { YourRealmPanel } from "./YourRealmPanel";
 
 const TITLE = "ThinkPages";
 
+/** The masthead behind the header: the ThinkPages tint, under a chevron texture drawn in the tint. */
+const MASTHEAD = (
+  <div className="bg-tint-fill absolute inset-0">
+    <TextureOverlay texture="chevron" className="[--facet-texture-color:var(--tint)]" />
+  </div>
+);
+
+const count = (n: number, one: string, many: string) =>
+  `${n.toLocaleString()} ${n === 1 ? one : many}`;
+
+/** "7 boards · 1,240 threads · 9,830 posts" over the sitewide boards; nothing until they load. */
+function totals(boards: readonly { threadCount: number; postCount: number }[]) {
+  if (boards.length === 0) return undefined;
+  const threads = boards.reduce((sum, b) => sum + b.threadCount, 0);
+  const posts = boards.reduce((sum, b) => sum + b.postCount, 0);
+  return `${count(boards.length, "board", "boards")} · ${count(threads, "thread", "threads")} · ${count(posts, "post", "posts")}`;
+}
+
 /**
- * The Forums home: Your realm, the sitewide boards with their latest threads, the old forum's archive (collapsed), and
- * a rail of Latest activity, Trending threads, Find a Realm, ThinkTanks and the member's own standing. The rail is
- * only passed when a panel has content; its panels rise in one after another.
+ * The Forums home: a textured masthead totalling the sitewide boards, the sitewide boards with their latest threads,
+ * the old forum's archive (collapsed), and a rail of Your realm, Latest activity, Trending threads, Find a Realm,
+ * ThinkTanks and the member's own standing, all over a paper grain. The rail is only passed when a panel has content;
+ * its panels rise in one after another.
  */
 export function ForumHome() {
   const { isSignedIn } = useUser();
@@ -35,6 +55,7 @@ export function ForumHome() {
     enabled: signedIn,
   });
   const rail = useHomeRail(signedIn);
+  const { realmMember } = useForumNavFlags(signedIn);
 
   const regular = categories?.filter((c) => !isArchiveCategory(c.key)) ?? [];
   const archived = categories?.filter((c) => isArchiveCategory(c.key)) ?? [];
@@ -44,6 +65,8 @@ export function ForumHome() {
     !!moderates &&
     (moderates.isSiteAdmin || moderates.realms.length > 0 || moderates.categories.length > 0);
   const panels = [
+    // Only for a realm member, so a viewer without a realm gets no empty rail (or Info button) for it.
+    realmMember ? <YourRealmPanel key="realm" signedIn={signedIn} /> : null,
     rail.activity ? <LatestActivityPanel key="activity" items={rail.activity} /> : null,
     rail.trending ? <TrendingPanel key="trending" threads={rail.trending} /> : null,
     rail.adverts ? <FindARealmPanel key="adverts" adverts={rail.adverts} /> : null,
@@ -72,6 +95,9 @@ export function ForumHome() {
   return (
     <ForumPage
       title={TITLE}
+      breadcrumbs={totals(regular)}
+      backdrop={MASTHEAD}
+      paperGrain
       wideActions={
         moderator ? (
           <Button asChild size="sm" variant="ghost" className="text-label-secondary">
@@ -95,7 +121,6 @@ export function ForumHome() {
         ) : undefined
       }
     >
-      <YourRealmCard signedIn={signedIn} />
       {isLoading ? (
         <Skeleton className="rounded-card h-64 w-full" />
       ) : (

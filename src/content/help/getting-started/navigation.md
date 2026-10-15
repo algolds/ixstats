@@ -22,7 +22,7 @@ The sidebar on the left of every page (except the full-screen maps) lists the ma
 - **Help** ([/help](/help)): these guides and What's new.
 - **Settings** ([/settings](/settings)): every settings panel.
 
-Your **account** sits at the bottom of the sidebar: your nation, your passport, IxnayID connections, sign out and, if you own more than one nation, the nation switcher. Below it are links to the changelog, Feedback, Privacy and Terms.
+Your **account** sits at the bottom of the sidebar: your nation (its public page), your **Passport**, your [Stash](/help/wiki/stash), **Passport settings** (IxnayID & Passport), Manage account, sign out and, if you own more than one nation, the nation switcher. Below it are links to the changelog, Feedback, Privacy and Terms.
 
 The collapse button shrinks the sidebar to a strip of icons. On a phone or narrow window the sidebar becomes a **tab bar** at the bottom with four areas and **More**, which holds everything else.
 

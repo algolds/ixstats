@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ChatBubble as MessageCircle } from "iconoir-react";
+import { ChatBubble, NavArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
+import { IconTile } from "~/components/thinkpages-forum/shell";
 import { ForumLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
@@ -79,38 +81,50 @@ function MyClubInlinePreview({ teamId }: { teamId: string }) {
   );
 }
 
+/**
+ * A link to an old-forum thread as the forum's thread card: one pressable Well (opening the thread in a new tab) with
+ * the forum's tint tile, the title, its board and replies, and an arrow that nudges on hover.
+ */
 function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
   const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { enabled: threadId > 0 }
   );
+  const replies = thread?.replyCount ?? 0;
 
   return (
     <ForumLinkPreview threadId={threadId}>
-      <div className="group/preview bg-surface-secondary hover:bg-fill-3 rounded-row mt-2 flex items-center justify-between p-3 transition-colors duration-150">
-        <div className="flex min-w-0 items-center gap-3">
-          <MessageCircle className="text-indigo size-4 shrink-0" aria-hidden="true" />
-          <div className="min-w-0">
-            <div className="text-headline text-label truncate">
-              {thread?.title ?? "Forum thread"}
-            </div>
-            {thread && (
-              <div className="text-label-secondary text-footnote">
-                {thread.forumName ? `${thread.forumName} · ` : ""}
-                {thread.replyCount ?? 0} replies
-              </div>
-            )}
-          </div>
-        </div>
+      <Card
+        variant="well"
+        padding="none"
+        interactive
+        className="has-[:focus-visible]:outline-tint mt-2 overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+      >
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-caption text-tint ml-2 shrink-0 hover:underline"
+          className="group/thread flex min-w-0 items-center gap-3 px-3 py-2.5 focus-visible:outline-none"
         >
-          View Thread →
+          <IconTile>
+            <ChatBubble />
+          </IconTile>
+          <span className="min-w-0 flex-1">
+            <span className="text-headline text-label block truncate">
+              {thread?.title ?? "Forum thread"}
+            </span>
+            {thread ? (
+              <span className="text-footnote text-label-secondary block truncate tabular-nums">
+                {`${thread.forumName ? `${thread.forumName} · ` : ""}${replies} ${replies === 1 ? "reply" : "replies"}`}
+              </span>
+            ) : null}
+          </span>
+          <NavArrowRight
+            aria-hidden
+            className="text-label-tertiary duration-fast ease-out-facet size-4 shrink-0 transition-transform motion-safe:group-hover/thread:translate-x-0.5"
+          />
         </a>
-      </div>
+      </Card>
     </ForumLinkPreview>
   );
 }

@@ -35,7 +35,7 @@ Some apps only appear when they apply to you. Home, MyCountry, Vault, Labs and S
 
 The collapse button at the bottom of the sidebar shrinks it to a strip of icons; select an icon to see that app's sections. Your choice is remembered. A dot on an app means it has something new, and a marker on the Vault shows when your daily reward is ready.
 
-Your **account** sits at the bottom of the sidebar: your nation, your passport and wiki profile, your nation's public page, IxnayID connections and sign out. If you own more than one nation, choose which one you're playing as there.
+Your **account** sits at the bottom of the sidebar: your nation (its public page), your **Passport**, your [Stash](/help/wiki/stash), **Passport settings** (IxnayID & Passport) and sign out. If you own more than one nation, choose which one you're playing as there.
 
 ## The tab bar on phones
 

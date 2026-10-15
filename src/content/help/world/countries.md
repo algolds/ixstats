@@ -8,13 +8,14 @@ nextHref: /help/world/explore
 nextLabel: Explore & Comparing Nations
 ---
 
-## The country directory
+## A realm's nations
 
-**My realm** ([/countries](/countries)), under **Realms** in the sidebar, lists every nation in your realm (or another realm with `?realm=<realm>` in the address). Anyone can browse it, signed in or not.
+Every nation belongs to a realm, so a realm's nations live on its **Nations** tab (`/r/<realm>/nations`). **My realm**, under **Realms** in the sidebar, opens your realm's Nations tab: your active nation's realm, or Ixnay if you're signed out or have no nation. Anyone can browse it, signed in or not. The old [/countries](/countries) address opens it too, and `/countries?realm=<realm>` opens another realm's.
 
-- **Search** by name, continent or region.
-- **Filter** by economic tier, continent, region and population range, and **sort** by any figure.
-- **Compare** up to eight nations side by side. See [Comparing Nations](/help/world/explore).
+- Each nation is a **flag card**. Hover it for its population and GDP; select it to expand its details, or choose **View** to open its profile.
+- Your own nations come first; the rest are shuffled once per visit. Choose **Feeling lucky** to open a random nation from the ones shown.
+- **Search** by name, economic tier, continent or region, and **filter** by economic tier. The figures above the cards total the nations shown; open the first one to filter by continent, or another to see the top five.
+- A card's corner shows the nation's state: **Unclaimed**, **Pending review**, **Active** (your active nation) or **Yours**. Hover the card and it becomes the action: **Claim** an unclaimed nation while the realm takes claims, **Play as** one of yours, or **Leave realm** with your active nation. To leave with another of your nations, play as it first.
 
 To find other realms, search across them or join one, choose **Explore**, which opens the [realm directory](/realms). See [Realms & Claiming a Nation](/help/world/realms).
 

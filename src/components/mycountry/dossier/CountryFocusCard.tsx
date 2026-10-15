@@ -72,6 +72,8 @@ interface CountryFocusCardProps {
   onCountryClick?: (countryId: string, countryName: string) => void;
   viewerCountryId?: string;
   size?: "default" | "small";
+  /** The card's top corner while it is collapsed (a realm's claim badge and actions); clicks there never toggle the card. */
+  corner?: React.ReactNode;
 }
 
 function QuickStat({
@@ -253,6 +255,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
     onExpandToggle,
     onCountryClick,
     viewerCountryId,
+    corner,
   }) => {
     const isHovered = propIsHovered ?? hovered === index;
     const isExpanded = propIsExpanded ?? expanded === index;
@@ -318,6 +321,13 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
               isHovered && !isExpanded ? "opacity-100" : "opacity-90"
             )}
           />
+
+          {corner && !isExpanded && (
+            // Stops clicks (including from a dialog the corner opens, which bubble through React) toggling the card.
+            <div className="absolute top-3 left-3 z-10" onClick={(e) => e.stopPropagation()}>
+              {corner}
+            </div>
+          )}
 
           <CardOverlay
             country={country}

@@ -1,14 +1,14 @@
 # Countries / Explore
 
-**Last updated:** 6 October 2026
+**Last updated:** 15 October 2026
 
-Public, read-only nation profiles plus the browse/explore experience. Anyone (signed in or not) can list all countries, search/filter/sort them, and open an individual country's public profile. Owner-side editing lives in MyCountry, not here.
+Public, read-only nation profiles. Anyone (signed in or not) can open a country's public profile; the nation list is each realm's Nations tab (`src/app/r/[realm]/(region)/nations`). Owner-side editing lives in MyCountry, not here.
 
 ## Routes
 
 | Route | File | Purpose |
 | --- | --- | --- |
-| `/countries` | `page.tsx` | Country grid: searchable/filterable/sortable list of all countries |
+| `/countries` | `page.tsx` | Redirect only: the nation list is the realm's Nations tab (`/r/<realm>/nations`); `?realm=` names the realm, else the viewer's |
 | `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The Factbook tab, opening on its overview (`CommandProfileView`); legacy hash links (`#economy`, `#dossier`, …) move to their routes |
 | `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Redirects to `/countries/[slug]` (the old Factbook index; the overview now lives at the country's URL) |
 | `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
@@ -82,15 +82,10 @@ Tested in `src/tests/server/api/routers/country-public-record.test.ts`. When the
 
 ```
 countries/
-├── page.tsx                          # Explore page orchestrator
-├── _components/                      # Explore + shared widgets
-│   ├── CountriesPageModular.tsx      # Explore grid orchestrator
-│   ├── CountriesFocusGridModular.tsx
-│   ├── CountriesFilterSidebar.tsx
-│   ├── filters.ts                    # Sort/filter types and the sort options
-│   ├── CountriesSortBar.tsx
-│   ├── CountriesStats.tsx
-│   ├── CountryComparisonModal.tsx
+├── page.tsx                          # Redirect to the realm's Nations tab
+├── _components/                      # Widgets the profile routes share
+│   ├── CountryComparisonModal.tsx    # Compare (QuickActions on the profile)
+│   ├── charts/ComparisonCharts.tsx
 │   └── economy/                      # Economic modeling engine
 │       └── EconomicModelingEngine.tsx
 └── [slug]/

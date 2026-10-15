@@ -3,12 +3,12 @@ import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
 import {
   ForumError,
   isThreadStashed,
-  listStashedThreads,
   stashThread,
   unstashThread,
   type StashDb,
   type StashOwner,
 } from "~/server/modules/thinkpages-forum";
+import { readableThreadTitles } from "~/server/modules/thinkpages-forum/stash";
 
 const categories = SITE_CATEGORIES.map((c, i) => ({
   id: `cat_${c.key}`,
@@ -361,7 +361,7 @@ describe("unstashThread", () => {
   });
 });
 
-describe("isThreadStashed and listStashedThreads", () => {
+describe("isThreadStashed and readableThreadTitles", () => {
   const row = (stashId: string, threadId: string, savedAt: string): Item => ({
     id: `i_${stashId}_${threadId}`,
     stashId,
@@ -389,45 +389,17 @@ describe("isThreadStashed and listStashedThreads", () => {
     });
   });
 
-  it("lists only native items, with the thread's current title and path", async () => {
-    const legacy: Item = {
-      ...row("stash_1", "7", "2026-10-02"),
-      pageTitle: "forum:thread:7",
-      pageSlug: "/forum/thread/7",
-    };
-    const { db } = fake({ stashes: [mine], items: [row("stash_1", "t1", "2026-10-01"), legacy] });
-
-    const list = await listStashedThreads(db, member, owner, 50);
-
-    expect(list).toEqual([
-      {
-        id: "i_stash_1_t1",
-        threadId: "t1",
-        title: "Hello there",
-        href: "/thinkpages/t/t1",
-        savedAt: new Date("2026-10-01"),
-      },
-    ]);
-  });
-
-  it("leaves out threads the caller can no longer read: hidden, staff-only or gone (I5)", async () => {
+  it("titles only the threads the caller can still read: not hidden, staff-only or gone (I5)", async () => {
     const { db } = fake({
       threads: {
         t1: thread(),
         t_hidden: thread({ id: "t_hidden", hidden: true }),
         t_staff: thread({ id: "t_staff" }, staff),
       },
-      stashes: [mine],
-      items: [
-        row("stash_1", "t1", "2026-10-01"),
-        row("stash_1", "t_hidden", "2026-10-02"),
-        row("stash_1", "t_staff", "2026-10-03"),
-        row("stash_1", "t_gone", "2026-10-04"),
-      ],
     });
 
-    const list = await listStashedThreads(db, member, owner, 50);
+    const titles = await readableThreadTitles(db, member, ["t1", "t_hidden", "t_staff", "t_gone"]);
 
-    expect(list.map((t) => [t.threadId, t.title])).toEqual([["t1", "Hello there"]]);
+    expect([...titles]).toEqual([["t1", "Hello there"]]);
   });
 });

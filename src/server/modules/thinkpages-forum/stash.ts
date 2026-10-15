@@ -185,38 +185,3 @@ export async function withReadableThreads<T extends { pageTitle: string; note: s
     return title === undefined ? [] : [{ ...item, note: title }];
   });
 }
-
-/** The caller's native stashed threads they may still read, newest first, with each thread's current title (I5). */
-export async function listStashedThreads(
-  db: StashDb,
-  viewer: ForumViewer,
-  owner: StashOwner,
-  limit: number
-): Promise<{ id: string; threadId: string; title: string; href: string; savedAt: Date }[]> {
-  const stashes = await db.stash.findMany({
-    where: { userId: { in: [...owner.ids] } },
-    select: { id: true },
-  });
-  const items = await db.stashItem.findMany({
-    where: {
-      stashId: { in: stashes.map((s) => s.id) },
-      contentType: CONTENT_TYPE,
-      pageTitle: { startsWith: NATIVE_THREAD_PREFIX },
-    },
-    orderBy: { savedAt: "desc" },
-    take: limit,
-    select: { id: true, pageTitle: true, savedAt: true },
-  });
-  const threadIdOf = (pageTitle: string) => pageTitle.slice(NATIVE_THREAD_PREFIX.length);
-  const titles = await readableThreadTitles(
-    db,
-    viewer,
-    items.map((item) => threadIdOf(item.pageTitle))
-  );
-  return items.flatMap((item) => {
-    const threadId = threadIdOf(item.pageTitle);
-    const title = titles.get(threadId);
-    if (title === undefined) return [];
-    return [{ id: item.id, threadId, title, href: threadHref(threadId), savedAt: item.savedAt }];
-  });
-}

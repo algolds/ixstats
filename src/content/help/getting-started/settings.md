@@ -10,7 +10,7 @@ nextLabel: The World Clock (IxTime)
 
 ## Opening Settings
 
-[Settings](/settings) is in the sidebar (on a phone, under **More**); **IxnayID connections** in the account menu also opens it. You need to be signed in. Each panel has its own address, such as `/settings?tab=notifications`, so you can bookmark one.
+[Settings](/settings) is in the sidebar (on a phone, under **More**); **Passport settings** in the account menu also opens it, on the IxnayID & Passport panel. You need to be signed in. Each panel has its own address, such as `/settings?tab=notifications`, so you can bookmark one.
 
 If your account has no nation yet, a banner links to [Setup](/setup).
 

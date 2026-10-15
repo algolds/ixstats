@@ -30,8 +30,6 @@ jest.mock("~/trpc/react", () => {
     "categories",
     "realmSection",
     "thread",
-    "stashedThreads",
-    "isThreadStashed",
   ];
   const utils = Object.fromEntries(
     names.map((name) => [
@@ -53,7 +51,6 @@ jest.mock("~/trpc/react", () => {
       thinkpagesForum: {
         newPosts: query("newPosts"),
         watchedThreads: query("watchedThreads"),
-        stashedThreads: query("stashedThreads"),
         markAllRead: mutation("markAllRead"),
         watchThread: mutation("watchThread"),
         unwatchThread: mutation("unwatchThread"),
@@ -78,7 +75,7 @@ jest.mock("~/components/ui/avatar", () => ({
   AvatarFallback: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
 }));
 
-import { NewPostsPage, StashedPage, WatchedPage } from "~/components/thinkpages-forum/lists";
+import { NewPostsPage, WatchedPage } from "~/components/thinkpages-forum/lists";
 import { useWatchToggle } from "~/components/thinkpages-forum/useWatchToggle";
 
 const { results, mutations, invalidated } = jest.requireMock<MockApi>("~/trpc/react");
@@ -229,37 +226,5 @@ describe("useWatchToggle", () => {
     await expect(result.current.setWatching("t1", true)).resolves.toBe(false);
     expect(notifySpy.error).toHaveBeenCalledWith("Could not update watching", "Nope");
     expect(invalidated).toEqual([]);
-  });
-});
-
-describe("StashedPage", () => {
-  it("lists stashed threads with an Unstash control", async () => {
-    results.stashedThreads = {
-      data: [
-        {
-          id: "i1",
-          threadId: "t1",
-          title: "Saved thread",
-          href: "/thinkpages/t/t1",
-          savedAt: new Date(),
-        },
-      ],
-    };
-    render(<StashedPage />);
-    expect(screen.getByRole("link", { name: "Saved thread" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t1"
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Unstash Saved thread" }));
-    await waitFor(() => expect(mutations.unstashThread).toHaveBeenCalledWith({ threadId: "t1" }));
-    await waitFor(() =>
-      expect(invalidated).toEqual(expect.arrayContaining(["stashedThreads", "isThreadStashed"]))
-    );
-  });
-
-  it("says so when nothing is stashed", () => {
-    results.stashedThreads = { data: [] };
-    render(<StashedPage />);
-    expect(screen.getByText("Nothing stashed yet")).toBeInTheDocument();
   });
 });

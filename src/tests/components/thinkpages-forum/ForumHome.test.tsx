@@ -176,8 +176,8 @@ describe("Forums home: board list", () => {
     render(<ForumHome />);
     const row = rowOf("General");
     const tile = row.querySelector("span[aria-hidden]")!;
-    expect(tile).toHaveClass("bg-tint-fill", "text-tint");
-    expect(tile.querySelector(".texture-overlay.facet-texture-dots")).not.toBeNull();
+    expect(tile).toHaveClass("bg-tint-fill", "text-tint", "size-12");
+    expect(tile.querySelector(".texture-overlay.facet-texture-paper-grain")).not.toBeNull();
     expect(within(row).getByRole("heading", { level: 3, name: /General/ })).toHaveClass(
       "text-title-3"
     );
@@ -245,6 +245,71 @@ describe("Forums home: board list", () => {
     set("categories", { isLoading: true });
     render(<ForumHome />);
     expect(screen.queryByRole("link", { name: "General" })).toBeNull();
+  });
+});
+
+describe("Forums home: texture and character", () => {
+  it("tops the page with a textured masthead whose subtitle totals the sitewide boards", () => {
+    set("categories", {
+      data: [board("general"), board("announcements", { threadCount: 2, postCount: 7 })],
+    });
+    render(<ForumHome />);
+    const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
+    expect(header.querySelector(".texture-overlay.facet-texture-chevron")).not.toBeNull();
+    expect(within(header).getByText("2 boards · 10 threads · 30 posts")).toBeInTheDocument();
+  });
+
+  it("lays a tint paper grain on the page canvas, outside the board panes", () => {
+    set("categories", { data: [board("rules")] });
+    const { container } = render(<ForumHome />);
+    const grains = [...container.querySelectorAll(".texture-overlay.facet-texture-paper-grain")];
+    expect(grains.some((grain) => !grain.closest('[data-slot="card"]'))).toBe(true);
+  });
+
+  it("gives each board its own texture on a large tile", () => {
+    set("categories", {
+      data: [board("rules"), board("announcements"), board("find-a-realm"), board("general")],
+    });
+    render(<ForumHome />);
+    const texture = (name: string) =>
+      rowOf(name).querySelector("span[aria-hidden] .texture-overlay")!.className;
+    expect(texture("Rules")).toContain("facet-texture-grid");
+    expect(texture("Announcements")).toContain("facet-texture-chevron");
+    expect(texture("Find-a-realm")).toContain("facet-texture-dots");
+    expect(texture("General")).toContain("facet-texture-paper-grain");
+  });
+
+  it("watermarks a board's latest-thread card with the last poster's flag, and only when there is one", () => {
+    set("categories", {
+      data: [
+        board("general"),
+        board("rules", {
+          latest: {
+            ...board("rules").latest,
+            author: { name: "Kir", handle: null, avatarUrl: null, flagUrl: null },
+          },
+        }),
+      ],
+    });
+    render(<ForumHome />);
+    const card = (name: RegExp) =>
+      screen.getByRole("link", { name }).closest('[data-slot="card"]') as HTMLElement;
+    const flag = card(/Latest in general/).querySelector('[data-slot="thread-card-flag"]');
+    expect(flag).toHaveAttribute("src", "/flags/caphiria.png");
+    expect(flag).toHaveAttribute("alt", "");
+    expect(card(/Latest in rules/).querySelector('[data-slot="thread-card-flag"]')).toBeNull();
+    expect(within(card(/Latest in general/)).getByText("Latest in general")).toHaveClass(
+      "text-headline"
+    );
+  });
+
+  it("rules a board with new threads down its left edge in the tint, and only that board", () => {
+    set("categories", {
+      data: [board("general", { unreadThreads: 2 }), board("rules", { unreadThreads: 0 })],
+    });
+    render(<ForumHome />);
+    expect(rowOf("General")).toHaveClass("before:bg-tint");
+    expect(rowOf("Rules")).not.toHaveClass("before:bg-tint");
   });
 });
 
@@ -362,6 +427,61 @@ describe("Forums home: Your realm and Moderation", () => {
     expect(within(card).getByText(/Aria Vance/)).toBeInTheDocument();
     expect(within(card).queryByText(/Hidden Player/)).toBeNull();
     expect(screen.getByText("Your realm")).toBeInTheDocument();
+  });
+
+  it("puts Your realm first in the right rail, out of the main column", () => {
+    auth.isSignedIn = true;
+    set("navFlags", { data: { realmMember: true, forumModerator: false } });
+    set("realms", { data: realm });
+    set("category", { data: hub });
+    set("trending", {
+      data: [{ threadId: "t1", title: "A", categoryName: "Hub", repliesToday: 1 }],
+    });
+    render(<ForumHome />);
+    const rail = document.querySelector('[data-slot="inspector"]') as HTMLElement;
+    const panel = within(rail).getByRole("heading", { level: 2, name: "Your realm" });
+    expect(within(rail).getByRole("link", { name: /Eurth/ })).toBeInTheDocument();
+    const headings = within(rail).getAllByRole("heading", { level: 2 });
+    expect(headings[0]).toBe(panel);
+  });
+
+  it("draws the realm's uploaded emblem in Your realm, else its thumbnail, else the realms icon", () => {
+    auth.isSignedIn = true;
+    set("realms", { data: realm });
+    set("category", { data: hub });
+    const mark = { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null };
+    const tile = () => screen.getByRole("link", { name: /Eurth/ });
+
+    set("navFlags", {
+      data: {
+        realmMember: true,
+        forumModerator: false,
+        realm: {
+          ...mark,
+          emblemUrl: "https://img.example/e.png",
+          thumbnail: "https://img.example/t.png",
+        },
+      },
+    });
+    const { unmount } = render(<ForumHome />);
+    expect(tile().querySelector("img")).toHaveAttribute("src", "https://img.example/e.png");
+    unmount();
+
+    set("navFlags", {
+      data: {
+        realmMember: true,
+        forumModerator: false,
+        realm: { ...mark, thumbnail: "https://img.example/t.png" },
+      },
+    });
+    const second = render(<ForumHome />);
+    expect(tile().querySelector("img")).toHaveAttribute("src", "https://img.example/t.png");
+    second.unmount();
+
+    set("navFlags", { data: { realmMember: true, forumModerator: false, realm: mark } });
+    render(<ForumHome />);
+    expect(tile().querySelector("img")).toBeNull();
+    expect(tile().querySelector("svg")).not.toBeNull();
   });
 
   it("omits the card for a viewer without a realm, and signed out", () => {

@@ -8,7 +8,7 @@ prevLabel: Lorewards
 
 ## What Stash is
 
-Stash is your personal reading list and research folder. Save wiki articles, quoted passages, images and forum threads into colour-coded collections, add notes, and come back to them at [/stashes](/stashes). Your stashes are private to you.
+Stash is your personal reading list and research folder. Save wiki articles, quoted passages, images and forum threads into colour-coded collections, add notes, and come back to them at [/stashes](/stashes), or from **Stash** in your account menu at the bottom of the sidebar. Your stashes are private to you.
 
 ## Saving things
 

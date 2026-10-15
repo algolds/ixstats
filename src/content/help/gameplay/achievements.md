@@ -38,7 +38,6 @@ Some achievements also award a card or a pack. Achievement IxCredits don't count
 
 ## The Achievements page
 
-- A standing card shows how many you have unlocked out of the active total, your **achievement points** and your **rank**, with a link to the [nation leaderboards](/leaderboards).
 - Four tabs: **All** (filter by category and rarity, search, grid or list; secret achievements stay hidden until you unlock them), **Lorewards** (your wiki-writing trophies, see [Lorewards](/help/wiki/lorewards)), **Showcase** (your rarest unlocks; see [Ribbons & Your Showcase](/help/gameplay/ribbons#the-achievements-showcase-shelf)) and **Leaderboard** (players ranked by achievement points).
 
 ## Legacy achievements

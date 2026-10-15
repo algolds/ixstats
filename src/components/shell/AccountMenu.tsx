@@ -2,9 +2,9 @@
 
 /**
  * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
- * name and country; your country (MyCountry), your passport and wiki profiles, the nation
- * switcher, a link to the nation's public page (the country row above goes to MyCountry), IxnayID
- * connections, the external account manager and sign out. Signed out, it is the sign-in button.
+ * name and country; your country (its public page), your Passport (`/@me`) and Stash, the nation
+ * switcher, Passport settings (IxnayID & passport), the external account manager and sign out. Signed out, it
+ * is the sign-in button.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
  * same panel inline in the TabBar's More sheet.
@@ -13,10 +13,9 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Crown,
+  Bookmark,
+  Fingerprint,
   LogOut,
-  Link as LinkIcon,
-  OpenBook,
   Settings,
   User,
   UserCircle,
@@ -28,7 +27,6 @@ import { api } from "~/trpc/react";
 import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { cn } from "~/lib/utils/cn";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
@@ -97,23 +95,14 @@ function Avatar({
 
 /** Your country, passport and wiki profile: what the per-app player and wiki widgets offered. */
 function IdentityLinks({ onClose }: { onClose?: () => void }) {
-  const { user } = useUser();
   const { country } = useUserCountry();
-  // Only the open panel mounts this, so the wiki lookup does not run on every page.
-  const { data: wikiProfile } = api.wikios.getAuthorProfile.useQuery(undefined, {
-    enabled: Boolean(user),
-    staleTime: 5 * 60_000,
-  });
   const done = () => onClose?.();
-  // The passport resolver never matches Clerk usernames, but it treats the handle "me" as the
-  // signed-in player, so the wiki link falls back to "me" rather than the account username.
-  const wikiName = wikiProfile?.displayName ?? "me";
 
   return (
     <ul className="flex flex-col gap-0.5 pb-1">
       {country && (
         <li>
-          <Link href="/mycountry" onClick={done} className={itemClass}>
+          <Link href={getNationUrl(country.name)} onClick={done} className={itemClass}>
             <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
               <UnifiedCountryFlag
                 countryName={country.name}
@@ -129,13 +118,14 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
       <li>
         <Link href="/@me" onClick={done} className={itemClass}>
           <UserCircle aria-hidden className="size-4 shrink-0" />
-          Your profile
+          Passport
         </Link>
       </li>
       <li>
-        <Link href={getWikiProfilePath(wikiName)} onClick={done} className={itemClass}>
-          <OpenBook aria-hidden className="size-4 shrink-0" />
-          Wiki profile
+        {/* The one Stash: saved pages, images and threads from every app. */}
+        <Link href="/stashes" onClick={done} className={itemClass}>
+          <Bookmark aria-hidden className="size-4 shrink-0" />
+          Stash
         </Link>
       </li>
     </ul>
@@ -168,14 +158,6 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
       <NationSwitcher onSwitched={done} className="border-separator -mx-1 border-t pt-1 pb-1" />
 
       <ul className="border-separator flex flex-col gap-0.5 border-t pt-1">
-        {countryName && (
-          <li>
-            <Link href={getNationUrl(countryName)} onClick={done} className={itemClass}>
-              <Crown aria-hidden className="size-4 shrink-0" />
-              Public country page
-            </Link>
-          </li>
-        )}
         {needsSetup && (
           <li>
             <Link href="/setup" onClick={done} className={itemClass}>
@@ -185,9 +167,9 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
           </li>
         )}
         <li>
-          <Link href="/settings?tab=account#ixnayid-card" onClick={done} className={itemClass}>
-            <LinkIcon aria-hidden className="size-4 shrink-0" />
-            IxnayID connections
+          <Link href="/settings?tab=account" onClick={done} className={itemClass}>
+            <Fingerprint aria-hidden className="size-4 shrink-0" />
+            Passport settings
           </Link>
         </li>
         <li>

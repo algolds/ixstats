@@ -92,12 +92,12 @@ describe("TabBar", () => {
 
   it("marks More when the current app is not a primary tab", () => {
     mockPhoneWidth();
-    render(<TabBar pathname="/stashes" searchParams={null} apps={apps} {...navProps} />);
+    render(<TabBar pathname="/util/categories" searchParams={null} apps={apps} {...navProps} />);
     const more = screen.getByRole("button", { name: "More" });
     expect(more).toHaveAttribute("data-current");
     fireEvent.click(more);
     const sheet = screen.getByRole("dialog", { name: "More" });
-    expect(within(sheet).getByRole("link", { name: "Stashes" })).toHaveAttribute(
+    expect(within(sheet).getByRole("link", { name: "Categories" })).toHaveAttribute(
       "aria-current",
       "page"
     );

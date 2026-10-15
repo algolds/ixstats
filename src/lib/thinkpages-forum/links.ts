@@ -99,10 +99,9 @@ export function postHref(postId: string): string {
   return `/thinkpages/post/${seg(postId)}`;
 }
 
-/** The pages the sidebar lists under ThinkPages for a signed-in member. */
+/** The member's New posts and Watched pages (signed-in only). */
 export const NEW_POSTS_HREF = "/thinkpages/new";
 export const WATCHED_HREF = "/thinkpages/watched";
-export const STASHED_HREF = "/thinkpages/stashed";
 
 /** A thread opened at its first unread post (a server redirect; a signed-out visitor gets the thread itself). */
 export function unreadHref(threadId: string): string {

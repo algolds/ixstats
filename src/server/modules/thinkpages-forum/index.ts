@@ -264,7 +264,6 @@ export {
 } from "./thread-extras";
 export {
   isThreadStashed,
-  listStashedThreads,
   stashThread,
   unstashThread,
   withReadableThreads,

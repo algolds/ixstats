@@ -10,9 +10,66 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the Vault collectathon hub, 2026-10-14) is listed
-first, then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (realm nations, 2026-10-15) is listed first,
+then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 🏰 Realm Nations (2026-10-15)
+
+- **`/countries` is retired:** every nation belongs to a realm, so the nation list is the realm's **Nations** tab
+  (`/r/<realm>/nations`). `/countries` (and `/explore`) redirect there: `?realm=<slug>` to that realm's, otherwise to
+  the active nation's realm, or Ixnay when signed out or without a nation. **My realm** in the sidebar follows the
+  same redirect. Nation profiles stay at `/countries/<name>`.
+- **The card grid is back on the Nations tab:** flag cards (hover for figures, click to expand), search, the tier
+  filter, **Feeling lucky** and the stats strip that filters by continent. Your nations come first, then the rest in an
+  order shuffled once per visit (`orderNations`). A card's top corner holds one button showing the nation's state that morphs
+  into its action while the card is hovered: **Unclaimed** → **Claim**, **Active** → **Leave realm**, **Yours** →
+  **Play as** (`MorphLabel`). **Pending review**, or **Unclaimed** when you can't claim, is a plain badge.
+- **Removed:** the filterable list directory (filter sidebar, sort bar, list cards, pages of nine). Region and
+  population filters and sorting go with it; comparing nations stays on a nation's profile.
+- **Realm pages are full width:** `/r/<realm>/…` and `/realms` drop the `max-w-6xl` column and fill the space beside
+  the sidebar.
+
+### 🗨️ ThinkPages Home Texture and Thread Cards (2026-10-15)
+
+- **Masthead:** the forum home's header sits on a ThinkPages tint wash under a chevron texture (`PageHeader`'s
+  backdrop, through `ForumPage`'s new `backdrop` prop), with the sitewide totals as its subtitle ("7 boards · 1,240
+  threads · 9,830 posts").
+- **Paper grain:** a tint paper grain on the home's page canvas (`ForumPage`'s `paperGrain`), behind the panes so it
+  shows through their glass; textures still never sit on data panes, and the 5% cap and Settings switch apply.
+- **Boards:** large icon tiles, each board with its own sanctioned texture (grid for Rules and Staff, chevron for
+  Announcements and Reports, dots for Find a Realm and Side games, paper grain for General), and a tint rule down the
+  left edge of a board with new threads.
+- **Your realm** moves from the main column to the top of the right rail (`YourRealmPanel`), shown only to realm
+  members, with the realm's uploaded emblem (else its thumbnail) as its tile.
+- **Thread cards:** a board's latest-thread card has a headline title, the last poster's flag as a faded watermark from
+  the right edge, and an arrow that nudges on hover. The old-forum thread link preview in posts uses the same look:
+  one pressable Well with the forum's tint tile (no indigo icon, no "View Thread →" text link). Both cards now draw a
+  keyboard focus ring.
+
+### 🧭 ThinkPages Sidebar, One Stash and Vault Leaderboards (2026-10-15)
+
+- **ThinkPages sidebar:** Forums, ThinkTanks, Accounts, Stashes and Moderation. **Your realm**, **New posts** and
+  **Watched** leave it (`/thinkpages/r/mine`, `/thinkpages/new` and `/thinkpages/watched` still work). With them go
+  the Watched and realm-board count badges (the sidebar no longer polls `navCounts`; the dashboard's Your realm panel
+  and the forum home's realm card still read it), the realm-emblem row icon (`realm-nav-icon.tsx`) and the
+  `realm-member` section gate.
+- **One Stash, in the account menu:** stashed threads live in `/stashes` (its Threads tab), the one stash page,
+  opened from **Stash** in the account menu (beside Your profile and Wiki profile); neither ThinkPages nor Wiki lists
+  it. `/thinkpages/stashed` redirects there. The forum-only listing (`StashedPage`,
+  `thinkpagesForum.stashedThreads`, `listStashedThreads`, `STASHED_HREF`) is removed; the I5 check on readable
+  threads stays tested through `readableThreadTitles`, which `/stashes` uses.
+- **Account menu:** your nation (flag and name) opens its public page, replacing the separate Public country page row;
+  then **Passport** (was Your profile; `/@me`), Stash, the nation switcher, Finish setup (when needed), **Passport
+  settings** (was IxnayID connections; Settings' IxnayID & Passport panel), Manage account and Sign out, with Privacy and Terms below. Wiki profile is
+  gone (its wiki lookup with it).
+- **Wiki sidebar:** Main page, Search, Recent changes, Categories, Repository and Utilities. Random article,
+  Contributions and Watchlist open from the Utilities hub; Stashes moved to the account menu; Blurbs keeps its
+  address, the wiki's main page and the dashboard.
+- **Leaderboards under Vault:** the nation boards (`/leaderboards`) get a **Leaderboards** row in the Vault sidebar,
+  after Achievements, and belong to the Vault app (they left the Realms app's routes).
+- **Achievements page:** the big "Achievements" header (and its Global leaderboards button) and the standing card
+  (unlocked, points, rank) are gone; the page opens on its tabs, titled by a visually hidden `h1`.
 
 ### 💎 Vault Collectathon Hub (2026-10-14) — platform 1.5.0
 
