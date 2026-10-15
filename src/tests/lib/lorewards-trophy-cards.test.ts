@@ -150,7 +150,9 @@ function buildDb(): PrismaClient {
     vaultTransaction: { create: credit("vaultTransaction.create") },
     myVault: { update: credit("myVault.update"), upsert: credit("myVault.upsert") },
     $executeRaw: jest.fn(async () => 0),
-    $transaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(fake)),
+    $transaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>): Promise<unknown> =>
+      fn(fake)
+    ),
   };
   return fake as unknown as PrismaClient;
 }
@@ -329,8 +331,13 @@ describe("grantUnownedTrophyCards", () => {
 
   it("does not grant a card that gained an owner since it was listed", async () => {
     links.set("Kir Republic", "u1");
-    const original = db.card.findMany;
-    jest.mocked(db.card.findMany).mockImplementationOnce(async (args) => {
+    // The fake's card.findMany (a jest.fn over the in-memory rows), not Prisma's PrismaPromise-typed method
+    const findMany = db.card.findMany as unknown as jest.Mock<
+      Promise<CardRow[]>,
+      [{ where: { CardOwnership?: unknown } }]
+    >;
+    const original = findMany;
+    findMany.mockImplementationOnce(async (args) => {
       const listed = await original(args);
       ownerships.push({
         id: "o",

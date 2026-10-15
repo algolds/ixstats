@@ -16,18 +16,26 @@ jest.mock("~/components/achievements/tabs/ShowcaseTab", () => ({
 }));
 
 import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
+import type { RouterOutputs } from "~/trpc/react";
+
+type AchievementRow = RouterOutputs["achievements"]["getAllWithStatus"][number];
 
 /** The ThinkPages series (3 tiers), all unlocked, so the card opens on tier III by default. */
-const level = (key: string, title: string) => ({
+const level = (key: string, title: string): AchievementRow => ({
   key,
   title,
   description: `${title} description`,
   category: "General",
   rarity: "Common",
   points: 10,
+  iconUrl: "Trophy",
+  isLegacy: false,
   triggerType: "STAT",
+  conditionJson: null,
   isUnlocked: true,
   unlockedAt: "2026-10-01T00:00:00.000Z",
+  metadata: null,
+  rewards: null,
   globalUnlockPercent: 50,
 });
 const ACHIEVEMENTS = [
