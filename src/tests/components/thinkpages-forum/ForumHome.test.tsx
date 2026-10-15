@@ -124,9 +124,8 @@ afterEach(() => {
   window.matchMedia = originalMatchMedia;
 });
 
-/** A board's row: the list item holding the board's own link. */
-const rowOf = (name: string) =>
-  screen.getByRole("link", { name, exact: true }).closest("li") as HTMLElement;
+/** A board's row: the list item holding the board's own link (a string `name` matches the whole name). */
+const rowOf = (name: string) => screen.getByRole("link", { name }).closest("li") as HTMLElement;
 
 describe("Forums home: board list", () => {
   it("marks a board with unread threads with a tint dot and an N new badge, and nothing for a board with none", () => {

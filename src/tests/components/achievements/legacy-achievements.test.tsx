@@ -8,17 +8,31 @@ import {
   getAchievementIcon,
   getCategoryTheme,
   groupAchievements,
-  type AchievementItem,
 } from "~/components/achievements/constants";
+import type { RouterOutputs } from "~/trpc/react";
 
-const row = (over: Partial<AchievementItem> & Pick<AchievementItem, "key" | "title">) => ({
+/** A standard catalogue row of `achievements.getAllWithStatus` (medals and wiki awards have no `isLegacy`). */
+type StandardRow = Extract<
+  RouterOutputs["achievements"]["getAllWithStatus"][number],
+  { isLegacy: boolean }
+>;
+
+const row = (
+  over: Pick<StandardRow, "key" | "title"> &
+    Partial<Pick<StandardRow, "category" | "rarity" | "isUnlocked" | "unlockedAt" | "isLegacy">>
+): StandardRow => ({
   description: `${over.title} description`,
   category: "General",
   rarity: "Common",
   points: 10,
   iconUrl: "Trophy",
+  isLegacy: false,
+  triggerType: "STAT",
+  conditionJson: null,
   isUnlocked: true,
   unlockedAt: "2026-10-01T00:00:00.000Z",
+  metadata: null,
+  rewards: null,
   globalUnlockPercent: 50,
   ...over,
 });

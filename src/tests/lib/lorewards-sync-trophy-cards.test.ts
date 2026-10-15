@@ -17,8 +17,10 @@ describe("syncTrophyCards", () => {
 
     expect(await syncTrophyCards()).toEqual({ minted: 4, granted: 2 });
 
-    expect(mintTrophyCards).toHaveBeenCalledWith(db);
-    expect(grantUnownedTrophyCards).toHaveBeenCalledWith(db);
+    // Untyped at the mock boundary: tsc overflows its stack comparing PrismaClient with the
+    // asymmetric-matcher form of the functions' parameters.
+    expect(mintTrophyCards as jest.Mock).toHaveBeenCalledWith(db);
+    expect(grantUnownedTrophyCards as jest.Mock).toHaveBeenCalledWith(db);
     expect(jest.mocked(mintTrophyCards).mock.invocationCallOrder[0]).toBeLessThan(
       jest.mocked(grantUnownedTrophyCards).mock.invocationCallOrder[0]!
     );

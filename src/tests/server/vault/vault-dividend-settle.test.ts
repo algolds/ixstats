@@ -171,7 +171,9 @@ describe("settleDividendDay", () => {
     deck("u1", 2000);
     expect(await settleDividendDay(db, D)).toEqual({ paid: 1, skipped: 0 });
     expect(rowsFor("u1")).toMatchObject([{ amount: 5, idempotencyKey: dividendKey("u1", D) }]);
-    expect(earnCreditsOnce).toHaveBeenCalledWith(
+    // Untyped at the mock boundary: tsc overflows its stack comparing PrismaClient with the
+    // asymmetric-matcher form of earnCreditsOnce's parameters.
+    expect(earnCreditsOnce as jest.Mock).toHaveBeenCalledWith(
       db,
       expect.objectContaining({ type: "EARN_PASSIVE", source: "VAULT_DIVIDEND", userId: "u1" })
     );
@@ -343,7 +345,9 @@ describe("settleMissedDividends", () => {
   // The job settles yesterday (2026-10-20 when it runs at 2026-10-21 00:00). Missed days are the 7 before it.
   const now = at("2026-10-21T00:00:00");
 
-  beforeEach(() => config.set(START_KEY, "2026-10-01"));
+  beforeEach(() => {
+    config.set(START_KEY, "2026-10-01");
+  });
 
   it("settles each unsettled day from that day's own activity, not today's", async () => {
     vault("u1");

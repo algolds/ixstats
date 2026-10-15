@@ -55,7 +55,7 @@ const caller = (user: object | null) =>
   );
 
 const actor = expect.objectContaining({ id: "u1", clerkUserId: "clerk_1", countryId: "c1" });
-const created = { threadId: "t_new", postId: "p_new", formatting: "done" as const, reward: null };
+const created = { threadId: "t_new", postId: "p_new", formatting: "done" as const };
 const NEW = { realm: "eurth", title: "Join Eurth", wikitext: "Come and play." };
 
 /** The error a promise rejects with, typed as a TRPCError. */
@@ -79,16 +79,16 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("thinkpagesForum.createAdvert", () => {
-  it("creates the advert as the caller, returns the reward, and runs the new-thread hooks", async () => {
+  it("creates the advert as the caller, returns the new thread, and runs the new-thread hooks", async () => {
     await expect(caller(member).createAdvert(NEW)).resolves.toEqual(created);
     expect(createAdvert).toHaveBeenCalledWith({}, actor, NEW);
     expect(afterThreadStarted).toHaveBeenCalledWith({}, actor, created);
   });
 
-  it("carries a reward the module granted", async () => {
-    const reward = { amount: 5 } as never;
-    jest.mocked(createAdvert).mockResolvedValue({ ...created, reward });
-    await expect(caller(member).createAdvert(NEW)).resolves.toMatchObject({ reward });
+  it("carries the module's answer as it is, a render still pending included", async () => {
+    const pending = { ...created, formatting: "pending" as const };
+    jest.mocked(createAdvert).mockResolvedValue(pending);
+    await expect(caller(member).createAdvert(NEW)).resolves.toEqual(pending);
   });
 
   it("never fails or waits on a hook that fails", async () => {
