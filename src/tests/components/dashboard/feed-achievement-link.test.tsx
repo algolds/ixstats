@@ -25,7 +25,7 @@ jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
 import { UnifiedFeedItem } from "~/components/dashboard/sections/UnifiedFeedItem";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 
-const item = (metadata: object): ProcessedFeedItem => ({
+const item = (metadata: Record<string, unknown>): ProcessedFeedItem => ({
   id: "a1",
   source: "activity",
   timestamp: new Date("2026-10-01T00:00:00Z"),
