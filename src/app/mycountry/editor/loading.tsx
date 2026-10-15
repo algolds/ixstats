@@ -1,4 +1,4 @@
-import { EditorSkeleton } from "~/app/builder/components/editor/EditorSkeleton";
+import { EditorSkeleton } from "./_components/CountryEditor";
 
 export default function Loading() {
   return <EditorSkeleton />;

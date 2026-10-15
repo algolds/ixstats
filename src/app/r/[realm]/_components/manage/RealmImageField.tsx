@@ -32,6 +32,7 @@ export function RealmImageField({
   value,
   onChange,
   previewClassName,
+  valid,
 }: {
   id: string;
   label: string;
@@ -39,12 +40,14 @@ export function RealmImageField({
   onChange: (value: string) => void;
   /** Size of the preview: the banner is wide, the thumbnail square. */
   previewClassName: string;
+  /** Overrides the address check, for a stored value from before the check existed. */
+  valid?: boolean;
 }) {
   const notify = useNotify();
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const ok = isRealmImageUrl(value);
+  const ok = valid ?? isRealmImageUrl(value);
   // An uploaded or repository image is a site path nobody needs to read: no address box, a Remove button instead.
   const hosted = ok && value.trim().startsWith("/");
   const preview = ok ? assetUrl(value) : null;

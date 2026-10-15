@@ -35,10 +35,13 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       await refetchProfile();
       setIsEditingCountry(false);
       setNewCountryName("");
-      notify.success("Country name updated successfully!");
+      notify.success("Nation renamed");
     } catch (error) {
-      console.error("Failed to update country name:", error);
-      notify.error("Failed to update country name");
+      // The server says why (a name another nation has, a lore nation of the realm).
+      notify.error(
+        "Could not rename the nation",
+        error instanceof Error ? error.message : undefined
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfileCountryId, newCountryName, updateCountryNameMutation, refetchProfile]);

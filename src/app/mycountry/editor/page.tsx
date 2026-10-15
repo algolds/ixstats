@@ -1,38 +1,37 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
-import { usePageTitle } from "~/hooks/usePageTitle";
-import { useUserCountry } from "~/hooks/useUserCountry";
-import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
-import { EditorSkeleton } from "~/app/builder/components/editor/EditorSkeleton";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
+import { CountryEditor, EditorSkeleton } from "./_components/CountryEditor";
 
 export const dynamic = "force-dynamic";
 
-export default function MyCountryEditor() {
-  usePageTitle({ title: "Country editor" });
+/** Where a player without a nation goes instead: founding one. */
+const NO_NATION_REDIRECT = "/builder";
 
+/**
+ * The country editor for the active nation. Keyed by the nation's id, so switching nation mounts
+ * a fresh editor and no section can ever save one nation's values into another.
+ */
+export default function MyCountryEditorPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const { profileLoading, userProfile } = useUserCountry();
-  const countryId = userProfile?.countryId;
+  const profile = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const countryId = profile.data?.countryId ?? null;
 
   const redirectTo =
     isLoaded && !user
       ? "/sign-in"
-      : isLoaded && !profileLoading && !countryId
-        ? "/mycountry/builder"
+      : isLoaded && profile.isSuccess && !countryId
+        ? NO_NATION_REDIRECT
         : null;
 
   useEffect(() => {
     if (redirectTo) router.replace(redirectTo);
   }, [redirectTo, router]);
 
-  // The editor loads the country itself (with its own skeleton and error state).
-  if (!isLoaded || profileLoading || redirectTo || !countryId) {
-    return <EditorSkeleton />;
-  }
-
-  return <BuilderRouter mode="edit" countryId={countryId} />;
+  if (!countryId || redirectTo) return <EditorSkeleton />;
+  return <CountryEditor key={countryId} countryId={countryId} />;
 }
