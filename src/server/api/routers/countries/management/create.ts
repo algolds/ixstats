@@ -159,6 +159,16 @@ const foundingFields = {
   archetypeId: z.string().optional(),
   /** A government form id (`src/lib/government/form-departments.ts`); sets type and departments. */
   governmentFormId: z.string().max(64).optional(),
+  /** Institution names the player renamed in the builder; the form names the rest. */
+  institutionNames: z
+    .object({
+      headOfStateTitle: z.string().trim().max(100).optional(),
+      headOfGovernmentTitle: z.string().trim().max(100).optional(),
+      legislatureName: z.string().trim().max(100).optional(),
+      executiveName: z.string().trim().max(100).optional(),
+      judicialName: z.string().trim().max(100).optional(),
+    })
+    .optional(),
   /** Size and wealth bands; an exact figure in `economicInputs.coreIndicators` wins. */
   populationBand: z.enum(POPULATION_BAND_IDS).optional(),
   wealthBand: z.enum(WEALTH_BAND_IDS).optional(),
@@ -199,6 +209,7 @@ async function prepareFounding(db: PrismaClient, input: FoundingInput) {
     populationBand: input.populationBand,
     wealthBand: input.wealthBand,
     governmentFormId: input.governmentFormId,
+    institutionNames: input.institutionNames,
     governmentComponents: input.governmentComponents,
     taxSystemData: input.taxSystemData,
     governmentStructure: input.governmentStructure,

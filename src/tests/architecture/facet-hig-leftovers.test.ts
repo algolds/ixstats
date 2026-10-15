@@ -49,6 +49,12 @@ describe("Facet 3.1 HIG leftovers", () => {
     ]) {
       expect([rel, (read(rel).match(h1) ?? []).length]).toEqual([rel, 1]);
     }
+    // The founding flow at /builder: PageHeader is its one h1; no step renders another.
+    expect(read("app/builder/_founding/FoundingFlow.tsx")).toMatch(/<PageHeader\b/);
+    const foundingH1 = walk(path.join(srcDir, "app/builder/_founding")).filter((file) =>
+      /<h1\b|<EntityHeader(?![^>]*headingLevel=\{2\})/.test(fs.readFileSync(file, "utf8"))
+    );
+    expect(foundingH1).toEqual([]);
     // Step content starts at h2: no h5/h6 anywhere in the builder.
     const deep = walk(path.join(srcDir, "app/builder")).filter((file) =>
       /<h[56]\b/.test(fs.readFileSync(file, "utf8"))
