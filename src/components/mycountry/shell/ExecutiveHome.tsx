@@ -12,6 +12,7 @@ import { TerritoryMapWidget } from "./TerritoryMapWidget";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
 import { DomainPeeksCard } from "./DomainPeeksCard";
 import { IntelligenceAlertsCard } from "./IntelligenceAlertsCard";
+import { FirstStepsCard } from "./FirstStepsCard";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -52,6 +53,7 @@ function ExecutiveHomeComponent({
   return (
     <div className="space-y-6">
       <CrisisSignal countryId={countryId} />
+      <FirstStepsCard countryId={countryId} />
       <ExecutiveOpportunityHero
         countryId={countryId}
         onOpenDrill={onOpenDrill}
