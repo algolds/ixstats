@@ -5,11 +5,10 @@
  * including foundation templates, archetypes, and initial sub-system setup.
  */
 
-import type { Country, EconomicArchetype, PrismaClient } from "@prisma/client";
+import type { Country, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { rateLimitedMutationProcedure } from "~/server/api/trpc";
-import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
+import { rateLimitedMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { invalidateCache, globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
@@ -39,7 +38,14 @@ import {
   pointActiveNation,
   resolveBuilderRealm,
 } from "~/server/modules/realms";
-import { pct, type EconInputs, type NumberKey } from "./shared";
+import {
+  computeFoundingSnapshot,
+  FOUNDING_MAX_GDP_GROWTH,
+  type FoundingSnapshot,
+  type FoundingSummary,
+} from "~/server/shared/founding-snapshot";
+import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
+import type { EconInputs } from "./shared";
 
 const BUILDER_REALM_ERROR_CODES = {
   REALM_NOT_FOUND: "NOT_FOUND",
@@ -54,111 +60,6 @@ function builderRealmError(error: Error): never {
   throw error;
 }
 
-type TaxInput = z.infer<typeof countryTaxSystemInputSchema>;
-type GovernmentStructureInput = z.infer<typeof countryGovernmentStructureInputSchema>;
-type GovernmentComponentInput = z.infer<typeof countryGovernmentComponentSchema>;
-type EconomyBuilderInput = z.infer<typeof countryEconomyBuilderStateSchema>;
-
-/** The sub-system payloads a nation is founded with; an archetype fills whichever the builder left empty. */
-interface FoundingPayload {
-  taxSystemData: TaxInput | null | undefined;
-  governmentStructure: GovernmentStructureInput | null | undefined;
-  governmentComponents: GovernmentComponentInput[];
-  economyBuilderState: EconomyBuilderInput | null | undefined;
-}
-
-interface Baseline {
-  population: number;
-  gdpPerCapita: number;
-  nominalGDP: number;
-}
-
-type Fallback = number | ((base: Baseline) => number);
-type Getter = (e: EconInputs, taxRate: number | undefined) => number | undefined;
-
-/** Numeric columns where a missing or zero input falls back to a default. */
-const ZERO_FALLBACK_FIELDS: ReadonlyArray<readonly [NumberKey, Getter, Fallback]> = [
-  ["currencyExchangeRate", (e) => e.coreIndicators?.currencyExchangeRate, 1],
-  ["laborForceParticipationRate", (e) => e.laborEmployment?.laborForceParticipationRate, 65],
-  ["employmentRate", (e) => e.laborEmployment?.employmentRate, 95],
-  ["unemploymentRate", (e) => e.laborEmployment?.unemploymentRate, 5],
-  ["averageWorkweekHours", (e) => e.laborEmployment?.averageWorkweekHours, 40],
-  ["minimumWage", (e) => e.laborEmployment?.minimumWage, 15],
-  [
-    "averageAnnualIncome",
-    (e) => e.laborEmployment?.averageAnnualIncome,
-    (b) => b.gdpPerCapita * 0.8,
-  ],
-  ["taxRevenueGDPPercent", (e, taxRate) => e.fiscalSystem?.taxRevenueGDPPercent || taxRate, 25],
-  [
-    "governmentRevenueTotal",
-    (e) => e.fiscalSystem?.governmentRevenueTotal,
-    (b) => b.nominalGDP * 0.25,
-  ],
-  [
-    "taxRevenuePerCapita",
-    (e) => e.fiscalSystem?.taxRevenuePerCapita,
-    (b) => (b.nominalGDP * 0.25) / b.population,
-  ],
-  ["governmentBudgetGDPPercent", (e) => e.fiscalSystem?.governmentBudgetGDPPercent, 25],
-  ["budgetDeficitSurplus", (e) => e.fiscalSystem?.budgetDeficitSurplus, 0],
-  ["internalDebtGDPPercent", (e) => e.fiscalSystem?.internalDebtGDPPercent, 30],
-  ["externalDebtGDPPercent", (e) => e.fiscalSystem?.externalDebtGDPPercent, 20],
-  ["totalDebtGDPRatio", (e) => e.fiscalSystem?.totalDebtGDPRatio, 50],
-  [
-    "debtPerCapita",
-    (e) => e.fiscalSystem?.debtPerCapita,
-    (b) => (b.nominalGDP * 0.5) / b.population,
-  ],
-  ["interestRates", (e) => e.fiscalSystem?.interestRates, 3.5],
-  ["debtServiceCosts", (e) => e.fiscalSystem?.debtServiceCosts, (b) => b.nominalGDP * 0.02],
-  ["povertyRate", (e) => e.incomeWealth?.povertyRate, 12],
-  [
-    "incomeInequalityGini",
-    (e) =>
-      e.incomeWealth?.incomeInequalityGini ||
-      (e.incomeWealth?.giniIndex ? e.incomeWealth.giniIndex / 100 : undefined),
-    0.35,
-  ],
-  ["socialMobilityIndex", (e) => e.incomeWealth?.socialMobilityIndex, 65],
-  [
-    "totalGovernmentSpending",
-    (e) => e.governmentSpending?.totalSpending,
-    (b) => b.nominalGDP * 0.22,
-  ],
-  ["spendingGDPPercent", (e) => e.governmentSpending?.spendingGDPPercent, 22],
-  [
-    "spendingPerCapita",
-    (e) => e.governmentSpending?.spendingPerCapita,
-    (b) => (b.nominalGDP * 0.22) / b.population,
-  ],
-  ["lifeExpectancy", (e) => e.demographics?.lifeExpectancy, 78.5],
-  ["urbanPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.urban, 65],
-  ["ruralPopulationPercent", (e) => e.demographics?.urbanRuralSplit?.rural, 35],
-  ["literacyRate", (e) => e.demographics?.literacyRate, 95],
-];
-
-/** Growth and inflation inputs arrive as percents; only an absent value (not 0) takes the default. */
-const RATE_FIELDS: ReadonlyArray<readonly [NumberKey, Getter, number]> = [
-  ["adjustedGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
-  ["actualGdpGrowth", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
-  ["realGDPGrowthRate", (e) => pct(e.coreIndicators?.realGDPGrowthRate), 0.025],
-  ["populationGrowthRate", (e) => pct(e.demographics?.populationGrowthRate), 0.008],
-  ["inflationRate", (e) => pct(e.coreIndicators?.inflationRate), 0.02],
-];
-
-function buildCountryNumbers(econ: EconInputs, taxRate: number | undefined, base: Baseline) {
-  const resolve = (fallback: Fallback) =>
-    typeof fallback === "function" ? fallback(base) : fallback;
-  return Object.fromEntries([
-    ...ZERO_FALLBACK_FIELDS.map(([key, get, fallback]) => [
-      key,
-      get(econ, taxRate) || resolve(fallback),
-    ]),
-    ...RATE_FIELDS.map(([key, get, fallback]) => [key, get(econ, taxRate) ?? fallback]),
-  ]) as Record<NumberKey, number>;
-}
-
 /** Foundations are Ixnay nations; names repeat across realms (ruling E-p). */
 function findFoundation(db: PrismaClient, ref: string) {
   return db.country.findFirst({
@@ -171,141 +72,6 @@ async function findArchetype(db: PrismaClient, idOrKey: string) {
     (await db.economicArchetype.findUnique({ where: { id: idOrKey } })) ??
     (await db.economicArchetype.findFirst({ where: { key: idOrKey } }))
   );
-}
-
-function parseArchetypeJson<T>(raw: string, field: string): T | null {
-  try {
-    return JSON.parse(raw) as T;
-  } catch (e) {
-    console.error(`Failed to parse archetype ${field}:`, e);
-    return null;
-  }
-}
-
-/** Archetype row; `economicStructure` / `economicModel` are optional extras the schema does not store. */
-type ArchetypeWithEconomy = EconomicArchetype & {
-  economicStructure?: string | null;
-  economicModel?: string | null;
-};
-
-function archetypeTaxSystem(archetype: EconomicArchetype): TaxInput | undefined {
-  const profile = parseArchetypeJson<{
-    incomeRate?: number;
-    corporateRate?: number;
-    consumptionRate?: number;
-  }>(archetype.taxProfile, "taxProfile");
-  if (!profile) return undefined;
-  const incomeRate = profile.incomeRate || 15;
-  const rated = (categoryName: string, categoryType: string, baseRate: number) => ({
-    categoryName,
-    categoryType,
-    baseRate,
-    isActive: true,
-  });
-  return {
-    taxSystemName: `${archetype.name} Tax System`,
-    taxAuthority: "Ministry of Finance",
-    progressiveTax: true,
-    baseRate: incomeRate,
-    categories: [
-      {
-        ...rated("Income Tax", "income", incomeRate),
-        brackets: [
-          {
-            bracketName: "Base Bracket",
-            minIncome: 0,
-            maxIncome: null,
-            rate: incomeRate,
-            isActive: true,
-          },
-        ],
-      },
-      rated("Corporate Tax", "corporate", profile.corporateRate || 20),
-      rated("Consumption Tax", "consumption", profile.consumptionRate || 10),
-    ],
-  };
-}
-
-const DEFAULT_DEPARTMENTS = [
-  ["Ministry of Finance", "finance"],
-  ["Ministry of Interior", "interior"],
-  ["Ministry of Foreign Affairs", "foreign"],
-  ["Ministry of Defense", "defense"],
-  ["Ministry of Justice", "justice"],
-] as const;
-
-function archetypeEconomyState(
-  archetype: ArchetypeWithEconomy,
-  base: Baseline
-): EconomyBuilderInput | undefined {
-  if (!archetype.economicStructure) return undefined;
-  const parsed = parseArchetypeJson<{
-    tradeOpenness?: number;
-    economicFreedom?: number;
-    sectors?: EconomyBuilderInput["sectors"];
-    selectedAtomicComponents?: string[];
-  }>(archetype.economicStructure, "economicStructure");
-  if (!parsed) return undefined;
-  return {
-    structure: {
-      economicModel: archetype.economicModel || "Social Market",
-      economicTier: "Developed",
-      totalGDP: base.nominalGDP,
-      gdpPerCapita: base.gdpPerCapita,
-      population: base.population,
-      tradeOpenness: parsed.tradeOpenness || 60,
-      economicFreedom: parsed.economicFreedom || 70,
-      creditRating: "AA",
-      fdi: base.nominalGDP * 0.03,
-      foreignReserves: base.nominalGDP * 0.15,
-    },
-    sectors: parsed.sectors || [],
-    selectedAtomicComponents: parsed.selectedAtomicComponents || [],
-  };
-}
-
-function archetypeComponents(archetype: EconomicArchetype): GovernmentComponentInput[] {
-  const types = parseArchetypeJson<string[]>(
-    archetype.governmentComponents,
-    "governmentComponents"
-  );
-  return Array.isArray(types)
-    ? types.map((componentType) => ({ componentType, effectivenessScore: 60, isActive: true }))
-    : [];
-}
-
-/** Fills the sub-system payloads the builder left empty from the chosen archetype. */
-function withArchetypeDefaults(
-  archetype: ArchetypeWithEconomy,
-  payload: FoundingPayload,
-  name: string,
-  base: Baseline
-): FoundingPayload {
-  const taxSystemData =
-    !payload.taxSystemData && archetype.taxProfile
-      ? (archetypeTaxSystem(archetype) ?? payload.taxSystemData)
-      : payload.taxSystemData;
-  const economyBuilderState =
-    !payload.economyBuilderState && archetype.economicStructure
-      ? (archetypeEconomyState(archetype, base) ?? payload.economyBuilderState)
-      : payload.economyBuilderState;
-  const governmentStructure = payload.governmentStructure ?? {
-    governmentName: `Government of ${name}`,
-    governmentType: archetype.name || "Constitutional Republic",
-    totalBudget: base.nominalGDP * 0.3,
-    fiscalYear: "Calendar Year",
-    budgetCurrency: "USD",
-    departments: DEFAULT_DEPARTMENTS.map(([deptName, category]) => ({
-      name: deptName,
-      category,
-      isActive: true,
-    })),
-  };
-  const governmentComponents =
-    payload.governmentComponents.length === 0 && archetype.governmentComponents
-      ? archetypeComponents(archetype)
-      : payload.governmentComponents;
-  return { taxSystemData, governmentStructure, governmentComponents, economyBuilderState };
 }
 
 async function uniqueCountrySlug(db: PrismaClient, name: string): Promise<string> {
@@ -323,9 +89,7 @@ interface CountryDataArgs {
   realmId: string;
   econ: EconInputs;
   foundation: Country | null;
-  base: Baseline;
-  taxRate: number | undefined;
-  structureType: string | undefined;
+  snapshot: FoundingSnapshot;
 }
 
 function buildCountryText(
@@ -346,16 +110,16 @@ function buildCountryText(
 }
 
 function buildCountryData(args: CountryDataArgs) {
-  const { econ, foundation, base } = args;
-  const { population, gdpPerCapita } = base;
+  const { econ, foundation, snapshot } = args;
+  const { population, gdpPerCapita, nominalGDP } = snapshot.base;
   const totalGdp = population * gdpPerCapita;
   const landArea = foundation?.landArea;
   return {
-    ...buildCountryNumbers(econ, args.taxRate, base),
+    ...snapshot.numbers,
     name: args.name,
     slug: args.slug,
     realmId: args.realmId,
-    ...buildCountryText(econ, foundation, args.structureType),
+    ...buildCountryText(econ, foundation, snapshot.governmentStructure.governmentType),
     landArea,
     areaSqMi: foundation?.areaSqMi,
     baselinePopulation: population,
@@ -363,11 +127,11 @@ function buildCountryData(args: CountryDataArgs) {
     currentPopulation: population,
     currentGdpPerCapita: gdpPerCapita,
     currentTotalGdp: totalGdp,
-    economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
-    populationTier: getPopulationTierFromPopulation(population),
-    nominalGDP: base.nominalGDP,
-    maxGdpGrowthRate: 0.15,
-    totalWorkforce: econ.laborEmployment?.totalWorkforce || Math.round(population * 0.65),
+    economicTier: snapshot.economicTier,
+    populationTier: snapshot.populationTier,
+    nominalGDP,
+    maxGdpGrowthRate: FOUNDING_MAX_GDP_GROWTH,
+    totalWorkforce: snapshot.totalWorkforce,
     populationDensity: landArea ? population / landArea : undefined,
     gdpDensity: landArea ? totalGdp / landArea : undefined,
   };
@@ -385,48 +149,63 @@ async function ensureDefaultRole(
   }
 }
 
-async function prepareFounding(db: PrismaClient, input: CreateCountryInput) {
-  const foundation = input.foundationCountry
-    ? await findFoundation(db, input.foundationCountry)
-    : null;
-  const archetype = input.archetypeId ? await findArchetype(db, input.archetypeId) : null;
-
-  const econ: EconInputs = input.economicInputs ?? {};
-  const population =
-    econ.coreIndicators?.totalPopulation || foundation?.baselinePopulation || 10000000;
-  const gdpPerCapita =
-    econ.coreIndicators?.gdpPerCapita || foundation?.baselineGdpPerCapita || 25000;
-  const base: Baseline = {
-    population,
-    gdpPerCapita,
-    nominalGDP: econ.coreIndicators?.nominalGDP || population * gdpPerCapita,
-  };
-
-  const submitted: FoundingPayload = {
-    taxSystemData: input.taxSystemData,
-    governmentStructure: input.governmentStructure,
-    governmentComponents: input.governmentComponents ?? [],
-    economyBuilderState: input.economyBuilderState,
-  };
-  const payload = archetype
-    ? withArchetypeDefaults(archetype, submitted, input.name, base)
-    : submitted;
-  return { foundation, econ, base, payload };
-}
-
-const createCountryInput = z.object({
-  name: z.string(),
-  foundationCountry: z.string().nullable(),
+/** The founding fields createCountry and previewFounding share (nothing here needs a write). */
+const foundingFields = {
   economicInputs: countryEconomicInputsSchema,
   governmentComponents: z.array(countryGovernmentComponentSchema).optional(),
   taxSystemData: countryTaxSystemInputSchema.nullish(),
   governmentStructure: countryGovernmentStructureInputSchema.nullish(),
   economyBuilderState: countryEconomyBuilderStateSchema.nullish(),
   archetypeId: z.string().optional(),
+  /** A government form id (`src/lib/government/form-departments.ts`); sets type and departments. */
+  governmentFormId: z.string().max(64).optional(),
+  /** Size and wealth bands; an exact figure in `economicInputs.coreIndicators` wins. */
+  populationBand: z.enum(POPULATION_BAND_IDS).optional(),
+  wealthBand: z.enum(WEALTH_BAND_IDS).optional(),
+};
+
+const createCountryInput = z.object({
+  name: z.string(),
+  foundationCountry: z.string().nullable(),
+  ...foundingFields,
   /** Realm to found the nation in; defaults to the realm of the nation the player acts as, else Ixnay. */
   realmId: z.string().min(1).max(100).optional(),
 });
 type CreateCountryInput = z.infer<typeof createCountryInput>;
+
+export const previewFoundingInput = z.object({
+  name: z.string().max(200).optional(),
+  foundationCountry: z.string().nullish(),
+  ...foundingFields,
+});
+export type PreviewFoundingInput = z.infer<typeof previewFoundingInput>;
+
+type FoundingInput = Omit<CreateCountryInput, "realmId" | "foundationCountry"> & {
+  foundationCountry?: string | null;
+};
+
+/** Reads the foundation and archetype, then computes everything the nation is founded with. */
+async function prepareFounding(db: PrismaClient, input: FoundingInput) {
+  const foundation = input.foundationCountry
+    ? await findFoundation(db, input.foundationCountry)
+    : null;
+  const archetype = input.archetypeId ? await findArchetype(db, input.archetypeId) : null;
+  const econ: EconInputs = input.economicInputs ?? {};
+  const snapshot = computeFoundingSnapshot({
+    name: input.name,
+    archetype,
+    foundation,
+    econ,
+    populationBand: input.populationBand,
+    wealthBand: input.wealthBand,
+    governmentFormId: input.governmentFormId,
+    governmentComponents: input.governmentComponents,
+    taxSystemData: input.taxSystemData,
+    governmentStructure: input.governmentStructure,
+    economyBuilderState: input.economyBuilderState,
+  });
+  return { foundation, econ, snapshot };
+}
 
 export const managementCreateProcedures = {
   // Create a new country from builder
@@ -478,9 +257,9 @@ export const managementCreateProcedures = {
 
       await ensureDefaultRole(ctx.db, player, userId);
 
-      const { foundation, econ, base, payload } = await prepareFounding(ctx.db, input);
+      const { foundation, econ, snapshot } = await prepareFounding(ctx.db, input);
       const { taxSystemData, governmentStructure, governmentComponents, economyBuilderState } =
-        payload;
+        snapshot;
 
       const slug = await uniqueCountrySlug(ctx.db, input.name);
       const { nationalIdentity, demographics, incomeWealth, governmentSpending, fiscalSystem } = {
@@ -502,9 +281,7 @@ export const managementCreateProcedures = {
                 realmId,
                 econ,
                 foundation,
-                base,
-                taxRate: taxSystemData?.totalTaxRate,
-                structureType: governmentStructure?.governmentType,
+                snapshot,
               }),
               baselineDate: ixNow,
               lastCalculated: ixNow,
@@ -550,5 +327,19 @@ export const managementCreateProcedures = {
           { cause: error }
         );
       }
+    }),
+
+  /**
+   * The live nation card's figures for a founding draft: the same preparation createCountry
+   * runs (archetype and foundation lookup, then computeFoundingSnapshot), with nothing written.
+   */
+  previewFounding: readOnlyProcedure
+    .input(previewFoundingInput)
+    .query(async ({ ctx, input }): Promise<FoundingSummary> => {
+      const { snapshot } = await prepareFounding(ctx.db, {
+        ...input,
+        name: input.name?.trim() || "New nation",
+      });
+      return snapshot.summary;
     }),
 };
