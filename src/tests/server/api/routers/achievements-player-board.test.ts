@@ -17,8 +17,24 @@ const totals = (
   rareAchievements: number
 ) => ({ userId, totalPoints, achievementCount, rareAchievements });
 
+/**
+ * A row of getMySummary's newest-unlock query. `rewardsJson` (the achievement's static rewards) is not selected; a
+ * test sets it anyway to show the reward is never read from it.
+ */
+interface LatestUnlockRow {
+  metadata: string | null;
+  achievement: {
+    key: string;
+    title: string;
+    rarity: string;
+    category: string;
+    iconUrl: string;
+    rewardsJson?: string | null;
+  };
+}
+
 // What the unlock wrote: the credits actually paid, not the achievement's static rewards.
-const LATEST_UNLOCK = {
+const LATEST_UNLOCK: LatestUnlockRow = {
   metadata: JSON.stringify({ points: 20, rewards: { credits: 25, cardIds: [] } }),
   achievement: {
     key: "first-trade",
@@ -35,8 +51,9 @@ function makeDb() {
     userAchievement: {
       findMany: jest.fn(),
       // The newest unlock of an active achievement, for the caller only.
-      findFirst: jest.fn(({ where }: { where: { userId: string } }) =>
-        Promise.resolve(where.userId === "u_me" ? LATEST_UNLOCK : null)
+      findFirst: jest.fn(
+        ({ where }: { where: { userId: string } }): Promise<LatestUnlockRow | null> =>
+          Promise.resolve(where.userId === "u_me" ? LATEST_UNLOCK : null)
       ),
     },
     // The database's aggregate, already ordered: points, then active count, then user id.

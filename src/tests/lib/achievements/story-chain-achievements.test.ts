@@ -24,8 +24,10 @@ describe.each([
   const def = getAchievementById(id)!;
 
   it("unlocks at its threshold of approved chains", () => {
-    expect(def.condition({ ...base, storyChainCount: threshold })).toBe(true);
-    expect(def.condition({ ...base, storyChainCount: threshold - 1 })).toBe(false);
+    // A custom `condition`: an approved-chain count is no single-metric rule
+    const condition = def.condition!;
+    expect(condition({ ...base, storyChainCount: threshold })).toBe(true);
+    expect(condition({ ...base, storyChainCount: threshold - 1 })).toBe(false);
   });
 
   it("is a country achievement", () => {
