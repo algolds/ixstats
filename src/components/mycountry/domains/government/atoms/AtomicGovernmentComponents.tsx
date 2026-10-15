@@ -11,7 +11,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
-import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
+import {
+  ATOMIC_COMPONENTS,
+  GOVERNMENT_TEMPLATES,
+  getTemplateSelection,
+} from "~/lib/government/atomic-data";
 import { getCategories } from "~/lib/government/atomic-utils";
 import { api } from "~/trpc/react";
 import {
@@ -108,15 +112,10 @@ export function AtomicGovernmentComponents({
     }));
   }, []);
 
-  // Handle template selection
+  // Apply the whole preset in one update; selecting one by one reuses a stale selection.
   const handleTemplateSelect = (templateId: string) => {
-    const template = GOVERNMENT_TEMPLATES[templateId as keyof typeof GOVERNMENT_TEMPLATES];
-    if (template) {
-      builder.clearSelection();
-      template.components.forEach((componentType) => {
-        builder.selectComponent(componentType);
-      });
-    }
+    if (!GOVERNMENT_TEMPLATES[templateId]) return;
+    builder.setSelection(getTemplateSelection(templateId));
   };
 
   const handleSave = () => {
@@ -250,6 +249,18 @@ export function AtomicGovernmentComponents({
               <ul className="text-caption list-inside list-disc space-y-1 font-semibold">
                 {builder.validation.errors.map((error, index) => (
                   <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        {builder.validation.warnings.length > 0 && (
+          <Alert>
+            <Info className="text-label-secondary h-4 w-4" />
+            <AlertDescription className="text-footnote leading-normal">
+              <ul className="list-inside list-disc space-y-1">
+                {builder.validation.warnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
                 ))}
               </ul>
             </AlertDescription>

@@ -34,3 +34,12 @@ export interface AtomicGovernmentComponent {
     technologyRequired: boolean;
   };
 }
+
+/**
+ * A component as written in `components-part*.ts`. Its `synergies` and `conflicts` are not
+ * written by hand: `components.ts` derives them from the shared synergy table.
+ */
+export type AtomicGovernmentComponentDefinition = Omit<
+  AtomicGovernmentComponent,
+  "synergies" | "conflicts"
+>;

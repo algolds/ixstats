@@ -13,13 +13,7 @@
  * @module atomic-economic-data/components-part3
  */
 
-import {
-  LightBulb as Lightbulb,
-  Flash as Zap,
-  GraduationCap,
-  Leaf,
-  Wrench,
-} from "iconoir-react";
+import { LightBulb as Lightbulb, Flash as Zap, GraduationCap, Leaf, Wrench } from "iconoir-react";
 import {
   EconomicComponentType,
   EconomicCategory,
@@ -40,6 +34,8 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.KNOWLEDGE_ECONOMY,
       EconomicComponentType.INNOVATION_ECONOMY,
       EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
+      EconomicComponentType.PATENT_PROTECTION,
+      EconomicComponentType.RESEARCH_AND_DEVELOPMENT,
     ],
     conflicts: [
       EconomicComponentType.EXTRACTION_FOCUSED,
@@ -100,6 +96,12 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.INNOVATION_ECONOMY,
       EconomicComponentType.VENTURE_CAPITAL,
       EconomicComponentType.FLEXIBLE_LABOR,
+      EconomicComponentType.FREE_MARKET_SYSTEM,
+      EconomicComponentType.TECHNOLOGY_FOCUSED,
+      EconomicComponentType.GIG_ECONOMY,
+      EconomicComponentType.MERIT_BASED,
+      EconomicComponentType.COMPETITIVE_MARKETS,
+      EconomicComponentType.OPEN_INNOVATION,
     ],
     conflicts: [
       EconomicComponentType.PLANNED_ECONOMY,
@@ -156,6 +158,10 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.EDUCATION_FIRST,
       EconomicComponentType.RD_INVESTMENT,
       EconomicComponentType.TECH_TRANSFER,
+      EconomicComponentType.KNOWLEDGE_ECONOMY,
+      EconomicComponentType.EDUCATION_FOCUSED,
+      EconomicComponentType.OPEN_INNOVATION,
+      EconomicComponentType.RESEARCH_AND_DEVELOPMENT,
     ],
     conflicts: [
       EconomicComponentType.EXTRACTION_FOCUSED,
@@ -217,11 +223,15 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.RENEWABLE_ENERGY,
       EconomicComponentType.CIRCULAR_ECONOMY,
       EconomicComponentType.GREEN_TECHNOLOGY,
+      EconomicComponentType.CONSERVATION_FIRST,
+      EconomicComponentType.ECO_FRIENDLY,
+      EconomicComponentType.GREEN_ECONOMY,
     ],
     conflicts: [
       EconomicComponentType.EXTRACTION_FOCUSED,
       EconomicComponentType.RESOURCE_BASED_ECONOMY,
       EconomicComponentType.CARBON_INTENSIVE,
+      EconomicComponentType.LINEAR_ECONOMY,
     ],
     governmentSynergies: ["ENVIRONMENTAL_PROTECTION", "SUSTAINABLE_DEVELOPMENT", "GREEN_POLICY"],
     governmentConflicts: ["RESOURCE_EXTRACTION", "CARBON_INTENSIVE_INDUSTRY"],
@@ -273,11 +283,25 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.RESOURCE_BASED_ECONOMY,
       EconomicComponentType.EXPORT_ORIENTED,
       EconomicComponentType.MANUFACTURING_LED,
+      EconomicComponentType.LINEAR_ECONOMY,
+      EconomicComponentType.CARBON_INTENSIVE,
     ],
     conflicts: [
       EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
       EconomicComponentType.KNOWLEDGE_ECONOMY,
       EconomicComponentType.GREEN_TECHNOLOGY,
+      EconomicComponentType.INNOVATION_ECONOMY,
+      EconomicComponentType.SERVICE_BASED,
+      EconomicComponentType.TECHNOLOGY_FOCUSED,
+      EconomicComponentType.TOURISM_BASED,
+      EconomicComponentType.EDUCATION_FIRST,
+      EconomicComponentType.RD_INVESTMENT,
+      EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
+      EconomicComponentType.RENEWABLE_ENERGY,
+      EconomicComponentType.CIRCULAR_ECONOMY,
+      EconomicComponentType.CONSERVATION_FIRST,
+      EconomicComponentType.CARBON_NEUTRAL,
+      EconomicComponentType.GREEN_ECONOMY,
     ],
     governmentSynergies: ["RESOURCE_EXTRACTION", "MINING_INDUSTRY", "EXPORT_ORIENTED"],
     governmentConflicts: ["ENVIRONMENTAL_PROTECTION", "SUSTAINABLE_DEVELOPMENT"],
@@ -329,6 +353,8 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
       EconomicComponentType.GREEN_TECHNOLOGY,
       EconomicComponentType.CIRCULAR_ECONOMY,
+      EconomicComponentType.CARBON_NEUTRAL,
+      EconomicComponentType.GREEN_ECONOMY,
     ],
     conflicts: [
       EconomicComponentType.EXTRACTION_FOCUSED,
@@ -385,6 +411,7 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_3: Partial<
       EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
       EconomicComponentType.GREEN_TECHNOLOGY,
       EconomicComponentType.RENEWABLE_ENERGY,
+      EconomicComponentType.ECO_FRIENDLY,
     ],
     conflicts: [
       EconomicComponentType.EXTRACTION_FOCUSED,

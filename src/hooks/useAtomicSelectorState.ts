@@ -27,6 +27,36 @@ interface UseAtomicSelectorStateProps<T extends string> {
   isReadOnly?: boolean;
   /** Default category */
   defaultCategory?: string | null;
+  /**
+   * Which ids count toward `maxComponents` (default: all). Ids that do not count, such as
+   * unknown types from old saved data, never block a selection. Pass a stable function.
+   */
+  countsTowardLimit?: (id: T) => boolean;
+}
+
+const countsAll = () => true;
+
+/**
+ * Trim a selection to the cap: ids that count are kept in order until the cap is reached;
+ * ids that do not count are always kept. Duplicates are dropped.
+ */
+export function capSelection<T extends string>(
+  ids: readonly T[],
+  maxComponents: number,
+  countsTowardLimit: (id: T) => boolean = countsAll
+): T[] {
+  const result: T[] = [];
+  const seen = new Set<string>();
+  let counted = 0;
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    const counts = countsTowardLimit(id);
+    if (counts && counted >= maxComponents) continue;
+    seen.add(id);
+    result.push(id);
+    if (counts) counted++;
+  }
+  return result;
 }
 
 interface UseAtomicSelectorStateReturn<T extends string> {
@@ -73,6 +103,7 @@ export function useAtomicSelectorState<T extends string>({
   maxComponents = 15,
   isReadOnly = false,
   defaultCategory = null,
+  countsTowardLimit = countsAll,
 }: UseAtomicSelectorStateProps<T> = {}): UseAtomicSelectorStateReturn<T> {
   const isControlled = controlledSelected !== undefined;
 
@@ -117,9 +148,19 @@ export function useAtomicSelectorState<T extends string>({
 
   const isSelected = useCallback((id: T | string) => selectedIds.has(id as string), [selectedIds]);
 
+  const countedLength = useMemo(
+    () => activeSelection.filter(countsTowardLimit).length,
+    [activeSelection, countsTowardLimit]
+  );
+
   const canSelectMore = useMemo(
-    () => !isReadOnly && activeSelection.length < maxComponents,
-    [isReadOnly, activeSelection.length, maxComponents]
+    () => !isReadOnly && countedLength < maxComponents,
+    [isReadOnly, countedLength, maxComponents]
+  );
+
+  const hasRoomFor = useCallback(
+    (id: T) => !countsTowardLimit(id) || countedLength < maxComponents,
+    [countsTowardLimit, countedLength, maxComponents]
   );
 
   const updateSelection = useCallback(
@@ -136,11 +177,11 @@ export function useAtomicSelectorState<T extends string>({
   const handleSelect = useCallback(
     (id: T) => {
       if (isReadOnly) return;
-      if (!selectedIds.has(id) && activeSelection.length < maxComponents) {
+      if (!selectedIds.has(id) && hasRoomFor(id)) {
         updateSelection([...activeSelection, id]);
       }
     },
-    [isReadOnly, selectedIds, activeSelection, maxComponents, updateSelection]
+    [isReadOnly, selectedIds, activeSelection, hasRoomFor, updateSelection]
   );
 
   const handleDeselect = useCallback(
@@ -158,11 +199,11 @@ export function useAtomicSelectorState<T extends string>({
       if (isReadOnly) return;
       if (selectedIds.has(id)) {
         updateSelection(activeSelection.filter((item) => item !== id));
-      } else if (activeSelection.length < maxComponents) {
+      } else if (hasRoomFor(id)) {
         updateSelection([...activeSelection, id]);
       }
     },
-    [isReadOnly, selectedIds, activeSelection, maxComponents, updateSelection]
+    [isReadOnly, selectedIds, activeSelection, hasRoomFor, updateSelection]
   );
 
   const handleClear = useCallback(() => {
@@ -173,9 +214,9 @@ export function useAtomicSelectorState<T extends string>({
   const setSelection = useCallback(
     (ids: T[]) => {
       if (isReadOnly) return;
-      updateSelection(ids.slice(0, maxComponents));
+      updateSelection(capSelection(ids, maxComponents, countsTowardLimit));
     },
-    [isReadOnly, maxComponents, updateSelection]
+    [isReadOnly, maxComponents, countsTowardLimit, updateSelection]
   );
 
   return {

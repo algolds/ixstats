@@ -18,7 +18,8 @@ import { EconomicComponentType, type EconomicCategoryDefinition } from "./types"
 
 /**
  * Economic Component Categories
- * Organizes components into logical groups
+ * Organizes components into logical groups. Each defined component appears in exactly one
+ * group, the one matching its own `category` field.
  */
 export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = {
   "Economic Model": {
@@ -34,6 +35,7 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
       EconomicComponentType.KNOWLEDGE_ECONOMY,
       EconomicComponentType.INNOVATION_ECONOMY,
       EconomicComponentType.RESOURCE_BASED_ECONOMY,
+      EconomicComponentType.RULE_OF_LAW,
     ],
   },
   "Sector Focus": {
@@ -46,9 +48,9 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
       EconomicComponentType.SERVICE_BASED,
       EconomicComponentType.TECHNOLOGY_FOCUSED,
       EconomicComponentType.FINANCE_CENTERED,
-      EconomicComponentType.EXPORT_ORIENTED,
       EconomicComponentType.DOMESTIC_FOCUSED,
       EconomicComponentType.TOURISM_BASED,
+      EconomicComponentType.REAL_ESTATE_FOCUSED,
     ],
   },
   "Labor System": {
@@ -64,6 +66,10 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
       EconomicComponentType.SKILL_BASED,
       EconomicComponentType.EDUCATION_FIRST,
       EconomicComponentType.MERIT_BASED,
+      EconomicComponentType.HIGH_SKILLED_WORKERS,
+      EconomicComponentType.EDUCATION_FOCUSED,
+      EconomicComponentType.HEALTHCARE_FOCUSED,
+      EconomicComponentType.VOCATIONAL_TRAINING,
     ],
   },
   "Trade Policy": {
@@ -73,12 +79,15 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
     components: [
       EconomicComponentType.FREE_TRADE,
       EconomicComponentType.PROTECTIONIST,
+      EconomicComponentType.EXPORT_ORIENTED,
       EconomicComponentType.BALANCED_TRADE,
       EconomicComponentType.EXPORT_SUBSIDY,
       EconomicComponentType.IMPORT_SUBSTITUTION,
       EconomicComponentType.TRADE_BLOC,
       EconomicComponentType.BILATERAL_FOCUS,
       EconomicComponentType.MULTILATERAL_FOCUS,
+      EconomicComponentType.TRADE_FACILITATION,
+      EconomicComponentType.COMPETITIVE_MARKETS,
     ],
   },
   Innovation: {
@@ -94,6 +103,7 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
       EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
       EconomicComponentType.VENTURE_CAPITAL,
       EconomicComponentType.INTELLECTUAL_PROPERTY,
+      EconomicComponentType.RESEARCH_AND_DEVELOPMENT,
     ],
   },
   "Resource Management": {
@@ -105,10 +115,13 @@ export const COMPONENT_CATEGORIES: Record<string, EconomicCategoryDefinition> = 
       EconomicComponentType.EXTRACTION_FOCUSED,
       EconomicComponentType.RENEWABLE_ENERGY,
       EconomicComponentType.CIRCULAR_ECONOMY,
+      EconomicComponentType.LINEAR_ECONOMY,
       EconomicComponentType.CONSERVATION_FIRST,
       EconomicComponentType.GREEN_TECHNOLOGY,
       EconomicComponentType.CARBON_NEUTRAL,
+      EconomicComponentType.CARBON_INTENSIVE,
       EconomicComponentType.ECO_FRIENDLY,
+      EconomicComponentType.GREEN_ECONOMY,
     ],
   },
 };

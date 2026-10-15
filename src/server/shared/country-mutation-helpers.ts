@@ -4,7 +4,7 @@
  */
 
 import type { GovernmentComponent, Prisma } from "@prisma/client";
-import { checkComponentSynergy } from "~/lib/government/synergy";
+import { checkComponentSynergy } from "~/lib/government/synergy-table";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 
 type TxClient = Prisma.TransactionClient;
