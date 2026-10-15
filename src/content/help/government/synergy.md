@@ -10,7 +10,7 @@ nextLabel: Government Structure & Departments
 
 ## What synergies and conflicts are
 
-Some pairs of government components reinforce each other and some work against each other. With both halves of a **synergy** pair in your government, your effectiveness goes up by **10**; with both halves of a **conflict** pair, it goes down by **15**. There are 45 of each. The builder and editor flag them as you pick, and the server checks them again when you save.
+Some pairs of government components reinforce each other and some work against each other. With both halves of a **synergy** pair in your government, your effectiveness goes up by **10**; with both halves of a **conflict** pair, it goes down by **15**. There are 106 synergy pairs and 48 conflict pairs. Founding and the editor list them as you pick, from the same table the server uses when you save.
 
 ## Examples
 
@@ -24,9 +24,9 @@ Some pairs of government components reinforce each other and some work against e
 
 ## How to use them
 
-1. In the Government step, select a component and look at its synergy and conflict hints.
-2. Add partners that synergise with what you already have.
-3. If your score drops, look for a red conflict marker and consider swapping one side of the pair.
+1. In **Customise institutions** (founding) or **Institutions** (editor), tick a component and read the list of pairs above the picker.
+2. Add partners that work well with what you already have.
+3. If the list warns that a pair works against each other, consider swapping one side of the pair.
 4. Save. Your effectiveness appears as the Efficiency ring on the [MyCountry home page](/help/mycountry/overview).
 
 ## Worked example

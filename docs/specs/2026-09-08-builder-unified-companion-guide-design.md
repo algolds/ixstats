@@ -1,5 +1,7 @@
 # Spec: Builder Unified Companion Sheet & Dynamic Guide System
 
+> **Superseded (2026-10-15)** by the [country builder and editor redesign](2026-10-15-country-builder-editor-redesign-design.md). The guide sheet, its context and its data were removed with the old builder; the notes below describe what existed before.
+
 > **Implementation status (verified 2026-09-29): largely shipped.**
 > - ✅ `BuilderGuideContext` / `useBuilderGuide()` (`builder-guide-context.tsx`), mounted in `BuilderRouter.tsx`; per-section `builder-guide-seen-<section>` keys (versioned `"2.0"`).
 > - ✅ `BuilderGuideSheet.tsx` with **Milestones** (`data/contextual-help.ts`) and **Rules** (`data/guide-rules.ts`) tabs, tip box, and "Changes auto-save in draft" footer.
@@ -12,9 +14,9 @@
 ## 1. Overview & Problem Statement
 
 The current help architecture in the IxStates Nation Builder is fragmented across two competing paradigms:
-1. **The Slide-over Companion Sheet** ([`BuilderGuideSheet.tsx`](../../src/app/builder/components/BuilderGuideSheet.tsx)): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
+1. **The Slide-over Companion Sheet** (`BuilderGuideSheet.tsx`): Triggered by the persistent header's `[ 📖 Guide ]` button, rendering a static 4-step list from `contextualHelp` (`src/app/builder/data/contextual-help.ts`).
 2. **Multiple Viewport-Blocking Centered Modals**:
-   - [`AtomicWelcomeModal.tsx`](../../src/components/mycountry/domains/government/atomic/AtomicWelcomeModal.tsx) (Government component walkthrough)
+   - `AtomicWelcomeModal.tsx` (Government component walkthrough)
    - `EconomicWelcomeModal.tsx` (Economy component walkthrough; since deleted)
    - `BenchmarkHelpModal.tsx` (Country benchmark template guide)
    - `GovernmentHelpSystem.tsx` (Legacy government dialog)

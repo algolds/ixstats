@@ -38,9 +38,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Defense | — | `/mycountry/defense` (also serves `/mycountry/intelligence`) | `security/`, `militaryEquipment/` | 🔒 Premium | |
 | Intelligence | — | — | `intelligence/` (templates, alerts), `diplo-intel.ts` | 🟡 Partial | No standalone dashboard; threshold alerts are read on the MyCountry overview. The old stack was deleted in plans 312/341 |
 | Map editor section | — | `/mycountry/map-editor` | `app/mycountry/map-editor/page.tsx` | 🔒 Premium | The route renders the map editor full-screen; the shell's `map-editor` section navigates there |
-| Country Builder | v4 | `/builder`, `/mycountry/editor` | `builderDraft.ts`, `countries/`, `economics/`, `customTypes.ts` | ✅ Live | 4-step wizard plus wiki import; guided/expert modes, 50-step undo in edit mode |
-| Builder companion guide | — | `/builder` | `BuilderGuideSheet.tsx` | 🟡 Partial | No diagnostics tab or subheader deep links |
-| Autosave | — | builder | `useGenericAutoSync` | 🟡 Partial | Only the Economy builder uses the engine; no navigation flush or shared sync badge |
+| Country Builder | v5 | `/builder`, `/mycountry/welcome`, `/mycountry/editor` | `builderDraft.ts`, `countries/` (`management/create.ts`, `editor.ts`), `src/server/shared/founding-snapshot.ts` | ✅ Live | Founding in five steps (plus Realm) with a live nation card from the same calculation as founding, wiki import, welcome and First steps; the editor saves per section with stale-tab checks |
 
 ## 🌍 Atlas & Realms — geography and worlds
 

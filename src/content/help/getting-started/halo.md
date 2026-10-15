@@ -54,7 +54,7 @@ Halo shows the [IxTime](/help/getting-started/ixtime) clock and a greeting, and 
 
 Shortcuts don't fire while you're typing in a text box, except `Ctrl`/`Cmd` + `K` in Halo's own search box.
 
-Some areas add their own controls to Halo. For example, MyCountry adds your nation's key figures and actions, the wiki adds reading progress and the article narrator, and the Country Builder adds your build progress. On the wiki, `Tab` opens and closes the wiki view.
+Some areas add their own controls to Halo. For example, MyCountry adds your nation's key figures and actions, the wiki adds reading progress and the article narrator, and founding a nation and the Country Editor add **Jump to section**. On the wiki, `Tab` opens and closes the wiki view.
 
 On the [world map](/maps), Halo is replaced by the map's own floating bar.
 

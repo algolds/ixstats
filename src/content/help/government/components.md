@@ -10,7 +10,7 @@ nextLabel: Synergies & Conflicts
 
 ## What's in the catalog
 
-Components are the building blocks you pick in the [Country Builder](/builder) and [Country Editor](/help/mycountry/editor). There are three kinds: government components (64, up to 15 per nation), economic components (27) and tax components (42). Each shows its description, an effectiveness rating and its costs when you select it.
+Components are the building blocks of a nation. There are three kinds: government components (66, up to 15 per nation), economic components (60) and tax components (42). You choose government components when you [found a nation](/help/gameplay/country-building) and in the [Country Editor](/help/mycountry/editor); economic components come from the kind of nation you started as.
 
 ## Government components (10 categories)
 
@@ -35,8 +35,9 @@ Government components set your [effectiveness score](/help/government/atomic) th
 
 - add maintenance costs to government spending;
 - shift unemployment, where they have an employment effect;
-- shift inflation (for example, planned and state-capitalist economies raise it; knowledge-economy and free-trade models lower it);
-- in a few cases adjust tax revenue once when added (see [The Country Editor](/help/mycountry/editor#what-changes-when-you-save)).
+- shift inflation (for example, planned and state-capitalist economies raise it; knowledge-economy and free-trade models lower it).
+
+Your economic components are set from the kind of nation you founded. There's no player control for changing them at the moment.
 
 ## Tax components (5 groups)
 

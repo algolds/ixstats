@@ -282,7 +282,7 @@ First-class systems within the IxStates platform.
 | Sub-system            | Description                                                                                                                                                     |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Builder Sections**  | 7 step-through sections: CoreIndicators, Demographics, Economy, FiscalSystem, GovernmentSpending, GovernmentStructure, LaborEmployment                          |
-| **Atomic Components** | Modular building system — AtomicEconomicComponents, AtomicGovernmentComponents, AtomicTaxComponents. Synergy/conflict system (`src/lib/government/synergy.ts`). |
+| **Atomic Components** | Modular building blocks of a nation: government, economic and tax components. Synergy/conflict pairs in `src/lib/government/synergy-table.ts`. |
 | **IIWiki Importer**   | Wiki data ingestion for country creation. tRPC: `countries/wiki` (`searchWiki`, `parseInfobox`; no standalone `wikiImporter` router).                                                                                              |
 
 ---

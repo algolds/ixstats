@@ -14,8 +14,8 @@ Trade shows up in three places: the **Trade & Commerce** tab of [Economy & Budge
 
 ## The Trade & Commerce tab
 
-- **Trade summary.** Exports, imports and the trade balance, worked out from the exports and imports (as a share of GDP) you recorded for your nation, applied to your current GDP. If you haven't recorded them they show "—"; set them in the [Country Editor](/help/mycountry/editor) (Advanced mode, Economics step). These are not a record of real trade with other nations.
-- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from the sectors you recorded in the builder, each at your saved Fiscal Policy tariff rate and weighted by its share of GDP. You can add sectors to try ideas out.
+- **Trade summary.** Exports, imports and the trade balance, worked out from the exports and imports (as a share of GDP) you recorded for your nation, applied to your current GDP. If none are recorded they show "—". These are not a record of real trade with other nations.
+- **Sector Tariff Planner.** Sliders for tariffs by sector, with the planner's average tariff and the tariff revenue it would raise on your recorded imports. The planner starts from your nation's recorded sectors, each at your saved Fiscal Policy tariff rate and weighted by its share of GDP. You can add sectors to try ideas out.
 - **Bilateral Trade Agreements & Partners.** The nations you have relations with. A **Trade treaty** badge means a trade treaty is recorded with that nation; otherwise **Propose FTA** opens their country page so you can propose one (see below).
 
 > [!WARNING]

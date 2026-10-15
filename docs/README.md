@@ -35,7 +35,6 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 | [architecture/frontend.md](architecture/frontend.md) | Next.js 16 App Router, providers, component layers, hubs, Facet rules |
 | [architecture/backend.md](architecture/backend.md) | tRPC builders and middleware (`src/server/api/trpc/`), router composition, rate limiting, auth context |
 | [architecture/data.md](architecture/data.md) | Prisma schema domains (21 files), PostGIS, `db.ts` guards, seeders |
-| [architecture/autosave.md](architecture/autosave.md) | `useGenericAutoSync` engine and where it is (and isn't yet) used |
 | [architecture/caching.md](architecture/caching.md) | Cache layers in `src/lib/cache/`, Redis-backed tRPC cache, wiki caches |
 | [architecture/realms-framework-spec.md](architecture/realms-framework-spec.md) | Realms — separate worlds; Phase 1 shipped, Phases 2–4 pending |
 | [architecture/ts-graph-isolation.md](architecture/ts-graph-isolation.md) | Partitioned typechecks (`typecheck:ui`, `server`, `trpc`, `db`) and the arch guard |
@@ -130,12 +129,12 @@ Status key used below: ✅ Live · 🟡 Partial · 🔒 Premium · 🧪 Labs · 
 
 | Document | Scope | Status |
 | --- | --- | :---: |
-| [specs/2026-10-15-country-builder-editor-redesign-design.md](specs/2026-10-15-country-builder-editor-redesign-design.md) | Country builder and editor redesign: archetype-led founding, live nation card, Manage-style editor | 📐 Design |
+| [specs/2026-10-15-country-builder-editor-redesign-design.md](specs/2026-10-15-country-builder-editor-redesign-design.md) | Country builder and editor redesign: archetype-led founding, live nation card, Manage-style editor | ✅ Implemented |
 | [specs/2026-09-27-realms-foundation-design.md](specs/2026-09-27-realms-foundation-design.md) | Realms Phase 1 foundation | ✅ Implemented |
 | [specs/2026-09-28-realms-eurth-design.md](specs/2026-09-28-realms-eurth-design.md) | Eurth first-realm slice | ✅ Implemented |
 | [specs/2026-09-12-route-travel-time-design.md](specs/2026-09-12-route-travel-time-design.md) | Route travel time | ✅ Implemented |
 | [specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md](specs/2026-09-11-map-editor-properties-history-deep-overhaul-design.md) | Map editor inspector and history | 🟡 Partial |
-| [specs/2026-09-08-builder-unified-companion-guide-design.md](specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🟡 Mostly implemented |
+| [specs/2026-09-08-builder-unified-companion-guide-design.md](specs/2026-09-08-builder-unified-companion-guide-design.md) | Builder companion guide | 🗄️ Superseded |
 | [specs/2026-10-04-facet-4-design.md](specs/2026-10-04-facet-4-design.md) | Facet 4 content-typed material system | 🟡 Foundation and sidebar implemented; per-app sweep in progress |
 | [specs/2026-10-04-facet-4-sidebar-design.md](specs/2026-10-04-facet-4-sidebar-design.md) | Facet 4 sidebar: one source list for all navigation | ✅ Implemented |
 | [specs/2026-10-05-realm-regions-design.md](specs/2026-10-05-realm-regions-design.md) | Realms as NationStates-style regions: banner, factbook, officers, embassies, census, polls, Manage tab | ✅ Implemented |

@@ -75,8 +75,8 @@ To enforce maintainability and performance across 900+ components, complex views
 ```
 
 ### Layer Rules & Responsibilities:
-1. **Business Logic Layer (`src/lib/<domain>/*.ts`)**: Pure functions (e.g. `government/synergy.ts`, `ixtime/core.ts`, `wiki-os/adapters/mediawiki/bridge/`). Never import React or UI elements.
-2. **State Management Layer (`src/hooks/*.ts`, or co-located next to a feature)**: Custom hooks that query tRPC, manage optimistic updates, and wrap timers (e.g. `src/hooks/useUnifiedFlags.ts`, `src/app/builder/components/enhanced/national-identity/useNationalIdentityState.ts`).
+1. **Business Logic Layer (`src/lib/<domain>/*.ts`)**: Pure functions (e.g. `government/synergy-table.ts`, `ixtime/core.ts`, `wiki-os/adapters/mediawiki/bridge/`). Never import React or UI elements.
+2. **State Management Layer (`src/hooks/*.ts`, or co-located next to a feature)**: Custom hooks that query tRPC, manage optimistic updates, and wrap timers (e.g. `src/hooks/useUnifiedFlags.ts`, `src/app/builder/_founding/hooks/useFoundingDraft.ts`).
 3. **Presentation Layer (`src/components/domain/*`)**: Reusable UI components styled with Facet tokens. Memoized with `React.memo` to prevent unnecessary re-renders.
 4. **Orchestration Layer (`src/app/**/page.tsx`)**: Composes hooks and UI components with minimal inline logic.
 
@@ -163,29 +163,17 @@ variable and a Tailwind utility — see the [Facet design system reference](../r
 
 ---
 
-## 5. Universal State & Sync Hooks
+## 5. Saving & Shared Hooks
 
-Form builders and country editors use the canonical auto-sync engine:
-
-```tsx
-import { useGenericAutoSync } from "~/hooks/useGenericAutoSync";
-
-export function useMyBuilderAutoSync(countryId: string, initialData: FormData) {
-  const updateMutation = api.myDomain.update.useMutation();
-
-  return useGenericAutoSync(initialData, {
-    enabled: !!countryId,
-    debounceMs: 2000,
-    syncFn: async (dataToSync) => {
-      return await updateMutation.mutateAsync({ countryId, data: dataToSync });
-    },
-  });
-}
-```
+Edit forms save on an explicit button per section, never by autosave. The country editor
+(`src/app/mycountry/editor/_components/EditorSection.tsx`) is the pattern: each section keeps a local copy of its values,
+its button is disabled until something changed, one mutation per section patches only its own rows, and the mutation
+receives the values the section loaded so a stale tab is refused instead of overwriting. Work-in-progress drafts (the
+founding flow's `builderDraft`, `src/app/builder/_founding/hooks/useFoundingDraft.ts`) save to the server after a short
+pause and show their status.
 
 ### Canonical Hook Directory:
 - **Flags**: `useFlag`, `useBulkFlags`, `useFlagPreloader` (`src/hooks/useUnifiedFlags.ts`) — single source of truth for country flag URLs and SVG badge rendering.
-- **Auto-Sync**: `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`) — universal debounced autosave engine.
 - **Notifications**: `useNotify` (`src/hooks/useNotify.ts`) — standardized toast and status messages.
 - **Media / Wiki**: `useWikiScanner` (`src/hooks/useWikiScanner.ts`) — batched IxWiki lookups that flag unlinked pages and map/infobox data conflicts.
 

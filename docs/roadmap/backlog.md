@@ -132,8 +132,6 @@ See §1 above (password rotation, CSP).
 - **Crisis events:** taxonomy, lifecycle, response postures, mutations, admin UI ([crisis-events.md](../systems/crisis-events.md)); nothing writes `CrisisEvent` rows.
 - **NPC AI:** trait drift (no callers); NPC responses for embassies and treaties; event-fatigue dampening ([npc-ai.md](../systems/npc-ai.md) :41, :54).
 - **Relative-development asymmetry:** feed it into trade maths.
-- **Builder companion guide:** diagnostics tab and subheader deep links ([spec](../specs/2026-09-08-builder-unified-companion-guide-design.md) :79).
-- **Autosave rollout:** government/tax hooks, National Identity and Map Editor, a navigation flush (`syncAllNow`) and a shared sync badge ([autosave.md](../architecture/autosave.md)).
 - **Reference formulas → live engine:** ERI, embassy synergy, GDP projection; PII is design-only ([calculations.md](../systems/calculations.md)).
 - The `VitalitySnapshot`, `IntelligenceBriefing` and `IntelligenceRecommendation` models are still in the schema after their writers were deleted.
 

@@ -20,14 +20,14 @@ Reference data is the shared content every nation builds with: component catalog
 | NPC personalities | `/admin/npc-personalities` | Cultural-exchange participation by computer-run nations |
 | Achievements | `/admin/achievements` | Achievement unlocks and rewards (live) |
 | Cards and packs | `/admin/cards` | The Vault Shop, packs and card pool (live) |
-| Economic archetypes | `/admin/economic-archetypes` | The archetype picker in the Country Builder (live) |
+| Economic archetypes | `/admin/economic-archetypes` | The figures new nations start with when founded from an archetype (live) |
 | Military equipment | `/admin/military-equipment` | The equipment browser in Defense → Forces & Arsenal (live) |
 | Government components | `/admin/government-components` | Read-only: defined in code |
 | Economic components (incl. tax impact) | `/admin/economic-components` | Read-only: defined in code |
 
 ## Economic archetypes
 
-Archetypes are the presets players can start an economy from. The builder's archetype picker reads this catalog, so a new or edited archetype shows up for players, and deactivating one hides it from the picker. Applying an archetype fills in its economic and government components, tax rates, growth and employment figures; nations already built from it keep what they had.
+Archetypes are the kinds of nation players found from. Founding reads the chosen archetype from this catalog, so an edit changes the economic components, tax rates, growth and employment figures new nations start with; nations already founded from it keep what they had. The founding picker itself (each archetype's plain name, pitch and starting government form) is written in code, so a new archetype needs a code change before players can pick it.
 
 The first time the catalog is opened it's filled with the 20 built-in archetypes (10 modern, 10 historical), which you can then edit. Use component keys (such as `FREE_MARKET_SYSTEM`) in the component lists; the form offers them.
 
@@ -39,7 +39,7 @@ The first time the catalog is opened it's filled with the built-in equipment and
 
 ## Government and economic components
 
-The government components (64) and economic components (27) are defined in code, and the Country Builder, the editor and the simulation read them from there. Their admin sections are a read-only reference: browse components with their category, effectiveness, complexity and synergies, see how often nations have adopted them, and (for economic components) view the preset templates. Changing a component means a code change and a release, not an admin edit.
+The government components (66) and economic components (60) are defined in code, and founding, the Country Editor and the simulation read them from there. Their admin sections are a read-only reference: browse components with their category, effectiveness, complexity and synergies, see how often nations have adopted them, and (for economic components) view the preset templates. Changing a component means a code change and a release, not an admin edit.
 
 ## National issue templates
 

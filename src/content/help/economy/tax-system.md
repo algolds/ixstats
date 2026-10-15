@@ -10,7 +10,7 @@ nextLabel: Trade & Commerce
 
 ## Where taxes are set
 
-Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. Rates you entered in the builder carry over; a tax you haven't set yet is marked **Not set** and has no revenue projection until you set it.
+Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → **Fiscal Policy**, under **National Tax Rate Controls**. Founding sets starting rates from the kind of nation you chose; a tax you haven't set yet is marked **Not set** and has no revenue projection until you set it.
 
 ## How to change a tax rate
 
@@ -28,7 +28,7 @@ Your national tax rates are in [MyCountry → Economy](/mycountry/economy) → *
 | Wealth tax | 0–10% | 1.5% |
 | Capital gains tax | 0–40% | 15% |
 
-- **Brackets.** If you set income or corporate tax as brackets in the builder, the tab shows your top rate read-only; change the brackets in the [Country Editor](/help/mycountry/editor).
+- **Brackets.** Some older nations have income or corporate tax stored as brackets. The tab shows the top rate read-only; brackets can't be changed at the moment.
 - **Projections.** Revenue is your GDP × rate × how much of the economy each tax reaches, reduced by your recorded collection efficiency. With no efficiency recorded, projections are shown before collection losses. Without a GDP figure, projections show "—".
 
 ## What tax rates affect

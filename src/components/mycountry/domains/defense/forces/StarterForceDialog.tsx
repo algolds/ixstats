@@ -19,7 +19,7 @@ import type { StarterBudgetSource } from "~/lib/military/force-structure";
 import { formatCount } from "./force-fields";
 
 const SOURCE_TEXT: Record<StarterBudgetSource, string> = {
-  builder: "Budgets come from the Defense spending you set in the builder.",
+  builder: "Budgets come from your Defense department's spending in the national budget.",
   defenseBudget: "Budgets come from your stored defense budget.",
   estimate: "No Defense spending was recorded, so budgets assume 2% of GDP.",
   none: "No GDP or Defense spending is recorded, so budgets start at zero.",

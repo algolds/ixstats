@@ -53,15 +53,14 @@ export const helpSections: HelpSection[] = [
       {
         id: "first-country",
         title: "Create Your First Nation",
-        description: "Build a nation in the Country Builder, import one from a wiki, or claim one.",
+        description: "Found a nation in a few plain choices, import one from a wiki, or claim one.",
         path: "/help/getting-started/first-country",
         tags: ["country", "builder", "claim", "tutorial"],
       },
       {
         id: "country-building",
         title: "The Country Builder in Depth",
-        description:
-          "Every builder step, Standard vs Advanced mode, wiki import, and editing later.",
+        description: "Every founding step, the nation card, wiki import, and what is generated.",
         path: "/help/gameplay/country-building",
         tags: ["builder", "components", "import", "editor"],
       },
@@ -168,7 +167,7 @@ export const helpSections: HelpSection[] = [
       {
         id: "editor",
         title: "The Country Editor",
-        description: "Change your nation's identity, government and economy after launch.",
+        description: "Change your nation's name, identity, government and size, section by section.",
         path: "/help/mycountry/editor",
         tags: ["editor", "builder", "edit", "identity"],
       },

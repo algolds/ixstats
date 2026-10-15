@@ -7,7 +7,7 @@
 **Primary Action:** `NAVIGATE` | **Domain Accent:** Universal Slate / Context-Adaptive  
 **Status:** ✅ Live (Halo v6: standard chrome glass with no glow); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
 
-> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `app/builder`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
+> **Facet UI Architecture:** **Halo** (contextual overlay & command palette) and **Cuelume** (audio-tactile haptic feedback) are documented alongside the **Facet UI Design System**, but Halo is an app shell, not a Facet primitive: the Facet primitives do not import Halo, while Halo imports `trpc/react`, `wiki-os`, stores and auth. Plugin components follow the `<Name>Halo` naming convention (e.g., `WikiHalo`, `MyCountryHalo`, `BuilderHalo`, `SportsLiveHalo`). Code identifiers intentionally retain the `DI*` prefix (`src/components/halo/`, `useDIPlugin`, `types.ts`, `DIPlugin`, `DIAction`, `DIBadge`) to prevent wide merge churn across active branches.
 
 Halo is the central interactive overlay element and command center for IxStates. It operates as both a persistent status capsule and a modal command palette, adapting contextually across all application domains (MyCountry, WikiOS, Vault, Labs, and Builder).
 
@@ -62,13 +62,13 @@ src/components/halo/
     │       ├── WikiView.tsx
     │       ├── WikiNarratorView.tsx
     │       └── WikiProfileView.tsx
-    ├── builder/                  # Nation Builder plugin
-    │   ├── BuilderHalo.tsx       # Step tracker & manual save registration
+    ├── builder/                  # Founding (/builder) and the country editor (/mycountry/editor)
+    │   ├── BuilderHalo.tsx       # Registers one command: Jump to section
+    │   ├── types.ts
     │   ├── index.ts
     │   └── views/
     │       ├── index.ts
-    │       ├── BuilderView.tsx
-    │       └── BuilderProgressView.tsx
+    │       └── JumpToSectionView.tsx # Lists the page's steps or sections; a tap jumps there
     └── sports/                   # Live match activity plugin
         ├── SportsLiveHalo.tsx    # Deterministic IxTime live match scoreboard (mounted globally via GameProviders)
         └── index.ts
@@ -188,7 +188,7 @@ Pages and layouts register their custom plugins on mount. Halo uses `useSyncExte
 graph TD
     subgraph Pages & Layouts
         Wiki[WikiOS Layout] -- Registers --> PluginW[WikiHalo]
-        Builder[Builder Layout] -- Registers --> PluginB[BuilderHalo]
+        Builder[Founding flow & country editor] -- Registers --> PluginB[BuilderHalo]
         Country[MyCountry Layout] -- Registers --> PluginC[MyCountryHalo]
     end
 
@@ -219,7 +219,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
   badge?: DIBadge;                                                   // Colored status dot or pulsing activity badge
   accentColor?: string;                                              // Underline accent border color
   stickyLabel?: string;                                              // Wayfinding label shown when sticky
-  filter?: F;                                                        // Context filter state (e.g. BuilderFilterState)
+  filter?: F;                                                        // Context filter state (e.g. a wiki filter)
   context?: C;                                                       // Domain context (e.g. Live match trace)
 }
 

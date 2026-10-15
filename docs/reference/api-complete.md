@@ -100,12 +100,12 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 
 ## Core Systems
 
-### countries Router (29 procedures)
+### countries Router (34 procedures)
 
 Country reads are split across `list`, `economy`, `identity`, `management`, `wiki`, `atomic` and `flags` modules and spread into one namespace (`flags` is nested: `api.countries.flags.*`).
 
 ```typescript
-// Queries (24)
+// Queries (25)
 api.countries.getSelectList.useQuery({ search?, limit?, realm? })
 api.countries.getAll.useQuery({ limit?, offset?, search?, continent?, economicTier?, realm? })
 api.countries.getMapSummary.useQuery({ countryId })
@@ -115,7 +115,6 @@ api.countries.getTopCountriesByPopulation.useQuery({ limit?, realm? })
 api.countries.getRandomCountries.useQuery({ limit?, realm? })
 api.countries.getByIdWithEconomicData.useQuery({ id, timestamp?, realm? })
 api.countries.getByIdAtTime.useQuery({ id, timestamp? })
-api.countries.getEditorRelations.useQuery({ countryId })
 api.countries.getGlobalStats.useQuery({ realm? })
 api.countries.getTradeData.useQuery({ countryId })
 api.countries.getActivityRingsData.useQuery({ countryId })
@@ -127,14 +126,20 @@ api.countries.getWikiPageImages.useQuery({ countryName })
 api.countries.getWikiRichIntro.useQuery({ countryName })
 api.countries.getBulkWikiRichIntros.useQuery({ countryNames })
 api.countries.getWikiSectionPreviews.useQuery({ countryName })
-api.countries.getEligibleCountries.useQuery({ site })
+api.countries.previewFounding.useQuery({ ...founding draft }) // the nation card's figures; same calculation as createCountry
+api.countries.getEditorState.useQuery({ countryId })
+api.countries.checkNameAvailable.useQuery({ countryId, name })
 api.countries.getByNameWithAtomic.useQuery({ name, realm? })
 api.countries.flags.resolveBatch.useQuery({ countryNames, fallbackPolicy? })
 
-// Mutations (5)
+// Mutations (9)
 api.countries.update.useMutation() // { id, ...fields } (passthrough)
 api.countries.createCountry.useMutation() // { name, foundationCountry, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState?, archetypeId? }
-api.countries.updateCountry.useMutation() // { id, name, economicInputs?, governmentComponents?, taxSystemData?, governmentStructure?, economyBuilderState? }
+api.countries.rename.useMutation() // { countryId, name, expected: { name } }; the old slug redirects
+api.countries.saveIdentity.useMutation() // one editor section's identity fields, with the values it loaded
+api.countries.saveGovernmentForm.useMutation() // government type and institution names
+api.countries.saveGovernmentComponents.useMutation() // { countryId, componentTypes, expected }
+api.countries.saveSize.useMutation() // population and GDP per person, with the loaded baseline
 api.countries.searchWiki.useMutation() // { query, site, categoryFilter? }
 api.countries.parseInfobox.useMutation() // { pageName, site }
 ```
@@ -270,17 +275,15 @@ api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cr
 api.atomicGovernment.getComponents.useQuery({ countryId })
 ```
 
-### economics Router (5 procedures)
+### economics Router (3 procedures)
 
 ```typescript
-// Queries (2)
+// Queries (1)
 api.economics.getEconomyConfiguration.useQuery({ countryId })
-api.economics.getEconomyBuilderState.useQuery({ countryId })
 
-// Mutations (3)
+// Mutations (2)
 api.economics.updateEconomicProfile.useMutation() // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
 api.economics.updateFiscalSystem.useMutation() // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
-api.economics.autoSaveEconomyBuilder.useMutation() // { countryId, changes }
 ```
 
 ### taxSystem Router (5 procedures)
@@ -854,30 +857,14 @@ const mutation = api.countries.update.useMutation({
 
 ---
 
-## Autosave System
+## Autosave Monitoring
 
-Autosave events are recorded in the `AuditLog` table (actions such as `autosave:economy`); the two routers below read them back.
-
-### autosaveHistory Router (2 procedures)
-
-**User Autosave History:**
-```typescript
-// Get autosave history for country
-api.autosaveHistory.getAutosaveHistory.useQuery({
-  countryId: string,
-  limit?: number,
-  offset?: number
-})
-
-// Get autosave statistics
-api.autosaveHistory.getAutosaveStats.useQuery({ countryId: string })
-```
-
----
+Older builder autosaves were recorded in the `AuditLog` table (actions such as `autosave:economy`). Nothing autosaves a
+country any more: founding saves a server draft (`builderDraft`) and the country editor saves each section on its own
+button. The admin dashboard below still reads the recorded history.
 
 ### autosaveMonitoring Router (5 procedures, Admin Only)
 
-**Global Autosave Monitoring:**
 ```typescript
 // Get global autosave statistics
 api.autosaveMonitoring.getAutosaveStats.useQuery({ timeRange? })
@@ -894,35 +881,6 @@ api.autosaveMonitoring.getActiveUsers.useQuery({ timeRange? })
 // Get system health
 api.autosaveMonitoring.getSystemHealth.useQuery()
 ```
-
----
-
-### Autosave Mutations
-
-Only the Economy Builder autosaves; the government and tax builders save explicitly. (The old
-`useBuilderAutoSync.ts` hooks were deleted, and no client calls `api.government.create` / `update` or
-`api.taxSystem.create` / `update` today.)
-
-**Economy Builder:** `useEconomyAutoSync` (`src/app/builder/components/enhanced/economy-builder/useEconomyAutoSync.ts`) →
-```typescript
-api.economics.autoSaveEconomyBuilder.useMutation()
-// Input: { countryId, changes }
-// Logs success/failure to AuditLog as "autosave:economy"
-```
-
-All three build on `useGenericAutoSync` (`src/hooks/useGenericAutoSync.ts`).
-
-**Debounce Configuration:**
-`useGenericAutoSync` and the government/tax hooks default to a 2-second debounce; the economy builder uses 15 seconds.
-
-**Error Handling:**
-- Economy autosave failures are logged to the `AuditLog` table
-- Users see subtle error indicators, not intrusive alerts
-- Admins can monitor failures via `autosaveMonitoring` router
-
-**Security:**
-- All mutations verify user ownership before saving
-- Rate limiting applied to prevent abuse
 
 ---
 
