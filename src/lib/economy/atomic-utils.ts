@@ -22,6 +22,11 @@ import {
 
 // Synergy and Conflict Detection
 
+/** Lower-cases the first letter so a sentence-case component name reads mid-sentence. */
+function lowerFirst(name: string | undefined): string {
+  return name ? name.charAt(0).toLowerCase() + name.slice(1) : "";
+}
+
 /**
  * Check if two economic components have synergy
  * @param component1Id First component type
@@ -92,7 +97,7 @@ export function detectEconomicSynergies(selectedComponents: EconomicComponentTyp
           component1: comp1,
           component2: comp2,
           bonus,
-          description: `${component1?.name ?? ""} synergizes with ${component2?.name ?? ""}`,
+          description: `${component1?.name ?? ""} works well with ${lowerFirst(component2?.name)}`,
         });
       }
     }
@@ -134,7 +139,7 @@ export function detectEconomicConflicts(selectedComponents: EconomicComponentTyp
           component1: comp1,
           component2: comp2,
           penalty: 15,
-          description: `${component1?.name ?? ""} conflicts with ${component2?.name ?? ""}`,
+          description: `${component1?.name ?? ""} works against ${lowerFirst(component2?.name)}`,
         });
       }
     }
