@@ -1,5 +1,6 @@
 "use client";
 
+import { MYCOUNTRY_ECONOMY_PATH } from "~/lib/mycountry/routes";
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import {
@@ -299,6 +300,7 @@ export function LaborTab({
       help="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
       subtitle={`Employment, wages, and human capital for ${country.name}`}
       editorIcon={Briefcase}
+      editor={{ href: MYCOUNTRY_ECONOMY_PATH, label: "Open economy" }}
       metrics={
         <LaborMetrics
           country={country}

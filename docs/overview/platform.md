@@ -146,7 +146,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 ### Database & Data Flow
 
-- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->376<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
+- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->377<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite October 2025)

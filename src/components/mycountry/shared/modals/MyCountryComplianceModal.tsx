@@ -101,7 +101,7 @@ export function MyCountryComplianceModal({
                     Remind me later
                   </Button>
                   <Button onClick={onReview} className="text-body w-full sm:w-fit">
-                    Open MyCountry editor
+                    Review
                   </Button>
                 </>
               ) : (

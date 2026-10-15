@@ -5,6 +5,10 @@
 
 import type { GovernmentComponent, Prisma } from "@prisma/client";
 import { checkComponentSynergy } from "~/lib/government/synergy-table";
+import {
+  governmentEffectiveness,
+  NEW_COMPONENT_EFFECTIVENESS,
+} from "~/lib/government/effectiveness";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 
 type TxClient = Prisma.TransactionClient;
@@ -66,6 +70,7 @@ const NATIONAL_IDENTITY_FIELDS = [
   "nationalDrink",
   "nationalInstrument",
   "nationalSymbol",
+  "nationalAnimal",
   "nationalAnimalImage",
   "nationalBirdImage",
   "nationalFishImage",
@@ -439,13 +444,6 @@ export async function syncGovernmentStructure(
   }
 }
 
-/** Score adjustments per synergy type: additive bonus, multiplicative bonus, conflict penalty. */
-function synergyScoreDelta(type: string, multiplier: number): number {
-  if (type === "CONFLICTING") return -15;
-  if (type === "ADDITIVE") return 10;
-  return type === "MULTIPLICATIVE" ? multiplier * 10 : 0;
-}
-
 /**
  * Brings GovernmentComponents in line with the input and recalculates their synergies. A
  * component already in place keeps its row, so its effectiveness and history survive.
@@ -479,7 +477,7 @@ export async function syncGovernmentComponents(
         data: {
           countryId,
           componentType: componentInput.componentType as any,
-          effectivenessScore: componentInput.effectivenessScore ?? 50,
+          effectivenessScore: componentInput.effectivenessScore ?? NEW_COMPONENT_EFFECTIVENESS,
           implementationDate: new Date(),
           implementationCost: componentInput.implementationCost ?? 0,
           maintenanceCost: componentInput.maintenanceCost ?? 0,
@@ -517,17 +515,9 @@ export async function syncGovernmentComponents(
   );
   await tx.componentSynergy.createMany({ data: synergies });
 
-  const synergyDelta = synergies.reduce(
-    (sum, s) => sum + synergyScoreDelta(s.synergyType, s.effectMultiplier),
-    0
-  );
-  const baseEffectiveness =
-    componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
-    (componentRecords.length || 1);
-
   await tx.governmentStructure.update({
     where: { countryId },
-    data: { governmentEffectiveness: Math.max(0, Math.min(100, baseEffectiveness + synergyDelta)) },
+    data: { governmentEffectiveness: governmentEffectiveness(componentRecords) },
   });
 }
 

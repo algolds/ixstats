@@ -1,3 +1,4 @@
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState, useEffect } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -435,7 +436,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 variant="secondary"
                 onClick={() => {
                   onClose();
-                  navigateWithBasePath(ixstatesHref("/mycountry/editor"), router);
+                  navigateWithBasePath(ixstatesHref(MYCOUNTRY_MAP_EDITOR_PATH), router);
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >

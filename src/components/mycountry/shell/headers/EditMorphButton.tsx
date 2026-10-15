@@ -7,6 +7,7 @@ import { EditPencil, MapPin } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { REDUCED_MOTION_FADE, springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
+import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 
 interface EditMorphButtonProps {
   /** Pill plate classes when the button sits over the flag. */
@@ -15,8 +16,8 @@ interface EditMorphButtonProps {
   withMapEditor: boolean;
 }
 
-const EDITOR_HREF = "/mycountry/editor";
-const MAP_EDITOR_HREF = "/mycountry/map-editor";
+const EDITOR_HREF = editorHref("identity");
+const MAP_EDITOR_HREF = MYCOUNTRY_MAP_EDITOR_PATH;
 
 /**
  * One Edit pill. For premium users it morphs into a Country | Map pair: on hover with a mouse, or

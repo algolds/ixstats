@@ -1,5 +1,6 @@
 "use client";
 
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { memo } from "react";
 import Link from "next/link";
 import {
@@ -58,7 +59,7 @@ const CONDITION_TEXT_THEMES = {
 function MapEditorLink({ label }: { label: string }) {
   return (
     <Button asChild variant="ghost" size="sm" className="h-11 shrink-0 sm:h-8">
-      <Link href="/mycountry/editor">
+      <Link href={MYCOUNTRY_MAP_EDITOR_PATH}>
         {label}
         <ArrowUpRight aria-hidden="true" />
       </Link>

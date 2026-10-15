@@ -1,5 +1,6 @@
 "use client";
 
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -57,7 +58,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => router.push("/mycountry/editor")}
+            onClick={() => router.push(MYCOUNTRY_MAP_EDITOR_PATH)}
             className="text-label-secondary size-11 sm:size-9"
             aria-label="Edit territory"
             title="Edit territory"
