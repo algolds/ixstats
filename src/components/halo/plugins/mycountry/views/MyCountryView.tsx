@@ -1,5 +1,6 @@
 "use client";
 
+import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState } from "react";
 import {
   Crown,
@@ -141,12 +142,12 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  window.location.href = createAbsoluteUrl("/mycountry/editor");
+                  window.location.href = createAbsoluteUrl(MYCOUNTRY_MAP_EDITOR_PATH);
                 }}
                 title="Open MyCountry map editor"
               >
                 <Edit3 aria-hidden className="text-yellow size-3.5" />
-                <span>Editor</span>
+                <span>Map editor</span>
               </Button>
             </>
           )}
@@ -345,7 +346,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => handleNavigate("/mycountry/editor")}
+                onClick={() => handleNavigate(editorHref("identity"))}
                 className={ACTION_BUTTON}
               >
                 <Edit3 aria-hidden className="text-yellow" />

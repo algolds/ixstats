@@ -1,5 +1,6 @@
 "use client";
 
+import { editorHref } from "~/lib/mycountry/routes";
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import {
@@ -167,6 +168,7 @@ export function EconomyTab({
       help="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
       subtitle={`GDP, trade, and sector analysis for ${country.name}`}
       editorIcon={TrendingUp}
+      editor={{ href: editorHref("size"), label: "Edit size and wealth" }}
       metrics={
         <EconomyMetrics
           country={country}

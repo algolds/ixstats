@@ -66,7 +66,7 @@ describe("MyCountry header Map editor action", () => {
     openEditPill();
     expect(screen.getByRole("link", { name: "Country editor" })).toHaveAttribute(
       "href",
-      "/mycountry/editor"
+      "/mycountry/editor#identity"
     );
     expect(screen.getByRole("link", { name: "Map editor" })).toHaveAttribute(
       "href",
@@ -101,7 +101,7 @@ describe("MyCountry header Map editor action", () => {
     expect(screen.queryByRole("button", { name: "Edit country or map" })).toBeNull();
     expect(screen.getByRole("link", { name: "Edit country" })).toHaveAttribute(
       "href",
-      "/mycountry/editor"
+      "/mycountry/editor#identity"
     );
     expect(screen.getByRole("link", { name: "Open public profile" })).toBeInTheDocument();
   });

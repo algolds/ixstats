@@ -1,5 +1,6 @@
 "use client";
 
+import { editorHref } from "~/lib/mycountry/routes";
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import {
@@ -310,6 +311,7 @@ export function GovernmentTab({
       help="View your nation's leadership, official capital and currency metadata, and public budget allocation details. Click values to analyze spending or debt."
       subtitle={`Structure, spending, and fiscal policy for ${country.name}`}
       editorIcon={Building}
+      editor={{ href: editorHref("government"), label: "Open editor" }}
       metrics={
         <GovernmentMetrics
           country={country}

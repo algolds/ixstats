@@ -66,6 +66,8 @@ interface TabShellProps extends Pick<
   help: string;
   subtitle: string;
   editorIcon: React.ComponentType<{ className?: string }>;
+  /** Where the owner edits what this tab shows: an editor section or a console. */
+  editor: { href: string; label: string };
   metrics: React.ReactNode;
   children: React.ReactNode;
 }
@@ -80,6 +82,7 @@ export function TabShell({
   help,
   subtitle,
   editorIcon: EditorIcon,
+  editor,
   metrics,
   children,
 }: TabShellProps) {
@@ -110,12 +113,12 @@ export function TabShell({
             <p className="text-label-secondary text-footnote">{subtitle}</p>
           </div>
           {!isPublicReadOnly && (
-            <Link href={"/mycountry/editor"}>
-              <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
-                <EditorIcon className="h-3.5 w-3.5" />
-                <span>Open editor</span>
-              </Button>
-            </Link>
+            <Button asChild size="sm" variant="outline" className="text-footnote h-8 gap-2">
+              <Link href={editor.href}>
+                <EditorIcon aria-hidden className="h-3.5 w-3.5" />
+                <span>{editor.label}</span>
+              </Link>
+            </Button>
           )}
         </div>
 

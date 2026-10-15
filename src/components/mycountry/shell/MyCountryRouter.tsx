@@ -17,6 +17,7 @@ import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
+import { complianceReviewHref } from "~/lib/mycountry/routes";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { CommandSurface } from "./CommandSurface";
 
@@ -96,7 +97,7 @@ function MyCountryRouterInner() {
       window.localStorage.removeItem(complianceStorageKey);
     }
     setShowComplianceModal(false);
-    router.push("/mycountry/editor");
+    router.push(complianceReviewHref(complianceSections.find((section) => !section.isComplete)));
   };
 
   // Navigate to a section (instant client-side switch)

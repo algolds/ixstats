@@ -20,7 +20,9 @@ import {
   Map,
   Trophy,
   Calendar,
+  EditPencil,
 } from "iconoir-react";
+import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
@@ -75,7 +77,8 @@ const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
   [Building2, "MyCountry dashboard", "/mycountry"],
   [ScrollText, "Executive actions", "/mycountry/executive"],
   [Handshake, "Manage diplomacy", "/mycountry/diplomacy"],
-  [Map, "Map & territory editor", "/mycountry/editor"],
+  [EditPencil, "Country editor", editorHref("identity")],
+  [Map, "Map and territory editor", MYCOUNTRY_MAP_EDITOR_PATH],
   [Scale, "Politics & elections", "/mycountry/politics"],
 ];
 
