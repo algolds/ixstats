@@ -1,5 +1,5 @@
 {
-  "src/app/admin/_components/CountryInspector.tsx": 1706,
+  "src/app/admin/_components/CountryInspector.tsx": 1465,
   "src/app/admin/myleague/SportsOversightPanel.tsx": 1357,
   "src/server/api/routers/wikios/templates.ts": 1289,
   "src/lib/discord/ixtwitter-sync.ts": 1156,
@@ -25,16 +25,16 @@
   "src/app/labs/onoma/components/sections/LoanwordsSection.tsx": 810,
   "src/hooks/useWikiNarrator.ts": 806,
   "src/lib/nationstates/api-client.ts": 802,
-  "src/hooks/useProvinceImporter.ts": 783,
-  "src/lib/maps/geo-analytics.ts": 774,
   "src/hooks/useBorderEditor.ts": 760,
   "src/lib/maps/province-importer/alignment.ts": 760,
   "src/lib/government/tax/atomic-tax-components.ts": 742,
-  "src/components/wiki-os/reader/ArticleRenderer.tsx": 740,
   "src/server/api/routers/lore-cards/wiki.ts": 739,
+  "src/hooks/useProvinceImporter.ts": 738,
   "src/components/mycountry/shared/modals/metric-details/PopulationDetailsModal.tsx": 737,
   "src/lib/maps/province-importer/parse-provinces.ts": 726,
   "src/app/admin/_components/IxTimeVisualizer.tsx": 718,
   "src/app/admin/vault/VaultStoreControl.tsx": 718,
+  "src/components/wiki-os/reader/ArticleRenderer.tsx": 714,
+  "src/lib/maps/geo-analytics.ts": 710,
   "src/lib/achievements/service.ts": 704
 }

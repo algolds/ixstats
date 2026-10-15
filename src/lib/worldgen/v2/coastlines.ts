@@ -19,7 +19,7 @@
 
 import type { WorldGraph, WorldGenParams, GeographicFeature } from "./types";
 import { cellLat, cellVectors, cellAreaKm2 } from "./mesh";
-import { buildNoiseConfig, fractalNoise } from "./helpers/noise";
+import { NoiseField } from "./helpers/noise";
 import { computeCoastalDistance } from "./helpers/flood-fill";
 import { getElevationZone } from "./config";
 
@@ -58,8 +58,8 @@ function carveCoastline(graph: WorldGraph, params: WorldGenParams): void {
   const complexity = params.coastlineComplexity ?? 0.6;
   const sphere = cellVectors(graph);
 
-  const noiseFjord = buildNoiseConfig(params.seed + 31, 3, 11, 2.0, 0.5);
-  const noiseCoast = buildNoiseConfig(params.seed + 32, 3, 7, 2.0, 0.5);
+  const noiseFjord = new NoiseField(sphere, params.seed + 31, 3, 11, 2.0, 0.5);
+  const noiseCoast = new NoiseField(sphere, params.seed + 32, 3, 7, 2.0, 0.5);
 
   // Step 1: Fjords at high latitudes (|lat| > 50°) near mountain ridges
   for (let i = 0; i < n; i++) {
@@ -70,7 +70,7 @@ function carveCoastline(graph: WorldGraph, params: WorldGenParams): void {
 
     // Check if cell is coastal (coastDist <= 2) and near mountain ridge
     if (cells.coastDist[i]! <= 2 && cells.isMountainRidge[i]) {
-      const val = fractalNoise(sphere, i, noiseFjord);
+      const val = noiseFjord.at(i);
 
       // Carve fjord inlet by dropping elevation below sea level
       if (val > 0.45 * (1 - complexity * 0.3)) {
@@ -85,7 +85,7 @@ function carveCoastline(graph: WorldGraph, params: WorldGenParams): void {
   // Step 2: Peninsulas & Bays — coastal noise perturbation
   for (let i = 0; i < n; i++) {
     const dist = cells.coastDist[i]!;
-    const val = fractalNoise(sphere, i, noiseCoast);
+    const val = noiseCoast.at(i);
 
     if (cells.isLand[i] && dist === 0) {
       // Coastal land cell: potential bay carving

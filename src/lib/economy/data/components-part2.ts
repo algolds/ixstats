@@ -12,7 +12,6 @@
  * - Education-First Labor
  * - Free Trade Policy
  * - Protectionist Trade
- * - Export-Oriented Trade
  *
  * @module atomic-economic-data/components-part2
  */
@@ -28,7 +27,6 @@ import {
   GraduationCap,
   Globe,
   Lock,
-  ArrowSeparateVertical as ArrowUpDown,
 } from "iconoir-react";
 import {
   EconomicComponentType,
@@ -648,69 +646,6 @@ export const ATOMIC_ECONOMIC_COMPONENTS_PART_2: Partial<
       timeToImplement: "2-3 years",
       staffRequired: 160,
       technologyRequired: true,
-    },
-  },
-
-  [EconomicComponentType.EXPORT_ORIENTED]: {
-    id: "export_oriented",
-    type: EconomicComponentType.EXPORT_ORIENTED,
-    name: formatComponentName(EconomicComponentType.EXPORT_ORIENTED),
-    description: "Focus on producing goods and services for international markets",
-    effectiveness: 80,
-    synergies: [
-      EconomicComponentType.FREE_TRADE,
-      EconomicComponentType.MANUFACTURING_LED,
-      EconomicComponentType.TECHNOLOGY_FOCUSED,
-      EconomicComponentType.STATE_CAPITALISM,
-      EconomicComponentType.RESOURCE_BASED_ECONOMY,
-      EconomicComponentType.AGRICULTURE_LED,
-      EconomicComponentType.EXPORT_SUBSIDY,
-      EconomicComponentType.TRADE_BLOC,
-      EconomicComponentType.TRADE_FACILITATION,
-      EconomicComponentType.EXTRACTION_FOCUSED,
-    ],
-    conflicts: [
-      EconomicComponentType.DOMESTIC_FOCUSED,
-      EconomicComponentType.PROTECTIONIST,
-      EconomicComponentType.TOURISM_BASED,
-      EconomicComponentType.IMPORT_SUBSTITUTION,
-    ],
-    governmentSynergies: ["EXPORT_PROMOTION", "TRADE_AGREEMENTS", "INTERNATIONAL_MARKETING"],
-    governmentConflicts: ["PROTECTIONIST_POLICY", "DOMESTIC_FOCUS"],
-    taxImpact: {
-      optimalCorporateRate: 20,
-      optimalIncomeRate: 28,
-      revenueEfficiency: 0.8,
-    },
-    sectorImpact: {
-      manufacturing: 1.6,
-      agriculture: 1.4,
-      services: 1.2,
-      technology: 1.3,
-      finance: 1.1,
-    },
-    employmentImpact: {
-      unemploymentModifier: -1.0,
-      participationModifier: 1.2,
-      wageGrowthModifier: 1.2,
-    },
-    demographicImpact: {
-      populationGrowthModifier: 1.0,
-      lifeExpectancyModifier: 1.0,
-      literacyModifier: 1.0,
-      urbanizationModifier: 1.0,
-    },
-    implementationCost: 110000,
-    maintenanceCost: 60000,
-    requiredCapacity: 80,
-    category: EconomicCategory.TRADE_POLICY,
-    icon: ArrowUpDown,
-    color: "green",
-    metadata: {
-      complexity: "Low",
-      timeToImplement: "1-2 years",
-      staffRequired: 120,
-      technologyRequired: false,
     },
   },
 };
