@@ -339,6 +339,7 @@ export function hydrateGovernmentStructure(
     departments: government.departments.map(
       (dept) =>
         ({
+          id: dept.id,
           name: dept.name,
           shortName: dept.shortName ?? undefined,
           category: dept.category as DepartmentCategory,

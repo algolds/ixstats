@@ -23,6 +23,7 @@ import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { useBuilderGuide } from "../../builder-guide-context";
 import { computeGovernmentWarnings } from "../government-preview/governmentWarnings";
+import { removeDepartmentAt } from "~/app/builder/lib/remove-department";
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContextOptional } from "../context/BuilderStateContext";
 import type { GovernmentBuilderState, GovernmentType } from "~/types/government";
@@ -401,12 +402,7 @@ export function GovernmentStep({
                     });
                   }}
                   onRemoveDepartment={(idx) => {
-                    onGovernmentStructureChange({
-                      ...governmentStructure,
-                      departments: (governmentStructure.departments || []).filter(
-                        (_dept: unknown, i: number) => i !== idx
-                      ),
-                    });
+                    onGovernmentStructureChange(removeDepartmentAt(governmentStructure, idx));
                   }}
                   isReadOnly={false}
                   governmentComponents={governmentComponents}

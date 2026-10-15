@@ -417,6 +417,8 @@ export interface GovernmentStructureInput {
 }
 
 export interface DepartmentInput {
+  /** The saved department's id, so a save updates it in place; absent for a new department. */
+  id?: string;
   name: string;
   shortName?: string;
   category: DepartmentCategory;
