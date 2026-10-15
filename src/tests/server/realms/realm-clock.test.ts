@@ -118,6 +118,16 @@ describe("realm clock actions", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
+  it("keeps an unpublished realm's clock private", async () => {
+    const { db, row } = makeDb();
+    await caller(FOUNDER, db).startClock(START);
+    row.status = "draft";
+    const anyone = realmsRouter.createCaller(
+      createMockRouterContext({ db, auth: null, user: null }) as never
+    ).region;
+    expect((await anyone.contextClock({ realm: "eurth" })).clock).toBeNull();
+  });
+
   it("answers the context clock: the realm's, a country's realm, null for Ixnay", async () => {
     const { db } = makeDb();
     await caller(FOUNDER, db).startClock(START);

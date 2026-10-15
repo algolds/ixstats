@@ -47,6 +47,31 @@ describe("RealmTimeSection", () => {
     );
   });
 
+  it("promises only what phase 1 does: the realm's date and speed, nations later", () => {
+    render(<RealmTimeSection slug="eurth" time={{ ...base, clock: null }} />);
+    expect(
+      screen.queryByText(/age and grow|stop while it is paused|Its nations run on it/)
+    ).toBeNull();
+    expect(
+      screen.getByText(/will follow it once the simulation moves onto realm clocks/)
+    ).toBeTruthy();
+  });
+
+  it("previews a speed change before it is saved", () => {
+    const clock = createRealmClock({
+      globalNowMs: Date.UTC(2041, 0, 1),
+      realNowMs: Date.now(),
+      startDate: "1203-03-14",
+      era: "AE",
+      multiplier: 3,
+    });
+    render(<RealmTimeSection slug="eurth" time={{ ...base, clock, skipsCooldown: true }} />);
+    fireEvent.change(screen.getByLabelText("Speed"), { target: { value: "6" } });
+    expect(screen.getByText("Runs at ×6 once saved.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Speed"), { target: { value: "0" } });
+    expect(screen.getByText("Pauses once saved.")).toBeTruthy();
+  });
+
   it("shows Ixnay as global IxTime, with no controls", () => {
     render(<RealmTimeSection slug="ixnay" time={{ ...base, clock: null, isIxnay: true }} />);
     expect(screen.getByText(/global IxTime/)).toBeTruthy();

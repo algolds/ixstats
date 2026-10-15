@@ -66,7 +66,8 @@ function SpeedField({
         className="w-32"
       />
       <p className="text-label-secondary text-footnote">
-        In-game days per real day, 0 to {MAX_REALM_SPEED}. 0 pauses the realm. Ixnay runs at ×2.
+        In-game days per real day, 0 to {MAX_REALM_SPEED}. 0 pauses the realm&apos;s date. Ixnay
+        runs at ×2.
       </p>
     </div>
   );
@@ -121,9 +122,9 @@ function StartClock({ slug, legacy }: { slug: string; legacy: InWorldDate | null
   return (
     <div className="flex flex-col gap-4">
       <p className="text-label-secondary text-footnote">
-        The realm runs on global IxTime until you start its own clock. Its nations then age and grow
-        at its speed, and stop while it is paused. The start date can&apos;t change later; the speed
-        and era can.
+        The realm runs on global IxTime until you start its own clock. Its date and speed then show
+        in the realm header, and its nations will follow it once the simulation moves onto realm
+        clocks. The start date can&apos;t change later; the speed and era can.
       </p>
       <div className="flex flex-col gap-2">
         <Label htmlFor="realm-start-date">Start date</Label>
@@ -195,6 +196,13 @@ function RunningClock({
           The speed can change again on {day(next)}.
         </p>
       )}
+      {speedChanged && (
+        <p className="text-label text-footnote">
+          {multiplier === 0
+            ? "Pauses once saved."
+            : `Runs at ${formatRealmSpeed(multiplier)} once saved.`}
+        </p>
+      )}
       <div>
         <Button
           disabled={(!speedChanged && !eraChanged) || multiplier === null || update.isPending}
@@ -219,7 +227,7 @@ export function RealmTimeSection({ slug, time }: { slug: string; time: RealmTime
     <ManageSection
       id="time"
       title="Time"
-      description="The realm's own date and speed. Its nations run on it; other realms keep their own."
+      description="The realm's own date and speed, shown in its header. Other realms keep their own."
     >
       {time.isIxnay ? (
         <p className="text-label-secondary text-footnote">

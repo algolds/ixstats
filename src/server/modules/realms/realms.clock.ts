@@ -12,7 +12,7 @@ import {
   type RealmClock,
 } from "~/lib/realms/realm-clock";
 import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
-import { isSiteAdmin, type RealmActor } from "./realms.access";
+import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { realmClock, withRealmClock } from "./realms.settings";
 
@@ -97,6 +97,12 @@ export async function realmContextClock(
     : null;
   const where = input.realm ? realmSlugWhere(input.realm) : realmId ? { id: realmId } : null;
   if (!where) return null;
-  const realm = await db.realm.findUnique({ where, select: { id: true, settings: true } });
-  return realm && realm.id !== DEFAULT_REALM_ID ? realmClock(realm.settings) : null;
+  const realm = await db.realm.findUnique({
+    where,
+    select: { id: true, status: true, settings: true },
+  });
+  // An unpublished realm stays private (its slug, era and speed), as everywhere else outside its staff.
+  if (!realm || realm.id === DEFAULT_REALM_ID || !isRealmPublished(realm.id, realm.status))
+    return null;
+  return realmClock(realm.settings);
 }

@@ -1,5 +1,3 @@
-import { IXNAY_SLUG } from "~/lib/realms/realm-ids";
-
 /**
  * Which clock a page goes by (realm clocks spec §4): inside a realm, that realm's (by slug, a country's realm, or the
  * viewer's active nation's realm); outside realms, real time. From the path alone, so the server render and the
@@ -17,6 +15,7 @@ export function clockContextForPath(pathname: string, realmParam: string | null)
     return third === "mine" ? ACTIVE : { kind: "realm", realm: third };
   if (first === "countries") return second ? { kind: "realm", country: second } : ACTIVE;
   if (first === "mycountry" || first === "builder") return ACTIVE;
-  if (first === "maps") return { kind: "realm", realm: realmParam ?? IXNAY_SLUG };
+  // Without ?realm= the map shows the viewer's active realm (global IxTime for viewers without a nation).
+  if (first === "maps") return realmParam ? { kind: "realm", realm: realmParam } : ACTIVE;
   return { kind: "real" };
 }

@@ -13,7 +13,8 @@ describe("clockContextForPath", () => {
     ["/mycountry/executive", null, { kind: "realm", active: true }],
     ["/builder", null, { kind: "realm", active: true }],
     ["/maps", "eurth", { kind: "realm", realm: "eurth" }],
-    ["/maps", null, { kind: "realm", realm: "ixnay" }],
+    // The map shows the viewer's active realm when the link names none.
+    ["/maps", null, { kind: "realm", active: true }],
     ["/vault", null, { kind: "real" }],
     ["/thinkpages", null, { kind: "real" }],
     ["/wiki/Aurelia", null, { kind: "real" }],
