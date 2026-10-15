@@ -29,7 +29,7 @@ Routers live under `src/server/api/routers` and expose the typed API surface for
 | Social & Collaboration | `thinkpages/`, `messages/`, `polls/`, `activities/`, `notifications/`, `forum/`, `sports/` |
 | Cards & Vault | `cards/`, `card-packs/`, `card-market/`, `cardImages`, `lore-cards/`, `ns-import/`, `vault/`, `crafting/`, `trading/` |
 | Wiki & Content | `wikios/`, `wikiCache`, `lorewards/`, `commons`, `heraldry/`, `blurbs/`, `onoma/` |
-| Admin & Operations | `admin/`, `users/`, `user-logging`, `system`, `system-validation`, `cache`, `demo-mode`, `scheduledChanges`, `quickactions/`, `customTypes`, `builderDraft`, `autosaveHistory`, `autosaveMonitoring`, `ixnayid/` |
+| Admin & Operations | `admin/`, `users/`, `user-logging`, `system`, `system-validation`, `cache`, `demo-mode`, `scheduledChanges`, `quickactions/`, `builderDraft`, `autosaveMonitoring`, `ixnayid/` |
 
 ## Recent Changes
 - **`realms`** router added with Realms Phase 1 (merged 2026-09-29) — realm admin, realm lookup, and nation claims; logic in `src/server/modules/realms/`.
