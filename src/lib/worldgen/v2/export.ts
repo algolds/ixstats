@@ -32,7 +32,7 @@ import type {
 import { ELEVATION_ZONES, ICE_CAP_BIOME, TREWARTHA_BIOMES } from "./config";
 import { coastCorners, mergeCells, type MergedPolygon } from "./helpers/polygon-merge";
 import { catmullRomSmoothLine } from "./helpers/chaikin";
-import { smoothRing } from "./helpers/ring-smooth";
+import { SmoothingCache, smoothRing } from "./helpers/ring-smooth";
 import { cellLng, cellLat } from "./mesh";
 
 /** Spline refinement passes of every polygon ring: 4 vertices per cell edge */
@@ -48,17 +48,25 @@ export function exportToGeoJSON(
   const corners = coastCorners(graph, (i) =>
     cells.isLand[i] ? 1 + (cells.state[i]! * 16 + cells.biome[i]!) * 16 + cells.elevZone[i]! : 0
   );
+  // A border is smoothed once for both rings that share it, a coast once for every layer
+  const shared: SharedSmoothing = { corners, cache: new SmoothingCache() };
   return {
-    background: exportBackground(graph, corners),
-    altitudes: exportAltitudes(graph, corners),
-    climate: exportClimate(graph, corners),
-    ...((options.political ?? true) ? { political: exportPolitical(graph, corners) } : {}),
+    background: exportBackground(graph, shared),
+    altitudes: exportAltitudes(graph, shared),
+    climate: exportClimate(graph, shared),
+    ...((options.political ?? true) ? { political: exportPolitical(graph, shared) } : {}),
     rivers: exportRivers(graph),
-    lakes: exportLakes(graph, corners),
+    lakes: exportLakes(graph, shared),
     icecaps: params.hasIcecaps
-      ? exportIcecaps(graph, corners)
+      ? exportIcecaps(graph, shared)
       : { type: "FeatureCollection", features: [] },
   };
+}
+
+/** What every layer's rings share: the coast corners and the chains smoothed so far. */
+interface SharedSmoothing {
+  corners: Uint8Array;
+  cache: SmoothingCache;
 }
 
 /** Cell ids by key, in cell order (key 0 means none). One pass instead of one per feature. */
@@ -76,7 +84,7 @@ function bucketCells(n: number, keyOf: (cell: number) => number): Map<number, nu
 
 // Layer Exporters
 
-function exportBackground(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportBackground(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, features } = graph;
   const geoFeatures: Feature[] = [];
 
@@ -89,7 +97,7 @@ function exportBackground(graph: WorldGraph, corners: Uint8Array): FeatureCollec
     const contCells = cellsOf.get(cont.id);
     if (!contCells) continue;
 
-    const smoothedGeom = smoothGeometry(mergeCells(graph, contCells, landmassOf, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, contCells, landmassOf);
     if (!smoothedGeom) continue;
 
     geoFeatures.push({
@@ -108,7 +116,7 @@ function exportBackground(graph: WorldGraph, corners: Uint8Array): FeatureCollec
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportAltitudes(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportAltitudes(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
 
@@ -126,7 +134,7 @@ function exportAltitudes(graph: WorldGraph, corners: Uint8Array): FeatureCollect
 
     if (zoneLandCells.length === 0) continue;
 
-    const smoothedGeom = smoothGeometry(mergeCells(graph, zoneLandCells, undefined, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, zoneLandCells);
     if (!smoothedGeom) continue;
 
     geoFeatures.push({
@@ -147,7 +155,7 @@ function exportAltitudes(graph: WorldGraph, corners: Uint8Array): FeatureCollect
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportClimate(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportClimate(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
   /** Water is its own region, apart from every biome */
@@ -163,7 +171,7 @@ function exportClimate(graph: WorldGraph, corners: Uint8Array): FeatureCollectio
 
     if (biomeCells.length === 0) continue;
 
-    const smoothedGeom = smoothGeometry(mergeCells(graph, biomeCells, biomeOf, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, biomeCells, biomeOf);
     if (!smoothedGeom) continue;
 
     geoFeatures.push({
@@ -183,7 +191,7 @@ function exportClimate(graph: WorldGraph, corners: Uint8Array): FeatureCollectio
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportPolitical(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportPolitical(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, states } = graph;
   const geoFeatures: Feature[] = [];
   const stateOf = (i: number) => cells.state[i]!;
@@ -202,7 +210,7 @@ function exportPolitical(graph: WorldGraph, corners: Uint8Array): FeatureCollect
     const centroidLng = sumLng / stateCells.length;
     const centroidLat = sumLat / stateCells.length;
 
-    const smoothedGeom = smoothGeometry(mergeCells(graph, stateCells, stateOf, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, stateCells, stateOf);
     if (!smoothedGeom) continue;
 
     geoFeatures.push({
@@ -273,7 +281,7 @@ function exportRivers(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportLakes(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportLakes(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells, features } = graph;
   const geoFeatures: Feature[] = [];
 
@@ -284,7 +292,7 @@ function exportLakes(graph: WorldGraph, corners: Uint8Array): FeatureCollection 
     const lakeCells = cellsOf.get(lake.id);
     if (!lakeCells) continue;
 
-    const smoothedGeom = smoothGeometry(mergeCells(graph, lakeCells, undefined, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, lakeCells);
     if (!smoothedGeom) continue;
 
     geoFeatures.push({
@@ -305,7 +313,7 @@ function exportLakes(graph: WorldGraph, corners: Uint8Array): FeatureCollection 
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-function exportIcecaps(graph: WorldGraph, corners: Uint8Array): FeatureCollection {
+function exportIcecaps(graph: WorldGraph, shared: SharedSmoothing): FeatureCollection {
   const { cells } = graph;
   const geoFeatures: Feature[] = [];
 
@@ -315,7 +323,7 @@ function exportIcecaps(graph: WorldGraph, corners: Uint8Array): FeatureCollectio
   }
 
   if (iceCells.length > 0) {
-    const smoothedGeom = smoothGeometry(mergeCells(graph, iceCells, undefined, corners));
+    const smoothedGeom = mergeAndSmooth(graph, shared, iceCells);
     if (smoothedGeom) {
       geoFeatures.push({
         type: "Feature",
@@ -333,16 +341,29 @@ function exportIcecaps(graph: WorldGraph, corners: Uint8Array): FeatureCollectio
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
+/** The cells merged into polygons (see mergeCells) and smoothed. */
+function mergeAndSmooth(
+  graph: WorldGraph,
+  shared: SharedSmoothing,
+  cellIds: number[],
+  labelOf?: (cell: number) => number
+): Polygon | MultiPolygon | null {
+  return smoothGeometry(shared.cache, mergeCells(graph, cellIds, labelOf, shared.corners));
+}
+
 /**
  * The polygons smoothed ring by ring, as a Polygon or MultiPolygon (null when nothing is left). A ring that
  * smoothing collapsed to less than a triangle is dropped: a shell takes its polygon with it, a hole just goes.
  */
-function smoothGeometry(polygons: MergedPolygon[]): Polygon | MultiPolygon | null {
+function smoothGeometry(
+  cache: SmoothingCache,
+  polygons: MergedPolygon[]
+): Polygon | MultiPolygon | null {
   const coordinates: Position[][][] = [];
   for (const [shell, ...holes] of polygons) {
-    const outer = smoothRing(shell!, SMOOTHING_PASSES);
+    const outer = smoothRing(shell!, SMOOTHING_PASSES, cache);
     if (outer.length < 4) continue;
-    const inner = holes.map((hole) => smoothRing(hole, SMOOTHING_PASSES));
+    const inner = holes.map((hole) => smoothRing(hole, SMOOTHING_PASSES, cache));
     coordinates.push([outer, ...inner.filter((ring) => ring.length >= 4)]);
   }
   if (coordinates.length === 0) return null;

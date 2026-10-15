@@ -23,6 +23,11 @@ export interface MergedRing {
    * chain by chain keeps shared borders identical.
    */
   corners: number[];
+  /**
+   * Mesh vertex id of each vertex but the closing one, when the ring came from `mergeCells`. Equal ids are
+   * equal points, so a chain's ids name its points exactly (see SmoothingCache).
+   */
+  vertices?: number[];
 }
 
 /** A shell followed by the holes inside it. */
@@ -224,6 +229,33 @@ function reserveEdges(index: VertexIndex, edges: number): void {
   index.slot = new Int32Array(capacity);
 }
 
+/** Each cell's neighbours in mesh order, without the antimeridian links: cell c's are links[offsets[c] .. offsets[c + 1]). */
+interface Adjacency {
+  offsets: Int32Array;
+  links: Int32Array;
+}
+
+/** Keyed by the mesh's `neighbors` array, which graphs built from a cached mesh share. */
+const adjacencies = new WeakMap<object, Adjacency>();
+
+function adjacency(graph: WorldGraph): Adjacency {
+  const { neighbors, p, n } = graph.cells;
+  let adjacent = adjacencies.get(neighbors);
+  if (adjacent && adjacent.offsets.length === n + 1) return adjacent;
+  const offsets = new Int32Array(n + 1);
+  const links: number[] = [];
+  for (let c = 0; c < n; c++) {
+    for (const nb of neighbors[c]!) {
+      // Antimeridian links share no Voronoi edge: each side becomes its own polygon
+      if (Math.abs(p[nb * 2]! - p[c * 2]!) <= 180) links.push(nb);
+    }
+    offsets[c + 1] = links.length;
+  }
+  adjacent = { offsets, links: Int32Array.from(links) };
+  adjacencies.set(neighbors, adjacent);
+  return adjacent;
+}
+
 /**
  * Find spatially contiguous groups within a set of cell IDs.
  * Returns an array of connected components.
@@ -237,6 +269,7 @@ function findContiguousGroups(
 
   // A cell is in the set when marked `inSet`, visited when marked `visited`
   const { mark } = index;
+  const { offsets, links } = adjacency(graph);
   const inSet = (index.markStamp += 2);
   const visited = inSet + 1;
   for (const cell of cellIds) mark[cell] = inSet;
@@ -253,10 +286,9 @@ function findContiguousGroups(
       const c = queue.pop()!;
       group.push(c);
 
-      for (const nb of graph.cells.neighbors[c]!) {
-        // Antimeridian links share no Voronoi edge: each side becomes its own polygon
-        const wraps = Math.abs(graph.cells.p[nb * 2]! - graph.cells.p[c * 2]!) > 180;
-        if (!wraps && mark[nb] === inSet) {
+      for (let k = offsets[c]!; k < offsets[c + 1]!; k++) {
+        const nb = links[k]!;
+        if (mark[nb] === inSet) {
           mark[nb] = visited;
           queue.push(nb);
         }
@@ -469,7 +501,7 @@ function chainBoundary(
       coordinates.push([xs[current]!, ys[current]!]);
 
       if (current === startVertex && coordinates.length > 2) {
-        rings.push({ coordinates, corners: cornersOf(labels, vertices, flagged) });
+        rings.push({ coordinates, corners: cornersOf(labels, vertices, flagged), vertices });
         break;
       }
 
