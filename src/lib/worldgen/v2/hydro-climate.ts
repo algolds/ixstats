@@ -54,12 +54,14 @@ export function computeHydroClimate(graph: WorldGraph, params: WorldGenParams): 
     cells.elevZone[i] = isLand ? getElevationZone(cells.h[i]!) : 0;
   }
 
-  accumulateFlux(graph);
+  // The filled heights and the land are final from here on
+  const land = landByHeightDesc(graph);
+  accumulateFlux(graph, land);
   graph.rivers = [];
   graph.watersheds = [];
   cells.river.fill(0);
   cells.watershed.fill(0);
-  if (params.hasRivers) generateRiverNetworks(graph, params);
+  if (params.hasRivers) generateRiverNetworks(graph, params, land);
   cells.lake.fill(0);
   if (params.hasLakes) generateLakes(graph, params, depressionDepths);
 
@@ -116,6 +118,66 @@ function computeWindPatterns(graph: WorldGraph): void {
 
 // Pass 2: Upwind trace
 
+/** A cell's step against one wind direction: the neighbour most nearly upwind and how far it is (degrees). */
+interface UpwindSteps {
+  /** Next cell upwind; -1 when no neighbour lies upwind, -2 when not worked out yet */
+  next: Int32Array;
+  length: Float64Array;
+}
+
+/**
+ * Upwind steps by wind direction (the angle as `windDir` stores it), per mesh: the step depends on the geometry
+ * and the direction alone, so graphs on one cached mesh share them, filled in as the traces reach cells.
+ */
+const upwindSteps = new WeakMap<Float64Array, Map<number, UpwindSteps>>();
+
+function stepsAgainst(graph: WorldGraph, windDir: number): UpwindSteps {
+  const { p, n } = graph.cells;
+  let byDir = upwindSteps.get(p);
+  if (!byDir) {
+    byDir = new Map();
+    upwindSteps.set(p, byDir);
+  }
+  let steps = byDir.get(windDir);
+  if (!steps) {
+    steps = { next: new Int32Array(n).fill(-2), length: new Float64Array(n) };
+    byDir.set(windDir, steps);
+  }
+  return steps;
+}
+
+/** The neighbour of `cur` most nearly along (ux, uy), recorded in `steps`. */
+function stepUpwind(
+  graph: WorldGraph,
+  cur: number,
+  ux: number,
+  uy: number,
+  steps: UpwindSteps
+): void {
+  let best = -1;
+  let bestDot = 0;
+  let bestLen = 0;
+  const curLng = cellLng(graph, cur);
+  const curLat = cellLat(graph, cur);
+  const cosCur = Math.cos((curLat * Math.PI) / 180);
+  for (const nb of graph.cells.neighbors[cur]!) {
+    const dx = lngDelta(curLng, cellLng(graph, nb)) * cosCur;
+    const dy = cellLat(graph, nb) - curLat;
+    // Only a neighbour with a positive component along the upwind direction can beat bestDot
+    const along = dx * ux + dy * uy;
+    if (!(along > 0)) continue;
+    const len = Math.hypot(dx, dy);
+    const dot = len > 0 ? along / len : 0;
+    if (dot > bestDot) {
+      bestDot = dot;
+      best = nb;
+      bestLen = len;
+    }
+  }
+  steps.next[cur] = best;
+  steps.length[cur] = bestLen;
+}
+
 /** Walk each land cell against the wind until the ocean, recording land distance and barriers. */
 function traceUpwind(graph: WorldGraph): UpwindTrace {
   const { cells } = graph;
@@ -123,41 +185,30 @@ function traceUpwind(graph: WorldGraph): UpwindTrace {
   const landKm = new Float32Array(n);
   const barrier = new Float32Array(n);
   const upwindH = new Float32Array(n);
-  const cosLat = new Float64Array(n);
-  for (let i = 0; i < n; i++) cosLat[i] = Math.cos((cellLat(graph, i) * Math.PI) / 180);
 
+  let steps: UpwindSteps | null = null;
+  let stepsDir = NaN;
   for (let i = 0; i < n; i++) {
     if (!cells.isLand[i]) continue;
-    const ux = -Math.cos(cells.windDir[i]!);
-    const uy = -Math.sin(cells.windDir[i]!);
+    // The whole walk follows this cell's wind (a few directions over the globe)
+    const windDir = cells.windDir[i]!;
+    if (windDir !== stepsDir) {
+      steps = stepsAgainst(graph, windDir);
+      stepsDir = windDir;
+    }
+    const { next, length } = steps!;
+    const ux = -Math.cos(windDir);
+    const uy = -Math.sin(windDir);
     let cur = i;
     let km = 0;
     let top = 0;
     for (let step = 0; step < UPWIND_STEPS; step++) {
-      let best = -1;
-      let bestDot = 0;
-      let bestLen = 0;
-      const curLng = cellLng(graph, cur);
-      const curLat = cellLat(graph, cur);
-      const cosCur = cosLat[cur]!;
-      for (const nb of cells.neighbors[cur]!) {
-        const dx = lngDelta(curLng, cellLng(graph, nb)) * cosCur;
-        const dy = cellLat(graph, nb) - curLat;
-        // Only a neighbour with a positive component along the upwind direction can beat bestDot
-        const along = dx * ux + dy * uy;
-        if (!(along > 0)) continue;
-        const len = Math.hypot(dx, dy);
-        const dot = len > 0 ? along / len : 0;
-        if (dot > bestDot) {
-          bestDot = dot;
-          best = nb;
-          bestLen = len;
-        }
-      }
+      if (next[cur] === -2) stepUpwind(graph, cur, ux, uy, steps!);
+      const best = next[cur]!;
       if (best < 0) break;
       if (step === 0) upwindH[i] = Math.max(0, cells.h[best]!);
       if (!cells.isLand[best]) break;
-      km += bestLen * 111;
+      km += length[cur]! * 111;
       // Air re-moistens downwind of a range, so a barrier's shadow fades over ~1500 km
       top = Math.max(top, (cells.h[best]! - cells.h[i]!) * Math.exp(-km / 1500));
       cur = best;
@@ -339,10 +390,10 @@ function landByHeightDesc(graph: WorldGraph): number[] {
   return land.sort((a, b) => graph.cells.h[b]! - graph.cells.h[a]!);
 }
 
-function accumulateFlux(graph: WorldGraph): void {
+/** `land` is landByHeightDesc(graph). */
+function accumulateFlux(graph: WorldGraph, land: number[]): void {
   const { cells } = graph;
   cells.flux.fill(0);
-  const land = landByHeightDesc(graph);
   for (const c of land) cells.flux[c] = Math.max(1, cells.prec[c]! * 0.05);
   for (const c of land) {
     const ds = cells.downstream[c]!;
@@ -359,15 +410,16 @@ function riverLengthKm(graph: WorldGraph, path: number[]): number {
   return Math.round(km);
 }
 
-function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams): void {
+/** `land` is landByHeightDesc(graph). */
+function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, land: number[]): void {
   const { cells } = graph;
-  const land = landByHeightDesc(graph);
   if (land.length === 0) return;
 
   // Rivers occupy roughly the top `share` of land cells by accumulated flux
   const share = Math.min(0.3, CLIMATE_CONSTANTS.riverCellShare * params.riverDensity);
-  const fluxSorted = land.map((c) => cells.flux[c]!).sort((a, b) => b - a);
-  const fluxCutoff = fluxSorted[Math.min(fluxSorted.length - 1, Math.floor(land.length * share))]!;
+  const fluxAscending = Float64Array.from(land, (c) => cells.flux[c]!).sort();
+  const rank = Math.min(land.length - 1, Math.floor(land.length * share));
+  const fluxCutoff = fluxAscending[land.length - 1 - rank]!;
 
   const byId = new Map<number, RiverNetwork>();
   let riverId = 1;
