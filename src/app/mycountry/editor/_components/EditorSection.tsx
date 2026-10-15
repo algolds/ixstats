@@ -1,15 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { STALE_EDITOR_MESSAGE } from "~/lib/mycountry/editor-fields";
+import { staleSectionOf, type EditorSectionId } from "~/lib/mycountry/editor-fields";
 import { cn } from "~/lib/utils";
-import { useEditor } from "./editor-context";
+import { useEditor, type EditorState } from "./editor-context";
 
 /**
  * One section of the editor: an anchor the nav links to, an h2 with a tinted icon, and its fields.
@@ -46,11 +45,12 @@ export function EditorSection({
 }
 
 /**
- * The section's one save button, named for what it saves. Disabled until something changed and
- * while saving. With a problem in a field it saves nothing and moves focus to the first field
- * that needs fixing, whose message is read out.
+ * The section's one save button, named for what it saves. Disabled until something changed, while
+ * saving and while the section is in conflict (until it reloads). With a problem in a field it
+ * saves nothing and moves focus to the first field that needs fixing, whose message is read out.
  */
 export function SaveButton({
+  section,
   label,
   dirty,
   invalid,
@@ -58,6 +58,7 @@ export function SaveButton({
   blocked = false,
   onSave,
 }: {
+  section: EditorSectionId;
   label: string;
   dirty: boolean;
   invalid: boolean;
@@ -66,7 +67,7 @@ export function SaveButton({
   blocked?: boolean;
   onSave: () => void;
 }) {
-  const { stale, saving } = useEditor();
+  const { conflicts } = useEditor();
   const ref = useRef<HTMLButtonElement>(null);
   return (
     <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -74,7 +75,7 @@ export function SaveButton({
         ref={ref}
         type="button"
         className="w-full sm:w-auto"
-        disabled={!dirty || pending || blocked || stale || saving}
+        disabled={!dirty || pending || blocked || conflicts.includes(section)}
         aria-busy={pending || undefined}
         onClick={() => {
           if (invalid) {
@@ -96,23 +97,31 @@ export function SaveButton({
   );
 }
 
-/** Success and error handling every section's save shares. */
-export function useSaveHandlers(messages: { saved: string; failed: string }) {
+/**
+ * Success and error handling every section's save shares. A save folds the values the server
+ * returns into the page's copy (`apply`), which re-keys this section alone; a refusal because the
+ * same fields changed elsewhere puts the section in conflict.
+ */
+export function useSaveHandlers<Result>({
+  saved,
+  failed,
+  apply,
+}: {
+  saved: string;
+  failed: string;
+  apply: (state: EditorState, result: Result) => EditorState;
+}) {
   const notify = useNotify();
-  const utils = api.useUtils();
-  const { setVersion, markStale, beginSave, endSave } = useEditor();
+  const { applySaved, markConflict } = useEditor();
   return {
-    onMutate: beginSave,
-    onSettled: endSave,
-    onSuccess: (result: { updatedAt: Date }) => {
-      setVersion(result.updatedAt);
-      notify.success(messages.saved);
-      // The section re-keys from the saved values once they come back.
-      void utils.countries.getEditorState.invalidate();
+    onSuccess: (result: Result) => {
+      applySaved((state) => apply(state, result));
+      notify.success(saved);
     },
     onError: (error: { message: string; data?: { code?: string } | null }) => {
-      if (error.data?.code === "CONFLICT" && error.message === STALE_EDITOR_MESSAGE) markStale();
-      notify.error(messages.failed, error.message);
+      const conflicted = error.data?.code === "CONFLICT" ? staleSectionOf(error.message) : null;
+      if (conflicted) markConflict(conflicted);
+      notify.error(failed, error.message);
     },
   };
 }

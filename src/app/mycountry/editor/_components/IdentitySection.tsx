@@ -5,6 +5,7 @@ import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { isRealmImageUrl } from "~/lib/realms/realm-region";
 import {
+  EDITOR_IDENTITY_KEYS,
   IDENTITY_FIELDS,
   identityFieldError,
   type EditorCountryImageKey,
@@ -14,9 +15,17 @@ import {
 } from "~/lib/mycountry/editor-fields";
 import { RealmImageField } from "~/app/r/[realm]/_components/manage/RealmImageField";
 import { EditorSection, SaveButton, TextField, useDraft, useSaveHandlers } from "./EditorSection";
-import { useEditor, useReportDirty } from "./editor-context";
+import { useEditor, useReportDirty, type EditorState } from "./editor-context";
 
 type Values = Record<string, string>;
+
+interface IdentitySaveResult {
+  identity: Partial<Record<EditorIdentityKey, string | null>>;
+  flag?: string | null;
+  coatOfArms?: string | null;
+}
+
+const EMPTY_IDENTITY = Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, null]));
 
 const IMAGE_FIELDS: Array<{ key: EditorCountryImageKey; label: string; preview: string }> = [
   { key: "flag", label: "Flag", preview: "h-16 w-auto max-w-40" },
@@ -85,7 +94,7 @@ export function IdentitySection({
   /** The flag and coat of arms, for the section that shows them. */
   images?: Record<EditorCountryImageKey, string | null>;
 }) {
-  const { countryId, getVersion } = useEditor();
+  const { countryId } = useEditor();
   const fields = IDENTITY_FIELDS[sectionId];
   const initial: Values = Object.fromEntries([
     ...fields.map((f) => [f.key, identity?.[f.key] ?? ""]),
@@ -110,22 +119,43 @@ export function IdentitySection({
   const handlers = useSaveHandlers({
     saved: `${title} saved`,
     failed: `Could not save ${title.toLowerCase()}`,
+    apply: (state, result: IdentitySaveResult) => ({
+      ...state,
+      ...(result.flag !== undefined && { flag: result.flag }),
+      ...(result.coatOfArms !== undefined && { coatOfArms: result.coatOfArms }),
+      nationalIdentity: {
+        ...EMPTY_IDENTITY,
+        ...state.nationalIdentity,
+        ...result.identity,
+      } as EditorState["nationalIdentity"],
+    }),
   });
   const save = api.countries.saveIdentity.useMutation(handlers);
 
   const onSave = () => {
     const identityPatch: Partial<Record<EditorIdentityKey, string | null>> = {};
     const imagePatch: Partial<Record<EditorCountryImageKey, string | null>> = {};
+    // What the page loaded for exactly the fields being changed: the server refuses only if one
+    // of those moved since.
+    const expectedIdentity: Record<string, string | null> = {};
+    const expectedImages: Partial<Record<EditorCountryImageKey, string | null>> = {};
     for (const key of draft.changed) {
       const value = draft.values[key]!.trim() || null;
-      if (key === "flag" || key === "coatOfArms") imagePatch[key] = value;
-      else identityPatch[key as EditorIdentityKey] = value;
+      const loaded = initial[key]?.trim() || null;
+      if (key === "flag" || key === "coatOfArms") {
+        imagePatch[key] = value;
+        expectedImages[key] = loaded;
+      } else {
+        identityPatch[key as EditorIdentityKey] = value;
+        expectedIdentity[key] = loaded;
+      }
     }
     save.mutate({
       countryId,
-      expectedUpdatedAt: getVersion(),
+      section: sectionId,
       identity: identityPatch,
       ...imagePatch,
+      expected: { identity: expectedIdentity, ...expectedImages },
     });
   };
 
@@ -178,6 +208,7 @@ export function IdentitySection({
         )}
       </div>
       <SaveButton
+        section={sectionId}
         label={saveLabel}
         dirty={draft.dirty}
         invalid={invalid}

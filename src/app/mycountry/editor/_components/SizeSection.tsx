@@ -47,11 +47,14 @@ function bandLine(bands: typeof POPULATION_BANDS | typeof WEALTH_BANDS, id: stri
 export function SizeSection({
   population: savedPopulation,
   gdpPerCapita: savedGdpPerCapita,
+  baseline,
 }: {
   population: number;
   gdpPerCapita: number;
+  /** The baseline the figures project from: what a save is checked against. */
+  baseline: { baselinePopulation: number; baselineGdpPerCapita: number };
 }) {
-  const { countryId, getVersion } = useEditor();
+  const { countryId } = useEditor();
   const [populationText, setPopulationText] = useState(asText(savedPopulation));
   const [gdpText, setGdpText] = useState(asText(savedGdpPerCapita));
   const population = parseFigure(populationText);
@@ -67,7 +70,19 @@ export function SizeSection({
     : null;
   const valid = !populationError && !gdpError && population !== null && gdpPerCapita !== null;
 
-  const handlers = useSaveHandlers({ saved: "Size saved", failed: "Could not save the size" });
+  const handlers = useSaveHandlers({
+    saved: "Size saved",
+    failed: "Could not save the size",
+    apply: (
+      state,
+      result: {
+        baselinePopulation: number;
+        baselineGdpPerCapita: number;
+        currentPopulation: number;
+        currentGdpPerCapita: number;
+      }
+    ) => ({ ...state, ...result }),
+  });
   const save = api.countries.saveSize.useMutation(handlers);
 
   return (
@@ -119,6 +134,7 @@ export function SizeSection({
         </p>
       )}
       <SaveButton
+        section="population"
         label="Save size"
         dirty={dirty}
         invalid={!valid}
@@ -128,9 +144,9 @@ export function SizeSection({
           gdpPerCapita !== null &&
           save.mutate({
             countryId,
-            expectedUpdatedAt: getVersion(),
             population: Math.round(population),
             gdpPerCapita,
+            expected: baseline,
           })
         }
       />

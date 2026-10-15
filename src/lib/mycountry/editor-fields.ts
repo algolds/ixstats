@@ -209,8 +209,36 @@ export function identityFieldError(key: EditorIdentityKey, raw: string): string 
   return spec?.check?.(value) ?? null;
 }
 
-/** The message a stale tab gets when the nation changed since the editor loaded it. */
-export const STALE_EDITOR_MESSAGE = "This nation changed since you opened it";
+/** Editor section titles, as the page and the server's conflict messages name them. */
+export const EDITOR_SECTION_TITLES = {
+  name: "Name",
+  symbols: "Flag and symbols",
+  language: "Capital and language",
+  culture: "Culture",
+  civic: "Civic standards",
+  form: "Form and institutions",
+  institutions: "Institutions",
+  population: "Population and wealth",
+} as const;
+export type EditorSectionId = keyof typeof EDITOR_SECTION_TITLES;
+
+const STALE_SUFFIX = " changed since you opened it";
+
+/**
+ * The refusal a save gets when a field it changes no longer holds the value the page loaded
+ * ("Culture changed since you opened it"). Writes to other fields never cause it.
+ */
+export function staleMessage(section: EditorSectionId): string {
+  return `${EDITOR_SECTION_TITLES[section]}${STALE_SUFFIX}`;
+}
+
+/** The section a stale refusal names, or null for any other message. */
+export function staleSectionOf(message: string): EditorSectionId | null {
+  if (!message.endsWith(STALE_SUFFIX)) return null;
+  const title = message.slice(0, -STALE_SUFFIX.length);
+  const entry = Object.entries(EDITOR_SECTION_TITLES).find(([, t]) => t === title);
+  return entry ? (entry[0] as EditorSectionId) : null;
+}
 
 /** Defined (described) government components a nation may have at once. */
 export const MAX_DEFINED_COMPONENTS = 15;

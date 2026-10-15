@@ -1,16 +1,31 @@
 /**
  * The country editor page: one list drives the grouped nav and the sections, each section saves
- * on its own button (disabled until something changed) and sends only what changed, and the
- * leave guard names the sections with unsaved changes.
+ * on its own button (disabled until something changed) and sends only what changed with the values
+ * it loaded for them, a conflict reloads only that section, and the leave guard names the sections
+ * with unsaved changes.
  */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
-const mockMutations: Record<string, { mutate: jest.Mock; isPending: boolean }> = {};
-function mockMutation(name: string) {
-  mockMutations[name] ??= { mutate: jest.fn(), isPending: false };
-  return mockMutations[name];
+interface SaveCall {
+  name: string;
+  input: Record<string, unknown>;
+  opts: {
+    onSuccess: (result: unknown) => void;
+    onError: (error: { message: string; data?: { code?: string } }) => void;
+  };
 }
+/** Each `mutate` call with the options of the section that made it. */
+const mockCalls: SaveCall[] = [];
+function mockMutation(name: string, opts: SaveCall["opts"]) {
+  return {
+    mutate: (input: Record<string, unknown>) => mockCalls.push({ name, input, opts }),
+    isPending: false,
+  };
+}
+const lastSave = () => mockCalls[mockCalls.length - 1]!;
+/** What a refetch returns (Reload); null means the state as first loaded. */
+const mockFresh: { current: Record<string, unknown> | null } = { current: null };
 const mockState = {
   id: "c1",
   name: "Testland",
@@ -21,7 +36,8 @@ const mockState = {
   governmentType: "Parliamentary Republic",
   currentPopulation: 12_000_000,
   currentGdpPerCapita: 30_000,
-  updatedAt: new Date("2026-10-20T10:00:00.000Z"),
+  baselinePopulation: 11_000_000,
+  baselineGdpPerCapita: 28_000,
   nationalIdentity: { demonym: "Testish", capitalCity: "Port Test", drivingSide: "right" },
   governmentStructure: {
     governmentType: "Parliamentary Republic",
@@ -46,16 +62,24 @@ jest.mock("~/trpc/react", () => ({
     },
     countries: {
       getEditorState: {
-        useQuery: () => ({ data: mockState, isError: false, refetch: jest.fn() }),
+        useQuery: () => ({
+          data: mockState,
+          isError: false,
+          refetch: async () => ({ data: mockFresh.current ?? mockState }),
+        }),
       },
       checkNameAvailable: {
         useQuery: () => ({ data: { available: true, reason: null }, isFetching: false }),
       },
-      rename: { useMutation: () => mockMutation("rename") },
-      saveIdentity: { useMutation: () => mockMutation("saveIdentity") },
-      saveGovernmentForm: { useMutation: () => mockMutation("saveGovernmentForm") },
-      saveGovernmentComponents: { useMutation: () => mockMutation("saveGovernmentComponents") },
-      saveSize: { useMutation: () => mockMutation("saveSize") },
+      rename: { useMutation: (opts: SaveCall["opts"]) => mockMutation("rename", opts) },
+      saveIdentity: { useMutation: (opts: SaveCall["opts"]) => mockMutation("saveIdentity", opts) },
+      saveGovernmentForm: {
+        useMutation: (opts: SaveCall["opts"]) => mockMutation("saveGovernmentForm", opts),
+      },
+      saveGovernmentComponents: {
+        useMutation: (opts: SaveCall["opts"]) => mockMutation("saveGovernmentComponents", opts),
+      },
+      saveSize: { useMutation: (opts: SaveCall["opts"]) => mockMutation("saveSize", opts) },
     },
   },
 }));
@@ -93,7 +117,8 @@ beforeAll(() => {
   Element.prototype.scrollIntoView = jest.fn();
 });
 beforeEach(() => {
-  for (const m of Object.values(mockMutations)) m.mutate.mockClear();
+  mockCalls.length = 0;
+  mockFresh.current = null;
   mockPush.mockClear();
 });
 
@@ -103,7 +128,7 @@ describe("the country editor", () => {
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Testland" })).toBeInTheDocument();
 
-    const groups = editorGroups(mockState as never, 0);
+    const groups = editorGroups(mockState as never);
     expect(groups.map((g) => g.label)).toEqual([
       "Identity",
       "Government",
@@ -141,13 +166,67 @@ describe("the country editor", () => {
     fireEvent.change(screen.getByLabelText("Demonym"), { target: { value: "Testian" } });
     expect(save).toBeEnabled();
     fireEvent.click(save);
-    expect(mockMutations.saveIdentity!.mutate).toHaveBeenCalledWith({
-      countryId: "c1",
-      expectedUpdatedAt: mockState.updatedAt,
-      identity: { demonym: "Testian" },
+    // Only the changed field, with the value the page loaded for it.
+    expect(lastSave()).toMatchObject({
+      name: "saveIdentity",
+      input: {
+        countryId: "c1",
+        section: "culture",
+        identity: { demonym: "Testian" },
+        expected: { identity: { demonym: "Testish" } },
+      },
     });
     // Other sections did not change.
     expect(screen.getByRole("button", { name: "Save capital and language" })).toBeDisabled();
+
+    // The saved values come back and the section starts over from them.
+    act(() => lastSave().opts.onSuccess({ identity: { demonym: "Testian" } }));
+    expect(screen.getByLabelText("Demonym")).toHaveValue("Testian");
+    expect(screen.getByRole("button", { name: "Save culture" })).toBeDisabled();
+  });
+
+  it("sends the loaded baseline with a new size", () => {
+    render(<MyCountryEditorPage />);
+    fireEvent.change(screen.getByLabelText("Population"), { target: { value: "20000000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save size" }));
+    expect(lastSave()).toMatchObject({
+      name: "saveSize",
+      input: {
+        population: 20_000_000,
+        gdpPerCapita: 30_000,
+        expected: { baselinePopulation: 11_000_000, baselineGdpPerCapita: 28_000 },
+      },
+    });
+  });
+
+  it("on a conflict, reloads only the section in conflict and keeps other unsaved edits", async () => {
+    render(<MyCountryEditorPage />);
+    fireEvent.change(screen.getByLabelText("Capital city"), { target: { value: "New Port" } });
+    fireEvent.change(screen.getByLabelText("Demonym"), { target: { value: "Testian" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save culture" }));
+
+    act(() =>
+      lastSave().opts.onError({
+        message: "Culture changed since you opened it",
+        data: { code: "CONFLICT" },
+      })
+    );
+    expect(screen.getByText("Culture changed since you opened it")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save culture" })).toBeDisabled();
+
+    // Another tab saved both sections; only Culture is in conflict.
+    mockFresh.current = {
+      ...mockState,
+      nationalIdentity: { demonym: "Testese", capitalCity: "Other Port", drivingSide: "right" },
+    };
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Reload culture" }));
+    });
+
+    expect(screen.queryByText("Culture changed since you opened it")).toBeNull();
+    expect(screen.getByLabelText("Demonym")).toHaveValue("Testese");
+    expect(screen.getByLabelText("Capital city")).toHaveValue("New Port");
+    expect(screen.getByRole("button", { name: "Save capital and language" })).toBeEnabled();
   });
 
   it("moves focus to the first field to fix instead of saving", () => {
@@ -157,7 +236,7 @@ describe("the country editor", () => {
     expect(iso).toHaveAttribute("aria-invalid", "true");
     fireEvent.click(screen.getByRole("button", { name: "Save civic standards" }));
     expect(iso).toHaveFocus();
-    expect(mockMutations.saveIdentity!.mutate).not.toHaveBeenCalled();
+    expect(mockCalls).toHaveLength(0);
   });
 
   it("shows what saving institutions does to government effectiveness", () => {

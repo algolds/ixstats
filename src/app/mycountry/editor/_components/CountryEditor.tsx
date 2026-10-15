@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { City, Community, Language, WhiteFlag } from "iconoir-react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
@@ -12,12 +12,13 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import {
-  IDENTITY_FIELDS,
-  STALE_EDITOR_MESSAGE,
-  type IdentitySectionId,
+  EDITOR_SECTION_TITLES,
+  staleMessage,
+  type EditorSectionId,
 } from "~/lib/mycountry/editor-fields";
 import type { EditorAnchor } from "~/lib/mycountry/routes";
-import { EditorProvider } from "./editor-context";
+import { EditorProvider, type EditorState } from "./editor-context";
+import { governmentFormOf, identityValuesOf, withSection } from "./editor-state";
 import { ElsewhereSection } from "./ElsewhereSection";
 import { GovernmentFormSection } from "./GovernmentFormSection";
 import { IdentitySection } from "./IdentitySection";
@@ -26,7 +27,7 @@ import { LeaveGuard } from "./LeaveGuard";
 import { NameSection } from "./NameSection";
 import { SizeSection } from "./SizeSection";
 
-export type EditorState = RouterOutputs["countries"]["getEditorState"];
+export type { EditorState };
 
 /** The page column: the shell's content width, padded like the other MyCountry pages. */
 export const EDITOR_COLUMN = "mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-16 md:px-8";
@@ -37,29 +38,20 @@ interface EditorGroup {
   sections: Array<{ id: EditorAnchor; label: string; node: React.ReactNode }>;
 }
 
-/**
- * Remounts a section when its saved values change (after its own save, or a reload), so it starts
- * over from what the server holds. Other sections keep their unsaved edits.
- */
-const keyOf = (value: unknown) => JSON.stringify(value);
+/** How many times each section was reloaded after a conflict; part of its key. */
+export type SectionReloads = Partial<Record<EditorSectionId, number>>;
 
 /** One list drives the nav and the page. */
-export function editorGroups(state: EditorState, reload: number): EditorGroup[] {
+export function editorGroups(state: EditorState, reloads: SectionReloads = {}): EditorGroup[] {
   const identity = state.nationalIdentity;
-  const government = state.governmentStructure;
-  const governmentForm = {
-    governmentType: government?.governmentType ?? state.governmentType ?? null,
-    headOfState: government?.headOfState ?? null,
-    headOfGovernment: government?.headOfGovernment ?? null,
-    legislatureName: government?.legislatureName ?? null,
-    executiveName: government?.executiveName ?? null,
-    judicialName: government?.judicialName ?? null,
-  };
+  const governmentForm = governmentFormOf(state);
   const images = { flag: state.flag, coatOfArms: state.coatOfArms };
-  const k = (value: unknown) => `${reload}:${keyOf(value)}`;
-  // Each identity section re-keys on its own fields only, so saving one keeps the others' edits.
-  const fieldsOf = (section: IdentitySectionId) =>
-    IDENTITY_FIELDS[section].map((f) => identity?.[f.key] ?? null);
+  // A section remounts (starting over from its saved values) when its own values change, after
+  // its save or a reload. Keys never read another section's values, so that one keeps its edits.
+  const k = (section: EditorSectionId, value: unknown) =>
+    `${reloads[section] ?? 0}:${JSON.stringify(value)}`;
+  const fieldsOf = (section: "language" | "culture" | "civic" | "symbols") =>
+    identityValuesOf(state, section);
 
   return [
     {
@@ -69,14 +61,14 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
         {
           id: "name",
           label: "Name",
-          node: <NameSection key={k(state.name)} name={state.name} />,
+          node: <NameSection key={k("name", state.name)} name={state.name} />,
         },
         {
           id: "symbols",
           label: "Flag and symbols",
           node: (
             <IdentitySection
-              key={k([images, fieldsOf("symbols")])}
+              key={k("symbols", [images, fieldsOf("symbols")])}
               sectionId="symbols"
               title="Flag and symbols"
               description="The images and emblems your nation is known by."
@@ -92,7 +84,7 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
           label: "Capital and language",
           node: (
             <IdentitySection
-              key={k(fieldsOf("language"))}
+              key={k("language", fieldsOf("language"))}
               sectionId="language"
               title="Capital and language"
               description="Where your government sits and what your people speak and pay with."
@@ -107,7 +99,7 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
           label: "Culture",
           node: (
             <IdentitySection
-              key={k(fieldsOf("culture"))}
+              key={k("culture", fieldsOf("culture"))}
               sectionId="culture"
               title="Culture"
               description="Your people, their faith and their traditions."
@@ -122,7 +114,7 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
           label: "Civic standards",
           node: (
             <IdentitySection
-              key={k(fieldsOf("civic"))}
+              key={k("civic", fieldsOf("civic"))}
               sectionId="civic"
               title="Civic standards"
               description="Codes and conventions other nations use to reach yours."
@@ -141,16 +133,18 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
         {
           id: "form",
           label: "Form and institutions",
-          node: <GovernmentFormSection key={k(governmentForm)} government={governmentForm} />,
+          node: (
+            <GovernmentFormSection key={k("form", governmentForm)} government={governmentForm} />
+          ),
         },
         {
           id: "institutions",
           label: "Institutions",
           node: (
             <InstitutionsSection
-              key={k(state.governmentComponents)}
+              key={k("institutions", state.governmentComponents)}
               components={state.governmentComponents}
-              storedEffectiveness={government?.governmentEffectiveness ?? null}
+              storedEffectiveness={state.governmentStructure?.governmentEffectiveness ?? null}
             />
           ),
         },
@@ -165,9 +159,14 @@ export function editorGroups(state: EditorState, reload: number): EditorGroup[] 
           label: "Population and wealth",
           node: (
             <SizeSection
-              key={k([state.currentPopulation, state.currentGdpPerCapita])}
+              // The stat progression moves the current figures; only a new baseline re-keys.
+              key={k("population", [state.baselinePopulation, state.baselineGdpPerCapita])}
               population={state.currentPopulation}
               gdpPerCapita={state.currentGdpPerCapita}
+              baseline={{
+                baselinePopulation: state.baselinePopulation,
+                baselineGdpPerCapita: state.baselineGdpPerCapita,
+              }}
             />
           ),
         },
@@ -249,6 +248,35 @@ export function EditorSkeleton() {
   );
 }
 
+function ConflictSignal({
+  conflicts,
+  onReload,
+}: {
+  conflicts: EditorSectionId[];
+  onReload: () => void;
+}) {
+  const names = conflicts.map((id) => EDITOR_SECTION_TITLES[id]);
+  return (
+    <Signal
+      tone="destructive"
+      title={
+        conflicts.length === 1
+          ? staleMessage(conflicts[0]!)
+          : `${names.join(", ")} changed since you opened them`
+      }
+    >
+      <p>
+        Another tab saved {conflicts.length === 1 ? "it" : "them"} after this page loaded. Reload to
+        see the latest; your unsaved changes there are discarded, and every other section keeps its
+        own.
+      </p>
+      <Button className="mt-3" variant="secondary" onClick={onReload}>
+        {conflicts.length === 1 ? `Reload ${names[0]!.toLowerCase()}` : "Reload these sections"}
+      </Button>
+    </Signal>
+  );
+}
+
 /**
  * The country editor for one nation: identity, government and size, each section saved on its
  * own. Mounted per nation (keyed by its id), so switching nation starts a fresh editor.
@@ -256,30 +284,40 @@ export function EditorSkeleton() {
 export function CountryEditor({ countryId }: { countryId: string }) {
   const query = api.countries.getEditorState.useQuery(
     { countryId },
-    // A refetch re-keys sections whose saved values moved; only saves and Reload should.
+    // The page keeps its own copy (below); a refetch only matters for Reload.
     { retry: false, refetchOnWindowFocus: false }
   );
-  const state = query.data;
-  // The version saves are checked against: the one loaded first, then each reload's.
-  const [version, setVersion] = useState<Date | null>(null);
-  const [reload, setReload] = useState(0);
-  const [stale, setStale] = useState(false);
-  const markStale = useCallback(() => setStale(true), []);
+  // The page's copy of the nation: loaded once, then moved on by each section's save and by
+  // Reload, one section at a time.
+  const [state, setState] = useState<EditorState | null>(null);
+  const [reloads, setReloads] = useState<SectionReloads>({});
+  const [conflicts, setConflicts] = useState<EditorSectionId[]>([]);
+
+  useEffect(() => {
+    if (query.data && !state) setState(query.data);
+  }, [query.data, state]);
+
+  const markConflict = useCallback(
+    (section: EditorSectionId) =>
+      setConflicts((current) => (current.includes(section) ? current : [...current, section])),
+    []
+  );
+  const applySaved = useCallback(
+    (update: (current: EditorState) => EditorState) =>
+      setState((current) => (current ? update(current) : current)),
+    []
+  );
 
   usePageTitle({ title: state ? `${state.name} · Editor` : "Country editor" });
 
-  useEffect(() => {
-    if (state && version === null) setVersion(state.updatedAt);
-  }, [state, version]);
-
-  const loaded = !!state && version !== null;
+  const loaded = !!state;
   useEffect(() => {
     if (loaded && window.location.hash) {
       document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
     }
   }, [loaded]);
 
-  if (query.isError) {
+  if (query.isError && !state) {
     return (
       <div className={`${EDITOR_COLUMN} pt-14`}>
         <h1 className="sr-only">Country editor</h1>
@@ -295,19 +333,33 @@ export function CountryEditor({ countryId }: { countryId: string }) {
       </div>
     );
   }
-  if (!state || version === null) return <EditorSkeleton />;
+  if (!state) return <EditorSkeleton />;
 
-  const groups = editorGroups(state, reload);
+  const groups = editorGroups(state, reloads);
 
-  const reloadAll = async () => {
-    const fresh = await query.refetch();
-    if (fresh.data) setVersion(fresh.data.updatedAt);
-    setStale(false);
-    setReload((n) => n + 1);
+  // Takes the latest values for the sections in conflict only, and remounts just those.
+  const reloadConflicts = async () => {
+    const fresh = (await query.refetch()).data;
+    if (!fresh) return;
+    const reloaded = conflicts;
+    setState((current) =>
+      current ? reloaded.reduce((acc, id) => withSection(id, acc, fresh), current) : current
+    );
+    setReloads((current) => {
+      const next = { ...current };
+      for (const id of reloaded) next[id] = (next[id] ?? 0) + 1;
+      return next;
+    });
+    setConflicts((current) => current.filter((id) => !reloaded.includes(id)));
   };
 
   return (
-    <EditorProvider countryId={countryId} version={version} stale={stale} onStale={markStale}>
+    <EditorProvider
+      countryId={countryId}
+      conflicts={conflicts}
+      onConflict={markConflict}
+      onSaved={applySaved}
+    >
       <div className={EDITOR_COLUMN}>
         <PageHeader
           title={state.name}
@@ -323,16 +375,8 @@ export function CountryEditor({ countryId }: { countryId: string }) {
           subtitle="Identity, government and size. Each section saves on its own."
         />
 
-        {stale && (
-          <Signal tone="destructive" title={STALE_EDITOR_MESSAGE}>
-            <p>
-              Another tab or a game update saved it after this page loaded. Reload to see the
-              latest; changes you have not saved here are discarded.
-            </p>
-            <Button className="mt-3" variant="secondary" onClick={() => void reloadAll()}>
-              Reload
-            </Button>
-          </Signal>
+        {conflicts.length > 0 && (
+          <ConflictSignal conflicts={conflicts} onReload={() => void reloadConflicts()} />
         )}
 
         <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">

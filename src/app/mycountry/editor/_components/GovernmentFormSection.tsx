@@ -65,7 +65,7 @@ function formFor(governmentType: string): GovernmentForm | undefined {
  * the player applies them.
  */
 export function GovernmentFormSection({ government }: { government: GovernmentFormState }) {
-  const { countryId, getVersion } = useEditor();
+  const { countryId } = useEditor();
   const draft = useDraft({
     governmentType: government.governmentType ?? "",
     headOfState: government.headOfState ?? "",
@@ -85,6 +85,19 @@ export function GovernmentFormSection({ government }: { government: GovernmentFo
   const handlers = useSaveHandlers({
     saved: "Government saved",
     failed: "Could not save the government",
+    apply: (state, result: GovernmentFormState & { governmentType: string }) => {
+      const { governmentType, ...names } = result;
+      return {
+        ...state,
+        governmentType,
+        governmentStructure: {
+          governmentEffectiveness: state.governmentStructure?.governmentEffectiveness ?? null,
+          ...state.governmentStructure,
+          governmentType,
+          ...names,
+        },
+      };
+    },
   });
   const save = api.countries.saveGovernmentForm.useMutation(handlers);
 
@@ -171,6 +184,7 @@ export function GovernmentFormSection({ government }: { government: GovernmentFo
       </div>
 
       <SaveButton
+        section="form"
         label="Save government"
         dirty={draft.dirty}
         invalid={!!typeError}
@@ -178,8 +192,8 @@ export function GovernmentFormSection({ government }: { government: GovernmentFo
         onSave={() =>
           save.mutate({
             countryId,
-            expectedUpdatedAt: getVersion(),
             governmentType: draft.values.governmentType.trim(),
+            expected: government,
             ...(Object.fromEntries(
               INSTITUTION_FIELDS.map((f) => [f.key, draft.values[f.key].trim() || null])
             ) as Record<InstitutionKey, string | null>),

@@ -17,7 +17,7 @@ const normalize = (name: string) => name.trim().replace(/\s+/g, " ");
  * typed (after a pause) for another nation in the realm with the same name.
  */
 export function NameSection({ name: savedName }: { name: string }) {
-  const { countryId, getVersion } = useEditor();
+  const { countryId } = useEditor();
   const [name, setName] = useState(savedName);
   const next = normalize(name);
   const dirty = next !== savedName;
@@ -46,7 +46,11 @@ export function NameSection({ name: savedName }: { name: string }) {
       ? "Available. Your page address follows the new name and the old one keeps working."
       : "Unique in your realm. Renaming moves your page address; the old one redirects.";
 
-  const handlers = useSaveHandlers({ saved: "Name saved", failed: "Could not save the name" });
+  const handlers = useSaveHandlers({
+    saved: "Name saved",
+    failed: "Could not save the name",
+    apply: (state, result: { name: string; slug: string }) => ({ ...state, ...result }),
+  });
   const utils = api.useUtils();
   const rename = api.countries.rename.useMutation({
     ...handlers,
@@ -74,12 +78,13 @@ export function NameSection({ name: savedName }: { name: string }) {
         helper={helper}
       />
       <SaveButton
+        section="name"
         label="Save name"
         dirty={dirty}
         invalid={!!error}
         pending={rename.isPending}
         blocked={checking}
-        onSave={() => rename.mutate({ countryId, expectedUpdatedAt: getVersion(), name: next })}
+        onSave={() => rename.mutate({ countryId, name: next, expected: { name: savedName } })}
       />
     </EditorSection>
   );

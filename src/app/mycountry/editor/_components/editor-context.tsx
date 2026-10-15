@@ -1,14 +1,10 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import type { RouterOutputs } from "~/trpc/react";
+import type { EditorSectionId } from "~/lib/mycountry/editor-fields";
+
+export type EditorState = RouterOutputs["countries"]["getEditorState"];
 
 export interface DirtySection {
   id: string;
@@ -17,49 +13,32 @@ export interface DirtySection {
 
 interface EditorContextValue {
   countryId: string;
-  /** The `Country.updatedAt` every save is checked against; each save moves it on. */
-  getVersion: () => Date;
-  setVersion: (version: Date) => void;
   /** Sections with changes nobody saved yet, in report order. */
   dirty: DirtySection[];
   reportDirty: (section: DirtySection, isDirty: boolean) => void;
-  /** Another tab or the server changed the nation: saves stop until the page reloads its data. */
-  stale: boolean;
-  markStale: () => void;
-  /**
-   * A save is on its way. Saves go one at a time: each moves the version on, so a second save
-   * sent with the old version would be refused as stale.
-   */
-  saving: boolean;
-  beginSave: () => void;
-  endSave: () => void;
+  /** Sections whose save was refused because another tab changed the same fields. */
+  conflicts: EditorSectionId[];
+  markConflict: (section: EditorSectionId) => void;
+  /** Folds a section's saved values into the page's copy; that section alone re-keys. */
+  applySaved: (update: (state: EditorState) => EditorState) => void;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
 
 export function EditorProvider({
   countryId,
-  version,
-  stale,
-  onStale,
+  conflicts,
+  onConflict,
+  onSaved,
   children,
 }: {
   countryId: string;
-  version: Date;
-  stale: boolean;
-  onStale: () => void;
+  conflicts: EditorSectionId[];
+  onConflict: (section: EditorSectionId) => void;
+  onSaved: (update: (state: EditorState) => EditorState) => void;
   children: React.ReactNode;
 }) {
-  const versionRef = useRef(version);
   const [dirty, setDirty] = useState<DirtySection[]>([]);
-  const [saving, setSaving] = useState(0);
-  const beginSave = useCallback(() => setSaving((n) => n + 1), []);
-  const endSave = useCallback(() => setSaving((n) => Math.max(0, n - 1)), []);
-
-  // A reload hands down a fresh version; adopt it.
-  useEffect(() => {
-    versionRef.current = version;
-  }, [version]);
 
   const reportDirty = useCallback((section: DirtySection, isDirty: boolean) => {
     setDirty((current) => {
@@ -72,19 +51,13 @@ export function EditorProvider({
   const value = useMemo<EditorContextValue>(
     () => ({
       countryId,
-      getVersion: () => versionRef.current,
-      setVersion: (next) => {
-        versionRef.current = next;
-      },
       dirty,
       reportDirty,
-      stale,
-      markStale: onStale,
-      saving: saving > 0,
-      beginSave,
-      endSave,
+      conflicts,
+      markConflict: onConflict,
+      applySaved: onSaved,
     }),
-    [countryId, dirty, reportDirty, stale, onStale, saving, beginSave, endSave]
+    [countryId, dirty, reportDirty, conflicts, onConflict, onSaved]
   );
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

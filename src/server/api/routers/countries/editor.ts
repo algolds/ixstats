@@ -1,8 +1,13 @@
 /**
  * The country editor's reads and saves (`/mycountry/editor`). One mutation per section, each
- * patching only the rows and columns that section names, and each refusing when the nation
- * changed since the page loaded it (`expectedUpdatedAt` against `Country.updatedAt`), so a stale
- * tab can never overwrite newer work. Every save returns the new `updatedAt` for the next one.
+ * patching only the rows and columns that section names.
+ *
+ * Concurrency is per field: a save sends the values the page loaded for exactly the fields it
+ * changes (`expected`), and inside the same transaction as the write the server checks those
+ * fields still hold them. If one moved (another tab saved it), the save is refused with CONFLICT
+ * ("Culture changed since you opened it"). Writes to anything else, such as the stat progression
+ * or a MyCountry console touching the country row, never refuse a save. Each save returns the
+ * section's new values, so the page re-keys that section from them.
  */
 
 import { ComponentType, type Prisma } from "@prisma/client";
@@ -15,11 +20,14 @@ import { isRealmImageUrl } from "~/lib/realms/realm-region";
 import {
   EDITOR_IDENTITY_KEYS,
   GDP_PER_CAPITA_LIMITS,
+  IDENTITY_FIELDS,
+  IDENTITY_SECTION_IDS,
   identityFieldError,
   MAX_DEFINED_COMPONENTS,
   POPULATION_LIMITS,
-  STALE_EDITOR_MESSAGE,
+  staleMessage,
   type EditorIdentityKey,
+  type EditorSectionId,
 } from "~/lib/mycountry/editor-fields";
 import { rateLimitedMutationProcedure, readOnlyProcedure } from "~/server/api/trpc";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
@@ -32,28 +40,18 @@ import {
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
-type Tx = Prisma.TransactionClient;
+const countryInput = z.object({ countryId: z.string().min(1) });
 
-const versioned = z.object({ countryId: z.string().min(1), expectedUpdatedAt: z.date() });
+/** Text as stored and as the page shows it: missing and empty are the same, spaces trimmed. */
+const sameText = (a: string | null | undefined, b: string | null | undefined) =>
+  (a ?? "").trim() === (b ?? "").trim();
 
-/**
- * Claims the country's version: moves `updatedAt` to now only when it still equals what the page
- * loaded, in one conditional write. Anything else (another tab saved, the server recalculated)
- * refuses the save with CONFLICT.
- */
-async function claimVersion(
-  tx: Pick<Tx, "country">,
-  countryId: string,
-  expectedUpdatedAt: Date,
-  data: Prisma.CountryUpdateManyMutationInput = {}
-): Promise<Date> {
-  const updatedAt = new Date();
-  const { count } = await tx.country.updateMany({
-    where: { id: countryId, updatedAt: expectedUpdatedAt },
-    data: { ...data, updatedAt },
-  });
-  if (count === 0) throw new TRPCError({ code: "CONFLICT", message: STALE_EDITOR_MESSAGE });
-  return updatedAt;
+const sameNumber = (a: number, b: number) =>
+  Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+
+/** Refuses the save when a field it changes no longer holds what the page loaded. */
+function refuseIfChanged(changed: boolean, section: EditorSectionId) {
+  if (changed) throw new TRPCError({ code: "CONFLICT", message: staleMessage(section) });
 }
 
 async function afterSave(userId: string | null | undefined) {
@@ -62,6 +60,7 @@ async function afterSave(userId: string | null | undefined) {
 }
 
 const optionalText = z.string().max(400).nullable().optional();
+const loadedText = z.string().max(2000).nullable();
 const imageUrl = z
   .string()
   .max(2000)
@@ -87,199 +86,284 @@ const identityPatch = z
   });
 
 const institutionName = z.string().trim().max(120).nullable();
+const INSTITUTION_KEYS = [
+  "headOfState",
+  "headOfGovernment",
+  "legislatureName",
+  "executiveName",
+  "judicialName",
+] as const;
+type InstitutionKey = (typeof INSTITUTION_KEYS)[number];
 
 /** Empty text clears a field. */
 const blankToNull = (value: string | null | undefined) =>
-  value == null ? value : value.trim() === "" ? null : value.trim();
+  value == null ? null : value.trim() === "" ? null : value.trim();
+
+const notFound = () => new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
 
 export const editorProcedures = {
-  /** Everything the editor page shows, with the version its saves are checked against. */
-  getEditorState: readOnlyProcedure
-    .input(z.object({ countryId: z.string().min(1) }))
-    .query(async ({ ctx, input }) => {
-      await assertCountryWriteAccess(ctx, input.countryId);
-      const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          flag: true,
-          coatOfArms: true,
-          realmId: true,
-          governmentType: true,
-          currentPopulation: true,
-          currentGdpPerCapita: true,
-          updatedAt: true,
-          nationalIdentity: {
-            select: Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
-              EditorIdentityKey,
-              true
-            >,
-          },
-          governmentStructure: {
-            select: {
-              governmentType: true,
-              headOfState: true,
-              headOfGovernment: true,
-              legislatureName: true,
-              executiveName: true,
-              judicialName: true,
-              governmentEffectiveness: true,
-            },
-          },
-          governmentComponents: {
-            select: { componentType: true, effectivenessScore: true },
-            orderBy: { createdAt: "asc" },
+  /** Everything the editor page shows. */
+  getEditorState: readOnlyProcedure.input(countryInput).query(async ({ ctx, input }) => {
+    await assertCountryWriteAccess(ctx, input.countryId);
+    const country = await ctx.db.country.findUnique({
+      where: { id: input.countryId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        flag: true,
+        coatOfArms: true,
+        realmId: true,
+        governmentType: true,
+        currentPopulation: true,
+        currentGdpPerCapita: true,
+        baselinePopulation: true,
+        baselineGdpPerCapita: true,
+        nationalIdentity: {
+          select: Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<
+            EditorIdentityKey,
+            true
+          >,
+        },
+        governmentStructure: {
+          select: {
+            governmentType: true,
+            headOfState: true,
+            headOfGovernment: true,
+            legislatureName: true,
+            executiveName: true,
+            judicialName: true,
+            governmentEffectiveness: true,
           },
         },
-      });
-      if (!country) throw new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
-      return country;
-    }),
+        governmentComponents: {
+          select: { componentType: true, effectivenessScore: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
+    if (!country) throw notFound();
+    return country;
+  }),
 
   /** Whether the nation can take a name: unique in its realm, not a lore nation, has a slug. */
   checkNameAvailable: readOnlyProcedure
-    .input(z.object({ countryId: z.string().min(1), name: z.string().max(400) }))
+    .input(countryInput.extend({ name: z.string().max(400) }))
     .query(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
         select: { id: true, name: true, realmId: true },
       });
-      if (!country) throw new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
+      if (!country) throw notFound();
       return checkCountryName(ctx.db, country, input.name);
     }),
 
   /** Name: the name, the slug (the old one redirects) and the identity's country name. */
   rename: rateLimitedMutationProcedure
     .input(
-      versioned.extend({
+      countryInput.extend({
         name: z
           .string()
           .min(1)
           .max(MAX_COUNTRY_NAME_LENGTH * 2),
+        expected: z.object({ name: z.string().max(400) }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      const country = await ctx.db.country.findUnique({
+      const before = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        select: { id: true, name: true, slug: true, realmId: true },
+        select: { id: true, name: true, realmId: true },
       });
-      if (!country) throw new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
-      const check = await checkCountryName(ctx.db, country, input.name);
+      if (!before) throw notFound();
+      const check = await checkCountryName(ctx.db, before, input.name);
       if (!check.available) {
         throw new TRPCError({ code: "CONFLICT", message: check.reason ?? "Name not available" });
       }
 
       const result = await ctx.db.$transaction(async (tx) => {
-        const updatedAt = await claimVersion(tx, country.id, input.expectedUpdatedAt);
-        const renamed = await renameCountryInTx(tx, country, input.name, { updatedAt });
-        return { name: renamed.name, slug: renamed.slug, updatedAt };
+        const current = await tx.country.findUnique({
+          where: { id: input.countryId },
+          select: { id: true, name: true, slug: true },
+        });
+        if (!current) throw notFound();
+        refuseIfChanged(current.name !== input.expected.name, "name");
+        const renamed = await renameCountryInTx(tx, current, input.name);
+        return { name: renamed.name, slug: renamed.slug };
       });
 
       await afterSave(ctx.auth?.userId);
-      if (result.name !== country.name) await invalidateRealmMap(ctx.db, country.realmId);
+      if (result.name !== before.name) await invalidateRealmMap(ctx.db, before.realmId);
       return result;
     }),
 
   /** Flag and symbols, capital and language, culture and civic standards. */
   saveIdentity: rateLimitedMutationProcedure
     .input(
-      versioned.extend({
-        identity: identityPatch,
-        flag: imageUrl,
-        coatOfArms: imageUrl,
-      })
+      countryInput
+        .extend({
+          section: z.enum(IDENTITY_SECTION_IDS),
+          identity: identityPatch,
+          flag: imageUrl,
+          coatOfArms: imageUrl,
+          expected: z.object({
+            identity: z.record(z.string(), loadedText).default({}),
+            flag: loadedText.optional(),
+            coatOfArms: loadedText.optional(),
+          }),
+        })
+        .superRefine((input, ctx) => {
+          const own = new Set<string>(IDENTITY_FIELDS[input.section].map((f) => f.key));
+          for (const key of Object.keys(input.identity)) {
+            if (!own.has(key)) {
+              ctx.addIssue({ code: "custom", path: ["identity", key], message: "Not here" });
+            } else if (!(key in input.expected.identity)) {
+              ctx.addIssue({ code: "custom", path: ["expected", key], message: "Missing" });
+            }
+          }
+          for (const key of ["flag", "coatOfArms"] as const) {
+            if (input[key] === undefined) continue;
+            if (input.section !== "symbols") {
+              ctx.addIssue({ code: "custom", path: [key], message: "Not here" });
+            } else if (input.expected[key] === undefined) {
+              ctx.addIssue({ code: "custom", path: ["expected", key], message: "Missing" });
+            }
+          }
+        })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+      const { countryId, section, expected } = input;
       const identity = Object.fromEntries(
         Object.entries(input.identity)
           .filter(([, value]) => value !== undefined)
           .map(([key, value]) => [key, blankToNull(value)])
       ) as Partial<Record<EditorIdentityKey, string | null>>;
+      const keys = Object.keys(identity) as EditorIdentityKey[];
 
-      const countryColumns: Prisma.CountryUpdateManyMutationInput = {};
-      if (input.flag !== undefined) countryColumns.flag = blankToNull(input.flag);
-      if (input.coatOfArms !== undefined) countryColumns.coatOfArms = blankToNull(input.coatOfArms);
-      // The country row keeps a copy of the religion that profiles and filters read.
-      if (identity.nationalReligion !== undefined)
-        countryColumns.religion = identity.nationalReligion;
+      const images: { flag?: string | null; coatOfArms?: string | null } = {};
+      if (input.flag !== undefined) images.flag = blankToNull(input.flag);
+      if (input.coatOfArms !== undefined) images.coatOfArms = blankToNull(input.coatOfArms);
+      const imageKeys = Object.keys(images) as Array<"flag" | "coatOfArms">;
 
-      const updatedAt = await ctx.db.$transaction(async (tx) => {
-        const claimed = await claimVersion(
-          tx,
-          input.countryId,
-          input.expectedUpdatedAt,
-          countryColumns
+      await ctx.db.$transaction(async (tx) => {
+        const stored =
+          keys.length > 0
+            ? ((await tx.nationalIdentity.findUnique({
+                where: { countryId },
+                select: Object.fromEntries(keys.map((key) => [key, true])),
+              })) as Partial<Record<EditorIdentityKey, string | null>> | null)
+            : null;
+        const storedImages =
+          imageKeys.length > 0
+            ? await tx.country.findUnique({
+                where: { id: countryId },
+                select: { flag: true, coatOfArms: true },
+              })
+            : null;
+        refuseIfChanged(
+          keys.some((key) => !sameText(stored?.[key], expected.identity[key])) ||
+            imageKeys.some((key) => !sameText(storedImages?.[key], expected[key])),
+          section
         );
-        if (Object.keys(identity).length > 0) {
+
+        // The country row keeps a copy of the religion that profiles and filters read.
+        const countryColumns: Prisma.CountryUpdateInput = { ...images };
+        if (identity.nationalReligion !== undefined) {
+          countryColumns.religion = identity.nationalReligion;
+        }
+        if (Object.keys(countryColumns).length > 0) {
+          await tx.country.update({ where: { id: countryId }, data: countryColumns });
+        }
+        if (keys.length > 0) {
           await tx.nationalIdentity.upsert({
-            where: { countryId: input.countryId },
+            where: { countryId },
             update: identity,
-            create: { countryId: input.countryId, ...identity },
+            create: { countryId, ...identity },
           });
         }
-        return claimed;
       });
 
       await afterSave(ctx.auth?.userId);
-      return { updatedAt };
+      return { identity, ...images };
     }),
 
   /** Form and institutions: the government type and the institution names. */
   saveGovernmentForm: rateLimitedMutationProcedure
     .input(
-      versioned.extend({
+      countryInput.extend({
         governmentType: z.string().trim().min(1).max(120),
         headOfState: institutionName,
         headOfGovernment: institutionName,
         legislatureName: institutionName,
         executiveName: institutionName,
         judicialName: institutionName,
+        expected: z.object({
+          governmentType: loadedText,
+          headOfState: loadedText,
+          headOfGovernment: loadedText,
+          legislatureName: loadedText,
+          executiveName: loadedText,
+          judicialName: loadedText,
+        }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      const { countryId, expectedUpdatedAt, governmentType, ...names } = input;
+      const { countryId, governmentType, expected } = input;
       const institutions = Object.fromEntries(
-        Object.entries(names).map(([key, value]) => [key, blankToNull(value)])
-      ) as Record<keyof typeof names, string | null>;
+        INSTITUTION_KEYS.map((key) => [key, blankToNull(input[key])])
+      ) as Record<InstitutionKey, string | null>;
 
-      const updatedAt = await ctx.db.$transaction(async (tx) => {
-        const claimed = await claimVersion(tx, countryId, expectedUpdatedAt, { governmentType });
-        const existing = await tx.governmentStructure.findUnique({
+      await ctx.db.$transaction(async (tx) => {
+        const structure = await tx.governmentStructure.findUnique({
           where: { countryId },
-          select: { id: true },
+          select: {
+            id: true,
+            governmentType: true,
+            headOfState: true,
+            headOfGovernment: true,
+            legislatureName: true,
+            executiveName: true,
+            judicialName: true,
+          },
         });
-        if (existing) {
+        const country = await tx.country.findUnique({
+          where: { id: countryId },
+          select: { name: true, governmentType: true },
+        });
+        if (!country) throw notFound();
+        // The page shows the structure's type, else the country's.
+        const storedType = structure?.governmentType ?? country.governmentType ?? null;
+        refuseIfChanged(
+          !sameText(storedType, expected.governmentType) ||
+            INSTITUTION_KEYS.some((key) => !sameText(structure?.[key], expected[key])),
+          "form"
+        );
+
+        if (structure) {
           await tx.governmentStructure.update({
             where: { countryId },
             data: { governmentType, ...institutions },
           });
         } else {
-          const country = await tx.country.findUnique({
-            where: { id: countryId },
-            select: { name: true },
-          });
           await tx.governmentStructure.create({
             data: {
               countryId,
-              governmentName: `Government of ${country?.name ?? "the nation"}`,
+              governmentName: `Government of ${country.name}`,
               governmentType,
               ...institutions,
             },
           });
         }
+        await tx.country.update({ where: { id: countryId }, data: { governmentType } });
         // The identity keeps its own copy of the government type; keep it in step when it exists.
         await tx.nationalIdentity.updateMany({ where: { countryId }, data: { governmentType } });
-        return claimed;
       });
 
       await afterSave(ctx.auth?.userId);
-      return { updatedAt };
+      return { governmentType, ...institutions };
     }),
 
   /**
@@ -288,12 +372,14 @@ export const editorProcedures = {
    */
   saveGovernmentComponents: rateLimitedMutationProcedure
     .input(
-      versioned.extend({
+      countryInput.extend({
         componentTypes: z.array(z.nativeEnum(ComponentType)).max(80),
+        expected: z.object({ componentTypes: z.array(z.string()).max(200) }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
+      const { countryId } = input;
       const types = [...new Set(input.componentTypes)];
       const defined = types.filter((type) => getComponentGroup(type));
       if (defined.length > MAX_DEFINED_COMPONENTS) {
@@ -304,20 +390,30 @@ export const editorProcedures = {
       }
 
       const result = await ctx.db.$transaction(async (tx) => {
-        const updatedAt = await claimVersion(tx, input.countryId, input.expectedUpdatedAt);
+        const existing = await tx.governmentComponent.findMany({
+          where: { countryId },
+          select: { componentType: true },
+        });
+        const stored = new Set<string>(existing.map((c) => c.componentType));
+        const loaded = new Set(input.expected.componentTypes);
+        refuseIfChanged(
+          stored.size !== loaded.size || [...stored].some((type) => !loaded.has(type)),
+          "institutions"
+        );
+
         // Effectiveness is stored on the structure, so the nation needs one.
         const structure = await tx.governmentStructure.findUnique({
-          where: { countryId: input.countryId },
+          where: { countryId },
           select: { id: true },
         });
         if (!structure) {
           const country = await tx.country.findUnique({
-            where: { id: input.countryId },
+            where: { id: countryId },
             select: { name: true, governmentType: true },
           });
           await tx.governmentStructure.create({
             data: {
-              countryId: input.countryId,
+              countryId,
               governmentName: `Government of ${country?.name ?? "the nation"}`,
               governmentType: country?.governmentType || "Parliamentary Republic",
             },
@@ -325,14 +421,19 @@ export const editorProcedures = {
         }
         await syncGovernmentComponents(
           tx,
-          input.countryId,
+          countryId,
           types.map((componentType) => ({ componentType }))
         );
+        const components = await tx.governmentComponent.findMany({
+          where: { countryId },
+          select: { componentType: true, effectivenessScore: true },
+          orderBy: { createdAt: "asc" },
+        });
         const after = await tx.governmentStructure.findUnique({
-          where: { countryId: input.countryId },
+          where: { countryId },
           select: { governmentEffectiveness: true },
         });
-        return { updatedAt, governmentEffectiveness: after?.governmentEffectiveness ?? null };
+        return { components, governmentEffectiveness: after?.governmentEffectiveness ?? null };
       });
 
       await afterSave(ctx.auth?.userId);
@@ -342,34 +443,52 @@ export const editorProcedures = {
   /**
    * Population and wealth. The figures become the nation's new baseline (dated now), so the
    * stat progression projects forward from them instead of reverting them; the totals that
-   * follow from them (total GDP, tiers, densities, workforce) are recalculated.
+   * follow from them (total GDP, tiers, densities, workforce) are recalculated. The check is
+   * against the baseline the page loaded: the stat progression moves the current figures, never
+   * the baseline, so it never refuses this save.
    */
   saveSize: rateLimitedMutationProcedure
     .input(
-      versioned.extend({
+      countryInput.extend({
         population: z.number().int().min(POPULATION_LIMITS.min).max(POPULATION_LIMITS.max),
         gdpPerCapita: z.number().min(GDP_PER_CAPITA_LIMITS.min).max(GDP_PER_CAPITA_LIMITS.max),
+        expected: z.object({ baselinePopulation: z.number(), baselineGdpPerCapita: z.number() }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      const before = await ctx.db.country.findUnique({
-        where: { id: input.countryId },
-        select: { currentPopulation: true, totalWorkforce: true, landArea: true },
-      });
-      if (!before) throw new TRPCError({ code: "NOT_FOUND", message: "Nation not found" });
+      const { countryId, population, gdpPerCapita, expected } = input;
 
-      const updatedAt = await ctx.db.$transaction(async (tx) =>
-        claimVersion(
-          tx,
-          input.countryId,
-          input.expectedUpdatedAt,
-          sizeColumns(input.population, input.gdpPerCapita, before)
-        )
-      );
+      await ctx.db.$transaction(async (tx) => {
+        const before = await tx.country.findUnique({
+          where: { id: countryId },
+          select: {
+            baselinePopulation: true,
+            baselineGdpPerCapita: true,
+            currentPopulation: true,
+            totalWorkforce: true,
+            landArea: true,
+          },
+        });
+        if (!before) throw notFound();
+        refuseIfChanged(
+          !sameNumber(before.baselinePopulation, expected.baselinePopulation) ||
+            !sameNumber(before.baselineGdpPerCapita, expected.baselineGdpPerCapita),
+          "population"
+        );
+        await tx.country.update({
+          where: { id: countryId },
+          data: sizeColumns(population, gdpPerCapita, before),
+        });
+      });
 
       await afterSave(ctx.auth?.userId);
-      return { updatedAt };
+      return {
+        baselinePopulation: population,
+        baselineGdpPerCapita: gdpPerCapita,
+        currentPopulation: population,
+        currentGdpPerCapita: gdpPerCapita,
+      };
     }),
 };
 
@@ -378,7 +497,7 @@ export function sizeColumns(
   population: number,
   gdpPerCapita: number,
   before: { currentPopulation: number; totalWorkforce: number | null; landArea: number | null }
-): Prisma.CountryUpdateManyMutationInput {
+): Prisma.CountryUpdateInput {
   const totalGdp = population * gdpPerCapita;
   const ixNow = new Date(IxTime.getCurrentIxTime());
   // The workforce keeps its share of the population; a nation without one gets the usual 65%.

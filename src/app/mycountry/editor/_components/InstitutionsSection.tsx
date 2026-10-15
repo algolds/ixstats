@@ -22,7 +22,7 @@ import {
 import { MAX_DEFINED_COMPONENTS } from "~/lib/mycountry/editor-fields";
 import { cn } from "~/lib/utils";
 import { EditorSection, SaveButton, useSaveHandlers } from "./EditorSection";
-import { useEditor, useReportDirty } from "./editor-context";
+import { useEditor, useReportDirty, type EditorState } from "./editor-context";
 
 const DEFINED = Object.keys(ATOMIC_COMPONENTS) as ComponentType[];
 const GROUPS = groupComponentsByPlainGroup(DEFINED);
@@ -55,7 +55,7 @@ export function InstitutionsSection({
   components: ScoredComponent[];
   storedEffectiveness: number | null;
 }) {
-  const { countryId, getVersion } = useEditor();
+  const { countryId } = useEditor();
   const savedTypes = [...new Set(components.map((c) => c.componentType))];
   const [selected, setSelected] = useState<string[]>(savedTypes);
   const dirty = !sameSet(selected, savedTypes);
@@ -79,6 +79,17 @@ export function InstitutionsSection({
   const handlers = useSaveHandlers({
     saved: "Institutions saved",
     failed: "Could not save the institutions",
+    apply: (
+      state,
+      result: { components: ScoredComponent[]; governmentEffectiveness: number | null }
+    ) => ({
+      ...state,
+      governmentComponents: result.components as EditorState["governmentComponents"],
+      governmentStructure: state.governmentStructure && {
+        ...state.governmentStructure,
+        governmentEffectiveness: result.governmentEffectiveness,
+      },
+    }),
   });
   const save = api.countries.saveGovernmentComponents.useMutation(handlers);
 
@@ -212,6 +223,7 @@ export function InstitutionsSection({
       )}
 
       <SaveButton
+        section="institutions"
         label="Save institutions"
         dirty={dirty}
         invalid={overCap}
@@ -219,8 +231,8 @@ export function InstitutionsSection({
         onSave={() =>
           save.mutate({
             countryId,
-            expectedUpdatedAt: getVersion(),
             componentTypes: selected as ComponentType[],
+            expected: { componentTypes: savedTypes },
           })
         }
       />
