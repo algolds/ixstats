@@ -4,7 +4,11 @@
  * forum threads and happenings — and the staff checks every Manage action goes through.
  */
 import type { PrismaClient } from "@prisma/client";
-import { UNPUBLISHED_REALM_STATUSES, realmSlugWhere } from "~/lib/realms/realm-ids";
+import {
+  DEFAULT_REALM_ID,
+  UNPUBLISHED_REALM_STATUSES,
+  realmSlugWhere,
+} from "~/lib/realms/realm-ids";
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { formatInWorldDate, parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
@@ -19,7 +23,8 @@ import {
   type RealmActor,
 } from "./realms.access";
 import { forumPreview } from "./realms.forum-preview";
-import { realmFounderTitle, realmInWorldDate } from "./realms.settings";
+import { realmClock, realmFounderTitle, realmInWorldDate } from "./realms.settings";
+import { formatRealmDate } from "~/lib/realms/realm-clock";
 import { realmInactivityDays, realmReclaimWindowExclusive } from "~/lib/realms/realm-content";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
@@ -256,6 +261,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
         })
       : [];
 
+  const clock = realmClock(realm.settings);
   return {
     realm: {
       id: realm.id,
@@ -290,7 +296,11 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
         }
       : null,
     links: parseRealmLinks(realm.communityLinks),
-    inWorldDate: formatInWorldDate(realmInWorldDate(realm.settings)),
+    // A running clock is the realm's date; until one is switched on, the founder's old label (if any).
+    inWorldDate: clock
+      ? { label: formatRealmDate(clock, Date.now()), asOf: null }
+      : formatInWorldDate(realmInWorldDate(realm.settings)),
+    speed: clock?.multiplier ?? null,
     officers: realm.officers.map((o) => ({
       title: o.title,
       powers: o.powers,
@@ -590,7 +600,15 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       ? { wikitext: realm.rulesWikitext ?? "", updatedAt: realm.rulesUpdatedAt }
       : null,
     links: can("appearance") ? parseRealmLinks(realm.communityLinks) : null,
-    inWorldDate: can("appearance") ? { value: realmInWorldDate(realm.settings) } : null,
+    // The clock is the founder's (and site staff's) alone.
+    time: isFounder
+      ? {
+          clock: realmClock(realm.settings),
+          legacy: realmInWorldDate(realm.settings),
+          isIxnay: staff.id === DEFAULT_REALM_ID,
+          skipsCooldown: isSiteAdmin(actor),
+        }
+      : null,
     inactivity: isFounder
       ? {
           days: realmInactivityDays(staff.id, realm.settings),

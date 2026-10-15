@@ -19,6 +19,12 @@ import {
   REALM_TAGS,
 } from "~/lib/realms/realm-region";
 import { InWorldDateSchema, RealmLinksSchema } from "~/lib/realms/realm-community";
+import { MAX_REALM_ERA, RealmSpeedSchema, RealmStartDateSchema } from "~/lib/realms/realm-clock";
+import {
+  realmContextClock,
+  startRealmClock,
+  updateRealmClock,
+} from "~/server/modules/realms/realms.clock";
 import { INACTIVITY_MAX_DAYS, INACTIVITY_MIN_DAYS } from "~/lib/realms/realm-content";
 import { globalCache } from "~/lib/cache";
 import {
@@ -137,6 +143,38 @@ export const realmRegionRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       updateRealmAppearance(ctx.db, ctx.user, input).catch(regionError)
     ),
+
+  /** The clock in a context (realm header, Halo greeting); null means global IxTime. Public. */
+  contextClock: publicProcedure
+    .input(
+      z.object({ realm: slug.optional(), country: slug.optional(), active: z.boolean().optional() })
+    )
+    .query(async ({ ctx, input }) => ({
+      clock: await realmContextClock(ctx.db, input, ctx.user ?? null),
+    })),
+
+  /** Founder or site staff: switch the realm's clock on (once; the start date cannot change later). */
+  startClock: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        slug,
+        startDate: RealmStartDateSchema,
+        era: z.string().trim().max(MAX_REALM_ERA),
+        multiplier: RealmSpeedSchema,
+      })
+    )
+    .mutation(({ ctx, input }) => startRealmClock(ctx.db, ctx.user, input).catch(regionError)),
+
+  /** Founder or site staff: the speed (founder: once a week) and the era. */
+  updateClock: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        slug,
+        multiplier: RealmSpeedSchema.optional(),
+        era: z.string().trim().max(MAX_REALM_ERA).optional(),
+      })
+    )
+    .mutation(({ ctx, input }) => updateRealmClock(ctx.db, ctx.user, input).catch(regionError)),
 
   updateFactbook: rateLimitedMutationProcedure
     .input(z.object({ slug, wikitext: z.string().max(100_000) }))

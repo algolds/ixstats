@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { parseInWorldDate, type InWorldDate } from "~/lib/realms/realm-community";
+import { parseRealmClock, type RealmClock } from "~/lib/realms/realm-clock";
 import { readNationGrowthTable, type NationGrowthTable } from "~/lib/realms/nation-growth-defaults";
 
 const RealmSettingsSchema = z.object({
@@ -42,6 +43,20 @@ export function withInWorldDate(
 ): Prisma.JsonObject {
   const { inWorldDate: _previous, ...rest } = storedSettings(settings);
   return inWorldDate ? { ...rest, inWorldDate } : rest;
+}
+
+/** The realm's own clock (`settings.clock`), or null: the realm runs on global IxTime. */
+export function realmClock(settings: Prisma.JsonValue | null | undefined): RealmClock | null {
+  return parseRealmClock(storedSettings(settings).clock);
+}
+
+/** `Realm.settings` with the clock set; the in-world date label it replaces is dropped, every other key kept. */
+export function withRealmClock(
+  settings: Prisma.JsonValue | null | undefined,
+  clock: RealmClock
+): Prisma.JsonObject {
+  const { clock: _previous, inWorldDate: _label, ...rest } = storedSettings(settings);
+  return { ...rest, clock };
 }
 
 /** The founder line's text when site staff set one (`settings.founderTitle`); null shows the realm's creator. */
