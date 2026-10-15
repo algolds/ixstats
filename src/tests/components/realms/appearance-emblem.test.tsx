@@ -25,7 +25,17 @@ function renderSection(emblemUrl: string | null = null) {
   render(
     <AppearanceSection
       slug="eurth"
-      appearance={{ bannerUrl: null, thumbnail: null, emblemUrl, description: null, tags: [] }}
+      appearance={{
+        bannerUrl: null,
+        thumbnail: null,
+        emblemUrl,
+        description: null,
+        tags: [],
+        founderTitle: null,
+        foundedYear: null,
+        createdYear: 2026,
+        canSetFounding: false,
+      }}
     />
   );
 }
