@@ -9,9 +9,8 @@ import { PortalTintSync } from "~/components/providers/PortalTintSync";
  * The builder starts "headless" - content begins at the top of the viewport.
  * Headless state and scroll-reveal is handled globally by Navigation.
  *
- * The builder creates (and, at /mycountry/editor, edits) a MyCountry nation, so it wears the
- * MyCountry gold tint here too; the same components render under /mycountry/builder and
- * /mycountry/editor inside MyCountry's own `data-app` scope.
+ * Founding (`/builder`) creates a MyCountry nation, so it wears the MyCountry gold tint here
+ * too; the editor at /mycountry/editor sits inside MyCountry's own `data-app` scope.
  */
 export default function BuilderLayout({ children }: { children: React.ReactNode }) {
   return (
