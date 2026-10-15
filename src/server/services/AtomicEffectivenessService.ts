@@ -1,5 +1,10 @@
 import { type PrismaClient, ComponentType, type AtomicEffectiveness } from "@prisma/client";
 import { clamp } from "~/lib/utils/math";
+import {
+  findSynergyPair,
+  synergyScoreDelta,
+  type SynergyType,
+} from "~/lib/government/synergy-table";
 
 interface ComponentEffectiveness {
   type: ComponentType;
@@ -10,11 +15,32 @@ interface ComponentEffectiveness {
   legitimacyImpact: number;
 }
 
+/** One pair from the synergy table (`~/lib/government/synergy-table`) that a nation has. */
 interface SynergyRule {
-  components: ComponentType[];
-  synergyType: "MULTIPLICATIVE" | "ADDITIVE" | "CONFLICTING";
+  components: [ComponentType, ComponentType];
+  synergyType: SynergyType;
   effectMultiplier: number;
   description: string;
+}
+
+/** Every pair among `componentTypes` that the shared synergy table lists. */
+function interactingPairs(componentTypes: readonly ComponentType[]): SynergyRule[] {
+  const unique = [...new Set(componentTypes)];
+  return unique.flatMap((a, i) =>
+    unique.slice(i + 1).flatMap((b): SynergyRule[] => {
+      const pair = findSynergyPair(a, b);
+      return pair
+        ? [
+            {
+              components: [a, b],
+              synergyType: pair.type,
+              effectMultiplier: pair.multiplier,
+              description: pair.description,
+            },
+          ]
+        : [];
+    })
+  );
 }
 
 class AtomicEffectivenessService {
@@ -87,75 +113,6 @@ class AtomicEffectivenessService {
         ]
       )
     ) as Partial<Record<ComponentType, ComponentEffectiveness>>;
-
-  // Predefined synergies based on the atomic design document
-  private synergyRules: SynergyRule[] = [
-    {
-      components: [
-        ComponentType.TECHNOCRATIC_PROCESS,
-        ComponentType.PROFESSIONAL_BUREAUCRACY,
-        ComponentType.PERFORMANCE_LEGITIMACY,
-      ],
-      synergyType: "MULTIPLICATIVE",
-      effectMultiplier: 1.5,
-      description:
-        "Technocratic Efficiency State: Expert-driven governance with professional implementation creates highly effective administration",
-    },
-    {
-      components: [
-        ComponentType.DEMOCRATIC_PROCESS,
-        ComponentType.INDEPENDENT_JUDICIARY,
-        ComponentType.RULE_OF_LAW,
-      ],
-      synergyType: "MULTIPLICATIVE",
-      effectMultiplier: 1.4,
-      description:
-        "Democratic Institutional State: Democratic mandate + independent institutions creates strong rule of law",
-    },
-    {
-      components: [
-        ComponentType.CENTRALIZED_POWER,
-        ComponentType.AUTOCRATIC_PROCESS,
-        ComponentType.SURVEILLANCE_SYSTEM,
-      ],
-      synergyType: "MULTIPLICATIVE",
-      effectMultiplier: 1.6,
-      description:
-        "Authoritarian Control State: Centralized autocracy with surveillance creates rapid response but may damage legitimacy",
-    },
-    {
-      components: [ComponentType.PROFESSIONAL_BUREAUCRACY, ComponentType.TECHNOCRATIC_AGENCIES],
-      synergyType: "ADDITIVE",
-      effectMultiplier: 1.25,
-      description:
-        "Expert Administration: Professional bureaucracy enhanced by technocratic agencies",
-    },
-    {
-      components: [ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY],
-      synergyType: "MULTIPLICATIVE",
-      effectMultiplier: 1.3,
-      description:
-        "Strong Legal Framework: Independent judiciary enforcing rule of law creates maximum institutional credibility",
-    },
-  ];
-
-  // Conflict rules
-  private conflictRules: SynergyRule[] = [
-    {
-      components: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.SURVEILLANCE_SYSTEM],
-      synergyType: "CONFLICTING",
-      effectMultiplier: 0.7,
-      description:
-        "Democratic-Surveillance Conflict: Democratic legitimacy undermined by extensive surveillance",
-    },
-    {
-      components: [ComponentType.CONSENSUS_PROCESS, ComponentType.AUTOCRATIC_PROCESS],
-      synergyType: "CONFLICTING",
-      effectMultiplier: 0.5,
-      description:
-        "Process Conflict: Consensus and autocratic decision-making are fundamentally incompatible",
-    },
-  ];
 
   async getCountryEffectiveness(
     countryId: string,
@@ -266,31 +223,23 @@ class AtomicEffectivenessService {
     };
   }
 
+  /**
+   * The table's pairs among `componentTypes` and what they add up to, scored like
+   * `syncGovernmentComponents`: each synergy adds to the bonus, each conflict to the penalty.
+   */
   private calculateSynergyEffects(componentTypes: ComponentType[]) {
     let synergyBonus = 0;
     let conflictPenalty = 0;
-    const detectedSynergies: SynergyRule[] = [];
-
-    const matches = (rule: SynergyRule) =>
-      rule.components.every((comp) => componentTypes.includes(comp));
-
-    for (const rule of this.synergyRules.filter(matches)) {
-      detectedSynergies.push(rule);
-      synergyBonus += (rule.effectMultiplier - 1) * 10;
+    const detectedSynergies = interactingPairs(componentTypes);
+    for (const rule of detectedSynergies) {
+      const delta = synergyScoreDelta(rule.synergyType, rule.effectMultiplier);
+      if (delta < 0) conflictPenalty -= delta;
+      else synergyBonus += delta;
     }
-
-    for (const rule of this.conflictRules.filter(matches)) {
-      detectedSynergies.push(rule);
-      conflictPenalty += (1 - rule.effectMultiplier) * 10;
-    }
-
     return { synergyBonus, conflictPenalty, detectedSynergies };
   }
 
   private async createSynergyIfNotExists(countryId: string, synergy: SynergyRule) {
-    // For simplicity, we'll create a synergy between the first two components
-    if (synergy.components.length < 2) return;
-
     const [primaryType, secondaryType] = synergy.components;
 
     const primaryComponent = await this.db.governmentComponent.findFirst({
@@ -332,18 +281,14 @@ class AtomicEffectivenessService {
       .filter((item): item is ComponentEffectiveness => item !== undefined);
   }
 
-  // Helper method to detect potential synergies for a given set of components
+  /** The synergy table's helping pairs among `componentTypes`. */
   detectPotentialSynergies(componentTypes: ComponentType[]): SynergyRule[] {
-    return this.synergyRules.filter((rule) =>
-      rule.components.every((comp) => componentTypes.includes(comp))
-    );
+    return interactingPairs(componentTypes).filter((rule) => rule.synergyType !== "CONFLICTING");
   }
 
-  // Helper method to detect conflicts
+  /** The synergy table's conflicting pairs among `componentTypes`. */
   detectConflicts(componentTypes: ComponentType[]): SynergyRule[] {
-    return this.conflictRules.filter((rule) =>
-      rule.components.every((comp) => componentTypes.includes(comp))
-    );
+    return interactingPairs(componentTypes).filter((rule) => rule.synergyType === "CONFLICTING");
   }
 }
 

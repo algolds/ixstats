@@ -3,6 +3,7 @@
  * (`syncGovernmentComponents`) and founding all compute the same number.
  */
 import { foundingGovernmentEffectiveness } from "~/server/shared/founding-snapshot";
+import { syncGovernmentComponents } from "~/server/shared/country-mutation-helpers";
 import {
   componentInteractions,
   governmentEffectiveness,
@@ -12,16 +13,45 @@ import {
 import { GOVERNMENT_FORMS } from "~/lib/government/forms";
 
 describe("government effectiveness", () => {
+  /** What `syncGovernmentComponents` writes for `components` on a nation with none yet. */
+  async function writtenEffectiveness(
+    components: Array<{ componentType: string; effectivenessScore?: number }>
+  ) {
+    let n = 0;
+    const update = jest.fn().mockResolvedValue({});
+    const tx = {
+      governmentComponent: {
+        findMany: jest.fn().mockResolvedValue([]),
+        create: jest.fn(({ data }: { data: object }) =>
+          Promise.resolve({ id: `gc${n++}`, ...data })
+        ),
+        deleteMany: jest.fn(),
+      },
+      componentSynergy: { deleteMany: jest.fn(), createMany: jest.fn() },
+      governmentStructure: { update },
+    };
+    await syncGovernmentComponents(tx as never, "c1", components);
+    return update.mock.calls[0]![0].data.governmentEffectiveness as number;
+  }
+
   it.each(GOVERNMENT_FORMS.map((form) => [form.name, form.components] as const))(
-    "matches founding for a %s",
-    (_name, components) => {
-      const records = components.map((componentType) => ({
-        componentType,
-        effectivenessScore: 60,
-      }));
-      expect(governmentEffectiveness(records)).toBe(
-        foundingGovernmentEffectiveness(
-          components.map((componentType) => ({ componentType, effectivenessScore: 60 }))
+    "founding a %s shows what the save writes",
+    async (_name, components) => {
+      // A duplicate and a missing score: both paths drop the one and default the other.
+      const input = [
+        ...components.map((componentType, i) =>
+          i === 0 ? { componentType } : { componentType, effectivenessScore: 60 + i }
+        ),
+        { componentType: components[0]!, effectivenessScore: 99 },
+      ];
+      const founding = foundingGovernmentEffectiveness(input as never);
+      expect(founding).toBe(await writtenEffectiveness(input));
+      expect(founding).toBe(
+        governmentEffectiveness(
+          projectComponentRecords(
+            [],
+            input.map((c) => c.componentType)
+          ).map((r, i) => (i === 0 ? r : { ...r, effectivenessScore: 60 + i }))
         )
       );
     }
