@@ -303,57 +303,88 @@ const REVENUE_SOURCE_FIELDS = [
   "administeredBy",
 ] as const;
 
-/** Recreates the departments (two passes so parent links resolve), then their budget allocations. */
+/**
+ * Brings the departments in line with the input. A department already on file (matched by id,
+ * then by name) is updated in place, so its officials, sub-budgets and budget history survive;
+ * one missing from the input is removed. The input links departments by index ("0", "1", …),
+ * as the builder does, or by id or name.
+ */
 async function syncDepartments(tx: TxClient, governmentStructureId: string, govInput: any) {
   const departments: any[] = govInput.departments;
-  const deptKey = (dept: any) => dept.id || dept.name;
+  const existing = await tx.governmentDepartment.findMany({
+    where: { governmentStructureId },
+    select: { id: true, name: true },
+  });
+  const unclaimed = new Map(existing.map((dept) => [dept.id, dept.name]));
+  const claim = (deptInput: any): string | undefined => {
+    let id: string | undefined = deptInput.id;
+    if (!id || !unclaimed.has(id)) {
+      id = [...unclaimed].find(([, name]) => name === deptInput.name)?.[0];
+    }
+    if (id) unclaimed.delete(id);
+    return id;
+  };
+
+  const realIds: string[] = [];
   const deptIdMap = new Map<string, string>();
-  for (const deptInput of departments) {
-    const department = await tx.governmentDepartment.create({
-      data: {
-        ...pick(deptInput, GOV_DEPARTMENT_FIELDS),
-        governmentStructureId,
-        ministerTitle: deptInput.ministerTitle || "Minister",
-        color: deptInput.color || "#6366f1",
-        priority: deptInput.priority || 50,
-        isActive: deptInput.isActive ?? true,
-        organizationalLevel: deptInput.organizationalLevel || "Ministry",
-        functions: jsonOrUndefined(deptInput.functions) ?? null,
-        kpis: jsonOrUndefined(deptInput.kpis) ?? null,
-      },
-    });
-    deptIdMap.set(deptKey(deptInput), department.id);
+  for (const [index, deptInput] of departments.entries()) {
+    const data = {
+      ...pick(deptInput, GOV_DEPARTMENT_FIELDS),
+      ministerTitle: deptInput.ministerTitle || "Minister",
+      color: deptInput.color || "#6366f1",
+      priority: deptInput.priority || 50,
+      isActive: deptInput.isActive ?? true,
+      organizationalLevel: deptInput.organizationalLevel || "Ministry",
+      functions: jsonOrUndefined(deptInput.functions) ?? null,
+      kpis: jsonOrUndefined(deptInput.kpis) ?? null,
+    };
+    const existingId = claim(deptInput);
+    const department = existingId
+      ? await tx.governmentDepartment.update({ where: { id: existingId }, data })
+      : await tx.governmentDepartment.create({ data: { ...data, governmentStructureId } });
+    realIds.push(department.id);
+    deptIdMap.set(String(index), department.id);
+  }
+  // Ids and names resolve too, for callers that link by them; an index always wins.
+  for (const [index, deptInput] of departments.entries()) {
+    for (const key of [deptInput.id, deptInput.name]) {
+      if (key && !deptIdMap.has(key)) deptIdMap.set(key, realIds[index]!);
+    }
   }
 
-  for (const deptInput of departments) {
-    const actualDeptId = deptIdMap.get(deptKey(deptInput));
-    const actualParentId = deptIdMap.get(deptInput.parentDepartmentId);
-    if (actualDeptId && actualParentId) {
-      await tx.governmentDepartment.update({
-        where: { id: actualDeptId },
-        data: { parentDepartmentId: actualParentId },
-      });
-    }
+  if (unclaimed.size > 0) {
+    await tx.governmentDepartment.deleteMany({ where: { id: { in: [...unclaimed.keys()] } } });
+  }
+
+  for (const [index, deptInput] of departments.entries()) {
+    const id = realIds[index]!;
+    const parentKey = deptInput.parentDepartmentId;
+    const parentId = parentKey == null ? null : (deptIdMap.get(String(parentKey)) ?? null);
+    await tx.governmentDepartment.update({
+      where: { id },
+      data: { parentDepartmentId: parentId === id ? null : parentId },
+    });
   }
 
   if (Array.isArray(govInput.budgetAllocations)) {
     const seenAlloc = new Set<string>();
     for (const alloc of govInput.budgetAllocations) {
-      const realDeptId = deptIdMap.get(alloc.departmentId);
+      const realDeptId = deptIdMap.get(String(alloc.departmentId));
       if (!realDeptId) continue;
       const budgetYear = alloc.budgetYear ?? currentBudgetYear();
       const dedupeKey = `${realDeptId}:${budgetYear}`;
       if (seenAlloc.has(dedupeKey)) continue;
       seenAlloc.add(dedupeKey);
-      await tx.budgetAllocation.create({
-        data: {
-          governmentStructureId,
-          departmentId: realDeptId,
-          budgetYear,
-          allocatedAmount: alloc.allocatedAmount ?? 0,
-          allocatedPercent: alloc.allocatedPercent ?? 0,
-          notes: alloc.notes,
-        },
+      const amounts = {
+        allocatedAmount: alloc.allocatedAmount ?? 0,
+        allocatedPercent: alloc.allocatedPercent ?? 0,
+        notes: alloc.notes,
+      };
+      // Years the input leaves out keep their allocations: the editor only loads recent ones.
+      await tx.budgetAllocation.upsert({
+        where: { departmentId_budgetYear: { departmentId: realDeptId, budgetYear } },
+        create: { governmentStructureId, departmentId: realDeptId, budgetYear, ...amounts },
+        update: amounts,
       });
     }
   }
@@ -371,13 +402,6 @@ export async function syncGovernmentStructure(
   if (!govInput) return;
   // The editor sends the fields nested under `structure`; other callers send them flat.
   const fields = { ...govInput, ...(govInput.structure ?? {}) };
-
-  const existingGovStruct = await tx.governmentStructure.findUnique({ where: { countryId } });
-  if (existingGovStruct) {
-    await tx.governmentDepartment.deleteMany({
-      where: { governmentStructureId: existingGovStruct.id },
-    });
-  }
 
   const govStructure = await tx.governmentStructure.upsert(
     upsertByCountry(countryId, {
@@ -401,7 +425,8 @@ export async function syncGovernmentStructure(
     await syncDepartments(tx, governmentStructureId, govInput);
 
   if (Array.isArray(govInput.revenueSources)) {
-    await tx.revenueSource.deleteMany({ where: { governmentStructureId } });
+    // The editor only loads active sources, so inactive ones are left alone.
+    await tx.revenueSource.deleteMany({ where: { governmentStructureId, isActive: true } });
     await tx.revenueSource.createMany({
       data: govInput.revenueSources.map((rev: any) => ({
         ...pick(rev, REVENUE_SOURCE_FIELDS),
@@ -422,7 +447,8 @@ function synergyScoreDelta(type: string, multiplier: number): number {
 }
 
 /**
- * Recreate GovernmentComponents and calculate component synergies.
+ * Brings GovernmentComponents in line with the input and recalculates their synergies. A
+ * component already in place keeps its row, so its effectiveness and history survive.
  */
 export async function syncGovernmentComponents(
   tx: TxClient,
@@ -431,10 +457,23 @@ export async function syncGovernmentComponents(
 ): Promise<void> {
   if (!componentsInput) return;
 
-  await tx.governmentComponent.deleteMany({ where: { countryId } });
+  const existing = await tx.governmentComponent.findMany({ where: { countryId } });
+  const kept = new Map<string, GovernmentComponent>();
+  for (const comp of existing) {
+    if (!kept.has(comp.componentType)) kept.set(comp.componentType, comp);
+  }
 
   const componentRecords: GovernmentComponent[] = [];
   for (const componentInput of componentsInput) {
+    const current = kept.get(componentInput.componentType);
+    if (current) {
+      kept.delete(componentInput.componentType);
+      componentRecords.push(current);
+      continue;
+    }
+    if (componentRecords.some((comp) => comp.componentType === componentInput.componentType)) {
+      continue;
+    }
     componentRecords.push(
       await tx.governmentComponent.create({
         data: {
@@ -453,6 +492,11 @@ export async function syncGovernmentComponents(
   }
 
   await tx.componentSynergy.deleteMany({ where: { countryId } });
+  const keptIds = new Set(componentRecords.map((comp) => comp.id));
+  const removedIds = existing.filter((comp) => !keptIds.has(comp.id)).map((comp) => comp.id);
+  if (removedIds.length > 0) {
+    await tx.governmentComponent.deleteMany({ where: { id: { in: removedIds } } });
+  }
 
   const synergies = componentRecords.flatMap((comp1, i) =>
     componentRecords.slice(i + 1).flatMap((comp2) => {

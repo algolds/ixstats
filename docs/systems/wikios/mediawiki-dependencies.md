@@ -233,6 +233,7 @@ configuration object, never from a literal:
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`; the export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
+  `src/lib/time/clock-context.ts` (the maps host's top-level routes, so a root-level country page greets by its realm's clock),
   `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`.
   An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
