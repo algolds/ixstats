@@ -214,7 +214,7 @@ function RunningClock({
             })
           }
         >
-          Save
+          Save time
         </Button>
       </div>
     </div>

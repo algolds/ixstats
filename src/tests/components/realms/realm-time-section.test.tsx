@@ -94,7 +94,7 @@ describe("RealmTimeSection", () => {
       )
     ).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Era"), { target: { value: "NE" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save time" }));
     expect(updateClock).toHaveBeenCalledWith({ slug: "eurth", era: "NE" });
   });
 });
