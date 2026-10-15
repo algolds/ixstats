@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { RouterOutputs } from "~/trpc/react";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
+import { realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { PlayAsNation } from "~/app/r/[realm]/_components/PlayAsNation";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "./realm-directory";
@@ -27,6 +27,7 @@ function YourRealmCard({
         {listing?.bannerUrl && (
           <img
             src={assetUrl(listing.bannerUrl) ?? ""}
+            referrerPolicy="no-referrer"
             alt=""
             className="h-full w-full object-cover"
           />
@@ -72,13 +73,11 @@ function YourRealmCard({
         </ul>
         {realm.slug && (
           <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
+            {/* The live board, whose rail lists the realm's boards. */}
             <Link
               href={realmBoardHref(realm.slug)}
               className="text-label hover:underline pointer-coarse:min-h-11"
             >
-              Board
-            </Link>
-            <Link href={hubHref(realm.slug)} className="text-label hover:underline">
               Forum
             </Link>
             <Link href={realmHref(realm.slug, "nations")} className="text-label hover:underline">

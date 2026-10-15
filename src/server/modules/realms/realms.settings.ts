@@ -44,6 +44,21 @@ export function withInWorldDate(
   return inWorldDate ? { ...rest, inWorldDate } : rest;
 }
 
+/** The founder line's text when site staff set one (`settings.founderTitle`); null shows the realm's creator. */
+export function realmFounderTitle(settings: Prisma.JsonValue | null | undefined): string | null {
+  const title = storedSettings(settings).founderTitle;
+  return typeof title === "string" && title.trim() ? title.trim() : null;
+}
+
+/** `Realm.settings` with the founder title set, or removed (`null`: the creator again); other keys are kept. */
+export function withFounderTitle(
+  settings: Prisma.JsonValue | null | undefined,
+  founderTitle: string | null
+): Prisma.JsonObject {
+  const { founderTitle: _previous, ...rest } = storedSettings(settings);
+  return founderTitle ? { ...rest, founderTitle } : rest;
+}
+
 /** The growth table the realm's new nations get (`settings.nationDefaults`), else IxStats's defaults. */
 export function realmNationDefaults(
   settings: Prisma.JsonValue | null | undefined

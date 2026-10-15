@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChatBubble, ChatLines, Globe, MapPin } from "iconoir-react";
+import { ChatBubble, Globe, MapPin } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { ShareSheet } from "~/components/share/ShareSheet";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref, realmHref } from "~/lib/thinkpages-forum/links";
+import { realmHref } from "~/lib/thinkpages-forum/links";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -22,15 +22,15 @@ interface RealmTab {
 }
 
 /**
- * The tabs of a realm page. Board opens the realm's live board, Forums its Hub and Map the atlas on this realm;
- * Rules shows once the realm has rules (and always to those who can write them).
+ * The tabs of a realm page. Forum opens the realm's live board, whose rail lists its boards (Hub, Character Threads,
+ * Current Events), and Map the atlas on this realm; Rules shows once the realm has rules (and always to those who can
+ * write them).
  */
 function realmTabs(slug: string, canManage: boolean, showRules: boolean): RealmTab[] {
   const base = `/r/${encodeURIComponent(slug)}`;
   return [
     { href: base, label: "Overview", exact: true },
-    { href: realmHref(slug), label: "Board", icon: ChatLines },
-    { href: hubHref(slug), label: "Forums", icon: ChatBubble },
+    { href: realmHref(slug), label: "Forum", icon: ChatBubble },
     { href: `${base}/nations`, label: "Nations" },
     ...(showRules ? [{ href: `${base}/rules`, label: "Rules" }] : []),
     { href: `/maps?realm=${encodeURIComponent(slug)}`, label: "Map", icon: MapPin },
@@ -111,7 +111,7 @@ export function RealmRegionHeader({
   openToClaim: number;
 }) {
   const pathname = usePathname();
-  const { realm, stats, founder, viewer, inWorldDate } = overview;
+  const { realm, stats, founder, founderTitle, viewer, inWorldDate } = overview;
   const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
@@ -127,6 +127,7 @@ export function RealmRegionHeader({
         {realm.bannerUrl ? (
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
+            referrerPolicy="no-referrer"
             alt=""
             className="h-full w-full object-cover"
           />
@@ -142,6 +143,7 @@ export function RealmRegionHeader({
           {realm.thumbnail && (
             <img
               src={assetUrl(realm.thumbnail) ?? ""}
+              referrerPolicy="no-referrer"
               alt=""
               className="border-separator rounded-row -mt-12 size-16 shrink-0 border object-cover sm:-mt-14 sm:size-20"
             />
@@ -182,11 +184,14 @@ export function RealmRegionHeader({
           {stats.population > 0 && (
             <StatItem label="Population" value={formatCompact(stats.population)} />
           )}
-          <StatItem label="Founded" value={new Date(realm.foundedAt).getFullYear()} />
+          {/* UTC: a founding year is stored as 1 January UTC, which is still the year before west of UTC. */}
+          <StatItem label="Founded" value={new Date(realm.foundedAt).getUTCFullYear()} />
           <StatItem
             label="Founder"
             value={
-              founder ? (
+              founderTitle ? (
+                founderTitle
+              ) : founder ? (
                 founderLink ? (
                   <Link href={founderLink} className="hover:underline">
                     {founder.name}

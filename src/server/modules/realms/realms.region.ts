@@ -14,11 +14,12 @@ import {
   canModerateRealm,
   isRealmOpen,
   isRealmPublished,
+  isSiteAdmin,
   realmPowers,
   type RealmActor,
 } from "./realms.access";
 import { forumPreview } from "./realms.forum-preview";
-import { realmInWorldDate } from "./realms.settings";
+import { realmFounderTitle, realmInWorldDate } from "./realms.settings";
 import { realmInactivityDays, realmReclaimWindowExclusive } from "~/lib/realms/realm-content";
 
 type RegionErrorCode = "NOT_FOUND" | "FORBIDDEN" | "CONFLICT" | "BAD_REQUEST";
@@ -270,6 +271,8 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       claimsOpen: isRealmOpen(realm.id, realm.status),
     },
     founder: founderIsStaff ? null : (people.get(realm.ownerId) ?? null),
+    /** Set by site staff; shown instead of the founder. */
+    founderTitle: realmFounderTitle(realm.settings),
     stats: {
       nations: stats._count._all,
       claimedNations: claimed,
@@ -508,6 +511,8 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
       communityLinks: true,
       settings: true,
       ownerId: true,
+      foundedAt: true,
+      createdAt: true,
     },
   });
 
@@ -570,6 +575,12 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
           thumbnail: realm.thumbnail,
           emblemUrl: realm.emblemUrl,
           tags: realm.tags,
+          founderTitle: realmFounderTitle(realm.settings),
+          /** Set by site staff for a realm older than its time here; null shows the year it was created. */
+          foundedYear: realm.foundedAt?.getUTCFullYear() ?? null,
+          createdYear: realm.createdAt.getUTCFullYear(),
+          // Only site staff set the founder line and the founding year; the founder and officers cannot.
+          canSetFounding: isSiteAdmin(actor),
         }
       : null,
     factbook: can("appearance")

@@ -122,6 +122,16 @@ export const realmRegionRouter = createTRPCRouter({
         emblemUrl: realmImage.nullable().optional(),
         description: z.string().trim().max(1000).nullable().optional(),
         tags: z.array(z.enum(REALM_TAGS)).max(MAX_REALM_TAGS).optional(),
+        /** Site admins only (the module refuses anyone else). */
+        founderTitle: z.string().trim().max(80).nullable().optional(),
+        /** Site admins only: a realm can predate IxStats (NationStates regions), never the future. */
+        foundedYear: z
+          .number()
+          .int()
+          .min(1970)
+          .refine((year) => year <= new Date().getUTCFullYear(), "That year has not happened yet")
+          .nullable()
+          .optional(),
       })
     )
     .mutation(({ ctx, input }) =>

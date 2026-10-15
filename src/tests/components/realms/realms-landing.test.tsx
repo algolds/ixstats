@@ -246,11 +246,6 @@ describe("realms landing sections", () => {
     expect(within(browse).queryByText(/Board not opened/)).toBeNull();
     const forumLinks = within(browse).getAllByRole("link", { name: "Forum" });
     expect(forumLinks.map((l) => l.getAttribute("href"))).toEqual([
-      "/thinkpages/r/eurth/hub",
-      "/thinkpages/r/quiet/hub",
-    ]);
-    const boardLinks = within(browse).getAllByRole("link", { name: "Board" });
-    expect(boardLinks.map((l) => l.getAttribute("href"))).toEqual([
       "/thinkpages/r/eurth",
       "/thinkpages/r/quiet",
     ]);
@@ -279,7 +274,7 @@ describe("realms landing sections", () => {
     expect(board.parentElement).not.toHaveClass("shrink-0");
   });
 
-  it("links each of Your realms to its board", () => {
+  it("links each of Your realms to its forum, the live board", () => {
     auth = { isLoaded: true, isSignedIn: true };
     queries["realms.myNations"] = {
       activeCountryId: null,
@@ -294,11 +289,8 @@ describe("realms landing sections", () => {
     };
     render(<RealmsLandingPage />);
     const yours = screen.getByRole("region", { name: /Your realms/ });
-    expect(within(yours).getByRole("link", { name: "Board" }).getAttribute("href")).toBe(
-      "/thinkpages/r/eurth"
-    );
     expect(within(yours).getByRole("link", { name: "Forum" }).getAttribute("href")).toBe(
-      "/thinkpages/r/eurth/hub"
+      "/thinkpages/r/eurth"
     );
   });
 });

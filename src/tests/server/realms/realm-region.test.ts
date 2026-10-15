@@ -1032,6 +1032,8 @@ describe("inactivity rules (ToS §2.8)", () => {
       tags: [],
       communityLinks: null,
       settings: { reclaimWindowExclusive: true },
+      foundedAt: null,
+      createdAt: new Date("2026-01-01"),
     });
     const founder = await callerAs(FOUNDER, db).region.manage({ slug: "eurth" });
     expect(founder.inactivity).toEqual({ days: 90, exclusiveWindow: true });

@@ -99,16 +99,17 @@ export function CommunityPanel({ overview }: { overview: Overview }) {
 }
 
 export function OfficersPanel({ overview }: { overview: Overview }) {
-  const { founder, officers } = overview;
+  const { founder, founderTitle, officers } = overview;
   // A staff-run realm without officers: the header already says so.
-  if (!founder && officers.length === 0) return null;
+  if (!founder && !founderTitle && officers.length === 0) return null;
   return (
     <Panel title="Officers">
       <ul className="flex flex-col gap-2">
         <li className="flex items-baseline justify-between gap-2">
           <span className="text-label-secondary text-footnote">Founder</span>
           <span className="text-label text-body truncate">
-            {founder ? <StaffName person={founder} /> : "Administered by IxStats staff"}
+            {founderTitle ??
+              (founder ? <StaffName person={founder} /> : "Administered by IxStats staff")}
           </span>
         </li>
         {officers.map((officer) => (
@@ -319,6 +320,7 @@ export function EmbassiesPanel({ overview }: { overview: Overview }) {
               {realm.thumbnail ? (
                 <img
                   src={assetUrl(realm.thumbnail) ?? ""}
+                  referrerPolicy="no-referrer"
                   alt=""
                   className="size-5 rounded-sm object-cover"
                 />

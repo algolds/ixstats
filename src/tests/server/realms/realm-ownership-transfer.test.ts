@@ -475,6 +475,8 @@ describe("the Manage payload", () => {
       factbookWikitext: null,
       factbookUpdatedAt: null,
       ownerId: FOUNDER,
+      foundedAt: null,
+      createdAt: new Date("2026-01-01"),
     });
     return db;
   }

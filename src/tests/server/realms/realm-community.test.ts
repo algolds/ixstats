@@ -15,6 +15,7 @@ import {
   parseRealmLinks,
 } from "~/lib/realms/realm-community";
 import { realmInWorldDate, withInWorldDate } from "~/server/modules/realms";
+import { realmFounderTitle, withFounderTitle } from "~/server/modules/realms/realms.settings";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -130,9 +131,9 @@ describe("Manage: links, rules and the in-world date", () => {
     await expect(officer.updateLinks({ slug: "eurth", links: [forum] })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    await expect(officer.updateRules({ slug: "eurth", wikitext: "Be civil." })).rejects.toMatchObject(
-      { code: "FORBIDDEN" }
-    );
+    await expect(
+      officer.updateRules({ slug: "eurth", wikitext: "Be civil." })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
     await expect(
       officer.updateInWorldDate({ slug: "eurth", inWorldDate: { mode: "fixed", label: "Year 1" } })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
@@ -241,7 +242,10 @@ describe("region overview", () => {
         rulesHtml: "<p>Be civil &amp; kind.</p>",
         rulesUpdatedAt: new Date("2026-10-01"),
         communityLinks: [forum, { label: "Bad", url: "javascript:alert(1)", kind: "other" }],
-        settings: { inWorldDate: { mode: "fixed", label: "14 Harvest 1203 AE" } },
+        settings: {
+          inWorldDate: { mode: "fixed", label: "14 Harvest 1203 AE" },
+          founderTitle: "The Eurth community",
+        },
       })
     );
     db.country.aggregate.mockResolvedValue({ _count: { _all: 0 }, _sum: { currentPopulation: 0 } });
@@ -259,5 +263,79 @@ describe("region overview", () => {
     });
     expect(overview?.links).toEqual([forum]);
     expect(overview?.inWorldDate).toEqual({ label: "14 Harvest 1203 AE", asOf: null });
+    expect(overview?.founderTitle).toBe("The Eurth community");
+  });
+});
+
+describe("founder title", () => {
+  const ADMIN = "clerk_admin";
+  const adminCaller = (db: Db) =>
+    realmsRouter.createCaller(
+      createMockRouterContext({
+        db,
+        auth: { userId: ADMIN },
+        user: { id: "db_admin", clerkUserId: ADMIN, role: { name: "admin", level: 10 } },
+        rateLimitIdentifier: `${ADMIN}_${Math.random()}`,
+      }) as never
+    );
+  const stored = { inWorldDate: { mode: "fixed", label: "Year 1" }, founderTitle: "Old" };
+
+  it("is kept in Realm.settings beside the other keys, and removed when cleared", () => {
+    expect(realmFounderTitle(withFounderTitle(stored, "  The Eurth community "))).toBe(
+      "The Eurth community"
+    );
+    expect(withFounderTitle(stored, null)).toEqual({ inWorldDate: stored.inWorldDate });
+    expect(realmFounderTitle({ founderTitle: 7 })).toBeNull();
+  });
+
+  it("is refused to the founder and officers, who are not site staff, as is the founding year", async () => {
+    const db = makeDb(realmRow({ settings: stored }));
+    await expect(
+      callerAs(FOUNDER, db).region.updateAppearance({ slug: "eurth", founderTitle: "Me" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(
+      callerAs(FOUNDER, db).region.updateAppearance({ slug: "eurth", foundedYear: 2003 })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(db.realm.update).not.toHaveBeenCalled();
+  });
+
+  it("sets the founding year as 1 January UTC for site admins, refuses the future, and clears back", async () => {
+    const db = makeDb(realmRow({ settings: stored }));
+    await adminCaller(db).region.updateAppearance({ slug: "eurth", foundedYear: 2003 });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { foundedAt: new Date("2003-01-01T00:00:00.000Z") },
+    });
+    await expect(
+      adminCaller(db).region.updateAppearance({
+        slug: "eurth",
+        foundedYear: new Date().getUTCFullYear() + 1,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      adminCaller(db).region.updateAppearance({ slug: "eurth", foundedYear: 1969 })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await adminCaller(db).region.updateAppearance({ slug: "eurth", foundedYear: null });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { foundedAt: null },
+    });
+  });
+
+  it("is set by site admins, keeping the other settings, and cleared back to the creator", async () => {
+    const db = makeDb(realmRow({ settings: stored }));
+    await adminCaller(db).region.updateAppearance({
+      slug: "eurth",
+      founderTitle: " The Eurth community ",
+    });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { settings: { ...stored, founderTitle: "The Eurth community" } },
+    });
+    await adminCaller(db).region.updateAppearance({ slug: "eurth", founderTitle: "" });
+    expect(db.realm.update).toHaveBeenLastCalledWith({
+      where: { id: "eurth" },
+      data: { settings: { inWorldDate: stored.inWorldDate } },
+    });
   });
 });

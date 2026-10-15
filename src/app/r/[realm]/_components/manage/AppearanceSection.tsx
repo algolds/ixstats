@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -16,7 +17,10 @@ import {
 import { ManageSection } from "./ManageSection";
 import { RealmImageField } from "./RealmImageField";
 
-/** Banner image, thumbnail, emblem, description and directory tags. */
+/**
+ * Banner image, thumbnail, emblem, description and directory tags; site staff also set the founder line and the
+ * founding year.
+ */
 export function AppearanceSection({
   slug,
   appearance,
@@ -28,6 +32,10 @@ export function AppearanceSection({
     emblemUrl: string | null;
     description: string | null;
     tags: string[];
+    founderTitle: string | null;
+    foundedYear: number | null;
+    createdYear: number;
+    canSetFounding: boolean;
   };
 }) {
   const notify = useNotify();
@@ -37,6 +45,11 @@ export function AppearanceSection({
   const [emblemUrl, setEmblemUrl] = useState(appearance.emblemUrl ?? "");
   const [description, setDescription] = useState(appearance.description ?? "");
   const [tags, setTags] = useState<string[]>(appearance.tags);
+  const [founderTitle, setFounderTitle] = useState(appearance.founderTitle ?? "");
+  const [foundedYear, setFoundedYear] = useState(appearance.foundedYear?.toString() ?? "");
+  const thisYear = new Date().getUTCFullYear();
+  const year = foundedYear.trim() === "" ? null : Number(foundedYear);
+  const yearOk = year === null || (Number.isInteger(year) && year >= 1970 && year <= thisYear);
   const save = api.realms.region.updateAppearance.useMutation({
     onSuccess: () => {
       notify.success("Appearance saved");
@@ -76,6 +89,48 @@ export function AppearanceSection({
           onChange={setEmblemUrl}
           previewClassName="size-16"
         />
+        {appearance.canSetFounding && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="realm-founder-title">Founder title</Label>
+            <Input
+              id="realm-founder-title"
+              value={founderTitle}
+              onChange={(e) => setFounderTitle(e.target.value)}
+              maxLength={80}
+              placeholder="The realm's creator"
+            />
+            <p className="text-label-secondary text-footnote">
+              Shown as the realm&apos;s founder. Leave empty to show its creator. Only site staff
+              can change it.
+            </p>
+          </div>
+        )}
+        {appearance.canSetFounding && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="realm-founded-year">Founded</Label>
+            <Input
+              id="realm-founded-year"
+              type="number"
+              inputMode="numeric"
+              min={1970}
+              max={thisYear}
+              value={foundedYear}
+              onChange={(e) => setFoundedYear(e.target.value)}
+              placeholder={String(appearance.createdYear)}
+              aria-invalid={!yearOk}
+              className="w-32"
+            />
+            <p
+              className={
+                yearOk ? "text-label-secondary text-footnote" : "text-destructive text-footnote"
+              }
+            >
+              {yearOk
+                ? "The year the realm began, for one older than its time here (a NationStates region). Leave empty for the year it was created here. Only site staff can change it."
+                : `Use a year from 1970 to ${thisYear}.`}
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <Label htmlFor="realm-description">Description</Label>
           <Textarea
@@ -110,7 +165,7 @@ export function AppearanceSection({
         </div>
         <div>
           <Button
-            disabled={!imagesOk || save.isPending}
+            disabled={!imagesOk || !yearOk || save.isPending}
             onClick={() =>
               save.mutate({
                 slug,
@@ -119,6 +174,10 @@ export function AppearanceSection({
                 emblemUrl: emblemUrl.trim() || null,
                 description: description.trim() || null,
                 tags: tags as RealmTag[],
+                ...(appearance.canSetFounding && {
+                  founderTitle: founderTitle.trim() || null,
+                  foundedYear: year,
+                }),
               })
             }
           >

@@ -5,7 +5,7 @@ import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { plural, realmHref, type DirectoryRealm } from "~/app/realms/_components/realm-directory";
 import { Badge } from "~/components/ui/badge";
 import { assetUrl } from "~/lib/base-path";
-import { hubHref, realmBoardHref } from "~/lib/thinkpages-forum/links";
+import { realmBoardHref } from "~/lib/thinkpages-forum/links";
 import { RealmAdvertCard, type AdvertOverview } from "./RealmAdvertCard";
 
 function boardActivity(board: DirectoryRealm["board"]): string {
@@ -25,6 +25,7 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
         {realm.bannerUrl && (
           <img
             src={assetUrl(realm.bannerUrl) ?? ""}
+            referrerPolicy="no-referrer"
             alt=""
             className="h-full w-full object-cover"
           />
@@ -64,13 +65,11 @@ function DirectoryRealmCard({ realm }: { realm: DirectoryRealm }) {
           </p>
         )}
         <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
+          {/* The live board, whose rail lists the realm's boards. */}
           <Link
             href={realmBoardHref(realm.slug)}
             className="text-label hover:underline pointer-coarse:min-h-11"
           >
-            Board
-          </Link>
-          <Link href={hubHref(realm.slug)} className="text-label hover:underline">
             Forum
           </Link>
           {realm.myNationCount > 0 && (

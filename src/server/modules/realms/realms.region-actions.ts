@@ -14,10 +14,10 @@ import {
 import type { InWorldDate, RealmLink } from "~/lib/realms/realm-community";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { sanitizeRealmContent } from "~/lib/utils/sanitize-html";
-import { isRealmPublished, type RealmActor } from "./realms.access";
+import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
-import { withInactivity, withInWorldDate } from "./realms.settings";
+import { withFounderTitle, withInactivity, withInWorldDate } from "./realms.settings";
 import { holdNationMaterial } from "./realms.material";
 import { invalidateCache } from "~/lib/cache";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
@@ -44,9 +44,26 @@ export async function updateRealmAppearance(
     emblemUrl?: string | null;
     description?: string | null;
     tags?: string[];
+    /** Site admins only: the founder line's text (null or empty: the realm's creator). */
+    founderTitle?: string | null;
+    /** Site admins only: the year the realm began (null: the year it was created here). */
+    foundedYear?: number | null;
   }
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
+  if ((input.founderTitle !== undefined || input.foundedYear !== undefined) && !isSiteAdmin(actor))
+    throw new RealmRegionError(
+      "FORBIDDEN",
+      "Only site staff can change the founder or founding year"
+    );
+  const settings =
+    input.founderTitle === undefined
+      ? undefined
+      : withFounderTitle(
+          (await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } }))
+            ?.settings,
+          input.founderTitle || null
+        );
   const tags = input.tags
     ? [...new Set(input.tags)].filter((t) => (REALM_TAGS as readonly string[]).includes(t))
     : undefined;
@@ -60,6 +77,10 @@ export async function updateRealmAppearance(
       ...(input.emblemUrl !== undefined && { emblemUrl: input.emblemUrl || null }),
       ...(input.description !== undefined && { description: input.description || null }),
       ...(tags && { tags }),
+      ...(settings && { settings }),
+      ...(input.foundedYear !== undefined && {
+        foundedAt: input.foundedYear ? new Date(Date.UTC(input.foundedYear, 0, 1)) : null,
+      }),
     },
   });
   return { success: true };

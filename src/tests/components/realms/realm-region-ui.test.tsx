@@ -5,7 +5,7 @@
  * officers holding it, Hand over for the founder).
  */
 import React from "react";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/r/eurth",
@@ -117,21 +117,19 @@ describe("realm header", () => {
     expect(screen.queryByText("In-world date")).toBeNull();
   });
 
-  it("has Board and Forums tabs out to the realm's board and Hub, each leaving tab with its own glyph", () => {
+  it("has one Forum tab out to the realm's live board, each leaving tab with its own glyph", () => {
     render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
     const nav = screen.getByRole("navigation", { name: "Realm sections" });
-    const board = within(nav).getByRole("link", { name: "Board" });
-    expect(board.getAttribute("href")).toBe("/thinkpages/r/eurth");
-    expect(board.getAttribute("aria-current")).toBeNull();
-    const forums = within(nav).getByRole("link", { name: "Forums" });
-    expect(forums.getAttribute("href")).toBe("/thinkpages/r/eurth/hub");
-    expect(forums.getAttribute("aria-current")).toBeNull();
-    expect(within(nav).queryByRole("link", { name: "Forum" })).toBeNull();
+    const forum = within(nav).getByRole("link", { name: "Forum" });
+    expect(forum.getAttribute("href")).toBe("/thinkpages/r/eurth");
+    expect(forum.getAttribute("aria-current")).toBeNull();
+    expect(within(nav).queryByRole("link", { name: "Board" })).toBeNull();
+    expect(within(nav).queryByRole("link", { name: "Forums" })).toBeNull();
     const map = within(nav).getByRole("link", { name: "Map" });
     expect(map.getAttribute("href")).toBe("/maps?realm=eurth");
-    for (const link of [board, forums, map]) expect(link.querySelector("svg")).toBeTruthy();
-    const glyphs = [board, forums, map].map((l) => l.querySelector("svg")?.outerHTML);
-    expect(new Set(glyphs).size).toBe(3);
+    for (const link of [forum, map]) expect(link.querySelector("svg")).toBeTruthy();
+    const glyphs = [forum, map].map((l) => l.querySelector("svg")?.outerHTML);
+    expect(new Set(glyphs).size).toBe(2);
     expect(within(nav).getByRole("link", { name: "Nations" }).querySelector("svg")).toBeNull();
   });
 
@@ -404,7 +402,7 @@ describe("Manage tab", () => {
   const manage = (
     powers: string[],
     isFounder: boolean,
-    { canHandOver = false, officers = [] as object[] } = {}
+    { canHandOver = false, officers = [] as object[], canSetFounding = false } = {}
   ) => ({
     realm: { id: "eurth", slug: "eurth", name: "Eurth", status: "active" },
     powers,
@@ -412,7 +410,15 @@ describe("Manage tab", () => {
     canHandOver,
     archived: false,
     appearance: powers.includes("appearance")
-      ? { description: null, bannerUrl: null, tags: [] }
+      ? {
+          description: null,
+          bannerUrl: null,
+          tags: [],
+          founderTitle: null,
+          foundedYear: null,
+          createdYear: 2026,
+          canSetFounding,
+        }
       : null,
     factbook: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
     rules: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
@@ -511,6 +517,25 @@ describe("Manage tab", () => {
         .getAllByRole("link")
         .map((a) => a.textContent)
     ).toEqual(["Appearance", "Advert", "Links", "In-world date", "Factbook", "Rules", "Officers"]);
+  });
+
+  it("lets site staff, and only them, set the founder line and founding year in Appearance", async () => {
+    queries["realms.region.manage"] = manage(["appearance"], false);
+    await renderManage();
+    await screen.findByRole("navigation", { name: "Manage sections" });
+    expect(screen.queryByLabelText("Founder title")).toBeNull();
+    expect(screen.queryByLabelText("Founded")).toBeNull();
+    cleanup();
+    queries["realms.region.manage"] = manage(["appearance"], true, { canSetFounding: true });
+    await renderManage();
+    expect(await screen.findByLabelText("Founder title")).toBeTruthy();
+    const founded = screen.getByLabelText("Founded");
+    expect(founded).toHaveAttribute("placeholder", "2026");
+    // A year still to come keeps Save off.
+    fireEvent.change(founded, { target: { value: String(new Date().getUTCFullYear() + 1) } });
+    expect(screen.getByRole("button", { name: "Save appearance" })).toBeDisabled();
+    fireEvent.change(founded, { target: { value: "2003" } });
+    expect(screen.getByRole("button", { name: "Save appearance" })).not.toBeDisabled();
   });
 
   it("leaves the hand-over out for site admins acting as founder", async () => {

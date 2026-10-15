@@ -229,7 +229,7 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           >
             <h3
               id={`manage-nav-${group.label}`}
-              className="text-caption text-label-secondary hidden px-3 pb-1 lg:block"
+              className="text-footnote text-label hidden px-3 pb-1 font-semibold lg:block"
             >
               {group.label}
             </h3>

@@ -54,7 +54,7 @@ describe("the directory realm card", () => {
     expect(card).toHaveTextContent(`5 posts this week · last ${LAST.toLocaleDateString()}`);
     expect(screen.getByRole("link", { name: "Forum" })).toHaveAttribute(
       "href",
-      "/thinkpages/r/eurth/hub"
+      "/thinkpages/r/eurth"
     );
     expect(screen.getByRole("link", { name: "Join · claim a nation" })).toHaveAttribute(
       "href",
@@ -62,16 +62,12 @@ describe("the directory realm card", () => {
     );
   });
 
-  it("links to the live board before the forum", () => {
+  it("has one Forum link, to the live board (its rail lists the realm's boards)", () => {
     renderCard();
     const links = screen.getAllByRole("link").map((l) => l.getAttribute("href"));
-    expect(screen.getByRole("link", { name: "Board" })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth"
-    );
-    expect(links.indexOf("/thinkpages/r/eurth")).toBeLessThan(
-      links.indexOf("/thinkpages/r/eurth/hub")
-    );
+    expect(links).toContain("/thinkpages/r/eurth");
+    expect(links).not.toContain("/thinkpages/r/eurth/hub");
+    expect(screen.queryByRole("link", { name: "Board" })).toBeNull();
   });
 
   it("states the board's week as its own line, only when there were messages", () => {
