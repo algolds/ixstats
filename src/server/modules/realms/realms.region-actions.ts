@@ -11,13 +11,13 @@ import {
   REALM_TAGS,
   type RealmPower,
 } from "~/lib/realms/realm-region";
-import type { InWorldDate, RealmLink } from "~/lib/realms/realm-community";
+import type { RealmLink } from "~/lib/realms/realm-community";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { sanitizeRealmContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
-import { withFounderTitle, withInactivity, withInWorldDate } from "./realms.settings";
+import { withFounderTitle, withInactivity } from "./realms.settings";
 import { holdNationMaterial } from "./realms.material";
 import { invalidateCache } from "~/lib/cache";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
@@ -147,21 +147,6 @@ export async function updateRealmLinks(
   await db.realm.update({
     where: { id: realm.id },
     data: { communityLinks: input.links.map(({ label, url, kind }) => ({ label, url, kind })) },
-  });
-  return { success: true };
-}
-
-/** Set the realm's in-world date (`settings.inWorldDate`), or clear it with `null`; other settings are kept. */
-export async function updateRealmInWorldDate(
-  db: ActionDb,
-  actor: RealmActor,
-  input: { slug: string; inWorldDate: InWorldDate | null }
-) {
-  const realm = await requireRealmStaff(db, actor, input.slug, "appearance");
-  const stored = await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } });
-  await db.realm.update({
-    where: { id: realm.id },
-    data: { settings: withInWorldDate(stored?.settings, input.inWorldDate) },
   });
   return { success: true };
 }

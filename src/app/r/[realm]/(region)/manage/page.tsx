@@ -14,7 +14,6 @@ import { EmbassiesSection } from "../../_components/manage/EmbassiesSection";
 import { FactbookSection } from "../../_components/manage/FactbookSection";
 import { ForumModerationSection } from "../../_components/manage/ForumModerationSection";
 import { HandOverSection } from "../../_components/manage/HandOverSection";
-import { InWorldDateSection } from "../../_components/manage/InWorldDateSection";
 import { InactivitySection } from "../../_components/manage/InactivitySection";
 import { LinksSection } from "../../_components/manage/LinksSection";
 import { MapSection } from "../../_components/manage/MapSection";
@@ -23,6 +22,7 @@ import { ManageSection } from "../../_components/manage/ManageSection";
 import { OfficersSection } from "../../_components/manage/OfficersSection";
 import { PollsSection } from "../../_components/manage/PollsSection";
 import { RulesSection } from "../../_components/manage/RulesSection";
+import { RealmTimeSection } from "../../_components/manage/RealmTimeSection";
 
 /** The Manage tab: the sections the founder or an officer's powers allow. */
 export default function RealmManagePage({ params }: { params: Promise<{ realm: string }> }) {
@@ -72,13 +72,6 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           id: "links",
           label: "Links",
           node: manage.links && <LinksSection slug={slug} links={manage.links} />,
-        },
-        {
-          id: "calendar",
-          label: "In-world date",
-          node: manage.inWorldDate && (
-            <InWorldDateSection slug={slug} inWorldDate={manage.inWorldDate.value} />
-          ),
         },
       ],
     },
@@ -176,6 +169,11 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
     {
       label: "Founder",
       sections: [
+        {
+          id: "time",
+          label: "Time",
+          node: manage.time && <RealmTimeSection slug={slug} time={manage.time} />,
+        },
         {
           id: "source-sync",
           label: "Source sync",

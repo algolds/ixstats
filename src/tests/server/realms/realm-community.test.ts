@@ -14,7 +14,7 @@ import {
   parseInWorldDate,
   parseRealmLinks,
 } from "~/lib/realms/realm-community";
-import { realmInWorldDate, withInWorldDate } from "~/server/modules/realms";
+import { realmInWorldDate } from "~/server/modules/realms";
 import { realmFounderTitle, withFounderTitle } from "~/server/modules/realms/realms.settings";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -116,11 +116,9 @@ describe("in-world date", () => {
     expect(realmInWorldDate("junk")).toBeNull();
   });
 
-  it("is stored in Realm.settings beside the other keys, and cleared without touching them", () => {
-    const stored = withInWorldDate({ maxNationsPerUser: 3 }, { mode: "offset", offset: 15 });
-    expect(stored).toEqual({ maxNationsPerUser: 3, inWorldDate: { mode: "offset", offset: 15 } });
+  it("is read from Realm.settings beside the other keys (the label shown until a clock starts)", () => {
+    const stored = { maxNationsPerUser: 3, inWorldDate: { mode: "offset", offset: 15 } };
     expect(realmInWorldDate(stored)).toEqual({ mode: "offset", offset: 15 });
-    expect(withInWorldDate(stored, null)).toEqual({ maxNationsPerUser: 3 });
   });
 });
 
@@ -133,9 +131,6 @@ describe("Manage: links, rules and the in-world date", () => {
     });
     await expect(
       officer.updateRules({ slug: "eurth", wikitext: "Be civil." })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      officer.updateInWorldDate({ slug: "eurth", inWorldDate: { mode: "fixed", label: "Year 1" } })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.realm.update).not.toHaveBeenCalled();
   });
@@ -191,26 +186,6 @@ describe("Manage: links, rules and the in-world date", () => {
     });
   });
 
-  it("stores the in-world date in settings, keeping the nation cap", async () => {
-    const db = makeDb(realmRow({ settings: { maxNationsPerUser: 2 } }));
-    await callerAs(FOUNDER, db).region.updateInWorldDate({
-      slug: "eurth",
-      inWorldDate: { mode: "offset", offset: 15, era: "AE" },
-    });
-    expect(db.realm.update).toHaveBeenLastCalledWith({
-      where: { id: "eurth" },
-      data: {
-        settings: { maxNationsPerUser: 2, inWorldDate: { mode: "offset", offset: 15, era: "AE" } },
-      },
-    });
-    await expect(
-      callerAs(FOUNDER, db).region.updateInWorldDate({
-        slug: "eurth",
-        inWorldDate: { mode: "fixed", label: "x".repeat(61) },
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
   it("keeps an archived realm read-only", async () => {
     const db = makeDb(realmRow({ status: "archived" }));
     await expect(
@@ -218,9 +193,6 @@ describe("Manage: links, rules and the in-world date", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringMatching(/archived/) });
     await expect(
       callerAs(FOUNDER, db).region.updateRules({ slug: "eurth", wikitext: "Be civil." })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(
-      callerAs(FOUNDER, db).region.updateInWorldDate({ slug: "eurth", inWorldDate: null })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });

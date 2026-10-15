@@ -36,15 +36,6 @@ export function realmInWorldDate(
   return parseInWorldDate(storedSettings(settings).inWorldDate);
 }
 
-/** `Realm.settings` with the in-world date set, or removed (`null`); every other stored key is kept. */
-export function withInWorldDate(
-  settings: Prisma.JsonValue | null | undefined,
-  inWorldDate: InWorldDate | null
-): Prisma.JsonObject {
-  const { inWorldDate: _previous, ...rest } = storedSettings(settings);
-  return inWorldDate ? { ...rest, inWorldDate } : rest;
-}
-
 /** The realm's own clock (`settings.clock`), or null: the realm runs on global IxTime. */
 export function realmClock(settings: Prisma.JsonValue | null | undefined): RealmClock | null {
   return parseRealmClock(storedSettings(settings).clock);

@@ -18,7 +18,7 @@ import {
   REALM_POWERS,
   REALM_TAGS,
 } from "~/lib/realms/realm-region";
-import { InWorldDateSchema, RealmLinksSchema } from "~/lib/realms/realm-community";
+import { RealmLinksSchema } from "~/lib/realms/realm-community";
 import { MAX_REALM_ERA, RealmSpeedSchema, RealmStartDateSchema } from "~/lib/realms/realm-clock";
 import {
   realmContextClock,
@@ -45,7 +45,6 @@ import {
   respondRealmEmbassy,
   updateRealmAppearance,
   updateRealmFactbook,
-  updateRealmInWorldDate,
   updateRealmInactivity,
   updateRealmLinks,
   updateRealmOfficer,
@@ -189,13 +188,6 @@ export const realmRegionRouter = createTRPCRouter({
   updateLinks: rateLimitedMutationProcedure
     .input(z.object({ slug, links: RealmLinksSchema }))
     .mutation(({ ctx, input }) => updateRealmLinks(ctx.db, ctx.user, input).catch(regionError)),
-
-  /** The in-world date in the header (display only), or `null` to clear it. */
-  updateInWorldDate: rateLimitedMutationProcedure
-    .input(z.object({ slug, inWorldDate: InWorldDateSchema.nullable() }))
-    .mutation(({ ctx, input }) =>
-      updateRealmInWorldDate(ctx.db, ctx.user, input).catch(regionError)
-    ),
 
   /**
    * Founder: when an inactive nation is released (ToS §2.8), in days (`null`: never), and whether the realm keeps

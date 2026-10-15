@@ -191,11 +191,13 @@ it: `realms.claimNationPage` and `realms.claimCountry` take `acceptedRules` and 
 (`RULES_NOT_ACCEPTED`) when the realm has rules and it is missing; the filed claim records `rulesAcceptedAt`.
 (`/setup` claims Ixnay nations and shows that error if Ixnay ever gets rules.)
 
-**In-world date:** a display label in the stats strip (`Realm.settings.inWorldDate`, `realmInWorldDate` /
-`withInWorldDate` in `realms.settings.ts`, formatted by `formatInWorldDate` in `src/lib/realms/realm-community.ts`):
-either a fixed label ("14 Harvest 1203 AE", optionally "as of" a real date) or real year + offset with an era
-("2041 AE"). The simulation and every date elsewhere keep the shared IxTime clock; the country page shows no current
-IxTime date, so it shows no in-world date either.
+**Realm clock and in-world date:** the founder (or site staff) switches on the realm's own clock in Manage → Time
+(`Realm.settings.clock`; math in `src/lib/realms/realm-clock.ts`, actions in `realms.clock.ts`; design:
+[2026-10-14-realm-clocks-design.md](../superpowers/specs/2026-10-14-realm-clocks-design.md)). It starts equal to
+global IxTime, runs at the realm's speed (0 pauses, up to ×12, the founder changes it at most weekly) and reads in the
+realm's calendar (start date + era); the stats strip shows that date and the speed. Until a clock is switched on, the
+old display label (`Realm.settings.inWorldDate`, `formatInWorldDate`) still shows; switching on drops it. Ixnay runs on
+global IxTime. Phase 1 is display only; the simulation moves onto realm clocks in phase 2.
 
 **Claimed nation pages prefill their nation (AT-3):** approving a claim on a nation page (by a moderator, or at
 once for the page's verified creator) first reads the page's infobox (`fetchNationPagePrefill` in
@@ -256,7 +258,7 @@ embassies, frozen board restrictions, polls and forum categories go with it, and
 ### Manage tab (`/r/[realm]/manage`)
 
 Sections follow the caller's powers: **Appearance** (banner and thumbnail, each uploaded or given as an `https://`
-address; description; up to five tags from `REALM_TAGS`), **Links** (community links), **In-world date**,
+address; description; up to five tags from `REALM_TAGS`), **Links** (community links), **Time** (the realm clock; founder and site staff),
 **Factbook** (the WikiOS canvas editor or wikitext; saved as wikitext plus rendered, sanitized HTML), **Rules**
 (the same editor; empty text removes the rules), **Officers** (each power with a one-line description), **Claims**
 (the founder and officers holding `claims`; the admin claims list narrowed to the realm, with Approve disabled on an

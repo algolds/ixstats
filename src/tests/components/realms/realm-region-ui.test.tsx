@@ -423,7 +423,7 @@ describe("Manage tab", () => {
     factbook: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
     rules: powers.includes("appearance") ? { wikitext: "", updatedAt: null } : null,
     links: powers.includes("appearance") ? [] : null,
-    inWorldDate: powers.includes("appearance") ? { value: null } : null,
+    time: isFounder ? { clock: null, legacy: null, isIxnay: false, skipsCooldown: false } : null,
     officers,
     embassies: [],
     polls: [],
@@ -488,7 +488,6 @@ describe("Manage tab", () => {
       "Appearance",
       "Advert",
       "Links",
-      "In-world date",
       "Factbook",
       "Rules",
       "Officers",
@@ -496,6 +495,7 @@ describe("Manage tab", () => {
       "Forum moderation",
       "Embassies",
       "Poll",
+      "Time",
       "Source sync",
       "Wiki",
       "Hand over",
@@ -516,7 +516,7 @@ describe("Manage tab", () => {
       within(nav)
         .getAllByRole("link")
         .map((a) => a.textContent)
-    ).toEqual(["Appearance", "Advert", "Links", "In-world date", "Factbook", "Rules", "Officers"]);
+    ).toEqual(["Appearance", "Advert", "Links", "Factbook", "Rules", "Officers"]);
   });
 
   it("lets site staff, and only them, set the founder line and founding year in Appearance", async () => {
