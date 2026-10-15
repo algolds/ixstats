@@ -30,6 +30,30 @@ function buildUpdatePayload(countryId: string, state: BuilderState): UpdatePaylo
   });
 }
 
+/** Sections the server rewrites as a whole when present in a save. */
+const WHOLE_SECTIONS = [
+  "governmentComponents",
+  "taxSystemData",
+  "governmentStructure",
+  "economyBuilderState",
+] as const;
+
+/**
+ * The payload without the whole sections the server already has, so a save only rewrites what
+ * the player changed (an unchanged government keeps its cabinet and budget history untouched).
+ */
+export function withoutSavedSections(
+  payload: UpdatePayload,
+  saved: UpdatePayload | null
+): UpdatePayload {
+  if (!saved) return payload;
+  const trimmed = { ...payload };
+  for (const key of WHOLE_SECTIONS) {
+    if (isEqual(payload[key], saved[key])) delete trimmed[key];
+  }
+  return trimmed;
+}
+
 interface UseBuilderPersistenceProps {
   mode: "create" | "edit";
   countryId?: string;
@@ -184,7 +208,7 @@ export function useBuilderPersistence({
     async (payload: UpdatePayload) => {
       lastSyncedStateRef.current = payload;
       try {
-        await updateCountryAsync(payload);
+        await updateCountryAsync(withoutSavedSections(payload, lastSuccessfulPayloadRef.current));
       } catch (error) {
         // Resend on the next change or retry instead of treating the failed state as saved.
         lastSyncedStateRef.current = lastSuccessfulPayloadRef.current;
