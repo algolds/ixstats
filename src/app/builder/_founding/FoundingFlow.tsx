@@ -29,6 +29,7 @@ import {
   EMPTY_IDENTITY,
   FOUNDING_STEP_LABELS,
   applyImport,
+  applyPreset,
   applyStart,
   chooseForm,
   renameInstitution,
@@ -407,6 +408,12 @@ export function FoundingFlowView() {
             setDraft((current) => ({
               ...current,
               government: { ...current.government, components: null },
+            }))
+          }
+          onApplyPreset={(components) =>
+            setDraft((current) => ({
+              ...current,
+              government: applyPreset(current.government, components),
             }))
           }
         />

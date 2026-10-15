@@ -2,15 +2,18 @@
  * The founding flow at /builder: the saved draft restores its step, deep links to a step whose
  * prerequisites are missing redirect, the draft saves two seconds after the last change,
  * Continue focuses the first invalid field, switching archetype asks first and keeps identity,
- * and Found nation needs a confirm and sends none of the explicit payloads.
+ * a policy preset replaces the institutions (asking first when the player chose their own), and
+ * Found nation needs a confirm and sends none of the explicit payloads.
  */
 import React from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   applyStart,
   emptyFoundingDraft,
+  toggleComponent,
   type FoundingDraft,
 } from "~/app/builder/_founding/lib/founding-draft";
+import { getPolicyPreset } from "~/lib/government/policy-presets";
 
 // ---- next/navigation: a tiny URL store the flow reads and writes ----------------------------
 const mockNav = { params: new URLSearchParams(), listeners: new Set<() => void>() };
@@ -82,6 +85,9 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 jest.mock("~/hooks/usePageTitle", () => ({ usePageTitle: jest.fn() }));
+jest.mock("~/components/ui/value-select", () =>
+  jest.requireActual("~/tests/helpers/native-value-select")
+);
 
 import { FoundingFlowView } from "~/app/builder/_founding/FoundingFlow";
 
@@ -213,6 +219,29 @@ describe("founding flow", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Switch" }));
     expect(mockPush).toHaveBeenCalledWith("/builder?step=identity");
     expect(screen.getByLabelText(/^Name/)).toHaveValue("Valoria");
+  });
+
+  it("applies a policy preset from Customise institutions, asking first over own choices", () => {
+    const draft = named("government");
+    serve({
+      ...draft,
+      government: toggleComponent(draft.government, "SURVEILLANCE_SYSTEM"),
+    });
+    render(<FoundingFlowView />);
+    // Own choices open Customise institutions on arrival.
+    const surveillance = screen.getByRole("checkbox", { name: "Surveillance system" });
+    expect(surveillance).toBeChecked();
+    fireEvent.change(screen.getByRole("combobox", { name: "Policy presets" }), {
+      target: { value: "technocracy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Use preset" }));
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Replace" })
+    );
+
+    const preset = getPolicyPreset("technocracy")!.components;
+    expect(screen.getByText(`${preset.length} of 15 chosen`)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Surveillance system" })).not.toBeChecked();
   });
 
   it("Found nation needs a confirm and sends none of the explicit payloads", async () => {

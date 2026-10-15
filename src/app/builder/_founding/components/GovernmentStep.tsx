@@ -30,6 +30,7 @@ import {
   isGovernmentCustomised,
   type FoundingDraft,
 } from "../lib/founding-draft";
+import { PolicyPresetPicker } from "~/components/shared/government/PolicyPresetPicker";
 import { StepCard } from "./StepCard";
 
 /** "Centralized Power Structure" → "Centralized power structure"; acronyms keep their capitals. */
@@ -84,12 +85,14 @@ interface GovernmentStepProps {
   onToggleComponent: (type: ComponentType) => void;
   onRename: (key: keyof GovernmentInstitutions, value: string) => void;
   onResetComponents: () => void;
+  /** Replaces the component set with a policy preset's, in one update. */
+  onApplyPreset: (components: ComponentType[]) => void;
 }
 
 /** "How is your nation governed?": a recognisable form, then optional institution detail. */
 export const GovernmentStep = forwardRef<HTMLDivElement, GovernmentStepProps>(
   function GovernmentStep(
-    { government, onChooseForm, onToggleComponent, onRename, onResetComponents },
+    { government, onChooseForm, onToggleComponent, onRename, onResetComponents, onApplyPreset },
     headingRef
   ) {
     const [open, setOpen] = useState(() => isGovernmentCustomised(government));
@@ -163,6 +166,13 @@ export const GovernmentStep = forwardRef<HTMLDivElement, GovernmentStepProps>(
                 ))}
               </div>
             </section>
+
+            <PolicyPresetPicker
+              idPrefix="founding"
+              currentChoices={government.components ?? []}
+              onApply={(components) => onApplyPreset(components)}
+              componentName={componentName}
+            />
 
             <section className="flex flex-col gap-4" aria-labelledby="founding-components">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
