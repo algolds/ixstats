@@ -21,15 +21,19 @@ export function formatFileSize(bytes: number): string {
 export function RealmWikiPanel({ slug }: { slug: string }) {
   const { data: view, isLoading, error } = api.realms.wiki.get.useQuery({ slug }, { retry: false });
 
-  if (isLoading) return <p className="text-label-secondary text-body">Loading the wiki settings…</p>;
-  if (!view) return <p className="text-label-secondary text-body">{error?.message ?? "Not available."}</p>;
+  if (isLoading)
+    return <p className="text-label-secondary text-body">Loading the wiki settings…</p>;
+  if (!view)
+    return <p className="text-label-secondary text-body">{error?.message ?? "Not available."}</p>;
+  // Both forms start over when the saved settings change; siblings need distinct keys.
+  const settings = JSON.stringify(view.wiki);
 
   return (
     <div className="flex flex-col gap-6">
-      <WikiSettingsForm key={JSON.stringify(view.wiki)} slug={slug} view={view} />
+      <WikiSettingsForm key={`settings:${settings}`} slug={slug} view={view} />
       {view.map && <ChosenWikiMap slug={slug} realmId={view.realm.id} map={view.map} />}
       {view.wiki ? (
-        <WikiDiscoveryPanel key={JSON.stringify(view.wiki)} slug={slug} view={view} />
+        <WikiDiscoveryPanel key={`discovery:${settings}`} slug={slug} view={view} />
       ) : (
         <p className="text-label-secondary text-footnote">
           Save the realm&apos;s wiki settings to discover its nations and world maps.
