@@ -82,12 +82,10 @@ describe("Facet 3 Phase 4 leftovers", () => {
     expect(hits(retired)).toEqual([]);
   });
 
-  it("lays builder text over images only through the shared image-scrim roles", () => {
-    const scrimFile = path.join("app", "builder", "lib", "image-scrim.ts");
+  it("lays no raw white text or black scrims in the builder", () => {
     expect(
-      hits(
-        /\b(?:text-white|bg-black\/\d+)\b/g,
-        (file) => file.startsWith(path.join("app", "builder")) && file !== scrimFile
+      hits(/\b(?:text-white|bg-black\/\d+)\b/g, (file) =>
+        file.startsWith(path.join("app", "builder"))
       )
     ).toEqual([]);
   });

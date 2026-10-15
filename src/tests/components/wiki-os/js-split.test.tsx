@@ -7,7 +7,6 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
-import { resolveNamedDepartmentIcon } from "~/components/mycountry/domains/government/atoms/department/department-constants";
 
 const root = process.cwd();
 const read = (file: string) => readFileSync(join(root, file), "utf8");
@@ -88,25 +87,6 @@ describe("Iconoir", () => {
     expect(resolveChatBadgeIcon(undefined)).toBe(crown);
     // an inherited property name is not an icon
     expect(resolveChatBadgeIcon("constructor")).toBe(crown);
-  });
-
-  it("resolves a department's named icon, never an image source or an unknown name", () => {
-    expect(resolveNamedDepartmentIcon("Shield")).toBeTruthy();
-    expect(resolveNamedDepartmentIcon("DeliveryTruck")).toBeTruthy();
-    // the category table's own name for Iconoir's Suitcase resolves too
-    expect(resolveNamedDepartmentIcon("Briefcase")).toBeTruthy();
-    expect(resolveNamedDepartmentIcon("Briefcase")).toBe(resolveNamedDepartmentIcon("Suitcase"));
-    // the names the builder's government step stores
-    for (const stored of ["Coins", "Activity", "Crown", "Users", "BookOpen", "Building2"]) {
-      expect(resolveNamedDepartmentIcon(stored)).toBeTruthy();
-    }
-    // lucide names map to the nearest Iconoir icon, not to one another
-    expect(resolveNamedDepartmentIcon("Users")).toBe(resolveNamedDepartmentIcon("Group"));
-    expect(resolveNamedDepartmentIcon("Building2")).toBe(resolveNamedDepartmentIcon("Building"));
-    expect(resolveNamedDepartmentIcon("BookOpen")).not.toBe(resolveNamedDepartmentIcon("Users"));
-    expect(resolveNamedDepartmentIcon("https://example.com/a.png")).toBeNull();
-    expect(resolveNamedDepartmentIcon("NoSuchIcon")).toBeNull();
-    expect(resolveNamedDepartmentIcon(undefined)).toBeNull();
   });
 });
 

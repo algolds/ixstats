@@ -191,8 +191,6 @@
         "src/trpc/react.tsx",
         "src/app/labs/onoma/**",
         "src/lib/websocket/intelligence-websocket-client.ts",
-        "src/app/builder/components/enhanced/EconomicArchetypeDisplay.tsx",
-        "src/app/builder/utils/governmentValidation.ts",
         "src/lib/flags/png-to-svg.ts",
         "src/lib/maps/story-pin-icons.ts",
         "src/lib/maps/map-engine.ts"

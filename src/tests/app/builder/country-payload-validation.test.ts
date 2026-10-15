@@ -1,4 +1,3 @@
-import { asJsonPayload } from "~/app/builder/lib/json-payload";
 import {
   countryTaxSystemInputSchema,
   countryGovernmentStructureInputSchema,
@@ -25,6 +24,15 @@ const governmentStructure = {
   errors: { structure: [], departments: {}, budget: [], revenue: [] },
 };
 const economyBuilderState = { sectors: [{ id: "a", share: Infinity }], lastUpdated: new Date(), isValid: true };
+
+/** The payload as it crosses the wire: JSON, so Dates become strings and NaN/Infinity drop out. */
+function asJsonPayload<T>(payload: object): T {
+  return JSON.parse(
+    JSON.stringify(payload, (_key, value: unknown) =>
+      typeof value === "number" && !Number.isFinite(value) ? undefined : value
+    )
+  ) as T;
+}
 
 describe("builder country payload validation", () => {
   it("accepts raw builder state with undefined keys (superjson path)", () => {

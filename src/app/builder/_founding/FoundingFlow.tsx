@@ -21,6 +21,7 @@ import { Inspector } from "~/components/ui/inspector";
 import { Skeleton } from "~/components/ui/skeleton";
 import { StepIndicator } from "~/components/ui/step-indicator";
 import { AuthenticationGuard } from "~/components/mycountry/shared/primitives";
+import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { MYCOUNTRY_WELCOME_PATH } from "~/lib/mycountry/routes";
 import { getArchetypeOption } from "./lib/founding-archetypes";
@@ -319,6 +320,12 @@ export function FoundingFlowView() {
       <PageHeader
         title="Found a nation"
         subtitle={realmName ? `Founding in ${realmName}` : undefined}
+      />
+      <BuilderHalo
+        label="Found a nation"
+        sections={steps.map((id) => ({ id, label: FOUNDING_STEP_LABELS[id] }))}
+        currentId={step}
+        onJump={(id) => goTo(id as FoundingStepId)}
       />
       <FacetMaterial layer="chrome" className="px-3 py-2">
         <StepIndicator

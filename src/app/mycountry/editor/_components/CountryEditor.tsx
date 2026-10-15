@@ -10,6 +10,7 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import {
   EDITOR_SECTION_TITLES,
@@ -398,6 +399,13 @@ export function CountryEditor({ countryId }: { countryId: string }) {
           </div>
         </div>
       </div>
+      <BuilderHalo
+        label={state.name}
+        sections={groups.flatMap((group) =>
+          group.sections.map((s) => ({ id: s.id, label: s.label }))
+        )}
+        onJump={jumpTo}
+      />
       <LeaveGuard />
     </EditorProvider>
   );
