@@ -13,6 +13,7 @@ import {
 } from "~/lib/system/wikios-standalone";
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
 import { RAW_PATH_HEADER, RAW_ROUTE_PATH } from "~/lib/wiki-os/raw-path";
+import { REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -96,6 +97,8 @@ function nextWithSecurityHeaders(req: NextRequest): NextResponse {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("Content-Security-Policy", csp);
   requestHeaders.set("x-csp-nonce", nonce);
+  // The requested path, for layouts that redirect to the same page elsewhere (renamed countries).
+  requestHeaders.set(REQUEST_PATH_HEADER, `${req.nextUrl.pathname}${req.nextUrl.search}`);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
 
