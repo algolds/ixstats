@@ -41,21 +41,10 @@ export const WEALTH_BANDS: readonly WealthBand[] = [
   "very-wealthy",
 ];
 
+import { GOVERNMENT_FORM_IDS, type GovernmentFormId } from "~/lib/government/forms";
+
 /** Government form ids from the builder's forms catalogue (spec §4). */
-export const GOVERNMENT_FORM_IDS = [
-  "parliamentary-republic",
-  "presidential-republic",
-  "federal-republic",
-  "constitutional-monarchy",
-  "absolute-monarchy",
-  "one-party-state",
-  "military-government",
-  "theocracy",
-  "technocracy",
-  "merchant-oligarchy",
-  "confederation",
-] as const;
-export type GovernmentFormId = (typeof GOVERNMENT_FORM_IDS)[number];
+export { GOVERNMENT_FORM_IDS, type GovernmentFormId };
 
 export interface ArchetypeDisplay {
   /** Plain-language name, for example "Wealthy welfare state". */

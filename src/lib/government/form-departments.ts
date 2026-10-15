@@ -7,6 +7,11 @@
  */
 
 import type { DepartmentCategory } from "~/types/government";
+import {
+  DEFAULT_GOVERNMENT_FORM_ID,
+  GOVERNMENT_FORM_IDS,
+  getGovernmentForm,
+} from "~/lib/government/forms";
 
 export interface FormDepartment {
   name: string;
@@ -312,24 +317,9 @@ const FORM_DEPARTMENTS: Record<string, Row[]> = {
   confederation: CONFEDERATION,
 };
 
-/** The `governmentType` a form founds a nation with. */
-const FORM_GOVERNMENT_TYPES: Record<string, string> = {
-  "parliamentary-republic": "Parliamentary Republic",
-  "presidential-republic": "Presidential Republic",
-  "federal-republic": "Federal Republic",
-  "constitutional-monarchy": "Constitutional Monarchy",
-  "absolute-monarchy": "Absolute Monarchy",
-  "one-party-state": "One-Party State",
-  "military-government": "Military Government",
-  theocracy: "Theocracy",
-  technocracy: "Technocracy",
-  "merchant-oligarchy": "Merchant Oligarchy",
-  confederation: "Confederation",
-};
+export const KNOWN_FORM_IDS: readonly string[] = GOVERNMENT_FORM_IDS;
 
-export const KNOWN_FORM_IDS = Object.keys(FORM_DEPARTMENTS);
-
-export const DEFAULT_FORM_ID = "parliamentary-republic";
+export const DEFAULT_FORM_ID = DEFAULT_GOVERNMENT_FORM_ID;
 
 /** The default departments for a government form, highest share first; shares sum to 1. */
 export function departmentsForForm(formId: string): FormDepartment[] {
@@ -347,5 +337,5 @@ export function departmentsForForm(formId: string): FormDepartment[] {
 
 /** The government type a form founds a nation with; null for an unknown form id. */
 export function governmentTypeForForm(formId: string): string | null {
-  return FORM_GOVERNMENT_TYPES[formId] ?? null;
+  return getGovernmentForm(formId)?.governmentType ?? null;
 }

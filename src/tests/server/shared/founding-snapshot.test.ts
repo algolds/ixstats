@@ -10,6 +10,9 @@ import type { EconomicArchetype } from "@prisma/client";
 import { buildArchetypeSeedRows } from "~/lib/economy/archetypes/seed";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
 import { departmentsForForm } from "~/lib/government/form-departments";
+import { getGovernmentForm } from "~/lib/government/forms";
+import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
+import { figureForPopulationBand, figureForWealthBand } from "~/lib/builder/founding-bands";
 import {
   computeFoundingSnapshot,
   estimateTaxRevenuePercent,
@@ -193,6 +196,36 @@ describe("computeFoundingSnapshot: inputs", () => {
     expect(snapshot.base.population).toBe(8_400_000);
     expect(snapshot.base.gdpPerCapita).toBe(61_000);
     expect(snapshot.economicTier).toBe("Very Strong");
+  });
+
+  it("a named government form brings its components, type and institution titles", () => {
+    const snapshot = computeFoundingSnapshot({
+      name: "Crown",
+      archetype: nordic,
+      foundation: null,
+      governmentFormId: "absolute-monarchy",
+    });
+    const form = getGovernmentForm("absolute-monarchy")!;
+    expect(snapshot.governmentComponents.map((c) => c.componentType).sort()).toEqual(
+      [...form.components].sort()
+    );
+    expect(snapshot.governmentStructure).toMatchObject({
+      governmentType: form.governmentType,
+      headOfState: form.institutions.headOfStateTitle,
+      legislatureName: form.institutions.legislatureName,
+    });
+  });
+
+  it("an archetype with no bands chosen starts at its typical size, wealth and form", () => {
+    const display = getArchetypeDisplay("nordic")!;
+    const snapshot = computeFoundingSnapshot({
+      name: "Typical",
+      archetype: nordic,
+      foundation: null,
+    });
+    expect(snapshot.base.population).toBe(figureForPopulationBand(display.typicalPopulationBand));
+    expect(snapshot.base.gdpPerCapita).toBe(figureForWealthBand(display.typicalWealthBand));
+    expect(snapshot.governmentFormId).toBe(display.startingGovernmentForm);
   });
 
   it("derives the economic tier and income from GDP per capita, never the builder's placeholders", () => {

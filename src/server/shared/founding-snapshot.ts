@@ -19,6 +19,8 @@
 import type { ComponentType, Country, EconomicArchetype } from "@prisma/client";
 import type { z } from "zod";
 import { checkComponentSynergy } from "~/lib/government/synergy";
+import { getGovernmentForm } from "~/lib/government/forms";
+import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import {
   DEFAULT_FORM_ID,
@@ -933,6 +935,15 @@ export function foundingGovernmentEffectiveness(components: GovernmentComponentI
   return clamp(base + synergyDelta, 0, 100);
 }
 
+/** The component set a government form starts with; empty for an unknown form id. */
+function formComponentsOf(formId: string): GovernmentComponentInput[] {
+  return (getGovernmentForm(formId)?.components ?? []).map((componentType) => ({
+    componentType,
+    effectivenessScore: 60,
+    isActive: true,
+  }));
+}
+
 function archetypeComponents(archetype: EconomicArchetype | null): GovernmentComponentInput[] {
   return archetypeStrings(archetype?.governmentComponents).map((componentType) => ({
     componentType,
@@ -969,9 +980,15 @@ function buildGovernmentStructure(
       allocatedPercent: round2(dept.spendingShare * 100),
     };
   });
+  const institutions = getGovernmentForm(formId)?.institutions;
   return {
     governmentName: `Government of ${name}`,
     governmentType: governmentTypeForForm(formId) ?? "Parliamentary Republic",
+    headOfState: institutions?.headOfStateTitle,
+    headOfGovernment: institutions?.headOfGovernmentTitle,
+    legislatureName: institutions?.legislatureName,
+    executiveName: institutions?.executiveName,
+    judicialName: institutions?.judicialName,
     totalBudget,
     fiscalYear: "Calendar Year",
     budgetCurrency: "USD",
@@ -1244,7 +1261,14 @@ export function resolveBaseline(
 export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingSnapshot {
   const econ = input.econ ?? {};
   const { archetype, foundation } = input;
-  const base = resolveBaseline(econ, foundation, input.populationBand, input.wealthBand);
+  // The archetype's typical size and wealth stand in for bands the player has not chosen.
+  const display = archetype ? getArchetypeDisplay(archetype.key) : undefined;
+  const base = resolveBaseline(
+    econ,
+    foundation,
+    input.populationBand ?? (foundation ? undefined : display?.typicalPopulationBand),
+    input.wealthBand ?? (foundation ? undefined : display?.typicalWealthBand)
+  );
   const wealth = WEALTH_DEFAULTS[bandForGdpPerCapita(base.gdpPerCapita)];
   const explicit = !!(
     input.taxSystemData ||
@@ -1272,12 +1296,18 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
     econ.laborEmployment?.totalWorkforce ||
     Math.round(base.population * (numbers.laborForceParticipationRate / 100));
 
-  // Government: components as sent, else the archetype's; form as named, else inferred.
+  // Government: components as sent, else the named form's, else the archetype's; form as named,
+  // else the archetype's starting form, else inferred from the components.
+  const namedForm =
+    input.governmentFormId ??
+    (input.governmentComponents?.length ? "" : (display?.startingGovernmentForm ?? ""));
+  const formComponents = formComponentsOf(namedForm);
   const governmentComponents =
     input.governmentComponents && input.governmentComponents.length > 0
       ? input.governmentComponents
-      : archetypeComponents(archetype);
-  const namedForm = input.governmentFormId ?? "";
+      : input.governmentFormId && formComponents.length > 0
+        ? formComponents
+        : archetypeComponents(archetype);
   const governmentFormId = governmentTypeForForm(namedForm)
     ? namedForm
     : inferFormId(governmentComponents.map((c) => c.componentType));
