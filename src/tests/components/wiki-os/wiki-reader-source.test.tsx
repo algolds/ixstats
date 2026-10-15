@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import ArticlePageClient, {
   type ArticlePageClientProps,
 } from "~/app/(wiki-os)/wiki/[...slug]/ArticlePageClient";
+import type { useIiwikiFallback } from "~/hooks/useIiwikiFallback";
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
@@ -30,7 +31,7 @@ jest.mock("~/trpc/react", () => ({
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
 }));
-const inactiveFallback = {
+const inactiveFallback: ReturnType<typeof useIiwikiFallback> = {
   active: false,
   article: undefined,
   loading: false,
@@ -552,8 +553,8 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
         error: Object.assign(new Error("not found"), { data: { code: "NOT_FOUND" } }),
         refetch: jest.fn(),
       });
-    const fallback = (over: Partial<typeof inactiveFallback> & { article?: unknown }) =>
-      mockFallback.mockReturnValue({ ...inactiveFallback, active: true, ...over } as never);
+    const fallback = (over: Partial<typeof inactiveFallback>) =>
+      mockFallback.mockReturnValue({ ...inactiveFallback, active: true, ...over });
 
     it("asks the browser to render it only once the server has failed", () => {
       failedOnServer();
