@@ -22,6 +22,7 @@ import { EconomicComponentType } from "~/lib/economy/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "./tax/atomic-tax-components";
 import { IxTime } from "~/lib/ixtime";
+import { CONFLICT_PENALTY, findSynergyPair, synergyScoreDelta } from "./synergy-table";
 
 /**
  * Calculate government effectiveness metrics based on selected components
@@ -58,7 +59,7 @@ export function calculateGovernmentEffectiveness(
       }
 
       if (checkGovernmentConflict(comp1, comp2)) {
-        conflictPenalty += 15;
+        conflictPenalty += CONFLICT_PENALTY;
         conflictCount++;
       }
     }
@@ -80,41 +81,29 @@ export function calculateGovernmentEffectiveness(
 }
 
 /**
- * Check for synergy between two government components
+ * Check for synergy between two government components, from the shared synergy table.
+ * Scores match the server's: +10 for an additive synergy, +10 × multiplier for a
+ * multiplicative one.
  *
  * @param comp1 - First component type
  * @param comp2 - Second component type
- * @returns Synergy score (0-10)
+ * @returns Synergy score (0 when the pair has no synergy)
  */
 export function checkGovernmentSynergy(comp1: string, comp2: string): number {
-  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
-  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
-
-  if (!component1 || !component2) return 0;
-
-  if (component1.synergies.includes(comp2 as ComponentType)) return 10;
-  if (component2.synergies.includes(comp1 as ComponentType)) return 10;
-
-  return 0;
+  const pair = findSynergyPair(comp1, comp2);
+  if (!pair || pair.type === "CONFLICTING") return 0;
+  return synergyScoreDelta(pair.type, pair.multiplier);
 }
 
 /**
- * Check for conflict between two government components
+ * Check for conflict between two government components, from the shared synergy table.
  *
  * @param comp1 - First component type
  * @param comp2 - Second component type
  * @returns True if components conflict
  */
 export function checkGovernmentConflict(comp1: string, comp2: string): boolean {
-  const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
-  const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
-
-  if (!component1 || !component2) return false;
-
-  return (
-    component1.conflicts.includes(comp2 as ComponentType) ||
-    component2.conflicts.includes(comp1 as ComponentType)
-  );
+  return findSynergyPair(comp1, comp2)?.type === "CONFLICTING";
 }
 
 /**
@@ -260,34 +249,48 @@ export function calculateRequiredCapacity(selectedComponents: ComponentType[]): 
 }
 
 /**
+ * Count the selected components that are defined in the library. Only these count toward
+ * the component cap; an unknown type (for example from old saved data) is ignored.
+ */
+export function countDefinedComponents(selectedComponents: readonly string[]): number {
+  return new Set(selectedComponents.filter((type) => ATOMIC_COMPONENTS[type as ComponentType]))
+    .size;
+}
+
+/**
  * Validate component selection
+ *
+ * Only defined components count toward the cap. Conflicts are warnings, never errors, and an
+ * empty selection is allowed: nothing here blocks a player from moving on.
  *
  * @param selectedComponents - Array of selected component types
  * @param maxComponents - Maximum allowed components
- * @returns Validation result with errors
+ * @returns Validation result with blocking errors and non-blocking warnings
  */
 export function validateSelection(
   selectedComponents: ComponentType[],
   maxComponents: number
-): { isValid: boolean; errors: string[] } {
+): { isValid: boolean; errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
 
-  if (selectedComponents.length === 0) {
-    errors.push("At least one component must be selected");
-  }
-
-  if (selectedComponents.length > maxComponents) {
+  if (countDefinedComponents(selectedComponents) > maxComponents) {
     errors.push(`Maximum ${maxComponents} components allowed`);
   }
 
   const conflicts = detectConflicts(selectedComponents);
   if (conflicts.length > 0) {
-    errors.push(`${conflicts.length} conflict${conflicts.length > 1 ? "s" : ""} detected`);
+    warnings.push(
+      conflicts.length === 1
+        ? "1 pair of components works against each other"
+        : `${conflicts.length} pairs of components work against each other`
+    );
   }
 
   return {
     isValid: errors.length === 0,
     errors,
+    warnings,
   };
 }
 

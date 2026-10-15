@@ -58,6 +58,8 @@ interface UseAtomicGovernmentBuilderReturn {
   deselectComponent: (componentType: ComponentType) => void;
   toggleComponent: (componentType: ComponentType) => void;
   clearSelection: () => void;
+  /** Replace the whole selection in one update (used to apply a preset). */
+  setSelection: (components: ComponentType[]) => void;
   setCategoryFilter: (category: string | null) => void;
   setSearchQuery: (query: string) => void;
 
@@ -65,6 +67,9 @@ interface UseAtomicGovernmentBuilderReturn {
   canSelectMore: boolean;
   categories: typeof COMPONENT_CATEGORIES;
 }
+
+/** Only defined components count toward the component cap. */
+const isDefinedComponent = (type: ComponentType) => ATOMIC_COMPONENTS[type] !== undefined;
 
 /**
  * Hook for managing atomic government component builder state and logic
@@ -82,6 +87,7 @@ export function useAtomicGovernmentBuilder({
     isReadOnly,
     onSelectionChange: onChange,
     defaultCategory: defaultCategoryFilter,
+    countsTowardLimit: isDefinedComponent,
   });
 
   const { selectedComponents, activeCategory, searchQuery } = state;
@@ -155,6 +161,7 @@ export function useAtomicGovernmentBuilder({
     deselectComponent: state.handleDeselect,
     toggleComponent: state.handleToggle,
     clearSelection: state.handleClear,
+    setSelection: state.setSelection,
     setCategoryFilter: state.setActiveCategory,
     setSearchQuery: state.setSearchQuery,
 
