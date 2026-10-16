@@ -1,4 +1,4 @@
-import { type PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 const XP_PER_LEVEL = 1000;
 
@@ -12,13 +12,16 @@ interface GrantXpResult {
   nextLevelThreshold: number;
 }
 
+/** What XP needs: a client or a transaction client (no cast at call sites). */
+type XpDb = Pick<Prisma.TransactionClient, "cardOwnership" | "cardExperienceEvent">;
+
 /**
  * Grant experience to a card ownership.
  * Safe to call from both tRPC mutations and server-side services (cron, auction completion).
  * Creates a CardExperienceEvent record for audit/history.
  */
 export async function grantCardXp(
-  db: PrismaClient,
+  db: XpDb,
   ownershipId: string,
   amount: number,
   source?: string,
