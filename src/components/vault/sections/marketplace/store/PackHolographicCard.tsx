@@ -36,7 +36,7 @@ export interface PackItem {
 
 const getPackConfig = (packType: string) => {
   const type = packType.toUpperCase();
-  if (type.includes("LEGENDARY") || type.includes("MYTHIC"))
+  if (type.includes("LEGENDARY"))
     return {
       color: "text-purple",
       borderColor: "border-purple/30",

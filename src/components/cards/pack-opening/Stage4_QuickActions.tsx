@@ -5,7 +5,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pack-opening";
+import type { CardInstance, QuickActionType } from "~/types/pack-opening";
 import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -13,7 +13,6 @@ import { Button } from "~/components/ui/button";
 
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];
-  onAction: (event: QuickActionEvent) => void;
   onComplete: () => void;
 }
 
@@ -21,186 +20,171 @@ interface Stage4_QuickActionsProps {
  * Stage4_QuickActions - Post-reveal action interface
  *
  * Features:
- * - Junk/Keep/List buttons per card
+ * - Keep and List buttons per card
  * - Bulk selection mode
- * - Quick sell estimates
  * - Auto-collect option
  * - User-controlled progression
  */
-export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
-  ({ cards, onAction, onComplete }) => {
-    const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
-    const [bulkMode, setBulkMode] = useState(false);
-    const [cardActions, setCardActions] = useState<Map<string, QuickActionType>>(new Map());
-    const service = getPackOpeningService();
+export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(({ cards, onComplete }) => {
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
+  const [cardActions, setCardActions] = useState<Map<string, QuickActionType>>(new Map());
+  const service = getPackOpeningService();
 
-    // Handle individual card action
-    const handleCardAction = (cardId: string, action: QuickActionType) => {
-      setCardActions((prev) => new Map(prev).set(cardId, action));
-      onAction({ cardId, action });
-      service.triggerHaptic("light");
-    };
+  // Handle individual card action
+  const handleCardAction = (cardId: string, action: QuickActionType) => {
+    setCardActions((prev) => new Map(prev).set(cardId, action));
+    service.triggerHaptic("light");
+  };
 
-    // Handle bulk selection toggle
-    const toggleBulkSelection = (cardId: string) => {
-      setSelectedCards((prev) => {
-        const next = new Set(prev);
-        if (next.has(cardId)) {
-          next.delete(cardId);
-        } else {
-          next.add(cardId);
-        }
-        return next;
-      });
-    };
+  // Handle bulk selection toggle
+  const toggleBulkSelection = (cardId: string) => {
+    setSelectedCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else {
+        next.add(cardId);
+      }
+      return next;
+    });
+  };
 
-    // Handle bulk action
-    const handleBulkAction = (action: QuickActionType) => {
-      const cardIdList = Array.from(selectedCards);
+  // Handle bulk action
+  const handleBulkAction = (action: QuickActionType) => {
+    const cardIdList = Array.from(selectedCards);
 
-      // Update local state for all selected cards
-      setCardActions((prev) => {
-        const next = new Map(prev);
-        cardIdList.forEach((id) => next.set(id, action));
-        return next;
-      });
+    // Update local state for all selected cards
+    setCardActions((prev) => {
+      const next = new Map(prev);
+      cardIdList.forEach((id) => next.set(id, action));
+      return next;
+    });
 
-      // Call onAction once with all cardIds
-      onAction({ cardIds: cardIdList, action });
+    setSelectedCards(new Set());
+    setBulkMode(false);
+    service.triggerHaptic("medium");
+  };
 
-      setSelectedCards(new Set());
-      setBulkMode(false);
-      service.triggerHaptic("medium");
-    };
+  // Auto-collect all
+  const handleCollectAll = () => {
+    cards.forEach((card) => {
+      if (!cardActions.has(card.id)) {
+        handleCardAction(card.id, "collect");
+      }
+    });
+    service.triggerHaptic("medium");
 
-    // Auto-collect all
-    const handleCollectAll = () => {
-      cards.forEach((card) => {
-        if (!cardActions.has(card.id)) {
-          handleCardAction(card.id, "collect");
-        }
-      });
-      service.triggerHaptic("medium");
+    // Complete after short delay
+    setTimeout(() => {
+      onComplete();
+    }, 500);
+  };
 
-      // Complete after short delay
-      setTimeout(() => {
-        onComplete();
-      }, 500);
-    };
-
-    return (
-      <div className="relative flex h-full w-full flex-col overflow-hidden">
-        {/* Header with stats */}
-        <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="border-separator bg-surface-secondary border-b p-6"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-title-1 text-label">Cards received</h2>
-              <p className="text-body text-label-secondary mt-1">
-                {cards.length} card{cards.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Bulk mode toggle */}
-          <div className="mt-4 flex items-center gap-4">
-            <Button
-              variant="secondary"
-              aria-pressed={bulkMode}
-              onClick={() => setBulkMode(!bulkMode)}
-            >
-              {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
-            </Button>
-
-            {bulkMode && selectedCards.size > 0 && (
-              <motion.div
-                initial={{ scale: 0.96, opacity: 0 }}
-                animate={{ scale: 1 }}
-                className="flex gap-2"
-              >
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleBulkAction("junk")}
-                  className="bg-red/15 text-red hover:bg-red/25"
-                >
-                  Junk ({selectedCards.size})
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleBulkAction("keep")}
-                  className="bg-green/15 text-green hover:bg-green/25"
-                >
-                  Keep ({selectedCards.size})
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleBulkAction("list")}
-                  className="bg-blue/15 text-blue hover:bg-blue/25"
-                >
-                  List ({selectedCards.size})
-                </Button>
-              </motion.div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Cards grid with action buttons */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            <AnimatePresence mode="sync">
-              {cards.map((card, index) => (
-                <CardActionItem
-                  key={card.id}
-                  card={card}
-                  index={index}
-                  isSelected={selectedCards.has(card.id)}
-                  bulkMode={bulkMode}
-                  action={cardActions.get(card.id)}
-                  onToggleSelect={toggleBulkSelection}
-                  onAction={handleCardAction}
-                  service={service}
-                />
-              ))}
-            </AnimatePresence>
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden">
+      {/* Header with stats */}
+      <motion.div
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="border-separator bg-surface-secondary border-b p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-title-1 text-label">Cards received</h2>
+            <p className="text-body text-label-secondary mt-1">
+              {cards.length} card{cards.length !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
 
-        {/* Footer actions */}
-        <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="border-separator bg-surface-secondary border-t p-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-body text-label-secondary">
-              {cardActions.size} of {cards.length} cards processed
-            </div>
+        {/* Bulk mode toggle */}
+        <div className="mt-4 flex items-center gap-4">
+          <Button
+            variant="secondary"
+            aria-pressed={bulkMode}
+            onClick={() => setBulkMode(!bulkMode)}
+          >
+            {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
+          </Button>
 
-            <div className="flex gap-3">
+          {bulkMode && selectedCards.size > 0 && (
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1 }}
+              className="flex gap-2"
+            >
               <Button
                 variant="secondary"
-                size="lg"
-                onClick={handleCollectAll}
+                size="sm"
+                onClick={() => handleBulkAction("keep")}
                 className="bg-green/15 text-green hover:bg-green/25"
               >
-                Collect all
+                Keep ({selectedCards.size})
               </Button>
-              <Button size="lg" onClick={onComplete}>
-                Done
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBulkAction("list")}
+                className="bg-blue/15 text-blue hover:bg-blue/25"
+              >
+                List ({selectedCards.size})
               </Button>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Cards grid with action buttons */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <AnimatePresence mode="sync">
+            {cards.map((card, index) => (
+              <CardActionItem
+                key={card.id}
+                card={card}
+                index={index}
+                isSelected={selectedCards.has(card.id)}
+                bulkMode={bulkMode}
+                action={cardActions.get(card.id)}
+                onToggleSelect={toggleBulkSelection}
+                onAction={handleCardAction}
+                service={service}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
-    );
-  }
-);
+
+      {/* Footer actions */}
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="border-separator bg-surface-secondary border-t p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-body text-label-secondary">
+            {cardActions.size} of {cards.length} cards processed
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={handleCollectAll}
+              className="bg-green/15 text-green hover:bg-green/25"
+            >
+              Collect all
+            </Button>
+            <Button size="lg" onClick={onComplete}>
+              Done
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+});
 
 Stage4_QuickActions.displayName = "Stage4_QuickActions";
 
@@ -327,15 +311,6 @@ const CardActionItem = React.memo<CardActionItemProps>(
             transition={{ delay: index * 0.05 + 0.3 }}
             className="mt-2 flex gap-1"
           >
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onAction(card.id, "junk")}
-              title="Junk for credits"
-              className="bg-red/15 text-red hover:bg-red/25 flex-1"
-            >
-              Junk
-            </Button>
             <Button
               variant="secondary"
               size="sm"

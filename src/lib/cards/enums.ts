@@ -58,6 +58,13 @@ export const CardType = {
 
 export type CardType = (typeof CardType)[keyof typeof CardType];
 
+const TYPE_VALUES: readonly string[] = Object.values(CardType);
+
+/** A card type string as the enum (exact match); null for anything else, the legacy strings included. */
+export function parseCardType(value: string | null | undefined): CardType | null {
+  return value && TYPE_VALUES.includes(value) ? (value as CardType) : null;
+}
+
 /** The finish of one copy (§2.1). Rolled at mint from Phase 4; Phase 1 mints Standard and Serialised only. */
 export const CardFinish = {
   STANDARD: "STANDARD",

@@ -54,7 +54,7 @@ export function AuctionCardItem({
         onClick={() => onShowDetails(auction)}
         className="border-separator rounded-control-sm relative h-14 w-12 shrink-0 cursor-pointer overflow-hidden border"
       >
-        <CardHolographicCover cardType="NS_IMPORT" rarity={rarity} title={title} />
+        <CardHolographicCover cardType={card?.cardType ?? ""} rarity={rarity} title={title} />
         {artwork && artwork !== CARD_ARTWORK_PLACEHOLDER && (
           <img
             src={artwork}

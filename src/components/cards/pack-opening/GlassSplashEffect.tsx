@@ -210,7 +210,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
         />
 
         {/* Secondary shimmer ring for legendary+ */}
-        {["LEGENDARY", "MYTHIC"].includes(rarity) && (
+        {rarity === "LEGENDARY" && (
           <motion.div
             className="absolute rounded-full border-2"
             style={{
@@ -241,7 +241,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
         )}
 
         {/* Radial light rays for epic+ */}
-        {["EPIC", "LEGENDARY", "MYTHIC"].includes(rarity) &&
+        {["EPIC", "LEGENDARY"].includes(rarity) &&
           Array.from({ length: isMobile ? 6 : 12 }).map((_, i) => {
             const angle = (Math.PI * 2 * i) / (isMobile ? 6 : 12);
             const length = isMobile ? 60 : 100;

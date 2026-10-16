@@ -48,7 +48,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
   const cards = useMemo(
     () =>
       inventoryData
-        ?.filter((ownership) => !ownership.isLocked)
+        ?.filter((ownership) => !ownership.isLocked && !ownership.cards?.isBound)
         .map((ownership) => ({
           id: ownership.cards?.id ?? ownership.id,
           ownershipId: ownership.id,
@@ -56,7 +56,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
           rarity: ownership.cards?.rarity ?? "COMMON",
           artwork: ownership.cards?.artwork || CARD_ARTWORK_PLACEHOLDER,
           marketValue: ownership.cards?.marketValue || 0,
-          cardType: ownership.cards?.cardType ?? "NS_IMPORT",
+          cardType: ownership.cards?.cardType ?? "",
         })) || [],
     [inventoryData]
   );

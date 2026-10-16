@@ -38,16 +38,7 @@ export interface CardInstance {
 /**
  * Quick action types for post-reveal
  */
-export type QuickActionType = "junk" | "keep" | "list" | "collect";
-
-/**
- * Quick action event data
- */
-export interface QuickActionEvent {
-  cardId?: string;
-  cardIds?: string[];
-  action: QuickActionType;
-}
+export type QuickActionType = "keep" | "list" | "collect";
 
 /**
  * Haptic feedback patterns

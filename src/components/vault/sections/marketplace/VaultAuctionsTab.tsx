@@ -30,7 +30,7 @@ import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
-import { CardRarity } from "~/lib/cards/enums";
+import { CardRarity, parseCardRarity, parseCardType } from "~/lib/cards/enums";
 import { getRarityConfig, CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { AuctionCardItem } from "./auctions/AuctionCardItem";
@@ -61,8 +61,8 @@ export function VaultAuctionsTab() {
 
   const queryFilters = useMemo(
     () => ({
-      rarity: filters.rarity || undefined,
-      cardType: filters.cardType || undefined,
+      rarity: parseCardRarity(filters.rarity) ?? undefined,
+      cardType: parseCardType(filters.cardType) ?? undefined,
       minPrice: filters.minPrice ? parseInt(filters.minPrice) : undefined,
       maxPrice: filters.maxPrice ? parseInt(filters.maxPrice) : undefined,
       sortBy: (filters.sortBy || "ending_soon") as
@@ -125,38 +125,30 @@ export function VaultAuctionsTab() {
     }
   }, []);
 
-  const detailCard = useMemo(() => {
-    if (!selectedAuction) return null;
-    const c = selectedAuction.CardOwnership?.cards;
+  const detailCard = useMemo((): CardInstance | null => {
+    const c = selectedAuction?.CardOwnership?.cards;
     if (!c) return null;
     return {
       id: c.id,
       title: c.title ?? "Unknown",
       description: c.description ?? "",
       artwork: c.artwork ?? CARD_ARTWORK_PLACEHOLDER,
-      artworkVariants: null,
-      cardType: c.cardType as any,
-      rarity: c.rarity as any,
+      cardType: c.cardType,
+      rarity: parseCardRarity(c.rarity) ?? CardRarity.COMMON,
       season: c.season ?? 1,
       nsCardId: null,
       nsSeason: null,
-      nsData: null,
       wikiSource: c.wikiSource ?? null,
       wikiArticleTitle: null,
       wikiUrl: null,
-      countryId: c.country?.id ?? null,
-      stats: {},
+      countryId: null,
       marketValue: c.marketValue ?? 0,
       totalSupply: c.totalSupply ?? 0,
       level: 1,
-      evolutionStage: 0,
-      enhancements: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       lastTrade: null,
-      country: c.country ?? null,
-      owners: [],
-    } as CardInstance;
+    };
   }, [selectedAuction]);
 
   return (
@@ -240,7 +232,7 @@ export function VaultAuctionsTab() {
             <SelectItem value="all">All types</SelectItem>
             <SelectItem value="NATION">Nation</SelectItem>
             <SelectItem value="LORE">Lore</SelectItem>
-            <SelectItem value="NS_IMPORT">NS import</SelectItem>
+            <SelectItem value="NS">NationStates</SelectItem>
             <SelectItem value="SPECIAL">Special</SelectItem>
           </SelectContent>
         </Select>

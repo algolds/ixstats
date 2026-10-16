@@ -345,7 +345,7 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
           />
 
           {/* Glass fragment effects for epic+ */}
-          {["EPIC", "LEGENDARY", "MYTHIC"].includes(highestRarity) &&
+          {["EPIC", "LEGENDARY"].includes(highestRarity) &&
             Array.from({ length: isMobile ? 8 : 16 }).map((_, i) => {
               const angle = (Math.PI * 2 * i) / (isMobile ? 8 : 16);
               const distance = isMobile ? 60 : 100;

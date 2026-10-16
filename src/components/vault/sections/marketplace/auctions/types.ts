@@ -24,7 +24,6 @@ export interface MarketAuctionItem {
       description?: string | null;
       marketValue?: number | null;
       totalSupply?: number | null;
-      country?: { id: string; name: string } | null;
     };
   };
   AuctionBid?: Array<{
