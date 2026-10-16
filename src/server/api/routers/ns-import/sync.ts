@@ -9,7 +9,8 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { SyncHealthMonitor } from "~/lib/nationstates/sync-monitor";
 import { TRPCError } from "@trpc/server";
-import { type PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { CardType } from "~/lib/cards/enums";
 
 import { activeRunningJobs, processRegionCardsFromDump } from "~/lib/nationstates/sync-processor";
 
@@ -111,10 +112,10 @@ export const nsImportSyncRouter = createTRPCRouter({
       }
 
       const nationsList: string[] = Array.isArray(meta.nations)
-        ? meta.nations.map((n: any) => String(n).trim()).filter(Boolean)
+        ? meta.nations.map((n: string | number) => String(n).trim()).filter(Boolean)
         : [];
 
-      const orConditions: any[] = [];
+      const orConditions: Prisma.CardWhereInput[] = [];
 
       if (regionName) {
         const spaced = regionName.replace(/_/g, " ");
@@ -131,8 +132,8 @@ export const nsImportSyncRouter = createTRPCRouter({
 
         for (const variant of regionVariants) {
           orConditions.push(
-            { stats: { path: ["region"], equals: variant } },
-            { stats: { path: ["region"], string_contains: variant } },
+            { metadata: { path: ["nsData", "region"], equals: variant } },
+            { metadata: { path: ["nsData", "region"], string_contains: variant } },
             { metadata: { path: ["importedFrom"], equals: `region:${variant}` } },
             { metadata: { path: ["importedFrom"], string_contains: variant } }
           );
@@ -170,17 +171,13 @@ export const nsImportSyncRouter = createTRPCRouter({
         });
       }
 
-      const where: any = {
-        cardType: "NS_IMPORT",
+      const where: Prisma.CardWhereInput = {
+        cardType: CardType.NS,
+        ...(orConditions.length > 0 ? { OR: orConditions } : {}),
+        ...(input.search?.trim()
+          ? { title: { contains: input.search.trim(), mode: "insensitive" } }
+          : {}),
       };
-
-      if (orConditions.length > 0) {
-        where.OR = orConditions;
-      }
-
-      if (input.search?.trim()) {
-        where.title = { contains: input.search.trim(), mode: "insensitive" };
-      }
 
       const [cards, total] = await Promise.all([
         ctx.db.card.findMany({
