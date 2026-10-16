@@ -1,5 +1,9 @@
+import type { ReactNode } from "react";
+import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import type { ForumAuthors } from "./AuthorName";
 import { ForumAvatar, type ForumAvatarSize } from "./ForumAvatar";
+import { PersonaTypeChip } from "./PersonaTypeChip";
 
 interface AuthorRef {
   authors: ForumAuthors;
@@ -47,5 +51,45 @@ export function AuthorMark({ size = "xs", ...ref }: AuthorMarkProps) {
       <ForumAvatar name={name} avatarUrl={avatarUrl} size={size} />
       {flagUrl ? <AuthorFlag url={flagUrl} /> : null}
     </span>
+  );
+}
+
+interface AuthorLineProps {
+  name: string;
+  /** A persona's username: the name opens the persona's hover card and `@username` follows it. */
+  personaUsername?: string | null;
+  personaType: PersonaType | null;
+  /** A member's flag; always null for a persona, which never shows its nation. */
+  flagUrl: string | null;
+  /** Role, visitor and moderation badges, and the time, after the name. */
+  children?: ReactNode;
+}
+
+/**
+ * Who wrote a post, the same on every forum surface: the name in headline type (a persona's opens its hover card,
+ * then its @username), a member's flag or a persona's voice chip, then whatever the surface adds.
+ */
+export function AuthorLine({
+  name,
+  personaUsername,
+  personaType,
+  flagUrl,
+  children,
+}: AuthorLineProps) {
+  const title = <span className="text-headline text-label min-w-0 truncate">{name}</span>;
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+      {personaUsername ? (
+        <>
+          <PersonaAuthorCard username={personaUsername}>{title}</PersonaAuthorCard>
+          <span className="text-footnote text-label-secondary">@{personaUsername}</span>
+        </>
+      ) : (
+        title
+      )}
+      {flagUrl ? <AuthorFlag url={flagUrl} /> : null}
+      {personaType ? <PersonaTypeChip type={personaType} /> : null}
+      {children}
+    </div>
   );
 }
