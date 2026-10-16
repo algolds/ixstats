@@ -113,17 +113,12 @@ describe("ThreadTable rows", () => {
     expect(cell.firstElementChild).toHaveAttribute("data-slot", "avatar");
   });
 
-  it("sets the title at the platform's headline size", () => {
-    renderTable([thread("t1")]);
-    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-headline");
-  });
-
-  it("draws rows at data density: 28px avatars, headline titles, 36px rows (44px coarse)", () => {
+  it("draws rows at data density: 28px avatars, headline titles, py-2 rows", () => {
     renderTable([thread("t1")]);
     const title = screen.getByRole("link", { name: /Thread t1/i });
     expect(title).toHaveClass("text-headline");
     const row = title.closest('[role="row"]')!;
-    expect(row).toHaveClass("py-2", "min-h-9", "pointer-coarse:min-h-11");
+    expect(row).toHaveClass("py-2", "pointer-coarse:min-h-11");
     expect(row.querySelector(".size-7")).not.toBeNull();
   });
 

@@ -206,7 +206,7 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
       role="row"
       className={cn(
         GRID,
-        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-5 min-h-9 pointer-coarse:min-h-11"
+        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-5 pointer-coarse:min-h-11"
       )}
     >
       <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">

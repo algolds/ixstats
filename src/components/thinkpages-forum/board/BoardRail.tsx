@@ -8,7 +8,7 @@ import { RailPanel } from "../shell";
 type Category = RouterOutputs["thinkpagesForum"]["category"]["category"];
 
 /** Who may start a thread here; the description and style are in the board's header. */
-export function AboutPanel({ category }: { category: Category }) {
+export function PostingPanel({ category }: { category: Category }) {
   const rule =
     category.postRole === "staff"
       ? "Only staff can start threads here."

@@ -334,7 +334,7 @@ describe("BoardPage read state", () => {
     auth.isSignedIn = false;
   });
 
-  it("shows an unread thread in bold and offers Mark board read, which marks the board and refreshes", async () => {
+  it("shows an unread thread in semibold and offers Mark board read, which marks the board and refreshes", async () => {
     set("category", {
       data: board({ threads: [{ ...thread("t1"), unread: true }, thread("t2")] }),
     });
