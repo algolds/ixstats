@@ -46,7 +46,7 @@ export function CardGeneralSettingsAdmin() {
         <div>
           <h2 className="text-label text-title-3">General card system policies</h2>
           <p className="text-label-secondary text-caption">
-            Marketplace fee, base card capacity and the junk batch limit.
+            Marketplace fee and base card capacity.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -98,7 +98,7 @@ export function CardGeneralSettingsAdmin() {
         <Card className="space-y-4 p-6">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Layers className="text-teal h-4 w-4" />
-            <h3 className="text-label text-headline">Inventory & recycler limits</h3>
+            <h3 className="text-label text-headline">Inventory</h3>
           </div>
 
           <div className="space-y-4">
@@ -117,29 +117,6 @@ export function CardGeneralSettingsAdmin() {
                   step={100}
                   value={form.maxInventoryCards ?? 150}
                   onChange={(e) => handleChange("maxInventoryCards", Number(e.target.value))}
-                  className="w-24 text-right font-mono"
-                />
-                <span className="text-label-secondary text-caption">cards</span>
-              </div>
-            </div>
-
-            <div className="border-separator bg-surface rounded-row flex items-center justify-between gap-4 border p-3">
-              <div className="space-y-0.5">
-                <label className="text-label text-caption block">
-                  Max Batch Junk/Recycle Limit
-                </label>
-                <p className="text-label-secondary text-footnote">
-                  Maximum cards recyclable in a single batch payout call
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min={10}
-                  max={500}
-                  step={10}
-                  value={form.maxJunkBatchSize ?? 100}
-                  onChange={(e) => handleChange("maxJunkBatchSize", Number(e.target.value))}
                   className="w-24 text-right font-mono"
                 />
                 <span className="text-label-secondary text-caption">cards</span>

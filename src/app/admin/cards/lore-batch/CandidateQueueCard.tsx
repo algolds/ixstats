@@ -48,10 +48,8 @@ interface CandidateQueueCardProps {
   queue: ReturnType<typeof useLoreBatchQueue>;
   statusFilter: StatusFilter;
   onStatusFilterChange: (filter: StatusFilter) => void;
-  duplicateCount: number;
   onPreview: (preview: ArtworkPreview) => void;
   onShowError: (candidate: BatchCandidate) => void;
-  onPurgeDuplicates: () => void;
   onBackfillAuthors: () => void;
   onReclassify: () => void;
 }
@@ -240,10 +238,8 @@ export function CandidateQueueCard({
   queue,
   statusFilter,
   onStatusFilterChange,
-  duplicateCount,
   onPreview,
   onShowError,
-  onPurgeDuplicates,
   onBackfillAuthors,
   onReclassify,
 }: CandidateQueueCardProps) {
@@ -269,15 +265,6 @@ export function CandidateQueueCard({
             title="Remove duplicate articles currently in this queue"
           >
             <Layers className="text-purple mr-1 h-3.5 w-3.5" /> Deduplicate queue
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={onPurgeDuplicates}
-            disabled={isProcessingBatch}
-            title="Scan and purge duplicate cards from the database"
-          >
-            <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge DB Duplicates ({duplicateCount})
           </Button>
           <Button
             size="sm"

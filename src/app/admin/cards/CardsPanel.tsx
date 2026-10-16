@@ -25,7 +25,7 @@ import { LogViewerFilterable, type LogEntry, type LogLevel } from "~/components/
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
-import { LoreCategory } from "~/lib/cards/category-enums";
+import { BROWSABLE_CATEGORIES, LoreCategory } from "~/lib/cards/category-enums";
 import { Stat } from "~/components/ui/stat";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -247,7 +247,12 @@ export default function CardAdminDashboardPage() {
                       label="Lore categories"
                       icon={<Layers className="text-teal" />}
                       iconPlacement="trailing"
-                      value={<>{Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13</>}
+                      value={
+                        <>
+                          {Object.keys(loreStats?.categoryBreakdown ?? {}).length} /{" "}
+                          {BROWSABLE_CATEGORIES.length}
+                        </>
+                      }
                       hint={<>Super-categories in active circulation</>}
                     />
                   </Card>

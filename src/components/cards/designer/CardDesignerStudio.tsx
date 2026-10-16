@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { parseCardRarity } from "~/lib/cards/enums";
 import { DesignerStage3D } from "./DesignerStage3D";
 import { DesignerControlRack } from "./DesignerControlRack";
 import { GameIconsBrowser } from "./GameIconsBrowser";
@@ -19,6 +20,7 @@ import {
   type CardDesignPreset,
   type GameIconItem,
   DEFAULT_DESIGN_STATE,
+  presetDesignState,
 } from "./types";
 
 const LOCAL_STORAGE_PRESETS_KEY = "ix_card_designer_presets_v1";
@@ -71,7 +73,7 @@ export const CardDesignerStudio: React.FC = () => {
 
   const handleLoadPreset = useCallback(
     (preset: CardDesignPreset) => {
-      setState(preset.state);
+      setState(presetDesignState(preset));
       notify.info(`Loaded preset "${preset.name}"`);
     },
     [notify]
@@ -128,7 +130,7 @@ export const CardDesignerStudio: React.FC = () => {
       description: state.description,
       category: state.category,
       subcategory: state.subcategory,
-      rarity: state.rarity as any,
+      rarity: parseCardRarity(state.rarity) ?? undefined,
       season: state.season,
       cardType: state.cardType,
       marketValue: state.marketValue,
@@ -141,15 +143,6 @@ export const CardDesignerStudio: React.FC = () => {
         state.artworkSource === "WIKI_FETCHED"
           ? `${state.wikiSource.toUpperCase()} Article`
           : undefined,
-      attributes: {
-        designerCreated: true,
-        materialFinish: state.materialFinish,
-        surfaceRefraction: state.surfaceRefraction,
-        particleDensity: state.particleDensity,
-        enableArtwork: state.enableArtwork,
-        artworkOpacity: state.artworkOpacity,
-      },
-
       metadata: {
         emblemIcon: state.emblemIcon,
         emblemScale: state.emblemScale,

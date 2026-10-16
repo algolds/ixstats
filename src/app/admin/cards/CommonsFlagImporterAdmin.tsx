@@ -62,6 +62,7 @@ export function CommonsFlagImporterAdmin() {
       notify.success("Flags Imported", data.message || `Imported ${data.imported} flag(s).`);
       setSelectedItemUrls(new Set());
       void commonsQuery.refetch();
+      void utils.cards.adminCardExplorer.invalidate();
       void utils.cards.getNSCards.invalidate();
       void utils.cards.getMyCards.invalidate();
     },

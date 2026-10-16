@@ -51,16 +51,14 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
       title: state.title || "Untitled Card",
       description: textContent,
       artwork: state.artworkUrl || "",
-      artworkUrl: state.artworkUrl || null,
       artworkSource: state.artworkSource || "PROCEDURAL",
-      cardType: state.cardType || "WIKI_LORE",
+      cardType: state.cardType,
       category: state.category,
       subcategory: state.subcategory,
       rarity: (state.rarity || "EPIC") as CardRarity,
       season: state.season || 1,
       nsCardId: null,
       nsSeason: null,
-      nsData: null,
       wikiSource: state.wikiSource || "ixwiki",
       wikiArticleTitle: state.wikiArticleTitle || state.title,
       wikiExcerpt: textContent,
@@ -71,7 +69,6 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
           )
         : null,
       countryId: null,
-      stats: { power: 100, defense: 100, diplomaticImpact: 100 },
       metadata: {
         emblemIcon: state.emblemIcon,
         emblemScale: state.emblemScale,
@@ -89,12 +86,9 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
       marketValue: state.marketValue || 6000,
       totalSupply: state.totalSupply || 100,
       level: 1,
-      evolutionStage: 1,
-      enhancements: null,
       createdAt: new Date(),
       updatedAt: new Date(),
       lastTrade: null,
-      artworkVariants: null,
     };
   }, [state]);
 

@@ -3,7 +3,6 @@
 import { useState, type ComponentType, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  CheckCircle as CheckCircle2,
   Component as Layers,
   Copy,
   InfoCircle as Info,
@@ -11,9 +10,7 @@ import {
   OpenNewWindow as ExternalLink,
   Sparks as Sparkles,
   SystemRestart as Loader2,
-  Trash as Trash2,
   Undo as RotateCcw,
-  WarningCircle as AlertCircle,
   WarningTriangle as AlertTriangle,
   XmarkCircle as XCircle,
 } from "iconoir-react";
@@ -195,11 +192,6 @@ export function ArtworkPreviewDialog({
   );
 }
 
-interface DuplicateStats {
-  totalDuplicates: number;
-  loreGroups: Array<{ title: string; wikiSource: string; count: number; redundantCount: number }>;
-}
-
 /** Refreshes the audit log and lore stats the maintenance dialogs change. */
 function useRefreshLoreStats() {
   const utils = api.useUtils();
@@ -207,111 +199,6 @@ function useRefreshLoreStats() {
     void utils.cards.getUnifiedAuditLogs.invalidate();
     void utils.cards.getLoreStats.invalidate();
   };
-}
-
-export function PurgeDuplicatesDialog({
-  open,
-  onOpenChange,
-  stats,
-  onPurged,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  stats: DuplicateStats | undefined;
-  onPurged: () => void;
-}) {
-  const notify = useNotify();
-  const refreshStats = useRefreshLoreStats();
-  const total = stats?.totalDuplicates ?? 0;
-  const purge = api.loreCards.purgeDuplicateCards.useMutation({
-    onSuccess: (data: { message: string }) => {
-      notify.success("Duplicates Purged", data.message);
-      onOpenChange(false);
-      onPurged();
-      refreshStats();
-    },
-    onError: (err: { message: string }) => notify.error("Purge Error", err.message),
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <ToneHeader
-          icon={Trash2}
-          tone="red"
-          title={`Purge Duplicate Cards (${total} Redundant)`}
-          description="Safely consolidate duplicate cards and clean up redundant database copies."
-        />
-
-        <div className="text-footnote space-y-4 py-2">
-          <div className="rounded-row border-yellow/30 bg-yellow/10 text-yellow space-y-1 border p-4">
-            <p className="flex items-center gap-2 font-semibold">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              How Duplicate Purging Works:
-            </p>
-            <p className="text-footnote leading-relaxed opacity-90">
-              For each article with duplicate cards, the system selects the highest-level / most
-              referenced card as the Primary Keeper. All user ownerships, auctions, and value
-              history are re-linked to the keeper card before deleting redundant copies.
-            </p>
-          </div>
-
-          {stats?.loreGroups && stats.loreGroups.length > 0 ? (
-            <div className="space-y-2">
-              <span className="text-label block font-semibold">
-                Duplicate Groups ({stats.loreGroups.length} unique articles):
-              </span>
-              <div className="border-separator bg-surface divide-separator rounded-row max-h-52 divide-y overflow-y-auto border">
-                {stats.loreGroups.map((g, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3">
-                    <div className="min-w-0">
-                      <p className="text-label truncate font-semibold">{g.title}</p>
-                      <span className="text-label-secondary text-eyebrow tabular-nums">
-                        {g.wikiSource}
-                      </span>
-                    </div>
-                    <Badge variant="destructive">
-                      {g.count} copies (+{g.redundantCount} redundant)
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-label-secondary py-4 text-center">
-              <CheckCircle2 className="text-green mx-auto mb-2 h-8 w-8 opacity-80" />
-              <p className="text-label font-semibold">No duplicate lore cards found</p>
-              <p className="text-footnote">
-                Your database is clean with no redundant lore card records.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={purge.isPending || total === 0}
-            onClick={() => purge.mutate({ mode: "wiki_lore" })}
-          >
-            {purge.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Purging...
-              </>
-            ) : (
-              <>
-                <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge {total} Duplicates
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 interface BatchJobDialogProps {

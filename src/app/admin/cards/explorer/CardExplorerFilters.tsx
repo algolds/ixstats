@@ -3,6 +3,8 @@ import { Search } from "iconoir-react";
 import { Input } from "~/components/ui/input";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
+import { getCardTypeLabel } from "~/lib/cards/display-utils";
+import { CardType } from "~/lib/cards/enums";
 import type { CardRarity } from "@prisma/client";
 import {
   Select,
@@ -13,7 +15,20 @@ import {
 } from "~/components/ui/select";
 import { Card } from "~/components/ui/card";
 
-export type CardTypeFilter = "all" | "NS_IMPORT" | "USER_CUSTOM" | "LORE_BATCH" | "COMMONS_IMPORT";
+/** The explorer's card type filter: one type, or all of them. */
+export type CardTypeFilter = "all" | CardType;
+
+/** Every card type with its label, for the type pickers. */
+export const CARD_TYPE_OPTIONS = Object.values(CardType).map(
+  (type) => [type, getCardTypeLabel(type)] as const
+);
+
+/** The type filter's choices, shared by the filter bar and the bulk bar. */
+export const CARD_TYPE_FILTER_OPTIONS: ReadonlyArray<readonly [CardTypeFilter, string]> = [
+  ["all", "All card types"],
+  ...CARD_TYPE_OPTIONS,
+];
+
 export type SortByOption = "recent" | "marketValue" | "marketValue_asc" | "name" | "rarity";
 
 interface CardExplorerFiltersProps {
@@ -70,7 +85,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         />
       </div>
 
-      {/* Card Source / Importer Filter */}
+      {/* Card type filter */}
       <Select
         value={cardTypeFilter}
         onValueChange={(v) => {
@@ -82,19 +97,19 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All card sources</SelectItem>
-          <SelectItem value="LORE_BATCH">Wiki lore cards</SelectItem>
-          <SelectItem value="NS_IMPORT">NS Official Imports</SelectItem>
-          <SelectItem value="USER_CUSTOM">User Imported / Custom</SelectItem>
-          <SelectItem value="COMMONS_IMPORT">Commons flag imports</SelectItem>
+          {CARD_TYPE_FILTER_OPTIONS.map(([value, label]) => (
+            <SelectItem key={value} value={value}>
+              {label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
-      {cardTypeFilter !== "NS_IMPORT" && (
+      {cardTypeFilter !== CardType.NS && (
         <Select
           value={categoryFilter}
           onValueChange={(v) => {
-            setCategoryFilter(v as any);
+            setCategoryFilter(v as CardExplorerFiltersProps["categoryFilter"]);
             setOffset(0);
           }}
         >
@@ -112,11 +127,11 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </Select>
       )}
 
-      {cardTypeFilter !== "LORE_BATCH" && (
+      {cardTypeFilter !== CardType.LORE && (
         <Select
           value={cteFilter}
           onValueChange={(v) => {
-            setCteFilter(v as any);
+            setCteFilter(v as CardExplorerFiltersProps["cteFilter"]);
             setOffset(0);
           }}
         >
@@ -134,7 +149,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
       <Select
         value={takedownFilter}
         onValueChange={(v) => {
-          setTakedownFilter(v as any);
+          setTakedownFilter(v as CardExplorerFiltersProps["takedownFilter"]);
           setOffset(0);
         }}
       >
@@ -170,7 +185,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
       <Select
         value={rarity}
         onValueChange={(v) => {
-          setRarity(v as any);
+          setRarity(v as CardExplorerFiltersProps["rarity"]);
           setOffset(0);
         }}
       >

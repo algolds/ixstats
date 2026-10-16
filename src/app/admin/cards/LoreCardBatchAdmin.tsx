@@ -12,7 +12,6 @@ import {
   ArtworkPreviewDialog,
   BackfillAuthorsDialog,
   ErrorDiagnosticsDialog,
-  PurgeDuplicatesDialog,
   ReclassifyDialog,
 } from "./lore-batch/LoreBatchDialogs";
 import { RequestQueueTab } from "./lore-batch/RequestQueueTab";
@@ -27,7 +26,6 @@ export function LoreCardBatchAdmin() {
   const [activeTab, setActiveTab] = useState<"generator" | "requests">("generator");
   const [preview, setPreview] = useState<ArtworkPreview | null>(null);
   const [errorCandidate, setErrorCandidate] = useState<BatchCandidate | null>(null);
-  const [isPurgeOpen, setIsPurgeOpen] = useState(false);
   const [isBackfillOpen, setIsBackfillOpen] = useState(false);
   const [isReclassifyOpen, setIsReclassifyOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -35,8 +33,6 @@ export function LoreCardBatchAdmin() {
   const controlInputs = useBatchControlsInputs();
   const queue = useLoreBatchQueue();
   const loaders = useLoreBatchLoaders(queue);
-  const { data: duplicateStats, refetch: refetchDuplicates } =
-    api.loreCards.getDuplicateCardsStats.useQuery();
   const requestStats = api.loreCards.getRequestStats.useQuery(undefined, {
     enabled: activeTab === "requests",
   });
@@ -85,10 +81,8 @@ export function LoreCardBatchAdmin() {
               queue={queue}
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
-              duplicateCount={duplicateStats?.totalDuplicates ?? 0}
               onPreview={setPreview}
               onShowError={setErrorCandidate}
-              onPurgeDuplicates={() => setIsPurgeOpen(true)}
               onBackfillAuthors={() => setIsBackfillOpen(true)}
               onReclassify={() => setIsReclassifyOpen(true)}
             />
@@ -98,12 +92,6 @@ export function LoreCardBatchAdmin() {
       {activeTab === "requests" && <RequestQueueTab />}
 
       <ArtworkPreviewDialog preview={preview} onClose={() => setPreview(null)} />
-      <PurgeDuplicatesDialog
-        open={isPurgeOpen}
-        onOpenChange={setIsPurgeOpen}
-        stats={duplicateStats}
-        onPurged={() => void refetchDuplicates()}
-      />
       <BackfillAuthorsDialog open={isBackfillOpen} onOpenChange={setIsBackfillOpen} />
       <ReclassifyDialog open={isReclassifyOpen} onOpenChange={setIsReclassifyOpen} />
       <ErrorDiagnosticsDialog

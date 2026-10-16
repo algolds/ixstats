@@ -18,14 +18,15 @@ import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
 import { Badge } from "~/components/ui/badge";
 import { ValueSelect } from "~/components/ui/value-select";
+import { type CardTypeFilter, CARD_TYPE_FILTER_OPTIONS } from "./CardExplorerFilters";
 
 interface CardExplorerBatchBarProps {
   total: number;
   loadedCount: number;
   isBulkModalOpen: boolean;
   setIsBulkModalOpen: (v: boolean) => void;
-  bulkTargetType: "all" | "NS_IMPORT" | "LORE" | "USER_CUSTOM" | "COMMONS_IMPORT";
-  setBulkTargetType: (v: "all" | "NS_IMPORT" | "LORE" | "USER_CUSTOM" | "COMMONS_IMPORT") => void;
+  bulkTargetType: CardTypeFilter;
+  setBulkTargetType: (v: CardTypeFilter) => void;
   bulkCteFilter: "all" | "active" | "cte";
   setBulkCteFilter: (v: "all" | "active" | "cte") => void;
   bulkCategoryFilter: "all" | LoreCategory;
@@ -97,7 +98,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 </label>
                 <ValueSelect
                   value={bulkCategoryFilter}
-                  onValueChange={(v) => setBulkCategoryFilter(v as any)}
+                  onValueChange={setBulkCategoryFilter}
                   options={[
                     ["all", "All categories"],
                     ...Object.values(LoreCategory).map(
@@ -110,17 +111,11 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
               </div>
 
               <div>
-                <label className="text-label-secondary text-caption mb-1 block">Source type</label>
+                <label className="text-label-secondary text-caption mb-1 block">Card type</label>
                 <ValueSelect
                   value={bulkTargetType}
-                  onValueChange={(v) => setBulkTargetType(v as any)}
-                  options={[
-                    ["all", "All sources"],
-                    ["LORE", "Lore cards only"],
-                    ["NS_IMPORT", "NS Imports Only"],
-                    ["USER_CUSTOM", "User custom only"],
-                    ["COMMONS_IMPORT", "Commons imports"],
-                  ]}
+                  onValueChange={setBulkTargetType}
+                  options={CARD_TYPE_FILTER_OPTIONS}
                   size="sm"
                   className="w-full"
                 />
@@ -134,7 +129,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 </label>
                 <ValueSelect
                   value={bulkCteFilter}
-                  onValueChange={(v) => setBulkCteFilter(v as any)}
+                  onValueChange={setBulkCteFilter}
                   options={[
                     ["all", "All"],
                     ["active", "Active"],
@@ -149,7 +144,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 <label className="text-label-secondary text-caption mb-1 block">Season</label>
                 <ValueSelect
                   value={bulkSeason}
-                  onValueChange={(v) => setBulkSeason(v as any)}
+                  onValueChange={setBulkSeason}
                   options={[
                     ["all", "All"],
                     ["1", "Season 1"],
@@ -165,7 +160,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
                 <label className="text-label-secondary text-caption mb-1 block">Rarity</label>
                 <ValueSelect
                   value={bulkRarity}
-                  onValueChange={(v) => setBulkRarity(v as any)}
+                  onValueChange={setBulkRarity}
                   options={[
                     ["all", "All"],
                     ["COMMON", "Common"],
