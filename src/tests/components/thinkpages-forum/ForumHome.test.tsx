@@ -36,6 +36,7 @@ jest.mock("~/trpc/react", () => {
         navFlags: query("navFlags"),
         realms: query("realms"),
         category: query("category"),
+        realmPanel: query("realmPanel"),
         navCounts: query("navCounts"),
         appeal: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
       },
@@ -384,36 +385,21 @@ describe("Forums home: the old forum's archive", () => {
 });
 
 describe("Forums home: Your realm and Moderation", () => {
-  const realm = { defaultSlug: "eurth", realms: [{ id: "r1", slug: "eurth", name: "Eurth" }] };
-  const hub = {
-    category: { key: "hub", name: "Hub" },
-    threads: [
-      {
-        id: "t_old",
-        title: "Pinned rules",
-        pinned: true,
-        authorUserId: "u1",
-        authorPersonaId: null,
-        importedAuthorName: null,
-        lastPostAt: new Date("2026-01-01T00:00:00Z"),
-      },
-      {
-        id: "t_hub",
-        title: "Interregnum topics",
-        pinned: false,
-        authorUserId: "u2",
-        authorPersonaId: "pa",
-        importedAuthorName: null,
-        lastPostAt: new Date(),
-      },
-    ],
-    authors: {
-      users: {
-        u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
-        u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: null },
-      },
-      personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null } },
-    },
+  const message = (over: object = {}) => ({
+    id: "m1",
+    author: { name: "Kir", avatarUrl: null, flagUrl: "/flags/kir.png", persona: false },
+    excerpt: "The envoys land on Friday",
+    createdAt: new Date(Date.now() - 3 * 60_000),
+    href: "/thinkpages/r/eurth#post-m1",
+    ...over,
+  });
+  const panel = (messages: object[] = [message()]) => ({
+    realm: { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null },
+    messages,
+  });
+  const member = () => {
+    auth.isSignedIn = true;
+    set("navFlags", { data: { realmMember: true, forumModerator: false } });
   };
 
   beforeEach(() => {
@@ -423,8 +409,7 @@ describe("Forums home: Your realm and Moderation", () => {
   it("says how many messages are new on the realm board, and nothing when none are", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
     const link = screen.getByRole("link", { name: /Eurth/ });
@@ -447,32 +432,63 @@ describe("Forums home: Your realm and Moderation", () => {
   it("caps the realm board count at 99+", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
     render(<ForumHome />);
     expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
-  it("shows the viewer's realm with its Hub's latest thread, linking to /thinkpages/r/mine", () => {
-    auth.isSignedIn = true;
-    set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+  it("shows the viewer's realm with its newest board message, linking to /thinkpages/r/mine", () => {
+    member();
+    set("realmPanel", { data: panel() });
     render(<ForumHome />);
     const card = screen.getByRole("link", { name: /Eurth/ });
     expect(card).toHaveAttribute("href", "/thinkpages/r/mine");
-    expect(within(card).getByText("Interregnum topics")).toBeInTheDocument();
-    expect(within(card).getByText(/Aria Vance/)).toBeInTheDocument();
-    expect(within(card).queryByText(/Hidden Player/)).toBeNull();
+    expect(within(card).getByText("Kir")).toBeInTheDocument();
+    expect(within(card).getByText("The envoys land on Friday")).toBeInTheDocument();
+    expect(within(card).getByText("3m ago")).toBeInTheDocument();
+    expect(card.querySelector('img[src="/flags/kir.png"]')).toBeNull();
     expect(screen.getByText("Your realm")).toBeInTheDocument();
+  });
+
+  it("names the persona, not the player, on a persona's newest board message, and shows no flag", () => {
+    member();
+    const author = { name: "Aria Vance", avatarUrl: null, flagUrl: null, persona: true };
+    set("realmPanel", { data: panel([message({ author })]) });
+    render(<ForumHome />);
+    const card = screen.getByRole("link", { name: /Eurth/ });
+    expect(within(card).getByText("Aria Vance")).toBeInTheDocument();
+    expect(card.querySelector("img")).toBeNull();
+  });
+
+  it("shows no message line when the board has no messages", () => {
+    member();
+    set("realmPanel", { data: panel([]) });
+    render(<ForumHome />);
+    const card = screen.getByRole("link", { name: /Eurth/ });
+    expect(card).toHaveTextContent(/^Eurth$/);
+  });
+
+  it("holds the card with a placeholder while the realm loads, so the boards do not jump", () => {
+    member();
+    set("realmPanel", { isLoading: true });
+    render(<ForumHome />);
+    expect(screen.getByRole("heading", { level: 2, name: "Your realm" })).toBeInTheDocument();
+    expect(screen.getByTestId("your-realm-placeholder")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Eurth/ })).toBeNull();
+  });
+
+  it("shows nothing once the board has loaded to no realm", () => {
+    member();
+    set("realmPanel", { data: null });
+    render(<ForumHome />);
+    expect(screen.queryByText("Your realm")).toBeNull();
   });
 
   it("puts Your realm in the main column above the boards, not in the rail", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("trending", {
       data: [{ threadId: "t1", title: "A", categoryName: "Hub", repliesToday: 1 }],
     });
@@ -491,8 +507,7 @@ describe("Forums home: Your realm and Moderation", () => {
 
   it("draws the realm's uploaded emblem in Your realm, else its thumbnail, else the realms icon", () => {
     auth.isSignedIn = true;
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     const mark = { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null };
     const tile = () => screen.getByRole("link", { name: /Eurth/ });
 
@@ -531,7 +546,7 @@ describe("Forums home: Your realm and Moderation", () => {
   it("omits the card for a viewer without a realm, and signed out", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: false, forumModerator: false } });
-    set("realms", { data: realm });
+    set("realmPanel", { data: panel() });
     const { unmount } = render(<ForumHome />);
     expect(screen.queryByText("Your realm")).toBeNull();
     unmount();
