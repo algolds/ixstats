@@ -54,7 +54,11 @@ export function VaultBalanceCard({ totalCards, deckValue }: VaultBalanceCardProp
       data-slot="vault-balance-card"
       className="flex h-full flex-col gap-3 overflow-hidden"
     >
-      <TextureOverlay texture="chevron" className="[--facet-texture-color:var(--tint)]" />
+      <TextureOverlay
+        texture="chevron"
+        opacity={0.025}
+        className="[--facet-texture-color:var(--tint)]"
+      />
       <div className="relative flex items-center justify-between gap-3">
         <CardTitle icon={<Wallet />}>Balance</CardTitle>
         <div className="flex flex-wrap items-center justify-end gap-2">

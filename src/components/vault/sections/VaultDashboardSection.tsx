@@ -3,15 +3,15 @@ import { useVaultStats } from "~/hooks/vault/useVaultStats";
 import type { Figure } from "./dashboard/credits";
 import { VaultBalanceCard } from "./dashboard/VaultBalanceCard";
 import { VaultHoldings } from "./dashboard/VaultHoldings";
-import { VaultLatestUnlock } from "./dashboard/VaultLatestUnlock";
+import { VaultUnlocks } from "./dashboard/VaultUnlocks";
 import { VaultShowcase } from "./dashboard/VaultShowcase";
 import { VaultStatement } from "./dashboard/VaultStatement";
 import { VaultMarkTile } from "./dashboard/VaultTitle";
 
 /**
- * The Wallet page. The DOM order is the phone order (balance, latest unlock, title and Your Vault column, showcase,
- * statement). From `lg`, three columns: balance and latest unlock side by side (equal width and height; the balance
- * takes both columns when there is no unlock), the showcase under them, the Vault column on the right over both
+ * The Wallet page. The DOM order is the phone order (balance, achievements, title and Your Vault column, showcase,
+ * statement). From `lg`, three columns: balance and achievements side by side (equal width and height; the balance
+ * takes both columns when there are none), the showcase under them, the Vault column on the right over both
  * rows, then the statement across the page. `lg:pt-14` clears Halo's floating band, which the desktop page has no
  * header toolbar to do.
  */
@@ -31,7 +31,7 @@ export function VaultDashboardSection() {
         />
       </div>
       <div className="empty:hidden lg:col-start-2 lg:row-start-1 lg:self-stretch">
-        <VaultLatestUnlock />
+        <VaultUnlocks />
       </div>
       <div className="lg:col-start-3 lg:row-span-2 lg:row-start-1">
         <VaultHoldings />

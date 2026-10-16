@@ -148,8 +148,22 @@ describe("lorewards.getMyTrophies", () => {
     logSpy.mockRestore();
   });
 
-  it("is empty, with no wiki name, for a viewer with no verified wiki link", async () => {
+  it("keeps the trophies of a viewer with no link under the name their WikiOS edits carry", async () => {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
+    db.wikiRevision.findFirst.mockResolvedValue({ author: "Ada" });
+    db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 500 } });
+
+    const mine = await viewer().getMyTrophies();
+    expect(mine.wikiUsername).toBe("Ada");
+    expect(mine.wins.daily).toBe(6);
+    expect(db.wikiRevision.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { authorId: "u1", author: { not: null } } })
+    );
+  });
+
+  it("is empty, with no wiki name, for a viewer with no link and no wiki edits", async () => {
+    db.wikiAccountLink.findFirst.mockResolvedValue(null);
+    db.wikiRevision.findFirst.mockResolvedValue(null);
 
     expect(await viewer().getMyTrophies()).toEqual({
       wikiUsername: null,

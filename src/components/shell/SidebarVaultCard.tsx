@@ -71,20 +71,6 @@ function AchievementProgress() {
   );
 }
 
-function WikiLinkPrompt() {
-  const { data: links } = api.ixnayid.listWikiLinks.useQuery();
-  // Quiet until the links load, so a linked player never sees the prompt flash.
-  if (!links || links.some((link) => link.source === "ixwiki" && link.verified)) return null;
-  return (
-    <Link
-      href="/settings?tab=account"
-      className={cn(focusRing, "rounded-control-sm text-footnote text-tint hover:underline")}
-    >
-      Link your wiki account to earn from edits
-    </Link>
-  );
-}
-
 function OpenPanel() {
   return (
     <div className="border-separator flex flex-col gap-3 border-t pt-3">
@@ -97,7 +83,6 @@ function OpenPanel() {
           </Button>
         ))}
       </nav>
-      <WikiLinkPrompt />
     </div>
   );
 }

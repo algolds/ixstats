@@ -230,7 +230,7 @@ describe("you focus", () => {
     expect(screen.getByText("Trophies are unavailable right now.")).toBeInTheDocument();
   });
 
-  it("asks a viewer with no verified wiki account to link it", () => {
+  it("tells a viewer with no wiki edits yet how trophies are earned, without asking for a link", () => {
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
       ok({
         wikiUsername: null,
@@ -244,11 +244,8 @@ describe("you focus", () => {
     );
     render(<LorewardsView focus="you" />);
 
-    expect(screen.getByText("Link your wiki account")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open settings" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/settings")
-    );
+    expect(screen.getByText("No wiki edits yet")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open settings" })).not.toBeInTheDocument();
   });
 
   it("shows another author's trophies for a username, without payouts", () => {

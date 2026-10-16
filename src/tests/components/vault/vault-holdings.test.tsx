@@ -157,7 +157,7 @@ describe("VaultHoldings (Your Vault)", () => {
       expect(row(/Lorewards/).textContent).not.toContain("Today");
     });
 
-    it("asks an unlinked player to link a wiki account, and links to the account settings", () => {
+    it("invites a player with no wiki edits to take part, never asking for a link", () => {
       mockData.getMyTrophies = {
         wikiUsername: null,
         wins: { daily: 0, weekly: 0, monthly: 0 },
@@ -169,8 +169,8 @@ describe("VaultHoldings (Your Vault)", () => {
       };
       render(<VaultHoldings />);
       const link = row(/Lorewards/);
-      expect(link.getAttribute("href")).toBe("/settings?tab=account#ixnayid-card");
-      expect(link.textContent).toContain("Link your wiki account to take part");
+      expect(link.getAttribute("href")).toBe("/vault/achievements?tab=lorewards");
+      expect(link.textContent).toContain("Edit the wiki to take part");
       expect(link.textContent).not.toMatch(/\d/);
     });
 
@@ -224,7 +224,9 @@ describe("VaultHoldings (Your Vault)", () => {
 
   it("carries no wiki prompt while the account is linked, and no packs or deck value", () => {
     const { container } = render(<VaultHoldings />);
-    expect(container.textContent).not.toMatch(/Link your wiki account|pack|deck value/i);
+    expect(container.textContent).not.toMatch(
+      /Link your wiki account|Edit the wiki|pack|deck value/i
+    );
   });
 
   it("marks each home with a tinted icon tile under a dots texture", () => {

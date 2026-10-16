@@ -18,7 +18,7 @@ const totals = (
 ) => ({ userId, totalPoints, achievementCount, rareAchievements });
 
 /**
- * A row of getMySummary's newest-unlock query. `rewardsJson` (the achievement's static rewards) is not selected; a
+ * A row of getMySummary's newest-unlocks query. `rewardsJson` (the achievement's static rewards) is not selected; a
  * test sets it anyway to show the reward is never read from it.
  */
 interface LatestUnlockRow {
@@ -49,11 +49,9 @@ function makeDb() {
   return {
     achievement: { count: jest.fn().mockResolvedValue(40) },
     userAchievement: {
-      findMany: jest.fn(),
-      // The newest unlock of an active achievement, for the caller only.
-      findFirst: jest.fn(
-        ({ where }: { where: { userId: string } }): Promise<LatestUnlockRow | null> =>
-          Promise.resolve(where.userId === "u_me" ? LATEST_UNLOCK : null)
+      // The newest unlocks of active achievements, for the caller only.
+      findMany: jest.fn(({ where }: { where: { userId: string } }): Promise<LatestUnlockRow[]> =>
+        Promise.resolve(where.userId === "u_me" ? [LATEST_UNLOCK] : [])
       ),
     },
     // The database's aggregate, already ordered: points, then active count, then user id.
@@ -90,7 +88,11 @@ describe("playerTotals", () => {
     const db = makeDb();
     await callerFor(db).getMySummary();
 
-    expect(db.userAchievement.findMany).not.toHaveBeenCalled();
+    // The only row read is the caller's three newest unlocks.
+    expect(db.userAchievement.findMany).toHaveBeenCalledTimes(1);
+    expect(db.userAchievement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ userId: "u_me" }), take: 3 })
+    );
     expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const query = db.$queryRaw.mock.calls[0]![0] as { sql: string; values: string[] };
     expect(query.sql).toMatch(/GROUP BY ua\."userId"/);
@@ -111,34 +113,39 @@ describe("achievements.getMySummary", () => {
     expect(db.achievement.count).toHaveBeenCalledWith({ where: { isActive: true } });
   });
 
-  it("names the caller's newest unlock of an active achievement, with its credit reward", async () => {
+  it("names the caller's newest unlocks of active achievements, with their credit rewards", async () => {
     const db = makeDb();
-    const { latest } = await callerFor(db).getMySummary();
+    const { recent } = await callerFor(db).getMySummary();
 
-    expect(latest).toEqual({
-      key: "first-trade",
-      title: "First trade",
-      rarity: "Rare",
-      category: "Cards",
-      iconUrl: "Cart",
-      reward: 25,
-    });
-    expect(db.userAchievement.findFirst).toHaveBeenCalledWith(
+    expect(recent).toEqual([
+      {
+        key: "first-trade",
+        title: "First trade",
+        rarity: "Rare",
+        category: "Cards",
+        iconUrl: "Cart",
+        reward: 25,
+      },
+    ]);
+    expect(db.userAchievement.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: "u_me", achievement: { isActive: true } },
         orderBy: { unlockedAt: "desc" },
+        take: 3,
       })
     );
   });
 
   it("shows what the unlock actually paid, not the achievement's static reward", async () => {
     const db = makeDb();
-    db.userAchievement.findFirst.mockResolvedValue({
-      ...LATEST_UNLOCK,
-      metadata: JSON.stringify({ rewards: { credits: 40 } }),
-      achievement: { ...LATEST_UNLOCK.achievement, rewardsJson: JSON.stringify({ credits: 5 }) },
-    });
-    expect((await callerFor(db).getMySummary()).latest?.reward).toBe(40);
+    db.userAchievement.findMany.mockResolvedValue([
+      {
+        ...LATEST_UNLOCK,
+        metadata: JSON.stringify({ rewards: { credits: 40 } }),
+        achievement: { ...LATEST_UNLOCK.achievement, rewardsJson: JSON.stringify({ credits: 5 }) },
+      },
+    ]);
+    expect((await callerFor(db).getMySummary()).recent[0]?.reward).toBe(40);
   });
 
   it("has no reward when the unlock paid nothing or its metadata is absent, unreadable or not a number", async () => {
@@ -153,8 +160,8 @@ describe("achievements.getMySummary", () => {
     ];
     for (const metadata of metadatas) {
       const db = makeDb();
-      db.userAchievement.findFirst.mockResolvedValue({ ...LATEST_UNLOCK, metadata });
-      expect((await callerFor(db).getMySummary()).latest?.reward).toBeNull();
+      db.userAchievement.findMany.mockResolvedValue([{ ...LATEST_UNLOCK, metadata }]);
+      expect((await callerFor(db).getMySummary()).recent[0]?.reward).toBeNull();
     }
   });
 
@@ -167,7 +174,7 @@ describe("achievements.getMySummary", () => {
       activeTotal: 40,
       points: 0,
       rank: null,
-      latest: null,
+      recent: [],
     });
   });
 

@@ -86,6 +86,43 @@ function compareMetric(operator: string, current: MetricValue, target: MetricVal
   }
 }
 
+/** The achievement's rule: its stored `conditionJson`, else its definition's `rule`; null when it has neither. */
+function ruleOf(achievement: { key: string; conditionJson: string | null }): RuleJson | null {
+  if (achievement.conditionJson) {
+    try {
+      const rule: Partial<RuleJson> | null = JSON.parse(achievement.conditionJson);
+      if (rule?.metric) return rule as RuleJson;
+    } catch (err) {
+      console.error(`[Achievement Service] Failed to evaluate rules for ${achievement.key}:`, err);
+    }
+  }
+  const definition = getAchievementById(achievement.key);
+  return definition?.rule ? ruleToJson(definition.rule) : null;
+}
+
+interface RuleProgress {
+  current: number;
+  target: number;
+  /** `current / target`, above 0 and below 1. */
+  share: number;
+}
+
+/** How far a locked achievement is toward its numeric `>=`/`>` rule's target; null for any other rule, or none begun. */
+function progressToward(
+  achievement: { key: string; conditionJson: string | null },
+  data: ExtendedAchievementData | AccountAchievementData
+): RuleProgress | null {
+  if (getAchievementById(achievement.key)?.retired) return null;
+  if (!data.country && achievementRequiresCountry(achievement)) return null;
+  const rule = ruleOf(achievement);
+  if (!rule || (rule.operator !== ">=" && rule.operator !== ">")) return null;
+  const current = readMetric(rule.metric, data);
+  const target = rule.value;
+  if (typeof current !== "number" || typeof target !== "number" || target <= 0) return null;
+  const share = current / target;
+  return share > 0 && share < 1 ? { current, target, share } : null;
+}
+
 /**
  * Run every loader of one scope once, in parallel, and merge their metrics. A failing loader
  * contributes nothing (its rules then read as unmet) instead of failing the evaluation.
@@ -209,19 +246,8 @@ class AchievementService {
     if (definition?.retired) return false;
     if (!data.country && achievementRequiresCountry(achievement)) return false;
 
-    if (achievement.conditionJson) {
-      try {
-        const rule: Partial<RuleJson> | null = JSON.parse(achievement.conditionJson);
-        if (rule?.metric) return this.evaluateRule(rule as RuleJson, data);
-      } catch (err) {
-        console.error(
-          `[Achievement Service] Failed to evaluate rules for ${achievement.key}:`,
-          err
-        );
-      }
-    }
-
-    if (definition?.rule) return this.evaluateRule(ruleToJson(definition.rule), data);
+    const rule = ruleOf(achievement);
+    if (rule) return this.evaluateRule(rule, data);
     if (definition?.condition) {
       try {
         // Safe without a country: account-level conditions never read `data.country`
@@ -257,41 +283,8 @@ class AchievementService {
     db: PrismaClient
   ): Promise<string[]> {
     try {
-      const country = countryId
-        ? await db.country.findUnique({
-            where: { id: countryId },
-          })
-        : null;
-
-      if (countryId && !country) {
-        console.warn(
-          `[Achievement Service] Country ${countryId} not found; evaluating account-level only`
-        );
-      }
-
-      const now = new Date();
-      const { internalUserId, ...accountData } = await this.gatherAccountData(
-        userId,
-        country?.id ?? null,
-        now,
-        db
-      );
-      const countryData = country
-        ? await this.gatherCountryData(country, db, {
-            clerkUserId: userId,
-            userId: internalUserId,
-            now,
-          })
-        : null;
-      const achievementData: ExtendedAchievementData | AccountAchievementData = countryData
-        ? {
-            ...accountData,
-            ...countryData,
-            metrics: { ...accountData.metrics, ...countryData.metrics },
-          }
-        : { ...accountData, countryClaimed: false };
-
-      const alreadyUnlocked = new Set<string>(accountData.existingKeys);
+      const achievementData = await this.gatherAchievementData(userId, countryId, db);
+      const alreadyUnlocked = new Set<string>(achievementData.existingKeys);
 
       const activeAchievements = await db.achievement.findMany({
         where: { isActive: true },
@@ -367,6 +360,68 @@ class AchievementService {
       console.error("[Achievement Service] Error in checkAndUnlock:", error);
       return [];
     }
+  }
+
+  /**
+   * Everything the rules read for a user (by Clerk id): account metrics, merged with the country's when
+   * `countryId` names an existing country.
+   */
+  private async gatherAchievementData(
+    userId: string,
+    countryId: string | null | undefined,
+    db: PrismaClient
+  ): Promise<ExtendedAchievementData | AccountAchievementData> {
+    const country = countryId ? await db.country.findUnique({ where: { id: countryId } }) : null;
+    if (countryId && !country) {
+      console.warn(
+        `[Achievement Service] Country ${countryId} not found; evaluating account-level only`
+      );
+    }
+
+    const now = new Date();
+    const { internalUserId, ...accountData } = await this.gatherAccountData(
+      userId,
+      country?.id ?? null,
+      now,
+      db
+    );
+    const countryData = country
+      ? await this.gatherCountryData(country, db, {
+          clerkUserId: userId,
+          userId: internalUserId,
+          now,
+        })
+      : null;
+    return countryData
+      ? {
+          ...accountData,
+          ...countryData,
+          metrics: { ...accountData.metrics, ...countryData.metrics },
+        }
+      : { ...accountData, countryClaimed: false };
+  }
+
+  /**
+   * The locked achievement the user (by Clerk id) is nearest to: the highest share of a numeric `>=`/`>` rule's
+   * target met so far, ties to the more points. Null when no locked achievement has a measurable rule.
+   * ponytail: runs every metric loader per call, like `checkAndUnlock`; cache the result if the dashboard
+   * makes it hot.
+   */
+  async nearestLocked(userId: string, countryId: string | null, db: PrismaClient) {
+    const data = await this.gatherAchievementData(userId, countryId, db);
+    const locked = await db.achievement.findMany({
+      where: { isActive: true, key: { notIn: [...(data.existingKeys ?? [])] } },
+    });
+    let nearest: (RuleProgress & { achievement: (typeof locked)[number] }) | null = null;
+    for (const achievement of locked) {
+      const progress = progressToward(achievement, data);
+      if (!progress) continue;
+      const closer = !nearest || progress.share > nearest.share;
+      const tie =
+        nearest?.share === progress.share && achievement.points > nearest.achievement.points;
+      if (closer || tie) nearest = { ...progress, achievement };
+    }
+    return nearest;
   }
 
   /**

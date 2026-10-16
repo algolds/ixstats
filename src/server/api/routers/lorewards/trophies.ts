@@ -5,7 +5,7 @@
 import { z } from "zod/v4";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
-import { resolveLorewardUser } from "~/lib/lorewards/resolve-user";
+import { lorewardNameOf, resolveLorewardUser } from "~/lib/lorewards/resolve-user";
 import { getTodayRace } from "~/lib/lorewards/today-race";
 import {
   loadTrophies,
@@ -54,19 +54,16 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
       return loadTrophies(ctx.db, input.username, showCards ? resolved : null);
     }),
 
-  /** The viewer's trophies through their verified IxWiki link, what Loreward bonuses paid, and today's rank. */
+  /** The viewer's trophies under their wiki name (WikiOS edits or a verified link), what Loreward bonuses paid, and today's rank. */
   getMyTrophies: protectedProcedure.query(async ({ ctx }) => {
-    const link = await ctx.db.wikiAccountLink.findFirst({
-      where: { userId: ctx.user.id, source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true },
-    });
-    if (!link) return { wikiUsername: null, ...NO_TROPHIES, paid: 0, todayRank: null };
+    const wikiUsername = await lorewardNameOf(ctx.db, ctx.user.id);
+    if (!wikiUsername) return { wikiUsername: null, ...NO_TROPHIES, paid: 0, todayRank: null };
 
     const [trophies, paid, todayRank] = await Promise.all([
-      loadTrophies(ctx.db, link.username, ctx.user.id),
+      loadTrophies(ctx.db, wikiUsername, ctx.user.id),
       lorewardCreditsPaid(ctx.db, ctx.user.id),
-      rankInTodayRace(link.username),
+      rankInTodayRace(wikiUsername),
     ]);
-    return { wikiUsername: link.username, ...trophies, paid, todayRank };
+    return { wikiUsername, ...trophies, paid, todayRank };
   }),
 });
