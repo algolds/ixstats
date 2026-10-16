@@ -31,7 +31,7 @@ import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { StepIndicator } from "~/components/ui/step-indicator";
 import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { ownedCardToInstance, type OwnedCard } from "~/lib/cards/ownership-card";
 
 interface TradeOfferModalProps {
   open: boolean;
@@ -41,36 +41,9 @@ interface TradeOfferModalProps {
   initialYourCards?: CardInstance[];
 }
 
-/** A tradable card ownership row as the CardInstance the card picker renders. */
-export function toCardInstance(ownership: any): CardInstance {
-  const card: CardInstance = {
-    id: ownership.id,
-    title: ownership.cards.title,
-    description: ownership.cards.description || "",
-    artwork: ownership.cards.artwork || CARD_ARTWORK_PLACEHOLDER,
-    artworkVariants: ownership.cards.artworkVariants || null,
-    cardType: ownership.cards.cardType,
-    rarity: ownership.cards.rarity,
-    season: ownership.cards.season,
-    nsCardId: ownership.cards.nsCardId || null,
-    nsSeason: ownership.cards.nsSeason || null,
-    nsData: ownership.cards.nsData || null,
-    wikiSource: ownership.cards.wikiSource || null,
-    wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
-    wikiUrl: ownership.cards.wikiUrl || null,
-    countryId: ownership.cards.countryId,
-    stats: ownership.cards.stats || {},
-    marketValue: ownership.cards.marketValue || 0,
-    totalSupply: ownership.cards.totalSupply || 0,
-    level: ownership.level || 1,
-    evolutionStage: ownership.cards.evolutionStage || 0,
-    enhancements: ownership.cards.enhancements || null,
-    createdAt: ownership.cards.createdAt,
-    updatedAt: ownership.cards.updatedAt,
-    lastTrade: ownership.cards.lastTrade || null,
-    country: ownership.cards.country,
-    owners: [],
-  };
+/** A tradable copy as the CardInstance the card picker renders (keyed by the ownership id). */
+export function toCardInstance(ownership: OwnedCard): CardInstance {
+  const card = { ...ownedCardToInstance(ownership), id: ownership.id };
   return { ...card, wikiUrl: cardWikiHref(card) };
 }
 
@@ -123,7 +96,8 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
     const { data: yourCardsData } = api.cards.getMyCards.useQuery({});
     const yourCards: CardInstance[] = useMemo(
-      () => yourCardsData?.map(toCardInstance) || [],
+      () =>
+        yourCardsData?.filter((ownership) => !ownership.cards.isBound).map(toCardInstance) || [],
       [yourCardsData]
     );
 

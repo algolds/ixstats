@@ -1,6 +1,12 @@
 /** @jest-environment node */
 /** Cards refresh §2.1: the client mirror of the card enums, and the one rarity parser. */
-import { CardFinish, CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
+import {
+  CardFinish,
+  CardRarity,
+  CardType,
+  parseCardRarity,
+  parseCardType,
+} from "~/lib/cards/enums";
 
 describe("card enums", () => {
   it("has the refresh's six rarities, five types and four finishes, in order", () => {
@@ -23,5 +29,15 @@ describe("card enums", () => {
     expect(parseCardRarity("toString")).toBeNull();
     expect(parseCardRarity("MYTHIC")).toBeNull();
     expect(parseCardRarity(null)).toBeNull();
+  });
+});
+
+describe("parseCardType", () => {
+  it("reads the five types and nothing else, the legacy strings included", () => {
+    expect(parseCardType("NS")).toBe("NS");
+    expect(parseCardType("TROPHY")).toBe("TROPHY");
+    expect(parseCardType("NS_IMPORT")).toBeNull();
+    expect(parseCardType("")).toBeNull();
+    expect(parseCardType(undefined)).toBeNull();
   });
 });

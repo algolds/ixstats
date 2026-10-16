@@ -20,17 +20,8 @@ const LoreCardGenerator = dynamic(
 );
 
 export function VaultCardsSection() {
-  const {
-    activeTab,
-    setActiveTab,
-    viewMode,
-    sortBy,
-    selectMode,
-    setSelectMode,
-    hideValue,
-    filters,
-    resetFilters,
-  } = useVaultCardsState();
+  const { activeTab, setActiveTab, viewMode, sortBy, hideValue, filters, resetFilters } =
+    useVaultCardsState();
 
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
   const [loreGeneratorOpen, setLoreGeneratorOpen] = useState(false);
@@ -67,12 +58,9 @@ export function VaultCardsSection() {
       {/* Tab Content */}
       {activeTab === "inventory" && (
         <InventoryTab
-          ownerships={allCards}
           isLoading={cardsLoading}
           allCards={allCards}
           viewMode={viewMode}
-          selectMode={selectMode}
-          setSelectMode={setSelectMode}
           hideValue={hideValue}
           filters={filters}
           onResetFilters={resetFilters}

@@ -141,26 +141,19 @@ export function CardGalleryTab({
         : [];
     const loreCards =
       source === "all" || source === "lore"
-        ? (loreData?.cards ?? []).map(
-            (card) =>
-              ({
-                ...card,
-                artwork: card.artwork || "/images/cards/lore-placeholder.svg",
-                stats: card.stats || {},
-                metadata: card.metadata || {},
-                level: card.level || 1,
-                evolutionStage: 0,
-                enhancements: null,
-                lastTrade: null,
-                owners: [],
-                country: null,
-                nsCardId: null,
-                nsSeason: null,
-                nsData: null,
-                wikiUrl: (card.metadata as { wikiUrl?: string })?.wikiUrl || null,
-                countryId: null,
-              }) as unknown as CardInstance
-          )
+        ? (loreData?.cards ?? []).map((card): CardInstance => ({
+            ...card,
+            artwork: card.artwork || "/images/cards/lore-placeholder.svg",
+            metadata: card.metadata as CardInstance["metadata"],
+            totalSupply: card.totalSupply ?? 0,
+            level: 1,
+            lastTrade: null,
+            country: null,
+            nsCardId: null,
+            nsSeason: null,
+            wikiUrl: (card.metadata as { wikiUrl?: string } | null)?.wikiUrl || null,
+            countryId: null,
+          }))
         : [];
 
     if (source === "ns") return nsCards;

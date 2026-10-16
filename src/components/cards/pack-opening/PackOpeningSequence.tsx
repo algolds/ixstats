@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { PackType, CardRarity, CardType } from "@prisma/client";
-import type { PackOpeningStage, CardInstance, QuickActionEvent } from "~/types/pack-opening";
+import type { PackOpeningStage, CardInstance } from "~/types/pack-opening";
 import { api } from "~/trpc/react";
 import { Stage1_PackReveal } from "./Stage1_PackReveal";
 import { Stage2_PackExplosion } from "./Stage2_PackExplosion";
@@ -43,19 +43,6 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
     const [cards, setCards] = useState<CardInstance[]>([]);
     const [error, setError] = useState<string | null>(null);
     const service = getPackOpeningService();
-
-    const utils = api.useUtils();
-
-    // Junk cards mutation
-    const junkCardsMutation = api.cards.junkCards.useMutation({
-      onSuccess: () => {
-        utils.vault.getBalance.invalidate();
-        utils.cards.getMyCards.invalidate();
-      },
-      onError: (err) => {
-        console.error("[PackOpening] Failed to junk cards:", err);
-      },
-    });
 
     // Open pack mutation
     const openPackMutation = api.cardPacks.openPack.useMutation({
@@ -103,25 +90,6 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
     const handleActionsComplete = useCallback(() => {
       onComplete();
     }, [onComplete]);
-
-    // Handle quick actions
-    const handleQuickAction = useCallback(
-      (event: QuickActionEvent) => {
-        console.log("[PackOpening] Quick action:", event);
-
-        if (event.action === "junk") {
-          const ids = event.cardIds || (event.cardId ? [event.cardId] : []);
-          if (ids.length > 0) {
-            junkCardsMutation.mutate({ ownershipIds: ids });
-          }
-        }
-
-        // Future integration:
-        // - api.cards.addToCollection.mutate({ cardId: event.cardId })
-        // - api.marketplace.createListing.mutate({ cardId: event.cardId })
-      },
-      [junkCardsMutation]
-    );
 
     // Cleanup on unmount
     useEffect(() => {
@@ -251,11 +219,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
               transition={{ duration: 0.3 }}
               className="h-full w-full"
             >
-              <Stage4_QuickActions
-                cards={cards}
-                onAction={handleQuickAction}
-                onComplete={handleActionsComplete}
-              />
+              <Stage4_QuickActions cards={cards} onComplete={handleActionsComplete} />
             </motion.div>
           )}
         </AnimatePresence>

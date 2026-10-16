@@ -19,7 +19,6 @@ export function useVaultCardsState() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<string>("acquired");
-  const [selectMode, setSelectMode] = useState(false);
   const [hideValue, setHideValue] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
@@ -52,8 +51,6 @@ export function useVaultCardsState() {
     setViewMode,
     sortBy,
     setSortBy,
-    selectMode,
-    setSelectMode,
     hideValue,
     setHideValue,
     filters,

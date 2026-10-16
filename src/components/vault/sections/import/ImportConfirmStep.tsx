@@ -1,7 +1,7 @@
 "use client";
 
 import { springSmooth } from "~/lib/design/motion";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle,
@@ -14,6 +14,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -43,6 +44,8 @@ export function ImportConfirmStep({
   onBack: () => void;
   onConfirmImport: () => void;
 }) {
+  const [consented, setConsented] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center py-2 text-center">
@@ -73,12 +76,24 @@ export function ImportConfirmStep({
         </div>
       </Card>
 
+      <label className="rounded-row bg-tint-fill flex cursor-pointer items-start gap-3 p-4">
+        <Checkbox
+          checked={consented}
+          onCheckedChange={(checked) => setConsented(checked === true)}
+          className="mt-0.5"
+        />
+        <span className="text-body text-label">
+          I own or run <strong>{nationName}</strong> on NationStates, and I allow IxStats to show
+          its flag and cards.
+        </span>
+      </label>
+
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onConfirmImport} className="flex-1" size="lg">
-          <Download className="mr-2 h-4 w-4" /> Import Deck
+        <Button onClick={onConfirmImport} disabled={!consented} className="flex-1" size="lg">
+          <Download className="mr-2 h-4 w-4" /> Import deck
         </Button>
       </div>
     </div>
@@ -192,7 +207,7 @@ export function ImportCompleteStep({
               >
                 <div className="relative mx-auto mb-1 h-10 w-10 overflow-hidden rounded">
                   <CardHolographicCover
-                    cardType="NS_IMPORT"
+                    cardType="NS"
                     rarity={card.rarity || "COMMON"}
                     title={card.title}
                   />

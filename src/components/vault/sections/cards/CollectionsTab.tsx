@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
-import type { CardInstance } from "~/types/cards-display";
+import { ownedCardToInstance } from "~/lib/cards/ownership-card";
 
 export function CollectionsTab({
   createOpen,
@@ -159,7 +159,7 @@ export function CollectionsTab({
                           {collectionCards.map((item) => (
                             <CardDisplay
                               key={item.id}
-                              card={(item.cardOwnership?.cards ?? item) as unknown as CardInstance}
+                              card={ownedCardToInstance(item.cardOwnership)}
                               size="small"
                               performanceMode
                             />
