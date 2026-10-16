@@ -193,7 +193,7 @@ export const cardsActivityLoader: MetricLoader = {
 /**
  * Deck standing. A Legendary counts when it came from a pack or a trade (an NS import, a daily
  * claim or an achievement reward does not). Trophy cards are out of the deck value, which is summed
- * in the database (market value x quantity of every live card).
+ * in the database (the copy value of every live copy).
  */
 export const cardsDeckLoader: MetricLoader = {
   id: "platform-cards-deck",
@@ -210,11 +210,12 @@ export const cardsDeckLoader: MetricLoader = {
           },
         },
       }),
+      // The sum is `copyValue` (src/lib/cards/copy-value.ts) in SQL: keep it equal to COPY_VALUE_SQL.
       db.$queryRaw<Array<{ value: number }>>`
-        SELECT COALESCE(SUM(c."marketValue" * o.quantity), 0)::float8 AS value
+        SELECT COALESCE(SUM(c."marketValue"), 0)::float8 AS value
         FROM "CardOwnership" o
         JOIN cards c ON c.id = o."cardId"
-        WHERE o."ownerId" = ${userId} AND c."isRetired" = false AND c."lorewardEntryId" IS NULL`,
+        WHERE o."ownerId" = ${userId} AND c."isRetired" = false AND c."cardType" <> 'TROPHY'`,
       db.myVault.findUnique({
         where: { userId },
         select: { loginStreak: true, lastLoginDate: true },

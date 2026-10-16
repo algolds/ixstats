@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { resolveLorewardUser } from "~/lib/lorewards/resolve-user";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
+import { copyValue } from "~/lib/cards/copy-value";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import {
   DIVIDEND,
@@ -118,14 +119,14 @@ async function loadListingsSold(db: PrismaClient, range: DayRange): Promise<Coun
   return counts;
 }
 
-/** Each owner's card deck value now (market value x quantity; retired and Loreward trophy cards excluded). */
+/** Each owner's deck value now: `copyValue` over every live copy (retired and trophy cards excluded). */
 async function loadDeckValues(db: PrismaClient): Promise<Counts> {
   const owned = await db.cardOwnership.findMany({
     where: { cards: { isRetired: false, ...EXCLUDE_TROPHY_CARDS } },
-    select: { ownerId: true, quantity: true, cards: { select: { marketValue: true } } },
+    select: { ownerId: true, cards: { select: { marketValue: true } } },
   });
   const values: Counts = new Map();
-  for (const o of owned) add(values, o.ownerId, o.cards.marketValue * o.quantity);
+  for (const copy of owned) add(values, copy.ownerId, copyValue(copy));
   return values;
 }
 

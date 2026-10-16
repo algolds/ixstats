@@ -7,6 +7,8 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 import type { CardInstance } from "~/types/cards-display";
+import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
+import { deckValue } from "~/lib/cards/copy-value";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 
 const CARD_SELECT = {
@@ -21,27 +23,21 @@ const CARD_SELECT = {
   season: true,
   marketValue: true,
   totalSupply: true,
-  artworkUrl: true,
   artwork: true,
   wikiSource: true,
   wikiArticleTitle: true,
-  wikiPageId: true,
   wikiExcerpt: true,
-  wikiImageUrl: true,
-  stats: true,
   metadata: true,
-  attributes: true,
   nsCardId: true,
   nsSeason: true,
-  nsData: true,
 } satisfies Prisma.CardSelect;
 
 type OwnershipRow = Prisma.CardOwnershipGetPayload<{
   include: { cards: { select: typeof CARD_SELECT } };
 }>;
 
-/** Lore card categories a collection can span (every `LoreCategory` except `NS_IMPORT`). */
-const LORE_CATEGORY_COUNT = 12;
+/** Lore card categories a collection can span. */
+const LORE_CATEGORY_COUNT = BROWSABLE_CATEGORIES.length;
 
 /** How many cards the collection highlight shows. */
 const COLLECTION_HIGHLIGHT_SIZE = 6;
@@ -76,7 +72,7 @@ export function toVaultFocus(
 ): PassportVaultFocus {
   const counts = new Map<string, number>();
   for (const category of categories) {
-    if (!category || category === "NS_IMPORT") continue;
+    if (!category) continue;
     counts.set(category, (counts.get(category) ?? 0) + 1);
   }
   let topCategory: string | null = null;
@@ -104,39 +100,30 @@ function toCardInstance(o: OwnershipRow): CardInstance {
     title: c.title || "IxCard",
     description: c.description,
     artwork: c.artwork ?? "",
-    artworkVariants: null,
     cardType: c.cardType,
     category: c.category,
     subcategory: c.subcategory,
-    artworkUrl: c.artworkUrl,
     artworkSource: null,
     artworkCredit: null,
     slug: c.slug,
-    rarity: c.rarity as CardInstance["rarity"],
+    rarity: c.rarity,
     season: c.season,
     nsCardId: c.nsCardId,
     nsSeason: c.nsSeason,
-    nsData: c.nsData as CardInstance["nsData"],
     wikiSource: c.wikiSource,
     wikiArticleTitle: c.wikiArticleTitle,
-    wikiPageId: c.wikiPageId,
     wikiExcerpt: c.wikiExcerpt,
-    wikiImageUrl: c.wikiImageUrl,
     wikiUrl: wikiUrlOf(c),
     countryId: null,
-    stats: (c.stats ?? {}) as CardInstance["stats"],
     metadata: c.metadata as CardInstance["metadata"],
-    attributes: (c.attributes ?? {}) as CardInstance["attributes"],
     ownershipId: o.id,
     isLocked: o.isLocked,
     marketValue: c.marketValue,
     totalSupply: c.totalSupply ?? 0,
     level: o.level,
-    evolutionStage: 0,
-    enhancements: null,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
-    lastTrade: o.lastSaleDate,
+    lastTrade: null,
     serialNumber: o.serialNumber,
     experience: o.experience,
     acquiredAt: o.acquiredAt,
@@ -168,7 +155,7 @@ export async function resolvePassportVault(
       }),
       db.cardOwnership.findMany({
         where: live,
-        select: { quantity: true, cards: { select: { marketValue: true, category: true } } },
+        select: { cards: { select: { marketValue: true, category: true } } },
       }),
       db.cardOwnership.findMany({
         where: live,
@@ -184,10 +171,7 @@ export async function resolvePassportVault(
       summary.collectorXp = vault.vaultXp;
     }
     summary.totalCards = liveOwnerships.length;
-    summary.deckValue = liveOwnerships.reduce(
-      (sum, o) => sum + o.cards.marketValue * o.quantity,
-      0
-    );
+    summary.deckValue = deckValue(liveOwnerships);
     summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
     summary.topCards = mostValuable.map(toCardInstance);
   } catch (err) {
