@@ -33,6 +33,7 @@ import {
   getLoreTokensBalance as perksGetLoreTokensBalance,
   getVaultConfig,
   invalidateVaultConfigCache,
+  type PerksDb,
 } from "./vault-perks";
 export { getVaultConfig, invalidateVaultConfigCache };
 export { LedgerError };
@@ -166,7 +167,7 @@ export class VaultService {
     return ledgerGetEarningsSummary(userId, db);
   }
 
-  getPurchasedItemsEffects(userId: string, db: PrismaClient) {
+  getPurchasedItemsEffects(userId: string, db: PerksDb) {
     return perksGetPurchasedItemsEffects(userId, db);
   }
 
@@ -174,7 +175,7 @@ export class VaultService {
     perksClearUserPerksCache(userId);
   }
 
-  getCardCapacityBoost(userId: string, db: PrismaClient) {
+  getCardCapacityBoost(userId: string, db: PerksDb) {
     return perksGetCardCapacityBoost(userId, db);
   }
 
