@@ -3,6 +3,7 @@
  * post (with the author's public name, the same way a thread list names its authors), and the rail's latest activity.
  */
 import type { PrismaClient } from "@prisma/client";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import {
   latestPerCategory,
@@ -22,6 +23,8 @@ export interface BoardAuthor {
   avatarUrl: string | null;
   /** The member's nation flag; null for a persona (it never names the player's nation) and imported authors. */
   flagUrl: string | null;
+  /** A persona's voice; null otherwise. */
+  personaType: PersonaType | null;
 }
 
 export type BoardLatest = LatestPost & { author: BoardAuthor | null };
@@ -38,12 +41,19 @@ function nameOf(
       handle: persona.username,
       avatarUrl: persona.avatarUrl,
       flagUrl: null,
+      personaType: persona.personaType,
     };
   }
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
-  if (user) return user;
+  if (user) return { ...user, personaType: null };
   return latest.importedAuthorName
-    ? { name: latest.importedAuthorName, handle: null, avatarUrl: null, flagUrl: null }
+    ? {
+        name: latest.importedAuthorName,
+        handle: null,
+        avatarUrl: null,
+        flagUrl: null,
+        personaType: null,
+      }
     : null;
 }
 

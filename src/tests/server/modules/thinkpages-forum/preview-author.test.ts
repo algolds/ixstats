@@ -19,6 +19,7 @@ const maps: AuthorMaps = {
         displayName: "Eurth Daily",
         username: "eurthdaily",
         avatarUrl: "https://img.example/p.png",
+        personaType: "media",
       },
     ],
   ]),
@@ -36,6 +37,7 @@ describe("previewAuthorOf", () => {
       avatarUrl: "https://img.example/p.png",
       flagUrl: null,
       persona: true,
+      personaType: "media",
     });
     expect(JSON.stringify(author)).not.toMatch(/jane|eurth\.png/);
   });
@@ -52,6 +54,7 @@ describe("previewAuthorOf", () => {
       avatarUrl: "https://img.example/jane.png",
       flagUrl: "https://flags.example/eurth.png",
       persona: false,
+      personaType: null,
     });
   });
 

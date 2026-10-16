@@ -190,3 +190,23 @@ describe("boardLiveMessageSchema reactions", () => {
     expect(parsed).not.toHaveProperty("myReaction");
   });
 });
+
+describe("boardLiveMessageSchema persona type", () => {
+  it("still parses a live message from a server that sends no personaType", () => {
+    const message = live("p1");
+    const result = boardLiveMessageSchema.safeParse({ ...message, author: { ...message.author } });
+    expect(result.success).toBe(true);
+    expect(result.data?.author.personaType).toBeUndefined();
+  });
+
+  it("keeps a known persona type and rejects an unknown one", () => {
+    const message = live("p1");
+    const withType = (personaType: string | null) => ({
+      ...message,
+      author: { ...message.author, persona: true, personaType },
+    });
+    expect(boardLiveMessageSchema.parse(withType("media")).author.personaType).toBe("media");
+    expect(boardLiveMessageSchema.parse(withType(null)).author.personaType).toBeNull();
+    expect(boardLiveMessageSchema.safeParse(withType("personal")).success).toBe(false);
+  });
+});

@@ -176,7 +176,7 @@ export const personas: Row[] = [
     id: "pa_news",
     clerkUserId: "clerk_u_member",
     isActive: true,
-    accountType: "character",
+    accountType: "media",
     displayName: "Eurth Daily",
     username: "eurthdaily",
     profileImageUrl: "https://img.example/daily.png",

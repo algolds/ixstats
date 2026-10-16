@@ -396,7 +396,7 @@ describe("listBoards", () => {
       authorPersonaId: null,
       importedAuthorName: null,
       at: T2,
-      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
+      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
     });
     expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
     expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
@@ -434,6 +434,7 @@ describe("listBoards", () => {
             displayName: "Caphiria News",
             username: "caphnews",
             profileImageUrl: "/p/news.png",
+            accountType: "media",
           },
         ]),
       },
@@ -442,7 +443,12 @@ describe("listBoards", () => {
     expect(row!.latest).toMatchObject({
       authorUserId: null,
       authorPersonaId: "pa_1",
-      author: { name: "Caphiria News", handle: "caphnews", avatarUrl: "/p/news.png" },
+      author: {
+        name: "Caphiria News",
+        handle: "caphnews",
+        avatarUrl: "/p/news.png",
+        personaType: "media",
+      },
     });
     expect(JSON.stringify(row)).not.toContain("u_x");
   });
@@ -493,7 +499,7 @@ describe("latestActivity", () => {
         threadTitle: "Thread t_new",
         categoryName: "General",
         isFirstPost: true,
-        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
+        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
       }),
     ]);
     const args = argsOf(db.forumPost.findMany);
