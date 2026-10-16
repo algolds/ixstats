@@ -50,12 +50,6 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         countryId: { not: null },
       },
       include: {
-        CardOwnership: {
-          select: {
-            userId: true,
-            lastSalePrice: true,
-          },
-        },
         valueHistory: {
           orderBy: { recordedAt: "desc" },
           take: 1, // The latest entry, for the change since the last run

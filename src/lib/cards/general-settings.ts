@@ -1,55 +1,27 @@
 /**
  * Card General System Settings
  *
- * SystemConfig-backed global settings for card trading, marketplace tax,
- * pack claims, inventory limits, and minting permissions.
- *
- * Read by the game: auctionHouseRakePct (marketplaceFee), maxInventoryCards
- * (baseCardCapacity) and maxJunkBatchSize (cards.junkCards). The others are stored
- * but nothing reads them yet, so the admin panel hides their controls (VT-9).
+ * SystemConfig-backed card settings the game reads: the marketplace rake (`marketplaceFee`) and the base card
+ * capacity (`baseCardCapacity`). The five keys nothing read are gone, and so is junk's batch limit.
  */
 
 import { type PrismaClient } from "@prisma/client";
 
 export interface CardGeneralSettings {
-  /** Master card trading & auction house toggle (1 = enabled, 0 = disabled). */
-  tradingEnabled: number;
   /** Marketplace transaction / auction rake percentage (0-50%). */
   auctionHouseRakePct: number;
-  /** Number of free daily packs grantable to players. */
-  dailyFreePacks: number;
-  /** Cooldown in hours between daily free pack claims. */
-  dailyPackCooldownHours: number;
-  /** Allow players to submit/mint custom lore cards (1 = on, 0 = admin-only). */
-  allowPlayerMinting: number;
-  /** Maximum number of cards a player can hold in their collection/binder. */
+  /** Copies a player can hold before any Vault capacity upgrades. */
   maxInventoryCards: number;
-  /** Maximum cards allowed in a single junk/recycle batch. */
-  maxJunkBatchSize: number;
-  /** Automatically fetch and attach wiki artwork during lore imports (1 = on, 0 = off). */
-  autoGenerateLoreThumbnails: number;
 }
 
 const CARD_GENERAL_DEFAULTS: CardGeneralSettings = {
-  tradingEnabled: 1,
   auctionHouseRakePct: 10,
-  dailyFreePacks: 1,
-  dailyPackCooldownHours: 24,
-  allowPlayerMinting: 0,
   maxInventoryCards: 150,
-  maxJunkBatchSize: 100,
-  autoGenerateLoreThumbnails: 1,
 };
 
 const KEY = {
-  tradingEnabled: "card_system_trading_enabled",
   auctionHouseRakePct: "card_system_auction_rake_pct",
-  dailyFreePacks: "card_system_daily_free_packs",
-  dailyPackCooldownHours: "card_system_daily_pack_cooldown_hours",
-  allowPlayerMinting: "card_system_allow_player_minting",
   maxInventoryCards: "card_system_max_inventory_cards",
-  maxJunkBatchSize: "card_system_max_junk_batch_size",
-  autoGenerateLoreThumbnails: "card_system_auto_lore_thumbnails",
 } as const satisfies Record<keyof CardGeneralSettings, string>;
 
 let cache: { value: CardGeneralSettings; expires: number } | null = null;
