@@ -1,28 +1,21 @@
 "use client";
 
 import { Medal, Page } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { ForumAvatar } from "../ForumAvatar";
 import { RailPanel } from "../shell";
 
 type Category = RouterOutputs["thinkpagesForum"]["category"]["category"];
 
-/** The board's description, whether it is in character, and who may start a thread. */
+/** Who may start a thread here; the description and style are in the board's header. */
 export function AboutPanel({ category }: { category: Category }) {
   const rule =
     category.postRole === "staff"
       ? "Only staff can start threads here."
       : "Any member can start threads here.";
   return (
-    <RailPanel title="About this board" icon={<Page />}>
-      <div className="space-y-3">
-        {category.description ? (
-          <p className="text-body text-label">{category.description}</p>
-        ) : null}
-        {category.style === "ic" ? <Badge variant="secondary">In character</Badge> : null}
-        <p className="text-footnote text-label-secondary">{rule}</p>
-      </div>
+    <RailPanel title="Posting here" icon={<Page />}>
+      <p className="text-footnote text-label-secondary">{rule}</p>
     </RailPanel>
   );
 }
