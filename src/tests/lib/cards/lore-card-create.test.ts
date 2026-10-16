@@ -56,3 +56,26 @@ describe("createCard", () => {
     await expect(wikiLoreCardGenerator.createCard(candidate)).rejects.toThrow(/already exists/);
   });
 });
+
+describe("generateCard", () => {
+  it("looks the article up by its canonical title, whatever its spelling", async () => {
+    jest
+      .spyOn(wikiLoreCardGenerator as never, "fetchArticleData")
+      .mockResolvedValue({ image: "a.png" } as never);
+    jest.mocked(db.card.findFirst).mockResolvedValue({ id: "c1" } as never);
+
+    await expect(wikiLoreCardGenerator.generateCard("Battle_of_Kiro", "ixwiki")).rejects.toThrow(
+      /already exists/
+    );
+
+    expect(db.card.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          wikiSource: "ixwiki",
+          cardType: "LORE",
+          wikiArticleTitle: { equals: "Battle of Kiro", mode: "insensitive" },
+        },
+      })
+    );
+  });
+});
