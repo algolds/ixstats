@@ -123,7 +123,7 @@ function BoardRow({ board }: { board: Board }) {
                 href={categoryHref({ key: board.key })}
                 className={cn(
                   "focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
-                  unread && "font-semibold"
+                  unread ? "font-semibold" : "font-medium"
                 )}
               >
                 {board.name}

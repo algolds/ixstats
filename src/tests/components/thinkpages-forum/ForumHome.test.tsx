@@ -296,6 +296,8 @@ describe("Forums home: texture and character", () => {
     });
     render(<ForumHome />);
     expect(screen.getByRole("link", { name: "General" })).toHaveClass("font-semibold");
+    expect(screen.getByRole("link", { name: "General" })).not.toHaveClass("font-medium");
+    expect(screen.getByRole("link", { name: "Rules" })).toHaveClass("font-medium");
     expect(screen.getByRole("link", { name: "Rules" })).not.toHaveClass("font-semibold");
     expect(rowOf("General").className).not.toContain("before:");
     const name = screen.getByRole("link", { name: "General" });
