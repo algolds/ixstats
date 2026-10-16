@@ -1,16 +1,18 @@
+// src/lib/cards/enums.ts
 /**
  * Card System Enums
  *
- * Runtime constants that match Prisma schema enums.
- * These can be safely used in both client and server components.
- *
- * IMPORTANT: These values MUST match the Prisma schema exactly.
- * If you modify prisma/schema.prisma enums, update these accordingly.
+ * Client-safe runtime constants that mirror the Prisma enums (prisma/schema/enums.prisma). The `satisfies`
+ * clauses fail the typecheck as soon as the two drift apart.
  */
+import type {
+  CardFinish as PrismaCardFinish,
+  CardRarity as PrismaCardRarity,
+  CardType as PrismaCardType,
+  PackType as PrismaPackType,
+} from "@prisma/client";
 
-/**
- * Card rarity levels
- */
+/** Card rarities, lowest first (cards refresh §2.1). */
 export const CardRarity = {
   COMMON: "COMMON",
   UNCOMMON: "UNCOMMON",
@@ -18,13 +20,22 @@ export const CardRarity = {
   ULTRA_RARE: "ULTRA_RARE",
   EPIC: "EPIC",
   LEGENDARY: "LEGENDARY",
-} as const;
+} as const satisfies { [K in PrismaCardRarity]: K };
 
 export type CardRarity = (typeof CardRarity)[keyof typeof CardRarity];
 
-/**
- * Card pack types (Prisma `PackType`)
- */
+const RARITY_VALUES: readonly string[] = Object.values(CardRarity);
+
+/** A rarity string as the enum: any casing, hyphens and spaces as underscores; null for anything else. */
+export function parseCardRarity(value: string | null | undefined): CardRarity | null {
+  const key = (value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return RARITY_VALUES.includes(key) ? (key as CardRarity) : null;
+}
+
+/** Card pack types (Prisma `PackType`). */
 export const PackType = {
   BASIC: "BASIC",
   PREMIUM: "PREMIUM",
@@ -32,34 +43,27 @@ export const PackType = {
   THEMED: "THEMED",
   SEASONAL: "SEASONAL",
   EVENT: "EVENT",
-} as const;
+} as const satisfies { [K in PrismaPackType]: K };
 
 export type PackType = (typeof PackType)[keyof typeof PackType];
 
-/**
- * Card types/categories
- */
+/** Card types (§2.1): Lore, Nation, NationStates, Special (achievement and event cards), Trophy. */
 export const CardType = {
-  NATION: "NATION",
   LORE: "LORE",
-  NS_IMPORT: "NS_IMPORT",
+  NATION: "NATION",
+  NS: "NS",
   SPECIAL: "SPECIAL",
-  COMMUNITY: "COMMUNITY",
-} as const;
+  TROPHY: "TROPHY",
+} as const satisfies { [K in PrismaCardType]: K };
 
 export type CardType = (typeof CardType)[keyof typeof CardType];
-/**
- * How a card was acquired
- */
-const AcquireMethod = {
-  PACK: "PACK",
-  TRADE: "TRADE",
-  AUCTION: "AUCTION",
-  CRAFT: "CRAFT",
-  GIFT: "GIFT",
-  NS_IMPORT: "NS_IMPORT",
-  ACHIEVEMENT: "ACHIEVEMENT",
-  EVENT: "EVENT",
-} as const;
 
-export type AcquireMethod = (typeof AcquireMethod)[keyof typeof AcquireMethod];
+/** The finish of one copy (§2.1). Rolled at mint from Phase 4; Phase 1 mints Standard and Serialised only. */
+export const CardFinish = {
+  STANDARD: "STANDARD",
+  FOIL: "FOIL",
+  HOLO: "HOLO",
+  SERIALISED: "SERIALISED",
+} as const satisfies { [K in PrismaCardFinish]: K };
+
+export type CardFinish = (typeof CardFinish)[keyof typeof CardFinish];
