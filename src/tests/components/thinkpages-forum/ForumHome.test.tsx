@@ -298,6 +298,11 @@ describe("Forums home: texture and character", () => {
     expect(screen.getByRole("link", { name: "General" })).toHaveClass("font-semibold");
     expect(screen.getByRole("link", { name: "Rules" })).not.toHaveClass("font-semibold");
     expect(rowOf("General").className).not.toContain("before:");
+    const name = screen.getByRole("link", { name: "General" });
+    const dot = rowOf("General").querySelector(".bg-tint.rounded-full") as HTMLElement;
+    expect(name.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    const count = screen.getByText("2 new");
+    expect(name.compareDocumentPosition(count) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
@@ -385,7 +390,16 @@ describe("Forums home: Your realm and Moderation", () => {
     set("category", { data: hub });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
-    expect(screen.getByRole("link", { name: /Eurth/ })).toHaveTextContent("4 new");
+    const link = screen.getByRole("link", { name: /Eurth/ });
+    expect(link).toHaveTextContent("4 new");
+    const name = within(link).getByText("Eurth");
+    const dot = link.querySelector(".bg-tint.rounded-full") as HTMLElement;
+    expect(name).toHaveClass("font-semibold");
+    expect(name.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(
+      name.compareDocumentPosition(within(link).getByText("4 new")) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     unmount();
 
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 0 } });

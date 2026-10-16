@@ -8,7 +8,7 @@ import { categoryHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
 import type { RouterOutputs } from "~/trpc/react";
 import { RailPanel } from "../shell";
-import { UnreadMark } from "../UnreadMark";
+import { UnreadCount, UnreadMark } from "../UnreadMark";
 import { BoardSettingsPanel } from "./BoardSettingsPanel";
 import type { BoardData } from "./types";
 
@@ -43,6 +43,7 @@ export function BoardsPanel({ slug, boards }: { slug: string; boards: readonly R
               className="hover:bg-fill-4 focus-visible:outline-tint rounded-control-sm block px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
             >
               <span className="flex min-w-0 items-baseline gap-2">
+                {board.unreadThreads > 0 ? <UnreadMark /> : null}
                 <span
                   className={cn(
                     "text-body text-label block min-w-0 flex-1 truncate",
@@ -51,7 +52,7 @@ export function BoardsPanel({ slug, boards }: { slug: string; boards: readonly R
                 >
                   {board.name}
                 </span>
-                {board.unreadThreads > 0 ? <UnreadMark count={board.unreadThreads} /> : null}
+                {board.unreadThreads > 0 ? <UnreadCount count={board.unreadThreads} /> : null}
               </span>
               <span className="text-footnote text-label-secondary flex min-w-0 gap-2">
                 <span className="min-w-0 flex-1 truncate">

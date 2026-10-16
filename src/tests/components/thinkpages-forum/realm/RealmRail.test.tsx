@@ -76,7 +76,14 @@ describe("BoardsPanel", () => {
     const unread = screen.getByRole("link", { name: /Hub/ });
     expect(within(unread).getByText("2 new")).toHaveClass("text-label-secondary");
     expect(unread.querySelector(".bg-tint.rounded-full")).not.toBeNull();
-    expect(within(unread).getByText("Hub")).toHaveClass("font-semibold");
+    const name = within(unread).getByText("Hub");
+    expect(name).toHaveClass("font-semibold");
+    const dot = unread.querySelector(".bg-tint.rounded-full") as HTMLElement;
+    expect(name.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(
+      name.compareDocumentPosition(within(unread).getByText("2 new")) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     expect(screen.queryByText("0 new")).toBeNull();
   });
 

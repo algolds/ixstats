@@ -260,6 +260,9 @@ describe("ThreadTable unread rows", () => {
     const title = unread.getByRole("link", { name: "Thread t1" });
     expect(title).toHaveAttribute("href", "/thinkpages/t/t1/unread");
     expect(title).toHaveClass("font-semibold");
+    const dot = unread.getByText("Unread").previousElementSibling as HTMLElement;
+    expect(dot).toHaveClass("bg-tint", "rounded-full");
+    expect(title.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     const read = within(rowOf(/Thread t2/));
     expect(read.queryByText("Unread")).toBeNull();
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveAttribute(

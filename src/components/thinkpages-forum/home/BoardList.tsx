@@ -27,7 +27,7 @@ import type { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils/cn";
 import { ForumAvatar } from "../ForumAvatar";
 import { IconTile, RISE_ITEM, RISE_LIST } from "../shell";
-import { UnreadMark } from "../UnreadMark";
+import { UnreadCount, UnreadMark } from "../UnreadMark";
 
 type Board = RouterOutputs["thinkpagesForum"]["categories"][number];
 
@@ -99,8 +99,8 @@ function LatestPreview({ latest }: { latest: Board["latest"] }) {
 }
 
 /**
- * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (an UnreadMark with
- * the board's count), description, counts, and the latest thread's preview, which sits
+ * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (an UnreadMark dot before
+ * the name, an UnreadCount after it), description, counts, and the latest thread's preview, which sits
  * above the row link as its own link.
  */
 function BoardRow({ board }: { board: Board }) {
@@ -118,6 +118,7 @@ function BoardRow({ board }: { board: Board }) {
         <div className="flex min-w-0 items-start gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-title-3 flex items-center gap-2">
+              {unread ? <UnreadMark /> : null}
               <Link
                 href={categoryHref({ key: board.key })}
                 className={cn(
@@ -127,7 +128,7 @@ function BoardRow({ board }: { board: Board }) {
               >
                 {board.name}
               </Link>
-              {unread ? <UnreadMark count={board.unreadThreads} /> : null}
+              {unread ? <UnreadCount count={board.unreadThreads} /> : null}
               {board.visibility === "staff" ? <Badge variant="outline">Staff</Badge> : null}
             </h3>
             {board.description ? (

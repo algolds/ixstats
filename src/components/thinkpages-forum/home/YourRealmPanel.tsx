@@ -5,12 +5,13 @@ import { skipToken } from "@tanstack/react-query";
 import { Community, NavArrowRight } from "iconoir-react";
 import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
 import { assetUrl } from "~/lib/base-path";
+import { cn } from "~/lib/utils/cn";
 import { timeAgo } from "~/lib/format/compact";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName } from "../AuthorName";
 import { IconTile, RailPanel } from "../shell";
-import { UnreadMark } from "../UnreadMark";
+import { UnreadCount, UnreadMark } from "../UnreadMark";
 
 type HubThread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
@@ -36,6 +37,7 @@ export function YourRealmPanel({ signedIn }: { signedIn: boolean }) {
   });
   const name = realms.data?.realms.find((r) => r.slug === slug)?.name;
   if (!slug || !name) return null;
+  const newOnBoard = counts.data?.realmBoardNew ?? 0;
 
   // Pinned threads sort first on the Hub; "latest" means the newest activity among what is shown.
   const latest = hub.data?.threads.reduce<HubThread | undefined>(
@@ -62,10 +64,18 @@ export function YourRealmPanel({ signedIn }: { signedIn: boolean }) {
           </IconTile>
         )}
         <span className="min-w-0 flex-1">
-          <span className="text-body text-label block truncate font-medium">{name}</span>
-          {counts.data && counts.data.realmBoardNew > 0 ? (
-            <UnreadMark count={counts.data.realmBoardNew} />
-          ) : null}
+          <span className="flex min-w-0 items-baseline gap-2">
+            {newOnBoard > 0 ? <UnreadMark /> : null}
+            <span
+              className={cn(
+                "text-body text-label block min-w-0 flex-1 truncate",
+                newOnBoard > 0 ? "font-semibold" : "font-medium"
+              )}
+            >
+              {name}
+            </span>
+            {newOnBoard > 0 ? <UnreadCount count={newOnBoard} /> : null}
+          </span>
           {latest && hub.data ? (
             <span className="text-footnote text-label-secondary flex min-w-0 items-center gap-1">
               <span className="text-label min-w-0 truncate">{latest.title}</span>
