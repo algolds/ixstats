@@ -127,6 +127,7 @@ export { liftBan, type LiftBanDb, type LiftedBan } from "./mod-ban-lift";
 export {
   activeBansFor,
   assertNotBanned,
+  bannedBoardIds,
   issueBan,
   postingBan,
   type ActiveBan,

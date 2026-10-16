@@ -112,6 +112,34 @@ export async function postingBan(
   return strongestBan(await activeBansFor(db, viewer.id, category));
 }
 
+/**
+ * Which of the sitewide boards a ban shuts the viewer out of, in one query: a site ban shuts them all, a category
+ * ban its own board. Site admins are never banned (M5) and signed-out viewers hold none; neither costs a query.
+ */
+export async function bannedBoardIds(
+  db: Pick<BansDb, "forumBan">,
+  viewer: ForumViewer,
+  categoryIds: readonly string[],
+  now: Date = new Date()
+): Promise<{ site: boolean; categories: ReadonlySet<string> }> {
+  if (viewer === null || isSiteAdmin(viewer)) return { site: false, categories: new Set() };
+  const rows = await db.forumBan.findMany({
+    where: {
+      userId: viewer.id,
+      liftedAt: null,
+      AND: [
+        liveAt(now),
+        { OR: [{ scope: "site" }, { scope: "category", scopeId: { in: [...categoryIds] } }] },
+      ],
+    },
+    select: { scope: true, scopeId: true },
+  });
+  return {
+    site: rows.some((row) => row.scope === "site"),
+    categories: new Set(rows.flatMap((row) => (row.scopeId !== null ? [row.scopeId] : []))),
+  };
+}
+
 /** Throws FORBIDDEN with banNotice(ban). Used by sitewide editPost (Task 3, T0-17) and fileReport (Task 4). */
 export async function assertNotBanned(
   db: Pick<BansDb, "forumBan">,

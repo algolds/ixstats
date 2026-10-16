@@ -6,6 +6,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
+import { bannedBoardIds } from "./mod-bans";
 import { canSeeCategory, canSeeThread, canStartThread, type ForumViewer } from "./access";
 import {
   latestPerCategory,
@@ -71,16 +72,24 @@ function publicLatest(
   };
 }
 
-export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
+export async function listBoards(
+  db: BoardsDb & Pick<PrismaClient, "forumBan">,
+  viewer: ForumViewer
+) {
   const all = await db.forumCategory.findMany({
     where: { scope: "site", realmId: null },
     orderBy: { order: "asc" },
   });
   const visible = all.filter((c) => canSeeCategory(viewer, c));
-  const [summaries, postCounts, latest] = await Promise.all([
+  const [summaries, postCounts, latest, bans] = await Promise.all([
     summarizeCategories(db, viewer, all),
     postCountsPerCategory(db, viewer, visible),
     latestPerCategory(db, viewer, visible),
+    bannedBoardIds(
+      db,
+      viewer,
+      visible.map((c) => c.id)
+    ),
   ]);
   const authors = await authorsOf(
     db,
@@ -96,8 +105,12 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       id: category.id,
       style: category.style,
       visibility: category.visibility,
-      // Find a Realm takes adverts only, so the home's New thread menu never offers it.
-      canStart: canStartThread(viewer, category) && !isAdvertCategory(category),
+      // Find a Realm takes adverts only, so the home's New thread menu never offers it; nor a board a ban closes.
+      canStart:
+        canStartThread(viewer, category) &&
+        !isAdvertCategory(category) &&
+        !bans.site &&
+        !bans.categories.has(category.id),
       postCount: postCounts.get(category.id) ?? 0,
       latest: last ? publicLatest(last, authors) : null,
     };

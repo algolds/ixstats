@@ -3,6 +3,7 @@ import { banNotice, DAY_MS } from "~/lib/thinkpages-forum/moderation-policy";
 import {
   activeBansFor,
   assertNotBanned,
+  bannedBoardIds,
   BANS_PER_PAGE,
   issueBan,
   liftBan,
@@ -260,6 +261,55 @@ describe("activeBansFor", () => {
       expiresAt: later,
       auto: false,
     });
+  });
+});
+
+describe("bannedBoardIds", () => {
+  const ids = ["cat_general", "cat_find"];
+
+  it("asks once for live site bans and bans on the listed categories", async () => {
+    const { db } = banDb();
+    await bannedBoardIds(db as never, member, ids, NOW);
+    expect(db.forumBan.findMany).toHaveBeenCalledTimes(1);
+    expect(db.forumBan.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "u_m",
+        liftedAt: null,
+        AND: [
+          { OR: [{ expiresAt: null }, { expiresAt: { gt: NOW } }] },
+          { OR: [{ scope: "site" }, { scope: "category", scopeId: { in: ids } }] },
+        ],
+      },
+      select: { scope: true, scopeId: true },
+    });
+  });
+
+  it("reports a site ban, and the categories banned one by one", async () => {
+    const { db } = banDb();
+    db.forumBan.findMany.mockResolvedValueOnce([{ scope: "site", scopeId: null }] as never);
+    expect(await bannedBoardIds(db as never, member, ids, NOW)).toEqual({
+      site: true,
+      categories: new Set(),
+    });
+    db.forumBan.findMany.mockResolvedValueOnce([
+      { scope: "category", scopeId: "cat_find" },
+      { scope: "category", scopeId: "cat_general" },
+    ] as never);
+    expect(await bannedBoardIds(db as never, member, ids, NOW)).toEqual({
+      site: false,
+      categories: new Set(["cat_find", "cat_general"]),
+    });
+  });
+
+  it("finds no bans and spends no query on a site admin or a signed-out viewer (M5)", async () => {
+    const { db } = banDb({ bans: [ban({ userId: "u_a" })] });
+    for (const viewer of [admin, null]) {
+      expect(await bannedBoardIds(db as never, viewer, ids, NOW)).toEqual({
+        site: false,
+        categories: new Set(),
+      });
+    }
+    expect(db.forumBan.findMany).not.toHaveBeenCalled();
   });
 });
 
