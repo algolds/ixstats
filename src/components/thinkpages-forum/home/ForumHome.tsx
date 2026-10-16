@@ -36,10 +36,10 @@ function totals(boards: readonly { threadCount: number; postCount: number }[]) {
 }
 
 /**
- * The Forums home: a plain header totalling the sitewide boards with a New thread menu, Your realm (for a realm member), the sitewide boards with their latest threads,
- * the old forum's archive (collapsed), New across ThinkPages (the newest posts, with persona voices), and a rail of Trending threads, Find a Realm,
- * ThinkTanks and the member's own standing. The rail is only passed when a panel has content;
- * its panels rise in one after another.
+ * The Forums home: a plain header totalling the sitewide boards with a New thread menu, then the main column: Your realm
+ * (for a realm member), the sitewide boards with their latest threads, New across ThinkPages (the newest posts, with
+ * persona voices) and the old forum's archive (collapsed). The rail holds Trending threads, Find a Realm, ThinkTanks and
+ * the member's own standing; it is only passed when a panel has content, and its panels rise in one after another.
  */
 export function ForumHome() {
   const { isSignedIn } = useUser();
@@ -117,7 +117,7 @@ export function ForumHome() {
         <Skeleton className="rounded-card h-64 w-full" />
       ) : (
         <>
-          {/* Only for a realm member; it renders nothing until the realm and its name load. */}
+          {/* Only for a realm member; it holds a placeholder while the realm loads and renders nothing if there is none. */}
           {realmMember ? <YourRealmPanel signedIn={signedIn} /> : null}
           {regular.length > 0 ? <BoardList boards={regular} title="Sitewide" /> : null}
           {noBoards ? (
@@ -126,20 +126,20 @@ export function ForumHome() {
               <EmptyState compact title="No boards yet" />
             </Card>
           ) : null}
-          {archived.length > 0 ? (
-            <BoardList boards={archived} title="From the old forum" collapsible />
-          ) : null}
           {rail.activity ? (
-            <Card content="feed">
-              <CardHeader>
+            <Card content="feed" padding="md">
+              <CardHeader className="px-0 pb-3">
                 <CardTitle icon={<Clock />} role="heading" aria-level={2}>
                   New across ThinkPages
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-0">
                 <LatestActivityList items={rail.activity} />
               </CardContent>
             </Card>
+          ) : null}
+          {archived.length > 0 ? (
+            <BoardList boards={archived} title="From the old forum" collapsible />
           ) : null}
         </>
       )}

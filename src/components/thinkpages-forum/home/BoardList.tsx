@@ -62,7 +62,7 @@ function Count({ value, one, many }: { value: number; one: string; many: string 
   );
 }
 
-/** The board's last post, inline at md and up: the thread (its own link, above the row link), then who and when. */
+/** The board's last post, inline at md and up: the thread (its own link, lifted above the row link; the line under it falls through to the row), then who and when. */
 function LastPostColumn({ latest }: { latest: Board["latest"] }) {
   if (!latest) {
     return (
@@ -72,10 +72,10 @@ function LastPostColumn({ latest }: { latest: Board["latest"] }) {
     );
   }
   return (
-    <div className="relative z-10 hidden w-56 shrink-0 md:block">
+    <div className="hidden w-56 shrink-0 md:block">
       <Link
         href={threadHref(latest.threadId)}
-        className="text-callout text-label focus-visible:outline-tint block truncate font-medium hover:underline focus-visible:outline-2"
+        className="text-callout text-label focus-visible:outline-tint relative z-10 block truncate font-medium hover:underline focus-visible:outline-2"
       >
         {latest.threadTitle}
       </Link>

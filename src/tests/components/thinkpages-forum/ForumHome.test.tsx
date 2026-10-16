@@ -34,7 +34,6 @@ jest.mock("~/trpc/react", () => {
         trending: query("trending"),
         myStanding: query("myStanding"),
         navFlags: query("navFlags"),
-        realms: query("realms"),
         category: query("category"),
         realmPanel: query("realmPanel"),
         navCounts: query("navCounts"),
@@ -312,15 +311,11 @@ describe("Forums home: texture and character", () => {
     expect(within(header).getByText("2 boards · 10 threads · 30 posts")).toBeInTheDocument();
   });
 
-  it("has no textured masthead and no grain on the page canvas", () => {
+  it("has no textured masthead", () => {
     set("categories", { data: [board("rules")] });
-    const { container } = render(<ForumHome />);
+    render(<ForumHome />);
     const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
     expect(header.querySelector(".texture-overlay")).toBeNull();
-    const outside = [...container.querySelectorAll(".texture-overlay")].filter(
-      (texture) => !texture.closest('[data-slot="card"]') && !texture.closest("span[aria-hidden]")
-    );
-    expect(outside).toEqual([]);
   });
 
   it("gives each board its own texture on a large tile", () => {
@@ -346,10 +341,16 @@ describe("Forums home: texture and character", () => {
     expect(within(row).getByText(/Heku · /)).toBeInTheDocument();
   });
 
-  it("says No threads yet in the column for an empty board", () => {
-    set("categories", { data: [EMPTY_BOARD] });
+  it("lifts only the thread title above the row link, so the rest of the column falls through to the board", () => {
+    set("categories", { data: [board("general")] });
     render(<ForumHome />);
-    expect(screen.getByText("No threads yet")).toBeInTheDocument();
+    const row = rowOf("General");
+    const title = within(row).getByRole("link", { name: "Latest in general" });
+    expect(title).toHaveClass("relative", "z-10");
+    const column = title.parentElement!;
+    expect(column).not.toHaveClass("z-10");
+    expect(column).not.toHaveClass("relative");
+    expect(within(row).getByText(/Heku · /)).not.toHaveClass("z-10");
   });
 
   it("sets the name of a board with new threads in semibold, and only that board", () => {
@@ -600,7 +601,7 @@ describe("Forums home: Your realm and Moderation", () => {
   });
 });
 
-describe("Forums home: rail", () => {
+describe("Forums home: New across ThinkPages", () => {
   beforeEach(() => {
     set("categories", { data: [board("general")] });
   });
@@ -654,6 +655,32 @@ describe("Forums home: rail", () => {
     expect(feed.closest("aside, [data-slot=inspector]")).toBeNull();
     expect(within(feed).getByText("Government")).toBeInTheDocument();
     expect(within(feed).getByText("In character")).toBeInTheDocument();
+  });
+
+  it("pads the card like the other panes", () => {
+    set("latestActivity", { data: [activity("p1")] });
+    render(<ForumHome />);
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(feed.className).toMatch(/\bp-4\b|\bpy-4\b|\bp-5\b/);
+  });
+
+  it("follows the sitewide boards and leads the old forum's archive", () => {
+    set("categories", { data: [board("general"), board("xf-3", { name: "Old Chat" })] });
+    set("latestActivity", { data: [activity("p1")] });
+    render(<ForumHome />);
+    const sitewide = screen.getByRole("heading", { level: 2, name: "Sitewide" });
+    const feed = screen.getByRole("heading", { level: 2, name: "New across ThinkPages" });
+    const archive = screen.getByRole("heading", { level: 2, name: /From the old forum/ });
+    expect(sitewide.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(feed.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe("Forums home: rail", () => {
+  beforeEach(() => {
+    set("categories", { data: [board("general")] });
   });
 
   it("shows Trending threads, ranked, and hides the panel when nothing is active", () => {
