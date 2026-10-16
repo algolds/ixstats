@@ -1,5 +1,5 @@
 import { isSystemOwner } from "~/lib/auth";
-import { DEFAULT_REALM_ID, isUnpublishedStatus } from "~/lib/realms/realm-ids";
+import { DEFAULT_REALM_ID, isUnpublishedStatus, SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import { REALM_POWERS, type RealmPower } from "~/lib/realms/realm-region";
 
 // ponytail: mirrors adminMiddleware's rule (owner/admin/staff or level ≤ 20); share it if a third caller appears.
@@ -55,11 +55,24 @@ export function hasRealmPower(
   return realmPowers(actor, realm, officers).includes(power);
 }
 
+const SYSTEM_IDS: ReadonlySet<string> = new Set(SYSTEM_REALM_IDS);
+
+/**
+ * A system realm (`Realm.isSystem`: NationStates, IIWiki, AltHistory) is a shelf for cards, not a place: never
+ * listed, claimable, mapped or deleted. Its ids are fixed (the cards backfill seeds them and refuses a clash), so
+ * this check needs no column; database lists filter on `isSystem` instead.
+ */
+export function isSystemRealm(realm: { id: string }): boolean {
+  return SYSTEM_IDS.has(realm.id);
+}
+
 /**
  * `Realm.status` (draft, generating, active, archived): only an active realm takes new nations and claims.
- * Ixnay predates realms and is always open, with or without a realm row.
+ * Ixnay predates realms and is always open, with or without a realm row. A system realm never is, so it is never
+ * published either.
  */
 export function isRealmOpen(realmId: string, status: string | null | undefined): boolean {
+  if (isSystemRealm({ id: realmId })) return false;
   return realmId === DEFAULT_REALM_ID || status === "active";
 }
 

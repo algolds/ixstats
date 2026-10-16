@@ -92,8 +92,9 @@ interface BuilderRealmOption {
 }
 
 /**
- * The realms the builder's picker offers: Ixnay, plus active realms that are public, that the user founded,
- * or where they already hold a nation (unlisted realms stay out of everyone else's list — decision 19).
+ * The realms the builder's picker offers: Ixnay, plus active realms (never a system realm) that are public, that
+ * the user founded, or where they already hold a nation (unlisted realms stay out of everyone else's list —
+ * decision 19).
  * `defaultRealmId` is the realm of the nation the user acts as.
  */
 export async function listBuilderRealms(
@@ -108,6 +109,7 @@ export async function listBuilderRealms(
           { id: DEFAULT_REALM_ID },
           {
             status: "active",
+            isSystem: false,
             OR: [
               { visibility: "public" },
               { ownerId: user.clerkUserId },

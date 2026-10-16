@@ -19,6 +19,7 @@ export {
   isRealmOpen,
   isRealmPublished,
   isSiteAdmin,
+  isSystemRealm,
   type RealmActor,
 } from "./realms.access";
 export {

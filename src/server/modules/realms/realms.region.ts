@@ -19,6 +19,7 @@ import {
   isRealmOpen,
   isRealmPublished,
   isSiteAdmin,
+  isSystemRealm,
   realmPowers,
   type RealmActor,
 } from "./realms.access";
@@ -58,7 +59,7 @@ export async function loadRegionRealm(
     where: realmSlugWhere(slug),
     select: STAFF_REALM_SELECT,
   });
-  if (!realm) throw new RealmRegionError("NOT_FOUND", "Realm not found");
+  if (!realm || isSystemRealm(realm)) throw new RealmRegionError("NOT_FOUND", "Realm not found");
   if (!isRealmPublished(realm.id, realm.status) && !(actor && canModerateRealm(actor, realm)))
     throw new RealmRegionError("NOT_FOUND", "Realm not found");
   return realm;
@@ -222,7 +223,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
       },
     },
   });
-  if (!realm) return null;
+  if (!realm || isSystemRealm(realm)) return null;
   if (!isRealmPublished(realm.id, realm.status) && !(viewer && canModerateRealm(viewer, realm)))
     return null;
 

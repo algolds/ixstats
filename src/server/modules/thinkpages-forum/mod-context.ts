@@ -26,14 +26,14 @@ export interface ModerationContext {
 
 const EMPTY: ModerationContext = { isSiteAdmin: false, realms: [], categories: [] };
 
-/** The realms by id (every realm when `ids` is null); Ixnay is synthesized when asked for and rowless. */
+/** The realms by id (every non-system realm when `ids` is null); Ixnay is synthesized when asked for and rowless. */
 async function realmsById(
   db: Pick<ContextDb, "realm">,
   ids: readonly string[] | null
 ): Promise<Map<string, ForumRealm>> {
   if (ids !== null && ids.length === 0) return new Map();
   const rows = await db.realm.findMany({
-    where: ids === null ? {} : { id: { in: [...ids] } },
+    where: ids === null ? { isSystem: false } : { id: { in: [...ids] } },
     select: REALM_SELECT,
   });
   const realms = new Map<string, ForumRealm>(rows.map((row) => [row.id, canonicalRealm(row)]));
