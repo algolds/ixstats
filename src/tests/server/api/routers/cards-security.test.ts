@@ -18,6 +18,10 @@ const admin = (db: ReturnType<typeof createMockPrisma>) =>
     user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
     db,
   }) as never;
+/** The trade partner, found by Clerk or DB id. */
+const partner = { id: "db2", clerkUserId: "user_2" };
+/** The part of a `userConnection.findMany` query the SL-4 helpers branch on. */
+type ConnectionQuery = { where: { connectionType: string } };
 
 describe("cards router security", () => {
   it("serves the lore stats and the explorer read to admins only", async () => {
@@ -38,12 +42,48 @@ describe("cards router security", () => {
 
   it("shows a trade partner only their tradeable copies", async () => {
     const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue(partner);
     await createCallerFactory(cardsInventoryRouter)(player(db)).getUserCards({ userId: "db2" });
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { id: "db2" },
+      select: { id: true, clerkUserId: true },
+    });
     expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
       ownerId: "db2",
       isLocked: false,
+      inscription: null,
       cards: { isBound: false },
     });
+  });
+
+  it("lists nothing to a viewer the partner has blocked", async () => {
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue(partner);
+    db.userConnection.findMany.mockImplementation(({ where }: ConnectionQuery) =>
+      Promise.resolve(where.connectionType === "blocked" ? [{ userId: "user_2" }] : [])
+    );
+    const caller = createCallerFactory(cardsInventoryRouter)(player(db));
+    await expect(caller.getUserCards({ userId: "user_2" })).resolves.toEqual([]);
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { clerkUserId: "user_2" },
+      select: { id: true, clerkUserId: true },
+    });
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+  });
+
+  it("lists nothing to a viewer outside the partner's trade-offer audience", async () => {
+    const db = createMockPrisma();
+    db.user.findUnique.mockResolvedValue(partner);
+    db.userConnection.findMany.mockImplementation(({ where }: ConnectionQuery) =>
+      Promise.resolve(
+        where.connectionType === "privacy_config"
+          ? [{ userId: "user_2", status: JSON.stringify({ tradeOffers: "nobody" }) }]
+          : []
+      )
+    );
+    const caller = createCallerFactory(cardsInventoryRouter)(player(db));
+    await expect(caller.getUserCards({ userId: "user_2" })).resolves.toEqual([]);
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
   it("never lists retired cards to players", async () => {
