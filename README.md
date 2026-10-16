@@ -110,11 +110,12 @@ A complete cartography, spatial analytics, and procedural world generation suite
 
 A living micro-economic and collectible card ecosystem backed by immutable financial ledgers (`apps.ixvault` v3):
 
-- **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 core card types:
+- **Four-Pillar Card System (IxCards)**: Collectible cards powered by Force, Wealth, Influence, and Legacy attributes across 5 card types:
   - `NATION`: Country cards with Force / Wealth / Influence / Legacy stats, valued by rarity and type; the `card-values` cron (every 6 hours) records their value history and does no GDP re-pricing.
   - `LORE`: Generated from WikiOS articles; rarity is suggested from wiki signals (word count, links, edit count, category breadth, images, article age) and admins can override it.
-  - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
-  - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.
+  - `NS`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
+  - `SPECIAL`: Commemorative milestone editions, event cards and achievement cards; commemorative and achievement cards are bound to their owner.
+  - `TROPHY`: One-of-one, serialised cards of Lorewards winning pages, bound to the winner so they cannot be traded or listed.
 - **Pack Openings & 6 Rarity Tiers**: Common → Legendary. Each pack sets its own price, card count and odds; 20 packs are seeded (100–15,000 IxC), including NationStates season packs. The opening sequence peels, flips and reveals each card by rarity.
 - **Crafting & Junking**: Removed in the cards refresh (Phase 1, 2026-10-15); see `docs/systems/cards.md`.
 - **Marketplace & P2P Escrow Trading**: Live public auctions with automated bidding and secure peer-to-peer card trading protected by atomic escrow locks.
