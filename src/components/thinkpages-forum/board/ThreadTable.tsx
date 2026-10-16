@@ -14,6 +14,7 @@ import { AuthorFlag, resolveAuthor } from "../AuthorMark";
 import { AuthorName, type ForumAuthors } from "../AuthorName";
 import { ForumAvatar } from "../ForumAvatar";
 import { pageHref } from "../Pagination";
+import { UnreadMark } from "../UnreadMark";
 
 /** What a row needs of a thread, as a board's read returns it. */
 export interface ThreadRowData {
@@ -140,11 +141,11 @@ function LastPost({ thread, authors }: { thread: Thread; authors: ForumAuthors }
       <ForumAvatar
         name={poster.name}
         avatarUrl={poster.avatarUrl}
-        size="sm"
+        size="xs"
         className="hidden md:flex"
       />
       <span className="flex min-w-0 items-baseline gap-1.5 md:flex-col md:items-start md:gap-0">
-        <span className="text-footnote text-label md:text-callout max-w-40 truncate md:max-w-48">
+        <span className="text-footnote text-label max-w-40 truncate md:max-w-48">
           {poster.name}
         </span>
         <span aria-hidden className="text-footnote text-label-secondary md:hidden">
@@ -167,7 +168,7 @@ function RowAvatar({
   return thread.advert ? (
     <AdvertMark advert={thread.advert} />
   ) : (
-    <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" />
+    <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="sm" />
   );
 }
 
@@ -205,21 +206,14 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
       role="row"
       className={cn(
         GRID,
-        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
-        // An unread thread carries a wash of the tint, so new activity reads down the list at a glance.
-        unread && "bg-tint-fill/50"
+        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-5 pointer-coarse:min-h-11"
       )}
     >
-      <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3.5 md:col-span-1">
+      <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
         <RowAvatar thread={thread} author={author} />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            {unread ? (
-              <>
-                <span aria-hidden className="bg-tint size-2 shrink-0 rounded-full" />
-                <span className="sr-only">Unread</span>
-              </>
-            ) : null}
+            {unread ? <UnreadMark /> : null}
             {thread.pinned ? (
               <Pin aria-label="Pinned" role="img" className="text-tint size-4 shrink-0" />
             ) : null}
@@ -229,8 +223,8 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
             <Link
               href={unread ? unreadHref(thread.id) : threadHref(thread.id)}
               className={cn(
-                "text-title-3 text-label focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
-                unread ? "font-bold" : "font-medium"
+                "text-headline text-label focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
+                unread ? "font-semibold" : "font-medium"
               )}
             >
               {thread.title}
@@ -264,7 +258,7 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
         role="cell"
         className="text-footnote text-label-secondary col-start-1 tabular-nums md:col-start-2 md:row-start-1 md:text-right"
       >
-        <span className="md:text-title-3 md:text-label md:block">{replies}</span>
+        <span className="md:text-callout md:text-label md:block">{replies}</span>
         <span className="md:text-footnote md:block">{` ${replies === 1 ? "reply" : "replies"}`}</span>
       </div>
       <div

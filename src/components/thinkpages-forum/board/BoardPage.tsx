@@ -10,7 +10,7 @@ import { ForumNotice } from "../BanNotice";
 import { ForumLoadError, ForumPageSkeleton } from "../ForumPageState";
 import { Pagination, pageHref, useLastPageRedirect } from "../Pagination";
 import { ForumPage } from "../shell";
-import { AboutPanel, TopPostersPanel } from "./BoardRail";
+import { PostingPanel, TopPostersPanel } from "./BoardRail";
 import {
   AdvertNotice,
   BoardActions,
@@ -83,7 +83,7 @@ export function BoardPage({ categoryKey, page, sort, realm }: BoardPageProps) {
       }
       rail={
         <>
-          <AboutPanel category={category} />
+          <PostingPanel category={category} />
           <TopPostersPanel categoryKey={categoryKey} realm={realm} />
         </>
       }

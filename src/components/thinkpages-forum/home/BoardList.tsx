@@ -27,6 +27,7 @@ import type { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils/cn";
 import { ForumAvatar } from "../ForumAvatar";
 import { IconTile, RISE_ITEM, RISE_LIST } from "../shell";
+import { UnreadCount, UnreadMark } from "../UnreadMark";
 
 type Board = RouterOutputs["thinkpagesForum"]["categories"][number];
 
@@ -98,8 +99,8 @@ function LatestPreview({ latest }: { latest: Board["latest"] }) {
 }
 
 /**
- * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (a dot, an "N new"
- * badge and a tint rule down the row's left edge), description, counts, and the latest thread's preview, which sits
+ * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (an UnreadMark dot before
+ * the name, an UnreadCount after it), description, counts, and the latest thread's preview, which sits
  * above the row link as its own link.
  */
 function BoardRow({ board }: { board: Board }) {
@@ -108,11 +109,7 @@ function BoardRow({ board }: { board: Board }) {
   return (
     <motion.li
       variants={RISE_ITEM}
-      className={cn(
-        "hover:bg-fill-4 relative flex gap-3.5 px-4 py-4 sm:px-5",
-        unread &&
-          "before:bg-tint before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full"
-      )}
+      className="hover:bg-fill-4 relative flex gap-3.5 px-4 py-4 sm:px-5"
     >
       <IconTile size="lg" texture={BOARD_TEXTURES[board.key] ?? "dots"}>
         <Icon />
@@ -121,20 +118,17 @@ function BoardRow({ board }: { board: Board }) {
         <div className="flex min-w-0 items-start gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-title-3 flex items-center gap-2">
+              {unread ? <UnreadMark /> : null}
               <Link
                 href={categoryHref({ key: board.key })}
-                className="focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2"
+                className={cn(
+                  "focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
+                  unread ? "font-semibold" : "font-medium"
+                )}
               >
                 {board.name}
               </Link>
-              {unread ? (
-                <>
-                  <span aria-hidden className="bg-tint size-2 shrink-0 rounded-full" />
-                  <Badge variant="secondary" className="text-tint shrink-0 tabular-nums">
-                    {`${board.unreadThreads} new`}
-                  </Badge>
-                </>
-              ) : null}
+              {unread ? <UnreadCount count={board.unreadThreads} /> : null}
               {board.visibility === "staff" ? <Badge variant="outline">Staff</Badge> : null}
             </h3>
             {board.description ? (
