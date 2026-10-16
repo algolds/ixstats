@@ -226,7 +226,7 @@ describe("thinkpagesForum watch, lists and counts", () => {
 
   it("answers navCounts with two numbers", async () => {
     const c = caller(member, engagementDb());
-    await expect(c.navCounts()).resolves.toEqual({ watchedUnread: 0, realmBoardNew: 0 });
+    await expect(c.navCounts()).resolves.toEqual({ realmBoardNew: 0 });
   });
 });
 

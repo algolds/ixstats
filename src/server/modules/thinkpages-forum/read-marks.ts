@@ -6,6 +6,7 @@
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { unreadFloor } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
 import { advertGate } from "./advert-access";
 import { boardThreadOf } from "./board-thread";
@@ -19,7 +20,7 @@ import {
   type CategoryLocator,
   type ReadsDb,
 } from "./reads";
-import { readerFloor, unreadIdsOf, type UnreadDb } from "./unread";
+import { unreadIdsOf, type UnreadDb } from "./unread";
 
 export type ReadMarksDb = ReadsDb &
   UnreadDb &
@@ -82,7 +83,7 @@ export async function markCategoryRead(
   where: CategoryLocator
 ): Promise<{ marked: number }> {
   const { category } = await loadCategory(db, viewer, where);
-  const floor = await readerFloor(db, viewer.id);
+  const floor = unreadFloor(new Date());
   let marked = 0;
   let cursor: { id: string; lastPostAt: Date } | undefined;
   for (let scanned = 0; scanned < MARK_CATEGORY_MAX; scanned += MARK_CATEGORY_CHUNK) {

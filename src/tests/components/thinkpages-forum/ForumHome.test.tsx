@@ -437,7 +437,7 @@ describe("Forums home: Your realm and Moderation", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
     set("realmPanel", { data: panel() });
-    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
+    set("navCounts", { data: { realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
     const link = screen.getByRole("link", { name: /Eurth/ });
     expect(link).toHaveTextContent("4 new on the board");
@@ -451,7 +451,7 @@ describe("Forums home: Your realm and Moderation", () => {
     ).toBeTruthy();
     unmount();
 
-    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 0 } });
+    set("navCounts", { data: { realmBoardNew: 0 } });
     render(<ForumHome />);
     expect(screen.queryByText(/ new$/)).toBeNull();
   });
@@ -460,7 +460,7 @@ describe("Forums home: Your realm and Moderation", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
     set("realmPanel", { data: panel() });
-    set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
+    set("navCounts", { data: { realmBoardNew: 100 } });
     render(<ForumHome />);
     expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });

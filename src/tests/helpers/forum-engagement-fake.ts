@@ -11,9 +11,6 @@ export function engagementTables() {
       updateMany: jest.fn(async (_args?: object) => ({ count: 0 })),
       upsert: jest.fn(async (_args?: object) => ({})),
     },
-    forumReader: {
-      findUnique: jest.fn(async (_args?: object): Promise<{ allReadAt: Date } | null> => null),
-    },
     forumThreadWatch: {
       findMany: jest.fn(async (_args?: object): Promise<object[]> => []),
       count: jest.fn(async (_args?: object) => 0),

@@ -5,11 +5,11 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { notBoardCategory } from "~/lib/thinkpages-forum/categories";
-import { isUnread } from "~/lib/thinkpages-forum/unread";
+import { isUnread, unreadFloor } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
 import { advertRealmHiddenFrom, ADVERT_REALM_SELECT } from "./advert-access";
 import { ownThreadsWhere } from "./reads";
-import { readerFloor, unreadIdsOf, type UnreadDb } from "./unread";
+import { unreadIdsOf, type UnreadDb } from "./unread";
 
 export type UnreadAttachDb = Pick<PrismaClient, "forumCategory" | "forumThread"> & UnreadDb;
 
@@ -31,13 +31,11 @@ async function unreadCountsByCategory(
   categoryIds: readonly string[]
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
-  const [categories, floor] = await Promise.all([
-    db.forumCategory.findMany({
-      where: { id: { in: [...categoryIds] }, ...notBoardCategory() },
-      select: { id: true, scope: true, realmId: true, visibility: true },
-    }),
-    readerFloor(db, viewer.id),
-  ]);
+  const floor = unreadFloor(new Date());
+  const categories = await db.forumCategory.findMany({
+    where: { id: { in: [...categoryIds] }, ...notBoardCategory() },
+    select: { id: true, scope: true, realmId: true, visibility: true },
+  });
   if (categories.length === 0) return counts;
   const threads = await db.forumThread.findMany({
     where: {

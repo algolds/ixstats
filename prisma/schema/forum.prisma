@@ -7,8 +7,9 @@
 /// The realm board (migration 20261014120000) adds the post reply and continued-thread links, and seeds each realm's hidden
 /// board category (style "board", key "board") with its one thread; every forum list, count and feed leaves it out
 /// (src/lib/thinkpages-forum/categories.ts, isBoardCategory).
-/// Unread, watch and mentions (migration 20261015120000) add forum_thread_reads, forum_readers, forum_thread_watches and
-/// forum_post_mentions; all expressible in Prisma, so a db push keeps them.
+/// Unread, watch and mentions (migration 20261015120000) add forum_thread_reads, forum_thread_watches and
+/// forum_post_mentions (and a "mark all read" table, dropped by migration 20261027120000); all expressible in Prisma, so a
+/// db push keeps them.
 /// Reactions (migration 20261016120000) add forum_post_reactions and forum_posts."reactionCounts"; both are expressible
 /// in Prisma, so a db push keeps them.
 /// Realm adverts (migration 20261018120000) add forum_threads.advertRealmId: a unique, nullable foreign key to realms that
@@ -248,7 +249,7 @@ model ForumAppeal {
 }
 
 /// What a member has read of a thread: the `lastPostAt` they have seen up to. A thread is unread when its lastPostAt is
-/// later than max(readAt, the member's allReadAt, 30 days ago). `userId` is a User.id.
+/// later than max(readAt, 30 days ago). `userId` is a User.id.
 model ForumThreadRead {
   userId   String
   threadId String
@@ -258,14 +259,6 @@ model ForumThreadRead {
   @@id([userId, threadId])
   @@index([threadId])
   @@map("forum_thread_reads")
-}
-
-/// "Mark all read": nothing before `allReadAt` is unread for the member.
-model ForumReader {
-  userId    String   @id
-  allReadAt DateTime
-
-  @@map("forum_readers")
 }
 
 /// A member watching a thread. `notifiedAt` is set when a reply notified them and cleared when they next open the

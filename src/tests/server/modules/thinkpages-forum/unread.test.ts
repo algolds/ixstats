@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { readerFloor, unreadIdsOf } from "~/server/modules/thinkpages-forum/unread";
+import { unreadIdsOf } from "~/server/modules/thinkpages-forum/unread";
 import { markUnreadThreads, withUnreadCounts } from "~/server/modules/thinkpages-forum/unread-attach";
 import { engagementTables } from "~/tests/helpers/forum-engagement-fake";
 
@@ -19,33 +19,27 @@ describe("unreadIdsOf", () => {
       { id: "again", lastPostAt: ago(0.5) },
     ]);
     expect([...unread].sort()).toEqual(["again", "new"]);
-    expect(db.forumReader.findUnique).toHaveBeenCalledTimes(1);
     expect(db.forumThreadRead.findMany).toHaveBeenCalledTimes(1);
   });
 
-  it("lets a later mark-all-read hide what came before it", async () => {
+  it("uses a floor the caller already has instead of the thirty-day window", async () => {
     const db = engagementTables();
-    db.forumReader.findUnique.mockResolvedValue({ allReadAt: ago(2) });
-    const unread = await unreadIdsOf(db as never, "u1", [
-      { id: "before", lastPostAt: ago(3) },
-      { id: "after", lastPostAt: ago(1) },
-    ]);
+    const unread = await unreadIdsOf(
+      db as never,
+      "u1",
+      [
+        { id: "before", lastPostAt: ago(3) },
+        { id: "after", lastPostAt: ago(1) },
+      ],
+      ago(2)
+    );
     expect([...unread]).toEqual(["after"]);
   });
 
   it("asks nothing for an empty list", async () => {
     const db = engagementTables();
     expect((await unreadIdsOf(db as never, "u1", [])).size).toBe(0);
-    expect(db.forumReader.findUnique).not.toHaveBeenCalled();
-  });
-});
-
-describe("readerFloor", () => {
-  it("is the mark-all-read time when it is within the window", async () => {
-    const db = engagementTables();
-    const allReadAt = ago(5);
-    db.forumReader.findUnique.mockResolvedValue({ allReadAt });
-    await expect(readerFloor(db as never, "u1")).resolves.toEqual(allReadAt);
+    expect(db.forumThreadRead.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -56,11 +50,11 @@ describe("markUnreadThreads", () => {
     await expect(markUnreadThreads(db as never, member, threads)).resolves.toEqual([
       { id: "t1", lastPostAt: threads[0]!.lastPostAt, unread: true },
     ]);
-    db.forumReader.findUnique.mockClear();
+    db.forumThreadRead.findMany.mockClear();
     await expect(markUnreadThreads(db as never, null, threads)).resolves.toEqual([
       { id: "t1", lastPostAt: threads[0]!.lastPostAt, unread: false },
     ]);
-    expect(db.forumReader.findUnique).not.toHaveBeenCalled();
+    expect(db.forumThreadRead.findMany).not.toHaveBeenCalled();
   });
 });
 
