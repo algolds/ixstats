@@ -14,6 +14,9 @@
 import { type PrismaClient } from "@prisma/client";
 import { nsApiClient, type NSCard } from "./api-client";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
+import { nsFactsFromApi, nsFactsOf, pickNsFacts, withNsFacts } from "~/lib/cards/ns-facts";
+import { NS_REALM_ID } from "~/lib/realms/realm-ids";
 import { generateNSImportDescription } from "./import-service";
 
 /**
@@ -31,7 +34,7 @@ interface SyncCounts {
  * Upsert a single NSCard definition into the DB.
  * Returns flags describing what happened.
  */
-async function upsertNSCardDefinition(
+export async function upsertNSCardDefinition(
   db: PrismaClient,
   nsCard: NSCard,
   importedFrom: string,
@@ -46,12 +49,9 @@ async function upsertNSCardDefinition(
     where: { nsCardId, nsSeason },
   });
 
+  const rarity = parseCardRarity(nsCard.rarity) ?? existing?.rarity ?? CardRarity.COMMON;
   const recomputedMarketValue = computeCardValue(
-    {
-      rarity: nsCard.rarity || existing?.rarity || "COMMON",
-      cardType: "NS_IMPORT",
-      nsMarketValue: parseFloat(nsCard.market_value || "0"),
-    },
+    { rarity, cardType: CardType.NS, nsMarketValue: parseFloat(nsCard.market_value || "0") },
     valCfg
   );
 
@@ -60,15 +60,15 @@ async function upsertNSCardDefinition(
     // artwork or value silently restored by a re-sync.
     if (existing.isRetired) return { created: false, updated: false };
     if (Math.abs(existing.marketValue - recomputedMarketValue) > 0.01) {
+      const fresh = nsFactsFromApi({ region: nsCard.region, market_value: nsCard.market_value });
       await db.card.update({
         where: { id: existing.id },
         data: {
           marketValue: recomputedMarketValue,
-          stats: {
-            ...((existing.stats as Record<string, unknown>) || {}),
-            region: nsCard.region || (existing.stats as any)?.region,
-            marketValue: nsCard.market_value,
-          },
+          metadata: withNsFacts(
+            existing.metadata,
+            pickNsFacts(fresh, nsFactsOf(existing.metadata))
+          ),
         },
       });
       return { created: false, updated: true };
@@ -82,36 +82,19 @@ async function upsertNSCardDefinition(
       title: nsCard.name,
       description: generateNSImportDescription(nsCard),
       artwork: nsCard.flag || "/images/cards/lore-placeholder.svg",
-      artworkVariants: nsCard.flag
-        ? {
-            original: nsCard.flag,
-            thumbnail: nsCard.flag,
-            large: nsCard.flag,
-            flagUrl: nsCard.flag,
-          }
-        : undefined,
-      cardType: "NS_IMPORT",
-      rarity: nsCard.rarity || "COMMON",
+      cardType: CardType.NS,
+      realmId: NS_REALM_ID,
+      rarity,
       season: nsSeason,
       nsCardId,
       nsSeason,
-      stats: {
-        region: nsCard.region,
-        category: nsCard.category,
-        govt: nsCard.govt,
-        cardcategory: nsCard.cardcategory,
-        marketValue: nsCard.market_value,
-        badge: nsCard.badge,
-        trophies: nsCard.trophies,
-      },
       metadata: {
-        nsData: { ...nsCard },
+        nsData: nsFactsFromApi(nsCard),
         importedFrom,
         importedAt: new Date().toISOString(),
       },
       marketValue: recomputedMarketValue,
       totalSupply: 1,
-      level: 1,
     },
   });
   return { created: true, updated: false };
@@ -297,7 +280,7 @@ export async function processRegionCardsFromDump(
 
 /**
  * Filter imported NS cards by active vs. CTE'd nation status.
- * Ingests nations.xml.gz and tags all NS_IMPORT cards with metadata.isCTE.
+ * Ingests nations.xml.gz and tags every NS card with metadata.isCTE.
  */
 export async function processCTENationFilter(db: PrismaClient): Promise<{
   totalProcessed: number;
@@ -308,7 +291,7 @@ export async function processCTENationFilter(db: PrismaClient): Promise<{
   const activeNations = await nsApiClient.fetchActiveNationsDump();
 
   const cards = await db.card.findMany({
-    where: { cardType: "NS_IMPORT" },
+    where: { cardType: CardType.NS },
     select: { id: true, title: true, metadata: true },
   });
 
@@ -320,8 +303,11 @@ export async function processCTENationFilter(db: PrismaClient): Promise<{
     const chunk = cards.slice(i, i + BATCH_SIZE);
     await Promise.all(
       chunk.map(async (card) => {
-        const meta = (card.metadata as Record<string, any>) || {};
-        const nsName = (meta.nsData?.name || card.title || "").trim().toLowerCase();
+        const meta =
+          card.metadata && typeof card.metadata === "object" && !Array.isArray(card.metadata)
+            ? card.metadata
+            : {};
+        const nsName = (nsFactsOf(card.metadata).name ?? card.title).trim().toLowerCase();
 
         const isActive = activeNations.has(nsName);
         const isCTE = !isActive;
