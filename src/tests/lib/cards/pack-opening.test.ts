@@ -12,6 +12,7 @@ jest.mock("~/lib/cards/xp-utils", () => ({ grantCardXp: jest.fn() }));
 jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
 
 import { mintCopy } from "~/lib/cards/mint";
+import { notificationAPI } from "~/lib/notifications/api";
 import {
   bestPulledRarity,
   generatePackCards,
@@ -344,6 +345,26 @@ describe("cardPacks.openPack errors", () => {
 
   it("keeps PackError a plain Error for other callers", () => {
     expect(new PackError("NOT_FOUND", "x")).toBeInstanceOf(Error);
+  });
+});
+
+describe("cardPacks.openPack notification", () => {
+  const open = (cards: FakeCard[], odds: Record<string, number>) =>
+    createCallerFactory(cardPacksUserRouter)(
+      createMockRouterContext({ db: makeDb(cards, { commonOdds: 0, ...odds }).db }) as never
+    ).openPack({ userPackId: USER_PACK_ID });
+
+  it("is high priority from an Epic best pull up, as Epic ranks above Ultra Rare", async () => {
+    const create = jest.mocked(notificationAPI.create);
+    create.mockClear();
+    await open([{ id: "e", rarity: "EPIC", cardType: "LORE" }], { epicOdds: 100 });
+    await open([{ id: "l", rarity: "LEGENDARY", cardType: "LORE" }], { legendaryOdds: 100 });
+    await open([{ id: "u", rarity: "ULTRA_RARE", cardType: "LORE" }], { ultraRareOdds: 100 });
+    expect(create.mock.calls.map(([note]) => [note.metadata?.bestRarity, note.priority])).toEqual([
+      ["EPIC", "high"],
+      ["LEGENDARY", "high"],
+      ["ULTRA_RARE", "medium"],
+    ]);
   });
 });
 

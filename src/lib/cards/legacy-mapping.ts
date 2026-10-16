@@ -99,11 +99,12 @@ export function boundFor(
   return card.isBound || card.type === CardType.TROPHY || achievementCardIds.has(card.id);
 }
 
-const WIKI_REALMS: Readonly<Record<string, string>> = {
-  ixwiki: DEFAULT_REALM_ID,
-  iiwiki: IIWIKI_REALM_ID,
-  althistory: ALTHISTORY_REALM_ID,
-};
+/** A Map, not an object: a source such as "constructor" must not find an Object.prototype member. */
+const WIKI_REALMS: ReadonlyMap<string, string> = new Map([
+  ["ixwiki", DEFAULT_REALM_ID],
+  ["iiwiki", IIWIKI_REALM_ID],
+  ["althistory", ALTHISTORY_REALM_ID],
+]);
 
 /** A wiki source as the realm sources key it: lower case, "ixwiki" when unset. */
 export function wikiSourceKey(source: string | null | undefined): string {
@@ -112,7 +113,7 @@ export function wikiSourceKey(source: string | null | undefined): string {
 
 /** Where a wiki's cards live when no realm imported their page: IxWiki (and any other wiki) Ixnay. */
 export function wikiFallbackRealm(source: string | null | undefined): string {
-  return WIKI_REALMS[wikiSourceKey(source)] ?? DEFAULT_REALM_ID;
+  return WIKI_REALMS.get(wikiSourceKey(source)) ?? DEFAULT_REALM_ID;
 }
 
 /** A page title in MediaWiki's canonical form; the trimmed title when MediaWiki would refuse it. */

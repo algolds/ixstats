@@ -15,6 +15,8 @@ import {
   bestPulledRarity,
   PackError,
 } from "~/lib/cards/pack-service";
+import { getRarityTier } from "~/lib/cards/display-utils";
+import { CardRarity } from "~/lib/cards/enums";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
@@ -176,7 +178,9 @@ export const cardPacksUserRouter = createTRPCRouter({
             message: `${results.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
             type: "info",
             category: "achievement",
-            priority: bestRarity === "LEGENDARY" || bestRarity === "ULTRA_RARE" ? "high" : "medium",
+            // Epic and up, in schema order (Epic ranks above Ultra Rare).
+            priority:
+              getRarityTier(bestRarity) >= getRarityTier(CardRarity.EPIC) ? "high" : "medium",
             metadata: { cardCount: results.length, bestRarity },
           });
         } catch (err) {
