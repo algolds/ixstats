@@ -5,7 +5,7 @@
  * `api.cards.*` is byte-identical to the former monolith — no call sites change.
  *
  * Domains:
- *  - inventory:  user inventory, NS-import library, admin updates/transfers, junking
+ *  - inventory:  user inventory, the card library, Lore stats (admin)
  *  - collections: collection CRUD + wiki article excerpt lookup
  */
 import { mergeRouters } from "~/server/api/trpc";

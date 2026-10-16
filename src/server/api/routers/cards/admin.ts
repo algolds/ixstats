@@ -4,12 +4,53 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { CardRarity } from "@prisma/client";
+import { ArtworkSource, CardRarity, CardType, LoreCategory, type Prisma } from "@prisma/client";
 import { recomputeAllCardValues } from "~/lib/cards/valuation";
 import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
-import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 export const cardsAdminRouter = createTRPCRouter({
+  /** Admin: the full library read for the cards explorer (retired cards, CTE, category and type filters). */
+  adminCardExplorer: adminProcedure
+    .input(
+      z.object({
+        limit: z.number().int().min(1).max(100).optional().default(50),
+        offset: z.number().int().min(0).optional().default(0),
+        search: z.string().max(100).optional(),
+        season: z.number().int().min(1).optional(),
+        rarity: z.nativeEnum(CardRarity).optional(),
+        region: z.string().max(100).optional(),
+        categoryFilter: z.nativeEnum(LoreCategory).optional(),
+        cardTypeFilter: z
+          .union([z.literal("all"), z.nativeEnum(CardType)])
+          .optional()
+          .default("all"),
+        cteFilter: cteFilterSchema.optional().default("all"),
+        isRetired: z.boolean().optional(),
+        includeRetired: z.boolean().optional(),
+        sortBy: z.enum(LIBRARY_SORTS).optional().default("recent"),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const where = libraryWhere({
+        ...input,
+        category: input.categoryFilter,
+        cardType: input.cardTypeFilter === "all" ? undefined : input.cardTypeFilter,
+        retired: input.isRetired ?? (input.includeRetired ? undefined : false),
+      });
+      const [total, cards] = await Promise.all([
+        ctx.db.card.count({ where }),
+        ctx.db.card.findMany({
+          where,
+          orderBy: LIBRARY_ORDER[input.sortBy],
+          take: input.limit,
+          skip: input.offset,
+        }),
+      ]);
+      return { cards, total, hasMore: input.offset + input.limit < total };
+    }),
+
   /**
    * Admin inline edit card details (title, marketValue, isRetired, rarity, category, artwork)
    */
@@ -21,25 +62,26 @@ export const cardsAdminRouter = createTRPCRouter({
         marketValue: z.number().int().min(0).optional(),
         isRetired: z.boolean().optional(),
         category: z.nativeEnum(LoreCategory).optional(),
-        cardType: z.string().optional(),
+        cardType: z.nativeEnum(CardType).optional(),
         rarity: z.nativeEnum(CardRarity).optional(),
-        artworkUrl: z.string().optional().nullable(),
+        artwork: z.string().optional().nullable(),
         artworkSource: z.nativeEnum(ArtworkSource).optional(),
         description: z.string().optional().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const updateData: Record<string, any> = {};
-        if (input.title !== undefined) updateData.title = input.title;
-        if (input.marketValue !== undefined) updateData.marketValue = input.marketValue;
-        if (input.isRetired !== undefined) updateData.isRetired = input.isRetired;
-        if (input.category !== undefined) updateData.category = input.category;
-        if (input.cardType !== undefined) updateData.cardType = input.cardType;
-        if (input.rarity !== undefined) updateData.rarity = input.rarity;
-        if (input.artworkUrl !== undefined) updateData.artworkUrl = input.artworkUrl;
-        if (input.artworkSource !== undefined) updateData.artworkSource = input.artworkSource;
-        if (input.description !== undefined) updateData.description = input.description;
+        const updateData: Prisma.CardUpdateInput = {
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.marketValue !== undefined && { marketValue: input.marketValue }),
+          ...(input.isRetired !== undefined && { isRetired: input.isRetired }),
+          ...(input.category !== undefined && { category: input.category }),
+          ...(input.cardType !== undefined && { cardType: input.cardType }),
+          ...(input.rarity !== undefined && { rarity: input.rarity }),
+          ...(input.artwork !== undefined && { artwork: input.artwork }),
+          ...(input.artworkSource !== undefined && { artworkSource: input.artworkSource }),
+          ...(input.description !== undefined && { description: input.description }),
+        };
 
         const card = await ctx.db.card.update({
           where: { id: input.cardId },
@@ -64,11 +106,14 @@ export const cardsAdminRouter = createTRPCRouter({
       z.object({
         isRetired: z.boolean(),
         cardTypeFilter: z
-          .enum(["all", "NS_IMPORT", "LORE", "USER_CUSTOM", "COMMONS_IMPORT"])
+          .union([z.literal("all"), z.nativeEnum(CardType)])
           .optional()
           .default("all"),
         cteFilter: z.enum(["all", "active", "cte"]).optional().default("all"),
-        categoryFilter: z.string().optional().default("all"),
+        categoryFilter: z
+          .union([z.literal("all"), z.nativeEnum(LoreCategory)])
+          .optional()
+          .default("all"),
         season: z.enum(["all", "1", "2", "3"]).optional().default("all"),
         rarity: z
           .enum(["all", "COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"])
@@ -78,41 +123,15 @@ export const cardsAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const where: Record<string, any> = {};
-
-        // Card type filter
-        if (input.cardTypeFilter === "NS_IMPORT") {
-          where.OR = [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }];
-        } else if (input.cardTypeFilter === "LORE") {
-          where.OR = [{ cardType: "LORE" }, { cardType: "LORE_BATCH" }];
-        } else if (input.cardTypeFilter === "USER_CUSTOM") {
-          where.nsCardId = null;
-          where.cardType = { notIn: ["LORE", "LORE_BATCH", "COMMONS_IMPORT"] };
-        } else if (input.cardTypeFilter === "COMMONS_IMPORT") {
-          where.cardType = "COMMONS_IMPORT";
-        }
-
-        // Category filter
-        if (input.categoryFilter && input.categoryFilter !== "all") {
-          where.category = input.categoryFilter;
-        }
-
-        // Season filter
-        if (input.season !== "all") {
-          where.season = parseInt(input.season, 10);
-        }
-
-        // Rarity filter
-        if (input.rarity !== "all") {
-          where.rarity = input.rarity;
-        }
-
-        // CTE filter
-        if (input.cteFilter === "cte") {
-          where.metadata = { path: ["isCTE"], equals: true };
-        } else if (input.cteFilter === "active") {
-          where.metadata = { path: ["isCTE"], equals: false };
-        }
+        const where: Prisma.CardWhereInput = {
+          ...(input.cardTypeFilter !== "all" && { cardType: input.cardTypeFilter }),
+          ...(input.categoryFilter !== "all" && { category: input.categoryFilter }),
+          ...(input.season !== "all" && { season: parseInt(input.season, 10) }),
+          ...(input.rarity !== "all" && { rarity: input.rarity }),
+          ...(input.cteFilter !== "all" && {
+            metadata: { path: ["isCTE"], equals: input.cteFilter === "cte" },
+          }),
+        };
 
         const result = await ctx.db.card.updateMany({
           where,
@@ -151,12 +170,13 @@ export const cardsAdminRouter = createTRPCRouter({
         const items = await commonsFlagImporter.fetchCategoryMembers(input.category, input.limit);
         if (items.length === 0) return { items: [] };
 
-        // Fetch existing COMMONS_IMPORT cards matching cleanTitle or fileUrl
+        // Commons flag cards already imported from this category, by title
         const cleanTitles = items.map((i) => i.cleanTitle);
         const existingCards = await ctx.db.card.findMany({
           where: {
-            cardType: "COMMONS_IMPORT",
+            cardType: CardType.LORE,
             title: { in: cleanTitles },
+            metadata: { path: ["commonsCategory"], equals: input.category },
           },
           select: { title: true },
         });
@@ -179,7 +199,8 @@ export const cardsAdminRouter = createTRPCRouter({
     }),
 
   /**
-   * Import selected Wikimedia Commons flags as COMMONS_IMPORT cards
+   * Import selected Wikimedia Commons flags as Lore cards in Ixnay, marked `metadata.commonsCategory`;
+   * the importing admin gets no copy.
    */
   importCommonsFlags: adminProcedure
     .input(
@@ -202,21 +223,23 @@ export const cardsAdminRouter = createTRPCRouter({
         let skipped = 0;
 
         for (const item of input.items) {
-          // Check if card with same title and type exists
-          let card = await ctx.db.card.findFirst({
+          // Check if this category's flag card with the same title exists
+          const card = await ctx.db.card.findFirst({
             where: {
               title: item.cleanTitle,
-              cardType: "COMMONS_IMPORT",
+              cardType: CardType.LORE,
+              metadata: { path: ["commonsCategory"], equals: item.category },
             },
           });
 
           if (!card) {
-            card = await ctx.db.card.create({
+            await ctx.db.card.create({
               data: {
                 title: item.cleanTitle,
                 description: `Wikimedia Commons SVG Flag from ${item.category}`,
                 artwork: item.fileUrl,
-                cardType: "COMMONS_IMPORT",
+                cardType: CardType.LORE,
+                realmId: DEFAULT_REALM_ID,
                 rarity: input.defaultRarity,
                 season: input.season,
                 metadata: {
@@ -229,23 +252,6 @@ export const cardsAdminRouter = createTRPCRouter({
               },
             });
             imported++;
-
-            // Grant the importer ownership of newly-created cards only — a freshly created card
-            // can't already be owned, so no existing-ownership lookup is needed here. Pre-existing
-            // cards (the `skipped` branch) are left alone: importing shouldn't grant ownership of
-            // cards someone else may already own.
-            if (ctx.user?.id) {
-              await ctx.db.cardOwnership.create({
-                data: {
-                  id: `card_own_${Date.now()}_${crypto.randomUUID().slice(0, 7)}`,
-                  userId: ctx.user.id,
-                  ownerId: ctx.user.id,
-                  cardId: card.id,
-                  serialNumber: 1,
-                  quantity: 1,
-                },
-              });
-            }
           } else {
             skipped++;
           }
