@@ -8,7 +8,13 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { purchasePack, openPack, getUserPacks, PackError } from "~/lib/cards/pack-service";
+import {
+  purchasePack,
+  openPack,
+  getUserPacks,
+  bestPulledRarity,
+  PackError,
+} from "~/lib/cards/pack-service";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
@@ -130,8 +136,7 @@ export const cardPacksUserRouter = createTRPCRouter({
     }),
 
   /**
-   * Open pack and reveal cards
-   * Admin-only endpoint
+   * Opens one of the caller's packs and reveals its cards
    */
   openPack: rateLimitedMutationProcedure
     .input(
@@ -164,10 +169,7 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         // Notification: cards revealed (fire-and-forget)
         try {
-          const bestRarity = results.reduce((best, r) => {
-            const order = ["COMMON", "UNCOMMON", "RARE", "EPIC", "ULTRA_RARE", "LEGENDARY"];
-            return order.indexOf(r.card.rarity) > order.indexOf(best) ? r.card.rarity : best;
-          }, "COMMON");
+          const bestRarity = bestPulledRarity(results.map((r) => r.card));
           await notificationAPI.create({
             userId: ctx.user.id,
             title: "Cards Revealed!",

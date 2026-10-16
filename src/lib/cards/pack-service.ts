@@ -1,14 +1,14 @@
 // src/lib/card-pack-service.ts
 // Card pack service for IxCards system
 
-import { LoreCategory } from "@prisma/client";
+import { CardType, LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
-import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
+import { getRarityTier } from "./display-utils";
+import { copyRoom } from "./capacity";
+import { CardFinish } from "./enums";
+import { mintCopy } from "./mint";
 import { grantCardXp } from "./xp-utils";
-import { newCardOwnershipId } from "./ownership-id";
-import { baseCardCapacity } from "./general-settings";
 
 /**
  * A pack-service failure the caller can act on. `code` is the tRPC error code the router
@@ -16,7 +16,7 @@ import { baseCardCapacity } from "./general-settings";
  */
 export class PackError extends Error {
   constructor(
-    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "PRECONDITION_FAILED",
+    public readonly code: "NOT_FOUND" | "BAD_REQUEST" | "PRECONDITION_FAILED" | "CONFLICT",
     message: string
   ) {
     super(message);
@@ -36,30 +36,38 @@ export interface PackThemeFilter {
   countryIds?: string[];
 }
 
-function stringList(value: unknown): string[] {
+const isJsonObject = (value: Prisma.JsonValue | null | undefined): value is Prisma.JsonObject =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+function stringList(value: Prisma.JsonValue | undefined): string[] {
   if (typeof value === "string") return value ? [value] : [];
   return Array.isArray(value)
     ? value.filter((v): v is string => typeof v === "string" && v !== "")
     : [];
 }
 
+/** The listed values that the enum knows. */
+function known<T extends string>(values: string[], allowed: readonly T[]): T[] {
+  return values.filter((value): value is T => (allowed as readonly string[]).includes(value));
+}
+
 /** Card filters for a pack's `themeFilter` JSON (an empty list when there is no theme). */
-export function themeFilterWhere(themeFilter: unknown): Prisma.CardWhereInput[] {
-  if (!themeFilter || typeof themeFilter !== "object" || Array.isArray(themeFilter)) return [];
-  const theme = themeFilter as Record<string, unknown>;
+export function themeFilterWhere(themeFilter: Prisma.JsonValue | null): Prisma.CardWhereInput[] {
+  if (!isJsonObject(themeFilter)) return [];
   const where: Prisma.CardWhereInput[] = [];
 
-  const validCategories = new Set<string>(Object.values(LoreCategory));
-  const categories = stringList(theme.categories).filter((c) => validCategories.has(c));
-  if (stringList(theme.categories).length > 0) {
-    // A theme naming only unknown categories matches nothing rather than everything
-    where.push({ category: { in: categories as LoreCategory[] } });
+  // A theme naming only unknown categories or types matches nothing rather than everything
+  const categories = stringList(themeFilter.categories);
+  if (categories.length > 0) {
+    where.push({ category: { in: known(categories, Object.values(LoreCategory)) } });
   }
-  const subcategories = stringList(theme.subcategories);
+  const subcategories = stringList(themeFilter.subcategories);
   if (subcategories.length > 0) where.push({ subcategory: { in: subcategories } });
-  const cardTypes = stringList(theme.cardTypes);
-  if (cardTypes.length > 0) where.push({ cardType: { in: cardTypes } });
-  const countryIds = stringList(theme.countryIds);
+  const cardTypes = stringList(themeFilter.cardTypes);
+  if (cardTypes.length > 0) {
+    where.push({ cardType: { in: known(cardTypes, Object.values(CardType)) } });
+  }
+  const countryIds = stringList(themeFilter.countryIds);
   if (countryIds.length > 0) where.push({ countryId: { in: countryIds } });
 
   return where;
@@ -231,15 +239,15 @@ export function generatePackCards(pack: {
 
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
- * theme, never SPECIAL (achievement / event rewards), never crafted and never a Loreward trophy.
+ * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted.
  */
 async function packPoolWhere(
   tx: Prisma.TransactionClient,
-  pack: { cardType: string | null; season: number | null; themeFilter: unknown }
+  pack: { cardType: CardType | null; season: number | null; themeFilter: Prisma.JsonValue | null }
 ): Promise<Prisma.CardWhereInput> {
-  // Crafted cards carry CRAFTED_CARD_MARKER (crafting-rules.ts). Matched positively, as a NOT
-  // on a JSON path would also drop every card without metadata. Legacy crafts carry no
-  // marker, only the generic "Crafted via <recipe>" description.
+  // Cards crafted before crafting was retired carry `metadata.crafted` (or the old "Crafted via"
+  // description); they stay out of packs. Matched positively, as a NOT on a JSON path would also
+  // drop every card without metadata.
   const crafted = await tx.card.findMany({
     where: {
       OR: [
@@ -252,8 +260,8 @@ async function packPoolWhere(
 
   const and: Prisma.CardWhereInput[] = [
     { isRetired: false },
-    { cardType: { not: "SPECIAL" } },
-    EXCLUDE_TROPHY_CARDS,
+    // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
+    { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },
     ...themeFilterWhere(pack.themeFilter),
   ];
   if (pack.cardType) and.push({ cardType: pack.cardType });
@@ -262,154 +270,121 @@ async function packPoolWhere(
   return { AND: and };
 }
 
+/** Why a pack could not be claimed: missing or someone else's reads NOT_FOUND (ids can't be probed); else opened. */
+async function unclaimedPackError(
+  tx: Prisma.TransactionClient,
+  userPackId: string,
+  userId: string
+) {
+  const own = await tx.userPack.findFirst({
+    where: { id: userPackId, userId },
+    select: { id: true },
+  });
+  return own
+    ? new PackError("CONFLICT", "This pack has already been opened")
+    : new PackError("NOT_FOUND", "Pack not found");
+}
+
+type PoolPack = Parameters<typeof packPoolWhere>[1];
+
+/** Draws one card of a rolled rarity; an empty tier falls back to the next-lower one, then reaches upward. */
+async function poolDrawer(tx: Prisma.TransactionClient, pack: PoolPack) {
+  const poolWhere = await packPoolWhere(tx, pack);
+  const tierCounts = new Map<CardRarity, number>();
+  const countTier = async (rarity: CardRarity) => {
+    const cached = tierCounts.get(rarity);
+    if (cached !== undefined) return cached;
+    const count = await tx.card.count({ where: { AND: [poolWhere, { rarity }] } });
+    tierCounts.set(rarity, count);
+    return count;
+  };
+  return async (rolled: CardRarity) => {
+    const rank = rarityRank(rolled);
+    const tiers = [...RARITY_ORDER.slice(0, rank + 1).reverse(), ...RARITY_ORDER.slice(rank + 1)];
+    for (const tier of tiers) {
+      const count = await countTier(tier);
+      if (count === 0) continue;
+      const card = await tx.card.findFirst({
+        where: { AND: [poolWhere, { rarity: tier }] },
+        skip: Math.floor(Math.random() * count),
+        take: 1,
+      });
+      if (!card) throw new PackError("PRECONDITION_FAILED", `Failed to select a ${tier} card`);
+      return card;
+    }
+    throw new PackError(
+      "PRECONDITION_FAILED",
+      "This pack has no cards available right now. Please try again later."
+    );
+  };
+}
+
 /**
- * Open pack and generate card ownership records
- * Returns array of cards pulled from pack
+ * Opens a pack: claims it first (only one open can flip `isOpened`, so a second, concurrent open throws CONFLICT
+ * before anything is minted; cards refresh §5.4), checks capacity, draws the whole pack, then mints each pulled
+ * card through `mintCopy`. One transaction: any failure leaves the pack unopened.
  */
 export async function openPack(db: PrismaClient, userId: string, userPackId: string) {
   return db.$transaction(async (tx) => {
-    // 1. Get UserPack with pack details
-    const userPack = await tx.userPack.findUnique({
+    const claimed = await tx.userPack.updateMany({
+      where: { id: userPackId, userId, isOpened: false },
+      data: { isOpened: true, openedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw await unclaimedPackError(tx, userPackId, userId);
+    const { pack } = await tx.userPack.findUniqueOrThrow({
       where: { id: userPackId },
       include: { pack: true },
     });
 
-    // 2. Verify ownership (another user's pack reads as missing, so ids can't be probed)
-    if (!userPack || userPack.userId !== userId) {
-      throw new PackError("NOT_FOUND", "Pack not found");
-    }
-
-    // 3. Check if already opened
-    if (userPack.isOpened) {
-      throw new PackError("BAD_REQUEST", "Pack has already been opened");
-    }
-
-    // 3.5 Check inventory capacity limits
-    const config = await getVaultConfig(tx as any);
     const user = await tx.user.findUnique({
       where: { id: userId },
-      include: { role: true },
+      select: { role: { select: { level: true } } },
     });
-    const userRoleLevel = user?.role?.level ?? 100;
-    const isExempt = config.exemptStaffFromLimit && userRoleLevel <= 20;
-
-    if (!isExempt) {
-      const capacityBoost = await vaultService.getCardCapacityBoost(userId, tx as any);
-      const maxCards = (await baseCardCapacity(tx)) + capacityBoost;
-      const currentCardsCount = await tx.cardOwnership.count({
-        where: { userId },
-      });
-      if (currentCardsCount + userPack.pack.cardCount > maxCards) {
-        throw new PackError(
-          "PRECONDITION_FAILED",
-          `Your inventory is full. Maximum capacity is ${maxCards} cards. Purchase a Card Capacity Upgrade in the Store to hold more.`
-        );
-      }
+    if ((await copyRoom(tx, { id: userId, roleLevel: user?.role?.level })) < pack.cardCount) {
+      throw new PackError(
+        "PRECONDITION_FAILED",
+        "Your inventory is full. Purchase a Card Capacity Upgrade in the Store to hold more."
+      );
     }
 
-    // 4. Generate card rarities based on pack odds
-    const rarities = generatePackCards(userPack.pack);
+    const draw = await poolDrawer(tx, pack);
+    const cards = [];
+    for (const rarity of generatePackCards(pack)) cards.push(await draw(rarity));
 
-    // 5. Select actual cards from pool based on rarities
-    const poolWhere = await packPoolWhere(tx, userPack.pack);
-    const tierCounts = new Map<CardRarity, number>();
-    const countTier = async (rarity: CardRarity) => {
-      let count = tierCounts.get(rarity);
-      if (count === undefined) {
-        count = await tx.card.count({ where: { AND: [poolWhere, { rarity }] } });
-        tierCounts.set(rarity, count);
-      }
-      return count;
-    };
-
-    const cardsWithOwnership = [];
-    for (const rolled of rarities) {
-      // An empty tier falls back to the next-lower rarity; only when every lower tier is
-      // empty too does it reach upward, so a thin pool still opens.
-      const rank = rarityRank(rolled);
-      const tiers = [...RARITY_ORDER.slice(0, rank + 1).reverse(), ...RARITY_ORDER.slice(rank + 1)];
-      let rarity: CardRarity | null = null;
-      let cardCount = 0;
-      for (const tier of tiers) {
-        cardCount = await countTier(tier);
-        if (cardCount > 0) {
-          rarity = tier;
-          break;
-        }
-      }
-
-      if (!rarity) {
-        throw new PackError(
-          "PRECONDITION_FAILED",
-          "This pack has no cards available right now. Please try again later."
-        );
-      }
-
-      // Random offset for variety
-      const randomOffset = Math.floor(Math.random() * cardCount);
-
-      const card = await tx.card.findFirst({
-        where: { AND: [poolWhere, { rarity }] },
-        skip: randomOffset,
-        take: 1,
+    // mintCopy holds its per-card serial lock until commit, so mint in cardId order: two concurrent opens that
+    // drew the same cards in different orders would otherwise deadlock.
+    const pulled: Array<{ card: (typeof cards)[number]; ownershipId: string }> = new Array(
+      cards.length
+    );
+    const mintOrder = cards
+      .map((card, index) => ({ card, index }))
+      .sort((a, b) => a.card.id.localeCompare(b.card.id));
+    for (const { card, index } of mintOrder) {
+      const copy = await mintCopy(tx, {
+        cardId: card.id,
+        ownerId: userId,
+        finish: CardFinish.STANDARD,
+        source: "PACK_OPEN",
       });
-
-      if (!card) {
-        throw new PackError("PRECONDITION_FAILED", `Failed to select a ${rarity} card`);
-      }
-
-      // 6. Create CardOwnership record
-      const maxSerial = await tx.cardOwnership.findFirst({
-        where: { cardId: card.id },
-        orderBy: { serialNumber: "desc" },
-        select: { serialNumber: true },
-      });
-      const nextSerial = (maxSerial?.serialNumber || 0) + 1;
-
-      const ownership = await tx.cardOwnership.create({
-        data: {
-          id: newCardOwnershipId(),
-          userId,
-          cardId: card.id,
-          ownerId: userId,
-          serialNumber: nextSerial,
-          level: 1,
-          experience: 0,
-        },
-      });
-
-      // Log provenance
-      const txAny = tx as any;
-      await txAny.cardTransferEvent.create({
-        data: {
-          ownershipId: ownership.id,
-          toUserId: userId,
-          action: "PACK_OPEN",
-        },
-      });
-
       await grantCardXp(
-        tx as any,
-        ownership.id,
+        tx,
+        copy.id,
         10,
         "PACK_OPEN",
-        JSON.stringify({ packId: userPack.pack.id, packName: userPack.pack.name })
+        JSON.stringify({ packId: pack.id, packName: pack.name })
       );
-
-      cardsWithOwnership.push({ card, ownershipId: ownership.id });
+      pulled[index] = { card, ownershipId: copy.id };
     }
-
-    // 7. Mark pack as opened
-    await tx.userPack.update({
-      where: { id: userPackId },
-      data: {
-        isOpened: true,
-        openedAt: new Date(),
-      },
-    });
-
-    return cardsWithOwnership;
+    return pulled;
   });
+}
+
+/** The best rarity a pack pulled, in schema order (Epic above Ultra Rare); "COMMON" for none. */
+export function bestPulledRarity(cards: ReadonlyArray<{ rarity: string }>): string {
+  return cards.reduce(
+    (best, card) => (getRarityTier(card.rarity) > getRarityTier(best) ? card.rarity : best),
+    "COMMON"
+  );
 }
 
 /**
