@@ -8,6 +8,8 @@ jest.mock("~/server/db", () => {
   const db = {
     lorewardEntry: { findMany: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    // No WikiOS edits: the WikiOS-author fallback finds nobody.
+    wikiRevision: { findFirst: jest.fn(async () => null) },
     systemConfig: { findMany: jest.fn() },
     user: { findFirst: jest.fn() },
   };
