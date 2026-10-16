@@ -2,6 +2,9 @@ import { type PrismaClient } from "@prisma/client";
 import { Cache } from "~/lib/cache";
 import { countStorePurchases } from "./store-purchases";
 
+/** What purchased-perk lookups read: a client, an extended client or a transaction client all fit. */
+export type PerksDb = Pick<PrismaClient, "vaultTransaction" | "vaultStoreItem">;
+
 interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
@@ -172,7 +175,7 @@ export async function getVaultConfig(db: {
  */
 export async function getPurchasedItemsEffects(
   userId: string,
-  db: PrismaClient
+  db: PerksDb
 ): Promise<VaultEffectItem[]> {
   const cacheKey = `user_perks:${userId}`;
   const cached = userPerksCache.get(cacheKey);
@@ -231,7 +234,7 @@ export async function getPurchasedItemsEffects(
 /**
  * Calculate total card capacity boost from store upgrades
  */
-export async function getCardCapacityBoost(userId: string, db: PrismaClient): Promise<number> {
+export async function getCardCapacityBoost(userId: string, db: PerksDb): Promise<number> {
   const effects = await getPurchasedItemsEffects(userId, db);
   let totalBoost = 0;
   for (const eff of effects) {
