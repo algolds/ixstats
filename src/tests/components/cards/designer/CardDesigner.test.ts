@@ -61,17 +61,9 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(first).toHaveProperty("tags");
   });
 
-  it("should have 8 distinct physical material profiles with custom shaders", () => {
-    const rarities = [
-      "COMMON",
-      "UNCOMMON",
-      "RARE",
-      "ULTRA_RARE",
-      "EPIC",
-      "LEGENDARY",
-      "MYTHIC",
-      "DIVINE",
-    ];
+  it("should have 6 distinct physical material profiles with custom shaders", () => {
+    const rarities = ["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"];
+    expect(Object.keys(RARITY_MATERIALS)).toEqual(rarities);
     rarities.forEach((r) => {
       const mat = getRarityMaterial(r);
       expect(mat).toBeDefined();
@@ -83,10 +75,10 @@ describe("Card Designer Studio & Game-Icons Library", () => {
 
     expect(RARITY_MATERIALS.LEGENDARY.materialName).toContain("24K");
     expect(RARITY_MATERIALS.COMMON.particles.enabled).toBe(false);
-    expect(RARITY_MATERIALS.DIVINE.particles.enabled).toBe(true);
+    expect(RARITY_MATERIALS.LEGENDARY.particles.enabled).toBe(true);
   });
 
-  it("should have comprehensive synonyms and keywords for all 13 LoreCategory entries", () => {
+  it("should have comprehensive synonyms and keywords for all 12 LoreCategory entries", () => {
     // Check Nations synonyms
     const nationSynonyms = CATEGORY_SYNONYMS[LoreCategory.NATION];
     expect(nationSynonyms).toContain("country");

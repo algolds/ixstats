@@ -3,7 +3,7 @@
  *
  * Defines distinctive physical material identities, surface shaders,
  * dynamic caustic glares, tier-specific borders, and particle systems
- * for all 8 card rarity tiers.
+ * for the six card rarity tiers.
  */
 
 export type MaterialFinishType =
@@ -13,9 +13,7 @@ export type MaterialFinishType =
   | "PRISMATIC_FOIL"
   | "CRACKED_ICE"
   | "COSMIC_STARDUST"
-  | "GILDED_GOLD"
-  | "ASTRAL_VOID"
-  | "SOLAR_CROWN";
+  | "GILDED_GOLD";
 
 interface RarityMaterialConfig {
   rarity: string;
@@ -34,19 +32,11 @@ interface RarityMaterialConfig {
   borderStyle: string;
   borderColor: string;
   borderGlow: string;
-  cornerTreatment:
-    "none" | "chamfer" | "engraved_bracket" | "laser_emitter" | "filigree" | "celestial_rune";
+  cornerTreatment: "none" | "chamfer" | "engraved_bracket" | "laser_emitter" | "filigree";
 
   // Emblem / Sigil treatment
   emblemTreatment:
-    | "matte"
-    | "gloss"
-    | "prismatic_chrome"
-    | "cyan_crystal"
-    | "amethyst_glow"
-    | "gilded_gold"
-    | "astral_hologram"
-    | "solar_incandescent";
+    "matte" | "gloss" | "prismatic_chrome" | "cyan_crystal" | "amethyst_glow" | "gilded_gold";
   emblemFilter: string;
 
   // Particle & Lighting FX
@@ -54,7 +44,7 @@ interface RarityMaterialConfig {
     enabled: boolean;
     count: number;
     colors: string[];
-    type: "sparkle" | "stars" | "embers" | "solar_motes";
+    type: "sparkle" | "stars" | "embers";
     speed: number;
   };
   causticWaves: boolean;
@@ -238,68 +228,6 @@ export const RARITY_MATERIALS: Record<string, RarityMaterialConfig> = {
     causticWaves: true,
     lightRays: true,
     chromaticAberration: false,
-  },
-
-  MYTHIC: {
-    rarity: "MYTHIC",
-    name: "Mythic",
-    materialName: "Astral Void Glass",
-    description:
-      "Deep black cosmic void with swirling nebula core and prismatic chromatic aberration.",
-    defaultFinish: "ASTRAL_VOID",
-    baseGradient: "from-rose-950 via-slate-950 to-purple-950",
-    surfaceTexture:
-      "radial-gradient(circle at 40% 60%, rgba(244,63,94,0.3) 0%, rgba(139,92,246,0.3) 50%, transparent 80%)",
-    specularColor: "rgba(251, 113, 133, 0.9)",
-    glareIntensity: 0.95,
-    borderStyle: "border-[2.5px] border-rose-500/90 ring-2 ring-purple-500/50",
-    borderColor: "rgba(244, 63, 94, 1)",
-    borderGlow: "shadow-[0_0_40px_rgba(244,63,94,0.6),inset_0_0_25px_rgba(139,92,246,0.5)]",
-    cornerTreatment: "engraved_bracket",
-    emblemTreatment: "astral_hologram",
-    emblemFilter:
-      "drop-shadow(0 0 18px rgba(244,63,94,1)) drop-shadow(0 0 35px rgba(139,92,246,0.8))",
-    particles: {
-      enabled: true,
-      count: 32,
-      colors: ["#fb7185", "#c084fc", "#38bdf8", "#ffffff"],
-      type: "stars",
-      speed: 2.2,
-    },
-    causticWaves: true,
-    lightRays: true,
-    chromaticAberration: true,
-  },
-
-  DIVINE: {
-    rarity: "DIVINE",
-    name: "Divine",
-    materialName: "Solar Celestial Crown",
-    description:
-      "Blinding celestial solar pearl with sacred runes, corona flares, and radiant aura.",
-    defaultFinish: "SOLAR_CROWN",
-    baseGradient: "from-amber-950 via-yellow-950 to-slate-950",
-    surfaceTexture:
-      "radial-gradient(circle at 50% 50%, rgba(253,224,71,0.45) 0%, rgba(245,158,11,0.2) 60%, transparent 90%)",
-    specularColor: "rgba(255, 255, 255, 1)",
-    glareIntensity: 1.0,
-    borderStyle: "border-[3px] border-yellow-200 ring-4 ring-amber-400/50",
-    borderColor: "rgba(254, 240, 138, 1)",
-    borderGlow: "shadow-[0_0_50px_rgba(250,204,21,0.8),inset_0_0_30px_rgba(253,224,71,0.6)]",
-    cornerTreatment: "celestial_rune",
-    emblemTreatment: "solar_incandescent",
-    emblemFilter:
-      "drop-shadow(0 0 22px rgba(255,255,255,1)) drop-shadow(0 0 45px rgba(250,204,21,0.9))",
-    particles: {
-      enabled: true,
-      count: 40,
-      colors: ["#ffffff", "#fef08a", "#fde047", "#f59e0b"],
-      type: "solar_motes",
-      speed: 2.5,
-    },
-    causticWaves: true,
-    lightRays: true,
-    chromaticAberration: true,
   },
 };
 

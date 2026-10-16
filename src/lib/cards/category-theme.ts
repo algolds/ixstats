@@ -279,21 +279,6 @@ const CATEGORY_THEMES: Record<LoreCategory, CategoryTheme> = {
     patternAnimation: "geo-spin",
     family: "meta",
   },
-
-  NS_IMPORT: {
-    label: "NationStates",
-    gradient: "from-emerald-950 via-cyan-950 to-slate-950",
-    accentColor: "rgba(6, 182, 212, 0.7)",
-    accentSoft: "rgba(6, 182, 212, 0.1)",
-    dotColor: "bg-cyan-400",
-    pattern: `linear-gradient(
-      180deg,
-      rgba(6, 182, 212, 0.03) 0%,
-      transparent 100%
-    )`,
-    patternAnimation: null,
-    family: "meta",
-  },
 };
 
 export function getCategoryTheme(category: LoreCategory): CategoryTheme {

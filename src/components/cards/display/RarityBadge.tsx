@@ -8,8 +8,8 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { getRarityConfig, getShimmerEffect, CARD_RARITIES } from "~/lib/cards/display-utils";
-import type { CardRarity } from "~/lib/cards/enums";
+import { getRarityConfig, getShimmerEffect } from "~/lib/cards/display-utils";
+import { CardRarity } from "~/lib/cards/enums";
 
 /**
  * RarityBadge component props
@@ -77,18 +77,8 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
           transition: { duration: 0.2 },
         }}
         animate={
-          animated &&
-          (rarity === CARD_RARITIES.LEGENDARY ||
-            rarity === CARD_RARITIES.MYTHIC ||
-            rarity === CARD_RARITIES.DIVINE)
-            ? {
-                boxShadow:
-                  rarity === CARD_RARITIES.DIVINE
-                    ? "0 0 20px rgba(253, 224, 71, 0.6)"
-                    : rarity === CARD_RARITIES.MYTHIC
-                      ? "0 0 15px rgba(244, 63, 94, 0.5)"
-                      : "0 0 15px rgba(251, 191, 36, 0.4)",
-              }
+          animated && rarity === CardRarity.LEGENDARY
+            ? { boxShadow: "0 0 15px rgba(251, 191, 36, 0.4)" }
             : undefined
         }
       >
@@ -113,7 +103,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
         )}
 
         {/* Static shimmer gradient for legendary */}
-        {animated && rarity === CARD_RARITIES.LEGENDARY && (
+        {animated && rarity === CardRarity.LEGENDARY && (
           <div
             className="pointer-events-none absolute inset-0 rounded-full opacity-30"
             style={{

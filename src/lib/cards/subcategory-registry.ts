@@ -462,7 +462,6 @@ const CATEGORY_SUBCATEGORIES: Record<LoreCategory, SubcategoryDefinition[]> = {
       keywords: ["commemorative", "medal", "anniversary", "jubilee"],
     },
   ],
-  NS_IMPORT: [],
 };
 
 /**
