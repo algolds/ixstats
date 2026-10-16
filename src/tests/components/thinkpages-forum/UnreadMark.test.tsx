@@ -15,6 +15,11 @@ describe("UnreadCount", () => {
     expect(screen.getByText("4 new")).toHaveClass("text-footnote", "text-label-secondary");
   });
 
+  it("adds its context after the count when given a suffix", () => {
+    render(<UnreadCount count={4} suffix="on the board" />);
+    expect(screen.getByText("4 new on the board")).toHaveClass("text-footnote");
+  });
+
   it("caps a large count at 99+", () => {
     render(<UnreadCount count={100} />);
     expect(screen.getByText("99+ new")).toBeInTheDocument();

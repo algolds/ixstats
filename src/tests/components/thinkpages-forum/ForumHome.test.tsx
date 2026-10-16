@@ -34,8 +34,8 @@ jest.mock("~/trpc/react", () => {
         trending: query("trending"),
         myStanding: query("myStanding"),
         navFlags: query("navFlags"),
-        realms: query("realms"),
         category: query("category"),
+        realmPanel: query("realmPanel"),
         navCounts: query("navCounts"),
         appeal: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
       },
@@ -84,6 +84,7 @@ function board(key: string, extra: object = {}) {
     icAllowed: false,
     postRole: "any",
     visibility: "public",
+    canStart: true,
     style: "ooc",
     threadCount: 8,
     postCount: 23,
@@ -98,6 +99,32 @@ function board(key: string, extra: object = {}) {
       at: new Date(),
       author: { name: "Heku", handle: "heku", avatarUrl: null, flagUrl: "/flags/caphiria.png" },
     },
+    ...extra,
+  };
+}
+
+const PLAYER = {
+  name: "Kir",
+  handle: "kir",
+  avatarUrl: null,
+  flagUrl: null,
+  personaType: null,
+};
+
+/** One row of latestActivity: a reply by a player on an out-of-character board, overridden per test. */
+function activity(postId: string, extra: Record<string, unknown> = {}) {
+  return {
+    postId,
+    threadId: `t_${postId}`,
+    threadTitle: "Lore Lab",
+    categoryName: "General",
+    isFirstPost: false,
+    inCharacter: false,
+    at: new Date(),
+    authorUserId: "u1",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    author: PLAYER,
     ...extra,
   };
 }
@@ -139,7 +166,7 @@ describe("Forums home: board list", () => {
     expect(within(rowOf("Rules")).queryByText(/ new$/)).toBeNull();
   });
 
-  it("lists each board with its link, description, counts and its latest thread's preview", () => {
+  it("lists each board with its link, description, counts and its last post", () => {
     set("categories", { data: [board("general"), board("announcements")] });
     render(<ForumHome />);
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
@@ -153,11 +180,11 @@ describe("Forums home: board list", () => {
     expect(within(general).getByText("8")).toBeInTheDocument();
     expect(within(general).getByText("23")).toBeInTheDocument();
     expect(within(general).getByText("8 threads · 23 posts")).toHaveClass("md:hidden");
-    const preview = within(general).getByRole("link", { name: /Latest in general/ });
-    expect(preview).toHaveAttribute("href", "/thinkpages/t/t_general");
-    expect(preview.closest('[data-slot="card"]')).toHaveAttribute("data-variant", "well");
-    expect(within(preview).getByText(/Heku/)).toBeInTheDocument();
-    expect(preview.querySelector('img[src="/flags/caphiria.png"]')).toBeNull();
+    expect(within(general).getByRole("link", { name: "Latest in general" })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/t_general"
+    );
+    expect(general.querySelector('img[src="/flags/caphiria.png"]')).toBeNull();
     expect(rowOf("Announcements")).toBeInTheDocument();
   });
 
@@ -248,22 +275,47 @@ describe("Forums home: board list", () => {
   });
 });
 
+describe("Forums home: New thread menu", () => {
+  const open = () => {
+    const trigger = screen.getByRole("button", { name: "New thread" });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+  };
+
+  it("offers New thread as a menu of the boards the viewer can start one in", () => {
+    set("categories", {
+      data: [board("general", { canStart: true }), board("rules", { canStart: false })],
+    });
+    render(<ForumHome />);
+    open();
+    expect(screen.getByRole("menuitem", { name: "General" })).toHaveAttribute(
+      "href",
+      "/thinkpages/c/general/new"
+    );
+    expect(screen.queryByRole("menuitem", { name: "Rules" })).toBeNull();
+  });
+
+  it("shows no New thread menu when the viewer can start a thread nowhere", () => {
+    set("categories", { data: [board("rules", { canStart: false })] });
+    render(<ForumHome />);
+    expect(screen.queryByRole("button", { name: "New thread" })).toBeNull();
+  });
+});
+
 describe("Forums home: texture and character", () => {
-  it("tops the page with a textured masthead whose subtitle totals the sitewide boards", () => {
+  it("tops the page with a plain header whose subtitle totals the sitewide boards", () => {
     set("categories", {
       data: [board("general"), board("announcements", { threadCount: 2, postCount: 7 })],
     });
     render(<ForumHome />);
     const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
-    expect(header.querySelector(".texture-overlay.facet-texture-chevron")).not.toBeNull();
     expect(within(header).getByText("2 boards · 10 threads · 30 posts")).toBeInTheDocument();
   });
 
-  it("lays a tint paper grain on the page canvas, outside the board panes", () => {
+  it("has no textured masthead", () => {
     set("categories", { data: [board("rules")] });
-    const { container } = render(<ForumHome />);
-    const grains = [...container.querySelectorAll(".texture-overlay.facet-texture-paper-grain")];
-    expect(grains.some((grain) => !grain.closest('[data-slot="card"]'))).toBe(true);
+    render(<ForumHome />);
+    const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
+    expect(header.querySelector(".texture-overlay")).toBeNull();
   });
 
   it("gives each board its own texture on a large tile", () => {
@@ -279,15 +331,26 @@ describe("Forums home: texture and character", () => {
     expect(texture("General")).toContain("facet-texture-paper-grain");
   });
 
-  it("draws a board's latest-thread card with a pronounced border and no flag", () => {
+  it("shows each board's last post as an inline column: the thread, then who and when", () => {
     set("categories", { data: [board("general")] });
     render(<ForumHome />);
-    const card = screen
-      .getByRole("link", { name: /Latest in general/ })
-      .closest('[data-slot="card"]') as HTMLElement;
-    expect(card).toHaveClass("border", "border-separator");
-    expect(card.querySelector("img[src^='/flags/']")).toBeNull();
-    expect(within(card).getByText("Latest in general")).toHaveClass("text-headline");
+    const row = rowOf("General");
+    const link = within(row).getByRole("link", { name: "Latest in general" });
+    expect(link).toHaveAttribute("href", "/thinkpages/t/t_general");
+    expect(row.querySelector('[data-slot="card"]')).toBeNull();
+    expect(within(row).getByText(/Heku · /)).toBeInTheDocument();
+  });
+
+  it("lifts only the thread title above the row link, so the rest of the column falls through to the board", () => {
+    set("categories", { data: [board("general")] });
+    render(<ForumHome />);
+    const row = rowOf("General");
+    const title = within(row).getByRole("link", { name: "Latest in general" });
+    expect(title).toHaveClass("relative", "z-10");
+    const column = title.parentElement!;
+    expect(column).not.toHaveClass("z-10");
+    expect(column).not.toHaveClass("relative");
+    expect(within(row).getByText(/Heku · /)).not.toHaveClass("z-10");
   });
 
   it("sets the name of a board with new threads in semibold, and only that board", () => {
@@ -349,36 +412,21 @@ describe("Forums home: the old forum's archive", () => {
 });
 
 describe("Forums home: Your realm and Moderation", () => {
-  const realm = { defaultSlug: "eurth", realms: [{ id: "r1", slug: "eurth", name: "Eurth" }] };
-  const hub = {
-    category: { key: "hub", name: "Hub" },
-    threads: [
-      {
-        id: "t_old",
-        title: "Pinned rules",
-        pinned: true,
-        authorUserId: "u1",
-        authorPersonaId: null,
-        importedAuthorName: null,
-        lastPostAt: new Date("2026-01-01T00:00:00Z"),
-      },
-      {
-        id: "t_hub",
-        title: "Interregnum topics",
-        pinned: false,
-        authorUserId: "u2",
-        authorPersonaId: "pa",
-        importedAuthorName: null,
-        lastPostAt: new Date(),
-      },
-    ],
-    authors: {
-      users: {
-        u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
-        u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: null },
-      },
-      personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null } },
-    },
+  const message = (over: object = {}) => ({
+    id: "m1",
+    author: { name: "Kir", avatarUrl: null, flagUrl: "/flags/kir.png", persona: false },
+    excerpt: "The envoys land on Friday",
+    createdAt: new Date(Date.now() - 3 * 60_000),
+    href: "/thinkpages/r/eurth#post-m1",
+    ...over,
+  });
+  const panel = (messages: object[] = [message()]) => ({
+    realm: { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null },
+    messages,
+  });
+  const member = () => {
+    auth.isSignedIn = true;
+    set("navFlags", { data: { realmMember: true, forumModerator: false } });
   };
 
   beforeEach(() => {
@@ -388,18 +436,17 @@ describe("Forums home: Your realm and Moderation", () => {
   it("says how many messages are new on the realm board, and nothing when none are", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
     const link = screen.getByRole("link", { name: /Eurth/ });
-    expect(link).toHaveTextContent("4 new");
+    expect(link).toHaveTextContent("4 new on the board");
     const name = within(link).getByText("Eurth");
     const dot = link.querySelector(".bg-tint.rounded-full") as HTMLElement;
     expect(name).toHaveClass("font-semibold");
     expect(name.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(
-      name.compareDocumentPosition(within(link).getByText("4 new")) &
+      name.compareDocumentPosition(within(link).getByText("4 new on the board")) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     unmount();
@@ -412,47 +459,82 @@ describe("Forums home: Your realm and Moderation", () => {
   it("caps the realm board count at 99+", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
     render(<ForumHome />);
-    expect(screen.getByText("99+ new")).toBeInTheDocument();
+    expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
-  it("shows the viewer's realm with its Hub's latest thread, linking to /thinkpages/r/mine", () => {
-    auth.isSignedIn = true;
-    set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+  it("shows the viewer's realm with its newest board message, linking to /thinkpages/r/mine", () => {
+    member();
+    set("realmPanel", { data: panel() });
     render(<ForumHome />);
     const card = screen.getByRole("link", { name: /Eurth/ });
     expect(card).toHaveAttribute("href", "/thinkpages/r/mine");
-    expect(within(card).getByText("Interregnum topics")).toBeInTheDocument();
-    expect(within(card).getByText(/Aria Vance/)).toBeInTheDocument();
-    expect(within(card).queryByText(/Hidden Player/)).toBeNull();
+    expect(within(card).getByText("Kir")).toBeInTheDocument();
+    expect(within(card).getByText("The envoys land on Friday")).toBeInTheDocument();
+    expect(within(card).getByText("3m ago")).toBeInTheDocument();
+    expect(card.querySelector('img[src="/flags/kir.png"]')).toBeNull();
     expect(screen.getByText("Your realm")).toBeInTheDocument();
   });
 
-  it("puts Your realm first in the right rail, out of the main column", () => {
+  it("names the persona, not the player, on a persona's newest board message, and shows no flag", () => {
+    member();
+    const author = { name: "Aria Vance", avatarUrl: null, flagUrl: null, persona: true };
+    set("realmPanel", { data: panel([message({ author })]) });
+    render(<ForumHome />);
+    const card = screen.getByRole("link", { name: /Eurth/ });
+    expect(within(card).getByText("Aria Vance")).toBeInTheDocument();
+    expect(card.querySelector("img")).toBeNull();
+  });
+
+  it("shows no message line when the board has no messages", () => {
+    member();
+    set("realmPanel", { data: panel([]) });
+    render(<ForumHome />);
+    const card = screen.getByRole("link", { name: /Eurth/ });
+    expect(card).toHaveTextContent(/^Eurth$/);
+  });
+
+  it("holds the card with a placeholder while the realm loads, so the boards do not jump", () => {
+    member();
+    set("realmPanel", { isLoading: true });
+    render(<ForumHome />);
+    expect(screen.getByRole("heading", { level: 2, name: "Your realm" })).toBeInTheDocument();
+    expect(screen.getByTestId("your-realm-placeholder")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Eurth/ })).toBeNull();
+  });
+
+  it("shows nothing once the board has loaded to no realm", () => {
+    member();
+    set("realmPanel", { data: null });
+    render(<ForumHome />);
+    expect(screen.queryByText("Your realm")).toBeNull();
+  });
+
+  it("puts Your realm in the main column above the boards, not in the rail", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     set("trending", {
       data: [{ threadId: "t1", title: "A", categoryName: "Hub", repliesToday: 1 }],
     });
     render(<ForumHome />);
+    const heading = screen.getByRole("heading", { level: 2, name: "Your realm" });
+    expect(heading.closest('[data-slot="inspector"]')).toBeNull();
+    expect(heading.closest("aside")).toBeNull();
+    expect(
+      heading.compareDocumentPosition(screen.getByRole("heading", { level: 2, name: "Sitewide" })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     const rail = document.querySelector('[data-slot="inspector"]') as HTMLElement;
-    const panel = within(rail).getByRole("heading", { level: 2, name: "Your realm" });
-    expect(within(rail).getByRole("link", { name: /Eurth/ })).toBeInTheDocument();
-    const headings = within(rail).getAllByRole("heading", { level: 2 });
-    expect(headings[0]).toBe(panel);
+    expect(within(rail).queryByRole("heading", { name: "Your realm" })).toBeNull();
+    expect(within(rail).getByRole("heading", { level: 2, name: /Trending/ })).toBeInTheDocument();
   });
 
   it("draws the realm's uploaded emblem in Your realm, else its thumbnail, else the realms icon", () => {
     auth.isSignedIn = true;
-    set("realms", { data: realm });
-    set("category", { data: hub });
+    set("realmPanel", { data: panel() });
     const mark = { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null };
     const tile = () => screen.getByRole("link", { name: /Eurth/ });
 
@@ -491,7 +573,7 @@ describe("Forums home: Your realm and Moderation", () => {
   it("omits the card for a viewer without a realm, and signed out", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: false, forumModerator: false } });
-    set("realms", { data: realm });
+    set("realmPanel", { data: panel() });
     const { unmount } = render(<ForumHome />);
     expect(screen.queryByText("Your realm")).toBeNull();
     unmount();
@@ -519,49 +601,86 @@ describe("Forums home: Your realm and Moderation", () => {
   });
 });
 
-describe("Forums home: rail", () => {
+describe("Forums home: New across ThinkPages", () => {
   beforeEach(() => {
     set("categories", { data: [board("general")] });
   });
 
-  it("shows Latest activity: who posted, started or replied in which thread, linking to the post", () => {
+  it("shows New across ThinkPages in the main column: who posted, started or replied in which thread, linking to the post", () => {
     set("latestActivity", {
       data: [
-        {
-          postId: "p2",
-          threadId: "t1",
-          threadTitle: "Lore Lab",
-          categoryName: "General",
-          isFirstPost: false,
-          at: new Date(),
-          authorUserId: "u1",
-          authorPersonaId: null,
-          importedAuthorName: null,
-          author: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: "/flags/kir.png" },
-        },
-        {
-          postId: "p1",
-          threadId: "t2",
+        activity("p2", { author: { ...PLAYER, name: "Kir", flagUrl: "/flags/kir.png" } }),
+        activity("p1", {
           threadTitle: "New realm",
           categoryName: "Hub",
           isFirstPost: true,
-          at: new Date(),
-          authorUserId: null,
-          authorPersonaId: "pa",
-          importedAuthorName: null,
-          author: { name: "Aria Vance", handle: "aria", avatarUrl: null, flagUrl: null },
-        },
+          author: { ...PLAYER, name: "Aria Vance" },
+        }),
       ],
     });
     render(<ForumHome />);
-    const panel = screen.getByText("Latest activity").closest('[data-slot="card"]') as HTMLElement;
-    const reply = within(panel).getByRole("link", { name: /Kir replied in Lore Lab/ });
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    const reply = within(feed).getByRole("link", { name: /Kir replied in Lore Lab/ });
     expect(reply).toHaveAttribute("href", "/thinkpages/post/p2");
     expect(reply.querySelector('img[src="/flags/kir.png"]')).not.toBeNull();
     expect(
-      within(panel).getByRole("link", { name: /Aria Vance started New realm/ })
+      within(feed).getByRole("link", { name: /Aria Vance started New realm/ })
     ).toBeInTheDocument();
-    expect(within(panel).getByText(/^Hub · /)).toBeInTheDocument();
+    expect(within(feed).getByText(/^Hub · /)).toBeInTheDocument();
+    expect(within(feed).queryByText("In character")).toBeNull();
+    expect(screen.queryByText("Latest activity")).toBeNull();
+  });
+
+  it("lists new posts across ThinkPages in the main column, with persona voices and In character", () => {
+    set("latestActivity", {
+      data: [
+        activity("p1", {
+          author: {
+            name: "Government of Urcea",
+            handle: null,
+            avatarUrl: null,
+            flagUrl: null,
+            personaType: "government",
+          },
+          inCharacter: true,
+        }),
+      ],
+    });
+    render(<ForumHome />);
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(feed.closest("aside, [data-slot=inspector]")).toBeNull();
+    expect(within(feed).getByText("Government")).toBeInTheDocument();
+    expect(within(feed).getByText("In character")).toBeInTheDocument();
+  });
+
+  it("pads the card like the other panes", () => {
+    set("latestActivity", { data: [activity("p1")] });
+    render(<ForumHome />);
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(feed.className).toMatch(/\bp-4\b|\bpy-4\b|\bp-5\b/);
+  });
+
+  it("follows the sitewide boards and leads the old forum's archive", () => {
+    set("categories", { data: [board("general"), board("xf-3", { name: "Old Chat" })] });
+    set("latestActivity", { data: [activity("p1")] });
+    render(<ForumHome />);
+    const sitewide = screen.getByRole("heading", { level: 2, name: "Sitewide" });
+    const feed = screen.getByRole("heading", { level: 2, name: "New across ThinkPages" });
+    const archive = screen.getByRole("heading", { level: 2, name: /From the old forum/ });
+    expect(sitewide.compareDocumentPosition(feed) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(feed.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe("Forums home: rail", () => {
+  beforeEach(() => {
+    set("categories", { data: [board("general")] });
   });
 
   it("shows Trending threads, ranked, and hides the panel when nothing is active", () => {

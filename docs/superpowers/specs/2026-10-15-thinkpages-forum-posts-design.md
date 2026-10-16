@@ -82,7 +82,8 @@ including the row tint wash and the left rule.
   composer: the persona is chosen per post and no default is stored, so a home-level switch would be a new feature
   (amended while planning, 2026-10-15).
 - Your realm moves from the rail into the main column, above the boards (both earlier specs asked for this). It
-  shows the realm's emblem, the number online and the newest board message.
+  shows the realm's emblem, its name with the unread count, and the newest board message. The number online is left
+  out because presence exists only over the realm board's live socket (amended 2026-10-15).
 - Board rows show the last post as an inline column (thread title, then "name · time"), in place of the nested
   latest-thread card (owner decision; this retires the card's border change of the same day).
 - Latest activity moves from the rail into the main column as "New across ThinkPages": a `feed` pane of new threads

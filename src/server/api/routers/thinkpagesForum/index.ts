@@ -129,14 +129,14 @@ const forumRouter = createTRPCRouter({
     return withUnreadCounts(ctx.db, viewer, await listBoards(ctx.db, viewer));
   }),
 
-  /** Rail: the newest posts across the boards the viewer may see, with their authors' display data. */
+  /** New across ThinkPages: the newest posts across the boards the viewer may see, with their authors' display data. */
   latestActivity: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(10).default(6) }).optional())
     .query(async ({ ctx, input }) =>
       latestActivity(ctx.db, await viewerOf(ctx.db, ctx.user), input?.limit ?? 6)
     ),
 
-  /** Rail: the most active threads of the last 24 hours that the viewer may see. */
+  /** Trending: the most active threads of the last 24 hours that the viewer may see. */
   trending: publicProcedure
     .input(z.object({ limit: z.number().int().min(1).max(10).default(5) }).optional())
     .query(async ({ ctx, input }) =>

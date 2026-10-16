@@ -138,7 +138,7 @@ export async function postCountsPerCategory(
 }
 
 /**
- * The threads whose posts the home's rail lists to anyone (Trending, Latest activity): visible and unarchived, not an
+ * The threads whose posts the home lists to anyone (New across ThinkPages, Trending): visible and unarchived, not an
  * advert of a realm the viewer cannot see, and in a sitewide board or a published realm's, never a realm board. Each
  * row still goes through `canSeeThread`, which drops staff boards and other members' reports.
  */

@@ -10,7 +10,6 @@ import {
   Globe,
   Megaphone,
   NavArrowDown,
-  NavArrowRight,
   Page,
   Search,
   ShieldCheck,
@@ -25,7 +24,6 @@ import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import type { RouterOutputs } from "~/trpc/react";
 import type { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils/cn";
-import { ForumAvatar } from "../ForumAvatar";
 import { IconTile, RISE_ITEM, RISE_LIST } from "../shell";
 import { UnreadCount, UnreadMark } from "../UnreadMark";
 
@@ -64,44 +62,34 @@ function Count({ value, one, many }: { value: number; one: string; many: string 
   );
 }
 
-/**
- * The board's newest thread as a pressable Well with a separator border: its title, who posted last, and when, with an
- * arrow that nudges on hover.
- */
-function LatestPreview({ latest }: { latest: Board["latest"] }) {
-  if (!latest) return <p className="text-callout text-label-tertiary">No threads yet</p>;
-  const author = latest.author?.name ?? "Member";
+/** The board's last post, inline at md and up: the thread (its own link, lifted above the row link; the line under it falls through to the row), then who and when. */
+function LastPostColumn({ latest }: { latest: Board["latest"] }) {
+  if (!latest) {
+    return (
+      <p className="text-footnote text-label-tertiary hidden w-56 shrink-0 md:block">
+        No threads yet
+      </p>
+    );
+  }
   return (
-    <Card
-      variant="well"
-      padding="none"
-      interactive
-      className="has-[:focus-visible]:outline-tint border-separator relative max-w-xl overflow-hidden border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
-    >
+    <div className="hidden w-56 shrink-0 md:block">
       <Link
         href={threadHref(latest.threadId)}
-        className="group/thread relative flex min-w-0 items-center gap-3 px-3 py-2.5 after:absolute after:inset-0 focus-visible:outline-none"
+        className="text-callout text-label focus-visible:outline-tint relative z-10 block truncate font-medium hover:underline focus-visible:outline-2"
       >
-        <ForumAvatar name={author} avatarUrl={latest.author?.avatarUrl} size="sm" />
-        <span className="min-w-0">
-          <span className="text-headline text-label block truncate">{latest.threadTitle}</span>
-          <span className="text-footnote text-label-secondary block truncate tabular-nums">
-            {`${author} · ${timeAgo(latest.at)}`}
-          </span>
-        </span>
-        <NavArrowRight
-          aria-hidden
-          className="text-label-tertiary duration-fast ease-out-facet ml-auto size-4 shrink-0 transition-transform motion-safe:group-hover/thread:translate-x-0.5"
-        />
+        {latest.threadTitle}
       </Link>
-    </Card>
+      <p className="text-footnote text-label-secondary truncate tabular-nums">
+        {`${latest.author?.name ?? "Member"} · ${timeAgo(latest.at)}`}
+      </p>
+    </div>
   );
 }
 
 /**
  * One board: its textured icon tile, the name (the row's link, stretched over the row), unread state (an UnreadMark dot before
- * the name, an UnreadCount after it), description, counts, and the latest thread's preview, which sits
- * above the row link as its own link.
+ * the name, an UnreadCount after it), description, counts, and the last-post column, whose thread link sits
+ * above the row link.
  */
 function BoardRow({ board }: { board: Board }) {
   const Icon = BOARD_ICONS[board.key] ?? Folder;
@@ -114,7 +102,7 @@ function BoardRow({ board }: { board: Board }) {
       <IconTile size="lg" texture={BOARD_TEXTURES[board.key] ?? "dots"}>
         <Icon />
       </IconTile>
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
+      <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-start gap-4">
           <div className="min-w-0 flex-1">
             <h3 className="text-title-3 flex items-center gap-2">
@@ -142,8 +130,8 @@ function BoardRow({ board }: { board: Board }) {
             <Count value={board.threadCount} one="thread" many="threads" />
             <Count value={board.postCount} one="post" many="posts" />
           </div>
+          <LastPostColumn latest={board.latest} />
         </div>
-        <LatestPreview latest={board.latest} />
       </div>
     </motion.li>
   );
@@ -171,7 +159,7 @@ interface BoardListProps {
   collapsible?: boolean;
 }
 
-/** A pane of boards, each row linking to its board and previewing its latest thread. */
+/** A pane of boards, each row linking to its board and showing its last post. */
 export function BoardList({ boards, title, collapsible = false }: BoardListProps) {
   if (collapsible) {
     return (

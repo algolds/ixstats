@@ -5,8 +5,6 @@ import { InfoCircle } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
 import { Inspector } from "~/components/ui/inspector";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { cn } from "~/lib/utils/cn";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { PHONE_QUERY } from "../composer/constants";
 
@@ -45,13 +43,6 @@ interface ForumPageProps {
   openRailOnHash?: string;
   /** The compact header's way up, which stays after the trail has scrolled away. */
   back?: { href: string; label?: string };
-  /** Art behind the expanded header (`PageHeader`'s backdrop): a masthead. */
-  backdrop?: React.ReactNode;
-  /**
-   * A tint paper grain on the page canvas, under the header and the panes. Textures never sit on data, so it goes
-   * behind the panes and shows through their glass.
-   */
-  paperGrain?: boolean;
   children: React.ReactNode;
 }
 
@@ -69,8 +60,6 @@ export function ForumPage({
   railTitle,
   openRailOnHash,
   back,
-  backdrop,
-  paperGrain = false,
   children,
 }: ForumPageProps) {
   const [railOpen, setRailOpen] = React.useState(false);
@@ -88,21 +77,12 @@ export function ForumPage({
   }, [watchHash, openRailOnHash]);
   return (
     <>
-      {/*
-        The grain is the column's first positioned box; the header and the content are positioned after it, so they
-        paint over it. No `isolate` or z-index: a stacking context here would trap the header's sticky compact bar.
-      */}
-      <div className={cn(PAGE_COLUMN, paperGrain && "relative")}>
-        {paperGrain ? (
-          <TextureOverlay texture="paperGrain" className="[--facet-texture-color:var(--tint)]" />
-        ) : null}
+      <div className={PAGE_COLUMN}>
         <PageHeader
           title={title}
           subtitle={breadcrumbs}
           leading={leading}
           back={back}
-          backdrop={backdrop}
-          className={paperGrain ? "relative" : undefined}
           bleed
           actions={
             hasRail || (!phone && (hasActions || hasWide)) ? (
@@ -126,7 +106,7 @@ export function ForumPage({
             ) : undefined
           }
         />
-        <div className={cn("flex min-w-0 flex-col gap-4", paperGrain && "relative")}>
+        <div className="flex min-w-0 flex-col gap-4">
           {phone && (hasWide || hasActions) ? (
             <div
               data-slot="forum-page-actions"
