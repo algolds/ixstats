@@ -91,6 +91,7 @@ describe("latestPublicThreads", () => {
         href: "/thinkpages/t/t1",
         placement: { name: "General" },
         persona: false,
+        personaType: null,
         starter: "user:u1",
       },
     ]);

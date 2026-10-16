@@ -7,6 +7,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { BOARD_EDIT_WINDOW_MS, boardExcerpt } from "~/lib/thinkpages-forum/board";
 import { primaryNationOf } from "~/lib/realms/primary-nation";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { readReactionCounts, type ReactionCounts } from "~/lib/thinkpages-forum/reactions";
 import { canSeeThread, type ForumViewer } from "./access";
 import { authorModeration, type AuthorModerationOf } from "./mod-authors";
@@ -34,6 +35,8 @@ export interface BoardMessageAuthor {
   avatarUrl: string | null;
   flagUrl: string | null;
   persona: boolean;
+  /** A persona's voice; null for a member, an imported author or a personal account. */
+  personaType: PersonaType | null;
 }
 
 export interface BoardMessage {
@@ -113,16 +116,18 @@ function authorOf(row: AuthorRow, maps: AuthorMaps): BoardMessageAuthor {
       avatarUrl: persona?.avatarUrl ?? null,
       flagUrl: null,
       persona: true,
+      personaType: persona?.personaType ?? null,
     };
   }
   const user = row.authorUserId ? maps.users.get(row.authorUserId) : undefined;
-  if (user) return { ...user, persona: false };
+  if (user) return { ...user, persona: false, personaType: null };
   return {
     name: row.importedAuthorName ?? "Member",
     handle: null,
     avatarUrl: null,
     flagUrl: null,
     persona: false,
+    personaType: null,
   };
 }
 

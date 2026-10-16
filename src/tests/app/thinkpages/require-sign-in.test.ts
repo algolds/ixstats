@@ -19,14 +19,14 @@ describe("requireSignIn", () => {
 
   it("sends a signed-out visitor to sign-in and back to the page", async () => {
     jest.mocked(sessionUserId).mockResolvedValue(null);
-    await expect(requireSignIn("/thinkpages/new")).rejects.toThrow(
-      `NEXT_REDIRECT /sign-in?redirect_url=${encodeURIComponent("https://example.test/projects/ixstats/thinkpages/new")}`
+    await expect(requireSignIn("/thinkpages/c/find-a-realm/new")).rejects.toThrow(
+      `NEXT_REDIRECT /sign-in?redirect_url=${encodeURIComponent("https://example.test/projects/ixstats/thinkpages/c/find-a-realm/new")}`
     );
   });
 
   it("lets a signed-in member through", async () => {
     jest.mocked(sessionUserId).mockResolvedValue("clerk_1");
-    await expect(requireSignIn("/thinkpages/new")).resolves.toBeUndefined();
+    await expect(requireSignIn("/thinkpages/c/find-a-realm/new")).resolves.toBeUndefined();
     expect(redirect).not.toHaveBeenCalled();
   });
 });

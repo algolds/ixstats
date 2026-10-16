@@ -161,9 +161,30 @@ describe("publishBoardPost", () => {
     await publishBoardPost(store.db as never, out, "p1", "message");
     const wire = JSON.stringify(out.broadcastBoard.mock.calls[0]![0]);
     expect(wire).toContain("Eurth Daily");
+    expect(wire).toContain('"personaType":"media"');
     expect(wire).not.toContain("u_member");
     expect(wire).not.toContain("flags.example");
     expect(wire).not.toContain('handle":"member');
+  });
+
+  it("shows a persona whose account is gone as a bare persona, never its player", async () => {
+    const store = eurth([
+      boardPost("p1", 1, { authorPersonaId: "pa_gone", authorUserId: "u_member" }),
+    ]);
+    const out = broadcaster();
+    await publishBoardPost(store.db as never, out, "p1", "message");
+    const event = out.broadcastBoard.mock.calls[0]![0];
+    expect(event.type === "board:message" && event.message.author).toMatchObject({
+      name: "Persona",
+      handle: null,
+      avatarUrl: null,
+      flagUrl: null,
+      persona: true,
+      personaType: null,
+    });
+    const wire = JSON.stringify(event);
+    expect(wire).not.toContain("u_member");
+    expect(wire).not.toContain("flags.example");
   });
 
   it("sends an update as an updated message", async () => {

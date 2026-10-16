@@ -260,6 +260,7 @@ describe("BoardMessage header", () => {
           avatarUrl: null,
           flagUrl: null,
           persona: true,
+          personaType: null,
         },
       }),
     });
@@ -269,6 +270,25 @@ describe("BoardMessage header", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(screen.queryByText(/Officer|Staff|Visitor/)).toBeNull();
     expect(container.textContent).not.toContain("u_kir");
+  });
+
+  it("shows a persona message's voice chip, and the same author line as thread posts", () => {
+    renderMessage({
+      message: boardMessage({
+        authorUserId: null,
+        authorPersonaId: "ps2",
+        author: {
+          name: "Government of Urcea",
+          handle: "urcea_gov",
+          avatarUrl: null,
+          flagUrl: null,
+          persona: true,
+          personaType: "government",
+        },
+      }),
+    });
+    expect(screen.getByText("Government")).toBeInTheDocument();
+    expect(screen.getByText("Government of Urcea")).toHaveClass("text-headline");
   });
 
   it("badges a hidden message for the moderators who receive it", () => {

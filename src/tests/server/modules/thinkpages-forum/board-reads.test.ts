@@ -396,7 +396,7 @@ describe("listBoards", () => {
       authorPersonaId: null,
       importedAuthorName: null,
       at: T2,
-      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
+      author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
     });
     expect(rows.find((r) => r.key === "rules")!.latest).toBeNull();
     expect(rows.find((r) => r.key === "rules")!.postCount).toBe(0);
@@ -434,6 +434,7 @@ describe("listBoards", () => {
             displayName: "Caphiria News",
             username: "caphnews",
             profileImageUrl: "/p/news.png",
+            accountType: "media",
           },
         ]),
       },
@@ -442,9 +443,63 @@ describe("listBoards", () => {
     expect(row!.latest).toMatchObject({
       authorUserId: null,
       authorPersonaId: "pa_1",
-      author: { name: "Caphiria News", handle: "caphnews", avatarUrl: "/p/news.png" },
+      author: {
+        name: "Caphiria News",
+        handle: "caphnews",
+        avatarUrl: "/p/news.png",
+        personaType: "media",
+      },
     });
     expect(JSON.stringify(row)).not.toContain("u_x");
+  });
+
+  it("names an orphaned persona post as a bare persona and never queries or shows the player", async () => {
+    const asked: string[][] = [];
+    const db = {
+      forumCategory: { findMany: jest.fn(async (_args: object) => [general]) },
+      forumThread: {
+        groupBy: jest.fn(async () => []),
+        findMany: jest.fn(async (_args: object) => [
+          { id: "t_g", title: "General chat", categoryId: general.id, lastPostAt: T2 },
+        ]),
+      },
+      forumPost: {
+        findMany: jest.fn(async (_args: object) => [
+          {
+            threadId: "t_g",
+            authorUserId: "u_x",
+            authorPersonaId: "pa_gone",
+            importedAuthorName: null,
+            createdAt: T2,
+          },
+        ]),
+      },
+      user: {
+        findMany: jest.fn(async (args: { where: { id: { in: string[] } } }) => {
+          asked.push(args.where.id.in);
+          return [
+            {
+              id: "u_x",
+              clerkUserId: "c_x",
+              handle: "realplayer",
+              wikiUsername: null,
+              country: { name: "Caphiria", flag: "/flags/caph.png" },
+            },
+          ];
+        }),
+      },
+      thinkpagesAccount: { findMany: jest.fn(async (_args: object) => []) },
+    };
+    const [row] = await listBoards(db as never, null);
+    expect(row!.latest!.author).toEqual({
+      name: "Persona",
+      handle: null,
+      avatarUrl: null,
+      flagUrl: null,
+      personaType: null,
+    });
+    expect(JSON.stringify(row)).not.toMatch(/realplayer|caph\.png|Caphiria|u_x/);
+    expect(asked.flat()).not.toContain("u_x");
   });
 });
 
@@ -493,7 +548,7 @@ describe("latestActivity", () => {
         threadTitle: "Thread t_new",
         categoryName: "General",
         isFirstPost: true,
-        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null },
+        author: { name: "heku", handle: "heku", avatarUrl: null, flagUrl: null, personaType: null },
       }),
     ]);
     const args = argsOf(db.forumPost.findMany);
@@ -533,5 +588,34 @@ describe("latestActivity", () => {
       author: { name: "Caphiria News", handle: "caphnews", flagUrl: null },
     });
     expect(JSON.stringify(item)).not.toContain("u_x");
+  });
+
+  it("names an orphaned persona post as a bare persona and never queries or shows the player", async () => {
+    const db = activityDb([post("p_p", "t_g", general, T2, { authorPersonaId: "pa_gone" })], []);
+    const [item] = await latestActivity(db as never, null, 6);
+    expect(item!.author).toEqual({
+      name: "Persona",
+      handle: null,
+      avatarUrl: null,
+      flagUrl: null,
+      personaType: null,
+    });
+    expect(JSON.stringify(item)).not.toMatch(/heku|u_x/);
+    expect(db.user.findMany).not.toHaveBeenCalled();
+  });
+
+  it("names an imported author with no persona type", async () => {
+    const db = activityDb(
+      [post("p_i", "t_g", general, T2, { authorUserId: null, importedAuthorName: "OldName" })],
+      []
+    );
+    const [item] = await latestActivity(db as never, null, 6);
+    expect(item!.author).toEqual({
+      name: "OldName",
+      handle: null,
+      avatarUrl: null,
+      flagUrl: null,
+      personaType: null,
+    });
   });
 });

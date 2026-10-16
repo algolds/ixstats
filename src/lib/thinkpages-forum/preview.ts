@@ -4,6 +4,7 @@
  * browser types them from one place.
  */
 import { withoutActionTokens } from "~/lib/action-links";
+import type { PersonaType } from "./persona-type";
 
 /** A feed card's excerpt, in characters. */
 export const FEED_EXCERPT_MAX = 280;
@@ -35,6 +36,8 @@ export interface PreviewAuthor {
   avatarUrl: string | null;
   flagUrl: string | null;
   persona: boolean;
+  /** A persona's voice; null for a member, an imported author or a personal account. */
+  personaType: PersonaType | null;
 }
 
 /** What a Home feed card shows of the post an item refers to. */

@@ -580,7 +580,13 @@ describe("authorsOf", () => {
       { id: "u4", handle: null, wikiUsername: null, country: null },
     ]);
     db.thinkpagesAccount.findMany.mockResolvedValue([
-      { id: "a1", displayName: "The Voice", username: "voice", profileImageUrl: null },
+      {
+        id: "a1",
+        displayName: "The Voice",
+        username: "voice",
+        profileImageUrl: null,
+        accountType: "citizen",
+      },
     ]);
     const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4", "u1"], ["a1"]);
     expect(out.users.get("u1")).toEqual({
@@ -611,6 +617,7 @@ describe("authorsOf", () => {
       displayName: "The Voice",
       username: "voice",
       avatarUrl: null,
+      personaType: "citizen",
     });
     expect(db.user.findMany).toHaveBeenCalledTimes(1);
     expect(db.user.findMany.mock.calls[0][0].where).toEqual({
@@ -644,6 +651,7 @@ describe("authorsOf", () => {
               displayName: "The Voice",
               username: "voice",
               profileImageUrl: "/p/voice.png",
+              accountType: "government",
             },
           ]
         : [{ clerkUserId: "c1", profileImageUrl: "/p/heku.png" }]
@@ -660,6 +668,7 @@ describe("authorsOf", () => {
       displayName: "The Voice",
       username: "voice",
       avatarUrl: "/p/voice.png",
+      personaType: "government",
     });
     const personal = db.thinkpagesAccount.findMany.mock.calls.find(
       ([a]) => !(a as { where: { id?: unknown } }).where.id

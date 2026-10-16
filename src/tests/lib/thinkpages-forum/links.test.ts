@@ -9,7 +9,6 @@ import {
   hubHref,
   isForumPath,
   modHref,
-  NEW_POSTS_HREF,
   newThreadAttachHref,
   newThreadHref,
   personaProfileHref,
@@ -20,7 +19,6 @@ import {
   STANDING_HREF,
   threadHref,
   unreadHref,
-  WATCHED_HREF,
 } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
@@ -82,9 +80,7 @@ describe("forum links", () => {
     expect(STANDING_HREF).toBe("/thinkpages#standing");
   });
 
-  it("names the signed-in pages, the jump to unread and the profile links", () => {
-    expect(NEW_POSTS_HREF).toBe("/thinkpages/new");
-    expect(WATCHED_HREF).toBe("/thinkpages/watched");
+  it("names the jump to unread and the profile links", () => {
     expect(unreadHref("t1")).toBe("/thinkpages/t/t1/unread");
     expect(unreadHref("a/b")).toBe("/thinkpages/t/a%2Fb/unread");
     expect(handleProfileHref("kir")).toBe("/id/kir");

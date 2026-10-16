@@ -1,6 +1,6 @@
 /**
- * The four ways a member marks things read: a thread (opened by its page), a board ("Mark board read"), everything
- * ("Mark all read"), and the realm board on the realm landing. Every mark is idempotent and only moves a read time
+ * The ways a member marks things read: a thread (opened by its page), a board ("Mark board read"), and the realm
+ * board on the realm landing. Every mark is idempotent and only moves a read time
  * forward. The thread mark reads the newest visible post of the page the member is shown from the database, never from
  * the client, and never past the thread's last post.
  */
@@ -138,19 +138,6 @@ async function markUnreadOf(
     ON CONFLICT ("userId", "threadId") DO UPDATE SET "readAt" = EXCLUDED."readAt"
     WHERE forum_thread_reads."readAt" < EXCLUDED."readAt"`);
   return rows.length;
-}
-
-export async function markAllRead(
-  db: Pick<PrismaClient, "forumReader">,
-  userId: string,
-  now: Date = new Date()
-): Promise<{ allReadAt: Date }> {
-  await db.forumReader.upsert({
-    where: { userId },
-    create: { userId, allReadAt: now },
-    update: { allReadAt: now },
-  });
-  return { allReadAt: now };
 }
 
 /** The realm landing was opened at the top: the realm board is read up to its last message. */

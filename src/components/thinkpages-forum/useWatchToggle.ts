@@ -6,9 +6,8 @@ import { api } from "~/trpc/react";
 import { useReadStateRefresh } from "./useReadStateRefresh";
 
 /**
- * Watches or unwatches a thread, then refreshes the lists, the sidebar count and the thread's own page state. One
- * error string for both directions; resolves true when the change was saved. The Watched page's Unwatch and the
- * thread page's Watch toggle share it.
+ * Watches or unwatches a thread, then refreshes the sidebar count and the thread's own page state. One
+ * error string for both directions; resolves true when the change was saved. The thread page's Watch toggle uses it.
  */
 export function useWatchToggle(): {
   setWatching: (threadId: string, watching: boolean) => Promise<boolean>;
@@ -30,7 +29,7 @@ export function useWatchToggle(): {
         notify.error("Could not update watching", e instanceof Error ? e.message : undefined);
         return false;
       }
-      // The change is saved; a failed refresh of the lists is not an error to report.
+      // The change is saved; a failed refresh of the sidebar count is not an error to report.
       await Promise.all([refresh(), utils.thinkpagesForum.thread.invalidate({ threadId })]).catch(
         () => undefined
       );

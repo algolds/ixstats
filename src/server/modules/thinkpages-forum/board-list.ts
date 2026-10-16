@@ -3,6 +3,7 @@
  * post (with the author's public name, the same way a thread list names its authors), and the rail's latest activity.
  */
 import type { PrismaClient } from "@prisma/client";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
 import {
   latestPerCategory,
@@ -22,6 +23,8 @@ export interface BoardAuthor {
   avatarUrl: string | null;
   /** The member's nation flag; null for a persona (it never names the player's nation) and imported authors. */
   flagUrl: string | null;
+  /** A persona's voice; null otherwise. */
+  personaType: PersonaType | null;
 }
 
 export type BoardLatest = LatestPost & { author: BoardAuthor | null };
@@ -31,19 +34,26 @@ function nameOf(
   latest: LatestPost,
   authors: Awaited<ReturnType<typeof authorsOf>>
 ): BoardAuthor | null {
-  const persona = latest.authorPersonaId ? authors.personas.get(latest.authorPersonaId) : undefined;
-  if (persona) {
+  if (latest.authorPersonaId) {
+    const persona = authors.personas.get(latest.authorPersonaId);
     return {
-      name: persona.displayName,
-      handle: persona.username,
-      avatarUrl: persona.avatarUrl,
+      name: persona?.displayName ?? "Persona",
+      handle: persona?.username ?? null,
+      avatarUrl: persona?.avatarUrl ?? null,
       flagUrl: null,
+      personaType: persona?.personaType ?? null,
     };
   }
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
-  if (user) return user;
+  if (user) return { ...user, personaType: null };
   return latest.importedAuthorName
-    ? { name: latest.importedAuthorName, handle: null, avatarUrl: null, flagUrl: null }
+    ? {
+        name: latest.importedAuthorName,
+        handle: null,
+        avatarUrl: null,
+        flagUrl: null,
+        personaType: null,
+      }
     : null;
 }
 
@@ -72,7 +82,7 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
   ]);
   const authors = await authorsOf(
     db,
-    [...latest.values()].map((l) => l.authorUserId),
+    [...latest.values()].map((l) => (l.authorPersonaId ? null : l.authorUserId)),
     [...latest.values()].map((l) => l.authorPersonaId)
   );
   const categoryByKey = new Map(visible.map((c) => [c.key, c]));
@@ -145,7 +155,7 @@ export async function latestActivity(
     }),
     authorsOf(
       db,
-      visible.map((p) => p.authorUserId),
+      visible.map((p) => (p.authorPersonaId ? null : p.authorUserId)),
       visible.map((p) => p.authorPersonaId)
     ),
   ]);

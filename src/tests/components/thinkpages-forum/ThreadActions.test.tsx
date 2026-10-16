@@ -13,8 +13,6 @@ jest.mock("~/trpc/react", () => {
         thinkpagesForum: {
           isThreadStashed: { invalidate: () => Promise.resolve() },
           thread: { invalidate: () => Promise.resolve() },
-          newPosts: { invalidate: () => Promise.resolve() },
-          watchedThreads: { invalidate: () => Promise.resolve() },
           navCounts: { invalidate: () => Promise.resolve() },
           category: { invalidate: () => Promise.resolve() },
           categories: { invalidate: () => Promise.resolve() },

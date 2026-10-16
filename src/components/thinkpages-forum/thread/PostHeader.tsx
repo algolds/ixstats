@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Link as LinkIcon } from "iconoir-react";
-import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
 import { Badge } from "~/components/ui/badge";
+import { timeAgo } from "~/lib/format/compact";
+import { IxTime } from "~/lib/ixtime";
 import { postHref } from "~/lib/thinkpages-forum/links";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
+import { AuthorLine } from "../AuthorMark";
 import { ForumAvatar } from "../ForumAvatar";
 
 export type PostRole = "staff" | "officer" | "starter";
@@ -30,16 +33,20 @@ interface PostHeaderProps {
   imported: boolean;
   /** A persona's username: the name opens the persona's hover card. */
   personaUsername?: string;
+  /** A persona's voice; null for a member, an imported author or a personal account. */
+  personaType: PersonaType | null;
   /** Moderators only: the post is hidden from members. */
   hidden?: boolean;
 }
 
-const formatDate = (date: Date) =>
-  date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const absolute = (date: Date) =>
+  `${date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · IxTime ${IxTime.formatIxTime(
+    IxTime.convertToIxTime(date.getTime())
+  )}`;
 
 /**
- * A post's header: avatar, name and flag, its role pill, handle and full date, and its `#N` permalink, on a Well band
- * across the top of the post, so each post in the feed's one Pane starts on its own surface.
+ * A post's header: the avatar, the shared author line (name, flag or voice chip, role and state badges), the relative
+ * time under it, and the post's `#N` permalink. It has no band of its own; the feed's one Pane is the surface.
  */
 export function PostHeader({
   name,
@@ -53,35 +60,28 @@ export function PostHeader({
   postId,
   imported,
   personaUsername,
+  personaType,
   hidden = false,
 }: PostHeaderProps) {
-  const title = <span className="text-title-3 text-label min-w-0 truncate">{name}</span>;
   return (
-    <header className="facet-well rounded-row -mx-2 flex items-center gap-3 px-3 py-2.5 sm:-mx-3">
-      <ForumAvatar name={name} avatarUrl={avatarUrl} size="md" className="sm:size-10" />
+    <header className="flex items-center gap-3">
+      <ForumAvatar name={name} avatarUrl={avatarUrl} size="md" />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          {personaUsername ? (
-            <PersonaAuthorCard username={personaUsername}>{title}</PersonaAuthorCard>
-          ) : (
-            title
-          )}
-          {flagUrl ? (
-            <img
-              src={flagUrl}
-              alt=""
-              width={18}
-              height={12}
-              className="rounded-control-sm h-3 w-[18px] shrink-0 object-cover"
-            />
-          ) : null}
+        <AuthorLine
+          name={name}
+          personaUsername={personaUsername}
+          personaType={personaType}
+          flagUrl={flagUrl}
+        >
           {role ? <Badge variant="secondary">{ROLE_LABEL[role]}</Badge> : null}
           {imported ? <Badge variant="outline">Old forum</Badge> : null}
           {hidden ? <Badge variant="warning">Hidden</Badge> : null}
-        </div>
+        </AuthorLine>
         <p className="text-footnote text-label-secondary tabular-nums">
-          {handle ? `@${handle} · ` : null}
-          <time dateTime={createdAt.toISOString()}>{formatDate(createdAt)}</time>
+          {handle && !personaUsername ? `@${handle} · ` : null}
+          <time dateTime={createdAt.toISOString()} title={absolute(createdAt)}>
+            {timeAgo(createdAt, { suffix: false })}
+          </time>
           {editedAt ? " · edited" : null}
         </p>
       </div>

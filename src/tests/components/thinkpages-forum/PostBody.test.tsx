@@ -157,7 +157,7 @@ describe("PostBody styles", () => {
     expect(body).toHaveClass("forum-post", "forum-post--ic");
     expect(body).not.toHaveClass("forum-post--ooc");
     rerender(<PostBody html="<p>x</p>" style="ooc" />);
-    expect(container.firstElementChild).toHaveClass("forum-post", "forum-post--ooc", "text-callout");
+    expect(container.firstElementChild).toHaveClass("forum-post", "forum-post--ooc", "text-body");
     expect(container.firstElementChild).not.toHaveClass("forum-post--ic");
     expect(container.firstElementChild?.className).not.toMatch(/\btext-sm\b/);
   });

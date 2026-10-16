@@ -37,8 +37,6 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate },
           realmSection: { invalidate },
           isThreadStashed: { invalidate },
-          newPosts: { invalidate },
-          watchedThreads: { invalidate },
           navCounts: { invalidate },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 1 }) },
         },
@@ -320,6 +318,14 @@ describe("the thread page", () => {
     const second = within(container.querySelector<HTMLElement>("#post-p2")!);
     expect(second.getByText("Staff")).toBeInTheDocument();
     expect(second.queryByText("Thread starter")).toBeNull();
+  });
+
+  it("indents a post's body to the name column from sm up only", () => {
+    set(threadData());
+    render(<ThreadPage threadId="t1" page={1} />);
+    const body = document.querySelector('article[id^="post-"] > div.sm\\:pl-12');
+    expect(body).not.toBeNull();
+    expect(body).not.toHaveClass("pl-12");
   });
 
   it("styles an in-character thread as an article and says so; an out-of-character one is compact", () => {
