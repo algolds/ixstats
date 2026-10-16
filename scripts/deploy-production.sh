@@ -168,6 +168,13 @@ fi
 echo "🔄 Applying the Atlas Studio SQL..."
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261023120000_atlas_studio/migration.sql || exit 1
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261024120000_vault_hub/migration.sql || exit 1
+# Cards refresh Phase 1 (docs/specs/2026-10-15-cards-refresh-design.md §5.5): the additive SQL, the backfill, then the
+# constraints, all BEFORE the push. The constraints convert cards.rarity and cardType to enums in place (db push would
+# drop and re-add those columns) and refuse to run until the backfill has. Stop the app before this deploy (plan
+# 2026-10-15-cards-refresh-phase-1-foundations, owner runbook). Re-runs are no-ops.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql || exit 1
+bun scripts/cards/backfill-cards-refresh.ts --apply || exit 1
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
