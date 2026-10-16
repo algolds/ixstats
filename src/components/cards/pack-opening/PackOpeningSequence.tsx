@@ -3,7 +3,7 @@
 // Main orchestrator for 4-stage pack opening animation sequence
 
 import { Button } from "~/components/ui/button";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { PackType, CardRarity, CardType } from "@prisma/client";
 import type { PackOpeningStage, CardInstance } from "~/types/pack-opening";
@@ -43,6 +43,9 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
     const [cards, setCards] = useState<CardInstance[]>([]);
     const [error, setError] = useState<string | null>(null);
     const service = getPackOpeningService();
+    // Synchronous latches: isPending only shows after a re-render, so a double tap in one frame would open twice.
+    const opening = useRef(false);
+    const received = useRef(false);
 
     // Open pack mutation
     const openPackMutation = api.cardPacks.openPack.useMutation({
@@ -60,6 +63,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             season: card.season,
           }));
 
+          received.current = true;
           setCards(cardInstances);
           setStage("explosion");
         } else {
@@ -67,6 +71,8 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
         }
       },
       onError: (err) => {
+        // A second open of this pack after its cards arrived: the cards are minted, so keep the reveal.
+        if (received.current && err.data?.code === "CONFLICT") return;
         setError(err.message || "Failed to open pack");
         console.error("[PackOpening] Error opening pack:", err);
       },
@@ -74,6 +80,8 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
     // Handle pack tap (Stage 1 -> API call -> Stage 2)
     const handlePackTap = useCallback(() => {
+      if (opening.current) return;
+      opening.current = true;
       service.triggerHaptic("medium");
       openPackMutation.mutate({ userPackId });
     }, [userPackId, openPackMutation, service]);
