@@ -116,9 +116,9 @@ export function NavigationSettings() {
       <CardContent className="space-y-6">
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-control border-blue/20 bg-blue/10 border p-2">
+            <div data-app="wiki" className="rounded-control border-tint/20 bg-tint-fill border p-2">
               {localSettings.showWikiTab ? (
-                <Eye className="text-blue h-4 w-4" />
+                <Eye className="text-tint h-4 w-4" />
               ) : (
                 <EyeOff className="text-label-secondary h-4 w-4" />
               )}
@@ -141,9 +141,9 @@ export function NavigationSettings() {
 
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-control border-purple/20 bg-purple/10 border p-2">
+            <div data-app="labs" className="rounded-control border-tint/20 bg-tint-fill border p-2">
               {localSettings.showLabsTab ? (
-                <Eye className="text-purple h-4 w-4" />
+                <Eye className="text-tint h-4 w-4" />
               ) : (
                 <EyeOff className="text-label-secondary h-4 w-4" />
               )}
@@ -166,9 +166,9 @@ export function NavigationSettings() {
 
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
+            <div data-app="maps" className="rounded-control border-tint/20 bg-tint-fill border p-2">
               {localSettings.showMapsTab ? (
-                <Eye className="text-orange h-4 w-4" />
+                <Eye className="text-tint h-4 w-4" />
               ) : (
                 <EyeOff className="text-label-secondary h-4 w-4" />
               )}
@@ -191,9 +191,9 @@ export function NavigationSettings() {
 
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-control border-yellow/20 bg-yellow/10 border p-2">
+            <div className="rounded-control border-tint/20 bg-tint-fill border p-2">
               {localSettings.showHelpTab ? (
-                <Eye className="text-yellow h-4 w-4" />
+                <Eye className="text-tint h-4 w-4" />
               ) : (
                 <EyeOff className="text-label-secondary h-4 w-4" />
               )}

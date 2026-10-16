@@ -453,7 +453,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 }}
                 className="h-auto w-full flex-col gap-2 p-4 text-center"
               >
-                <Wallet className="text-yellow h-5 w-5" />
+                <Wallet data-app="vault" className="text-tint h-5 w-5" />
                 <span>IxVault Cards</span>
               </Button>
 

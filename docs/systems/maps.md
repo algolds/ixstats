@@ -5,7 +5,7 @@
 **Parent App Suite:** Atlas (app version 3 — `VERSIONS.apps.ixworld`, exported as `IXWORLD_VERSION`; `IxWorld` is the in-code app name)  
 **Engine:** Atlas Spatial Engine (`ATLAS_ENGINE_VERSION = 5`)  
 **Subsystems:** Interactive World Map, Vector Map Editor Studio, Spatial Geographic Analyzer, Atlas admin and World Studio  
-**Primary Action:** `MAP` | **Domain Accent:** Sky Blue (`#0EA5E9` / `--color-blue-500`)  
+**Primary Action:** `MAP` | **Domain Accent:** Chart shallows (`data-app="maps"`, `#05667a` / `#69cee6`)  
 **Routes:** `/maps` (players edit their own nation in place; `?realm=<slug>&editor=world` opens the World tab), `/mycountry/map-editor` (the same country editor, full-screen), `/admin/maps/editor` (world editor), `/admin/maps` (Atlas, the admin home for every realm's map), `/admin/maps/realms/<slug>` (a realm's page), `/admin/maps/studio` (World Studio), standalone `maps.ixwiki.com` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md) (interactive map and worldgen ✅ Live; map editor 🟡 Partial)  
 
 Atlas is the spatial, cartographic, and worldbuilding studio for IxStates. Built on **MapLibre GL JS**, it powers interactive vector globe maps, procedural realm generation, grounded manual IxEarth cartography, admin GIS suites, and precision player territory editors.

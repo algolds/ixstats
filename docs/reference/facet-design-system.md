@@ -52,27 +52,27 @@ Facet's own:
 
 The app palette has one colour per app, never shared:
 
-- **Brand colours.** Two tints are logo colours and fixed: MyCountry gold, and the IxWiki navy from the original logo (`#1d4e89`).
-- **Even spacing.** The rest sit evenly in the two OKLCH hue gaps those leave, at one lightness per mode (0.50 light, 0.78 dark), so no app reads louder than another.
-- **Ink default.** The default (Home, Help, Settings, Admin) is not a colour but a warm ink, chroma under 0.04, so the apps carry the colour. A colourful default could only be violet, the free hue between the wiki navy and Realms.
-- **Enforced.** `app-palette.test.ts` holds every pair at least 30 degrees apart in hue in both modes, and every non-brand tint at the shared lightness.
+- **Materials.** Every app colour is taken from a material that app would be made of, and the material sets its depth and the text colour on it. The guide is the IxStates brand colours artifact.
+- **Brand colours.** Two tints are logo colours and fixed: MyCountry state gold, and the IxWiki navy from the original logo (`#1d4e89`).
+- **Ink default.** The default (Home, Help, Settings, Admin) is not a colour but iron-gall ink, chroma under 0.04, so the apps carry the colour.
+- **Enforced.** `app-palette.test.ts` holds every pair at least 30 degrees apart in hue in both modes; `token-contrast.test.ts` holds every tint, its strong shade and its text colour to AA contrast on every surface.
 - **Adding a tint.** Nine hues is the ceiling: one more drops the spacing below 30 degrees. A new app or section wears its parent's tint unless one is removed.
 
 | `data-app` | Tint | OKLCH hue |
 |---|---|---|
-| none, `admin` | Warm ink (Home, Help, Settings, Admin) | none (60, chroma 0.03) |
-| `mycountry` | Gold (brand) | 49 light, 84 dark |
-| `wiki` | IxWiki navy (brand) | 255 |
-| `labs` | Green (also MyLeague and MyClub) | 127 |
-| `thinkpages` | Emerald | 170 |
-| `maps` | Cyan | 212 |
-| `realms` | Purple | 302 |
-| `vault` | Raspberry | 338 |
+| none, `admin` | Iron-gall ink (Home, Help, Settings, Admin) | none (60, chroma 0.03) |
+| `mycountry` | State gold (brand) | 49 light, 84 dark |
+| `wiki` | Encyclopedia cloth, the IxWiki navy (brand) | 255 |
+| `labs` | Uranium glass (Labs, MyLeague, MyClub; Onoma keeps its own azure) | 120 |
+| `thinkpages` | Commons leather, ivory text | 158 |
+| `maps` | Chart shallows | 218 |
+| `realms` | Banner purpure, ivory text | 312 |
+| `vault` | Jewel-case velvet | 2 |
 
-The Forum Red tint (hue 13) was retired with the XenForo bridge app in ThinkPages forum phase 4b; the native forum wears ThinkPages' emerald.
+The Forum Red tint (hue 13) was retired with the XenForo bridge app in ThinkPages forum phase 4b; the native forum wears ThinkPages' Commons leather.
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
-- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own. ThinkTanks and Messages use the same scope, so their primaries are emerald too.
+- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own. ThinkTanks and Messages use the same scope, so their primaries are Commons leather too.
 
 Tint is a real accent everywhere:
 
@@ -205,7 +205,7 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
 ### Actions and data
 
 - `Button`: variants `default | destructive | outline | secondary | ghost | link`; sizes `default | xs | sm | lg | icon | icon-sm | icon-lg`.
-  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` (the forum, plus ThinkTanks and Messages, which wear that scope) it is the emerald app tint. Never hand-roll a gold or gradient button.
+  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` (the forum, plus ThinkTanks and Messages, which wear that scope) it is the Commons leather app tint. Never hand-roll a gold or gradient button.
   - Pressed is a colour change. There is no scale and no glow.
   - One primary per surface. Use `asChild` to render a link.
 - `Badge`: 7 variants (`default`, `secondary`, `success`, `warning`, `destructive`, `info`, `outline`). Status and count chips only. Pair colour with text or an icon.

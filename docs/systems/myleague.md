@@ -4,7 +4,7 @@
 
 **Parent Layer:** Labs (Experimental & Incubation Studio)  
 **Subsystems:** League Workspace, Franchise Management (MyClub), Match Simulation Engine, Athlete Cards  
-**Primary Action:** `COMPETE` | **Domain Accent:** Emerald Green / Sports Gold  
+**Primary Action:** `COMPETE` | **Domain Accent:** Uranium glass (`data-app="labs"`, `#5b6c04` / `#c8d84a`)  
 **Routes:** `/myleague`, `/myclub` (Labs product, top-level routes) | **Status:** 🧪 Labs Preview  
 
 MyLeague and MyClub provide full-season sports simulation across seven sport presets — soccer, Formula 1, hockey, boxing, basketball, baseball, and American football — with dynamic match resolvers and athlete roster progression. Soccer, hockey, basketball, baseball, and football have dedicated match resolvers, F1 uses the racing resolver, and boxing bouts currently fall back to the soccer match loop.

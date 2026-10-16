@@ -15,18 +15,22 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "features", label: "Features" },
 ];
 
-/** Result category → Badge colour (system colours; the wiki uses its own ink tint). */
+/** Result category → Badge colour: system colours for categories that span several apps. */
 const CATEGORY_BADGE: Record<string, BadgeVariant> = {
-  Statecraft: "warning",
-  Vault: "info",
   Geography: "success",
   Knowledge: "info",
   Community: "info",
-  Sports: "warning",
-  Labs: "secondary",
   System: "default",
   Country: "info",
-  Wiki: "secondary",
+};
+
+/** A category that is one app wears that app's tint (`data-app` on a secondary Badge), whatever app Halo is over. */
+const CATEGORY_APP: Record<string, string> = {
+  Statecraft: "mycountry",
+  Vault: "vault",
+  Sports: "labs",
+  Labs: "labs",
+  Wiki: "wiki",
 };
 
 function SearchViewComponent({
@@ -113,7 +117,8 @@ function SearchViewComponent({
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeVariant = CATEGORY_BADGE[cat] ?? "default";
+            const categoryApp = CATEGORY_APP[cat];
+            const badgeVariant = categoryApp ? "secondary" : (CATEGORY_BADGE[cat] ?? "default");
 
             return (
               <button
@@ -149,7 +154,9 @@ function SearchViewComponent({
                     >
                       {result.title}
                     </PreText>
-                    <Badge variant={badgeVariant}>{cat}</Badge>
+                    <Badge variant={badgeVariant} data-app={categoryApp}>
+                      {cat}
+                    </Badge>
                   </div>
                   {result.description && (
                     <PreText

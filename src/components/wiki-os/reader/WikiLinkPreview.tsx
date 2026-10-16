@@ -174,7 +174,7 @@ const BADGE_BASE =
 
 // Minimalist glass pills, joined to BADGE_BASE with cn().
 const BADGE_TONES = {
-  league: "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30",
+  league: "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30",
   club: "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30",
   country: "bg-green/6 border-green/20 text-green hover:bg-green/10 hover:border-green/30",
   user: "bg-tint/10 border-tint/30 text-tint hover:bg-tint/20 hover:text-wiki-hover",
@@ -191,7 +191,7 @@ function renderEntityMention(element: HTMLElement, href: string, index: number):
   }
   const tone = isLeague ? "league" : isClub ? "club" : isCountry ? "country" : "user";
 
-  return (
+  const pill = (
     <MentionPopover
       key={index}
       href={href}
@@ -199,6 +199,14 @@ function renderEntityMention(element: HTMLElement, href: string, index: number):
       badgeStyle={cn(BADGE_BASE, BADGE_TONES[tone])}
       icon={getEntityIcon(label, isLeague, isClub, isCountry) || undefined}
     />
+  );
+  // Leagues and clubs live in Labs (MyLeague, MyClub), so their pills wear the Labs tint inside the wiki.
+  return isLeague || isClub ? (
+    <span key={index} data-app="labs" className="contents">
+      {pill}
+    </span>
+  ) : (
+    pill
   );
 }
 

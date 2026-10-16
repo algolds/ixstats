@@ -51,7 +51,8 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             className="text-label-secondary size-11 sm:size-9"
           >
             <Link href="/maps" aria-label="Open world maps" title="Open world maps">
-              <MapIcon aria-hidden="true" className="text-green" />
+              {/* The door into Maps wears the Maps tint; the button keeps MyCountry's focus ring. */}
+              <MapIcon aria-hidden="true" data-app="maps" className="text-tint" />
             </Link>
           </Button>
           <Button

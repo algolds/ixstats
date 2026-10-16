@@ -181,7 +181,7 @@ export function TourHUD({
                 size="icon"
                 onClick={togglePause}
                 aria-label={isPaused ? "Resume tour" : "Pause tour"}
-                className="bg-blue text-on-blue hover:bg-blue/90"
+                className="bg-tint text-on-tint hover:bg-tint-hover"
               >
                 {isPaused ? <Play aria-hidden /> : <Pause aria-hidden />}
               </Button>
@@ -197,7 +197,7 @@ export function TourHUD({
 
           <div className="bg-fill-3 h-1 w-full">
             <div
-              className="bg-blue h-full origin-left transition-transform duration-100"
+              className="bg-tint h-full origin-left transition-transform duration-100"
               style={{
                 transform: `scaleX(${tourState === "paused_at_step" ? progress / 100 : 0})`,
               }}

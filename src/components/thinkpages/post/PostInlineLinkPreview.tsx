@@ -104,7 +104,7 @@ function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: st
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group/thread flex min-w-0 items-center gap-3 px-3 py-2.5 focus-visible:outline-none"
+          className="group/thread flex min-w-0 items-center gap-3 px-3 py-3 focus-visible:outline-none"
         >
           <IconTile>
             <ChatBubble />

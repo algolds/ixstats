@@ -572,7 +572,8 @@ export default function StashesPage() {
                                   Browse the{" "}
                                   <Link
                                     href={FORUM_HOME}
-                                    className="text-orange font-semibold hover:underline"
+                                    data-app="thinkpages"
+                                    className="text-tint font-semibold hover:underline"
                                   >
                                     Forum
                                   </Link>{" "}

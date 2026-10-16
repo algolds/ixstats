@@ -27,11 +27,11 @@ export default function Page() {
         <SignUp appearance={facetClerkAppearance} />
         <p className="text-muted-foreground text-center text-xs">
           By registering, you confirm you are at least 16 years old and agree to the{" "}
-          <Link href="/terms" className="text-foreground underline hover:text-indigo-400">
+          <Link href="/terms" className="text-foreground underline hover:text-tint">
             Terms of service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="text-foreground underline hover:text-indigo-400">
+          <Link href="/privacy" className="text-foreground underline hover:text-tint">
             Privacy policy
           </Link>
           .

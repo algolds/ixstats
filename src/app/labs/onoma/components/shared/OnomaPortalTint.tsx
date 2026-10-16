@@ -5,9 +5,9 @@ import { ONOMA_TINT_SLOTS } from "../../onoma-tint";
 
 /**
  * Radix portals (dialogs, sheets, popovers, menus, tooltips) render into <body>, outside Onoma's
- * wrapper. The Labs `PortalTintSync` already mirrors `data-app="maps"` onto <body>; this mirrors
+ * wrapper. The Labs `PortalTintSync` already mirrors `data-app="labs"` onto <body>; this mirrors
  * Onoma's inline tint slots too, so portalled surfaces resolve `--tint` (focus, selection, tinted
- * controls) to the Onoma azure instead of the Labs sky while the lab is mounted. The [data-app]
+ * controls) to the Onoma azure instead of the Labs uranium glass while the lab is mounted. The [data-app]
  * rules derive `--tint` from these slots on <body> itself, so appearance and Increase Contrast
  * still switch them. Restores whatever <body> had on unmount.
  */

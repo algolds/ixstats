@@ -7,7 +7,11 @@
  * via client-side <style> + <script>.
  */
 
+import { APP_TINTS } from "~/lib/design/tokens";
+
 const EMBED_BASE = "/maps?embed=true";
+/** The pin sits on the dark #0a1628 ground, so it takes the Maps dark tint. */
+const EMBED_PIN = APP_TINTS.maps.dark.tint;
 
 export const EMBED_CSS = `
 .ix-embed-wrap{position:relative;margin:8px 0;overflow:hidden;border-radius:12px;
@@ -17,7 +21,7 @@ export const EMBED_CSS = `
   align-items:center;justify-content:center;gap:8px;transition:background .2s}
 .ix-embed-wrap:hover .ix-embed-placeholder{background:rgba(255,255,255,0.03)}
 .ix-embed-pin-icon{width:24px;height:24px;border-radius:50% 50% 50% 0;
-  background:#3b82f6;transform:rotate(-45deg);opacity:.6}
+  background:${EMBED_PIN};transform:rotate(-45deg);opacity:.6}
 .ix-embed-coords{font-family:monospace;font-size:12px;color:rgba(255,255,255,.7)}
 .ix-embed-hint{font-size:10px;color:rgba(255,255,255,.35)}
 .ix-embed-zoom-badge{position:absolute;bottom:8px;right:8px;padding:2px 8px;

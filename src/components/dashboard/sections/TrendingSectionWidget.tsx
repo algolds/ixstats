@@ -30,14 +30,19 @@ const TRENDING_FILTER_LIMIT = 10;
 
 type FilterTab = "all" | "forum" | "wiki";
 
-const DEFAULT_SOURCE = { icon: Activity, color: "text-yellow", label: "Live activity" };
+/** `app` scopes the icon to that app's tint (`data-app`), so a ThinkPages source wears ThinkPages' colour. */
+type TrendingSource = {
+  icon: typeof Rss | typeof Activity;
+  color: string;
+  label: string;
+  app?: string;
+};
 
-const TRENDING_SOURCE: Record<
-  string,
-  { icon: typeof Rss | typeof Activity; color: string; label: string }
-> = {
-  thinkpages: { icon: Newspaper, color: "text-blue", label: "ThinkPages" },
-  forum: { icon: MessageSquare, color: "text-orange", label: "Forum" },
+const DEFAULT_SOURCE: TrendingSource = { icon: Activity, color: "text-yellow", label: "Live activity" };
+
+const TRENDING_SOURCE: Record<string, TrendingSource> = {
+  thinkpages: { icon: Newspaper, color: "text-tint", label: "ThinkPages", app: "thinkpages" },
+  forum: { icon: MessageSquare, color: "text-tint", label: "Forum", app: "thinkpages" },
   wiki: { icon: BookOpen, color: "text-wiki", label: "Wiki" },
   crisis: { icon: AlertTriangle, color: "text-red", label: "Crisis" },
 };
@@ -160,6 +165,7 @@ function TrendingRow({ item }: { item: any }) {
     >
       <span
         aria-hidden
+        data-app={src.app}
         className="bg-surface border-separator rounded-control-sm mt-0.5 flex size-6 shrink-0 items-center justify-center border"
       >
         <SrcIcon className={cn("size-3.5", src.color)} />

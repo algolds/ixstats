@@ -42,15 +42,16 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
         return (
           <div
             key={item.id}
+            data-app="thinkpages"
             className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-2 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             <div className="flex items-start justify-between gap-3">
               <Link href={forumUrl} className="group/title flex min-w-0 flex-1 items-center gap-2">
-                <div className="rounded-row border-orange/30 bg-orange/15 text-orange flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
+                <div className="rounded-row border-tint/30 bg-tint-fill text-tint flex h-9 w-9 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:scale-105">
                   <MessageSquare className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-headline text-label group-hover/title:text-orange truncate transition-colors">
+                  <h3 className="text-headline text-label group-hover/title:text-tint truncate transition-colors">
                     {cleanTitle}
                   </h3>
                   <div className="text-footnote text-label-secondary flex items-center gap-2 pt-0.5">
@@ -62,7 +63,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                         year: "numeric",
                       })}
                     </span>
-                    <span className="py-0.2 rounded-control-sm border-orange/25 bg-orange/15 text-eyebrow text-orange border px-2">
+                    <span className="py-0.2 rounded-control-sm border-tint/25 bg-tint-fill text-eyebrow text-tint border px-2">
                       Forum
                     </span>
                   </div>

@@ -31,7 +31,7 @@ export default function OnomaLayout({ children }: { children: ReactNode }) {
       }
     >
       {/* Onoma azure as a scoped tint (onoma-tint.ts); OnomaPortalTint carries it to portals. */}
-      <div data-app="maps" className="contents" style={ONOMA_TINT}>
+      <div data-app="labs" className="contents" style={ONOMA_TINT}>
         <OnomaPortalTint />
         {children}
       </div>

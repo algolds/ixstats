@@ -431,7 +431,7 @@ function IconButton({
       className={cn(
         "rounded-control relative h-11 w-11 sm:h-9 sm:w-9",
         variant === "active-tool"
-          ? "bg-blue text-on-blue hover:bg-blue/90"
+          ? "bg-tint text-on-tint hover:bg-tint-hover"
           : isActive
             ? "bg-fill-3 text-label"
             : "text-label-secondary"
@@ -444,7 +444,7 @@ function IconButton({
     >
       {icon}
       {hasIndicator && (
-        <span className="ring-card bg-blue absolute top-1 right-1 h-2 w-2 rounded-full ring-1" />
+        <span className="ring-card bg-tint absolute top-1 right-1 h-2 w-2 rounded-full ring-1" />
       )}
     </Button>
   );

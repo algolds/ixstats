@@ -143,21 +143,16 @@ interface TintSet {
   onTint: string;
 }
 
-/** Apps whose tint is their logo's colour, exempt from the palette's shared lightness. */
-export const BRAND_TINTS = ["mycountry", "wiki"] as const;
-
-/** The OKLCH lightness every non-brand tint is drawn at (chroma 0.16 light / 0.13 dark, cut to sRGB). */
-export const APP_TINT_LIGHTNESS = { light: 0.5, dark: 0.78 } as const;
-
 /**
- * App tints: one colour per app, never shared. Two are brand colours: MyCountry's gold (OKLCH hue 49 light,
- * 84 dark) and the IxWiki navy from the original logo (hue 255). The rest sit evenly in the two gaps those
- * leave, at one lightness per mode (`APP_TINT_LIGHTNESS`): labs 127, thinkpages 170, maps 212 between gold
- * and navy; realms 302, vault 338 between navy and gold (forum's 13 was retired with the XenForo bridge in
- * ThinkPages forum phase 4b). Any two are at least 30 degrees apart
- * (app-palette.test.ts). `strong` is 0.06 darker (light) / 0.07 lighter (dark). The default (Home, Help,
- * Settings, Admin) is not a colour but a warm ink, OKLCH 0.42 / 0.78 at hue 60 and chroma under 0.04, so
- * the apps carry the colour.
+ * App tints: one colour per app, never shared, each taken from a material its app would be made of (the
+ * IxStates brand colours guide). Two are fixed brand colours: MyCountry's state gold (OKLCH hue 49 light,
+ * 84 dark) and the IxWiki navy from the original logo (hue 255). The rest: Labs uranium glass (120),
+ * ThinkPages Commons leather (158), Maps chart shallows (218), Realms banner purpure (312) and Vault
+ * jewel-case velvet (2). Each material sets its own depth and its text colour (ivory on the leather and the
+ * purpure); token-contrast.test.ts holds every tint to AA text contrast, and app-palette.test.ts keeps any
+ * two at least 30 degrees apart in both modes. `strong` is 0.06 darker (light) / 0.07 lighter (dark). The
+ * default (Home, Help, Settings, Admin) is not a colour but iron-gall ink, OKLCH 0.42 / 0.78 at hue 60 and
+ * chroma under 0.04, so the apps carry the colour.
  */
 export const APP_TINTS = {
   default: {
@@ -173,24 +168,24 @@ export const APP_TINTS = {
     dark: { tint: "#89b3e6", strong: "#abc9ed", onTint: "#0b0c0f" },
   },
   labs: {
-    light: { tint: "#4f7002", strong: "#425d03", onTint: "#ffffff" },
-    dark: { tint: "#a1c768", strong: "#bcda93", onTint: "#0b0c0f" },
+    light: { tint: "#5b6c04", strong: "#4b5a03", onTint: "#ffffff" },
+    dark: { tint: "#c8d84a", strong: "#dfee82", onTint: "#0b0c0f" },
   },
   thinkpages: {
-    light: { tint: "#04755b", strong: "#03614b", onTint: "#ffffff" },
-    dark: { tint: "#4cd2ab", strong: "#87e3c4", onTint: "#0b0c0f" },
+    light: { tint: "#115536", strong: "#014428", onTint: "#f4eedf" },
+    dark: { tint: "#82d2a8", strong: "#ade3c5", onTint: "#0b0c0f" },
   },
   maps: {
-    light: { tint: "#057080", strong: "#025d6b", onTint: "#ffffff" },
-    dark: { tint: "#26cde7", strong: "#78dff4", onTint: "#0b0c0f" },
+    light: { tint: "#05667a", strong: "#025465", onTint: "#ffffff" },
+    dark: { tint: "#69cee6", strong: "#9fe0f1", onTint: "#0b0c0f" },
   },
   realms: {
-    light: { tint: "#7546ad", strong: "#64349a", onTint: "#ffffff" },
-    dark: { tint: "#c7a3fc", strong: "#d8c1fe", onTint: "#0b0c0f" },
+    light: { tint: "#603379", strong: "#4f2267", onTint: "#f4eedf" },
+    dark: { tint: "#d2acee", strong: "#e3c8f7", onTint: "#0b0c0f" },
   },
   vault: {
-    light: { tint: "#993582", strong: "#862270", onTint: "#ffffff" },
-    dark: { tint: "#ed96d4", strong: "#f9b5e5", onTint: "#0b0c0f" },
+    light: { tint: "#851f47", strong: "#710637", onTint: "#ffffff" },
+    dark: { tint: "#f3a3bd", strong: "#fcc2d4", onTint: "#0b0c0f" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */

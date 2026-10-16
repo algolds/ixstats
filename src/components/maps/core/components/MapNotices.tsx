@@ -72,7 +72,7 @@ export function MapFailureOverlay({
             type="button"
             size="lg"
             onClick={() => window.location.reload()}
-            className="bg-blue text-on-blue hover:bg-blue/90 w-full sm:flex-1"
+            className="bg-tint text-on-tint hover:bg-tint-hover w-full sm:flex-1"
           >
             Reload page
           </Button>

@@ -555,43 +555,43 @@
     --on-tint-dark: #0b0c0f;
   }
   [data-app="labs"] {
-    --tint-light: #4f7002;
-    --tint-light-strong: #425d03;
+    --tint-light: #5b6c04;
+    --tint-light-strong: #4b5a03;
     --on-tint-light: #ffffff;
-    --tint-dark: #a1c768;
-    --tint-dark-strong: #bcda93;
+    --tint-dark: #c8d84a;
+    --tint-dark-strong: #dfee82;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="thinkpages"] {
-    --tint-light: #04755b;
-    --tint-light-strong: #03614b;
-    --on-tint-light: #ffffff;
-    --tint-dark: #4cd2ab;
-    --tint-dark-strong: #87e3c4;
+    --tint-light: #115536;
+    --tint-light-strong: #014428;
+    --on-tint-light: #f4eedf;
+    --tint-dark: #82d2a8;
+    --tint-dark-strong: #ade3c5;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="maps"] {
-    --tint-light: #057080;
-    --tint-light-strong: #025d6b;
+    --tint-light: #05667a;
+    --tint-light-strong: #025465;
     --on-tint-light: #ffffff;
-    --tint-dark: #26cde7;
-    --tint-dark-strong: #78dff4;
+    --tint-dark: #69cee6;
+    --tint-dark-strong: #9fe0f1;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="realms"] {
-    --tint-light: #7546ad;
-    --tint-light-strong: #64349a;
-    --on-tint-light: #ffffff;
-    --tint-dark: #c7a3fc;
-    --tint-dark-strong: #d8c1fe;
+    --tint-light: #603379;
+    --tint-light-strong: #4f2267;
+    --on-tint-light: #f4eedf;
+    --tint-dark: #d2acee;
+    --tint-dark-strong: #e3c8f7;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="vault"] {
-    --tint-light: #993582;
-    --tint-light-strong: #862270;
+    --tint-light: #851f47;
+    --tint-light-strong: #710637;
     --on-tint-light: #ffffff;
-    --tint-dark: #ed96d4;
-    --tint-dark-strong: #f9b5e5;
+    --tint-dark: #f3a3bd;
+    --tint-dark-strong: #fcc2d4;
     --on-tint-dark: #0b0c0f;
   }
 
@@ -693,7 +693,7 @@
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the emerald tint inside ThinkPages
+    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the Commons leather tint inside ThinkPages
        (and ThinkTanks and Messages, which wear its scope) */
     --primary-mono: #18181b;
     --primary-mono-hover: #3f3f46;
@@ -737,7 +737,7 @@
     --primary-fill-hover: var(--gold-hover);
     --on-primary: var(--on-gold);
   }
-  /* ThinkPages (the forum, and the ThinkTanks and Messages pages that share its emerald scope): the primary
+  /* ThinkPages (the forum, and the ThinkTanks and Messages pages that share its scope): the primary
      action is the app tint itself. */
   [data-app="thinkpages"] {
     --primary-fill: var(--tint);

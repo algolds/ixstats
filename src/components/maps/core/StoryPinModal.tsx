@@ -245,7 +245,7 @@ function StoryPinFooter({
           </Link>
         </Button>
       )}
-      <Button size="sm" onClick={onFlyTo} className="bg-blue text-on-blue hover:bg-blue/90">
+      <Button size="sm" onClick={onFlyTo} className="bg-tint text-on-tint hover:bg-tint-hover">
         <MapPin aria-hidden />
         Fly to location
       </Button>

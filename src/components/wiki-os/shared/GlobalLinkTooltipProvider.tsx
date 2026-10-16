@@ -208,7 +208,7 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+          <MessageSquare data-app="thinkpages" className="text-tint h-3.5 w-3.5 shrink-0" />
           <span className="text-headline text-label">Loading thread...</span>
         </div>
         <Skeleton className="rounded-control-sm h-10 w-full" />
@@ -216,13 +216,14 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     );
   }
 
+  // The forum is ThinkPages, so the thread card wears ThinkPages' tint inside any app.
   return (
-    <div className="space-y-2">
+    <div data-app="thinkpages" className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+        <MessageSquare className="text-tint h-3.5 w-3.5 shrink-0" />
         <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
-      {thread.forumName && <Badge variant="warning">{thread.forumName}</Badge>}
+      {thread.forumName && <Badge variant="secondary">{thread.forumName}</Badge>}
       {thread.excerpt && (
         <p className="text-label-secondary text-footnote line-clamp-3 leading-relaxed">
           {thread.excerpt.substring(0, 250)}

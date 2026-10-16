@@ -42,7 +42,7 @@ Versioning communicates:
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
  │ 2. 🗺️ IXWORLD — Spatial Geography & Cartographic Studio (v2)                                   │
- │    Action: MAP | Domain Accent: Sky Blue (#0EA5E9) | Route: /maps                              │
+ │    Action: MAP | Domain Accent: Chart shallows (#05667a) | Route: /maps                        │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Interactive Map (v2)     │ WebGL vector globe rendering rivers, lakes, national borders,     │
  │                            │ topography, and climate biomes.                                   │
@@ -84,7 +84,7 @@ Versioning communicates:
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
  │ 5. 💬 THINKPAGES — Real-Time Knowledge Feed & Communications (v2)                              │
- │    Action: DELIBERATE | Domain Accent: Emerald Jade (#10B981) | Route: /thinkpages             │
+ │    Action: DELIBERATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages          │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Sovereign Feed (v2)      │ Sovereign micro-posts, `[blurb:slug]` tags, polls, and live wiki  │
  │                            │ card embeds.                                                      │
@@ -97,7 +97,7 @@ Versioning communicates:
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
  │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
- │    Action: DEBATE | Domain Accent: Warm Orange (#F97316) | Route: /forum                       │
+ │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /forum                   │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • XenForo Native Bridge    │ Thread synchronization, category boards, and sovereign dispatches.│
  │ • Single Sign-On (SSO)     │ Unified auth via IxnayID session sharing.                         │

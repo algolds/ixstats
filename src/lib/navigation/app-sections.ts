@@ -85,7 +85,7 @@ export type NavBadge =
   { kind: "count"; value: number } | { kind: "action"; label: string; streak?: number };
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
-/** `data-app` tint keys (tokens.css). Omitted = the default (indigo) tint. */
+/** `data-app` tint keys (tokens.css). Omitted = the default tint (iron-gall ink). */
 type AppTint = "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs";
 
 type AppId =

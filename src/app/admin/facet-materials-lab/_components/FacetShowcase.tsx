@@ -46,7 +46,6 @@ const APP_TINTS = [
   { value: "maps", label: "Maps" },
   { value: "thinkpages", label: "ThinkPages" },
   { value: "vault", label: "Vault" },
-  { value: "forum", label: "Forum" },
   { value: "wiki", label: "Wiki" },
   { value: "realms", label: "Realms" },
   { value: "labs", label: "Labs" },

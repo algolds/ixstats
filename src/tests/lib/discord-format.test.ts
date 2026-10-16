@@ -1,4 +1,5 @@
 import { htmlToDiscordMarkdown, formatThinkPagesEmbed } from "~/lib/discord/ixtwitter-sync";
+import { APP_TINTS } from "~/lib/design/tokens";
 
 describe("htmlToDiscordMarkdown", () => {
   test("strips standard paragraph tags and trims whitespace", () => {
@@ -87,7 +88,8 @@ describe("formatThinkPagesEmbed", () => {
     const embeds = formatThinkPagesEmbed(post, account);
     expect(embeds.length).toBe(1);
     expect(embeds[0].description).toBe("Hello world!");
-    expect(embeds[0].color).toBe(0x9835ff);
+    // A ThinkPages post wears the ThinkPages tint (dark value, for Discord's dark embeds).
+    expect(embeds[0].color).toBe(parseInt(APP_TINTS.thinkpages.dark.tint.slice(1), 16));
     // U2: the feed is IxStats; ThinkPages names the forum.
     expect(embeds[0].footer.text).toBe("Shared from IxStats");
   });

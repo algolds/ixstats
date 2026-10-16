@@ -28,7 +28,7 @@ function Banner({ src }: { src: string | null }) {
         display: "flex",
         width: BANNER.width,
         height: BANNER.height,
-        background: P.tint,
+        background: P.realmTint,
         borderBottom: `2px solid ${P.rule}`,
         overflow: "hidden",
       }}
@@ -96,8 +96,8 @@ export function RealmOgCard({ model, images }: { model: RealmOgModel; images: Re
             flexShrink: 0,
             padding: "16px 30px",
             borderRadius: 999,
-            background: P.tint,
-            color: P.onTint,
+            background: P.realmTint,
+            color: P.onRealmTint,
             fontSize: 28,
             fontWeight: 600,
           }}

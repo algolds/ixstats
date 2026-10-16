@@ -244,6 +244,7 @@ export function CoordinatesMapEmbed({
   return (
     <div
       ref={elementRef}
+      data-app="maps"
       className={cn(
         "wikios-ixworld-embed bg-map-ocean/40 rounded-row border-separator relative overflow-hidden border",
         className
@@ -254,14 +255,14 @@ export function CoordinatesMapEmbed({
 
       {!mapReady && (
         <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center">
-          <Loader2 className="text-blue mb-2 h-6 w-6 animate-spin" />
+          <Loader2 className="text-tint mb-2 h-6 w-6 animate-spin" />
           <span className="text-caption text-label-secondary">Loading map...</span>
         </div>
       )}
 
       {mapReady && marker && (
         <div className="facet-chrome rounded-control text-footnote text-label-secondary pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 select-none">
-          <MapPin className="text-blue h-2.5 w-2.5" />
+          <MapPin className="text-tint h-2.5 w-2.5" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
           <span className="text-footnote text-label-secondary font-mono">
             ({lat.toFixed(3)}, {lng.toFixed(3)})

@@ -70,7 +70,7 @@ export function MapLoadingScreen({ isReady }: MapLoadingScreenProps) {
               className="bg-fill-3 relative h-1 w-44 overflow-hidden rounded-full"
             >
               <motion.div
-                className="bg-blue h-full w-1/3 origin-left rounded-full"
+                className="bg-tint h-full w-1/3 origin-left rounded-full"
                 animate={
                   shouldReduceMotion
                     ? { transform: "scaleX(3)", opacity: 0.7 }

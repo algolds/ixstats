@@ -316,7 +316,7 @@ export function MapPickerModal({
           <Button
             onClick={handleConfirm}
             disabled={!selectedCoords || isValid === false || !mapReady}
-            className="bg-blue text-on-blue hover:bg-blue/90"
+            className="bg-tint text-on-tint hover:bg-tint-hover"
           >
             Confirm selection
           </Button>

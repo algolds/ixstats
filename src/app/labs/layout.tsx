@@ -1,6 +1,7 @@
 // src/app/labs/layout.tsx
-// Labs tint scope: Labs uses the sky `maps` tint (Onoma's brand is blue), as in
-// src/lib/navigation/app-sections.ts. PortalTintSync keeps dialogs, sheets and menus on it.
+// Labs tint scope: uranium glass, the `labs` tint, as in src/lib/navigation/app-sections.ts.
+// Onoma sets its own azure inside it (onoma/onoma-tint.ts). PortalTintSync keeps dialogs, sheets
+// and menus on the scope.
 //
 // Server gate (SL-27): Labs pages render only for the people the navigation shows Labs to
 // (src/lib/navigation/labs-gate.ts). Signed-out visitors go to sign-in; anyone else gets a 404.
@@ -16,7 +17,7 @@ export default async function LabsLayout({ children }: { children: ReactNode }) 
   if (access === "denied") notFound();
 
   return (
-    <div data-app="maps" className="contents">
+    <div data-app="labs" className="contents">
       <PortalTintSync />
       {children}
     </div>

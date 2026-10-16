@@ -129,7 +129,7 @@ function UnreadButton({
         aria-hidden
         className={cn(
           "ring-surface text-caption absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-semibold tabular-nums ring-2",
-          hasMessages ? "bg-red text-on-red" : "bg-blue text-on-blue"
+          hasMessages ? "bg-red text-on-red" : "bg-tint text-on-tint"
         )}
       >
         {totalUnread > 99 ? "99+" : totalUnread}

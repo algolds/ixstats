@@ -135,7 +135,7 @@ Integrated apps with their own distinct brand identity that ship and break indep
 
 The XenForo bridge that carried the IxForum name (`/forum`, its orange accent, the forum widget cards and the
 Halo forum plugin) was retired in ThinkPages forum phase 4b. The community forum is the native ThinkPages forum
-at `/thinkpages`, in ThinkPages' emerald tint; `/forum/*` only redirects to it. Whether `IXFORUM_VERSION` stays in
+at `/thinkpages`, in ThinkPages' Commons leather tint; `/forum/*` only redirects to it. Whether `IXFORUM_VERSION` stays in
 the version registry is an open owner decision (`docs/reference/revision.md` is unchanged until then).
 
 ### 2.3 IxVault (Wallet / Economy / Trading Cards)
@@ -293,7 +293,7 @@ First-class systems within the IxStates platform.
 | ----------------- | ----------------------------------------------------------------------------- |
 | **Version**       | `THINKPAGES_VERSION` (from registry — single capability integer)              |
 | **Nav icon**      | ThinkPagesIcon (custom SVG: cyan-to-teal gradient) + Rss (Lucide, contextual) |
-| **Accent hex**    | `#3b82f6` (blue-500)                                                          |
+| **Accent hex**    | `#115536` / `#82d2a8` (Commons leather, `data-app="thinkpages"`)              |
 | **Shine**         | `["#3b82f6", "#1d4ed8", "#60a5fa"]`                                           |
 | **Glow**          | `text-blue-400`                                                               |
 | **Logo**          | `public/thinkpages-logo.svg`                                                  |

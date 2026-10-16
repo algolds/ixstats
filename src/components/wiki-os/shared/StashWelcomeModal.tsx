@@ -120,7 +120,7 @@ const MEDIA_STEPS = [
 const FORUM_STEPS = [
   {
     icon: MessageSquare,
-    color: "text-orange",
+    color: "text-tint",
     title: "Thread bookmarks",
     description:
       "Save regional forum threads, debates, and policy proposals in your research lists.",
@@ -151,7 +151,8 @@ const TABS = [
   { label: "Overview", steps: OVERVIEW_STEPS },
   { label: "Articles & quotes", steps: ARTICLE_STEPS },
   { label: "Media assets", steps: MEDIA_STEPS },
-  { label: "Forum threads", steps: FORUM_STEPS },
+  // Forum threads wear ThinkPages' tint, the forum's app.
+  { label: "Forum threads", steps: FORUM_STEPS, app: "thinkpages" },
 ];
 
 export function StashWelcomeModal({
@@ -209,6 +210,7 @@ export function StashWelcomeModal({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={tweenFast}
+              data-app={TABS[activeTab]?.app}
               className="grid grid-cols-1 gap-2 text-left sm:grid-cols-2"
             >
               {currentSteps.map((step) => {

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { APP_IDS, APP_TINTS, APP_TINT_LIGHTNESS, BRAND_TINTS } from "~/lib/design/tokens";
+import { APP_IDS, APP_TINTS } from "~/lib/design/tokens";
 
 /** The default tint is an ink (a near-neutral), so it has no hue to clash and sits off the palette's lightness. */
 const INK = "default";
@@ -40,19 +40,6 @@ describe("Facet app palette", () => {
         })
       );
       expect(close).toEqual([]);
-    }
-  );
-
-  it.each(["light", "dark"] as const)(
-    "draws every non-brand tint at the palette's one lightness (%s)",
-    (mode) => {
-      for (const [app, sets] of entries) {
-        if ((BRAND_TINTS as readonly string[]).includes(app)) continue;
-        expect([app, oklch(sets[mode].tint).l.toFixed(2)]).toEqual([
-          app,
-          APP_TINT_LIGHTNESS[mode].toFixed(2),
-        ]);
-      }
     }
   );
 

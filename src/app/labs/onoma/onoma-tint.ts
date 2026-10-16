@@ -8,7 +8,7 @@ import type { CSSProperties } from "react";
  * like every app tint.
  *
  * There is no `data-app="onoma"` scope (that would live in facet/tokens.css), so the slots are set
- * inline on Onoma's `data-app="maps"` wrapper and mirrored onto <body> for portals by
+ * inline on Onoma's `data-app="labs"` wrapper and mirrored onto <body> for portals by
  * `OnomaPortalTint`.
  */
 export const ONOMA_TINT_SLOTS = {

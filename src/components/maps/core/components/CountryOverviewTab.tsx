@@ -333,7 +333,7 @@ export function CountryOverviewTab({
           </Button>
         )}
         {summary.slug && (
-          <Button asChild size="sm" className="bg-blue text-on-blue hover:bg-blue/90">
+          <Button asChild size="sm" className="bg-tint text-on-tint hover:bg-tint-hover">
             <Link href={`/countries/${summary.slug}`}>
               View full profile
               <ExternalLink aria-hidden />

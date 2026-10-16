@@ -28,31 +28,33 @@ import { ForumFeedCard } from "./feed/ForumFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { Card } from "~/components/ui/card";
 
-type FeedBadge = { icon: typeof Rss; color: string; bg: string; label: string };
+/** `app` scopes the badge to that app's tint (`data-app`), so an app's items wear the app's colour. */
+type FeedBadge = { icon: typeof Rss; color: string; bg: string; label: string; app?: string };
 
 const BLUE = { color: "text-blue", bg: "bg-blue/10" };
 const GREEN = { color: "text-green", bg: "bg-green/10" };
 const RED = { color: "text-red", bg: "bg-red/10" };
+const tintOf = (app: string) => ({ color: "text-tint", bg: "bg-tint-fill", app });
 
 const SOURCE_CONFIG: Record<string, FeedBadge> = {
   activity: { icon: Rss, ...BLUE, label: "Activity" },
-  thinkpages: { icon: Users, ...BLUE, label: "Social" },
-  forum: { icon: MessageCircle, color: "text-orange", bg: "bg-orange/10", label: "Forum" },
+  thinkpages: { icon: Users, ...tintOf("thinkpages"), label: "Social" },
+  forum: { icon: MessageCircle, ...tintOf("thinkpages"), label: "Forum" },
 };
 
 /** First match wins: an activity type, a category or a keyword in the title. */
 const ACTIVITY_RULES: (FeedBadge & { types?: string[]; cats?: string[]; words: string[] })[] = [
   // A directive is named by its activity type; its title is the player's own goal text, so words never apply.
-  { label: "Directive", icon: ClipboardCheck, ...BLUE, types: ["directive"], words: [] },
-  { label: "POI", icon: MapIcon, ...GREEN, words: ["point of interest", "poi"] },
-  { label: "City", icon: MapIcon, ...GREEN, words: ["city", "settlement"] },
+  { label: "Directive", icon: ClipboardCheck, ...tintOf("mycountry"), types: ["directive"], words: [] },
+  { label: "POI", icon: MapIcon, ...tintOf("maps"), words: ["point of interest", "poi"] },
+  { label: "City", icon: MapIcon, ...tintOf("maps"), words: ["city", "settlement"] },
   {
     label: "Subdivision",
     icon: MapIcon,
-    ...GREEN,
+    ...tintOf("maps"),
     words: ["subdivision", "province", "state", "region"],
   },
-  { label: "Maps", icon: MapIcon, ...GREEN, cats: ["map"], words: ["map", "claim"] },
+  { label: "Maps", icon: MapIcon, ...tintOf("maps"), cats: ["map"], words: ["map", "claim"] },
   {
     label: "Economy",
     icon: TrendingUp,
@@ -177,6 +179,7 @@ function ActivityCard({ activity }: { activity: any }) {
       <div className="flex items-start gap-3">
         <div
           aria-hidden
+          data-app={badge.app}
           className={cn(
             "rounded-row border-separator mt-0.5 flex size-9 shrink-0 items-center justify-center border",
             badge.bg

@@ -6,7 +6,7 @@ import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "icon
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
-/** Titled blurb with a blue icon, used in the welcome dialogs' tips pages. */
+/** Titled blurb with an app-tinted icon, used in the welcome dialogs' tips pages. */
 export function TipCard({
   icon: Icon,
   title,
@@ -23,7 +23,7 @@ export function TipCard({
   return (
     <Card variant="well" className={className}>
       <div className={`flex items-center gap-2 ${headerClassName}`}>
-        <Icon className="text-blue h-4 w-4" aria-hidden />
+        <Icon className="text-tint h-4 w-4" aria-hidden />
         <h3 className="text-label text-headline">{title}</h3>
       </div>
       <p className="text-label-secondary text-footnote leading-relaxed">{description}</p>
@@ -85,7 +85,7 @@ export function WelcomeFooter({
             aria-current={i === page ? "step" : undefined}
             onClick={() => onPageChange(i)}
             className={`h-1.5 rounded-full transition-[background-color,opacity] ${
-              i === page ? `bg-blue ${activeDotClass}` : "bg-fill-2 hover:bg-fill w-1.5"
+              i === page ? `bg-tint ${activeDotClass}` : "bg-fill-2 hover:bg-fill w-1.5"
             }`}
           />
         ))}

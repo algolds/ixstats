@@ -95,7 +95,7 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
           variant={active ? "default" : "outline"}
           onClick={handleToggle}
           aria-pressed={active}
-          className={`min-h-11 sm:min-h-0 ${active ? "bg-blue text-on-blue hover:bg-blue/90" : ""}`}
+          className={`min-h-11 sm:min-h-0 ${active ? "bg-tint text-on-tint hover:bg-tint-hover" : ""}`}
           title="Measure distance or area (M)"
         >
           <Trash2 aria-hidden />

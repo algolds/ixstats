@@ -220,7 +220,7 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
             </WikiLinkButton>
           )}
           {feature.countrySlug && (
-            <Button asChild size="sm" className="bg-blue text-on-blue hover:bg-blue/90">
+            <Button asChild size="sm" className="bg-tint text-on-tint hover:bg-tint-hover">
               <Link href={`/countries/${feature.countrySlug}`}>
                 View {feature.countryName}
                 <ExternalLink aria-hidden />

@@ -52,7 +52,7 @@ Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `forumHome
 | Server logic | `src/server/modules/thinkpages-forum/` |
 | tRPC routers | `src/server/api/routers/thinkpagesForum/` (`index.ts`, `mod.ts`, `viewer.ts`), registered in `root.ts` as `thinkpagesForum` and `thinkpagesForumMod` |
 | Pure helpers | `src/lib/thinkpages-forum/` (`links.ts`, `permalink.ts`, `categories.ts`, `moderation-policy.ts`) |
-| Layout and tint | `layout.tsx` sets `data-app="thinkpages"` (the emerald tint) for the subtree |
+| Layout and tint | `layout.tsx` sets `data-app="thinkpages"` (the Commons leather tint) for the subtree |
 
 The old XenForo forum is copied in by the import described in `docs/operations/forum-xenforo-import-runbook.md` and `docs/systems/forum.md`.
 

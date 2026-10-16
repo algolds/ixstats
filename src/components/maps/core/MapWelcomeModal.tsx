@@ -107,7 +107,7 @@ function ShortcutsPage() {
 
       <Card variant="well" className="mt-4 p-3">
         <div className="mb-1 flex items-center gap-2">
-          <Compass className="text-blue h-4 w-4" aria-hidden />
+          <Compass className="text-tint h-4 w-4" aria-hidden />
           <h4 className="text-label text-headline">Tip</h4>
         </div>
         <p className="text-label-secondary text-footnote">
@@ -257,7 +257,7 @@ export function MapWelcomeModal({
       <DialogContent className="rounded-card gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="flex-row items-center justify-between gap-3 px-6 pt-6 pr-12 pb-4 text-left">
           <div className="flex items-center gap-3">
-            <Globe className="text-blue h-6 w-6 shrink-0" aria-hidden />
+            <Globe className="text-tint h-6 w-6 shrink-0" aria-hidden />
             <div>
               <DialogTitle>Welcome to IxMaps</DialogTitle>
               <DialogDescription className="text-footnote">
@@ -312,7 +312,7 @@ export function MapWelcomeModal({
               <Button
                 size="sm"
                 onClick={handleClose}
-                className="bg-blue text-on-blue hover:bg-blue/90"
+                className="bg-tint text-on-tint hover:bg-tint-hover"
               >
                 Start exploring
                 <Navigation aria-hidden />

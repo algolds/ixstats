@@ -3,12 +3,12 @@ import type { Appearance } from "@clerk/types";
 /**
  * Facet / Apple-Design system appearance configuration for Clerk components.
  * Binds directly to platform CSS variables (--color-bg-secondary, --color-text-primary,
- * --color-brand-primary, --color-border-primary), ensuring 100% theme compliance
+ * --tint, --color-border-primary), ensuring 100% theme compliance
  * across Light Mode, Dark Mode, and dynamic accent themes.
  */
 export const facetClerkAppearance: Appearance = {
   variables: {
-    colorPrimary: "var(--color-brand-primary, #6366f1)",
+    colorPrimary: "var(--tint, #5a493d)",
     colorBackground: "var(--color-bg-secondary, #16181d)",
     colorText: "var(--color-text-primary, #e4e4e7)",
     colorTextSecondary: "var(--color-text-muted, #a1a1aa)",

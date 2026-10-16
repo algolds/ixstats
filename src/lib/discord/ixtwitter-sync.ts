@@ -19,6 +19,10 @@ import { DOMParser } from "@xmldom/xmldom";
 import { buildDiscordPollObject } from "./poll";
 import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
+import { APP_TINTS } from "~/lib/design/tokens";
+
+/** ThinkPages posts on Discord wear the ThinkPages tint; the dark value reads on Discord's dark embeds. */
+const THINKPAGES_EMBED_COLOR = parseInt(APP_TINTS.thinkpages.dark.tint.slice(1), 16);
 
 const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223534418722818";
 // IxTwitter is one-way (Discord → feed only). The dedicated ThinkPages channel handles feed → Discord.
@@ -776,7 +780,7 @@ export function formatThinkPagesEmbed(
   let description = htmlToDiscordMarkdown(cleanPostContent(post.content));
   if (description.length > 4000) description = description.slice(0, 3997) + "...";
   return withMedia(
-    { url, author, description, color: 0x9835ff, footer: FEED_FOOTER, timestamp },
+    { url, author, description, color: THINKPAGES_EMBED_COLOR, footer: FEED_FOOTER, timestamp },
     mediaUrls
   );
 }
