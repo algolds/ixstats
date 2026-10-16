@@ -3,92 +3,12 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  publicProcedure,
-  rateLimitedMutationProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, adminProcedure, protectedProcedure } from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
-import { CardRarity } from "@prisma/client";
-import { globalCache } from "~/lib/cache";
-import { getValuationConfig, junkValue } from "~/lib/cards/valuation";
-import { getGeneralCardSettings } from "~/lib/cards/general-settings";
-import { vaultService, LedgerError } from "~/lib/vault/vault-service";
-import { LoreCategory } from "~/lib/cards/category-enums";
-
-const NS_CARD_ORDER: Record<string, Record<string, string>[]> = {
-  marketValue: [{ marketValue: "desc" }],
-  marketValue_asc: [{ marketValue: "asc" }],
-  name: [{ title: "asc" }],
-  recent: [{ createdAt: "desc" }],
-  rarity: [{ marketValue: "desc" }],
-};
-
-/** Card-type filter as a Prisma where fragment. */
-function cardTypeWhere(filter: string): Record<string, unknown> {
-  switch (filter) {
-    case "all":
-      return {};
-    case "COMMONS_IMPORT":
-      return { cardType: "COMMONS_IMPORT" };
-    case "USER_CUSTOM":
-      return {
-        AND: [
-          {
-            OR: [
-              { cardType: { notIn: ["NS_IMPORT", "LORE", "LORE_BATCH", "COMMONS_IMPORT"] } },
-              { nsCardId: null },
-            ],
-          },
-          { cardType: { notIn: ["LORE", "LORE_BATCH", "COMMONS_IMPORT"] } },
-        ],
-      };
-    case "LORE":
-    case "LORE_BATCH":
-      return { OR: [{ cardType: { in: ["LORE_BATCH", "LORE"] } }, { category: { not: null } }] };
-    case "NS_IMPORT":
-      return { OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }] };
-    default:
-      return { cardType: filter };
-  }
-}
-
-/** Where clause for the NS card library; a search replaces any `OR` from the card-type filter. */
-function buildNSCardWhere(input: {
-  categoryFilter?: string;
-  cardTypeFilter: string;
-  season?: number;
-  rarity?: string;
-  isRetired?: boolean;
-  includeRetired?: boolean;
-  cteFilter: string;
-  search?: string;
-  region?: string;
-}) {
-  const term = input.search?.trim();
-  const retired = input.isRetired ?? (input.includeRetired ? undefined : false);
-  return {
-    ...(input.categoryFilter ? { category: input.categoryFilter } : {}),
-    ...cardTypeWhere(input.cardTypeFilter),
-    ...(input.season ? { season: input.season } : {}),
-    ...(input.rarity && Object.values(CardRarity).includes(input.rarity as CardRarity)
-      ? { rarity: input.rarity }
-      : {}),
-    ...(retired === undefined ? {} : { isRetired: retired }),
-    ...(input.cteFilter !== "all"
-      ? { metadata: { path: ["isCTE"], equals: input.cteFilter === "cte_only" } }
-      : {}),
-    ...(input.search
-      ? {
-          OR: ["title", "name", "slug", "wikiExcerpt"].map((field) => ({
-            [field]: { contains: term, mode: "insensitive" },
-          })),
-        }
-      : {}),
-    ...(input.region ? { stats: { path: ["region"], string_contains: input.region } } : {}),
-  };
-}
+import { CardRarity, CardType } from "@prisma/client";
+import { recipientsBlockingSender } from "~/server/shared/user-blocks";
+import { recipientsRefusing } from "~/server/shared/privacy-permissions";
+import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 /**
  * Cards Inventory & Library router
@@ -155,9 +75,7 @@ export const cardsInventoryRouter = createTRPCRouter({
       })
     ),
 
-  /**
-   * Get another user's card inventory (for trading/viewing collections)
-   */
+  /** Another player's tradeable copies, for building a trade offer. */
   getUserCards: protectedProcedure
     .input(
       z.object({
@@ -181,24 +99,31 @@ export const cardsInventoryRouter = createTRPCRouter({
           }
         }
 
-        let targetDbUserId = input.userId;
-        if (input.userId.startsWith("user_")) {
-          const targetUser = await ctx.db.user.findUnique({
-            where: { clerkUserId: input.userId },
-            select: { id: true },
-          });
-          if (targetUser) {
-            targetDbUserId = targetUser.id;
-          }
-        }
+        const partner = await ctx.db.user.findUnique({
+          where: input.userId.startsWith("user_")
+            ? { clerkUserId: input.userId }
+            : { id: input.userId },
+          select: { id: true, clerkUserId: true },
+        });
+        if (!partner) return [];
+
+        // Only a viewer who may send this partner a trade offer sees their copies: the partner's
+        // trade-offer audience and block list (SL-4), as createtradeOffer checks them.
+        const [refusing, blocking] = await Promise.all([
+          recipientsRefusing(ctx.db, ctx.auth.userId, [partner.clerkUserId], "tradeOffers"),
+          recipientsBlockingSender(ctx.db, ctx.auth.userId, [partner.clerkUserId]),
+        ]);
+        if (refusing.length > 0 || blocking.length > 0) return [];
 
         const ownerships = await ctx.db.cardOwnership.findMany({
+          // A trade partner sees only the copies they could trade (cards refresh §3): unlocked, not
+          // bound, not inscribed; Phase 4 lifts the inscription block. Retired and taken-down copies
+          // stay tradeable (§3 UX details), so they are listed.
           where: {
-            ownerId: targetDbUserId,
-            cards: {
-              isRetired: false,
-              ...(filterRarity && { rarity: filterRarity }),
-            },
+            ownerId: partner.id,
+            isLocked: false,
+            inscription: null,
+            cards: { isBound: false, ...(filterRarity && { rarity: filterRarity }) },
           },
           include: {
             cards: true,
@@ -225,73 +150,28 @@ export const cardsInventoryRouter = createTRPCRouter({
       }
     }),
 
-  /**
-   * Get Lore Cards overview statistics & category distribution breakdown
-   */
-  getLoreStats: publicProcedure.query(async ({ ctx }) => {
-    try {
-      const dbCard = ctx.db.card as any;
-      const [
-        totalCards,
-        totalLoreCards,
-        totalNSCards,
-        totalCommonsCards,
-        pendingRequests,
-        categoryGroups,
-      ] = await Promise.all([
-        dbCard.count({ where: { isRetired: false } }),
-        dbCard.count({
-          where: {
-            isRetired: false,
-            OR: [{ cardType: { in: ["LORE", "LORE_BATCH"] } }, { category: { not: null } }],
-          },
-        }),
-        dbCard.count({
-          where: {
-            isRetired: false,
-            OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }],
-          },
-        }),
-        dbCard.count({
-          where: { isRetired: false, cardType: "COMMONS_IMPORT" },
-        }),
-        ctx.db.loreCardRequest.count({
-          where: { status: "PENDING" },
-        }),
-        dbCard.groupBy({
+  /** Admin: card counts by type and category, and pending requests. */
+  getLoreStats: adminProcedure.query(async ({ ctx }) => {
+    const live = { isRetired: false };
+    const [totalCards, totalLoreCards, totalNSCards, pendingRequests, categoryGroups] =
+      await Promise.all([
+        ctx.db.card.count({ where: live }),
+        ctx.db.card.count({ where: { ...live, cardType: CardType.LORE } }),
+        ctx.db.card.count({ where: { ...live, cardType: CardType.NS } }),
+        ctx.db.loreCardRequest.count({ where: { status: "PENDING" } }),
+        ctx.db.card.groupBy({
           by: ["category"],
-          where: { isRetired: false },
+          where: { ...live, category: { not: null } },
           _count: { id: true },
         }),
       ]);
-
-      const categoryBreakdown: Record<string, number> = {};
-      for (const g of categoryGroups as { category: string | null; _count: { id: number } }[]) {
-        if (g.category) {
-          categoryBreakdown[g.category] = g._count.id;
-        }
-      }
-
-      return {
-        totalCards,
-        totalLoreCards,
-        totalNSCards,
-        totalCommonsCards,
-        pendingRequests,
-        categoryBreakdown,
-      };
-    } catch (error) {
-      console.error("[CARDS_ROUTER] Error in getLoreStats:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch lore statistics",
-      });
-    }
+    const categoryBreakdown: Record<string, number> = {};
+    for (const group of categoryGroups)
+      if (group.category) categoryBreakdown[group.category] = group._count.id;
+    return { totalCards, totalLoreCards, totalNSCards, pendingRequests, categoryBreakdown };
   }),
 
-  /**
-   * Get NS Import cards for the NS Library tab
-   */
+  /** The card library for signed-in players: every live card, filterable; never a retired one. */
   getNSCards: protectedProcedure
     .input(
       z.object({
@@ -299,50 +179,24 @@ export const cardsInventoryRouter = createTRPCRouter({
         offset: z.number().int().min(0).optional().default(0),
         search: z.string().max(100).optional(),
         season: z.number().int().min(1).optional(),
-        rarity: z.string().optional(),
+        rarity: z.nativeEnum(CardRarity).optional(),
         region: z.string().max(100).optional(),
-        categoryFilter: z.nativeEnum(LoreCategory).optional(),
-        cardTypeFilter: z
-          .enum(["all", "LORE", "NS_IMPORT", "USER_CUSTOM", "LORE_BATCH", "COMMONS_IMPORT"])
-          .optional()
-          .default("all"),
-        cteFilter: z.enum(["all", "cte_only", "active_only"]).optional().default("all"),
-        isRetired: z.boolean().optional(),
-        includeRetired: z.boolean().optional(),
-        sortBy: z
-          .enum(["marketValue", "marketValue_asc", "rarity", "recent", "name"])
-          .optional()
-          .default("recent"),
+        cteFilter: cteFilterSchema.optional().default("all"),
+        sortBy: z.enum(LIBRARY_SORTS).optional().default("recent"),
       })
     )
     .query(async ({ ctx, input }) => {
-      try {
-        const where = buildNSCardWhere(input);
-        const orderBy = NS_CARD_ORDER[input.sortBy] ?? NS_CARD_ORDER.marketValue;
-
-        const [total, cards] = await Promise.all([
-          ctx.db.card.count({ where: where as any }),
-          ctx.db.card.findMany({
-            where: where as any,
-            orderBy,
-            take: input.limit,
-            skip: input.offset,
-          }),
-        ]);
-
-        return {
-          cards,
-          total,
-          hasMore: input.offset + input.limit < total,
-        };
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in getNSCards:", error);
-        if (error instanceof TRPCError) throw error;
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch NS cards",
-        });
-      }
+      const where = libraryWhere({ ...input, retired: false });
+      const [total, cards] = await Promise.all([
+        ctx.db.card.count({ where }),
+        ctx.db.card.findMany({
+          where,
+          orderBy: LIBRARY_ORDER[input.sortBy],
+          take: input.limit,
+          skip: input.offset,
+        }),
+      ]);
+      return { cards, total, hasMore: input.offset + input.limit < total };
     }),
 
   /**
@@ -354,34 +208,32 @@ export const cardsInventoryRouter = createTRPCRouter({
         await Promise.all([
           ctx.db.card.count({
             where: {
-              OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }],
+              cardType: CardType.NS,
               isRetired: false,
             },
           }),
           ctx.db.card.count({
             where: {
-              OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }],
+              cardType: CardType.NS,
               isRetired: false,
               metadata: { path: ["isCTE"], equals: true },
             },
           }),
           ctx.db.card.count({
             where: {
-              OR: [{ cardType: "NS_IMPORT" }, { nsCardId: { not: null } }],
+              cardType: CardType.NS,
               isRetired: true,
             },
           }),
-          ctx.db.$queryRaw`
-            SELECT stats->>'region' as region, COUNT(*)::int as count
+          ctx.db.$queryRaw<Array<{ region: string; count: number }>>`
+            SELECT metadata->'nsData'->>'region' AS region, COUNT(*)::int AS count
             FROM cards
-            WHERE ("cardType" = 'NS_IMPORT' OR "nsCardId" IS NOT NULL)
-              AND ("isRetired" IS FALSE OR "isRetired" IS NULL)
-              AND stats->>'region' IS NOT NULL
-              AND stats->>'region' != ''
-            GROUP BY stats->>'region'
+            WHERE "cardType" = 'NS' AND "isRetired" = false
+              AND COALESCE(metadata->'nsData'->>'region', '') <> ''
+            GROUP BY 1
             ORDER BY count DESC
             LIMIT 20
-          ` as Promise<Array<{ region: string; count: number }>>,
+          `,
           ctx.db.syncLog.findFirst({
             where: { syncType: { startsWith: "NS_" } },
             orderBy: { startedAt: "desc" },
@@ -409,128 +261,4 @@ export const cardsInventoryRouter = createTRPCRouter({
       });
     }
   }),
-
-  /**
-   * Junk cards for credits payout based on rarity
-   */
-  junkCards: rateLimitedMutationProcedure
-    .input(
-      z.object({
-        ownershipIds: z.array(z.string()).min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const userId = ctx.user?.id;
-        if (!userId) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "User ID not found",
-          });
-        }
-
-        const { maxJunkBatchSize } = await getGeneralCardSettings(ctx.db);
-        if (input.ownershipIds.length > maxJunkBatchSize) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `You can junk at most ${maxJunkBatchSize} cards at a time.`,
-          });
-        }
-
-        const valCfg = await getValuationConfig(ctx.db);
-
-        const ownerships = await ctx.db.cardOwnership.findMany({
-          where: {
-            id: { in: input.ownershipIds },
-            ownerId: userId,
-          },
-          include: {
-            cards: true,
-          },
-        });
-
-        if (ownerships.length === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No owned cards found for the provided IDs",
-          });
-        }
-
-        const lockedCards = ownerships.filter((o) => o.isLocked);
-        if (lockedCards.length > 0) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Cannot junk locked cards: ${lockedCards.map((l) => l.cards.title).join(", ")}`,
-          });
-        }
-
-        let totalCredits = 0;
-        for (const ownership of ownerships) {
-          const payoutPerCard = junkValue(valCfg, ownership.cards.rarity);
-          const qty = ownership.quantity ?? 1;
-          totalCredits += payoutPerCard * qty;
-        }
-
-        const result = await ctx.db.$transaction(async (tx) => {
-          // Pay only for rows this call actually removes: a concurrent junk (or a lock
-          // taken since the read above) removes fewer, and the whole transaction rolls back.
-          const deleted = await tx.cardOwnership.deleteMany({
-            where: {
-              id: { in: ownerships.map((o) => o.id) },
-              ownerId: userId,
-              isLocked: false,
-            },
-          });
-          if (deleted.count !== ownerships.length) {
-            throw new TRPCError({
-              code: "CONFLICT",
-              message: "Some of these cards were already junked or locked. Refresh and try again.",
-            });
-          }
-
-          // Pay through the ledger (lifetime counters, XP, maintenance mode); a LedgerError
-          // rolls back the deletes above.
-          if (totalCredits <= 0) {
-            const vault = await tx.myVault.findUnique({ where: { userId } });
-            return { success: true, newBalance: vault?.credits ?? 0 };
-          }
-          const earned = await vaultService.earnCreditsTx(tx, {
-            userId,
-            amount: totalCredits,
-            type: "EARN_CARDS",
-            source: "JUNK_CARDS",
-            metadata: {
-              cardNames: ownerships.map((o) => o.cards.title),
-              ownershipIds: ownerships.map((o) => o.id),
-            },
-          });
-
-          return {
-            success: true,
-            newBalance: earned.newBalance,
-          };
-        });
-
-        await Promise.all([
-          globalCache.delete(`user_vault_stats:${userId}`),
-          ...(ctx.auth?.userId
-            ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
-            : []),
-          globalCache.delete(`user_vault_balance:${userId}`),
-        ]);
-
-        return {
-          success: true,
-          payout: totalCredits,
-          newBalance: result.newBalance,
-          message: `Successfully junked ${ownerships.length} card(s) and received ${totalCredits} IxC!`,
-        };
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in junkCards:", error);
-        if (error instanceof LedgerError) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: error.message });
-        }
-        throw error;
-      }
-    }),
 });

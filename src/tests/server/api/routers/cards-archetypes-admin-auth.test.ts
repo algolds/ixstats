@@ -16,6 +16,7 @@ jest.mock("~/lib/cards/valuation", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsAdminRouter } from "~/server/api/routers/cards/admin";
+import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 
@@ -55,6 +56,27 @@ describe("cardsAdminRouter auth (Finding 2)", () => {
     await expect(caller.fetchCommonsCategoryMembers({ category: "Cat" })).rejects.toThrow();
   });
 
+  it("marks a flag already imported from the same Commons category (admin)", async () => {
+    const db = createMockDb();
+    jest
+      .mocked(commonsFlagImporter.fetchCategoryMembers)
+      .mockResolvedValueOnce([{ cleanTitle: "Flag" }, { cleanTitle: "Other" }] as never);
+    db.card.findMany = jest.fn().mockResolvedValue([{ title: "Flag" }] as never);
+    const caller = createCardsCaller(adminCtx(db) as never);
+
+    const result = await caller.fetchCommonsCategoryMembers({ category: "Cat" });
+
+    expect(db.card.findMany).toHaveBeenCalledWith({
+      where: {
+        cardType: "LORE",
+        title: { in: ["Flag", "Other"] },
+        metadata: { path: ["commonsCategory"], equals: "Cat" },
+      },
+      select: { title: true },
+    });
+    expect(result.items.map((item) => item.isAlreadyImported)).toEqual([true, false]);
+  });
+
   it("does not grant ownership for a pre-existing card (admin, item already imported)", async () => {
     const db = createMockDb();
     db.card.findFirst = jest.fn().mockResolvedValue({ id: "card_existing" } as never);
@@ -70,7 +92,7 @@ describe("cardsAdminRouter auth (Finding 2)", () => {
     expect(db.cardOwnership.create).not.toHaveBeenCalled();
   });
 
-  it("creates the card and grants ownership exactly once for a newly-imported card (admin)", async () => {
+  it("creates a Lore card in Ixnay and gives the importing admin no copy (admin)", async () => {
     const db = createMockDb();
     db.card.findFirst = jest.fn().mockResolvedValue(null as never);
     db.card.create = jest.fn().mockResolvedValue({ id: "card_new" } as never);
@@ -80,11 +102,21 @@ describe("cardsAdminRouter auth (Finding 2)", () => {
       items: [{ cleanTitle: "Flag", fileUrl: "https://example.com/flag.svg", category: "Cat" }],
     });
 
-    expect(result.imported).toBe(1);
-    expect(result.skipped).toBe(0);
-    expect(db.card.create).toHaveBeenCalledTimes(1);
-    expect(db.cardOwnership.create).toHaveBeenCalledTimes(1);
-    // The freshly-created card can't already be owned, so no existing-ownership lookup is needed.
-    expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ imported: 1, skipped: 0 });
+    expect(db.card.findFirst).toHaveBeenCalledWith({
+      where: {
+        title: "Flag",
+        cardType: "LORE",
+        metadata: { path: ["commonsCategory"], equals: "Cat" },
+      },
+    });
+    expect(db.card.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        cardType: "LORE",
+        realmId: "default",
+        artwork: "https://example.com/flag.svg",
+      }),
+    });
+    expect(db.cardOwnership.create).not.toHaveBeenCalled();
   });
 });
