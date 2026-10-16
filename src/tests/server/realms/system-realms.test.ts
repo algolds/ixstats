@@ -13,6 +13,7 @@ import {
   isSystemRealm,
 } from "~/server/modules/realms";
 import { deleteRealm } from "~/server/modules/realms/realms.admin";
+import { getRealmOverview, loadRegionRealm } from "~/server/modules/realms/realms.region";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -84,6 +85,16 @@ describe("system realms", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.card.count).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
     expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("have no region page: even a site admin gets not-found", async () => {
+    const db = createMockPrisma();
+    db.realm.findUnique.mockResolvedValue({ ...systemRow("iiwiki"), ownerId: "system" });
+    await expect(loadRegionRealm(db, "iiwiki", admin)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    await expect(getRealmOverview(db, "iiwiki", admin)).resolves.toBeNull();
+    expect(db.country.aggregate).not.toHaveBeenCalled();
   });
 
   it("keep their slugs: no new realm may take one", () => {

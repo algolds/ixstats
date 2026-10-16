@@ -42,7 +42,10 @@ describe("listForumRealms", () => {
     await listForumRealms(db as never, null);
     expect(db.realm.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { OR: [{ id: "default" }, { status: "active", visibility: "public" }] },
+        where: {
+          isSystem: false,
+          OR: [{ id: "default" }, { status: "active", visibility: "public" }],
+        },
         orderBy: { name: "asc" },
       })
     );
@@ -52,6 +55,7 @@ describe("listForumRealms", () => {
     const db = listDb([]);
     await listForumRealms(db as never, plain);
     expect(db.realm.findMany.mock.calls[0][0].where).toEqual({
+      isSystem: false,
       OR: [
         { id: "default" },
         { status: "active", visibility: "public" },
@@ -62,10 +66,18 @@ describe("listForumRealms", () => {
     });
   });
 
-  it("asks for every realm for a site admin", async () => {
+  it("asks for every realm but the system ones for a site admin", async () => {
     const db = listDb([]);
     await listForumRealms(db as never, admin);
-    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({});
+    expect(db.realm.findMany.mock.calls[0][0].where).toEqual({ isSystem: false });
+  });
+
+  it("never lists a system realm: the where carries isSystem false for anonymous, regular and admin viewers", async () => {
+    for (const viewer of [null, plain, admin]) {
+      const db = listDb([]);
+      await listForumRealms(db as never, viewer);
+      expect(db.realm.findMany.mock.calls[0][0].where).toMatchObject({ isSystem: false });
+    }
   });
 
   it("puts Ixnay first, then by name, and drops realms hidden from the viewer", async () => {
@@ -79,12 +91,7 @@ describe("listForumRealms", () => {
       listDb([ALBA, DRAFT, EURTH, IXNAY_ROW]) as never,
       founder
     );
-    expect(forFounder.realms.map((r) => r.slug)).toEqual([
-      "ixnay",
-      "alba",
-      "draft-land",
-      "eurth",
-    ]);
+    expect(forFounder.realms.map((r) => r.slug)).toEqual(["ixnay", "alba", "draft-land", "eurth"]);
   });
 
   it("synthesizes Ixnay when it has no realm row, and gives a legacy row (slug default or ixworld) the ixnay slug", async () => {
@@ -261,10 +268,22 @@ describe("getRealmSection", () => {
   });
 
   it("leaves the realm's board out of its categories and counts", async () => {
-    const board = { ...seeded[0]!, id: "cat_board", key: "board", name: "Board", order: 0, icAllowed: true, style: "board" };
+    const board = {
+      ...seeded[0]!,
+      id: "cat_board",
+      key: "board",
+      name: "Board",
+      order: 0,
+      icAllowed: true,
+      style: "board",
+    };
     const db = sectionDb(EURTH, [[board, ...seeded]]);
     const out = await getRealmSection(db as never, owner, "eurth");
-    expect(out.categories.map((c) => c.key)).toEqual(["hub", "character-threads", "current-events"]);
+    expect(out.categories.map((c) => c.key)).toEqual([
+      "hub",
+      "character-threads",
+      "current-events",
+    ]);
     const groupBy = db.forumThread.groupBy.mock.calls[0]![0];
     expect(JSON.stringify(groupBy)).not.toContain("cat_board");
     expect(JSON.stringify(db.forumThread.findMany.mock.calls[0]![0])).not.toContain("cat_board");
@@ -272,15 +291,31 @@ describe("getRealmSection", () => {
 
   it("names each board's latest thread without its author, so a persona's player never leaks", async () => {
     const out = await getRealmSection(sectionDb(EURTH) as never, owner, "eurth");
-    expect(Object.keys(out.categories[0]!.latest!).sort()).toEqual(["at", "threadId", "threadTitle"]);
+    expect(Object.keys(out.categories[0]!.latest!).sort()).toEqual([
+      "at",
+      "threadId",
+      "threadTitle",
+    ]);
   });
 
   it("seeds a realm whose only category is its board, then reads the sections", async () => {
-    const board = { ...seeded[0]!, id: "cat_board", key: "board", name: "Board", order: 0, icAllowed: true, style: "board" };
+    const board = {
+      ...seeded[0]!,
+      id: "cat_board",
+      key: "board",
+      name: "Board",
+      order: 0,
+      icAllowed: true,
+      style: "board",
+    };
     const db = sectionDb(EURTH, [[board], [board, ...seeded]]);
     const out = await getRealmSection(db as never, owner, "eurth");
     expect(db.forumCategory.createMany).toHaveBeenCalledTimes(1);
-    expect(out.categories.map((c) => c.key)).toEqual(["hub", "character-threads", "current-events"]);
+    expect(out.categories.map((c) => c.key)).toEqual([
+      "hub",
+      "character-threads",
+      "current-events",
+    ]);
   });
 
   it("seeds a realm with no categories, then reads them again", async () => {
