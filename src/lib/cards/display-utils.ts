@@ -1,27 +1,9 @@
 /**
- * Card Display Utilities
- * Helper functions for card display components
- * Phase 1: Card Display Components
+ * Card display helpers: rarity palette, sizes, labels, serial and edition.
  */
 
 import { CardRarity, type CardType } from "./enums";
-import type {
-  CardInstance,
-  FormattedStats,
-  FormattedStatEntry,
-  FormattedSpecialStatEntry,
-  RarityConfig,
-  CardDisplaySize,
-} from "~/types/cards-display";
-import {
-  getBaseStatDefs,
-  getSpecialStatsForType,
-  STAT_PROGRESSION,
-  LEGACY_KEY_MAP,
-  normalizeSpecialStat,
-  formatCompactValue,
-} from "./stat-config";
-import { computeSpecialStats, type SpecialStats } from "~/lib/country-geo";
+import type { CardInstance, RarityConfig, CardDisplaySize } from "~/types/cards-display";
 import { rgbToHex } from "~/lib/color";
 
 /** Artwork shown when a card has none (a tracked asset in public/). */
@@ -155,133 +137,6 @@ export function getRarityConfig(rarity: string): RarityConfig {
 }
 
 /**
- * Resolve raw stat values from a card instance, translating legacy keys
- */
-function resolveCardStats(card: CardInstance): Record<string, number> {
-  let stats = card.stats ?? {};
-
-  if (Object.keys(stats).length === 0 && card.metadata) {
-    const metaStats = (card.metadata as Record<string, unknown>)?.stats;
-    if (metaStats && typeof metaStats === "object" && !Array.isArray(metaStats)) {
-      stats = metaStats as Record<string, number>;
-    }
-  }
-
-  const baseStats = card.baseStats ?? stats;
-
-  if (Object.keys(baseStats).length === 0 && stats.historicalSignificance !== undefined) {
-    return {
-      force: Math.round(Math.min((stats.preserved ?? stats.rarity ?? 0) * 0.3, 100)),
-      wealth: Math.round(Math.min((stats.culturalImpact ?? 0) * 0.5, 100)),
-      influence: Math.round(Math.min((stats.rarity ?? 0) * 0.2, 100)),
-      legacy: Math.round(Math.min((stats.historicalSignificance ?? 0) * 0.5, 100)),
-    };
-  }
-
-  const resolved: Record<string, number> = {};
-  const source = Object.keys(baseStats).length > 0 ? baseStats : stats;
-
-  for (const [oldKey, val] of Object.entries(source)) {
-    const newKey = LEGACY_KEY_MAP[oldKey] ?? oldKey;
-    resolved[newKey] = val as number;
-  }
-
-  return resolved;
-}
-
-/**
- * Format special stats for a card instance
- */
-function formatSpecialStats(card: CardInstance): FormattedSpecialStatEntry[] {
-  const specialDefs = getSpecialStatsForType(
-    card.cardType as unknown as import("./enums").CardType
-  );
-  if (specialDefs.length === 0) return [];
-
-  const rawSpecials: Record<string, number> =
-    (card.attributes?.specials as Record<string, number>) ?? {};
-
-  const hasSpecials = Object.keys(rawSpecials).length > 0;
-
-  if (!hasSpecials) {
-    const computed = computeSpecialStats({
-      cardType: card.cardType,
-      attributes: card.attributes,
-      nsData: card.nsData,
-      country: card.country,
-    });
-    const computedEntries: FormattedSpecialStatEntry[] = [];
-    for (const def of specialDefs) {
-      const label = computed[def.key as keyof SpecialStats];
-      if (label) {
-        computedEntries.push({
-          normalizedValue: label,
-          rawValue: 0,
-          formattedRaw: label,
-          def,
-        });
-      }
-    }
-    return computedEntries;
-  }
-
-  return specialDefs
-    .map((def) => {
-      const rawValue = rawSpecials[def.key] ?? 0;
-      const normalizedValue = normalizeSpecialStat(def.key, rawValue);
-      return {
-        normalizedValue,
-        rawValue,
-        formattedRaw: formatCompactValue(rawValue),
-        def,
-      };
-    })
-    .filter((s) => s.rawValue > 0);
-}
-
-/**
- * Format card stats for display
- * Extracts and formats stats from card instance
- * @param card - Card instance with stats JSON
- * @returns Formatted stats object with labels and colors
- */
-export function formatCardStats(card: CardInstance): FormattedStats {
-  const rawStats = resolveCardStats(card);
-  const level = card.level ?? 1;
-  const boost = (level - 1) * STAT_PROGRESSION.boostPerLevel;
-  const baseStatDefs = getBaseStatDefs();
-
-  const base: Record<string, FormattedStatEntry> = {};
-  let hasAnyBase = false;
-
-  for (const def of baseStatDefs) {
-    const rawVal = rawStats[def.key] ?? 0;
-    const baseVal = rawStats[`base_${def.key}`] ?? rawVal;
-    const capped = Math.min(baseVal + boost, STAT_PROGRESSION.cap);
-    base[def.key] = {
-      value: capped,
-      baseValue: baseVal,
-      bonus: boost,
-      def,
-    };
-    if (capped > 0) hasAnyBase = true;
-  }
-
-  const specials = formatSpecialStats(card);
-
-  if (!hasAnyBase) {
-    return {
-      base: {},
-      specials,
-      level,
-      totalBoost: boost,
-    };
-  }
-
-  return { base, specials, level, totalBoost: boost };
-}
-
-/**
  * Get card width class based on size
  * @param size - Card display size
  * @returns Tailwind width class
@@ -330,24 +185,6 @@ export function getShimmerEffect(rarity: CardRarity, animated: boolean = true): 
   }
 
   return "";
-}
-
-/**
- * Get owner count display string
- * @param owners - Array of card ownerships
- * @returns Formatted owner count
- */
-export function getOwnerCount(
-  owners?: Array<{ userId: string; quantity: number; acquiredDate: Date; acquiredMethod: string }>
-): string {
-  if (!owners || owners.length === 0) return "No owners";
-
-  // Each CardOwnership record represents one unique card instance
-  const uniqueOwners = owners.length;
-  const totalCards = owners.reduce((sum, o) => sum + o.quantity, 0);
-
-  if (uniqueOwners === 1) return "1 owner";
-  return `${uniqueOwners} owners (${totalCards} total)`;
 }
 
 const CARD_TYPE_LABELS: Record<CardType, string> = {

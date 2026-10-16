@@ -133,7 +133,6 @@ function TopCards({ vault, handle }: { vault: PassportVault; handle: string }) {
             size="small"
             enable3D={!shouldReduceMotion}
             performanceMode={!!shouldReduceMotion}
-            hideStats
             hideExcerpt={false}
             onClick={setSelectedCard}
             className="w-full will-change-transform"

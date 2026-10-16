@@ -36,8 +36,6 @@ interface Card3DViewerProps {
   performanceMode?: boolean;
   /** Hide market value overlay (default: false) */
   hideValue?: boolean;
-  /** Hide stats bars & hover stats overlay (default: false) */
-  hideStats?: boolean;
   /** Hide bottom lore excerpt box (default: false) */
   hideExcerpt?: boolean;
   /** Callback when card is flipped */
@@ -78,7 +76,6 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
     className,
     performanceMode = false,
     hideValue = false,
-    hideStats = false,
     hideExcerpt = false,
     onFlip,
   }) => {
@@ -249,9 +246,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
             <CardDisplay
               card={card}
               size={size}
-              showStatsOnHover={!hideStats && !isDragging}
               hideValue={hideValue}
-              hideStats={hideStats}
               hideExcerpt={hideExcerpt}
               enable3D={false} // Disable internal 3D since viewer handles it
               enableHolographic={true}

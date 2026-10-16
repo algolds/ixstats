@@ -4,7 +4,6 @@ import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, EditPencil as PenTool } from "iconoir-react";
-import { CardTitle } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { LoreWikiExcerpt } from "../LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
@@ -35,15 +34,13 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
   const cardTypeStr = (card.cardType as string) || "";
   const isLoreCard =
     cardTypeStr === "LORE" ||
-    cardTypeStr === "LORE_BATCH" ||
-    Boolean(card.category && card.category !== "NS_IMPORT") ||
-    Boolean(card.wikiPageId) ||
+    Boolean(card.category) ||
     Boolean(card.wikiSource) ||
     Boolean(card.slug);
 
   const rawCat = card.category || (meta?.category as string);
   const resolvedCategory = (
-    rawCat && isValidLoreCategory(rawCat) && rawCat !== "NS_IMPORT"
+    rawCat && isValidLoreCategory(rawCat)
       ? (rawCat as LoreCategory)
       : isLoreCard
         ? classifyFromWikitext(
@@ -109,41 +106,6 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
 
       {/* Wiki article excerpt (full paragraphs) */}
       <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} />
-
-      {/* Lore-specific historical metrics */}
-      {(() => {
-        const loreStats = meta?.loreStats as
-          { historicalSignificance?: number; culturalImpact?: number } | undefined;
-        if (!loreStats) return null;
-        return (
-          <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-            <CardTitle>Historical metrics</CardTitle>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="border-separator bg-surface rounded-control border p-3">
-                <div className="text-label-secondary text-footnote font-medium">
-                  Historical significance
-                </div>
-                <div className="text-title-2 text-yellow mt-1 tabular-nums">
-                  {loreStats.historicalSignificance ?? "–"}/100
-                </div>
-              </div>
-              <div className="border-separator bg-surface rounded-control border p-3">
-                <div className="text-label-secondary text-footnote font-medium">
-                  Cultural impact
-                </div>
-                <div className="text-title-2 text-indigo mt-1 tabular-nums">
-                  {loreStats.culturalImpact ?? "–"}/100
-                </div>
-              </div>
-            </div>
-            {meta?.qualityScore != null && (
-              <div className="text-label-tertiary text-footnote pt-1">
-                Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
-              </div>
-            )}
-          </div>
-        );
-      })()}
     </motion.div>
   );
 }

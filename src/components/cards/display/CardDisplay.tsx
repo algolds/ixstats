@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import Image from "next/image";
 import { cn } from "~/lib/utils";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -18,7 +18,6 @@ import {
   getRarityGlow,
   getRarityConfig,
   getCardWidth,
-  formatCardStats,
   getCardTypeLabel,
 } from "~/lib/cards/display-utils";
 import { getPremiumBorderConfig, getFoilStampConfig, getMetallicGradient } from "~/lib/themes";
@@ -53,7 +52,6 @@ const SIZE_STYLES: Record<
   {
     title: string;
     type: string;
-    stats: string;
     height: string;
     heightPx: string;
     imageSizes: string;
@@ -62,7 +60,6 @@ const SIZE_STYLES: Record<
   small: {
     title: "text-footnote",
     type: "text-footnote",
-    stats: "text-footnote",
     height: "h-[179px]",
     heightPx: "179px",
     imageSizes: "128px",
@@ -70,7 +67,6 @@ const SIZE_STYLES: Record<
   medium: {
     title: "text-body",
     type: "text-footnote",
-    stats: "text-footnote",
     height: "h-[269px]",
     heightPx: "269px",
     imageSizes: "192px",
@@ -78,7 +74,6 @@ const SIZE_STYLES: Record<
   large: {
     title: "text-body",
     type: "text-body",
-    stats: "text-body",
     height: "h-[358px]",
     heightPx: "358px",
     imageSizes: "256px",
@@ -97,19 +92,15 @@ const CORNER_BRACKETS = [
   "right-2 bottom-2 border-r-2 border-b-2",
 ];
 
-type CardStats = ReturnType<typeof formatCardStats>;
+const isNsCard = (card: CardInstance) => card.cardType === "NS" || Boolean(card.nsCardId);
 
-const isNsImport = (card: CardInstance) => card.cardType === "NS_IMPORT" || Boolean(card.nsCardId);
-
-/** Lore cards carry no numeric stats; they are identified by category, wiki linkage or slug. */
+/** Lore cards are identified by type, category, wiki linkage or slug. */
 function isLoreCardOf(card: CardInstance, resolvedCategory: LoreCategory | null) {
-  const type = (card.cardType as string) || "";
   return (
-    type === "LORE" ||
-    type === "LORE_BATCH" ||
-    Boolean(card.category && card.category !== "NS_IMPORT") ||
-    Boolean(card.wikiPageId || card.wikiSource || card.wikiArticleTitle || card.slug) ||
-    (resolvedCategory !== null && resolvedCategory !== "NS_IMPORT")
+    card.cardType === "LORE" ||
+    Boolean(card.category) ||
+    Boolean(card.wikiSource || card.wikiArticleTitle || card.slug) ||
+    resolvedCategory !== null
   );
 }
 
@@ -141,11 +132,9 @@ function TopBadges(props: {
   typeFont: string;
 }) {
   const { card, isIIWiki, isLoreCard, effectiveCategory } = props;
-  const showNsBadge = !isIIWiki && !isLoreCard && isNsImport(card);
+  const showNsBadge = !isIIWiki && !isLoreCard && isNsCard(card);
   const showTypeLabel =
-    !effectiveCategory &&
-    !isIIWiki &&
-    (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId));
+    !effectiveCategory && !isIIWiki && (isLoreCard || (card.cardType !== "NS" && !card.nsCardId));
 
   return (
     <div className="flex items-start justify-between">
@@ -188,7 +177,7 @@ function TopBadges(props: {
   );
 }
 
-/** Category / rarity line. NS cards show the NationStates badge instead of an "NS Import" label. */
+/** Category / rarity line. NS cards show the NationStates badge instead of a type label. */
 function SubtitleLine(props: {
   card: CardInstance;
   effectiveCategory: LoreCategory | null;
@@ -200,16 +189,16 @@ function SubtitleLine(props: {
   const categoryLabel =
     card.subcategory ||
     (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
-    (props.isLoreCard && card.cardType !== "NS_IMPORT" ? getCardTypeLabel(card.cardType) : null);
+    (props.isLoreCard && card.cardType !== "NS" ? getCardTypeLabel(card.cardType) : null);
 
-  if (isNsImport(card) && !categoryLabel) {
+  if (isNsCard(card) && !categoryLabel) {
     return (
       <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-amber-400 uppercase">
         <span>{rarityLabel}</span>
       </p>
     );
   }
-  const showLabel = categoryLabel && !(isNsImport(card) && categoryLabel === "NS Import");
+  const showLabel = categoryLabel && !(isNsCard(card) && categoryLabel === "NationStates");
   return (
     <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-white/80 uppercase">
       {showLabel && (
@@ -220,57 +209,6 @@ function SubtitleLine(props: {
       )}
       <span className="font-semibold tracking-wide text-amber-400">{rarityLabel}</span>
     </p>
-  );
-}
-
-function StatBars({ stats }: { stats: CardStats }) {
-  return (
-    <div className="space-y-2">
-      <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-2">
-        {Object.entries(stats.base).map(([key, stat]) => (
-          <div key={key} className="flex-1 space-y-0.5">
-            <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                style={{ width: `${stat.value}%`, backgroundColor: stat.def.color }}
-              />
-            </div>
-            <div className="text-center text-[7px] leading-none font-bold text-white/50">
-              {stat.def.label.substring(0, 3).toUpperCase()}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function HoverStats({ stats, fontClass }: { stats: CardStats; fontClass: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className={cn(
-        "xs:grid-cols-2 rounded-control grid grid-cols-1 gap-1 p-2",
-        "border border-white/20 bg-black/80",
-        fontClass
-      )}
-      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)" }}
-    >
-      {Object.entries(stats.base).map(([key, stat]) => (
-        <div key={key} className="flex items-center justify-between px-1">
-          <span className="font-medium text-white/70">{stat.def.label}</span>
-          <span
-            className="font-bold tabular-nums"
-            style={{ color: stat.def.color, textShadow: `0 0 8px ${stat.def.color}` }}
-          >
-            {stat.value}
-          </span>
-        </div>
-      ))}
-    </motion.div>
   );
 }
 
@@ -309,7 +247,7 @@ function useCardIdentity(card: CardInstance) {
 
   const meta = card.metadata as Record<string, unknown> | null | undefined;
   const effectiveCategory = React.useMemo(() => {
-    if (resolvedCategory && resolvedCategory !== "NS_IMPORT") return resolvedCategory;
+    if (resolvedCategory) return resolvedCategory;
     if (!isLoreCard) return null;
     return classifyFromWikitext(
       (meta?.fullExcerpt as string) || card.description,
@@ -338,7 +276,7 @@ function CardArtwork(props: {
 }) {
   const { card, performanceMode } = props;
   const [imageError, setImageError] = useState(false);
-  const artUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
+  const artUrl = card.artwork;
   const hasCustomArtwork = Boolean(artUrl?.trim() && !imageError);
 
   return (
@@ -463,14 +401,11 @@ function CardInfoOverlay(props: {
   styles: (typeof SIZE_STYLES)[SizeKey];
   designMeta: ReturnType<typeof getCardDesignMetadata>;
   identity: ReturnType<typeof useCardIdentity>;
-  stats: CardStats;
   isHovered: boolean;
   performanceMode: boolean;
-  showStats: boolean;
-  showStatsOnHover: boolean;
   showExcerpt: boolean;
 }) {
-  const { card, styles, identity, stats, isHovered, performanceMode } = props;
+  const { card, styles, identity, isHovered, performanceMode } = props;
   const excerptText = card.wikiExcerpt || card.description || "";
   const excerptHtml = React.useMemo(
     () => (excerptText ? parseWikitextToHtml(excerptText) : ""),
@@ -516,16 +451,7 @@ function CardInfoOverlay(props: {
           </p>
         )}
 
-        {/* Stat bars: nation / NS_IMPORT cards only (lore categories drop numeric stats) */}
-        {props.showStats && Object.keys(stats.base).length > 0 && <StatBars stats={stats} />}
-
         {props.showExcerpt && excerptText && <ExcerptBox card={card} html={excerptHtml} />}
-
-        <AnimatePresence>
-          {props.showStats && props.showStatsOnHover && isHovered && (
-            <HoverStats stats={stats} fontClass={styles.stats} />
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
@@ -543,8 +469,6 @@ interface CardDisplayProps {
   onClick?: (card: CardInstance) => void;
   /** Additional CSS classes */
   className?: string;
-  /** Show stats on hover (default: true) */
-  showStatsOnHover?: boolean;
   /** Enable 3D tilt effect (default: true) */
   enable3D?: boolean;
   /** Enable holographic effects (default: true for rare+) */
@@ -553,8 +477,6 @@ interface CardDisplayProps {
   performanceMode?: boolean;
   /** Hide market value (accepted for callers; the card face shows none) */
   hideValue?: boolean;
-  /** Hide stats bars & hover stats (default: false) */
-  hideStats?: boolean;
   /** Hide bottom lore excerpt box (default: false) */
   hideExcerpt?: boolean;
 }
@@ -565,17 +487,14 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     size = "medium",
     onClick,
     className,
-    showStatsOnHover = true,
     enable3D = true,
     enableHolographic,
     performanceMode = false,
-    hideStats = false,
     hideExcerpt = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     const designMeta = React.useMemo(() => getCardDesignMetadata(card), [card]);
-    const stats = React.useMemo(() => formatCardStats(card), [card]);
     const identity = useCardIdentity(card);
     const { isLoreCard, effectiveCategory } = identity;
 
@@ -590,7 +509,6 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     // Holographic is on for rare+ cards unless explicitly disabled
     const showHolographic =
       enableHolographic !== false && !performanceMode && HOLOGRAPHIC_RARITIES.includes(card.rarity);
-    const showStats = !hideStats && !isLoreCard;
     const styles = SIZE_STYLES[SIZE_KEY[size] ?? "medium"];
     const depth3D = enable3D && !performanceMode;
 
@@ -643,11 +561,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             styles={styles}
             designMeta={designMeta}
             identity={identity}
-            stats={stats}
             isHovered={isHovered}
             performanceMode={performanceMode}
-            showStats={showStats}
-            showStatsOnHover={showStatsOnHover}
             showExcerpt={isLoreCard && !hideExcerpt}
           />
 

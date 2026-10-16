@@ -3,7 +3,6 @@ import React from "react";
 import { motion } from "motion/react";
 import {
   StatUp as TrendingUp,
-  Group as Users,
   Calendar,
   Page as ScrollText,
   Component as Layers,
@@ -13,8 +12,7 @@ import { cn } from "~/lib/utils";
 import { Card3DViewer } from "../Card3DViewer";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { getOwnerCount } from "~/lib/cards/display-utils";
-import type { CardInstance, FormattedStats, CardAuthorInfo } from "~/types/cards-display";
+import type { CardInstance, CardAuthorInfo } from "~/types/cards-display";
 import { CategoryIcon } from "~/components/cards/icons";
 import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, LoreCategory } from "~/lib/cards/category-enums";
@@ -36,7 +34,6 @@ interface CardOverviewTabProps {
     color: string;
   };
   neonFrame: Parameters<typeof NeonFrameOverlay>[0]["neonFrame"];
-  stats?: FormattedStats;
   onTrade?: (card: CardInstance) => void;
   onList?: (card: CardInstance) => void;
   onViewCollection?: (countryId: string) => void;
@@ -46,21 +43,17 @@ export function CardOverviewTab({
   card,
   rarityConfig,
   neonFrame: _neonFrame,
-  stats: _stats,
   onTrade,
   onList,
   onViewCollection,
 }: CardOverviewTabProps) {
   const rawMeta = (card.metadata as Record<string, unknown> | null | undefined) ?? {};
-  const rawAttrs = (card.attributes as Record<string, unknown> | null | undefined) ?? {};
   const authorInfoFromMeta = (rawMeta.authorInfo as CardAuthorInfo | undefined) || null;
 
   const cardTypeStr = (card.cardType as string) || "";
   const isLoreCard =
     cardTypeStr === "LORE" ||
-    cardTypeStr === "LORE_BATCH" ||
-    Boolean(card.category && card.category !== "NS_IMPORT") ||
-    Boolean(card.wikiPageId) ||
+    Boolean(card.category) ||
     Boolean(card.wikiSource) ||
     Boolean(card.slug);
 
@@ -73,7 +66,6 @@ export function CardOverviewTab({
 
   const { data: liveAuthorData } = api.loreCards.getCardAuthorInfo.useQuery(
     {
-      cardId: card.id,
       articleTitle: card.wikiArticleTitle || "",
       source: (card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki",
     },
@@ -89,8 +81,6 @@ export function CardOverviewTab({
     (rawMeta.author as string) ||
     (rawMeta.creator as string) ||
     (rawMeta.wikiAuthor as string) ||
-    (rawAttrs.author as string) ||
-    (rawAttrs.creator as string) ||
     card.artworkCredit ||
     "";
 
@@ -133,13 +123,12 @@ export function CardOverviewTab({
             enableDragRotation={true}
             enableMouseTracking={true}
             hideValue={true}
-            hideStats={true}
             hideExcerpt={true}
           />
         </div>
 
         {/* Market value & ownership */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <div className="text-label-secondary text-footnote flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
@@ -148,16 +137,6 @@ export function CardOverviewTab({
             <div className={cn("text-title-2 mt-1 flex items-baseline gap-1", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" />
               {card.marketValue.toLocaleString()}
-            </div>
-          </div>
-
-          <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <div className="text-label-secondary text-footnote flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Owners
-            </div>
-            <div className="text-label text-title-3 mt-1 font-semibold">
-              {getOwnerCount(card.owners)}
             </div>
           </div>
 
@@ -185,24 +164,6 @@ export function CardOverviewTab({
                 month: "long",
                 day: "numeric",
               })}
-            </div>
-          </div>
-        )}
-
-        {card.lastSalePrice != null && (
-          <div className="bg-surface-secondary border-separator rounded-control border p-3">
-            <div className="text-label-secondary text-footnote flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Last sale
-            </div>
-            <div className="text-label text-headline mt-1 flex items-baseline gap-1">
-              <IxCreditsSymbol size="0.8em" />
-              {card.lastSalePrice.toLocaleString()}
-              {card.lastSaleDate && (
-                <span className="text-label-secondary text-footnote ml-2 font-normal">
-                  {new Date(card.lastSaleDate).toLocaleDateString()}
-                </span>
-              )}
             </div>
           </div>
         )}
@@ -249,16 +210,14 @@ export function CardOverviewTab({
           const isLoreCard =
             isIIWiki ||
             cardTypeStr === "LORE" ||
-            cardTypeStr === "LORE_BATCH" ||
-            Boolean(card.category && card.category !== "NS_IMPORT") ||
-            Boolean(card.wikiPageId) ||
+            Boolean(card.category) ||
             Boolean(card.wikiSource) ||
             Boolean(card.slug);
 
           const meta = card.metadata as Record<string, unknown> | null | undefined;
           const rawCat = card.category || (meta?.category as string);
           const resolvedCategory = (
-            rawCat && isValidLoreCategory(rawCat) && rawCat !== "NS_IMPORT"
+            rawCat && isValidLoreCategory(rawCat)
               ? (rawCat as LoreCategory)
               : isLoreCard
                 ? classifyFromWikitext(

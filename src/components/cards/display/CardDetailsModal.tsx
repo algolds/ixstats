@@ -8,11 +8,9 @@ import { Button } from "~/components/ui/button";
 import React, { useMemo, useState } from "react";
 import {
   Xmark as X,
-  StatUp as TrendingUp,
   StatsReport as BarChart3,
   InfoCircle as Info,
   OpenBook as BookOpen,
-  ArrowSeparate as ArrowRightLeft,
   ShareAndroid as Share2,
   Download,
 } from "iconoir-react";
@@ -21,21 +19,19 @@ import { cardWikiHref } from "./card-wiki-href";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";
-import { formatCardStats, getRarityConfig } from "~/lib/cards/display-utils";
+import { getRarityConfig } from "~/lib/cards/display-utils";
 import { NationStatesAttribution } from "./NationStatesAttribution";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { CardOverviewTab } from "./modal/CardOverviewTab";
 import { CardMarketTab } from "./modal/CardMarketTab";
-import { CardStatsTab } from "./modal/CardStatsTab";
 import { CardLoreTab } from "./modal/CardLoreTab";
-import { CardCompareTab } from "./modal/CardCompareTab";
 import { CardTakedownVerificationModal } from "./CardTakedownVerificationModal";
 import { IIWikiBadge, isIIWikiCard } from "./IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
 import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
-import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
+import { isValidLoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 
 interface CardDetailsModalProps {
@@ -45,23 +41,12 @@ interface CardDetailsModalProps {
   onTrade?: (card: CardInstance) => void;
   onList?: (card: CardInstance) => void;
   onViewCollection?: (countryId: string) => void;
-  comparisonCard?: CardInstance | null;
   onShare?: (card: CardInstance) => void;
   onDownloadImage?: (card: CardInstance) => void;
 }
 
 export const CardDetailsModal = React.memo<CardDetailsModalProps>(
-  ({
-    card,
-    open,
-    onClose,
-    onTrade,
-    onList,
-    onViewCollection,
-    comparisonCard,
-    onShare,
-    onDownloadImage,
-  }) => {
+  ({ card, open, onClose, onTrade, onList, onViewCollection, onShare, onDownloadImage }) => {
     const [activeTab, setActiveTab] = useState("overview");
     const [isTakedownModalOpen, setIsTakedownModalOpen] = useState(false);
 
@@ -69,16 +54,6 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       if (!card) return getRarityConfig("COMMON");
       return getRarityConfig(card.rarity);
     }, [card]);
-
-    const stats = useMemo(() => {
-      if (!card) return { base: {}, specials: [], level: 0, totalBoost: 0 };
-      return formatCardStats(card);
-    }, [card]);
-
-    const comparisonStats = useMemo(() => {
-      if (!comparisonCard) return null;
-      return formatCardStats(comparisonCard);
-    }, [comparisonCard]);
 
     const transferHistoryQuery = api.cardMarket.getCardTransferHistory.useQuery(
       { ownershipId: card?.ownershipId || "" },
@@ -94,18 +69,16 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       return (
         isIIWiki ||
         card.cardType === "LORE" ||
-        card.cardType === "LORE_BATCH" ||
-        Boolean(card.category && card.category !== "NS_IMPORT") ||
-        Boolean(card.wikiPageId) ||
+        Boolean(card.category) ||
         Boolean(card.wikiSource) ||
         Boolean(card.wikiArticleTitle) ||
         Boolean(card.slug)
       );
     }, [card, isIIWiki]);
 
-    const isNsImportCard = useMemo(() => {
+    const isNsCard = useMemo(() => {
       if (!card) return false;
-      return !isLoreCard && (card.cardType === "NS_IMPORT" || Boolean(card.nsCardId));
+      return !isLoreCard && (card.cardType === "NS" || Boolean(card.nsCardId));
     }, [card, isLoreCard]);
 
     const wikiUrl = useMemo(() => cardWikiHref(card), [card]);
@@ -114,9 +87,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       if (!card) return null;
       const meta = card.metadata as Record<string, unknown> | null | undefined;
       const rawCat = card.category || (meta?.category as string);
-      if (rawCat && isValidLoreCategory(rawCat) && rawCat !== "NS_IMPORT") {
-        return rawCat as LoreCategory;
-      }
+      if (rawCat && isValidLoreCategory(rawCat)) return rawCat;
       if (isLoreCard) {
         return classifyFromWikitext(
           (meta?.fullExcerpt as string) || card.description,
@@ -218,22 +189,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   <BarChart3 className="mr-2 h-3.5 w-3.5" />
                   Market & provenance
                 </TabsTrigger>
-                {isNsImportCard && (
-                  <TabsTrigger value="stats">
-                    <TrendingUp className="mr-2 h-3.5 w-3.5" />
-                    Stats
-                  </TabsTrigger>
-                )}
                 <TabsTrigger value="lore">
                   <BookOpen className="mr-2 h-3.5 w-3.5" />
                   Lore
                 </TabsTrigger>
-                {comparisonCard && comparisonStats && (
-                  <TabsTrigger value="compare">
-                    <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
-                    Compare
-                  </TabsTrigger>
-                )}
               </TabsList>
             </div>
 
@@ -244,7 +203,6 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   card={card}
                   rarityConfig={rarityConfig}
                   neonFrame={neonFrame}
-                  stats={stats}
                   onTrade={onTrade}
                   onList={onList}
                   onViewCollection={onViewCollection}
@@ -256,34 +214,17 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
                   card={card}
                   rarityConfig={rarityConfig}
                   isLoadingProvenance={transferHistoryQuery.isLoading}
-                  provenanceEvents={transferHistoryQuery.data as any}
+                  provenanceEvents={transferHistoryQuery.data}
                 />
               </TabsContent>
-
-              {isNsImportCard && (
-                <TabsContent value="stats" className="space-y-4">
-                  <CardStatsTab card={card} stats={stats} />
-                </TabsContent>
-              )}
 
               <TabsContent value="lore" className="space-y-4">
                 <CardLoreTab card={card} wikiUrl={wikiUrl} />
               </TabsContent>
-
-              {comparisonCard && comparisonStats && (
-                <TabsContent value="compare" className="space-y-4">
-                  <CardCompareTab
-                    card={card}
-                    comparisonCard={comparisonCard}
-                    stats={stats}
-                    comparisonStats={comparisonStats}
-                  />
-                </TabsContent>
-              )}
             </div>
           </Tabs>
 
-          {isNsImportCard && (
+          {isNsCard && (
             <div className="border-separator bg-surface shrink-0 border-t p-3 sm:px-6">
               <NationStatesAttribution onRequestTakedown={() => setIsTakedownModalOpen(true)} />
             </div>
