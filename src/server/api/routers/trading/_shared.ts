@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "@prisma/client";
+import { TradeStatus } from "~/lib/vault/trade-settlement";
 import type { getVaultConfig } from "~/lib/vault/vault-service";
 
 const PARTY_SELECT = {

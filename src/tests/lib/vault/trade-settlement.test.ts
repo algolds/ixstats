@@ -9,11 +9,11 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
   spendCreditsTx: jest.fn(),
 }));
 
-import { TradeStatus } from "@prisma/client";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  TradeStatus,
   transferCardsTx,
   transferCreditsTx,
   unlockCardsTx,
@@ -27,7 +27,7 @@ const NOW = new Date("2026-09-25T12:00:00.000Z");
 function makeTx() {
   return {
     tradeOffer: { updateMany: jest.fn() },
-    cardOwnership: { updateMany: jest.fn() },
+    cardOwnership: { count: jest.fn().mockResolvedValue(0), updateMany: jest.fn() },
   };
 }
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
@@ -121,13 +121,7 @@ describe("transferCardsTx", () => {
 
     expect(tx.cardOwnership.updateMany.mock.calls[0][0]).toEqual({
       where: { id: { in: ["c1", "c2"] }, ownerId: "from_1", isLocked: false },
-      data: {
-        ownerId: "to_1",
-        userId: "to_1",
-        isLocked: false,
-        acquiredAt: NOW,
-        lastSaleDate: NOW,
-      },
+      data: { ownerId: "to_1", isLocked: false, acquiredAt: NOW },
     });
   });
 

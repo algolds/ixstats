@@ -100,6 +100,7 @@ function makeHarness(
     auctionBid: { create: jest.fn().mockResolvedValue({ id: "bid" }) },
     cardOwnership: { update: jest.fn().mockResolvedValue({}) },
     card: { update: jest.fn().mockResolvedValue({}) },
+    cardTransferEvent: { create: jest.fn().mockResolvedValue({}) },
   };
   const db: any = {
     systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
@@ -240,9 +241,44 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
       source: "card_sale_auction",
     });
     expect(h.balances.s).toBe(450);
-    expect(h.tx.cardOwnership.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ ownerId: "p", isLocked: false }) })
-    );
+    expect(h.tx.cardOwnership.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerId: "p", isLocked: false },
+    });
+    expect(h.tx.cardTransferEvent.create).toHaveBeenCalledWith({
+      data: {
+        ownershipId: "c1",
+        fromUserId: "s",
+        toUserId: "p",
+        action: "AUCTION_END",
+        price: 500,
+      },
+    });
+  });
+
+  it("executeBuyout records the sale in the copy's trail as AUCTION_BUYOUT, with its price", async () => {
+    const h = makeHarness(makeAuction({ buyoutPrice: 300, currentBidderId: null }), {
+      b: 1000,
+      s: 0,
+    });
+
+    await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
+      success: true,
+    });
+
+    expect(h.tx.cardOwnership.update).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      data: { ownerId: "b", isLocked: false },
+    });
+    expect(h.tx.cardTransferEvent.create).toHaveBeenCalledWith({
+      data: {
+        ownershipId: "c1",
+        fromUserId: "s",
+        toUserId: "b",
+        action: "AUCTION_BUYOUT",
+        price: 300,
+      },
+    });
   });
 
   it("completeAuction is a no-op when already settled", async () => {
