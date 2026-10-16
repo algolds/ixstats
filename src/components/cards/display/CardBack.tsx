@@ -211,44 +211,6 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
     textureType: "shimmer",
     textureOpacity: 0.07,
   },
-  MYTHIC: {
-    borderOuter: "border-rose-500/50",
-    borderInner: "border-rose-400/30",
-    cornerBracket: "border-rose-400",
-    medallionBorder: "border-rose-400/80",
-    auraGlow: "from-rose-600/30 to-purple-950/70",
-    medallionGlow: "shadow-[0_0_25px_rgba(244,63,94,0.55),inset_0_1px_2px_rgba(255,255,255,0.4)]",
-    cardGlow: "",
-    textPrimary: "text-rose-200",
-    textSecondary: "text-rose-300/90",
-    badgeBg: "bg-rose-950/90",
-    badgeBorder: "border-rose-400/40",
-    foilGradient:
-      "linear-gradient(135deg, #ffe4e6 0%, #ffffff 25%, #e11d48 50%, #fda4af 75%, #881337 100%)",
-    foilDiffraction:
-      "conic-gradient(from 0deg at 50% 50%, rgba(244,63,94,0.6) 0deg, rgba(251,191,36,0.6) 120deg, rgba(192,132,252,0.7) 240deg, rgba(244,63,94,0.6) 360deg)",
-    textureType: "triangular",
-    textureOpacity: 0.05,
-  },
-  DIVINE: {
-    borderOuter: "border-yellow-400/60",
-    borderInner: "border-amber-300/40",
-    cornerBracket: "border-yellow-300",
-    medallionBorder: "border-yellow-300/90",
-    auraGlow: "from-yellow-400/35 to-amber-950/80",
-    medallionGlow: "shadow-[0_0_30px_rgba(253,224,71,0.6),inset_0_1px_2px_rgba(255,255,255,0.5)]",
-    cardGlow: "",
-    textPrimary: "text-yellow-200",
-    textSecondary: "text-yellow-300/90",
-    badgeBg: "bg-yellow-950/90",
-    badgeBorder: "border-yellow-400/50",
-    foilGradient:
-      "linear-gradient(135deg, #fef9c3 0%, #ffffff 25%, #ca8a04 50%, #fef08a 75%, #713f12 100%)",
-    foilDiffraction:
-      "conic-gradient(from 0deg at 50% 50%, rgba(253,224,71,0.7) 0deg, rgba(255,255,255,0.8) 120deg, rgba(251,191,36,0.7) 240deg, rgba(253,224,71,0.7) 360deg)",
-    textureType: "shimmer",
-    textureOpacity: 0.09,
-  },
 };
 
 interface PointerState {

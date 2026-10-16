@@ -287,7 +287,6 @@ const SPECIFICITY_RANK: Record<LoreCategoryType, number> = {
   [LoreCategory.HISTORY]: 10,
   [LoreCategory.NATION]: 11,
   [LoreCategory.SPECIAL]: 12,
-  [LoreCategory.NS_IMPORT]: 99,
 };
 
 /**
@@ -365,7 +364,6 @@ export function classifyLoreArticle(input: ArticleClassificationInput): LoreCate
 
   for (const [catStr, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
     const cat = catStr as LoreCategoryType;
-    if (cat === LoreCategory.NS_IMPORT) continue;
 
     let synHits = 0;
     for (const word of synonyms) {

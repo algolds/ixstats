@@ -9,7 +9,6 @@ import {
   Crown,
   Page as Scroll,
   Bank as Landmark,
-  Component as Layers,
   Coins,
   ClockRotateRight as History,
   Building,
@@ -42,7 +41,6 @@ const CATEGORY_ICON_MAP: Record<LoreCategory, React.ComponentType<{ className?: 
   [LoreCategory.HISTORY]: History,
   [LoreCategory.NATION]: Globe,
   [LoreCategory.SPECIAL]: Sparkles,
-  [LoreCategory.NS_IMPORT]: Layers,
 };
 
 export const CATEGORY_PRESETS: CategoryPreset[] = (

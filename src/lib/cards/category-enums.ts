@@ -6,14 +6,14 @@
  */
 
 /**
- * Lore categories — the 13-value replacement for the legacy 5-value CardType.
+ * Lore categories: the 12 super-categories of Lore cards (NS cards carry none).
  *
  * Organized into visual families:
  *   Heraldic:   MILITARY, GOVERNMENT, NATION
  *   Celestial:  RELIGION, SCIENCE, GEOGRAPHY
  *   Civic:      DIPLOMACY, ECONOMY
  *   Humanistic: PEOPLE, CULTURE, HISTORY
- *   Meta:       SPECIAL, NS_IMPORT
+ *   Meta:       SPECIAL
  */
 export const LoreCategory = {
   MILITARY: "MILITARY",
@@ -28,7 +28,6 @@ export const LoreCategory = {
   HISTORY: "HISTORY",
   NATION: "NATION",
   SPECIAL: "SPECIAL",
-  NS_IMPORT: "NS_IMPORT",
 } as const;
 
 export type LoreCategory = (typeof LoreCategory)[keyof typeof LoreCategory];
@@ -49,24 +48,8 @@ export const ArtworkSource = {
 
 export type ArtworkSource = (typeof ArtworkSource)[keyof typeof ArtworkSource];
 
-/**
- * All lore categories as an ordered array (useful for filters, navigation).
- * Excludes NS_IMPORT — that's a compatibility bucket, not a browsable category.
- */
-export const BROWSABLE_CATEGORIES: LoreCategory[] = [
-  LoreCategory.MILITARY,
-  LoreCategory.DIPLOMACY,
-  LoreCategory.GEOGRAPHY,
-  LoreCategory.RELIGION,
-  LoreCategory.CULTURE,
-  LoreCategory.GOVERNMENT,
-  LoreCategory.PEOPLE,
-  LoreCategory.ECONOMY,
-  LoreCategory.SCIENCE,
-  LoreCategory.HISTORY,
-  LoreCategory.NATION,
-  LoreCategory.SPECIAL,
-];
+/** Every lore category, in display order (for filters and navigation). */
+export const BROWSABLE_CATEGORIES: LoreCategory[] = Object.values(LoreCategory);
 
 export function isValidLoreCategory(value: string): value is LoreCategory {
   return Object.values(LoreCategory).includes(value as LoreCategory);
@@ -356,16 +339,6 @@ const CATEGORY_ROOTS: Record<LoreCategory, readonly string[]> = {
     "custom",
     "loreward",
     "founder",
-  ],
-  NS_IMPORT: [
-    "nationstates",
-    "ns",
-    "ns card",
-    "ns import",
-    "external deck",
-    "flag import",
-    "trading card",
-    "nationstates import",
   ],
 };
 

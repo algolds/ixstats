@@ -67,7 +67,7 @@ const CARD_TYPE_THEMES: Record<string, CardTypeTheme> = {
     sublabel: "Sovereign State",
     motifSymbol: "🏛️",
   },
-  NS_IMPORT: {
+  NS: {
     base: "from-emerald-950 via-cyan-950 to-slate-950",
     accent: "rgba(6,182,212,0.4)",
     accentSoft: "rgba(6,182,212,0.1)",
@@ -84,15 +84,6 @@ const CARD_TYPE_THEMES: Record<string, CardTypeTheme> = {
     label: "Special",
     sublabel: "Limited Edition",
     motifSymbol: "⭐",
-  },
-  COMMUNITY: {
-    base: "from-violet-950 via-fuchsia-950 to-slate-950",
-    accent: "rgba(168,85,247,0.4)",
-    accentSoft: "rgba(168,85,247,0.1)",
-    hueRotate: 270,
-    label: "Community",
-    sublabel: "Player Created",
-    motifSymbol: "🤝",
   },
 };
 
