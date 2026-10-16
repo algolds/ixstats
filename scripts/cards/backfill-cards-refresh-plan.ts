@@ -31,7 +31,7 @@ import {
   type HomeRealmLookups,
   type LedgerRow,
 } from "~/lib/cards/legacy-mapping";
-import { nsBankValue, nsNationKey, withNsFacts } from "~/lib/cards/ns-facts";
+import { isJsonObject, nsBankValue, nsNationKey, withNsFacts } from "~/lib/cards/ns-facts";
 import { DEFAULT_REALM_ID, IXNAY_SLUG } from "~/lib/realms/realm-ids";
 import type {
   BackfillIo,
@@ -92,9 +92,6 @@ const IXNAY_REALM: RealmInsert = {
 /** Pack pools never hold Special or Trophy cards (pack-service.ts `packPoolWhere`). */
 const OUTSIDE_POOLS: ReadonlySet<string> = new Set([CardType.SPECIAL, CardType.TROPHY]);
 const SAMPLE = 50;
-
-const isJsonObject = (value: Json | undefined): value is Prisma.JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** JSON as text with sorted keys: jsonb reorders keys, so plain JSON.stringify would never compare equal. */
 function stableJson(value: Json | undefined): string {

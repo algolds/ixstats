@@ -160,14 +160,22 @@ export function canonicalizeTitle(
   };
 }
 
+/** A title's canonical form; the trimmed title, underscores as spaces, when MediaWiki would refuse it. */
+export function canonicalOrTrimmedTitle(raw: string, source = "ixwiki"): string {
+  return canonicalizeTitle(raw, { source })?.title ?? raw.replace(/_/g, " ").trim();
+}
+
+/** A page's case-insensitive key: every spelling of one page shares it ("foo_bar", "Foo bar", "foo bar"). */
+export function titleKey(raw: string, source = "ixwiki"): string {
+  return canonicalOrTrimmedTitle(raw, source).toLowerCase();
+}
+
 /**
  * Whether two spellings name the same page, ignoring case: a cache keyed by a raw or lower-cased title
  * is evicted for every spelling it may hold ("foo_bar", "Foo bar", "foo bar").
  */
 export function sameTitle(a: string, b: string, source = "ixwiki"): boolean {
-  const key = (raw: string) =>
-    (canonicalizeTitle(raw, { source })?.title ?? raw.replace(/_/g, " ").trim()).toLowerCase();
-  return key(a) === key(b);
+  return titleKey(a, source) === titleKey(b, source);
 }
 
 /**

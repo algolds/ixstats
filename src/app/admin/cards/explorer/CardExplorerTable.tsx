@@ -18,6 +18,7 @@ import { getCategoryLabel } from "~/lib/cards/category-theme";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { getCardTypeLabel } from "~/lib/cards/display-utils";
 import { CardType } from "~/lib/cards/enums";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
@@ -270,7 +271,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         header: "Category / Status",
         mobileRole: "field",
         render: (_val, card: Card) => {
-          const meta = (card.metadata ?? {}) as Prisma.JsonObject;
+          const meta: Prisma.JsonObject = isJsonObject(card.metadata) ? card.metadata : {};
           const isCTE = meta.isCTE === true;
           const isLoreCard =
             card.cardType === CardType.LORE ||

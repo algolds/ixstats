@@ -8,6 +8,7 @@ import { getRarityTier } from "./display-utils";
 import { copyRoom } from "./capacity";
 import { CardFinish } from "./enums";
 import { mintCopy } from "./mint";
+import { isJsonObject } from "./ns-facts";
 import { grantCardXp } from "./xp-utils";
 
 /**
@@ -35,9 +36,6 @@ export interface PackThemeFilter {
   cardTypes?: string[];
   countryIds?: string[];
 }
-
-const isJsonObject = (value: Prisma.JsonValue | null | undefined): value is Prisma.JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 function stringList(value: Prisma.JsonValue | undefined): string[] {
   if (typeof value === "string") return value ? [value] : [];

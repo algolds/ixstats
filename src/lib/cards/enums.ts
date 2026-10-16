@@ -26,12 +26,17 @@ export type CardRarity = (typeof CardRarity)[keyof typeof CardRarity];
 
 const RARITY_VALUES: readonly string[] = Object.values(CardRarity);
 
-/** A rarity string as the enum: any casing, hyphens and spaces as underscores; null for anything else. */
-export function parseCardRarity(value: string | null | undefined): CardRarity | null {
-  const key = (value ?? "")
+/** A rarity string as the enum spells it: trimmed, upper case, hyphens and spaces as underscores ("ultra-rare"). */
+export function rarityKey(value: string | null | undefined): string {
+  return (value ?? "")
     .trim()
     .toUpperCase()
     .replace(/[\s-]+/g, "_");
+}
+
+/** A rarity string as the enum: any casing, hyphens and spaces as underscores; null for anything else. */
+export function parseCardRarity(value: string | null | undefined): CardRarity | null {
+  const key = rarityKey(value);
   return RARITY_VALUES.includes(key) ? (key as CardRarity) : null;
 }
 

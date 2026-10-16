@@ -6,8 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, protectedProcedure } from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity, CardType } from "@prisma/client";
-import { recipientsBlockingSender } from "~/server/shared/user-blocks";
-import { recipientsRefusing } from "~/server/shared/privacy-permissions";
+import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
 import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 /**
@@ -109,11 +108,7 @@ export const cardsInventoryRouter = createTRPCRouter({
 
         // Only a viewer who may send this partner a trade offer sees their copies: the partner's
         // trade-offer audience and block list (SL-4), as createtradeOffer checks them.
-        const [refusing, blocking] = await Promise.all([
-          recipientsRefusing(ctx.db, ctx.auth.userId, [partner.clerkUserId], "tradeOffers"),
-          recipientsBlockingSender(ctx.db, ctx.auth.userId, [partner.clerkUserId]),
-        ]);
-        if (refusing.length > 0 || blocking.length > 0) return [];
+        if (await refusesTradeOffer(ctx.db, ctx.auth.userId, partner.clerkUserId)) return [];
 
         const ownerships = await ctx.db.cardOwnership.findMany({
           // A trade partner sees only the copies they could trade (cards refresh §3): unlocked, not
