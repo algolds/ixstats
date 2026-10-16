@@ -10,7 +10,7 @@ nextLabel: Lore Cards
 
 ## Where it happens
 
-Both live in the Vault's [Store](/vault/store): the **Auctions** tab for public auctions and the **Trading** tab for direct trades with a specific player. A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold, traded or recycled twice.
+Both live in the Vault's [Store](/vault/store): the **Auctions** tab for public auctions and the **Trading** tab for direct trades with a specific player. A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold or traded twice. Special and Trophy cards can't be traded or auctioned.
 
 ## Selling at auction
 

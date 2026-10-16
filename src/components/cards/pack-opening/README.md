@@ -100,11 +100,9 @@ Post-reveal action interface.
 
 **Duration**: User-controlled
 **Features**:
-- Junk/Keep/List buttons per card (only **Junk** is wired — to `cards.junkCards` with ownership IDs; Keep/List just log)
+- Keep/List buttons per card (UI-only for now: the choice is held in component state and nothing is sent to the server; every card is already in the collection)
 - Bulk selection mode
-- Quick sell estimates (IC value)
 - "Collect All" auto-option
-- Estimated total value display
 
 ## Service Layer
 
@@ -166,14 +164,7 @@ interface CardInstance {
 }
 
 // Quick action types
-type QuickActionType = "junk" | "keep" | "list" | "collect";
-
-// Action event
-interface QuickActionEvent {
-  cardId?: string;
-  cardIds?: string[];
-  action: QuickActionType;
-}
+type QuickActionType = "keep" | "list" | "collect";
 
 // Haptic patterns
 type HapticPattern = "light" | "medium" | "heavy";
@@ -278,7 +269,7 @@ const cards = await api.cardPacks.openPack.mutate({
   cards: [
     {
       id: "clx789...",          // Card definition ID
-      ownershipId: "co_...",   // CardOwnership ID (use for junking)
+      ownershipId: "co_...",   // CardOwnership ID
       name: "Ancient Artifact",
       rarity: "LEGENDARY",
       cardType: "LORE",
@@ -324,10 +315,10 @@ const balance = await api.vault.getBalance.query();
 ## Future Enhancements
 
 ### Quick Actions Integration
-Junk is wired (`cards.junkCards({ ownershipIds })`). Keep and List still only log in `PackOpeningSequence.handleQuickAction`. Candidate integrations:
+Keep and List are UI-only: `Stage4_QuickActions` keeps the choice in local state. Candidate integrations:
 ```typescript
-// In PackOpeningSequence.handleQuickAction
-switch (event.action) {
+// In Stage4_QuickActions.handleCardAction
+switch (action) {
   case "keep":
     // e.g. cards.addToCollection (needs a collectionId)
     break;

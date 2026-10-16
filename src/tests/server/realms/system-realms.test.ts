@@ -55,20 +55,20 @@ describe("system realms", () => {
   it("have no hub, even for a site admin", async () => {
     const db = createMockPrisma();
     db.realm.findUnique.mockResolvedValue(systemRow("nationstates"));
-    await expect(getRealmHub(db, "nationstates", admin)).resolves.toBeNull();
+    await expect(getRealmHub(db as never, "nationstates", admin)).resolves.toBeNull();
     expect(db.realmPage.findFirst).not.toHaveBeenCalled();
   });
 
   it("never become the viewer's realm: their slug resolves like an unknown one", async () => {
     const db = createMockPrisma();
     db.realm.findUnique.mockResolvedValue({ id: "iiwiki", status: "active", ownerId: "system" });
-    await expect(findRealmIdBySlug(db, "iiwiki", admin)).resolves.toBeNull();
+    await expect(findRealmIdBySlug(db as never, "iiwiki", admin)).resolves.toBeNull();
   });
 
   it("can't be deleted, and nor can a realm that still has cards", async () => {
     const db = createMockPrisma();
     await expect(
-      deleteRealm(db, admin, { realmId: "althistory", confirmSlug: "althistory" })
+      deleteRealm(db as never, admin, { realmId: "althistory", confirmSlug: "althistory" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "System realms can't be deleted" });
     expect(db.realm.findUnique).not.toHaveBeenCalled();
 
@@ -81,7 +81,7 @@ describe("system realms", () => {
     db.mapLayer.count.mockResolvedValue(0);
     db.card.count.mockResolvedValue(3);
     await expect(
-      deleteRealm(db, admin, { realmId: "eurth", confirmSlug: "eurth" })
+      deleteRealm(db as never, admin, { realmId: "eurth", confirmSlug: "eurth" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.card.count).toHaveBeenCalledWith({ where: { realmId: "eurth" } });
     expect(db.$transaction).not.toHaveBeenCalled();
@@ -90,10 +90,10 @@ describe("system realms", () => {
   it("have no region page: even a site admin gets not-found", async () => {
     const db = createMockPrisma();
     db.realm.findUnique.mockResolvedValue({ ...systemRow("iiwiki"), ownerId: "system" });
-    await expect(loadRegionRealm(db, "iiwiki", admin)).rejects.toMatchObject({
+    await expect(loadRegionRealm(db as never, "iiwiki", admin)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-    await expect(getRealmOverview(db, "iiwiki", admin)).resolves.toBeNull();
+    await expect(getRealmOverview(db as never, "iiwiki", admin)).resolves.toBeNull();
     expect(db.country.aggregate).not.toHaveBeenCalled();
   });
 

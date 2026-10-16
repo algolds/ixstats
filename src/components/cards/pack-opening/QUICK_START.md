@@ -109,7 +109,8 @@ onComplete() called
 `PackOpeningSequence` automatically calls:
 
 1. **Open Pack**: `api.cardPacks.openPack.mutate({ userPackId })`
-2. **Junk quick action**: `api.cards.junkCards.mutate({ ownershipIds })`
+
+The Keep and List quick actions are UI-only; they call nothing.
 
 Your page is responsible for **Purchase** (`api.cardPacks.purchasePack.mutate({ packId })`) and any balance display (`api.vault.getBalance`).
 

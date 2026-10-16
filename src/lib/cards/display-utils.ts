@@ -70,7 +70,7 @@ const RARITY_COLORS: Record<string, RarityConfig> = {
   },
 };
 
-/** Canonical rarity key from any casing; unknown values (and the retired MYTHIC and DIVINE) fall back to COMMON. */
+/** Canonical rarity key from any casing; unknown values (and the two retired top tiers) fall back to COMMON. */
 export function normalizeRarity(rarity?: string | null): CardRarity {
   const upper = rarity?.toUpperCase();
   return upper && upper in RARITY_COLORS ? (upper as CardRarity) : CardRarity.COMMON;

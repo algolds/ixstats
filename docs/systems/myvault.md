@@ -28,12 +28,12 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
 - `src/components/vault/vault-sections.ts` – `getSubTabFromPathname` only (the Cards sub-tab for a path); the navigation itself is the Vault entry of the source list
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): the Wallet page, see [below](#the-wallet-page)
-  - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters, bulk junking), Collections
+  - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters), Collections
   - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/store?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening; `?view=my-packs` opens the shop on My packs, which the Wallet showcase's pack card links to), Auctions, P2P Trading
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
   - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
-- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#crafting-retired-for-now-2026-10-05)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
+- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#removed-in-the-cards-refresh-2026-10-15)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
 
 ### The Wallet page
 
@@ -71,7 +71,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 Organized into modular sub-files:
 
 - `vault/index.ts` – Router combination
-- `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `deckValue`, which counts trophy cards, and `deckValueExTrophy`, which the dividend and deck-value achievements use). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
+- `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `{ totalCards, deckValue, deckValueExTrophy }`, computed live from the copies (`copyValue`, `src/lib/cards/copy-value.ts`); `deckValue` counts trophy cards and `deckValueExTrophy`, which the dividend and deck-value achievements use, does not). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
 - `vault/daily-claims.ts` – Daily bonus / combined daily claim
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip, `getTransactions` (the statement's feed)
 - `vault/public-cosmetics.ts` – `getEquippedCosmeticsFor`, another player's equipped cosmetics (public)
@@ -106,7 +106,7 @@ Related routers: `cards/`, `card-packs/`, `card-market/` (auctions & bids), `tra
 
 ## Known Gaps
 
-- **Crafting** is retired for now (2026-10-05); the schema and history rows stay until the schema-drop decision.
+- **Crafting** was removed on 2026-10-15 (cards refresh Phase 1): the router, rules, seed and tables are gone.
 - **Card Gallery** (lore/NS library browsing) is dev-build only.
 - **Premium multiplier** is shown in Settings but not applied to earnings (`getBalance` returns `isPremium: false`).
 

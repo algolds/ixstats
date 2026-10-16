@@ -81,7 +81,7 @@ Granted through `grantBonus()` (`src/lib/vault/vault-bonus.ts`), outside the dai
 Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that would exceed the remaining allowance is clamped. The dividend, bonuses and card earnings are outside them.
 
 ### Card sales and trades
-- Selling cards through auctions and trades pays the seller (`EARN_CARDS`), and junking a card pays its junk value. A **nation card** sold at auction pays a 2% royalty to the nation's owner (else the earliest human puller of the card) (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
+- Selling cards through auctions and trades pays the seller (`EARN_CARDS`). A **nation card** sold at auction pays a 2% royalty to the nation's owner (else the earliest human puller of the card) (`src/lib/economy/auction-service.ts`); it is the only place a country feeds the Vault.
 
 ---
 
@@ -116,7 +116,7 @@ try {
 
 ### Client React Hooks (`src/hooks/vault/`)
 - `useVaultBalance()` – Reads current balance, XP, level, today's earnings, and premium multiplier
-- `useVaultStats()` – Aggregate vault statistics (card count, deck value, waiting packs)
+- `useVaultStats()` – The card count and deck value
 - `useCollections()` – Collection list
 
 There is no client-side earn hook: credits are only awarded server-side. Daily claims call `api.vault.claimDailyBonus` / `claimCombinedDailyClaim` directly (e.g. `DailyRewardProvider`).

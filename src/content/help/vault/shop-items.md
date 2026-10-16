@@ -40,7 +40,7 @@ The **Archetype Proposal Token** has been retired: it never did anything in the 
 
 ### Card capacity
 
-You can hold 150 cards by default, plus any capacity boosts. Your Vault dashboard shows your count against your capacity. When a pack would take you over it, the pack won't open until you make room (recycle, auction or trade cards) or buy a boost. Staff accounts may be exempt.
+You can hold 150 cards by default, plus any capacity boosts. Your Vault dashboard shows your count against your capacity. When a pack would take you over it, the pack won't open until you make room (auction or trade cards) or buy a boost. Staff accounts may be exempt.
 
 ## Cosmetics
 

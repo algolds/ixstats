@@ -1,6 +1,6 @@
 # NationStates Integration
 
-**Last updated:** September 2026  
+**Last updated:** 2026-10-15  
 **Status:** Release Candidate (platform 1.4.0)  
 **Hierarchy:** Sub-system of IxCards / IxVault (`IXVAULT_VERSION = 3`).
 
@@ -16,6 +16,11 @@ The NationStates (NS) integration allows users to import their existing NationSt
 - **Attribution Footer (`NationStatesAttribution.tsx`)**: Pinned footer inside `CardDetailsModal` displaying clear fan-site attribution copy and a takedown trigger.
 - **Self-Service Takedown Verification**: Nation owners verify identity via HMAC-MD5 token to retire their card and clear artwork immediately.
 - **Rate Limit Compliance**: `nsApiClient` (`src/lib/nationstates/api-client.ts`) spaces all outgoing requests by at least 800ms (NS limit: 50 requests / 30s); dump downloads retry with backoff (`withRetry`).
+
+
+### Deck import
+
+`nsImport.importDeck` (`ns-import/decks.ts`) runs the whole import in one transaction: if anything fails, nothing is added. Each NS card is claimed once ever per nation in the ledger (`ns_import_ledger`, model `NSImportLedger`, unique `(nsCardId, nsSeason, nation)`), whichever account imports it first; importing a deck again adds only the cards that nation had not imported before. Copies are minted through `mintCopy` into the NationStates system realm (`nationstates`), and the `EARN_BONUS` is paid only for newly minted copies. The NS facts (nation, region, category, season, bank value) sit in `metadata.nsData` (`src/lib/cards/ns-facts.ts`); NS cards have card type `NS` and no lore category.
 
 ---
 
