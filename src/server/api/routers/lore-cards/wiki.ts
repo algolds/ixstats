@@ -5,7 +5,7 @@ import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import { CardRarity } from "@prisma/client";
+import { CardRarity, CardType } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
 import { analyzeWikiSignals } from "~/lib/cards/rarity-algorithm";
@@ -14,6 +14,10 @@ import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/artic
 import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import { articleHomeRealm } from "~/lib/cards/home-realm";
+import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { isUniqueViolation } from "~/lib/prisma-error";
 
 const isArticleTitle = (title: string): boolean => {
   if (!title || !title.trim()) return false;
@@ -114,7 +118,7 @@ async function searchLocalLore(db: PrismaClient, query: string) {
         snippet:
           c.description || c.wikiExcerpt || `Canonical ${c.category || "Lore"} card: ${c.title}`,
         source: "wikios" as const,
-        imageUrl: c.artworkUrl || c.artwork || null,
+        imageUrl: c.artwork ?? null,
         category: c.category || "SPECIAL",
         rarity: c.rarity,
         marketValue: c.marketValue,
@@ -392,9 +396,9 @@ export const loreCardsWikiRouter = createTRPCRouter({
         description: z.string().optional(),
         category: z.nativeEnum(LoreCategory).default(LoreCategory.SPECIAL),
         subcategory: z.string().optional(),
-        rarity: z.string().default("COMMON"),
+        rarity: z.nativeEnum(CardRarity).default(CardRarity.COMMON),
         season: z.number().int().min(1).default(1),
-        cardType: z.string().default("WIKI_LORE"),
+        cardType: z.nativeEnum(CardType).default(CardType.LORE),
         marketValue: z.number().min(0).default(100),
         totalSupply: z.number().int().positive().nullable().optional(),
         wikiSource: z.string().optional(),
@@ -402,7 +406,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
         wikiExcerpt: z.string().optional(),
         artworkUrl: z.string().optional(),
         artworkCredit: z.string().optional(),
-        attributes: z.record(z.string(), z.any()).optional(),
         metadata: z.record(z.string(), z.any()).optional(),
       })
     )
@@ -414,30 +417,43 @@ export const loreCardsWikiRouter = createTRPCRouter({
       const uniqueSuffix = crypto.randomUUID().slice(0, 5);
       const slug = `${slugBase}-${uniqueSuffix}`;
 
-      const card = await ctx.db.card.create({
-        data: {
-          title: input.title,
-          name: input.title,
-          slug,
-          description: input.description ?? input.wikiExcerpt ?? null,
-          category: input.category,
-          subcategory: input.subcategory ?? null,
-          rarity: input.rarity,
-          season: input.season,
-          cardType: input.cardType,
-          marketValue: input.marketValue,
-          totalSupply: input.totalSupply ?? null,
-          artworkUrl: input.artworkUrl ?? null,
-          artwork: input.artworkUrl ?? null,
-          artworkSource: ArtworkSource.PROCEDURAL,
-          artworkCredit: input.artworkCredit ?? "Game-Icons.net",
-          wikiSource: input.wikiSource ?? null,
-          wikiArticleTitle: input.wikiArticleTitle ?? null,
-          wikiExcerpt: input.wikiExcerpt ?? null,
-          attributes: input.attributes ?? {},
-          metadata: input.metadata ?? {},
-        },
-      });
+      const wikiArticleTitle = input.wikiArticleTitle
+        ? canonicalArticleTitle(input.wikiArticleTitle, input.wikiSource ?? null)
+        : null;
+      const card = await ctx.db.card
+        .create({
+          data: {
+            title: input.title,
+            slug,
+            description: input.description ?? input.wikiExcerpt ?? null,
+            category: input.category,
+            subcategory: input.subcategory ?? null,
+            rarity: input.rarity,
+            season: input.season,
+            cardType: input.cardType,
+            realmId: wikiArticleTitle
+              ? await articleHomeRealm(ctx.db, input.wikiSource ?? null, wikiArticleTitle)
+              : DEFAULT_REALM_ID,
+            marketValue: input.marketValue,
+            totalSupply: input.totalSupply ?? null,
+            artwork: input.artworkUrl ?? null,
+            artworkSource: ArtworkSource.PROCEDURAL,
+            artworkCredit: input.artworkCredit ?? "Game-Icons.net",
+            wikiSource: input.wikiSource ?? null,
+            wikiArticleTitle,
+            wikiExcerpt: input.wikiExcerpt ?? null,
+            metadata: input.metadata ?? {},
+          },
+        })
+        .catch((error: Error) => {
+          if (isUniqueViolation(error)) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "That article already has a Lore card.",
+            });
+          }
+          throw error;
+        });
 
       // Record Audit Log & SyncLog
       await Promise.allSettled([
@@ -482,7 +498,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Multi-source Lore Archive Search (IxWiki, IIWiki, WikiOS, Stash)
    */
-  searchLoreArchive: publicProcedure
+  searchLoreArchive: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki", "wikios", "stash"]),
@@ -516,7 +532,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Fetch rich metadata, signals, and excerpt for a specific article
    */
-  fetchLoreMetadata: publicProcedure
+  fetchLoreMetadata: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki", "wikios", "stash"]),
@@ -551,7 +567,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Search live wiki categories by prefix
    */
-  searchWikiCategories: publicProcedure
+  searchWikiCategories: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki"]),
@@ -577,7 +593,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Fetch category statistics (size, pages, files, subcats) for a list of categories
    */
-  getCategoryStats: publicProcedure
+  getCategoryStats: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki"]),
@@ -602,7 +618,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Fetch member page titles from a live wiki category (all pages & files up to 10,000)
    */
-  fetchWikiCategoryMembers: publicProcedure
+  fetchWikiCategoryMembers: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki"]),
@@ -631,7 +647,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Fetch all page titles in the main namespace (namespace 0) for a wiki (up to 10,000)
    */
-  fetchAllMainNamespacePages: publicProcedure
+  fetchAllMainNamespacePages: adminProcedure
     .input(
       z.object({
         source: z.enum(["ixwiki", "iiwiki"]),
@@ -655,7 +671,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
   /**
    * Batch fetch article metadata (images, excerpts, categories, estimated values)
    */
-  fetchArticlePreviewsBatch: publicProcedure
+  fetchArticlePreviewsBatch: adminProcedure
     .input(
       z.object({
         titles: z.array(z.string()).min(1).max(200),
@@ -674,17 +690,15 @@ export const loreCardsWikiRouter = createTRPCRouter({
 
   /**
    * Resolve author info for a wiki article (Page Creator + Top Contributor)
-   * If cardId is provided, asynchronously persists authorInfo to card.metadata
    */
   getCardAuthorInfo: publicProcedure
     .input(
       z.object({
-        cardId: z.string().optional(),
         articleTitle: z.string().min(1),
         source: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
       })
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ input }) => {
       try {
         const titleKey = input.articleTitle.replace(/_/g, " ").trim().toLowerCase();
         const authorMap = await wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(
@@ -697,33 +711,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
             creator: "Unknown",
             displayAuthor: "Unknown",
           };
-
-        if (input.cardId) {
-          const targetCardId = input.cardId;
-          void (async () => {
-            try {
-              const existing = await ctx.db.card.findUnique({
-                where: { id: targetCardId },
-                select: { metadata: true },
-              });
-              if (existing) {
-                const currentMeta = (existing.metadata as Record<string, unknown>) || {};
-                await ctx.db.card.update({
-                  where: { id: targetCardId },
-                  data: {
-                    metadata: {
-                      ...currentMeta,
-                      authorInfo: authorInfo as any,
-                      author: authorInfo.displayAuthor,
-                    },
-                  },
-                });
-              }
-            } catch (err) {
-              console.warn(`[Lore Cards] Failed to cache authorInfo for ${targetCardId}:`, err);
-            }
-          })();
-        }
 
         return { authorInfo };
       } catch (error) {

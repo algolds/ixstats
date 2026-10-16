@@ -39,7 +39,6 @@ export async function GET(request: Request) {
       wikiSource: candidate.wikiSource,
       artwork: candidate.artwork,
       hasImage: !!candidate.artwork && !candidate.artwork.includes("placeholder"),
-      stats: candidate.stats,
     });
   } catch (error) {
     console.error("[Preview Article API] Error:", error);
