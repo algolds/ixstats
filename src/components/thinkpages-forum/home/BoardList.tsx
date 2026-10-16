@@ -25,7 +25,6 @@ import { categoryHref, threadHref } from "~/lib/thinkpages-forum/links";
 import type { RouterOutputs } from "~/trpc/react";
 import type { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils/cn";
-import { AuthorFlag } from "../AuthorMark";
 import { ForumAvatar } from "../ForumAvatar";
 import { IconTile, RISE_ITEM, RISE_LIST } from "../shell";
 
@@ -65,36 +64,24 @@ function Count({ value, one, many }: { value: number; one: string; many: string 
 }
 
 /**
- * The board's newest thread as a pressable Well: its title, who posted last (avatar and flag), and when, with the last
- * poster's flag fading in from the right edge as a watermark and an arrow that nudges on hover.
+ * The board's newest thread as a pressable Well with a separator border: its title, who posted last, and when, with an
+ * arrow that nudges on hover.
  */
 function LatestPreview({ latest }: { latest: Board["latest"] }) {
   if (!latest) return <p className="text-callout text-label-tertiary">No threads yet</p>;
   const author = latest.author?.name ?? "Member";
-  const flagUrl = latest.author?.flagUrl;
   return (
     <Card
       variant="well"
       padding="none"
       interactive
-      className="has-[:focus-visible]:outline-tint relative max-w-xl overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
+      className="has-[:focus-visible]:outline-tint border-separator relative max-w-xl overflow-hidden border has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
     >
-      {flagUrl ? (
-        <img
-          data-slot="thread-card-flag"
-          src={flagUrl}
-          alt=""
-          className="pointer-events-none absolute inset-y-0 right-0 w-1/3 mask-l-from-30% object-cover opacity-20 select-none"
-        />
-      ) : null}
       <Link
         href={threadHref(latest.threadId)}
         className="group/thread relative flex min-w-0 items-center gap-3 px-3 py-2.5 after:absolute after:inset-0 focus-visible:outline-none"
       >
-        <span className="inline-flex shrink-0 items-center gap-1.5">
-          <ForumAvatar name={author} avatarUrl={latest.author?.avatarUrl} size="sm" />
-          {latest.author?.flagUrl ? <AuthorFlag url={latest.author.flagUrl} /> : null}
-        </span>
+        <ForumAvatar name={author} avatarUrl={latest.author?.avatarUrl} size="sm" />
         <span className="min-w-0">
           <span className="text-headline text-label block truncate">{latest.threadTitle}</span>
           <span className="text-footnote text-label-secondary block truncate tabular-nums">

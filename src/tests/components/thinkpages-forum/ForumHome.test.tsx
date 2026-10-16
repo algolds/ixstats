@@ -157,7 +157,7 @@ describe("Forums home: board list", () => {
     expect(preview).toHaveAttribute("href", "/thinkpages/t/t_general");
     expect(preview.closest('[data-slot="card"]')).toHaveAttribute("data-variant", "well");
     expect(within(preview).getByText(/Heku/)).toBeInTheDocument();
-    expect(preview.querySelector('img[src="/flags/caphiria.png"]')).not.toBeNull();
+    expect(preview.querySelector('img[src="/flags/caphiria.png"]')).toBeNull();
     expect(rowOf("Announcements")).toBeInTheDocument();
   });
 
@@ -279,28 +279,15 @@ describe("Forums home: texture and character", () => {
     expect(texture("General")).toContain("facet-texture-paper-grain");
   });
 
-  it("watermarks a board's latest-thread card with the last poster's flag, and only when there is one", () => {
-    set("categories", {
-      data: [
-        board("general"),
-        board("rules", {
-          latest: {
-            ...board("rules").latest,
-            author: { name: "Kir", handle: null, avatarUrl: null, flagUrl: null },
-          },
-        }),
-      ],
-    });
+  it("draws a board's latest-thread card with a pronounced border and no flag", () => {
+    set("categories", { data: [board("general")] });
     render(<ForumHome />);
-    const card = (name: RegExp) =>
-      screen.getByRole("link", { name }).closest('[data-slot="card"]') as HTMLElement;
-    const flag = card(/Latest in general/).querySelector('[data-slot="thread-card-flag"]');
-    expect(flag).toHaveAttribute("src", "/flags/caphiria.png");
-    expect(flag).toHaveAttribute("alt", "");
-    expect(card(/Latest in rules/).querySelector('[data-slot="thread-card-flag"]')).toBeNull();
-    expect(within(card(/Latest in general/)).getByText("Latest in general")).toHaveClass(
-      "text-headline"
-    );
+    const card = screen
+      .getByRole("link", { name: /Latest in general/ })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(card).toHaveClass("border", "border-separator");
+    expect(card.querySelector("img[src^='/flags/']")).toBeNull();
+    expect(within(card).getByText("Latest in general")).toHaveClass("text-headline");
   });
 
   it("rules a board with new threads down its left edge in the tint, and only that board", () => {
