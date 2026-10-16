@@ -411,6 +411,8 @@ class AchievementService {
     const data = await this.gatherAchievementData(userId, countryId, db);
     const locked = await db.achievement.findMany({
       where: { isActive: true, key: { notIn: [...(data.existingKeys ?? [])] } },
+      // A tie on share and points keeps the first, so the order makes the pick stable.
+      orderBy: { key: "asc" },
     });
     let nearest: (RuleProgress & { achievement: (typeof locked)[number] }) | null = null;
     for (const achievement of locked) {
