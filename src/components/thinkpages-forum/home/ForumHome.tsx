@@ -19,16 +19,10 @@ import { StandingPanel } from "../StandingPanel";
 import { BoardList } from "./BoardList";
 import { FindARealmPanel, LatestActivityPanel, ThinkTanksPanel, TrendingPanel } from "./HomeRail";
 import { useHomeRail } from "./useHomeRail";
+import { NewThreadMenu } from "./NewThreadMenu";
 import { YourRealmPanel } from "./YourRealmPanel";
 
 const TITLE = "ThinkPages";
-
-/** The masthead behind the header: the ThinkPages tint, under a chevron texture drawn in the tint. */
-const MASTHEAD = (
-  <div className="bg-tint-fill absolute inset-0">
-    <TextureOverlay texture="chevron" className="[--facet-texture-color:var(--tint)]" />
-  </div>
-);
 
 const count = (n: number, one: string, many: string) =>
   `${n.toLocaleString()} ${n === 1 ? one : many}`;
@@ -42,9 +36,9 @@ function totals(boards: readonly { threadCount: number; postCount: number }[]) {
 }
 
 /**
- * The Forums home: a textured masthead totalling the sitewide boards, the sitewide boards with their latest threads,
+ * The Forums home: a plain header totalling the sitewide boards with a New thread menu, the sitewide boards with their latest threads,
  * the old forum's archive (collapsed), and a rail of Your realm, Latest activity, Trending threads, Find a Realm,
- * ThinkTanks and the member's own standing, all over a paper grain. The rail is only passed when a panel has content;
+ * ThinkTanks and the member's own standing. The rail is only passed when a panel has content;
  * its panels rise in one after another.
  */
 export function ForumHome() {
@@ -96,17 +90,18 @@ export function ForumHome() {
     <ForumPage
       title={TITLE}
       breadcrumbs={totals(regular)}
-      backdrop={MASTHEAD}
-      paperGrain
       wideActions={
-        moderator ? (
-          <Button asChild size="sm" variant="ghost" className="text-label-secondary">
-            <Link href={modHref()}>
-              <ShieldCheck aria-hidden />
-              Moderation
-            </Link>
-          </Button>
-        ) : null
+        <>
+          <NewThreadMenu boards={regular} />
+          {moderator ? (
+            <Button asChild size="sm" variant="ghost" className="text-label-secondary">
+              <Link href={modHref()}>
+                <ShieldCheck aria-hidden />
+                Moderation
+              </Link>
+            </Button>
+          ) : null}
+        </>
       }
       openRailOnHash="#standing"
       rail={

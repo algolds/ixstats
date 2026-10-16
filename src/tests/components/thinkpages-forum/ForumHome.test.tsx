@@ -84,6 +84,7 @@ function board(key: string, extra: object = {}) {
     icAllowed: false,
     postRole: "any",
     visibility: "public",
+    canStart: true,
     style: "ooc",
     threadCount: 8,
     postCount: 23,
@@ -248,22 +249,51 @@ describe("Forums home: board list", () => {
   });
 });
 
+describe("Forums home: New thread menu", () => {
+  const open = () => {
+    const trigger = screen.getByRole("button", { name: "New thread" });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+  };
+
+  it("offers New thread as a menu of the boards the viewer can start one in", () => {
+    set("categories", {
+      data: [board("general", { canStart: true }), board("rules", { canStart: false })],
+    });
+    render(<ForumHome />);
+    open();
+    expect(screen.getByRole("menuitem", { name: "General" })).toHaveAttribute(
+      "href",
+      "/thinkpages/c/general/new"
+    );
+    expect(screen.queryByRole("menuitem", { name: "Rules" })).toBeNull();
+  });
+
+  it("shows no New thread menu when the viewer can start a thread nowhere", () => {
+    set("categories", { data: [board("rules", { canStart: false })] });
+    render(<ForumHome />);
+    expect(screen.queryByRole("button", { name: "New thread" })).toBeNull();
+  });
+});
+
 describe("Forums home: texture and character", () => {
-  it("tops the page with a textured masthead whose subtitle totals the sitewide boards", () => {
+  it("tops the page with a plain header whose subtitle totals the sitewide boards", () => {
     set("categories", {
       data: [board("general"), board("announcements", { threadCount: 2, postCount: 7 })],
     });
     render(<ForumHome />);
     const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
-    expect(header.querySelector(".texture-overlay.facet-texture-chevron")).not.toBeNull();
     expect(within(header).getByText("2 boards · 10 threads · 30 posts")).toBeInTheDocument();
   });
 
-  it("lays a tint paper grain on the page canvas, outside the board panes", () => {
+  it("has no textured masthead and no grain on the page canvas", () => {
     set("categories", { data: [board("rules")] });
     const { container } = render(<ForumHome />);
-    const grains = [...container.querySelectorAll(".texture-overlay.facet-texture-paper-grain")];
-    expect(grains.some((grain) => !grain.closest('[data-slot="card"]'))).toBe(true);
+    const header = screen.getByRole("heading", { level: 1, name: "ThinkPages" }).closest("header")!;
+    expect(header.querySelector(".texture-overlay")).toBeNull();
+    const outside = [...container.querySelectorAll(".texture-overlay")].filter(
+      (texture) => !texture.closest('[data-slot="card"]') && !texture.closest("span[aria-hidden]")
+    );
+    expect(outside).toEqual([]);
   });
 
   it("gives each board its own texture on a large tile", () => {

@@ -4,7 +4,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
-import { canSeeCategory, canSeeThread, type ForumViewer } from "./access";
+import { canSeeCategory, canSeeThread, canStartThread, type ForumViewer } from "./access";
 import {
   latestPerCategory,
   postCountsPerCategory,
@@ -94,6 +94,7 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       id: category.id,
       style: category.style,
       visibility: category.visibility,
+      canStart: canStartThread(viewer, category),
       postCount: postCounts.get(category.id) ?? 0,
       latest: last ? publicLatest(last, authors) : null,
     };
