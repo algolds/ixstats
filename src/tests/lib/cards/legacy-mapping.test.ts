@@ -281,5 +281,7 @@ describe("import ledger inference", () => {
       { nsCardId: 7, nsSeason: 3, nation: "heku", userId: "u_imp", ownershipId: "imp" },
     ]);
     expect(result.unattributed).toBe(1);
+    // "imp" and "lost" had no trade, so their owners were taken as their importers; "traded" had a giver.
+    expect(result.ownerInferred).toBe(2);
   });
 });
