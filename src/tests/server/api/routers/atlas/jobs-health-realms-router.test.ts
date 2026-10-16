@@ -39,6 +39,18 @@ function seeded() {
     visibility: "public",
     mapVersion: 5,
     settings: null,
+    isSystem: false,
+  });
+  db.realm.rows.push({
+    id: "s",
+    slug: "nationstates",
+    name: "NationStates",
+    ownerId: "o",
+    status: "active",
+    visibility: "public",
+    mapVersion: 1,
+    settings: null,
+    isSystem: true,
   });
   db.mapImportJob.rows.push({
     id: "job00000001",
@@ -76,6 +88,12 @@ describe("Atlas server procedures", () => {
   it("overview lists the realms for an admin", async () => {
     const { realms } = await caller(admin, seeded()).realms.overview();
     expect(realms.map((r) => r.slug)).toEqual(["alpha"]);
+  });
+
+  it("get leaves a system realm out even when asked for by slug", async () => {
+    await expect(
+      caller(admin, seeded()).realms.get({ realm: "nationstates" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("get answers the realm and its latest import, without a second copy of its jobs", async () => {

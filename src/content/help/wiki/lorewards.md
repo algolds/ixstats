@@ -34,7 +34,7 @@ You're only paid if IxStats can match the winner to your account through a **ver
 
 ## Trophy cards
 
-Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a lore card you can keep, trade or list like any other. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If your wiki account isn't linked yet, the card waits and is given to you once you verify the link. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
+Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a lore card that is bound to the winner, so it stays with you and can't be traded or listed. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If your wiki account isn't linked yet, the card waits and is given to you once you verify the link. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
 
 ## Where your Lorewards show
 

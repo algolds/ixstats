@@ -188,6 +188,7 @@ export async function realmOverview(
       settings: true,
     },
   });
+  if (matchedId && realms.length === 0) throw new MapImportError("NOT_FOUND", "Realm not found");
   const ids = realms.map((realm) => realm.id);
   const active = { isActive: true, realmId: { in: ids } };
 
