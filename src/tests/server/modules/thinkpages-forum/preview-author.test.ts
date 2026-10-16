@@ -42,6 +42,22 @@ describe("previewAuthorOf", () => {
     expect(JSON.stringify(author)).not.toMatch(/jane|eurth\.png/);
   });
 
+  it("shows a persona whose account is gone as a bare persona, never its player", () => {
+    const author = previewAuthorOf(
+      { authorUserId: "u1", authorPersonaId: "p_gone", importedAuthorName: null },
+      maps,
+      "Member"
+    );
+    expect(author).toEqual({
+      name: "Persona",
+      avatarUrl: null,
+      flagUrl: null,
+      persona: true,
+      personaType: null,
+    });
+    expect(JSON.stringify(author)).not.toMatch(/jane|eurth\.png/);
+  });
+
   it("shows a member by public name, picture and flag", () => {
     expect(
       previewAuthorOf(

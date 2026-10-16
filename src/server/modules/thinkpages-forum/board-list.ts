@@ -34,14 +34,14 @@ function nameOf(
   latest: LatestPost,
   authors: Awaited<ReturnType<typeof authorsOf>>
 ): BoardAuthor | null {
-  const persona = latest.authorPersonaId ? authors.personas.get(latest.authorPersonaId) : undefined;
-  if (persona) {
+  if (latest.authorPersonaId) {
+    const persona = authors.personas.get(latest.authorPersonaId);
     return {
-      name: persona.displayName,
-      handle: persona.username,
-      avatarUrl: persona.avatarUrl,
+      name: persona?.displayName ?? "Persona",
+      handle: persona?.username ?? null,
+      avatarUrl: persona?.avatarUrl ?? null,
       flagUrl: null,
-      personaType: persona.personaType,
+      personaType: persona?.personaType ?? null,
     };
   }
   const user = latest.authorUserId ? authors.users.get(latest.authorUserId) : undefined;
@@ -82,7 +82,7 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
   ]);
   const authors = await authorsOf(
     db,
-    [...latest.values()].map((l) => l.authorUserId),
+    [...latest.values()].map((l) => (l.authorPersonaId ? null : l.authorUserId)),
     [...latest.values()].map((l) => l.authorPersonaId)
   );
   const categoryByKey = new Map(visible.map((c) => [c.key, c]));
@@ -155,7 +155,7 @@ export async function latestActivity(
     }),
     authorsOf(
       db,
-      visible.map((p) => p.authorUserId),
+      visible.map((p) => (p.authorPersonaId ? null : p.authorUserId)),
       visible.map((p) => p.authorPersonaId)
     ),
   ]);
