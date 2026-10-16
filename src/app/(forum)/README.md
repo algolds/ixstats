@@ -4,7 +4,8 @@
 
 The old XenForo bridge ("IxForum") was retired in ThinkPages forum phase 4b. Its forum was imported into the native
 ThinkPages forum (`/thinkpages`, `src/app/thinkpages/`), and this route group now holds only redirects, so every
-old `/forum/*` link, bookmark, stash item and nginx-forwarded `forum.ixwiki.com` URL keeps working.
+old forum thread, post, forum and member link, bookmark, stash item and nginx-forwarded `forum.ixwiki.com` URL keeps
+working. The bridge's own pages (`/forum`, search, new thread, bookmarks, conversations) are deleted.
 
 ## Routes
 
@@ -18,8 +19,6 @@ Every page is a server component that renders nothing: it awaits `followLegacyRe
 | `/forum/post/[postId]` | the imported post (`/thinkpages/post/<id>`, by `ForumPost.xenforoPostId`); nginx sends XenForo's `/posts/<id>/` here |
 | `/forum/[forumId]` | the node's category from the applied node map (SystemConfig `forum_import_node_map`), else its archive category `xf-<nodeId>` |
 | `/forum/members/[userId]` | the profile (`/@<handle>`) of the earliest account linked to that XenForo user (`User.forumUserId`) |
-| `/forum`, `/forum/search`, `/forum/new-thread`, `/forum/bookmarks` | the forum home (`FORUM_HOME`) |
-| `/forum/conversations`, `/forum/conversations/[id]` | ThinkShare (`/messages`, a plain redirect) |
 
 Only what an anonymous visitor may read resolves: a thread or post that is not hidden, in a public category, in the
 site section or a published realm. Anything else, an id that was never imported, a non-numeric id or a failed

@@ -26,13 +26,9 @@ jest.mock("~/server/modules/thinkpages-forum", () => ({
 jest.mock("~/server/db", () => ({ __esModule: true, db: { marker: "db" } }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import ForumHomePage from "~/app/(forum)/forum/page";
 import ForumThreadListPage from "~/app/(forum)/forum/[forumId]/page";
 import ThreadPage from "~/app/(forum)/forum/thread/[threadId]/page";
 import MemberProfilePage from "~/app/(forum)/forum/members/[userId]/page";
-import NewThreadPage from "~/app/(forum)/forum/new-thread/page";
-import ForumSearchPage from "~/app/(forum)/forum/search/page";
-import ForumStashesPage from "~/app/(forum)/forum/bookmarks/page";
 import LegacyPostPage from "~/app/(forum)/forum/post/[postId]/page";
 
 const params = <T extends object>(value: T) => ({ params: Promise.resolve(value) });
@@ -44,7 +40,6 @@ interface PageCase {
 }
 
 const CASES: PageCase[] = [
-  { name: "/forum", render: () => ForumHomePage(), ref: { kind: "home" } },
   {
     name: "/forum/[forumId]",
     render: () => ForumThreadListPage(params({ forumId: "12" })),
@@ -65,9 +60,6 @@ const CASES: PageCase[] = [
     render: () => MemberProfilePage(params({ userId: "7" })),
     ref: { kind: "member", userId: 7 },
   },
-  { name: "/forum/new-thread", render: () => NewThreadPage(), ref: { kind: "other" } },
-  { name: "/forum/search", render: () => ForumSearchPage(), ref: { kind: "other" } },
-  { name: "/forum/bookmarks", render: () => ForumStashesPage(), ref: { kind: "other" } },
 ];
 
 beforeEach(() => {

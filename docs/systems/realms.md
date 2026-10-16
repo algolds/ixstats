@@ -1,7 +1,7 @@
 # Realms — Places
 
 **Last updated:** 2026-10-07
-**Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/r/[realm]/board` · `/r/[realm]/nations` ·
+**Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/thinkpages/r/[realm]` · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`, `source-sync.ts`, `wiki.ts`, `map.ts`), `src/server/modules/realms/`
 (`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`, `realms.wiki.ts`, `realms.map.ts`, `realms.map-access.ts`), `src/lib/realms/sources/`, `src/lib/realms/realm-wiki-settings.ts`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
@@ -103,10 +103,10 @@ With it, the feed shows (`realmFeedWhere`):
 
 It composes with the `countryId`, `hashtag` and `filter` inputs and is cached per realm (the cache key includes the realm id).
 
-Where it is used: the `/realms` feed panel and the **Realm feed** tab of `/r/[realm]/board`. The
+Where it is used: the `/realms` feed panel and the **Realm feed** tab of `/thinkpages/r/[realm]`. The
 `/dashboard` feed (`activities.getGlobalFeed`) is not realm-scoped yet.
 
-## 3. Realm board (`/r/[realm]/board`)
+## 3. Realm board (`/thinkpages/r/[realm]`)
 
 Each realm has one board: a ThinkTank of type `realm_board`, mapped by the `RealmBoard` model
 (`prisma/schema/realm-boards.prisma`). It is created the first time anyone opens it (`realms.getBoard`); there

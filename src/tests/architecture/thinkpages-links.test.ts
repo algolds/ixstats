@@ -2,7 +2,7 @@
 /**
  * Phase 5 of the ThinkPages forum: /thinkpages is the forum. The persona hub is /dashboard/accounts, feed posts
  * /dashboard/post/<id>, persona profiles /dashboard/profile/<username>, saved posts /dashboard/saved. The old
- * /thinkpages pages only redirect, so nothing links to them; /thinkpages/post/<id> is the forum post permalink
+ * /thinkpages pages are deleted, so nothing links to them; /thinkpages/post/<id> is the forum post permalink
  * (ruling P5, written into wiki story chains) and only the resolver page and the link-builder modules spell it.
  *
  * Scope: ts/tsx under src/ (markdown is out of scope). Comment lines are skipped. The patterns need a
@@ -19,14 +19,8 @@ import path from "node:path";
 const SRC = path.join(process.cwd(), "src");
 const SKIP_DIRS = new Set(["tests", "node_modules", "generated"]);
 
-/** The retired pages: they only redirect, and are the one place their old paths may be named. */
+/** The retired /thinkpages pages are deleted: only the files that recognize their old paths may still name them. */
 const LEGACY_PAGES = [
-  "app/thinkpages/feed/page.tsx",
-  "app/thinkpages/forum/page.tsx",
-  "app/thinkpages/profile/[username]/page.tsx",
-  "app/thinkpages/saved/page.tsx",
-  "app/thinkpages/thinkshare/page.tsx",
-  "app/thinkpages/thinktanks/page.tsx",
   // Recognizes the old persona profile path in existing wiki pages (hover card); it builds no link.
   "lib/wiki-os/mention-target.ts",
 ];
@@ -119,12 +113,14 @@ describe("the patterns catch the old links (and only links)", () => {
     expect(LEGACY_PATH.test(line) || POST_PATH.test(line)).toBe(false);
   });
 
-  it.each(['href="/forum"', 'router.push("/forum/thread/12")', "`/forum?sort=new`", "path: '/forum/new-thread',"])(
-    "BRIDGE_PATH matches %s",
-    (line) => {
-      expect(BRIDGE_PATH.test(line)).toBe(true);
-    }
-  );
+  it.each([
+    'href="/forum"',
+    'router.push("/forum/thread/12")',
+    "`/forum?sort=new`",
+    "path: '/forum/new-thread',",
+  ])("BRIDGE_PATH matches %s", (line) => {
+    expect(BRIDGE_PATH.test(line)).toBe(true);
+  });
 
   it.each([
     'href="/thinkpages/forum"',
@@ -143,8 +139,12 @@ describe("the patterns catch the old links (and only links)", () => {
   });
 
   it("HUB_REDIRECT_PATH matches a guarded page redirecting into /thinkpages", () => {
-    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/thinkpages/saved">')).toBe(true);
-    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/dashboard/saved">')).toBe(false);
+    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/thinkpages/saved">')).toBe(
+      true
+    );
+    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/dashboard/saved">')).toBe(
+      false
+    );
   });
 });
 
@@ -169,7 +169,9 @@ describe("nothing links to a retired ThinkPages feed page", () => {
   });
 
   it("the account hub is the Dashboard's Accounts section", () => {
-    expect(fs.existsSync(path.join(SRC, "components/thinkpages/ThinkPagesAccountHub.tsx"))).toBe(false);
+    expect(fs.existsSync(path.join(SRC, "components/thinkpages/ThinkPagesAccountHub.tsx"))).toBe(
+      false
+    );
     expect(offenders(/ThinkPagesAccountHub/)).toEqual([]);
   });
 

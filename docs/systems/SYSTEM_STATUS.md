@@ -55,7 +55,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Relief (Atlas RA) | Atlas RA | raster layer `relief` on `/maps`; `/api/map-rasters/<realm>/relief/<version>/<z>/<x>/<y>` | `src/server/modules/maps/realm-relief*.ts`, `src/lib/worldgen/relief.ts` | ✅ Live | Hillshade tiles z0 to 5 (lossy WebP, transparent tiles skipped, about 500 to 740 tiles and 3 MB) for generated worlds (built after the apply; **Rebuild relief** in the World tab) and for any realm with stored altitude bands (`build-realm-map.ts --steps relief`, no stored pipeline needed; a realm with none is reported as skipped) |
 | Routes & travel time | — | `/maps` | `transport/`, `src/lib/economy/travel-time.ts` | ✅ Live | Sea routes use currents and wind; directive-driven network speeds not built |
 | Realms Phase 1 + Eurth | — | `/r/[realm]`, `/admin/realms` | `realms/`, `src/server/modules/realms/` | ✅ Live | Ownership, verified-creator claims, realm-scoped listings, lore index. Merged 2026-09-29 |
-| Realms Phases 2–4 | — | — | — | 🟡 Partial | Built: per-realm feed filter, realm boards (`/r/[realm]/board`), `/realms` directory, realm-aware builder, tier-aware nation cap, nation switcher. Not built: founding applications, founder tooling, archived realms. Realm world generation is the Worldgen row |
+| Realms Phases 2–4 | — | — | — | 🟡 Partial | Built: per-realm feed filter, realm boards (`/thinkpages/r/[realm]`), `/realms` directory, realm-aware builder, tier-aware nation cap, nation switcher. Not built: founding applications, founder tooling, archived realms. Realm world generation is the Worldgen row |
 
 ## 📖 WikiOS — lore platform
 

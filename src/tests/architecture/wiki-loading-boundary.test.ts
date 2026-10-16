@@ -6,19 +6,18 @@
  * `src/app/(wiki-os)`. The loading UI lives in `_components/RootLoading.tsx` and every other
  * top-level route segment re-exports it from its own `loading.tsx`.
  *
- * The passport redirects need the real 308 too: `/id/[username]` (canonical handle) and the legacy
- * `/r/[realm]/[username]` have no `loading.tsx` above them. `/r`'s loading UI sits in the realm's
- * `(region)` group instead, below the legacy path.
+ * The passport redirect needs the real 308 too: `/id/[username]` (canonical handle) has no `loading.tsx` above it.
+ * `/r`'s loading UI sits in the realm's `(region)` group instead.
  *
  * `/achievements` redirects to `/vault/achievements` (keeping `?a=<key>`), so it has no `loading.tsx` either.
  *
- * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page of the retired
- * XenForo bridge calls `permanentRedirect()` before rendering anything, so the `(forum)` group has no `loading.tsx`
+ * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page left of the
+ * retired XenForo bridge (thread, post, forum node, member) calls `permanentRedirect()` before rendering anything, so the `(forum)` group has no `loading.tsx`
  * and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
  * instead of the redirect (seen on the clone in phase 4).
  *
- * The ThinkPages redirects need the real 307 and 308 too (phase 5): the forum post permalink resolver, the feed's
- * old pages and the realm redirect. `/thinkpages` has no `loading.tsx`; the forum's category, thread and moderation
+ * The ThinkPages redirects need the real 307 and 308 too (phase 5): the forum post permalink resolver and the realm
+ * redirect. `/thinkpages` has no `loading.tsx`; the forum's category, thread and moderation
  * pages, which never redirect, keep the loading UI in their own segments.
  */
 import fs from "node:fs";
@@ -39,11 +38,7 @@ const OWN_LOADING = new Set(["builder"]);
 /** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
 const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages", "achievements"]);
 /** The redirect pages, relative to src/app. */
-const REDIRECT_PAGES = [
-  "id/[username]/page.tsx",
-  "r/[realm]/[username]/page.tsx",
-  "achievements/page.tsx",
-];
+const REDIRECT_PAGES = ["id/[username]/page.tsx", "achievements/page.tsx"];
 
 const LOADING_FILE = /^loading\.(?:tsx?|jsx?)$/;
 const PAGE_FILE = /^page\.(?:tsx?|jsx?)$/;
@@ -115,7 +110,7 @@ describe("no loading.tsx above the legacy forum redirects", () => {
       dirs.push(path.dirname(file));
       if (PAGE_FILE.test(path.basename(file))) pages.push(file);
     });
-    expect(pages.length).toBeGreaterThanOrEqual(8); // the walk found the redirect pages
+    expect(pages.length).toBeGreaterThanOrEqual(4); // the walk found the redirect pages
     const offenders = [...new Set([FORUM_GROUP, ...dirs])].filter(hasLoading);
     expect(offenders.map((dir) => path.relative(process.cwd(), dir))).toEqual([]);
   });
@@ -131,12 +126,6 @@ describe("no loading.tsx above the ThinkPages redirects", () => {
   const pages = [
     "thinkpages/page.tsx",
     "thinkpages/post/[postId]/page.tsx",
-    "thinkpages/forum/page.tsx",
-    "thinkpages/feed/page.tsx",
-    "thinkpages/profile/[username]/page.tsx",
-    "thinkpages/saved/page.tsx",
-    "thinkpages/thinkshare/page.tsx",
-    "thinkpages/thinktanks/page.tsx",
     "thinkpages/r/[realm]/page.tsx",
   ];
 

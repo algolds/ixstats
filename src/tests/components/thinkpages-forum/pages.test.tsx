@@ -302,21 +302,10 @@ beforeEach(() => {
 });
 
 describe("forum home", () => {
-  it("renders the forum home without a realm", async () => {
+  it("renders the forum home", () => {
     set("categories", { data: [] });
-    render(await ForumHomePage({ searchParams: Promise.resolve({}) }));
+    render(<ForumHomePage />);
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
-    expect(redirect).not.toHaveBeenCalled();
-  });
-
-  it("opens an old ?realm= link on that realm's Hub", async () => {
-    await ForumHomePage({ searchParams: Promise.resolve({ realm: "eurth" }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/eurth/hub");
-  });
-
-  it("treats an empty ?realm= as none", async () => {
-    set("categories", { data: [] });
-    render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "" }) }));
     expect(redirect).not.toHaveBeenCalled();
   });
 });

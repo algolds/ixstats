@@ -15,12 +15,12 @@ The feed and personas are the real-time communications and publishing network of
 
 ## 1. Sovereign Feed & Micro-Publishing (`/dashboard`)
 
-The **Sovereign Feed** (rendered on `/dashboard`; `/thinkpages/feed` redirects there; a single post is `/dashboard/post/[postId]`) is the public town square for national announcements, diplomatic communiqués, breaking news, and community polling:
+The **Sovereign Feed** (rendered on `/dashboard`; a single post is `/dashboard/post/[postId]`) is the public town square for national announcements, diplomatic communiqués, breaking news, and community polling:
 - **`[blurb:slug|Title]` Blurb Cross-Posts**: [Blurbs](../../src/app/blurbs/README.md) (Topic Tuesday) responses auto-cross-post to the feed with a `[blurb:slug|Title]` prefix and `#blurb` tag; the post card strips the prefix and renders a chip linking back to the prompt. Inline link previews cover Wiki, Forum, League, and Club URLs.
 - **Official Seals & Sovereign Identity**: Posts display sovereign state seals, leader titles, and verified tags. Only admins can set the verified flag, and creating an account tied to a country requires write access to that country (`accounts.ts`).
 - **National Polls**: Real-time polling widgets let rulers gauge international sentiment and domestic approval with instant visual tallying.
 - **Hashtag Indexing**: Hashtags are extracted on submit and each tag has its own page (`/hashtags/[tag]`) aggregating discussions across sovereign borders.
-- **Saved posts** (`/dashboard/saved`, SL-10; `/thinkpages/saved` redirects there): a post's menu bookmarks it (`thinkpages.bookmarkPost`, keyed by the caller's Clerk id). `thinkpages.getBookmarkedPosts` lists the caller's bookmarks, most recently saved first (cursor on the bookmark id), leaving out posts deleted since and posts the caller can no longer read. The page links from the Accounts section and each item has **Remove from saved**.
+- **Saved posts** (`/dashboard/saved`, SL-10): a post's menu bookmarks it (`thinkpages.bookmarkPost`, keyed by the caller's Clerk id). `thinkpages.getBookmarkedPosts` lists the caller's bookmarks, most recently saved first (cursor on the bookmark id), leaving out posts deleted since and posts the caller can no longer read. The page links from the Accounts section and each item has **Remove from saved**.
 - **Flags and the moderation queue** (SL-10): `thinkpages.flagPost` records a flag (`PostFlag`) for the caller, with an optional reason; the flagger is always the signed-in user (a client-sent `userId` is ignored), and a user flags a post once. Admins work the queue in **Admin → ThinkPages → Flagged posts** (`admin.listFlaggedPosts`: open flags grouped by post, most flagged first, with up to five reasons). **Dismiss** closes every open flag on the post (`status: "dismissed"`); **Remove post** deletes the post through the same path as `deletePost` (`server/shared/thinkpages-post-delete.ts`) and closes its flags as `removed`. Both record `resolvedAt` and the admin's Clerk id in `resolvedBy`.
 
 ### Trending, Hot & engagement counters
@@ -81,7 +81,7 @@ Notifications are keyed by Clerk user id. The recipient is always the **owning u
 ThinkTanks are dedicated research and policy drafting rooms for alliances, international coalitions, and co-authors:
 - **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
 - **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
-- **Realm Boards**: every realm has a board ThinkTank at `/r/[realm]/board`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
+- **Realm Boards**: every realm has a board ThinkTank, shown on the realm's landing page at `/thinkpages/r/<realm>`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
 - **Joint Working Papers and group chat**: the workspace mounts a Docs tab (`ThinktankPapersTab`, `CollaborativeDoc` CRUD) and a Chat tab on the group's linked ThinkShare conversation (see [ThinkTanks](./thinktanks.md#pillars-34-chat-and-docs)).
 
 ---

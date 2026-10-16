@@ -4,7 +4,6 @@ import {
   FORUM_HOME,
   categoryHref,
   claimNationHref,
-  forumHomeHref,
   handleProfileHref,
   hubHref,
   isForumPath,
@@ -22,13 +21,8 @@ import {
 } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
-  it("opens the home, with the realm in the query when given", () => {
+  it("opens the home", () => {
     expect(FORUM_HOME).toBe("/thinkpages");
-    expect(forumHomeHref()).toBe("/thinkpages");
-    expect(forumHomeHref(null)).toBe("/thinkpages");
-    expect(forumHomeHref("")).toBe("/thinkpages");
-    expect(forumHomeHref("eurth")).toBe("/thinkpages?realm=eurth");
-    expect(forumHomeHref("a b")).toBe("/thinkpages?realm=a%20b");
   });
 
   it("puts sitewide categories under /c and realm categories under /r/<slug>", () => {
@@ -64,7 +58,6 @@ describe("forum links", () => {
   });
 
   it("encodes slugs so they cannot add path segments or query parameters", () => {
-    expect(forumHomeHref("a&b=c")).toBe("/thinkpages?realm=a%26b%3Dc");
     expect(categoryHref({ key: "hub", realm: { slug: "../x" } })).toBe("/thinkpages/r/..%2Fx/hub");
     expect(claimNationHref("a/b")).toBe("/r/a%2Fb/nations");
   });

@@ -1,20 +1,13 @@
 /**
  * The realm passport (`/r/{realm}/@{handle}`, served from `/r/[realm]/(region)/u/[username]`): one
  * holder's nations in one realm, titled with the realm's name from the region overview, showing the
- * payload's passport handle (never the URL segment). The old `/r/{realm}/{username}` path 308s to
- * it, and its layout carries the passport's noindex rule.
+ * payload's passport handle (never the URL segment). Its layout carries the passport's noindex rule.
  */
 import React, { Suspense } from "react";
 import { act, render, screen } from "@testing-library/react";
 import type { PassportPayload, RealmItem } from "~/components/passport/types";
 
-const permanentRedirect = jest.fn();
-class NotFound extends Error {}
 jest.mock("next/navigation", () => ({
-  permanentRedirect: (url: string) => permanentRedirect(url),
-  notFound: () => {
-    throw new NotFound("not found");
-  },
   usePathname: () => "/r/eurth/u/alex",
 }));
 const pageTitle = jest.fn();
@@ -52,7 +45,6 @@ jest.mock("~/trpc/react", () => {
 
 import RealmPassportPage from "~/app/r/[realm]/(region)/u/[username]/page";
 import { generateMetadata } from "~/app/r/[realm]/(region)/u/[username]/layout";
-import LegacyRealmPassportPage from "~/app/r/[realm]/[username]/page";
 
 function membership(name: string): RealmItem {
   return {
@@ -186,33 +178,5 @@ describe("realm passport metadata", () => {
       params: Promise.resolve({ realm: "eurth", username: "alex" }),
     });
     expect(metadata).toEqual({});
-  });
-});
-
-describe("legacy realm passport path", () => {
-  const legacy = (username: string) =>
-    LegacyRealmPassportPage({ params: Promise.resolve({ realm: "eurth", username }) });
-
-  beforeEach(() => permanentRedirect.mockClear());
-
-  it("308s /r/{realm}/{username} to /r/{realm}/@{username}", async () => {
-    await legacy("alex");
-    expect(permanentRedirect).toHaveBeenLastCalledWith("/r/eurth/@alex");
-  });
-
-  it("keeps names that need encoding encoded", async () => {
-    await legacy("Some%20Nation");
-    expect(permanentRedirect).toHaveBeenLastCalledWith("/r/eurth/@Some%20Nation");
-  });
-
-  it("404s, never redirecting to itself, when the segment already starts with @", async () => {
-    await expect(legacy("%40alex")).rejects.toThrow("not found");
-    await expect(legacy("@alex")).rejects.toThrow("not found");
-    expect(permanentRedirect).not.toHaveBeenCalled();
-  });
-
-  it("404s on a malformed segment", async () => {
-    await expect(legacy("%E0%A4%A")).rejects.toThrow("not found");
-    expect(permanentRedirect).not.toHaveBeenCalled();
   });
 });

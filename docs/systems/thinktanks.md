@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05  
 **Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; invite inbox and join-by-code since 2026-10-05); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
-**Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/r/[realm]/board`  
+**Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/thinkpages/r/[realm]`  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
 ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#4-thinkshare-real-time-messaging-messages) platform.
@@ -115,7 +115,7 @@ Every realm has a board, the NationStates regional message board, built on this 
   (`prisma/schema/realm-boards.prisma`: `realmId` and `groupId`, both unique). It has the usual linked
   ThinkShare conversation (the Chat tab) and settings `{ allowPersonaPosting: true }`.
 - **Created on demand.** `realms.getBoard` creates the board, its chat and its `RealmBoard` row in one
-  transaction the first time anyone opens `/r/[realm]/board`. When two first opens race, the unique
+  transaction the first time anyone opens `/thinkpages/r/[realm]`. When two first opens race, the unique
   `realmId` lets one win and the other returns the winner's board. There is no bulk migration.
 - **Access follows nation ownership, not member rows.** `getGroupAccess` hands realm boards to
   `getRealmBoardAccess`:

@@ -39,11 +39,6 @@ export function withQuery(path: string, query: PageQuery): string {
   return search ? `${path}?${search}` : path;
 }
 
-/** The forum home, opened on `realm`'s section when given. */
-export function forumHomeHref(realm?: string | null): string {
-  return realm ? `${FORUM_HOME}?realm=${seg(realm)}` : FORUM_HOME;
-}
-
 export function categoryHref(category: CategoryPlace): string {
   const { key, realm } = category;
   return realm ? `/thinkpages/r/${seg(realm.slug)}/${seg(key)}` : `/thinkpages/c/${seg(key)}`;
@@ -109,7 +104,7 @@ export function handleProfileHref(handle: string): string {
   return `/id/${seg(handle)}`;
 }
 
-/** A persona's profile (the dashboard owns the feed; `/thinkpages/profile/*` only redirects there). */
+/** A persona's profile (the dashboard owns the feed). */
 export function personaProfileHref(username: string): string {
   return `/dashboard/profile/${seg(username)}`;
 }
