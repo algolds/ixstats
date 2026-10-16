@@ -52,7 +52,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       // Guaranteed non-null by protectedProcedure's authMiddleware.
       const userId = ctx.auth.userId;
       const balance = await vaultService.getBalance(userId, ctx.db as any);
-      // Same curve as the ledger and the crafting gate: configured XP per level.
+      // Same curve as the ledger: configured XP per level.
       const { xpPerLevel } = await getVaultConfig(ctx.db);
       const vaultLevel = Math.floor(balance.vaultXp / xpPerLevel) + 1;
 

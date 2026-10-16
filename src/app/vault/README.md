@@ -35,7 +35,7 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 - **Card packs** — Browse/purchase packs (`cardPacks.getAvailablePacks`, `purchasePack`), open via the cards pipeline. Pack types and odds are documented in `docs/systems/cards.md`.
 - **Marketplace** — Three tabs in one section: **Vault Shop** (`vault.listStoreItems` / `getPurchasedItems`), **Auctions** (`cardMarket.*` — active/ending-soon/my-bids/my-auctions, `createAuction`), and **Trading** (`trading.getActiveTrades` / `getTradeHistory`).
 - **Collections** — Create/delete and organize cards (`cards.getMyCollections`, `createCollection`, `deleteCollection`, `getCollectionCards`); collection pages support comments and likes (`vault.getCollectionComments`, `addCollectionComment`, `likeCollection`).
-- **Crafting** — Retired for now (2026-10-05): every `crafting.*` procedure refuses and the workbench is gone; see `docs/systems/cards.md`.
+- **Crafting** — Retired for now (2026-10-05): the `crafting` router and workbench are gone; see `docs/systems/cards.md`.
 - **Card junking** — Recycle unlocked cards for IxC (`cards.junkCards`); cards escrow-locked by an auction or trade are refused.
 - **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `importDeck`, `fetchPublicDeck`); see `docs/systems/ns-integration.md`.
 - **Achievements and Lorewards** — `/vault/achievements` (see `docs/systems/achievements.md`); the Lorewards tab wraps the shared `LorewardsView` (`VaultLorewardsPanel`).
@@ -97,5 +97,5 @@ The previous README described an architecture that no longer matches the code an
 - **No `VaultRouter`, `VaultDashboard`, `VaultHeader`, `VaultNavigation`, or `QuickActions` components** exist: navigation is the shell sidebar, and the pages are a `layout.tsx` plus per-route section components.
 - Documented routes (`/vault/packs`, `/vault/market`) are now **redirect stubs** into `/vault/store`; real routes include `crafting`, `import`, `ns-deck`, `lore-gallery`/`lore-generator`, `ns-library`, `admin`.
 - Marketplace is a single tabbed section (Shop/Auctions/Trading), not separate "Agent 1/2/3" components.
-- Auction/market endpoints live on `cardMarket` (not `market`); packs on `cardPacks`; NS on `nsImport`; crafting on `crafting`; trading on `trading` — the prior "API endpoints needed" wishlist is now live.
+- Auction/market endpoints live on `cardMarket` (not `market`); packs on `cardPacks`; NS on `nsImport`; trading on `trading` — the prior "API endpoints needed" wishlist is now live.
 - Dropped the stale "Agent 1/2/3", TODO, and testing-checklist sections.

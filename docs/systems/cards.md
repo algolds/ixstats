@@ -102,14 +102,12 @@ Packs are rows in `CardPack`, seeded from `prisma/seeds/data/card-packs.json` an
 
 ### Crafting: retired for now (2026-10-05)
 The owner deprecated crafting. Nothing can craft:
-- Every `crafting.*` procedure (`getRecipes`, `getRecipeById`, `craftCard`) refuses with `PRECONDITION_FAILED`
-  ("Crafting is retired for now.") before touching the database. The switch is `CRAFTING_ENABLED` in
-  `src/server/api/routers/crafting/_retired.ts`; the Vault config's `isCraftingEnabled` key and its admin toggle are gone.
+- The `crafting` router (`getRecipes`, `getRecipeById`, `craftCard`), its rule module and its seed are deleted
+  (cards refresh Phase 1); the Vault config's `isCraftingEnabled` key and its admin toggle are gone.
 - `/vault/crafting` shows a short "Crafting is retired for now" empty state; the workbench components, the sidebar,
-  Halo and help-centre entries are removed. `db:seed` no longer runs `prisma/seeds/crafting-recipes.ts`.
-- Kept until the schema-drop decision (it waits on a backup): the `CraftingRecipe` / `CraftingHistory` models and rows,
-  `SPEND_CRAFT` / `CRAFT` enum values, `src/lib/cards/crafting-rules.ts` (packs still exclude crafted cards with
-  `CRAFTED_CARD_MARKER`) and the router logic, whose tests mock the flag on.
+  Halo and help-centre entries are removed. `db:seed` has no crafting seed.
+- The `CraftingRecipe` / `CraftingHistory` tables drop with the cards refresh constraints SQL; the `SPEND_CRAFT` /
+  `CRAFT` enum values stay. Packs still exclude legacy crafted cards by their stored `metadata.crafted` marker.
 - Moot with it: decision D6 (a MYTHIC recipe) and "failed rolls consume materials".
 
 ### Card Recycling (Junking)
@@ -126,7 +124,7 @@ All card operations route through modularized subdirectories:
 - `src/server/api/routers/cardImages.ts` (card XP helpers live in `src/lib/cards/xp-utils.ts`)
 - `src/server/api/routers/lore-cards/`
 - `src/server/api/routers/ns-import/`
-- `src/server/api/routers/trading/` (`crafting/` is retired and refuses every call)
+- `src/server/api/routers/trading/` (the `crafting/` router is deleted; Phase 4 of the cards refresh brings dust crafting)
 
 ---
 
