@@ -15,8 +15,9 @@ const newestFirst = (a: { lastActivity: Date }, b: { lastActivity: Date }) =>
   new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
 
 /**
- * The Forums home rail's data, each panel `undefined` when it has nothing to show: New across ThinkPages, Trending, open
- * Find a Realm adverts, ThinkTanks (the member's own, else the most recently active) and the member's standing.
+ * The Forums home's side data, each part `undefined` when it has nothing to show: the New across ThinkPages feed (main
+ * column), then the rail's Trending, open Find a Realm adverts, ThinkTanks (the member's own, else the most recently
+ * active) and the member's standing.
  */
 export function useHomeRail(signedIn: boolean) {
   const { data: activity } = api.thinkpagesForum.latestActivity.useQuery();
