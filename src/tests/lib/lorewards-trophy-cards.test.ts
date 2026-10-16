@@ -1,13 +1,21 @@
 /** @jest-environment node */
 /**
- * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the winner's wiki
- * account is verified-linked. Minting, granting and the backfill never write IxCredits.
+ * Loreward trophy cards: one one-of-one, bound Trophy card per recorded place, held unowned until the winner's wiki
+ * account is verified-linked, its copy Serialised. Minting, granting and the backfill never write IxCredits.
  */
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
+jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
+jest.mock("~/lib/cards/home-realm", () => ({
+  articleHomeRealm: jest.fn().mockResolvedValue("default"),
+}));
+
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { ConflictError } from "~/lib/app-error";
+import { mintCopy } from "~/lib/cards/mint";
 import {
   backfillTrophyCards,
+  EXCLUDE_TROPHY_CARDS,
   grantUnownedTrophyCards,
   isTrophyCard,
   mintTrophyCards,
@@ -39,11 +47,8 @@ interface CardRow {
 interface OwnershipRow {
   id: string;
   cardId: string;
-  userId: string;
   ownerId: string;
   serialNumber: number;
-  isLocked: boolean;
-  quantity: number;
 }
 
 let entries: EntryRow[];
@@ -138,14 +143,6 @@ function buildDb(): PrismaClient {
         async ({ where }: { where: { cardId: string } }) =>
           ownerships.filter((o) => o.cardId === where.cardId).length
       ),
-      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
-        const mine = ownerships.filter((o) => o.cardId === where.cardId);
-        return mine.length ? { serialNumber: Math.max(...mine.map((o) => o.serialNumber)) } : null;
-      }),
-      create: jest.fn(async ({ data }: { data: OwnershipRow }) => {
-        ownerships.push(data);
-        return data;
-      }),
     },
     vaultTransaction: { create: credit("vaultTransaction.create") },
     myVault: { update: credit("myVault.update"), upsert: credit("myVault.upsert") },
@@ -169,12 +166,25 @@ beforeEach(() => {
   failNextCardCreate = false;
   failNextCardCreateAsConflict = false;
   db = buildDb();
+  // The real mintCopy (Task 4) is tested on its own; here it records the copy it would create.
+  jest.mocked(mintCopy).mockReset();
+  jest.mocked(mintCopy).mockImplementation(async (_tx, input) => {
+    const serialNumber = ownersOf(input.cardId).length + 1;
+    ownerships.push({
+      id: `o${ownerships.length + 1}`,
+      cardId: input.cardId,
+      ownerId: input.ownerId,
+      serialNumber,
+    });
+    return { id: `o${ownerships.length}` } as Awaited<ReturnType<typeof mintCopy>>;
+  });
 });
 
-describe("isTrophyCard", () => {
-  it("is true for a card stamped with a Loreward entry and false otherwise", () => {
-    expect(isTrophyCard({ lorewardEntryId: "e1" })).toBe(true);
-    expect(isTrophyCard({ lorewardEntryId: null })).toBe(false);
+describe("trophy exclusion", () => {
+  it("leaves every trophy out, Loreward or sports, by type", () => {
+    expect(EXCLUDE_TROPHY_CARDS).toEqual({ cardType: { not: "TROPHY" } });
+    expect(isTrophyCard({ cardType: "TROPHY" })).toBe(true);
+    expect(isTrophyCard({ cardType: "LORE" })).toBe(false);
   });
 });
 
@@ -190,7 +200,7 @@ describe("trophyRarity", () => {
 });
 
 describe("mintTrophyCards", () => {
-  it("mints one one-of-one lore card per recorded place of the entry", async () => {
+  it("mints one one-of-one, bound Trophy card per recorded place of the entry", async () => {
     entries = [entry({ runnerUpUser: "Urcea", runnerUpPage: "Caballian Wars" })];
 
     expect(await mintTrophyCards(db)).toEqual({ minted: 2 });
@@ -201,7 +211,9 @@ describe("mintTrophyCards", () => {
     ]);
     expect(cards[0]).toMatchObject({
       title: "Seneca front",
-      cardType: "LORE",
+      cardType: "TROPHY",
+      isBound: true,
+      realmId: "default",
       rarity: "RARE",
       totalSupply: 1,
       season: 3,
@@ -260,20 +272,18 @@ describe("mintTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
 
-  it("gives a linked winner an unlocked, tradeable copy as serial 1", async () => {
+  it("gives a linked winner a Serialised copy through mintCopy", async () => {
     links.set("Kir Republic", "u1");
 
     await mintTrophyCards(db);
 
-    expect(ownersOf("c1")).toEqual([
-      expect.objectContaining({
-        userId: "u1",
-        ownerId: "u1",
-        serialNumber: 1,
-        quantity: 1,
-        isLocked: false,
-      }),
-    ]);
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+    });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1", serialNumber: 1 })]);
     expect(cards[0]?.metadata).toMatchObject({ grantedTo: "u1" });
   });
 
@@ -308,13 +318,28 @@ describe("grantUnownedTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
 
+  it("takes the per-card lock before it looks at the card or its owners", async () => {
+    links.set("Kir Republic", "u1");
+
+    await grantUnownedTrophyCards(db);
+
+    const raw = jest.mocked(db.$executeRaw as unknown as jest.Mock);
+    const exists = jest.mocked(db.card.findUnique as unknown as jest.Mock);
+    expect(raw).toHaveBeenCalled();
+    expect(raw.mock.invocationCallOrder[0]).toBeLessThan(exists.mock.invocationCallOrder[0]!);
+  });
+
   it("grants the card once after a link appears", async () => {
     links.set("Kir Republic", "u1");
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
-    expect(ownersOf("c1")).toEqual([
-      expect.objectContaining({ userId: "u1", ownerId: "u1", serialNumber: 1, isLocked: false }),
-    ]);
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+    });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1", serialNumber: 1 })]);
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownersOf("c1")).toHaveLength(1);
@@ -339,15 +364,7 @@ describe("grantUnownedTrophyCards", () => {
     const original = findMany;
     findMany.mockImplementationOnce(async (args) => {
       const listed = await original(args);
-      ownerships.push({
-        id: "o",
-        cardId: "c1",
-        userId: "u9",
-        ownerId: "u9",
-        serialNumber: 1,
-        isLocked: false,
-        quantity: 1,
-      });
+      ownerships.push({ id: "o", cardId: "c1", ownerId: "u9", serialNumber: 1 });
       return listed;
     });
 
@@ -395,7 +412,7 @@ describe("backfillTrophyCards", () => {
 
     expect(report).toMatchObject({ minted: 4, granted: 0 });
     expect(cards).toHaveLength(4);
-    expect(ownerships.map((o) => o.userId)).toEqual(["u1", "u1", "u1"]);
+    expect(ownerships.map((o) => o.ownerId)).toEqual(["u1", "u1", "u1"]);
     expect(creditWrites).toEqual([]);
   });
 

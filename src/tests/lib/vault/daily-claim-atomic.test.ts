@@ -200,7 +200,7 @@ describe("claimCombinedDailyClaim", () => {
     expect(db.vaultTransaction.create).toHaveBeenCalledTimes(1);
   });
 
-  it("CARD: never picks a Loreward trophy card, active or fallback", async () => {
+  it("CARD: never picks a trophy card, active or fallback", async () => {
     const db = makeDb();
     db.myVault.updateMany = jest.fn().mockResolvedValue({ count: 1 });
     db.card.count = jest.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(1);
@@ -213,11 +213,11 @@ describe("claimCombinedDailyClaim", () => {
     await claimCombinedDailyClaim("user_1", "CARD", db as never);
 
     expect(db.card.count).toHaveBeenNthCalledWith(1, {
-      where: { isRetired: false, lorewardEntryId: null },
+      where: { isRetired: false, cardType: { not: "TROPHY" } },
     });
-    expect(db.card.count).toHaveBeenNthCalledWith(2, { where: { lorewardEntryId: null } });
+    expect(db.card.count).toHaveBeenNthCalledWith(2, { where: { cardType: { not: "TROPHY" } } });
     expect(db.card.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { lorewardEntryId: null } })
+      expect.objectContaining({ where: { cardType: { not: "TROPHY" } } })
     );
   });
 

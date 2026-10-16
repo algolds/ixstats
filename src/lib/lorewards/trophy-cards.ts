@@ -1,27 +1,27 @@
 /**
  * Loreward trophy cards: every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a
- * one-of-one, tradeable lore card for that wiki user. The card is minted once per (entry, edition) and held
- * unowned until the user's wiki account is verified-linked (`resolveLorewardUser`), then granted exactly once.
- * No IxCredits are written here: trophy cards are collectibles, kept out of deck value (`EXCLUDE_TROPHY_CARDS`).
- *
- * A trophy card carries the winning page's `wikiArticleTitle` like any lore card, so random lore generation
- * will not make a second card of that page (`checkCardExists`); that is intended.
+ * one-of-one, bound Trophy card (cards refresh §2.1) for that wiki user, its copy Serialised. The card is minted
+ * once per (entry, edition) and held unowned until the user's wiki account is verified-linked
+ * (`resolveLorewardUser`), then granted exactly once.
+ * No IxCredits are written here: trophy cards stay out of deck value and the dividend (`EXCLUDE_TROPHY_CARDS`).
+ * A Lore card and a Trophy card may exist for the same article (§3).
  */
-import { Prisma, type PrismaClient } from "@prisma/client";
-import { ConflictError } from "~/lib/app-error";
+import { type Prisma, type PrismaClient } from "@prisma/client";
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { LoreCategory } from "~/lib/cards/category-enums";
-import { CardRarity, CardType } from "~/lib/cards/enums";
-import { newCardOwnershipId } from "~/lib/cards/ownership-id";
+import { CardFinish, CardRarity, CardType } from "~/lib/cards/enums";
+import { articleHomeRealm } from "~/lib/cards/home-realm";
+import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
+import { mintCopy } from "~/lib/cards/mint";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
-import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
+import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { resolveLorewardUser } from "./resolve-user";
 
-/** Prisma `where` fragment for a card relation that leaves trophy cards out (deck value, collection interest). */
-export const EXCLUDE_TROPHY_CARDS = { lorewardEntryId: null } as const;
+/** Prisma `where` fragment for a card relation that leaves every trophy out (deck value, the dividend, packs). */
+export const EXCLUDE_TROPHY_CARDS = { cardType: { not: CardType.TROPHY } } as const;
 
-export const isTrophyCard = (card: { lorewardEntryId: string | null }) =>
-  card.lorewardEntryId !== null;
+export const isTrophyCard = (card: { cardType: string }) => card.cardType === CardType.TROPHY;
 
 const CONTESTS: LorewardType[] = ["daily", "weekly", "monthly"];
 const PLACES: LorewardPlace[] = ["winner", "runner-up"];
@@ -60,24 +60,6 @@ interface TrophyEntry {
 const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {};
 
-/** A unique violation: `P2002` from a raw client, a `ConflictError` once it passes through `~/server/db`. */
-const isUniqueViolation = (error: Error) =>
-  (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") ||
-  error instanceof ConflictError;
-
-const ownershipData = (cardId: string, userId: string, serialNumber: number) => ({
-  id: newCardOwnershipId(),
-  cardId,
-  userId,
-  ownerId: userId,
-  serialNumber,
-  quantity: 1,
-  level: 1,
-  experience: 0,
-  isLocked: false,
-  acquiredAt: new Date(),
-});
-
 /** Keys (`<entryId>:<edition>`) of the trophy cards that already exist. */
 async function mintedKeys(db: PrismaClient, entryIds?: string[]): Promise<Set<string>> {
   const rows = await db.card.findMany({
@@ -102,16 +84,19 @@ async function mintOne(
   const userId = await resolveLorewardUser(db, wikiUser);
   try {
     await db.$transaction(async (tx) => {
+      const title = page ?? `${label} Loreward ${entry.date}`;
       const card = await tx.card.create({
         data: {
-          title: page ?? `${label} Loreward ${entry.date}`,
+          title,
           description: `${label} Loreward ${place}, ${entry.date}. Won by ${wikiUser}${page ? ` with ${page}` : ""}.`,
           category: LoreCategory.SPECIAL,
-          cardType: CardType.LORE,
+          cardType: CardType.TROPHY,
+          isBound: true,
+          realmId: await articleHomeRealm(tx, "ixwiki", title),
           rarity,
           season,
           wikiSource: "ixwiki",
-          wikiArticleTitle: page,
+          wikiArticleTitle: page === null ? null : canonicalArticleTitle(page, "ixwiki"),
           totalSupply: 1,
           marketValue: TROPHY_MARKET_VALUE[rarity]!,
           lorewardEntryId: entry.id,
@@ -127,14 +112,18 @@ async function mintOne(
         },
       });
       if (userId) {
-        const serial = await allocateSerialNumberTx(tx, card.id);
-        await tx.cardOwnership.create({ data: ownershipData(card.id, userId, serial) });
+        await mintCopy(tx, {
+          cardId: card.id,
+          ownerId: userId,
+          finish: CardFinish.SERIALISED,
+          source: "TROPHY",
+        });
       }
     });
     return true;
   } catch (error) {
     // Another run minted this place between the existence check and the insert.
-    if (error instanceof Error && isUniqueViolation(error)) return false;
+    if (isUniqueViolation(error)) return false;
     throw error;
   }
 }
@@ -202,14 +191,19 @@ export async function mintTrophyCards(
 /** Gives one unowned trophy card to `userId` unless it gained an owner, or was granted before, in the meantime. */
 async function grantOne(db: PrismaClient, cardId: string, userId: string): Promise<boolean> {
   return db.$transaction(async (tx) => {
-    // Takes the per-card lock, so a concurrent grant waits and then sees this one.
-    const serial = await allocateSerialNumberTx(tx, cardId);
+    // The per-card lock first, so a concurrent grant waits and then sees this one.
+    await lockCardSerialsTx(tx, cardId);
     const card = await tx.card.findUnique({ where: { id: cardId }, select: { metadata: true } });
     const meta = metaOf(card?.metadata);
     if (!card || meta.grantedTo || (await tx.cardOwnership.count({ where: { cardId } })) > 0) {
       return false;
     }
-    await tx.cardOwnership.create({ data: ownershipData(cardId, userId, serial) });
+    await mintCopy(tx, {
+      cardId,
+      ownerId: userId,
+      finish: CardFinish.SERIALISED,
+      source: "TROPHY",
+    });
     await tx.card.update({
       where: { id: cardId },
       data: { metadata: { ...meta, grantedTo: userId, grantedAt: new Date().toISOString() } },
@@ -220,7 +214,8 @@ async function grantOne(db: PrismaClient, cardId: string, userId: string): Promi
 
 /**
  * Grants each unowned trophy card to its winner once that wiki account has a verified link. A card granted
- * before is never granted again, even if its owner later sold, junked or crafted it away.
+ * before is never granted again, A trophy is bound and stays with
+ * the account it was granted to (§3).
  */
 export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
   const unowned = await db.card.findMany({

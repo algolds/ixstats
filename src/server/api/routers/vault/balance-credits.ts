@@ -140,7 +140,7 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
           cards: {
             select: {
               marketValue: true,
-              lorewardEntryId: true,
+              cardType: true,
             },
           },
         },
