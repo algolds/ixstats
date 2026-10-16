@@ -35,8 +35,16 @@ describe("timeAgo (single relative-time formatter, plan 345)", () => {
     expect(timeAgo(NOW - 5 * MIN)).toBe("5m ago");
   });
 
-  it("falls back to a short date after 30 days and to an empty string for invalid input", () => {
-    expect(timeAgo(ago(45 * DAY))).toMatch(/[A-Z][a-z]{2} \d{1,2}/);
+  it("falls back to a short date without the year after 30 days in the same year", () => {
+    expect(timeAgo(ago(45 * DAY))).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/);
+  });
+
+  it("keeps the year on a date from an earlier year", () => {
+    expect(timeAgo(new Date("2019-03-12T09:00:00Z"))).toMatch(/2019/);
+    expect(timeAgo(new Date("2025-12-31T09:00:00Z"))).toMatch(/2025/);
+  });
+
+  it("returns an empty string for invalid input", () => {
     expect(timeAgo("not a date")).toBe("");
   });
 });

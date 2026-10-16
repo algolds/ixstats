@@ -10,7 +10,7 @@ export function formatCompact(num: number): string {
 
 /**
  * Format a timestamp as a relative time string: "just now", "5m ago", "2h ago", "3d ago",
- * then a short date after 30 days. `{ suffix: false }` drops " ago" for compact list rows.
+ * then a short date after 30 days (with the year when it is not this year). `{ suffix: false }` drops " ago" for compact list rows.
  *
  * The single relative-time formatter in the codebase (13 hand-rolled copies were folded
  * into it on 2026-09-25, plan 345). Accepts a Date, ISO string or epoch milliseconds.
@@ -27,5 +27,10 @@ export function timeAgo(input: Date | string | number, opts: { suffix?: boolean 
   if (diffHr < 24) return `${diffHr}h${suffix}`;
   const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 30) return `${diffDay}d${suffix}`;
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
 }
