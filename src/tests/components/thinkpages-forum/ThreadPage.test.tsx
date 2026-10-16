@@ -322,6 +322,14 @@ describe("the thread page", () => {
     expect(second.queryByText("Thread starter")).toBeNull();
   });
 
+  it("indents a post's body to the name column from sm up only", () => {
+    set(threadData());
+    render(<ThreadPage threadId="t1" page={1} />);
+    const body = document.querySelector('article[id^="post-"] > div.sm\\:pl-12');
+    expect(body).not.toBeNull();
+    expect(body).not.toHaveClass("pl-12");
+  });
+
   it("styles an in-character thread as an article and says so; an out-of-character one is compact", () => {
     set(threadData({ style: "ic" }));
     const { container, unmount } = render(<ThreadPage threadId="t1" page={1} />);

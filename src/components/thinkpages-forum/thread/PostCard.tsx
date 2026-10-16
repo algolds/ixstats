@@ -117,6 +117,7 @@ function headerAuthor(post: ForumPost, authors: ForumAuthors) {
       avatarUrl: persona?.avatarUrl ?? null,
       flagUrl: null,
       personaUsername: persona?.username,
+      personaType: persona?.personaType ?? null,
       imported: false,
     };
   }
@@ -127,6 +128,7 @@ function headerAuthor(post: ForumPost, authors: ForumAuthors) {
     avatarUrl: user?.avatarUrl ?? null,
     flagUrl: user?.flagUrl ?? null,
     personaUsername: undefined,
+    personaType: null,
     imported: post.authorUserId === null && post.importedAuthorName !== null,
   };
 }
@@ -203,28 +205,30 @@ export const PostCard = memo(function PostCard({
             postId={post.id}
             hidden={post.hidden === true}
           />
-          <PostBody
-            html={post.contentHtml}
-            style={style}
-            cards={cards}
-            cardsReady={cardsReady}
-            cardsErrored={cardsErrored}
-            postId={countedPostId({ id: post.id, persona: !!post.authorPersonaId })}
-          />
-          <PostActions
-            post={post}
-            canReply={canReply}
-            canReact={canReactToPost(canReact, post)}
-            onReply={onReply}
-            onQuote={quote}
-            // Authors edit their own post while the thread is open; any other member may report it.
-            canEdit={post.isOwn && open}
-            onEdit={() => setEditing("author")}
-            canReport={signedIn && !post.byViewer && !canModerate}
-            canModerate={canModerate}
-            tools={tools}
-            onModeratorEdit={() => setEditing("moderator")}
-          />
+          <div className="flex flex-col gap-3 sm:pl-12">
+            <PostBody
+              html={post.contentHtml}
+              style={style}
+              cards={cards}
+              cardsReady={cardsReady}
+              cardsErrored={cardsErrored}
+              postId={countedPostId({ id: post.id, persona: !!post.authorPersonaId })}
+            />
+            <PostActions
+              post={post}
+              canReply={canReply}
+              canReact={canReactToPost(canReact, post)}
+              onReply={onReply}
+              onQuote={quote}
+              // Authors edit their own post while the thread is open; any other member may report it.
+              canEdit={post.isOwn && open}
+              onEdit={() => setEditing("author")}
+              canReport={signedIn && !post.byViewer && !canModerate}
+              canModerate={canModerate}
+              tools={tools}
+              onModeratorEdit={() => setEditing("moderator")}
+            />
+          </div>
         </>
       )}
     </article>
