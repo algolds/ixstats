@@ -1,9 +1,9 @@
 import type { LoreCategory } from "~/lib/cards/category-enums";
+import { CardType, parseCardType } from "~/lib/cards/enums";
 import type { CardRarity } from "@prisma/client";
-import type { MaterialFinishType } from "~/lib/cards/rarity-materials";
 import type { CardBackVariant } from "~/components/cards/display/CardBack";
 
-export type { MaterialFinishType, CardBackVariant };
+export type { CardBackVariant };
 
 export interface GameIconItem {
   id: string; // e.g. "lorc/crossed-swords"
@@ -20,7 +20,7 @@ export interface CardDesignState {
   category: LoreCategory;
   subcategory: string;
   season: number;
-  cardType: string;
+  cardType: CardType;
   customSubtitle: string;
 
   // Artwork & Custom Image
@@ -40,13 +40,10 @@ export interface CardDesignState {
 
   // Materials & Physical Shaders
   rarity: CardRarity | string;
-  materialFinish: MaterialFinishType;
   enableCategoryTint: boolean;
   accentColorOverride: string;
   foilSheen: boolean;
   holographicIntensity: number; // 0 - 1
-  surfaceRefraction: number; // 0 - 1
-  particleDensity: number; // 0 - 1
   cardBackVariant: CardBackVariant;
 
   // Lore & Wikitext
@@ -74,7 +71,7 @@ export const DEFAULT_DESIGN_STATE: CardDesignState = {
   category: "DIPLOMACY" as LoreCategory,
   subcategory: "Treaties",
   season: 1,
-  cardType: "WIKI_LORE",
+  cardType: CardType.LORE,
   customSubtitle: "",
 
   artworkUrl: null,
@@ -105,13 +102,10 @@ export const DEFAULT_DESIGN_STATE: CardDesignState = {
   watermarkColor: "",
 
   rarity: "LEGENDARY" as CardRarity,
-  materialFinish: "AUTO" as MaterialFinishType,
   enableCategoryTint: true,
   accentColorOverride: "",
   foilSheen: true,
   holographicIntensity: 0.85,
-  surfaceRefraction: 0.6,
-  particleDensity: 0.5,
   cardBackVariant: "lattice",
 
   wikiSource: "wikios",
@@ -127,13 +121,7 @@ export const DEFAULT_DESIGN_STATE: CardDesignState = {
   totalSupply: null,
 };
 
-export const RARITY_BASE_VALUES: Record<string, number> = {
-  COMMON: 100,
-  UNCOMMON: 250,
-  RARE: 600,
-  ULTRA_RARE: 1200,
-  EPIC: 2500,
-  LEGENDARY: 6000,
-  MYTHIC: 15000,
-  DIVINE: 50000,
-};
+/** A saved preset's design; presets saved before the five card types carry a legacy type, which loads as Lore. */
+export function presetDesignState(preset: CardDesignPreset): CardDesignState {
+  return { ...preset.state, cardType: parseCardType(preset.state.cardType) ?? CardType.LORE };
+}

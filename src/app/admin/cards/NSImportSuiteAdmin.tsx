@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { RarityBadge } from "~/components/cards/display/RarityBadge";
+import { nsFactsOf } from "~/lib/cards/ns-facts";
 import type { CardRarity } from "@prisma/client";
 import { formatDurationMs as formatDuration } from "~/lib/admin/admin-formatters";
 import { Textarea } from "~/components/ui/textarea";
@@ -818,11 +819,8 @@ export function NSImportSuiteAdmin() {
             ) : syncLogCardsData?.cards && syncLogCardsData.cards.length > 0 ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {syncLogCardsData.cards.map((card) => {
-                  const flag =
-                    card.artwork ||
-                    (card.artworkVariants as any)?.original ||
-                    "/images/cards/lore-placeholder.svg";
-                  const region = (card.stats as any)?.region || syncLogCardsData.regionName;
+                  const flag = card.artwork || "/images/cards/lore-placeholder.svg";
+                  const region = nsFactsOf(card.metadata).region || syncLogCardsData.regionName;
                   return (
                     <Card
                       key={card.id}

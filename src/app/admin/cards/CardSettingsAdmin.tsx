@@ -88,7 +88,7 @@ export function CardSettingsAdmin({
     {
       id: "valuation" as SettingsSubtab,
       label: "Valuation & floors",
-      description: "Rarity base curves, NS premium multipliers & junk rates",
+      description: "Rarity base curves and NS premium multipliers",
       icon: Coins,
     },
     {

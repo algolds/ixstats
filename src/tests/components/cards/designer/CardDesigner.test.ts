@@ -1,4 +1,9 @@
-import { DEFAULT_DESIGN_STATE, RARITY_BASE_VALUES } from "~/components/cards/designer/types";
+import type { ReactNode } from "react";
+import {
+  DEFAULT_DESIGN_STATE,
+  presetDesignState,
+  type CardDesignPreset,
+} from "~/components/cards/designer/types";
 import { RARITY_MATERIALS, getRarityMaterial } from "~/lib/cards/rarity-materials";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
@@ -8,7 +13,7 @@ import { LoreCategory } from "~/lib/cards/category-enums";
 jest.mock("@tsparticles/react", () => ({
   __esModule: true,
   default: () => null,
-  ParticlesProvider: ({ children }: any) => children,
+  ParticlesProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
 jest.mock("@tsparticles/slim", () => ({
@@ -31,14 +36,25 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(DEFAULT_DESIGN_STATE.watermarkIcon).not.toBeNull();
     expect(DEFAULT_DESIGN_STATE.watermarkIcon?.slug).toBe("scroll-unfurled");
     expect(["ixwiki", "iiwiki", "wikios", "stash"]).toContain(DEFAULT_DESIGN_STATE.wikiSource);
+    expect(DEFAULT_DESIGN_STATE.cardType).toBe("LORE");
   });
 
-  it("should contain standard rarity baseline valuations", () => {
-    expect(RARITY_BASE_VALUES.COMMON).toBe(100);
-    expect(RARITY_BASE_VALUES.RARE).toBe(600);
-    expect(RARITY_BASE_VALUES.EPIC).toBe(2500);
-    expect(RARITY_BASE_VALUES.LEGENDARY).toBe(6000);
-    expect(RARITY_BASE_VALUES.DIVINE).toBe(50000);
+  it("loads a preset saved with a legacy card type as a Lore design", () => {
+    // Presets come back from localStorage as JSON; ones saved before the five card types carry WIKI_LORE.
+    const saved: CardDesignPreset = JSON.parse(
+      JSON.stringify({
+        id: "preset-1",
+        name: "Old",
+        createdAt: 1,
+        state: { ...DEFAULT_DESIGN_STATE, title: "Kept", cardType: "WIKI_LORE" },
+      })
+    );
+    const state = presetDesignState(saved);
+    expect(state.cardType).toBe("LORE");
+    expect(state.title).toBe("Kept");
+    expect(
+      presetDesignState({ ...saved, state: { ...saved.state, cardType: "SPECIAL" } }).cardType
+    ).toBe("SPECIAL");
   });
 
   // public/icons/ is git-ignored and the manifest is built by an archived download script
@@ -139,7 +155,9 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
 
     // Check IXWB preset
-    const ixwbPreset = CATEGORY_PRESETS.find((p: any) => p.categoryName === "IXWB");
+    const ixwbPreset = CATEGORY_PRESETS.find(
+      (p: { categoryName: string }) => p.categoryName === "IXWB"
+    );
     expect(ixwbPreset).toBeDefined();
     expect(ixwbPreset.name).toBe("IXWB Worldbuilding");
     expect(ixwbPreset.wikiSourceFilter).toBe("ixwiki");

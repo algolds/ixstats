@@ -3,9 +3,11 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import type { CardRarity } from "@prisma/client";
+import type { Card as CardRow, CardRarity } from "@prisma/client";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
+import { CardType } from "~/lib/cards/enums";
+import { cardToInstance } from "~/lib/cards/ownership-card";
 import type { CardInstance } from "~/types/cards-display";
 
 import {
@@ -51,7 +53,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
   const [selectedCardForEdit, setSelectedCardForEdit] = useState<CardInstance | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState<LoreCategory | "">("");
-  const [editCardType, setEditCardType] = useState<string>("LORE");
+  const [editCardType, setEditCardType] = useState<CardType>(CardType.LORE);
   const [editRarity, setEditRarity] = useState<CardRarity>("COMMON");
   const [editArtworkUrl, setEditArtworkUrl] = useState("");
   const [editArtworkSource, setEditArtworkSource] = useState<ArtworkSource>("PROCEDURAL");
@@ -60,9 +62,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
 
   // Bulk visibility control states
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [bulkTargetType, setBulkTargetType] = useState<
-    "all" | "NS_IMPORT" | "LORE" | "USER_CUSTOM" | "COMMONS_IMPORT"
-  >("all");
+  const [bulkTargetType, setBulkTargetType] = useState<CardTypeFilter>("all");
   const [bulkCteFilter, setBulkCteFilter] = useState<"all" | "active" | "cte">("all");
   const [bulkCategoryFilter, setBulkCategoryFilter] = useState<"all" | LoreCategory>("all");
   const [bulkSeason, setBulkSeason] = useState<"all" | "1" | "2" | "3">("all");
@@ -83,7 +83,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
     sortBy,
   };
 
-  const { data, isLoading, refetch } = api.cards.getNSCards.useQuery(queryInput);
+  const { data, isLoading, refetch } = api.cards.adminCardExplorer.useQuery(queryInput);
 
   const bulkVisibilityMutation = api.cards.bulkToggleVisibility.useMutation({
     onSuccess: (res) => {
@@ -109,86 +109,28 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
   const total = data?.total ?? 0;
   const cards = data?.cards ?? [];
 
-  const handleOpen3DViewer = (card: any) => {
-    const artUrl = card.artworkUrl || card.artwork || card.wikiImageUrl || "";
-    const isWikiCard =
-      card.cardType === "LORE" ||
-      card.cardType === "LORE_BATCH" ||
-      Boolean(card.category && card.category !== "NS_IMPORT") ||
-      Boolean(card.wikiPageId) ||
-      Boolean(card.wikiSource) ||
-      Boolean(card.slug);
+  /** The art source an edit starts from: the card's own, else wiki-fetched when it has art. */
+  const artSourceOf = (card: CardRow): ArtworkSource =>
+    card.artworkSource && card.artworkSource !== "PROCEDURAL"
+      ? card.artworkSource
+      : card.artwork
+        ? "WIKI_FETCHED"
+        : "PROCEDURAL";
 
-    const initialArtSource: ArtworkSource =
-      card.artworkSource && card.artworkSource !== "PROCEDURAL"
-        ? card.artworkSource
-        : artUrl
-          ? "WIKI_FETCHED"
-          : "PROCEDURAL";
-
-    const instance: CardInstance = {
-      ...card,
-      artwork: artUrl,
-      artworkUrl: artUrl,
-      artworkSource: initialArtSource,
-      cardType: isWikiCard ? "LORE" : card.cardType || "NS_IMPORT",
-      category:
-        card.category && card.category !== "NS_IMPORT"
-          ? (card.category as LoreCategory)
-          : isWikiCard
-            ? "NATION"
-            : undefined,
-    };
-
-    setSelectedCardForViewer(instance);
+  const handleOpen3DViewer = (card: CardRow) => {
+    setSelectedCardForViewer({ ...cardToInstance(card), artworkSource: artSourceOf(card) });
   };
 
-  const handleOpenEditModal = (card: any) => {
-    const artUrl = card.artworkUrl || card.artwork || card.wikiImageUrl || "";
-    const isWikiCard =
-      card.cardType === "LORE" ||
-      card.cardType === "LORE_BATCH" ||
-      Boolean(card.category && card.category !== "NS_IMPORT") ||
-      Boolean(card.wikiPageId) ||
-      Boolean(card.wikiSource) ||
-      Boolean(card.slug);
-
-    const initCat: LoreCategory | "" =
-      card.category && card.category !== "NS_IMPORT"
-        ? (card.category as LoreCategory)
-        : isWikiCard
-          ? "NATION"
-          : "";
-
-    const initialCardType = isWikiCard
-      ? "LORE"
-      : card.cardType || (card.nsCardId ? "NS_IMPORT" : "LORE");
-
-    const initialArtSource: ArtworkSource =
-      card.artworkSource && card.artworkSource !== "PROCEDURAL"
-        ? card.artworkSource
-        : artUrl
-          ? "WIKI_FETCHED"
-          : "PROCEDURAL";
-
-    const instance: CardInstance = {
-      ...card,
-      artwork: artUrl,
-      artworkUrl: artUrl,
-      cardType: initialCardType,
-      category: initCat || undefined,
-      artworkSource: initialArtSource,
-    };
-
-    setSelectedCardForEdit(instance);
-    setEditTitle(card.title || "");
-    setEditCategory(initCat);
-    setEditCardType(initialCardType);
-    setEditRarity(card.rarity || "COMMON");
-    setEditArtworkUrl(artUrl);
-    setEditArtworkSource(initialArtSource);
-    setEditMarketValue(card.marketValue || 0);
-    setEditIsRetired(card.isRetired || false);
+  const handleOpenEditModal = (card: CardRow) => {
+    setSelectedCardForEdit({ ...cardToInstance(card), artworkSource: artSourceOf(card) });
+    setEditTitle(card.title);
+    setEditCategory(card.category ?? "");
+    setEditCardType(card.cardType);
+    setEditRarity(card.rarity);
+    setEditArtworkUrl(card.artwork ?? "");
+    setEditArtworkSource(artSourceOf(card));
+    setEditMarketValue(card.marketValue);
+    setEditIsRetired(card.isRetired);
   };
 
   const livePreviewCard = useMemo(() => {
@@ -199,7 +141,6 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       category: editCategory || undefined,
       cardType: editCardType,
       rarity: editRarity,
-      artworkUrl: editArtworkUrl,
       artwork: editArtworkUrl,
       artworkSource: editArtworkSource,
       marketValue: editMarketValue,
@@ -239,7 +180,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
       category: (editCategory as LoreCategory) || undefined,
       cardType: editCardType,
       rarity: editRarity,
-      artworkUrl: editArtworkUrl || null,
+      artwork: editArtworkUrl || null,
       artworkSource: editArtworkSource,
       marketValue: editMarketValue,
       isRetired: editIsRetired,

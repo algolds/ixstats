@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import type { Card, Prisma } from "@prisma/client";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
@@ -13,23 +14,24 @@ import {
 } from "iconoir-react";
 import { IIWikiBadge, isIIWikiCard } from "~/components/cards/display/IIWikiLogo";
 import { CategoryIcon } from "~/components/cards/icons";
-import { LoreCategory, isValidLoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
+import { getCardTypeLabel } from "~/lib/cards/display-utils";
+import { CardType } from "~/lib/cards/enums";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
 import { ActionPill } from "~/components/ui/action-pill";
 
 interface CardExplorerTableProps {
-  cards: any[];
+  cards: Card[];
   total: number;
   offset: number;
   pageSize: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
-  onOpen3DViewer: (card: any) => void;
-  onOpenEditModal: (card: any) => void;
+  onOpen3DViewer: (card: Card) => void;
+  onOpenEditModal: (card: Card) => void;
   onSaveTitle: (cardId: string, title: string) => void;
   onSaveValue: (cardId: string, value: number) => void;
   onToggleTakedown: (cardId: string, currentStatus: boolean) => void;
@@ -55,52 +57,23 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
   const [editingValueId, setEditingValueId] = useState<string | null>(null);
   const [editingValueNum, setEditingValueNum] = useState<number>(0);
 
-  const getCardTypeBadge = (card: any) => {
-    const isWiki =
-      card.cardType === "LORE" ||
-      card.cardType === "LORE_BATCH" ||
-      Boolean(card.category) ||
-      Boolean(card.wikiSource) ||
-      Boolean(card.wikiPageId) ||
-      Boolean(card.slug) ||
-      Boolean(card.wikiExcerpt);
-
-    const isIIWiki = isIIWikiCard(card as any);
-
-    if (
-      isIIWiki ||
-      (isWiki && (!card.nsCardId || card.cardType === "LORE" || card.cardType === "LORE_BATCH"))
-    ) {
-      if (isIIWiki) {
-        return <IIWikiBadge size="xs" />;
-      }
-      return <Badge variant="warning">Wiki</Badge>;
-    }
-
-    if (card.cardType === "COMMONS_IMPORT") {
-      return <Badge variant="info">Commons import</Badge>;
-    }
-
-    if (
-      card.nsCardId !== null &&
-      card.nsCardId !== undefined &&
-      card.nsCardId > 0 &&
-      card.cardType === "NS_IMPORT"
-    ) {
-      return <Badge variant="info">NS Import</Badge>;
-    }
-
-    return <Badge variant="info">User imported</Badge>;
+  const getCardTypeBadge = (card: Card) => {
+    if (isIIWikiCard(card)) return <IIWikiBadge size="xs" />;
+    return (
+      <Badge variant={card.cardType === CardType.LORE ? "warning" : "info"}>
+        {getCardTypeLabel(card.cardType)}
+      </Badge>
+    );
   };
 
-  const columns = useMemo<FacetColumn<any>[]>(
+  const columns = useMemo<FacetColumn<Card>[]>(
     () => [
       {
         key: "art",
         header: "Card",
         mobileRole: "hero",
-        render: (_val: unknown, card: any) => {
-          const rawUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
+        render: (_val, card: Card) => {
+          const rawUrl = card.artwork;
           const proxiedUrl = rawUrl ? proxyCardArtwork(rawUrl) : null;
           return (
             <Button
@@ -109,10 +82,10 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
               onClick={() => onOpen3DViewer(card)}
               title="Click to view interactive 3D card"
               aria-label={`View ${card.title ?? "card"} as an interactive 3D card`}
-              className="border-separator hover:border-tint/60 group/thumb hover:shadow-card h-11 w-8 overflow-hidden border p-0 hover:scale-110"
+              className="border-separator hover:border-tint/60 group/thumb hover:shadow-card h-11 w-8 overflow-hidden border p-0"
             >
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-1">
-                <CategoryIcon category={card.category || "SPECIAL"} treatment="seal" />
+                <CategoryIcon category={card.category ?? "SPECIAL"} treatment="seal" />
               </div>
               {proxiedUrl && (
                 <img
@@ -132,8 +105,8 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         key: "title",
         header: "Title",
         mobileRole: "hero",
-        accessor: (card: any) => card.title,
-        render: (_val: unknown, card: any) => {
+        accessor: (card: Card) => card.title,
+        render: (_val, card: Card) => {
           const isEditingTitle = editingTitleId === card.id;
           if (isEditingTitle) {
             return (
@@ -205,13 +178,13 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         key: "origin",
         header: "Origin",
         mobileRole: "badge",
-        render: (_val: unknown, card: any) => getCardTypeBadge(card),
+        render: (_val, card: Card) => getCardTypeBadge(card),
       },
       {
         key: "rarity",
         header: "Season & Rarity",
         mobileRole: "badge",
-        render: (_val: unknown, card: any) => (
+        render: (_val, card: Card) => (
           <div className="flex items-center gap-2">
             <Badge variant="secondary">S{card.season}</Badge>
             <Badge variant="warning">{card.rarity}</Badge>
@@ -224,8 +197,8 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         sortable: true,
         mobileRole: "field",
         mobileLabel: "Market Value",
-        accessor: (card: any) => card.marketValue || 0,
-        render: (_val: unknown, card: any) => {
+        accessor: (card: Card) => card.marketValue || 0,
+        render: (_val, card: Card) => {
           const isEditingValue = editingValueId === card.id;
           if (isEditingValue) {
             return (
@@ -296,29 +269,24 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         key: "category",
         header: "Category / Status",
         mobileRole: "field",
-        render: (_val: unknown, card: any) => {
-          const meta = (card.metadata as Record<string, any>) || {};
+        render: (_val, card: Card) => {
+          const meta = (card.metadata ?? {}) as Prisma.JsonObject;
           const isCTE = meta.isCTE === true;
-          const cardTypeStr = (card.cardType as string) || "";
           const isLoreCard =
-            cardTypeStr === "LORE" ||
-            cardTypeStr === "LORE_BATCH" ||
-            Boolean(card.wikiPageId) ||
+            card.cardType === CardType.LORE ||
             Boolean(card.wikiSource) ||
             Boolean(card.wikiArticleTitle) ||
             Boolean(card.slug) ||
-            (card.category && card.category !== "NS_IMPORT");
+            Boolean(card.category);
 
-          const resolvedCategory = (
-            card.category && isValidLoreCategory(card.category) && card.category !== "NS_IMPORT"
-              ? (card.category as LoreCategory)
-              : isLoreCard
-                ? classifyFromWikitext(
-                    (meta?.fullExcerpt as string) || card.description,
-                    card.wikiArticleTitle || card.title
-                  )
-                : null
-          ) as LoreCategory | null;
+          const resolvedCategory =
+            card.category ??
+            (isLoreCard
+              ? classifyFromWikitext(
+                  (meta?.fullExcerpt as string) || card.description,
+                  card.wikiArticleTitle || card.title
+                )
+              : null);
 
           if (isLoreCard) {
             return (
@@ -350,7 +318,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         key: "visibility",
         header: "Takedown / Visibility",
         mobileRole: "field",
-        render: (_val: unknown, card: any) => {
+        render: (_val, card: Card) => {
           const isRetired = card.isRetired === true;
           return (
             <ActionPill
@@ -384,7 +352,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         header: "Studio & Edit",
         align: "right",
         mobileRole: "action",
-        render: (_val: unknown, card: any) => (
+        render: (_val, card: Card) => (
           <Button
             size="sm"
             variant="secondary"

@@ -15,7 +15,9 @@ import type { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardInstance } from "~/types/cards-display";
+import type { CardType } from "~/lib/cards/enums";
 import { ValueSelect } from "~/components/ui/value-select";
+import { CARD_TYPE_OPTIONS } from "./CardExplorerFilters";
 
 interface CardEditDialogProps {
   isOpen: boolean;
@@ -26,8 +28,8 @@ interface CardEditDialogProps {
   setEditTitle: (v: string) => void;
   editCategory: LoreCategory | "";
   setEditCategory: (v: LoreCategory | "") => void;
-  editCardType: string;
-  setEditCardType: (v: string) => void;
+  editCardType: CardType;
+  setEditCardType: (v: CardType) => void;
   editRarity: CardRarity;
   setEditRarity: (v: CardRarity) => void;
   editArtworkUrl: string;
@@ -98,16 +100,11 @@ export const CardEditDialog = React.memo(function CardEditDialog({
           <div className="space-y-4 md:col-span-7">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-label text-caption mb-1 block">Card Origin / Type</label>
+                <label className="text-label text-caption mb-1 block">Card type</label>
                 <ValueSelect
                   value={editCardType}
-                  onValueChange={(v) => setEditCardType(v)}
-                  options={[
-                    ["LORE", "Wiki Lore Card (Wiki)"],
-                    ["NS_IMPORT", "NationStates Import (NS Import)"],
-                    ["COMMONS_IMPORT", "Commons Flag Import (Commons)"],
-                    ["USER_CUSTOM", "User Custom Import (Custom)"],
-                  ]}
+                  onValueChange={setEditCardType}
+                  options={CARD_TYPE_OPTIONS}
                   size="sm"
                   className="w-full"
                 />
@@ -132,7 +129,7 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                 </span>
               </label>
               <ValueSelect
-                value={(editCategory === "NS_IMPORT" ? "" : editCategory) || "__none__"}
+                value={editCategory || "__none__"}
                 onValueChange={(v) => setEditCategory((v === "__none__" ? "" : v) as LoreCategory)}
                 options={[
                   ["__none__", "(Default / Unassigned)"],
