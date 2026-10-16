@@ -14,6 +14,7 @@ import { AuthorFlag, resolveAuthor } from "../AuthorMark";
 import { AuthorName, type ForumAuthors } from "../AuthorName";
 import { ForumAvatar } from "../ForumAvatar";
 import { pageHref } from "../Pagination";
+import { UnreadMark } from "../UnreadMark";
 
 /** What a row needs of a thread, as a board's read returns it. */
 export interface ThreadRowData {
@@ -205,21 +206,14 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
       role="row"
       className={cn(
         GRID,
-        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
-        // An unread thread carries a wash of the tint, so new activity reads down the list at a glance.
-        unread && "bg-tint-fill/50"
+        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11"
       )}
     >
       <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3.5 md:col-span-1">
         <RowAvatar thread={thread} author={author} />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            {unread ? (
-              <>
-                <span aria-hidden className="bg-tint size-2 shrink-0 rounded-full" />
-                <span className="sr-only">Unread</span>
-              </>
-            ) : null}
+            {unread ? <UnreadMark /> : null}
             {thread.pinned ? (
               <Pin aria-label="Pinned" role="img" className="text-tint size-4 shrink-0" />
             ) : null}
@@ -230,7 +224,7 @@ function ThreadRow({ thread, authors }: ThreadRowProps) {
               href={unread ? unreadHref(thread.id) : threadHref(thread.id)}
               className={cn(
                 "text-title-3 text-label focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
-                unread ? "font-bold" : "font-medium"
+                unread ? "font-semibold" : "font-medium"
               )}
             >
               {thread.title}

@@ -128,13 +128,13 @@ afterEach(() => {
 const rowOf = (name: string) => screen.getByRole("link", { name }).closest("li") as HTMLElement;
 
 describe("Forums home: board list", () => {
-  it("marks a board with unread threads with a tint dot and an N new badge, and nothing for a board with none", () => {
+  it("marks a board with unread threads with an UnreadMark (tint dot, N new), and nothing for a board with none", () => {
     set("categories", {
       data: [board("general", { unreadThreads: 3 }), board("rules", { unreadThreads: 0 })],
     });
     render(<ForumHome />);
     const general = rowOf("General");
-    expect(within(general).getByText("3 new")).toHaveClass("text-tint");
+    expect(within(general).getByText("3 new")).toHaveClass("text-footnote", "text-label-secondary");
     expect(general.querySelector(".bg-tint.rounded-full")).not.toBeNull();
     expect(within(rowOf("Rules")).queryByText(/ new$/)).toBeNull();
   });
@@ -290,13 +290,14 @@ describe("Forums home: texture and character", () => {
     expect(within(card).getByText("Latest in general")).toHaveClass("text-headline");
   });
 
-  it("rules a board with new threads down its left edge in the tint, and only that board", () => {
+  it("sets the name of a board with new threads in semibold, and only that board", () => {
     set("categories", {
       data: [board("general", { unreadThreads: 2 }), board("rules", { unreadThreads: 0 })],
     });
     render(<ForumHome />);
-    expect(rowOf("General")).toHaveClass("before:bg-tint");
-    expect(rowOf("Rules")).not.toHaveClass("before:bg-tint");
+    expect(screen.getByRole("link", { name: "General" })).toHaveClass("font-semibold");
+    expect(screen.getByRole("link", { name: "Rules" })).not.toHaveClass("font-semibold");
+    expect(rowOf("General").className).not.toContain("before:");
   });
 });
 
@@ -384,12 +385,12 @@ describe("Forums home: Your realm and Moderation", () => {
     set("category", { data: hub });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
-    expect(screen.getByRole("link", { name: /Eurth/ })).toHaveTextContent("4 new on the board");
+    expect(screen.getByRole("link", { name: /Eurth/ })).toHaveTextContent("4 new");
     unmount();
 
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 0 } });
     render(<ForumHome />);
-    expect(screen.queryByText(/new on the board/)).toBeNull();
+    expect(screen.queryByText(/ new$/)).toBeNull();
   });
 
   it("caps the realm board count at 99+", () => {
@@ -399,7 +400,7 @@ describe("Forums home: Your realm and Moderation", () => {
     set("category", { data: hub });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
     render(<ForumHome />);
-    expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
+    expect(screen.getByText("99+ new")).toBeInTheDocument();
   });
 
   it("shows the viewer's realm with its Hub's latest thread, linking to /thinkpages/r/mine", () => {

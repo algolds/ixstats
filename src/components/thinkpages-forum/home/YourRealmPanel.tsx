@@ -7,10 +7,10 @@ import { useForumNavFlags } from "~/components/shell/use-forum-nav-flags";
 import { assetUrl } from "~/lib/base-path";
 import { timeAgo } from "~/lib/format/compact";
 import { REALM_HUB_KEY } from "~/lib/thinkpages-forum/categories";
-import { countLabel } from "~/lib/thinkpages-forum/unread";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { AuthorName } from "../AuthorName";
 import { IconTile, RailPanel } from "../shell";
+import { UnreadMark } from "../UnreadMark";
 
 type HubThread = RouterOutputs["thinkpagesForum"]["category"]["threads"][number];
 
@@ -64,9 +64,7 @@ export function YourRealmPanel({ signedIn }: { signedIn: boolean }) {
         <span className="min-w-0 flex-1">
           <span className="text-body text-label block truncate font-medium">{name}</span>
           {counts.data && counts.data.realmBoardNew > 0 ? (
-            <span className="text-footnote text-tint block font-medium tabular-nums">
-              {`${countLabel(counts.data.realmBoardNew)} new on the board`}
-            </span>
+            <UnreadMark count={counts.data.realmBoardNew} />
           ) : null}
           {latest && hub.data ? (
             <span className="text-footnote text-label-secondary flex min-w-0 items-center gap-1">

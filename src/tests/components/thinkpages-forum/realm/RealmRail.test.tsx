@@ -73,7 +73,10 @@ describe("BoardsPanel", () => {
         ]}
       />
     );
-    expect(screen.getByText("2 new")).toBeInTheDocument();
+    const unread = screen.getByRole("link", { name: /Hub/ });
+    expect(within(unread).getByText("2 new")).toHaveClass("text-label-secondary");
+    expect(unread.querySelector(".bg-tint.rounded-full")).not.toBeNull();
+    expect(within(unread).getByText("Hub")).toHaveClass("font-semibold");
     expect(screen.queryByText("0 new")).toBeNull();
   });
 

@@ -259,14 +259,14 @@ describe("ThreadTable unread rows", () => {
     expect(unread.getByText("Unread")).toBeInTheDocument();
     const title = unread.getByRole("link", { name: "Thread t1" });
     expect(title).toHaveAttribute("href", "/thinkpages/t/t1/unread");
-    expect(title).toHaveClass("font-bold");
+    expect(title).toHaveClass("font-semibold");
     const read = within(rowOf(/Thread t2/));
     expect(read.queryByText("Unread")).toBeNull();
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveAttribute(
       "href",
       "/thinkpages/t/t2"
     );
-    expect(read.getByRole("link", { name: "Thread t2" })).not.toHaveClass("font-bold");
+    expect(read.getByRole("link", { name: "Thread t2" })).not.toHaveClass("font-semibold");
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveClass("font-medium");
   });
 

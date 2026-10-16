@@ -330,7 +330,7 @@ describe("BoardPage read state", () => {
       data: board({ threads: [{ ...thread("t1"), unread: true }, thread("t2")] }),
     });
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("font-bold");
+    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("font-semibold");
     fireEvent.click(screen.getByRole("button", { name: "Mark board read" }));
     await waitFor(() =>
       expect(mutations.markCategoryRead).toHaveBeenCalledWith({ key: "general", realm: undefined })

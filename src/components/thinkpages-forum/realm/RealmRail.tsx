@@ -5,8 +5,10 @@ import { Activity, Group, List } from "iconoir-react";
 import { Stat } from "~/components/ui/stat";
 import { timeAgo } from "~/lib/format/compact";
 import { categoryHref } from "~/lib/thinkpages-forum/links";
+import { cn } from "~/lib/utils/cn";
 import type { RouterOutputs } from "~/trpc/react";
 import { RailPanel } from "../shell";
+import { UnreadMark } from "../UnreadMark";
 import { BoardSettingsPanel } from "./BoardSettingsPanel";
 import type { BoardData } from "./types";
 
@@ -41,14 +43,15 @@ export function BoardsPanel({ slug, boards }: { slug: string; boards: readonly R
               className="hover:bg-fill-4 focus-visible:outline-tint rounded-control-sm block px-2 py-2 focus-visible:outline-2 pointer-coarse:min-h-11"
             >
               <span className="flex min-w-0 items-baseline gap-2">
-                <span className="text-body text-label block min-w-0 flex-1 truncate font-medium">
+                <span
+                  className={cn(
+                    "text-body text-label block min-w-0 flex-1 truncate",
+                    board.unreadThreads > 0 ? "font-semibold" : "font-medium"
+                  )}
+                >
                   {board.name}
                 </span>
-                {board.unreadThreads > 0 ? (
-                  <span className="text-footnote text-tint shrink-0 font-medium tabular-nums">
-                    {`${board.unreadThreads} new`}
-                  </span>
-                ) : null}
+                {board.unreadThreads > 0 ? <UnreadMark count={board.unreadThreads} /> : null}
               </span>
               <span className="text-footnote text-label-secondary flex min-w-0 gap-2">
                 <span className="min-w-0 flex-1 truncate">
