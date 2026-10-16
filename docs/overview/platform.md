@@ -134,7 +134,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
-**IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `crafting/`, `trading/`, `lore-cards/`, `ns-import/`
+**IxVault:** `vault/`, `cards/`, `card-packs/`, `card-market/`, `cardImages.ts`, `trading/`, `lore-cards/`, `ns-import/`
 
 **MyCountry & Subsystems:** `mycountry/`, `intelligence/`, `diplomacy/` (core, embassies, policies, cultural), `diplomaticScenarios/`, `npcPersonalities/`, `security/` (operations, military, assessment, stability, borders, conflicts, defense), `militaryEquipment/`, `smallArmsEquipment/`, `government/`, `atomicGovernment.ts`, `governmentComponents/`, `elections/`, `legislation.ts`, `economics/`, `economicComponents/`, `economicArchetypes/`, `taxSystem/`, `resources.ts`, `transport/`, `meetings/`, `national-issues/`, `intent.ts`, `crisis-events.ts`, `policies/`, `quickactions/`, `historical/`, `countryGeo.ts`
 
