@@ -173,8 +173,10 @@ function memoryWriter(db: BackfillSnapshot) {
     clearRequestCategories: jest.fn(async () => {
       db.requestNsImportCategories = 0;
     }),
+    // Deleting a card cascades to its copies (CardOwnership_cardId_fkey ON DELETE CASCADE), as in the database.
     mergeCards: jest.fn(async ({ loserIds }: CardMerge) => {
       db.cards = db.cards.filter((row) => !loserIds.includes(row.id));
+      db.copies = db.copies.filter((row) => !loserIds.includes(row.cardId));
     }),
   } satisfies BackfillWriter;
 }
@@ -281,6 +283,38 @@ describe("cards refresh backfill", () => {
     expect(db.cards.map((c) => c.id)).not.toContain("foo_new");
     const merged = db.copies.filter((c) => c.cardId === "foo_old").map((c) => c.serialNumber);
     expect(merged.sort()).toEqual([1, 2]);
+  });
+
+  it("keeps a merged-away card's copies: they move before the card is deleted", async () => {
+    const db = await applied();
+    expect(byId(db.copies, "o_foo_new").cardId).toBe("foo_old");
+    expect(db.copies).toHaveLength(fixture().copies.length);
+  });
+
+  it("writes exactly the NS facts the constraints compare: stats first, trimmed as JS trims, numbers as text", async () => {
+    const db = fixture();
+    db.cards.push(
+      card("ns3", {
+        cardType: "NS_IMPORT",
+        nsCardId: 9,
+        nsSeason: 2,
+        stats: { marketValue: 12.5, region: "\u00a0Abydos\t", category: " common " },
+        metadata: { nsData: { market_value: "1", region: "Elsewhere", flag: "f.png" } },
+        nsData: { name: "Kel", region: "Old", govt: "g" },
+      })
+    );
+    await applyPlan(memoryWriter(db), planBackfill(db, OPTIONS).plan);
+    expect(byId(db.cards, "ns3").metadata).toEqual({
+      nsData: {
+        id: "9",
+        name: "Kel",
+        flag: "f.png",
+        region: "Abydos",
+        category: "common",
+        season: "2",
+        market_value: "12.5",
+      },
+    });
   });
 
   it("renumbers serial collisions by acquisition", async () => {

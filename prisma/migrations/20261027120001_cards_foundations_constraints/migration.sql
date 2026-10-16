@@ -6,9 +6,9 @@
 -- changing nothing, while the backfill has not run. It is one transaction, so a failure anywhere changes nothing either
 -- (prisma db execute already runs a file as one; BEGIN and COMMIT make psql do the same).
 --
--- It is one-shot. Every deploy runs this file, so once cards.cardType is the CardType enum and the dead tables are gone
--- it skips the whole conversion: no lock, no DROP TYPE (Phase 4 may bring back enums named TradeStatus or
--- AuctionStatus) and no config DELETE. All of it is one DO block for that reason.
+-- It is one-shot. Every deploy runs this file, so once cards.cardType is the CardType enum it skips the whole
+-- conversion: no lock, no DROP TYPE (Phase 4 may bring back enums named TradeStatus or AuctionStatus), no DROP TABLE
+-- (nor of a later table that reuses a dropped name) and no config DELETE. All of it is one DO block for that reason.
 --
 -- The Lore natural key is an expression and partial index, which Prisma cannot declare; Prisma 6 leaves such indexes
 -- alone, so db push keeps it. A fresh database (db push, then db:bootstrap) passes the gate from the start, so the key
@@ -24,16 +24,16 @@ DECLARE
   n bigint;
   type_col text;
   rarity_col text;
+  -- The characters JS String.prototype.trim() removes: the backfill trims with it (ns-facts.ts, the artwork copy).
+  js_space constant text := E'\t\n\u000B\f\r \u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF';
 BEGIN
   <<conversion>>
   BEGIN
-    -- 0. The gate: the conversion is done once cards.cardType is the enum and the dead tables are gone.
+    -- 0. The gate. The file is atomic, so cards.cardType as the enum proves the conversion ran in full (or a fresh
+    --    db push made it so). It looks at nothing else, so a later table reusing a dropped name never reopens it.
     EXIT conversion WHEN
       (SELECT udt_name FROM information_schema.columns
-       WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'cardType') = 'CardType'
-      AND to_regclass('"CraftingHistory"') IS NULL AND to_regclass('"CraftingRecipe"') IS NULL
-      AND to_regclass('"CardTrade"') IS NULL AND to_regclass('"ns_imports"') IS NULL
-      AND to_regclass('"sync_checkpoints"') IS NULL;
+       WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'cardType') = 'CardType';
 
     -- 1. Refuse until the additive SQL and the backfill have run. Each check applies only while its conversion is to
     --    come.
@@ -88,26 +88,39 @@ BEGIN
     ) duplicates;
     IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % articles have two Lore cards; run the backfill first', n; END IF;
 
-    -- Nothing step 7 drops may be lost: an NS card's stats and nsData live on in metadata.nsData, and an artworkUrl in
-    -- a blank artwork (backfill steps 5 and 10). Each check runs while its source column exists.
+    -- Nothing step 7 drops may be lost (backfill steps 5 and 10). Each check runs while its source column exists and
+    -- compares what the backfill writes. An NS card's stats facts rank first (legacyNsFacts), so they equal its
+    -- metadata.nsData facts: strings trimmed as JS trims, numbers compared as numbers. Each fact in the nsData column
+    -- (it ranks last) is in metadata.nsData. A non-blank artworkUrl is in a blank artwork.
     IF EXISTS (SELECT 1 FROM information_schema.columns
                WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'stats') THEN
-      SELECT count(*) INTO n FROM "cards"
-        WHERE "cardType"::text IN ('NS', 'NS_IMPORT') AND jsonb_typeof("metadata"->'nsData') IS DISTINCT FROM 'object'
-          AND "stats" IS NOT NULL AND "stats" NOT IN ('{}'::jsonb, '[]'::jsonb, 'null'::jsonb);
-      IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % NS cards have stats but no metadata.nsData; run the backfill first', n; END IF;
+      SELECT count(*) INTO n FROM "cards" c,
+        (VALUES ('marketValue', 'market_value'), ('region', 'region'), ('category', 'category')) AS m(stat, fact)
+        WHERE c."cardType"::text IN ('NS', 'NS_IMPORT') AND CASE jsonb_typeof(c."stats"->m.stat)
+          WHEN 'string' THEN btrim(c."stats"->>m.stat, js_space) <> ''
+            AND c."metadata"->'nsData'->>m.fact IS DISTINCT FROM btrim(c."stats"->>m.stat, js_space)
+          WHEN 'number' THEN CASE WHEN c."metadata"->'nsData'->>m.fact ~ '^-?[0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?$'
+            THEN (c."metadata"->'nsData'->>m.fact)::numeric <> (c."stats"->>m.stat)::numeric ELSE true END
+          ELSE false
+        END;
+      IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % NS card facts in stats differ from metadata.nsData; run the backfill first', n; END IF;
     END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns
                WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'nsData') THEN
-      SELECT count(*) INTO n FROM "cards"
-        WHERE "cardType"::text IN ('NS', 'NS_IMPORT') AND jsonb_typeof("metadata"->'nsData') IS DISTINCT FROM 'object'
-          AND "nsData" IS NOT NULL;
-      IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % NS cards have nsData but no metadata.nsData; run the backfill first', n; END IF;
+      SELECT count(*) INTO n FROM "cards" c,
+        unnest(ARRAY['id', 'name', 'flag', 'region', 'category', 'season', 'market_value']) AS k(fact)
+        WHERE c."cardType"::text IN ('NS', 'NS_IMPORT') AND CASE jsonb_typeof(c."nsData"->k.fact)
+          WHEN 'string' THEN btrim(c."nsData"->>k.fact, js_space) <> ''
+          WHEN 'number' THEN true
+          ELSE false
+        END
+          AND jsonb_typeof(c."metadata"->'nsData'->k.fact) IS DISTINCT FROM 'string';
+      IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % NS card facts in the nsData column are missing from metadata.nsData; run the backfill first', n; END IF;
     END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns
                WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'artworkUrl') THEN
       SELECT count(*) INTO n FROM "cards"
-        WHERE "artworkUrl" ~ '\S' AND ("artwork" IS NULL OR "artwork" !~ '\S');
+        WHERE btrim("artworkUrl", js_space) <> '' AND btrim(COALESCE("artwork", ''), js_space) = '';
       IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % cards have an artworkUrl but no artwork; run the backfill first', n; END IF;
     END IF;
 

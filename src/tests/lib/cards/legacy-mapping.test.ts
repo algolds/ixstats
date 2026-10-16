@@ -16,6 +16,7 @@ import {
   mapTypeString,
   renumberCollisions,
   renumberOnto,
+  RETIRED_NS_CATEGORY,
   SYSTEM_REALMS,
   wikiFallbackRealm,
   withoutStatKeys,
@@ -99,6 +100,7 @@ describe("category and bound", () => {
   it("gives NS cards and the retired NS_IMPORT bucket no category", () => {
     expect(categoryFor({ type: "NS", category: "MILITARY" })).toBeNull();
     expect(categoryFor({ type: "LORE", category: "NS_IMPORT" })).toBeNull();
+    expect(RETIRED_NS_CATEGORY).toBe("NS_IMPORT");
     expect(categoryFor({ type: "LORE", category: "HISTORY" })).toBe("HISTORY");
   });
 

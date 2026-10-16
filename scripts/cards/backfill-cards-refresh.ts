@@ -12,7 +12,7 @@
  * --apply is two small reads.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { SYSTEM_REALM_OWNER_ID } from "~/lib/cards/legacy-mapping";
+import { RETIRED_NS_CATEGORY, SYSTEM_REALM_OWNER_ID } from "~/lib/cards/legacy-mapping";
 import { getValuationConfig, rarityFloor } from "~/lib/cards/valuation";
 import { runBackfill } from "./backfill-cards-refresh-plan";
 import type {
@@ -103,7 +103,7 @@ async function loadSnapshot(): Promise<BackfillSnapshot> {
     prisma.$queryRaw<Array<{ value: string }>>`
         SELECT DISTINCT "suggestedRarity"::text AS value FROM lore_card_requests WHERE "suggestedRarity" IS NOT NULL`,
     prisma.$queryRaw<Array<{ n: number }>>`
-        SELECT count(*)::int AS n FROM lore_card_requests WHERE category::text = 'NS_IMPORT'`,
+        SELECT count(*)::int AS n FROM lore_card_requests WHERE category::text = ${RETIRED_NS_CATEGORY}`,
   ]);
   return {
     realms,
@@ -218,9 +218,19 @@ function sqlWriter(tx: Tx): BackfillWriter {
       }
     },
     async clearRequestCategories() {
-      await tx.$executeRaw`UPDATE lore_card_requests SET category = NULL WHERE category::text = 'NS_IMPORT'`;
+      await tx.$executeRaw`
+        UPDATE lore_card_requests SET category = NULL WHERE category::text = ${RETIRED_NS_CATEGORY}`;
     },
+    /** Throws, rolling everything back, unless every loser copy has moved and exactly the losers are deleted. */
     async mergeCards({ survivorId, loserIds }) {
+      const [left] = await tx.$queryRaw<Array<{ n: number }>>`
+        SELECT count(*)::int AS n FROM "CardOwnership" WHERE "cardId" = ANY(${loserIds}::text[])`;
+      if ((left?.n ?? 0) > 0) {
+        throw new Error(
+          `Merge onto ${survivorId}: ${left?.n} copies still point at ${loserIds.join(", ")}, and deleting the ` +
+            "cards would cascade-delete them. Nothing was written; re-run the backfill."
+        );
+      }
       await tx.$executeRaw`UPDATE card_value_history SET "cardId" = ${survivorId} WHERE "cardId" = ANY(${loserIds}::text[])`;
       await tx.$executeRaw`
         DELETE FROM card_watchlist w WHERE w."cardId" = ANY(${loserIds}::text[]) AND EXISTS (
@@ -231,7 +241,12 @@ function sqlWriter(tx: Tx): BackfillWriter {
           WHERE o."userId" = w."userId" AND o."cardId" = ANY(${loserIds}::text[]) AND o.id < w.id)`;
       await tx.$executeRaw`UPDATE card_watchlist SET "cardId" = ${survivorId} WHERE "cardId" = ANY(${loserIds}::text[])`;
       await tx.$executeRaw`UPDATE lore_card_requests SET "cardId" = ${survivorId} WHERE "cardId" = ANY(${loserIds}::text[])`;
-      await tx.$executeRaw`DELETE FROM cards WHERE id = ANY(${loserIds}::text[])`;
+      const deleted = await tx.$executeRaw`DELETE FROM cards WHERE id = ANY(${loserIds}::text[])`;
+      if (deleted !== loserIds.length) {
+        throw new Error(
+          `Merge onto ${survivorId}: deleted ${deleted} of ${loserIds.length} cards. Nothing was written; re-run the backfill.`
+        );
+      }
     },
   };
 }

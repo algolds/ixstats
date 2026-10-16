@@ -85,9 +85,12 @@ export function finishFor(input: {
   return input.current;
 }
 
+/** The retired `LoreCategory` bucket: the pre-refresh default every card held. The backfill clears it everywhere. */
+export const RETIRED_NS_CATEGORY = "NS_IMPORT";
+
 /** No category for NS cards (their automatic sets go by NS season) and none for the retired NS_IMPORT bucket. */
 export function categoryFor(input: { type: CardType; category: string | null }): string | null {
-  if (input.type === CardType.NS || input.category === "NS_IMPORT") return null;
+  if (input.type === CardType.NS || input.category === RETIRED_NS_CATEGORY) return null;
   return input.category;
 }
 
