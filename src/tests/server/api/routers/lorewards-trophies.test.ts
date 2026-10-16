@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The Lorewards trophies procedures: the viewer's own (through their verified wiki link) and any wiki user's
- * public ones, plus the standings. Trophy cards come from the trophy cards the user's account owns.
+ * The Lorewards trophies procedures: the viewer's own (through their verified wiki link, or a wiki name only they
+ * edit under) and any wiki user's public ones, plus the standings. Trophy cards come from the trophy cards the user's account owns.
  */
 import { beforeEach, describe, expect, it } from "@jest/globals";
 
@@ -70,6 +70,7 @@ beforeEach(() => {
   jest.mocked(getTodayRace).mockResolvedValue(RACE);
   jest.mocked(loadPassportSettings).mockResolvedValue(settings(true));
   db.wikiAccountLink.findFirst.mockResolvedValue({ username: "Ada", userId: "u1" });
+  db.wikiRevision.groupBy.mockResolvedValue([]);
   db.lorewardUserStats.findFirst.mockResolvedValue(STATS);
   db.cardOwnership.findMany.mockResolvedValue([
     {
@@ -148,17 +149,34 @@ describe("lorewards.getMyTrophies", () => {
     logSpy.mockRestore();
   });
 
-  it("keeps the trophies of a viewer with no link under the name their WikiOS edits carry", async () => {
+  it("keeps the trophies of a viewer with no link under the name only their WikiOS edits carry", async () => {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
     db.wikiRevision.findFirst.mockResolvedValue({ author: "Ada" });
+    db.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u1" }]);
     db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 500 } });
 
     const mine = await viewer().getMyTrophies();
     expect(mine.wikiUsername).toBe("Ada");
     expect(mine.wins.daily).toBe(6);
     expect(db.wikiRevision.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { authorId: "u1", author: { not: null } } })
+      expect.objectContaining({
+        where: { authorId: "u1", source: "ixwiki", author: { not: null } },
+      })
     );
+  });
+
+  it("is empty, with no wiki name, when the viewer's edit name is shared with an unverified MediaWiki editor", async () => {
+    db.wikiAccountLink.findFirst.mockResolvedValue(null);
+    db.wikiRevision.findFirst.mockResolvedValue({ author: "Ada" });
+    db.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u1" }, { authorId: null }]);
+
+    expect(await viewer().getMyTrophies()).toMatchObject({
+      wikiUsername: null,
+      paid: 0,
+      cards: [],
+    });
+    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
+    expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
   });
 
   it("is empty, with no wiki name, for a viewer with no link and no wiki edits", async () => {

@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
- * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the winner's wiki
- * account is verified-linked. Minting, granting and the backfill never write IxCredits.
+ * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the winner's account
+ * can be told (a verified wiki link, or the one WikiOS account editing under the name). Minting, granting and
+ * the backfill never write IxCredits.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
@@ -92,8 +93,8 @@ function buildDb(): PrismaClient {
         return userId ? { userId } : null;
       }),
     },
-    // No WikiOS edits: the WikiOS-author fallback finds nobody.
-    wikiRevision: { findFirst: jest.fn(async () => null) },
+    // No ixwiki edits under the name: the WikiOS-author fallback finds nobody.
+    wikiRevision: { groupBy: jest.fn(async () => []) },
     card: {
       findMany: jest.fn(async ({ where }: { where: { CardOwnership?: unknown } }) =>
         cards.filter(

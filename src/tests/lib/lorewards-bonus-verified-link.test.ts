@@ -1,15 +1,16 @@
 /** @jest-environment node */
 /**
- * Loreward payouts by contest and place. The credits go to the owner of a VERIFIED ixwiki WikiAccountLink,
- * never to whoever holds the legacy User.wikiUsername (which could be set without proof), and only for
- * entries from the payout start on.
+ * Loreward payouts by contest and place. The credits go to the owner of a VERIFIED ixwiki WikiAccountLink, else
+ * to the one WikiOS account behind every ixwiki edit under the name. Never to whoever holds the legacy
+ * User.wikiUsername (which could be set without proof), to no one when the name is shared with another account
+ * or an unverified MediaWiki edit, and only for entries from the payout start on.
  */
 jest.mock("~/server/db", () => {
   const db = {
     lorewardEntry: { findMany: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
-    // No WikiOS edits: the WikiOS-author fallback finds nobody.
-    wikiRevision: { findFirst: jest.fn(async () => null) },
+    // No ixwiki edits under the name: the WikiOS-author fallback finds nobody.
+    wikiRevision: { groupBy: jest.fn(async () => []) },
     systemConfig: { findMany: jest.fn() },
     user: { findFirst: jest.fn() },
   };
@@ -30,6 +31,7 @@ import { grantLorewardBonuses } from "~/lib/lorewards/sync";
 const mocked = db as unknown as {
   lorewardEntry: { findMany: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
+  wikiRevision: { groupBy: jest.Mock };
   systemConfig: { findMany: jest.Mock };
   user: { findFirst: jest.Mock };
 };
@@ -102,6 +104,7 @@ describe("grantLorewardBonuses", () => {
     mocked.systemConfig.findMany.mockReset().mockResolvedValue([]);
     mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
     mocked.lorewardEntry.findMany.mockReset().mockResolvedValue([daily()]);
+    mocked.wikiRevision.groupBy.mockReset().mockResolvedValue([]);
     jest.spyOn(console, "log").mockImplementation(() => undefined);
   });
 
@@ -133,6 +136,24 @@ describe("grantLorewardBonuses", () => {
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonus).not.toHaveBeenCalled();
     expect(mocked.user.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("pays the one WikiOS account behind every ixwiki edit under an unlinked name", async () => {
+    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
+    expect(await grantLorewardBonuses()).toBe(1);
+    expect(mocked.wikiRevision.groupBy).toHaveBeenCalledWith({
+      by: ["authorId"],
+      where: { source: "ixwiki", author: { in: ["Kir_Republic", "Kir Republic"] } },
+    });
+    expect(grants()).toEqual([["u_wikios", "bonus:loreward:e1", 500]]);
+  });
+
+  it("pays nobody when an unlinked name is shared with an unverified MediaWiki edit", async () => {
+    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }, { authorId: null }]);
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonus).not.toHaveBeenCalled();
   });
 
   it("pays the winner and the runner-up of a daily by place, under distinct keys", async () => {
