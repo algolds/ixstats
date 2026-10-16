@@ -85,7 +85,6 @@ describe("thinkpagesForum read marks", () => {
     for (const call of [
       () => c.markThreadRead({ threadId: "t1", page: 1 }),
       () => c.markCategoryRead({ key: "general" }),
-      () => c.markAllRead(),
       () => c.markRealmBoardRead({ realm: "eurth" }),
     ]) {
       await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
@@ -100,12 +99,6 @@ describe("thinkpagesForum read marks", () => {
     expect(db.forumThreadRead.createMany).toHaveBeenCalledWith(
       expect.objectContaining({ skipDuplicates: true })
     );
-  });
-
-  it("marks everything read", async () => {
-    const db = engagementDb();
-    await caller(member, db).markAllRead();
-    expect(db.forumReader.upsert).toHaveBeenCalledTimes(1);
   });
 
   it("bounds the inputs", async () => {

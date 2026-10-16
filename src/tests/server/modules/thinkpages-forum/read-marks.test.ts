@@ -2,7 +2,6 @@
 import type { Prisma } from "@prisma/client";
 import { ForumError } from "~/server/modules/thinkpages-forum";
 import {
-  markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
@@ -335,19 +334,6 @@ describe("markCategoryRead", () => {
     } as never);
     await expect(markCategoryRead(db as never, member, { key: "board" })).rejects.toMatchObject({
       code: "NOT_FOUND",
-    });
-  });
-});
-
-describe("markAllRead", () => {
-  it("sets the member's mark-all-read time", async () => {
-    const db = engagementTables();
-    const now = new Date("2026-10-15T00:00:00Z");
-    await expect(markAllRead(db as never, "u1", now)).resolves.toEqual({ allReadAt: now });
-    expect(db.forumReader.upsert).toHaveBeenCalledWith({
-      where: { userId: "u1" },
-      create: { userId: "u1", allReadAt: now },
-      update: { allReadAt: now },
     });
   });
 });

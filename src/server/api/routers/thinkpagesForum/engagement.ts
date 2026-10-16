@@ -13,7 +13,6 @@ import {
 } from "~/server/api/trpc";
 import {
   forumNavCounts,
-  markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
@@ -37,11 +36,6 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) =>
       markCategoryRead(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
-
-  /** "Mark all read": nothing before now is unread. */
-  markAllRead: rateLimitedMutationProcedure.mutation(({ ctx }) =>
-    markAllRead(ctx.db, memberOf(ctx.user).id)
-  ),
 
   /** The realm landing was opened at the top: the realm board is read to its last message. */
   markRealmBoardRead: rateLimitedMutationProcedure

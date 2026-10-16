@@ -13,7 +13,6 @@ export function engagementTables() {
     },
     forumReader: {
       findUnique: jest.fn(async (_args?: object): Promise<{ allReadAt: Date } | null> => null),
-      upsert: jest.fn(async (_args?: object) => ({})),
     },
     forumThreadWatch: {
       findMany: jest.fn(async (_args?: object): Promise<object[]> => []),

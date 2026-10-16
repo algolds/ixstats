@@ -91,7 +91,6 @@ export { mentionAnchorNames } from "./mention-html";
 export { mentionSuggestions, type MentionSuggestion } from "./mention-suggest";
 export { firstUnreadPost } from "./first-unread";
 export {
-  markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
