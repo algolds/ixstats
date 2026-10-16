@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "@prisma/client";
 import { TRADE_PARTIES_INCLUDE, assertTradingOpen } from "./_shared";
 import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
+import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { globalCache } from "~/lib/cache";
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  TradeStatus,
   transferCardsTx,
   transferCreditsTx,
   unlockCardsTx,
@@ -91,9 +92,6 @@ export const tradingOffersRouter = createTRPCRouter({
           ownerId: initiatorDbId,
           isLocked: false,
         },
-        include: {
-          cards: true,
-        },
       });
 
       if (initiatorCards.length !== input.initiatorCardIds.length) {
@@ -103,7 +101,7 @@ export const tradingOffersRouter = createTRPCRouter({
         });
       }
 
-      if (initiatorCards.some((c: any) => c.inscription !== null)) {
+      if (initiatorCards.some((c) => c.inscription !== null)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Inscribed cards cannot be traded",
@@ -117,9 +115,6 @@ export const tradingOffersRouter = createTRPCRouter({
           ownerId: recipientDbId,
           isLocked: false,
         },
-        include: {
-          cards: true,
-        },
       });
 
       if (recipientCards.length !== input.recipientCardIds.length) {
@@ -129,12 +124,15 @@ export const tradingOffersRouter = createTRPCRouter({
         });
       }
 
-      if (recipientCards.some((c: any) => c.inscription !== null)) {
+      if (recipientCards.some((c) => c.inscription !== null)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Inscribed cards cannot be traded",
         });
       }
+
+      // Bound cards (trophies, achievement rewards) can't be traded (cards refresh §2.1)
+      await assertNoBoundCopies(ctx.db, [...input.initiatorCardIds, ...input.recipientCardIds]);
 
       // Verify initiator has enough credits if offering any
       if (input.initiatorCredits > 0) {
@@ -149,16 +147,6 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         }
       }
-
-      // Calculate trade values
-      const _initiatorValue =
-        initiatorCards.reduce(
-          (sum: number, c: { cards: { marketValue: number } }) => sum + c.cards.marketValue,
-          0
-        ) + input.initiatorCredits;
-      const _recipientValue =
-        recipientCards.reduce((sum: number, c: any) => sum + c.cards.marketValue, 0) +
-        input.recipientCredits;
 
       // Create trade offer (expires in 24 hours) — atomically lock initiator's cards
       const expiresAt = new Date();
@@ -309,7 +297,7 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         }
 
-        if (counterInitiatorCards.some((c: any) => c.inscription !== null)) {
+        if (counterInitiatorCards.some((c) => c.inscription !== null)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Inscribed cards cannot be traded",
@@ -331,12 +319,14 @@ export const tradingOffersRouter = createTRPCRouter({
           });
         }
 
-        if (counterRecipientCards.some((c: any) => c.inscription !== null)) {
+        if (counterRecipientCards.some((c) => c.inscription !== null)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Inscribed cards cannot be traded",
           });
         }
+
+        await assertNoBoundCopies(ctx.db, [...newInitiatorCardIds, ...newRecipientCardIds]);
 
         // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
         const result = await ctx.db.$transaction(async (tx: any) => {

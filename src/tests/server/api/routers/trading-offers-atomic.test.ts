@@ -159,11 +159,11 @@ describe("respondToTrade ACCEPT", () => {
     expect(db.cardOwnership.updateMany).toHaveBeenCalledTimes(2);
     expect(db.cardOwnership.updateMany).toHaveBeenNthCalledWith(1, {
       where: { id: { in: ["ci_1"] }, ownerId: INITIATOR, isLocked: true },
-      data: expect.objectContaining({ ownerId: RECIPIENT, userId: RECIPIENT, isLocked: false }),
+      data: expect.objectContaining({ ownerId: RECIPIENT, isLocked: false }),
     });
     expect(db.cardOwnership.updateMany).toHaveBeenNthCalledWith(2, {
       where: { id: { in: ["cr_1", "cr_2"] }, ownerId: RECIPIENT, isLocked: false },
-      data: expect.objectContaining({ ownerId: INITIATOR, userId: INITIATOR, isLocked: false }),
+      data: expect.objectContaining({ ownerId: INITIATOR, isLocked: false }),
     });
     expect(spendMock).toHaveBeenCalledTimes(1);
     expect(earnMock).toHaveBeenCalledTimes(1);
@@ -192,6 +192,19 @@ describe("respondToTrade ACCEPT", () => {
       where: { id: { in: ["ci_1"] }, ownerId: INITIATOR },
       data: { isLocked: false },
     });
+  });
+
+  it("refuses to accept an offer that holds a copy the backfill made bound, moving nothing", async () => {
+    const { db, caller } = makeCaller();
+    db.tradeOffer.updateMany = jest.fn().mockResolvedValue({ count: 1 } as never);
+    db.cardOwnership.count = jest.fn().mockResolvedValue(1) as never;
+    db.cardOwnership.updateMany = jest.fn() as never;
+
+    await expect(caller.respondToTrade(acceptInput)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(spendMock).not.toHaveBeenCalled();
   });
 });
 
@@ -240,6 +253,57 @@ describe("createtradeOffer", () => {
       where: { id: { in: ["ci_1"] }, ownerId: RECIPIENT, isLocked: false },
       data: { isLocked: true },
     });
+    expect(db.tradeOffer.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses to offer a bound copy (a trophy or achievement card): no lock, no offer", async () => {
+    const { db, caller } = makeCaller();
+    db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);
+    db.cardOwnership.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { id: "ci_1", inscription: null, cards: { marketValue: 10 } },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: "cr_1", inscription: null, cards: { marketValue: 5 } },
+      ] as never);
+    db.cardOwnership.count = jest.fn().mockResolvedValue(1) as never;
+
+    await expect(
+      caller.createtradeOffer({
+        recipientId: "clerk_recip",
+        initiatorCardIds: ["ci_1"],
+        recipientCardIds: ["cr_1"],
+      })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(db.cardOwnership.count).toHaveBeenCalledWith({
+      where: { id: { in: ["ci_1", "cr_1"] }, cards: { isBound: true } },
+    });
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(db.tradeOffer.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("respondToTrade COUNTER", () => {
+  it("refuses a counter that holds a bound copy: the offer stays pending, nothing locks", async () => {
+    const { db, caller } = makeCaller();
+    db.cardOwnership.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { id: "cr_1", inscription: null },
+        { id: "cr_2", inscription: null },
+      ] as never)
+      .mockResolvedValueOnce([{ id: "ci_1", inscription: null }] as never);
+    db.cardOwnership.count = jest.fn().mockResolvedValue(1) as never;
+
+    await expect(
+      caller.respondToTrade({ tradeId: "trade_1", action: "COUNTER" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(db.cardOwnership.count).toHaveBeenCalledWith({
+      where: { id: { in: ["cr_1", "cr_2", "ci_1"] }, cards: { isBound: true } },
+    });
+    expect(db.tradeOffer.updateMany).not.toHaveBeenCalled();
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(db.tradeOffer.create).not.toHaveBeenCalled();
   });
 });

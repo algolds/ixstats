@@ -11,6 +11,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { CardRarity, CardType } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE, AUCTION_CARD_INCLUDE } from "./_shared";
@@ -22,7 +23,7 @@ import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE, AUCTION_CARD_INCLUDE } f
 export const cardMarketAuctionQueriesRouter = createTRPCRouter({
   /**
    * Get active auctions with filters and pagination
-   * Admin-only endpoint
+   * Any signed-in user
    */
   getActiveAuctions: protectedProcedure
     .input(
@@ -30,8 +31,8 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
         cardId: z.string().optional(),
         sellerId: z.string().optional(),
         isFeatured: z.boolean().optional(),
-        rarity: z.string().optional(),
-        cardType: z.string().optional(),
+        rarity: z.nativeEnum(CardRarity).optional(),
+        cardType: z.nativeEnum(CardType).optional(),
         minPrice: z.number().int().min(0).optional(),
         maxPrice: z.number().int().min(0).optional(),
         sortBy: z.enum(["ending_soon", "newest", "price_low", "price_high"]).optional(),
@@ -69,7 +70,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
 
   /**
    * Get user's active auctions (selling)
-   * Admin-only endpoint
+   * The signed-in seller's own listings
    */
   getMyActiveAuctions: protectedProcedure.query(async ({ ctx }) => {
     try {

@@ -16,9 +16,10 @@
 
 import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
 import { TRPCError } from "@trpc/server";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
+import { boundCopyError } from "~/lib/cards/bound";
 import { marketplaceFee } from "~/lib/cards/general-settings";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth";
 import {
@@ -131,11 +132,16 @@ async function payNationRoyalty(
   }
 }
 
-/** Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, records the price. */
+/** Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, and records the sale. */
 async function settleSale(
   tx: Prisma.TransactionClient,
   auction: AuctionWithCard,
-  sale: { buyerId: string; price: number; sellerSource: string }
+  sale: {
+    buyerId: string;
+    price: number;
+    sellerSource: string;
+    action: "AUCTION_BUYOUT" | "AUCTION_END";
+  }
 ) {
   const { buyerId, price } = sale;
   const fee = await marketplaceFee(tx, price);
@@ -155,12 +161,16 @@ async function settleSale(
 
   await tx.cardOwnership.update({
     where: { id: auction.cardInstanceId },
+    data: { ownerId: buyerId, isLocked: false },
+  });
+  // The sale's row in the copy's provenance trail, with its price (cards refresh §3)
+  await tx.cardTransferEvent.create({
     data: {
-      ownerId: buyerId,
-      userId: buyerId,
-      isLocked: false,
-      lastSalePrice: price,
-      lastSaleDate: new Date(),
+      ownershipId: auction.cardInstanceId,
+      fromUserId: auction.sellerId,
+      toUserId: buyerId,
+      action: sale.action,
+      price,
     },
   });
   if (auction.CardOwnership?.cards) {
@@ -224,6 +234,8 @@ export class AuctionService {
         message: "You do not own this card or it is already locked",
       });
     }
+    // Bound cards (trophies, achievement rewards) can't be listed (cards refresh §2.1)
+    if (ownership.cards.isBound) throw boundCopyError();
 
     // 2. Validate pricing
     if (params.startingPrice < 1) {
@@ -728,6 +740,7 @@ export class AuctionService {
           buyerId: params.userId,
           price: buyoutPrice,
           sellerSource: "card_sale_buyout",
+          action: "AUCTION_BUYOUT",
         });
       });
 
@@ -811,6 +824,7 @@ export class AuctionService {
             buyerId: auction.currentBidderId,
             price: finalPrice,
             sellerSource: "card_sale_auction",
+            action: "AUCTION_END",
           });
 
           // Grant 50 XP to the winner's card instance
@@ -1020,8 +1034,8 @@ export class AuctionService {
       cardId?: string;
       sellerId?: string;
       isFeatured?: boolean;
-      rarity?: string;
-      cardType?: string;
+      rarity?: CardRarity;
+      cardType?: CardType;
       minPrice?: number;
       maxPrice?: number;
       sortBy?: "ending_soon" | "newest" | "price_low" | "price_high";
@@ -1033,56 +1047,42 @@ export class AuctionService {
     const limit = Math.min(params.limit ?? 20, 100);
     const offset = params.offset ?? 0;
 
-    const where: any = {
+    const cards: Prisma.CardWhereInput = {
+      ...(params.cardId ? { id: params.cardId } : {}),
+      ...(params.rarity ? { rarity: params.rarity } : {}),
+      ...(params.cardType ? { cardType: params.cardType } : {}),
+    };
+    const currentBid: Prisma.IntFilter = {
+      ...(params.minPrice !== undefined ? { gte: params.minPrice } : {}),
+      ...(params.maxPrice !== undefined ? { lte: params.maxPrice } : {}),
+    };
+    // Every filter is in the query, so the count and the page agree
+    const where: Prisma.CardAuctionWhereInput = {
       status: "ACTIVE",
       endTime: { gt: new Date() },
       ...(params.sellerId ? { sellerId: params.sellerId } : {}),
       ...(params.isFeatured !== undefined ? { isFeatured: params.isFeatured } : {}),
+      ...(Object.keys(cards).length > 0 ? { CardOwnership: { cards } } : {}),
+      ...(Object.keys(currentBid).length > 0 ? { currentBid } : {}),
     };
 
-    // Card-owned filters (rarity + cardType are on Card model through CardOwnership)
-    const cardsFilter: any = {};
-    if (params.rarity) cardsFilter.rarity = params.rarity;
-    if (params.cardType) cardsFilter.cardType = params.cardType;
-    if (Object.keys(cardsFilter).length > 0) {
-      where.CardOwnership = { cards: cardsFilter };
-    }
-
-    // Price range filters (currentBid is on the auction)
-    if (params.minPrice !== undefined || params.maxPrice !== undefined) {
-      where.currentBid = {};
-      if (params.minPrice !== undefined) where.currentBid.gte = params.minPrice;
-      if (params.maxPrice !== undefined) where.currentBid.lte = params.maxPrice;
-    }
-
-    // Sorting
-    // eslint-disable-next-line prefer-const
-    let orderBy: any[] = [{ isFeatured: "desc" }];
-    if (params.sortBy === "newest") {
-      orderBy.push({ createdAt: "desc" });
-    } else if (params.sortBy === "price_low") {
-      orderBy.push({ currentBid: "asc" });
-    } else if (params.sortBy === "price_high") {
-      orderBy.push({ currentBid: "desc" });
-    } else {
-      // Default: ending soon
-      orderBy.push({ endTime: "asc" });
-    }
+    const SORTS: Record<string, Prisma.CardAuctionOrderByWithRelationInput> = {
+      newest: { createdAt: "desc" },
+      price_low: { currentBid: "asc" },
+      price_high: { currentBid: "desc" },
+    };
+    const orderBy: Prisma.CardAuctionOrderByWithRelationInput[] = [
+      { isFeatured: "desc" },
+      SORTS[params.sortBy ?? ""] ?? { endTime: "asc" },
+    ];
 
     const [total, auctions] = await Promise.all([
       db.cardAuction.count({ where }),
       db.cardAuction.findMany({
         where,
         include: {
-          CardOwnership: {
-            include: {
-              cards: true,
-            },
-          },
-          AuctionBid: {
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
+          CardOwnership: { include: { cards: true } },
+          AuctionBid: { orderBy: { createdAt: "desc" }, take: 1 },
         },
         orderBy,
         take: limit,
@@ -1090,16 +1090,7 @@ export class AuctionService {
       }),
     ]);
 
-    // Filter by cardId if provided (post-query since it's on related model)
-    const filteredAuctions = params.cardId
-      ? auctions.filter((a) => a.CardOwnership?.cards?.id === params.cardId)
-      : auctions;
-
-    return {
-      auctions: filteredAuctions,
-      total: filteredAuctions.length,
-      hasMore: offset + limit < total,
-    };
+    return { auctions, total, hasMore: offset + limit < total };
   }
 }
 

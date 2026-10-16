@@ -8,11 +8,22 @@
  * balance.
  */
 
-import { type Prisma, TradeStatus } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "./vault-ledger";
 
 type Tx = Prisma.TransactionClient;
+
+/** A trade offer's status (`TradeOffer.status` stays a string until Phase 4 reworks trades). */
+export const TradeStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  REJECTED: "REJECTED",
+  CANCELLED: "CANCELLED",
+  EXPIRED: "EXPIRED",
+} as const;
+export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
 
 /** Move a PENDING trade to `next` iff it is still PENDING (and, for ACCEPTED, not expired). */
 export async function claimPendingTradeTx(
@@ -53,15 +64,16 @@ export async function unlockCardsTx(tx: Tx, ids: string[], ownerId: string): Pro
   });
 }
 
-/** Transfer cards; fails if any card is not owned by `fromId` in the expected lock state. */
+/** Transfer cards; fails if any card is bound, or not owned by `fromId` in the expected lock state. */
 export async function transferCardsTx(
   tx: Tx,
   args: { ids: string[]; fromId: string; toId: string; expectLocked: boolean; now: Date }
 ): Promise<void> {
   const { ids, fromId, toId, expectLocked, now } = args;
+  await assertNoBoundCopies(tx, ids);
   const res = await tx.cardOwnership.updateMany({
     where: { id: { in: ids }, ownerId: fromId, isLocked: expectLocked },
-    data: { ownerId: toId, userId: toId, isLocked: false, acquiredAt: now, lastSaleDate: now },
+    data: { ownerId: toId, isLocked: false, acquiredAt: now },
   });
   if (res.count !== ids.length) {
     throw new TRPCError({

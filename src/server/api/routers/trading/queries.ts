@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "@prisma/client";
+import { TradeStatus } from "~/lib/vault/trade-settlement";
 import { FINISHED_TRADE_STATUSES, TRADE_PARTIES_INCLUDE } from "./_shared";
 
 export const tradingQueriesRouter = createTRPCRouter({
