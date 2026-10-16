@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import type { CardType, PackType, Prisma } from "@prisma/client";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -9,59 +10,52 @@ const prisma = new PrismaClient();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export async function seedCardPacks() {
-  console.log("📦 Seeding card packs...");
+interface SeedPack {
+  id: string;
+  name: string;
+  description: string | null;
+  artwork: string | null;
+  packType: PackType;
+  priceCredits: number;
+  cardCount: number;
+  guaranteedRarity: string | null;
+  isActive: boolean;
+  commonOdds: number;
+  uncommonOdds: number;
+  rareOdds: number;
+  ultraRareOdds: number;
+  epicOdds: number;
+  legendaryOdds: number;
+  season: number | null;
+  cardType: CardType | null;
+  themeFilter: Prisma.InputJsonValue | null;
+  limitedQuantity: number | null;
+  purchaseLimit: number | null;
+  expiresAt: string | null;
+  /** The pack art recipe for scripts/setup/generate-pack-assets.ts; there is no such column. */
+  pdsConfig?: Prisma.InputJsonValue;
+}
 
-  if (process.env.NODE_ENV === "production") {
-    console.log("ℹ️  Running card pack seeding in production mode (non-destructive)...");
-  }
+/**
+ * Creates the packs the database lacks and leaves every existing pack as an admin edited it (cards refresh §3).
+ */
+export async function seedCardPacks() {
+  console.log("📦 Seeding card packs (create-only)...");
 
   try {
-    // 1. Read JSON file
     const jsonPath = path.join(__dirname, "data", "card-packs.json");
-    const fileContent = fs.readFileSync(jsonPath, "utf8");
-    const packsData = JSON.parse(fileContent);
-
-    // 2. Upsert all card packs
-    let seededCount = 0;
-    for (const pack of packsData) {
-      const packPayload = {
-        name: pack.name,
-        description: pack.description,
-        artwork: pack.artwork,
-        packType: pack.packType,
-        priceCredits: pack.priceCredits,
-        cardCount: pack.cardCount,
-        guaranteedRarity: pack.guaranteedRarity || null,
-        isActive: pack.isActive,
-        commonOdds: pack.commonOdds,
-        uncommonOdds: pack.uncommonOdds,
-        rareOdds: pack.rareOdds,
-        ultraRareOdds: pack.ultraRareOdds,
-        epicOdds: pack.epicOdds,
-        legendaryOdds: pack.legendaryOdds,
-        season: pack.season,
-        cardType: pack.cardType,
-        themeFilter: pack.themeFilter || undefined,
-        limitedQuantity: pack.limitedQuantity,
-        purchaseLimit: pack.purchaseLimit,
-        expiresAt: pack.expiresAt ? new Date(pack.expiresAt) : null,
-        pdsConfig: pack.pdsConfig || undefined,
-      };
-
-      await prisma.cardPack.upsert({
-        where: { id: pack.id },
-        update: packPayload,
-        create: {
-          id: pack.id,
-          ...packPayload,
-        },
-      });
-      console.log(`✨ Seeded card pack: ${pack.name} (${pack.packType})`);
-      seededCount++;
-    }
-
-    console.log(`✅ Seeded ${seededCount} card packs successfully!`);
+    const packs = JSON.parse(fs.readFileSync(jsonPath, "utf8")) as SeedPack[];
+    const { count } = await prisma.cardPack.createMany({
+      data: packs.map(({ themeFilter, expiresAt, pdsConfig: _art, ...pack }) => ({
+        ...pack,
+        themeFilter: themeFilter ?? undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      })),
+      skipDuplicates: true,
+    });
+    console.log(
+      `✅ Created ${count} card pack(s); ${packs.length - count} already existed and were left alone.`
+    );
   } catch (error) {
     console.error("❌ Failed to seed card packs:", error);
     throw error;
