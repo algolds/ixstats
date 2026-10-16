@@ -556,6 +556,18 @@ describe("latestActivity", () => {
     expect(args.where).toMatchObject({ hidden: false, thread: { hidden: false, archived: false } });
   });
 
+  it("marks a post in character when its board is an in-character board", async () => {
+    const ic = { ...general, id: "cat_ic", style: "ic" };
+    const db = activityDb([post("p_ic", "t_ic", ic, T2), post("p_ooc", "t_ooc", general, T1)], []);
+    const out = await latestActivity(db as never, member, 6);
+    expect(out.find((i) => i.postId === "p_ic")?.inCharacter).toBe(true);
+    expect(out.find((i) => i.postId === "p_ooc")?.inCharacter).toBe(false);
+    const select = argsOf(db.forumPost.findMany).select as {
+      thread: { select: { category: { select: { style: boolean } } } };
+    };
+    expect(select.thread.select.category.select.style).toBe(true);
+  });
+
   it("only reads sitewide boards and published realms, never a realm board", async () => {
     const db = activityDb([], []);
     await latestActivity(db as never, null, 6);

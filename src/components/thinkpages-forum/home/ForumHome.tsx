@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck } from "iconoir-react";
+import { Clock, ShieldCheck } from "iconoir-react";
 import { motion } from "motion/react";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
@@ -17,7 +17,7 @@ import { ForumLoadError } from "../ForumPageState";
 import { ForumPage, RISE_ITEM, RISE_LIST } from "../shell";
 import { StandingPanel } from "../StandingPanel";
 import { BoardList } from "./BoardList";
-import { FindARealmPanel, LatestActivityPanel, ThinkTanksPanel, TrendingPanel } from "./HomeRail";
+import { FindARealmPanel, LatestActivityList, ThinkTanksPanel, TrendingPanel } from "./HomeRail";
 import { useHomeRail } from "./useHomeRail";
 import { NewThreadMenu } from "./NewThreadMenu";
 import { YourRealmPanel } from "./YourRealmPanel";
@@ -37,7 +37,7 @@ function totals(boards: readonly { threadCount: number; postCount: number }[]) {
 
 /**
  * The Forums home: a plain header totalling the sitewide boards with a New thread menu, Your realm (for a realm member), the sitewide boards with their latest threads,
- * the old forum's archive (collapsed), and a rail of Latest activity, Trending threads, Find a Realm,
+ * the old forum's archive (collapsed), New across ThinkPages (the newest posts, with persona voices), and a rail of Trending threads, Find a Realm,
  * ThinkTanks and the member's own standing. The rail is only passed when a panel has content;
  * its panels rise in one after another.
  */
@@ -59,7 +59,6 @@ export function ForumHome() {
     !!moderates &&
     (moderates.isSiteAdmin || moderates.realms.length > 0 || moderates.categories.length > 0);
   const panels = [
-    rail.activity ? <LatestActivityPanel key="activity" items={rail.activity} /> : null,
     rail.trending ? <TrendingPanel key="trending" threads={rail.trending} /> : null,
     rail.adverts ? <FindARealmPanel key="adverts" adverts={rail.adverts} /> : null,
     rail.thinktanks ? (
@@ -129,6 +128,18 @@ export function ForumHome() {
           ) : null}
           {archived.length > 0 ? (
             <BoardList boards={archived} title="From the old forum" collapsible />
+          ) : null}
+          {rail.activity ? (
+            <Card content="feed">
+              <CardHeader>
+                <CardTitle icon={<Clock />} role="heading" aria-level={2}>
+                  New across ThinkPages
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LatestActivityList items={rail.activity} />
+              </CardContent>
+            </Card>
           ) : null}
         </>
       )}

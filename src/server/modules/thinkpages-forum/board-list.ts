@@ -101,11 +101,13 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
   });
 }
 
-/** One post in the home rail's Latest activity: who wrote it, in which thread and board, and whether it began it. */
+/** One post in New across ThinkPages (the home and front page feeds): who wrote it, in which thread and board, and whether it began it. */
 export type ActivityItem = BoardLatest & {
   postId: string;
   categoryName: string;
   isFirstPost: boolean;
+  /** The post's board is in character. */
+  inCharacter: boolean;
 };
 
 /** Activity asks for more posts than it returns, because posts in threads the viewer cannot see are dropped. */
@@ -137,7 +139,14 @@ export async function latestActivity(
           authorUserId: true,
           hidden: true,
           category: {
-            select: { id: true, name: true, visibility: true, scope: true, realmId: true },
+            select: {
+              id: true,
+              name: true,
+              style: true,
+              visibility: true,
+              scope: true,
+              realmId: true,
+            },
           },
         },
       },
@@ -176,5 +185,6 @@ export async function latestActivity(
     postId: p.id,
     categoryName: p.thread.category.name,
     isFirstPost: firstIds.has(p.id),
+    inCharacter: p.thread.category.style === "ic",
   }));
 }

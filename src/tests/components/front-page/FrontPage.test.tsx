@@ -76,6 +76,36 @@ const pane = (title: string) =>
   screen.getByRole("heading", { name: title }).closest<HTMLElement>("[data-slot='card']")!;
 
 describe("FrontPage", () => {
+  it("gives the ThinkPages pane persona voices and In character posts", () => {
+    results.forum = {
+      data: [
+        {
+          postId: "p1",
+          threadId: "t1",
+          threadTitle: "Budget statement",
+          categoryName: "Politics",
+          isFirstPost: true,
+          inCharacter: true,
+          at: new Date(),
+          authorUserId: null,
+          authorPersonaId: "pa",
+          importedAuthorName: null,
+          author: {
+            name: "Government of Urcea",
+            handle: null,
+            avatarUrl: null,
+            flagUrl: null,
+            personaType: "government",
+          },
+        },
+      ],
+    };
+    render(<FrontPage />);
+    const forum = pane("ThinkPages");
+    expect(within(forum).getByText("Government")).toBeInTheDocument();
+    expect(within(forum).getByText("In character")).toBeInTheDocument();
+  });
+
   it("presents IxStates, today's realm, the apps and one way to join", () => {
     render(<FrontPage />);
     expect(screen.getByRole("heading", { level: 1, name: "IxStates" })).toBeInTheDocument();

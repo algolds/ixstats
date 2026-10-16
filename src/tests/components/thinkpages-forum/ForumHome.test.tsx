@@ -104,6 +104,32 @@ function board(key: string, extra: object = {}) {
   };
 }
 
+const PLAYER = {
+  name: "Kir",
+  handle: "kir",
+  avatarUrl: null,
+  flagUrl: null,
+  personaType: null,
+};
+
+/** One row of latestActivity: a reply by a player on an out-of-character board, overridden per test. */
+function activity(postId: string, extra: Record<string, unknown> = {}) {
+  return {
+    postId,
+    threadId: `t_${postId}`,
+    threadTitle: "Lore Lab",
+    categoryName: "General",
+    isFirstPost: false,
+    inCharacter: false,
+    at: new Date(),
+    authorUserId: "u1",
+    authorPersonaId: null,
+    importedAuthorName: null,
+    author: PLAYER,
+    ...extra,
+  };
+}
+
 const EMPTY_BOARD = board("rules", {
   threadCount: 0,
   postCount: 0,
@@ -579,44 +605,55 @@ describe("Forums home: rail", () => {
     set("categories", { data: [board("general")] });
   });
 
-  it("shows Latest activity: who posted, started or replied in which thread, linking to the post", () => {
+  it("shows New across ThinkPages in the main column: who posted, started or replied in which thread, linking to the post", () => {
     set("latestActivity", {
       data: [
-        {
-          postId: "p2",
-          threadId: "t1",
-          threadTitle: "Lore Lab",
-          categoryName: "General",
-          isFirstPost: false,
-          at: new Date(),
-          authorUserId: "u1",
-          authorPersonaId: null,
-          importedAuthorName: null,
-          author: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: "/flags/kir.png" },
-        },
-        {
-          postId: "p1",
-          threadId: "t2",
+        activity("p2", { author: { ...PLAYER, name: "Kir", flagUrl: "/flags/kir.png" } }),
+        activity("p1", {
           threadTitle: "New realm",
           categoryName: "Hub",
           isFirstPost: true,
-          at: new Date(),
-          authorUserId: null,
-          authorPersonaId: "pa",
-          importedAuthorName: null,
-          author: { name: "Aria Vance", handle: "aria", avatarUrl: null, flagUrl: null },
-        },
+          author: { ...PLAYER, name: "Aria Vance" },
+        }),
       ],
     });
     render(<ForumHome />);
-    const panel = screen.getByText("Latest activity").closest('[data-slot="card"]') as HTMLElement;
-    const reply = within(panel).getByRole("link", { name: /Kir replied in Lore Lab/ });
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    const reply = within(feed).getByRole("link", { name: /Kir replied in Lore Lab/ });
     expect(reply).toHaveAttribute("href", "/thinkpages/post/p2");
     expect(reply.querySelector('img[src="/flags/kir.png"]')).not.toBeNull();
     expect(
-      within(panel).getByRole("link", { name: /Aria Vance started New realm/ })
+      within(feed).getByRole("link", { name: /Aria Vance started New realm/ })
     ).toBeInTheDocument();
-    expect(within(panel).getByText(/^Hub · /)).toBeInTheDocument();
+    expect(within(feed).getByText(/^Hub · /)).toBeInTheDocument();
+    expect(within(feed).queryByText("In character")).toBeNull();
+    expect(screen.queryByText("Latest activity")).toBeNull();
+  });
+
+  it("lists new posts across ThinkPages in the main column, with persona voices and In character", () => {
+    set("latestActivity", {
+      data: [
+        activity("p1", {
+          author: {
+            name: "Government of Urcea",
+            handle: null,
+            avatarUrl: null,
+            flagUrl: null,
+            personaType: "government",
+          },
+          inCharacter: true,
+        }),
+      ],
+    });
+    render(<ForumHome />);
+    const feed = screen
+      .getByRole("heading", { name: "New across ThinkPages" })
+      .closest('[data-slot="card"]') as HTMLElement;
+    expect(feed.closest("aside, [data-slot=inspector]")).toBeNull();
+    expect(within(feed).getByText("Government")).toBeInTheDocument();
+    expect(within(feed).getByText("In character")).toBeInTheDocument();
   });
 
   it("shows Trending threads, ranked, and hides the panel when nothing is active", () => {
