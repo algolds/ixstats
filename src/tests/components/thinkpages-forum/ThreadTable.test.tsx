@@ -3,8 +3,10 @@ import { render, screen, within } from "@testing-library/react";
 
 // Radix Avatar renders an image only once the browser has loaded it; show it at once.
 jest.mock("~/components/ui/avatar", () => ({
-  Avatar: ({ children }: { children: React.ReactNode }) => (
-    <span data-slot="avatar">{children}</span>
+  Avatar: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <span data-slot="avatar" className={className}>
+      {children}
+    </span>
   ),
   AvatarImage: ({ src }: { src: string }) => <img src={src} alt="" />,
   AvatarFallback: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -111,9 +113,18 @@ describe("ThreadTable rows", () => {
     expect(cell.firstElementChild).toHaveAttribute("data-slot", "avatar");
   });
 
-  it("sets the title at the platform's list-title size", () => {
+  it("sets the title at the platform's headline size", () => {
     renderTable([thread("t1")]);
-    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-title-3");
+    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-headline");
+  });
+
+  it("draws rows at data density: 28px avatars, headline titles, 36px rows (44px coarse)", () => {
+    renderTable([thread("t1")]);
+    const title = screen.getByRole("link", { name: /Thread t1/i });
+    expect(title).toHaveClass("text-headline");
+    const row = title.closest('[role="row"]')!;
+    expect(row).toHaveClass("py-2", "min-h-9", "pointer-coarse:min-h-11");
+    expect(row.querySelector(".size-7")).not.toBeNull();
   });
 
   describe("last post", () => {
@@ -253,7 +264,7 @@ describe("ThreadTable page shortcuts", () => {
 });
 
 describe("ThreadTable unread rows", () => {
-  it("shows an unread thread in bold with a dot, and links it to the first unread post", () => {
+  it("shows an unread thread in semibold with a dot, and links it to the first unread post", () => {
     renderTable([thread("t1", { unread: true }), thread("t2", { unread: false })]);
     const unread = within(rowOf(/Thread t1/));
     expect(unread.getByText("Unread")).toBeInTheDocument();
