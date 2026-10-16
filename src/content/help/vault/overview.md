@@ -47,7 +47,7 @@ Select a card to see it up close with its details. Importing a NationStates deck
 | Special | Commemorative, event and achievement cards |
 | Trophy | Loreward and sports trophy cards. See [Lorewards](/help/wiki/lorewards#trophy-cards) |
 
-Special and Trophy cards stay with the account that earned them: they can't be traded or auctioned.
+Bound cards (trophies and achievement cards) stay with the account that earned them: they can't be traded or auctioned.
 
 Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra Rare**, **Epic** and **Legendary**. Rarer cards have stronger visual effects.
 

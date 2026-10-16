@@ -17,7 +17,7 @@ The Vault Cards system provides 3D holographic collectibles integrating sovereig
 - **Lore Categories**: 12-value `LoreCategory` enum (`prisma/schema/enums.prisma`) with per-category icons and themes (NS cards carry none)
 - **Ownership & Upgrades**: Serial numbers, escrow locking (`isLocked` while listed/traded), and card XP/leveling
 - **Pack Mechanics**: Data-driven `CardPack` rows (`packType` BASIC, PREMIUM, ELITE and EVENT seeded; THEMED/SEASONAL defined in `PackType` but unseeded; limited releases are EVENT packs with `limitedQuantity`)
-- **Home realm, finish and bound**: every card belongs to one realm (`Card.realmId`: Ixnay, a player realm, or the NationStates, IIWiki and AltHistory system realms); every copy has a finish (`CardOwnership.finish`: Standard, Foil, Holo, Serialised; Phase 1 mints Standard, and Serialised for trophies); `Card.isBound` cards (achievement cards and trophies) can't be traded, auctioned or listed (`assertNoBoundCopies`, `src/lib/cards/bound.ts`)
+- **Home realm, finish and bound**: every card belongs to one realm (`Card.realmId`: Ixnay, a player realm, or the NationStates, IIWiki and AltHistory system realms); every copy has a finish (`CardOwnership.finish`: Standard, Foil, Holo, Serialised; Phase 1 mints Standard, and Serialised for trophies); `Card.isBound` cards (trophies, achievement cards and commemorative cards) can't be traded, auctioned or listed (`assertNoBoundCopies`, `src/lib/cards/bound.ts`)
 - **One mint path**: every copy comes from `mintCopy` (`src/lib/cards/mint.ts`), which takes the serial under a per-card advisory lock and writes the mint row to `CardTransferEvent` with its source
 - **Marketplace & P2P Trading**: Live auctions with fee schedules (`cardMarket`), peer-to-peer trade offers with escrow (`trading`)
 - **Attribution & Compliance**: Legally-sound attribution footer for NationStates imports and self-service takedown verification
@@ -55,7 +55,7 @@ Every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is
 - **Economy:** a trophy card is a real holding, so the Wallet's deck value and net worth count it, but it is left out of the dividend's collection interest and of the deck-value achievements (excluded by type, `cardType: TROPHY`, and `deckValueExTrophy`). Admin duplicate cleanup (`purgeDuplicateCards`) never deletes one.
 
 ### 4. SPECIAL cards
-Commemorative milestone editions (e.g. *IxStates 1.0 Ogma Launch*), event cards and achievement cards (commemoratives and achievement cards are bound).
+Commemorative milestone editions (e.g. *IxStates 1.0 Ogma Launch*), event cards and achievement cards (commemorative and achievement cards are bound; other event cards are not).
 
 ---
 

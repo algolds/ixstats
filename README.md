@@ -116,7 +116,7 @@ A living micro-economic and collectible card ecosystem backed by immutable finan
   - `NS_IMPORT`: Synchronized with external NationStates card collections under strict compliance guardrails (streaming image proxying at `/api/proxy-ns-image`, attribution footers, and HMAC-MD5 self-service takedown verification).
   - `SPECIAL` & `COMMUNITY`: Commemorative milestone editions, contest winners, and alliance editions.
 - **Pack Openings & 6 Rarity Tiers**: Common → Legendary. Each pack sets its own price, card count and odds; 20 packs are seeded (100–15,000 IxC), including NationStates season packs. The opening sequence peels, flips and reveals each card by rarity.
-- **Crafting, Fusion & Card Junking**: Recycle unlocked cards for instant IxCredits. Fusion and evolution recipes exist at `/vault/crafting`, but that page is unlinked and does not work end to end yet (see `docs/systems/cards.md`).
+- **Crafting & Junking**: Removed in the cards refresh (Phase 1, 2026-10-15); see `docs/systems/cards.md`.
 - **Marketplace & P2P Escrow Trading**: Live public auctions with automated bidding and secure peer-to-peer card trading protected by atomic escrow locks.
 - **IxCredits (IxC), Achievements & Lorewards**: The platform currency, earned through a nightly Vault dividend (collection interest plus wiki, posting and card activity), daily streaks, achievement unlocks and tiered Lorewards payouts (wiki-writing rewards, with trophy cards), all recorded in the vault ledger. No nation action earns IxCredits.
 

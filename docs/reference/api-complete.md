@@ -664,7 +664,7 @@ api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (24 procedures)
+### cards Router (23 procedures)
 
 ```typescript
 // Queries (13)
@@ -682,11 +682,10 @@ api.cards.getCollectionCards.useQuery({ collectionId })
 api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
 api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
 
-// Mutations (11)
-api.cards.junkCards.useMutation() // { ownershipIds }
-api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation?, junkRate? }
+// Mutations (10)
+api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation? }
 api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
-api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, maxJunkBatchSize?, autoGenerateLoreThumbnails? }
+api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, autoGenerateLoreThumbnails? }
 api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
 api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
 api.cards.importCommonsFlags.useMutation() // { items, defaultRarity?, season? }
@@ -713,13 +712,12 @@ api.cardPacks.deactivatePack.useMutation() // { packId }
 api.cardPacks.adminAwardPack.useMutation() // { targetUserId, packId, acquiredMethod?, sendNotification? }
 ```
 
-### nsImport Router (22 procedures)
+### nsImport Router (21 procedures)
 
 Replaces the former `nsIntegration` router (NationStates deck verification, import and sync).
 
 ```typescript
-// Queries (8)
-api.nsImport.fetchPublicDeck.useQuery({ nationName })
+// Queries (7)
 api.nsImport.getSyncHealth.useQuery()
 api.nsImport.getSyncLogs.useQuery({ syncTypeFilter?, limit? })
 api.nsImport.getSyncLogCards.useQuery({ syncLogId, limit?, offset?, search? })

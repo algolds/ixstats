@@ -19,15 +19,19 @@ function walk(dir: string): string[] {
 
 const sources = walk(SRC).map((file) => ({
   file: path.relative(ROOT, file),
-  lines: fs.readFileSync(file, "utf8").split("\n"),
+  text: fs.readFileSync(file, "utf8"),
 }));
 
-/** `file:line` of every source line matching `pattern`, outside the `allowed` files. */
+/** `file:line` of every match of `pattern` (across line breaks), outside the `allowed` files. */
 function hits(pattern: RegExp, allowed: readonly string[] = []): string[] {
+  const global = new RegExp(pattern.source, "g");
   return sources
     .filter(({ file }) => !allowed.includes(file))
-    .flatMap(({ file, lines }) =>
-      lines.flatMap((line, i) => (pattern.test(line) ? [`${file}:${i + 1}`] : []))
+    .flatMap(({ file, text }) =>
+      Array.from(
+        text.matchAll(global),
+        (m) => `${file}:${text.slice(0, m.index).split("\n").length}`
+      )
     );
 }
 
@@ -61,7 +65,7 @@ describe("cards refresh Phase 1 removals", () => {
 
   it("mints every copy through mintCopy", () => {
     expect(
-      hits(/cardOwnership\.(create|createMany|upsert)\(|INSERT INTO "CardOwnership"/, [
+      hits(/cardOwnership\s*\.\s*(create\w*|upsert)\b|INSERT INTO "CardOwnership"/, [
         "src/lib/cards/mint.ts",
       ])
     ).toEqual([]);
