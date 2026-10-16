@@ -140,7 +140,7 @@ describe("Forums home: board list", () => {
     expect(within(rowOf("Rules")).queryByText(/ new$/)).toBeNull();
   });
 
-  it("lists each board with its link, description, counts and its latest thread's preview", () => {
+  it("lists each board with its link, description, counts and its last post", () => {
     set("categories", { data: [board("general"), board("announcements")] });
     render(<ForumHome />);
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
@@ -154,11 +154,11 @@ describe("Forums home: board list", () => {
     expect(within(general).getByText("8")).toBeInTheDocument();
     expect(within(general).getByText("23")).toBeInTheDocument();
     expect(within(general).getByText("8 threads · 23 posts")).toHaveClass("md:hidden");
-    const preview = within(general).getByRole("link", { name: /Latest in general/ });
-    expect(preview).toHaveAttribute("href", "/thinkpages/t/t_general");
-    expect(preview.closest('[data-slot="card"]')).toHaveAttribute("data-variant", "well");
-    expect(within(preview).getByText(/Heku/)).toBeInTheDocument();
-    expect(preview.querySelector('img[src="/flags/caphiria.png"]')).toBeNull();
+    expect(within(general).getByRole("link", { name: "Latest in general" })).toHaveAttribute(
+      "href",
+      "/thinkpages/t/t_general"
+    );
+    expect(general.querySelector('img[src="/flags/caphiria.png"]')).toBeNull();
     expect(rowOf("Announcements")).toBeInTheDocument();
   });
 
@@ -309,15 +309,20 @@ describe("Forums home: texture and character", () => {
     expect(texture("General")).toContain("facet-texture-paper-grain");
   });
 
-  it("draws a board's latest-thread card with a pronounced border and no flag", () => {
+  it("shows each board's last post as an inline column: the thread, then who and when", () => {
     set("categories", { data: [board("general")] });
     render(<ForumHome />);
-    const card = screen
-      .getByRole("link", { name: /Latest in general/ })
-      .closest('[data-slot="card"]') as HTMLElement;
-    expect(card).toHaveClass("border", "border-separator");
-    expect(card.querySelector("img[src^='/flags/']")).toBeNull();
-    expect(within(card).getByText("Latest in general")).toHaveClass("text-headline");
+    const row = rowOf("General");
+    const link = within(row).getByRole("link", { name: "Latest in general" });
+    expect(link).toHaveAttribute("href", "/thinkpages/t/t_general");
+    expect(row.querySelector('[data-slot="card"]')).toBeNull();
+    expect(within(row).getByText(/Heku · /)).toBeInTheDocument();
+  });
+
+  it("says No threads yet in the column for an empty board", () => {
+    set("categories", { data: [EMPTY_BOARD] });
+    render(<ForumHome />);
+    expect(screen.getByText("No threads yet")).toBeInTheDocument();
   });
 
   it("sets the name of a board with new threads in semibold, and only that board", () => {
