@@ -36,8 +36,8 @@ function totals(boards: readonly { threadCount: number; postCount: number }[]) {
 }
 
 /**
- * The Forums home: a plain header totalling the sitewide boards with a New thread menu, the sitewide boards with their latest threads,
- * the old forum's archive (collapsed), and a rail of Your realm, Latest activity, Trending threads, Find a Realm,
+ * The Forums home: a plain header totalling the sitewide boards with a New thread menu, Your realm (for a realm member), the sitewide boards with their latest threads,
+ * the old forum's archive (collapsed), and a rail of Latest activity, Trending threads, Find a Realm,
  * ThinkTanks and the member's own standing. The rail is only passed when a panel has content;
  * its panels rise in one after another.
  */
@@ -59,8 +59,6 @@ export function ForumHome() {
     !!moderates &&
     (moderates.isSiteAdmin || moderates.realms.length > 0 || moderates.categories.length > 0);
   const panels = [
-    // Only for a realm member, so a viewer without a realm gets no empty rail (or Info button) for it.
-    realmMember ? <YourRealmPanel key="realm" signedIn={signedIn} /> : null,
     rail.activity ? <LatestActivityPanel key="activity" items={rail.activity} /> : null,
     rail.trending ? <TrendingPanel key="trending" threads={rail.trending} /> : null,
     rail.adverts ? <FindARealmPanel key="adverts" adverts={rail.adverts} /> : null,
@@ -120,6 +118,8 @@ export function ForumHome() {
         <Skeleton className="rounded-card h-64 w-full" />
       ) : (
         <>
+          {/* Only for a realm member; it renders nothing until the realm and its name load. */}
+          {realmMember ? <YourRealmPanel signedIn={signedIn} /> : null}
           {regular.length > 0 ? <BoardList boards={regular} title="Sitewide" /> : null}
           {noBoards ? (
             <Card content="data" className="overflow-hidden">

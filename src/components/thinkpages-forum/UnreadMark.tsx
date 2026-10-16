@@ -14,9 +14,12 @@ export function UnreadMark() {
   );
 }
 
-/** The quiet "N new" that follows an unread name (capped at 99+). */
-export function UnreadCount({ count }: { count: number }) {
+/** The quiet "N new" that follows an unread name (capped at 99+), with an optional context after it ("on the board"). */
+export function UnreadCount({ count, suffix }: { count: number; suffix?: string }) {
+  const label = `${countLabel(count)} new`;
   return (
-    <span className="text-footnote text-label-secondary shrink-0 tabular-nums">{`${countLabel(count)} new`}</span>
+    <span className="text-footnote text-label-secondary shrink-0 tabular-nums">
+      {suffix ? `${label} ${suffix}` : label}
+    </span>
   );
 }

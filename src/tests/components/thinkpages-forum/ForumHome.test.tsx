@@ -428,13 +428,13 @@ describe("Forums home: Your realm and Moderation", () => {
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 4 } });
     const { unmount } = render(<ForumHome />);
     const link = screen.getByRole("link", { name: /Eurth/ });
-    expect(link).toHaveTextContent("4 new");
+    expect(link).toHaveTextContent("4 new on the board");
     const name = within(link).getByText("Eurth");
     const dot = link.querySelector(".bg-tint.rounded-full") as HTMLElement;
     expect(name).toHaveClass("font-semibold");
     expect(name.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     expect(
-      name.compareDocumentPosition(within(link).getByText("4 new")) &
+      name.compareDocumentPosition(within(link).getByText("4 new on the board")) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     unmount();
@@ -451,7 +451,7 @@ describe("Forums home: Your realm and Moderation", () => {
     set("category", { data: hub });
     set("navCounts", { data: { watchedUnread: 0, realmBoardNew: 100 } });
     render(<ForumHome />);
-    expect(screen.getByText("99+ new")).toBeInTheDocument();
+    expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
   it("shows the viewer's realm with its Hub's latest thread, linking to /thinkpages/r/mine", () => {
@@ -468,7 +468,7 @@ describe("Forums home: Your realm and Moderation", () => {
     expect(screen.getByText("Your realm")).toBeInTheDocument();
   });
 
-  it("puts Your realm first in the right rail, out of the main column", () => {
+  it("puts Your realm in the main column above the boards, not in the rail", () => {
     auth.isSignedIn = true;
     set("navFlags", { data: { realmMember: true, forumModerator: false } });
     set("realms", { data: realm });
@@ -477,11 +477,16 @@ describe("Forums home: Your realm and Moderation", () => {
       data: [{ threadId: "t1", title: "A", categoryName: "Hub", repliesToday: 1 }],
     });
     render(<ForumHome />);
+    const heading = screen.getByRole("heading", { level: 2, name: "Your realm" });
+    expect(heading.closest('[data-slot="inspector"]')).toBeNull();
+    expect(heading.closest("aside")).toBeNull();
+    expect(
+      heading.compareDocumentPosition(screen.getByRole("heading", { level: 2, name: "Sitewide" })) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     const rail = document.querySelector('[data-slot="inspector"]') as HTMLElement;
-    const panel = within(rail).getByRole("heading", { level: 2, name: "Your realm" });
-    expect(within(rail).getByRole("link", { name: /Eurth/ })).toBeInTheDocument();
-    const headings = within(rail).getAllByRole("heading", { level: 2 });
-    expect(headings[0]).toBe(panel);
+    expect(within(rail).queryByRole("heading", { name: "Your realm" })).toBeNull();
+    expect(within(rail).getByRole("heading", { level: 2, name: /Trending/ })).toBeInTheDocument();
   });
 
   it("draws the realm's uploaded emblem in Your realm, else its thumbnail, else the realms icon", () => {
