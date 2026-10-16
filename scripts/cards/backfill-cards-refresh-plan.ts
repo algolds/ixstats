@@ -135,6 +135,7 @@ function emptyReport(): BackfillReport {
     serialRenumbers: [],
     requestCategoriesCleared: 0,
     artworkCopied: 0,
+    multiQuantityCopies: 0,
   };
 }
 
@@ -388,6 +389,19 @@ function orphanErrors(targets: readonly Target[], realmIds: ReadonlySet<string>)
 }
 
 /**
+ * Copies held as `quantity > 1` (a re-awarded achievement card, the retired duplicate merge): the constraint SQL drops
+ * `quantity` and refuses while any remain, so the dry run fails on them too. The backfill never splits them; the owner
+ * resolves each row first.
+ */
+function quantityErrors(count: number): string[] {
+  if (count === 0) return [];
+  return [
+    `${count} copies hold quantity > 1, and the constraint SQL drops quantity: resolve those rows first ` +
+      `(SELECT id, "cardId", "ownerId", quantity FROM "CardOwnership" WHERE quantity > 1)`,
+  ];
+}
+
+/**
  * Lore cards the constraints' natural key, `(COALESCE(wikiSource, 'ixwiki'), lower(wikiArticleTitle))`, would still
  * refuse after the merges: say, two blank titles, which are never merged. Caught here, before the window, not there.
  */
@@ -603,6 +617,8 @@ export function planBackfill(snapshot: BackfillSnapshot, options: PlanOptions): 
   const packs = planPacks(snapshot, report, errors);
   report.suggestedRarities = [...new Set(snapshot.requestSuggestedRarities)].sort();
   report.requestCategoriesCleared = snapshot.requestNsImportCategories;
+  report.multiQuantityCopies = snapshot.multiQuantityCopies;
+  errors.push(...quantityErrors(snapshot.multiQuantityCopies));
   if (errors.length > 0) return { plan: emptyPlan(), report, errors };
 
   const targets = planTargets(snapshot, mapped, report, options);

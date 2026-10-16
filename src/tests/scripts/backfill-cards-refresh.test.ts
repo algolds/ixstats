@@ -152,6 +152,7 @@ function fixture(): BackfillSnapshot {
     ledger: [],
     requestSuggestedRarities: ["RARE"],
     requestNsImportCategories: 2,
+    multiQuantityCopies: 0,
   };
 }
 
@@ -220,6 +221,7 @@ describe("cards refresh backfill", () => {
     expect(result.report.mergeGroups).toHaveLength(1);
     expect(result.report.ledgerRows).toBe(1);
     expect(result.report.requestCategoriesCleared).toBe(2);
+    expect(result.report.multiQuantityCopies).toBe(0);
   });
 
   it("applies every mapping, and a second run plans nothing", async () => {
@@ -340,6 +342,19 @@ describe("cards refresh backfill", () => {
     expect(result.applied).toBe(false);
     expect(result.errors.join("\n")).toMatch(/cardType "COMMUNITY".*odd/);
     expect(result.errors.join("\n")).toMatch(/rarity "SHINY".*shiny/);
+    for (const write of Object.values(writer)) expect(write).not.toHaveBeenCalled();
+  });
+
+  it("fails the dry run while copies hold quantity > 1, counting them, and never writes", async () => {
+    const db = fixture();
+    db.multiQuantityCopies = 2;
+    const writer = memoryWriter(db);
+    const result = await runBackfill(io(db, writer), true);
+    expect(result.applied).toBe(false);
+    expect(result.report.multiQuantityCopies).toBe(2);
+    expect(result.errors.join("\n")).toMatch(
+      /2 copies hold quantity > 1.*resolve those rows first/
+    );
     for (const write of Object.values(writer)) expect(write).not.toHaveBeenCalled();
   });
 
