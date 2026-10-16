@@ -1,7 +1,4 @@
 /** Cards refresh §2.1: six rarities, five card types, twelve lore categories, and nothing legacy in the maps. */
-// display-utils still imports the special-stats module until Task 20 deletes it.
-jest.mock("~/lib/country-geo", () => ({ computeSpecialStats: jest.fn() }));
-
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { BROWSABLE_CATEGORIES, CATEGORY_SYNONYMS, LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryTheme } from "~/lib/cards/category-theme";

@@ -1,48 +1,56 @@
-import type { Prisma } from "@prisma/client";
+import type { Card, Prisma } from "@prisma/client";
 import type { CardInstance } from "~/types/cards-display";
 import { CARD_ARTWORK_PLACEHOLDER } from "./display-utils";
 
 /** An ownership row with its card, as `cards.getMyCards` and `cards.getMyTopCards` return it. */
 export type OwnedCard = Prisma.CardOwnershipGetPayload<{ include: { cards: true } }>;
 
-/** The card display shape for an owned card: the card's fields plus what this copy has (serial, level, lock). */
-export function ownedCardToInstance(ownership: OwnedCard): CardInstance {
-  const card = ownership.cards;
-  const stats = (card.stats ?? {}) as CardInstance["stats"];
+/** The card display shape of a card with no copy attached (a library or admin explorer row). */
+export function cardToInstance(card: Card): CardInstance {
   return {
     id: card.id,
-    ownershipId: ownership.id,
-    isLocked: ownership.isLocked,
     title: card.title,
     description: card.description ?? "",
     artwork: card.artwork || CARD_ARTWORK_PLACEHOLDER,
-    artworkVariants: card.artworkVariants as CardInstance["artworkVariants"],
     cardType: card.cardType,
-    rarity: card.rarity as CardInstance["rarity"],
+    category: card.category,
+    subcategory: card.subcategory,
+    artworkSource: card.artworkSource,
+    artworkCredit: card.artworkCredit,
+    slug: card.slug,
+    rarity: card.rarity,
     season: card.season,
     nsCardId: card.nsCardId || null,
     nsSeason: card.nsSeason || null,
-    nsData: card.nsData as CardInstance["nsData"],
     wikiSource: card.wikiSource,
     wikiArticleTitle: card.wikiArticleTitle,
+    wikiExcerpt: card.wikiExcerpt,
     wikiUrl: null,
     countryId: card.countryId,
-    stats,
-    baseStats: stats as CardInstance["baseStats"],
+    metadata: card.metadata as CardInstance["metadata"],
     marketValue: card.marketValue,
     totalSupply: card.totalSupply ?? 0,
+    level: 1,
+    createdAt: card.createdAt,
+    updatedAt: card.updatedAt,
+    lastTrade: null,
+    isRetired: card.isRetired,
+    retiredAt: card.retiredAt,
+    country: null,
+  };
+}
+
+/** The card display shape for an owned card: the card's fields plus what this copy has (serial, level, lock). */
+export function ownedCardToInstance(ownership: OwnedCard): CardInstance {
+  return {
+    ...cardToInstance(ownership.cards),
+    ownershipId: ownership.id,
+    isLocked: ownership.isLocked,
     level: ownership.level,
-    evolutionStage: 0,
-    enhancements: card.enhancements as CardInstance["enhancements"],
     serialNumber: ownership.serialNumber,
     experience: ownership.experience,
-    lastSalePrice: ownership.lastSalePrice,
-    lastSaleDate: ownership.lastSaleDate,
     acquiredAt: ownership.acquiredAt,
     createdAt: ownership.createdAt,
     updatedAt: ownership.updatedAt,
-    lastTrade: null,
-    country: null,
-    owners: [],
   };
 }

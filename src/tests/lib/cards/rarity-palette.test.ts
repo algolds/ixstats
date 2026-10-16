@@ -2,8 +2,6 @@
 // `jest` is the injected global on purpose: @swc/jest only hoists jest.mock() on the global.
 import { describe, it, expect } from "@jest/globals";
 
-jest.mock("~/lib/country-geo", () => ({ computeSpecialStats: jest.fn() }));
-
 import {
   getRarityConfig,
   getRarityHex,

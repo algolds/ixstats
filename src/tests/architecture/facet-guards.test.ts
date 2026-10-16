@@ -39,7 +39,6 @@ const MICRO_TYPE = /\btext-\[(?:(?:\d|1[01])(?:\.\d+)?px|0?\.(?:[0-6]\d*|7(?:[0-
 // Fixed-geometry glyphs where a 12px line box cannot fit.
 const MICRO_TYPE_ALLOWED = new Set([
   "components/sports/surfaces/FootballField.tsx: text-[3px]", // SVG user units, not CSS px
-  "components/cards/display/CardDisplay.tsx: text-[7px]", // card-face stat glyph
   "components/cards/display/CardBack.tsx: text-[8.5px]", // card-back art label
   "components/cards/pack-opening/PackHolographicCover.tsx: text-[7px]", // size="sm" pack art
   "components/thinkpages/composer/ComposerActionBar.tsx: text-[7px]", // 14px count badge
