@@ -145,7 +145,7 @@ function LastPost({ thread, authors }: { thread: Thread; authors: ForumAuthors }
         className="hidden md:flex"
       />
       <span className="flex min-w-0 items-baseline gap-1.5 md:flex-col md:items-start md:gap-0">
-        <span className="text-footnote text-label md:text-footnote md:text-label max-w-40 truncate md:max-w-48">
+        <span className="text-footnote text-label max-w-40 truncate md:max-w-48">
           {poster.name}
         </span>
         <span aria-hidden className="text-footnote text-label-secondary md:hidden">
