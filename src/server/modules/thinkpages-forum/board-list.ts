@@ -1,8 +1,10 @@
 /**
  * The sitewide boards for the Forums home: each visible board with its thread and post counts, style, and latest
- * post (with the author's public name, the same way a thread list names its authors), and the rail's latest activity.
+ * post (with the author's public name, the same way a thread list names its authors), plus the New across ThinkPages
+ * feed.
  */
 import type { PrismaClient } from "@prisma/client";
+import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { canSeeCategory, canSeeThread, canStartThread, type ForumViewer } from "./access";
 import {
@@ -94,7 +96,8 @@ export async function listBoards(db: BoardsDb, viewer: ForumViewer) {
       id: category.id,
       style: category.style,
       visibility: category.visibility,
-      canStart: canStartThread(viewer, category),
+      // Find a Realm takes adverts only, so the home's New thread menu never offers it.
+      canStart: canStartThread(viewer, category) && !isAdvertCategory(category),
       postCount: postCounts.get(category.id) ?? 0,
       latest: last ? publicLatest(last, authors) : null,
     };

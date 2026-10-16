@@ -27,8 +27,18 @@ describe("listBoards: canStart", () => {
     expect(boards.find((b) => b.key === "rules")?.canStart).toBe(true);
   });
 
+  it("never offers Find a Realm, which takes adverts only, to a member or an admin", async () => {
+    for (const viewer of [member, admin]) {
+      const boards = await listBoards(dbWithStaffBoard(), viewer);
+      const find = boards.find((b) => b.key === "find-a-realm");
+      expect(find).toBeDefined();
+      expect(find?.canStart).toBe(false);
+    }
+  });
+
   it("lets no one start a thread when signed out", async () => {
     const boards = await listBoards(dbWithStaffBoard(), null);
+    expect(boards.length).toBeGreaterThan(0);
     expect(boards.every((b) => !b.canStart)).toBe(true);
   });
 });
