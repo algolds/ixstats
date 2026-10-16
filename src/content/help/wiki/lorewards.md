@@ -30,11 +30,11 @@ A Loreward pays by contest and place, into your [Vault](/help/vault/overview):
 
 Each place pays once. These amounts apply to results dated 15 October 2026 or later; earlier results keep what they paid, and yearly winners don't pay. Runner-up places are only paid where the results record them, which today is the daily contest. Admins can change the amounts.
 
-You're only paid if IxStats can match the winner to your account through a **verified** wiki link. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
+You're only paid if IxStats can match the winner to your account: through a **verified** wiki link, or, with no link, when every IxWiki edit under that name was made in WikiOS from your account. If the name also has edits made through MediaWiki, or another account has edited under it, nobody is paid until the name's owner verifies the link. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
 
 ## Trophy cards
 
-Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a lore card you can keep, trade or list like any other. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If your wiki account isn't linked yet, the card waits and is given to you once you verify the link. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
+Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a lore card you can keep, trade or list like any other. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If the winner can't be matched to your account yet (see [What a place pays](#what-a-place-pays)), the card waits and is given to you once it can, for example when you verify your wiki link. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
 
 ## Where your Lorewards show
 
