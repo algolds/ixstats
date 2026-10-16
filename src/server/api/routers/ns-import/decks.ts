@@ -3,19 +3,14 @@ import type { Card, Prisma, PrismaClient } from "@prisma/client";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
-import {
-  computeCardValue,
-  getValuationConfig,
-  type CardValuationConfig,
-} from "~/lib/cards/valuation";
+import { getValuationConfig, type CardValuationConfig } from "~/lib/cards/valuation";
 import { copyRoom } from "~/lib/cards/capacity";
-import { CardFinish, CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
+import { CardFinish } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
-import { nsFactsFromApi, nsFactsOf, nsNationKey, withNsFacts } from "~/lib/cards/ns-facts";
-import { NS_REALM_ID } from "~/lib/realms/realm-ids";
+import { nsNationKey } from "~/lib/cards/ns-facts";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
-import { generateNSImportDescription } from "~/lib/nationstates/import-service";
+import { upsertNSCardDefinition } from "~/lib/nationstates/sync-processor";
 
 type NsDeck = NonNullable<Awaited<ReturnType<typeof nsApiClient.fetchDeck>>>;
 type NsCard = NsDeck["cards"][number];
@@ -24,7 +19,6 @@ type ImportUser = { id: string; role?: { level?: number | null } | null };
 
 /** One import is one transaction (cards refresh §5.4); a large deck is a few hundred statements. */
 const IMPORT_TRANSACTION = { timeout: 60_000, maxWait: 10_000 };
-const PLACEHOLDER_ART = "/images/cards/lore-placeholder.svg";
 
 /** Translate an NS API failure into the TRPCError the client shows. */
 function nsFetchError(error: unknown) {
@@ -86,71 +80,18 @@ async function loadDeck(nationName: string): Promise<NsCard[]> {
   const cards = distinctCards(deck.cards);
   for (const card of cards) {
     if (isPricedCard(card)) continue;
-    // A card NationStates can't describe is skipped later (no name), never fatal
-    const info = await nsApiClient.fetchCardInfo(card.id, card.season).catch(() => null);
-    if (info) Object.assign(card, info);
+    // Null is a failed request (429, 5xx, network): import all of the deck or none of it. A card NationStates
+    // answers for without a name is skipped later.
+    const info = await nsApiClient.fetchCardInfo(card.id, card.season);
+    if (!info) {
+      throw new TRPCError({
+        code: "BAD_GATEWAY",
+        message: "NationStates didn't answer for every card in the deck. Please try again.",
+      });
+    }
+    Object.assign(card, info);
   }
   return cards;
-}
-
-/** A new NS card: the nationstates realm, original text (NS text is never copied), and its facts. */
-function newNsCardData(
-  nsCard: NsCard,
-  nationName: string,
-  marketValue: number
-): Prisma.CardUncheckedCreateInput {
-  return {
-    id: `card_ns_${nsCard.id}_s${nsCard.season}`,
-    title: nsCard.name ?? `Card ${nsCard.id}`,
-    description: generateNSImportDescription(nsCard),
-    artwork: nsCard.flag || PLACEHOLDER_ART,
-    cardType: CardType.NS,
-    realmId: NS_REALM_ID,
-    rarity: parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON,
-    season: parseInt(nsCard.season),
-    nsCardId: parseInt(nsCard.id),
-    nsSeason: parseInt(nsCard.season),
-    wikiArticleTitle: nsCard.name ?? null,
-    metadata: {
-      nsData: nsFactsFromApi(nsCard),
-      importedFrom: nationName,
-      importedAt: new Date().toISOString(),
-    },
-    marketValue,
-    totalSupply: 1,
-  };
-}
-
-/** Finds the card's definition, refreshing its value and bank value, or creates it. */
-async function upsertNsDefinition(
-  tx: Tx,
-  nsCard: NsCard,
-  nationName: string,
-  valCfg: CardValuationConfig
-): Promise<Card> {
-  const nsCardId = parseInt(nsCard.id);
-  const nsSeason = parseInt(nsCard.season);
-  const marketValue = computeCardValue(
-    {
-      rarity: parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON,
-      cardType: CardType.NS,
-      nsMarketValue: parseFloat(nsCard.market_value || "0"),
-    },
-    valCfg
-  );
-  const existing = await tx.card.findFirst({ where: { nsCardId, nsSeason } });
-  if (!existing) return tx.card.create({ data: newNsCardData(nsCard, nationName, marketValue) });
-  if (Math.abs(existing.marketValue - marketValue) <= 0.01) return existing;
-  return tx.card.update({
-    where: { id: existing.id },
-    data: {
-      marketValue,
-      metadata: withNsFacts(existing.metadata, {
-        ...nsFactsOf(existing.metadata),
-        market_value: nsCard.market_value,
-      }),
-    },
-  });
 }
 
 type LedgerKey = { nsCardId: number; nsSeason: number; nation: string };
@@ -211,15 +152,22 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
   const outcome: DeckImportOutcome = { imported: [], alreadyImported: 0, skipped: [] };
   const claimed: Array<{ card: Card; key: LedgerKey }> = [];
   for (const nsCard of run.cards) {
-    if (!nsCard.name) {
-      outcome.skipped.push(`Card ${nsCard.id} S${nsCard.season}`);
-      continue;
-    }
+    const label = nsCard.name ?? `Card ${nsCard.id} S${nsCard.season}`;
     if (claimed.length >= run.room) {
-      outcome.skipped.push(`${nsCard.name} (Inventory Full)`);
+      outcome.skipped.push(`${label} (Inventory Full)`);
       continue;
     }
-    const card = await upsertNsDefinition(tx, nsCard, run.nationName, run.valCfg);
+    const definition = await upsertNSCardDefinition(tx, nsCard, run.nationName, run.valCfg);
+    if (!definition) {
+      outcome.skipped.push(label);
+      continue;
+    }
+    // A taken-down card mints no new copies; unclaimed, it can import again if it is restored
+    if (definition.card.isRetired) {
+      outcome.skipped.push(`${label} (Taken down)`);
+      continue;
+    }
+    const { card } = definition;
     const key = { nsCardId: parseInt(nsCard.id), nsSeason: parseInt(nsCard.season), nation };
     const claim = await tx.nSImportLedger.createMany({
       data: [{ ...key, userId: run.userId }],

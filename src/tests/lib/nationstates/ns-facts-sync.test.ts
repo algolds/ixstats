@@ -22,7 +22,7 @@ it("creates an NS card in the nationstates realm with only its facts", async () 
   };
   await expect(
     upsertNSCardDefinition(db as never, nsCard, "region:abydos", CARD_VALUATION_DEFAULTS)
-  ).resolves.toEqual({
+  ).resolves.toMatchObject({
     created: true,
     updated: false,
   });
@@ -71,4 +71,56 @@ it("refreshes an existing card's value and its region and bank value facts", asy
     importedFrom: "x",
     nsData: { name: "Heku", region: "Abydos", market_value: "90" },
   });
+});
+
+it("leaves a taken-down card's value and facts alone, and returns it", async () => {
+  const existing = {
+    id: "card_ns_7_s3",
+    rarity: "COMMON",
+    isRetired: true,
+    marketValue: 1,
+    metadata: null,
+  };
+  const db = { card: { findFirst: jest.fn().mockResolvedValue(existing), update: jest.fn() } };
+
+  await expect(
+    upsertNSCardDefinition(
+      db as never,
+      { ...nsCard, market_value: "90" },
+      "x",
+      CARD_VALUATION_DEFAULTS
+    )
+  ).resolves.toEqual({ card: existing, created: false, updated: false });
+  expect(db.card.update).not.toHaveBeenCalled();
+});
+
+it("returns null for a card without a valid id or a name, and writes nothing", async () => {
+  const db = { card: { findFirst: jest.fn(), create: jest.fn() } };
+
+  for (const bad of [
+    { ...nsCard, id: "x" },
+    { ...nsCard, season: "" },
+    { ...nsCard, name: undefined },
+  ]) {
+    await expect(
+      upsertNSCardDefinition(db as never, bad, "x", CARD_VALUATION_DEFAULTS)
+    ).resolves.toBeNull();
+  }
+  expect(db.card.findFirst).not.toHaveBeenCalled();
+  expect(db.card.create).not.toHaveBeenCalled();
+});
+
+it("returns the card it created, which has no wiki article title", async () => {
+  const created = { id: "card_ns_7_s3" };
+  const db = {
+    card: {
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn().mockResolvedValue(created),
+    },
+  };
+
+  const result = await upsertNSCardDefinition(db as never, nsCard, "x", CARD_VALUATION_DEFAULTS);
+
+  expect(result?.card).toBe(created);
+  expect(db.card.create.mock.calls[0]![0].data).not.toHaveProperty("wikiArticleTitle");
 });

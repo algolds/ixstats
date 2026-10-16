@@ -11,7 +11,7 @@
  * Dumps rather than dozens/hundreds/thousands of real-time API requests."
  */
 
-import { type PrismaClient } from "@prisma/client";
+import type { Card, Prisma, PrismaClient } from "@prisma/client";
 import { nsApiClient, type NSCard } from "./api-client";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
@@ -31,19 +31,20 @@ interface SyncCounts {
 }
 
 /**
- * Upsert a single NSCard definition into the DB.
- * Returns flags describing what happened.
+ * The one NS card definition upsert (the region sync and the deck import): finds the card, refreshing its value and
+ * NS facts, or creates it. A taken-down (retired) card is returned untouched. Null for a card without a valid id or a
+ * name, which writes nothing. `db` may be a transaction client.
  */
 export async function upsertNSCardDefinition(
-  db: PrismaClient,
+  db: Pick<Prisma.TransactionClient, "card">,
   nsCard: NSCard,
   importedFrom: string,
   valCfg: Awaited<ReturnType<typeof getValuationConfig>>
-): Promise<{ created: boolean; updated: boolean }> {
+): Promise<{ card: Card; created: boolean; updated: boolean } | null> {
   const nsCardId = parseInt(nsCard.id);
   const nsSeason = parseInt(nsCard.season);
-  if (isNaN(nsCardId) || isNaN(nsSeason)) return { created: false, updated: false };
-  if (!nsCard.name) return { created: false, updated: false };
+  if (isNaN(nsCardId) || isNaN(nsSeason)) return null;
+  if (!nsCard.name) return null;
 
   const existing = await db.card.findFirst({
     where: { nsCardId, nsSeason },
@@ -58,10 +59,10 @@ export async function upsertNSCardDefinition(
   if (existing) {
     // A card hidden via takedown (flag-owner opt-out) must not have its
     // artwork or value silently restored by a re-sync.
-    if (existing.isRetired) return { created: false, updated: false };
+    if (existing.isRetired) return { card: existing, created: false, updated: false };
     if (Math.abs(existing.marketValue - recomputedMarketValue) > 0.01) {
       const fresh = nsFactsFromApi({ region: nsCard.region, market_value: nsCard.market_value });
-      await db.card.update({
+      const card = await db.card.update({
         where: { id: existing.id },
         data: {
           marketValue: recomputedMarketValue,
@@ -71,12 +72,12 @@ export async function upsertNSCardDefinition(
           ),
         },
       });
-      return { created: false, updated: true };
+      return { card, created: false, updated: true };
     }
-    return { created: false, updated: false };
+    return { card: existing, created: false, updated: false };
   }
 
-  await db.card.create({
+  const card = await db.card.create({
     data: {
       id: `card_ns_${nsCard.id}_s${nsCard.season}`,
       title: nsCard.name,
@@ -97,7 +98,7 @@ export async function upsertNSCardDefinition(
       totalSupply: 1,
     },
   });
-  return { created: true, updated: false };
+  return { card, created: true, updated: false };
 }
 
 /**
@@ -214,8 +215,8 @@ export async function processRegionCardsFromDump(
           `region:${regionNames.join(",")}`,
           valCfg
         );
-        if (result.created) cardsCreated++;
-        else if (result.updated) cardsUpdated++;
+        if (result?.created) cardsCreated++;
+        else if (result?.updated) cardsUpdated++;
       } catch (cardError) {
         const msg = cardError instanceof Error ? cardError.message : String(cardError);
         if (!msg.includes("Unique constraint")) {
