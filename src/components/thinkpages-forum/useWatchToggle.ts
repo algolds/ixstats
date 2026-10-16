@@ -29,7 +29,7 @@ export function useWatchToggle(): {
         notify.error("Could not update watching", e instanceof Error ? e.message : undefined);
         return false;
       }
-      // The change is saved; a failed refresh of the lists is not an error to report.
+      // The change is saved; a failed refresh of the sidebar count is not an error to report.
       await Promise.all([refresh(), utils.thinkpagesForum.thread.invalidate({ threadId })]).catch(
         () => undefined
       );

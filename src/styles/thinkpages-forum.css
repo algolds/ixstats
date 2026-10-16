@@ -144,7 +144,7 @@
 
   [data-app="thinkpages"] .forum-post .forum-quote-author {
     margin-bottom: 4px;
-    font-size: 13px;
+    font-size: calc(0.8125rem * var(--text-scale, 1));
     font-weight: 500;
     line-height: 1.4;
     color: var(--tint);

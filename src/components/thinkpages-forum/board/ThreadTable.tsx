@@ -69,7 +69,7 @@ function SortHeaders({ basePath, sort }: { basePath: string; sort: ThreadSort })
       role="row"
       className={cn(
         GRID,
-        // The column headings sit on a Well band, as each post starts on one.
+        // The column headings sit on a Well band to set them apart from the thread rows.
         "facet-well text-footnote text-label-secondary border-separator items-center gap-x-4 border-b px-4 py-2 max-md:sr-only max-md:focus-within:not-sr-only sm:px-5"
       )}
     >

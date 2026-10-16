@@ -45,4 +45,10 @@ describe("a forum post's stylesheet", () => {
     );
     for (const s of ["", " h2", " h3", " h4"]) expect(sel(s)).not.toMatch(/font-size:\s*[\d.]+px/);
   });
+
+  it("sets the quote author on the Facet scale, not in raw pixels", () => {
+    expect(rule('[data-app="thinkpages"] .forum-post .forum-quote-author')).toMatch(
+      /font-size:\s*calc\(0\.8125rem \* var\(--text-scale, 1\)\);/
+    );
+  });
 });
