@@ -4,7 +4,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
-  JUNK_RATE_MAX,
   getValuationConfig,
   recomputeAllCardValues,
   setValuationConfig,
@@ -39,7 +38,6 @@ export const cardsSettingsRouter = createTRPCRouter({
           nsPremium: z.number().min(0),
           multSpecial: z.number().min(0),
           multNation: z.number().min(0),
-          junkRate: z.number().min(0).max(JUNK_RATE_MAX),
         })
         .partial()
     )
@@ -98,14 +96,8 @@ export const cardsSettingsRouter = createTRPCRouter({
     .input(
       z
         .object({
-          tradingEnabled: z.number().min(0).max(1),
           auctionHouseRakePct: z.number().min(0).max(50),
-          dailyFreePacks: z.number().min(0).max(100),
-          dailyPackCooldownHours: z.number().min(0).max(168),
-          allowPlayerMinting: z.number().min(0).max(1),
           maxInventoryCards: z.number().min(10).max(100000),
-          maxJunkBatchSize: z.number().min(1).max(1000),
-          autoGenerateLoreThumbnails: z.number().min(0).max(1),
         })
         .partial()
     )
