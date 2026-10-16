@@ -85,9 +85,12 @@ export function finishFor(input: {
   return input.current;
 }
 
+/** The retired `LoreCategory` bucket: the pre-refresh default every card held. The backfill clears it everywhere. */
+export const RETIRED_NS_CATEGORY = "NS_IMPORT";
+
 /** No category for NS cards (their automatic sets go by NS season) and none for the retired NS_IMPORT bucket. */
 export function categoryFor(input: { type: CardType; category: string | null }): string | null {
-  if (input.type === CardType.NS || input.category === "NS_IMPORT") return null;
+  if (input.type === CardType.NS || input.category === RETIRED_NS_CATEGORY) return null;
   return input.category;
 }
 
@@ -338,14 +341,15 @@ const MINTED_BY_PACK_OR_DAILY: ReadonlySet<string> = new Set(["PACK_OPEN", "DAIL
 /**
  * The import ledger for existing NS copies (§5.5 step 3.7). A copy came from a deck import when no pack or daily
  * claim minted it; its importer is the giver of its first trade, else its owner; it is recorded against every nation
- * that importer verified. A copy whose importer verified none is counted as unattributed.
+ * that importer verified. A copy whose importer verified none is counted as unattributed. `ownerInferred` counts the
+ * copies whose owner was taken as importer: an auction sale leaves no transfer event, so some of those are buyers.
  */
 export function inferImportLedger(input: {
   copies: ReadonlyArray<LegacyCopy & { nsCardId: number; nsSeason: number }>;
   transfers: readonly LegacyTransfer[];
   verifiedNations: ReadonlyMap<string, readonly string[]>;
   existing: ReadonlySet<string>;
-}): { rows: LedgerRow[]; unattributed: number } {
+}): { rows: LedgerRow[]; unattributed: number; ownerInferred: number } {
   const events = new Map<string, LegacyTransfer[]>();
   for (const transfer of [...input.transfers].sort(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
@@ -355,10 +359,13 @@ export function inferImportLedger(input: {
   const seen = new Set(input.existing);
   const rows: LedgerRow[] = [];
   let unattributed = 0;
+  let ownerInferred = 0;
   for (const copy of input.copies) {
     const trail = events.get(copy.id) ?? [];
     if (trail.some((event) => MINTED_BY_PACK_OR_DAILY.has(event.action))) continue;
-    const importer = trail.find((event) => event.action === "TRADE")?.fromUserId ?? copy.ownerId;
+    const giver = trail.find((event) => event.action === "TRADE")?.fromUserId ?? null;
+    if (giver === null) ownerInferred += 1;
+    const importer = giver ?? copy.ownerId;
     const nations = input.verifiedNations.get(importer) ?? [];
     if (nations.length === 0) unattributed += 1;
     for (const nation of nations) {
@@ -374,5 +381,5 @@ export function inferImportLedger(input: {
       rows.push(row);
     }
   }
-  return { rows, unattributed };
+  return { rows, unattributed, ownerInferred };
 }
