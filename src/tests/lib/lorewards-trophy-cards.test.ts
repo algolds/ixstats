@@ -97,6 +97,8 @@ function buildDb(): PrismaClient {
         return userId ? { userId } : null;
       }),
     },
+    // No WikiOS edits: the WikiOS-author fallback finds nobody.
+    wikiRevision: { findFirst: jest.fn(async () => null) },
     card: {
       findMany: jest.fn(async ({ where }: { where: { CardOwnership?: unknown } }) =>
         cards.filter(
