@@ -2,7 +2,7 @@
  * Achievement Card Seeds
  *
  * Seeds commemorative SPECIAL cards that are awarded for major achievements.
- * These cards cannot be obtained through packs or trading - only through achievement unlock.
+ * These cards are bound: they cannot be traded, listed or dusted (cards refresh §2.1).
  * Unlocks that happened before the cards existed are backfilled (the award used to fail with
  * "Card not found").
  *
@@ -33,9 +33,10 @@ export async function seedAchievementCards(prisma: PrismaClient) {
         cardType: cardDef.cardType,
         category: cardDef.category,
         season: cardDef.season,
-        stats: cardDef.stats,
         totalSupply: cardDef.totalSupply,
         marketValue: cardDef.marketValue,
+        realmId: cardDef.realmId,
+        isBound: cardDef.isBound,
       };
 
       // Check if card already exists

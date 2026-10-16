@@ -18,6 +18,9 @@ const TITLE_BY_ID: Record<string, string> = {
   "collect-diplomat": "Diplomat",
 };
 
+/** The Vidmaster achievements' pack: the seeded Lore Master pack (prisma/seeds/data/card-packs.json). */
+export const VIDMASTER_REWARD_PACK_ID = "pack_lore_master";
+
 function buildRewards(id: string, rarity: string) {
   if (RECRUITER_ACHIEVEMENT_IDS.has(id)) return { credits: 0, cardIds: [] };
   const cardId = getCardRewardForAchievement(id);
@@ -26,7 +29,7 @@ function buildRewards(id: string, rarity: string) {
     cardIds: cardId ? [cardId] : [],
   };
   if (id.startsWith("vid-")) {
-    rewards.cardPacks = ["vidmaster-lore-pack"];
+    rewards.cardPacks = [VIDMASTER_REWARD_PACK_ID];
     rewards.titles = ["Vidmaster"];
   } else if (TITLE_BY_ID[id]) {
     rewards.titles = [TITLE_BY_ID[id]];
