@@ -5,6 +5,9 @@ import {
   ATLAS_RA_SQL,
   ATLAS_STUDIO_SQL,
   bootstrapRefusal,
+  CARDS_BACKFILL_SCRIPT,
+  CARDS_CONSTRAINTS_SQL,
+  CARDS_FOUNDATIONS_SQL,
   DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
   VAULT_HUB_SQL,
@@ -69,6 +72,23 @@ describe("the SQL a fresh database needs besides db push", () => {
     expect(studio).toBeGreaterThan(0);
     expect(vault).toBeGreaterThan(studio);
     expect(push).toBeGreaterThan(vault);
+  });
+
+  it("runs the cards additive SQL, the backfill (it seeds the system realms) and the constraints after the push, before the seed", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    const push = source.indexOf('"db", "push"');
+    // Prettier wraps these two calls one argument per line, so match across the line break.
+    const additive = source.search(/"--file",\s*CARDS_FOUNDATIONS_SQL/);
+    const backfill = source.indexOf('CARDS_BACKFILL_SCRIPT, "--apply"');
+    const constraints = source.search(/"--file",\s*CARDS_CONSTRAINTS_SQL/);
+    const seed = source.indexOf("scripts/setup/seed-db.ts");
+    expect(CARDS_FOUNDATIONS_SQL).toContain("20261027120000_cards_foundations");
+    expect(CARDS_CONSTRAINTS_SQL).toContain("20261027120001_cards_foundations_constraints");
+    expect(CARDS_BACKFILL_SCRIPT).toBe("scripts/cards/backfill-cards-refresh.ts");
+    expect(additive).toBeGreaterThan(push);
+    expect(backfill).toBeGreaterThan(additive);
+    expect(constraints).toBeGreaterThan(backfill);
+    expect(seed).toBeGreaterThan(constraints);
   });
 
   it("the Atlas Studio SQL is the idempotent one that creates the preset tables and drops the dead models", () => {

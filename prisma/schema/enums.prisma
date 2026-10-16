@@ -334,11 +334,20 @@ enum ThreatStatus {
 /// *
 ///  * CardType - Classification of card types
 enum CardType {
-  NATION
   LORE
-  NS_IMPORT
+  NATION
+  NS
   SPECIAL
-  COMMUNITY
+  TROPHY
+}
+
+/// *
+///  * CardFinish - The finish of one copy (cards refresh §2.1): rolled at mint, upgraded by fusing
+enum CardFinish {
+  STANDARD
+  FOIL
+  HOLO
+  SERIALISED
 }
 
 /// *
@@ -364,37 +373,6 @@ enum PackType {
 }
 
 /// *
-///  * AcquireMethod - How a card was acquired
-enum AcquireMethod {
-  PACK
-  TRADE
-  AUCTION
-  CRAFT
-  GIFT
-  NS_IMPORT
-  ACHIEVEMENT
-  EVENT
-}
-
-/// *
-///  * AuctionStatus - Auction lifecycle status
-enum AuctionStatus {
-  ACTIVE
-  COMPLETED
-  CANCELLED
-}
-
-/// *
-///  * TradeStatus - Trade lifecycle status
-enum TradeStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  CANCELLED
-  EXPIRED
-}
-
-/// *
 ///  * VaultTransactionType - Types of IxCredits transactions
 enum VaultTransactionType {
   EARN_PASSIVE
@@ -414,7 +392,7 @@ enum VaultTransactionType {
 }
 
 /// *
-///  * LoreCategory - 13 super-categories for lore-first cards
+///  * LoreCategory - 12 super-categories for lore-first cards
 enum LoreCategory {
   MILITARY
   DIPLOMACY
@@ -428,7 +406,6 @@ enum LoreCategory {
   HISTORY
   NATION
   SPECIAL
-  NS_IMPORT
 }
 
 /// *

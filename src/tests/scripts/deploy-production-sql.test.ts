@@ -48,4 +48,23 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(vault).toBeGreaterThan(studio);
     expect(push).toBeGreaterThan(vault);
   });
+
+  it("runs the cards additive SQL, the cards backfill and the cards constraints, in order, after the Vault hub SQL and before the push", () => {
+    const vault = script.indexOf("prisma/migrations/20261024120000_vault_hub/migration.sql");
+    const additive = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120000_cards_foundations/migration.sql || exit 1"
+    );
+    const backfill = script.indexOf(
+      "bun scripts/cards/backfill-cards-refresh.ts --apply || exit 1"
+    );
+    const constraints = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(vault).toBeGreaterThan(0);
+    expect(additive).toBeGreaterThan(vault);
+    expect(backfill).toBeGreaterThan(additive);
+    expect(constraints).toBeGreaterThan(backfill);
+    expect(push).toBeGreaterThan(constraints);
+  });
 });

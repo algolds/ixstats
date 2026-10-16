@@ -531,6 +531,8 @@ model Realm {
   ownerId         String       // Clerk userId
   status          String       @default("draft") // draft, generating, active, archived
   visibility      String       @default("unlisted") // public | unlisted (never private — realms decision 19)
+  /// A system realm (nationstates, iiwiki, althistory): a card shelf only, never listed, claimed or mapped (cards refresh §5.1).
+  isSystem        Boolean      @default(false)
   settings        Json?        // Realm-specific config overrides
   thumbnail       String?      // Preview image URL
   seed            Int?         // Master generation seed for reproducibility
@@ -565,6 +567,7 @@ model Realm {
   /// The realm's one Find a Realm advert thread (docs/superpowers/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md).
   advertThread      ForumThread?    @relation("RealmAdvert")
   polls             Poll[]           @relation("RealmPolls")
+  cards             Card[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 

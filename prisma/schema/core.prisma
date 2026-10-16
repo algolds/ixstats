@@ -242,10 +242,6 @@ model User {
   isActive            Boolean                  @default(true)
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
-  totalCards          Int                      @default(0)
-  deckValue           Float                    @default(0)
-  collectorLevel      Int                      @default(1)
-  collectorXp         Int                      @default(0)
   AuctionBid          AuctionBid[]
   CardAuction         CardAuction[]
   CardCollection      CardCollection[]
@@ -258,7 +254,6 @@ model User {
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
   vault               MyVault?
   nsVerifications     NSVerification[]
-  craftingHistory     CraftingHistory[]
   tradesInitiated     TradeOffer[]             @relation("TradeInitiator")
   tradesReceived      TradeOffer[]             @relation("TradeRecipient")
   forumUserId         Int?

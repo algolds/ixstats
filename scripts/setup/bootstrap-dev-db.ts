@@ -38,6 +38,17 @@ export const ATLAS_STUDIO_SQL = "prisma/migrations/20261023120000_atlas_studio/m
 /** The Vault hub columns, the Lorewards index and the nav-tab reset; idempotent. It runs right after the Atlas Studio SQL. */
 export const VAULT_HUB_SQL = "prisma/migrations/20261024120000_vault_hub/migration.sql";
 
+/** Cards refresh Phase 1: the additive SQL (before the backfill); idempotent, and a no-op after a fresh db push. */
+export const CARDS_FOUNDATIONS_SQL =
+  "prisma/migrations/20261027120000_cards_foundations/migration.sql";
+
+/** Cards refresh Phase 1: the constraints (after the backfill); on a fresh database it adds the Lore natural key. */
+export const CARDS_CONSTRAINTS_SQL =
+  "prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql";
+
+/** The cards backfill; on a fresh database it only seeds Ixnay and the system realms the card tables point at. */
+export const CARDS_BACKFILL_SCRIPT = "scripts/cards/backfill-cards-refresh.ts";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -123,6 +134,26 @@ async function main(): Promise<void> {
   for (const file of DB_SETUP_SQL_FILES) {
     run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", file]);
   }
+  console.log("🃏 Cards foundations: the additive SQL, the backfill, then the constraints...");
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    CARDS_FOUNDATIONS_SQL,
+  ]);
+  run("bun", [CARDS_BACKFILL_SCRIPT, "--apply"]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    CARDS_CONSTRAINTS_SQL,
+  ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 
   console.log(`
