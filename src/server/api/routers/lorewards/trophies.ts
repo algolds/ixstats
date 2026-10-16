@@ -41,8 +41,8 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
   getTodayRace: publicProcedure.query(() => getTodayRace()),
 
   /**
-   * A wiki user's trophies; the cards are those held by the account that verified the name, and are left out
-   * when that account hides its Vault cards on its passport.
+   * A wiki user's trophies; the cards are those held by the account behind the name (`resolveLorewardUser`), and
+   * are left out when that account hides its Vault cards on its passport.
    */
   getTrophies: publicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
@@ -54,7 +54,7 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
       return loadTrophies(ctx.db, input.username, showCards ? resolved : null);
     }),
 
-  /** The viewer's trophies under their wiki name (WikiOS edits or a verified link), what Loreward bonuses paid, and today's rank. */
+  /** The viewer's trophies under their wiki name (`lorewardNameOf`), what Loreward bonuses paid, and today's rank. */
   getMyTrophies: protectedProcedure.query(async ({ ctx }) => {
     const wikiUsername = await lorewardNameOf(ctx.db, ctx.user.id);
     if (!wikiUsername) return { wikiUsername: null, ...NO_TROPHIES, paid: 0, todayRank: null };

@@ -523,8 +523,9 @@ function payoutDay(entry: { type: string; date: string; dateEnd: string | null }
 /**
  * Pay the winner and the runner-up of every approved daily, weekly and monthly entry from the payout start
  * (`LOREWARD_PAYOUT_START`) on, by contest and place. A wiki name maps to a platform account only through a
- * VERIFIED ixwiki `WikiAccountLink` (see `resolveLorewardUser`); entries before the start are never paid, so
- * a link made later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
+ * VERIFIED ixwiki `WikiAccountLink`, or the one WikiOS account behind every ixwiki edit under the name (see
+ * `resolveLorewardUser`); a shared name pays no one. Entries before the start are never paid, so an account
+ * found later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
  * `lorewardBonusKey(entryId, place)`, so re-running after each sync only pays new places.
  * Returns the number of newly-granted bonuses.
  */
@@ -561,7 +562,7 @@ export async function grantLorewardBonuses(): Promise<number> {
       const amount = payouts[e.type][place];
       if (!wikiUser || amount <= 0) continue;
       const userId = await resolveLorewardUser(db, wikiUser);
-      if (!userId) continue; // no verified platform account: skip
+      if (!userId) continue; // no account can be told behind the name: skip
 
       const res = await grantBonus(db, userId, lorewardBonusKey(e.id, place), amount, {
         oneTime: true,
@@ -584,7 +585,8 @@ export async function grantLorewardBonuses(): Promise<number> {
 
 /**
  * Trophy cards for the recorded Loreward places: mint the ones that have no card yet, then give each unowned
- * card to its winner once that wiki account is verified-linked. Idempotent, and writes no IxCredits.
+ * card to its winner once an account can be told behind the name (`resolveLorewardUser`). Idempotent, and
+ * writes no IxCredits.
  */
 export async function syncTrophyCards(): Promise<{ minted: number; granted: number }> {
   const { minted } = await mintTrophyCards(db);

@@ -33,7 +33,10 @@ function dayRange(day: string): DayRange {
 const add = (counts: Counts, userId: string, n: number) =>
   counts.set(userId, (counts.get(userId) ?? 0) + n);
 
-/** Sum of each linked editor's Lorewards candidate scores for the day. Unlinked editors earn no wiki part. */
+/**
+ * Sum of each editor's Lorewards candidate scores for the day, by the account `resolveLorewardUser` tells behind
+ * the name. An editor no account can be told behind (unlinked MediaWiki, or a shared name) earns no wiki part.
+ */
 async function loadWikiScores(db: PrismaClient, day: string): Promise<Counts> {
   const { candidates } = await scoreDailyWikiOS(day, undefined, { enrichAll: true });
   const byName: Counts = new Map();

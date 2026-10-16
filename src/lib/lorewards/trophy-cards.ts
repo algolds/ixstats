@@ -1,7 +1,8 @@
 /**
  * Loreward trophy cards: every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a
  * one-of-one, tradeable lore card for that wiki user. The card is minted once per (entry, edition) and held
- * unowned until the user's wiki account is verified-linked (`resolveLorewardUser`), then granted exactly once.
+ * unowned until the user's account can be told (a verified wiki link, or the one WikiOS account editing under
+ * the name: `resolveLorewardUser`), then granted exactly once.
  * No IxCredits are written here: trophy cards are collectibles, kept out of deck value (`EXCLUDE_TROPHY_CARDS`).
  *
  * A trophy card carries the winning page's `wikiArticleTitle` like any lore card, so random lore generation
@@ -182,7 +183,7 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
 
 /**
  * Mints the trophy card of every recorded place of the approved daily, weekly and monthly entries (all of them,
- * or only `entryIds`) that has none yet, owned by the place's verified-linked user when there is one.
+ * or only `entryIds`) that has none yet, owned by the place's user when `resolveLorewardUser` tells one.
  * Idempotent: the unique (entry, edition) key means a re-run mints nothing new. Entries before the payout start
  * mint too (the history backfill); no credits are paid.
  */
@@ -219,7 +220,7 @@ async function grantOne(db: PrismaClient, cardId: string, userId: string): Promi
 }
 
 /**
- * Grants each unowned trophy card to its winner once that wiki account has a verified link. A card granted
+ * Grants each unowned trophy card to its winner once `resolveLorewardUser` tells their account. A card granted
  * before is never granted again, even if its owner later sold, junked or crafted it away.
  */
 export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
