@@ -29,8 +29,8 @@ import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard"
 const caller = () =>
   createCallerFactory(loreCardsWikiRouter)(
     createMockRouterContext({
-      auth: null,
-      user: null,
+      auth: { userId: "admin_1" },
+      user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
       db: {
         card: { findMany: jest.fn().mockResolvedValue([]) },
         wikiArticle: { findMany: jest.fn().mockResolvedValue([]) },

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * VT-9: the card general settings the admin panel shows are the ones the game reads —
- * the house rake (marketplace fee), base card capacity and the junk batch limit.
+ * the house rake (marketplace fee) and base card capacity.
  */
 import { describe, it, expect } from "@jest/globals";
 
@@ -25,7 +25,7 @@ describe("card general settings", () => {
     const s = await getGeneralCardSettings(dbWith([]));
     expect(s.auctionHouseRakePct).toBe(10);
     expect(s.maxInventoryCards).toBe(150);
-    expect(s.maxJunkBatchSize).toBe(100);
+    expect(Object.keys(s).sort()).toEqual(["auctionHouseRakePct", "maxInventoryCards"]);
   });
 
   it("marketplaceFee uses the configured rake and spares sales of 100 IxC or less", async () => {

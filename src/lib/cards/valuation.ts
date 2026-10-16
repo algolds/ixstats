@@ -1,16 +1,16 @@
 /**
  * Card Valuation — single source of truth for what a card is worth.
  *
- * Replaces three previously-disconnected tables (raw NS passthrough in ns-import,
- * the rarity base table in card-service.getCardMarketValue, and JUNK_VALUES in
- * cards.junkCards). One formula, one tunable config (SystemConfig-backed, DM-editable
- * — same pattern as exchange-config.ts).
+ * Replaces previously-disconnected tables (raw NS passthrough in ns-import and the
+ * rarity base table in card-service.getCardMarketValue). One formula, one tunable config
+ * (SystemConfig-backed, DM-editable — same pattern as exchange-config.ts).
  *
  *   value = max( rarityFloor[rarity] × typeMult ,  nsMarketValue × nsPremium )
  *
- * - rarity floor lifts the ~99% of NS imports stuck at NS bank value 1 onto a real curve
+ * - rarity floor lifts the ~99% of NS cards stuck at NS bank value 1 onto a real curve
  * - nsPremium rewards importers; on genuinely-valuable NS cards it floats them above floor
  * - native cards (LORE/NATION/SPECIAL) ride the same curve, so everything is comparable
+ * - NS bank values live in `metadata.nsData.market_value` (src/lib/cards/ns-facts.ts)
  *
  * ponytail: no supply/demand multiplier baked into the stored value — base value is
  * predictable and admin-tunable; let auctions/trades discover live prices. Add a demand
@@ -28,20 +28,10 @@ export interface CardValuationConfig {
   floorLegendary: number;
   /** Multiplier applied to a card's NS bank value (retain + premium). */
   nsPremium: number;
-  /** Type multipliers on the rarity floor (NS_IMPORT/LORE/COMMUNITY = 1.0). */
+  /** Type multipliers on the rarity floor (LORE/NS/TROPHY = 1.0). */
   multSpecial: number;
   multNation: number;
-  /** Fraction of the rarity floor paid out when a card is junked (0..JUNK_RATE_MAX). */
-  junkRate: number;
 }
-
-/**
- * Hard ceiling on `junkRate`. Junking pays out of thin air, so it has to stay well below
- * what a card costs to pull from a pack, or buy -> open -> junk mints credits. The
- * seeded entry packs return up to ~1.55x their price in rarity floors at rate 1.0; at
- * this ceiling the best one returns ~0.78x. The pack-junk-EV test guards it.
- */
-export const JUNK_RATE_MAX = 0.5;
 
 export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
   floorCommon: 10,
@@ -53,7 +43,6 @@ export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
   nsPremium: 1.5,
   multSpecial: 2.0,
   multNation: 1.5,
-  junkRate: 0.25,
 };
 
 const KEY = {
@@ -66,7 +55,6 @@ const KEY = {
   nsPremium: "card_valuation_ns_premium",
   multSpecial: "card_valuation_mult_special",
   multNation: "card_valuation_mult_nation",
-  junkRate: "card_valuation_junk_rate",
 } as const satisfies Record<keyof CardValuationConfig, string>;
 
 let cache: { value: CardValuationConfig; expires: number } | null = null;
@@ -91,8 +79,6 @@ export async function getValuationConfig(db: PrismaClient): Promise<CardValuatio
       if (!Number.isNaN(parsed)) merged[field] = parsed;
     }
   }
-  // Clamp stale/out-of-range rows so a stored 1.0 can't reopen the pack-junk arbitrage
-  merged.junkRate = Math.min(JUNK_RATE_MAX, Math.max(0, merged.junkRate));
 
   cache = { value: merged, expires: now + CACHE_TTL_MS };
   return merged;
@@ -130,54 +116,9 @@ export function rarityFloor(cfg: CardValuationConfig, rarity: string): number {
   }
 }
 
-/** Credits paid out when junking a card of this rarity. */
-export function junkValue(cfg: CardValuationConfig, rarity: string): number {
-  return Math.round(rarityFloor(cfg, rarity) * cfg.junkRate);
-}
-
-/** Odds columns of a pack, as stored on CardPack (percent per card, remainder falls to COMMON). */
-interface PackOddsForValuation {
-  cardCount: number;
-  commonOdds: number;
-  uncommonOdds: number;
-  rareOdds: number;
-  ultraRareOdds: number;
-  epicOdds: number;
-  legendaryOdds: number;
-}
-
 /**
- * Expected credits from junking every card in one opened pack. Mirrors
- * `selectRarityByOdds` (cumulative odds in rarity order, anything left over is COMMON).
- * Compare against the pack price: it must stay clearly below it.
- */
-export function expectedPackJunkValue(
-  pack: PackOddsForValuation,
-  cfg: CardValuationConfig
-): number {
-  const tiers: Array<[string, number]> = [
-    ["UNCOMMON", pack.uncommonOdds],
-    ["RARE", pack.rareOdds],
-    ["ULTRA_RARE", pack.ultraRareOdds],
-    ["EPIC", pack.epicOdds],
-    ["LEGENDARY", pack.legendaryOdds],
-  ];
-  const commonPct = Math.max(0, Math.min(100, pack.commonOdds));
-  let cumulative = commonPct;
-  let perCard = (commonPct / 100) * junkValue(cfg, "COMMON");
-  for (const [rarity, odds] of tiers) {
-    const pct = Math.max(0, Math.min(odds, 100 - cumulative));
-    cumulative += pct;
-    perCard += (pct / 100) * junkValue(cfg, rarity);
-  }
-  // Odds that don't sum to 100 fall through to COMMON in the selector
-  perCard += ((100 - cumulative) / 100) * junkValue(cfg, "COMMON");
-  return perCard * pack.cardCount;
-}
-
-/**
- * The canonical value of a card. `nsMarketValue` is the raw NS bank value (the source
- * of truth for imports, stored in card.stats.marketValue) — null/0 for native cards.
+ * The canonical value of a card. `nsMarketValue` is the NS bank value
+ * (`metadata.nsData.market_value`); null or 0 for other cards.
  */
 export function computeCardValue(
   input: { rarity: string; cardType: string; nsMarketValue?: number | null },
@@ -198,7 +139,7 @@ export function computeCardValue(
 /**
  * Recompute marketValue for every card under the current config. Set-based UPDATEs
  * grouped by rarity (handles 56k+ NS cards in 6 statements, not 56k round-trips).
- * NS source value is read from stats->>'marketValue' so re-running is idempotent.
+ * NS source value is read from metadata.nsData so re-running is idempotent.
  */
 export async function recomputeAllCardValues(db: PrismaClient): Promise<{ updated: number }> {
   const cfg = await getValuationConfig(db);
@@ -216,8 +157,8 @@ export async function recomputeAllCardValues(db: PrismaClient): Promise<{ update
     // All numbers below come from validated numeric config; rarity is from a fixed list.
     const sql = `
       UPDATE cards SET "marketValue" = CASE
-        WHEN "cardType" = 'NS_IMPORT'
-          THEN GREATEST(${floor}, COALESCE(NULLIF(stats->>'marketValue', '')::numeric, 0) * ${cfg.nsPremium})
+        WHEN "cardType" = 'NS'
+          THEN GREATEST(${floor}, COALESCE(NULLIF(metadata->'nsData'->>'market_value', '')::numeric, 0) * ${cfg.nsPremium})
         WHEN "cardType" = 'SPECIAL' THEN ${floor * cfg.multSpecial}
         WHEN "cardType" = 'NATION'  THEN ${floor * cfg.multNation}
         ELSE ${floor}

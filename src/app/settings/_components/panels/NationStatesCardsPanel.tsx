@@ -81,7 +81,7 @@ export function NationStatesCardsPanel() {
               </Link>
             </Button>
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault/ns-deck" data-cuelume-press="soft">
+              <Link href="/vault/import" data-cuelume-press="soft">
                 <NationStatesLogo size="xs" className="h-3 w-auto" />
                 <span>Import deck</span>
               </Link>
@@ -132,7 +132,7 @@ export function NationStatesCardsPanel() {
               profile.
             </p>
             <Button asChild variant="default" size="sm">
-              <Link href="/vault/ns-deck" data-cuelume-press="soft">
+              <Link href="/vault/import" data-cuelume-press="soft">
                 <NationStatesLogo size="xs" />
                 <span>Import your NationStates deck</span>
               </Link>

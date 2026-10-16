@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Card, Prisma, PrismaClient } from "@prisma/client";
-import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 import {
@@ -308,66 +308,6 @@ async function claimVerification(db: PrismaClient, user: ImportUser, verificatio
 }
 
 export const nsImportDecksRouter = createTRPCRouter({
-  /**
-   * Fetch a nation's deck (public - no auth required)
-   */
-  fetchPublicDeck: publicProcedure
-    .input(
-      z.object({
-        nationName: z.string().min(1).max(100),
-      })
-    )
-    .query(async ({ input }) => {
-      const deckData = await fetchDeckOrThrow(input.nationName);
-
-      if (!deckData) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck)",
-        });
-      }
-
-      // Deduplicate cards and track quantities
-      const cardMap = new Map<string, { card: NsCard; quantity: number }>();
-      for (const card of deckData.cards) {
-        const key = `${card.id}-${card.season}`;
-        const existing = cardMap.get(key);
-        if (existing) {
-          existing.quantity += 1;
-        } else {
-          cardMap.set(key, { card, quantity: 1 });
-        }
-      }
-
-      // Get unique cards (limit to first 20 unique cards)
-      const uniqueCards = Array.from(cardMap.values()).slice(0, 20);
-
-      console.log(
-        `[NS Import] Deduplicated ${deckData.cards.length} cards to ${uniqueCards.length} unique cards`
-      );
-
-      // Fetch detailed info for unique cards only
-      // Process sequentially to respect rate limits
-      const cardsWithInfo = [];
-      for (const { card, quantity } of uniqueCards) {
-        const info = card.name
-          ? null
-          : await nsApiClient.fetchCardInfo(card.id, card.season).catch((error: unknown) => {
-              console.error(`[NS Import] Failed to fetch card info for ${card.id}:`, error);
-              return null;
-            });
-        cardsWithInfo.push({ ...card, ...info, quantity });
-      }
-
-      return {
-        nation: deckData.nation,
-        cards: cardsWithInfo,
-        totalCards: deckData.num_cards,
-        uniqueCards: cardMap.size,
-        deckValue: deckData.deck_value,
-      };
-    }),
-
   /**
    * Import trading cards from a NationStates nation
    *

@@ -7,11 +7,11 @@
  * Domains:
  *  - verification: nation ownership verification flow (verifyNation, requestVerification,
  *                  checkVerification)
- *  - decks:        single-nation deck operations (fetchPublicDeck, previewDeck, importDeck)
+ *  - decks:        single-nation deck operations (previewDeck, importDeck)
  *  - sync:         admin bulk-region sync control plane (getSyncHealth, getSyncLogs,
  *                  fetchRegionCards, getRegionSyncStatus, getActiveJobs, pauseRegionFetch,
  *                  resumeRegionFetch, stopRegionFetch, discoverTopRegions)
- *  - cards:        card maintenance and user stats (batchUpdateCardStats, refreshCardValues,
+ *  - cards:        card maintenance and user stats (batchUpdateCardStats,
  *                  getMyImportHistory, getImportStats)
  */
 import { mergeRouters } from "~/server/api/trpc";

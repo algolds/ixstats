@@ -188,12 +188,12 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["art", "illustrations", "lore", "gallery", "cards", "paintings"],
   },
   {
-    name: "NationStates deck",
-    path: "/vault/ns-deck",
+    name: "Import NationStates cards",
+    path: "/vault/import",
     icon: MultiplePages,
     category: "Vault",
-    description: "Your synced NationStates cards and trades",
-    keywords: ["ns", "deck", "nationstates", "sync", "cards"],
+    description: "Import the cards of a NationStates nation you own",
+    keywords: ["ns", "deck", "nationstates", "import", "cards"],
   },
 
   // 3. Geography & Atlas
