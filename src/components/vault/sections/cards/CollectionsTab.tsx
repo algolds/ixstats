@@ -151,8 +151,7 @@ export function CollectionsTab({
                     <div className="pt-2 pl-4">
                       {!collectionCards || collectionCards.length === 0 ? (
                         <p className="text-label-secondary text-footnote py-4 text-center">
-                          No cards in this collection yet. Use Select Mode in Inventory to add
-                          cards.
+                          No cards in this collection yet.
                         </p>
                       ) : (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">

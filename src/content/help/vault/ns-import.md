@@ -17,11 +17,11 @@ If you collect NationStates trading cards, you can copy your deck into your IxSt
 1. **Enter nation.** Type your NationStates nation name.
 2. **Visit NS link.** Open the NationStates verification page we link to, while logged in to that nation on NationStates.
 3. **Paste code.** Copy the code NationStates shows you and paste it back here, then choose **Verify ownership**.
-4. **Import.** Your deck's cards are added to your Vault.
+4. **Import.** Your deck's cards are added to your Vault in one go: if anything fails, nothing is added and you can try again.
 
 ## The import bonus
 
-You earn 50 IxCredits for each newly imported card, up to 5,000 IxCredits. The bonus is paid once per NationStates nation, whichever account imports it first.
+You earn 50 IxCredits for each newly imported card, up to 5,000 IxCredits. The bonus is paid once per NationStates nation, whichever account imports it first. Each NationStates card is imported once per nation, so importing a deck again adds only the cards that nation had not imported before.
 
 ## After importing
 

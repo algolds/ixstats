@@ -22,7 +22,7 @@ IxCredits (IxC) are the platform currency, kept in your [Vault](/vault). You ear
 | New account welcome bonus | 5,000, once per account | None |
 | Importing a NationStates deck | 50 per new card, up to 5,000, once per NationStates nation | None |
 | Lorewards | 500 / 150 for a daily win / runner-up, 1,500 / 400 weekly, 4,000 / 1,000 monthly | None |
-| Selling cards, trades and recycling | The price you get, minus fees | None |
+| Selling cards and trades | The price you get, minus fees | None |
 
 ## Daily caps
 

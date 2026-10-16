@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-05
 
 Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **<!-- BEGIN_DOCS:COUNT:models -->377<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->33<!-- END_DOCS:COUNT:enums --> enums)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->373<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->31<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
@@ -17,7 +17,7 @@ Models: **<!-- BEGIN_DOCS:COUNT:models -->377<!-- END_DOCS:COUNT:models -->** (p
 | Achievements & Notifications (`core.prisma`) | `Achievement`, `UserAchievement`, `Notification`, `NotificationEventConfig` |
 | Users, Roles & Logging (`core.prisma`, `identity.prisma`) | `User`, `Role`, `Permission`, `RolePermission`, `UserSession`, `AuditLog`, `AdminAuditLog`, `SystemLog`, `PassportPreference` |
 | Scheduled jobs (`core.prisma`) | `JobLease` (`job_leases`, the cron lease row), `CronRun` (one row per cron run) |
-| Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `CraftingRecipe`, `TradeOffer`, `NSImport` (`CardBackgroundImage` lives in `core.prisma`) |
+| Cards & Vault (`cards.prisma`) | `Card`, `CardOwnership`, `CardPack`, `UserPack`, `MyVault`, `VaultTransaction`, `CardAuction`, `TradeOffer`, `NSImportLedger` (`CardBackgroundImage` lives in `core.prisma`) |
 | Exchange (`exchange.prisma`) | `ExchangeWallet`, `Company`, `Shareholding`, `SectorIndex`, `Contract` |
 | Maps, Geo & Realms (`maps.prisma`) | `Territory`, `Subdivision`, `City`, `PointOfInterest`, `CountrySovereignty`, `TransportRoute`, `Realm`, `RealmClaim` |
 | Wiki, Stash & LoreWards (`wiki.prisma`) | `WikiArticle`, `WikiRevision`, `WikiLink`, `Stash`, `StashItem`, `LorewardEntry`, `BlurbPrompt` |
@@ -50,7 +50,7 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 ```
 
 ## Migration & Tooling
-- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->54<!-- END_DOCS:COUNT:migrations --> migrations)
+- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->56<!-- END_DOCS:COUNT:migrations --> migrations)
 - `bun run db:migrate:force` – Development migrations (protected by default)
 - `bun run db:migrate:deploy` – Production-safe migration execution
 - `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)

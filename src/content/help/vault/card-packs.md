@@ -17,7 +17,7 @@ Packs are sold in the **Vault Shop**: [Vault → Store](/vault/store?tab=store) 
 1. Open the Vault Shop's **Marketplace** tab and select a pack to see its price, card count and odds.
 2. Buy it. The IxCredits are taken straight away and the pack goes to **My Packs**. (If you don't have enough IxCredits, you can't buy it.)
 3. Open it from **My Packs**. Tap the pack to open it, then reveal each card in turn.
-4. At the end, choose what to do with each card. **Keep** leaves it in your collection; **Junk** recycles it for IxCredits right away.
+4. At the end, mark each card **Keep** or **List**; every card is already in your collection.
 
 ## Odds
 

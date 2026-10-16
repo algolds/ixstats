@@ -5,11 +5,11 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1088 Endpoints)
+### Live tRPC API Inventory (77 Routers, 1081 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`api.achievements`** | 7 | 2 | 0 | **9** | `src/server/api/routers/achievements/index.ts` |
+| **`api.achievements`** | 8 | 2 | 0 | **10** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
 | **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
 | **`api.admin`** | 36 | 48 | 0 | **84** | `src/server/api/routers/admin/index.ts` |
@@ -22,7 +22,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.cardImages`** | 2 | 2 | 0 | **4** | `src/server/api/routers/cardImages.ts` |
 | **`api.cardMarket`** | 7 | 4 | 0 | **11** | `src/server/api/routers/card-market/index.ts` |
 | **`api.cardPacks`** | 3 | 6 | 0 | **9** | `src/server/api/routers/card-packs/index.ts` |
-| **`api.cards`** | 14 | 11 | 0 | **25** | `src/server/api/routers/cards/index.ts` |
+| **`api.cards`** | 15 | 10 | 0 | **25** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
@@ -54,7 +54,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
 | **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
-| **`api.loreCards`** | 14 | 9 | 0 | **23** | `src/server/api/routers/lore-cards/index.ts` |
+| **`api.loreCards`** | 13 | 8 | 0 | **21** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
@@ -63,7 +63,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.nationalIssues`** | 11 | 10 | 0 | **21** | `src/server/api/routers/national-issues/index.ts` |
 | **`api.notifications`** | 7 | 14 | 0 | **21** | `src/server/api/routers/notifications/index.ts` |
 | **`api.npcPersonalities`** | 1 | 4 | 0 | **5** | `src/server/api/routers/npcPersonalities/index.ts` |
-| **`api.nsImport`** | 8 | 14 | 0 | **22** | `src/server/api/routers/ns-import/index.ts` |
+| **`api.nsImport`** | 7 | 13 | 0 | **20** | `src/server/api/routers/ns-import/index.ts` |
 | **`api.onoma`** | 17 | 26 | 0 | **43** | `src/server/api/routers/onoma/index.ts` |
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
@@ -77,7 +77,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 1 | 4 | 0 | **5** | `src/server/api/routers/taxSystem/index.ts` |
 | **`api.thinkpages`** | 20 | 28 | 0 | **48** | `src/server/api/routers/thinkpages/index.ts` |
-| **`api.thinkpagesForum`** | 24 | 22 | 0 | **46** | `src/server/api/routers/thinkpagesForum/index.ts` |
+| **`api.thinkpagesForum`** | 23 | 22 | 0 | **45** | `src/server/api/routers/thinkpagesForum/index.ts` |
 | **`api.thinkpagesForumMod`** | 8 | 11 | 0 | **19** | `src/server/api/routers/thinkpagesForum/mod.ts` |
 | **`api.trading`** | 4 | 3 | 0 | **7** | `src/server/api/routers/trading/index.ts` |
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
@@ -86,7 +86,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.vault`** | 23 | 19 | 0 | **42** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **519** | **555** | **0** | **1088** | **78 registered namespaces** |
+| **TOTALS** | **516** | **551** | **0** | **1081** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
@@ -664,7 +664,7 @@ api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (24 procedures)
+### cards Router (23 procedures)
 
 ```typescript
 // Queries (13)
@@ -682,11 +682,10 @@ api.cards.getCollectionCards.useQuery({ collectionId })
 api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
 api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
 
-// Mutations (11)
-api.cards.junkCards.useMutation() // { ownershipIds }
-api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation?, junkRate? }
+// Mutations (10)
+api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation? }
 api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
-api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, maxJunkBatchSize?, autoGenerateLoreThumbnails? }
+api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, autoGenerateLoreThumbnails? }
 api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
 api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
 api.cards.importCommonsFlags.useMutation() // { items, defaultRarity?, season? }
@@ -713,13 +712,12 @@ api.cardPacks.deactivatePack.useMutation() // { packId }
 api.cardPacks.adminAwardPack.useMutation() // { targetUserId, packId, acquiredMethod?, sendNotification? }
 ```
 
-### nsImport Router (22 procedures)
+### nsImport Router (21 procedures)
 
 Replaces the former `nsIntegration` router (NationStates deck verification, import and sync).
 
 ```typescript
-// Queries (8)
-api.nsImport.fetchPublicDeck.useQuery({ nationName })
+// Queries (7)
 api.nsImport.getSyncHealth.useQuery()
 api.nsImport.getSyncLogs.useQuery({ syncTypeFilter?, limit? })
 api.nsImport.getSyncLogCards.useQuery({ syncLogId, limit?, offset?, search? })

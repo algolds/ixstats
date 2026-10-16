@@ -44,8 +44,10 @@ Select a card to see it up close with its details. Importing a NationStates deck
 | Nation | A country card |
 | Lore | Made from a wiki article. See [Lore Cards](/help/vault/lore-cards) |
 | NationStates | Imported from NationStates. See [Importing NationStates Cards](/help/vault/ns-import) |
-| Special | Commemorative and event cards, and Loreward trophy cards. See [Lorewards](/help/wiki/lorewards#trophy-cards) |
-| Community | Contest and community cards |
+| Special | Commemorative, event and achievement cards |
+| Trophy | Loreward and sports trophy cards. See [Lorewards](/help/wiki/lorewards#trophy-cards) |
+
+Bound cards (trophies and achievement cards) stay with the account that earned them: they can't be traded or auctioned.
 
 Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra Rare**, **Epic** and **Legendary**. Rarer cards have stronger visual effects.
 
@@ -56,10 +58,6 @@ Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra
 ## Vault level
 
 You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A higher level makes the daily IxCredit roll larger.
-
-## Recycling cards
-
-You can recycle ("junk") a card you don't want for a small amount of IxCredits based on its rarity. Cards listed at auction or offered in a trade are locked and can't be recycled.
 
 ## Also in the Vault
 

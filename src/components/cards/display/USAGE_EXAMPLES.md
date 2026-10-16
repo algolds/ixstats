@@ -26,7 +26,6 @@ export function SingleCard({ card }: { card: CardInstance }) {
       card={card}
       size="medium"
       onClick={(card) => console.log("Clicked:", card.title)}
-      showStatsOnHover
       enable3D
     />
   );
@@ -138,7 +137,7 @@ export function InteractiveCardModal({
 
 ### Card Comparison View
 
-`CardDetailsModal` already ships a compare tab (`comparisonCard` prop). For a custom layout, `StatsComparison` below is a placeholder for your own component:
+`CardDetailsModal` has no compare tab. For a custom side-by-side layout:
 
 ```tsx
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
@@ -154,11 +153,9 @@ export function CardComparison({
     <div className="grid grid-cols-2 gap-8">
       <div className="space-y-4">
         <CardDisplay card={card1} size="large" />
-        <StatsComparison card={card1} highlight={card1} compare={card2} />
       </div>
       <div className="space-y-4">
         <CardDisplay card={card2} size="large" />
-        <StatsComparison card={card2} highlight={card2} compare={card1} />
       </div>
     </div>
   );

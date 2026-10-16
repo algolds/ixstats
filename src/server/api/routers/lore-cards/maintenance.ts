@@ -123,7 +123,7 @@ export const loreCardsMaintenanceRouter = createTRPCRouter({
       const whereClause: Prisma.CardWhereInput = {
         cardType: CardType.LORE,
         ...(input.wikiSource !== "all" && { wikiSource: input.wikiSource }),
-        // Without a forced overwrite, only cards that have no category (the backfill cleared NS_IMPORT) are reclassified
+        // Without a forced overwrite, only cards that have no category (the backfill cleared the old NS category) are reclassified
         ...(!input.forceOverwrite && { category: null }),
       };
 

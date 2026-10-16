@@ -186,7 +186,7 @@ no consumer were removed or hidden; these are now read by the game:
 
 | Admin setting | Key(s) | Read by |
 | :--- | :--- | :--- |
-| Cards: house rake, base card capacity, junk batch limit | `card_system_auction_rake_pct` (default 10), `card_system_max_inventory_cards` (150), `card_system_max_junk_batch_size` (100) | `lib/cards/general-settings.ts`: the marketplace fee (auction sales and buyouts), pack opening, NS deck import and the Vault dashboard, and `cards.junkCards`. Trading kill-switch, daily free packs, player minting and lore thumbnails are hidden |
+| Cards: house rake, base card capacity | `card_system_auction_rake_pct` (default 10), `card_system_max_inventory_cards` (150) | `lib/cards/general-settings.ts`: the marketplace fee (auction sales and buyouts), pack opening, NS deck import and the Vault dashboard. Trading kill-switch, daily free packs, player minting and lore thumbnails are hidden |
 | ThinkPages: accounts per user | `thinkpages_maxAccountsPerUser` (default 25) | `thinkpages.createAccount`; the public `thinkpages.getAccountLimit` feeds the account manager's counter. Character cap, auto-news and attachment switches are hidden |
 | ThinkPages: Discord feed | `ThinkpagesDiscordFeedConfig` row | `admin.getThinkpagesDiscordFeedConfig` / `saveThinkpagesDiscordFeedConfig` (admin) behind the Discord tab's feed card |
 | Lorewards: scoring weights | `lorewardWeight_<field>` for `proseWeight`, `depthMaxBonus`, `noveltyBonus`, `importanceMaxBonus`, `listPenalty`, `minorOnlyPenalty` | `loadScoringWeights()` in `lib/lorewards/scoring.ts`, used by the daily scorer and the admin preview. The older keys are ignored |

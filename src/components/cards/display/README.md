@@ -21,7 +21,6 @@ Individual trading card component with holographic parallax effects.
 **Features:**
 - Uses CometCard for 3D tilt and holographic effects
 - Category-themed face (`getCategoryTheme`, `CategoryIcon`) and hybrid rarity materials (`getHybridRarityMaterial`)
-- Stats reveal on hover (unless `hideStats`)
 - Size variants: `"small" | "sm" | "medium" | "md" | "large"`
 - Next.js `Image`, NS artwork via `proxyNSImage()`
 - Glass hierarchy child/interactive levels
@@ -34,7 +33,6 @@ import { CardDisplay } from "~/components/cards/display/CardDisplay";
   card={cardInstance}
   size="medium"
   onClick={(card) => handleCardClick(card)}
-  showStatsOnHover
 />
 ```
 
@@ -43,11 +41,10 @@ import { CardDisplay } from "~/components/cards/display/CardDisplay";
 - `size` (CardDisplaySize): "small" | "sm" | "medium" | "md" | "large" (default "medium")
 - `onClick` ((card) => void): Click handler
 - `className` (string): Additional CSS classes
-- `showStatsOnHover` (boolean): Show stats on hover (default: true)
 - `enable3D` (boolean): Enable 3D tilt (default: true)
 - `enableHolographic` (boolean): Holographic effects (default: on for rare+)
 - `performanceMode` (boolean): Disable heavy effects (default: false)
-- `hideValue` / `hideStats` / `hideExcerpt` (boolean): Hide market value, stat bars, or lore excerpt
+- `hideValue` / `hideExcerpt` (boolean): Hide market value or lore excerpt
 
 ### Removed components
 
@@ -55,10 +52,10 @@ import { CardDisplay } from "~/components/cards/display/CardDisplay";
 
 ### CardDetailsModal
 
-Expanded card view with full stats, artwork, and market data (tabs decomposed into `src/components/cards/display/modal/`: `CardOverviewTab`, `CardStatsTab`, `CardMarketTab`, `CardLoreTab`, `CardCompareTab`).
+Expanded card view with artwork and market data (tabs decomposed into `src/components/cards/display/modal/`: `CardOverviewTab`, `CardMarketTab`, `CardLoreTab`).
 
 **Features:**
-- Overview, stats, market (price history), lore (wiki excerpt), and compare tabs
+- Overview, market (price history) and lore (wiki excerpt) tabs
 - NationStates attribution footer (`NationStatesAttribution`) with takedown trigger (`CardTakedownVerificationModal`) for NS cards
 - Ownership information
 - Quick actions (Trade, List, View Collection, Share, Download image)
@@ -85,7 +82,6 @@ import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 - `onTrade` ((card) => void): Trade action
 - `onList` ((card) => void): List on market
 - `onViewCollection` ((countryId) => void): View collection
-- `comparisonCard` (CardInstance | null): Pre-selected card for the compare tab
 - `onShare` / `onDownloadImage` ((card) => void): Share and image export actions
 
 ### NationStatesAttribution
@@ -138,18 +134,10 @@ import { RarityBadge } from "~/components/cards/display/RarityBadge";
 Helper functions for card display logic (also `normalizeRarity`, `getRarityHex`, `getRarityTier`, `getCardSerialNumber`, `getCardEditionLabel`, …).
 
 **Functions:**
-- `getRarityColor(rarity)`: Get Tailwind color class
 - `getRarityGlow(rarity)`: Get glow intensity class
 - `getRarityConfig(rarity)`: Get full rarity config
-- `formatCardStats(card)`: Format stats for display
-- `getCardAspectRatio(size)`: Get aspect ratio class
 - `getCardWidth(size)`: Get width class
-- `formatMarketValue(value)`: Format IX Points
-- `formatSupply(supply)`: Format supply count
 - `getShimmerEffect(rarity, animated)`: Get shimmer animation
-- `getRarityPercentage(rarity)`: Get rarity percentage
-- `getOwnerCount(owners)`: Format owner count
-- `isNewCard(date)`: Check if card is new (7 days)
 - `getCardTypeLabel(type)`: Get card type label
 
 ## Types
@@ -160,13 +148,8 @@ TypeScript type definitions.
 
 **Types:**
 - `CardDisplaySize`: "small" | "sm" | "medium" | "md" | "large"
-- `DiscriminatedCardInstance`: `LoreCardInstance | NSCardInstance | NationCardInstance`
-- Branded IDs: `UserId`, `CardId`, `AuctionId`, `OwnershipId`
 - `CardInstance`: Complete card data interface
-- `FormattedStats`: Display-ready stats
-- `MarketHistoryPoint`: Market data point
-- `CardFilters`: Filter options
-- `CardSort`: Sort options
+- `CardAuthorInfo`: Lore card author details
 - `RarityConfig`: Rarity display config
 
 ## Rarity System
@@ -249,7 +232,7 @@ For a real data source see `api.cards.getMyCards` (ownerships with a nested `car
 src/components/cards/display/
 ├── CardDisplay.tsx                    # Main card component
 ├── CardDetailsModal.tsx               # Expanded card view
-├── modal/                             # Overview / Stats / Market / Lore / Compare tabs
+├── modal/                             # Overview / Market / Lore tabs
 ├── Card3DViewer.tsx, CardBack.tsx     # 3D viewer + card backs
 ├── CardHolographicCover.tsx, LoreCardHolographicCover.tsx, HolographicOverlay.tsx
 ├── RarityBadge.tsx
