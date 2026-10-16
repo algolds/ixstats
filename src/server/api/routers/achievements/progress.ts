@@ -5,6 +5,10 @@ import {
   protectedProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
+import { achievementService } from "~/lib/achievements/service";
+
+/** How many of the newest unlocks the summary carries. */
+const RECENT_UNLOCKS = 3;
 
 const percentOf = (count: number, total: number) =>
   Math.min(100, parseFloat(((count / total) * 100).toFixed(1)));
@@ -355,9 +359,10 @@ export const achievementsProgressRouter = createTRPCRouter({
     const [activeTotal, totals, newest] = await Promise.all([
       ctx.db.achievement.count({ where: { isActive: true } }),
       playerTotals(ctx.db),
-      ctx.db.userAchievement.findFirst({
+      ctx.db.userAchievement.findMany({
         where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
         orderBy: { unlockedAt: "desc" },
+        take: RECENT_UNLOCKS,
         select: {
           metadata: true,
           achievement: {
@@ -367,22 +372,36 @@ export const achievementsProgressRouter = createTRPCRouter({
       }),
     ]);
     const mine = totals.find((t) => t.userId === ctx.user.clerkUserId);
-    const unlock = newest?.achievement;
     return {
       unlocked: mine?.achievementCount ?? 0,
       activeTotal,
       points: mine?.totalPoints ?? 0,
       rank: mine?.rank ?? null,
-      latest: unlock
-        ? {
-            key: unlock.key,
-            title: unlock.title,
-            rarity: unlock.rarity,
-            category: unlock.category,
-            iconUrl: unlock.iconUrl,
-            reward: paidCredits(newest?.metadata ?? null),
-          }
-        : null,
+      /** The newest unlocks, newest first. */
+      recent: newest.map(({ achievement, metadata }) => ({
+        ...achievement,
+        reward: paidCredits(metadata),
+      })),
+    };
+  }),
+
+  /** The locked achievement the viewer is nearest to unlocking, with how far along they are; null when none is measurable. */
+  getNextUnlock: protectedProcedure.query(async ({ ctx }) => {
+    const nearest = await achievementService.nearestLocked(
+      ctx.user.clerkUserId,
+      ctx.user.countryId ?? null,
+      ctx.db
+    );
+    if (!nearest) return null;
+    const { key, title, rarity, category, iconUrl } = nearest.achievement;
+    return {
+      key,
+      title,
+      rarity,
+      category,
+      iconUrl,
+      current: nearest.current,
+      target: nearest.target,
     };
   }),
 

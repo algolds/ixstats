@@ -288,6 +288,20 @@ describe("AchievementService.checkAndUnlock without a country", () => {
     expect(grantBonus).not.toHaveBeenCalled();
   });
 
+  it("names the locked achievement nearest its numeric target, skipping met, non-numeric and country rules", async () => {
+    const db = setup(["gen-welcome", "gen-one-week", "social-first-thinkpage"]);
+
+    // 10 of 30 days beats 3 of 10 achievements; `<`, `==` and the country rule are not measurable.
+    const nearest = await achievementService.nearestLocked(CLERK_ID, null, db as never);
+
+    expect(nearest).toMatchObject({
+      current: 10,
+      target: 30,
+      achievement: { key: "gen-one-month" },
+    });
+    expect(db.userAchievement.create).not.toHaveBeenCalled();
+  });
+
   it("pays nothing when a concurrent run already created the unlock", async () => {
     const db = setup();
     db.userAchievement.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));

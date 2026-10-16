@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser, SignInButton } from "~/context/auth-context";
@@ -9,7 +8,6 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
-import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { AwardHistory } from "./AwardHistory";
 import { LorewardsSection } from "./LorewardsSection";
 import { StreakCalendar } from "./StreakCalendar";
@@ -113,13 +111,8 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     return (
       <EmptyState
         icon={<Trophy />}
-        title="Link your wiki account"
-        message="Trophies belong to your wiki account. Verify it in your settings and your Loreward wins, trophy cards and payouts appear here."
-        action={
-          <Button asChild>
-            <Link href={ixstatesLinkHref("/settings")}>Open settings</Link>
-          </Button>
-        }
+        title="No wiki edits yet"
+        message="Lorewards score your edits on the wiki. Your wins, trophy cards and payouts appear here after your first edit."
       />
     );
   }

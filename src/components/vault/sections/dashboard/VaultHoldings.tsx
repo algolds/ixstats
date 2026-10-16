@@ -51,21 +51,14 @@ function AchievementsHome() {
   );
 }
 
-const LINK_WIKI_HREF = "/settings?tab=account#ixnayid-card";
-
 function LorewardsHome() {
   const { data: trophies, isError } = api.lorewards.getMyTrophies.useQuery();
   const wins = trophies ? trophies.wins.daily + trophies.wins.weekly + trophies.wins.monthly : 0;
-  const unlinked = trophies?.wikiUsername === null;
   return (
-    <Home
-      href={unlinked ? LINK_WIKI_HREF : "/vault/achievements?tab=lorewards"}
-      title="Lorewards"
-      icon={<Medal />}
-    >
+    <Home href="/vault/achievements?tab=lorewards" title="Lorewards" icon={<Medal />}>
       {trophies ? (
-        unlinked ? (
-          <span>Link your wiki account to take part</span>
+        trophies.wikiUsername === null ? (
+          <span>Edit the wiki to take part</span>
         ) : (
           <span className="tabular-nums">
             {plural(wins, "win")}

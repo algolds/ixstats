@@ -93,7 +93,7 @@ describe("Vault Wallet page", () => {
       getBalance: { credits: BALANCE, canClaimDailyBonus: true, loginStreak: 1 },
       getVaultLevel: { vaultLevel: 4 },
       getTodayEarnings: { total: 0, sources: [], transactionCount: 0 },
-      getMySummary: { unlocked: 1, activeTotal: 2, points: 3, rank: 4, latest: LATEST },
+      getMySummary: { unlocked: 1, activeTotal: 2, points: 3, rank: 4, recent: [LATEST] },
       getMyTrophies: null,
       getTransactions: {
         hasMore: false,
@@ -141,12 +141,12 @@ describe("Vault Wallet page", () => {
     expect(container.textContent).not.toMatch(/net worth/i);
   });
 
-  it("is title, balance, latest unlock, Your Vault, showcase, statement in the DOM, which is the phone order", () => {
+  it("is title, balance, achievements, Your Vault, showcase, statement in the DOM, which is the phone order", () => {
     const { container } = render(<VaultDashboardSection />);
     const order = [
       "shell-page-header",
       "vault-balance-card",
-      "vault-latest-unlock",
+      "vault-unlocks",
       "vault-holdings",
       "vault-showcase",
       "vault-statement",
@@ -164,7 +164,7 @@ describe("Vault Wallet page", () => {
     expect(grid.className).not.toMatch(/(^|\s)pt-/);
     for (const name of [
       "vault-balance-card",
-      "vault-latest-unlock",
+      "vault-unlocks",
       "vault-holdings",
       "vault-showcase",
       "vault-statement",
@@ -172,21 +172,19 @@ describe("Vault Wallet page", () => {
       expect(cell(name).parentElement).toBe(grid);
     const has = (name: string, ...classes: string[]) =>
       classes.forEach((c) => expect(cell(name).className.split(/\s+/)).toContain(c));
-    // Balance and latest unlock side by side on row 1, stretched to one height.
+    // Balance and achievements side by side on row 1, stretched to one height.
     has("vault-balance-card", "lg:col-start-1", "lg:row-start-1", "lg:self-stretch");
-    has("vault-latest-unlock", "lg:col-start-2", "lg:row-start-1", "lg:self-stretch");
+    has("vault-unlocks", "lg:col-start-2", "lg:row-start-1", "lg:self-stretch");
     // The showcase sits under both, the Vault column spans both rows, the statement spans the page.
     has("vault-showcase", "lg:col-span-2", "lg:col-start-1", "lg:row-start-2");
     has("vault-holdings", "lg:col-start-3", "lg:row-start-1", "lg:row-span-2");
     has("vault-statement", "lg:col-span-3", "lg:row-start-3");
-    // Alone, the balance takes both left columns; beside an unlock it takes one.
+    // Alone, the balance takes both left columns; beside the achievements it takes one.
     has("vault-balance-card", "lg:col-span-2", "lg:has-[+div:not(:empty)]:col-span-1");
     // The cards fill their cells so the two share a height.
     expect(slot(container, "vault-balance-card").className).toContain("h-full");
-    expect(slot(container, "vault-latest-unlock").className).toContain("h-full");
-    expect(slot(container, "vault-latest-unlock").firstElementChild!.className).toContain(
-      "items-center"
-    );
+    expect(slot(container, "vault-unlocks").className).toContain("h-full");
+    expect(slot(container, "vault-unlocks").querySelector("a")!.className).toContain("h-full");
   });
 
   it("shows the real gallery card tiles in the showcase", () => {
@@ -197,10 +195,10 @@ describe("Vault Wallet page", () => {
     expect(Array.from(tiles).map((tile) => tile.textContent)).toEqual(["Ostrozava 1st Ed."]);
   });
 
-  it("hides the latest unlock for a player with none", () => {
-    mockData.getMySummary = { unlocked: 0, activeTotal: 2, points: 0, rank: null, latest: null };
+  it("hides the achievements for a player with no unlock and none in reach", () => {
+    mockData.getMySummary = { unlocked: 0, activeTotal: 2, points: 0, rank: null, recent: [] };
     const { container } = render(<VaultDashboardSection />);
-    expect(slot(container, "vault-latest-unlock")).toBeNull();
+    expect(slot(container, "vault-unlocks")).toBeNull();
     expect(slot(container, "vault-holdings")).not.toBeNull();
     // Its cell stays in the DOM but empty and hidden, so the balance takes both columns.
     const balanceCell = slot(container, "vault-balance-card").parentElement!;
@@ -209,7 +207,7 @@ describe("Vault Wallet page", () => {
     expect(unlockCell.className).toContain("empty:hidden");
   });
 
-  it("has no wiki signal, linked or not; the Lorewards row carries the prompt instead", () => {
+  it("has no wiki signal, linked or not; the Lorewards row invites wiki edits instead", () => {
     mockData.listWikiLinks = [];
     mockData.getMyTrophies = {
       wikiUsername: null,
@@ -220,8 +218,8 @@ describe("Vault Wallet page", () => {
     expect(container.querySelector('[data-content="signal"]')).toBeNull();
     expect(container.querySelector('[role="status"]')).toBeNull();
     const row = within(slot(container, "vault-holdings")).getByRole("link", { name: /Lorewards/ });
-    expect(row.getAttribute("href")).toBe("/settings?tab=account#ixnayid-card");
-    expect(row.textContent).toContain("Link your wiki account to take part");
+    expect(row.getAttribute("href")).toBe("/vault/achievements?tab=lorewards");
+    expect(row.textContent).toContain("Edit the wiki to take part");
   });
 
   it("has one primary action: the daily claim, in the Vault column", () => {

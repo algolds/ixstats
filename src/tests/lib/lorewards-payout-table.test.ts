@@ -19,13 +19,18 @@ describe("the Loreward payout table", () => {
 });
 
 describe("resolveLorewardUser", () => {
-  const dbWith = (link: { userId: string } | null) => {
+  const dbWith = (link: { userId: string } | null, edit: { authorId: string } | null = null) => {
     const findFirst = jest.fn().mockResolvedValue(link);
-    return { db: { wikiAccountLink: { findFirst } }, findFirst };
+    const revision = jest.fn().mockResolvedValue(edit);
+    return {
+      db: { wikiAccountLink: { findFirst }, wikiRevision: { findFirst: revision } },
+      findFirst,
+      revision,
+    };
   };
 
   it("returns the user of the verified ixwiki link for the normalized name", async () => {
-    const { db, findFirst } = dbWith({ userId: "u1" });
+    const { db, findFirst, revision } = dbWith({ userId: "u1" });
     expect(await resolveLorewardUser(db as never, "Kir_Republic")).toBe("u1");
     expect(findFirst).toHaveBeenCalledWith({
       where: {
@@ -35,9 +40,20 @@ describe("resolveLorewardUser", () => {
       },
       select: { userId: true },
     });
+    expect(revision).not.toHaveBeenCalled();
   });
 
-  it("returns null without a verified link", async () => {
+  it("falls back to the WikiOS account whose edits carry the name", async () => {
+    const { db, revision } = dbWith(null, { authorId: "u2" });
+    expect(await resolveLorewardUser(db as never, "Kir_Republic")).toBe("u2");
+    expect(revision).toHaveBeenCalledWith({
+      where: { author: { in: ["Kir_Republic", "Kir Republic"] }, authorId: { not: null } },
+      orderBy: { createdAt: "desc" },
+      select: { authorId: true },
+    });
+  });
+
+  it("returns null with no verified link and no WikiOS edits", async () => {
     expect(await resolveLorewardUser(dbWith(null).db as never, "Nobody")).toBeNull();
   });
 });

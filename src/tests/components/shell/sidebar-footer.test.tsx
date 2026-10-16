@@ -21,10 +21,6 @@ let summary:
   points: 340,
   rank: 7,
 };
-let wikiLinks:
-  { source: string; username: string; verified: boolean; pending: boolean }[] | undefined = [
-  { source: "ixwiki", username: "Diplomat", verified: true, pending: false },
-];
 
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "u1" }) }));
 jest.mock("~/trpc/react", () => ({
@@ -39,7 +35,6 @@ jest.mock("~/trpc/react", () => ({
       },
     },
     achievements: { getMySummary: { useQuery: () => ({ data: summary }) } },
-    ixnayid: { listWikiLinks: { useQuery: () => ({ data: wikiLinks }) } },
   },
 }));
 jest.mock("~/components/vault/DailyRewardProvider", () => ({
@@ -69,7 +64,6 @@ beforeEach(() => {
   earnings = { total: 250, sources: [{ type: "daily", label: "Daily", amount: 250 }] };
   earningsQuery.mockClear();
   summary = { unlocked: 12, activeTotal: 80, points: 340, rank: 7 };
-  wikiLinks = [{ source: "ixwiki", username: "Diplomat", verified: true, pending: false }];
 });
 
 describe("SidebarVaultCard", () => {
@@ -188,25 +182,7 @@ describe("SidebarVaultCard disclosure", () => {
     );
   });
 
-  it("asks to link a wiki account only when none is verified", () => {
-    wikiLinks = [{ source: "ixwiki", username: "Diplomat", verified: false, pending: true }];
-    open();
-    expect(
-      screen.getByRole("link", { name: "Link your wiki account to earn from edits" })
-    ).toHaveAttribute("href", "/settings?tab=account");
-  });
-
-  it("treats a verified link to another wiki as no ixwiki link", () => {
-    wikiLinks = [{ source: "iiwiki", username: "Diplomat", verified: true, pending: false }];
-    open();
-    expect(screen.getByRole("link", { name: /Link your wiki account/ })).toBeInTheDocument();
-  });
-
-  it("does not nag with a verified link, or before the links have loaded", () => {
-    open();
-    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
-    wikiLinks = undefined;
-    cleanup();
+  it("never asks for a wiki link: edits earn through the WikiOS account", () => {
     open();
     expect(screen.queryByText(/Link your wiki account/)).toBeNull();
   });
