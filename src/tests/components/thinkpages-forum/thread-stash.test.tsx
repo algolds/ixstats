@@ -50,8 +50,6 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate },
           realmSection: { invalidate },
           isThreadStashed: { invalidate },
-          newPosts: { invalidate },
-          watchedThreads: { invalidate },
           navCounts: { invalidate },
         },
       }),

@@ -6,9 +6,8 @@ import { api } from "~/trpc/react";
 import { useReadStateRefresh } from "./useReadStateRefresh";
 
 /**
- * Watches or unwatches a thread, then refreshes the lists, the sidebar count and the thread's own page state. One
- * error string for both directions; resolves true when the change was saved. The Watched page's Unwatch and the
- * thread page's Watch toggle share it.
+ * Watches or unwatches a thread, then refreshes the sidebar count and the thread's own page state. One
+ * error string for both directions; resolves true when the change was saved. The thread page's Watch toggle uses it.
  */
 export function useWatchToggle(): {
   setWatching: (threadId: string, watching: boolean) => Promise<boolean>;

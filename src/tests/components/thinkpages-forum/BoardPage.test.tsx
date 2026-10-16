@@ -39,8 +39,6 @@ jest.mock("~/trpc/react", () => {
     api: {
       useUtils: () => ({
         thinkpagesForum: {
-          newPosts: invalidator("newPosts"),
-          watchedThreads: invalidator("watchedThreads"),
           navCounts: invalidator("navCounts"),
           category: invalidator("category"),
           categories: invalidator("categories"),

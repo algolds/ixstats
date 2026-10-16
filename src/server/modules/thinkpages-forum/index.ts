@@ -99,14 +99,7 @@ export {
 } from "./read-marks";
 export { readerFloor, readTimes, unreadIdsOf, type UnreadDb } from "./unread";
 export { forumNavCounts, type NavCounts, type NavCountsDb } from "./nav-counts";
-export {
-  listNewPosts,
-  listWatched,
-  unreadWatchedCount,
-  type ListedThread,
-  type ListingDb,
-  type ThreadListing,
-} from "./thread-listing";
+export { unreadWatchedCount, type ListingDb } from "./thread-listing";
 export { autoWatch, isWatching, unwatchThread, watchThread, type WatchDb } from "./watch";
 export { markUnreadThreads, withUnreadCounts, type UnreadAttachDb } from "./unread-attach";
 export {

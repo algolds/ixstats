@@ -45,8 +45,6 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate: () => Promise.resolve() },
           realmSection: { invalidate: () => Promise.resolve() },
           myStanding: { invalidate: () => Promise.resolve() },
-          newPosts: { invalidate: () => Promise.resolve() },
-          watchedThreads: { invalidate: () => Promise.resolve() },
           navCounts: { invalidate: () => Promise.resolve() },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 3 }) },
         },

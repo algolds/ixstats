@@ -1,5 +1,5 @@
 /**
- * The candidate threads of the New posts and Watched lists: the columns read for each, and which of them the member
+ * The candidate threads of the watched count: the columns read for each, and which of them the member
  * may read (see `thread-listing.ts`).
  */
 import type { Prisma } from "@prisma/client";

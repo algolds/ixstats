@@ -252,7 +252,7 @@ describe("ThreadTable page shortcuts", () => {
   });
 });
 
-describe("ThreadTable unread rows and the list pages' options", () => {
+describe("ThreadTable unread rows", () => {
   it("shows an unread thread in bold with a dot, and links it to the first unread post", () => {
     renderTable([thread("t1", { unread: true }), thread("t2", { unread: false })]);
     const unread = within(rowOf(/Thread t1/));
@@ -276,35 +276,5 @@ describe("ThreadTable unread rows and the list pages' options", () => {
     expect(row.getByText("Unread")).toBeInTheDocument();
     expect(row.getByText("Aria Vance")).toBeInTheDocument();
     expect(row.queryByText("Hidden Player")).toBeNull();
-  });
-
-  it("has plain column headers, not sort links, without a base path", () => {
-    render(<ThreadTable threads={[thread("t1")] as never} authors={authors} />);
-    expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Thread",
-      "Replies",
-      "Last post",
-    ]);
-    expect(
-      screen.queryAllByRole("columnheader").flatMap((h) => within(h).queryAllByRole("link"))
-    ).toEqual([]);
-  });
-
-  it("names the board (and the realm) of a listed thread, and renders a row action", () => {
-    render(
-      <ThreadTable
-        threads={
-          [
-            thread("t1", { board: { name: "Hub", realm: { name: "Eurth" } } }),
-            thread("t2", { board: { name: "General", realm: null } }),
-          ] as never
-        }
-        authors={authors}
-        renderAction={(row) => <button type="button">{`Act on ${row.title}`}</button>}
-      />
-    );
-    expect(within(rowOf(/Thread t1/)).getByText("Eurth · Hub")).toBeInTheDocument();
-    expect(within(rowOf(/Thread t2/)).getByText("General")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Act on Thread t1" })).toBeInTheDocument();
   });
 });

@@ -38,8 +38,6 @@ jest.mock("~/trpc/react", () => {
       realmSection: invalidator("realmSection"),
       myStanding: invalidator("myStanding"),
       isThreadStashed: invalidator("isThreadStashed"),
-      newPosts: invalidator("newPosts"),
-      watchedThreads: invalidator("watchedThreads"),
       navCounts: invalidator("navCounts"),
       resolvePost: { fetch: resolvePost },
     },

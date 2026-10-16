@@ -209,13 +209,11 @@ describe("thinkpagesForum watch, lists and counts", () => {
   });
   afterEach(() => jest.restoreAllMocks());
 
-  it("refuses every watch, list and count to a signed-out caller", async () => {
+  it("refuses every watch and count to a signed-out caller", async () => {
     const c = caller(null);
     for (const call of [
       () => c.watchThread({ threadId: "t1" }),
       () => c.unwatchThread({ threadId: "t1" }),
-      () => c.newPosts({ page: 1 }),
-      () => c.watchedThreads({ page: 1 }),
       () => c.navCounts(),
     ]) {
       await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
@@ -233,26 +231,9 @@ describe("thinkpagesForum watch, lists and counts", () => {
     });
   });
 
-  it("answers an empty New posts and Watched with an authors map, and navCounts with two numbers", async () => {
-    const db = {
-      ...engagementDb(),
-      user: { findMany: jest.fn(async () => []) },
-      thinkpagesAccount: { findMany: jest.fn(async () => []) },
-    };
-    const c = caller(member, db);
-    await expect(c.newPosts({ page: 1 })).resolves.toEqual({
-      threads: [],
-      total: 0,
-      authors: { users: {}, personas: {} },
-    });
-    await expect(c.watchedThreads({ page: 1 })).resolves.toMatchObject({ threads: [], total: 0 });
+  it("answers navCounts with two numbers", async () => {
+    const c = caller(member, engagementDb());
     await expect(c.navCounts()).resolves.toEqual({ watchedUnread: 0, realmBoardNew: 0 });
-  });
-
-  it("bounds the page of a list", async () => {
-    await expect(caller(member, engagementDb()).newPosts({ page: 0 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
   });
 });
 
