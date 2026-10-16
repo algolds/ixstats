@@ -1,22 +1,30 @@
 import { z } from "zod";
-import type { PrismaClient } from "@prisma/client";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  rateLimitedMutationProcedure,
-} from "~/server/api/trpc";
+import type { Card, Prisma, PrismaClient } from "@prisma/client";
+import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
-import { getVaultConfig, vaultService } from "~/lib/vault/vault-service";
-import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
-import { baseCardCapacity } from "~/lib/cards/general-settings";
+import {
+  computeCardValue,
+  getValuationConfig,
+  type CardValuationConfig,
+} from "~/lib/cards/valuation";
+import { copyRoom } from "~/lib/cards/capacity";
+import { CardFinish, CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
+import { mintCopy } from "~/lib/cards/mint";
+import { nsFactsFromApi, nsFactsOf, nsNationKey, withNsFacts } from "~/lib/cards/ns-facts";
+import { NS_REALM_ID } from "~/lib/realms/realm-ids";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { generateNSImportDescription } from "~/lib/nationstates/import-service";
 
 type NsDeck = NonNullable<Awaited<ReturnType<typeof nsApiClient.fetchDeck>>>;
 type NsCard = NsDeck["cards"][number];
+type Tx = Prisma.TransactionClient;
 type ImportUser = { id: string; role?: { level?: number | null } | null };
+
+/** One import is one transaction (cards refresh §5.4); a large deck is a few hundred statements. */
+const IMPORT_TRANSACTION = { timeout: 60_000, maxWait: 10_000 };
+const PLACEHOLDER_ART = "/images/cards/lore-placeholder.svg";
 
 /** Translate an NS API failure into the TRPCError the client shows. */
 function nsFetchError(error: unknown) {
@@ -44,67 +52,108 @@ const fetchDeckOrThrow = (nationName: string) =>
     throw nsFetchError(error);
   });
 
-/** Original card text and NS data for a newly created IxCards definition (never copies NS-authored text verbatim). */
-function newNsCardData(nsCard: NsCard, name: string, nationName: string, marketValue: number) {
+const isPricedCard = (card: NsCard) =>
+  Boolean(
+    card.name && card.market_value && card.market_value !== "0" && card.market_value !== "0.00"
+  );
+
+/** The deck's distinct cards (a deck can hold a card twice; an import gives one copy of each). */
+function distinctCards(cards: NsCard[]): NsCard[] {
+  const seen = new Set<string>();
+  return cards.filter((card) => {
+    const key = `${card.id}-${card.season}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** The nation's deck with every card's name and value filled in from NationStates; outside any transaction. */
+async function loadDeck(nationName: string): Promise<NsCard[]> {
+  const deck = await fetchDeckOrThrow(nationName);
+  if (!deck) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck).",
+    });
+  }
+  if (deck.cards.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "This nation has no cards in their deck.",
+    });
+  }
+  const cards = distinctCards(deck.cards);
+  for (const card of cards) {
+    if (isPricedCard(card)) continue;
+    // A card NationStates can't describe is skipped later (no name), never fatal
+    const info = await nsApiClient.fetchCardInfo(card.id, card.season).catch(() => null);
+    if (info) Object.assign(card, info);
+  }
+  return cards;
+}
+
+/** A new NS card: the nationstates realm, original text (NS text is never copied), and its facts. */
+function newNsCardData(
+  nsCard: NsCard,
+  nationName: string,
+  marketValue: number
+): Prisma.CardUncheckedCreateInput {
   return {
     id: `card_ns_${nsCard.id}_s${nsCard.season}`,
-    title: name,
+    title: nsCard.name ?? `Card ${nsCard.id}`,
     description: generateNSImportDescription(nsCard),
-    // Use NS flag as artwork, fallback to placeholder
-    artwork: nsCard.flag || "/images/cards/lore-placeholder.svg",
-    artworkVariants: nsCard.flag
-      ? {
-          original: nsCard.flag,
-          thumbnail: nsCard.flag,
-          large: nsCard.flag,
-          flagUrl: nsCard.flag,
-        }
-      : undefined,
-    cardType: "NS_IMPORT",
-    rarity: nsCard.rarity,
+    artwork: nsCard.flag || PLACEHOLDER_ART,
+    cardType: CardType.NS,
+    realmId: NS_REALM_ID,
+    rarity: parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON,
     season: parseInt(nsCard.season),
     nsCardId: parseInt(nsCard.id),
     nsSeason: parseInt(nsCard.season),
-    wikiSource: null,
-    wikiArticleTitle: name,
-    countryId: null,
-    stats: {
-      region: nsCard.region,
-      category: nsCard.category,
-      govt: nsCard.govt,
-      cardcategory: nsCard.cardcategory,
-      marketValue: nsCard.market_value,
-      badge: nsCard.badge,
-      trophies: nsCard.trophies,
-    },
+    wikiArticleTitle: nsCard.name ?? null,
     metadata: {
-      nsData: {
-        id: nsCard.id,
-        season: nsCard.season,
-        rarity: nsCard.rarity,
-        name: nsCard.name,
-        region: nsCard.region,
-        category: nsCard.category,
-        govt: nsCard.govt,
-        type: nsCard.type,
-        cardcategory: nsCard.cardcategory,
-        slogan: nsCard.slogan,
-        motto: nsCard.motto,
-        description: nsCard.description,
-        badge: nsCard.badge,
-        trophies: nsCard.trophies,
-        market_value: nsCard.market_value,
-        flag: nsCard.flag,
-      },
+      nsData: nsFactsFromApi(nsCard),
       importedFrom: nationName,
       importedAt: new Date().toISOString(),
     },
     marketValue,
     totalSupply: 1,
-    level: 1,
-    enhancements: undefined,
   };
 }
+
+/** Finds the card's definition, refreshing its value and bank value, or creates it. */
+async function upsertNsDefinition(
+  tx: Tx,
+  nsCard: NsCard,
+  nationName: string,
+  valCfg: CardValuationConfig
+): Promise<Card> {
+  const nsCardId = parseInt(nsCard.id);
+  const nsSeason = parseInt(nsCard.season);
+  const marketValue = computeCardValue(
+    {
+      rarity: parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON,
+      cardType: CardType.NS,
+      nsMarketValue: parseFloat(nsCard.market_value || "0"),
+    },
+    valCfg
+  );
+  const existing = await tx.card.findFirst({ where: { nsCardId, nsSeason } });
+  if (!existing) return tx.card.create({ data: newNsCardData(nsCard, nationName, marketValue) });
+  if (Math.abs(existing.marketValue - marketValue) <= 0.01) return existing;
+  return tx.card.update({
+    where: { id: existing.id },
+    data: {
+      marketValue,
+      metadata: withNsFacts(existing.metadata, {
+        ...nsFactsOf(existing.metadata),
+        market_value: nsCard.market_value,
+      }),
+    },
+  });
+}
+
+type LedgerKey = { nsCardId: number; nsSeason: number; nation: string };
 
 type ImportedCard = {
   id: string;
@@ -115,105 +164,107 @@ type ImportedCard = {
   marketValue: number;
 };
 
-type CardImportOutcome =
-  { kind: "skipped"; label: string } | { kind: "owned" } | { kind: "imported"; card: ImportedCard };
+interface DeckImport {
+  userId: string;
+  nationName: string;
+  cards: NsCard[];
+  room: number;
+  valCfg: CardValuationConfig;
+}
 
-/** Import one NS card for the user: find/refresh/create its definition, then grant ownership. */
-async function importNsCard(
-  db: PrismaClient,
+interface DeckImportOutcome {
+  imported: ImportedCard[];
+  alreadyImported: number;
+  skipped: string[];
+}
+
+/**
+ * Mints one copy of each claimed card in cardId order, as a pack open does: `mintCopy` holds its per-card serial
+ * lock until commit, so two transactions minting the same cards in different orders would deadlock.
+ */
+async function mintClaimed(
+  tx: Tx,
   userId: string,
-  nsCard: NsCard,
-  nationName: string,
-  valCfg: Awaited<ReturnType<typeof getValuationConfig>>
-): Promise<CardImportOutcome> {
-  // Fetch full card info since deck API may only provide id, season, rarity
-  if (
-    !nsCard.name ||
-    !nsCard.market_value ||
-    nsCard.market_value === "0" ||
-    nsCard.market_value === "0.00"
-  ) {
-    console.log(`[NS Import] Fetching card info for ${nsCard.id} S${nsCard.season}`);
-    const cardInfo = await nsApiClient.fetchCardInfo(nsCard.id, nsCard.season);
-    // Only overwrite fields that cardInfo actually provides
-    if (cardInfo) Object.assign(nsCard, cardInfo);
-  }
-
-  if (!nsCard.name) {
-    console.error(`[NS Import] Could not fetch name for card ${nsCard.id} S${nsCard.season}`);
-    return { kind: "skipped", label: `Card ${nsCard.id} S${nsCard.season}` };
-  }
-
-  const valuedMarketValue = computeCardValue(
-    {
-      rarity: nsCard.rarity || "COMMON",
-      cardType: "NS_IMPORT",
-      nsMarketValue: parseFloat(nsCard.market_value || "0"),
-    },
-    valCfg
-  );
-
-  let card = await db.card.findFirst({
-    where: { nsCardId: parseInt(nsCard.id), nsSeason: parseInt(nsCard.season) },
-  });
-
-  if (!card) {
-    card = await db.card.create({
-      data: newNsCardData(nsCard, nsCard.name, nationName, valuedMarketValue),
-    });
-  } else if (Math.abs(card.marketValue - valuedMarketValue) > 0.01) {
-    // Refresh an existing card's value if the recomputed value differs
-    card = await db.card.update({
-      where: { id: card.id },
-      data: {
-        marketValue: valuedMarketValue,
-        stats: {
-          ...(card.stats as Record<string, unknown> | null),
-          marketValue: nsCard.market_value,
-        },
-      },
-    });
-  }
-
-  const existingOwnership = await db.cardOwnership.findFirst({
-    where: { userId, cardId: card.id },
-  });
-  // Already in the collection: nothing new to import, count or pay for
-  if (existingOwnership) return { kind: "owned" };
-
-  const maxSerial = await db.cardOwnership.findFirst({
-    where: { cardId: card.id },
-    orderBy: { serialNumber: "desc" },
-    select: { serialNumber: true },
-  });
-
-  await db.cardOwnership.create({
-    data: {
-      id: `own_${Date.now()}_${userId}_${card.id}`,
-      userId,
+  claimed: ReadonlyArray<{ card: Card; key: LedgerKey }>
+) {
+  const mintOrder = [...claimed].sort((a, b) => a.card.id.localeCompare(b.card.id));
+  for (const { card, key } of mintOrder) {
+    const copy = await mintCopy(tx, {
       cardId: card.id,
       ownerId: userId,
-      serialNumber: (maxSerial?.serialNumber || 0) + 1,
-      isLocked: false,
-    },
-  });
+      finish: CardFinish.STANDARD,
+      source: "NS_DECK_IMPORT",
+    });
+    await tx.nSImportLedger.update({
+      where: { nsCardId_nsSeason_nation: key },
+      data: { ownershipId: copy.id },
+    });
+  }
+}
 
-  await db.user.update({
-    where: { id: userId },
-    data: { totalCards: { increment: 1 }, deckValue: { increment: card.marketValue } },
-  });
+/**
+ * The import itself, inside one transaction: for each card the ledger claims (NS card, season, nation) once ever,
+ * across all accounts (cards refresh §2.2), and only a fresh claim mints a copy.
+ */
+async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome> {
+  const nation = nsNationKey(run.nationName);
+  const outcome: DeckImportOutcome = { imported: [], alreadyImported: 0, skipped: [] };
+  const claimed: Array<{ card: Card; key: LedgerKey }> = [];
+  for (const nsCard of run.cards) {
+    if (!nsCard.name) {
+      outcome.skipped.push(`Card ${nsCard.id} S${nsCard.season}`);
+      continue;
+    }
+    if (claimed.length >= run.room) {
+      outcome.skipped.push(`${nsCard.name} (Inventory Full)`);
+      continue;
+    }
+    const card = await upsertNsDefinition(tx, nsCard, run.nationName, run.valCfg);
+    const key = { nsCardId: parseInt(nsCard.id), nsSeason: parseInt(nsCard.season), nation };
+    const claim = await tx.nSImportLedger.createMany({
+      data: [{ ...key, userId: run.userId }],
+      skipDuplicates: true,
+    });
+    if (claim.count === 0) outcome.alreadyImported += 1;
+    else claimed.push({ card, key });
+  }
+  await mintClaimed(tx, run.userId, claimed);
+  outcome.imported = claimed.map(({ card }) => ({
+    id: card.id,
+    title: card.title,
+    artwork: card.artwork ?? "",
+    rarity: card.rarity,
+    season: card.season,
+    marketValue: card.marketValue,
+  }));
+  return outcome;
+}
 
-  return {
-    kind: "imported",
-    card: {
-      id: card.id,
-      title: card.title,
-      artwork: card.artwork ?? "",
-      rarity: card.rarity,
-      season: card.season ?? parseInt(nsCard.season),
-      marketValue: card.marketValue,
-    },
+/**
+ * Everything an import does before its bonus: the deck from NationStates (network, outside any transaction), then
+ * the import in one transaction. Any failure here leaves nothing behind.
+ */
+async function importVerifiedDeck(db: PrismaClient, user: ImportUser, nationName: string) {
+  const cards = await loadDeck(nationName);
+  const run: DeckImport = {
+    userId: user.id,
+    nationName,
+    cards,
+    room: await copyRoom(db, { id: user.id, roleLevel: user.role?.level }),
+    valCfg: await getValuationConfig(db),
   };
+  return db.$transaction((tx) => importDeckTx(tx, run), IMPORT_TRANSACTION);
+}
+
+/** The deck-import bonus: per imported card, capped, and paid once per nation whichever account imports it. */
+async function payImportBonus(db: PrismaClient, userId: string, nationName: string, count: number) {
+  const amount = nsImportBonus(await getBonusConfig(db), count);
+  if (amount <= 0) return 0;
+  const bonus = await grantBonus(db, userId, "bonus:ns_deck_import", amount, {
+    onceKey: `bonus:ns_deck_import:${nsNationKey(nationName)}`,
+    metadata: { nationName, cardsImported: count },
+  });
+  return bonus.granted ? amount : 0;
 }
 
 /**
@@ -319,6 +370,9 @@ export const nsImportDecksRouter = createTRPCRouter({
 
   /**
    * Import trading cards from a NationStates nation
+   *
+   * The nation is one the caller verified. One transaction, one copy per card, and each nation's card once ever
+   * across all accounts (cards refresh §2.2, §5.4).
    */
   importDeck: rateLimitedMutationProcedure
     .input(
@@ -334,87 +388,30 @@ export const nsImportDecksRouter = createTRPCRouter({
       );
       const nationName = verification.nationName;
 
-      // If the deck can't be fetched, nothing was imported: give the verification back.
-      const reject = async (code: "NOT_FOUND" | "BAD_REQUEST", message: string) => {
-        await releaseClaim();
-        throw new TRPCError({ code, message });
-      };
-
-      const deckData = await fetchDeckOrThrow(nationName).catch(async (error: unknown) => {
-        await releaseClaim();
-        throw error;
-      });
-      if (!deckData) {
-        return reject(
-          "NOT_FOUND",
-          "Failed to fetch deck from NationStates (Unknown Nation or Empty Deck)."
-        );
-      }
-      if (deckData.cards.length === 0) {
-        return reject("BAD_REQUEST", "This nation has no cards in their deck.");
-      }
-
-      const imported: ImportedCard[] = [];
-      const skippedCards: string[] = [];
-      let alreadyOwned = 0;
-
-      // Get vault config and calculate user's maximum capacity limit
-      const config = await getVaultConfig(ctx.db as any);
-      const valCfg = await getValuationConfig(ctx.db);
-      const capacityBoost = await vaultService.getCardCapacityBoost(ctx.user.id, ctx.db as any);
-      const maxCards = (await baseCardCapacity(ctx.db)) + capacityBoost;
-
-      // Exempt when role level <= 20 and the exemption toggle is enabled
-      const isExempt = config.exemptStaffFromLimit && (ctx.user.role?.level ?? 100) <= 20;
-
-      const currentCardsCount = await ctx.db.cardOwnership.count({
-        where: { userId: ctx.user.id },
-      });
-
-      for (const nsCard of deckData.cards) {
-        // Enforce inventory capacity limit check (only if not exempt)
-        if (!isExempt && currentCardsCount + imported.length >= maxCards) {
-          console.warn(
-            `[NS Import] User ${ctx.user.id} hit capacity limit of ${maxCards} cards during deck import.`
-          );
-          const cardLabel = nsCard.name || `Card ${nsCard.id} S${nsCard.season}`;
-          skippedCards.push(`${cardLabel} (Inventory Full)`);
-          continue;
+      // Nothing was imported: give the verification back.
+      const outcome = await importVerifiedDeck(ctx.db, ctx.user, nationName).catch(
+        async (error: Error) => {
+          await releaseClaim();
+          throw error;
         }
-        try {
-          const outcome = await importNsCard(ctx.db, ctx.user.id, nsCard, nationName, valCfg);
-          if (outcome.kind === "imported") imported.push(outcome.card);
-          else if (outcome.kind === "owned") alreadyOwned++;
-          else skippedCards.push(outcome.label);
-        } catch (error) {
-          console.error(`[NS Import] Failed to import card ${nsCard.name ?? "unknown"}:`, error);
-          if (nsCard.name) {
-            skippedCards.push(nsCard.name);
-          }
-        }
-      }
+      );
 
-      // Award bonus IxCredits for newly imported cards (per-card, capped — config-tunable),
-      // once per nation whichever account imports it
-      const bcfg = await getBonusConfig(ctx.db);
-      let bonusAmount = nsImportBonus(bcfg, imported.length);
-      if (bonusAmount > 0) {
-        const bonus = await grantBonus(ctx.db, ctx.user.id, "bonus:ns_deck_import", bonusAmount, {
-          onceKey: `bonus:ns_deck_import:${nationName.trim().toLowerCase().replace(/\s+/g, "_")}`,
-          metadata: { nationName, cardsImported: imported.length },
-        });
-        if (!bonus.granted) bonusAmount = 0;
-      }
-      if (imported.length > 0) queueAchievementCheck(ctx.user.id);
+      const bonusCredits = await payImportBonus(
+        ctx.db,
+        ctx.user.id,
+        nationName,
+        outcome.imported.length
+      );
+      if (outcome.imported.length > 0) queueAchievementCheck(ctx.user.id);
 
       return {
         success: true,
-        cardsImported: imported.length,
-        cardsAlreadyOwned: alreadyOwned,
-        cardsSkipped: skippedCards.length,
-        bonusCredits: bonusAmount,
+        cardsImported: outcome.imported.length,
+        cardsAlreadyImported: outcome.alreadyImported,
+        cardsSkipped: outcome.skipped.length,
+        bonusCredits,
         nation: nationName,
-        cards: imported,
+        cards: outcome.imported,
       };
     }),
 });
