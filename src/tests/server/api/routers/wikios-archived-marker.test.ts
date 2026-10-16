@@ -226,7 +226,7 @@ describe("the same readers still serve a published page", () => {
 
 describe("searchLoreArchive", () => {
   it("lists published pages and leaves deleted ones out", async () => {
-    const found = await createCallerFactory(loreCardsWikiRouter)(ctxOf(null)).searchLoreArchive({
+    const found = await createCallerFactory(loreCardsWikiRouter)(ctxOf("admin")).searchLoreArchive({
       source: "wikios",
       query: "land",
     });

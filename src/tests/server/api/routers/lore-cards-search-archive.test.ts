@@ -16,8 +16,8 @@ describe("loreCards.searchLoreArchive stash source", () => {
     };
     const ctx = createMockRouterContext({
       db,
-      auth: { userId: "clerk_1" },
-      user: { id: "u1", clerkUserId: "clerk_1" },
+      auth: { userId: "admin_1" },
+      user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
     });
     const caller = loreCardsWikiRouter.createCaller(ctx as never);
 

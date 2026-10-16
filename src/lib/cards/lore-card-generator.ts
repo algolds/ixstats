@@ -30,13 +30,15 @@ import type {
   MediaWikiAllCategoriesItem,
 } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { LoreCategory, type LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
+import { articleHomeRealm } from "./home-realm";
+import { canonicalArticleTitle } from "./legacy-mapping";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 import {
-  CATEGORY_STAT_WEIGHTS,
   buildAuthorInfo,
   firstPage,
   mwQuery,
@@ -77,16 +79,6 @@ interface LoreCardCandidate {
   wikiArticleTitle: string;
   wikiUrl: string;
   category: LoreCategoryType;
-  stats: {
-    economic: number;
-    diplomatic: number;
-    military: number;
-    social: number;
-  };
-  loreStats: {
-    historicalSignificance: number;
-    culturalImpact: number;
-  };
   qualityScore: number;
   authorInfo?: CardAuthorInfo;
 }
@@ -201,8 +193,6 @@ class WikiLoreCardGenerator {
         wikiArticleTitle: articleTitle,
         wikiUrl: wikiReaderPath(articleTitle, wikiSource),
         category,
-        stats: this.calculateStats(quality, qualityScore, category),
-        loreStats: this.calculateLoreStats(quality),
         qualityScore,
         authorInfo: articleData.authorInfo as CardAuthorInfo | undefined,
       };
@@ -751,11 +741,20 @@ class WikiLoreCardGenerator {
     }
   }
 
+  /** Whether the article already has a Lore card: one per wiki and canonical title, whatever its spelling (§5.1). */
   private async checkCardExists(articleTitle: string, wikiSource: WikiSource): Promise<boolean> {
     const existing = await db.card.findFirst({
-      where: { wikiArticleTitle: articleTitle, wikiSource, cardType: CardType.LORE },
+      where: {
+        wikiSource,
+        cardType: CardType.LORE,
+        wikiArticleTitle: {
+          equals: canonicalArticleTitle(articleTitle, wikiSource),
+          mode: "insensitive",
+        },
+      },
+      select: { id: true },
     });
-    return !!existing;
+    return existing !== null;
   }
 
   private analyzeArticleQuality(
@@ -834,70 +833,54 @@ class WikiLoreCardGenerator {
     return summary;
   }
 
-  /** Economic/diplomatic/military/social stats from quality metrics and category-specific weights. */
-  private calculateStats(quality: ArticleQuality, qualityScore: number, category: string) {
-    const basePower = qualityScore;
-    const refPower = Math.min(quality.referenceCount * 8, 100);
-    const linkPower = Math.min(quality.inboundLinks * 5, 100);
-    const featuredBonus = quality.isFeatured ? 20 : 0;
-    const weights = CATEGORY_STAT_WEIGHTS[category] ?? CATEGORY_STAT_WEIGHTS.default!;
-
-    const stat = (value: number) => Math.round(Math.min(value, 100));
-    return {
-      economic: stat(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1),
-      diplomatic: stat(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15),
-      military: stat(basePower * weights.military + refPower * 0.1),
-      social: stat(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2),
-    };
-  }
-
-  /** Lore-specific metrics for the Lore tab. */
-  private calculateLoreStats(quality: ArticleQuality) {
-    return {
-      historicalSignificance: Math.round(
-        Math.min((quality.referenceCount * 10 + quality.inboundLinks * 5) / 2, 100)
-      ),
-      culturalImpact: Math.round(
-        Math.min(quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0), 100)
-      ),
-    };
-  }
-
-  /** Create the card in the database from a candidate. */
+  /** Create the card from a candidate: its canonical title, its home realm (§5.3), one per article (§5.1). */
   async createCard(candidate: LoreCardCandidate): Promise<string> {
     const season = await getCurrentIxCardSeason(db);
-    const card = await db.card.create({
-      data: {
-        title: candidate.title,
-        description: candidate.description,
-        artwork: candidate.artwork,
-        category: candidate.category as LoreCategory,
-        cardType: CardType.LORE,
-        rarity: candidate.rarity,
-        season,
-        wikiSource: candidate.wikiSource,
-        wikiArticleTitle: candidate.wikiArticleTitle,
-        stats: candidate.stats,
-        metadata: {
-          wikiUrl: candidate.wikiUrl,
-          category: candidate.category,
-          qualityScore: candidate.qualityScore,
-          loreStats: candidate.loreStats,
-          fullExcerpt: candidate.fullExcerpt,
-          ...(candidate.authorInfo
-            ? { authorInfo: candidate.authorInfo as unknown as Prisma.InputJsonValue }
-            : {}),
-          ...(candidate.authorInfo?.displayAuthor
-            ? { author: candidate.authorInfo.displayAuthor }
-            : {}),
+    const wikiArticleTitle = canonicalArticleTitle(
+      candidate.wikiArticleTitle,
+      candidate.wikiSource
+    );
+    try {
+      const card = await db.card.create({
+        data: {
+          title: candidate.title,
+          description: candidate.description,
+          artwork: candidate.artwork,
+          category: candidate.category as LoreCategory,
+          cardType: CardType.LORE,
+          realmId: await articleHomeRealm(db, candidate.wikiSource, wikiArticleTitle),
+          rarity: candidate.rarity,
+          season,
+          wikiSource: candidate.wikiSource,
+          wikiArticleTitle,
+          metadata: {
+            wikiUrl: candidate.wikiUrl,
+            category: candidate.category,
+            qualityScore: candidate.qualityScore,
+            fullExcerpt: candidate.fullExcerpt,
+            ...(candidate.authorInfo
+              ? { authorInfo: candidate.authorInfo as unknown as Prisma.InputJsonValue }
+              : {}),
+            ...(candidate.authorInfo?.displayAuthor
+              ? { author: candidate.authorInfo.displayAuthor }
+              : {}),
+          },
+          totalSupply: 0, // Unlimited for lore cards
+          marketValue: BASE_MARKET_VALUE[candidate.rarity]!,
         },
-        totalSupply: 0, // Unlimited for lore cards
-        marketValue: BASE_MARKET_VALUE[candidate.rarity]!,
-      },
-    });
+      });
 
-    console.log(`[Lore Card Generator] Created card ${card.id} for "${candidate.title}"`);
-    return card.id;
+      console.log(`[Lore Card Generator] Created card ${card.id} for "${candidate.title}"`);
+      return card.id;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new Error(
+          `A lore card for "${candidate.title}" (${candidate.wikiSource}) already exists in the collection.`,
+          { cause: error }
+        );
+      }
+      throw error;
+    }
   }
 
   /**

@@ -136,8 +136,6 @@ describe("generateCard for IxWiki", () => {
       wikiSource: "ixwiki",
       wikiArticleTitle: "Caphiria",
       artwork: asset.url,
-      // (two references * 10 + four inbound links * 5) / 2, and four inbound links * 10: the facts Postgres holds.
-      loreStats: { historicalSignificance: 20, culturalImpact: 40 },
       authorInfo: {
         creator: "Kir",
         primaryContributor: "Bea",

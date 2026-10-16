@@ -62,7 +62,10 @@ afterAll(() => {
 describe("loreCards.wiki.fetchArticlePreviewsBatch", () => {
   it("leaves out a page WikiOS deleted, and never asks the wiki about it", async () => {
     const caller = createCallerFactory(loreCardsWikiRouter)(
-      createMockRouterContext({ auth: null, user: null }) as never
+      createMockRouterContext({
+        auth: { userId: "admin_1" },
+        user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+      }) as never
     );
 
     const { previews } = await caller.fetchArticlePreviewsBatch({
