@@ -5,8 +5,10 @@
  * These cards are exclusive rewards that cannot be obtained through packs or trading.
  *
  * Integration: When an achievement is unlocked, the system checks this mapping
- * and awards the corresponding card (if defined) using AcquireMethod.ACHIEVEMENT.
+ * and awards the corresponding card (if defined) as a bound copy (mintCopy, source ACHIEVEMENT).
  */
+
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 /**
  * Achievement to Card Reward Mapping
@@ -70,8 +72,8 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
 ];
 
 /**
- * A commemorative card row, seeded by `prisma/seeds/achievement-cards.ts`. SPECIAL cards
- * never drop from packs (`pack-service.ts`), so unlocking the achievement is the only source.
+ * A bound commemorative card in Ixnay, seeded by `prisma/seeds/achievement-cards.ts`;
+ * unlocking the achievement is the only source.
  */
 interface CommemorativeCardDefinition {
   id: string;
@@ -82,9 +84,10 @@ interface CommemorativeCardDefinition {
   cardType: "SPECIAL";
   category: "SPECIAL";
   season: number;
-  stats: Record<string, never>;
   totalSupply: number | null;
   marketValue: number;
+  realmId: string;
+  isBound: true;
 }
 
 function commemorative(
@@ -102,9 +105,10 @@ function commemorative(
     cardType: "SPECIAL",
     category: "SPECIAL",
     season: 1,
-    stats: {},
     totalSupply: null,
     marketValue: 0,
+    realmId: DEFAULT_REALM_ID,
+    isBound: true,
   };
 }
 

@@ -50,6 +50,13 @@ describe("commemorative card definitions", () => {
     }
     expect(new Set(rewards.map((r) => r.cardId))).toEqual(new Set(defs.keys()));
   });
+
+  it("defines every commemorative card bound, in Ixnay, with no stats", () => {
+    for (const card of COMMEMORATIVE_CARD_DEFINITIONS) {
+      expect(card).toMatchObject({ cardType: "SPECIAL", realmId: "default", isBound: true });
+      expect(card).not.toHaveProperty("stats");
+    }
+  });
 });
 
 describe("unlocking an achievement with a card reward", () => {
@@ -62,7 +69,9 @@ describe("unlocking an achievement with a card reward", () => {
       .find((row: any) => row.key === "gen-one-year");
     expect(JSON.parse(synced.rewardsJson).cardIds).toEqual(["card-achievement-veteran"]);
 
-    const db = createMockPrisma();
+    const db = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
+    // the helper's $transaction hands its callback the raw target; hand it the proxy so mintCopy reaches every model
+    db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<never>) => cb(db));
     db.user.findUnique.mockResolvedValue({
       id: "user_db_1",
       createdAt: new Date(Date.now() - 400 * DAY),
@@ -79,14 +88,16 @@ describe("unlocking an achievement with a card reward", () => {
     const unlocked = await achievementService.checkAndUnlock(CLERK_ID, null, db as never);
 
     expect(unlocked).toContain("gen-one-year");
-    expect(db.cardOwnership.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          cardId: "card-achievement-veteran",
-          ownerId: "user_db_1",
-          userId: "user_db_1",
-        }),
-      })
-    );
+    expect(db.cardOwnership.create).toHaveBeenCalledWith({
+      data: {
+        cardId: "card-achievement-veteran",
+        ownerId: "user_db_1",
+        serialNumber: 1,
+        finish: "STANDARD",
+      },
+    });
+    expect(db.cardTransferEvent.create).toHaveBeenCalledWith({
+      data: { ownershipId: undefined, toUserId: "user_db_1", action: "ACHIEVEMENT" },
+    });
   });
 });

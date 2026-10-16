@@ -2,8 +2,8 @@ import { type Prisma, type PrismaClient } from "@prisma/client";
 import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-ledger";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
-import { newCardOwnershipId } from "~/lib/cards/ownership-id";
+import { CardFinish } from "~/lib/cards/enums";
+import { mintCopy } from "~/lib/cards/mint";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
@@ -239,40 +239,20 @@ export async function claimCombinedDailyClaim(
       };
     }
 
-    // Slot, serial allocation, ownership, transfer event, XP and ledger row: one transaction
+    // Slot, mint (serial, copy, mint row), XP and ledger row: one transaction
     const streak = await db.$transaction(async (tx) => {
       const slot = await claimDailySlot(tx, vault, now);
       if (!slot.claimed) return null;
 
-      const serialNumber = await allocateSerialNumberTx(tx, card.id);
-
-      const ownership = await tx.cardOwnership.create({
-        data: {
-          id: newCardOwnershipId(),
-          userId: vault.userId,
-          cardId: card.id,
-          ownerId: vault.userId,
-          serialNumber,
-          level: 1,
-          experience: 0,
-        },
+      // Serial, copy and its mint row (DAILY_CLAIM) through the one mint path
+      const ownership = await mintCopy(tx, {
+        cardId: card.id,
+        ownerId: vault.userId,
+        finish: CardFinish.STANDARD,
+        source: "DAILY_CLAIM",
       });
 
-      await tx.cardTransferEvent.create({
-        data: {
-          ownershipId: ownership.id,
-          toUserId: vault.userId,
-          action: "DAILY_CLAIM",
-        },
-      });
-
-      await grantCardXp(
-        tx as PrismaClient,
-        ownership.id,
-        10,
-        "DAILY_CLAIM",
-        JSON.stringify({ cardId: card.id })
-      );
+      await grantCardXp(tx, ownership.id, 10, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }));
 
       await tx.vaultTransaction.create({
         data: {
