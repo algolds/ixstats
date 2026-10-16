@@ -43,8 +43,7 @@ interface World {
   sales: { vault: { userId: string }; createdAt: Date }[];
   ownerships: {
     ownerId: string;
-    quantity: number;
-    cards: { marketValue: number; lorewardEntryId: string | null };
+    cards: { marketValue: number; cardType: string };
   }[];
 }
 
@@ -111,9 +110,9 @@ function buildDb(): PrismaClient {
     },
     $transaction: jest.fn(async (ops: Promise<void>[]) => Promise.all(ops)),
     cardOwnership: {
-      findMany: jest.fn(async ({ where }: { where: { cards: { lorewardEntryId?: null } } }) =>
+      findMany: jest.fn(async ({ where }: { where: { cards: { cardType?: { not: string } } } }) =>
         world.ownerships.filter(
-          (o) => where.cards.lorewardEntryId !== null || o.cards.lorewardEntryId === null
+          (o) => where.cards.cardType?.not !== "TROPHY" || o.cards.cardType !== "TROPHY"
         )
       ),
     },
@@ -158,12 +157,8 @@ beforeEach(() => {
 
 const vault = (userId: string, loginStreak = 0, lastLoginDate: Date | null = null) =>
   world.vaults.push({ userId, loginStreak, lastLoginDate });
-const deck = (
-  ownerId: string,
-  marketValue: number,
-  quantity = 1,
-  lorewardEntryId: string | null = null
-) => world.ownerships.push({ ownerId, quantity, cards: { marketValue, lorewardEntryId } });
+const deck = (ownerId: string, marketValue: number, cardType = "LORE") =>
+  world.ownerships.push({ ownerId, cards: { marketValue, cardType } });
 
 describe("settleDividendDay", () => {
   it("pays a user with only interest", async () => {
@@ -201,7 +196,7 @@ describe("settleDividendDay", () => {
   it("leaves trophy cards out of the deck value that earns collection interest", async () => {
     vault("u1");
     deck("u1", 2000);
-    deck("u1", 50000, 1, "entry-1");
+    deck("u1", 50000, "TROPHY");
 
     await settleDividendDay(db, D);
 
@@ -211,7 +206,7 @@ describe("settleDividendDay", () => {
 
   it("pays nothing to a user whose whole deck is trophy cards", async () => {
     vault("u1");
-    deck("u1", 50000, 1, "entry-1");
+    deck("u1", 50000, "TROPHY");
 
     expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 0 });
   });

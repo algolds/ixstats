@@ -20,6 +20,7 @@ import {
   wikiLoader,
 } from "~/lib/achievements/metrics/platform";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { COPY_VALUE_SQL } from "~/lib/cards/copy-value";
 
 const DAY = 86_400_000;
 // A Wednesday in ISO week 2026-W42 (Monday 2026-10-12).
@@ -317,7 +318,7 @@ describe("cards deck loader", () => {
     await cardsDeckLoader.load(ctx(db));
     expect(db.cardOwnership.count.mock.calls[0]![0].where).toEqual({
       ownerId: "u1",
-      cards: { rarity: "LEGENDARY", isRetired: false, lorewardEntryId: null },
+      cards: { rarity: "LEGENDARY", isRetired: false, cardType: { not: "TROPHY" } },
       transferEvents: { some: { toUserId: "u1", action: { in: ["PACK_OPEN", "TRADE"] } } },
     });
   });
@@ -328,9 +329,10 @@ describe("cards deck loader", () => {
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
     const { sql, params } = sqlOf(db);
     expect(params).toEqual(["u1"]);
-    expect(sql).toContain('SUM(c."marketValue" * o.quantity)');
+    expect(sql).toContain(`SUM(${COPY_VALUE_SQL})`);
+    expect(sql).not.toContain("quantity");
     expect(sql).toContain('c."isRetired" = false');
-    expect(sql).toContain('c."lorewardEntryId" IS NULL');
+    expect(sql).toContain(`c."cardType" <> 'TROPHY'`);
   });
 
   it("deck value is 0 when the aggregate returns no row, and the claim streak is 0 without a vault", async () => {

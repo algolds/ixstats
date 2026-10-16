@@ -20,10 +20,10 @@ const createCaller = createCallerFactory(vaultBalanceCreditsRouter);
 describe("vault.getUserStats", () => {
   it("shows trophy cards in the deck value and leaves them out of the economy's figure", async () => {
     const db = createMockDb();
-    (db.cardOwnership.count as jest.Mock).mockResolvedValue(3);
     (db.cardOwnership.findMany as jest.Mock).mockResolvedValue([
-      { quantity: 2, cards: { marketValue: 100, lorewardEntryId: null } },
-      { quantity: 1, cards: { marketValue: 600, lorewardEntryId: "e1" } },
+      { cards: { marketValue: 100, cardType: "LORE" } },
+      { cards: { marketValue: 100, cardType: "LORE" } },
+      { cards: { marketValue: 600, cardType: "TROPHY" } },
     ]);
     const ctx = createMockRouterContext({
       auth: { userId: "user_self" },
@@ -34,5 +34,6 @@ describe("vault.getUserStats", () => {
     const stats = await createCaller(ctx as never).getUserStats();
 
     expect(stats).toMatchObject({ totalCards: 3, deckValue: 800, deckValueExTrophy: 200 });
+    expect(stats).not.toHaveProperty("collectorLevel");
   });
 });
