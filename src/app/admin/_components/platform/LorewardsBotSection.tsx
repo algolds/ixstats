@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
@@ -36,6 +37,7 @@ import {
   CommandGroup,
 } from "~/components/ui/command";
 import { ValueSelect } from "~/components/ui/value-select";
+import { overrideFields, trophyChangeNote } from "~/lib/lorewards/override-form";
 
 export function LorewardsBotSection() {
   const notify = useNotify();
@@ -66,14 +68,17 @@ export function LorewardsBotSection() {
   // Override form states
   const [overrideDate, setOverrideDate] = useState<string>("");
   const [overrideType, setOverrideType] = useState<string>("daily");
+  // A blank field keeps the stored value; only "No winner" or "No runner-up" empties a place
   const [overrideWinnerUser, setOverrideWinnerUser] = useState<string>("");
   const [overrideWinnerPage, setOverrideWinnerPage] = useState<string>("");
-  const [overrideWinnerScore, setOverrideWinnerScore] = useState<number>(100);
-  const [overrideWinnerBytes, setOverrideWinnerBytes] = useState<number>(1000);
+  const [overrideWinnerScore, setOverrideWinnerScore] = useState<string>("");
+  const [overrideWinnerBytes, setOverrideWinnerBytes] = useState<string>("");
+  const [overrideNoWinner, setOverrideNoWinner] = useState(false);
   const [overrideRunnerUpUser, setOverrideRunnerUpUser] = useState<string>("");
   const [overrideRunnerUpPage, setOverrideRunnerUpPage] = useState<string>("");
-  const [overrideRunnerUpScore, setOverrideRunnerUpScore] = useState<number>(50);
-  const [overrideRunnerUpBytes, setOverrideRunnerUpBytes] = useState<number>(500);
+  const [overrideRunnerUpScore, setOverrideRunnerUpScore] = useState<string>("");
+  const [overrideRunnerUpBytes, setOverrideRunnerUpBytes] = useState<string>("");
+  const [overrideNoRunnerUp, setOverrideNoRunnerUp] = useState(false);
 
   // Cross-validation / Sync states
   const [adminDate, setAdminDate] = useState(() => {
@@ -100,8 +105,12 @@ export function LorewardsBotSection() {
   });
 
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
-    onSuccess: () => {
-      notify.success("Winner Overridden", "The winner override has been successfully synced.");
+    onSuccess: ({ trophies }) => {
+      const note = trophyChangeNote(trophies);
+      notify.success(
+        "Winner overridden",
+        `The override is saved and synced.${note ? ` ${note}` : ""}`
+      );
     },
     onError: (err) => {
       notify.error("Override Failed", err.message);
@@ -175,14 +184,22 @@ export function LorewardsBotSection() {
     overrideWinnerMutation.mutate({
       date: overrideDate,
       type: overrideType as "daily" | "weekly" | "monthly",
-      winnerUser: overrideWinnerUser || null,
-      winnerPage: overrideWinnerPage || null,
-      winnerScore: overrideWinnerScore ? Number(overrideWinnerScore) : null,
-      winnerBytes: overrideWinnerBytes ? Number(overrideWinnerBytes) : null,
-      runnerUpUser: overrideRunnerUpUser || null,
-      runnerUpPage: overrideRunnerUpPage || null,
-      runnerUpScore: overrideRunnerUpScore ? Number(overrideRunnerUpScore) : null,
-      runnerUpBytes: overrideRunnerUpBytes ? Number(overrideRunnerUpBytes) : null,
+      ...overrideFields(
+        {
+          user: overrideWinnerUser,
+          page: overrideWinnerPage,
+          score: overrideWinnerScore,
+          bytes: overrideWinnerBytes,
+          cleared: overrideNoWinner,
+        },
+        {
+          user: overrideRunnerUpUser,
+          page: overrideRunnerUpPage,
+          score: overrideRunnerUpScore,
+          bytes: overrideRunnerUpBytes,
+          cleared: overrideNoRunnerUp,
+        }
+      ),
     });
   };
 
@@ -892,7 +909,8 @@ export function LorewardsBotSection() {
           </CardTitle>
           <CardDescription>
             Manually rewrite the winning details of past daily, weekly, or monthly entries and push
-            announcement updates to the Discord bot
+            announcement updates to the Discord bot. A blank field keeps its stored value, and the
+            place's trophy moves with the override.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -924,11 +942,16 @@ export function LorewardsBotSection() {
 
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-eyebrow text-yellow">1. Winner Details</span>
+            <label className="text-label-secondary text-subhead flex items-center gap-2">
+              <Switch checked={overrideNoWinner} onCheckedChange={setOverrideNoWinner} />
+              No winner
+            </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-label-secondary text-subhead">Username</label>
                 <Input
                   placeholder="Winner username"
+                  disabled={overrideNoWinner}
                   value={overrideWinnerUser}
                   onChange={(e) => setOverrideWinnerUser(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
@@ -938,6 +961,7 @@ export function LorewardsBotSection() {
                 <label className="text-label-secondary text-subhead">Page title</label>
                 <Input
                   placeholder="Winner article page"
+                  disabled={overrideNoWinner}
                   value={overrideWinnerPage}
                   onChange={(e) => setOverrideWinnerPage(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
@@ -950,8 +974,9 @@ export function LorewardsBotSection() {
                 <Input
                   type="number"
                   placeholder="Winner score"
+                  disabled={overrideNoWinner}
                   value={overrideWinnerScore}
-                  onChange={(e) => setOverrideWinnerScore(Number(e.target.value))}
+                  onChange={(e) => setOverrideWinnerScore(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                 />
               </div>
@@ -960,8 +985,9 @@ export function LorewardsBotSection() {
                 <Input
                   type="number"
                   placeholder="Winner bytes"
+                  disabled={overrideNoWinner}
                   value={overrideWinnerBytes}
-                  onChange={(e) => setOverrideWinnerBytes(Number(e.target.value))}
+                  onChange={(e) => setOverrideWinnerBytes(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                 />
               </div>
@@ -970,11 +996,16 @@ export function LorewardsBotSection() {
 
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-label-secondary text-eyebrow">2. Runner-up Details</span>
+            <label className="text-label-secondary text-subhead flex items-center gap-2">
+              <Switch checked={overrideNoRunnerUp} onCheckedChange={setOverrideNoRunnerUp} />
+              No runner-up
+            </label>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-label-secondary text-subhead">Username</label>
                 <Input
                   placeholder="Runner-up username"
+                  disabled={overrideNoRunnerUp}
                   value={overrideRunnerUpUser}
                   onChange={(e) => setOverrideRunnerUpUser(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
@@ -984,6 +1015,7 @@ export function LorewardsBotSection() {
                 <label className="text-label-secondary text-subhead">Page title</label>
                 <Input
                   placeholder="Runner-up article page"
+                  disabled={overrideNoRunnerUp}
                   value={overrideRunnerUpPage}
                   onChange={(e) => setOverrideRunnerUpPage(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
@@ -996,8 +1028,9 @@ export function LorewardsBotSection() {
                 <Input
                   type="number"
                   placeholder="Runner-up score"
+                  disabled={overrideNoRunnerUp}
                   value={overrideRunnerUpScore}
-                  onChange={(e) => setOverrideRunnerUpScore(Number(e.target.value))}
+                  onChange={(e) => setOverrideRunnerUpScore(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                 />
               </div>
@@ -1006,8 +1039,9 @@ export function LorewardsBotSection() {
                 <Input
                   type="number"
                   placeholder="Runner-up bytes"
+                  disabled={overrideNoRunnerUp}
                   value={overrideRunnerUpBytes}
-                  onChange={(e) => setOverrideRunnerUpBytes(Number(e.target.value))}
+                  onChange={(e) => setOverrideRunnerUpBytes(e.target.value)}
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                 />
               </div>

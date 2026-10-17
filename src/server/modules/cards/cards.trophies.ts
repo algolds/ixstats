@@ -1,7 +1,8 @@
 /**
  * Trophy fixes (cards refresh spec §2.4): an admin override of a Loreward winner or runner-up is written to every
- * entry of its contest, and each place it changes takes its trophy with it, with an audit row, a transfer event and a
- * provenance note on the card. This is the only way a bound card moves.
+ * entry of its contest and marked (`overriddenAt`, so no sync writes over it), and each place it changes takes its
+ * trophy with it, with an audit row, a transfer event and a provenance note on the card. This is the only way a bound
+ * card moves.
  *
  * A trophy is a one-of-one whose serial is never issued twice. A new holder the place resolves to
  * (`resolveLorewardPlace`) takes the copy in place. An emptied place, or a holder no account can be told for yet,
@@ -19,17 +20,13 @@ import {
   contestPlaceKey,
   type Contest,
 } from "~/lib/lorewards/contest-identity";
-import {
-  CONTEST_ENTRY_SELECT,
-  lockContestPlace,
-  type StoredContestEntry,
-} from "~/lib/lorewards/contest-store";
+import { CONTEST_ENTRY_SELECT, lockContestPlace } from "~/lib/lorewards/contest-store";
 import { placeOf, resolveLorewardPlace, type LorewardPlaceRef } from "~/lib/lorewards/resolve-user";
 import { mintTrophyCards, mintTrophyCopyTx, trophyCardText } from "~/lib/lorewards/trophy-cards";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 
-/** What an override sets (`lorewards.overrideWinner`); a field it leaves out is cleared. */
+/** What an override sets (`lorewards.overrideWinner`): a field left out keeps its stored value, and null clears it. */
 export interface LorewardOverride {
   winnerUser?: string | null;
   winnerPage?: string | null;
@@ -47,27 +44,50 @@ type Outcome = "REASSIGNED" | "VOIDED";
 /** Winner first: every override takes the two places' locks in this order. */
 const PLACES: readonly LorewardPlace[] = ["winner", "runner-up"];
 
-/** Every field the override writes: a blank name or page is none (the form sends ""), and a score of 0 stays. */
-function entryFields(fields: LorewardOverride) {
+/** The columns an override writes. */
+const ENTRY_FIELDS = {
+  winnerUser: true,
+  winnerPage: true,
+  winnerScore: true,
+  winnerBytes: true,
+  runnerUpUser: true,
+  runnerUpPage: true,
+  runnerUpScore: true,
+  runnerUpBytes: true,
+} as const;
+const CONTEST_ROW_SELECT = { ...CONTEST_ENTRY_SELECT, ...ENTRY_FIELDS } as const;
+type ContestRow = Prisma.LorewardEntryGetPayload<{ select: typeof CONTEST_ROW_SELECT }>;
+type EntryFields = Prisma.LorewardEntryGetPayload<{ select: typeof ENTRY_FIELDS }>;
+
+const NOTHING_STORED: EntryFields = {
+  winnerUser: null,
+  winnerPage: null,
+  winnerScore: null,
+  winnerBytes: null,
+  runnerUpUser: null,
+  runnerUpPage: null,
+  runnerUpScore: null,
+  runnerUpBytes: null,
+};
+
+const keep = <T>(value: T | undefined, stored: T): T => (value === undefined ? stored : value);
+
+/** The override over the stored fields: an omitted field keeps its value, null clears it, a blank name or page is none. */
+function entryFields(fields: LorewardOverride, stored: EntryFields): EntryFields {
   return {
-    winnerUser: fields.winnerUser || null,
-    winnerPage: fields.winnerPage || null,
-    winnerScore: fields.winnerScore ?? null,
-    winnerBytes: fields.winnerBytes ?? null,
-    runnerUpUser: fields.runnerUpUser || null,
-    runnerUpPage: fields.runnerUpPage || null,
-    runnerUpScore: fields.runnerUpScore ?? null,
-    runnerUpBytes: fields.runnerUpBytes ?? null,
+    winnerUser: keep(fields.winnerUser, stored.winnerUser) || null,
+    winnerPage: keep(fields.winnerPage, stored.winnerPage) || null,
+    winnerScore: keep(fields.winnerScore, stored.winnerScore),
+    winnerBytes: keep(fields.winnerBytes, stored.winnerBytes),
+    runnerUpUser: keep(fields.runnerUpUser, stored.runnerUpUser) || null,
+    runnerUpPage: keep(fields.runnerUpPage, stored.runnerUpPage) || null,
+    runnerUpScore: keep(fields.runnerUpScore, stored.runnerUpScore),
+    runnerUpBytes: keep(fields.runnerUpBytes, stored.runnerUpBytes),
   };
 }
-type EntryFields = ReturnType<typeof entryFields>;
-type PlaceColumns = Pick<
-  EntryFields,
-  "winnerUser" | "winnerPage" | "runnerUpUser" | "runnerUpPage"
->;
 
 /** Whether the entry already records the place as the override does: the same name and page. */
-function samePlace(entry: PlaceColumns, fields: PlaceColumns, place: LorewardPlace): boolean {
+function samePlace(entry: EntryFields, fields: EntryFields, place: LorewardPlace): boolean {
   return place === "winner"
     ? entry.winnerUser === fields.winnerUser && entry.winnerPage === fields.winnerPage
     : entry.runnerUpUser === fields.runnerUpUser && entry.runnerUpPage === fields.runnerUpPage;
@@ -75,6 +95,7 @@ function samePlace(entry: PlaceColumns, fields: PlaceColumns, place: LorewardPla
 
 interface TrophyCard {
   id: string;
+  title: string;
   metadata: Prisma.JsonValue;
 }
 
@@ -84,27 +105,44 @@ interface HeldTrophy {
   copies: RemovableCopy[];
 }
 
-/** The place as the override records it, and how the audit row names it. */
-interface NextHolder {
-  type: LorewardType;
-  place: LorewardPlace;
+/** The place's holder as the override records it, and the card text that follows. */
+interface PlaceTarget {
   ref: LorewardPlaceRef;
+  text: ReturnType<typeof trophyCardText>;
+}
+
+/** The place as the override records it, the card's realm that follows, and the audit's name for the place. */
+interface NextHolder extends PlaceTarget {
+  realmId: string;
   label: string;
 }
 
+const metadataOf = (card: TrophyCard): Prisma.JsonObject =>
+  isJsonObject(card.metadata) ? card.metadata : {};
+
 /** The name the card records its place's holder under. */
-function recordedHolder(metadata: Prisma.JsonValue): string | null {
-  const holder = isJsonObject(metadata) ? metadata.wikiUser : null;
-  return typeof holder === "string" ? holder : null;
+function recordedHolder(meta: Prisma.JsonObject): string | null {
+  return typeof meta.wikiUser === "string" ? meta.wikiUser : null;
+}
+
+/**
+ * Whether the card already shows the place as the override records it: the same holder and title, or voided (by an
+ * override, `voidedAt`) for an empty place. A card that disagrees is reconciled even when the entries do not change.
+ */
+function cardRecords(card: TrophyCard, target: PlaceTarget | null): boolean {
+  const meta = metadataOf(card);
+  if (!target) return Boolean(meta.voidedAt);
+  return (
+    !meta.voidedAt && meta.wikiUser === target.ref.wikiUser && card.title === target.text.title
+  );
 }
 
 /** The card's metadata with `changes`, and one more provenance note: who moved the place, from and to whom, when. */
 function withProvenance(
-  metadata: Prisma.JsonValue,
+  meta: Prisma.JsonObject,
   note: { action: "REASSIGN" | "VOID"; from: string | null; to: string | null; by: string },
   changes: Prisma.JsonObject
 ): Prisma.InputJsonObject {
-  const meta = isJsonObject(metadata) ? metadata : {};
   const notes = Array.isArray(meta.provenance) ? meta.provenance : [];
   return { ...meta, ...changes, provenance: [...notes, { ...note, at: new Date().toISOString() }] };
 }
@@ -143,23 +181,34 @@ async function transferCopyTx(tx: Tx, copy: RemovableCopy, toUserId: string): Pr
 }
 
 /**
- * Gives the trophy's copy to `userId`: moved in place from its holder, minted (or its serial reissued) when there is
- * none, or given up (a VOID) when no account can be told for the place yet, so the card waits for its grant.
+ * Gives the trophy's copy to `userId`: moved in place from its holder, or minted (or its serial reissued) when there
+ * is none. With no account to tell for the place yet, the copy is given up (a VOID) and the card waits for its grant.
+ * Returns whether the copy came to `userId` now.
  */
 async function settleCopyTx(
   tx: Tx,
   cardId: string,
   [copy]: RemovableCopy[],
   userId: string | null
-): Promise<void> {
-  if (!copy) {
-    if (userId) await mintTrophyCopyTx(tx, cardId, userId);
-  } else if (!userId) {
-    await removeCopyTx(tx, copy, "VOID");
-  } else if (copy.ownerId !== userId) {
-    await transferCopyTx(tx, copy, userId);
+): Promise<boolean> {
+  if (!userId) {
+    if (copy) await removeCopyTx(tx, copy, "VOID");
+    return false;
   }
+  if (!copy) {
+    await mintTrophyCopyTx(tx, cardId, userId);
+    return true;
+  }
+  if (copy.ownerId === userId) return false;
+  await transferCopyTx(tx, copy, userId);
+  return true;
 }
+
+/** The grant date that follows: now for a copy that just came to its holder, none while it waits, else unchanged. */
+const grantedAtChange = (userId: string | null, granted: boolean): Prisma.JsonObject => {
+  if (!userId) return { grantedAt: null };
+  return granted ? { grantedAt: new Date().toISOString() } : {};
+};
 
 async function reassignTrophyTx(
   tx: Tx,
@@ -168,21 +217,21 @@ async function reassignTrophyTx(
   next: NextHolder,
   userId: string | null
 ): Promise<Outcome> {
-  const from = recordedHolder(card.metadata);
+  const meta = metadataOf(card);
+  const from = recordedHolder(meta);
   const to = next.ref.wikiUser;
-  await settleCopyTx(tx, card.id, copies, userId);
-  const text = trophyCardText(next.type, next.ref.date, next.place, to, next.ref.page);
+  const granted = await settleCopyTx(tx, card.id, copies, userId);
   await tx.card.update({
     where: { id: card.id },
     data: {
-      ...text,
-      realmId: await articleHomeRealm(tx, "ixwiki", text.title),
-      isRetired: false,
-      retiredAt: null,
+      ...next.text,
+      realmId: next.realmId,
+      // Only a card an override voided comes back; one retired for another reason stays retired
+      ...(meta.voidedAt ? { isRetired: false, retiredAt: null } : {}),
       metadata: withProvenance(
-        card.metadata,
+        meta,
         { action: "REASSIGN", from, to, by: actor.clerkId },
-        { wikiUser: to, grantedTo: userId }
+        { wikiUser: to, grantedTo: userId, ...grantedAtChange(userId, granted), voidedAt: null }
       ),
     },
   });
@@ -195,23 +244,65 @@ async function reassignTrophyTx(
   return "REASSIGNED";
 }
 
+/**
+ * A second card of the place (one per entry of a contest stored twice, minted before contests were told apart): its
+ * text follows the place, a copy on it is voided, and it is never granted. The place's trophy is `keeperId`.
+ */
+async function duplicateTrophyTx(
+  tx: Tx,
+  actor: CardAdminActor,
+  { card, copies }: HeldTrophy,
+  next: NextHolder,
+  keeperId: string
+): Promise<Outcome> {
+  const meta = metadataOf(card);
+  const from = recordedHolder(meta);
+  const to = next.ref.wikiUser;
+  for (const copy of copies) await removeCopyTx(tx, copy, "VOID");
+  const voided = copies.length > 0;
+  await tx.card.update({
+    where: { id: card.id },
+    data: {
+      ...next.text,
+      realmId: next.realmId,
+      metadata: withProvenance(
+        meta,
+        { action: voided ? "VOID" : "REASSIGN", from, to, by: actor.clerkId },
+        { wikiUser: to, grantedTo: null, grantedAt: null }
+      ),
+    },
+  });
+  const holders = copies.map((copy) => copy.ownerId).join(", ");
+  await recordCardAudit(tx, {
+    action: voided ? "TROPHY_VOID" : "TROPHY_REASSIGN",
+    actor: actor.clerkId,
+    target: card.id,
+    details: voided
+      ? `Voided the duplicate copy of the ${next.label} trophy held by ${holders}: the place's trophy is ${keeperId}`
+      : `Reassigned the duplicate ${next.label} trophy card from ${from ?? "nobody"} to ${to}: the place's trophy is ${keeperId}`,
+  });
+  return voided ? "VOIDED" : "REASSIGNED";
+}
+
 async function voidTrophyTx(
   tx: Tx,
   actor: CardAdminActor,
   { card, copies }: HeldTrophy,
   label: string
 ): Promise<Outcome> {
-  const from = recordedHolder(card.metadata);
+  const meta = metadataOf(card);
+  const from = recordedHolder(meta);
+  const voidedAt = new Date();
   for (const copy of copies) await removeCopyTx(tx, copy, "VOID");
   await tx.card.update({
     where: { id: card.id },
     data: {
       isRetired: true,
-      retiredAt: new Date(),
+      retiredAt: voidedAt,
       metadata: withProvenance(
-        card.metadata,
+        meta,
         { action: "VOID", from, to: null, by: actor.clerkId },
-        { grantedTo: null }
+        { grantedTo: null, grantedAt: null, voidedAt: voidedAt.toISOString() }
       ),
     },
   });
@@ -225,54 +316,77 @@ async function voidTrophyTx(
 }
 
 /**
- * Takes one changed place's trophy with the override. Every card of the contest's place follows the entry, and the
- * place keeps one copy at most, on the card that holds it: a contest stored twice may have a card per entry, minted
- * before contests were told apart. The place is named and resolved through the state-keyed entry, as the mint does.
+ * The card the place's trophy stays on: the one whose copy the new holder already owns, else the one holding a copy,
+ * else the first. The rest are duplicates (`duplicateTrophyTx`).
+ */
+const keeperOf = (held: HeldTrophy[], userId: string | null): HeldTrophy =>
+  held.find((trophy) => trophy.copies.some((copy) => copy.ownerId === userId)) ??
+  held.find((trophy) => trophy.copies.length > 0) ??
+  held[0];
+
+/** The contest an override writes: its entries, the one it names and resolves its places through, and the fields. */
+interface OverriddenContest {
+  contest: Contest<ContestRow>;
+  lead: ContestRow;
+  type: LorewardType;
+  fields: EntryFields;
+}
+
+/**
+ * Takes one place's trophy with the override, when the override changes the place or a card of it disagrees. Every
+ * card of the contest's place follows the entry, and the place keeps one copy at most (`keeperOf`). The place is named
+ * and resolved through the state-keyed entry, as the mint does.
  */
 async function reconcilePlaceTx(
   tx: Tx,
   actor: CardAdminActor,
-  contest: Contest<StoredContestEntry>,
-  override: { type: LorewardType; fields: EntryFields },
+  { contest, lead, type, fields }: OverriddenContest,
   place: LorewardPlace
 ): Promise<Outcome[]> {
   const cards = await tx.card.findMany({
     where: { lorewardEntryId: { in: contest.map((entry) => entry.id) }, lorewardEdition: place },
-    select: { id: true, metadata: true },
+    select: { id: true, title: true, metadata: true },
     orderBy: { id: "asc" },
   });
+  const ref = placeOf({ ...lead, ...fields }, place);
+  const target = ref && {
+    ref,
+    text: trophyCardText(type, lead.date, place, ref.wikiUser, ref.page),
+  };
+  const entriesAgree = contest.every((entry) => samePlace(entry, fields, place));
+  if (entriesAgree && cards.every((card) => cardRecords(card, target))) return [];
+
   const held: HeldTrophy[] = [];
   for (const card of cards) held.push({ card, copies: await liveCopiesTx(tx, card.id) });
-  const lead = contest.find((entry) => entry.dateStart !== null) ?? contest[0];
-  const label = `${override.type} ${place} of ${lead.date}`;
-  const ref = placeOf({ ...lead, ...override.fields }, place);
-
+  const label = `${type} ${place} of ${lead.date}`;
   const outcomes: Outcome[] = [];
-  if (!ref) {
+  if (!target) {
     for (const trophy of held) outcomes.push(await voidTrophyTx(tx, actor, trophy, label));
     return outcomes;
   }
   if (held.length === 0) return outcomes;
-  const userId = await resolveLorewardPlace(tx, ref);
-  const keeper = held.find((trophy) => trophy.copies.length > 0) ?? held[0];
-  const next = { type: override.type, place, ref, label };
+  const userId = await resolveLorewardPlace(tx, target.ref);
+  const keeper = keeperOf(held, userId);
+  const realmId = await articleHomeRealm(tx, "ixwiki", target.text.title);
+  const next = { ...target, realmId, label };
   for (const trophy of held) {
     outcomes.push(
-      await reassignTrophyTx(tx, actor, trophy, next, trophy === keeper ? userId : null)
+      trophy === keeper
+        ? await reassignTrophyTx(tx, actor, trophy, next, userId)
+        : await duplicateTrophyTx(tx, actor, trophy, next, keeper.card.id)
     );
   }
   return outcomes;
 }
 
 /**
- * Writes the override to every entry of its contest (creating the entry, approved, when the contest has none), under
- * both places' contest locks, then reconciles the trophy of each place it changes.
+ * Writes the override to every entry of its contest, marked `overriddenAt` (creating the entry, approved, when the
+ * contest has none), under both places' contest locks, then reconciles each place's trophy.
  */
 async function overrideTx(
   tx: Tx,
   actor: CardAdminActor,
-  input: { date: string; type: LorewardType },
-  fields: EntryFields
+  input: { date: string; type: LorewardType; fields: LorewardOverride }
 ): Promise<{ entryIds: string[]; outcomes: Outcome[] }> {
   const key = { date_type: { date: input.date, type: input.type } };
   const keyed = await tx.lorewardEntry.findUnique({
@@ -283,49 +397,64 @@ async function overrideTx(
   for (const place of PLACES) await lockContestPlace(tx, contestPlaceKey(identity, place));
   const [first, ...rest] = await tx.lorewardEntry.findMany({
     where: contestEntriesWhere(identity),
-    select: CONTEST_ENTRY_SELECT,
+    select: CONTEST_ROW_SELECT,
     orderBy: { id: "asc" },
   });
+  const overriddenAt = new Date();
   if (!first) {
+    const fields = entryFields(input.fields, NOTHING_STORED);
     const created = await tx.lorewardEntry.upsert({
       where: key,
-      create: { date: input.date, type: input.type, ...fields, status: "approved" },
-      update: fields,
+      create: { date: input.date, type: input.type, ...fields, status: "approved", overriddenAt },
+      update: { ...fields, overriddenAt },
       select: { id: true },
     });
     return { entryIds: [created.id], outcomes: [] };
   }
 
-  const contest: Contest<StoredContestEntry> = [first, ...rest];
+  const contest: Contest<ContestRow> = [first, ...rest];
+  const lead = contest.find((entry) => entry.dateStart !== null) ?? first;
+  const fields = entryFields(input.fields, lead);
   const entryIds = contest.map((entry) => entry.id);
-  await tx.lorewardEntry.updateMany({ where: { id: { in: entryIds } }, data: fields });
+  await tx.lorewardEntry.updateMany({
+    where: { id: { in: entryIds } },
+    data: { ...fields, overriddenAt },
+  });
   const outcomes: Outcome[] = [];
   for (const place of PLACES) {
-    if (contest.every((entry) => samePlace(entry, fields, place))) continue;
     outcomes.push(
-      ...(await reconcilePlaceTx(tx, actor, contest, { type: input.type, fields }, place))
+      ...(await reconcilePlaceTx(tx, actor, { contest, lead, type: input.type, fields }, place))
     );
   }
   return { entryIds, outcomes };
 }
 
 /**
- * Overrides a Loreward contest's winner and runner-up, and takes each changed place's trophy with it (reassigned or
- * voided, in one transaction with the write), then mints the trophy of any recorded place that has none.
+ * Overrides a Loreward contest's winner and runner-up, and takes each place's trophy with it (reassigned or voided,
+ * in one transaction with the write), then mints the trophy of any recorded place that has none. A failed mint only
+ * defers it to the next sync (`mintDeferred`): the override and the trophies it moved stand.
  */
 export async function overrideLorewardEntry(
   db: PrismaClient,
   actor: CardAdminActor,
   input: { date: string; type: LorewardType; fields: LorewardOverride }
-): Promise<{ reassigned: number; voided: number; minted: number }> {
-  const fields = entryFields(input.fields);
-  const { entryIds, outcomes } = await db.$transaction((tx) =>
-    overrideTx(tx, actor, input, fields)
-  );
-  const { minted } = await mintTrophyCards(db, entryIds);
+): Promise<{ reassigned: number; voided: number; minted: number; mintDeferred: boolean }> {
+  const { entryIds, outcomes } = await db.$transaction((tx) => overrideTx(tx, actor, input));
+  let minted = 0;
+  let mintDeferred = false;
+  try {
+    ({ minted } = await mintTrophyCards(db, entryIds));
+  } catch (error) {
+    console.error(
+      "[cards.trophies] Minting the override's trophies failed; the next sync mints them:",
+      error
+    );
+    mintDeferred = true;
+  }
   return {
     reassigned: outcomes.filter((outcome) => outcome === "REASSIGNED").length,
     voided: outcomes.filter((outcome) => outcome === "VOIDED").length,
     minted,
+    mintDeferred,
   };
 }

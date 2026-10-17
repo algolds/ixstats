@@ -6,7 +6,9 @@ jest.mock("~/lib/lorewards", () => ({
   scoreDailyWikiOS: jest.fn().mockResolvedValue({ winner: null, runnerUp: null, candidates: [] }),
 }));
 jest.mock("~/server/modules/cards/cards.trophies", () => ({
-  overrideLorewardEntry: jest.fn().mockResolvedValue({ reassigned: 1, voided: 0, minted: 0 }),
+  overrideLorewardEntry: jest
+    .fn()
+    .mockResolvedValue({ reassigned: 1, voided: 0, minted: 0, mintDeferred: false }),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
@@ -110,7 +112,7 @@ describe("WK-9: Lorewards admin procedures", () => {
 
       await expect(adminCaller(db).overrideWinner(input)).resolves.toEqual({
         success: true,
-        trophies: { reassigned: 1, voided: 0, minted: 0 },
+        trophies: { reassigned: 1, voided: 0, minted: 0, mintDeferred: false },
       });
 
       expect(overrideLorewardEntry).toHaveBeenCalledWith(
