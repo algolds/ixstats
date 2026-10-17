@@ -21,6 +21,7 @@ import { placeOf, resolveLorewardPlace } from "./resolve-user";
 import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { INTERWIKI_PREFIX, labelOfImportName } from "~/lib/wiki-os/services/import-label";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
 /**
@@ -420,6 +421,33 @@ export async function fullSync(): Promise<{
   return { stateEntries, oolEntries, users, members };
 }
 
+interface StoredNames {
+  winnerUser: string | null;
+  runnerUpUser: string | null;
+}
+
+/** The stored entries with a `wikios>` place, by `date|type`. */
+async function storedImportNames(): Promise<Map<string, StoredNames>> {
+  const prefix = `${INTERWIKI_PREFIX}>`;
+  const rows = await db.lorewardEntry.findMany({
+    where: {
+      OR: [{ winnerUser: { startsWith: prefix } }, { runnerUpUser: { startsWith: prefix } }],
+    },
+    select: { date: true, type: true, winnerUser: true, runnerUpUser: true },
+  });
+  return new Map(rows.map((row) => [`${row.date}|${row.type}`, row]));
+}
+
+const isImportName = (name: string | null | undefined): name is string =>
+  !!name && labelOfImportName(name) !== null;
+
+/**
+ * The OOL page's name for a place, unless it would turn a stored `wikios>` name into a plain one: a `wikios>` name
+ * pays only the WikiOS account behind its edits, a plain one whoever verifies that MediaWiki account.
+ */
+const oolName = (stored: string | null | undefined, fromPage: string | null): string | null =>
+  isImportName(stored) && !isImportName(fromPage) ? stored : fromPage;
+
 let lastAutoSyncTime = 0;
 const AUTO_SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
 
@@ -448,12 +476,16 @@ export async function syncCurrentWinners(force = false): Promise<void> {
     if (wikitext) {
       const parsed = parseOOLPage(wikitext, currentYear);
       const activeUsernames = new Set<string>();
+      const imports = await storedImportNames();
 
       for (const entry of parsed) {
         if (!entry.winnerUser) continue;
+        const stored = imports.get(`${entry.date}|${entry.type}`);
+        const winnerUser = oolName(stored?.winnerUser, entry.winnerUser);
+        const runnerUpUser = oolName(stored?.runnerUpUser, entry.runnerUpUser);
 
-        activeUsernames.add(entry.winnerUser);
-        if (entry.runnerUpUser) activeUsernames.add(entry.runnerUpUser);
+        if (winnerUser) activeUsernames.add(winnerUser);
+        if (runnerUpUser) activeUsernames.add(runnerUpUser);
 
         // Upsert so we get updates/corrections made on the wiki
         await db.lorewardEntry.upsert({
@@ -461,18 +493,18 @@ export async function syncCurrentWinners(force = false): Promise<void> {
           create: {
             date: entry.date,
             type: entry.type,
-            winnerUser: entry.winnerUser,
+            winnerUser,
             winnerPage: entry.winnerPage,
-            runnerUpUser: entry.runnerUpUser,
+            runnerUpUser,
             runnerUpPage: entry.runnerUpPage,
             status: "approved",
             month: entry.month,
             year: entry.year ?? currentYear,
           },
           update: {
-            winnerUser: entry.winnerUser,
+            winnerUser,
             winnerPage: entry.winnerPage,
-            runnerUpUser: entry.runnerUpUser,
+            runnerUpUser,
             runnerUpPage: entry.runnerUpPage,
           },
         });
