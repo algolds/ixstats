@@ -130,6 +130,9 @@ END $$;
 ALTER TABLE "lore_card_requests" ADD COLUMN IF NOT EXISTS "realmId" TEXT;
 CREATE INDEX IF NOT EXISTS "lore_card_requests_realmId_idx" ON "lore_card_requests"("realmId");
 
+-- Trophy fixes: an admin override of a Loreward place is marked, so no sync writes over it.
+ALTER TABLE "loreward_entries" ADD COLUMN IF NOT EXISTS "overriddenAt" TIMESTAMP(3);
+
 -- Legacy Commons flag cards: Phase 1 made them Lore cards in Ixnay with no wikiSource and no wikiArticleTitle, so the
 -- Commons importer could not see them. The old importer's metadata.commonsCategory marks them exactly, and their
 -- Commons upload URL (the artwork, or the metadata.descriptionUrl it fell back to) marks the rest. An IxWiki article

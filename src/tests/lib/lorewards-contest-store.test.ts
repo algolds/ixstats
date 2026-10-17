@@ -6,8 +6,8 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   CONTEST_ENTRY_SELECT,
-  contestEntryIds,
   findContestEntries,
+  holderStillRecordedTx,
   lockContestPlace,
 } from "~/lib/lorewards/contest-store";
 
@@ -65,26 +65,62 @@ describe("findContestEntries", () => {
   });
 });
 
-describe("contestEntryIds", () => {
-  it("reads the ids of every entry of the contest, whichever key each is stored under", async () => {
-    const tx = {
-      lorewardEntry: {
-        findMany: jest.fn(async (_args: object) => [{ id: "ool" }, { id: "state" }]),
-      },
-    };
-    const ids = await contestEntryIds(tx as never, {
-      type: "weekly",
-      date: "2026-W42",
-      dateStart: "2026-10-12",
-    });
-    expect(ids).toEqual(["ool", "state"]);
+describe("holderStillRecordedTx", () => {
+  const row = (id: string, over: object = {}) => ({
+    id,
+    type: "weekly",
+    date: "2026-10-12",
+    dateStart: null,
+    dateEnd: null,
+    winnerUser: "Amy",
+    winnerPage: "Page",
+    runnerUpUser: null,
+    runnerUpPage: null,
+    ...over,
+  });
+  /** The state-keyed twin of the weekly of 12 October. */
+  const state = (over: object = {}) =>
+    row("state", { date: "2026-W42", dateStart: "2026-10-12", dateEnd: "2026-10-18", ...over });
+  const recheck = (rows: object[], recorded = { wikiUser: "Amy", page: "Page" }) => {
+    const tx = { lorewardEntry: { findMany: jest.fn(async (_args: object) => rows) } };
+    const ids = holderStillRecordedTx(
+      tx as never,
+      { type: "weekly", date: "2026-W42", dateStart: "2026-10-12" },
+      "winner",
+      recorded
+    );
+    return { tx, ids };
+  };
+
+  it("reads every entry of the contest through the transaction, whichever key each is stored under", async () => {
+    const { tx, ids } = recheck([row("ool"), state()]);
+    expect(await ids).toEqual(["ool", "state"]);
     expect(tx.lorewardEntry.findMany).toHaveBeenCalledWith({
       where: {
         type: "weekly",
         OR: [{ dateStart: "2026-10-12" }, { dateStart: null, date: "2026-10-12" }],
       },
-      select: { id: true },
+      select: CONTEST_ENTRY_SELECT,
+      orderBy: { id: "asc" },
     });
+  });
+
+  it("judges the holder through the state-keyed entry, page included", async () => {
+    // Both entries name Amy; only the state-keyed one, which the place acts through, records another page.
+    expect(await recheck([row("ool"), state({ winnerPage: "Other" })]).ids).toBeNull();
+    expect(await recheck([row("ool", { winnerPage: "Other" }), state()]).ids).toEqual([
+      "ool",
+      "state",
+    ]);
+  });
+
+  it.each<[string, object[]]>([
+    ["another holder", [row("ool", { winnerUser: "Cy" })]],
+    ["nobody", [row("ool", { winnerUser: null, winnerPage: null })]],
+    ["entries that disagree", [row("ool"), state({ winnerUser: "Cy" })]],
+    ["no entry at all", []],
+  ])("is null when the contest now records %s", async (_, rows) => {
+    expect(await recheck(rows).ids).toBeNull();
   });
 });
 

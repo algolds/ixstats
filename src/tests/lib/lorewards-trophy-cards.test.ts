@@ -233,6 +233,22 @@ function buildDb(): PrismaClient {
 let db: PrismaClient;
 const ownersOf = (cardId: string) => ownerships.filter((o) => o.cardId === cardId);
 
+/**
+ * Runs every transaction on a client distinct from `db`, sharing its cards and copies but with its own entry reads
+ * (and any `delegates` given): they see `inLock`, what an override wrote while the run waited for the lock, while the
+ * run's listing through `db` still sees `entries`. A re-check made on `db` would read the listing and miss the change.
+ */
+function distinctTx(inLock: EntryRow[], delegates: Record<string, object> = {}) {
+  const reread = jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+    inLock.filter((e) => matches(storedEntry(e), where))
+  );
+  const tx = Object.assign({}, db, { lorewardEntry: { findMany: reread } }, delegates);
+  (db as unknown as { $transaction: jest.Mock }).$transaction.mockImplementation(
+    async <T>(fn: (client: typeof tx) => Promise<T>) => fn(tx)
+  );
+  return { reread, listing: db.lorewardEntry.findMany as unknown as jest.Mock };
+}
+
 beforeEach(() => {
   entries = [entry()];
   cards = [];
@@ -602,6 +618,72 @@ describe("trophy cards of a contest stored twice", () => {
     links.set("Nasastan", "u2");
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownerships).toEqual([]);
+  });
+});
+
+describe("trophy cards when an override writes the place while a run waits", () => {
+  it("mints nothing for a holder the place no longer records once the lock is held", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("mints when the transaction's re-read still records the listed holder", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread, listing } = distinctTx([entry()]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1" })]);
+    expect(reread).toHaveBeenCalledTimes(1);
+    // The root client only listed the contests
+    expect(listing).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing to the listed holder once the place records another", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing once the place records nobody", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: null, winnerPage: null })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing for a card retired after it was listed", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    // Only the transaction's read sees the card retired
+    const retiredRead = jest.fn(async () => ({ ...cards[0], isRetired: true }));
+    distinctTx([entry()], { card: { ...db.card, findUnique: retiredRead } });
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(retiredRead).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      select: { metadata: true, isRetired: true },
+    });
+  });
+
+  it("grants when the transaction's re-read still records the listed holder", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry()]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(reread).toHaveBeenCalledTimes(1);
   });
 });
 

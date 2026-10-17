@@ -20,8 +20,8 @@ import { highestIssuedSerialTx, lockCardSerialsTx } from "~/lib/cards/serial-num
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { contestHolder, contestPlaceKey, groupByContest, type Contest } from "./contest-identity";
 import {
-  contestEntryIds,
   findContestEntries,
+  holderStillRecordedTx,
   lockContestPlace,
   type StoredContestEntry,
 } from "./contest-store";
@@ -131,9 +131,11 @@ async function mintOne(
   const userId = await resolveLorewardPlace(db, recorded);
   try {
     return await db.$transaction(async (tx) => {
-      // One card per contest place: a concurrent sync waits here, then finds this card.
+      // One card per contest place: a concurrent sync waits here, then finds this card. An override that wrote the
+      // place meanwhile leaves the listed holder unrecorded, and this run mints nothing for it.
       await lockContestPlace(tx, contestPlaceKey(entry, place));
-      if (await contestPlaceMinted(tx, await contestEntryIds(tx, entry), place)) return false;
+      const entryIds = await holderStillRecordedTx(tx, entry, place, recorded);
+      if (!entryIds || (await contestPlaceMinted(tx, entryIds, place))) return false;
       const text = trophyCardText(entry.type, entry.date, place, wikiUser, page);
       const card = await tx.card.create({
         data: {
@@ -255,8 +257,9 @@ async function contestPlaceSettled(
 }
 
 /**
- * Gives one unowned trophy card to `userId`, unless a card of its contest place (this one or a twin's) gained an owner
- * or was granted in the meantime.
+ * Gives one unowned trophy card to `userId`, unless, by the time both locks are held, the place no longer records the
+ * listed holder (an override or a sync wrote it), a card of its contest place (this one or a twin's) gained an owner
+ * or was granted, or the card was retired.
  */
 async function grantOne(db: PrismaClient, grant: TrophyGrant, userId: string): Promise<boolean> {
   return db.$transaction(async (tx) => {
@@ -264,13 +267,13 @@ async function grantOne(db: PrismaClient, grant: TrophyGrant, userId: string): P
     // second, never first (mintCopy takes it again), so the checks below read under both.
     await lockContestPlace(tx, contestPlaceKey(grant.entry, grant.place));
     await lockCardSerialsTx(tx, grant.cardId);
-    const entryIds = await contestEntryIds(tx, grant.entry);
-    if (await contestPlaceSettled(tx, entryIds, grant.place)) return false;
+    const entryIds = await holderStillRecordedTx(tx, grant.entry, grant.place, grant.recorded);
+    if (!entryIds || (await contestPlaceSettled(tx, entryIds, grant.place))) return false;
     const card = await tx.card.findUnique({
       where: { id: grant.cardId },
-      select: { metadata: true },
+      select: { metadata: true, isRetired: true },
     });
-    if (!card) return false;
+    if (!card || card.isRetired) return false;
     await mintTrophyCopyTx(tx, grant.cardId, userId);
     await tx.card.update({
       where: { id: grant.cardId },
