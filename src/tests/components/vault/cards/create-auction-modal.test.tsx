@@ -23,7 +23,7 @@ import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CreateAuctionModal } from "~/components/vault/cards/market/CreateAuctionModal";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
-const row = (ownershipId: string, serialNumber: number, isLocked = false) => ({
+const row = (ownershipId: string, serialNumber: number, isLocked = false, isBound = false) => ({
   face: {
     cardId: "c1",
     title: "Caphiria",
@@ -41,6 +41,7 @@ const row = (ownershipId: string, serialNumber: number, isLocked = false) => ({
   copies: 3,
   acquiredAt: new Date("2026-10-01T00:00:00Z"),
   isLocked,
+  isBound,
 });
 
 type Listed = (result: { message: string }) => void;
@@ -50,7 +51,7 @@ let onSuccess: Listed = () => undefined;
 beforeEach(() => {
   mutate = jest.fn();
   jest.mocked(api.cards.listMine.useQuery).mockReturnValue({
-    data: { rows: [row("o1", 4), row("o2", 9), row("o3", 12, true)] },
+    data: { rows: [row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)] },
     isLoading: false,
   } as never);
   jest.mocked(api.cardMarket.createAuction.useMutation).mockImplementation(((options: {
@@ -72,7 +73,7 @@ const landed = (message: string) => {
 };
 
 describe("CreateAuctionModal", () => {
-  it("lists copies, not cards, and leaves out a copy already listed or traded", () => {
+  it("lists copies, not cards, and leaves out a copy already listed or traded, or bound", () => {
     render(<CreateAuctionModal open onClose={jest.fn()} />);
     const copies = within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
     expect(copies).toHaveLength(2);
@@ -81,6 +82,7 @@ describe("CreateAuctionModal", () => {
     // The face is hidden from the button's name, which says the title once.
     expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
     expect(screen.queryByText(/#12/)).toBeNull();
+    expect(screen.queryByText(/#20/)).toBeNull();
   });
 
   it("lists the copy picked, at the prices typed", () => {
@@ -111,6 +113,14 @@ describe("CreateAuctionModal", () => {
       buyoutPrice: undefined,
       duration: "30",
     });
+  });
+
+  it("says a bound copy from the sheet cannot be sold, instead of offering the form", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o4" />);
+    expect(screen.getByText("Bound cards can't be sold")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Your cards" })).toBeNull();
+    expect(screen.queryByLabelText(/Starting price/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "List it" })).toBeNull();
   });
 
   it("refuses a buy-now price at or under the start, and prices that are not whole IxC", () => {
