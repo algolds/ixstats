@@ -73,6 +73,7 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboardSection";
+import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
 const occurrences = (haystack: string, needle: string) => haystack.split(needle).length - 1;
 const statementCard = (container: HTMLElement) =>
@@ -87,6 +88,9 @@ const follows = (a: Element, b: Element) =>
   Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
 describe("Vault Wallet page", () => {
+  // The achievements deck measures its track.
+  beforeAll(stubResizeObserver);
+
   beforeEach(() => {
     mockRouters.clear();
     Object.assign(mockData, {

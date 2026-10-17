@@ -12,8 +12,9 @@
  * and records nothing, so its idempotency key stays free.
  */
 
-import { type PrismaClient } from "@prisma/client";
-import { earnCreditsOnce, vaultService } from "./vault-service";
+import { type Prisma, type PrismaClient } from "@prisma/client";
+import { earnCreditsOnce, earnCreditsOnceTx, vaultService } from "./vault-service";
+import type { LedgerEarnInput } from "./vault-ledger";
 
 export interface VaultBonusConfig {
   /** Master toggle (1 = on, 0 = off). */
@@ -228,6 +229,40 @@ export async function grantBonus(
     newBalance: res.newBalance,
     reason: res.message,
   };
+}
+
+/**
+ * A one-time bonus (`grantBonus` with `oneTime`) inside the caller's transaction, for a caller that holds a lock
+ * across its own check and the grant: `grantBonus` runs its own transaction. The caller checks that bonuses are on
+ * and that `amount` is positive. Returns whether it paid.
+ */
+export async function grantBonusTx(
+  tx: Prisma.TransactionClient,
+  userIdOrClerkId: string,
+  source: string,
+  amount: number,
+  metadata?: LedgerEarnInput["metadata"]
+): Promise<boolean> {
+  const user = await tx.user.findFirst({
+    where: { OR: [{ id: userIdOrClerkId }, { clerkUserId: userIdOrClerkId }] },
+    select: { id: true },
+  });
+  if (!user) return false;
+  // Grants made before idempotency keys existed carry only the source
+  const existing = await tx.vaultTransaction.findFirst({
+    where: { source, type: "EARN_BONUS", vault: { userId: user.id } },
+    select: { id: true },
+  });
+  if (existing) return false;
+  const once = await earnCreditsOnceTx(tx, {
+    userId: user.id,
+    amount,
+    type: "EARN_BONUS",
+    source,
+    metadata,
+    idempotencyKey: `${source}:${user.id}`,
+  });
+  return !once.alreadyApplied;
 }
 
 /**

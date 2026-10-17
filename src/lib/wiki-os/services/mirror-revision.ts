@@ -41,15 +41,10 @@ import { contentModelFor } from "../xml/content-model";
 import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export-writer";
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
 import type { XmlRevision } from "../xml/types";
+import { importName, INTERWIKI_PREFIX } from "./import-label";
 import { MIRROR_SOURCE, revisionPayloadSchema, type RevisionPayload } from "./mirror-outbox";
 import type { MirrorJob } from "./mirror-queue";
 
-/** MediaWiki's prefix for the names of editors it has no account for: `wikios>Name`. */
-const INTERWIKI_PREFIX = "wikios";
-const UNKNOWN_AUTHOR = "Community Contributor";
-/** MediaWiki's `actor_name` holds 255 bytes; the import prefix and its `>` take some of them. */
-const MAX_ACTOR_NAME_BYTES = 255;
-const MAX_LABEL_BYTES = MAX_ACTOR_NAME_BYTES - (INTERWIKI_PREFIX.length + 1);
 const DEFAULT_SUMMARY = "WikiOS native edit";
 const RESTORE_SUMMARY = "Restoring the current WikiOS revision";
 const SUMMARY_LIMIT = 480;
@@ -248,25 +243,6 @@ async function verifiedUsernames(
   return new Map(links.map((link) => [link.userId, link.username]));
 }
 
-/** `text` cut to at most `maxBytes` bytes of UTF-8, never in the middle of a character. */
-function truncateUtf8(text: string, maxBytes: number): string {
-  const bytes = Buffer.from(text, "utf8");
-  if (bytes.length <= maxBytes) return text;
-  let end = maxBytes;
-  // a continuation byte (10xxxxxx) at the cut belongs to a character that starts before it: leave that one out too
-  while (end > 0 && (bytes[end]! & 0xc0) === 0x80) end--;
-  return bytes.subarray(0, end).toString("utf8");
-}
-
-/**
- * The label a free-text author goes out under (after `wikios>`): one line (a line break or tab, with the spaces around it, becomes
- * one space: MediaWiki's user names hold neither), at most the 248 bytes that fit MediaWiki's 255-byte actor name with the prefix.
- */
-function importLabel(author: string | null): string {
-  const line = (author ?? "").replace(/\s*[\r\n\t]\s*/g, " ").trim();
-  return truncateUtf8(line, MAX_LABEL_BYTES).trim() || UNKNOWN_AUTHOR;
-}
-
 /**
  * The name a revision is imported under. Only a VERIFIED wiki account goes out as itself, which MediaWiki credits to
  * the local account of that name (`assignknownusers`). Every other author is a free-text label (a country, `User_x`,
@@ -278,7 +254,7 @@ function contributorName(
   usernames: ReadonlyMap<string, string>
 ): string {
   const verified = revision.authorId ? usernames.get(revision.authorId) : undefined;
-  return verified ?? `${INTERWIKI_PREFIX}>${importLabel(revision.author)}`;
+  return verified ?? importName(revision.author);
 }
 
 /** What `revision` would add to the XML: its text as escaped (an `&` takes five bytes) and its tags. */

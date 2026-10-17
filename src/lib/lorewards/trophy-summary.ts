@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
-import type { TodayRace } from "./today-race";
+import { canonicalWikiName } from "./resolve-user";
 
 export interface TrophyCardSummary {
   id: string;
@@ -38,7 +38,10 @@ const placeOf = (edition: string | null): LorewardPlace | null =>
   edition === "winner" || edition === "runner-up" ? edition : null;
 
 /** The trophy cards `userId` owns; a card whose contest or place was not recorded is left out. */
-async function ownedTrophyCards(db: TrophyDb, userId: string): Promise<TrophyCardSummary[]> {
+export async function ownedTrophyCards(
+  db: Pick<PrismaClient, "cardOwnership">,
+  userId: string
+): Promise<TrophyCardSummary[]> {
   const owned = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { lorewardEntryId: { not: null } } },
     select: { cards: { select: { id: true, title: true, lorewardEdition: true, metadata: true } } },
@@ -54,8 +57,9 @@ async function ownedTrophyCards(db: TrophyDb, userId: string): Promise<TrophyCar
 }
 
 /**
- * A wiki user's trophies: counts from their Lorewards stats (matched case-insensitively, like the leaderboards)
- * and the trophy cards held by the platform account `userId` that verified the wiki name (null: none).
+ * A wiki name's public trophies: counts from that exact name's Lorewards stats (`canonicalWikiName`: MediaWiki names
+ * are case-sensitive after the first letter, so "OstroZava" is not "Ostrozava") and the trophy cards held by the
+ * platform account `userId` that verified the name (null: none).
  */
 export async function loadTrophies(
   db: TrophyDb,
@@ -64,7 +68,7 @@ export async function loadTrophies(
 ): Promise<Trophies> {
   const [stats, cards] = await Promise.all([
     db.lorewardUserStats.findFirst({
-      where: { username: { equals: wikiUsername, mode: "insensitive" } },
+      where: { username: canonicalWikiName(wikiUsername) },
     }),
     userId ? ownedTrophyCards(db, userId) : Promise.resolve([]),
   ]);
@@ -87,10 +91,4 @@ export async function lorewardCreditsPaid(
     _sum: { credits: true },
   });
   return paid._sum.credits ?? 0;
-}
-
-/** The wiki user's place (1-based) in today's top ten, or null when they are not in it. */
-export function todayRankOf(race: TodayRace, wikiUsername: string): number | null {
-  const wanted = wikiUsername.toLowerCase();
-  return race.entries.find((e) => e.user.toLowerCase() === wanted)?.rank ?? null;
 }

@@ -39,6 +39,8 @@ interface CandidateScore {
   largestEdit: number;
   editCount: number;
   isMinorOnly: boolean;
+  /** The distinct `authorId`s of the scored revisions (null: mirrored from MediaWiki), for the dividend. */
+  authorIds: Array<string | null>;
   // Quality signals
   proseRatio: number;
   proseMultiplier: number;
@@ -79,12 +81,14 @@ interface Candidate {
   editCount: number;
   isMinorOnly: boolean;
   hasNewArticle: boolean;
+  authorIds: Set<string | null>;
 }
 
 /** The revision columns `scoreDailyWikiOS` reads. */
 interface RevisionRow {
   articleId: string;
   author: string | null;
+  authorId: string | null;
   byteSize: number;
   byteDelta: number;
   minor: boolean;
@@ -112,6 +116,7 @@ function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
         editCount: 0,
         isMinorOnly: true,
         hasNewArticle: diff > 500 && row.byteSize === diff,
+        authorIds: new Set(),
       };
       byUserPage.set(key, entry);
     }
@@ -119,6 +124,7 @@ function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
     if (diff > 0) entry.bytesAdded += diff;
     entry.largestEdit = Math.max(entry.largestEdit, diff);
     entry.editCount++;
+    entry.authorIds.add(row.authorId);
     if (!row.minor) entry.isMinorOnly = false;
   }
 
@@ -143,6 +149,7 @@ const candidateBase = (c: Candidate) => ({
   largestEdit: c.largestEdit,
   editCount: c.editCount,
   isMinorOnly: c.isMinorOnly,
+  authorIds: [...c.authorIds],
   isCollaborative: false,
   collaborativeMultiplier: 1,
 });
@@ -153,7 +160,7 @@ async function enrichCandidate(c: Candidate, weights: ScoringWeights): Promise<C
     .count({ where: { targetSlug: toArticleSlug(c.page) } })
     .catch(() => 0);
   const depth = await db.wikiRevision
-    .count({ where: { articleId: c.articleId, author: c.user } })
+    .count({ where: { source: "ixwiki", articleId: c.articleId, author: c.user } })
     .catch(() => 1);
 
   const proseMultiplier = 1 - weights.proseWeight + PROSE_RATIO * weights.proseWeight;
@@ -237,7 +244,7 @@ export async function loadScoringWeights(
 }
 
 /**
- * Score a UTC day's edits. Only the top ten candidates get the full quality signals (and are returned) unless
+ * Score a UTC day's IxWiki edits. Only the top ten candidates get the full quality signals (and are returned) unless
  * `enrichAll` is set, which the Vault dividend uses to score every editor.
  */
 export async function scoreDailyWikiOS(
@@ -252,7 +259,9 @@ export async function scoreDailyWikiOS(
 
   const revRows: RevisionRow[] = await db.wikiRevision
     .findMany({
+      // Lorewards is IxWiki's contest: other wikis' revisions never score, so a name wins only from IxWiki edits.
       where: {
+        source: "ixwiki",
         createdAt: { gte: startOfDay, lte: endOfDay },
         author: { not: null },
         article: { namespace: 0 },
@@ -261,6 +270,7 @@ export async function scoreDailyWikiOS(
         id: true,
         articleId: true,
         author: true,
+        authorId: true,
         byteSize: true,
         byteDelta: true,
         minor: true,
