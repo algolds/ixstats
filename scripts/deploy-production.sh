@@ -176,7 +176,7 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202610271
 bun scripts/cards/backfill-cards-refresh.ts --apply || exit 1
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1
 # Cards refresh Phase 2 (docs/specs/2026-10-15-cards-refresh-design.md §2.4): review state, import jobs, licences,
-# takedowns, Special card fields. Idempotent and additive.
+# takedowns, Special card fields, a SET NULL transfer-event FK, the legacy Commons tag. Idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql || exit 1
 
 # Sync production database with schema

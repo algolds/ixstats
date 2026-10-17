@@ -1,6 +1,7 @@
 -- Cards refresh, Phase 2: admin and importers (docs/specs/2026-10-15-cards-refresh-design.md §2.4). Hand-written and
 -- idempotent: safe to re-run, and a no-op on a database that already has it. It creates what the Prisma schema
--- declares, so the `db push` around it changes nothing here. Every existing card stays APPROVED. It needs Phase 1's
+-- declares, so the `db push` around it changes nothing here. Every existing card stays APPROVED. It also relaxes the
+-- transfer-event FK to SET NULL (two columns go nullable) and tags legacy Commons cards. It needs Phase 1's
 -- constraints first (the CardRarity enum, cards.realmId), and it is one transaction, so a failure changes nothing
 -- (prisma db execute already runs a file as one; BEGIN and COMMIT make psql do the same).
 --
@@ -130,12 +131,14 @@ ALTER TABLE "lore_card_requests" ADD COLUMN IF NOT EXISTS "realmId" TEXT;
 CREATE INDEX IF NOT EXISTS "lore_card_requests_realmId_idx" ON "lore_card_requests"("realmId");
 
 -- Legacy Commons flag cards: Phase 1 made them Lore cards in Ixnay with no wikiSource and no wikiArticleTitle, so the
--- Commons importer could not see them. Their Commons upload URL (the artwork, or the metadata.descriptionUrl the old
--- importer fell back to) marks them. An IxWiki article card (a title, no source) can show a Commons image too, so a
--- card with a wikiArticleTitle is left alone. A re-run finds nothing left to change.
+-- Commons importer could not see them. The old importer's metadata.commonsCategory marks them exactly, and their
+-- Commons upload URL (the artwork, or the metadata.descriptionUrl it fell back to) marks the rest. An IxWiki article
+-- card (a title, no source) can show a Commons image too, so a card with a wikiArticleTitle is left alone. A re-run
+-- finds nothing left to change.
 UPDATE "cards" SET "wikiSource" = 'commons'
 WHERE "cardType" = 'LORE' AND "wikiSource" IS NULL AND "wikiArticleTitle" IS NULL
-  AND ("artwork" ~* '^(https?:)?//upload\.wikimedia\.org/wikipedia/commons/'
+  AND ("metadata" ? 'commonsCategory'
+    OR "artwork" ~* '^(https?:)?//upload\.wikimedia\.org/wikipedia/commons/'
     OR "metadata"->>'descriptionUrl' ~* '^(https?:)?//upload\.wikimedia\.org/wikipedia/commons/');
 
 -- Transfer events outlive a revoked or voided copy: the copy's id goes null, the card and serial stay.
