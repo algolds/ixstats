@@ -13,6 +13,8 @@ import {
 } from "~/lib/lorewards";
 import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
+import { adminActor } from "~/server/api/routers/cards/admin/_actor";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { writeConfigKeys } from "./_config-kv";
 
 /** The scorer's tunable weights (WK-8): prose weight is a 0-1 blend, the rest bonuses/multipliers. */
@@ -139,42 +141,17 @@ export const adminWikiRouter = createTRPCRouter({
         status: z.string().default("approved"),
       })
     )
+    // The scored result is an override like any other: its places' trophies follow, and no sync writes over it
     .mutation(async ({ ctx, input }) => {
-      const entry = await ctx.db.lorewardEntry.upsert({
-        where: {
-          date_type: {
-            date: input.date,
-            type: input.type,
-          },
-        },
-        create: {
-          date: input.date,
-          type: input.type,
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-        },
-        update: {
-          winnerUser: input.winnerUser,
-          winnerPage: input.winnerPage,
-          winnerScore: input.winnerScore ?? null,
-          winnerBytes: input.winnerBytes ?? null,
-          runnerUpUser: input.runnerUpUser ?? null,
-          runnerUpPage: input.runnerUpPage ?? null,
-          runnerUpScore: input.runnerUpScore ?? null,
-          runnerUpBytes: input.runnerUpBytes ?? null,
-          status: input.status,
-          syncedAt: new Date(),
-        },
+      const { date, type, status, ...fields } = input;
+      const result = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
+        status,
       });
       await invalidateCache(["lorewards."]);
-      return entry;
+      return result;
     }),
 
   pushLorewardToBot: adminProcedure

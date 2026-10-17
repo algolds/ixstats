@@ -6,9 +6,23 @@ jest.mock("~/lib/lorewards", () => ({
   scoreDailyWikiOS: jest.fn().mockResolvedValue({ winner: null, runnerUp: null, candidates: [] }),
 }));
 jest.mock("~/server/modules/cards/cards.trophies", () => ({
-  overrideLorewardEntry: jest
-    .fn()
-    .mockResolvedValue({ reassigned: 1, voided: 0, minted: 0, mintDeferred: false }),
+  overrideLorewardEntry: jest.fn().mockResolvedValue({
+    reassigned: 1,
+    voided: 0,
+    minted: 0,
+    mintDeferred: false,
+    // What the database now holds: the runner-up the admin left out was kept
+    written: {
+      winnerUser: "Cy",
+      winnerPage: "Page",
+      winnerScore: null,
+      winnerBytes: null,
+      runnerUpUser: "Bee",
+      runnerUpPage: "Hive",
+      runnerUpScore: 80,
+      runnerUpBytes: 800,
+    },
+  }),
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
@@ -97,7 +111,7 @@ describe("WK-9: Lorewards admin procedures", () => {
     expect(overrideLorewardEntry).not.toHaveBeenCalled();
   });
 
-  it("moves an admin's override's trophies with it, then tells the bot", async () => {
+  it("moves an admin's override's trophies with it, then tells the bot what the entry now holds", async () => {
     const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
     const realFetch = global.fetch;
     global.fetch = fetchMock as never;
@@ -125,7 +139,21 @@ describe("WK-9: Lorewards admin procedures", () => {
       );
       expect(fetchMock).toHaveBeenCalledWith(
         expect.stringMatching(/\/lorewards\/override$/),
-        expect.objectContaining({ method: "POST", body: JSON.stringify(input) })
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-10-20",
+            type: "daily",
+            winnerUser: "Cy",
+            winnerPage: "Page",
+            winnerScore: null,
+            winnerBytes: null,
+            runnerUpUser: "Bee",
+            runnerUpPage: "Hive",
+            runnerUpScore: 80,
+            runnerUpBytes: 800,
+          }),
+        })
       );
     } finally {
       global.fetch = realFetch;

@@ -1,7 +1,8 @@
 /**
  * The admin's Loreward override form (`lorewards.overrideWinner`): what it sends, and what its success says about the
  * trophies. A field the admin leaves blank is left out, so the stored value stays; only "No winner" or "No runner-up"
- * empties a place.
+ * empties a place. A new holder starts with no page or score: the server clears the blank ones when the name changes
+ * (`overrideLorewardEntry`), since only it knows the stored holder. The form's description says so.
  */
 
 /** One place as the form holds it: the four inputs, and whether the admin emptied the place. */

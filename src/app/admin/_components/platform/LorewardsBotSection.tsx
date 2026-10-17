@@ -257,7 +257,10 @@ export function LorewardsBotSection() {
   });
 
   const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
-    onSuccess: () => notify.success("Saved", "Saved winner details override to database"),
+    onSuccess: (result) => {
+      const note = trophyChangeNote(result);
+      notify.success("Saved", `Saved the winner details as an override.${note ? ` ${note}` : ""}`);
+    },
     onError: (err) => notify.error("Override Error", err.message),
   });
 
@@ -909,8 +912,8 @@ export function LorewardsBotSection() {
           </CardTitle>
           <CardDescription>
             Manually rewrite the winning details of past daily, weekly, or monthly entries and push
-            announcement updates to the Discord bot. A blank field keeps its stored value, and the
-            place's trophy moves with the override.
+            announcement updates to the Discord bot. A blank field keeps its stored value, except a
+            new holder starts with no page or score. The place's trophy moves with the override.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

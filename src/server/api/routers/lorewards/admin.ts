@@ -190,10 +190,15 @@ export const lorewardsAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { date, type, ...fields } = input;
-      const trophies = await overrideLorewardEntry(ctx.db, adminActor(ctx), { date, type, fields });
+      const { written, ...trophies } = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
+      });
+      // The bot is told what the database now holds, not only the fields the admin typed
       await postToBot(
         "/lorewards/override",
-        input,
+        { date, type, ...written },
         "Failed to sync override with Discord bot",
         () => undefined
       );
