@@ -7,7 +7,6 @@
 
 import { PrismaClient } from "@prisma/client";
 import { seedCardPacks } from "../../prisma/seeds/card-packs";
-import { seedAchievementCards } from "../../prisma/seeds/achievement-cards";
 import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
 import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
 import { seedOnomaPresets } from "../../prisma/seeds/onoma-presets";
@@ -51,8 +50,7 @@ async function seedDatabase() {
     // Seed card packs
     await seedCardPacks();
 
-    // Seed commemorative achievement cards (and backfill earlier unlocks)
-    await seedAchievementCards(db);
+    // The achievement Special cards come from a one-time import: bun scripts/cards/import-special-cards.ts --apply
 
     // Crafting is retired (2026-10-05): its router, rules and seed are deleted.
 

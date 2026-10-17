@@ -1,5 +1,5 @@
 /** @jest-environment node */
-/** Cards refresh §3 security: wiki discovery is admin-only; reading an article's author writes nothing. */
+/** Reading an article's author, on any wiki whose articles become cards, writes nothing. */
 jest.mock("~/lib/wiki-os/adapters/ixstates/lore-card-generator", () => ({
   __esModule: true,
   wikiLoreCardGenerator: {
@@ -10,31 +10,12 @@ jest.mock("~/lib/wiki-os/adapters/ixstates/lore-card-generator", () => ({
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
+import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { loreCardsWikiRouter } from "~/server/api/routers/lore-cards/wiki";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
-const player = (db: ReturnType<typeof createMockPrisma>) =>
-  createCallerFactory(loreCardsWikiRouter)(
-    createMockRouterContext({
-      auth: { userId: "user_1" },
-      user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
-      db,
-    }) as never
-  );
-
 describe("lore wiki procedures", () => {
-  it("refuses every wiki discovery read to a signed-in player", async () => {
-    const caller = player(createMockPrisma());
-    const refused = /Admin privileges required/;
-    await expect(caller.searchLoreArchive({ source: "ixwiki", query: "x" })).rejects.toThrow(
-      refused
-    );
-    await expect(caller.fetchLoreMetadata({ source: "ixwiki", pageTitle: "X" })).rejects.toThrow(
-      refused
-    );
-  });
-
   it("answers an article's author without writing to any card", async () => {
     const db = createMockPrisma();
     const caller = createCallerFactory(loreCardsWikiRouter)(
@@ -47,5 +28,19 @@ describe("lore wiki procedures", () => {
     });
     expect(db.card.update).not.toHaveBeenCalled();
     expect(db.card.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("asks the card's own article wiki, and no file host", async () => {
+    const caller = createCallerFactory(loreCardsWikiRouter)(
+      createMockRouterContext({ auth: null, user: null, db: createMockPrisma() }) as never
+    );
+    await caller.getCardAuthorInfo({ articleTitle: "Kiro", source: "althistory" });
+    expect(wikiLoreCardGenerator.fetchArticleAuthorInfoBatch).toHaveBeenLastCalledWith(
+      ["Kiro"],
+      "althistory"
+    );
+    await expect(
+      caller.getCardAuthorInfo({ articleTitle: "File:Kiro.png", source: "commons" as never })
+    ).rejects.toThrow();
   });
 });

@@ -5,10 +5,11 @@
 import { type Achievement, type PrismaClient } from "@prisma/client";
 import { achievementBonus, getBonusConfig, grantBonus } from "~/lib/vault/vault-bonus";
 import { awardAchievementCard } from "~/lib/cards/card-service";
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 
 /**
- * Records an unlock for the user and pays out its credits, commemorative cards and packs.
+ * Records an unlock for the user and pays out its credits, its reward card and packs.
  * Returns false when the user already holds the achievement (a concurrent unlock won the race).
  */
 export async function unlockAchievement(
@@ -20,7 +21,6 @@ export async function unlockAchievement(
   const creditReward = RECRUITER_ACHIEVEMENT_IDS.has(achievement.key)
     ? 0
     : achievementBonus(await getBonusConfig(db), achievement.rarity);
-  let cardIds: string[] = [];
   let packIds: string[] = [];
   let titles: string[] = [];
 
@@ -28,7 +28,6 @@ export async function unlockAchievement(
     try {
       const rewards = JSON.parse(achievement.rewardsJson);
       if (rewards) {
-        if (Array.isArray(rewards.cardIds)) cardIds = rewards.cardIds;
         if (Array.isArray(rewards.cardPacks)) packIds = rewards.cardPacks;
         if (Array.isArray(rewards.titles)) titles = rewards.titles;
       }
@@ -36,6 +35,14 @@ export async function unlockAchievement(
       console.error(`[Achievement Service] Failed to parse rewards for ${achievement.key}:`, err);
     }
   }
+
+  // The reward card is the live Special card that names this achievement (the Designer sets it)
+  const rewardCard = await db.card.findUnique({
+    where: { rewardAchievementKey: achievement.key },
+    select: { id: true, cardType: true, isRetired: true },
+  });
+  const cardIds =
+    rewardCard && rewardCard.cardType === "SPECIAL" && !rewardCard.isRetired ? [rewardCard.id] : [];
 
   // Create UserAchievement record (references Achievement.key)
   try {
@@ -56,14 +63,8 @@ export async function unlockAchievement(
         }),
       },
     });
-  } catch (createErr: any) {
-    if (
-      createErr?.code === "P2002" ||
-      createErr?.message?.includes("Unique constraint") ||
-      createErr?.statusCode === 409
-    ) {
-      return false;
-    }
+  } catch (createErr) {
+    if (isUniqueViolation(createErr)) return false;
     throw createErr;
   }
 

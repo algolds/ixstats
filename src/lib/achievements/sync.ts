@@ -1,6 +1,5 @@
 import { type PrismaClient } from "@prisma/client";
 import { ruleToJson, type AchievementDefinition } from "./definitions";
-import { getCardRewardForAchievement } from "./card-rewards";
 import { RECRUITER_ACHIEVEMENT_IDS } from "./scope";
 import { ALL_DEFINITIONS } from "./sets";
 
@@ -22,11 +21,9 @@ const TITLE_BY_ID: Record<string, string> = {
 export const VIDMASTER_REWARD_PACK_ID = "pack_lore_master";
 
 function buildRewards(id: string, rarity: string) {
-  if (RECRUITER_ACHIEVEMENT_IDS.has(id)) return { credits: 0, cardIds: [] };
-  const cardId = getCardRewardForAchievement(id);
-  const rewards: { credits: number; cardIds: string[]; cardPacks?: string[]; titles?: string[] } = {
+  if (RECRUITER_ACHIEVEMENT_IDS.has(id)) return { credits: 0 };
+  const rewards: { credits: number; cardPacks?: string[]; titles?: string[] } = {
     credits: CREDITS_BY_RARITY[rarity] || 5,
-    cardIds: cardId ? [cardId] : [],
   };
   if (id.startsWith("vid-")) {
     rewards.cardPacks = [VIDMASTER_REWARD_PACK_ID];

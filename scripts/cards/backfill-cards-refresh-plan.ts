@@ -6,8 +6,8 @@
  * differences are planned, so a backfilled snapshot plans nothing: the backfill is idempotent.
  */
 import type { Prisma } from "@prisma/client";
-import { COMMEMORATIVE_CARD_DEFINITIONS } from "~/lib/achievements/card-rewards";
 import { CardFinish, CardType, type CardRarity } from "~/lib/cards/enums";
+import { LEGACY_SPECIAL_CARDS } from "~/lib/cards/special-card-import";
 import {
   boundFor,
   canonicalArticleTitle,
@@ -79,7 +79,7 @@ interface Target {
 }
 
 const ACHIEVEMENT_CARD_IDS: ReadonlySet<string> = new Set(
-  COMMEMORATIVE_CARD_DEFINITIONS.map((definition) => definition.id)
+  LEGACY_SPECIAL_CARDS.map((card) => card.id)
 );
 const KNOWN_WIKIS: ReadonlySet<string> = new Set(["ixwiki", "iiwiki", "althistory"]);
 const IXNAY_REALM: RealmInsert = {

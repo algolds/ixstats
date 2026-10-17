@@ -372,16 +372,3 @@ function expandSynonyms(roots: readonly string[]): string[] {
 export const CATEGORY_SYNONYMS: Record<LoreCategory, readonly string[]> = Object.fromEntries(
   Object.entries(CATEGORY_ROOTS).map(([cat, roots]) => [cat, expandSynonyms(roots)])
 ) as unknown as Record<LoreCategory, readonly string[]>;
-
-/**
- * Find matching LoreCategory for any keyword, synonym, or alias.
- */
-export function findMatchingCategory(term: string): LoreCategory | null {
-  const normalized = term.trim().toLowerCase();
-  for (const [cat, synonyms] of Object.entries(CATEGORY_SYNONYMS)) {
-    if (cat.toLowerCase() === normalized || synonyms.includes(normalized)) {
-      return cat as LoreCategory;
-    }
-  }
-  return null;
-}
