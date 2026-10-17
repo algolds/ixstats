@@ -1,4 +1,7 @@
-/** A pack's odds per rarity, as stored on CardPack (percent per card). They are shown in the store, so they add up to 100. */
+/**
+ * A pack's odds per rarity, as stored on CardPack (percent per card), and the bounds the pack editor and the server
+ * share. Odds are shown in the store, so they add up to 100. Client-safe.
+ */
 import { z } from "zod";
 
 /** Each rarity, lowest first, with its CardPack odds column. */
@@ -13,6 +16,21 @@ export const PACK_ODDS_FIELDS = [
 
 export type PackOddsField = (typeof PACK_ODDS_FIELDS)[number][1];
 export type PackOdds = Record<PackOddsField, number>;
+
+/** A new pack's odds: the CardPack column defaults. */
+export const DEFAULT_PACK_ODDS: Readonly<PackOdds> = {
+  commonOdds: 65,
+  uncommonOdds: 25,
+  rareOdds: 7,
+  ultraRareOdds: 2,
+  epicOdds: 0.9,
+  legendaryOdds: 0.1,
+};
+
+export const PACK_MAX_PRICE = 1_000_000;
+export const PACK_MAX_CARDS = 20;
+/** The most a pack's total stock or per-player limit can be (well inside the int4 columns). */
+export const PACK_MAX_LIMIT = 1_000_000;
 
 export function packOddsTotal(odds: PackOdds): number {
   return PACK_ODDS_FIELDS.reduce((sum, [, field]) => sum + odds[field], 0);

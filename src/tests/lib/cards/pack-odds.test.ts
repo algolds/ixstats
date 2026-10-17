@@ -1,6 +1,12 @@
 /** @jest-environment node */
 /** Pack odds are shown in the store, so they must add up to 100%. */
-import { PACK_ODDS_FIELDS, PackOddsSchema, oddsAddUp, packOddsTotal } from "~/lib/cards/pack-odds";
+import {
+  DEFAULT_PACK_ODDS,
+  PACK_ODDS_FIELDS,
+  PackOddsSchema,
+  oddsAddUp,
+  packOddsTotal,
+} from "~/lib/cards/pack-odds";
 
 const seeded = {
   commonOdds: 65,
@@ -42,4 +48,9 @@ it("says why the odds were refused", () => {
   const result = PackOddsSchema.safeParse({ ...seeded, rareOdds: 8 });
   expect(result.success).toBe(false);
   expect(result.error?.issues[0]?.message).toBe("The odds must add up to 100%");
+});
+
+it("gives a new pack the seeded odds, which add up", () => {
+  expect(DEFAULT_PACK_ODDS).toEqual(seeded);
+  expect(PackOddsSchema.safeParse(DEFAULT_PACK_ODDS).success).toBe(true);
 });

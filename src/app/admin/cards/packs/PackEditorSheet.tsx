@@ -4,7 +4,13 @@ import { useState } from "react";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PackType } from "~/lib/cards/enums";
-import { PackOddsSchema } from "~/lib/cards/pack-odds";
+import {
+  DEFAULT_PACK_ODDS,
+  PACK_MAX_CARDS,
+  PACK_MAX_LIMIT,
+  PACK_MAX_PRICE,
+  PackOddsSchema,
+} from "~/lib/cards/pack-odds";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -27,8 +33,6 @@ const GUARANTEE_OPTIONS: readonly (readonly [RarityValue | "none", string])[] = 
   ["none", "None"],
   ...RARITIES.map((rarity) => [rarity, RARITY_LABELS[rarity]] as const),
 ];
-const MAX_PRICE = 1_000_000;
-const MAX_CARDS = 20;
 
 /** A new pack: the seeded odds, off sale until the admin puts it on. */
 const NEW_PACK: PackForm = {
@@ -41,16 +45,7 @@ const NEW_PACK: PackForm = {
   cardCount: 5,
   guaranteedRarity: null,
   isActive: false,
-  odds: {
-    commonOdds: 65,
-    uncommonOdds: 25,
-    rareOdds: 7,
-    ultraRareOdds: 2,
-    epicOdds: 0.9,
-    legendaryOdds: 0.1,
-  },
-  season: null,
-  cardType: null,
+  odds: { ...DEFAULT_PACK_ODDS },
   pool: { realmIds: [], categories: [], cardTypes: [] },
   limitedQuantity: null,
   purchaseLimit: null,
@@ -78,8 +73,6 @@ function packFormOf(pack: Pack | null): PackForm {
       epicOdds: pack.epicOdds,
       legendaryOdds: pack.legendaryOdds,
     },
-    season: pack.season,
-    cardType: pack.cardType,
     pool: pack.pool,
     limitedQuantity: pack.limitedQuantity,
     purchaseLimit: pack.purchaseLimit,
@@ -87,18 +80,21 @@ function packFormOf(pack: Pack | null): PackForm {
   };
 }
 
-const isCount = (value: number, max = Number.MAX_SAFE_INTEGER) =>
+const isCount = (value: number, max: number) =>
   Number.isInteger(value) && value >= 1 && value <= max;
+const range = (max: number) => `1 to ${max.toLocaleString("en")}`;
 
 /** Why the pack cannot be saved yet, or null. The server checks the same rules; this says which one. */
 function saveBlocker(form: PackForm): string | null {
   if (form.name.trim() === "") return "Give the pack a name.";
   if (!form.packType) return "Choose the pack's kind.";
-  if (!isCount(form.priceCredits, MAX_PRICE))
-    return `Set a whole-number price from 1 to ${MAX_PRICE.toLocaleString("en")} IxC.`;
-  if (!isCount(form.cardCount, MAX_CARDS)) return `A pack holds 1 to ${MAX_CARDS} cards.`;
-  if ([form.limitedQuantity, form.purchaseLimit].some((limit) => limit !== null && !isCount(limit)))
-    return "Total stock and the per-player limit are blank or a whole number of at least 1.";
+  if (!isCount(form.priceCredits, PACK_MAX_PRICE))
+    return `Set a whole-number price from ${range(PACK_MAX_PRICE)} IxC.`;
+  if (!isCount(form.cardCount, PACK_MAX_CARDS))
+    return `A pack holds ${range(PACK_MAX_CARDS)} cards.`;
+  const limits = [form.limitedQuantity, form.purchaseLimit];
+  if (limits.some((limit) => limit !== null && !isCount(limit, PACK_MAX_LIMIT)))
+    return `Total stock and the per-player limit are blank or a whole number from ${range(PACK_MAX_LIMIT)}.`;
   if (!PackOddsSchema.safeParse(form.odds).success)
     return "Each rarity's odds are 0 to 100%, adding up to 100%.";
   return null;
@@ -119,6 +115,8 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
   const notify = useNotify();
   const utils = api.useUtils();
   const [form, setForm] = useState<PackForm>(() => packFormOf(pack));
+  // The pack's own type and season narrow the preview; the editor shows them but never saves them
+  const scope = { cardType: pack?.cardType ?? null, season: pack?.season ?? null };
   const save = api.cards.admin.packs.save.useMutation({
     onSuccess: () => {
       notify.success("Pack saved");
@@ -171,7 +169,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
                 id="pack-price"
                 type="number"
                 min={1}
-                max={MAX_PRICE}
+                max={PACK_MAX_PRICE}
                 step={1}
                 value={form.priceCredits}
                 onChange={(event) => set("priceCredits", Number(event.target.value))}
@@ -184,7 +182,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
                 id="pack-count"
                 type="number"
                 min={1}
-                max={MAX_CARDS}
+                max={PACK_MAX_CARDS}
                 step={1}
                 value={form.cardCount}
                 onChange={(event) => set("cardCount", Number(event.target.value))}
@@ -237,8 +235,9 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
             onOddsChange={(odds) => set("odds", odds)}
             pool={form.pool}
             onPoolChange={(pool) => set("pool", pool)}
-            cardType={form.cardType}
-            season={form.season}
+            cardType={scope.cardType}
+            season={scope.season}
+            guaranteedRarity={form.guaranteedRarity}
           />
 
           <fieldset className="space-y-3">
@@ -250,6 +249,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
                   id="pack-stock"
                   type="number"
                   min={1}
+                  max={PACK_MAX_LIMIT}
                   step={1}
                   placeholder="Unlimited"
                   value={form.limitedQuantity ?? ""}
@@ -263,6 +263,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
                   id="pack-limit"
                   type="number"
                   min={1}
+                  max={PACK_MAX_LIMIT}
                   step={1}
                   placeholder="No limit"
                   value={form.purchaseLimit ?? ""}

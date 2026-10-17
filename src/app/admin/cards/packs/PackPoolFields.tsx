@@ -22,6 +22,7 @@ import {
   CARD_TYPE_LABELS,
   RARITY_LABELS,
   type CardTypeValue,
+  type RarityValue,
 } from "../shared/card-labels";
 
 type Pool = RouterInputs["cards"]["admin"]["packs"]["save"]["pool"];
@@ -44,7 +45,10 @@ interface PoolTogglesProps<T extends string> {
   onChange: (value: T[]) => void;
 }
 
-/** One multi-select pool filter; the chosen values keep the options' order. */
+/**
+ * One multi-select pool filter; the chosen values keep the options' order. Stored values the list does not show (a
+ * realm missing from the list, a type that never drops) stay through every toggle, so a save never widens the pool.
+ */
 function PoolToggles<T extends string>({
   label,
   none,
@@ -53,6 +57,8 @@ function PoolToggles<T extends string>({
   onChange,
 }: PoolTogglesProps<T>) {
   const id = useId();
+  const listed = options.map(([option]) => option);
+  const unlisted = value.filter((item) => !listed.includes(item));
   return (
     <div className="space-y-2">
       <p id={id} className="text-subhead text-label">
@@ -65,7 +71,7 @@ function PoolToggles<T extends string>({
         aria-labelledby={id}
         value={[...value]}
         onValueChange={(next) =>
-          onChange(options.map(([option]) => option).filter((o) => next.includes(o)))
+          onChange([...listed.filter((option) => next.includes(option)), ...unlisted])
         }
       >
         {options.map(([option, optionLabel]) => (
@@ -74,6 +80,11 @@ function PoolToggles<T extends string>({
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+      {unlisted.length > 0 && (
+        <p className="text-footnote text-label-secondary">
+          {`Also keeps ${unlisted.length} stored ${unlisted.length === 1 ? "value" : "values"} not listed here.`}
+        </p>
+      )}
     </div>
   );
 }
@@ -85,8 +96,18 @@ function packScopeNote(cardType: CardTypeValue | null, season: number | null): s
   return `This pack draws only ${cards}${season ? ` from season ${season}` : ""}.`;
 }
 
-function PoolPreview({ preview }: { preview: Preview }) {
+function PoolPreview({
+  preview,
+  guaranteedRarity,
+}: {
+  preview: Preview;
+  guaranteedRarity: RarityValue | null;
+}) {
   const fallsBack = preview.byRarity.some((row) => row.fallsBack);
+  // The guaranteed slot draws from its own tier, so a tier with no cards cannot honour it
+  const guaranteeEmpty = preview.byRarity.some(
+    (row) => row.rarity === guaranteedRarity && row.count === 0
+  );
   return (
     <div className="space-y-2">
       <p className="text-footnote text-label-secondary">
@@ -103,13 +124,19 @@ function PoolPreview({ preview }: { preview: Preview }) {
       </ul>
       {fallsBack && (
         <p className="text-footnote text-label-secondary">
-          A rarity with odds but no cards draws from the nearest rarity that has some.
+          A rarity with odds but no cards draws from the next rarity down that has cards, or up when
+          none below do.
+        </p>
+      )}
+      {guaranteeEmpty && guaranteedRarity && (
+        <p className="text-footnote text-warning-ink">
+          {`No ${RARITY_LABELS[guaranteedRarity]} cards are in this pool, so the guaranteed card draws another rarity.`}
         </p>
       )}
       {preview.samples.length === 0 ? (
         <p className="text-footnote text-label-secondary">No cards match this pool.</p>
       ) : (
-        <ul aria-label="Newest cards in the pool" className="text-footnote space-y-1">
+        <ul aria-label="Some cards in the pool" className="text-footnote space-y-1">
           {preview.samples.map((card) => (
             <li key={card.id}>
               <span className="text-label">{card.title}</span>{" "}
@@ -129,8 +156,10 @@ interface PackPoolFieldsProps {
   onOddsChange: (odds: PackOdds) => void;
   pool: Pool;
   onPoolChange: (pool: Pool) => void;
+  /** The pack's own type and season: read-only here, they narrow the preview. */
   cardType: CardTypeValue | null;
   season: number | null;
+  guaranteedRarity: RarityValue | null;
 }
 
 export function PackPoolFields({
@@ -140,6 +169,7 @@ export function PackPoolFields({
   onPoolChange,
   cardType,
   season,
+  guaranteedRarity,
 }: PackPoolFieldsProps) {
   const [previewing, setPreviewing] = useState(false);
   const realms = api.cards.admin.overview.realms.useQuery();
@@ -151,7 +181,6 @@ export function PackPoolFields({
   );
   const balanced = oddsAddUp(odds);
   const scopeNote = packScopeNote(cardType, season);
-  const realmOptions = (realms.data ?? []).map((realm) => [realm.id, realm.name] as const);
 
   return (
     <div className="space-y-6">
@@ -189,13 +218,21 @@ export function PackPoolFields({
       <fieldset className="space-y-4">
         <legend className="text-headline text-label">Pool</legend>
         {scopeNote && <p className="text-footnote text-label-secondary">{scopeNote}</p>}
-        <PoolToggles
-          label="Realms"
-          none="every realm"
-          options={realmOptions}
-          value={pool.realmIds}
-          onChange={(realmIds) => onPoolChange({ ...pool, realmIds })}
-        />
+        {realms.data ? (
+          <PoolToggles
+            label="Realms"
+            none="every realm"
+            options={realms.data.map((realm) => [realm.id, realm.name] as const)}
+            value={pool.realmIds}
+            onChange={(realmIds) => onPoolChange({ ...pool, realmIds })}
+          />
+        ) : (
+          <p className="text-footnote text-label-secondary">
+            {realms.isError
+              ? "The realms did not load. Reopen the pack to try again."
+              : "Loading realms"}
+          </p>
+        )}
         <PoolToggles
           label="Types"
           none="every type"
@@ -226,7 +263,9 @@ export function PackPoolFields({
         {previewing && !preview.data && preview.isFetching && (
           <p className="text-footnote text-label-secondary">Counting the pool</p>
         )}
-        {previewing && preview.data && <PoolPreview preview={preview.data} />}
+        {previewing && preview.data && (
+          <PoolPreview preview={preview.data} guaranteedRarity={guaranteedRarity} />
+        )}
       </div>
     </div>
   );

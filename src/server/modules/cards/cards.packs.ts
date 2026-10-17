@@ -3,13 +3,19 @@
  * category; a guaranteed rarity that can be cleared; limits and expiry; and a preview of the approved cards the pack
  * draws from.
  */
-import { CardRarity, CardType, PackType, type Prisma, type PrismaClient } from "@prisma/client";
+import { CardRarity, CardType, PackType, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { LoreCategory } from "~/lib/cards/category-enums";
-import { isJsonObject } from "~/lib/cards/ns-facts";
-import { PACK_ODDS_FIELDS, PackOddsSchema, type PackOdds } from "~/lib/cards/pack-odds";
-import { packPoolWhere, packThemePool } from "~/lib/cards/pack-service";
+import {
+  PACK_MAX_CARDS,
+  PACK_MAX_LIMIT,
+  PACK_MAX_PRICE,
+  PACK_ODDS_FIELDS,
+  PackOddsSchema,
+  type PackOdds,
+} from "~/lib/cards/pack-odds";
+import { mergePackTheme, packPoolWhere, packThemePool } from "~/lib/cards/pack-service";
 import { MAX_CARD_SEASON } from "~/lib/cards/season";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 
@@ -22,24 +28,40 @@ export type PackPool = z.infer<typeof PackPoolSchema>;
 
 export const PackSeasonSchema = z.number().int().min(1).max(MAX_CARD_SEASON).nullable();
 
-export const PackEditorSchema = z.object({
-  id: z.string().min(1).optional(),
-  name: z.string().trim().min(1).max(100),
-  description: z.string().trim().max(500).nullable(),
-  artwork: z.string().trim().max(500).nullable(),
-  packType: z.nativeEnum(PackType),
-  priceCredits: z.number().int().positive().max(1_000_000),
-  cardCount: z.number().int().min(1).max(20),
-  guaranteedRarity: z.nativeEnum(CardRarity).nullable(),
-  isActive: z.boolean(),
-  odds: PackOddsSchema,
-  season: PackSeasonSchema,
-  cardType: z.nativeEnum(CardType).nullable(),
-  pool: PackPoolSchema,
-  limitedQuantity: z.number().int().positive().nullable(),
-  purchaseLimit: z.number().int().positive().nullable(),
-  expiresAt: z.date().nullable(),
-});
+/** A whole number from 1 to `max`. Every failure reads `message`, so the admin's toast is one sentence. */
+const wholeNumber = (max: number, message: string) =>
+  z.number().int(message).min(1, message).max(max, message);
+const LIMIT_RANGE = `a whole number from 1 to ${PACK_MAX_LIMIT.toLocaleString("en")}`;
+
+export const PackEditorSchema = z
+  .object({
+    id: z.string().min(1).optional(),
+    name: z.string().trim().min(1).max(100),
+    description: z.string().trim().max(500).nullable(),
+    artwork: z.string().trim().max(500).nullable(),
+    packType: z.nativeEnum(PackType),
+    priceCredits: wholeNumber(
+      PACK_MAX_PRICE,
+      `The price is a whole number from 1 to ${PACK_MAX_PRICE.toLocaleString("en")} IxC`
+    ),
+    cardCount: wholeNumber(PACK_MAX_CARDS, `A pack holds 1 to ${PACK_MAX_CARDS} cards`),
+    guaranteedRarity: z.nativeEnum(CardRarity).nullable(),
+    isActive: z.boolean(),
+    odds: PackOddsSchema,
+    pool: PackPoolSchema,
+    limitedQuantity: wholeNumber(
+      PACK_MAX_LIMIT,
+      `Total stock is blank or ${LIMIT_RANGE}`
+    ).nullable(),
+    purchaseLimit: wholeNumber(
+      PACK_MAX_LIMIT,
+      `The per-player limit is blank or ${LIMIT_RANGE}`
+    ).nullable(),
+    expiresAt: z.date().nullable(),
+  })
+  // The pack's own type and season retarget its pool, and the editor has no field for them, so a save refuses
+  // them rather than writing what a client sent: a create takes the column defaults, an update leaves them alone.
+  .strict();
 export type PackEditorInput = z.infer<typeof PackEditorSchema>;
 
 /** Every pack, on-sale first, with how many were issued and the pool the editor shows. */
@@ -49,16 +71,6 @@ export async function listPacks(db: PrismaClient) {
     include: { _count: { select: { UserPack: true } } },
   });
   return packs.map((pack) => ({ ...pack, pool: packThemePool(pack.themeFilter) }));
-}
-
-/** The stored theme with the editor's pool keys replaced; keys the editor does not show are kept. */
-function mergedTheme(existing: Prisma.JsonValue | null, pool: PackPool): Prisma.InputJsonObject {
-  return {
-    ...(isJsonObject(existing) ? existing : {}),
-    realmIds: pool.realmIds,
-    categories: pool.categories,
-    cardTypes: pool.cardTypes,
-  };
 }
 
 const packGone = () => new TRPCError({ code: "NOT_FOUND", message: "That pack no longer exists." });
@@ -87,9 +99,7 @@ export async function savePack(
       guaranteedRarity: input.guaranteedRarity,
       isActive: input.isActive,
       ...input.odds,
-      season: input.season,
-      cardType: input.cardType,
-      themeFilter: mergedTheme(existing?.themeFilter ?? null, input.pool),
+      themeFilter: mergePackTheme(existing?.themeFilter ?? null, input.pool),
       limitedQuantity: input.limitedQuantity,
       purchaseLimit: input.purchaseLimit,
       expiresAt: input.expiresAt,
@@ -137,7 +147,10 @@ export async function setPackActive(
   });
 }
 
-/** How many approved cards of each rarity the pack would draw from, and a few of the newest. */
+/**
+ * How many approved cards of each rarity the pack would draw from, and some of them. The sample is unordered, so the
+ * read stops after 12 index rows instead of sorting the whole pool.
+ */
 export async function previewPackPool(
   db: PrismaClient,
   input: { cardType: CardType | null; season: number | null; pool: PackPool; odds: PackOdds }
@@ -151,7 +164,6 @@ export async function previewPackPool(
     db.card.groupBy({ by: ["rarity"], where, _count: { _all: true } }),
     db.card.findMany({
       where,
-      orderBy: { createdAt: "desc" },
       take: 12,
       select: { id: true, title: true, rarity: true, realm: { select: { name: true } } },
     }),
@@ -159,7 +171,7 @@ export async function previewPackPool(
   const byRarity = new Map(counts.map((row) => [row.rarity, row._count._all]));
   return {
     total: counts.reduce((sum, row) => sum + row._count._all, 0),
-    // A rarity with odds but no card falls back to a neighbouring tier when the pack opens
+    // A rarity with odds but no card falls back when the pack opens: lower tiers first, then higher
     byRarity: PACK_ODDS_FIELDS.map(([rarity, field]) => {
       const count = byRarity.get(rarity) ?? 0;
       return {

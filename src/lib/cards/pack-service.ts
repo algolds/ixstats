@@ -90,6 +90,31 @@ export function packThemePool(themeFilter: Prisma.JsonValue | null): {
   };
 }
 
+/** The stored values outside the enum, which the pack editor cannot carry. */
+function unknownValues(value: Prisma.JsonValue | undefined, allowed: readonly string[]): string[] {
+  return stringList(value).filter((item) => !allowed.includes(item));
+}
+
+/**
+ * The stored theme with the editor's pool written over it. Keys the editor does not show stay, and so do stored
+ * categories and types outside the enums: a theme naming only those matches nothing, so dropping them would widen it.
+ */
+export function mergePackTheme(
+  existing: Prisma.JsonValue | null,
+  pool: { realmIds: readonly string[]; categories: readonly string[]; cardTypes: readonly string[] }
+): Prisma.InputJsonObject {
+  const stored: Prisma.JsonObject = isJsonObject(existing) ? existing : {};
+  return {
+    ...stored,
+    realmIds: [...pool.realmIds],
+    categories: [
+      ...pool.categories,
+      ...unknownValues(stored.categories, Object.values(LoreCategory)),
+    ],
+    cardTypes: [...pool.cardTypes, ...unknownValues(stored.cardTypes, Object.values(CardType))],
+  };
+}
+
 /**
  * Weighted random selection based on rarity odds
  */

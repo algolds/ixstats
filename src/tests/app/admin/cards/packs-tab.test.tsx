@@ -21,14 +21,17 @@ jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
 
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { PacksTab } from "~/app/admin/cards/packs";
+
+type PackRow = RouterOutputs["cards"]["admin"]["packs"]["list"][number];
+type Preview = RouterOutputs["cards"]["admin"]["packs"]["preview"];
 
 const packs = api.cards.admin.packs;
 const save = jest.fn();
 const setActive = jest.fn();
 
-const booster = {
+const booster: PackRow = {
   id: "pack_1",
   name: "IIWiki booster",
   description: null,
@@ -51,10 +54,12 @@ const booster = {
   limitedQuantity: null,
   purchaseLimit: null,
   expiresAt: null,
+  createdAt: new Date(0),
+  updatedAt: new Date(0),
   _count: { UserPack: 12 },
 };
 
-const preview = {
+const preview: Preview = {
   total: 43,
   byRarity: [
     { rarity: "COMMON", count: 40, odds: 65, fallsBack: false },
@@ -67,7 +72,7 @@ const preview = {
   samples: [{ id: "c1", title: "Elm", rarity: "RARE", realmName: "IIWiki" }],
 };
 
-const serve = (list: { data?: unknown[]; isError?: boolean }, previewData?: typeof preview) => {
+const serve = (list: { data?: PackRow[]; isError?: boolean }, previewData?: Preview) => {
   jest.mocked(api.useUtils).mockReturnValue({
     cards: { admin: { packs: { list: { invalidate: jest.fn() } } } },
   } as never);
@@ -105,6 +110,8 @@ describe("PacksTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear guarantee" }));
     fireEvent.click(screen.getByRole("button", { name: "History" }));
     fireEvent.click(saveButton());
+    expect(save.mock.calls[0]?.[0]).not.toHaveProperty("season");
+    expect(save.mock.calls[0]?.[0]).not.toHaveProperty("cardType");
     expect(save).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "pack_1",
@@ -161,6 +168,28 @@ describe("PacksTab", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps pool values the editor does not list when other values are toggled", () => {
+    serve({
+      data: [
+        {
+          ...booster,
+          pool: { realmIds: ["iiwiki", "gone_realm"], categories: [], cardTypes: ["SPECIAL"] },
+        },
+      ],
+    });
+    render(<PacksTab />);
+    openEditor();
+    expect(screen.getAllByText("Also keeps 1 stored value not listed here.")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "IIWiki" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lore" }));
+    fireEvent.click(saveButton());
+    expect(save.mock.calls[0]?.[0].pool).toEqual({
+      realmIds: ["gone_realm"],
+      categories: [],
+      cardTypes: ["LORE", "SPECIAL"],
+    });
+  });
+
   it("previews the pool on request and flags rarities with odds but no cards", () => {
     serve({ data: [booster] }, preview);
     render(<PacksTab />);
@@ -176,7 +205,26 @@ describe("PacksTab", () => {
     expect(screen.getByText("43 approved cards in the pool")).toBeInTheDocument();
     expect(screen.getByText("Uncommon: 0, none to draw")).toBeInTheDocument();
     expect(screen.getByText("Common: 40")).toBeInTheDocument();
-    expect(screen.getByText("Elm")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "A rarity with odds but no cards draws from the next rarity down that has cards, or up when none below do."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Some cards in the pool" })).toHaveTextContent("Elm");
+    // The guaranteed Rare has cards, so nothing warns about it
+    expect(screen.queryByText(/guaranteed card/)).not.toBeInTheDocument();
+  });
+
+  it("warns when the pool has no card of the guaranteed rarity", () => {
+    serve({ data: [{ ...booster, guaranteedRarity: "EPIC" }] }, preview);
+    render(<PacksTab />);
+    openEditor();
+    fireEvent.click(screen.getByRole("button", { name: "Preview the pool" }));
+    expect(
+      screen.getByText(
+        "No Epic cards are in this pool, so the guaranteed card draws another rarity."
+      )
+    ).toBeInTheDocument();
   });
 
   it("starts a new pack with today's default odds and an empty pool", () => {
@@ -195,6 +243,8 @@ describe("PacksTab", () => {
       pool: { realmIds: [], categories: [], cardTypes: [] },
     });
     expect(sent.id).toBeUndefined();
+    expect(sent).not.toHaveProperty("season");
+    expect(sent).not.toHaveProperty("cardType");
   });
 
   it("puts a pack on or off sale from the list", () => {

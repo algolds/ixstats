@@ -2,6 +2,7 @@
 /** The pack editor: what it saves, the guarantee cleared, the pool previewed. */
 import { packThemePool, themeFilterWhere } from "~/lib/cards/pack-service";
 import {
+  PackEditorSchema,
   listPacks,
   previewPackPool,
   savePack,
@@ -31,8 +32,6 @@ const input = (overrides: Partial<PackEditorInput> = {}): PackEditorInput => ({
   guaranteedRarity: null,
   isActive: true,
   odds,
-  season: null,
-  cardType: null,
   pool: { realmIds: ["iiwiki"], categories: ["HISTORY"], cardTypes: [] },
   limitedQuantity: null,
   purchaseLimit: 3,
@@ -55,10 +54,10 @@ describe("packThemePool", () => {
       packThemePool({
         realmIds: ["iiwiki", 4, ""],
         categories: ["HISTORY", "BOGUS"],
-        cardTypes: ["NS", "MYSTERY"],
+        cardTypes: ["NS", "SPECIAL", "MYSTERY"],
         subcategories: ["Treaties"],
       })
-    ).toEqual({ realmIds: ["iiwiki"], categories: ["HISTORY"], cardTypes: ["NS"] });
+    ).toEqual({ realmIds: ["iiwiki"], categories: ["HISTORY"], cardTypes: ["NS", "SPECIAL"] });
   });
 
   it("is empty for a pack without a theme", () => {
@@ -87,8 +86,28 @@ describe("listPacks", () => {
   });
 });
 
+describe("PackEditorSchema", () => {
+  it("refuses a season or card type, which the editor does not set", () => {
+    expect(PackEditorSchema.safeParse(input()).success).toBe(true);
+    expect(PackEditorSchema.safeParse({ ...input(), season: 2 }).success).toBe(false);
+    expect(PackEditorSchema.safeParse({ ...input(), cardType: "NS" }).success).toBe(false);
+  });
+
+  it("caps the stock and the per-player limit, saying why", () => {
+    const tooMany = PackEditorSchema.safeParse(input({ limitedQuantity: 2 ** 31 }));
+    expect(tooMany.error?.issues[0]?.message).toBe(
+      "Total stock is blank or a whole number from 1 to 1,000,000"
+    );
+    const perPlayer = PackEditorSchema.safeParse(input({ purchaseLimit: 0 }));
+    expect(perPlayer.error?.issues[0]?.message).toBe(
+      "The per-player limit is blank or a whole number from 1 to 1,000,000"
+    );
+    expect(PackEditorSchema.safeParse(input({ limitedQuantity: 1_000_000 })).success).toBe(true);
+  });
+});
+
 describe("savePack", () => {
-  it("updates every field, clears the guarantee, and keeps theme keys the editor does not show", async () => {
+  it("updates the editor's fields, clears the guarantee, and keeps theme keys the editor does not show", async () => {
     const db = createMockPrisma();
     db.cardPack.findUnique.mockResolvedValue({
       id: "pack_1",
@@ -121,6 +140,28 @@ describe("savePack", () => {
       }),
     });
     expect(db.$transaction).toHaveBeenCalled();
+    const { data } = db.cardPack.update.mock.calls[0]![0];
+    expect(data).not.toHaveProperty("season");
+    expect(data).not.toHaveProperty("cardType");
+  });
+
+  it("keeps stored categories and types the editor cannot carry, so a legacy theme never widens", async () => {
+    const db = createMockPrisma();
+    db.cardPack.findUnique.mockResolvedValue({
+      id: "pack_1",
+      themeFilter: { categories: ["BOGUS"], cardTypes: ["MYSTERY", "SPECIAL"] },
+    });
+    db.cardPack.update.mockResolvedValue({ id: "pack_1" });
+    await savePack(
+      db as never,
+      actor,
+      input({ pool: { realmIds: [], categories: [], cardTypes: ["SPECIAL"] } })
+    );
+    expect(db.cardPack.update.mock.calls[0]![0].data.themeFilter).toEqual({
+      realmIds: [],
+      categories: ["BOGUS"],
+      cardTypes: ["SPECIAL", "MYSTERY"],
+    });
   });
 
   it("creates a pack when there is no id", async () => {
@@ -230,7 +271,12 @@ describe("previewPackPool", () => {
     const where = db.card.groupBy.mock.calls[0]![0].where;
     expect(JSON.stringify(where)).toContain('"reviewState":"APPROVED"');
     expect(JSON.stringify(where)).toContain('"realmId":{"in":["iiwiki"]}');
-    expect(db.card.findMany.mock.calls[1]![0].where).toBe(where);
+    // The sample is unordered, so Postgres stops after 12 index rows instead of sorting the whole pool
+    expect(db.card.findMany.mock.calls[1]![0]).toEqual({
+      where,
+      take: 12,
+      select: { id: true, title: true, rarity: true, realm: { select: { name: true } } },
+    });
   });
 
   it("does not warn for a rarity the pack never rolls, and keeps the pack's own type and season", async () => {
