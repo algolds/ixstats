@@ -9,6 +9,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { cardsWithVisibleArt, facesFor } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
 import { CARD_FACE_SELECT, toCardFace, toRealmBadge } from "./faces";
+import { likeLiteral } from "~/lib/utils/like-literal";
 
 type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
 
@@ -222,9 +223,6 @@ export async function exploreShelves(
 export const ExploreRegionsQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
 });
-
-/** `value` as the literal part of an ILIKE pattern. */
-const likeLiteral = (value: string): string => value.replace(/[\\%_]/g, "\\$&");
 
 /**
  * NationStates regions with cards, most cards first, for the region filter (spec §2.1: region stays a filter). There
