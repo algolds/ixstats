@@ -21,6 +21,7 @@ import {
   grantUnownedTrophyCards,
   isTrophyCard,
   mintTrophyCards,
+  trophyCardText,
   trophyRarity,
 } from "~/lib/lorewards/trophy-cards";
 
@@ -58,6 +59,8 @@ interface OwnershipRow {
 let entries: EntryRow[];
 let cards: CardRow[];
 let ownerships: OwnershipRow[];
+/** The serials each card's transfer events record (they outlive a voided copy). */
+let trail: Array<{ cardId: string; serialNumber: number }>;
 let links: Map<string, string>;
 /** The authorIds of each page's edits under the queried label, by page title, as the place query groups them. */
 let winningEdits: Map<string, Array<string | null>>;
@@ -146,11 +149,16 @@ function buildDb(): PrismaClient {
     },
     card: {
       findMany: jest.fn(
-        async ({ where }: { where: CardWhere & { CardOwnership?: { none: object } } }) =>
+        async ({
+          where,
+        }: {
+          where: CardWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+        }) =>
           cards.filter(
             (c) =>
               c.lorewardEntryId !== null &&
               inContestPlace(c, where) &&
+              (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
               (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
           )
       ),
@@ -201,6 +209,16 @@ function buildDb(): PrismaClient {
               : o.cardId === where.cardId;
           }).length
       ),
+      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
+        const serials = ownersOf(where.cardId).map((o) => o.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
+      }),
+    },
+    cardTransferEvent: {
+      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
+        const serials = trail.filter((t) => t.cardId === where.cardId).map((t) => t.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
+      }),
     },
     vaultTransaction: { create: credit("vaultTransaction.create") },
     myVault: { update: credit("myVault.update"), upsert: credit("myVault.upsert") },
@@ -219,6 +237,7 @@ beforeEach(() => {
   entries = [entry()];
   cards = [];
   ownerships = [];
+  trail = [];
   links = new Map();
   winningEdits = new Map();
   placeQueries = [];
@@ -256,6 +275,21 @@ describe("trophyRarity", () => {
     expect(trophyRarity("weekly", "runner-up")).toBe("RARE");
     expect(trophyRarity("daily", "winner")).toBe("RARE");
     expect(trophyRarity("daily", "runner-up")).toBe("RARE");
+  });
+});
+
+describe("trophyCardText", () => {
+  it("names the card after the page, or the contest when there is none", () => {
+    expect(trophyCardText("weekly", "2026-10-20", "winner", "Amy", "Elm_Republic")).toEqual({
+      title: "Elm_Republic",
+      description: "Weekly Loreward winner, 2026-10-20. Won by Amy with Elm_Republic.",
+      wikiArticleTitle: "Elm Republic",
+    });
+    expect(trophyCardText("daily", "2026-10-20", "runner-up", "Bee", null)).toEqual({
+      title: "Daily Loreward 2026-10-20",
+      description: "Daily Loreward runner-up, 2026-10-20. Won by Bee.",
+      wikiArticleTitle: null,
+    });
   });
 });
 
@@ -479,6 +513,29 @@ describe("grantUnownedTrophyCards", () => {
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     expect(creditWrites).toEqual([]);
+  });
+
+  it("grants a trophy its place gave up again under its serial, reissued, never a second one", async () => {
+    // An override voided the copy (serial 1 lives on in the trail) and cleared the grant
+    trail.push({ cardId: "c1", serialNumber: 1 });
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+      serialNumber: 1,
+    });
+  });
+
+  it("grants no retired trophy: a voided place waits for an override to fill it again", async () => {
+    cards[0]!.isRetired = true;
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
   });
 });
 
