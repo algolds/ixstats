@@ -157,7 +157,15 @@ describe("cardsActivity", () => {
     expect(db.auditLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          action: { in: [...CARD_AUDIT_ACTIONS, "CARD_DESIGNER_MINT", "CARD_AUTHORS_BACKFILLED"] },
+          action: {
+            in: [
+              ...CARD_AUDIT_ACTIONS,
+              "CARD_DESIGNER_MINT",
+              "CARD_AUTHORS_BACKFILLED",
+              "LORE_CARD_MINT",
+              "LORE_CARDS_RECLASSIFIED",
+            ],
+          },
         },
       })
     );

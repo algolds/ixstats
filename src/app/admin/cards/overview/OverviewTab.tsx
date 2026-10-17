@@ -35,7 +35,7 @@ const figure = (value: number | undefined) => (value === undefined ? "–" : val
 function LoadError({ what }: { what: string }) {
   return (
     <p role="alert" className="text-destructive text-footnote">
-      {what} did not load. Retrying every 30 seconds.
+      {what} did not load. Retrying every {REFRESH_MS / 1000} seconds.
     </p>
   );
 }

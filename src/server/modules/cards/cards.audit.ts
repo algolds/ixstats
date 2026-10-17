@@ -27,8 +27,13 @@ export const CARD_AUDIT_ACTIONS = [
 ] as const;
 export type CardAuditAction = (typeof CARD_AUDIT_ACTIONS)[number];
 
-/** Card actions older code wrote before this trail (the designer mint, the Lore author backfill). */
-const LEGACY_CARD_AUDIT_ACTIONS = ["CARD_DESIGNER_MINT", "CARD_AUTHORS_BACKFILLED"] as const;
+/** Card actions older code wrote before this trail (the designer and Lore mints, the Lore author and type backfills). */
+const LEGACY_CARD_AUDIT_ACTIONS = [
+  "CARD_DESIGNER_MINT",
+  "CARD_AUTHORS_BACKFILLED",
+  "LORE_CARD_MINT",
+  "LORE_CARDS_RECLASSIFIED",
+] as const;
 
 /**
  * Every action the Overview feed reads. An exact list rather than a `CARD_` prefix, because `action IN (...)` uses the
