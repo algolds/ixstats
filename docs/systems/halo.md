@@ -1,6 +1,6 @@
 # 🎯 Halo — Facet UI Contextual Overlay & Command Palette
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-17
 
 **Parent Platform Layer:** Facet UI Design System (`FACET_VERSION = 4` / `HALO_VERSION = 6`)  
 **Subsystems:** Contextual Floating Capsule, `Cmd+K` Command Palette, Unified Notification Tray, Plugin Registry  
@@ -97,7 +97,7 @@ Halo features a command palette accessible via `⌘K` or by tapping the search i
 ### 1. Multi-Domain Catalog (`src/components/halo/halo-registry.ts`)
 The registry provides comprehensive coverage across eight platform domains:
 - **Statecraft**: Executive Command (`/mycountry`), Directives (`/mycountry/executive`), Policy Studio (`/mycountry/editor`), Diplomacy (`/mycountry/diplomacy`), Defense (`/mycountry/defense`), Intelligence (`/mycountry/intelligence`), Fiscal Policy (`/mycountry/economy`), Politics (`/mycountry/politics`), and Map Editor (`/mycountry/map-editor`).
-- **Vault**: Trading Cards (`/vault/cards`), Pack Openings (`/vault/store?tab=store`), Marketplace and auctions (`/vault/store`), Lore Gallery (`/vault/lore-gallery`), and NS Decks (`/vault/ns-deck`).
+- **Vault**: IxVault cards (`/vault/cards/mine`), Open card packs (`/vault/store?view=packs`), Card market (`/vault/cards/market`), Explore cards (`/vault/cards/explore`) and Import NationStates cards (`/vault/import`).
 - **Geography**: Interactive Map (`/maps`), Country Directory (`/countries`), Leaderboards (`/leaderboards`), and Nation Builder (`/builder`).
 - **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
 - **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum (the forum home), New Thread (`/thinkpages/c/general/new`), and Achievements (`/vault/achievements`).

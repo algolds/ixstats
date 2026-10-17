@@ -11,9 +11,9 @@ The NationStates (NS) integration allows users to import their existing NationSt
 ## Architecture & Features
 
 - **Card Dump Sync**: Admin-triggered region syncs (`cards.admin.nationstates.*`, `/admin/cards` → Imports → NationStates, `src/server/modules/cards/cards.ns-sync.ts`) that ingest the per-season Trading Cards dump (`cardlist_S{season}.xml.gz`, published once per season, not daily) via `processRegionCardsFromDump()` in `src/lib/nationstates/sync-processor.ts`. A sync writes its progress to its `SyncLog` after every card, so it pauses, resumes and stops; every card it creates waits in Curation. There is no scheduled sync job.
-- **Collection Import**: Verify NS nation ownership (`nsImport.requestVerification` → `checkVerification`, backed by `NSVerification`) and import deck cards into `CardOwnership` (`nsImport.importDeck`, `/vault/import`); imports earn an `EARN_BONUS` of 50 IxC per newly imported card (cap 5,000), paid once per nation whichever account imports it (`ns-import/decks.ts`).
+- **Collection Import**: Verify NS nation ownership (`nsImport.requestVerification` → `checkVerification`, backed by `NSVerification`) and import deck cards into `CardOwnership` (`nsImport.importDeck`, `/vault/import`, which asks for consent before the import); imports earn an `EARN_BONUS` of 50 IxC per newly imported card (cap 5,000), paid once per nation whichever account imports it (`ns-import/decks.ts`).
 - **Streaming Image Proxy (`/api/proxy-ns-image`)**: Server-side proxy restricted to nationstates.net / Wikimedia hosts, 24h cache, and a placeholder redirect when NS blocks the request — no persistent binary disk writes.
-- **Attribution Footer (`NationStatesAttribution.tsx`)**: Pinned footer inside `CardDetailsModal` displaying clear fan-site attribution copy and a takedown trigger.
+- **Attribution (`NationStatesAttribution.tsx`)**: the card sheet's About section shows NationStates' fan-site credit and the "Verify & request takedown" button; the card back carries the shorter credit (`NationStatesDataCredit`) beside the NS provenance line. NS cards are a realm shelf in the cards hub's Explore (`/vault/cards/explore?realm=nationstates`), and a player's own are in Mine.
 - **Self-Service Takedown Verification**: Nation owners verify identity via HMAC-MD5 token to hide their card's art at once through the one Compliance queue (`selfServiceTakedown`, `src/server/modules/cards/cards.compliance.ts`); an admin's restore puts the art back.
 - **Rate Limit Compliance**: `nsApiClient` (`src/lib/nationstates/api-client.ts`) spaces all outgoing requests by at least 800ms (NS limit: 50 requests / 30s); dump downloads retry with backoff (`withRetry`).
 
@@ -53,7 +53,7 @@ sequenceDiagram
 - `src/lib/nationstates/` (`api-client.ts`, `sync-processor.ts`, `import-service.ts`)
 - `src/app/admin/cards/imports/ns/` – Imports → NationStates admin
 - `src/app/api/proxy-ns-image/route.ts` – Image proxy
-- `src/components/cards/display/NationStatesAttribution.tsx` – Attribution footer
+- `src/components/cards/display/NationStatesAttribution.tsx` – NationStates credit and takedown button (the sheet), and `NationStatesDataCredit` (the card back)
 - `src/components/cards/display/CardTakedownVerificationModal.tsx` – Takedown dialog (also `src/app/settings/_components/modals/NSTakedownModal.tsx`)
 - `src/components/cards/display/nationstates-api.md` – Reference copy of the upstream NationStates API documentation
 

@@ -55,7 +55,7 @@ You can only pin ribbons for achievements you've unlocked.
 
 Next to your ribbons, the showcase has:
 
-- **Collection highlight**: your three most valuable cards, with a link to view all your cards.
+- **Top cards** (on the **Collection** tab): your pinned showcase when it is public, otherwise your six most valuable cards. Select a card to open it.
 - **Lorewards standing**: your rank, score, laurels and best streak. See [Lorewards](/help/wiki/lorewards).
 
 Each panel says so when there's nothing to show yet.
@@ -69,7 +69,7 @@ The [Achievements](/vault/achievements) page has a **Showcase** tab. Its **Rare 
 On the settings side of your passport (**Edit passport**):
 
 - **Achievements** off hides your achievements and ribbons from your passport and your nations' profiles.
-- **IxCredits** off hides your collection highlight, along with the rest of your Vault.
+- **IxCredits** off hides your top cards, along with the rest of your Vault.
 - **Civic accolades** off hides your Lorewards standing.
 
 Hidden sections are hidden from everyone, including you, so you see what visitors see.

@@ -119,7 +119,6 @@ See §1 above (password rotation, CSP).
 |---|---|---|
 | Vexel attach-to-country | Labs › Vexel | Attach now refuses a design with no image instead of blanking the coat of arms; no PNG render exists, so attach always refuses ([vexel.md](../systems/vexel.md)) |
 | `db.ts` runs `syncAchievements` on import | Platform | Fires whenever the module loads on the server outside tests and read-only mode, including in scripts |
-| Auctions filter offers "Mythic" | Vault | Not a `CardRarity` value (`VaultAuctionsTab.tsx:225`) |
 | Diplomatic missions and embassy upgrades removed | MyCountry › Diplomacy | `startMission`, `completeMission`, `upgradeEmbassy`, `allocateBudget` deleted (plan 312); playable missions are M4 |
 
 ### PF§3 Partly built — finish the documented scope
@@ -193,7 +192,7 @@ See §1 above (password rotation, CSP).
 **Vault & cards**
 - Ribbons: Ribbons tab and community ribbons ([ribbons spec](../specs/2026-08-10-achievements-ribbons-design.md) §2, §3.2)
 - Lore-first schema cleanup: unique slug, `@@unique([wikiArticleTitle, wikiSource])`, drop stats/cardType, `CardRarity` enum ([ixcards spec](../specs/2026-08-13-ixcards-lore-first-rebuild.md) Part III); 40/25/20/10/4/1 rarity distribution (Part IV)
-- Vault reorder (Lore Gallery primary, category filters); category-themed packs; seasons
+- Category-themed and realm packs; seasons (cards refresh Phases 4 and 5; the Vault reorder shipped as the cards hub, whose Explore tab has the category filters)
 - Real-time card updates over WebSocket
 - Premium: payments/checkout (D4), tiered rate limits, export quotas, history limits, ThinkPages Pro tiers ([premium-features.md](../reference/premium-features.md))
 

@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 1030 Endpoints)
+### Live tRPC API Inventory (77 Routers, 1022 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -20,9 +20,9 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.builderDraft`** | 1 | 2 | 0 | **3** | `src/server/api/routers/builderDraft.ts` |
 | **`api.cache`** | 1 | 0 | 0 | **1** | `src/server/api/routers/cache.ts` |
 | **`api.cardImages`** | 2 | 2 | 0 | **4** | `src/server/api/routers/cardImages.ts` |
-| **`api.cardMarket`** | 7 | 4 | 0 | **11** | `src/server/api/routers/card-market/index.ts` |
+| **`api.cardMarket`** | 6 | 4 | 0 | **10** | `src/server/api/routers/card-market/index.ts` |
 | **`api.cardPacks`** | 2 | 2 | 0 | **4** | `src/server/api/routers/card-packs/index.ts` |
-| **`api.cards`** | 9 | 4 | 0 | **13** | `src/server/api/routers/cards/index.ts` |
+| **`api.cards`** | 12 | 7 | 0 | **19** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
@@ -54,7 +54,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
 | **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
-| **`api.loreCards`** | 2 | 0 | 0 | **2** | `src/server/api/routers/lore-cards/index.ts` |
+| **`api.loreCards`** | 0 | 0 | 0 | **0** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
@@ -83,13 +83,13 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
-| **`api.vault`** | 22 | 18 | 0 | **40** | `src/server/api/routers/vault/index.ts` |
+| **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **492** | **524** | **0** | **1030** | **77 registered namespaces** |
+| **TOTALS** | **487** | **521** | **0** | **1022** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
-> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 13, and its 60 `cards.admin.*` procedures are listed under [cards Router](#cards-router-73-procedures).
+> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 19, and its 60 `cards.admin.*` procedures are listed under [cards Router](#cards-router-79-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.
 
 ---
 
@@ -613,12 +613,12 @@ api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
 
 ## IxVault (Cards & Credits)
 
-### vault Router (39 procedures)
+### vault Router (29 procedures)
 
 Balance, level and transaction reads use the signed-in user (no `userId` input).
 
 ```typescript
-// Queries (21)
+// Queries (17)
 api.vault.getBalance.useQuery()
 api.vault.getVaultLevel.useQuery()
 api.vault.getTodayEarnings.useQuery()
@@ -627,11 +627,7 @@ api.vault.getTransactions.useQuery({ limit?, offset?, type?, direction? }) // di
 api.vault.getPurchasedItems.useQuery()
 api.vault.listStoreItems.useQuery()
 api.vault.getEquippedCosmetics.useQuery()
-api.vault.getMyCollections.useQuery({ limit?, offset? })
-api.vault.getPublicCollections.useQuery({ limit?, offset?, sortBy? })
-api.vault.getCollectionLeaderboard.useQuery({ category, limit? })
-api.vault.getCollectionComments.useQuery({ collectionId, limit?, offset? })
-api.vault.getCollectionDetails.useQuery({ collectionId })
+api.vault.getEquippedCosmeticsFor.useQuery({ userIds? }) // public, rate limited: other players' equipped cosmetics
 api.vault.adminListUserTransactions.useQuery({ userId, limit?, offset?, type? })
 api.vault.adminListVaults.useQuery({ search?, limit?, offset? })
 api.vault.adminGetVaultConfig.useQuery()
@@ -641,19 +637,13 @@ api.vault.adminGetPurchaseLogs.useQuery()
 api.vault.adminGetPurchasedItems.useQuery({ userId })
 api.vault.adminGetEquippedCosmetics.useQuery({ userId })
 
-// Mutations (18)
-api.vault.spendCredits.useMutation() // { amount, type, source, metadata? }
-api.vault.claimDailyBonus.useMutation()
-api.vault.claimCombinedDailyClaim.useMutation() // { choice }
-api.vault.adminAdjustStreak.useMutation() // { targetUserId, delta }
+// Mutations (12)
+api.vault.purchaseStoreItem.useMutation() // { itemId }
 api.vault.toggleEquipCosmetic.useMutation() // { itemId }
-api.vault.createCollection.useMutation() // { name, description?, isPublic? }
-api.vault.updateCollection.useMutation() // { collectionId, name?, description?, isPublic? }
-api.vault.deleteCollection.useMutation() // { collectionId }
-api.vault.likeCollection.useMutation() // { collectionId, unlike? }
-api.vault.addCollectionComment.useMutation() // { collectionId, content }
+api.vault.claimCombinedDailyClaim.useMutation() // { choice: "CREDITS" | "CARD" }; a card claim returns the copy's face
+api.vault.adminAdjustStreak.useMutation() // { targetUserId, delta }
 api.vault.adminAdjustCredits.useMutation() // { targetUserId, amount, type?, source, reason, sendNotification? }
-api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap, xpPerLevel, maxStreakBonus, premiumMultiplier, priceGoldenProfileGlow, priceNeonCyberFrame, priceEliteChatBadge, priceLoreRequestToken, priceCardCapacity, pricePassiveYieldBoost, isEarningEnabled, isTradingEnabled, isAuctionsEnabled, isStoreEnabled, isCraftingEnabled, isPacksEnabled, isMaintenanceMode, exemptStaffFromLimit }
+api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap, xpPerLevel, premiumMultiplier, isEarningEnabled, isTradingEnabled, isAuctionsEnabled, isStoreEnabled, isPacksEnabled, isMaintenanceMode, exemptStaffFromLimit, isExchangeEnabled }
 api.vault.adminCreateStoreItem.useMutation() // { name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, effects? }
 api.vault.adminUpdateStoreItem.useMutation() // { id, name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, isActive?, effects? }
 api.vault.adminDeleteStoreItem.useMutation() // { id, hardDelete? }
@@ -662,28 +652,37 @@ api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (73 procedures)
+Showcases replaced the `vault.*` collection procedures, and the daily reward is `claimCombinedDailyClaim` only (cards refresh Phase 3; see [cards.md](../systems/cards.md#removed-in-the-cards-refresh-2026-10-15)).
 
-13 player procedures at `api.cards.*`, and 60 admin procedures under `api.cards.admin.<tab>.*`, one sub-router per
+### cards Router (79 procedures)
+
+19 player procedures at `api.cards.*`, and 60 admin procedures under `api.cards.admin.<tab>.*`, one sub-router per
 `/admin/cards` tab plus NationStates imports and the player tools (all `adminProcedure`; the inventory above counts
-only the 13). Wiki and Commons imports are queued from `api.cards.admin.imports.*`.
+only the 19). Wiki and Commons imports are queued from `api.cards.admin.imports.*`. Every card face these return
+follows the silhouette rules ([cards.md](../systems/cards.md#silhouettes)).
 
 ```typescript
-// Queries (9)
+// Queries (12)
+api.cards.listMine.useQuery({ realmId?, rarities?, finishes?, types?, categories?, duplicates?, search?, sort?, cursor?, limit? }) // Mine
+api.cards.exploreShelves.useQuery() // Explore's realm shelves
+api.cards.exploreGrid.useQuery({ realmId?, rarities?, types?, categories?, region?, season?, owned?, search?, sort?, cursor?, limit? })
+api.cards.exploreRegions.useQuery({ search? }) // NationStates regions with cards, at most 60
+api.cards.getSheet.useQuery({ cardId, from? }) // the card sheet; from: "showcase.<id>" | "offer.<id>" | "holder.<handle>"
+api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource }) // public
+api.cards.listMyShowcases.useQuery()
+api.cards.getShowcase.useQuery({ showcaseId })
+api.cards.getMyDisplay.useQuery() // the pinned public showcase, else the top cards
 api.cards.getMyCards.useQuery({ sortBy?, filterRarity? })
-api.cards.getMyTopCards.useQuery({ limit? })
-api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? })
-api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, cteFilter?, sortBy? })
-api.cards.getNSLibraryStats.useQuery()
-api.cards.getMyCollections.useQuery()
-api.cards.getCollectionCards.useQuery({ collectionId })
-api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
+api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? }) // a trade partner's tradeable copies
 api.cards.mySuggestions.useQuery()
 
-// Mutations (4)
-api.cards.createCollection.useMutation() // { name, description?, isPublic? }
-api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
-api.cards.deleteCollection.useMutation() // { collectionId }
+// Mutations (7)
+api.cards.createShowcase.useMutation() // { name, description?, isPublic? }
+api.cards.updateShowcase.useMutation() // { showcaseId, name, description?, isPublic }; making it private unpins it
+api.cards.deleteShowcase.useMutation() // { showcaseId }
+api.cards.addToShowcase.useMutation() // { showcaseId, ownershipIds }
+api.cards.removeFromShowcase.useMutation() // { showcaseId, ownershipId }
+api.cards.pinShowcase.useMutation() // { showcaseId, pinned }; only a public showcase pins
 api.cards.suggestCard.useMutation() // { source, title }; free, 3 in any 24 hours
 ```
 
@@ -714,6 +713,41 @@ api.cardPacks.getMyPacks.useQuery({ isOpened? })
 // Mutations (2)
 api.cardPacks.purchasePack.useMutation() // { packId }
 api.cardPacks.openPack.useMutation() // { userPackId }
+```
+
+### cardMarket Router (10 procedures)
+
+The cards hub's Market (`/vault/cards/market`). Card faces in these payloads follow the silhouette rules.
+
+```typescript
+// Queries (6)
+api.cardMarket.getActiveAuctions.useQuery({ cardId?, realmId?, sellerId?, isFeatured?, rarity?, cardType?, minPrice?, maxPrice?, sortBy?, limit?, offset? }) // sortBy: "ending_soon" | "newest" | "price_low" | "price_high"
+api.cardMarket.getMyActiveAuctions.useQuery()
+api.cardMarket.getMyActiveBids.useQuery() // running auctions the viewer is winning
+api.cardMarket.getMyAuctionParticipation.useQuery({ limit?, offset? })
+api.cardMarket.getCardValueHistory.useQuery({ cardId })
+api.cardMarket.getCardTransferHistory.useQuery({ ownershipId })
+
+// Mutations (4)
+api.cardMarket.createAuction.useMutation() // { cardId, startingPrice, buyoutPrice?, duration: "30" | "60", isFeatured? }; cardId is the copy's id
+api.cardMarket.placeBid.useMutation() // { auctionId, amount }
+api.cardMarket.executeBuyout.useMutation() // { auctionId }
+api.cardMarket.cancelAuction.useMutation() // { auctionId }
+```
+
+### trading Router (7 procedures)
+
+```typescript
+// Queries (4)
+api.trading.getActiveTrades.useQuery()
+api.trading.getTradeHistory.useQuery({ limit?, offset? })
+api.trading.getTradeById.useQuery({ tradeId })
+api.trading.searchTradingPartners.useQuery({ query })
+
+// Mutations (3)
+api.trading.createtradeOffer.useMutation() // { recipientId, initiatorCardIds, recipientCardIds, initiatorCredits?, recipientCredits?, message? }
+api.trading.respondToTrade.useMutation() // { tradeId, action: "ACCEPT" | "REJECT" | "COUNTER", newInitiatorCardIds?, newRecipientCardIds?, newInitiatorCredits?, newRecipientCredits?, counterMessage? }
+api.trading.cancelTrade.useMutation() // { tradeId }
 ```
 
 ### nsImport Router (7 procedures)

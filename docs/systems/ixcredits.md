@@ -1,6 +1,6 @@
 # IxCredits (IxC) Virtual Currency Engine
 
-**Last updated:** 2026-10-14  
+**Last updated:** 2026-10-17  
 **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby")  
 **Hierarchy:** Currency & Earning Engine of **IxVault** (`IXVAULT_VERSION = 3`).
 
@@ -89,7 +89,7 @@ Both caps are configurable (`activeDailyCap`, `socialDailyCap`); an earn that wo
 - **Card Packs**: `pack-service.ts` spends through `spendCreditsTx` with type `SPEND_PACKS`, so the ledger's kill switch and idempotency apply to packs. Per-pack `priceCredits` (seeded range 100–15,000 IxC; see [cards.md](./cards.md#pack-tiers))
 - **Card Crafting (`SPEND_CRAFT`)**: retired for now (2026-10-05); nothing spends `SPEND_CRAFT` any more, and old rows stay in the ledger
 - **Marketplace & Trading (`SPEND_MARKET`)**: Listing fee (5 IxC standard, 10 IxC featured; 50% refunded if no bids), marketplace fee (10% on sales $>100$ IxC), P2P credit transfers
-- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Vault Shop items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no dividend boost item, although the dividend reads a `yieldBoost` effect if an owned item has one
+- **Boosts & Cosmetics (`SPEND_BOOST`, `SPEND_COSMETIC`)**: Store items. The seed script `scripts/setup/seed-vault-items.ts` (not run by `db:seed`) creates profile glows, frames and badges (including seasonal ones), card capacity boosts, a MyClub team licence token and a MyLeague franchise pass. It has no lore request token and no dividend boost item, although the dividend reads a `yieldBoost` effect if an owned item has one
 
 ---
 
@@ -116,7 +116,6 @@ try {
 ### Client React Hooks (`src/hooks/vault/`)
 - `useVaultBalance()` – Reads current balance, XP, level, today's earnings, and premium multiplier
 - `useVaultStats()` – The card count and deck value
-- `useCollections()` – Collection list
 
 There is no client-side earn hook: credits are only awarded server-side. The daily claim calls `api.vault.claimCombinedDailyClaim` directly (`DailyRewardProvider`); a card claim returns the minted copy's face (`cardFace`).
 

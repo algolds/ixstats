@@ -34,7 +34,7 @@ Edits made in WikiOS earn for your account without a link; wins on the classic w
 
 ## Trophy cards
 
-Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a lore card that is bound to the winner, so it stays with you and can't be traded or listed. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If the winner can't be matched to your account yet (see [What a place pays](#what-a-place-pays)), the card waits and is given to you once it can: for a classic wiki name, when you verify your wiki link. A link never applies to a place won under a `wikios>` name. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
+Every recorded place, winner or runner-up, in the daily, weekly and monthly contests, has a one-of-one **trophy card** of the winning page. It is a trophy card, bound to the winner, so it stays with you and can't be traded or listed. Monthly winners are Legendary, weekly winners and monthly runner-ups are Epic, and the other places are Rare. Cards exist for results back to 2017. If the winner can't be matched to your account yet (see [What a place pays](#what-a-place-pays)), the card waits and is given to you once it can: for a classic wiki name, when you verify your wiki link. A link never applies to a place won under a `wikios>` name. Trophy cards pay nothing and don't count toward your deck value for the daily Vault dividend or the deck-value achievements.
 
 ## Where your Lorewards show
 

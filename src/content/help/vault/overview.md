@@ -29,13 +29,14 @@ The claim prompt opens by itself at most once a day. If you close it, claim late
 
 ## Cards
 
-**Cards** has three tabs:
+**Cards** has four tabs:
 
-- **Card Gallery:** browse every card in the game, including NationStates and lore cards.
-- **Inventory:** the cards you own. Filter by rarity, type, season, level and value, and switch between grid, list and compact views.
-- **Collections:** group your cards into named collections.
+- **[Mine](/vault/cards/mine):** the cards you own. Filter by realm, rarity, finish, type, category and duplicates, search, sort, and switch between a grid and a list with each card's value. Choose **Select** to pick several cards and add them to a showcase.
+- **[Sets](/vault/cards/sets):** your showcases, sets of your cards you put together and name. A showcase can be public or private, and you can pin one public showcase: it is what your wallet and your passport show. Without a pinned showcase they show your most valuable cards.
+- **[Market](/vault/cards/market):** auctions and trades. See [Auctions & Trading](/help/vault/trading).
+- **[Explore](/vault/cards/explore):** every realm's cards, realm by realm, then a grid you can filter. A card you haven't collected shows as a silhouette (its title, realm, rarity and number, but not its art). You can also suggest a new lore card here; see [Lore Cards](/help/vault/lore-cards).
 
-Select a card to see it up close with its details. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
+Select a card to open its sheet: the card itself (turn it over with Space or F to see its back), your copies of it, its market, and what it is about. **Copy link** copies a link that opens the same card. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
 
 ## Card types and rarities
 
@@ -49,11 +50,11 @@ Select a card to see it up close with its details. Importing a NationStates deck
 
 Bound cards (trophies and achievement cards) stay with the account that earned them: they can't be traded or auctioned.
 
-Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra Rare**, **Epic** and **Legendary**. Rarer cards have stronger visual effects.
+Rarities, from most to least common: **Common**, **Uncommon**, **Rare**, **Ultra Rare**, **Epic** and **Legendary**. A card's rarity is the colour of its edge and its gem. A copy of a card also has a finish (Standard, Foil, Holo or Serialised), which shows as a sheen.
 
 ## Store
 
-**Store** has three tabs: **Vault Shop** (card packs, plus cosmetics and account upgrades; see [Card Packs](/help/vault/card-packs) and [Vault Shop Items](/help/vault/shop-items)), **Auctions** and **Trading** (see [Auctions & Trading](/help/vault/trading)).
+The [Store](/vault/store?view=packs) has four tabs: **My packs** (packs you own and haven't opened), **Packs** (packs for sale; see [Card Packs](/help/vault/card-packs)), **Cosmetics** and **Account upgrades** (see [Vault Shop Items](/help/vault/shop-items)). Auctions and trades are in Cards → **Market**.
 
 ## Vault level
 
@@ -64,3 +65,4 @@ You gain 1 XP for every IxCredit you earn, and each 1,000 XP is a level. A highe
 - [Achievements](/help/gameplay/achievements) have their own row in the sidebar, with the Lorewards tab and a leaderboard by achievement points. See also the nation [Leaderboards](/help/gameplay/leaderboards).
 - The **Exchange** moved to Labs, and IxCredits can no longer be converted to Sovereigns.
 - **Crafting** is retired for now. Your cards and IxCredits are untouched.
+- **Collections** are now showcases, in Cards → **Sets**: your collections became showcases holding the cards you still own, and likes and comments are gone.

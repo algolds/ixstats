@@ -19,7 +19,7 @@ Reference data is the shared content every nation builds with: component catalog
 | Diplomatic options | `/admin/diplomatic-options` | Choices offered when players edit embassy profiles (live) |
 | NPC personalities | `/admin/npc-personalities` | Cultural-exchange participation by computer-run nations |
 | Achievements | `/admin/achievements` | Achievement unlocks and rewards (live) |
-| Cards and packs | `/admin/cards` | The Vault Shop, packs and card pool (live) |
+| Cards and packs | `/admin/cards` | Card packs and the card pool (live) |
 | Economic archetypes | `/admin/economic-archetypes` | The figures new nations start with when founded from an archetype (live) |
 | Military equipment | `/admin/military-equipment` | The equipment browser in Defense → Forces & Arsenal (live) |
 | Government components | `/admin/government-components` | Read-only: defined in code |
