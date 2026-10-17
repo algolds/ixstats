@@ -138,12 +138,12 @@ function monthRange(date: string, result: StateFileResult) {
   return { start: `${date}-01`, end: `${date}-${String(lastDay).padStart(2, "0")}` };
 }
 
-/** The `date|type` keys of the entries an admin override wrote (`overriddenAt`): no sync writes their places again. */
+/**
+ * The `date|type` keys of the entries an admin override wrote (`overriddenAt`): no sync writes their places again.
+ * Read in pages (`findContestEntries`), so the 1,000-row cap drops none, whatever year the state file reaches back to.
+ */
 async function overriddenKeys(): Promise<ReadonlySet<string>> {
-  const rows = await db.lorewardEntry.findMany({
-    where: { overriddenAt: { not: null } },
-    select: { date: true, type: true },
-  });
+  const rows = await findContestEntries(db, { overriddenAt: { not: null } });
   return new Set(rows.map((row) => `${row.date}|${row.type}`));
 }
 

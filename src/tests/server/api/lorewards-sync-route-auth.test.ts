@@ -94,3 +94,66 @@ describe("/api/bot/lorewards/sync", () => {
     expect((await call({ "x-bot-api-key": "bot-s3cret" })).status).not.toBe(401);
   });
 });
+
+describe("/api/bot/lorewards/sync over an admin override", () => {
+  let POST: (req: Request) => Promise<Response>;
+  const { db } = jest.requireMock<{ db: { lorewardEntry?: object } }>("~/server/db");
+  const upsert = jest.fn(async (_args: object) => ({ id: "e1" }));
+  beforeAll(async () => {
+    process.env.BOT_API_KEY = "bot-s3cret";
+    ({ POST } = await import("~/app/api/bot/lorewards/sync/route"));
+  });
+
+  /** The bot pushes the daily of 16 October, naming Amy and Bee, onto an entry stored with `overriddenAt`. */
+  async function push(overriddenAt: Date | null) {
+    const findUnique = jest.fn(async (_args: object) => (overriddenAt ? { overriddenAt } : null));
+    upsert.mockClear();
+    db.lorewardEntry = { findUnique, upsert };
+    const res = await POST(
+      new Request("http://localhost/api/bot/lorewards/sync", {
+        method: "POST",
+        headers: { "x-bot-api-key": "bot-s3cret" },
+        body: JSON.stringify({
+          date: "2026-10-16",
+          type: "daily",
+          winnerUser: "Amy",
+          winnerPage: "Amy's page",
+          winnerScore: 90,
+          runnerUpUser: "Bee",
+          metadata: "[]",
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { date_type: { date: "2026-10-16", type: "daily" } },
+      select: { overriddenAt: true },
+    });
+    return upsert.mock.calls[0]![0];
+  }
+
+  const places = {
+    winnerUser: "Amy",
+    winnerPage: "Amy's page",
+    winnerScore: 90,
+    winnerBytes: null,
+    runnerUpUser: "Bee",
+    runnerUpPage: null,
+    runnerUpScore: null,
+    runnerUpBytes: null,
+  };
+
+  it("keeps the places of an entry an override wrote, and still writes the rest", async () => {
+    expect(await push(new Date("2026-10-17T12:00:00.000Z"))).toEqual({
+      where: { date_type: { date: "2026-10-16", type: "daily" } },
+      create: { date: "2026-10-16", type: "daily", ...places, status: "approved", metadata: "[]" },
+      update: { status: "approved", metadata: "[]", syncedAt: expect.any(Date) },
+    });
+  });
+
+  it("writes the places of an entry no override wrote", async () => {
+    expect(await push(null)).toMatchObject({
+      update: { ...places, status: "approved", metadata: "[]" },
+    });
+  });
+});

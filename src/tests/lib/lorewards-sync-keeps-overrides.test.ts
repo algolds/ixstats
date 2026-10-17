@@ -27,6 +27,7 @@ import * as fs from "fs";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { parseOOLPage } from "~/lib/lorewards/ool-parser";
+import { CONTEST_ENTRY_SELECT } from "~/lib/lorewards/contest-store";
 import { syncCurrentWinners, syncFromOOLPages } from "~/lib/lorewards/sync";
 import { entryStore, storedEntry, type StoredEntry } from "~/tests/helpers/loreward-entry-store";
 
@@ -128,8 +129,35 @@ describe("the state file", () => {
     expect(rows[0]).toMatchObject({ winnerBytes: 42, editCount: 12, overriddenAt: OVERRIDDEN });
     expect(mocked.lorewardEntry.findMany).toHaveBeenCalledWith({
       where: { overriddenAt: { not: null } },
-      select: { date: true, type: true },
+      select: CONTEST_ENTRY_SELECT,
+      orderBy: { id: "asc" },
+      take: 500,
     });
+  });
+
+  it("reads the overridden keys in pages, so an override past the first 500 still holds", async () => {
+    store([overriddenDaily({ overriddenAt: null })]);
+    stateFile(stateDaily);
+    const fullPage = Array.from({ length: 500 }, (_, i) =>
+      storedEntry({ id: `x${String(i).padStart(3, "0")}`, date: `2019-01-01`, type: `old${i}` })
+    );
+    const readTable = mocked.lorewardEntry.findMany.getMockImplementation()!;
+    let keyPages = 0;
+    mocked.lorewardEntry.findMany.mockImplementation(async (args) => {
+      if (!("overriddenAt" in args.where) && !("AND" in args.where)) return readTable(args);
+      keyPages++;
+      // The second page holds the 16 October daily's entry, overridden
+      return keyPages === 1 ? fullPage : [storedEntry({ id: "y1" })];
+    });
+
+    await syncCurrentWinners(true);
+
+    expect(places(rows[0])).toEqual(CY_AND_DEE);
+    expect(mocked.lorewardEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { AND: [{ overriddenAt: { not: null } }, { id: { gt: "x499" } }] },
+      })
+    );
   });
 
   it("keeps the winner an override gave a state-keyed weekly", async () => {
