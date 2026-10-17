@@ -1,6 +1,6 @@
 ---
 title: Explore & Comparing Nations
-description: Browse your realm's nations, compare up to eight side by side, and browse card collections.
+description: Browse your realm's nations and compare up to eight side by side.
 badge: The World
 prevHref: /help/world/countries
 prevLabel: Exploring Countries
@@ -15,10 +15,6 @@ The sidebar's **Explore** opens the [realm directory](/realms), where you find, 
 ## Comparing nations
 
 On a nation's profile, choose **Compare** to open the comparison window. Add up to eight nations and see their figures side by side.
-
-## Collections
-
-**Collections** ([/explore/collections](/explore/collections)) is something different: a gallery of players' public [Vault](/help/vault/overview) card collections. Search them, sort by newest, most valuable, most cards or top rated, and see the collection leaderboard.
 
 ## What you see on a profile
 

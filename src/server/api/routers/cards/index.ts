@@ -11,6 +11,7 @@
  *  - mine:        the caller's copies (the hub's Mine tab)
  *  - explore:     realm shelves, the catalogue grid, regions
  *  - sheet:       the card sheet and the wiki excerpt
+ *  - showcases:   free-form showcases by copy, and the player's display
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -20,6 +21,7 @@ import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsMineRouter } from "./mine";
 import { cardsExploreRouter } from "./explore";
 import { cardsSheetRouter } from "./sheet";
+import { cardsShowcasesRouter } from "./showcases";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -29,5 +31,6 @@ export const cardsRouter = mergeRouters(
   cardsMineRouter,
   cardsExploreRouter,
   cardsSheetRouter,
+  cardsShowcasesRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );

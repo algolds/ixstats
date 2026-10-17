@@ -181,8 +181,6 @@ model CardCollection {
   updatedAt   DateTime             @default(now())
   User        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   items       CardCollectionItem[]
-  likes       CollectionLike[]
-  comments    CollectionComment[]
 
   @@index([userId])
   @@index([userId, pinnedAt])
@@ -199,32 +197,6 @@ model CardCollectionItem {
   @@unique([collectionId, cardOwnershipId])
   @@index([collectionId])
   @@index([cardOwnershipId])
-}
-
-model CollectionLike {
-  id           String         @id @default(cuid())
-  collectionId String
-  userId       String
-  createdAt    DateTime       @default(now())
-  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([collectionId, userId])
-  @@index([collectionId])
-  @@index([userId])
-}
-
-model CollectionComment {
-  id           String         @id @default(cuid())
-  collectionId String
-  userId       String
-  content      String         @db.VarChar(500)
-  createdAt    DateTime       @default(now())
-  collection   CardCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  User         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([collectionId])
-  @@index([userId])
 }
 
 model CardOwnership {
