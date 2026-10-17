@@ -1,6 +1,14 @@
 import { RarityMark } from "~/components/cards/face/RarityMark";
 import { RARITY_LABEL, RARITY_ORDER } from "~/lib/cards/face/labels";
+import type { CardRarity } from "~/lib/cards/face/types";
 import { formatOdds, packOddsRows, type PackOdds as PackOddsValues } from "~/lib/cards/pack-odds";
+
+/** Nothing is rarer than the top rarity, so its guarantee drops "or rarer". */
+function guaranteeLine(rarity: CardRarity): string {
+  const label = RARITY_LABEL[rarity];
+  const rarest = rarity === RARITY_ORDER[RARITY_ORDER.length - 1];
+  return `Every pack has at least one ${rarest ? label : `${label} or rarer`} card.`;
+}
 
 /** A pack's odds per card (pack odds are shown in the store), and its guarantee if it has one. */
 export function PackOdds({ pack }: { pack: PackOddsValues & { guaranteedRarity: string | null } }) {
@@ -22,9 +30,7 @@ export function PackOdds({ pack }: { pack: PackOddsValues & { guaranteedRarity: 
         </tbody>
       </table>
       {guaranteed && (
-        <p className="text-footnote text-label-secondary">
-          Every pack has at least one {RARITY_LABEL[guaranteed]} or rarer card.
-        </p>
+        <p className="text-footnote text-label-secondary">{guaranteeLine(guaranteed)}</p>
       )}
     </div>
   );

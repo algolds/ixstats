@@ -7,6 +7,7 @@ jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
   ),
 }));
 
+import { focusRing, hitSlop } from "~/components/ui/button";
 import { PackOdds } from "~/components/vault/sections/marketplace/store/PackOdds";
 import {
   PackHolographicCard,
@@ -57,6 +58,24 @@ describe("PackOdds", () => {
     expect(screen.getAllByRole("row")).toHaveLength(1);
     expect(screen.queryByText(/at least one/)).toBeNull();
   });
+
+  it("names a Legendary guarantee without 'or rarer', since nothing is rarer", () => {
+    render(
+      <PackOdds
+        pack={{
+          commonOdds: 50,
+          uncommonOdds: 30,
+          rareOdds: 15,
+          ultraRareOdds: 3,
+          epicOdds: 1.5,
+          legendaryOdds: 0.5,
+          guaranteedRarity: "LEGENDARY",
+        }}
+      />
+    );
+    expect(screen.getByText("Every pack has at least one Legendary card.")).toBeInTheDocument();
+    expect(screen.queryByText(/or rarer/)).toBeNull();
+  });
 });
 
 describe("a pack's details in the Store", () => {
@@ -69,6 +88,7 @@ describe("a pack's details in the Store", () => {
     priceCredits: 120,
     cardCount: 5,
     guaranteedRarity: "ULTRA_RARE",
+    cardType: "NS",
     commonOdds: 60,
     uncommonOdds: 28,
     rareOdds: 10,
@@ -77,7 +97,7 @@ describe("a pack's details in the Store", () => {
     legendaryOdds: 0,
   };
 
-  it("shows the pack's odds and its guarantee once, by the player rarity name", () => {
+  it("shows the pack's odds, its guarantee once and its card type, by the player names", () => {
     render(<PackHolographicCard pack={pack} actionButton={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Pack details and odds" }));
     const dialog = screen.getByRole("dialog");
@@ -92,5 +112,15 @@ describe("a pack's details in the Store", () => {
     ).toBeInTheDocument();
     expect(within(dialog).queryByText("Guaranteed rarity")).toBeNull();
     expect(within(dialog).queryByText(/ULTRA/)).toBeNull();
+    expect(within(dialog).getByText("NationStates")).toBeInTheDocument();
+    expect(within(dialog).queryByText("NS")).toBeNull();
+  });
+
+  it("gives the odds button a touch-size target and the focus ring", () => {
+    render(<PackHolographicCard pack={pack} actionButton={null} />);
+    expect(screen.getByRole("button", { name: "Pack details and odds" })).toHaveClass(
+      ...focusRing.split(" "),
+      ...hitSlop.split(" ")
+    );
   });
 });

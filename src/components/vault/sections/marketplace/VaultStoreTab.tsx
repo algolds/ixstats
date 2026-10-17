@@ -258,7 +258,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
           tabs={STORE_TABS}
           activeTab={storeTab}
           onTabChange={setStoreTab}
-          myPacksCount={myPacks?.length}
+          myPacksCount={myPacks.length}
         />
 
         {/* Storefront Window Header */}
@@ -292,7 +292,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
               className="relative"
             >
               {storeTab === "my-packs" &&
-                (myPacks && myPacks.length > 0 ? (
+                (myPacks.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
                     {myPacks.map((userPack) => {
                       const packData = userPack.pack;
@@ -333,7 +333,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                 ))}
 
               {storeTab === "packs" &&
-                (packs && packs.length > 0 ? (
+                (packs.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
                     {packs.map((pack) => {
                       const isPending =
