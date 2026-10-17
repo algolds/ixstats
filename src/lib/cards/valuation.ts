@@ -60,11 +60,10 @@ const KEY = {
 let cache: { value: CardValuationConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
-/** Read the merged valuation config (defaults overlaid with any SystemConfig rows). */
-export async function getValuationConfig(db: PrismaClient): Promise<CardValuationConfig> {
-  const now = Date.now();
-  if (cache && cache.expires > now) return cache.value;
-
+/** The stored config, defaults overlaid with any SystemConfig rows, read past the cache. */
+async function readValuationConfig(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<CardValuationConfig> {
   const rows = await db.systemConfig.findMany({
     where: { key: { startsWith: "card_valuation_" } },
     select: { key: true, value: true },
@@ -79,14 +78,21 @@ export async function getValuationConfig(db: PrismaClient): Promise<CardValuatio
       if (!Number.isNaN(parsed)) merged[field] = parsed;
     }
   }
+  return merged;
+}
 
+/** Read the merged valuation config (defaults overlaid with any SystemConfig rows). */
+export async function getValuationConfig(db: PrismaClient): Promise<CardValuationConfig> {
+  const now = Date.now();
+  if (cache && cache.expires > now) return cache.value;
+  const merged = await readValuationConfig(db);
   cache = { value: merged, expires: now + CACHE_TTL_MS };
   return merged;
 }
 
 /** Update a single config value (DM admin). Invalidates the in-memory cache. */
 export async function setValuationConfig(
-  db: PrismaClient,
+  db: Pick<PrismaClient, "systemConfig">,
   field: keyof CardValuationConfig,
   value: number
 ): Promise<void> {
@@ -140,9 +146,11 @@ export function computeCardValue(
  * Recompute marketValue for every card under the current config. Set-based UPDATEs
  * grouped by rarity (handles 56k+ NS cards in 6 statements, not 56k round-trips).
  * NS source value is read from metadata.nsData so re-running is idempotent.
+ * The config is read past the cache: a read during an Economy save's transaction can
+ * cache the old values again before the new ones commit.
  */
 export async function recomputeAllCardValues(db: PrismaClient): Promise<{ updated: number }> {
-  const cfg = await getValuationConfig(db);
+  const cfg = await readValuationConfig(db);
   const rarities: Array<[string, number]> = [
     ["COMMON", cfg.floorCommon],
     ["UNCOMMON", cfg.floorUncommon],

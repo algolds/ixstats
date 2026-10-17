@@ -5,7 +5,6 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { ArtworkSource, CardRarity, CardType, LoreCategory, type Prisma } from "@prisma/client";
-import { recomputeAllCardValues } from "~/lib/cards/valuation";
 import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 export const cardsLegacyAdminRouter = createTRPCRouter({
@@ -152,9 +151,4 @@ export const cardsLegacyAdminRouter = createTRPCRouter({
         });
       }
     }),
-
-  /** Recompute every card's marketValue under the current config (no config change). */
-  recomputeCardValues: adminProcedure.mutation(async ({ ctx }) => {
-    return recomputeAllCardValues(ctx.db);
-  }),
 });

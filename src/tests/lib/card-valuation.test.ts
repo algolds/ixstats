@@ -1,6 +1,7 @@
 import {
   CARD_VALUATION_DEFAULTS as C,
   computeCardValue,
+  getValuationConfig,
   rarityFloor,
   recomputeAllCardValues,
 } from "~/lib/cards/valuation";
@@ -42,6 +43,24 @@ describe("card-valuation", () => {
     expect(sql).toContain(`metadata->'nsData'->>'market_value'`);
     expect(sql).not.toMatch(/stats|NS_IMPORT/);
     expect(executeRawUnsafe).toHaveBeenCalledTimes(6);
+  });
+
+  test("the recompute reads the stored config, not this process's cached copy", async () => {
+    await getValuationConfig({
+      systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
+    } as never);
+    const executeRawUnsafe = jest.fn().mockResolvedValue(1);
+    const db = {
+      systemConfig: {
+        findMany: jest.fn().mockResolvedValue([{ key: "card_valuation_floor_rare", value: "120" }]),
+      },
+      $executeRawUnsafe: executeRawUnsafe,
+    };
+    await recomputeAllCardValues(db as never);
+    const rareSql = executeRawUnsafe.mock.calls
+      .map(([sql]) => String(sql))
+      .find((sql) => sql.includes("'RARE'"));
+    expect(rareSql).toContain("GREATEST(120,");
   });
 
   test("the config has no junk rate", () => {

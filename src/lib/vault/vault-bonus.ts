@@ -139,6 +139,21 @@ export async function getLorewardPayouts(
   return payouts;
 }
 
+/** Set one cell of the payout table (the cards admin's Economy tab). */
+export async function setLorewardPayout(
+  db: Pick<PrismaClient, "systemConfig">,
+  type: LorewardType,
+  place: LorewardPlace,
+  credits: number
+): Promise<void> {
+  const key = lorewardPayoutConfigKey(type, place);
+  await db.systemConfig.upsert({
+    where: { key },
+    create: { key, value: String(credits), description: `Loreward payout: ${type} ${place}` },
+    update: { value: String(credits) },
+  });
+}
+
 /** Credits for unlocking an achievement of the given rarity (case-insensitive). */
 export function achievementBonus(cfg: VaultBonusConfig, rarity: string): number {
   switch (rarity.toUpperCase()) {

@@ -97,4 +97,17 @@ describe("threshold tables", () => {
     expect(RarityThresholdsSchema.safeParse({ ...table, LEGENDARY: 101 }).success).toBe(false);
     expect(RarityThresholdsSchema.safeParse({ ...table, UNCOMMON: -1 }).success).toBe(false);
   });
+
+  it("refuses in sentences the Economy tab can show as they are", () => {
+    const table = DEFAULT_RARITY_THRESHOLDS.ixwiki;
+    const firstIssue = (value: object) =>
+      RarityThresholdsSchema.safeParse(value).error?.issues[0]?.message;
+    const range = "Each minimum score must be a number from 0 to 100";
+    expect(firstIssue({ ...table, LEGENDARY: 101 })).toBe(range);
+    expect(firstIssue({ ...table, UNCOMMON: -1 })).toBe(range);
+    expect(firstIssue({ ...table, RARE: Number.NaN })).toBe(range);
+    expect(firstIssue({ ...table, RARE: 21 })).toBe(
+      "Each rarity needs a higher minimum score than the one below it"
+    );
+  });
 });

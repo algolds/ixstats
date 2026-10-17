@@ -53,7 +53,7 @@ export async function getGeneralCardSettings(
 }
 
 export async function setGeneralCardSetting(
-  db: PrismaClient,
+  db: Pick<PrismaClient, "systemConfig">,
   field: keyof CardGeneralSettings,
   value: number
 ): Promise<void> {
