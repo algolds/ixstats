@@ -6,7 +6,7 @@ import { focusRing } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "~/components/cards/display/CardPriceHistoryChart";
-import { formatTimeLeft } from "~/lib/cards/face/time-left";
+import { timeLeftPhrase } from "~/lib/cards/face/time-left";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import type { CardSheetData, SheetListing } from "~/lib/cards/hub/sheet";
 
@@ -54,7 +54,7 @@ export function CardSheetMarket({ cardId, value, market }: CardSheetMarketProps)
               className="text-callout flex items-center justify-between gap-3 py-2"
             >
               <span className="min-w-0 truncate">
-                {`${seller(listing)} · ${formatTimeLeft(listing.endTime)} left`}
+                {`${seller(listing)} · ${timeLeftPhrase(listing.endTime)}`}
               </span>
               <span className="shrink-0">{credits(listing.currentBid)}</span>
             </li>

@@ -251,6 +251,25 @@ describe("caller-scoped reads", () => {
     );
   });
 
+  it("marks the caller's own listings, which they cannot bid on", async () => {
+    const listed = (id: string, sellerId: string) => ({
+      id,
+      sellerId,
+      cardInstanceId: `o_${id}`,
+      CardOwnership: { cards: { id: `c_${id}` } },
+    });
+    service.getActiveAuctions!.mockResolvedValue({
+      auctions: [listed("a", "u1"), listed("b", "u2")],
+      total: 2,
+      hasMore: false,
+    });
+    const result = await callerAs("u1", db).getActiveAuctions({});
+    expect(result.auctions.map((a) => [a.id, a.isMine])).toEqual([
+      ["a", true],
+      ["b", false],
+    ]);
+  });
+
   it("labels past auctions by the caller's part in them", async () => {
     db.cardAuction.count.mockResolvedValue(3);
     // Each past auction as the query includes it: the listed copy with its card
@@ -273,6 +292,10 @@ describe("caller-scoped reads", () => {
         OR: [{ sellerId: "u1" }, { winnerId: "u1" }, { AuctionBid: { some: { bidderId: "u1" } } }],
       }),
     });
+  });
+
+  it("has no ending-soon list: ending soon is a sort (spec §2.3 Market)", () => {
+    expect("getEndingSoon" in cardMarketRouter._def.procedures).toBe(false);
   });
 
   it("caps the active-auction page size", async () => {

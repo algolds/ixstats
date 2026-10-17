@@ -11,3 +11,9 @@ export function formatTimeLeft(endTime: Date, now: Date = new Date()): string {
   if (left >= MINUTE) return `${Math.floor(left / MINUTE)}m`;
   return "under 1m";
 }
+
+/** The same in running text: "3h 12m left", and just "Ended" once it is over. */
+export function timeLeftPhrase(endTime: Date, now: Date = new Date()): string {
+  const left = formatTimeLeft(endTime, now);
+  return left === "Ended" ? left : `${left} left`;
+}

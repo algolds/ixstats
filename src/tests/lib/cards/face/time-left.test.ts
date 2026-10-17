@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { formatTimeLeft } from "~/lib/cards/face/time-left";
+import { formatTimeLeft, timeLeftPhrase } from "~/lib/cards/face/time-left";
 
 const now = new Date("2026-10-15T12:00:00Z");
 const later = (ms: number) => new Date(now.getTime() + ms);
@@ -37,5 +37,13 @@ describe("formatTimeLeft", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe("timeLeftPhrase", () => {
+  it("says what is left in running text, and only that a listing has ended", () => {
+    expect(timeLeftPhrase(later(3 * HOUR + 12 * MINUTE), now)).toBe("3h 12m left");
+    expect(timeLeftPhrase(later(20_000), now)).toBe("under 1m left");
+    expect(timeLeftPhrase(later(-1), now)).toBe("Ended");
   });
 });

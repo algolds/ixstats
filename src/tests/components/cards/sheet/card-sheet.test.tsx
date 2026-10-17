@@ -413,6 +413,22 @@ describe("CardSheet market", () => {
     expect(screen.queryByRole("list", { name: "Live listings" })).toBeNull();
     expect(screen.getByRole("link", { name: "Look for it in the market" })).toBeInTheDocument();
   });
+
+  it("says a listing whose time has run out has ended", () => {
+    showSheet(
+      sheet({
+        market: {
+          listings: [listing({ endTime: new Date(Date.now() - 60_000) })],
+          recentSales: [],
+          wantedBy: 0,
+        },
+      })
+    );
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const list = screen.getByRole("list", { name: "Live listings" });
+    expect(list).toHaveTextContent("@ann · Ended");
+    expect(list).not.toHaveTextContent("left");
+  });
 });
 
 describe("CardSheet about", () => {
