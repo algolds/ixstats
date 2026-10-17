@@ -66,4 +66,16 @@ describe("adminActor", () => {
       clerkId: "clerk_admin",
     });
   });
+
+  it("refuses a context with no signed-in user or Clerk id", () => {
+    expect(() => adminActor({ user: null, auth: { userId: "clerk_admin" } })).toThrow(
+      "Sign in as an admin."
+    );
+    expect(() => adminActor({ user: { id: "db_admin" }, auth: { userId: null } })).toThrow(
+      "Sign in as an admin."
+    );
+    expect(() => adminActor({ user: { id: "db_admin" }, auth: null })).toThrow(
+      "Sign in as an admin."
+    );
+  });
 });
