@@ -13,7 +13,7 @@ import { isUniqueViolation } from "~/lib/prisma-error";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 import { DiscoveryStopped, type Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
-import { commonsCardTitle } from "~/lib/cards/art-licence";
+import { commonsCardTitle, commonsFileName } from "~/lib/cards/art-licence";
 import {
   canonicalCardTitle,
   cardSourceLabel,
@@ -77,8 +77,22 @@ export async function oneOffImportContext(
 }
 
 /**
- * The keys among `titles` that already have a Lore card from `source` (the natural key). Each key is
- * `titleKey(title, source)`, which is what callers compare with.
+ * The keys of the Commons files legacy Commons cards show. The old flag importer stored those cards with no title,
+ * so their file is the one their art or their metadata.descriptionUrl names.
+ */
+async function legacyCommonsKeys(db: PrismaClient): Promise<Set<string>> {
+  // `lower(...) IS NULL` rather than a plain IS NULL, so the natural-key index finds the titleless Commons cards.
+  const rows = await db.$queryRaw<Array<{ artwork: string | null; descriptionUrl: string | null }>>`
+    SELECT "artwork", "metadata"->>'descriptionUrl' AS "descriptionUrl" FROM "cards"
+    WHERE COALESCE("wikiSource", 'ixwiki') = 'commons' AND "cardType" = 'LORE'
+      AND lower("wikiArticleTitle") IS NULL`;
+  const names = rows.flatMap((row) => [row.artwork, row.descriptionUrl].map(commonsFileName));
+  return new Set(names.flatMap((name) => (name ? [titleKey(`File:${name}`, "commons")] : [])));
+}
+
+/**
+ * The keys among `titles` that already have a Lore card from `source`: by the natural key, and for Commons also by
+ * the file a legacy card shows. Each key is `titleKey(title, source)`, which is what callers compare with.
  */
 export async function cardedTitleKeys(
   db: PrismaClient,
@@ -91,7 +105,11 @@ export async function cardedTitleKeys(
     SELECT lower("wikiArticleTitle") AS "key" FROM "cards"
     WHERE COALESCE("wikiSource", 'ixwiki') = ${source} AND "cardType" = 'LORE'
       AND lower("wikiArticleTitle") IN (${Prisma.join(keys)})`;
-  return new Set(rows.map((row) => row.key));
+  const carded = new Set(rows.map((row) => row.key));
+  if (source !== "commons" || carded.size === keys.length) return carded;
+  const legacy = await legacyCommonsKeys(db);
+  for (const key of keys) if (legacy.has(key)) carded.add(key);
+  return carded;
 }
 
 /** The realm that imported the page first (its home), else the source's system realm. */
@@ -267,7 +285,7 @@ export async function stageCommonsFile(
   input: StageInput,
   context: ImportContext
 ): Promise<StageOutcome> {
-  const fileTitle = canonicalCardTitle("commons", `File:${input.title.replace(/^file:/i, "")}`);
+  const fileTitle = canonicalCardTitle("commons", input.title);
   if (!fileTitle) return { status: "FAILED", reason: "Not a valid file name" };
   if ((await cardedTitleKeys(db, "commons", [fileTitle])).size > 0) return ALREADY_CARDED;
 

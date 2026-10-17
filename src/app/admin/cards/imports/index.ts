@@ -1,1 +1,1 @@
-export { CardImportStudio as ImportsTab } from "../CardImportStudio";
+export { ImportsTab } from "./ImportsTab";

@@ -463,6 +463,22 @@ describe("stageCommonsFile", () => {
     expect(db.$queryRaw.mock.calls[0]![1]).toBe("commons");
   });
 
+  it("skips a file a legacy Commons card shows, without asking Commons", async () => {
+    const db = makeDb();
+    db.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        artwork:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/120px-Flag_of_Ireland.svg.png",
+        descriptionUrl: null,
+      },
+    ]);
+    expect(await stageCommonsFile(db as never, input("flag_of_Ireland.svg"), commons)).toEqual({
+      status: "SKIPPED",
+      reason: "Already a card",
+    });
+    expect(capture).not.toHaveBeenCalled();
+  });
+
   it("fails a file name MediaWiki would refuse", async () => {
     const db = makeDb();
     expect(await stageCommonsFile(db as never, input("a|b.svg"), commons)).toEqual({
@@ -595,6 +611,44 @@ describe("the importer's lookups", () => {
       "caphiria",
       "elm land",
     ]);
+  });
+
+  it("reads no legacy Commons cards for an article wiki", async () => {
+    const db = makeDb();
+    await cardedTitleKeys(db as never, "iiwiki", ["Elm"]);
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads no legacy Commons cards when every file already has a card by its title", async () => {
+    const db = makeDb(["file:flag.svg"]);
+    await expect(cardedTitleKeys(db as never, "commons", ["File:Flag.svg"])).resolves.toEqual(
+      new Set(["file:flag.svg"])
+    );
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts a Commons file a legacy card shows: its art, or its description URL, names the file", async () => {
+    const db = makeDb();
+    db.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        artwork: "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg",
+        descriptionUrl: null,
+      },
+      {
+        artwork: "https://example.com/redrawn.png",
+        descriptionUrl: "https://commons.wikimedia.org/wiki/File%3AFlag%20of%20Elm.svg",
+      },
+      { artwork: "https://iiwiki.com/images/a/ab/Flag_of_Oak.svg", descriptionUrl: null },
+    ]);
+    const keys = await cardedTitleKeys(db as never, "commons", [
+      "File:Flag of Ireland.svg",
+      "File:Flag of Elm.svg",
+      "File:Flag of Oak.svg",
+    ]);
+    expect(keys).toEqual(new Set(["file:flag of ireland.svg", "file:flag of elm.svg"]));
+    const sql = (db.$queryRaw.mock.calls[1]![0] as TemplateStringsArray).join("?");
+    expect(sql).toContain(`COALESCE("wikiSource", 'ixwiki') = 'commons'`);
+    expect(sql).toContain(`lower("wikiArticleTitle") IS NULL`);
   });
 
   it("homes a Commons file in Ixnay without asking for realm pages", async () => {

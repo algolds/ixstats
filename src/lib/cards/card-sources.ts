@@ -4,6 +4,7 @@
  * wiki-hosts.ts is a card source too. Client-safe.
  */
 import { z } from "zod";
+import { commonsFileName } from "~/lib/cards/art-licence";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { titleUrlPath, type WikiSource } from "~/lib/wiki-os/config";
 import { SISTER_READER_IDS, SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
@@ -46,9 +47,30 @@ export function commonsPageUrl(title: string): string {
 }
 
 /**
+ * A Commons card's file page. A legacy Commons card (the old flag importer stored no title) is found by the file its
+ * metadata.descriptionUrl, else its art, names; null when neither names a Commons file.
+ */
+export function commonsCardPageUrl(card: {
+  wikiArticleTitle: string | null;
+  artwork?: string | null;
+  descriptionUrl?: string | null;
+}): string | null {
+  if (card.wikiArticleTitle) return commonsPageUrl(card.wikiArticleTitle);
+  const name = commonsFileName(card.descriptionUrl) ?? commonsFileName(card.artwork);
+  return name ? commonsPageUrl(`File:${name}`) : null;
+}
+
+/** A file title's namespace as an admin may type it ("File:", "file :", "Image:"). */
+const FILE_NAMESPACE = /^\s*(?:file|image)\s*:\s*/i;
+
+/**
  * A page title as cards store it: the form of Phase 1's `canonicalArticleTitle` (the Lore natural key), or null when
  * MediaWiki would refuse the title (`canonicalArticleTitle` falls back to the raw title instead; the importer rejects).
+ * Commons holds files only, so its titles always take the `File:` namespace, and the file name's first letter is
+ * capitalised as Commons does (other wikis' namespaces are not parsed, so the name after them would stay as typed).
  */
 export function canonicalCardTitle(source: CardWikiSource, raw: string): string | null {
-  return canonicalizeTitle(raw, { source })?.title ?? null;
+  if (source !== "commons") return canonicalizeTitle(raw, { source })?.title ?? null;
+  const name = canonicalizeTitle(raw.replace(FILE_NAMESPACE, ""), { source })?.title;
+  return name ? `File:${name}` : null;
 }

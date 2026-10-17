@@ -6,8 +6,6 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { ArtworkSource, CardRarity, CardType, LoreCategory, type Prisma } from "@prisma/client";
 import { recomputeAllCardValues } from "~/lib/cards/valuation";
-import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 export const cardsLegacyAdminRouter = createTRPCRouter({
@@ -151,123 +149,6 @@ export const cardsLegacyAdminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to perform bulk visibility update",
-        });
-      }
-    }),
-
-  /**
-   * Fetch category members from Wikimedia Commons API
-   */
-  fetchCommonsCategoryMembers: adminProcedure
-    .input(
-      z.object({
-        category: z.string().min(1),
-        limit: z.number().int().min(1).max(100).optional().default(50),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const items = await commonsFlagImporter.fetchCategoryMembers(input.category, input.limit);
-        if (items.length === 0) return { items: [] };
-
-        // Commons flag cards already imported from this category, by title
-        const cleanTitles = items.map((i) => i.cleanTitle);
-        const existingCards = await ctx.db.card.findMany({
-          where: {
-            cardType: CardType.LORE,
-            title: { in: cleanTitles },
-            metadata: { path: ["commonsCategory"], equals: input.category },
-          },
-          select: { title: true },
-        });
-
-        const existingSet = new Set(existingCards.map((c) => c.title));
-
-        const itemsWithStatus = items.map((item) => ({
-          ...item,
-          isAlreadyImported: existingSet.has(item.cleanTitle),
-        }));
-
-        return { items: itemsWithStatus };
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in fetchCommonsCategoryMembers:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch Wikimedia Commons flags",
-        });
-      }
-    }),
-
-  /**
-   * Import selected Wikimedia Commons flags as Lore cards in Ixnay, marked `metadata.commonsCategory`;
-   * the importing admin gets no copy.
-   */
-  importCommonsFlags: adminProcedure
-    .input(
-      z.object({
-        items: z.array(
-          z.object({
-            cleanTitle: z.string().min(1),
-            fileUrl: z.string().url(),
-            category: z.string(),
-            descriptionUrl: z.string().optional(),
-          })
-        ),
-        defaultRarity: z.nativeEnum(CardRarity).optional().default(CardRarity.COMMON),
-        season: z.number().int().min(1).optional().default(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        let imported = 0;
-        let skipped = 0;
-
-        for (const item of input.items) {
-          // Check if this category's flag card with the same title exists
-          const card = await ctx.db.card.findFirst({
-            where: {
-              title: item.cleanTitle,
-              cardType: CardType.LORE,
-              metadata: { path: ["commonsCategory"], equals: item.category },
-            },
-          });
-
-          if (!card) {
-            await ctx.db.card.create({
-              data: {
-                title: item.cleanTitle,
-                description: `Wikimedia Commons SVG Flag from ${item.category}`,
-                artwork: item.fileUrl,
-                cardType: CardType.LORE,
-                realmId: DEFAULT_REALM_ID,
-                rarity: input.defaultRarity,
-                season: input.season,
-                metadata: {
-                  commonsCategory: item.category,
-                  descriptionUrl: item.descriptionUrl || item.fileUrl,
-                  importedAt: new Date().toISOString(),
-                  importedBy: ctx.user.id,
-                },
-                marketValue: 15,
-              },
-            });
-            imported++;
-          } else {
-            skipped++;
-          }
-        }
-
-        return {
-          success: true,
-          imported,
-          skipped,
-          message: `Imported ${imported} Commons flag card(s) (${skipped} skipped as duplicates).`,
-        };
-      } catch (error) {
-        console.error("[CARDS_ROUTER] Error in importCommonsFlags:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to import Wikimedia Commons flags",
         });
       }
     }),

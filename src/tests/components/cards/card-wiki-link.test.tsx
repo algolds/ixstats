@@ -111,6 +111,24 @@ describe("cardWikiHref", () => {
     ).toBe("https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg");
   });
 
+  it("links a legacy Commons card, stored with no title, to the file its description URL or art names", () => {
+    const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
+    const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
+    expect(
+      cardWikiHref(card({ wikiSource: "commons", metadata: { descriptionUrl: upload } }))
+    ).toBe(page);
+    expect(cardWikiHref(card({ wikiSource: "commons", artwork: upload }))).toBe(page);
+    expect(
+      cardWikiHref(
+        card({
+          wikiSource: "commons",
+          wikiUrl: null,
+          metadata: { descriptionUrl: "javascript:alert(1)" },
+        })
+      )
+    ).toBeNull();
+  });
+
   it("keeps a URL that names no article as it is", () => {
     expect(cardWikiHref(card({ wikiUrl: "https://example.com/x", wikiSource: "iiwiki" }))).toBe(
       "https://example.com/x"

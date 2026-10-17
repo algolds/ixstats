@@ -3,7 +3,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, adminProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity, CardType } from "@prisma/client";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
@@ -144,27 +144,6 @@ export const cardsInventoryRouter = createTRPCRouter({
         });
       }
     }),
-
-  /** Admin: card counts by type and category, and pending requests. */
-  getLoreStats: adminProcedure.query(async ({ ctx }) => {
-    const live = { isRetired: false };
-    const [totalCards, totalLoreCards, totalNSCards, pendingRequests, categoryGroups] =
-      await Promise.all([
-        ctx.db.card.count({ where: live }),
-        ctx.db.card.count({ where: { ...live, cardType: CardType.LORE } }),
-        ctx.db.card.count({ where: { ...live, cardType: CardType.NS } }),
-        ctx.db.loreCardRequest.count({ where: { status: "PENDING" } }),
-        ctx.db.card.groupBy({
-          by: ["category"],
-          where: { ...live, category: { not: null } },
-          _count: { id: true },
-        }),
-      ]);
-    const categoryBreakdown: Record<string, number> = {};
-    for (const group of categoryGroups)
-      if (group.category) categoryBreakdown[group.category] = group._count.id;
-    return { totalCards, totalLoreCards, totalNSCards, pendingRequests, categoryBreakdown };
-  }),
 
   /** The card library for signed-in players: every live card, filterable; never a retired or pending one. */
   getNSCards: protectedProcedure

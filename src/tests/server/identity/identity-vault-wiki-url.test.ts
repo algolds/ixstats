@@ -30,6 +30,16 @@ describe("passport vault card wikiUrl", () => {
     );
   });
 
+  it("opens a legacy Commons card's file, stored with no title, on Commons", () => {
+    const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
+    const legacy = (metadata: object | null, artwork: string | null) =>
+      ({ wikiArticleTitle: null, wikiSource: "commons", metadata, artwork }) as CardRow;
+    const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
+    expect(wikiUrlOf(legacy({ descriptionUrl: upload }, null))).toBe(page);
+    expect(wikiUrlOf(legacy(null, upload))).toBe(page);
+    expect(wikiUrlOf(legacy({ descriptionUrl: 3 }, "https://example.com/x.png"))).toBeNull();
+  });
+
   it("has no link without an article title", () => {
     expect(wikiUrlOf(card(null, "ixwiki"))).toBeNull();
   });

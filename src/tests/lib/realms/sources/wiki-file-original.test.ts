@@ -48,6 +48,8 @@ const infoFor = (bytes: Uint8Array, over: Partial<WikiFileInfo> = {}): WikiFileI
   licenceUrl: null,
   artist: "Cartographer",
   credit: null,
+  ownAttribution: null,
+  holder: "iiwiki",
   attribution: "Eurth political map 2024.png by Cartographer, CC BY-SA 4.0, via IIWiki",
   ...over,
 });

@@ -104,9 +104,9 @@ export async function captureArtLicence(
 
   const licence = decidingHint(await filePageLicenceHints(query, fileTitle));
   if (!licence) return captured;
-  // The credit line names the licence the File page gave.
-  const attribution = attributionLine(source, fileTitle, {
-    attribution: null,
+  // The credit line names the licence the File page gave, unless the file states its own.
+  const attribution = attributionLine(info.holder, fileTitle, {
+    attribution: info.ownAttribution,
     artist: info.artist,
     licence,
   });

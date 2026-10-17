@@ -148,20 +148,6 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(findMatchingCategory("unknown_keyword_xyz")).toBeNull();
   });
 
-  it("should have the IXWB preset configured", () => {
-    const { CATEGORY_PRESETS } = require("~/app/admin/cards/LoreCardBatchAdmin");
-
-    // Check IXWB preset
-    const ixwbPreset = CATEGORY_PRESETS.find(
-      (p: { categoryName: string }) => p.categoryName === "IXWB"
-    );
-    expect(ixwbPreset).toBeDefined();
-    expect(ixwbPreset.name).toBe("IXWB Worldbuilding");
-    expect(ixwbPreset.wikiSourceFilter).toBe("ixwiki");
-    expect(ixwbPreset.terms.length).toBeGreaterThanOrEqual(10);
-    expect(ixwbPreset.synonyms).toContain("ixwb");
-  });
-
   it("should have getSyncLogCards and getSyncLogs configured on nsImportSyncRouter", () => {
     const { nsImportSyncRouter } = require("~/server/api/routers/ns-import/sync");
     expect(nsImportSyncRouter._def.procedures.getSyncLogs).toBeDefined();

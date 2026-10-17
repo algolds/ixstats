@@ -4,11 +4,21 @@ import {
   CARD_TYPE_LABELS,
   RARITIES,
   RARITY_LABELS,
+  SOURCE_OPTIONS,
   labelOf,
 } from "~/app/admin/cards/shared/card-labels";
 import { CardRarity } from "~/lib/cards/enums";
 
 describe("card labels", () => {
+  it("offers every card source wiki by its name", () => {
+    expect(SOURCE_OPTIONS).toEqual([
+      ["ixwiki", "IxWiki"],
+      ["iiwiki", "IIWiki"],
+      ["althistory", "AltHistory Wiki"],
+      ["commons", "Wikimedia Commons"],
+    ]);
+  });
+
   it("lists the rarities lowest first, as the enum does", () => {
     expect(RARITIES).toEqual(Object.values(CardRarity));
   });

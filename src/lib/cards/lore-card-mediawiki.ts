@@ -34,10 +34,14 @@ export function mwQuery(
   });
 }
 
-/** An `action=query` answer: its pages, its backlinks, or the API's error. */
-export interface MwQueryResponse {
-  query?: { pages?: Record<string, MwPage>; backlinks?: Array<{ title: string }> };
+/** An API error, as any action answers it. */
+export interface MwError {
   error?: { code?: string; info?: string };
+}
+
+/** An `action=query` answer: its pages, its backlinks, or the API's error. */
+export interface MwQueryResponse extends MwError {
+  query?: { pages?: Record<string, MwPage>; backlinks?: Array<{ title: string }> };
 }
 
 /** The HTTP answers that mean the wiki will not serve this run: a refusal, and a rate limit. */
@@ -71,11 +75,15 @@ function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | n
 }
 
 /**
- * The JSON of a wiki's answer. A refusal (HTTP 403, or the API's `readapidenied`), a rate limit (HTTP 429), or an
- * answer that is not data (a Cloudflare challenge page) means the wiki will not serve this run: DiscoveryStopped.
- * Any other HTTP error, or another API error, throws. An error answer's body is let go unread.
+ * The JSON of a wiki's answer, as `T` (an `action=query` answer unless the caller names its own shape). A refusal
+ * (HTTP 403, or the API's `readapidenied`), a rate limit (HTTP 429), or an answer that is not data (a Cloudflare
+ * challenge page) means the wiki will not serve this run: DiscoveryStopped. Any other HTTP error, or another API
+ * error, throws. An error answer's body is let go unread.
  */
-export async function mwJson(response: Response, wikiSource: WikiSource): Promise<MwQueryResponse> {
+export async function mwJson<T extends MwError = MwQueryResponse>(
+  response: Response,
+  wikiSource: WikiSource
+): Promise<T> {
   const label = cardSourceLabel(wikiSource);
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);
@@ -84,9 +92,9 @@ export async function mwJson(response: Response, wikiSource: WikiSource): Promis
     throw new Error(`${label} answered HTTP ${response.status}.`);
   }
   const body = await response.text();
-  let data: MwQueryResponse;
+  let data: T;
   try {
-    data = JSON.parse(body) as MwQueryResponse;
+    data = JSON.parse(body) as T;
   } catch {
     return stopped(wikiSource, "blocked", response.status);
   }

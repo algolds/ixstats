@@ -8,7 +8,7 @@ import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
-import { mwJson, mwQuery } from "./lore-card-mediawiki";
+import { mwJson, mwQuery, type MwError } from "./lore-card-mediawiki";
 import {
   ixwikiCategoryTitles,
   ixwikiMainNamespaceTitles,
@@ -26,7 +26,16 @@ export interface CategoryCounts {
   subcats: number;
 }
 
-/** Page titles from a paged `list=` query, up to `limit`. */
+/** One page of a `list=` query's answer. */
+interface ListPage extends MwError {
+  query?: Record<string, Array<{ title?: string }>>;
+  continue?: Record<string, string>;
+}
+
+/**
+ * Page titles from a paged `list=` query, up to `limit`. Every page is read through mwJson, so a wiki that refuses
+ * throws DiscoveryStopped and a failed page throws, rather than the list coming back empty or cut short.
+ */
 async function listAll(
   wikiSource: WikiSource,
   params: Record<string, string>,
@@ -37,33 +46,21 @@ async function listAll(
   const titles: string[] = [];
   let cont: string | undefined;
   do {
-    try {
-      const res = await mwQuery(
-        wikiSource,
-        { ...params, ...(cont && { [continueKey]: cont }) },
-        12000
-      );
-      if (!res.ok) {
-        console.error(`[Lore Card Discovery] ${params.list} error: ${res.status}`);
-        break;
-      }
-      const data = (await res.json()) as {
-        query?: Record<string, Array<{ title?: string }>>;
-        continue?: Record<string, string>;
-      };
-      for (const member of data.query?.[listKey] ?? []) {
-        if (member.title) titles.push(member.title);
-      }
-      cont = data.continue?.[continueKey];
-    } catch (error) {
-      console.error(`[Lore Card Discovery] ${params.list} fetch failed:`, error);
-      break;
+    const response = await mwQuery(
+      wikiSource,
+      { ...params, ...(cont && { [continueKey]: cont }) },
+      12000
+    );
+    const data = await mwJson<ListPage>(response, wikiSource);
+    for (const member of data.query?.[listKey] ?? []) {
+      if (member.title) titles.push(member.title);
     }
+    cont = data.continue?.[continueKey];
   } while (cont && titles.length < limit);
   return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
 }
 
-/** Page titles (and, when asked, files) in a live wiki category. */
+/** Page titles (and, when asked, files) in a live wiki category; a sister wiki's failed read throws (listAll). */
 function fetchCategoryMembers(
   category: string,
   wikiSource: WikiSource,
@@ -84,7 +81,7 @@ function fetchCategoryMembers(
   );
 }
 
-/** Every main-namespace page that is not a redirect. */
+/** Every main-namespace page that is not a redirect; a sister wiki's failed read throws (listAll). */
 function fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
   if (readsPostgres(wikiSource)) return ixwikiMainNamespaceTitles(limit);
   return listAll(

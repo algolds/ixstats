@@ -3,6 +3,7 @@
 import {
   classifyLicence,
   commonsCardTitle,
+  commonsFileName,
   fileNameFromArtworkUrl,
   licenceTemplates,
 } from "~/lib/cards/art-licence";
@@ -169,5 +170,35 @@ describe("commonsCardTitle", () => {
     expect(commonsCardTitle("Flag of the Holy See.png")).toBe("Flag of the Holy See");
     expect(commonsCardTitle("file:Coat of arms.JPEG")).toBe("Coat of arms");
     expect(commonsCardTitle("File:Map.tif")).toBe("Map.tif");
+  });
+});
+
+describe("commonsFileName", () => {
+  it.each([
+    ["an original", "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg"],
+    [
+      "a thumbnail, with the tracking query",
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/120px-Flag_of_Ireland.svg.png?utm_source=commons.wikimedia.org",
+    ],
+    ["its file page", "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"],
+  ])("names the file of %s", (_name, url) => {
+    expect(commonsFileName(url)).toBe("Flag_of_Ireland.svg");
+  });
+
+  it("decodes a file page whose title was percent-encoded whole", () => {
+    expect(
+      commonsFileName("https://commons.wikimedia.org/wiki/File%3AFlag%20of%20Ireland.svg")
+    ).toBe("Flag of Ireland.svg");
+  });
+
+  it.each([
+    ["another wiki's file", "https://iiwiki.com/images/a/ab/Flag.png"],
+    ["a page that is no file", "https://commons.wikimedia.org/wiki/Category:Flags"],
+    ["a Commons look-alike host", "https://commons.wikimedia.org.evil.example/wiki/File:Flag.svg"],
+    ["a path step", "https://commons.wikimedia.org/wiki/File:.."],
+    ["no URL", null],
+    ["not a URL", "Flag.svg"],
+  ])("names nothing for %s", (_name, url) => {
+    expect(commonsFileName(url)).toBeNull();
   });
 });

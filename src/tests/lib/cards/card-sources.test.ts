@@ -7,6 +7,7 @@ import {
   cardArticleSourceSchema,
   cardSourceLabel,
   cardWikiSourceSchema,
+  commonsCardPageUrl,
   commonsPageUrl,
   parseCardArticleSource,
   parseCardWikiSource,
@@ -64,5 +65,58 @@ describe("card sources", () => {
       canonicalArticleTitle("United_States_of_Elm", "iiwiki")
     );
     expect(canonicalCardTitle("althistory", "a|b")).toBeNull();
+  });
+
+  it("keeps an AltHistory title's timeline whole: it is part of the page's name", () => {
+    expect(canonicalCardTitle("althistory", "Aramelia_(Roman_Survival)")).toBe(
+      "Aramelia (Roman Survival)"
+    );
+  });
+
+  it("names a Commons file as Commons does: always File:, the name's first letter capitalised", () => {
+    expect(canonicalCardTitle("commons", "flag_of_Ireland.svg")).toBe("File:Flag of Ireland.svg");
+    expect(canonicalCardTitle("commons", "file : flag of Ireland.svg")).toBe(
+      "File:Flag of Ireland.svg"
+    );
+    expect(canonicalCardTitle("commons", "Image:map.png")).toBe("File:Map.png");
+    expect(canonicalCardTitle("commons", "File:Flag of Ireland.svg")).toBe(
+      "File:Flag of Ireland.svg"
+    );
+    expect(canonicalCardTitle("commons", "File:")).toBeNull();
+    expect(canonicalCardTitle("commons", "File:a|b.svg")).toBeNull();
+  });
+});
+
+describe("commonsCardPageUrl", () => {
+  const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
+  const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
+
+  it("addresses a Commons card's file by its title", () => {
+    expect(commonsCardPageUrl({ wikiArticleTitle: "File:Flag of Ireland.svg", artwork: "x" })).toBe(
+      page
+    );
+  });
+
+  it("finds a legacy card's file, stored with no title, from its description URL, else its art", () => {
+    expect(commonsCardPageUrl({ wikiArticleTitle: null, descriptionUrl: upload })).toBe(page);
+    expect(
+      commonsCardPageUrl({
+        wikiArticleTitle: null,
+        descriptionUrl: "https://commons.wikimedia.org/wiki/File%3AFlag%20of%20Ireland.svg",
+      })
+    ).toBe(page);
+    expect(
+      commonsCardPageUrl({ wikiArticleTitle: null, descriptionUrl: null, artwork: upload })
+    ).toBe(page);
+  });
+
+  it("has no page when neither names a Commons file", () => {
+    expect(
+      commonsCardPageUrl({
+        wikiArticleTitle: null,
+        descriptionUrl: "javascript:alert(1)",
+        artwork: "https://evil.example/Flag.svg",
+      })
+    ).toBeNull();
   });
 });

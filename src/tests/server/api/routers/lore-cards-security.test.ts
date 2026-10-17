@@ -33,17 +33,6 @@ describe("lore wiki procedures", () => {
     await expect(caller.fetchLoreMetadata({ source: "ixwiki", pageTitle: "X" })).rejects.toThrow(
       refused
     );
-    await expect(caller.searchWikiCategories({ source: "ixwiki" })).rejects.toThrow(refused);
-    await expect(caller.getCategoryStats({ source: "ixwiki", categories: ["X"] })).rejects.toThrow(
-      refused
-    );
-    await expect(
-      caller.fetchWikiCategoryMembers({ source: "ixwiki", category: "X" })
-    ).rejects.toThrow(refused);
-    await expect(caller.fetchAllMainNamespacePages({ source: "ixwiki" })).rejects.toThrow(refused);
-    await expect(
-      caller.fetchArticlePreviewsBatch({ source: "ixwiki", titles: ["X"] })
-    ).rejects.toThrow(refused);
   });
 
   it("answers an article's author without writing to any card", async () => {
