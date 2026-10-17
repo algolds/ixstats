@@ -36,9 +36,15 @@ import {
 } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
 describe("the Vault shop's initial view", () => {
-  it("opens on the Marketplace by default", () => {
+  it("opens on Packs by default", () => {
     render(<VaultStoreTab />);
-    expect(screen.getByTestId("active-store-tab").textContent).toBe("boosters");
+    expect(screen.getByTestId("active-store-tab").textContent).toBe("packs");
+    expect(screen.getByText("Packs from every realm. Each shows its odds.")).toBeInTheDocument();
+  });
+
+  it("opens on Packs from an old boosters link", () => {
+    render(<VaultStoreTab initialView="boosters" />);
+    expect(screen.getByTestId("active-store-tab").textContent).toBe("packs");
   });
 
   it("opens on My packs when the view param names it", () => {
@@ -47,8 +53,15 @@ describe("the Vault shop's initial view", () => {
   });
 
   it("ignores a view that is not a sub-tab", () => {
-    expect(resolveStoreView("nope")).toBe("boosters");
-    expect(resolveStoreView(null)).toBe("boosters");
+    expect(resolveStoreView("nope")).toBe("packs");
+    expect(resolveStoreView(null)).toBe("packs");
     expect(resolveStoreView("upgrades")).toBe("upgrades");
+  });
+
+  it("names the pack shop Packs and keeps old links working", () => {
+    expect(resolveStoreView(undefined)).toBe("packs");
+    expect(resolveStoreView("packs")).toBe("packs");
+    expect(resolveStoreView("my-packs")).toBe("my-packs");
+    expect(resolveStoreView("boosters")).toBe("packs");
   });
 });
