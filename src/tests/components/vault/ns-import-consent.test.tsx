@@ -67,6 +67,7 @@ describe("NS import complete step", () => {
     expect(
       screen.getByRole("img", { name: "Testlandia, Rare, Standard, NationStates, season 3" })
     ).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Your cards" })).toBeInTheDocument();
     expect(screen.queryByText(/more cards/)).toBeNull();
     expect(screen.getByRole("button", { name: "Import another nation" })).toBeInTheDocument();
   });

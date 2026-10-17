@@ -13,18 +13,19 @@ import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
 import { NSTakedownModal } from "../modals/NSTakedownModal";
 
-/** The most recently imported card, or null when there is none. */
-function lastImport<T extends { acquiredAt: Date }>(cards: readonly T[]): T | null {
+/** The NS card acquired most recently, or null when there is none. */
+function newestCard<T extends { acquiredAt: Date }>(cards: readonly T[]): T | null {
   return cards.reduce<T | null>(
-    (last, card) => (last && last.acquiredAt >= card.acquiredAt ? last : card),
+    (newest, card) => (newest && newest.acquiredAt >= card.acquiredAt ? newest : card),
     null
   );
 }
 
-function importsSummary(count: number, last: { acquiredAt: Date } | null): string {
-  if (!last) return "No cards imported yet";
+/** Every NS copy held counts (a pack or trade can bring one too), so the row does not say "imported". */
+function cardsSummary(count: number, newest: { acquiredAt: Date } | null): string {
+  if (!newest) return "No NationStates cards yet. Import them from your NationStates deck.";
   const noun = count === 1 ? "card" : "cards";
-  return `${count} ${noun} imported, the last on ${last.acquiredAt.toLocaleDateString()}`;
+  return `${count} NationStates ${noun}, the newest on ${newest.acquiredAt.toLocaleDateString()}`;
 }
 
 export function NationStatesCardsPanel() {
@@ -40,7 +41,7 @@ export function NationStatesCardsPanel() {
   });
 
   const cards = nsCardsData?.cards ?? [];
-  const last = lastImport(cards);
+  const newest = newestCard(cards);
 
   return (
     <div className="space-y-6">
@@ -85,13 +86,20 @@ export function NationStatesCardsPanel() {
 
       <SettingsGroup>
         <SettingsRow
-          label="Your imports"
-          description={cardsLoading ? "Loading your imports" : importsSummary(cards.length, last)}
+          label="Your NationStates cards"
+          description={
+            cardsLoading ? "Loading your NationStates cards" : cardsSummary(cards.length, newest)
+          }
           icon={Download}
         >
-          {last && (
+          {newest && (
             <Button asChild variant="secondary" size="sm">
-              <Link href={cardSheetHref(CARD_HUB_PATHS.mine, last.cardId)}>Open {last.title}</Link>
+              <Link
+                href={cardSheetHref(CARD_HUB_PATHS.mine, newest.cardId)}
+                data-cuelume-press="soft"
+              >
+                Open {newest.title}
+              </Link>
             </Button>
           )}
         </SettingsRow>

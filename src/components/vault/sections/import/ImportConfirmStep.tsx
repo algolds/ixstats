@@ -1,7 +1,7 @@
 "use client";
 
 import { springSmooth } from "~/lib/design/motion";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle,
@@ -103,6 +103,7 @@ export function ImportCompleteStep({
   onReset: () => void;
 }) {
   const moreFaces = importResult.faces.length - SHOWN_FACES;
+  const facesLabel = useId();
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center py-4 text-center">
@@ -183,8 +184,13 @@ export function ImportCompleteStep({
           transition={{ delay: 0.55 }}
           className="space-y-2"
         >
-          <p className="text-label-secondary text-footnote font-semibold">Your cards</p>
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-3">
+          <p id={facesLabel} className="text-label-secondary text-footnote font-semibold">
+            Your cards
+          </p>
+          <ul
+            aria-labelledby={facesLabel}
+            className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-3"
+          >
             {importResult.faces.slice(0, SHOWN_FACES).map((face) => (
               <li key={face.copy?.ownershipId ?? face.cardId}>
                 <CardFace face={face} size="S" className="w-full" />

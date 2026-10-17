@@ -74,8 +74,9 @@ function ImportDeckTab() {
       });
       setCurrentStep("complete");
       vaultNotify.cardsImported(data.cardsImported, data.nation);
-      // So Mine lists the new copies
+      // So Mine and the Settings NS panel list the new copies
       void utils.cards.listMine.invalidate();
+      void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (error) => {
       setErrorMessage(error.message);

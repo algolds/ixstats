@@ -1,9 +1,12 @@
-/** /vault/import: a finished import shows the copies it minted as their faces, and Mine refetches to list them. */
+/** /vault/import: a finished import shows the copies it minted as their faces, and Mine and Settings refetch. */
 import { act, render, screen } from "@testing-library/react";
 import type React from "react";
 
 jest.mock("~/trpc/react", () => {
-  const utils = { cards: { listMine: { invalidate: jest.fn() } } };
+  const utils = {
+    cards: { listMine: { invalidate: jest.fn() } },
+    nsImport: { getMyNSCards: { invalidate: jest.fn() } },
+  };
   const mutation = () => ({
     useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
   });
@@ -91,7 +94,7 @@ describe("VaultImportSection", () => {
     }) as never);
   });
 
-  it("shows the imported copies as their faces and refreshes Mine", () => {
+  it("shows the imported copies as their faces, and refreshes Mine and the Settings NS panel", () => {
     render(<VaultImportSection />);
     act(() =>
       importDeck.onSuccess?.(
@@ -104,5 +107,6 @@ describe("VaultImportSection", () => {
       screen.getByRole("img", { name: "Testlandia, Rare, Standard, NationStates, season 3" })
     ).toBeInTheDocument();
     expect(api.useUtils().cards.listMine.invalidate).toHaveBeenCalledTimes(1);
+    expect(api.useUtils().nsImport.getMyNSCards.invalidate).toHaveBeenCalledTimes(1);
   });
 });

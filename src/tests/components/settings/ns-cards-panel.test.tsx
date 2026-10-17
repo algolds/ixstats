@@ -13,8 +13,10 @@ jest.mock("~/app/settings/_components/modals/NSTakedownModal", () => ({
 }));
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({ href, children, ...rest }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
   ),
 }));
 
@@ -64,7 +66,7 @@ function withCards(cards: MyNSCards["cards"]) {
 }
 
 describe("NationStatesCardsPanel", () => {
-  it("keeps the import link, the last import and the takedown, and no card list", () => {
+  it("keeps the import link, the newest card and the takedown, and no card list", () => {
     withCards([
       nsCard("a", "Aland", "2026-10-01T00:00:00Z"),
       nsCard("b", "Bigtopia", "2026-10-03T00:00:00Z"),
@@ -74,9 +76,10 @@ describe("NationStatesCardsPanel", () => {
       "href",
       "/vault/import"
     );
+    expect(screen.getByText("Your NationStates cards")).toBeInTheDocument();
     expect(
       screen.getByText(
-        `2 cards imported, the last on ${new Date("2026-10-03T00:00:00Z").toLocaleDateString()}`
+        `2 NationStates cards, the newest on ${new Date("2026-10-03T00:00:00Z").toLocaleDateString()}`
       )
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Takedown and opt-out/ })).toBeInTheDocument();
@@ -86,29 +89,30 @@ describe("NationStatesCardsPanel", () => {
     expect(screen.queryByText("Aland")).toBeNull();
   });
 
-  it("opens the last import in its card sheet, not a modal", () => {
+  it("opens the newest card in its card sheet, not a modal", () => {
     withCards([
       nsCard("a", "Aland", "2026-10-01T00:00:00Z"),
       nsCard("b", "Bigtopia", "2026-10-03T00:00:00Z"),
     ]);
     render(<NationStatesCardsPanel />);
-    expect(screen.getByRole("link", { name: "Open Bigtopia" })).toHaveAttribute(
-      "href",
-      "/vault/cards/mine?card=b"
-    );
+    const open = screen.getByRole("link", { name: "Open Bigtopia" });
+    expect(open).toHaveAttribute("href", "/vault/cards/mine?card=b");
+    expect(open).toHaveAttribute("data-cuelume-press", "soft");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("counts one card in the singular", () => {
     withCards([nsCard("a", "Aland", "2026-10-01T00:00:00Z")]);
     render(<NationStatesCardsPanel />);
-    expect(screen.getByText(/^1 card imported, the last on/)).toBeInTheDocument();
+    expect(screen.getByText(/^1 NationStates card, the newest on/)).toBeInTheDocument();
   });
 
-  it("says when nothing is imported yet, with no card link", () => {
+  it("says there are none yet and where to import them, with no card link", () => {
     withCards([]);
     render(<NationStatesCardsPanel />);
-    expect(screen.getByText("No cards imported yet")).toBeInTheDocument();
+    expect(
+      screen.getByText("No NationStates cards yet. Import them from your NationStates deck.")
+    ).toBeInTheDocument();
     const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
     expect(hrefs.some((href) => href?.includes("?card="))).toBe(false);
     expect(screen.getByRole("link", { name: /Import cards/ })).toBeInTheDocument();
