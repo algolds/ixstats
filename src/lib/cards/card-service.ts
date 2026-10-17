@@ -1,7 +1,7 @@
 // src/lib/card-service.ts
 // Card service layer for IxCards Phase 1
 
-import { type PrismaClient } from "@prisma/client";
+import { type Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardFinish, type CardRarity } from "./enums";
 import { mintCopy } from "./mint";
@@ -9,7 +9,8 @@ import { nsBankValue } from "./ns-facts";
 import { computeCardValue, getValuationConfig } from "./valuation";
 
 /**
- * Get user's card inventory via CardOwnership
+ * Get user's card inventory via CardOwnership. Retired cards stay in it (cards refresh §3): a takedown or a Library
+ * hide retires the card, never the owner's copies, which show the placeholder face.
  * @param db - Prisma client instance
  * @param userId - User ID
  * @param sortBy - Sort option
@@ -30,15 +31,12 @@ export async function getUserCards(
       });
     }
 
-    const where: any = {
+    const where: Prisma.CardOwnershipWhereInput = {
       ownerId: userId,
-      cards: {
-        isRetired: false,
-        ...(filterRarity && { rarity: filterRarity }),
-      },
+      ...(filterRarity && { cards: { rarity: filterRarity } }),
     };
 
-    let orderBy: any = [];
+    let orderBy: Prisma.CardOwnershipOrderByWithRelationInput[] = [];
     if (sortBy === "rarity") {
       orderBy = [{ cards: { rarity: "desc" } }, { cards: { marketValue: "desc" } }];
     } else if (sortBy === "value") {
