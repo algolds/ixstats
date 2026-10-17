@@ -11,9 +11,6 @@ jest.mock("~/server/db", () => ({
     lorewardUserStats: { upsert: jest.fn() },
   },
 }));
-jest.mock("~/lib/vault/vault-bonus", () => ({
-  getBonusConfig: jest.fn().mockResolvedValue({ enabled: false }),
-}));
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
