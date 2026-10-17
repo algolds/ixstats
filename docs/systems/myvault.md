@@ -33,7 +33,7 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
   - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
-- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#removed-in-the-cards-refresh-2026-10-15)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
+- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#removed-in-the-cards-refresh-2026-10-15)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`
 
 ### The Wallet page
 
