@@ -175,6 +175,7 @@ class WikiLoreCardGenerator {
       exchars: String(EXCERPT_CHARS), // first ~2000 chars for the full excerpt
       exlimit: "1",
       explaintext: "1",
+      exsectionformat: "plain", // section headings as plain lines, not `== Heading ==`
       piprop: "original|name",
       pithumbsize: "500",
       inprop: "url",

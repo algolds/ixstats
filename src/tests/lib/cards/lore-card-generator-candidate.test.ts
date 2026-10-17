@@ -23,6 +23,14 @@ interface FakePage {
   pageimage?: string;
   images?: Array<{ title: string }>;
   wikitext?: string;
+  /** A wiki with TextExtracts: the lead and its sections, which it heads as asked (`exsectionformat`). */
+  sections?: { lead: string; headings: string[] };
+}
+
+/** TextExtracts' plain text: section headings as `== Heading ==` lines, unless asked for plain ones. */
+function textExtract(sections: NonNullable<FakePage["sections"]>, format: string | null): string {
+  const heading = (title: string) => (format === "plain" ? title : `== ${title} ==`);
+  return [sections.lead, ...sections.headings.map(heading)].join("\n\n");
 }
 
 /** AltHistory answering the generator's reads: the page, its backlinks, its first editors and file URLs. */
@@ -48,6 +56,7 @@ function althistory(page: FakePage) {
         pages: {
           1: {
             title: "Aramelia (Roman Survival)",
+            extract: page.sections && textExtract(page.sections, params.get("exsectionformat")),
             original: page.original,
             pageimage: page.pageimage,
             images: page.images,
@@ -209,6 +218,18 @@ describe("generateCard for a sister wiki", () => {
     expect(card.fullExcerpt.length).toBeLessThanOrEqual(2000);
     // The length gate still counts the article's text, not the cleaned excerpt
     expect(card.signals.length).toBeGreaterThan(card.fullExcerpt.length);
+  });
+
+  it("asks TextExtracts for plain section headings, so the excerpt keeps no == lines", async () => {
+    const sections = {
+      lead: "Aramelia is a nation of the Roman Survival timeline.",
+      headings: ["History", "Rise"],
+    };
+    const card = await read({ sections });
+    expect(card.fullExcerpt).not.toContain("==");
+    expect(card.fullExcerpt).toBe(
+      "Aramelia is a nation of the Roman Survival timeline.\n\nHistory\n\nRise"
+    );
   });
 
   it("rejects a stub, unless the caller lowers the length gate", async () => {
