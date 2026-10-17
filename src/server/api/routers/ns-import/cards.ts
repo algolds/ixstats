@@ -9,46 +9,16 @@ import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
-  adminProcedure,
   publicProcedure,
   rateLimitedPublicProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { CardType } from "~/lib/cards/enums";
-import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
+import { nsFactsOf } from "~/lib/cards/ns-facts";
 import { normalizeNationName } from "~/lib/vault/exploit-corrections";
-
-// ─── Background Processing Functions ──────────────────────────────
-
-async function findNSCard(db: PrismaClient, nsCardId: number, nsSeason: number) {
-  const card = await db.card.findFirst({ where: { nsCardId, nsSeason } });
-  if (!card) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: `No NS card found for ${nsCardId} S${nsSeason}`,
-    });
-  }
-  return card;
-}
-
-/** Retire a card, purge its artwork and record the takedown in its metadata. */
-async function retireCardArtwork(
-  db: PrismaClient,
-  card: { id: string; metadata: Prisma.JsonValue },
-  takedown: Prisma.InputJsonObject
-) {
-  await db.card.update({
-    where: { id: card.id },
-    data: {
-      isRetired: true,
-      retiredAt: new Date(),
-      artwork: null,
-      metadata: { ...(card.metadata as Prisma.JsonObject | null), nsTakedown: takedown },
-    },
-  });
-}
+import { selfServiceTakedown } from "~/server/modules/cards/cards.compliance";
 
 export function nationNamesMatch(a: string, b: string): boolean {
   const left = normalizeNationName(a);
@@ -58,19 +28,6 @@ export function nationNamesMatch(a: string, b: string): boolean {
 /** The nation an NS card depicts: its facts' name, falling back to the title. */
 function cardNationName(card: { title: string; metadata: Prisma.JsonValue }): string {
   return nsFactsOf(card.metadata).name ?? card.title;
-}
-
-/** When and why a card was hidden by a takedown, from its metadata. */
-function takedownOf(metadata: Prisma.JsonValue): {
-  hiddenAt: string | null;
-  reason: string | null;
-} {
-  const takedown =
-    isJsonObject(metadata) && isJsonObject(metadata.nsTakedown) ? metadata.nsTakedown : {};
-  return {
-    hiddenAt: typeof takedown.hiddenAt === "string" ? takedown.hiddenAt : null,
-    reason: typeof takedown.reason === "string" ? takedown.reason : null,
-  };
 }
 
 export const nsImportCardsRouter = createTRPCRouter({
@@ -139,124 +96,23 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      // 3. Retire card and purge artwork
-      await retireCardArtwork(ctx.db, card, {
-        selfService: true,
+      // 3. File the takedown and hide the art, through the one takedown queue.
+      const { alreadyHidden } = await selfServiceTakedown(ctx.db, {
+        cardId: card.id,
         verifiedNation: input.nationName.trim(),
-        hiddenAt: new Date().toISOString(),
-        reason: input.reason || "Self-service flag owner takedown request",
+        reason: input.reason,
+        requestedBy: ctx.user?.id ?? null,
       });
 
       return {
         success: true,
         cardId: card.id,
         title: card.title,
-        message: `Card artwork for "${card.title}" has been retired per verified nation owner request.`,
+        message: alreadyHidden
+          ? `"${card.title}" is already hidden.`
+          : `Card art for "${card.title}" is hidden, as its flag owner asked.`,
       };
     }),
-
-  /**
-   * Admin: Hide a NationStates-import card (flag-owner takedown / opt-out).
-   *
-   * Sets the card as retired and clears its artwork so the nation flag stops
-   * being served, per a flag owner's objection. The card definition is kept
-   * (ownership/history intact) but renders with the placeholder artwork.
-   */
-  hideNSCard: adminProcedure
-    .input(
-      z.object({
-        nsCardId: z.number().int().positive(),
-        nsSeason: z.number().int().positive(),
-        reason: z.string().max(500).optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const card = await findNSCard(ctx.db, input.nsCardId, input.nsSeason);
-
-      await retireCardArtwork(ctx.db, card, {
-        hiddenAt: new Date().toISOString(),
-        hiddenBy: ctx.user.id,
-        reason: input.reason || null,
-      });
-
-      console.log(
-        `[NS Import] Takedown: hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title}) by ${ctx.user.id}`
-      );
-
-      return {
-        success: true,
-        cardId: card.id,
-        title: card.title,
-        message: `Hidden "${card.title}" (${input.nsCardId} S${input.nsSeason}). Artwork removed; the flag will no longer be served.`,
-      };
-    }),
-
-  /**
-   * Admin: Restore a previously hidden NS-import card (undo takedown).
-   */
-  restoreNSCard: adminProcedure
-    .input(
-      z.object({
-        nsCardId: z.number().int().positive(),
-        nsSeason: z.number().int().positive(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const card = await findNSCard(ctx.db, input.nsCardId, input.nsSeason);
-
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: false,
-          retiredAt: null,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: null,
-          },
-        },
-      });
-
-      return {
-        success: true,
-        cardId: card.id,
-        title: card.title,
-        message: `Restored "${card.title}". A re-sync will re-add the flag artwork.`,
-      };
-    }),
-
-  /**
-   * Admin: List NS cards currently hidden by takedown.
-   */
-  listHiddenNSCards: adminProcedure.query(async ({ ctx }) => {
-    const cards = await ctx.db.card.findMany({
-      where: { isRetired: true, nsCardId: { not: null } },
-      select: {
-        id: true,
-        title: true,
-        nsCardId: true,
-        nsSeason: true,
-        retiredAt: true,
-        metadata: true,
-      },
-      orderBy: { retiredAt: "desc" },
-      take: 100,
-    });
-
-    return cards.map((card) => {
-      const meta = (card.metadata as Record<string, any>) || {};
-      return {
-        cardId: card.id,
-        title: card.title,
-        nsCardId: card.nsCardId,
-        nsSeason: card.nsSeason,
-        retiredAt: card.retiredAt,
-        hiddenBy: meta.nsTakedown?.hiddenBy ?? null,
-        reason: meta.nsTakedown?.reason ?? null,
-        selfService: meta.nsTakedown?.selfService ?? false,
-      };
-    });
-  }),
 
   // ─── Self-serve flag-owner opt-out (user settings) ────────────────
 
@@ -293,6 +149,12 @@ export const nsImportCardsRouter = createTRPCRouter({
               isRetired: true,
               retiredAt: true,
               metadata: true,
+              takedowns: {
+                where: { status: "HIDDEN" },
+                orderBy: { resolvedAt: "desc" },
+                take: 1,
+                select: { reason: true, resolvedAt: true },
+              },
             },
           },
         },
@@ -313,10 +175,10 @@ export const nsImportCardsRouter = createTRPCRouter({
         seen.add(key);
         return true;
       })
-      .map(({ cards: card }) => {
+      .map(({ cards: { takedowns, ...card } }) => {
         const facts = nsFactsOf(card.metadata);
         const flag = facts.flag ?? card.artwork ?? null;
-        const takedown = takedownOf(card.metadata);
+        const takedown = takedowns[0];
         return {
           ...card,
           cardId: card.id,
@@ -324,8 +186,8 @@ export const nsImportCardsRouter = createTRPCRouter({
           nation: facts.name ?? card.title,
           imageUrl: flag,
           isHidden: card.isRetired,
-          hiddenAt: takedown.hiddenAt ?? card.retiredAt ?? null,
-          reason: takedown.reason,
+          hiddenAt: takedown?.resolvedAt ?? card.retiredAt ?? null,
+          reason: takedown?.reason ?? null,
         };
       });
 
@@ -392,31 +254,19 @@ export const nsImportCardsRouter = createTRPCRouter({
         });
       }
 
-      if (card.isRetired) {
-        return {
-          success: true,
-          cardId: card.id,
-          title: card.title,
-          message: `"${card.title}" is already hidden.`,
-        };
-      }
-
-      await retireCardArtwork(ctx.db, card, {
-        hiddenAt: new Date().toISOString(),
-        hiddenBy: ctx.user.id,
-        reason: input.reason || null,
-        selfService: true,
+      const { alreadyHidden } = await selfServiceTakedown(ctx.db, {
+        cardId: card.id,
+        verifiedNation: nation,
+        reason: input.reason,
+        requestedBy: ctx.user.id,
       });
-
-      console.log(
-        `[NS Import] Self-serve takedown: user ${ctx.user.id} hid NS card ${input.nsCardId} S${input.nsSeason} (${card.title})`
-      );
-
       return {
         success: true,
         cardId: card.id,
         title: card.title,
-        message: `Hidden "${card.title}". Your flag will no longer be served on this card.`,
+        message: alreadyHidden
+          ? `"${card.title}" is already hidden.`
+          : `Hidden "${card.title}". Your flag is no longer shown on this card.`,
       };
     }),
 });

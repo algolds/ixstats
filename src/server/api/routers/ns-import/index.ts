@@ -8,9 +8,9 @@
  * Domains:
  *  - verification: nation ownership verification flow (requestVerification, checkVerification)
  *  - decks:        the verified nation's deck import (importDeck)
- *  - cards:        the verification URL, takedowns (requestSelfServiceTakedown, hideNSCard,
- *                  restoreNSCard, listHiddenNSCards, hideMyCard) and the player's NS cards
- *                  (getMyNSCards)
+ *  - cards:        the verification URL, the flag owner's takedowns (requestSelfServiceTakedown,
+ *                  hideMyCard, both through the cards admin's takedown queue) and the player's NS
+ *                  cards (getMyNSCards)
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { nsImportVerificationRouter } from "./verification";
