@@ -28,7 +28,7 @@ WHERE c."id" = numbered."id";
 
 CREATE UNIQUE INDEX IF NOT EXISTS "cards_realmId_collectorNumber_key" ON "cards" ("realmId", "collectorNumber");
 
--- Every mint path creates cards; numbering them here keeps all of them out of it. The per-realm lock is namespace 7337
+-- Every path that creates a card (imports, trophies, sports, the Designer) gets its number here, so none of them has to. The per-realm lock is namespace 7337
 -- (7331-7336 are taken, 7334 is reserved for Phase 4). A card that moves realm (a trophy reassign, a Special card
 -- edit) takes the next number in its new realm, since its old one may be taken there.
 CREATE OR REPLACE FUNCTION "cards_assign_collector_number"() RETURNS trigger LANGUAGE plpgsql AS $$
