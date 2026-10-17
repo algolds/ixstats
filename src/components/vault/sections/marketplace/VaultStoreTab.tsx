@@ -1,8 +1,9 @@
 "use client";
 
 import { springSmooth } from "~/lib/design/motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Package,
@@ -47,23 +48,21 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
-import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { cardSheetHref } from "~/lib/cards/face/sheet-link";
+import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { StoreItemCard, type StoreItem } from "./StoreItemCard";
 import { useNotify } from "~/hooks/useNotify";
-import { PackHolographicCard } from "./store/PackHolographicCard";
+import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard";
 import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import { Card, CardTitle } from "~/components/ui/card";
 
-const PackOpeningSequence = dynamic(
-  () =>
-    import("~/components/cards/pack-opening/PackOpeningSequence").then(
-      (m) => m.PackOpeningSequence
-    ),
+const PackReveal = dynamic(
+  () => import("~/components/cards/reveal/PackReveal").then((m) => m.PackReveal),
   { ssr: false }
 );
 
@@ -122,37 +121,30 @@ export function resolveStoreView(view: string | null | undefined): StoreView {
 
 export function VaultStoreTab({ initialView }: { initialView?: string | null }) {
   const notify = useNotify();
+  const router = useRouter();
 
   const [storeTab, setStoreTab] = useState<StoreView>(() => resolveStoreView(initialView));
-  const [openingPack, setOpeningPack] = useState<{ id: string; packType: string } | null>(null);
+  const [opening, setOpening] = useState<{ id: string; pack: PackItem } | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [activeCheckoutItem, setActiveCheckoutItem] = useState<StoreItem | null>(null);
   const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
+  const sections = useRef<HTMLDivElement>(null);
 
   const utils = api.useUtils();
 
-  const {
-    data: myPacksData,
-    isLoading: myPacksLoading,
-    refetch: refetchMyPacks,
-  } = api.cardPacks.getMyPacks.useQuery();
+  const { data: myPacksData, isLoading: myPacksLoading } = api.cardPacks.getMyPacks.useQuery({
+    isOpened: false,
+  });
   const { data: packsData, isLoading: packsLoading } = api.cardPacks.getAvailablePacks.useQuery();
   const { data: storeItemsData, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
   const { data: ownedData } = api.vault.getPurchasedItems.useQuery();
 
   const purchasePackMutation = api.cardPacks.purchasePack.useMutation({
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       notify.success("Card pack purchased");
       void utils.vault.getBalance.invalidate();
       void utils.cardPacks.getMyPacks.invalidate();
-      const userPackId = data.userPack?.id || data.userPackId;
-      const packType = data.userPack?.pack?.packType || data.userPack?.packType || data.packType;
-      if (userPackId && packType) {
-        setOpeningPack({
-          id: userPackId,
-          packType,
-        });
-      }
+      setOpening({ id: data.userPack.id, pack: data.userPack.pack });
     },
     onError: (err: { message?: string }) => {
       notify.error(err.message || "Failed to purchase card pack.");
@@ -180,6 +172,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
 
   const packs = packsData?.packs ?? [];
   const myPacks = myPacksData?.packs ?? [];
+  const nextWaiting = myPacks.find((p) => p.id !== opening?.id) ?? null;
 
   const cosmeticItems: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "cosmetics")
@@ -254,12 +247,14 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       {/* Large Storefront Showcase Window */}
       <Card className="relative min-h-[380px] w-full overflow-hidden p-6">
         {/* Category Sub-Tabs Selector */}
-        <StoreCategoryHeader
-          tabs={STORE_TABS}
-          activeTab={storeTab}
-          onTabChange={setStoreTab}
-          myPacksCount={myPacks.length}
-        />
+        <div ref={sections}>
+          <StoreCategoryHeader
+            tabs={STORE_TABS}
+            activeTab={storeTab}
+            onTabChange={setStoreTab}
+            myPacksCount={myPacks.length}
+          />
+        </div>
 
         {/* Storefront Window Header */}
         <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
@@ -303,12 +298,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                             actionButton={
                               <Button
                                 size="sm"
-                                onClick={() =>
-                                  setOpeningPack({
-                                    id: userPack.id,
-                                    packType: packData.packType,
-                                  })
-                                }
+                                onClick={() => setOpening({ id: userPack.id, pack: packData })}
                                 className="h-7 w-full"
                               >
                                 Rip open pack
@@ -447,40 +437,28 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
         subtitle="Apply it from your account settings."
       />
 
-      {/* Booster pack opening overlay */}
-      <Dialog
-        open={!!openingPack}
-        onOpenChange={(open) => {
-          if (open) return;
-          // Escape skips the flourish; the pack is already opened server-side.
-          setOpeningPack(null);
-          purchasePackMutation.reset();
-          void refetchMyPacks();
-        }}
-      >
-        <DialogContent
-          showCloseButton={false}
-          aria-describedby={undefined}
-          className="h-dvh max-h-dvh w-screen max-w-none gap-0 overflow-hidden rounded-none border-0 bg-black p-0"
-        >
-          <DialogTitle className="sr-only">Opening pack</DialogTitle>
-          {openingPack && (
-            <PackOpeningSequence
-              userPackId={openingPack.id}
-              packType={openingPack.packType as any}
-              onComplete={() => {
-                setOpeningPack(null);
-                purchasePackMutation.reset();
-                void refetchMyPacks();
-              }}
-              onCancel={() => {
-                setOpeningPack(null);
-                purchasePackMutation.reset();
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {opening && (
+        <PackReveal
+          key={opening.id}
+          open
+          userPackId={opening.id}
+          pack={opening.pack}
+          nextPack={nextWaiting ? { id: nextWaiting.id, name: nextWaiting.pack.name } : null}
+          onOpenNext={() =>
+            nextWaiting && setOpening({ id: nextWaiting.id, pack: nextWaiting.pack })
+          }
+          onOpenCard={(cardId) => {
+            setOpening(null);
+            router.push(cardSheetHref(CARD_HUB_PATHS.mine, cardId));
+          }}
+          onClose={() => setOpening(null)}
+          // An opened pack's "Rip open pack" button leaves My packs, so focus goes back to the section's tab.
+          returnFocus={() =>
+            sections.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
+            null
+          }
+        />
+      )}
     </div>
   );
 }

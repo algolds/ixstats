@@ -431,7 +431,7 @@ export async function getAvailablePacks(db: PrismaClient) {
 }
 
 /**
- * Get user's packs (default: unopened only)
+ * A user's packs, newest first: every pack, opened or not, unless `isOpened` picks one side.
  */
 export async function getUserPacks(db: PrismaClient, userId: string, isOpened?: boolean) {
   return db.userPack.findMany({

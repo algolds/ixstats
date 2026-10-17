@@ -21,6 +21,7 @@ import { LedgerError } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
+import { ownedFaces } from "~/lib/cards/hub/faces";
 
 /**
  * Card Packs Router
@@ -138,7 +139,7 @@ export const cardPacksUserRouter = createTRPCRouter({
     }),
 
   /**
-   * Opens one of the caller's packs and reveals its cards
+   * Opens one of the caller's packs and returns the faces of the copies it minted, in pull order
    */
   openPack: rateLimitedMutationProcedure
     .input(
@@ -157,17 +158,6 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
         queueAchievementCheck(ctx.user.id);
-
-        // Format cards with rarity reveal data
-        const revealData = results.map(({ card, ownershipId }) => ({
-          id: card.id,
-          ownershipId,
-          name: card.title,
-          rarity: card.rarity,
-          cardType: card.cardType,
-          artwork: card.artwork,
-          season: card.season,
-        }));
 
         // Notification: cards revealed (fire-and-forget)
         try {
@@ -193,10 +183,15 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
+        // Read after the side effects above: the pack is open whether or not this read succeeds.
+        const faces = await ownedFaces(
+          ctx.db,
+          results.map((r) => r.ownershipId)
+        );
         return {
           success: true,
           message: `Opened pack and received ${results.length} cards!`,
-          cards: revealData,
+          faces,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 
 jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
+jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));

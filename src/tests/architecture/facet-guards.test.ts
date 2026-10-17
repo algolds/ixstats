@@ -173,8 +173,6 @@ const RAW_BACKDROP_ALLOWED = new Set([
   `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
 ]);
 const INLINE_BACKDROP_FILES = [
-  // The rare-card reveal moment (Vault flourish) frosts the stage behind the card.
-  "components/cards/pack-opening/Stage3_CardReveal.tsx",
   // The progressive blur primitive is a material itself (stepped backdrop blur).
   "components/ui/magicui/progressive-blur.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
