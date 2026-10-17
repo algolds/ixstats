@@ -42,9 +42,23 @@ const faceRow = (id: string, cardId: string, cardType = "LORE") => ({
     realm,
   },
 });
-const rawCopy = (id: string, cardId: string, marketValue = 10) => ({
+const rawCopy = (id: string, cardId: string, marketValue = 10, isRetired = false) => ({
   id,
-  cards: { id: cardId, cardType: "LORE", marketValue, artwork: `https://art/${cardId}.png` },
+  cards: {
+    id: cardId,
+    cardType: "LORE",
+    marketValue,
+    isRetired,
+    artwork: `https://art/${cardId}.png`,
+    artworkCredit: `${cardId}.png, via Commons`,
+    metadata: { qualityScore: 80, descriptionUrl: `https://commons/File:${cardId}.png` },
+  },
+});
+/** An auction row as the market's includes read it: the listed copy with its raw card. */
+const listing = (id: string, cardInstanceId: string, cardId: string) => ({
+  id,
+  cardInstanceId,
+  CardOwnership: { id: cardInstanceId, cards: rawCopy(cardInstanceId, cardId).cards },
 });
 type OwnershipArgs = {
   where: { id?: { in: string[] } };
@@ -72,7 +86,14 @@ describe("auctions", () => {
     const db = createMockPrisma();
     db.cardAuction.count.mockResolvedValue(1);
     db.cardAuction.findMany.mockResolvedValueOnce([
-      { id: "a", status: "COMPLETED", winnerId: "x", sellerId: "y", cardInstanceId: "o1" },
+      {
+        id: "a",
+        status: "COMPLETED",
+        winnerId: "x",
+        sellerId: "y",
+        cardInstanceId: "o1",
+        CardOwnership: { id: "o1", cards: { id: "c1", title: "c1" } },
+      },
     ]);
     ownership(db, [], [faceRow("o1", "c1")]);
     const result = await market(db).getMyAuctionParticipation({ limit: 5 });
@@ -86,7 +107,7 @@ describe("auctions", () => {
   it("filters live listings by realm and shows their art to every viewer", async () => {
     const db = createMockPrisma();
     db.cardAuction.count.mockResolvedValue(1);
-    db.cardAuction.findMany.mockResolvedValue([{ id: "a", cardInstanceId: "o1" }]);
+    db.cardAuction.findMany.mockResolvedValue([listing("a", "o1", "c1")]);
     ownership(db, [], [faceRow("o1", "c1")]);
     const result = await market(db).getActiveAuctions({ realmId: "r1" });
     expect(db.cardAuction.count.mock.calls[0]![0].where).toMatchObject({
@@ -97,12 +118,13 @@ describe("auctions", () => {
       artwork: "https://art/c1.png",
       silhouette: false,
     });
+    expect(result.auctions[0]!.CardOwnership.cards.artwork).toBe("https://art/c1.png");
     expect(db.cardAuction.findMany).toHaveBeenCalledTimes(1);
   });
 
   it("lists only bids on auctions still running, with their faces", async () => {
     const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValue([{ id: "a", cardInstanceId: "o1" }]);
+    db.cardAuction.findMany.mockResolvedValue([listing("a", "o1", "c1")]);
     ownership(db, [], [faceRow("o1", "c1")]);
     const result = await market(db).getMyActiveBids();
     expect(db.cardAuction.findMany.mock.calls[0]![0].where).toEqual({
@@ -115,7 +137,7 @@ describe("auctions", () => {
 
   it("gives the seller their listings' faces under the rule, since an ended listing may await settlement", async () => {
     const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValueOnce([{ id: "a", cardInstanceId: "o1" }]);
+    db.cardAuction.findMany.mockResolvedValueOnce([listing("a", "o1", "c1")]);
     ownership(db, ["c1"], [faceRow("o1", "c1")]);
     const result = await market(db).getMyActiveAuctions();
     expect(result.auctions[0]!.face).toMatchObject({ cardId: "c1", silhouette: false });
@@ -126,7 +148,7 @@ describe("auctions", () => {
 });
 
 describe("a partner's tradeable copies", () => {
-  it("blank the art of cards the viewer holds nothing of", async () => {
+  it("blank the art and its credit for cards the viewer holds nothing of, and never carry metadata", async () => {
     const db = createMockPrisma();
     db.user.findUnique.mockResolvedValue({ id: "them", clerkUserId: "clerk_them" });
     ownership(
@@ -136,10 +158,11 @@ describe("a partner's tradeable copies", () => {
       [rawCopy("o1", "shared"), rawCopy("o2", "secret")]
     );
     const rows = await inventory(db).getUserCards({ userId: "them" });
-    expect(rows.map((r) => [r.id, r.cards.artwork])).toEqual([
-      ["o1", "https://art/shared.png"],
-      ["o2", null],
+    expect(rows.map((r) => [r.id, r.cards.artwork, r.cards.artworkCredit])).toEqual([
+      ["o1", "https://art/shared.png", "shared.png, via Commons"],
+      ["o2", null, null],
     ]);
+    expect(rows.map((r) => r.cards.metadata)).toEqual([null, null]);
   });
 
   it("refuses a signed-out caller", async () => {
@@ -152,7 +175,7 @@ describe("a partner's tradeable copies", () => {
 });
 
 describe("trade details", () => {
-  const trade = (overrides: Record<string, unknown>) => ({
+  const pendingOffer = {
     id: "t1",
     initiatorId: "them",
     recipientId: "me",
@@ -164,14 +187,26 @@ describe("trade details", () => {
     expiresAt: new Date(Date.now() + 60_000),
     initiator: { id: "them", clerkUserId: "clerk_them", handle: "ann", country: null },
     recipient: { id: "me", clerkUserId: "clerk_me", handle: "max", country: null },
+  };
+  const trade = (overrides: Partial<typeof pendingOffer> = {}) => ({
+    ...pendingOffer,
     ...overrides,
   });
+  const TRADE_CARD_SELECT = {
+    id: true,
+    title: true,
+    rarity: true,
+    cardType: true,
+    artwork: true,
+    marketValue: true,
+    isRetired: true,
+  };
   const sides = [rawCopy("o1", "c1", 30), rawCopy("o2", "c2", 12)];
   const faces = [faceRow("o1", "c1"), faceRow("o2", "c2")];
 
   it("shows a live offer made to the viewer in full, valued by the shared copy value", async () => {
     const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue(trade({}));
+    db.tradeOffer.findUnique.mockResolvedValue(trade());
     db.tradeOffer.count.mockResolvedValue(1);
     ownership(db, ["c2"], faces, sides);
     const result = await trading(db).getTradeById({ tradeId: "t1" });
@@ -180,8 +215,11 @@ describe("trade details", () => {
     });
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["o1"] } },
-      include: { cards: true },
+      include: { cards: { select: TRADE_CARD_SELECT } },
     });
+    const sideSelect = db.cardOwnership.findMany.mock.calls[0]![0].include.cards.select;
+    expect(sideSelect).not.toHaveProperty("metadata");
+    expect(sideSelect).not.toHaveProperty("artworkCredit");
     expect(result.initiatorCardsData[0]!.cards.artwork).toBe("https://art/c1.png");
     expect(result.initiatorFaces).toEqual([
       expect.objectContaining({ cardId: "c1", silhouette: false }),
@@ -209,6 +247,14 @@ describe("trade details", () => {
       artwork: null,
     });
     expect(result.initiatorCardsData[0]!.cards.artwork).toBe("https://art/c1.png");
+  });
+
+  it("values a hidden (retired) copy at 0, as Mine and the sheet do", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findUnique.mockResolvedValue(trade({ initiatorCardIds: ["o1", "o3"] }));
+    ownership(db, [], [], [...sides, rawCopy("o3", "c3", 50, true)]);
+    const result = await trading(db).getTradeById({ tradeId: "t1" });
+    expect(result).toMatchObject({ initiatorValue: 35, recipientValue: 12 });
   });
 
   it("refuses a signed-out caller and a player outside the trade", async () => {

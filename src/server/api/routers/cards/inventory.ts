@@ -134,7 +134,9 @@ export const cardsInventoryRouter = createTRPCRouter({
           take: input.limit,
         });
 
-        return await blankUnseenArt(ctx.db, ctx.user.id, ownerships);
+        const rows = await blankUnseenArt(ctx.db, ctx.user.id, ownerships);
+        // No client reads a partner's card metadata, and it holds admin-only fields (qualityScore)
+        return rows.map((row) => ({ ...row, cards: { ...row.cards, metadata: null } }));
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in getUserCards:", error);
         if (error instanceof TRPCError) {

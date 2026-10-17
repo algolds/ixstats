@@ -253,10 +253,15 @@ describe("caller-scoped reads", () => {
 
   it("labels past auctions by the caller's part in them", async () => {
     db.cardAuction.count.mockResolvedValue(3);
+    // Each past auction as the query includes it: the listed copy with its card
+    const listed = (id: string) => ({
+      cardInstanceId: `o_${id}`,
+      CardOwnership: { cards: { id } },
+    });
     db.cardAuction.findMany.mockResolvedValue([
-      { id: "a", status: "COMPLETED", winnerId: "u1", sellerId: "x" },
-      { id: "b", status: "COMPLETED", winnerId: "y", sellerId: "u1" },
-      { id: "c", status: "CANCELLED", winnerId: null, sellerId: "u1" },
+      { id: "a", status: "COMPLETED", winnerId: "u1", sellerId: "x", ...listed("a") },
+      { id: "b", status: "COMPLETED", winnerId: "y", sellerId: "u1", ...listed("b") },
+      { id: "c", status: "CANCELLED", winnerId: null, sellerId: "u1", ...listed("c") },
     ]);
 
     const result = await callerAs("u1", db).getMyAuctionParticipation({ limit: 2 });

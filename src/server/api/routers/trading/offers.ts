@@ -230,7 +230,7 @@ export const tradingOffersRouter = createTRPCRouter({
 
       if (new Date() > trade.expiresAt) {
         // Auto-expire the trade (only if still PENDING) and release the initiator's cards
-        await ctx.db.$transaction(async (tx: any) => {
+        await ctx.db.$transaction(async (tx) => {
           await tx.tradeOffer.updateMany({
             where: { id: input.tradeId, status: TradeStatus.PENDING },
             data: { status: TradeStatus.EXPIRED },
@@ -246,7 +246,7 @@ export const tradingOffersRouter = createTRPCRouter({
 
       // Handle different actions
       if (input.action === "REJECT") {
-        const result = await ctx.db.$transaction(async (tx: any) => {
+        const result = await ctx.db.$transaction(async (tx) => {
           await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
           await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
 
@@ -319,7 +319,7 @@ export const tradingOffersRouter = createTRPCRouter({
         await assertNoBoundCopies(ctx.db, [...newInitiatorCardIds, ...newRecipientCardIds]);
 
         // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
-        const result = await ctx.db.$transaction(async (tx: any) => {
+        const result = await ctx.db.$transaction(async (tx) => {
           await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
           await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
           await lockCardsTx(tx, newInitiatorCardIds, userId);
@@ -346,7 +346,7 @@ export const tradingOffersRouter = createTRPCRouter({
       }
 
       // ACCEPT - Execute the trade atomically (every transition is a conditional write)
-      const completedTrade = await ctx.db.$transaction(async (tx: any) => {
+      const completedTrade = await ctx.db.$transaction(async (tx) => {
         // Cast Json card IDs to string arrays
         const initiatorCardIds = trade.initiatorCardIds as string[];
         const recipientCardIds = trade.recipientCardIds as string[];

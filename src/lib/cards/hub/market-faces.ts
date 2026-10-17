@@ -38,11 +38,21 @@ export async function copyFaces(
   );
 }
 
+/** A raw card as the market's includes read it; auction history reads no art at all. */
+type RawCard = { id: string; artwork?: string | null; artworkCredit?: string | null };
+type RawCopyRow = { id: string; cards: RawCard };
+type AuctionRow = { cardInstanceId: string; CardOwnership: { cards: RawCard } };
+
+/** The raw card without the fields that show or name its art. */
+function withoutArt<C extends RawCard>(cards: C): C {
+  return { ...cards, artwork: null, artworkCredit: null };
+}
+
 /**
  * Auction rows with their card's face; null when the copy no longer exists. `live`: every auction is running (active,
- * ending in the future), so its art shows to all.
+ * ending in the future), so its art shows to all. The raw card follows the face, so a retired card ships no art.
  */
-export async function withAuctionFaces<T extends { cardInstanceId: string }>(
+export async function withAuctionFaces<T extends AuctionRow>(
   db: FaceDb,
   viewerId: string,
   auctions: readonly T[],
@@ -54,19 +64,27 @@ export async function withAuctionFaces<T extends { cardInstanceId: string }>(
     auctions.map((a) => a.cardInstanceId),
     live
   );
-  return auctions.map((a) => ({ ...a, face: faces.get(a.cardInstanceId) ?? null }));
+  return auctions.map((a) => {
+    const face = faces.get(a.cardInstanceId) ?? null;
+    if (face?.artwork) return { ...a, face };
+    return {
+      ...a,
+      face,
+      CardOwnership: { ...a.CardOwnership, cards: withoutArt(a.CardOwnership.cards) },
+    };
+  });
 }
 
-/** A copy row that still carries its raw card (a partner's copies, a trade's sides). */
-type RawCopyRow = { id: string; cards: { artwork: string | null } };
-
-/** The raw card keeps its art only where the copy's face shows art (toCardFace holds the rule). */
+/**
+ * A copy row's raw card (a partner's copies, a trade's sides) keeps its art only where the copy's face shows art
+ * (toCardFace holds the rule).
+ */
 function keepFaceArt<T extends RawCopyRow>(
   rows: readonly T[],
   faces: ReadonlyMap<string, CardFaceData>
 ): T[] {
   return rows.map((row) =>
-    faces.get(row.id)?.artwork ? row : { ...row, cards: { ...row.cards, artwork: null } }
+    faces.get(row.id)?.artwork ? row : { ...row, cards: withoutArt(row.cards) }
   );
 }
 
@@ -91,7 +109,7 @@ interface TradeCopyLists {
   recipientCardIds: Prisma.JsonValue;
 }
 
-export interface TradeView<I, R> {
+interface TradeView<I, R> {
   initiatorCardsData: I[];
   recipientCardsData: R[];
   initiatorFaces: CardFaceData[];

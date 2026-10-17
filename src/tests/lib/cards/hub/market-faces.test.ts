@@ -32,10 +32,18 @@ const copyRow = (
     realm,
   },
 });
-const rawRow = (id: string, cardId: string) => ({
+const rawCard = (cardId: string) => ({
+  id: cardId,
+  marketValue: 10,
+  artwork: `https://art/${cardId}.png`,
+  artworkCredit: `${cardId}.png, via Commons`,
+});
+const rawRow = (id: string, cardId: string) => ({ id, isLocked: false, cards: rawCard(cardId) });
+/** An auction row as the market's includes read it: the listed copy with its raw card. */
+const auctionRow = (id: string, cardInstanceId: string, cardId: string) => ({
   id,
-  isLocked: false,
-  cards: { id: cardId, marketValue: 10, artwork: `https://art/${cardId}.png` },
+  cardInstanceId,
+  CardOwnership: { id: cardInstanceId, cards: rawCard(cardId) },
 });
 type OwnershipArgs = { select: { cardId?: true } };
 /** Ownership reads: the visibility check asks for card ids the viewer holds, the face read for copies. */
@@ -57,18 +65,17 @@ describe("copyFaces and withAuctionFaces", () => {
     const rows = await withAuctionFaces(
       db as never,
       "me",
-      [
-        { id: "a1", cardInstanceId: "o1" },
-        { id: "a2", cardInstanceId: "gone" },
-      ],
+      [auctionRow("a1", "o1", "c1"), auctionRow("a2", "gone", "c9")],
       true
     );
     expect(rows[0]).toMatchObject({ id: "a1", face: { cardId: "c1", silhouette: false } });
+    expect(rows[0]!.CardOwnership.cards).toEqual(rawCard("c1"));
     expect(rows[0]!.face).toMatchObject({
       artwork: "https://art/c1.png",
       copy: { ownershipId: "o1" },
     });
     expect(rows[1]).toMatchObject({ id: "a2", face: null });
+    expect(rows[1]!.CardOwnership.cards).toMatchObject({ artwork: null, artworkCredit: null });
     expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
       id: { in: ["o1", "gone"] },
@@ -93,11 +100,22 @@ describe("copyFaces and withAuctionFaces", () => {
     expect(faces.get("o2")).toMatchObject({ artwork: "https://art/c2.png", silhouette: false });
   });
 
-  it("never shows a retired card's art, even on a live listing", async () => {
+  it("never shows a retired card's art, even on a live listing, in the face or the raw card", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([copyRow("o1", "c1", { isRetired: true })]);
     const faces = await copyFaces(db as never, "me", ["o1"], true);
     expect(faces.get("o1")).toMatchObject({ artwork: null, isRetired: true });
+    const [auction] = await withAuctionFaces(
+      db as never,
+      "me",
+      [auctionRow("a1", "o1", "c1")],
+      true
+    );
+    expect(auction!.face).toMatchObject({ artwork: null, isRetired: true });
+    expect(auction!.CardOwnership).toEqual({
+      id: "o1",
+      cards: { ...rawCard("c1"), artwork: null, artworkCredit: null },
+    });
   });
 
   it("reads each copy once, and nothing for an empty list", async () => {
@@ -139,7 +157,11 @@ describe("blankUnseenArt", () => {
       "https://art/listed.png",
       null,
     ]);
-    expect(blanked[1]).toEqual({ ...rows[1], cards: { ...rows[1]!.cards, artwork: null } });
+    expect(blanked[1]).toEqual({
+      ...rows[1],
+      cards: { ...rows[1]!.cards, artwork: null, artworkCredit: null },
+    });
+    expect(blanked[4]!.cards.artworkCredit).toBeNull();
     expect(blanked[0]).toBe(rows[0]);
   });
 
