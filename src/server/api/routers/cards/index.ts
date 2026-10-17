@@ -8,17 +8,20 @@
  *  - inventory:   user inventory, the card library and its NationStates stats
  *  - collections: collection CRUD + wiki article excerpt lookup
  *  - suggestions: free lore card suggestions
+ *  - explore:     realm shelves, the catalogue grid, regions
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "./inventory";
 import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
+import { cardsExploreRouter } from "./explore";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
   cardsInventoryRouter,
   cardsCollectionsRouter,
   cardsSuggestionsRouter,
+  cardsExploreRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );
