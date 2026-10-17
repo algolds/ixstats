@@ -7,6 +7,7 @@ import { getValuationConfig, type CardValuationConfig } from "~/lib/cards/valuat
 import { copyRoom } from "~/lib/cards/capacity";
 import { CardFinish } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
+import { ownedFaces } from "~/lib/cards/hub/faces";
 import { nsNationKey } from "~/lib/cards/ns-facts";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
@@ -160,15 +161,6 @@ async function planDeckImport(
 
 type LedgerKey = { nsCardId: number; nsSeason: number; nation: string };
 
-type ImportedCard = {
-  id: string;
-  title: string;
-  artwork: string;
-  rarity: string;
-  season: number;
-  marketValue: number;
-};
-
 interface DeckImport {
   userId: string;
   nationName: string;
@@ -177,22 +169,27 @@ interface DeckImport {
 }
 
 interface DeckImportOutcome {
-  imported: ImportedCard[];
+  /** The copies the import minted, in deck order. */
+  ownershipIds: string[];
   alreadyImported: number;
   skipped: string[];
 }
 
 /**
  * Mints one copy of each claimed card in cardId order, as a pack open does: `mintCopy` holds its per-card serial
- * lock until commit, so two transactions minting the same cards in different orders would deadlock.
+ * lock until commit, so two transactions minting the same cards in different orders would deadlock. Returns the
+ * copies' ids in the claimed (deck) order, which is the order the player sees them in.
  */
 async function mintClaimed(
   tx: Tx,
   userId: string,
   claimed: ReadonlyArray<{ card: Card; key: LedgerKey }>
-) {
-  const mintOrder = [...claimed].sort((a, b) => a.card.id.localeCompare(b.card.id));
-  for (const { card, key } of mintOrder) {
+): Promise<string[]> {
+  const mintOrder = claimed
+    .map((entry, index) => ({ ...entry, index }))
+    .sort((a, b) => a.card.id.localeCompare(b.card.id));
+  const ownershipIds: string[] = new Array<string>(claimed.length);
+  for (const { card, key, index } of mintOrder) {
     const copy = await mintCopy(tx, {
       cardId: card.id,
       ownerId: userId,
@@ -203,7 +200,9 @@ async function mintClaimed(
       where: { nsCardId_nsSeason_nation: key },
       data: { ownershipId: copy.id },
     });
+    ownershipIds[index] = copy.id;
   }
+  return ownershipIds;
 }
 
 /**
@@ -212,7 +211,7 @@ async function mintClaimed(
  */
 async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome> {
   const nation = nsNationKey(run.nationName);
-  const outcome: DeckImportOutcome = { imported: [], alreadyImported: 0, skipped: [] };
+  const outcome: DeckImportOutcome = { ownershipIds: [], alreadyImported: 0, skipped: [] };
   const claimed: Array<{ card: Card; key: LedgerKey }> = [];
   for (const nsCard of run.cards) {
     const label = cardLabel(nsCard);
@@ -236,15 +235,7 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
     if (claim.count === 0) outcome.alreadyImported += 1;
     else claimed.push({ card, key });
   }
-  await mintClaimed(tx, run.userId, claimed);
-  outcome.imported = claimed.map(({ card }) => ({
-    id: card.id,
-    title: card.title,
-    artwork: card.artwork ?? "",
-    rarity: card.rarity,
-    season: card.season,
-    marketValue: card.marketValue,
-  }));
+  outcome.ownershipIds = await mintClaimed(tx, run.userId, claimed);
   return outcome;
 }
 
@@ -268,7 +259,7 @@ async function importVerifiedDeck(
   };
   const outcome = await db.$transaction((tx) => importDeckTx(tx, run), IMPORT_TRANSACTION);
   return {
-    imported: outcome.imported,
+    ownershipIds: outcome.ownershipIds,
     alreadyImported: plan.alreadyImported + outcome.alreadyImported,
     skipped: [...plan.skipped, ...outcome.skipped],
   };
@@ -354,22 +345,19 @@ export const nsImportDecksRouter = createTRPCRouter({
         }
       );
 
-      const bonusCredits = await payImportBonus(
-        ctx.db,
-        ctx.user.id,
-        nationName,
-        outcome.imported.length
-      );
-      if (outcome.imported.length > 0) queueAchievementCheck(ctx.user.id);
+      const cardsImported = outcome.ownershipIds.length;
+      const bonusCredits = await payImportBonus(ctx.db, ctx.user.id, nationName, cardsImported);
+      if (cardsImported > 0) queueAchievementCheck(ctx.user.id);
 
       return {
         success: true,
-        cardsImported: outcome.imported.length,
+        cardsImported,
         cardsAlreadyImported: outcome.alreadyImported,
         cardsSkipped: outcome.skipped.length,
         bonusCredits,
         nation: nationName,
-        cards: outcome.imported,
+        // The copies just imported; their definitions may wait for review, and the owner sees their art all the same
+        faces: await ownedFaces(ctx.db, outcome.ownershipIds),
       };
     }),
 });
