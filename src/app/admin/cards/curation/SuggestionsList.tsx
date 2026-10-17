@@ -53,6 +53,8 @@ export function SuggestionsList() {
     onError: (error) => notify.error("Suggestion not declined", error.message),
   });
   const rows = list.data ?? [];
+  /** The row whose card is being made: it cannot be declined meanwhile. */
+  const making = accept.isPending ? accept.variables?.requestId : undefined;
 
   return (
     <Card content="data">
@@ -66,7 +68,11 @@ export function SuggestionsList() {
           onValueChange={setStatus}
           options={STATUS_OPTIONS}
         />
-        {rows.length === 0 ? (
+        {list.isError ? (
+          <p role="alert" className="text-destructive text-footnote">
+            Suggestions did not load. {list.error.message}
+          </p>
+        ) : rows.length === 0 ? (
           <EmptyState
             compact
             title={status === "PENDING" ? "No suggestions waiting" : "No answered suggestions"}
@@ -107,7 +113,12 @@ export function SuggestionsList() {
                         >
                           Make a card
                         </Button>
-                        <Button size="xs" variant="ghost" onClick={() => setDeclining(request.id)}>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          disabled={making === request.id}
+                          onClick={() => setDeclining(request.id)}
+                        >
                           Decline
                         </Button>
                       </>

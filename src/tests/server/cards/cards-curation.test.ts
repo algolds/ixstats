@@ -3,6 +3,7 @@
 jest.mock("~/server/modules/cards/cards.importer", () => ({ stageForAdmin: jest.fn() }));
 
 import { TRPCError } from "@trpc/server";
+import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import {
   acceptSuggestion,
@@ -17,6 +18,15 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const stage = jest.mocked(stageForAdmin);
 const RESTRICTED = { artLicence: { is: { status: "RESTRICTED" } } };
+const AS_OF = new Date("2026-10-28T12:00:00Z");
+
+/** A database whose `$transaction` hands its callback a separate client, so a test sees which writes it holds. */
+function withTx() {
+  const db = createMockPrisma();
+  const tx = createMockPrisma();
+  db.$transaction.mockImplementation((run: (client: typeof tx) => Promise<unknown>) => run(tx));
+  return { db, tx };
+}
 
 beforeEach(() => stage.mockReset());
 
@@ -40,24 +50,28 @@ describe("queueWhere", () => {
 });
 
 describe("listReviewQueue", () => {
-  it("pages the queue by id and hands back the next cursor only for a full page", async () => {
+  it("reads the queue as of one moment, paged by id, with the next cursor only for a full page", async () => {
     const db = createMockPrisma();
     db.card.findMany.mockResolvedValue([{ id: "a" }, { id: "b" }]);
     db.card.count.mockResolvedValue(5);
-    expect(await listReviewQueue(db as never, { realm: "all", limit: 2, cursor: "x" })).toEqual({
+    const page = await listReviewQueue(db as never, { realm: "all", limit: 2, cursor: "x" });
+    expect(page).toEqual({
       cards: [{ id: "a" }, { id: "b" }],
       total: 5,
       nextCursor: "b",
+      asOf: expect.any(Date),
     });
+    const where = { reviewState: "PENDING", createdAt: { lte: page.asOf } };
     expect(db.card.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { reviewState: "PENDING" },
+        where,
         orderBy: { id: "asc" },
         take: 2,
         cursor: { id: "x" },
         skip: 1,
       })
     );
+    expect(db.card.count).toHaveBeenCalledWith({ where });
 
     db.card.findMany.mockResolvedValue([{ id: "c" }]);
     expect((await listReviewQueue(db as never, { realm: "all", limit: 2 })).nextCursor).toBeNull();
@@ -65,81 +79,153 @@ describe("listReviewQueue", () => {
 });
 
 describe("reviewCards", () => {
-  it("approves the chosen cards, never one whose art licence is restricted, and audits it", async () => {
-    const db = createMockPrisma();
-    db.card.count.mockResolvedValue(1);
-    db.card.updateMany.mockResolvedValue({ count: 2 });
+  it("approves the chosen cards, never one whose art licence is restricted, and audits it in the same transaction", async () => {
+    const { db, tx } = withTx();
+    tx.card.count.mockResolvedValue(1);
+    tx.card.updateMany.mockResolvedValue({ count: 2 });
     const result = await reviewCards(db as never, actor, {
       decision: "APPROVE",
       cardIds: ["a", "b", "c"],
     });
     expect(result).toEqual({ updated: 2, skippedRestricted: 1 });
-    expect(db.card.count).toHaveBeenCalledWith({
-      where: {
-        id: { in: ["a", "b", "c"] },
-        reviewState: { in: ["PENDING", "REJECTED"] },
-        ...RESTRICTED,
-      },
-    });
-    expect(db.card.updateMany).toHaveBeenCalledWith({
-      where: {
-        id: { in: ["a", "b", "c"] },
-        reviewState: { in: ["PENDING", "REJECTED"] },
-        NOT: RESTRICTED,
-      },
+    const chosen = { id: { in: ["a", "b", "c"] }, reviewState: { in: ["PENDING", "REJECTED"] } };
+    expect(tx.card.count).toHaveBeenCalledWith({ where: { ...chosen, ...RESTRICTED } });
+    expect(tx.card.updateMany).toHaveBeenCalledWith({
+      where: { ...chosen, NOT: RESTRICTED },
       data: expect.objectContaining({ reviewState: "APPROVED", reviewedBy: "db_admin" }),
     });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         action: "CARD_REVIEW",
         userId: "clerk_admin",
         target: null,
-        details: "Approved 2 card(s)",
+        details: "Approved 2 cards",
+      }),
+    });
+    expect(db.card.updateMany).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects chosen cards only while they are pending, and names a single card in the audit", async () => {
+    const { db, tx } = withTx();
+    tx.card.updateMany.mockResolvedValue({ count: 1 });
+    await reviewCards(db as never, actor, {
+      decision: "REJECT",
+      cardIds: ["a"],
+      note: "Off topic",
+    });
+    expect(tx.card.count).not.toHaveBeenCalled();
+    expect(tx.card.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["a"] }, reviewState: "PENDING" },
+      data: expect.objectContaining({ reviewState: "REJECTED" }),
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ target: "a", details: "Rejected 1 card: Off topic" }),
+    });
+  });
+
+  it("approves by filter exactly the pending cards the admin saw: none newer, never rejected ones", async () => {
+    const { db, tx } = withTx();
+    tx.card.count.mockResolvedValueOnce(7).mockResolvedValueOnce(1);
+    tx.card.updateMany.mockResolvedValue({ count: 6 });
+    const result = await reviewCards(db as never, actor, {
+      decision: "APPROVE",
+      filter: { realm: "eurth", source: "iiwiki" },
+      asOf: AS_OF,
+      expected: 7,
+    });
+    expect(result).toEqual({ updated: 6, skippedRestricted: 1 });
+    const seen = {
+      reviewState: "PENDING",
+      realmId: "eurth",
+      wikiSource: "iiwiki",
+      createdAt: { lte: AS_OF },
+    };
+    expect(tx.card.count).toHaveBeenNthCalledWith(1, { where: seen });
+    expect(tx.card.count).toHaveBeenNthCalledWith(2, { where: { ...seen, ...RESTRICTED } });
+    expect(tx.card.updateMany).toHaveBeenCalledWith({
+      where: { ...seen, NOT: RESTRICTED },
+      data: expect.objectContaining({ reviewState: "APPROVED" }),
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        details: "Approved 6 cards matching realm eurth, source iiwiki",
       }),
     });
   });
 
-  it("rejects only cards still pending, here every card matching a filter", async () => {
-    const db = createMockPrisma();
-    db.card.updateMany.mockResolvedValue({ count: 40 });
-    const result = await reviewCards(db as never, actor, {
+  it("rejects by filter only the pending cards the admin saw", async () => {
+    const { db, tx } = withTx();
+    tx.card.count.mockResolvedValue(40);
+    tx.card.updateMany.mockResolvedValue({ count: 40 });
+    await reviewCards(db as never, actor, {
       decision: "REJECT",
       filter: { realm: "all", cardType: "NS" },
+      asOf: AS_OF,
+      expected: 40,
       note: "wrong region",
     });
-    expect(result).toEqual({ updated: 40, skippedRestricted: 0 });
-    expect(db.card.count).not.toHaveBeenCalled();
-    expect(db.card.updateMany).toHaveBeenCalledWith({
-      where: { reviewState: "PENDING", cardType: "NS" },
+    expect(tx.card.count).toHaveBeenCalledTimes(1);
+    expect(tx.card.updateMany).toHaveBeenCalledWith({
+      where: { reviewState: "PENDING", cardType: "NS", createdAt: { lte: AS_OF } },
       data: expect.objectContaining({ reviewState: "REJECTED", reviewedBy: "db_admin" }),
     });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ details: "Rejected 40 card(s): wrong region" }),
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        details: "Rejected 40 cards matching realm all, type NS: wrong region",
+      }),
     });
   });
 
-  it("approves by filter only what the queue shows: pending cards, never rejected ones", async () => {
-    const db = createMockPrisma();
-    db.card.count.mockResolvedValue(0);
-    db.card.updateMany.mockResolvedValue({ count: 7 });
-    await reviewCards(db as never, actor, { decision: "APPROVE", filter: { realm: "eurth" } });
-    expect(db.card.updateMany).toHaveBeenCalledWith({
-      where: { reviewState: "PENDING", realmId: "eurth", NOT: RESTRICTED },
-      data: expect.objectContaining({ reviewState: "APPROVED" }),
+  it.each([
+    [8, /New cards arrived since you loaded the queue/],
+    [6, /reviewed since you loaded the queue/],
+  ])("refuses a filter review when %i cards match instead of the 7 seen", async (now, message) => {
+    const { db, tx } = withTx();
+    tx.card.count.mockResolvedValue(now);
+    const review = reviewCards(db as never, actor, {
+      decision: "APPROVE",
+      filter: { realm: "admin" },
+      asOf: AS_OF,
+      expected: 7,
     });
+    await expect(review).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(review).rejects.toThrow(message);
+    expect(tx.card.updateMany).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it("rejects chosen cards only while they are pending, and names a single card in the audit", async () => {
-    const db = createMockPrisma();
-    db.card.updateMany.mockResolvedValue({ count: 1 });
-    await reviewCards(db as never, actor, { decision: "REJECT", cardIds: ["a"] });
-    expect(db.card.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["a"] }, reviewState: "PENDING" },
-      data: expect.objectContaining({ reviewState: "REJECTED" }),
-    });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ target: "a" }),
-    });
+  it("refuses a filter review above the cap, or without the queue it was read from, before reading anything", async () => {
+    const { db, tx } = withTx();
+    const filter = { realm: "all" };
+    await expect(
+      reviewCards(db as never, actor, {
+        decision: "APPROVE",
+        filter,
+        asOf: AS_OF,
+        expected: MAX_FILTER_REVIEW + 1,
+      })
+    ).rejects.toThrow(/at most 1,000 cards at once/);
+    await expect(
+      reviewCards(db as never, actor, { decision: "APPROVE", filter, expected: 3 })
+    ).rejects.toThrow(/Reload the queue/);
+    expect(MAX_FILTER_REVIEW).toBe(1000);
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(tx.card.count).not.toHaveBeenCalled();
+  });
+
+  it("allows a filter review of exactly the cap", async () => {
+    const { db, tx } = withTx();
+    tx.card.count.mockResolvedValueOnce(MAX_FILTER_REVIEW).mockResolvedValueOnce(0);
+    tx.card.updateMany.mockResolvedValue({ count: MAX_FILTER_REVIEW });
+    await expect(
+      reviewCards(db as never, actor, {
+        decision: "APPROVE",
+        filter: { realm: "all" },
+        asOf: AS_OF,
+        expected: MAX_FILTER_REVIEW,
+      })
+    ).resolves.toEqual({ updated: MAX_FILTER_REVIEW, skippedRestricted: 0 });
   });
 
   it("refuses an empty choice", async () => {
@@ -187,7 +273,7 @@ describe("suggestions", () => {
   const waiting = { id: "req", status: "PENDING", wikiSource: "iiwiki", articleTitle: "Elm" };
 
   it("makes a suggestion into an approved card, skipping the length gate but never the licence gate", async () => {
-    const db = createMockPrisma();
+    const { db, tx } = withTx();
     db.loreCardRequest.findUnique.mockResolvedValue(waiting);
     stage.mockResolvedValue({ cardId: "card_elm", rarity: "RARE" });
     expect(await acceptSuggestion(db as never, actor, "req")).toEqual({ cardId: "card_elm" });
@@ -198,21 +284,28 @@ describe("suggestions", () => {
       bypassLengthGate: true,
       reviewState: "APPROVED",
     });
-    expect(db.loreCardRequest.update).toHaveBeenCalledWith({
+    // A decline that landed while the card was made is overwritten whole: the card exists.
+    expect(tx.loreCardRequest.update).toHaveBeenCalledWith({
       where: { id: "req" },
       data: expect.objectContaining({
         status: "GENERATED",
         cardId: "card_elm",
+        rejectionReason: null,
         reviewedBy: "db_admin",
       }),
     });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ action: "CARD_SUGGESTION", target: "card_elm" }),
     });
+    expect(db.loreCardRequest.update).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(stage.mock.invocationCallOrder[0]).toBeLessThan(
+      db.$transaction.mock.invocationCallOrder[0]!
+    );
   });
 
   it("keeps the suggestion waiting and says why when the page cannot become a card", async () => {
-    const db = createMockPrisma();
+    const { db, tx } = withTx();
     db.loreCardRequest.findUnique.mockResolvedValue(waiting);
     stage.mockRejectedValue(
       new TRPCError({
@@ -223,8 +316,9 @@ describe("suggestions", () => {
     await expect(acceptSuggestion(db as never, actor, "req")).rejects.toThrow(
       /does not allow commercial use/
     );
-    expect(db.loreCardRequest.update).not.toHaveBeenCalled();
-    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(tx.loreCardRequest.update).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 
   it("refuses a missing, answered or Commons suggestion before staging anything", async () => {
@@ -239,11 +333,11 @@ describe("suggestions", () => {
     expect(stage).not.toHaveBeenCalled();
   });
 
-  it("declines a waiting suggestion with a reason", async () => {
-    const db = createMockPrisma();
-    db.loreCardRequest.updateMany.mockResolvedValue({ count: 1 });
+  it("declines a waiting suggestion with a reason, audited in the same transaction", async () => {
+    const { db, tx } = withTx();
+    tx.loreCardRequest.updateMany.mockResolvedValue({ count: 1 });
     await declineSuggestion(db as never, actor, { requestId: "req", reason: "Not a lore article" });
-    expect(db.loreCardRequest.updateMany).toHaveBeenCalledWith({
+    expect(tx.loreCardRequest.updateMany).toHaveBeenCalledWith({
       where: { id: "req", status: "PENDING" },
       data: expect.objectContaining({
         status: "REJECTED",
@@ -251,17 +345,19 @@ describe("suggestions", () => {
         reviewedBy: "db_admin",
       }),
     });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ action: "CARD_SUGGESTION", target: "req" }),
     });
+    expect(db.loreCardRequest.updateMany).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
   });
 
   it("refuses to decline a suggestion someone already answered", async () => {
-    const db = createMockPrisma();
-    db.loreCardRequest.updateMany.mockResolvedValue({ count: 0 });
+    const { db, tx } = withTx();
+    tx.loreCardRequest.updateMany.mockResolvedValue({ count: 0 });
     await expect(
       declineSuggestion(db as never, actor, { requestId: "req", reason: "Not a lore article" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
   });
 });

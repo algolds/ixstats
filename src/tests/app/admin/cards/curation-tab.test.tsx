@@ -33,8 +33,9 @@ import { api } from "~/trpc/react";
 import { CurationTab } from "~/app/admin/cards/curation";
 
 const curation = api.cards.admin.curation;
+const AS_OF = new Date("2026-10-28T12:00:00Z");
 
-function setUp() {
+function setUp({ total = 1 }: { total?: number } = {}) {
   const review = jest.fn();
   const accept = jest.fn();
   const decline = jest.fn();
@@ -70,8 +71,9 @@ function setUp() {
           },
         },
       ],
-      total: 1,
+      total,
       nextCursor: null,
+      asOf: AS_OF,
     },
   } as never);
   jest
@@ -146,7 +148,19 @@ describe("CurationTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "Approve all 1" }));
     expect(review).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Approve all" }));
-    expect(review).toHaveBeenCalledWith({ decision: "APPROVE", filter: { realm: "admin" } });
+    expect(review).toHaveBeenCalledWith({
+      decision: "APPROVE",
+      filter: { realm: "admin" },
+      asOf: AS_OF,
+      expected: 1,
+    });
+  });
+
+  it("offers approve all only up to 1,000 cards, and says to narrow the filter above that", () => {
+    setUp({ total: 1001 });
+    render(<CurationTab />);
+    expect(screen.getByRole("button", { name: "Approve all 1,001" })).toBeDisabled();
+    expect(screen.getByText(/Narrow the filter to approve all/)).toBeInTheDocument();
   });
 
   it("filters the queue, and a filter change clears the choice", () => {
@@ -168,6 +182,8 @@ describe("CurationTab", () => {
     expect(review).toHaveBeenCalledWith({
       decision: "APPROVE",
       filter: { realm: "iiwiki", cardType: "LORE" },
+      asOf: AS_OF,
+      expected: 1,
     });
   });
 
@@ -179,5 +195,30 @@ describe("CurationTab", () => {
     giveReason("Not a lore article");
     fireEvent.click(screen.getByRole("button", { name: "Decline" }));
     expect(decline).toHaveBeenCalledWith({ requestId: "req_1", reason: "Not a lore article" });
+  });
+  it("keeps Decline off while that suggestion is being made into a card", () => {
+    setUp();
+    jest.mocked(curation.acceptSuggestion.useMutation).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: true,
+      variables: { requestId: "req_1" },
+    } as never);
+    render(<CurationTab />);
+    openSuggestions();
+    expect(screen.getByRole("button", { name: "Make a card" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Decline" })).toBeDisabled();
+  });
+
+  it("says when the suggestions did not load, instead of showing none", () => {
+    setUp();
+    jest.mocked(curation.suggestions.useQuery).mockReturnValue({
+      data: undefined,
+      isError: true,
+      error: { message: "Network down" },
+    } as never);
+    render(<CurationTab />);
+    openSuggestions();
+    expect(screen.getByRole("alert")).toHaveTextContent("Suggestions did not load. Network down");
+    expect(screen.queryByText("No suggestions waiting")).not.toBeInTheDocument();
   });
 });

@@ -34,6 +34,9 @@ export const cardsAdminCurationRouter = createTRPCRouter({
           decision: z.enum(["APPROVE", "REJECT"]),
           cardIds: z.array(z.string().min(1)).min(1).max(2000).optional(),
           filter: queueFilter.optional(),
+          // A filter review names the queue read it came from: its `asOf` and the total it showed.
+          asOf: z.date().optional(),
+          expected: z.number().int().min(0).optional(),
           note: z.string().max(500).optional(),
         })
         .refine(

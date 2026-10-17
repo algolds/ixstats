@@ -9,6 +9,7 @@ import { CheckCircle } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
+import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import {
   AlertDialog,
@@ -118,7 +119,10 @@ function QueueRow({
   );
 }
 
-/** Approve every card the filter shows, after asking: it can put thousands of cards into packs at once. */
+/**
+ * Approve every card the filter shows, after asking. The server approves exactly the cards this queue read showed
+ * (its `asOf` and total), and at most MAX_FILTER_REVIEW of them.
+ */
 function ApproveAll({
   total,
   disabled,
@@ -131,7 +135,11 @@ function ApproveAll({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button size="sm" variant="ghost" disabled={disabled || total === 0}>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={disabled || total === 0 || total > MAX_FILTER_REVIEW}
+        >
           Approve all {total.toLocaleString()}
         </Button>
       </AlertDialogTrigger>
@@ -181,11 +189,16 @@ export function ReviewQueue() {
       void utils.cards.admin.curation.queue.invalidate();
       void utils.cards.admin.overview.summary.invalidate();
     },
-    onError: (error) => notify.error("Review not saved", error.message),
+    onError: (error) => {
+      notify.error("Review not saved", error.message);
+      // The queue changed under a filter review: read it again, so the next try sees it as it is.
+      if (error.data?.code === "CONFLICT") void utils.cards.admin.curation.queue.invalidate();
+    },
   });
 
   const cards = queue.data?.cards ?? [];
   const total = queue.data?.total ?? 0;
+  const asOf = queue.data?.asOf;
   /** A filter change clears the choice, so no card the queue no longer shows is reviewed. */
   const refilter =
     <T,>(set: (value: T) => void) =>
@@ -254,10 +267,18 @@ export function ReviewQueue() {
           </Button>
           <ApproveAll
             total={total}
-            disabled={review.isPending}
-            onConfirm={() => review.mutate({ decision: "APPROVE", filter })}
+            disabled={review.isPending || !asOf}
+            onConfirm={() =>
+              asOf && review.mutate({ decision: "APPROVE", filter, asOf, expected: total })
+            }
           />
         </div>
+        {total > MAX_FILTER_REVIEW && (
+          <p className="text-footnote text-label-secondary">
+            Narrow the filter to approve all: at most {MAX_FILTER_REVIEW.toLocaleString()} cards at
+            once.
+          </p>
+        )}
 
         {queue.isError ? (
           <p role="alert" className="text-destructive text-footnote">

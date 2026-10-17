@@ -54,7 +54,7 @@ A login streak raises the activity parts by 5% for each day of streak, up to 10 
 - **Card packs** in the Vault Shop (seeded packs cost 100 to 15,000 IxC). See [Card Packs](/help/vault/card-packs).
 - **Auctions:** bids and buyouts, plus a listing fee of 5 IxC (10 for featured). See [Auctions & Trading](/help/vault/trading).
 - **Trades:** you can add IxCredits to either side of a trade offer.
-- **Lore card requests:** 50 IxC to ask for a wiki article to become a card, refunded if rejected. See [Lore Cards](/help/vault/lore-cards).
+- **Lore card suggestions** cost nothing: suggesting a wiki article for a card is free (up to 3 a day), so there is nothing to refund. See [Lore Cards](/help/vault/lore-cards).
 - **Vault Shop items** (cosmetics such as profile glows, frames and badges, card capacity boosts and MyLeague licences) when the shop has them. See [Vault Shop Items](/help/vault/shop-items).
 
 ## Vault level
