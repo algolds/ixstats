@@ -12,6 +12,7 @@ const mutate = jest.fn();
 const invalidateBalance = jest.fn();
 const invalidateTransactions = jest.fn();
 const invalidateEarnings = jest.fn();
+const invalidateMine = jest.fn();
 let mutationOptions: {
   onSuccess: (data: unknown) => void;
   onError: (err: { message: string }) => void;
@@ -26,7 +27,7 @@ jest.mock("~/trpc/react", () => ({
         getTransactions: { invalidate: invalidateTransactions },
         getTodayEarnings: { invalidate: invalidateEarnings },
       },
-      cards: { getMyCards: { invalidate: jest.fn() } },
+      cards: { listMine: { invalidate: invalidateMine } },
     }),
     vault: {
       getBalance: { useQuery: () => ({ data: balance, isLoading: false }) },
@@ -46,9 +47,6 @@ jest.mock("~/lib/sound/cuelume", () => ({
 }));
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { error: jest.fn(), success: jest.fn() },
-}));
-jest.mock("~/components/cards/display/CardHolographicCover", () => ({
-  CardHolographicCover: () => <div data-testid="holo-cover" />,
 }));
 
 import {
@@ -73,10 +71,25 @@ beforeEach(() => {
   invalidateBalance.mockClear();
   invalidateTransactions.mockClear();
   invalidateEarnings.mockClear();
+  invalidateMine.mockClear();
   window.localStorage.clear();
 });
 
 const dialog = () => screen.getByRole("dialog");
+
+const CAPHIRIA_FACE = {
+  cardId: "c1",
+  title: "Caphiria",
+  rarity: "ULTRA_RARE",
+  cardType: "LORE",
+  realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
+  artwork: null,
+  silhouette: false,
+  number: 1,
+  season: null,
+  isRetired: false,
+  copy: { ownershipId: "o1", finish: "STANDARD", serialNumber: 1, level: 1 },
+};
 
 describe("DailyRewardProvider", () => {
   it("auto-opens the vault dialog with two choices and the streak", () => {
@@ -108,23 +121,40 @@ describe("DailyRewardProvider", () => {
     expect(reveal).toHaveBeenCalledTimes(1);
   });
 
-  it("reveals a card without artwork and links to the collection", async () => {
+  it("shows the card pull face down before the claim, small enough for its socket", () => {
+    render(<Widget />);
+    const tile = within(dialog()).getByRole("button", { name: /Card pull/ });
+    const faceDown = tile.querySelector(".card-face-down");
+    expect(faceDown).not.toBeNull();
+    // The socket is 128px tall, so the 5:7 card is 80px wide rather than size S's 128px.
+    expect(faceDown).toHaveClass("w-20");
+    expect(faceDown).not.toHaveClass("w-32");
+  });
+
+  it("reveals the pulled copy's real face and links to it in Mine", async () => {
     render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /Card pull/ }));
     act(() =>
       mutationOptions.onSuccess({
-        cardAwarded: { id: "c1", title: "Caphiria", rarity: "ULTRA_RARE", artwork: "" },
+        cardAwarded: {
+          id: "c1",
+          ownershipId: "o1",
+          title: "Caphiria",
+          rarity: "ULTRA_RARE",
+          artwork: "",
+        },
+        cardFace: CAPHIRIA_FACE,
         streak: 5,
       })
     );
-    expect(await screen.findByText("Caphiria")).toBeInTheDocument();
-    expect(screen.getByTestId("holo-cover")).toBeInTheDocument();
-    expect(screen.queryByRole("img")).toBeNull();
-    expect(screen.getByText("ultra rare")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "View collection" })).toHaveAttribute(
+    expect(
+      await screen.findByRole("img", { name: "Caphiria, Ultra Rare, Standard, Ixnay" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View card" })).toHaveAttribute(
       "href",
-      "/vault/inventory"
+      "/vault/cards/mine?card=c1"
     );
+    expect(invalidateMine).toHaveBeenCalledTimes(1);
   });
 
   it("refreshes the statement and today's earnings after a claim", () => {

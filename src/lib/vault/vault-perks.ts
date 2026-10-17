@@ -21,7 +21,6 @@ export interface VaultConfig {
   activeDailyCap: number;
   socialDailyCap: number;
   xpPerLevel: number;
-  maxStreakBonus: number;
   premiumMultiplier: number;
   isEarningEnabled: boolean;
   isTradingEnabled: boolean;
@@ -38,7 +37,6 @@ export const VAULT_CONFIG_DEFAULTS: VaultConfig = {
   activeDailyCap: 100,
   socialDailyCap: 50,
   xpPerLevel: 1000,
-  maxStreakBonus: 7,
   premiumMultiplier: 1.0,
   isEarningEnabled: true,
   isTradingEnabled: true,
@@ -54,7 +52,6 @@ const VAULT_CONFIG_KEYS: Record<keyof VaultConfig, string> = {
   activeDailyCap: "vault_activeDailyCap",
   socialDailyCap: "vault_socialDailyCap",
   xpPerLevel: "vault_xpPerLevel",
-  maxStreakBonus: "vault_maxStreakBonus",
   premiumMultiplier: "vault_premiumMultiplier",
   isEarningEnabled: "vault_isEarningEnabled",
   isTradingEnabled: "vault_isTradingEnabled",
@@ -121,9 +118,6 @@ export async function getVaultConfig(db: {
         m.vault_socialDailyCap ?? String(VAULT_CONFIG_DEFAULTS.socialDailyCap)
       ),
       xpPerLevel: parseFloat(m.vault_xpPerLevel ?? String(VAULT_CONFIG_DEFAULTS.xpPerLevel)),
-      maxStreakBonus: parseFloat(
-        m.vault_maxStreakBonus ?? String(VAULT_CONFIG_DEFAULTS.maxStreakBonus)
-      ),
       premiumMultiplier: parseFloat(
         m.vault_premiumMultiplier ?? String(VAULT_CONFIG_DEFAULTS.premiumMultiplier)
       ),

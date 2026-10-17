@@ -139,8 +139,8 @@ chronological or trending for everyone). Stored values for them are ignored and 
 
 ### Vault status (`vault`) — `VaultStatusPanel`
 
-Balance, streak, level and lifetime totals from the Vault. **Claim** calls `vault.claimDailyBonus`. **Sync with
-server** refetches.
+Balance, streak, level and lifetime totals from the Vault. **Open daily reward** opens the one daily reward dialog
+(`useDailyReward`, `vault.claimCombinedDailyClaim`). **Sync with server** refetches.
 
 ### Cosmetics (`cosmetics`) — `CosmeticsUpgradesPanel`
 
@@ -170,7 +170,7 @@ verification checksum; `nsImport.getVerificationUrl` gives the verification link
 | `countries.update` | protected + `assertCountryWriteAccess` |
 | `countryGeo.updateGeoRollupMode`, `countryGeo.rebaseNationalFromGeography` | country owner, standard mutation rate limit |
 | `thinkpages.updateAccount` | protected |
-| `vault.claimDailyBonus`, `vault.toggleEquipCosmetic` | protected |
+| `vault.toggleEquipCosmetic` | protected |
 | `ixnayid.*` link and unlink procedures | protected (verification starts are light rate limited) |
 | `nsImport.hideMyCard` | protected |
 | `nsImport.requestSelfServiceTakedown` | public, rate limited |

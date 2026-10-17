@@ -15,7 +15,6 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
 import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-ledger";
 import {
   claimCombinedDailyClaim,
-  claimDailyBonus,
   claimDailySlot,
   startOfUtcDay,
 } from "~/lib/vault/vault-daily-bonus";
@@ -100,58 +99,6 @@ describe("claimDailySlot", () => {
   });
 });
 
-describe("claimDailyBonus", () => {
-  it("pays once: the second same-day claim loses the conditional write", async () => {
-    const db = makeDb();
-    db.myVault.updateMany = jest
-      .fn()
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 });
-
-    const first = await claimDailyBonus("user_1", db as never);
-    const second = await claimDailyBonus("user_1", db as never);
-
-    expect(first).toEqual({ success: true, bonus: 4, streak: 4 });
-    expect(second).toEqual({
-      success: false,
-      bonus: 0,
-      streak: 3,
-      message: "Daily bonus already claimed today",
-    });
-    expect(earnMock).toHaveBeenCalledTimes(1);
-    expect(earnMock).toHaveBeenCalledWith(db, {
-      userId: "user_1",
-      amount: 4,
-      type: "EARN_ACTIVE",
-      source: "DAILY_LOGIN",
-      metadata: { streak: 4 },
-    });
-    expect(db.$transaction).toHaveBeenCalledTimes(2);
-  });
-
-  it("takes the slot and pays inside one transaction; a ledger failure rolls the slot back", async () => {
-    const db = makeDb();
-    db.myVault.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-    earnMock.mockRejectedValue(new LedgerError("DAILY_CAP_REACHED", "Daily earning cap reached"));
-
-    const result = await claimDailyBonus("user_1", db as never);
-
-    expect(result).toEqual({
-      success: false,
-      bonus: 0,
-      streak: 3,
-      message: "Daily earning cap reached",
-    });
-    // The slot write and the earn ran in the same $transaction callback, which rejected,
-    // so a real database rolls the slot back with it.
-    expect(db.myVault.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
-      earnMock.mock.invocationCallOrder[0]
-    );
-    await expect(db.$transaction.mock.results[0].value).rejects.toBeInstanceOf(LedgerError);
-    expect(db.myVault.update).not.toHaveBeenCalled();
-  });
-});
-
 describe("claimCombinedDailyClaim", () => {
   it("CREDITS: a second same-day claim is rejected without earning", async () => {
     const db = makeDb();
@@ -166,6 +113,87 @@ describe("claimCombinedDailyClaim", () => {
       message: "Daily claim already made today",
     });
     expect(earnMock).not.toHaveBeenCalled();
+  });
+
+  it("CREDITS: pays once; the second same-day claim loses the conditional write", async () => {
+    const db = makeDb();
+    db.myVault.updateMany = jest
+      .fn()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+
+    const first = await claimCombinedDailyClaim("user_1", "CREDITS", db as never);
+    const second = await claimCombinedDailyClaim("user_1", "CREDITS", db as never);
+
+    expect(first).toMatchObject({
+      success: true,
+      rewardType: "credits",
+      creditsAwarded: 4,
+      streak: 4,
+    });
+    expect(second).toMatchObject({ success: false, message: "Daily claim already made today" });
+    expect(earnMock).toHaveBeenCalledTimes(1);
+    expect(earnMock).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({
+        userId: "user_1",
+        source: "DAILY_LOGIN_CREDITS",
+        metadata: { streak: 4 },
+      })
+    );
+    expect(db.$transaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("CREDITS: takes the slot and pays inside one transaction; a ledger failure rolls the slot back", async () => {
+    const db = makeDb();
+    db.myVault.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    earnMock.mockRejectedValue(new LedgerError("DAILY_CAP_REACHED", "Daily earning cap reached"));
+
+    const result = await claimCombinedDailyClaim("user_1", "CREDITS", db as never);
+
+    expect(result).toEqual({
+      success: false,
+      rewardType: "credits",
+      streak: 3,
+      message: "Daily earning cap reached",
+    });
+    // The slot write and the earn ran in the same $transaction callback, which rejected,
+    // so a real database rolls the slot back with it.
+    expect(db.myVault.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      earnMock.mock.invocationCallOrder[0]
+    );
+    await expect(db.$transaction.mock.results[0].value).rejects.toBeInstanceOf(LedgerError);
+    expect(db.myVault.update).not.toHaveBeenCalled();
+  });
+
+  it("CARD: a double claim mints once, and only the winner gets a copy id", async () => {
+    const db = makeDb();
+    db.myVault.updateMany = jest
+      .fn()
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    db.card.count = jest.fn().mockResolvedValue(1);
+    db.card.findFirst = jest
+      .fn()
+      .mockResolvedValue({ id: "card_1", title: "Test Card", rarity: "COMMON", artwork: null });
+    db.cardOwnership.findFirst = jest.fn().mockResolvedValue({ serialNumber: 4 });
+    db.cardOwnership.create = jest.fn().mockResolvedValue({ id: "co_1" });
+
+    const [first, second] = await Promise.all([
+      claimCombinedDailyClaim("user_1", "CARD", db as never),
+      claimCombinedDailyClaim("user_1", "CARD", db as never),
+    ]);
+
+    expect(first).toMatchObject({ success: true, cardAwarded: { ownershipId: "co_1" } });
+    expect(second).toEqual({
+      success: false,
+      rewardType: "card",
+      streak: 3,
+      message: "Daily claim already made today",
+    });
+    expect(db.cardOwnership.create).toHaveBeenCalledTimes(1);
+    expect(db.cardTransferEvent.create).toHaveBeenCalledTimes(1);
+    expect(db.vaultTransaction.create).toHaveBeenCalledTimes(1);
   });
 
   it("CARD: allocates the serial under the advisory lock and awards inside one transaction", async () => {
@@ -184,7 +212,7 @@ describe("claimCombinedDailyClaim", () => {
       success: true,
       rewardType: "card",
       streak: 4,
-      cardAwarded: { id: "card_1", title: "Test Card" },
+      cardAwarded: { id: "card_1", ownershipId: "co_1", title: "Test Card" },
     });
     expect(db.$transaction).toHaveBeenCalledTimes(1);
     expect(db.myVault.updateMany.mock.invocationCallOrder[0]).toBeLessThan(

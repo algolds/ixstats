@@ -61,7 +61,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 - `isAuctionsEnabled`: Marketplace listing and bidding
 - `isMaintenanceMode`: Emergency master switch blocking all ledger writes
 - Crafting has no switch any more: it is retired and its router is deleted; a leftover `vault_isCraftingEnabled` row is ignored
-- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50; nothing pays `EARN_SOCIAL` any more), `xpPerLevel` (1,000), `maxStreakBonus` (7) and `premiumMultiplier` (display-only today). The store item's `yieldBoost` effect is labelled "Dividend boost" in the admin store form and multiplies the nightly Vault dividend. Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
+- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50; nothing pays `EARN_SOCIAL` any more), `xpPerLevel` (1,000) and `premiumMultiplier` (display-only today). The store item's `yieldBoost` effect is labelled "Dividend boost" in the admin store form and multiplies the nightly Vault dividend. Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
 
 ---
 

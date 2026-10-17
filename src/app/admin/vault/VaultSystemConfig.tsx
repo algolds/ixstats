@@ -22,7 +22,6 @@ export function VaultSystemConfig() {
     activeDailyCap: 100,
     socialDailyCap: 50,
     xpPerLevel: 1000,
-    maxStreakBonus: 7,
     premiumMultiplier: 1,
     isEarningEnabled: true,
     isTradingEnabled: true,
@@ -40,7 +39,6 @@ export function VaultSystemConfig() {
         activeDailyCap: vaultConfig.activeDailyCap,
         socialDailyCap: vaultConfig.socialDailyCap,
         xpPerLevel: vaultConfig.xpPerLevel,
-        maxStreakBonus: vaultConfig.maxStreakBonus,
         premiumMultiplier: vaultConfig.premiumMultiplier,
         isEarningEnabled: vaultConfig.isEarningEnabled ?? true,
         isTradingEnabled: vaultConfig.isTradingEnabled ?? true,
@@ -81,14 +79,14 @@ export function VaultSystemConfig() {
         </CardHeader>
         <CardContent>
           {isConfigLoading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-              {[...Array(5)].map((_, i) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="rounded-control h-20 w-full" />
               ))}
             </div>
           ) : (
             <form onSubmit={handleSaveConfig} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="space-y-2">
                   <Label htmlFor="cfg-active-cap" className="text-label">
                     Daily Cap (Active)
@@ -149,27 +147,6 @@ export function VaultSystemConfig() {
                     />
                     <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       XP
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cfg-streak" className="text-label">
-                    Max streak bonus
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="cfg-streak"
-                      type="number"
-                      min={1}
-                      max={365}
-                      value={configForm.maxStreakBonus}
-                      onChange={(e) =>
-                        setConfigForm((f) => ({ ...f, maxStreakBonus: Number(e.target.value) }))
-                      }
-                      className="pr-10 font-mono"
-                    />
-                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
-                      IxC
                     </span>
                   </div>
                 </div>

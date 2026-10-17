@@ -5,65 +5,39 @@
  * Provides endpoints for:
  * - Balance queries
  * - Transaction history
- * - Daily bonuses and streaks
+ * - The daily reward and streaks
  * - Credit spending
  * - Vault level and earnings summaries
  */
 
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
+import { ownedFaces } from "~/lib/cards/hub/faces";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import type { CardFaceData } from "~/lib/cards/face/types";
+
+/**
+ * The face of the copy a daily card claim minted. The claimer holds it, so its art shows (a retired card keeps the
+ * placeholder face). The claim has already committed, so a failed read drops the face instead of failing the claim.
+ */
+async function claimedFace(
+  db: PrismaClient,
+  ownershipId: string | undefined
+): Promise<CardFaceData | null> {
+  if (!ownershipId) return null;
+  try {
+    const [face] = await ownedFaces(db, [ownershipId]);
+    return face ?? null;
+  } catch (error) {
+    console.error("[Vault Router] Daily card face read failed:", error);
+    return null;
+  }
+}
 
 export const vaultDailyClaimsRouter = createTRPCRouter({
-  /**
-   * Get vault balance and stats for a user
-   */
-  claimDailyBonus: rateLimitedMutationProcedure.mutation(async ({ ctx }) => {
-    try {
-      if (!ctx.auth?.userId) {
-        throw new Error("User ID not found in authentication context");
-      }
-
-      const result = await vaultService.claimDailyBonus(ctx.auth.userId, ctx.db as any);
-
-      if (!result.success) {
-        throw new Error(result.message || "Failed to claim daily bonus");
-      }
-
-      await globalCache.delete(`user_vault_balance:${ctx.auth.userId}`);
-
-      // Notification: daily bonus claimed (fire-and-forget)
-      try {
-        await notificationAPI.create({
-          userId: ctx.auth.userId,
-          title: "Daily Bonus Claimed",
-          message: `+${result.bonus} IxCredits! ${result.streak}-day streak`,
-          type: "info",
-          category: "achievement",
-          priority: "low",
-          metadata: { bonus: result.bonus, streak: result.streak },
-        });
-      } catch (err) {
-        console.warn("[Vault Router] Daily bonus notification failed:", err);
-      }
-
-      return {
-        success: true,
-        bonus: result.bonus,
-        streak: result.streak,
-        message: `Claimed ${result.bonus} IxCredits! Streak: ${result.streak} days`,
-      };
-    } catch (error) {
-      console.error("[Vault Router] Error claiming daily bonus:", error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Failed to claim daily bonus", { cause: error });
-    }
-  }),
-
   /**
    * Claim combined daily claim (credits jackpot OR random card)
    */
@@ -78,7 +52,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
         const result = await vaultService.claimCombinedDailyClaim(
           ctx.auth.userId,
           input.choice,
-          ctx.db as any
+          ctx.db
         );
 
         if (!result.success) {
@@ -115,7 +89,7 @@ export const vaultDailyClaimsRouter = createTRPCRouter({
           console.warn("[Vault Router] Daily claim notification failed:", err);
         }
 
-        return result;
+        return { ...result, cardFace: await claimedFace(ctx.db, result.cardAwarded?.ownershipId) };
       } catch (error) {
         console.error("[Vault Router] Error claiming combined daily reward:", error);
         if (error instanceof Error) throw error;
