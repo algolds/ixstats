@@ -1,7 +1,8 @@
 /** The cards admin Overview (cards refresh spec §2.4): counts, what waits on an admin, and a card-only feed. */
-import type { CardImportJob, Prisma, PrismaClient, SyncLog } from "@prisma/client";
+import type { CardImportJob, PrismaClient, SyncLog } from "@prisma/client";
 import { CardRarity } from "~/lib/cards/enums";
 import { CARD_FEED_ACTIONS, type CardAuditAction } from "./cards.audit";
+import { GRANTABLE_CARDS } from "./cards.tools";
 
 export interface CountRow {
   key: string;
@@ -185,16 +186,6 @@ export function realmOptions(db: PrismaClient) {
     take: 500,
   });
 }
-
-/**
- * The cards an admin may grant, as packs and the daily card would draw them: approved by review and not retired. A
- * trophy moves only with its Loreward, so it is never one.
- */
-const GRANTABLE_CARDS = {
-  reviewState: "APPROVED",
-  isRetired: false,
-  cardType: { not: "TROPHY" },
-} satisfies Prisma.CardWhereInput;
 
 /**
  * Up to 10 cards whose title contains `query`, for the admin's card pickers. `grantable` keeps only cards a grant
