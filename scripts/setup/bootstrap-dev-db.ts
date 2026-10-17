@@ -49,6 +49,9 @@ export const CARDS_CONSTRAINTS_SQL =
 /** The cards backfill; on a fresh database it only seeds Ixnay and the system realms the card tables point at. */
 export const CARDS_BACKFILL_SCRIPT = "scripts/cards/backfill-cards-refresh.ts";
 
+/** Cards refresh Phase 2: review state, import jobs, art licences, takedowns, Special card fields; idempotent. */
+export const CARDS_ADMIN_SQL = "prisma/migrations/20261028120000_cards_admin/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -154,6 +157,7 @@ async function main(): Promise<void> {
     "--file",
     CARDS_CONSTRAINTS_SQL,
   ]);
+  run("bunx", ["prisma", "db", "execute", "--schema", "prisma/schema", "--file", CARDS_ADMIN_SQL]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 
   console.log(`
