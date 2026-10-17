@@ -13,6 +13,7 @@ import { db } from "~/server/db";
 import type { CardRarity } from "@prisma/client";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
@@ -83,6 +84,9 @@ const MIN_ARTICLE_LENGTH = 600;
 /** How long one read of a sister wiki may take; a hung answer fails the article, not the run. */
 const WIKI_READ_TIMEOUT_MS = 10_000;
 
+/** Reads at once: the pace of a caller outside an import run. */
+const unpaced: Pace = (read) => read();
+
 /** Lookup keys an article title may be requested under (raw, lowercase, spaced, underscored). */
 const titleKeys = (title: string | undefined, underscored = false) =>
   title
@@ -103,13 +107,16 @@ const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
 const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
 
 class WikiLoreCardGenerator {
-  /** An article read into a card candidate; throws ArticleRejected when the page cannot become a card. */
+  /**
+   * An article read into a card candidate; throws ArticleRejected when the page cannot become a card. An import run
+   * passes its discovery client's `pace`, so each MediaWiki read waits its turn with the run's other reads.
+   */
   async generateCard(
     articleTitle: string,
     wikiSource: CardArticleSource,
-    options: { requireImage?: boolean; minLength?: number } = {}
+    options: { requireImage?: boolean; minLength?: number; pace?: Pace } = {}
   ): Promise<LoreCardCandidate> {
-    const articleData = await this.fetchArticleData(articleTitle, wikiSource);
+    const articleData = await this.fetchArticleData(articleTitle, wikiSource, options.pace);
     if (!articleData) {
       throw new ArticleRejected(
         "missing",
@@ -153,31 +160,29 @@ class WikiLoreCardGenerator {
    */
   private async fetchArticleData(
     title: string,
-    wikiSource: CardArticleSource
+    wikiSource: CardArticleSource,
+    pace: Pace = unpaced
   ): Promise<ArticleData | null> {
     if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
     // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
     if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
-    const response = await mwQuery(
-      wikiSource,
-      {
-        titles: title,
-        prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
-        exchars: "2000", // first ~2000 chars for the full excerpt
-        exlimit: "1",
-        explaintext: "1",
-        piprop: "original|name",
-        pithumbsize: "500",
-        inprop: "url",
-        cllimit: "50",
-        pllimit: "500", // up to 500 links (inbound indicator)
-        rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
-        imlimit: "10",
-        pclimit: "10", // up to 10 contributors
-      },
-      WIKI_READ_TIMEOUT_MS
-    );
-    const data = await mwJson(response, wikiSource);
+    const read = (params: Record<string, string>) =>
+      pace(async () => mwJson(await mwQuery(wikiSource, params, WIKI_READ_TIMEOUT_MS), wikiSource));
+    const data = await read({
+      titles: title,
+      prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
+      exchars: "2000", // first ~2000 chars for the full excerpt
+      exlimit: "1",
+      explaintext: "1",
+      piprop: "original|name",
+      pithumbsize: "500",
+      inprop: "url",
+      cllimit: "50",
+      pllimit: "500", // up to 500 links (inbound indicator)
+      rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
+      imlimit: "10",
+      pclimit: "10", // up to 10 contributors
+    });
     if (!data.query?.pages) {
       throw new Error(`${cardSourceLabel(wikiSource)} answered with no page data.`);
     }
@@ -185,21 +190,19 @@ class WikiLoreCardGenerator {
     if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
 
     const wikitext = page.revisions?.[0]?.["*"] || "";
-    const featured = await this.resolveFeaturedImage(page, this.parseInfobox(wikitext), wikiSource);
-
-    const backlinks = await mwJson(
-      await mwQuery(
-        wikiSource,
-        { list: "backlinks", bltitle: title, bllimit: "500" },
-        WIKI_READ_TIMEOUT_MS
-      ),
-      wikiSource
+    const featured = await this.resolveFeaturedImage(
+      page,
+      this.parseInfobox(wikitext),
+      wikiSource,
+      pace
     );
+
+    const backlinks = await read({ list: "backlinks", bltitle: title, bllimit: "500" });
     const inboundLinks = backlinks.query?.backlinks?.length ?? 0;
 
     return {
       ...page,
-      authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
+      authorInfo: await this.lookupAuthorInfo(page, title, wikiSource, pace),
       text: this.removeTemplates(wikitext),
       rawText: wikitext,
       image: featured?.url,
@@ -215,14 +218,15 @@ class WikiLoreCardGenerator {
   private async resolveFeaturedImage(
     page: MwPage,
     infobox: Record<string, string>,
-    wikiSource: CardArticleSource
+    wikiSource: CardArticleSource,
+    pace: Pace
   ): Promise<{ url: string; file: string | null } | undefined> {
     if (page.original?.source) {
       const url = page.original.source;
       return { url, file: page.pageimage ?? fileNameFromArtworkUrl(url, wikiSource) };
     }
     if (infobox.image) {
-      const url = await this.getImageUrl(infobox.image, wikiSource);
+      const url = await this.getImageUrl(infobox.image, wikiSource, pace);
       if (url) return { url, file: withoutFileNamespace(infobox.image) };
     }
     const firstImage = page.images?.find((img: { title?: string }) => {
@@ -230,29 +234,31 @@ class WikiLoreCardGenerator {
       return !NON_ARTICLE_IMAGE.test(filename) && FILE_IMAGE.test(filename);
     });
     if (!firstImage?.title) return undefined;
-    const url = await this.getImageUrl(firstImage.title, wikiSource);
+    const url = await this.getImageUrl(firstImage.title, wikiSource, pace);
     return url ? { url, file: withoutFileNamespace(firstImage.title) } : undefined;
   }
 
   /** Creator: earliest non-bot editor, else the first non-bot editor among the fetched revisions. */
-  private async lookupAuthorInfo(page: MwPage, title: string, wikiSource: WikiSource) {
+  private async lookupAuthorInfo(page: MwPage, title: string, wikiSource: WikiSource, pace: Pace) {
     let found = { creator: "", createdAt: "", isBotFiltered: false };
     try {
-      const creatorRes = await mwQuery(
-        wikiSource,
-        {
-          titles: title,
-          prop: "revisions",
-          rvdir: "newer",
-          rvlimit: "5",
-          rvprop: "user|timestamp|comment",
-        },
-        8000
-      );
-      if (creatorRes.ok) {
-        const early = firstPage<MediaWikiPageItem>(await creatorRes.json())?.revisions;
-        found = pickCreator((early || []) as RevisionUser[]);
-      }
+      const early = await pace(async () => {
+        const creatorRes = await mwQuery(
+          wikiSource,
+          {
+            titles: title,
+            prop: "revisions",
+            rvdir: "newer",
+            rvlimit: "5",
+            rvprop: "user|timestamp|comment",
+          },
+          8000
+        );
+        return creatorRes.ok
+          ? firstPage<MediaWikiPageItem>(await creatorRes.json())?.revisions
+          : undefined;
+      });
+      if (early) found = pickCreator(early as RevisionUser[]);
     } catch (err) {
       console.warn(`[Lore Card Generator] Earliest revision lookup failed for "${title}":`, err);
     }
@@ -510,18 +516,24 @@ class WikiLoreCardGenerator {
    * Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API; null when the wiki has
    * no such file. A failed or refused read throws (mwJson).
    */
-  private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+  private async getImageUrl(
+    filename: string,
+    wikiSource: WikiSource,
+    pace: Pace
+  ): Promise<string | null> {
     if (readsPostgres(wikiSource)) {
       const name = withoutFileNamespace(filename);
       return (await ixwikiImageUrls([name])).get(name) ?? null;
     }
-    const data = await mwJson(
-      await mwQuery(
-        wikiSource,
-        { titles: `File:${withoutFileNamespace(filename)}`, prop: "imageinfo", iiprop: "url" },
-        WIKI_READ_TIMEOUT_MS
-      ),
-      wikiSource
+    const data = await pace(async () =>
+      mwJson(
+        await mwQuery(
+          wikiSource,
+          { titles: `File:${withoutFileNamespace(filename)}`, prop: "imageinfo", iiprop: "url" },
+          WIKI_READ_TIMEOUT_MS
+        ),
+        wikiSource
+      )
     );
     return firstPage<MwPage>(data)?.imageinfo?.[0]?.url || null;
   }

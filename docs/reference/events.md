@@ -57,6 +57,7 @@ Both servers attach to a raw HTTP server's `upgrade` event. They are hosted by:
 | `vault-dividend` | `0 0 * * *` | `cronSchedule_vaultDividend` |
 | `card-values` | `0 */6 * * *` | `cronSchedule_cardValue` |
 | `lore-card-generation` | `0 2 * * *` | — |
+| `card-import-jobs` | `* * * * *` | — |
 | `lorewards-full-sync` | `0 6 * * *` | `cronSchedule_lorewardsScoring` |
 | `lorewards-state-sync` | `*/10 * * * *` | — |
 | `trade-expiry` | `*/5 * * * *` | — |

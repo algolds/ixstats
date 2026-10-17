@@ -1,6 +1,11 @@
 /** @jest-environment node */
-/** The per-wiki rarity tables in SystemConfig (Economy tab). */
-import { getRarityThresholds, setRarityThresholds } from "~/server/modules/cards/cards.config";
+/** The per-wiki rarity tables and daily import settings in SystemConfig (Economy tab). */
+import {
+  getDailyImportConfig,
+  getRarityThresholds,
+  setDailyImportSetting,
+  setRarityThresholds,
+} from "~/server/modules/cards/cards.config";
 import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -63,6 +68,71 @@ describe("rarity thresholds config", () => {
         key: "card_rarity_thresholds_althistory",
         value,
         description: "Card rarity thresholds: althistory",
+      },
+    });
+  });
+});
+
+describe("daily import settings", () => {
+  it("defaults to IxWiki and IIWiki on at 20 a day, AltHistory off", async () => {
+    const db = createMockPrisma();
+    expect(await getDailyImportConfig(db as never)).toEqual({
+      ixwiki: { enabled: true, count: 20 },
+      iiwiki: { enabled: true, count: 20 },
+      althistory: { enabled: false, count: 0 },
+    });
+    expect(db.systemConfig.findMany).toHaveBeenCalledWith({
+      where: {
+        key: {
+          in: [
+            "card_daily_import_ixwiki",
+            "card_daily_import_iiwiki",
+            "card_daily_import_althistory",
+          ],
+        },
+      },
+    });
+  });
+
+  it("reads a stored setting, and falls back to the default for a malformed or out-of-range one", async () => {
+    const db = createMockPrisma();
+    db.systemConfig.findMany.mockResolvedValue([
+      { key: "card_daily_import_ixwiki", value: JSON.stringify({ enabled: false, count: 5 }) },
+      { key: "card_daily_import_iiwiki", value: JSON.stringify({ enabled: true, count: 500 }) },
+      { key: "card_daily_import_althistory", value: "{not json" },
+    ]);
+    expect(await getDailyImportConfig(db as never)).toEqual({
+      ixwiki: { enabled: false, count: 5 },
+      iiwiki: { enabled: true, count: 20 },
+      althistory: { enabled: false, count: 0 },
+    });
+  });
+
+  it("refuses a daily count above the cap, a fraction or a negative, and writes nothing", async () => {
+    const db = createMockPrisma();
+    await expect(
+      setDailyImportSetting(db as never, "althistory", { enabled: true, count: 101 })
+    ).rejects.toThrow();
+    await expect(
+      setDailyImportSetting(db as never, "althistory", { enabled: true, count: 2.5 })
+    ).rejects.toThrow();
+    await expect(
+      setDailyImportSetting(db as never, "althistory", { enabled: true, count: -1 })
+    ).rejects.toThrow();
+    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
+  });
+
+  it("stores a valid setting under its source's key, the cap included", async () => {
+    const db = createMockPrisma();
+    await setDailyImportSetting(db as never, "althistory", { enabled: true, count: 100 });
+    const value = JSON.stringify({ enabled: true, count: 100 });
+    expect(db.systemConfig.upsert).toHaveBeenCalledWith({
+      where: { key: "card_daily_import_althistory" },
+      update: { value },
+      create: {
+        key: "card_daily_import_althistory",
+        value,
+        description: "Daily card import: althistory",
       },
     });
   });

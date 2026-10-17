@@ -144,6 +144,17 @@ describe("stageArticleCard", () => {
     expect(db.card.create.mock.calls[0]![0].select).toEqual({ id: true, rarity: true });
   });
 
+  it("reads the article in the turns of the run's client when the context has one", async () => {
+    const db = makeDb();
+    const pace = jest.fn();
+    await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), { ...context, pace });
+    expect(generateCard).toHaveBeenCalledWith(
+      "Union Assembly",
+      "iiwiki",
+      expect.objectContaining({ pace })
+    );
+  });
+
   it("stores the canonical title, and asks for an existing card by its key", async () => {
     const db = makeDb();
     await stageArticleCard(db as never, "iiwiki", input("battle_of_Kiro"), context);
@@ -488,7 +499,7 @@ describe("stageForAdmin", () => {
     await expect(
       stageForAdmin(db as never, "iiwiki", { ...input("Union Assembly"), requireImage: true })
     ).resolves.toEqual({ cardId: "card_new", rarity: "RARE" });
-    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki", undefined);
+    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki");
     expect(generateCard).toHaveBeenCalledWith("Union Assembly", "iiwiki", {
       requireImage: true,
       minLength: undefined,
@@ -607,12 +618,6 @@ describe("the importer's lookups", () => {
       query,
       thresholds: tuned,
     });
-    expect(wikiQueryFor).toHaveBeenCalledWith("althistory", undefined);
-  });
-
-  it("gives a longer run a bigger licence budget", async () => {
-    const db = makeDb();
-    await oneOffImportContext(db as never, "iiwiki", 300);
-    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki", 300);
+    expect(wikiQueryFor).toHaveBeenCalledWith("althistory");
   });
 });

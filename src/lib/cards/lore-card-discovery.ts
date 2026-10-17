@@ -8,7 +8,7 @@ import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
-import { mwQuery, type MwPage } from "./lore-card-mediawiki";
+import { mwJson, mwQuery } from "./lore-card-mediawiki";
 import {
   ixwikiCategoryTitles,
   ixwikiMainNamespaceTitles,
@@ -164,36 +164,33 @@ async function getCategoriesInfo(
 }
 
 /**
- * Random articles that have a page image. One request: `generator=random` with `prop=pageimages`, over-fetching
- * to cover pages without one (a per-article image check tripped the wiki's rate limit).
+ * Random articles that have a page image (the daily import's draw). One request: `generator=random` with
+ * `prop=pageimages`, over-fetching to cover pages without one (a per-article image check tripped the wiki's rate
+ * limit). A sister wiki's answer is read through mwJson: a refusal throws DiscoveryStopped and any other failed read
+ * throws, so the daily import reports the wiki instead of drawing nothing.
  */
 async function fetchRandomArticlesWithImages(
   count: number,
   wikiSource: WikiSource
 ): Promise<string[]> {
   if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count);
-  try {
-    const res = await mwQuery(wikiSource, {
+  const response = await mwQuery(
+    wikiSource,
+    {
       generator: "random",
       grnnamespace: "0",
       grnlimit: String(Math.min(count * 3, 50)),
       prop: "pageimages",
       piprop: "original",
       pilimit: "max",
-    });
-    if (!res.ok) {
-      console.error(`[Lore Card Discovery] random articles error: ${res.status}`);
-      return [];
-    }
-    const data = (await res.json()) as { query?: { pages?: Record<string, MwPage> } };
-    const titles = Object.values(data.query?.pages ?? {})
-      .filter((page) => page.original?.source)
-      .map((page) => page.title);
-    return withoutArchivedTitles(titles.slice(0, count), wikiSource);
-  } catch (error) {
-    console.error("[Lore Card Discovery] random articles fetch failed:", error);
-    return [];
-  }
+    },
+    12000
+  );
+  const data = await mwJson(response, wikiSource);
+  const titles = Object.values(data.query?.pages ?? {})
+    .filter((page) => page.original?.source)
+    .map((page) => page.title);
+  return withoutArchivedTitles(titles.slice(0, count), wikiSource);
 }
 
 export const loreCardDiscovery = {

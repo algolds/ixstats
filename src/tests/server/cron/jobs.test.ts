@@ -62,6 +62,20 @@ describe("CRON_JOBS", () => {
     expect(job?.timeoutMs).toBeGreaterThan(15 * 60_000);
   });
 
+  it("queues the daily lore import, and works card imports every minute under the lease the admin's Start shares", () => {
+    expect(CRON_JOBS.find((j) => j.name === "lore-card-generation")).toMatchObject({
+      defaultSchedule: "0 2 * * *",
+      modulePath: "~/server/modules/cards/cards.daily-import",
+      exportName: "queueDailyLoreImports",
+    });
+    expect(CRON_JOBS.find((j) => j.name === "card-import-jobs")).toMatchObject({
+      defaultSchedule: "* * * * *",
+      lockName: "card-import-jobs",
+      timeoutMs: 5 * 60_000,
+      exportName: "runQueuedCardImports",
+    });
+  });
+
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
     "%s points at an existing module and export",
     (_name, job) => {

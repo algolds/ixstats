@@ -69,11 +69,19 @@ function althistory(page: FakePage) {
 let guard: FetchGuard;
 /** Whether each request carried an abort signal (a timeout), in order. */
 let signalled: boolean[] = [];
-const read = (page: FakePage, options?: { requireImage?: boolean; minLength?: number }) => {
+/** Whether each request was sent inside a turn of the caller's pace, in order. */
+let sentInTurn: boolean[] = [];
+let turnOpen = false;
+const read = (
+  page: FakePage,
+  options?: Parameters<typeof wikiLoreCardGenerator.generateCard>[2]
+) => {
   signalled = [];
+  sentInTurn = [];
   const answer = althistory(page);
   guard = installFetchGuard((url, init) => {
     signalled.push(init?.signal instanceof AbortSignal);
+    sentInTurn.push(turnOpen);
     return answer(url);
   });
   return wikiLoreCardGenerator.generateCard("Aramelia (Roman Survival)", "althistory", options);
@@ -134,6 +142,30 @@ describe("generateCard for a sister wiki", () => {
     await read({ wikitext });
     // The page, its image's URL, its backlinks and its first editors.
     expect(signalled).toEqual([true, true, true, true]);
+  });
+
+  it("sends every read of the article, and reads its answer, in a turn of the caller's pace", async () => {
+    const wikitext = `{{Infobox country\n| image = File:Aramelia map.png\n}}\n${BODY}`;
+    let turns = 0;
+    const pace = async <T>(work: () => Promise<T>): Promise<T> => {
+      turns++;
+      turnOpen = true;
+      try {
+        return await work();
+      } finally {
+        turnOpen = false;
+      }
+    };
+    const card = await read({ wikitext }, { pace });
+    expect(sentInTurn).toEqual([true, true, true, true]);
+    expect(turns).toBe(4);
+    expect(card.signals.inboundLinks).toBe(2);
+    expect(card.authorInfo).toMatchObject({ creator: "Kir" });
+  });
+
+  it("reads unpaced when the caller gives no pace", async () => {
+    await read({});
+    expect(sentInTurn).toEqual([false, false, false]);
   });
 
   it("takes the first article image when there is no page or infobox image, skipping icons", async () => {

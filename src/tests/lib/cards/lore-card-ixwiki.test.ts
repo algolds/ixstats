@@ -23,13 +23,16 @@ import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
+import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
 /** The generator's private readers these tests call directly. */
 const generatorInternals = wikiLoreCardGenerator as unknown as {
-  getImageUrl(filename: string, wikiSource: string): Promise<string | null>;
+  getImageUrl(filename: string, wikiSource: string, pace: Pace): Promise<string | null>;
   fetchArticleData(title: string, wikiSource: string): Promise<unknown>;
 };
+/** Reads at once, as a caller outside an import run does. */
+const unpaced: Pace = (read) => read();
 
 const mocked = db as unknown as {
   wikiArticle: Record<"findFirst" | "findMany", jest.Mock>;
@@ -522,7 +525,9 @@ describe("lists for IxWiki", () => {
   it("gives the URL of a file from the asset WikiOS holds", async () => {
     mocked.wikiAsset.findMany.mockResolvedValue([asset]);
 
-    expect(await generatorInternals.getImageUrl("File:Caphiria map.png", "ixwiki")).toBe(asset.url);
+    expect(await generatorInternals.getImageUrl("File:Caphiria map.png", "ixwiki", unpaced)).toBe(
+      asset.url
+    );
     expect(guard.calls()).toEqual([]);
   });
 });
@@ -554,7 +559,7 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
     ["searchCategories", () => loreCardDiscovery.searchCategories("El", "iiwiki")],
     ["getCategoriesInfo", () => loreCardDiscovery.getCategoriesInfo(["Elms"], "iiwiki")],
     ["fetchAllMainNamespacePages", () => loreCardDiscovery.fetchAllMainNamespacePages("iiwiki")],
-    ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki")],
+    ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki", unpaced)],
     [
       "fetchRandomArticlesWithImages",
       () => loreCardDiscovery.fetchRandomArticlesWithImages(3, "iiwiki"),

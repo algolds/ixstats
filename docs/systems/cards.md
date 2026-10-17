@@ -35,6 +35,7 @@ Linked to an IxStates country via `Card.countryId`:
 
 ### 2. LORE Cards
 Generated from IxWiki/IIWiki articles via `loreCardsRouter`, the admin Lore Batch tool, user requests (`loreCards.requestLoreCard` → admin queue), and the daily `lore-card-generation` cron:
+- **Import jobs**: imports run as server jobs (`CardImportJob`, `src/server/modules/cards/cards.import-jobs.ts`), worked by the per-minute `card-import-jobs` cron under one lease, one throttled discovery client per wiki per run. The daily `lore-card-generation` cron (`cards.daily-import.ts`) queues one job per article wiki switched on in the Economy tab (SystemConfig `card_daily_import_<wiki>`; by default IxWiki and IIWiki at 20 a day, AltHistory off), once a day; its cards land pending review, and a wiki whose draw fails fails the cron run by name.
 - Categories: `LoreCategory` — MILITARY, DIPLOMACY, GEOGRAPHY, RELIGION, CULTURE, GOVERNMENT, PEOPLE, ECONOMY, SCIENCE, HISTORY, NATION, SPECIAL
 - The natural key is the wiki and the canonical article title (`cards_lore_natural_key`), so one article makes one Lore card; a lost race reports `already exists`.
 - Rarity suggested by `analyzeWikiSignals()` (`src/lib/cards/rarity-algorithm.ts`): word count 25%, links 25%, edit count 15%, category breadth 15%, images 10%, article age 10%; admins can override.
