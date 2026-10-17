@@ -1,5 +1,8 @@
 const SEASON_CONFIG_KEY = "currentIxCardSeason";
 
+/** The highest card season an admin can set. */
+export const MAX_CARD_SEASON = 100;
+
 export async function getCurrentIxCardSeason(db: {
   systemConfig: {
     findUnique: (args: { where: { key: string } }) => Promise<{ value: string } | null>;

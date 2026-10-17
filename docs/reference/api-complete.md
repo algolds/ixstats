@@ -613,12 +613,12 @@ api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
 
 ## IxVault (Cards & Credits)
 
-### vault Router (42 procedures)
+### vault Router (39 procedures)
 
 Balance, level and transaction reads use the signed-in user (no `userId` input).
 
 ```typescript
-// Queries (22)
+// Queries (21)
 api.vault.getBalance.useQuery()
 api.vault.getVaultLevel.useQuery()
 api.vault.getTodayEarnings.useQuery()
@@ -641,7 +641,7 @@ api.vault.adminGetPurchaseLogs.useQuery()
 api.vault.adminGetPurchasedItems.useQuery({ userId })
 api.vault.adminGetEquippedCosmetics.useQuery({ userId })
 
-// Mutations (19)
+// Mutations (18)
 api.vault.spendCredits.useMutation() // { amount, type, source, metadata? }
 api.vault.claimDailyBonus.useMutation()
 api.vault.claimCombinedDailyClaim.useMutation() // { choice }
