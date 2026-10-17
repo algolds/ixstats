@@ -13,7 +13,7 @@ import {
 } from "~/lib/lorewards";
 import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
-import { adminActor } from "~/server/api/routers/cards/admin/_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { writeConfigKeys } from "./_config-kv";
 

@@ -5,7 +5,7 @@ import {
   rewardAchievementOptions,
   saveSpecialCard,
 } from "~/server/modules/cards/cards.designer";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 export const cardsAdminDesignerRouter = createTRPCRouter({
   list: adminProcedure.query(({ ctx }) => listSpecialCards(ctx.db)),

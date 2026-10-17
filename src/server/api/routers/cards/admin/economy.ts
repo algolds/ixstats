@@ -12,7 +12,7 @@ import {
   saveMarket,
   saveRarityThresholds,
 } from "~/server/modules/cards/cards.economy";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 // Inputs check only the shape. The bounds live in cards.economy, so a refusal shows its sentence rather than
 // zod's issue list.

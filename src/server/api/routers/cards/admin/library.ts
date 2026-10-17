@@ -7,7 +7,7 @@ import {
   listLibrary,
   updateLibraryCard,
 } from "~/server/modules/cards/cards.library";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 export const cardsAdminLibraryRouter = createTRPCRouter({
   list: adminProcedure

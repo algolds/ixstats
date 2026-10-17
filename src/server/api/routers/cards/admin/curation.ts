@@ -9,7 +9,7 @@ import {
   listSuggestions,
   reviewCards,
 } from "~/server/modules/cards/cards.curation";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 const queueFilter = z.object({
   realm: z.string().min(1).max(100).default("admin"),

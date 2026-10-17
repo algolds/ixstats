@@ -12,7 +12,7 @@ const OTHER_BUILDERS =
 describe("cards admin router", () => {
   it("builds every procedure on adminProcedure", () => {
     const files = fs.readdirSync(DIR).filter((file) => file.endsWith(".ts"));
-    expect(files.length).toBeGreaterThanOrEqual(13);
+    expect(files.length).toBeGreaterThanOrEqual(12);
     const offenders = files.filter((file) =>
       OTHER_BUILDERS.test(fs.readFileSync(path.join(DIR, file), "utf8"))
     );

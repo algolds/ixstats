@@ -11,7 +11,7 @@ import {
   savePack,
   setPackActive,
 } from "~/server/modules/cards/cards.packs";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 export const cardsAdminPacksRouter = createTRPCRouter({
   list: adminProcedure.query(({ ctx }) => listPacks(ctx.db)),
