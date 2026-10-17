@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
@@ -135,6 +135,16 @@ describe("AddToShowcaseDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("forgets a half-typed name once the cards are added elsewhere", () => {
+    listed([showcase()]);
+    mutations({ add: (options) => options.onSuccess?.({ added: 1 }) });
+    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
+    const name = screen.getByLabelText("New showcase name");
+    fireEvent.change(name, { target: { value: "Half" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
+    expect(name).toHaveValue("");
+  });
+
   it("counts several cards, and says so when they were all there already", () => {
     listed([showcase()]);
     let added = 3;
@@ -162,17 +172,58 @@ describe("AddToShowcaseDialog", () => {
     expect(onOpenChange).not.toHaveBeenCalled();
   });
 
-  it("lists a new showcase even when adding to it then fails, so a retry does not make another", () => {
+  it("after a new showcase is made but the add fails, lists it and clears the name, so a second press makes no other", () => {
     listed([]);
-    mutations({
+    const { create } = mutations({
       create: (options) => options.onSuccess?.({ id: "s9" }),
       add: (options) => options.onError?.({ message: "A card you picked is no longer yours." }),
     });
     render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
-    fireEvent.change(screen.getByLabelText("New showcase name"), { target: { value: "Firsts" } });
+    const name = screen.getByLabelText("New showcase name");
+    fireEvent.change(name, { target: { value: "Firsts" } });
     fireEvent.click(screen.getByRole("button", { name: "Create and add" }));
     expect(vaultNotify.error).toHaveBeenCalledWith("A card you picked is no longer yours.");
     expect(api.useUtils().cards.listMyShowcases.invalidate).toHaveBeenCalled();
+    expect(name).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Create and add" })).toBeDisabled();
+    fireEvent.submit(name.closest("form") as HTMLFormElement);
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it("says when the showcases did not load, and asks again", () => {
+    const refetch = jest.fn();
+    jest
+      .mocked(api.cards.listMyShowcases.useQuery)
+      .mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch } as never);
+    mutations({});
+    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
+    expect(screen.getByText("Your showcases did not load.")).toBeInTheDocument();
+    expect(screen.queryByText("No showcases yet. Name one to start it.")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives focus back to what opened it when it closes", async () => {
+    listed([showcase()]);
+    mutations({});
+    function Host() {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open</button>
+          <AddToShowcaseDialog open={open} onOpenChange={setOpen} ownershipIds={["o1"]} />
+        </>
+      );
+    }
+    render(<Host />);
+    const opener = screen.getByRole("button", { name: "Open" });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(opener));
   });
 
   it("will not overfill a showcase, and says how much room is left", () => {
@@ -183,9 +234,9 @@ describe("AddToShowcaseDialog", () => {
     ]);
     mutations({});
     render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1", "o2"]} />);
-    expect(screen.getByRole("button", { name: "Add to Full one" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add to Full one, Full" })).toBeDisabled();
     expect(screen.getByText("Full")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add to Tight" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add to Tight, Room for 1" })).toBeDisabled();
     expect(screen.getByText("Room for 1")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add to Roomy" })).toBeEnabled();
     expect(screen.getByText(`${SHOWCASE_LIMITS.items - 2} cards`)).toBeInTheDocument();

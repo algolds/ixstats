@@ -434,13 +434,19 @@ function formatParagraphs(text: string): string {
   return paragraphs.join("\n\n").trim();
 }
 
+/** `images: false` leaves out file links and the infobox image: a card sheet that hides a card's art. */
+interface WikitextHtmlOptions {
+  images?: boolean;
+}
+
 /**
  * Robust wikitext parser that converts raw MediaWiki markup into clean HTML
  * for display in card modals, wiki previews, and lore excerpts.
  */
 export function parseWikitextToHtml(
   wikitext: string | null | undefined,
-  wikiSource: string = "ixwiki"
+  wikiSource: string = "ixwiki",
+  { images = true }: WikitextHtmlOptions = {}
 ): string {
   if (!wikitext || !wikitext.trim()) return "";
   if (wikitext.length > COMPILE_CEILING) return plainFallbackHtml(wikitext);
@@ -468,7 +474,7 @@ export function parseWikitextToHtml(
   text = parseWikitables(text);
 
   // 6b. Extract and convert Infobox template to HTML table before stripping
-  const infoboxHtml = parseInfoboxToHtml(text);
+  const infoboxHtml = parseInfoboxToHtml(text, { images });
 
   // 7. Strip recursively nested templates: {{...}}
   text = stripWikitextTemplates(text);
@@ -483,7 +489,7 @@ export function parseWikitextToHtml(
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
-  text = convertWikitextImages(text, wikiSource);
+  text = images ? convertWikitextImages(text, wikiSource) : stripWikitextFiles(text);
 
   // 10. Convert wikitext headings
   text = replaceHeadings(

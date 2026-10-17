@@ -1,5 +1,13 @@
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -14,8 +22,14 @@ jest.mock("~/components/cards/display/CardPriceHistoryChart", () => ({
   CardPriceHistoryChart: () => null,
 }));
 jest.mock("~/components/cards/display/LoreWikiExcerpt", () => ({
-  LoreWikiExcerpt: ({ wikiUrl }: { wikiUrl: string | null }) => <p>Excerpt {wikiUrl}</p>,
+  LoreWikiExcerpt: ({ wikiUrl, artHidden }: { wikiUrl: string | null; artHidden?: boolean }) => (
+    <p>
+      Excerpt {wikiUrl}
+      {artHidden ? " without art" : ""}
+    </p>
+  ),
 }));
+jest.mock("next/navigation", () => ({ useSearchParams: jest.fn(() => new URLSearchParams()) }));
 jest.mock("~/components/cards/display/CardTakedownVerificationModal", () => ({
   CardTakedownVerificationModal: ({
     isOpen,
@@ -48,6 +62,7 @@ jest.mock("next/link", () => ({
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
+import { useCardSheet } from "~/hooks/useCardSheet";
 import type { CardSheetData, SheetCopy, SheetListing } from "~/lib/cards/hub/sheet";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
@@ -220,6 +235,70 @@ describe("CardSheet", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "See it in the market" })).toBeNull();
     expect(screen.queryByText("Bound to your account")).toBeNull();
+  });
+
+  it("says nothing of where a retired card comes from", () => {
+    showSheet(
+      sheet({
+        copies: [],
+        card: { ...card, isRetired: true, value: 0 },
+        face: { ...face, copy: null, isRetired: true },
+      })
+    );
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByText("You do not have this card yet.")).toBeInTheDocument();
+    expect(screen.queryByText(/packs/)).toBeNull();
+    expect(screen.queryByRole("link", { name: "See it in the market" })).toBeNull();
+  });
+
+  it("gives focus back to the face that opened it when it closes", async () => {
+    showSheet();
+    const opener = document.createElement("button");
+    document.body.append(opener);
+    opener.focus();
+    const { result } = renderHook(() => useCardSheet());
+    act(() => result.current.open("c1"));
+    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(document.activeElement).not.toBe(opener);
+    unmount();
+    await waitFor(() => expect(document.activeElement).toBe(opener));
+    opener.remove();
+  });
+
+  it("gives focus back once, so a later sheet from a link does not send it to an old opener", async () => {
+    showSheet();
+    const first = document.createElement("button");
+    const later = document.createElement("button");
+    document.body.append(first, later);
+    first.focus();
+    const { result } = renderHook(() => useCardSheet());
+    act(() => result.current.open("c1"));
+    const sheet1 = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    sheet1.unmount();
+    await waitFor(() => expect(document.activeElement).toBe(first));
+    later.focus();
+    const sheet2 = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    later.focus();
+    sheet2.unmount();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(document.activeElement).not.toBe(first);
+    first.remove();
+    later.remove();
+  });
+
+  it("leaves focus alone when the opener is gone", async () => {
+    showSheet();
+    const opener = document.createElement("button");
+    document.body.append(opener);
+    opener.focus();
+    const { result } = renderHook(() => useCardSheet());
+    act(() => result.current.open("c1"));
+    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    opener.remove();
+    const focus = jest.spyOn(opener, "focus");
+    unmount();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it("says when a card is not available", () => {
@@ -423,6 +502,43 @@ describe("CardSheet about", () => {
       "href",
       "https://example.com/a"
     );
+  });
+
+  it("tells the excerpt to hide the art for a silhouette or a retired card, but not for a held one", () => {
+    const commons = {
+      ...card,
+      wikiSource: "commons",
+      wikiArticleTitle: "File:Flag of Ireland.svg",
+    };
+    const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
+    showSheet(
+      sheet({ card: commons, copies: [], face: { ...face, copy: null, silhouette: true } })
+    );
+    const view = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByText(`Excerpt ${page} without art`)).toBeInTheDocument();
+    view.unmount();
+    showSheet(sheet({ card: { ...card, isRetired: true }, face: { ...face, isRetired: true } }));
+    const retired = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByText("Excerpt /wiki/Caphiria without art")).toBeInTheDocument();
+    retired.unmount();
+    showSheet(sheet({ card: commons }));
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
+  });
+
+  it("adds the licence to the art credit when the line does not name it", () => {
+    showSheet(
+      sheet({
+        card: {
+          ...card,
+          cardType: "SPECIAL",
+          artCredit: { line: "Photo by Ann", licence: "CC BY 4.0", sourceUrl: null },
+        },
+      })
+    );
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const about = screen.getByRole("region", { name: "About" });
+    expect(within(about).getByText("Art: Photo by Ann · CC BY 4.0")).toBeInTheDocument();
   });
 
   it("points a wiki card to the takedown help", () => {

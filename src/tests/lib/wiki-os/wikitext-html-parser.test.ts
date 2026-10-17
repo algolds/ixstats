@@ -75,4 +75,28 @@ describe("wikitext-parser — wikitable and image parsing", () => {
   });
 });
 
+describe("wikitext-parser — images left out", () => {
+  const article = `{{Infobox country
+| name = Velarc
+| image_flag = Flag of Velarc.svg
+| capital = [[Kirav]]
+}}
+'''Velarc''' is a country. [[File:Velarc coast.jpg|thumb|The [[Kirav]] coast]] It borders the sea. [[Image:Map.png|200px]]`;
 
+  it("draws the article's images by default", () => {
+    const html = parseWikitextToHtml(article, "ixwiki");
+    expect(html).toContain("<img");
+    expect(html).toContain("infobox-image-row");
+  });
+
+  it("leaves out file links and the infobox image, keeping the text and the rest of the infobox", () => {
+    const html = parseWikitextToHtml(article, "ixwiki", { images: false });
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<figure");
+    expect(html).not.toContain("infobox-image-row");
+    expect(html).not.toContain("Velarc coast");
+    expect(html).not.toContain("Flag of Velarc");
+    expect(html).toContain("It borders the sea.");
+    expect(html).toContain("Capital");
+  });
+});

@@ -72,6 +72,50 @@ describe("useCardSheet", () => {
     expect(pushState).not.toHaveBeenCalled();
   });
 
+  it("steps back once however often it is closed before the address changes, then closes again later", () => {
+    withParams("realm=r1");
+    const { result, rerender } = renderHook(() => useCardSheet());
+    act(() => result.current.open("c2"));
+    act(() => {
+      result.current.close();
+      result.current.close();
+    });
+    expect(back).toHaveBeenCalledTimes(1);
+    // The step back lands: the address loses the card.
+    window.history.replaceState(null, "", "/vault/cards/mine?realm=r1");
+    pushState.mockClear();
+    act(() => result.current.close());
+    expect(pushState).not.toHaveBeenCalled();
+    withParams("realm=r1&card=c3");
+    rerender();
+    window.history.replaceState(null, "", "/vault/cards/mine?realm=r1&card=c3");
+    act(() => result.current.close());
+    expect(pushState).toHaveBeenLastCalledWith(null, "", "/vault/cards/mine?realm=r1");
+  });
+
+  it("pushes one address however often a linked-in sheet is closed before the address changes", () => {
+    window.history.replaceState(null, "", "/vault/cards/explore?card=c1");
+    withParams("card=c1");
+    const { result } = renderHook(() => useCardSheet());
+    act(() => {
+      result.current.close();
+      result.current.close();
+    });
+    expect(pushState).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not take a state Next.js or another page wrote for its own marker", () => {
+    withParams("card=c1");
+    for (const state of [{ cardSheetOpened: "yes" }, { __NA: true }, "cardSheetOpened", 7]) {
+      window.history.replaceState(state, "", "/vault/cards/mine?card=c1");
+      const { result, unmount } = renderHook(() => useCardSheet());
+      act(() => result.current.close());
+      unmount();
+    }
+    expect(back).not.toHaveBeenCalled();
+    expect(pushState).toHaveBeenCalledTimes(4);
+  });
+
   it("writes a bare path when nothing is left of the query", () => {
     window.history.replaceState(null, "", "/vault/cards/explore?card=c1");
     withParams("card=c1");

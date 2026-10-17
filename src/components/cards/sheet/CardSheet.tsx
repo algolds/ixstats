@@ -14,6 +14,7 @@ import { RARITY_LABEL } from "~/lib/cards/face/labels";
 import { cardSheetHref, encodeSheetFrom, type SheetFrom } from "~/lib/cards/face/sheet-link";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
+import { returnFocusToSheetOpener } from "~/hooks/useCardSheet";
 import type { CardSheetData } from "~/lib/cards/hub/sheet";
 import { CardFlip } from "~/components/cards/face/CardFlip";
 import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
@@ -37,7 +38,14 @@ export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
   const query = api.cards.getSheet.useQuery({ cardId, from: from ? encodeSheetFrom(from) : null });
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent size="wide" className="overflow-y-auto">
+      <SheetContent
+        size="wide"
+        className="overflow-y-auto"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocusToSheetOpener();
+        }}
+      >
         {query.data ? (
           <SheetBody key={query.data.card.id} sheet={query.data} />
         ) : (
@@ -161,7 +169,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
           onAddToShowcase={(id) => setShowcasing([id])}
         />
         <CardSheetMarket cardId={card.id} value={card.value} market={sheet.market} />
-        <CardSheetAbout card={card} />
+        <CardSheetAbout card={card} artHidden={face.silhouette || card.isRetired} />
       </div>
       <AddToShowcaseDialog
         open={showcasing !== null}

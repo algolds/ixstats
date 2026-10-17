@@ -324,6 +324,8 @@ describe("CardBackProvenance", () => {
     expect(credit).toHaveAttribute("rel", "noopener noreferrer");
     expect(credit).toHaveClass(...focusRing.split(" "));
     expect(credit.parentElement).toHaveTextContent(/^Map by Ann · CC BY-SA 4\.0$/);
+    // The credit sits at the foot of the back, below the trail.
+    expect(credit.parentElement).toHaveClass("mt-auto");
     expect(screen.queryByRole("link", { name: "View on NationStates" })).toBeNull();
   });
 

@@ -9,9 +9,9 @@ import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
 import { LoreWikiExcerpt } from "~/components/cards/display/LoreWikiExcerpt";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 import { CardTakedownVerificationModal } from "~/components/cards/display/CardTakedownVerificationModal";
+import { ArtCreditLine } from "~/components/cards/face/ArtCreditLine";
 import { parseCardArticleSource } from "~/lib/cards/card-sources";
 import { cleanWikiUsername } from "~/lib/cards/lore-card-author-info";
-import type { ArtCredit } from "~/lib/cards/face/art-credit";
 import type { CardSheetData } from "~/lib/cards/hub/sheet";
 
 const AUTHOR_STALE_MS = 60 * 60 * 1000;
@@ -38,26 +38,6 @@ function useArticleAuthor(card: CardSheetData["card"], isLore: boolean): string 
     }
   );
   return stored ?? cleanAuthor(live.data?.authorInfo?.displayAuthor);
-}
-
-function ArtCreditLine({ credit }: { credit: ArtCredit }) {
-  return (
-    <p className="text-footnote text-label-secondary">
-      Art:{" "}
-      {credit.sourceUrl ? (
-        <a
-          href={credit.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn("underline", focusRing)}
-        >
-          {credit.line}
-        </a>
-      ) : (
-        credit.line
-      )}
-    </p>
-  );
 }
 
 /** NS cards keep NationStates' own credit and self-service takedown; every other card points to the help. */
@@ -90,8 +70,14 @@ function Takedown({ card }: { card: CardSheetData["card"] }) {
   );
 }
 
+interface CardSheetAboutProps {
+  card: CardSheetData["card"];
+  /** The viewer may not see the card's art (a silhouette or a retired card): nothing here may show or link it. */
+  artHidden: boolean;
+}
+
 /** "About": the lore excerpt and wiki link, the author and art credit, and the takedown link. */
-export function CardSheetAbout({ card }: { card: CardSheetData["card"] }) {
+export function CardSheetAbout({ card, artHidden }: CardSheetAboutProps) {
   // A legacy Commons card has no title but still links to its file page.
   const isLore =
     card.cardType === "LORE" && (Boolean(card.wikiArticleTitle) || card.wikiSource === "commons");
@@ -108,12 +94,14 @@ export function CardSheetAbout({ card }: { card: CardSheetData["card"] }) {
         About
       </h3>
       {isLore ? (
-        <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} />
+        <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} artHidden={artHidden} />
       ) : (
         card.description && <p className="text-callout text-label-secondary">{card.description}</p>
       )}
       {writer && <p className="text-footnote text-label-secondary">Article by {writer}</p>}
-      {card.artCredit && <ArtCreditLine credit={card.artCredit} />}
+      {card.artCredit && (
+        <ArtCreditLine credit={card.artCredit} label="Art:" className="text-footnote" />
+      )}
       <Takedown card={card} />
     </section>
   );

@@ -1,15 +1,37 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { encodeSheetFrom, parseSheetFrom, type SheetFrom } from "~/lib/cards/face/sheet-link";
+import { focusedElement, refocus } from "~/lib/utils/focus";
 
 /** Marks the history entry that `open` pushed, so `close` can step back over it. */
 const OPENED_HERE = "cardSheetOpened";
 
-function openedHere(): boolean {
-  const state: Record<string, boolean> | null = window.history.state;
-  return state?.[OPENED_HERE] === true;
+/** What `history.state` can hold: any value a script stored there. */
+type HistoryValue = object | string | number | bigint | boolean | null | undefined;
+
+/** True only for the entry `open` pushed: Next.js adds its own keys there, and other scripts can store anything. */
+function isOpenedHere(state: HistoryValue): state is { [OPENED_HERE]: true } {
+  return (
+    typeof state === "object" &&
+    state !== null &&
+    OPENED_HERE in state &&
+    state[OPENED_HERE] === true
+  );
+}
+
+/**
+ * What had focus when the sheet opened, to give it back when the sheet closes: the sheet opens from the address, so
+ * Radix has no trigger to return to. One at a time, since only one sheet is open.
+ */
+let sheetOpener: HTMLElement | null = null;
+
+/** Gives focus back to whatever opened the sheet, while it is still on the page. */
+export function returnFocusToSheetOpener(): void {
+  const opener = sheetOpener;
+  sheetOpener = null;
+  refocus(opener);
 }
 
 /** The current address with its query changed, keeping the path, the page's own query and the hash. */
@@ -34,8 +56,15 @@ export function useCardSheet(): {
   const params = useSearchParams();
   const cardId = params?.get("card") || null;
   const from = parseSheetFrom(params?.get("from"));
+  // Set by a close until the address changes, so a second Esc or click cannot step back twice or push again.
+  const closing = useRef(false);
+  const search = params?.toString() ?? "";
+  useEffect(() => {
+    closing.current = false;
+  }, [search]);
 
   const open = useCallback((id: string, nextFrom?: SheetFrom | null) => {
+    sheetOpener = focusedElement();
     const address = addressWith((query) => {
       query.set("card", id);
       if (nextFrom) query.set("from", encodeSheetFrom(nextFrom));
@@ -45,7 +74,9 @@ export function useCardSheet(): {
   }, []);
 
   const close = useCallback(() => {
-    if (openedHere()) {
+    if (closing.current) return;
+    closing.current = true;
+    if (isOpenedHere(window.history.state)) {
       window.history.back();
       return;
     }

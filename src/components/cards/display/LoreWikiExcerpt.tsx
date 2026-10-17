@@ -26,9 +26,11 @@ interface LoreWikiExcerptProps {
     wikiArticleTitle: string | null;
   };
   wikiUrl: string | null;
+  /** The viewer may not see the card's art: the excerpt draws no images, and a Commons file page is not linked. */
+  artHidden?: boolean;
 }
 
-export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl }) => {
+export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl, artHidden }) => {
   const storedExcerpt = card.excerpt;
   const targetArticleTitle = card.wikiArticleTitle || card.title;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
@@ -50,8 +52,8 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
     fetchedExcerpt?.wikitext || fetchedExcerpt?.extract || storedExcerpt || card.description;
 
   const parsedHtml = useMemo(
-    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki"),
-    [excerptText, articleSource]
+    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki", { images: !artHidden }),
+    [excerptText, articleSource, artHidden]
   );
 
   return (
@@ -74,7 +76,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
         <div className="text-label-secondary text-footnote py-2">No article excerpt available.</div>
       )}
 
-      {wikiUrl && articleSource === null && (
+      {wikiUrl && articleSource === null && !artHidden && (
         <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
           <a
             href={wikiUrl}

@@ -49,8 +49,14 @@ export function CardSheetCopies({
   );
 }
 
-/** For a card the viewer does not hold: where it comes from, and the market for one that can be bought. */
+/**
+ * For a card the viewer does not hold: where it comes from, and the market for one that can be bought. A retired card
+ * no longer comes from anywhere, so nothing is said.
+ */
 function HowToGet({ card, realmName }: { card: CardSheetData["card"]; realmName: string }) {
+  if (card.isRetired) {
+    return <p className="text-callout text-label-secondary">You do not have this card yet.</p>;
+  }
   if (card.isBound) {
     return (
       <p className="text-callout text-label-secondary">
