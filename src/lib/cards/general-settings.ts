@@ -27,6 +27,11 @@ const KEY = {
 let cache: { value: CardGeneralSettings; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
+/** Forget the cached settings; a caller that writes them in a transaction calls this once the transaction commits. */
+export function clearGeneralCardSettingsCache(): void {
+  cache = null;
+}
+
 export async function getGeneralCardSettings(
   db: Pick<PrismaClient, "systemConfig">
 ): Promise<CardGeneralSettings> {
@@ -52,8 +57,12 @@ export async function getGeneralCardSettings(
   return merged;
 }
 
+/**
+ * The app client's write is visible at once, so it clears the cache here; a transaction's caller clears it after the
+ * commit.
+ */
 export async function setGeneralCardSetting(
-  db: PrismaClient,
+  db: Pick<PrismaClient, "systemConfig">,
   field: keyof CardGeneralSettings,
   value: number
 ): Promise<void> {
@@ -62,7 +71,7 @@ export async function setGeneralCardSetting(
     create: { key: KEY[field], value: String(value), description: `Card system setting: ${field}` },
     update: { value: String(value) },
   });
-  cache = null;
+  if ("$transaction" in db) clearGeneralCardSettingsCache();
 }
 
 /**

@@ -2,15 +2,16 @@
  * The cards admin's SystemConfig settings that are not valuation or market numbers: the rarity table of each source
  * wiki, and the daily import of each article wiki. Read once per import run, so there is no cache.
  */
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
+import { readConfigKeys, writeConfigKey } from "~/server/shared/config-kv";
 import {
   CARD_ARTICLE_SOURCES,
   CARD_WIKI_SOURCES,
   type CardArticleSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
+import { MAX_DAILY_IMPORT } from "~/lib/cards/economy-fields";
 import {
   DEFAULT_RARITY_THRESHOLDS,
   RarityThresholdsSchema,
@@ -18,6 +19,9 @@ import {
 } from "~/lib/cards/rarity-engine";
 
 const thresholdsKey = (source: CardWikiSource) => `card_rarity_thresholds_${source}`;
+
+/** A setter's client: the app's, or the Economy tab's transaction that also writes the audit row. */
+type ConfigWriter = Pick<Prisma.TransactionClient, "systemConfig">;
 
 /** A stored JSON value read by `schema`; null when it is missing, not JSON, or fails the schema. */
 function parseStoredConfig<T>(raw: string | undefined, schema: z.ZodType<T>): T | null {
@@ -43,15 +47,16 @@ export async function getRarityThresholds(
 }
 
 export async function setRarityThresholds(
-  db: PrismaClient,
+  db: ConfigWriter,
   source: CardWikiSource,
   thresholds: RarityThresholds
 ): Promise<void> {
   const valid = RarityThresholdsSchema.parse(thresholds);
-  await writeConfigKeys(
+  await writeConfigKey(
     db,
-    [{ key: thresholdsKey(source), value: JSON.stringify(valid) }],
-    () => `Card rarity thresholds: ${source}`
+    thresholdsKey(source),
+    JSON.stringify(valid),
+    `Card rarity thresholds: ${source}`
   );
 }
 
@@ -61,9 +66,7 @@ export interface DailyImportSetting {
   count: number;
 }
 
-export const MAX_DAILY_IMPORT = 100;
-
-export const DailyImportSettingSchema = z.object({
+const DailyImportSettingSchema = z.object({
   enabled: z.boolean(),
   count: z.number().int().min(0).max(MAX_DAILY_IMPORT),
 });
@@ -92,14 +95,10 @@ export async function getDailyImportConfig(
 }
 
 export async function setDailyImportSetting(
-  db: PrismaClient,
+  db: ConfigWriter,
   source: CardArticleSource,
   setting: DailyImportSetting
 ): Promise<void> {
   const valid = DailyImportSettingSchema.parse(setting);
-  await writeConfigKeys(
-    db,
-    [{ key: dailyKey(source), value: JSON.stringify(valid) }],
-    () => `Daily card import: ${source}`
-  );
+  await writeConfigKey(db, dailyKey(source), JSON.stringify(valid), `Daily card import: ${source}`);
 }

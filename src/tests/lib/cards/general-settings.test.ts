@@ -41,6 +41,26 @@ describe("card general settings", () => {
     expect(await load().marketplaceFee(db, 1000)).toBe(500);
   });
 
+  it("a setter in a transaction leaves the cache to its caller, which clears it after the commit", async () => {
+    const { clearGeneralCardSettingsCache, getGeneralCardSettings, setGeneralCardSetting } = load();
+    const read = dbWith([]);
+    await getGeneralCardSettings(read);
+    await setGeneralCardSetting(
+      { systemConfig: { upsert: jest.fn() } } as never,
+      "maxInventoryCards",
+      200
+    );
+    await getGeneralCardSettings(read);
+    expect(read.systemConfig.findMany).toHaveBeenCalledTimes(1);
+    clearGeneralCardSettingsCache();
+    await getGeneralCardSettings(read);
+    expect(read.systemConfig.findMany).toHaveBeenCalledTimes(2);
+    const app = { systemConfig: { upsert: jest.fn() }, $transaction: jest.fn() };
+    await setGeneralCardSetting(app as never, "maxInventoryCards", 200);
+    await getGeneralCardSettings(read);
+    expect(read.systemConfig.findMany).toHaveBeenCalledTimes(3);
+  });
+
   it("baseCardCapacity reads the admin capacity", async () => {
     const db = dbWith([{ key: "card_system_max_inventory_cards", value: "400" }]);
     expect(await load().baseCardCapacity(db)).toBe(400);

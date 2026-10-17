@@ -27,7 +27,7 @@ export function qualityScore(s: ArticleSignals): number {
     (s.isFeatured ? 20 : 0) +
     (s.hasInfobox ? 5 : 0) +
     Math.min(s.categoryCount * 0.5, 5);
-  return Math.min(score, 100);
+  return Math.min(score, MAX_QUALITY_SCORE);
 }
 
 /** The rarities a table gives a minimum score, lowest first; below Uncommon's minimum a card is Common. */
@@ -41,7 +41,15 @@ export const TIERED_RARITIES = [
 export type TieredRarity = (typeof TIERED_RARITIES)[number];
 export type RarityThresholds = Record<TieredRarity, number>;
 
-const minScore = z.number().min(0).max(100);
+/** The highest quality score, and so the highest minimum a rarity table can set. */
+export const MAX_QUALITY_SCORE = 100;
+
+// A sentence, as the Economy tab shows the first issue as it is.
+const SCORE_RANGE = `Each minimum score must be a number from 0 to ${MAX_QUALITY_SCORE}`;
+const minScore = z
+  .number({ error: SCORE_RANGE })
+  .min(0, { error: SCORE_RANGE })
+  .max(MAX_QUALITY_SCORE, { error: SCORE_RANGE });
 
 export const RarityThresholdsSchema = z
   .object({

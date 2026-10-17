@@ -8,7 +8,6 @@ import {
   ShoppingBag,
   ClockRotateRight as History,
   Settings,
-  Gift,
   Coins,
 } from "iconoir-react";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -18,12 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 // Sub-components
 import { VaultUserDirectory } from "./VaultUserDirectory";
 import { VaultStoreControl } from "./VaultStoreControl";
-import { VaultBonusAdmin } from "./VaultBonusAdmin";
 import { VaultPurchaseLogs } from "./VaultPurchaseLogs";
 import { VaultSystemConfig } from "./VaultSystemConfig";
 import { ExchangeAdmin } from "./ExchangeAdmin";
 
-type VaultTab = "users" | "store" | "bonuses" | "logs" | "exchange" | "config";
+type VaultTab = "users" | "store" | "logs" | "exchange" | "config";
 
 export default function AdminVaultPage() {
   usePageTitle({ title: "Admin - Vault Store & Economy" });
@@ -33,7 +31,7 @@ export default function AdminVaultPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vault and economy"
-        subtitle="User credit balances, store items, metagame bonuses and purchase logs."
+        subtitle="User credit balances, store items and purchase logs."
       />
 
       <Tabs
@@ -49,10 +47,6 @@ export default function AdminVaultPage() {
           <TabsTrigger value="store" className="text-caption flex items-center gap-2">
             <ShoppingBag className="h-4 w-4" />
             Store inventory
-          </TabsTrigger>
-          <TabsTrigger value="bonuses" className="text-caption flex items-center gap-2">
-            <Gift className="h-4 w-4" />
-            Metagame bonuses
           </TabsTrigger>
           <TabsTrigger value="logs" className="text-caption flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -74,10 +68,6 @@ export default function AdminVaultPage() {
 
         <TabsContent value="store" className="mt-4 focus-visible:outline-none">
           <VaultStoreControl />
-        </TabsContent>
-
-        <TabsContent value="bonuses" className="mt-4 focus-visible:outline-none">
-          <VaultBonusAdmin />
         </TabsContent>
 
         <TabsContent value="logs" className="mt-4 focus-visible:outline-none">
