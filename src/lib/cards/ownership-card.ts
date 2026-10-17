@@ -5,8 +5,8 @@ import { CARD_ARTWORK_PLACEHOLDER } from "./display-utils";
 /** An ownership row with its card, as `cards.getMyCards` and `cards.getMyTopCards` return it. */
 export type OwnedCard = Prisma.CardOwnershipGetPayload<{ include: { cards: true } }>;
 
-/** The card display shape of a card with no copy attached (a library or admin explorer row). */
-export function cardToInstance(card: Card): CardInstance {
+/** The card display shape of a card's own fields, before a copy's are laid over them. */
+function cardToInstance(card: Card): CardInstance {
   return {
     id: card.id,
     title: card.title,

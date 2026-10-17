@@ -1,1 +1,1 @@
-export { AdminCardExplorer as LibraryTab } from "../AdminCardExplorer";
+export { LibraryTab } from "./LibraryTab";

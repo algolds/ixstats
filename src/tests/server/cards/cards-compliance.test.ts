@@ -32,6 +32,7 @@ type MockDb = ReturnType<typeof mockDb>;
 /** The takedown row hiding reads: the card's art, whether it is retired, and its metadata. */
 const takedownOf = (card: { artwork: string | null; isRetired: boolean; metadata?: object }) => ({
   id: "td_1",
+  cardId: "card_1",
   card: { id: "card_1", metadata: {}, ...card },
 });
 
@@ -175,6 +176,24 @@ describe("fileTakedown", () => {
 });
 
 describe("hideTakedownArt", () => {
+  it("hides under the card's lock, so a Library or Designer edit cannot write art over it", async () => {
+    const db = mockDb();
+    db.cardTakedown.findUnique.mockResolvedValue(takedownOf({ artwork: ELM, isRetired: false }));
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+
+    await hideTakedownArt(db as never, actor, "td_1");
+
+    expect(db.cardTakedown.findUnique.mock.calls[0]![0]).toEqual({
+      where: { id: "td_1" },
+      select: { cardId: true },
+    });
+    expect(db.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(db.$executeRaw.mock.calls[0]).toContain("card_1");
+    // The takedown and its card are read (second read) and written only once the lock is held
+    expect(lockedBefore(db, db.cardTakedown.findUnique, 1)).toBe(true);
+    expect(lockedBefore(db, db.cardTakedown.updateMany)).toBe(true);
+  });
+
   it("keeps an already retired card's retirement, and restore will leave it retired", async () => {
     const db = mockDb();
     db.cardTakedown.findUnique.mockResolvedValue(takedownOf({ artwork: ELM, isRetired: true }));
@@ -228,6 +247,7 @@ describe("hideTakedownArt", () => {
     await expect(hideTakedownArt(db as never, actor, "td_x")).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+    expect(db.$executeRaw).not.toHaveBeenCalled();
   });
 });
 

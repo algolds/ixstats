@@ -1,4 +1,4 @@
-import { cardToInstance, ownedCardToInstance, type OwnedCard } from "~/lib/cards/ownership-card";
+import { ownedCardToInstance, type OwnedCard } from "~/lib/cards/ownership-card";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 
 const AT = new Date("2026-01-02T03:04:05Z");
@@ -80,25 +80,16 @@ describe("ownedCardToInstance", () => {
     expect(card.nsSeason).toBeNull();
   });
 
+  it("carries the card's category and art source, and no wiki link", () => {
+    expect(
+      ownedCardToInstance(owned({ category: "MILITARY", artworkSource: "UPLOADED" }))
+    ).toMatchObject({ category: "MILITARY", artworkSource: "UPLOADED", wikiUrl: null });
+  });
+
   it("keeps the card's own art and NS ids when it has them", () => {
     const card = ownedCardToInstance(owned({ artwork: "/a.png", nsCardId: 55, nsSeason: 3 }));
     expect(card.artwork).toBe("/a.png");
     expect(card.nsCardId).toBe(55);
     expect(card.nsSeason).toBe(3);
-  });
-});
-
-describe("cardToInstance", () => {
-  it("maps a card with no copy: its category and art source, level 1, no ownership fields", () => {
-    const card = cardToInstance(owned({ category: "MILITARY", artworkSource: "UPLOADED" }).cards);
-    expect(card).toMatchObject({
-      id: "c1",
-      category: "MILITARY",
-      artworkSource: "UPLOADED",
-      level: 1,
-      wikiUrl: null,
-    });
-    expect(card.ownershipId).toBeUndefined();
-    expect(card.serialNumber).toBeUndefined();
   });
 });

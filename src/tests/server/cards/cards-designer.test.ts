@@ -36,7 +36,10 @@ const stored = (card: Record<string, unknown>, copies = 0) => ({
   specialKind: "EVENT",
   isBound: false,
   rewardAchievementKey: null,
-  _count: { CardOwnership: copies },
+  artwork: null,
+  wikiSource: null,
+  artLicence: null,
+  _count: { CardOwnership: copies, takedowns: 0 },
   ...card,
 });
 
@@ -125,9 +128,11 @@ describe("saveSpecialCard", () => {
     );
     const { where, data } = db.card.update.mock.calls[0]![0];
     expect(where).toEqual({ id: "card_1" });
-    // The serial lock is taken before the copies are counted, so no mint slips in between
-    expect(db.$executeRaw).toHaveBeenCalled();
-    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    // The serial lock, then the takedown lock, are taken before the card is read, so no mint or hide slips in between
+    expect(db.$executeRaw).toHaveBeenCalledTimes(2);
+    expect(db.$executeRaw.mock.calls[0]).toEqual([expect.anything(), 7331, "card_1"]);
+    expect(db.$executeRaw.mock.calls[1]).toEqual([expect.anything(), 7335, "card_1"]);
+    expect(db.$executeRaw.mock.invocationCallOrder[1]).toBeLessThan(
       db.card.findUnique.mock.invocationCallOrder[0]!
     );
     expect(data).toMatchObject({
@@ -139,6 +144,76 @@ describe("saveSpecialCard", () => {
       expect(data).not.toHaveProperty(field);
     expect(db.card.create).not.toHaveBeenCalled();
     expect(db.auditLog.create.mock.calls[0]![0].data.details).toMatch(/^Edited/);
+  });
+
+  it("leaves art a takedown or a restricted licence hides to Compliance, and saves the rest", async () => {
+    const db = mockDb();
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    const edit = (artwork: string | null) =>
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...event, id: "card_1", artwork })
+      );
+    const art = "https://ixwiki.com/images/gala.png";
+    for (const held of [
+      stored({ _count: { CardOwnership: 0, takedowns: 1 } }),
+      stored({ artwork: art, artLicence: { status: "RESTRICTED" } }),
+    ]) {
+      db.card.findUnique.mockResolvedValue(held);
+      await expect(edit("https://ixwiki.com/images/other.png")).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+        message: expect.stringMatching(/from Compliance/),
+      });
+    }
+    expect(db.card.update).not.toHaveBeenCalled();
+    await expect(edit(art)).resolves.toEqual({ id: "card_1" });
+    db.card.findUnique.mockResolvedValue(stored({ _count: { CardOwnership: 0, takedowns: 1 } }));
+    await expect(edit(null)).resolves.toEqual({ id: "card_1" });
+  });
+
+  it("takes the licence row and credit with new art, and drops the row with the art, as the Library does", async () => {
+    const db = mockDb();
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    const edit = (artwork: string | null) =>
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...event, id: "card_1", artwork })
+      );
+    const art = "https://ixwiki.com/images/gala.png";
+
+    db.card.findUnique.mockResolvedValue(stored({}));
+    await edit(art);
+    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({
+      artwork: art,
+      artworkCredit: null,
+    });
+    expect(db.cardArtLicence.upsert.mock.calls[0]![0]).toMatchObject({
+      where: { cardId: "card_1" },
+      update: {
+        wiki: "ixwiki",
+        status: "UNKNOWN",
+        fileUrl: art,
+        note: "Art changed in the Designer",
+      },
+    });
+    expect(db.cardArtLicence.upsert.mock.invocationCallOrder[0]).toBeGreaterThan(
+      db.card.update.mock.invocationCallOrder[0]!
+    );
+
+    db.card.findUnique.mockResolvedValue(stored({ artwork: art }));
+    await edit(null);
+    expect(db.card.update.mock.calls[1]![0].data).toMatchObject({
+      artwork: null,
+      artworkCredit: null,
+    });
+    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledWith({ where: { cardId: "card_1" } });
+
+    await edit(art);
+    expect(db.card.update.mock.calls[2]![0].data).not.toHaveProperty("artworkCredit");
+    expect(db.cardArtLicence.upsert).toHaveBeenCalledTimes(1);
+    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledTimes(1);
   });
 
   it("refuses to edit a card that is gone or not a Special card", async () => {

@@ -160,7 +160,7 @@ export const cardsInventoryRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const where = libraryWhere({ ...input, retired: false, reviewState: "APPROVED" });
+      const where = libraryWhere(input);
       const [total, cards] = await Promise.all([
         ctx.db.card.count({ where }),
         ctx.db.card.findMany({
