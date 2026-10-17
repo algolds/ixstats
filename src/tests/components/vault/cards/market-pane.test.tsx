@@ -223,8 +223,8 @@ describe("MarketPane", () => {
     listingsAt({}, { data: previous, isPlaceholderData: true });
     renderPane("browse");
     const options = jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mock.calls.at(-1)?.[1];
-    const keep = options?.placeholderData as (data: typeof previous) => typeof previous;
-    expect(keep(previous)).toBe(previous);
+    const keep = options?.placeholderData;
+    expect(typeof keep === "function" && keep(previous as never, undefined)).toBe(previous);
     expect(screen.getByRole("list", { name: "Listings" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show more" })).toBeDisabled();
   });
