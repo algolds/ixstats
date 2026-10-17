@@ -1,10 +1,20 @@
 /** @jest-environment node */
 /** The one-time import of the five Special cards the CLI seed used to create. */
-import { LEGACY_SPECIAL_CARDS, planSpecialCardImport } from "~/lib/cards/special-card-import";
+import {
+  LEGACY_SPECIAL_CARDS,
+  awaitsSpecialCardImport,
+  planSpecialCardImport,
+} from "~/lib/cards/special-card-import";
 import { getAchievementById } from "~/lib/achievements/definitions";
 
 const imported = { specialKind: "ACHIEVEMENT_REWARD", isBound: true } as const;
-const seeded = { specialKind: null, rewardAchievementKey: null, isBound: false };
+const seeded = { specialKind: null, rewardAchievementKey: null, isBound: false, isRetired: false };
+/** A legacy card the import already pointed at its achievement. */
+const done = (achievementKey: string, isRetired = false) => ({
+  ...imported,
+  rewardAchievementKey: achievementKey,
+  isRetired,
+});
 const [first, second, third] = LEGACY_SPECIAL_CARDS;
 
 describe("LEGACY_SPECIAL_CARDS", () => {
@@ -23,7 +33,7 @@ describe("planSpecialCardImport", () => {
     const plan = planSpecialCardImport(
       new Map([
         [first!.id, seeded],
-        [second!.id, { ...imported, rewardAchievementKey: second!.achievementKey }],
+        [second!.id, done(second!.achievementKey)],
       ])
     );
     expect(plan.updates).toEqual([
@@ -39,14 +49,9 @@ describe("planSpecialCardImport", () => {
   });
 
   it("plans nothing once imported, and still names every reward for the backfill", () => {
-    const done = new Map(
-      LEGACY_SPECIAL_CARDS.map((card) => [
-        card.id,
-        { ...imported, rewardAchievementKey: card.achievementKey },
-      ])
-    );
+    const rows = new Map(LEGACY_SPECIAL_CARDS.map((card) => [card.id, done(card.achievementKey)]));
     const holders = new Map(LEGACY_SPECIAL_CARDS.map((card) => [card.achievementKey, card.id]));
-    const plan = planSpecialCardImport(done, holders);
+    const plan = planSpecialCardImport(rows, holders);
     expect(plan).toMatchObject({ creates: [], updates: [], skipped: [] });
     expect(plan.rewards).toHaveLength(LEGACY_SPECIAL_CARDS.length);
   });
@@ -55,7 +60,10 @@ describe("planSpecialCardImport", () => {
     const plan = planSpecialCardImport(
       new Map([
         [second!.id, seeded],
-        [third!.id, { specialKind: "EVENT", rewardAchievementKey: null, isBound: false }],
+        [
+          third!.id,
+          { specialKind: "EVENT", rewardAchievementKey: null, isBound: false, isRetired: false },
+        ],
       ]),
       new Map([
         [first!.achievementKey, "card_designed_1"],
@@ -80,5 +88,28 @@ describe("planSpecialCardImport", () => {
     expect(plan.rewards.map((reward) => reward.cardId)).toEqual(
       LEGACY_SPECIAL_CARDS.slice(3).map((card) => card.id)
     );
+  });
+
+  it("points a retired legacy card at its achievement but never backfills it", () => {
+    const plan = planSpecialCardImport(
+      new Map([
+        [first!.id, { ...seeded, isRetired: true }],
+        [second!.id, done(second!.achievementKey, true)],
+      ])
+    );
+    expect(plan.updates.map((update) => update.id)).toEqual([first!.id]);
+    expect(plan.rewards.map((r) => r.cardId)).toEqual(
+      LEGACY_SPECIAL_CARDS.slice(2).map((card) => card.id)
+    );
+  });
+});
+
+describe("awaitsSpecialCardImport", () => {
+  it("names the old seed's rows only, until the import gives them a kind", () => {
+    expect(awaitsSpecialCardImport({ id: first!.id, specialKind: null })).toBe(true);
+    expect(awaitsSpecialCardImport({ id: first!.id, specialKind: "ACHIEVEMENT_REWARD" })).toBe(
+      false
+    );
+    expect(awaitsSpecialCardImport({ id: "card_designed", specialKind: null })).toBe(false);
   });
 });

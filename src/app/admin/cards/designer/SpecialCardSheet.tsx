@@ -57,10 +57,12 @@ function saveBlocker(form: SpecialCardDraft): string | null {
 
 interface SpecialCardSheetProps {
   draft: SpecialCardDraft;
+  /** Copies players hold. Any copy fixes the kind, binding and achievement, as the server does. */
+  copies: number;
   onOpenChange: (open: boolean) => void;
 }
 
-export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps) {
+export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardSheetProps) {
   const notify = useNotify();
   const utils = api.useUtils();
   const [form, setForm] = useState(draft);
@@ -77,7 +79,16 @@ export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps)
   const set = <K extends keyof SpecialCardDraft>(key: K, value: SpecialCardDraft[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
   const reward = form.kind === "ACHIEVEMENT_REWARD";
+  const fixed = copies > 0;
   const blocker = saveBlocker(form);
+  const achievementOptions = (achievements.data ?? []).map(
+    (achievement) => [achievement.id, achievement.title] as const
+  );
+  // A card keeps an achievement that has since retired, which the live list no longer offers
+  const storedKey = draft.rewardAchievementKey;
+  if (storedKey && !achievementOptions.some(([id]) => id === storedKey)) {
+    achievementOptions.push([storedKey, storedKey]);
+  }
   const submit = () =>
     save.mutate({
       id: form.id,
@@ -98,12 +109,20 @@ export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps)
           <SheetTitle>{form.id ? `Edit ${draft.title}` : "New Special card"}</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
-          <SegmentedControl
-            aria-label="Kind"
-            value={form.kind}
-            onValueChange={(kind) => set("kind", kind)}
-            options={KIND_OPTIONS}
-          />
+          <div className="space-y-1">
+            <SegmentedControl
+              aria-label="Kind"
+              value={form.kind}
+              disabled={fixed}
+              onValueChange={(kind) => set("kind", kind)}
+              options={KIND_OPTIONS}
+            />
+            {fixed && (
+              <p className="text-footnote text-label-secondary">
+                Players hold copies of this card, so its kind and binding are fixed.
+              </p>
+            )}
+          </div>
           <div className="space-y-1">
             <Label htmlFor="special-title">Title</Label>
             <Input
@@ -159,10 +178,9 @@ export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps)
               <ValueSelect
                 id="special-achievement"
                 value={form.rewardAchievementKey}
+                disabled={fixed}
                 onValueChange={(key) => set("rewardAchievementKey", key)}
-                options={(achievements.data ?? []).map(
-                  (achievement) => [achievement.id, achievement.title] as const
-                )}
+                options={achievementOptions}
                 placeholder="Choose the achievement that awards it"
               />
             </div>
@@ -172,7 +190,7 @@ export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps)
               <Switch
                 id="special-bound"
                 checked={reward || form.isBound}
-                disabled={reward}
+                disabled={reward || fixed}
                 onCheckedChange={(isBound) => set("isBound", isBound)}
               />
               <Label htmlFor="special-bound">Bound</Label>
@@ -185,11 +203,13 @@ export function SpecialCardSheet({ draft, onOpenChange }: SpecialCardSheetProps)
           </div>
         </div>
         <SheetFooter className="border-separator shrink-0 border-t pt-4 sm:items-center">
-          {blocker && (
-            <p className="text-footnote text-label-secondary sm:mr-auto" aria-live="polite">
-              {blocker}
-            </p>
-          )}
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-footnote text-label-secondary sm:mr-auto"
+          >
+            {blocker}
+          </p>
           <Button disabled={save.isPending || blocker !== null} onClick={submit}>
             Save card
           </Button>

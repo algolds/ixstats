@@ -1,8 +1,8 @@
 // scripts/cards/import-special-cards.ts
 /**
  * One-off: the CLI achievement card seed becomes this import. Creates the five Special reward cards if missing, points
- * the old seed's rows at their achievement, then awards each card to every player who already holds its achievement
- * but not the card (the old seed's backfill).
+ * the old seed's rows at their achievement, then awards each live card to every player who already holds its
+ * achievement but not the card (the old seed's backfill; a retired card is never awarded).
  *
  *   bun scripts/cards/import-special-cards.ts            # dry run: prints the plan, writes nothing
  *   bun scripts/cards/import-special-cards.ts --apply
@@ -21,7 +21,13 @@ async function importCards() {
   const [rows, holders] = await Promise.all([
     db.card.findMany({
       where: { id: { in: LEGACY_SPECIAL_CARDS.map((card) => card.id) } },
-      select: { id: true, specialKind: true, rewardAchievementKey: true, isBound: true },
+      select: {
+        id: true,
+        specialKind: true,
+        rewardAchievementKey: true,
+        isBound: true,
+        isRetired: true,
+      },
     }),
     db.card.findMany({
       where: {

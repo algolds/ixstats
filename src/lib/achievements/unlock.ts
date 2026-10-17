@@ -17,8 +17,10 @@ export async function unlockAchievement(
   userId: string,
   achievement: Achievement
 ): Promise<boolean> {
-  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus); recruiting pays nothing
-  const creditReward = RECRUITER_ACHIEVEMENT_IDS.has(achievement.key)
+  // Recruiting pays nothing: no IxCredits and no reward card
+  const paysNothing = RECRUITER_ACHIEVEMENT_IDS.has(achievement.key);
+  // Credit reward scales by rarity (consistent curve, admin-tunable in vault-bonus)
+  const creditReward = paysNothing
     ? 0
     : achievementBonus(await getBonusConfig(db), achievement.rarity);
   let packIds: string[] = [];
@@ -36,13 +38,19 @@ export async function unlockAchievement(
     }
   }
 
-  // The reward card is the live Special card that names this achievement (the Designer sets it)
-  const rewardCard = await db.card.findUnique({
-    where: { rewardAchievementKey: achievement.key },
-    select: { id: true, cardType: true, isRetired: true },
-  });
+  // The reward card is the live, approved Special card that names this achievement (the Designer sets it)
+  const rewardCard = paysNothing
+    ? null
+    : await db.card.findUnique({
+        where: { rewardAchievementKey: achievement.key },
+        select: { id: true, cardType: true, isRetired: true, reviewState: true },
+      });
   const cardIds =
-    rewardCard && rewardCard.cardType === "SPECIAL" && !rewardCard.isRetired ? [rewardCard.id] : [];
+    rewardCard?.cardType === "SPECIAL" &&
+    !rewardCard.isRetired &&
+    rewardCard.reviewState === "APPROVED"
+      ? [rewardCard.id]
+      : [];
 
   // Create UserAchievement record (references Achievement.key)
   try {

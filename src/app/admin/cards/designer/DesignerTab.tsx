@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
 import { RARITY_LABELS, labelOf } from "../shared/card-labels";
 import { EMPTY_DRAFT, SpecialCardSheet, type SpecialCardDraft } from "./SpecialCardSheet";
 
@@ -34,6 +35,14 @@ const draftOf = (row: Row): SpecialCardDraft => ({
 
 /** Names by id; an id a map lacks shows as itself. */
 type Names = Readonly<Record<string, string>>;
+
+function kindLabel(row: Row, achievementNames: Names): string {
+  if (awaitsSpecialCardImport(row)) return "Waiting for the Special card import";
+  if (row.specialKind === "ACHIEVEMENT_REWARD" && row.rewardAchievementKey) {
+    return `Reward for ${labelOf(achievementNames, row.rewardAchievementKey)}`;
+  }
+  return "Event card";
+}
 
 function SpecialCardsTable({
   rows,
@@ -70,11 +79,7 @@ function SpecialCardsTable({
                 {row.isRetired && <Badge variant="outline">Retired</Badge>}
               </span>
             </TableCell>
-            <TableCell>
-              {row.specialKind === "ACHIEVEMENT_REWARD" && row.rewardAchievementKey
-                ? `Reward for ${labelOf(achievementNames, row.rewardAchievementKey)}`
-                : "Event card"}
-            </TableCell>
+            <TableCell>{kindLabel(row, achievementNames)}</TableCell>
             <TableCell>{labelOf(RARITY_LABELS, row.rarity)}</TableCell>
             <TableCell>{labelOf(realmNames, row.realmId)}</TableCell>
             <TableCell className="text-right tabular-nums">
@@ -85,6 +90,7 @@ function SpecialCardsTable({
                 size="sm"
                 variant="ghost"
                 aria-label={`Edit ${row.title}`}
+                disabled={awaitsSpecialCardImport(row)}
                 onClick={() => onEdit(row)}
               >
                 Edit
@@ -99,7 +105,7 @@ function SpecialCardsTable({
 
 export function DesignerTab() {
   // Keyed by card below, so switching cards always starts from that card's stored values
-  const [editing, setEditing] = useState<SpecialCardDraft | null>(null);
+  const [editing, setEditing] = useState<{ draft: SpecialCardDraft; copies: number } | null>(null);
   const list = api.cards.admin.designer.list.useQuery();
   const achievements = api.cards.admin.designer.achievements.useQuery();
   const realms = api.cards.admin.overview.realms.useQuery();
@@ -112,7 +118,7 @@ export function DesignerTab() {
     <Card content="data">
       <CardHeader className="flex flex-row items-center justify-between pt-5">
         <CardTitle icon={<Star />}>Special cards</CardTitle>
-        <Button size="sm" onClick={() => setEditing(EMPTY_DRAFT)}>
+        <Button size="sm" onClick={() => setEditing({ draft: EMPTY_DRAFT, copies: 0 })}>
           <Plus />
           New Special card
         </Button>
@@ -136,14 +142,15 @@ export function DesignerTab() {
             rows={list.data}
             achievementNames={achievementNames}
             realmNames={realmNames}
-            onEdit={(row) => setEditing(draftOf(row))}
+            onEdit={(row) => setEditing({ draft: draftOf(row), copies: row._count.CardOwnership })}
           />
         )}
       </CardContent>
       {editing && (
         <SpecialCardSheet
-          key={editing.id ?? "new"}
-          draft={editing}
+          key={editing.draft.id ?? "new"}
+          draft={editing.draft}
+          copies={editing.copies}
           onOpenChange={(open) => {
             if (!open) setEditing(null);
           }}

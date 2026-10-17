@@ -3,13 +3,15 @@
  * achievement reward card is always bound and names the achievement that awards it (one card per achievement,
  * `rewardAchievementKey @unique`). The face has no bespoke styling, so a definition is plain card fields and a realm.
  */
-import { SpecialCardKind, type PrismaClient } from "@prisma/client";
+import { SpecialCardKind, type Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { RECRUITER_ACHIEVEMENT_IDS } from "~/lib/achievements/scope";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
 import { CardRarity } from "~/lib/cards/enums";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
+import { lockCardSerialsTx } from "~/lib/cards/serial-number";
+import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 
@@ -76,16 +78,56 @@ const cardGone = () =>
     message: "That Special card, or its realm, no longer exists",
   });
 
+const refused = (message: string) => new TRPCError({ code: "PRECONDITION_FAILED", message });
+
+/** The card an edit saves over, read under the card's serial lock: mints take it too, so its copy count holds. */
+async function editedCard(tx: Prisma.TransactionClient, id: string) {
+  await lockCardSerialsTx(tx, id);
+  const card = await tx.card.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      cardType: true,
+      specialKind: true,
+      isBound: true,
+      rewardAchievementKey: true,
+      _count: { select: { CardOwnership: true } },
+    },
+  });
+  if (!card || card.cardType !== "SPECIAL") throw cardGone();
+  return card;
+}
+
+/**
+ * An old seed row waits for the import, which alone gives it a kind. Once players hold copies, the kind, binding and
+ * achievement stay: binding lives on the card, so unbinding one would free every copy at once.
+ */
+function assertEditable(card: Awaited<ReturnType<typeof editedCard>>, input: SpecialCardInput) {
+  if (awaitsSpecialCardImport(card)) {
+    throw refused("Run the Special card import before editing this card.");
+  }
+  const changesKind =
+    card.specialKind !== input.kind ||
+    card.isBound !== input.isBound ||
+    card.rewardAchievementKey !== input.rewardAchievementKey;
+  if (changesKind && card._count.CardOwnership > 0) {
+    throw refused("Players hold copies of this card, so its kind and binding are fixed.");
+  }
+}
+
+/** A newly chosen achievement must be live; a card keeps the one it has after that achievement retires. */
+function assertRewardAchievement(key: string | null, storedKey: string | null) {
+  if (key && key !== storedKey && !rewardAchievementOptions().some((option) => option.id === key)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "No such achievement" });
+  }
+}
+
 /** Creates a Special card, approved because an admin made it, or edits one in place (its season and type stay). */
 export async function saveSpecialCard(
   db: PrismaClient,
   actor: CardAdminActor,
   input: SpecialCardInput
 ): Promise<{ id: string }> {
-  const key = input.rewardAchievementKey;
-  if (key && !rewardAchievementOptions().some((option) => option.id === key)) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "No such achievement" });
-  }
   const data = {
     title: input.title,
     description: input.description || null,
@@ -95,17 +137,13 @@ export async function saveSpecialCard(
     artworkSource: input.artwork ? ("UPLOADED" as const) : ("PROCEDURAL" as const),
     isBound: input.isBound,
     specialKind: input.kind,
-    rewardAchievementKey: key,
+    rewardAchievementKey: input.rewardAchievementKey,
   };
   try {
     return await db.$transaction(async (tx) => {
-      const existing = input.id
-        ? await tx.card.findUnique({
-            where: { id: input.id },
-            select: { id: true, cardType: true },
-          })
-        : null;
-      if (input.id && existing?.cardType !== "SPECIAL") throw cardGone();
+      const existing = input.id ? await editedCard(tx, input.id) : null;
+      if (existing) assertEditable(existing, input);
+      assertRewardAchievement(input.rewardAchievementKey, existing?.rewardAchievementKey ?? null);
       const card = existing
         ? await tx.card.update({ where: { id: existing.id }, data, select: { id: true } })
         : await tx.card.create({

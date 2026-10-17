@@ -53,10 +53,24 @@ export const LEGACY_SPECIAL_CARDS: readonly LegacySpecialCard[] = [
   },
 ];
 
+const LEGACY_IDS: ReadonlySet<string> = new Set(LEGACY_SPECIAL_CARDS.map((card) => card.id));
+
+/**
+ * One of the old seed's rows, which only the import may give a kind. The Designer keeps it read-only until then, so
+ * an early save can never make the import skip it as an admin's card.
+ */
+export function awaitsSpecialCardImport(card: {
+  id: string;
+  specialKind: SpecialCardKind | null;
+}): boolean {
+  return card.specialKind === null && LEGACY_IDS.has(card.id);
+}
+
 export interface ExistingSpecialCard {
   specialKind: SpecialCardKind | null;
   rewardAchievementKey: string | null;
   isBound: boolean;
+  isRetired: boolean;
 }
 
 export interface SpecialCardImportPlan {
@@ -67,7 +81,7 @@ export interface SpecialCardImportPlan {
   }[];
   /** Legacy cards the import leaves alone, and why. */
   skipped: { id: string; achievementKey: string; reason: string }[];
-  /** The legacy cards that reward their achievement once the plan is applied: the ones the backfill awards. */
+  /** The live legacy cards that reward their achievement once the plan is applied: the ones the backfill awards. */
   rewards: { cardId: string; achievementKey: string }[];
 }
 
@@ -102,7 +116,8 @@ export function planSpecialCardImport(
       plan.skipped.push({ id, achievementKey, reason: "an admin changed it in the Designer" });
       continue;
     }
-    plan.rewards.push({ cardId: id, achievementKey });
+    // A retired card is never minted, as the unlock never awards one
+    if (!row?.isRetired) plan.rewards.push({ cardId: id, achievementKey });
   }
   return plan;
 }

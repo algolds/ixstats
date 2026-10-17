@@ -118,6 +118,44 @@ it("lists the Special cards and edits one from its stored values", () => {
   });
 });
 
+it("fixes the kind, binding and achievement of a card players hold", () => {
+  serve({ data: [veteran] });
+  fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
+  expect(
+    screen.getByText("Players hold copies of this card, so its kind and binding are fixed.")
+  ).toBeInTheDocument();
+  for (const kind of ["Event card", "Achievement reward"]) {
+    expect(screen.getByRole("radio", { name: kind })).toBeDisabled();
+  }
+  expect(screen.getByRole("switch", { name: "Bound" })).toBeDisabled();
+  expect(screen.getByRole("combobox", { name: "Achievement" })).toBeDisabled();
+  expect(screen.getByLabelText("Title")).toBeEnabled();
+});
+
+it("lets the kind and binding of a card nobody holds change", () => {
+  serve({ data: [{ ...veteran, _count: { CardOwnership: 0 } }] });
+  fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
+  expect(screen.queryByText(/Players hold copies/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("radio", { name: "Event card" }));
+  expect(screen.getByRole("switch", { name: "Bound" })).toBeEnabled();
+});
+
+it("keeps the old seed's rows read-only until the Special card import runs", () => {
+  serve({ data: [{ ...veteran, specialKind: null, rewardAchievementKey: null }] });
+  expect(screen.getByText("Waiting for the Special card import")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Edit Veteran" })).toBeDisabled();
+});
+
+it("announces why the card cannot be saved yet from one live region", () => {
+  serve({ data: [] });
+  fireEvent.click(screen.getByRole("button", { name: "New Special card" }));
+  const status = screen.getByRole("status");
+  expect(status).toHaveTextContent("Give the card a title of at least 2 characters.");
+  fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Founders' gala" } });
+  expect(screen.getByRole("status")).toBe(status);
+  expect(status).toBeEmptyDOMElement();
+});
+
 it("says when there are no Special cards yet", () => {
   serve({ data: [] });
   expect(screen.getByText("No Special cards yet")).toBeInTheDocument();
