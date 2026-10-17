@@ -20,6 +20,16 @@ describe("passport vault card wikiUrl", () => {
     expect(wikiUrlOf(card("Some Page", "iiwiki"))).toBe("/wiki/Some_Page?source=iiwiki");
   });
 
+  it("opens an AltHistory article in the WikiOS reader", () => {
+    expect(wikiUrlOf(card("Some Page", "althistory"))).toBe("/wiki/Some_Page?source=althistory");
+  });
+
+  it("opens a Commons file on Commons, not as an IxWiki page", () => {
+    expect(wikiUrlOf(card("File:Flag of Ireland.svg", "commons"))).toBe(
+      "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"
+    );
+  });
+
   it("has no link without an article title", () => {
     expect(wikiUrlOf(card(null, "ixwiki"))).toBeNull();
   });

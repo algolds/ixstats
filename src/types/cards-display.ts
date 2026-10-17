@@ -5,6 +5,7 @@
  */
 
 import type { CardRarity, CardType } from "@prisma/client";
+import type { CardArticleSource } from "~/lib/cards/card-sources";
 
 export interface CardAuthorInfo {
   creator: string;
@@ -20,7 +21,7 @@ interface LoreCardMetadata {
   category?: string;
   subcategory?: string;
   source?: string;
-  wikiSource?: "ixwiki" | "iiwiki";
+  wikiSource?: CardArticleSource;
   articleTitle?: string;
   authorInfo?: CardAuthorInfo;
   author?: string;

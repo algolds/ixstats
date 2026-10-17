@@ -15,6 +15,7 @@ import {
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 interface LoreWikiExcerptProps {
@@ -26,15 +27,17 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const meta = card.metadata as Record<string, unknown> | undefined;
   const storedExcerpt = meta?.fullExcerpt as string | undefined;
   const targetArticleTitle = card.wikiArticleTitle || card.title;
-  const source = (card.wikiSource as "ixwiki" | "iiwiki") || "ixwiki";
+  const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
+  // Commons has files and no articles: no wikitext to fetch, no reader page to preview.
+  const articleSource = source === "commons" ? null : source;
 
   const { data: fetchedExcerpt, isLoading } = api.cards.getWikiArticleExcerpt.useQuery(
     {
       articleTitle: targetArticleTitle,
-      wikiSource: source,
+      wikiSource: articleSource ?? "ixwiki",
     },
     {
-      enabled: !!targetArticleTitle,
+      enabled: !!targetArticleTitle && articleSource !== null,
       staleTime: 10 * 60 * 1000,
     }
   );
@@ -42,7 +45,10 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const excerptText =
     fetchedExcerpt?.wikitext || fetchedExcerpt?.extract || storedExcerpt || card.description;
 
-  const parsedHtml = useMemo(() => parseWikitextToHtml(excerptText, source), [excerptText, source]);
+  const parsedHtml = useMemo(
+    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki"),
+    [excerptText, articleSource]
+  );
 
   return (
     <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
@@ -64,7 +70,22 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
         <div className="text-label-secondary text-footnote py-2">No article excerpt available.</div>
       )}
 
-      {wikiUrl && (
+      {wikiUrl && articleSource === null && (
+        <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
+          <a
+            href={wikiUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-tint text-footnote inline-flex items-center gap-2 font-semibold hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            View the file page
+          </a>
+          <span className="text-label-secondary text-footnote">From {cardSourceLabel(source)}</span>
+        </span>
+      )}
+
+      {wikiUrl && articleSource !== null && (
         <WikiLinkPreview
           title={
             card.wikiArticleTitle ||
@@ -75,7 +96,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               ?.replace(/_/g, " ") ||
             ""
           }
-          wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
+          wiki={articleSource}
         >
           <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
             <Link
@@ -85,8 +106,10 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               <ExternalLink className="h-3.5 w-3.5" />
               Read the full article
             </Link>
-            {card.wikiSource === "iiwiki" && (
-              <span className="text-label-secondary text-footnote">From IIWiki</span>
+            {articleSource !== "ixwiki" && (
+              <span className="text-label-secondary text-footnote">
+                From {cardSourceLabel(articleSource)}
+              </span>
             )}
           </span>
         </WikiLinkPreview>
