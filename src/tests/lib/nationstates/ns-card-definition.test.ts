@@ -94,4 +94,32 @@ describe("processRegionCardsFromDump", () => {
       data: expect.objectContaining({ status: "SUCCESS", cardsCreated: 1 }),
     });
   });
+
+  it("beats its heartbeat after each season dump it reads, keeping the metadata a resume needs, and with every card", async () => {
+    jest
+      .mocked(nsApiClient.fetchCardDump)
+      .mockResolvedValueOnce("<xml/>" as never)
+      .mockRejectedValueOnce(new Error("HTTP 404: Not Found"));
+    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([elm] as never);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = createMockPrisma();
+    const saved = { regionNames: ["lazarus"], lastProcessedIndex: -1, startedBy: "db_admin" };
+    db.syncLog.findUnique.mockImplementation(async ({ select }: { select: { metadata?: true } }) =>
+      select.metadata ? { metadata: saved } : { status: "IN_PROGRESS" }
+    );
+    db.card.create.mockResolvedValue({ id: "card_ns_123_s3" });
+
+    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3, 4]);
+
+    const writes = db.syncLog.update.mock.calls.map(([call]) => call.data);
+    expect(writes.slice(0, 2)).toEqual([
+      { metadata: { ...saved, heartbeatAt: expect.any(String) } },
+      { metadata: { ...saved, heartbeatAt: expect.any(String) } },
+    ]);
+    expect(writes[2]!.metadata).toMatchObject({
+      lastProcessedIndex: 0,
+      heartbeatAt: expect.any(String),
+    });
+    jest.mocked(console.error).mockRestore();
+  });
 });

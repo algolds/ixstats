@@ -24,6 +24,7 @@ const sync = (overrides: object) => ({
   id: "log_a",
   region: "Lazarus",
   status: "IN_PROGRESS",
+  stalled: false,
   processed: 10,
   totalCards: 40,
   cardsCreated: 6,
@@ -51,6 +52,7 @@ function serve({
   logs = [] as object[],
   logCards = undefined as object | undefined,
   found = undefined as object[] | undefined,
+  pausing = undefined as string | undefined,
 } = {}) {
   jest.mocked(api.useUtils).mockReturnValue({
     cards: {
@@ -63,7 +65,11 @@ function serve({
   jest.mocked(ns.logs.useQuery).mockReturnValue({ data: logs } as never);
   jest.mocked(ns.logCards.useQuery).mockReturnValue({ data: logCards } as never);
   jest.mocked(ns.start.useMutation).mockReturnValue(mutation(start));
-  jest.mocked(ns.pause.useMutation).mockReturnValue(mutation(pause));
+  jest
+    .mocked(ns.pause.useMutation)
+    .mockReturnValue(
+      mutation(pause, pausing ? { isPending: true, variables: { syncLogId: pausing } } : {})
+    );
   jest.mocked(ns.resume.useMutation).mockReturnValue(mutation(resume));
   jest.mocked(ns.stop.useMutation).mockReturnValue(mutation(stop));
   jest
@@ -114,6 +120,34 @@ describe("NsImports", () => {
     expect(resume).toHaveBeenCalledWith({ syncLogId: "log_a" });
     fireEvent.click(screen.getAllByRole("button", { name: "Stop" })[1]!);
     expect(stop).toHaveBeenCalledWith({ syncLogId: "log_b" });
+  });
+
+  it("offers Resume beside Pause on a sync whose run has stalled", () => {
+    serve({ active: [sync({ stalled: true })] });
+    render(<NsImports />);
+    expect(screen.getByText("Stalled")).toBeInTheDocument();
+    expect(screen.queryByText("Running")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    expect(resume).toHaveBeenCalledWith({ syncLogId: "log_a" });
+    expect(screen.getByRole("button", { name: "Pause" })).toBeEnabled();
+  });
+
+  it("offers no Resume on a sync that is running", () => {
+    serve({ active: [sync({})] });
+    render(<NsImports />);
+    expect(screen.getByText("Running")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resume" })).not.toBeInTheDocument();
+  });
+
+  it("disables a sync's buttons while a request for it is pending, and only that sync's", () => {
+    serve({
+      active: [sync({ stalled: true }), sync({ id: "log_b", region: "Balder" })],
+      pausing: "log_a",
+    });
+    render(<NsImports />);
+    const [lazarus, balder] = screen.getAllByRole("row").slice(1);
+    for (const button of within(lazarus!).getAllByRole("button")) expect(button).toBeDisabled();
+    for (const button of within(balder!).getAllByRole("button")) expect(button).toBeEnabled();
   });
 
   it("finds large regions by tag and adds one to the list", () => {

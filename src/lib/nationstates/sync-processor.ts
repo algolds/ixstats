@@ -134,7 +134,8 @@ export async function upsertNSCardDefinition(
  */
 async function loadRegionCardsFromDumps(
   regionNames: string[],
-  seasons: number[]
+  seasons: number[],
+  onSeasonRead: () => Promise<void>
 ): Promise<Array<{ id: number; season: number; card: NSCard }>> {
   const norm = (str: string) =>
     str
@@ -171,9 +172,28 @@ async function loadRegionCardsFromDumps(
       // A missing/older season dump must not abort the whole sync — log and continue.
       console.error(`[NS Import] Failed to process season ${season} dump:`, err);
     }
+    await onSeasonRead();
   }
 
   return matches;
+}
+
+/**
+ * Marks a sync alive while it reads the season dumps, which can take minutes each. It merges into the stored
+ * metadata, which still holds what a resume needs (the region list and the last card worked).
+ */
+async function beatHeartbeat(db: PrismaClient, syncLogId: string): Promise<void> {
+  const log = await db.syncLog.findUnique({ where: { id: syncLogId }, select: { metadata: true } });
+  const metadata = log?.metadata;
+  await db.syncLog.update({
+    where: { id: syncLogId },
+    data: {
+      metadata: {
+        ...(isJsonObject(metadata) ? metadata : {}),
+        heartbeatAt: new Date().toISOString(),
+      },
+    },
+  });
 }
 
 /**
@@ -194,7 +214,9 @@ export async function processRegionCardsFromDump(
   activeRunningJobs.add(syncLogId);
   try {
     const valCfg = await getValuationConfig(db);
-    const matches = await loadRegionCardsFromDumps(regionNames, seasons);
+    const matches = await loadRegionCardsFromDumps(regionNames, seasons, () =>
+      beatHeartbeat(db, syncLogId)
+    );
 
     if (matches.length === 0) {
       console.warn(
@@ -271,6 +293,7 @@ export async function processRegionCardsFromDump(
             cardsUpdated,
             errorCount: errors.length,
             lastProcessedIndex: i,
+            heartbeatAt: new Date().toISOString(),
           },
         },
       });
@@ -309,6 +332,34 @@ export async function processRegionCardsFromDump(
 
 const CTE_BATCH = 500;
 
+/**
+ * The fewest active nations a whole dump can hold: a floor, and a share of the nations the last successful run read.
+ * A smaller set (an empty or cut-off read) would mark nearly every card ceased, so the filter refuses it.
+ */
+export const CTE_DUMP_SANITY = { minNations: 1_000, minShareOfLastRun: 0.5 } as const;
+
+const count = (n: number) => n.toLocaleString("en-US");
+
+/** Refuses an active-nations set too small to be the whole dump, before any card is read or written. */
+async function assertWholeDump(db: PrismaClient, nations: number): Promise<void> {
+  const last = await db.syncLog.findFirst({
+    where: { syncType: "NS_CTE_FILTER", status: "SUCCESS" },
+    orderBy: { startedAt: "desc" },
+    select: { metadata: true },
+  });
+  const meta = last?.metadata;
+  const lastNations =
+    isJsonObject(meta) && typeof meta.activeNations === "number" ? meta.activeNations : null;
+  const needed = Math.ceil(
+    Math.max(CTE_DUMP_SANITY.minNations, (lastNations ?? 0) * CTE_DUMP_SANITY.minShareOfLastRun)
+  );
+  if (nations >= needed) return;
+  const lastRun = lastNations === null ? "" : `; the last run read ${count(lastNations)}`;
+  throw new Error(
+    `The active-nations dump listed ${count(nations)} nations, too few to be whole (at least ${count(needed)}${lastRun}). No card was changed.`
+  );
+}
+
 export interface CteCounts {
   totalProcessed: number;
   cteCount: number;
@@ -318,13 +369,14 @@ export interface CteCounts {
 /**
  * Tags every NationStates card with `metadata.isCTE` (its nation has ceased to exist) against the daily
  * active-nations dump, a page of cards at a time, writing its progress to its SyncLog. Pages by `id > last`, so a
- * card deleted mid-run never ends the walk early.
+ * card deleted mid-run never ends the walk early. Throws, changing nothing, on a dump too small to be whole.
  */
 export async function processCTENationFilter(
   db: PrismaClient,
   syncLogId: string
 ): Promise<CteCounts> {
   const activeNations = await nsApiClient.fetchActiveNationsDump();
+  await assertWholeDump(db, activeNations.size);
   const counts: CteCounts = { totalProcessed: 0, cteCount: 0, activeCount: 0 };
   let last: string | null = null;
   for (;;) {
@@ -365,7 +417,7 @@ export async function processCTENationFilter(
       status: "SUCCESS",
       completedAt: new Date(),
       itemsProcessed: counts.totalProcessed,
-      metadata: { ...counts },
+      metadata: { ...counts, activeNations: activeNations.size },
     },
   });
   console.log(

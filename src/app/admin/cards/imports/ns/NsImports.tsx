@@ -3,7 +3,7 @@
 import { Hourglass, UserXmark } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -22,33 +22,51 @@ type Sync = RouterOutputs["cards"]["admin"]["nationstates"]["active"][number];
 
 const ACTIVE_REFRESH_MS = 5_000;
 
+/** A sync's status as shown: a running one whose run has gone quiet is stalled, and can be resumed. */
+function syncStatus(sync: Sync): { label: string; variant: BadgeVariant } {
+  if (sync.status === "PAUSED") return { label: "Paused", variant: "warning" };
+  return sync.stalled
+    ? { label: "Stalled", variant: "warning" }
+    : { label: "Running", variant: "info" };
+}
+
 function SyncRow({
   sync,
+  busy,
   onPause,
   onResume,
   onStop,
 }: {
   sync: Sync;
+  busy: boolean;
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
 }) {
   const paused = sync.status === "PAUSED";
+  const status = syncStatus(sync);
   return (
     <TableRow>
       <TableCell>{sync.region}</TableCell>
       <TableCell>
-        <Badge variant={paused ? "warning" : "info"}>{paused ? "Paused" : "Running"}</Badge>
+        <Badge variant={status.variant}>{status.label}</Badge>
       </TableCell>
       <TableCell className="text-right tabular-nums">
         {/* A sync reads the season dumps before it knows how many cards it has */}
         {sync.totalCards > 0 ? `${sync.processed} of ${sync.totalCards}` : "Reading the card dumps"}
       </TableCell>
       <TableCell className="space-x-1 text-right whitespace-nowrap">
-        <Button size="xs" variant="secondary" onClick={paused ? onResume : onPause}>
-          {paused ? "Resume" : "Pause"}
-        </Button>
-        <Button size="xs" variant="ghost" onClick={onStop}>
+        {!paused && (
+          <Button size="xs" variant="secondary" disabled={busy} onClick={onPause}>
+            Pause
+          </Button>
+        )}
+        {(paused || sync.stalled) && (
+          <Button size="xs" variant="secondary" disabled={busy} onClick={onResume}>
+            Resume
+          </Button>
+        )}
+        <Button size="xs" variant="ghost" disabled={busy} onClick={onStop}>
           Stop
         </Button>
       </TableCell>
@@ -81,6 +99,12 @@ export function NsImports() {
     onError: (error) => notify.error("CTE filter not started", error.message),
   });
   const syncs = active.data ?? [];
+  // Syncs with a pause, resume or stop still on its way: their buttons wait for the answer
+  const busy = new Set(
+    [pause, resume, stop]
+      .filter((control) => control.isPending)
+      .map((control) => control.variables?.syncLogId)
+  );
 
   return (
     <div className="space-y-6">
@@ -110,6 +134,7 @@ export function NsImports() {
                   <SyncRow
                     key={sync.id}
                     sync={sync}
+                    busy={busy.has(sync.id)}
                     onPause={() => pause.mutate({ syncLogId: sync.id })}
                     onResume={() => resume.mutate({ syncLogId: sync.id })}
                     onStop={() => stop.mutate({ syncLogId: sync.id })}

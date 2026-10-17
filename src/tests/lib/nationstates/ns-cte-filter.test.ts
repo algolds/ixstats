@@ -6,11 +6,25 @@ jest.mock("~/lib/nationstates/api-client", () => ({
 }));
 
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
+import { CTE_DUMP_SANITY, processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
+/** An active-nations set of `size` nations, holding `named` among them. */
+const nations = (size: number, ...named: string[]) =>
+  new Set([...named, ...Array.from({ length: size - named.length }, (_, i) => `nation ${i}`)]);
+
+const lastRun = (activeNations: number) => ({ metadata: { activeNations, activeCount: 9 } });
+
+beforeEach(() => jest.clearAllMocks());
+
+it("holds its sanity thresholds in one named constant", () => {
+  expect(CTE_DUMP_SANITY).toEqual({ minNations: 1_000, minShareOfLastRun: 0.5 });
+});
+
 it("tags each card by its nation's NS name, a page at a time, and keeps the rest of its metadata", async () => {
-  jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(new Set(["heku of ix", "elm"]));
+  jest
+    .mocked(nsApiClient.fetchActiveNationsDump)
+    .mockResolvedValue(nations(1_000, "heku of ix", "elm"));
   const db = createMockPrisma();
   db.card.findMany
     .mockResolvedValueOnce([
@@ -31,6 +45,11 @@ it("tags each card by its nation's NS name, a page at a time, and keeps the rest
     activeCount: 2,
   });
 
+  expect(db.syncLog.findFirst).toHaveBeenCalledWith({
+    where: { syncType: "NS_CTE_FILTER", status: "SUCCESS" },
+    orderBy: { startedAt: "desc" },
+    select: { metadata: true },
+  });
   expect(db.card.findMany).toHaveBeenNthCalledWith(1, {
     where: { cardType: "NS" },
     select: { id: true, title: true, metadata: true },
@@ -68,7 +87,55 @@ it("tags each card by its nation's NS name, a page at a time, and keeps the rest
       status: "SUCCESS",
       completedAt: expect.any(Date),
       itemsProcessed: 3,
-      metadata: { totalProcessed: 3, cteCount: 1, activeCount: 2 },
+      // The next run's sanity check reads how many nations this dump held
+      metadata: { totalProcessed: 3, cteCount: 1, activeCount: 2, activeNations: 1_000 },
     },
+  });
+});
+
+describe("a dump that cannot be whole", () => {
+  it.each([
+    ["empty, with no run before it", 0, null],
+    ["under 1,000 nations, with no run before it", 999, null],
+    ["under half the last run's nations", 99_999, 200_000],
+    ["under 1,000 nations, even when the last run read few", 999, 1_200],
+  ])("is refused when %s, and no card is read or changed", async (_case, size, previous) => {
+    jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(nations(size));
+    const db = createMockPrisma();
+    db.syncLog.findFirst.mockResolvedValue(previous === null ? null : lastRun(previous));
+
+    await expect(processCTENationFilter(db as never, "cte_log")).rejects.toThrow(
+      /too few to be whole.*No card was changed/
+    );
+    expect(db.card.findMany).not.toHaveBeenCalled();
+    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.syncLog.update).not.toHaveBeenCalled();
+  });
+
+  it("names the count it read and the count it needed", async () => {
+    jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(nations(12));
+    const db = createMockPrisma();
+    db.syncLog.findFirst.mockResolvedValue(lastRun(240_000));
+    await expect(processCTENationFilter(db as never, "cte_log")).rejects.toThrow(
+      "The active-nations dump listed 12 nations, too few to be whole (at least 120,000; the last run read 240,000). No card was changed."
+    );
+  });
+
+  it("runs on a dump at least half the last run's size", async () => {
+    jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(nations(100_000));
+    const db = createMockPrisma();
+    db.syncLog.findFirst.mockResolvedValue(lastRun(200_000));
+    await expect(processCTENationFilter(db as never, "cte_log")).resolves.toMatchObject({
+      totalProcessed: 0,
+    });
+  });
+
+  it("falls back to the floor when the last run recorded no nation count", async () => {
+    jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(nations(1_000));
+    const db = createMockPrisma();
+    db.syncLog.findFirst.mockResolvedValue({ metadata: { activeCount: 50_000 } });
+    await expect(processCTENationFilter(db as never, "cte_log")).resolves.toMatchObject({
+      totalProcessed: 0,
+    });
   });
 });

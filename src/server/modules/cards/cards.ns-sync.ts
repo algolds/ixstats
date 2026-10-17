@@ -7,6 +7,7 @@ import type { Prisma, PrismaClient, SyncLog } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { CardType } from "~/lib/cards/enums";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import {
   activeRunningJobs,
@@ -35,6 +36,7 @@ const SyncMetaSchema = z.object({
   seasons: z.array(z.number()).catch([]),
   totalCards: z.number().catch(0),
   lastProcessedIndex: z.number().catch(-1),
+  heartbeatAt: z.string().nullable().catch(null),
 });
 type SyncMeta = z.infer<typeof SyncMetaSchema>;
 
@@ -43,14 +45,49 @@ function syncMeta(log: Pick<SyncLog, "metadata">): SyncMeta {
   return parsed.success ? parsed.data : SyncMetaSchema.parse({});
 }
 
-async function requireSync(db: PrismaClient, id: string): Promise<SyncLog> {
+const REGION_SYNC = "NS_REGION_";
+
+/** The SyncLog, or NOT_FOUND; with `kind`, a log of another type is not found either. */
+async function requireSync(db: PrismaClient, id: string, kind?: string): Promise<SyncLog> {
   const log = await db.syncLog.findUnique({ where: { id } });
-  if (!log) throw new TRPCError({ code: "NOT_FOUND", message: "Sync not found" });
+  if (!log || (kind && !log.syncType.startsWith(kind))) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Sync not found" });
+  }
   return log;
 }
 
 /** A sync that may still be worked: running, paused, or interrupted by a restart (left running). */
 const isOpen = (log: SyncLog) => log.status === "IN_PROGRESS" || log.status === "PAUSED";
+
+/** A running sync whose run has written nothing for this long has lost it (a restart, or a crash). */
+const STALL_MS = 10 * 60_000;
+
+/**
+ * Running, but its run has gone quiet: no heartbeat (each card, each season dump) for over `STALL_MS`, counted from
+ * its start when it has none. A run still going in this process is never stalled.
+ */
+function isStalled(log: SyncLog, meta: SyncMeta): boolean {
+  if (log.status !== "IN_PROGRESS" || activeRunningJobs.has(log.id)) return false;
+  const beat = Date.parse(meta.heartbeatAt ?? "");
+  const last = Number.isFinite(beat) ? beat : log.startedAt.getTime();
+  return Date.now() - last > STALL_MS;
+}
+
+/**
+ * Claims a paused or stalled sync for one new run. The write lands only while the log is as it was read, so of two
+ * resumes racing for it, one starts a run.
+ */
+async function claimRun(db: PrismaClient, log: SyncLog): Promise<boolean> {
+  const metadata = isJsonObject(log.metadata) ? log.metadata : {};
+  const claimed = await db.syncLog.updateMany({
+    where: { id: log.id, status: log.status, metadata: { equals: metadata } },
+    data: {
+      status: "IN_PROGRESS",
+      metadata: { ...metadata, heartbeatAt: new Date().toISOString() },
+    },
+  });
+  return claimed.count === 1;
+}
 
 /** A new run's SyncLog and the audit row naming who started it (the run rewrites its own metadata as it goes). */
 function createSyncLog(
@@ -77,7 +114,7 @@ function createSyncLog(
 }
 
 const regionSyncType = (region: string) =>
-  `NS_REGION_${region.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+  `${REGION_SYNC}${region.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
 
 /** Runs a sync's work after the request returns; a run that breaks marks its SyncLog failed instead of running. */
 function runInBackground<T>(db: PrismaClient, syncLogId: string, work: Promise<T>, label: string) {
@@ -124,7 +161,13 @@ export async function startRegionSync(
   for (const regionName of regions) {
     const log = await createSyncLog(db, actor, {
       syncType: regionSyncType(regionName),
-      metadata: { regionNames: [regionName], seasons, totalCards: 0, lastProcessedIndex: -1 },
+      metadata: {
+        regionNames: [regionName],
+        seasons,
+        totalCards: 0,
+        lastProcessedIndex: -1,
+        heartbeatAt: new Date().toISOString(),
+      },
       details: `Started a NationStates region sync of ${regionName}, seasons ${seasons.join(", ")}`,
     });
     runInBackground(
@@ -201,7 +244,7 @@ export async function syncLogCards(
 
 export async function activeSyncs(db: PrismaClient) {
   const logs = await db.syncLog.findMany({
-    where: { syncType: { startsWith: "NS_REGION_" }, status: { in: ["IN_PROGRESS", "PAUSED"] } },
+    where: { syncType: { startsWith: REGION_SYNC }, status: { in: ["IN_PROGRESS", "PAUSED"] } },
     orderBy: { startedAt: "desc" },
   });
   return logs.map((log) => {
@@ -210,6 +253,7 @@ export async function activeSyncs(db: PrismaClient) {
       id: log.id,
       region: meta.regionNames[0] ?? log.syncType,
       status: log.status,
+      stalled: isStalled(log, meta),
       processed: meta.lastProcessedIndex + 1,
       totalCards: meta.totalCards,
       cardsCreated: log.cardsCreated ?? 0,
@@ -220,7 +264,7 @@ export async function activeSyncs(db: PrismaClient) {
 }
 
 export async function pauseSync(db: PrismaClient, id: string): Promise<void> {
-  const log = await requireSync(db, id);
+  const log = await requireSync(db, id, REGION_SYNC);
   if (log.status !== "IN_PROGRESS") {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Only a running sync can be paused" });
   }
@@ -229,7 +273,7 @@ export async function pauseSync(db: PrismaClient, id: string): Promise<void> {
 
 /** `resumed` is whether a new run started; a sync still running here just has its pause lifted. */
 export async function resumeSync(db: PrismaClient, id: string): Promise<{ resumed: boolean }> {
-  const log = await requireSync(db, id);
+  const log = await requireSync(db, id, REGION_SYNC);
   if (!isOpen(log)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -239,11 +283,20 @@ export async function resumeSync(db: PrismaClient, id: string): Promise<{ resume
   if (activeRunningJobs.has(log.id)) {
     // The run checks the status before each card, so it carries on once the pause is lifted.
     if (log.status === "PAUSED") {
-      await db.syncLog.update({ where: { id }, data: { status: "IN_PROGRESS" } });
+      await db.syncLog.updateMany({
+        where: { id, status: "PAUSED" },
+        data: { status: "IN_PROGRESS" },
+      });
     }
     return { resumed: false };
   }
   const meta = syncMeta(log);
+  if (log.status === "IN_PROGRESS" && !isStalled(log, meta)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "This sync is still running. Resume it once it stalls, or pause it first.",
+    });
+  }
   if (meta.regionNames.length === 0) {
     throw new TRPCError({
       code: "BAD_REQUEST",
@@ -258,7 +311,7 @@ export async function resumeSync(db: PrismaClient, id: string): Promise<{ resume
     });
     return { resumed: false };
   }
-  await db.syncLog.update({ where: { id }, data: { status: "IN_PROGRESS" } });
+  if (!(await claimRun(db, log))) return { resumed: false };
   runInBackground(
     db,
     id,
@@ -273,7 +326,7 @@ export async function resumeSync(db: PrismaClient, id: string): Promise<{ resume
 }
 
 export async function stopSync(db: PrismaClient, id: string): Promise<void> {
-  const log = await requireSync(db, id);
+  const log = await requireSync(db, id, REGION_SYNC);
   if (!isOpen(log)) {
     throw new TRPCError({
       code: "BAD_REQUEST",
