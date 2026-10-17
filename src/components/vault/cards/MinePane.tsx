@@ -21,6 +21,7 @@ import { CardFilterBar, type FilterDimension } from "./CardFilterBar";
 import { CardGrid } from "./CardGrid";
 import { MineBulkBar } from "./MineBulkBar";
 import { MineList } from "./MineList";
+import { MoreCards } from "./MoreCards";
 
 const MINE_DIMENSIONS: readonly FilterDimension[] = [
   "realm",
@@ -203,31 +204,6 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
         onAdded={picks.stop}
       />
     </div>
-  );
-}
-
-/** The next page's button, or why the next page did not load. */
-function MoreCards(props: {
-  hasMore: boolean;
-  loading: boolean;
-  failed: boolean;
-  onMore: () => void;
-}) {
-  if (props.failed) {
-    return (
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-callout text-label-secondary">More cards did not load.</p>
-        <Button size="sm" variant="secondary" onClick={props.onMore}>
-          Try again
-        </Button>
-      </div>
-    );
-  }
-  if (!props.hasMore) return null;
-  return (
-    <Button variant="secondary" className="w-full" disabled={props.loading} onClick={props.onMore}>
-      Show more
-    </Button>
   );
 }
 
