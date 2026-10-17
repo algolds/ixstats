@@ -21,7 +21,10 @@ describe("ImportsTab", () => {
     ["tab=imports&subtab=nationstates", "nationstates importer"],
     ["tab=imports&subtab=ns", "nationstates importer"],
     ["tab=ns", "nationstates importer"],
-    ["tab=import", "wiki importer"],
+    // The old panel's ?tab=import opened its NationStates section.
+    ["tab=import", "nationstates importer"],
+    ["tab=import&subtab=wiki", "wiki importer"],
+    ["tab=lore", "wiki importer"],
     ["tab=imports&subtab=flags", "wiki importer"],
     ["tab=imports", "wiki importer"],
   ])("?%s opens the %s", (search, panel) => {
