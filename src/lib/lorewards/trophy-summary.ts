@@ -1,4 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "~/lib/cards/hub/faces";
+import type { CardFaceData } from "~/lib/cards/face/types";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { canonicalWikiName } from "./resolve-user";
 
@@ -7,6 +9,8 @@ export interface TrophyCardSummary {
   title: string;
   contest: LorewardType;
   place: LorewardPlace;
+  /** The trophy's face. A player's trophies are their showcase, so the art always shows. */
+  face: CardFaceData;
 }
 
 export interface Trophies {
@@ -16,15 +20,18 @@ export interface Trophies {
   streak: number;
   /** The trophy cards the user's account holds. */
   cards: TrophyCardSummary[];
+  /** The handle of the account holding the cards, which opens their sheets through its display; null: none. */
+  holderHandle: string | null;
 }
 
-type TrophyDb = Pick<PrismaClient, "lorewardUserStats" | "cardOwnership">;
+type TrophyDb = Pick<PrismaClient, "lorewardUserStats" | "cardOwnership" | "user">;
 
 export const NO_TROPHIES: Trophies = {
   wins: { daily: 0, weekly: 0, monthly: 0 },
   runnerUps: 0,
   streak: 0,
   cards: [],
+  holderHandle: null,
 };
 
 /** The contest a trophy card was minted for (`metadata.contest`), or null when it was not recorded. */
@@ -44,14 +51,20 @@ export async function ownedTrophyCards(
 ): Promise<TrophyCardSummary[]> {
   const owned = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { lorewardEntryId: { not: null } } },
-    select: { cards: { select: { id: true, title: true, lorewardEdition: true, metadata: true } } },
+    select: {
+      ...COPY_FACE_SELECT,
+      cards: { select: { ...CARD_FACE_SELECT, lorewardEdition: true, metadata: true } },
+    },
     orderBy: { acquiredAt: "desc" },
   });
   const summaries: TrophyCardSummary[] = [];
-  for (const { cards: card } of owned) {
+  for (const row of owned) {
+    const card = row.cards;
     const contest = contestOf(card.metadata);
     const place = placeOf(card.lorewardEdition);
-    if (contest && place) summaries.push({ id: card.id, title: card.title, contest, place });
+    if (!contest || !place) continue;
+    const face = toCardFace(card, { revealArt: true, copy: row });
+    summaries.push({ id: card.id, title: card.title, contest, place, face });
   }
   return summaries;
 }
@@ -59,25 +72,30 @@ export async function ownedTrophyCards(
 /**
  * A wiki name's public trophies: counts from that exact name's Lorewards stats (`canonicalWikiName`: MediaWiki names
  * are case-sensitive after the first letter, so "OstroZava" is not "Ostrozava") and the trophy cards held by the
- * platform account `userId` that verified the name (null: none).
+ * platform account `userId` that verified the name (null: none), with that account's handle.
  */
 export async function loadTrophies(
   db: TrophyDb,
   wikiUsername: string,
   userId: string | null
 ): Promise<Trophies> {
-  const [stats, cards] = await Promise.all([
+  const [stats, cards, holder] = await Promise.all([
     db.lorewardUserStats.findFirst({
       where: { username: canonicalWikiName(wikiUsername) },
     }),
     userId ? ownedTrophyCards(db, userId) : Promise.resolve([]),
+    userId
+      ? db.user.findUnique({ where: { id: userId }, select: { handle: true } })
+      : Promise.resolve(null),
   ]);
-  if (!stats) return { ...NO_TROPHIES, cards };
+  const holderHandle = holder?.handle ?? null;
+  if (!stats) return { ...NO_TROPHIES, cards, holderHandle };
   return {
     wins: { daily: stats.dailyWins, weekly: stats.weeklyWins, monthly: stats.monthlyWins },
     runnerUps: stats.dailyRunnerUps,
     streak: stats.currentStreak,
     cards,
+    holderHandle,
   };
 }
 

@@ -43,8 +43,8 @@ export async function displayedCopies(
     };
   }
   // ponytail: the ceiling is the player's live copies. The relation-first orderBy keeps Prisma's distinct and take
-  // in memory, so this reads every live copy they own (as getMyTopCards does); if players hold thousands of copies,
-  // read the cards first, with the take in SQL, and one copy of each.
+  // in memory, so this reads every live copy they own; if players hold thousands of copies, read the cards first,
+  // with the take in SQL, and one copy of each.
   const top = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { isRetired: false } },
     orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }, { id: "asc" }],

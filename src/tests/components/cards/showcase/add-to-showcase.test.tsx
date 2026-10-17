@@ -5,6 +5,7 @@ jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
   const utils = {
     cards: { listMyShowcases: invalidate(), getShowcase: invalidate(), getMyDisplay: invalidate() },
+    ixnayid: { getPassport: invalidate() },
   };
   return {
     api: {
@@ -132,6 +133,7 @@ describe("AddToShowcaseDialog", () => {
     expect(utils.cards.listMyShowcases.invalidate).toHaveBeenCalled();
     expect(utils.cards.getShowcase.invalidate).toHaveBeenCalledWith({ showcaseId: "s1" });
     expect(utils.cards.getMyDisplay.invalidate).toHaveBeenCalled();
+    expect(utils.ixnayid.getPassport.invalidate).toHaveBeenCalled();
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 

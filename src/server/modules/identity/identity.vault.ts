@@ -1,42 +1,15 @@
 /**
  * Vault summary for a passport: collector level, credits, deck value, category focus and the
- * collection highlight (the most valuable live cards).
+ * collection highlight (the holder's display: their pinned public showcase, else their most valuable live cards).
  * (Moved from routers/ixnayid/passport-vault.ts, now typed.)
  */
-import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
-import type { CardInstance } from "~/types/cards-display";
 import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { deckValue } from "~/lib/cards/copy-value";
-import { wikiReaderPath } from "~/lib/wiki-os/config";
-import { commonsCardPageUrl, parseCardWikiSource } from "~/lib/cards/card-sources";
-import { isJsonObject } from "~/lib/cards/ns-facts";
-
-const CARD_SELECT = {
-  id: true,
-  title: true,
-  description: true,
-  slug: true,
-  category: true,
-  subcategory: true,
-  rarity: true,
-  cardType: true,
-  season: true,
-  marketValue: true,
-  totalSupply: true,
-  artwork: true,
-  wikiSource: true,
-  wikiArticleTitle: true,
-  wikiExcerpt: true,
-  metadata: true,
-  nsCardId: true,
-  nsSeason: true,
-} satisfies Prisma.CardSelect;
-
-type OwnershipRow = Prisma.CardOwnershipGetPayload<{
-  include: { cards: { select: typeof CARD_SELECT } };
-}>;
+import type { CardFaceData } from "~/lib/cards/face/types";
+import { displayedCopies } from "~/lib/cards/hub/displayed";
+import { toCardFace } from "~/lib/cards/hub/faces";
 
 /** Lore card categories a collection can span. */
 const LORE_CATEGORY_COUNT = BROWSABLE_CATEGORIES.length;
@@ -64,8 +37,11 @@ export interface PassportVaultSummary {
   credits: number;
   /** Collection breadth; null when the owner hides it. */
   focus: PassportVaultFocus | null;
-  /** Collection highlight: the most valuable live cards, highest market value first. */
-  topCards: CardInstance[];
+  /**
+   * Collection highlight: the holder's display (`displayedCopies`), their pinned public showcase, else their most
+   * valuable live cards. A player's display is shown off, so the faces show their art.
+   */
+  topCards: CardFaceData[];
 }
 
 /** Category breadth of a collection. Pure. */
@@ -88,61 +64,6 @@ export function toVaultFocus(
   return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
-/**
- * Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`); a Commons file
- * opens on Commons, a legacy one (stored with no title) found by its description URL or art.
- */
-export function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
-  const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
-  if (source === "commons") {
-    const descriptionUrl = isJsonObject(card.metadata) ? card.metadata.descriptionUrl : null;
-    return commonsCardPageUrl({
-      wikiArticleTitle: card.wikiArticleTitle,
-      artwork: card.artwork,
-      descriptionUrl: typeof descriptionUrl === "string" ? descriptionUrl : null,
-    });
-  }
-  return card.wikiArticleTitle ? wikiReaderPath(card.wikiArticleTitle, source) : null;
-}
-
-/** Shape an owned card for `CardDisplay`; JSON columns are passed through as stored. */
-function toCardInstance(o: OwnershipRow): CardInstance {
-  const c = o.cards;
-  return {
-    id: c.id,
-    title: c.title || "IxCard",
-    description: c.description,
-    artwork: c.artwork ?? "",
-    cardType: c.cardType,
-    category: c.category,
-    subcategory: c.subcategory,
-    artworkSource: null,
-    artworkCredit: null,
-    slug: c.slug,
-    rarity: c.rarity,
-    season: c.season,
-    nsCardId: c.nsCardId,
-    nsSeason: c.nsSeason,
-    wikiSource: c.wikiSource,
-    wikiArticleTitle: c.wikiArticleTitle,
-    wikiExcerpt: c.wikiExcerpt,
-    wikiUrl: wikiUrlOf(c),
-    countryId: null,
-    metadata: c.metadata as CardInstance["metadata"],
-    ownershipId: o.id,
-    isLocked: o.isLocked,
-    marketValue: c.marketValue,
-    totalSupply: c.totalSupply ?? 0,
-    level: o.level,
-    createdAt: o.createdAt,
-    updatedAt: o.updatedAt,
-    lastTrade: null,
-    serialNumber: o.serialNumber,
-    experience: o.experience,
-    acquiredAt: o.acquiredAt,
-  };
-}
-
 export async function resolvePassportVault(
   userId: string | null | undefined
 ): Promise<PassportVaultSummary> {
@@ -161,7 +82,7 @@ export async function resolvePassportVault(
 
   const live = { ownerId: userId, cards: { isRetired: false } };
   try {
-    const [vault, liveOwnerships, mostValuable] = await Promise.all([
+    const [vault, liveOwnerships, displayed] = await Promise.all([
       db.myVault.findUnique({
         where: { userId },
         select: { credits: true, vaultLevel: true, vaultXp: true },
@@ -170,12 +91,7 @@ export async function resolvePassportVault(
         where: live,
         select: { cards: { select: { marketValue: true, category: true } } },
       }),
-      db.cardOwnership.findMany({
-        where: live,
-        take: COLLECTION_HIGHLIGHT_SIZE,
-        orderBy: [{ cards: { marketValue: "desc" } }, { acquiredAt: "asc" }],
-        include: { cards: { select: CARD_SELECT } },
-      }),
+      displayedCopies(db, userId, COLLECTION_HIGHLIGHT_SIZE),
     ]);
 
     if (vault) {
@@ -186,7 +102,9 @@ export async function resolvePassportVault(
     summary.totalCards = liveOwnerships.length;
     summary.deckValue = deckValue(liveOwnerships);
     summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
-    summary.topCards = mostValuable.map(toCardInstance);
+    summary.topCards = displayed.copies.map(({ card, copy }) =>
+      toCardFace(card, { revealArt: true, copy })
+    );
   } catch (err) {
     console.warn("[PassportVault] Failed to resolve vault summary for user", userId, err);
   }

@@ -5,6 +5,7 @@ jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
   const utils = {
     cards: { listMyShowcases: invalidate(), getShowcase: invalidate(), getMyDisplay: invalidate() },
+    ixnayid: { getPassport: invalidate() },
   };
   const mutation = () => ({ useMutation: () => ({ mutate: jest.fn(), isPending: false }) });
   return {
