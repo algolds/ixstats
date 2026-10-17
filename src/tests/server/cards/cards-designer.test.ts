@@ -7,6 +7,7 @@ import {
   rewardAchievementOptions,
   saveSpecialCard,
 } from "~/server/modules/cards/cards.designer";
+import { CARD_VALUATION_DEFAULTS, computeCardValue } from "~/lib/cards/valuation";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
@@ -29,10 +30,11 @@ const duplicateKey = (field: string) =>
 /** A client whose `$executeRaw` takes the card's serial lock, as an edit does. */
 const mockDb = () => createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
 
-/** A stored card as the edit's pre-read selects it: by default an event card nobody holds. */
+/** A stored card as the edit's pre-read selects it: by default an epic event card nobody holds. */
 const stored = (card: Record<string, unknown>, copies = 0) => ({
   id: "card_1",
   cardType: "SPECIAL",
+  rarity: "EPIC",
   specialKind: "EVENT",
   isBound: false,
   rewardAchievementKey: null,
@@ -312,6 +314,78 @@ describe("saveSpecialCard", () => {
     await expect(
       saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event))
     ).rejects.toThrow("dup");
+  });
+});
+
+describe("saveSpecialCard's card value", () => {
+  /** A client whose transaction runs on its own client, so a read inside it is told apart from one outside. */
+  const transacting = () => {
+    const tx = mockDb();
+    const db = createMockPrisma({
+      $transaction: jest.fn((work: (client: typeof tx) => Promise<object>) => work(tx)),
+    });
+    return { db, tx };
+  };
+
+  it("values a new card as the revalue does, at its rarity's floor times the Special multiplier", async () => {
+    const { db, tx } = transacting();
+    tx.card.create.mockResolvedValue({ id: "card_new" });
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, rarity: "RARE" })
+    );
+    await saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event));
+    // The default config: rare 100 × 2, epic 1,000 × 2
+    expect(tx.card.create.mock.calls[0]![0].data).toMatchObject({
+      rarity: "RARE",
+      marketValue: 200,
+    });
+    expect(tx.card.create.mock.calls[1]![0].data).toMatchObject({
+      rarity: "EPIC",
+      marketValue: 2000,
+    });
+    expect(tx.card.create.mock.calls[0]![0].data.marketValue).toBe(
+      computeCardValue({ rarity: "RARE", cardType: "SPECIAL" }, CARD_VALUATION_DEFAULTS)
+    );
+  });
+
+  it("reads the valuation config inside the transaction, past the cache", async () => {
+    const { db, tx } = transacting();
+    tx.card.create.mockResolvedValue({ id: "card_new" });
+    tx.systemConfig.findMany.mockResolvedValue([
+      { key: "card_valuation_mult_special", value: "3" },
+    ]);
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, rarity: "RARE" })
+    );
+    expect(tx.card.create.mock.calls[0]![0].data.marketValue).toBe(300);
+    expect(db.systemConfig.findMany).not.toHaveBeenCalled();
+  });
+
+  it("revalues an edit that changes the rarity, and leaves the value of one that does not", async () => {
+    const { db, tx } = transacting();
+    tx.card.update.mockResolvedValue({ id: "card_1" });
+    tx.card.findUnique.mockResolvedValue(stored({}));
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, id: "card_1", rarity: "LEGENDARY" })
+    );
+    expect(tx.card.update.mock.calls[0]![0].data).toMatchObject({
+      rarity: "LEGENDARY",
+      marketValue: 6000,
+    });
+
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, id: "card_1", title: "Renamed gala" })
+    );
+    expect(tx.card.update.mock.calls[1]![0].data).not.toHaveProperty("marketValue");
+    expect(tx.systemConfig.findMany).toHaveBeenCalledTimes(1);
   });
 });
 

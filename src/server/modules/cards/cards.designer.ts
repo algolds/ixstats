@@ -12,6 +12,7 @@ import { CardRarity } from "~/lib/cards/enums";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
+import { computeCardValue, readValuationConfig } from "~/lib/cards/valuation";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 import {
@@ -98,6 +99,7 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
     select: {
       id: true,
       cardType: true,
+      rarity: true,
       specialKind: true,
       isBound: true,
       rewardAchievementKey: true,
@@ -140,20 +142,32 @@ function assertRewardAchievement(key: string | null, storedKey: string | null) {
   }
 }
 
-/** An edit's write. New art takes its licence row and credit with it, as in the Library. */
+/**
+ * A Special card's value at a rarity, as the revalue sets it (its floor times the Special multiplier), under the
+ * config as this transaction reads it.
+ */
+async function specialCardValueTx(tx: Prisma.TransactionClient, rarity: CardRarity) {
+  return computeCardValue({ rarity, cardType: "SPECIAL" }, await readValuationConfig(tx));
+}
+
+/**
+ * An edit's write. New art takes its licence row and credit with it, and a new rarity its value, as in the Library.
+ */
 async function updateSpecialCardTx(
   tx: Prisma.TransactionClient,
   card: EditedSpecialCard,
   data: Prisma.CardUncheckedUpdateInput,
-  artwork: string | null
+  input: Pick<SpecialCardInput, "artwork" | "rarity">
 ) {
-  const artChanged = artwork !== card.artwork;
+  const artChanged = input.artwork !== card.artwork;
+  const revalued =
+    input.rarity !== card.rarity ? { marketValue: await specialCardValueTx(tx, input.rarity) } : {};
   const updated = await tx.card.update({
     where: { id: card.id },
-    data: artChanged ? { ...data, artworkCredit: null } : data,
+    data: { ...data, ...revalued, ...(artChanged ? { artworkCredit: null } : {}) },
     select: { id: true },
   });
-  if (artChanged) await artLicenceFollowsTx(tx, card, artwork, "Designer");
+  if (artChanged) await artLicenceFollowsTx(tx, card, input.artwork, "Designer");
   return updated;
 }
 
@@ -180,10 +194,11 @@ export async function saveSpecialCard(
       if (existing) assertEditable(existing, input);
       assertRewardAchievement(input.rewardAchievementKey, existing?.rewardAchievementKey ?? null);
       const card = existing
-        ? await updateSpecialCardTx(tx, existing, data, input.artwork)
+        ? await updateSpecialCardTx(tx, existing, data, input)
         : await tx.card.create({
             data: {
               ...data,
+              marketValue: await specialCardValueTx(tx, input.rarity),
               cardType: "SPECIAL",
               category: "SPECIAL",
               season: await getCurrentIxCardSeason(tx),
