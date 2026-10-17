@@ -353,6 +353,29 @@ describe("rarity tables and daily imports", () => {
     });
   });
 
+  it("refuses a daily import switched on with no cards a day, and saves one switched off at 0", async () => {
+    const db = createMockPrisma();
+    await expect(
+      saveDailyImport(db as never, actor, {
+        source: "althistory",
+        setting: { enabled: true, count: 0 },
+      })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Set how many cards a day, or switch the daily import off.",
+    });
+    expect(db.systemConfig.upsert).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+
+    await saveDailyImport(db as never, actor, {
+      source: "althistory",
+      setting: { enabled: false, count: 0 },
+    });
+    expect(upserts(db)).toEqual([
+      ["card_daily_import_althistory", JSON.stringify({ enabled: false, count: 0 })],
+    ]);
+  });
+
   it("refuses a daily count over the cap with a sentence naming the wiki", async () => {
     const db = createMockPrisma();
     await expect(

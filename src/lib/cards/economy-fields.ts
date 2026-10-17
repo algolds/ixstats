@@ -144,3 +144,18 @@ export const MAX_DAILY_IMPORT = 100;
 export function dailyImportCountField(wiki: string): EconomyNumberField {
   return { key: "count", label: `${wiki} cards a day`, min: 0, max: MAX_DAILY_IMPORT, whole: true };
 }
+
+/**
+ * Why a wiki's daily import cannot be saved, as a sentence; null when it can. Switched on, it needs at least one card
+ * a day, since the nightly run skips a wiki with none.
+ */
+export function dailyImportProblem(
+  wiki: string,
+  setting: { enabled: boolean; count: number }
+): string | null {
+  const countProblem = numberFieldProblem(dailyImportCountField(wiki), setting.count);
+  if (countProblem) return countProblem;
+  return setting.enabled && setting.count === 0
+    ? "Set how many cards a day, or switch the daily import off."
+    : null;
+}
