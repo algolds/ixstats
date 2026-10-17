@@ -68,7 +68,7 @@ export function PlayerCardsSheet({
   return (
     <Sheet open={player !== null} onOpenChange={onOpenChange}>
       <SheetContent size="wide" className="flex flex-col overflow-hidden">
-        <SheetHeader>
+        <SheetHeader className="pr-8">
           <SheetTitle>{player ? `${player.displayName}'s cards` : "Cards"}</SheetTitle>
           <SheetDescription>{data ? capacityLine(data) : "Loading"}</SheetDescription>
         </SheetHeader>

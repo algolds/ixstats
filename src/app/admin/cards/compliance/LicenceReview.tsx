@@ -134,7 +134,7 @@ export function LicenceReview() {
                 <TableHead>Card</TableHead>
                 <TableHead>File</TableHead>
                 <TableHead>Licence</TableHead>
-                <TableHead>
+                <TableHead pinned>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -154,7 +154,7 @@ export function LicenceReview() {
                       <FileCell row={row} />
                     </TableCell>
                     <TableCell>{row.licence ?? "–"}</TableCell>
-                    <TableCell className="space-x-1 text-right whitespace-nowrap">
+                    <TableCell pinned className="space-x-1 text-right whitespace-nowrap">
                       <Button size="xs" variant="secondary" onClick={() => mark(row, "OPEN")}>
                         Mark open
                       </Button>

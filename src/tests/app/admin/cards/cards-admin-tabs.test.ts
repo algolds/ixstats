@@ -20,6 +20,7 @@ describe("cards admin tabs", () => {
     [null, null, "overview"],
     ["library", null, "library"],
     ["explorer", null, "library"],
+    ["import", null, "imports"],
     ["lore", null, "imports"],
     ["sync", null, "imports"],
     ["takedowns", null, "compliance"],

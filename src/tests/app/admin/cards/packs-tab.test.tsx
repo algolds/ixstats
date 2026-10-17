@@ -130,6 +130,18 @@ describe("PacksTab", () => {
     );
   });
 
+  it("keeps the editor's title clear of the sheet's close button, and pins each row's Edit", () => {
+    serve({ data: [booster] });
+    render(<PacksTab />);
+    expect(
+      screen.getByRole("button", { name: "Edit IIWiki booster" }).closest("td")
+    ).toHaveAttribute("data-pinned");
+    openEditor();
+    const title = screen.getByRole("heading", { name: "Edit IIWiki booster" });
+    // The close button sits 16px in and is 28px wide; the sheet's 24px padding plus pr-8 clears it.
+    expect(title.parentElement?.className).toContain("pr-8");
+  });
+
   it("blocks Save and the preview while the odds do not add up to 100%", () => {
     serve({ data: [booster] });
     render(<PacksTab />);

@@ -9,7 +9,7 @@ import {
   cardSourceLabel,
   type CardArticleSource,
 } from "~/lib/cards/card-sources";
-import { dailyImportCountField, numberFieldProblem } from "~/lib/cards/economy-fields";
+import { dailyImportCountField, dailyImportProblem } from "~/lib/cards/economy-fields";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -37,7 +37,7 @@ function SourceRow({ source, initial }: { source: CardArticleSource; initial: Se
   const enabled = draft.enabled ?? initial.enabled;
   const rawCount = draft.count ?? String(initial.count);
   const count = fieldNumber(rawCount);
-  const problem = numberFieldProblem(field, count);
+  const problem = dailyImportProblem(label, { enabled, count });
   const changed = enabled !== initial.enabled || count !== initial.count;
   const problemId = `daily-${source}-problem`;
 

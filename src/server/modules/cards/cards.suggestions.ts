@@ -9,6 +9,7 @@ import {
   isArticleTitle,
   type CardArticleSource,
 } from "~/lib/cards/card-sources";
+import { titleKey } from "~/lib/wiki-os/core/title";
 import { cardedTitleKeys, resolveImportRealm } from "./cards.importer";
 
 export const SUGGESTIONS_PER_DAY = 3;
@@ -28,6 +29,28 @@ function suggestedTitle(source: CardArticleSource, raw: string): string {
   return title;
 }
 
+/** Whether every Lore card of the article was turned down in review (cardedTitleKeys' match, by title). */
+async function turnedDown(
+  db: PrismaClient,
+  source: CardArticleSource,
+  title: string
+): Promise<boolean> {
+  const cards = await db.$queryRaw<Array<{ reviewState: string }>>`
+    SELECT "reviewState"::text AS "reviewState" FROM "cards"
+    WHERE COALESCE("wikiSource", 'ixwiki') = ${source} AND "cardType" = 'LORE'
+      AND lower("wikiArticleTitle") = ${titleKey(title, source)}`;
+  return cards.length > 0 && cards.every((card) => card.reviewState === "REJECTED");
+}
+
+/** Refuses an article that has a card: approved, or waiting in review, or turned down in it. */
+async function refuseCarded(db: PrismaClient, source: CardArticleSource, title: string) {
+  if ((await cardedTitleKeys(db, source, [title])).size === 0) return;
+  const message = (await turnedDown(db, source, title))
+    ? "This article was reviewed and turned down."
+    : "This article already has a card";
+  throw new TRPCError({ code: "CONFLICT", message });
+}
+
 export async function suggestCard(
   db: PrismaClient,
   userId: string,
@@ -35,9 +58,7 @@ export async function suggestCard(
   now = new Date()
 ): Promise<{ id: string }> {
   const title = suggestedTitle(input.source, input.title);
-  if ((await cardedTitleKeys(db, input.source, [title])).size > 0) {
-    throw new TRPCError({ code: "CONFLICT", message: "This article already has a card" });
-  }
+  await refuseCarded(db, input.source, title);
   const home = await resolveImportRealm(db, input.source, title);
   if (home.nationPage) {
     throw new TRPCError({

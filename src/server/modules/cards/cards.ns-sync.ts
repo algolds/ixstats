@@ -57,8 +57,9 @@ async function requireSync(db: PrismaClient, id: string, kind?: string): Promise
   return log;
 }
 
-/** A sync that may still be worked: running, paused, or interrupted by a restart (left running). */
-const isOpen = (log: SyncLog) => log.status === "IN_PROGRESS" || log.status === "PAUSED";
+/** The statuses of a sync that may still be worked: running, paused, or interrupted by a restart (left running). */
+const OPEN_STATUSES: readonly string[] = ["IN_PROGRESS", "PAUSED"];
+const isOpen = (log: SyncLog) => OPEN_STATUSES.includes(log.status);
 
 /** A running sync whose run has written nothing for this long has lost it (a restart, or a crash). */
 const STALL_MS = 10 * 60_000;
@@ -117,13 +118,16 @@ function createSyncLog(
 const regionSyncType = (region: string) =>
   `${REGION_SYNC}${region.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
 
-/** Runs a sync's work after the request returns; a run that breaks marks its SyncLog failed instead of running. */
+/**
+ * Runs a sync's work after the request returns; a run that breaks marks its SyncLog failed instead of running. The
+ * write lands only while the sync is still open, so it never writes over a stop an admin has already recorded.
+ */
 function runInBackground<T>(db: PrismaClient, syncLogId: string, work: Promise<T>, label: string) {
   work.catch(async (error) => {
     console.error(`[NS Import] ${label} failed:`, error);
     await db.syncLog
-      .update({
-        where: { id: syncLogId },
+      .updateMany({
+        where: { id: syncLogId, status: { in: [...OPEN_STATUSES] } },
         data: {
           status: "FAILED",
           errorMessage: error instanceof Error ? error.message : String(error),

@@ -16,7 +16,7 @@ import {
   BONUS_SWITCH_FIELD,
   CARD_VALUE_FIELDS,
   MARKET_FIELDS,
-  dailyImportCountField,
+  dailyImportProblem,
   floorsProblem,
   lorewardPayoutField,
   numberFieldProblem,
@@ -258,7 +258,7 @@ export async function saveDailyImport(
   input: { source: CardArticleSource; setting: DailyImportSetting }
 ): Promise<void> {
   const { source, setting } = input;
-  const problem = numberFieldProblem(dailyImportCountField(cardSourceLabel(source)), setting.count);
+  const problem = dailyImportProblem(cardSourceLabel(source), setting);
   if (problem) refuse(problem);
   const state = setting.enabled ? `on, ${setting.count} a day` : "off";
   await saveAudited(db, actor, `Daily import: ${source} ${state}`, (tx) =>

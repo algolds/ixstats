@@ -197,6 +197,12 @@ async function beatHeartbeat(db: PrismaClient, syncLogId: string): Promise<void>
 }
 
 /**
+ * A run's final status write lands only while its sync is still open (running or paused), so it never writes over a
+ * stop an admin has already recorded.
+ */
+const STILL_OPEN = { in: ["IN_PROGRESS", "PAUSED"] } satisfies Prisma.StringFilter;
+
+/**
  * Process cards for one or more regions in the background, sourced from the
  * official Trading Cards Daily Dumps. Saves progress to SyncLog after every
  * card so it can be resumed if the server restarts. Seasons are processed and
@@ -222,8 +228,8 @@ export async function processRegionCardsFromDump(
       console.warn(
         `[NS Import] No cards matched regions ${regionNames.join(", ")} in seasons ${seasons.join(",")}`
       );
-      await db.syncLog.update({
-        where: { id: syncLogId },
+      await db.syncLog.updateMany({
+        where: { id: syncLogId, status: STILL_OPEN },
         data: {
           status: "FAILED",
           errorMessage: "No cards matched the requested region(s) in the card dumps.",
@@ -300,8 +306,8 @@ export async function processRegionCardsFromDump(
     }
 
     // Final update — mark complete
-    await db.syncLog.update({
-      where: { id: syncLogId },
+    await db.syncLog.updateMany({
+      where: { id: syncLogId, status: STILL_OPEN },
       data: {
         status: errors.length > matches.length / 2 ? "FAILED" : "SUCCESS",
         itemsProcessed: matches.length,

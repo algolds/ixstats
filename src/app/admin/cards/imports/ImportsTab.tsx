@@ -16,9 +16,12 @@ const SECTION_OPTIONS: ReadonlyArray<{ value: Section; label: string }> = [
   { value: "nationstates", label: "NationStates" },
 ];
 
-/** The `?subtab=` values, and the `?tab=` values of links with no subtab, that open NationStates. */
+/**
+ * The `?subtab=` values, and the `?tab=` values of links with no subtab, that open NationStates. The old panel's
+ * `?tab=import` opened its NationStates section, so it still does.
+ */
 const NATIONSTATES_SUBTABS: ReadonlySet<string> = new Set(["nationstates", "ns", "import", "sync"]);
-const NATIONSTATES_TABS: ReadonlySet<string> = new Set(["ns", "sync"]);
+const NATIONSTATES_TABS: ReadonlySet<string> = new Set(["ns", "sync", "import"]);
 
 /** The section the address names; anything else (the old wiki and Commons subtabs too) is the wiki importer. */
 function sectionFromAddress(): Section {

@@ -66,7 +66,7 @@ function CopyRow({ copy, onRevoke }: { copy: Copy; onRevoke: (pending: Pending) 
       <TableCell className="text-right tabular-nums">
         {new Date(copy.acquiredAt).toLocaleDateString()}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell pinned className="text-right">
         {copy.cards.cardType !== CardType.TROPHY && (
           <Button
             size="xs"
@@ -178,7 +178,7 @@ export function CopiesSection({
                   <TableHead>Card</TableHead>
                   <TableHead>Rarity</TableHead>
                   <TableHead className="text-right">Acquired</TableHead>
-                  <TableHead>
+                  <TableHead pinned>
                     <span className="sr-only">Revoke</span>
                   </TableHead>
                 </TableRow>

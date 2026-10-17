@@ -1,6 +1,8 @@
 /** The cards admin Overview (cards refresh spec §2.4): counts, what waits on an admin, and a card-only feed. */
-import type { CardImportJob, PrismaClient, SyncLog } from "@prisma/client";
+import type { AuditLog, CardImportJob, Prisma, PrismaClient, SyncLog } from "@prisma/client";
 import { CardRarity } from "~/lib/cards/enums";
+import { isJsonObject } from "~/lib/cards/ns-facts";
+import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 import { CARD_FEED_ACTIONS, type CardAuditAction } from "./cards.audit";
 import { GRANTABLE_CARDS } from "./cards.tools";
 
@@ -79,10 +81,15 @@ export interface ActivityItem {
   at: Date;
   kind: "audit" | "import" | "sync";
   title: string;
+  /** The card or player the action was on, by name, when the detail does not already name them. */
+  subject: string | null;
   detail: string | null;
-  actor: string | null;
+  /** Who acted, by name: `SYSTEM_ACTOR` for a cron, a flag owner, or a sync no admin is recorded as starting. */
+  actor: string;
   ok: boolean;
 }
+
+export const SYSTEM_ACTOR = "System";
 
 const AUDIT_TITLES: Record<CardAuditAction, string> = {
   CARD_REVIEW: "Cards reviewed",
@@ -115,14 +122,102 @@ function humanise(action: string): string {
 const auditTitle = (action: string) =>
   (AUDIT_TITLES as Readonly<Record<string, string>>)[action] ?? humanise(action);
 
-function jobItem(job: CardImportJob): ActivityItem {
+/** A player's DB id (a cuid), as the audit rows' details name players. */
+const USER_ID = /\bc[a-z0-9]{24}\b/g;
+
+const present = (values: ReadonlyArray<string | null | undefined>): string[] => [
+  ...new Set(values.filter((value): value is string => Boolean(value))),
+];
+
+/** The admin who started a NationStates sync, by DB id, when its metadata records one. */
+function startedBy(log: SyncLog): string | null {
+  const meta = log.metadata;
+  return isJsonObject(meta) && typeof meta.startedBy === "string" ? meta.startedBy : null;
+}
+
+/** The names the feed shows for the ids its rows hold. */
+interface FeedNames {
+  /** Someone by Clerk id (the audit rows' actor); `SYSTEM_ACTOR` for none. */
+  byClerkId: (clerkId: string | null) => string;
+  /** Someone by DB id (a job's or sync's starter); `SYSTEM_ACTOR` for none. */
+  byDbId: (dbId: string | null) => string;
+  /** A player by DB id; null for an id that is no player's. */
+  player: (dbId: string | null) => string | null;
+  /** A card's title by id; null for an id that is no card's. */
+  card: (id: string | null) => string | null;
+}
+
+/**
+ * Every name the feed shows, in the same few reads however many rows it has: the players and cards the rows name by
+ * id, then each one's display name.
+ */
+async function feedNames(
+  db: PrismaClient,
+  audits: readonly AuditLog[],
+  jobs: readonly CardImportJob[],
+  syncs: readonly SyncLog[]
+): Promise<FeedNames> {
+  const targets = present(audits.map((row) => row.target));
+  const userIds = present([
+    ...targets,
+    ...audits.flatMap((row) => row.details?.match(USER_ID) ?? []),
+    ...jobs.map((job) => job.requestedBy),
+    ...syncs.map(startedBy),
+  ]);
+  const [users, cards] = await Promise.all([
+    userIds.length > 0
+      ? db.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, clerkUserId: true },
+        })
+      : [],
+    targets.length > 0
+      ? db.card.findMany({ where: { id: { in: targets } }, select: { id: true, title: true } })
+      : [],
+  ]);
+  const clerkIds = new Map(users.map((user) => [user.id, user.clerkUserId]));
+  const titles = new Map(cards.map((card) => [card.id, card.title]));
+  const names = await resolveDisplayNames(db, [
+    ...present(audits.map((row) => row.userId)),
+    ...clerkIds.values(),
+  ]);
+  const nameOf = (clerkId: string) => names.get(clerkId) ?? UNKNOWN_DISPLAY_NAME;
+  const player = (dbId: string | null) => {
+    const clerkId = dbId ? clerkIds.get(dbId) : undefined;
+    return clerkId ? nameOf(clerkId) : null;
+  };
+  return {
+    byClerkId: (clerkId) => (clerkId ? nameOf(clerkId) : SYSTEM_ACTOR),
+    byDbId: (dbId) => (dbId ? (player(dbId) ?? UNKNOWN_DISPLAY_NAME) : SYSTEM_ACTOR),
+    player,
+    card: (id) => (id ? (titles.get(id) ?? null) : null),
+  };
+}
+
+function auditItem(row: AuditLog, names: FeedNames): ActivityItem {
+  const detail = row.details?.replace(USER_ID, (id) => names.player(id) ?? id) ?? null;
+  const subject = names.card(row.target) ?? names.player(row.target);
+  return {
+    id: `audit-${row.id}`,
+    at: row.timestamp,
+    kind: "audit",
+    title: auditTitle(row.action),
+    subject: subject && !detail?.includes(subject) ? subject : null,
+    detail,
+    actor: names.byClerkId(row.userId),
+    ok: row.success,
+  };
+}
+
+function jobItem(job: CardImportJob, names: FeedNames): ActivityItem {
   return {
     id: `import-${job.id}`,
     at: job.finishedAt ?? job.startedAt ?? job.createdAt,
     kind: "import",
     title: job.label,
+    subject: null,
     detail: `${job.staged} staged, ${job.skipped} skipped, ${job.blocked} blocked, ${job.failed} failed of ${job.total}`,
-    actor: job.requestedBy,
+    actor: names.byDbId(job.requestedBy),
     ok: job.status !== "FAILED",
   };
 }
@@ -138,14 +233,15 @@ function syncTitle(syncType: string): string {
     .toLowerCase()}`;
 }
 
-function syncItem(log: SyncLog): ActivityItem {
+function syncItem(log: SyncLog, names: FeedNames): ActivityItem {
   return {
     id: `sync-${log.id}`,
     at: log.completedAt ?? log.startedAt,
     kind: "sync",
     title: syncTitle(log.syncType),
+    subject: null,
     detail: `${log.cardsCreated ?? 0} new, ${log.cardsUpdated ?? 0} updated`,
-    actor: null,
+    actor: names.byDbId(startedBy(log)),
     ok: log.status !== "FAILED",
   };
 }
@@ -164,16 +260,12 @@ export async function cardsActivity(db: PrismaClient, limit = 50): Promise<Activ
       take: limit,
     }),
   ]);
-  const audited: ActivityItem[] = audits.map((row) => ({
-    id: `audit-${row.id}`,
-    at: row.timestamp,
-    kind: "audit",
-    title: auditTitle(row.action),
-    detail: row.details,
-    actor: row.userId,
-    ok: row.success,
-  }));
-  return [...audited, ...jobs.map(jobItem), ...syncs.map(syncItem)]
+  const names = await feedNames(db, audits, jobs, syncs);
+  return [
+    ...audits.map((row) => auditItem(row, names)),
+    ...jobs.map((job) => jobItem(job, names)),
+    ...syncs.map((log) => syncItem(log, names)),
+  ]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, limit);
 }

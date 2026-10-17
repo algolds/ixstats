@@ -120,6 +120,22 @@ it("saves a bonus, refuses a rarity table that does not rise, and switches a wik
   expect(mutations.saveRarityThresholds).not.toHaveBeenCalled();
 });
 
+it("says a daily import switched on needs a count, and keeps its Save off until it has one", () => {
+  serve({ data });
+  render(<EconomyTab />);
+  const problem = "Set how many cards a day, or switch the daily import off.";
+  expect(screen.queryByText(problem)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("switch", { name: "Import from AltHistory Wiki daily" }));
+  expect(screen.getByText(problem)).toBeInTheDocument();
+  expect(screen.getByLabelText("AltHistory Wiki cards a day")).toHaveAccessibleDescription(problem);
+  expect(button("Save AltHistory Wiki daily import")).toBeDisabled();
+
+  type("AltHistory Wiki cards a day", "5");
+  expect(screen.queryByText(problem)).not.toBeInTheDocument();
+  expect(button("Save AltHistory Wiki daily import")).toBeEnabled();
+});
+
 it("keeps each Save off until something in its section changes", () => {
   serve({ data });
   render(<EconomyTab />);

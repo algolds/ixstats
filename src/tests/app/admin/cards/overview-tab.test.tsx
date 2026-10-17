@@ -18,9 +18,10 @@ const activity = [
     id: "audit-1",
     at: new Date("2026-10-28T10:00:00Z"),
     kind: "audit",
-    title: "Card granted",
-    detail: "Granted Elm #3",
-    actor: "clerk_admin",
+    title: "Rarity overridden",
+    subject: "Ahkmala",
+    detail: "Rarity COMMON → RARE: a banner",
+    actor: "Admin Isles",
     ok: true,
   },
   {
@@ -28,8 +29,9 @@ const activity = [
     at: new Date("2026-10-28T08:00:00Z"),
     kind: "sync",
     title: "NationStates region sync: lazarus",
+    subject: null,
     detail: null,
-    actor: null,
+    actor: "System",
     ok: false,
   },
 ];
@@ -59,8 +61,18 @@ describe("OverviewTab", () => {
     expect(screen.getByText("NationStates")).toBeInTheDocument();
     expect(screen.getByText("Ultra rare")).toBeInTheDocument();
     expect(screen.getByText("IIWiki")).toBeInTheDocument();
-    expect(screen.getByText("Card granted")).toBeInTheDocument();
+    expect(screen.getByText("Rarity overridden: Ahkmala")).toBeInTheDocument();
     expect(screen.getByText("Failed")).toBeInTheDocument();
+  });
+
+  it("shows who acted, and each detail in the admin's labels", () => {
+    serve(query(summary), query(activity));
+    render(<OverviewTab />);
+    expect(screen.getByText("Rarity Common → Rare: a banner")).toBeInTheDocument();
+    expect(screen.queryByText(/COMMON/)).not.toBeInTheDocument();
+    expect(screen.getByText("Admin Isles")).toBeInTheDocument();
+    expect(screen.getByText("System")).toBeInTheDocument();
+    expect(screen.getByText("NationStates region sync: lazarus")).toBeInTheDocument();
   });
 
   it("dates the feed relatively, one separated row per item", () => {

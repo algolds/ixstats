@@ -86,7 +86,7 @@ function LibraryTable({ rows, onEdit }: { rows: LibraryRow[]; onEdit: (row: Libr
           <TableHead>Realm</TableHead>
           <TableHead>Rarity</TableHead>
           <TableHead className="text-right">Copies</TableHead>
-          <TableHead>
+          <TableHead pinned>
             <span className="sr-only">Edit</span>
           </TableHead>
         </TableRow>
@@ -108,7 +108,7 @@ function LibraryTable({ rows, onEdit }: { rows: LibraryRow[]; onEdit: (row: Libr
             <TableCell className="text-right tabular-nums">
               {row._count.CardOwnership.toLocaleString()}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell pinned className="text-right">
               <Button
                 size="sm"
                 variant="ghost"

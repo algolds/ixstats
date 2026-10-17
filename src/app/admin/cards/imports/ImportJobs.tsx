@@ -80,7 +80,7 @@ function JobItems({ job, onClose }: { job: Job | null; onClose: () => void }) {
   return (
     <Sheet open={job !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent size="wide">
-        <SheetHeader>
+        <SheetHeader className="pr-8">
           <SheetTitle>{job?.label}</SheetTitle>
           <SheetDescription>
             {job ? sourceName(job.source) : ""}
@@ -196,7 +196,7 @@ export function ImportJobs() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Progress</TableHead>
                 <TableHead>Results</TableHead>
-                <TableHead>
+                <TableHead pinned>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -219,7 +219,7 @@ export function ImportJobs() {
                     {job.staged} staged · {job.skipped} skipped · {job.blocked} blocked ·{" "}
                     {job.failed} failed
                   </TableCell>
-                  <TableCell className="space-x-1 text-right whitespace-nowrap">
+                  <TableCell pinned className="space-x-1 text-right whitespace-nowrap">
                     <JobActions
                       job={job}
                       onView={() => setViewed(job)}

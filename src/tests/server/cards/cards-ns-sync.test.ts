@@ -131,17 +131,40 @@ describe("startRegionSync", () => {
     regionSync.mockRejectedValueOnce(new Error("connection reset"));
     await startRegionSync(db as never, ADMIN, { regions: ["Lazarus"] });
     await settle();
-    expect(db.syncLog.update).toHaveBeenCalledWith({
-      where: { id: "log_a" },
+    expect(db.syncLog.updateMany).toHaveBeenCalledWith({
+      where: { id: "log_a", status: { in: ["IN_PROGRESS", "PAUSED"] } },
       data: { status: "FAILED", errorMessage: "connection reset", completedAt: expect.any(Date) },
     });
+    expect(db.syncLog.update).not.toHaveBeenCalled();
+  });
+
+  it("keeps an admin's stop when the run breaks after it", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = createMockPrisma();
+    db.syncLog.create.mockResolvedValue({ id: "log_a" });
+    // The SyncLog as Stop left it. An `update` always lands; an `updateMany` only while the status is one it names.
+    const log = { status: "FAILED", errorMessage: "Stopped by an admin" };
+    db.syncLog.update.mockImplementation(async ({ data }: { data: typeof log }) =>
+      Object.assign(log, data)
+    );
+    db.syncLog.updateMany.mockImplementation(
+      async ({ where, data }: { where: { status: { in: string[] } }; data: typeof log }) => {
+        if (!where.status.in.includes(log.status)) return { count: 0 };
+        Object.assign(log, data);
+        return { count: 1 };
+      }
+    );
+    regionSync.mockRejectedValueOnce(new Error("connection reset"));
+    await startRegionSync(db as never, ADMIN, { regions: ["Lazarus"] });
+    await settle();
+    expect(log).toEqual({ status: "FAILED", errorMessage: "Stopped by an admin" });
   });
 
   it("logs, rather than leaves unhandled, a failure it cannot record", async () => {
     const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const db = createMockPrisma();
     db.syncLog.create.mockResolvedValue({ id: "log_a" });
-    db.syncLog.update.mockRejectedValue(new Error("db down"));
+    db.syncLog.updateMany.mockRejectedValue(new Error("db down"));
     regionSync.mockRejectedValueOnce(new Error("connection reset"));
     await startRegionSync(db as never, ADMIN, { regions: ["Lazarus"] });
     await settle();
@@ -543,8 +566,8 @@ describe("startCteFilter", () => {
     cteFilter.mockRejectedValueOnce(new Error("HTTP 503: Service Unavailable"));
     await startCteFilter(db as never, ADMIN);
     await settle();
-    expect(db.syncLog.update).toHaveBeenCalledWith({
-      where: { id: "cte_log" },
+    expect(db.syncLog.updateMany).toHaveBeenCalledWith({
+      where: { id: "cte_log", status: { in: ["IN_PROGRESS", "PAUSED"] } },
       data: {
         status: "FAILED",
         errorMessage: "HTTP 503: Service Unavailable",

@@ -139,7 +139,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
         aria-describedby={undefined}
         className="flex flex-col overflow-hidden"
       >
-        <SheetHeader>
+        <SheetHeader className="pr-8">
           <SheetTitle>{pack ? `Edit ${pack.name}` : "New pack"}</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto py-4 pr-1">
