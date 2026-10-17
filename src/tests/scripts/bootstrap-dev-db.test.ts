@@ -5,6 +5,7 @@ import {
   ATLAS_RA_SQL,
   ATLAS_STUDIO_SQL,
   bootstrapRefusal,
+  CARDS_ADMIN_SQL,
   CARDS_BACKFILL_SCRIPT,
   CARDS_CONSTRAINTS_SQL,
   CARDS_FOUNDATIONS_SQL,
@@ -89,6 +90,70 @@ describe("the SQL a fresh database needs besides db push", () => {
     expect(backfill).toBeGreaterThan(additive);
     expect(constraints).toBeGreaterThan(backfill);
     expect(seed).toBeGreaterThan(constraints);
+  });
+
+  it("runs the cards admin SQL after Phase 1's constraints SQL, before the seed", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    // Prettier wraps the Phase 1 calls one argument per line, so match across the line break.
+    const constraints = source.search(/"--file",\s*CARDS_CONSTRAINTS_SQL/);
+    const admin = source.search(/"--file",\s*CARDS_ADMIN_SQL/);
+    const seed = source.indexOf("scripts/setup/seed-db.ts");
+    expect(CARDS_ADMIN_SQL).toContain("20261028120000_cards_admin");
+    expect(constraints).toBeGreaterThan(0);
+    expect(admin).toBeGreaterThan(constraints);
+    expect(seed).toBeGreaterThan(admin);
+  });
+
+  it("the cards admin SQL is idempotent and creates the import, licence and takedown tables", () => {
+    const sql = readFileSync(CARDS_ADMIN_SQL, "utf8");
+    for (const table of [
+      "card_art_licences",
+      "card_import_jobs",
+      "card_import_items",
+      "card_takedowns",
+    ]) {
+      expect(sql).toContain(`CREATE TABLE IF NOT EXISTS "${table}"`);
+    }
+    expect(sql).toContain(
+      `ADD COLUMN IF NOT EXISTS "reviewState" "CardReviewState" NOT NULL DEFAULT 'APPROVED'`
+    );
+    expect(sql).toContain(`ALTER COLUMN "ownershipId" DROP NOT NULL`);
+    expect(sql).not.toMatch(/^\s*CREATE TYPE/m); // every type is created inside a duplicate_object guard
+  });
+
+  it("the cards admin SQL keeps a transfer event once its copy is gone, with the card and serial", () => {
+    const sql = readFileSync(CARDS_ADMIN_SQL, "utf8");
+    expect(sql).toContain(
+      `ALTER TABLE "card_transfer_events" ADD COLUMN IF NOT EXISTS "cardId" TEXT;`
+    );
+    expect(sql).toContain(
+      `ALTER TABLE "card_transfer_events" ADD COLUMN IF NOT EXISTS "serialNumber" INTEGER;`
+    );
+    expect(sql).toContain(`ALTER COLUMN "toUserId" DROP NOT NULL`);
+    // The cascading FK is swapped for SET NULL once; a re-run finds SET NULL and leaves it.
+    expect(sql).toContain(
+      `conname = 'card_transfer_events_ownershipId_fkey' AND confdeltype = 'c'`
+    );
+    expect(sql).toContain(`REFERENCES "CardOwnership"("id") ON DELETE SET NULL`);
+  });
+
+  it("the cards admin SQL marks the legacy Commons flag cards as Commons, and no IxWiki article", () => {
+    const sql = readFileSync(CARDS_ADMIN_SQL, "utf8");
+    const backfill = sql.slice(sql.indexOf(`UPDATE "cards" SET "wikiSource" = 'commons'`));
+    const statement = backfill.slice(0, backfill.indexOf(";"));
+    expect(statement).toContain(`"cardType" = 'LORE'`);
+    expect(statement).toContain(`"wikiSource" IS NULL`);
+    // An IxWiki article (a title, no source) may show a Commons image; only the titleless flag cards move.
+    expect(statement).toContain(`"wikiArticleTitle" IS NULL`);
+    const commonsUpload = String.raw`'^(https?:)?//upload\.wikimedia\.org/wikipedia/commons/'`;
+    expect(statement).toContain(`"artwork" ~* ${commonsUpload}`);
+    expect(statement).toContain(`"metadata"->>'descriptionUrl' ~* ${commonsUpload}`);
+  });
+
+  it("the cards admin SQL is one transaction, so a failure part-way changes nothing", () => {
+    const sql = readFileSync(CARDS_ADMIN_SQL, "utf8");
+    expect(sql).toMatch(/^BEGIN;$/m);
+    expect(sql.trimEnd().endsWith("COMMIT;")).toBe(true);
   });
 
   it("the Atlas Studio SQL is the idempotent one that creates the preset tables and drops the dead models", () => {

@@ -67,4 +67,17 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(constraints).toBeGreaterThan(backfill);
     expect(push).toBeGreaterThan(constraints);
   });
+
+  it("runs the cards admin SQL right after the cards constraints, before the push, and stops the deploy if it fails", () => {
+    const constraints = script.indexOf(
+      "prisma/migrations/20261027120001_cards_foundations_constraints/migration.sql || exit 1"
+    );
+    const admin = script.indexOf(
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_cards_admin/migration.sql || exit 1"
+    );
+    const push = script.indexOf("bun run db:push:force");
+    expect(constraints).toBeGreaterThan(0);
+    expect(admin).toBeGreaterThan(constraints);
+    expect(push).toBeGreaterThan(admin);
+  });
 });

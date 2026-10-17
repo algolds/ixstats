@@ -417,3 +417,59 @@ enum ArtworkSource {
   FLAG
 }
 
+/// Where a card stands in review. Imports land PENDING; only APPROVED cards enter packs, the daily card and Explore.
+enum CardReviewState {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// What a Special card is for: an event, or the reward for unlocking one achievement.
+enum SpecialCardKind {
+  EVENT
+  ACHIEVEMENT_REWARD
+}
+
+/// What a card art's licence allows. RESTRICTED is non-commercial or no-derivatives; UNKNOWN means none was found.
+enum CardLicenceStatus {
+  OPEN
+  RESTRICTED
+  UNKNOWN
+}
+
+enum CardImportJobKind {
+  MANUAL
+  DAILY
+}
+
+enum CardImportJobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum CardImportItemStatus {
+  QUEUED
+  PROCESSING
+  STAGED
+  SKIPPED
+  BLOCKED
+  FAILED
+}
+
+enum CardTakedownOrigin {
+  NS_SELF_SERVICE
+  AUTHOR_REQUEST
+  LICENCE_REVIEW
+  ADMIN
+}
+
+enum CardTakedownStatus {
+  OPEN
+  HIDDEN
+  DECLINED
+  RESTORED
+}
+

@@ -76,6 +76,15 @@ model Card {
   retiredAt        DateTime?
   lorewardEntryId  String?
   lorewardEdition  String?
+  reviewState          CardReviewState   @default(APPROVED)
+  reviewedAt           DateTime?
+  /// DB user id of the admin (or realm owner) who reviewed it.
+  reviewedBy           String?
+  specialKind          SpecialCardKind?
+  /// The achievement whose unlock awards this Special card.
+  rewardAchievementKey String?           @unique
+  artLicence           CardArtLicence?
+  takedowns            CardTakedown[]
   /// The card's home realm, kept forever (cards refresh §2.1). Ixnay is "default".
   realmId          String
   realm            Realm           @relation(fields: [realmId], references: [id], onDelete: Restrict)
@@ -95,6 +104,7 @@ model Card {
   @@index([rarity], map: "Card_rarity_idx")
   @@index([season], map: "Card_season_idx")
   @@index([realmId])
+  @@index([reviewState, realmId])
   @@map("cards")
 }
 
@@ -310,6 +320,7 @@ model LoreCardRequest {
   userId          String
   articleTitle    String
   wikiSource      String
+  realmId         String?
   category        LoreCategory?
   suggestedRarity CardRarity?
   status          String        @default("PENDING")
@@ -326,6 +337,7 @@ model LoreCardRequest {
   @@index([userId])
   @@index([status])
   @@index([wikiSource])
+  @@index([realmId])
   @@map("lore_card_requests")
 }
 
@@ -435,17 +447,22 @@ model CardWatchlist {
 }
 
 model CardTransferEvent {
-  id          String   @id @default(cuid())
-  ownershipId String
-  fromUserId  String?
-  toUserId    String
-  action      String   // "PACK_OPEN" | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "ADMIN" | "DAILY_CLAIM"
-  price       Int?
-  createdAt   DateTime @default(now())
-  
-  ownership   CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
-  
+  id           String         @id @default(cuid())
+  /// Null once the copy is gone (revoked or voided); `cardId` and `serialNumber` keep the trail.
+  ownershipId  String?
+  cardId       String?
+  serialNumber Int?
+  fromUserId   String?
+  /// Null when the copy leaves every player (REVOKE, VOID).
+  toUserId     String?
+  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "REVOKE" | "REASSIGN" | "VOID"
+  price        Int?
+  createdAt    DateTime @default(now())
+
+  ownership    CardOwnership? @relation(fields: [ownershipId], references: [id], onDelete: SetNull)
+
   @@index([ownershipId])
+  @@index([cardId])
   @@map("card_transfer_events")
 }
 
@@ -465,4 +482,103 @@ model NSImportLedger {
   @@unique([nsCardId, nsSeason, nation])
   @@index([userId])
   @@map("ns_import_ledger")
+}
+
+/// The lead image's provenance and licence, recorded at import (licensing drafts §2.5(b)).
+model CardArtLicence {
+  cardId         String            @id
+  card           Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  /// The source wiki (`CardWikiSource`).
+  wiki           String
+  fileTitle      String?
+  fileUrl        String?
+  descriptionUrl String?
+  licence        String?
+  licenceUrl     String?
+  status         CardLicenceStatus @default(UNKNOWN)
+  artist         String?
+  /// The credit line shown with the art.
+  attribution    String?
+  note           String?
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  importedBy     String?
+  importJobId    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([status])
+  @@map("card_art_licences")
+}
+
+/// A server-side import: one item per page or file, worked through by the card-import-jobs cron.
+model CardImportJob {
+  id           String              @id @default(cuid())
+  /// `CardWikiSource`.
+  source       String
+  kind         CardImportJobKind   @default(MANUAL)
+  status       CardImportJobStatus @default(QUEUED)
+  label        String
+  /// DB user id; null for the daily cron.
+  requestedBy  String?
+  requireImage Boolean             @default(false)
+  total        Int                 @default(0)
+  processed    Int                 @default(0)
+  staged       Int                 @default(0)
+  skipped      Int                 @default(0)
+  blocked      Int                 @default(0)
+  failed       Int                 @default(0)
+  error        String?
+  createdAt    DateTime            @default(now())
+  startedAt    DateTime?
+  heartbeatAt  DateTime?
+  finishedAt   DateTime?
+  items        CardImportItem[]
+
+  @@index([status, createdAt])
+  @@map("card_import_jobs")
+}
+
+model CardImportItem {
+  id        String               @id @default(cuid())
+  jobId     String
+  job       CardImportJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  title     String
+  status    CardImportItemStatus @default(QUEUED)
+  cardId    String?
+  rarity    CardRarity?
+  licence   String?
+  reason    String?
+  updatedAt DateTime             @updatedAt
+
+  @@unique([jobId, title])
+  @@index([jobId, status])
+  @@map("card_import_items")
+}
+
+/// One removal request for a card's art, from any source, answered within 14 days (licensing drafts §2.5(f)).
+model CardTakedown {
+  id                String             @id @default(cuid())
+  cardId            String
+  card              Card               @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  origin            CardTakedownOrigin
+  status            CardTakedownStatus @default(OPEN)
+  reason            String
+  contact           String?
+  /// DB user id of whoever filed it.
+  requestedBy       String?
+  receivedAt        DateTime           @default(now())
+  dueAt             DateTime
+  /// The art the card had when it was hidden; restore puts it back.
+  savedArtwork      String?
+  /// True when hiding retired the card (so restore un-retires it); false when it was retired already.
+  retiredByTakedown Boolean            @default(false)
+  resolvedAt        DateTime?
+  resolvedBy        String?
+  resolutionNote    String?
+  createdAt         DateTime           @default(now())
+
+  @@index([status, dueAt])
+  @@index([cardId])
+  @@map("card_takedowns")
 }
