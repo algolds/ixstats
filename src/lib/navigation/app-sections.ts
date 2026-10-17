@@ -481,7 +481,7 @@ export const APPS: readonly AppDefinition[] = [
         ["image-repo", "Image repository", "/admin/image-repo", MediaImage],
         ["stash", "Stash", "/admin/stash", Folder],
         ["vault", "Vault & IxCredits", "/admin/vault", Coins],
-        ["cards", "Card packs & lore", "/admin/cards", Package],
+        ["cards", "Cards", "/admin/cards", Package],
         ["achievements", "Achievements", "/admin/achievements", Medal],
         ["thinkpages", "ThinkPages", "/admin/thinkpages", ChatLines],
         ["blurbs", "Blurbs & prompts", "/admin/blurbs", ChatBubble],

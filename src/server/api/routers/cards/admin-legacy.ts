@@ -1,5 +1,5 @@
-// src/server/api/routers/cards/admin.ts
-// Admin operations & batch tools sub-router for IxCards
+// src/server/api/routers/cards/admin-legacy.ts
+// Card admin procedures still used by the old admin components, until their tab is rebuilt.
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -10,7 +10,7 @@ import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
-export const cardsAdminRouter = createTRPCRouter({
+export const cardsLegacyAdminRouter = createTRPCRouter({
   /** Admin: the full library read for the cards explorer (retired cards, CTE, category and type filters). */
   adminCardExplorer: adminProcedure
     .input(

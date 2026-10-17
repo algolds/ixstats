@@ -1,24 +1,27 @@
 /**
  * Cards router — split across files by domain (2026-06-13) and recombined here.
  *
- * mergeRouters preserves every procedure at the top level, so the public API path
- * `api.cards.*` is byte-identical to the former monolith — no call sites change.
+ * mergeRouters keeps every player procedure at the top level (`api.cards.*`); the card admin is the nested
+ * `api.cards.admin.<tab>.*` (cards refresh spec §2.4).
  *
  * Domains:
- *  - inventory:  user inventory, the card library, Lore stats (admin)
+ *  - inventory:   user inventory, the card library, Lore stats (admin)
  *  - collections: collection CRUD + wiki article excerpt lookup
+ *  - admin:       every card admin procedure, one sub-router per admin tab
  */
-import { mergeRouters } from "~/server/api/trpc";
+import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "./inventory";
 import { cardsSettingsRouter } from "./settings";
-import { cardsAdminRouter } from "./admin";
+import { cardsLegacyAdminRouter } from "./admin-legacy";
 import { cardsCollectionsRouter } from "./collections";
 import { cardsOperationsRouter } from "./operations";
+import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
   cardsInventoryRouter,
   cardsSettingsRouter,
-  cardsAdminRouter,
+  cardsLegacyAdminRouter,
   cardsCollectionsRouter,
-  cardsOperationsRouter
+  cardsOperationsRouter,
+  createTRPCRouter({ admin: cardsAdminRouter })
 );

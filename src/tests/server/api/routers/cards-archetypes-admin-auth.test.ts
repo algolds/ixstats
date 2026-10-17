@@ -15,7 +15,7 @@ jest.mock("~/lib/cards/valuation", () => ({
 
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
-import { cardsAdminRouter } from "~/server/api/routers/cards/admin";
+import { cardsLegacyAdminRouter as cardsAdminRouter } from "~/server/api/routers/cards/admin-legacy";
 import { commonsFlagImporter } from "~/lib/flags/commons-flag-importer";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
