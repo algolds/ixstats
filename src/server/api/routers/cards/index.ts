@@ -9,6 +9,7 @@
  *  - collections: collection CRUD + wiki article excerpt lookup
  *  - suggestions: free lore card suggestions
  *  - mine:        the caller's copies (the hub's Mine tab)
+ *  - explore:     realm shelves, the catalogue grid, regions
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -16,6 +17,7 @@ import { cardsInventoryRouter } from "./inventory";
 import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsMineRouter } from "./mine";
+import { cardsExploreRouter } from "./explore";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -23,5 +25,6 @@ export const cardsRouter = mergeRouters(
   cardsCollectionsRouter,
   cardsSuggestionsRouter,
   cardsMineRouter,
+  cardsExploreRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );
