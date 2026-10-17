@@ -4,10 +4,10 @@
 import { CardType, LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { getRarityTier } from "./display-utils";
 import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
 import { copyRoom } from "./capacity";
-import { CardFinish } from "./enums";
+import { CardFinish, parseCardRarity } from "./enums";
+import { RARITY_ORDER, rarityRank } from "./face/labels";
 import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
 import { PACK_ODDS_FIELDS, type PackOdds } from "./pack-odds";
@@ -214,13 +214,6 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
   });
 }
 
-/** Pack rarity tiers, lowest first (the order of the odds table). */
-const RARITY_ORDER: readonly CardRarity[] = PACK_ODDS_FIELDS.map(([rarity]) => rarity);
-
-function rarityRank(rarity: string | null | undefined): number {
-  return RARITY_ORDER.indexOf(rarity as CardRarity);
-}
-
 /**
  * Generate cards for pack based on rarity distribution
  * Returns array of card rarities to be pulled from card pool. When the pack has a
@@ -250,13 +243,13 @@ export function generatePackCards(pack: {
     rarities.push(selectRarityByOdds(odds));
   }
 
-  const guaranteedRank = rarityRank(pack.guaranteedRarity);
+  const guaranteed = parseCardRarity(pack.guaranteedRarity);
   if (
-    guaranteedRank >= 0 &&
+    guaranteed &&
     rarities.length > 0 &&
-    !rarities.some((r) => rarityRank(r) >= guaranteedRank)
+    !rarities.some((r) => rarityRank(r) >= rarityRank(guaranteed))
   ) {
-    rarities[rarities.length - 1] = RARITY_ORDER[guaranteedRank]!;
+    rarities[rarities.length - 1] = guaranteed;
   }
 
   return rarities;
@@ -407,12 +400,12 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
   });
 }
 
-/** The best rarity a pack pulled, in schema order (Epic above Ultra Rare); "COMMON" for none. */
-export function bestPulledRarity(cards: ReadonlyArray<{ rarity: string }>): string {
-  return cards.reduce(
-    (best, card) => (getRarityTier(card.rarity) > getRarityTier(best) ? card.rarity : best),
-    "COMMON"
-  );
+/** The best rarity a pack pulled, in schema order (Epic above Ultra Rare); Common for none. */
+export function bestPulledRarity(cards: ReadonlyArray<{ rarity: string }>): CardRarity {
+  return cards.reduce<CardRarity>((best, card) => {
+    const rarity = parseCardRarity(card.rarity);
+    return rarity && rarityRank(rarity) > rarityRank(best) ? rarity : best;
+  }, "COMMON");
 }
 
 /**

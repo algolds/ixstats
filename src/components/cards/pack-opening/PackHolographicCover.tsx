@@ -20,8 +20,15 @@
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";
 import type { CardRarity } from "@prisma/client";
-import { getFoilStampConfig, getEmbossedTextShadow } from "~/lib/themes";
-import { getEffectiveRarity, getHoloGradient } from "~/components/cards/display/holo-helpers";
+import { parseCardRarity } from "~/lib/cards/enums";
+import {
+  getFoilStampConfig,
+  getEmbossedTextShadow,
+  getHolofoilTextureGradient,
+  getPrismaticWaveGradient,
+  getRainbowHolographicGradient,
+  getSparkleGridGradient,
+} from "~/lib/themes";
 
 interface PackHolographicCoverProps {
   packType: string;
@@ -71,6 +78,21 @@ const PACK_THEMES: Record<string, PackTheme> = {
 
 // Rarity helpers
 
+function getHoloGradient(rarity: CardRarity): string {
+  switch (rarity) {
+    case "LEGENDARY":
+      return `${getSparkleGridGradient()}, ${getPrismaticWaveGradient()}`;
+    case "EPIC":
+      return getSparkleGridGradient();
+    case "ULTRA_RARE":
+      return getPrismaticWaveGradient();
+    case "RARE":
+      return getRainbowHolographicGradient(135);
+    default:
+      return getHolofoilTextureGradient();
+  }
+}
+
 function getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
     COMMON: 4,
@@ -108,7 +130,7 @@ const STAMP_SIZES = {
 export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
   ({ packType, guaranteedRarity, packName, packArtwork, className, size = "sm" }) => {
     const theme = PACK_THEMES[packType.toUpperCase()] ?? PACK_THEMES.BASIC!;
-    const rarity = getEffectiveRarity(guaranteedRarity);
+    const rarity = parseCardRarity(guaranteedRarity) ?? "COMMON";
     const foilStamp = getFoilStampConfig(rarity);
     const sweepDuration = getSweepSpeed(rarity);
     const holoOpacity = getHoloOpacity(rarity);

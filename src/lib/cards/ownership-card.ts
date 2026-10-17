@@ -33,7 +33,6 @@ function cardToInstance(card: Card): CardInstance {
     level: 1,
     createdAt: card.createdAt,
     updatedAt: card.updatedAt,
-    lastTrade: null,
     isRetired: card.isRetired,
     retiredAt: card.retiredAt,
     country: null,

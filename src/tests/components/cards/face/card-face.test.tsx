@@ -18,7 +18,6 @@ import { CardFace } from "~/components/cards/face/CardFace";
 import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
 import { RarityMark } from "~/components/cards/face/RarityMark";
 import { RealmCrest } from "~/components/cards/face/RealmCrest";
-import { isIIWikiCard } from "~/components/cards/display/IIWikiLogo";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 
@@ -234,14 +233,5 @@ describe("CardFaceDown and RarityMark", () => {
     // Page backgrounds take the theme's paint; the raw-hue face gem is for the title scrim only.
     expect(mark?.querySelector(".card-rarity-gem")).toHaveAttribute("aria-hidden", "true");
     expect(mark?.querySelector(".card-face-gem")).toBeNull();
-  });
-});
-
-describe("isIIWikiCard", () => {
-  it("reads the card's source, then the source its lore metadata recorded", () => {
-    expect(isIIWikiCard({ wikiSource: "iiwiki" })).toBe(true);
-    expect(isIIWikiCard({ wikiSource: null, metadata: { wikiSource: "iiwiki" } })).toBe(true);
-    expect(isIIWikiCard({ wikiSource: "ixwiki", metadata: null })).toBe(false);
-    expect(isIIWikiCard(null)).toBe(false);
   });
 });

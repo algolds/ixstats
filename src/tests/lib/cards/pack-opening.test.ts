@@ -170,6 +170,12 @@ describe("generatePackCards", () => {
     expect(rarities).toEqual(Array(5).fill("LEGENDARY"));
   });
 
+  it("honours a guaranteed rarity in any casing", () => {
+    const rarities = generatePackCards({ ...allCommon, guaranteedRarity: "epic" });
+    expect(rarities.filter((r) => r === "EPIC")).toHaveLength(1);
+    expect(rarities.filter((r) => r === "COMMON")).toHaveLength(4);
+  });
+
   it("ignores an unknown guaranteed rarity", () => {
     expect(generatePackCards({ ...allCommon, guaranteedRarity: "MYTHIC" })).toEqual(
       Array(5).fill("COMMON")
@@ -419,5 +425,14 @@ describe("bestPulledRarity", () => {
       bestPulledRarity([{ rarity: "ULTRA_RARE" }, { rarity: "EPIC" }, { rarity: "COMMON" }])
     ).toBe("EPIC");
     expect(bestPulledRarity([])).toBe("COMMON");
+  });
+
+  it("never lets an unknown rarity beat Common", () => {
+    expect(bestPulledRarity([{ rarity: "MYTHIC" }])).toBe("COMMON");
+    expect(bestPulledRarity([{ rarity: "MYTHIC" }, { rarity: "RARE" }])).toBe("RARE");
+  });
+
+  it("reads a rarity in any casing as its enum", () => {
+    expect(bestPulledRarity([{ rarity: "RARE" }, { rarity: "epic" }])).toBe("EPIC");
   });
 });

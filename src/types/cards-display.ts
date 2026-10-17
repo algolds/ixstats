@@ -1,7 +1,7 @@
 /**
  * Card Display Types
- * The card shape the display components take: a card's fields, plus an owned copy's when there is one. Cards have no
- * stats (cards refresh §2.1); NS facts live in `metadata.nsData` (src/lib/cards/ns-facts.ts).
+ * The card shape the trade offer modal and the market types take: a card's fields, plus an owned copy's when there is
+ * one. Cards have no stats (cards refresh §2.1); NS facts live in `metadata.nsData` (src/lib/cards/ns-facts.ts).
  */
 
 import type { CardRarity, CardType } from "@prisma/client";
@@ -34,12 +34,7 @@ interface LoreCardMetadata {
 }
 
 /**
- * Card display size options
- */
-export type CardDisplaySize = "small" | "sm" | "medium" | "md" | "large";
-
-/**
- * A card as the display components take it: a Prisma `Card`'s fields, plus an owned copy's when there is one.
+ * A card as the trade offer modal takes it: a Prisma `Card`'s fields, plus an owned copy's when there is one.
  */
 export interface CardInstance {
   id: string;
@@ -69,7 +64,6 @@ export interface CardInstance {
   level: number;
   createdAt: Date;
   updatedAt: Date;
-  lastTrade: Date | null;
   isRetired?: boolean;
   retiredAt?: Date | null;
   /** Ownership-specific fields */
@@ -86,19 +80,4 @@ export interface CardInstance {
     region: string | null;
     flag: string | null;
   } | null;
-}
-
-/**
- * Rarity configuration for display
- */
-export interface RarityConfig {
-  color: string;
-  glowColor: string;
-  glowIntensity: string;
-  borderColor: string;
-  label: string;
-  /** "r,g,b" of the rarity hue, for inline rgba() glows and borders. */
-  rgb: string;
-  /** Outline badge classes (border + text + tint). */
-  badgeStyle: string;
 }
