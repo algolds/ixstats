@@ -9,13 +9,15 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { cardSourceLabel, type CardArticleSource } from "~/lib/cards/card-sources";
 import { Button } from "~/components/ui/button";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface ArticleSearchProps {
-  wikiSource: "ixwiki" | "iiwiki";
+  /** The search field's id, for its label. */
+  id?: string;
+  wikiSource: CardArticleSource;
   onSelect: (articleTitle: string) => void;
-  value?: string;
 }
 
 interface ArticleSuggestion {
@@ -23,8 +25,8 @@ interface ArticleSuggestion {
   snippet: string;
 }
 
-export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearchProps) {
-  const [searchQuery, setSearchQuery] = useState(value);
+export function ArticleSearch({ id, wikiSource, onSelect }: ArticleSearchProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ArticleSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -93,12 +95,13 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
     <div className="relative">
       <div className="relative">
         <input
+          id={id}
           type="text"
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder={`Search ${wikiSource === "ixwiki" ? "wiki" : "IIWiki"} articles...`}
+          placeholder={`Search ${cardSourceLabel(wikiSource)} articles`}
           className="border-separator bg-fill-3 rounded-control text-label placeholder:text-label-tertiary w-full border px-4 py-3 pr-10"
         />
 

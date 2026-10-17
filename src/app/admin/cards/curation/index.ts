@@ -1,1 +1,1 @@
-export { RequestQueueTab as CurationTab } from "../lore-batch/RequestQueueTab";
+export { CurationTab } from "./CurationTab";
