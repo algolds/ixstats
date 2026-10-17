@@ -42,6 +42,9 @@ function addressWith(change: (query: URLSearchParams) => void): string {
   return `${url.pathname}${search ? `?${search}` : ""}${url.hash}`;
 }
 
+/** The address the browser shows now, as a path. */
+const currentAddress = () => addressWith(() => undefined);
+
 /**
  * The card sheet lives in the address (`?card=<id>`, with `?from=` for where it was opened), so a copied link opens
  * it and the back button closes it. Opening keeps the page and its own query. Closing a sheet this page opened steps
@@ -56,18 +59,42 @@ export function useCardSheet(): {
   const params = useSearchParams();
   const cardId = params?.get("card") || null;
   const from = parseSheetFrom(params?.get("from"));
-  // Set by a close until the address changes, so a second Esc or click cannot step back twice or push again.
+  // Set by a close until the router's address changes, so a second Esc or click cannot step back twice or push again.
   const closing = useRef(false);
   const search = params?.toString() ?? "";
   useEffect(() => {
     closing.current = false;
   }, [search]);
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      // A step back Next.js follows changes the router's address, which releases the guard.
+      if (!closing.current || event.state) return;
+      // It ignores one onto an entry with no state (a #fragment link's, such as the skip link), so its address
+      // still shows the card: release the guard, and tell it where the browser is (its history patch follows).
+      closing.current = false;
+      window.history.replaceState(null, "", currentAddress());
+    };
+    // A page back from the browser's page cache has left the entry it was closing from.
+    const onPageShow = () => {
+      closing.current = false;
+    };
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
 
   const open = useCallback((id: string, nextFrom?: SheetFrom | null) => {
+    const shown = new URL(window.location.href).searchParams;
+    const fromValue = nextFrom ? encodeSheetFrom(nextFrom) : null;
+    // Already open there: another entry would only make close step back onto the same address.
+    if (shown.get("card") === id && shown.get("from") === fromValue) return;
     sheetOpener = focusedElement();
     const address = addressWith((query) => {
       query.set("card", id);
-      if (nextFrom) query.set("from", encodeSheetFrom(nextFrom));
+      if (fromValue) query.set("from", fromValue);
       else query.delete("from");
     });
     window.history.pushState({ [OPENED_HERE]: true }, "", address);

@@ -203,6 +203,19 @@ describe("AddToShowcaseDialog", () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the loaded showcases when only a refresh fails", () => {
+    jest.mocked(api.cards.listMyShowcases.useQuery).mockReturnValue({
+      data: [showcase()],
+      isLoading: false,
+      isError: true,
+      refetch: jest.fn(),
+    } as never);
+    mutations({});
+    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
+    expect(screen.getByRole("button", { name: "Add to Best of Ixnay" })).toBeEnabled();
+    expect(screen.queryByText("Your showcases did not load.")).toBeNull();
+  });
+
   it("gives focus back to what opened it when it closes", async () => {
     listed([showcase()]);
     mutations({});

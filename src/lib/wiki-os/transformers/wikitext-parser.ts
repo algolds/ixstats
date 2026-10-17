@@ -319,6 +319,16 @@ export function stripWikitextFiles(text: string): string {
   return pieces.join("");
 }
 
+/** A link to a file's page rather than the file: `[[:File:Name|words]]`, also `Image:` and `Media:`. */
+const FILE_PAGE_LINK = /\[\[:((?:file|image|media):[^\]|]*)(?:\|([^\]]*))?\]\]/gi;
+
+/** File-page links read as their words (or the file title), for text that must not lead to the file. */
+function unlinkFilePages(text: string): string {
+  return text.replace(FILE_PAGE_LINK, (_link, target: string, words: string | undefined) =>
+    words ? words : target
+  );
+}
+
 /**
  * ponytail: COMPILE_CEILING, 300,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
  * the in-process fallback for a page MediaWiki could not render (a reader's page or an old revision, an
@@ -434,7 +444,10 @@ function formatParagraphs(text: string): string {
   return paragraphs.join("\n\n").trim();
 }
 
-/** `images: false` leaves out file links and the infobox image: a card sheet that hides a card's art. */
+/**
+ * `images: false` leaves out file links and the infobox image, and reads links to file pages as plain words: a card
+ * sheet that hides a card's art.
+ */
 interface WikitextHtmlOptions {
   images?: boolean;
 }
@@ -489,7 +502,9 @@ export function parseWikitextToHtml(
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
-  text = images ? convertWikitextImages(text, wikiSource) : stripWikitextFiles(text);
+  text = images
+    ? convertWikitextImages(text, wikiSource)
+    : unlinkFilePages(stripWikitextFiles(text));
 
   // 10. Convert wikitext headings
   text = replaceHeadings(

@@ -53,7 +53,8 @@ function ShowcaseChoices({
   onPick: (showcase: ShowcaseChoice) => void;
 }) {
   if (query.isLoading) return <Skeleton className="rounded-row h-24" />;
-  if (query.isError) {
+  // A failed refresh keeps the rows it already has; only a list that never loaded says so.
+  if (query.isError && !query.data) {
     return (
       <div className="flex items-center justify-between gap-3">
         <p className="text-callout text-label-secondary">Your showcases did not load.</p>

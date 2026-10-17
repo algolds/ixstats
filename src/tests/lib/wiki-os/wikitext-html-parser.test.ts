@@ -99,4 +99,18 @@ describe("wikitext-parser — images left out", () => {
     expect(html).toContain("It borders the sea.");
     expect(html).toContain("Capital");
   });
+
+  it("reads a link to a file page as its plain words", () => {
+    const links =
+      "See [[:File:Flag of Velarc.svg|the flag]], [[:Image:Map.png]] and [[:media:Anthem.ogg|the anthem]].";
+    const html = parseWikitextToHtml(links, "ixwiki", { images: false });
+    expect(html).toContain("See the flag, Image:Map.png and the anthem.");
+    expect(html).not.toContain("<a");
+    expect(html).not.toMatch(/File|Anthem\.ogg/);
+  });
+
+  it("keeps links to file pages as links by default", () => {
+    const html = parseWikitextToHtml("See [[:File:Flag of Velarc.svg|the flag]].", "ixwiki");
+    expect(html).toContain('<a href="/wiki/%3AFile%3AFlag_of_Velarc.svg"');
+  });
 });

@@ -130,6 +130,8 @@ const showSheet = (data: CardSheetData | null = sheet()) =>
   useSheet().mockReturnValue({ data, isLoading: false } as never);
 
 beforeEach(() => {
+  // A page with no sheet open, so open() in the focus tests always pushes.
+  window.history.replaceState(null, "", "/vault/cards/mine");
   jest.clearAllMocks();
   useAuthor().mockReturnValue({ data: undefined } as never);
 });
