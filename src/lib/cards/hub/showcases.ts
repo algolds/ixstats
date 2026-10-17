@@ -222,7 +222,8 @@ export async function removeFromShowcase(
 }
 
 /**
- * One pinned showcase per player: pinning clears the others. Only a public showcase pins; the pin re-checks it in the
+ * One pinned showcase per player: pinning clears the others, and unpinning clears only this one, so an unpin from a
+ * stale screen never takes the pin off another showcase. Only a public showcase pins; the pin re-checks it in the
  * same transaction, so a showcase made private meanwhile stays unpinned and `pinned` comes back false.
  */
 export async function pinShowcase(
@@ -240,7 +241,7 @@ export async function pinShowcase(
   }
   const [, pin] = await db.$transaction([
     db.cardCollection.updateMany({
-      where: { userId, pinnedAt: { not: null } },
+      where: pinned ? { userId, pinnedAt: { not: null } } : { id, userId },
       data: { pinnedAt: null },
     }),
     ...(pinned
