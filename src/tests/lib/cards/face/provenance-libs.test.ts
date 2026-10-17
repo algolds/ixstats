@@ -60,6 +60,8 @@ describe("nsProvenanceOf", () => {
       { id: "0", season: "2" },
       { id: "42", season: "-1" },
       { id: "x", season: "2" },
+      { id: "42abc", season: "2" },
+      { id: "42", season: "1.5" },
     ]) {
       expect(
         nsProvenanceOf({ title: "T", nsCardId: null, nsSeason: null, metadata: { nsData } }).cardUrl
@@ -68,6 +70,15 @@ describe("nsProvenanceOf", () => {
     expect(
       nsProvenanceOf({ title: "T", nsCardId: 42, nsSeason: null, metadata: null }).cardUrl
     ).toBeNull();
+  });
+
+  it("reads only whole numbers as the id and season", () => {
+    const provenance = (nsData: Record<string, string>) =>
+      nsProvenanceOf({ title: "T", nsCardId: null, nsSeason: null, metadata: { nsData } });
+    expect(provenance({ id: "42abc", season: "2" }).cardUrl).toBeNull();
+    expect(provenance({ id: "42", season: "1.5" }).season).toBeNull();
+    expect(provenance({ id: "42", season: "3abc" }).season).toBeNull();
+    expect(provenance({ id: "42", season: "3" }).season).toBe(3);
   });
 
   it("encodes the nation in its link", () => {

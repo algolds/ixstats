@@ -13,9 +13,10 @@ export interface NsProvenance {
   nationUrl: string;
 }
 
+/** A whole number above 0, or null: "42abc" and "1.5" are not ids or seasons. */
 function positiveInt(value: string | undefined): number | null {
-  const n = Number.parseInt(value ?? "", 10);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  const n = Number(value);
+  return Number.isInteger(n) && n > 0 ? n : null;
 }
 
 /** The card's own NS columns win; the facts stored at import (`metadata.nsData`) fill the gaps. */

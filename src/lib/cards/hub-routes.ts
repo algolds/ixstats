@@ -76,6 +76,16 @@ function storeTabTarget(tab: string | undefined): Target | null {
   return null;
 }
 
+/**
+ * The old marketplace with no auctions or trading tab: its Store tab is the Store, still on the view it showed (my
+ * packs, cosmetics, upgrades); anything else is the hub's Market.
+ */
+function marketplaceTarget(query: PageQuery): Target {
+  if (first(query.tab) !== "store") return { path: CARD_HUB_PATHS.market };
+  const view = first(query.view);
+  return { path: STORE_PATH, set: view ? { view } : undefined };
+}
+
 /** NationStates cards are a realm shelf in Explore; a system realm's slug is its id. */
 const NS_EXPLORE: Target = { path: CARD_HUB_PATHS.explore, set: { realm: NS_REALM_ID } };
 
@@ -97,9 +107,7 @@ const LEGACY: Record<LegacyCardRoute, (query: PageQuery, param?: string) => Targ
   market: () => ({ path: CARD_HUB_PATHS.market }),
   trading: () => ({ path: CARD_HUB_PATHS.market, set: { tab: "trades" } }),
   packs: () => ({ path: STORE_PATH, set: { view: "packs" } }),
-  marketplace: (query) =>
-    storeTabTarget(first(query.tab)) ??
-    (first(query.tab) === "store" ? { path: STORE_PATH } : { path: CARD_HUB_PATHS.market }),
+  marketplace: (query) => storeTabTarget(first(query.tab)) ?? marketplaceTarget(query),
 };
 
 /** The query an old page came with, minus its own `tab` and `view`: those named old screens. */
@@ -151,18 +159,23 @@ function pageQueryOf(search: string): PageQuery {
   return Object.fromEntries([...new Set(params.keys())].map((key) => [key, params.getAll(key)]));
 }
 
+/** Which old card page a base-path-free path is, with its path parameter; null for every other path. */
+function legacyPageOf(path: string): { route: LegacyCardRoute; param?: string } | null {
+  const route = LEGACY_PAGES.get(path);
+  if (route) return { route };
+  const collection = COLLECTION_PAGE.exec(path);
+  if (collection) return { route: "collection", param: collection[1] };
+  return NS_DECK_NATION_PAGE.test(path) ? { route: "ns-deck-nation" } : null;
+}
+
 /**
  * The new home of an old card address, for `src/proxy.ts` to answer with a 308 (a redirect thrown by the page would
  * stream as a 200 under the Vault's loading boundary); null for every other address. `search` is the request's query
- * string. The bare hub address `/vault/cards` is not an old one: its page opens Mine.
+ * string, read only once the path matches. The bare hub address `/vault/cards` is not an old one: its page opens Mine.
  */
 export function legacyCardRedirectFor(pathname: string, search: string): string | null {
   const path = barePath(pathname);
-  const query = pageQueryOf(search);
-  if (path === STORE_PATH) return storeTabRedirect(query);
-  const route = LEGACY_PAGES.get(path);
-  if (route) return legacyCardRedirect(route, query);
-  const collection = COLLECTION_PAGE.exec(path);
-  if (collection) return legacyCardRedirect("collection", query, collection[1]);
-  return NS_DECK_NATION_PAGE.test(path) ? legacyCardRedirect("ns-deck-nation", query) : null;
+  if (path === STORE_PATH) return storeTabRedirect(pageQueryOf(search));
+  const page = legacyPageOf(path);
+  return page ? legacyCardRedirect(page.route, pageQueryOf(search), page.param) : null;
 }

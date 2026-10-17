@@ -44,7 +44,8 @@ describe("hub tabs under a base path", () => {
   const previous = process.env.NEXT_PUBLIC_BASE_PATH;
 
   afterEach(() => {
-    process.env.NEXT_PUBLIC_BASE_PATH = previous;
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+    else process.env.NEXT_PUBLIC_BASE_PATH = previous;
   });
 
   it("strips the production base path before reading the path", async () => {
@@ -100,6 +101,19 @@ describe("legacyCardRedirect", () => {
     expect(legacyCardRedirect("marketplace", { tab: "store" })).toBe("/vault/store");
     expect(legacyCardRedirect("marketplace", { tab: ["store", "auctions"] })).toBe("/vault/store");
   });
+
+  it("keeps the Store view the old marketplace showed, and drops the view for a hub tab", () => {
+    expect(legacyCardRedirect("marketplace", { tab: "store", view: "cosmetics", card: "c1" })).toBe(
+      "/vault/store?card=c1&view=cosmetics"
+    );
+    expect(legacyCardRedirect("marketplace", { tab: "store", view: ["upgrades", "x"] })).toBe(
+      "/vault/store?view=upgrades"
+    );
+    expect(legacyCardRedirect("marketplace", { tab: "trading", view: "my-packs" })).toBe(
+      `${CARD_HUB_PATHS.market}?tab=trades`
+    );
+    expect(legacyCardRedirect("marketplace", { view: "my-packs" })).toBe(CARD_HUB_PATHS.market);
+  });
 });
 
 describe("storeTabRedirect", () => {
@@ -130,7 +144,9 @@ describe("legacyCardRedirectFor", () => {
     ["/vault/ns-deck/testlandia", "", `${explore}?realm=nationstates`],
     ["/vault/market", "?card=c1", `${market}?card=c1`],
     ["/vault/marketplace", "?tab=trading", `${market}?tab=trades`],
-    ["/vault/marketplace", "?tab=store&view=my-packs", "/vault/store"],
+    ["/vault/marketplace", "?tab=store&view=my-packs", "/vault/store?view=my-packs"],
+    ["/vault/marketplace", "?tab=store", "/vault/store"],
+    ["/vault/marketplace", "?tab=auctions&view=my-packs", market],
     ["/vault/trading", "?card=c1&card=c2", `${market}?card=c1&card=c2&tab=trades`],
     ["/vault/packs", "?view=my-packs", "/vault/store?view=packs"],
     ["/vault/store", "?tab=auctions&card=c1", `${market}?card=c1`],
@@ -174,7 +190,14 @@ describe("legacyCardRedirectFor", () => {
       "/vault/packs",
     ];
     for (const pathname of old) {
-      for (const search of ["", "?tab=auctions", "?tab=trading", "?tab=store", "?view=packs"]) {
+      for (const search of [
+        "",
+        "?tab=auctions",
+        "?tab=trading",
+        "?tab=store",
+        "?tab=store&view=my-packs",
+        "?view=packs",
+      ]) {
         const target = legacyCardRedirectFor(pathname, search);
         expect(target).not.toBeNull();
         const [path = "", query = ""] = target!.split("?");

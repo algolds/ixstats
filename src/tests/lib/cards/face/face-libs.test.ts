@@ -127,6 +127,9 @@ describe("sheet links", () => {
       "holder.a b",
       "xshowcase.a",
       "showcase.a.b",
+      "Holder.ann",
+      "constructor.x",
+      "toString.x",
       `showcase.${"x".repeat(65)}`,
     ]) {
       expect(parseSheetFrom(raw)).toBeNull();

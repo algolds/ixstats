@@ -5,19 +5,25 @@ export type SheetFrom =
   | { kind: "offer"; id: string }
   | { kind: "holder"; handle: string };
 
-const FROM_PATTERN = /^(showcase|offer|holder)\.([A-Za-z0-9_-]{1,64})$/;
+type FromBuilder = (value: string) => SheetFrom;
+
+/** Each `?from=` kind, building the place from its value: the only list of kinds (the pattern takes any word). */
+const FROM_KINDS: ReadonlyMap<string, FromBuilder> = new Map<string, FromBuilder>([
+  ["showcase", (id) => ({ kind: "showcase", id })],
+  ["offer", (id) => ({ kind: "offer", id })],
+  ["holder", (handle) => ({ kind: "holder", handle })],
+]);
+
+const FROM_PATTERN = /^([a-z]+)\.([A-Za-z0-9_-]{1,64})$/;
 
 export function encodeSheetFrom(from: SheetFrom): string {
   return from.kind === "holder" ? `holder.${from.handle}` : `${from.kind}.${from.id}`;
 }
 
-/** The `?from=` value, or null when it is missing or malformed. */
+/** The `?from=` value, or null when it is missing, malformed or of an unknown kind. */
 export function parseSheetFrom(raw: string | null | undefined): SheetFrom | null {
   const match = FROM_PATTERN.exec(raw ?? "");
-  if (!match) return null;
-  const [, kind, value] = match;
-  if (kind === "holder") return { kind, handle: value };
-  return kind === "showcase" || kind === "offer" ? { kind, id: value } : null;
+  return match ? (FROM_KINDS.get(match[1])?.(match[2]) ?? null) : null;
 }
 
 /** A path that opens `cardId`'s sheet (`?card=`), keeping where it was opened from. */
