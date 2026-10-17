@@ -30,6 +30,7 @@ import {
   parseCardWikiSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
+import { MAX_IMPORT_TITLES } from "~/lib/cards/curation-limits";
 import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
 import { getRarityThresholds } from "./cards.config";
 import {
@@ -41,7 +42,8 @@ import {
 } from "./cards.importer";
 
 export const IMPORT_LOCK = "card-import-jobs";
-export const MAX_IMPORT_TITLES = 2000;
+/** Shared with the curation cap, which must take a whole job; the import router and crawl read it from here. */
+export { MAX_IMPORT_TITLES };
 const MINUTE = 60_000;
 /** The lease a run holds; the card-import-jobs cron row holds the same. */
 const IMPORT_LEASE_MS = 5 * MINUTE;

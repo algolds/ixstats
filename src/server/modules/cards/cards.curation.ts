@@ -124,6 +124,13 @@ function reviewChoice(input: ReviewInput, approve: boolean): ReviewChoice {
   if (!input.asOf || input.expected === undefined) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Reload the queue and try again." });
   }
+  // A read time after now would let the review take cards imported after the admin's read.
+  if (input.asOf.getTime() > Date.now()) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "The queue's read time is in the future. Reload the queue and try again.",
+    });
+  }
   if (input.expected > MAX_FILTER_REVIEW) {
     throw new TRPCError({
       code: "BAD_REQUEST",

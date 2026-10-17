@@ -1,5 +1,9 @@
+/** The most pages one card import job takes. Client-safe, like the curation cap it sets. */
+export const MAX_IMPORT_TITLES = 2000;
+
 /**
- * The most cards one filter review (the curation queue's approve all) may change. Above it the admin narrows the
- * filter, so no single click sends an unbounded set of cards into packs. Client-safe: the queue disables the button.
+ * The most cards one filter review (the curation queue's approve all) may change: one import job's worth, so the
+ * cards a whole job staged can always be approved at once. Above it the admin narrows the filter, so no single click
+ * sends an unbounded set of cards into packs. The queue disables the button past it.
  */
-export const MAX_FILTER_REVIEW = 1000;
+export const MAX_FILTER_REVIEW = MAX_IMPORT_TITLES;

@@ -33,7 +33,7 @@ import { api } from "~/trpc/react";
 import { CurationTab } from "~/app/admin/cards/curation";
 
 const curation = api.cards.admin.curation;
-const AS_OF = new Date("2026-10-28T12:00:00Z");
+const AS_OF = new Date("2026-10-01T12:00:00Z");
 
 function setUp({ total = 1 }: { total?: number } = {}) {
   const review = jest.fn();
@@ -156,10 +156,16 @@ describe("CurationTab", () => {
     });
   });
 
-  it("offers approve all only up to 1,000 cards, and says to narrow the filter above that", () => {
-    setUp({ total: 1001 });
+  it("offers approve all up to one import job's 2,000 cards, and says to narrow the filter above that", () => {
+    setUp({ total: 2000 });
+    const { unmount } = render(<CurationTab />);
+    expect(screen.getByRole("button", { name: "Approve all 2,000" })).toBeEnabled();
+    expect(screen.queryByText(/Narrow the filter to approve all/)).not.toBeInTheDocument();
+    unmount();
+
+    setUp({ total: 2001 });
     render(<CurationTab />);
-    expect(screen.getByRole("button", { name: "Approve all 1,001" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Approve all 2,001" })).toBeDisabled();
     expect(screen.getByText(/Narrow the filter to approve all/)).toBeInTheDocument();
   });
 

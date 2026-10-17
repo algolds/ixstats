@@ -3,7 +3,7 @@
 jest.mock("~/server/modules/cards/cards.importer", () => ({ stageForAdmin: jest.fn() }));
 
 import { TRPCError } from "@trpc/server";
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { MAX_FILTER_REVIEW, MAX_IMPORT_TITLES } from "~/lib/cards/curation-limits";
 import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import {
   acceptSuggestion,
@@ -18,7 +18,7 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const stage = jest.mocked(stageForAdmin);
 const RESTRICTED = { artLicence: { is: { status: "RESTRICTED" } } };
-const AS_OF = new Date("2026-10-28T12:00:00Z");
+const AS_OF = new Date("2026-10-01T12:00:00Z");
 
 /** A database whose `$transaction` hands its callback a separate client, so a test sees which writes it holds. */
 function withTx() {
@@ -205,11 +205,29 @@ describe("reviewCards", () => {
         asOf: AS_OF,
         expected: MAX_FILTER_REVIEW + 1,
       })
-    ).rejects.toThrow(/at most 1,000 cards at once/);
+    ).rejects.toThrow(/at most 2,000 cards at once/);
     await expect(
       reviewCards(db as never, actor, { decision: "APPROVE", filter, expected: 3 })
     ).rejects.toThrow(/Reload the queue/);
-    expect(MAX_FILTER_REVIEW).toBe(1000);
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(tx.card.count).not.toHaveBeenCalled();
+  });
+
+  it("caps a filter review at one import job, so a whole job can always be approved at once", () => {
+    expect(MAX_FILTER_REVIEW).toBe(MAX_IMPORT_TITLES);
+    expect(MAX_IMPORT_TITLES).toBe(2000);
+  });
+
+  it("refuses a queue read dated after now, before reading anything", async () => {
+    const { db, tx } = withTx();
+    await expect(
+      reviewCards(db as never, actor, {
+        decision: "APPROVE",
+        filter: { realm: "all" },
+        asOf: new Date(Date.now() + 60_000),
+        expected: 3,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/future/) });
     expect(db.$transaction).not.toHaveBeenCalled();
     expect(tx.card.count).not.toHaveBeenCalled();
   });
