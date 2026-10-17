@@ -180,6 +180,20 @@ describe("queueDailyLoreImports", () => {
     error.mockRestore();
   });
 
+  it("joins the failed wikis' reasons into one sentence", async () => {
+    const error = quiet();
+    random.mockImplementation(async (_count, source) => {
+      if (source === "ixwiki") throw new Error("connection reset");
+      throw new DiscoveryStopped({ kind: "blocked", status: 403, message: "iiwiki refused" });
+    });
+    await expect(queueDailyLoreImports()).rejects.toMatchObject({
+      message:
+        "Daily card import failed: IxWiki: connection reset; IIWiki stopped answering (HTTP 403).",
+    });
+    expect(create).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it("returns what it queued when every wiki's draw answers", async () => {
     random.mockResolvedValue(["Elm"]);
     await expect(queueDailyLoreImports()).resolves.toEqual({ ixwiki: 1, iiwiki: 1 });

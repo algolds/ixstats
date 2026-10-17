@@ -108,7 +108,8 @@ const stageItem: StageItem = (db, source, input, context) =>
 
 /** The wiki's client for this run, and its stored rarity table. */
 async function runContext(db: PrismaClient, source: CardWikiSource): Promise<ImportContext> {
-  const client = createDiscoveryClient(source, { maxRequests: RUN_REQUEST_CAP });
+  // Its first request waits too: it may replace a client whose last request just failed, or follow the last run's.
+  const client = createDiscoveryClient(source, { maxRequests: RUN_REQUEST_CAP, pauseFirst: true });
   return {
     query: client.query,
     pace: client.pace,
@@ -122,12 +123,26 @@ interface Passed {
   jobs: Set<string>;
 }
 
-/** Items a dead runner left PROCESSING (claimed longer ago than a lease) go back to the queue. */
+/**
+ * Items a dead runner left PROCESSING (claimed longer ago than a lease): back to the queue while their job is still
+ * to work, else skipped as cancelled and counted, so the job's counters still equal its rows.
+ */
 async function requeueAbandoned(db: PrismaClient, at: number) {
+  const abandoned = {
+    status: "PROCESSING" as const,
+    updatedAt: { lt: new Date(at - IMPORT_LEASE_MS) },
+  };
   await db.cardImportItem.updateMany({
-    where: { status: "PROCESSING", updatedAt: { lt: new Date(at - IMPORT_LEASE_MS) } },
+    where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING"] } } },
     data: { status: "QUEUED" },
   });
+  const ended = await db.cardImportItem.findMany({
+    where: { ...abandoned, job: { status: { in: ["CANCELLED", "FAILED"] } } },
+    select: { id: true, jobId: true },
+  });
+  for (const item of ended) {
+    await recordOutcome(db, item.jobId, item.id, { status: "SKIPPED", reason: CANCELLED });
+  }
 }
 
 /** The oldest job still to work on, moved to RUNNING. */
@@ -217,7 +232,11 @@ async function finishJob(db: PrismaClient, jobId: string): Promise<boolean> {
 }
 
 /** Fails a running job with its reason; false when it is no longer running (an admin cancelled it). */
-async function failJob(db: PrismaClient, jobId: string, reason: string): Promise<boolean> {
+async function failJob(
+  db: Prisma.TransactionClient,
+  jobId: string,
+  reason: string
+): Promise<boolean> {
   const failed = await db.cardImportJob.updateMany({
     where: { id: jobId, status: "RUNNING" },
     data: { status: "FAILED", error: reason, finishedAt: new Date() },
@@ -225,13 +244,17 @@ async function failJob(db: PrismaClient, jobId: string, reason: string): Promise
   return failed.count === 1;
 }
 
-/** The wiki stopped answering: the job fails and the item waits for Retry, or is skipped if the job was cancelled. */
+/**
+ * The wiki stopped answering: the job fails and the item waits for Retry, in one transaction, so a cancel that comes
+ * meanwhile waits and then skips and counts the item. If the job was cancelled first, the item is skipped instead.
+ */
 async function stopJob(db: PrismaClient, jobId: string, itemId: string, reason: string) {
-  if (await failJob(db, jobId, reason)) {
-    await db.cardImportItem.update({ where: { id: itemId }, data: { status: "QUEUED" } });
-    return;
-  }
-  await recordOutcome(db, jobId, itemId, { status: "SKIPPED", reason: CANCELLED });
+  const parked = await db.$transaction(async (tx) => {
+    if (!(await failJob(tx, jobId, reason))) return false;
+    await tx.cardImportItem.update({ where: { id: itemId }, data: { status: "QUEUED" } });
+    return true;
+  });
+  if (!parked) await recordOutcome(db, jobId, itemId, { status: "SKIPPED", reason: CANCELLED });
 }
 
 /**

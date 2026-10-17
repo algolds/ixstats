@@ -7,7 +7,10 @@
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
-    cardImportItem: { updateMany: jest.fn(async () => ({ count: 0 })) },
+    cardImportItem: {
+      updateMany: jest.fn(async () => ({ count: 0 })),
+      findMany: jest.fn(async () => []),
+    },
     cardImportJob: { findFirst: jest.fn(async () => null) },
   },
 }));
@@ -76,8 +79,9 @@ interface JobWhere {
 interface ItemWhere {
   id?: string;
   jobId?: string;
-  status: string;
+  status?: string;
   updatedAt?: { lt: Date };
+  job?: { status: { in: string[] } };
 }
 interface CreateData {
   source: string;
@@ -100,13 +104,19 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
     inStatus(job.status, where.status) &&
     !(where.id?.notIn ?? []).includes(job.id) &&
     !(where.source?.notIn ?? []).includes(job.source);
+  const jobStatus = (item: ItemRow) => jobs.find((job) => job.id === item.jobId)?.status ?? "";
   const itemMatches = (item: ItemRow, where: ItemWhere) =>
     (where.id === undefined || item.id === where.id) &&
     (where.jobId === undefined || item.jobId === where.jobId) &&
-    item.status === where.status &&
-    (where.updatedAt === undefined || item.updatedAt < where.updatedAt.lt);
+    (where.status === undefined || item.status === where.status) &&
+    (where.updatedAt === undefined || item.updatedAt < where.updatedAt.lt) &&
+    (where.job === undefined || where.job.status.in.includes(jobStatus(item)));
   const touch = (item: ItemRow, data: Partial<ItemRow>) =>
     Object.assign(item, data, { updatedAt: new Date() });
+  /** The status writes to either table, and whether each ran inside an interactive transaction. */
+  const writes: Array<{ write: string; inTx: boolean }> = [];
+  let inTx = false;
+  const note = (write: string) => writes.push({ write, inTx });
   const db = {
     cardImportJob: {
       findFirst: jest.fn(
@@ -126,6 +136,7 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
           const hit = jobs.filter(
             (job) => job.id === where.id && inStatus(job.status, where.status)
           );
+          note(`job ${data.status}`);
           hit.forEach((job) => Object.assign(job, data));
           return { count: hit.length };
         }
@@ -170,11 +181,14 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
         hit.forEach((item) => touch(item, data));
         return { count: hit.length };
       }),
-      update: jest.fn(async ({ where, data }: { where: { id: string }; data: Partial<ItemRow> }) =>
-        touch(
-          items.find((item) => item.id === where.id)!,
-          data
-        )
+      update: jest.fn(
+        async ({ where, data }: { where: { id: string }; data: Partial<ItemRow> }) => {
+          note(`item ${data.status}`);
+          return touch(
+            items.find((item) => item.id === where.id)!,
+            data
+          );
+        }
       ),
       count: jest.fn(
         async ({ where }: { where: { jobId: string; status: { in: string[] } } }) =>
@@ -182,16 +196,25 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
             (item) => item.jobId === where.jobId && where.status.in.includes(item.status)
           ).length
       ),
-      findMany: jest.fn(async () => items),
+      findMany: jest.fn(async ({ where }: { where: ItemWhere }) =>
+        items.filter((item) => itemMatches(item, where))
+      ),
     },
     systemConfig: { findMany: jest.fn(async () => []) },
   };
   /** A transaction over the fake runs its work at once: a callback gets the fake itself, a batch is awaited. */
   const $transaction = jest.fn(
-    async <T>(work: ((tx: typeof db) => Promise<T>) | Array<Promise<T>>) =>
-      typeof work === "function" ? work(db) : Promise.all(work)
+    async <T>(work: ((tx: typeof db) => Promise<T>) | Array<Promise<T>>) => {
+      if (typeof work !== "function") return Promise.all(work);
+      inTx = true;
+      try {
+        return await work(db);
+      } finally {
+        inTx = false;
+      }
+    }
   );
-  return Object.assign(db, { $transaction });
+  return Object.assign(db, { $transaction, writes });
 }
 
 function jobRow(id: string, minutesAgo: number, status = "QUEUED", source = "iiwiki"): JobRow {
@@ -371,6 +394,26 @@ describe("runImportJobs", () => {
     expect(jobs[0]!.status).toBe("DONE");
   });
 
+  it.each(["CANCELLED", "FAILED"])(
+    "skips and counts an item a dead runner left under a %s job, in one transaction",
+    async (status) => {
+      const jobs = [jobRow("j", 10, status)];
+      jobs[0]!.processed = 1;
+      jobs[0]!.staged = 1;
+      const items = [itemRow("j", "A", "PROCESSING", "j:A", 6), itemRow("j", "B", "STAGED")];
+      const db = fakeDb(jobs, items);
+      const stage = stageMock();
+      await runImportJobs(db as never, deps(stage));
+
+      expect(stage).not.toHaveBeenCalled();
+      expect(items[0]).toMatchObject({ status: "SKIPPED", reason: "Cancelled" });
+      expect(jobs[0]).toMatchObject({ status, processed: 2, staged: 1, skipped: 1 });
+      expect(
+        db.$transaction.mock.calls.map(([work]) => Array.isArray(work) && work.length)
+      ).toEqual([2]);
+    }
+  );
+
   it("leaves a job whose last item another runner holds, and goes on to the next job", async () => {
     const jobs = [jobRow("held", 10, "RUNNING"), jobRow("next", 1)];
     const items = [itemRow("held", "A", "PROCESSING", "held:A", 1), itemRow("next", "B")];
@@ -460,6 +503,32 @@ describe("runImportJobs", () => {
     expect(stage).toHaveBeenCalledTimes(1);
     expect(jobs.map((j) => j.status)).toEqual(["FAILED", "QUEUED"]);
     expect(items.map((i) => i.status)).toEqual(["QUEUED", "QUEUED", "QUEUED"]);
+    error.mockRestore();
+  });
+
+  it("fails the job and parks its item in one transaction, so a cancel after the stop counts every item", async () => {
+    const jobs = [jobRow("j", 1)];
+    const items = [itemRow("j", "A"), itemRow("j", "B")];
+    const db = fakeDb(jobs, items);
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    await runImportJobs(
+      db as never,
+      deps(
+        stageMock(async () => {
+          throw stoppedBy403();
+        })
+      )
+    );
+    expect(
+      db.writes.filter(({ write }) => write === "job FAILED" || write === "item QUEUED")
+    ).toEqual([
+      { write: "job FAILED", inTx: true },
+      { write: "item QUEUED", inTx: true },
+    ]);
+
+    await cancelImportJob(db as never, "j");
+    expect(jobs[0]).toMatchObject({ status: "CANCELLED", processed: 2, skipped: 2 });
+    expect(jobs[0]!.processed).toBe(items.length);
     error.mockRestore();
   });
 
@@ -566,7 +635,10 @@ describe("runImportJobs", () => {
     await runImportJobs(db as never, { stage });
 
     expect(createDiscoveryClient).toHaveBeenCalledTimes(1);
-    expect(createDiscoveryClient).toHaveBeenCalledWith("iiwiki", { maxRequests: 1200 });
+    expect(createDiscoveryClient).toHaveBeenCalledWith("iiwiki", {
+      maxRequests: 1200,
+      pauseFirst: true,
+    });
     expect(contexts).toHaveLength(3);
     expect(new Set(contexts).size).toBe(1);
     expect(contexts[0]).toEqual({
@@ -577,12 +649,36 @@ describe("runImportJobs", () => {
     expect(db.systemConfig.findMany).toHaveBeenCalled();
   });
 
+  it("builds the client that replaces a lost one with the pause before its first request", async () => {
+    jest
+      .mocked(createDiscoveryClient)
+      .mockImplementation(() => ({ query: jest.fn(), pace: jest.fn() }) as never);
+    const jobs = [jobRow("j", 1)];
+    const items = [itemRow("j", "A"), itemRow("j", "B")];
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const stage = stageMock().mockRejectedValueOnce(
+      new DiscoveryStopped({ kind: "error", status: 502, message: "iiwiki answered HTTP 502" })
+    );
+    await runImportJobs(fakeDb(jobs, items) as never, { stage });
+    // The replacement's first request waits the client's pause after the failed one, like every other request.
+    expect(jest.mocked(createDiscoveryClient).mock.calls).toEqual([
+      ["iiwiki", { maxRequests: 1200, pauseFirst: true }],
+      ["iiwiki", { maxRequests: 1200, pauseFirst: true }],
+    ]);
+    error.mockRestore();
+  });
+
   it("asks only for items left PROCESSING longer than a lease", async () => {
     const db = fakeDb([], []);
     await runImportJobs(db as never, deps(stageMock(), { now: () => 10 * MINUTE }));
+    const abandoned = { status: "PROCESSING", updatedAt: { lt: new Date(5 * MINUTE) } };
     expect(db.cardImportItem.updateMany).toHaveBeenCalledWith({
-      where: { status: "PROCESSING", updatedAt: { lt: new Date(5 * MINUTE) } },
+      where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING"] } } },
       data: { status: "QUEUED" },
+    });
+    expect(db.cardImportItem.findMany).toHaveBeenCalledWith({
+      where: { ...abandoned, job: { status: { in: ["CANCELLED", "FAILED"] } } },
+      select: { id: true, jobId: true },
     });
   });
 });

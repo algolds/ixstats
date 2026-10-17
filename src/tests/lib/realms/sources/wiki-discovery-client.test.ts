@@ -13,7 +13,7 @@ const Any = z.object({ query: z.unknown().optional() }).passthrough();
 
 function setup(
   respond?: Parameters<typeof fakeIiwiki>[0],
-  options: { maxRetryAfterMs?: number; maxRequests?: number } = {}
+  options: { maxRetryAfterMs?: number; maxRequests?: number; pauseFirst?: boolean } = {}
 ) {
   const wiki = fakeIiwiki(respond);
   const sleeps: number[] = [];
@@ -39,6 +39,13 @@ describe("discovery client throttling", () => {
     expect(wiki.calls).toHaveLength(3);
     expect(sleeps).toEqual([400, 400]);
     expect(client.requests()).toBe(3);
+  });
+
+  it("can pause before its first request too, for a client that takes over from a failing one", async () => {
+    const { client, sleeps } = setup(undefined, { pauseFirst: true });
+    await client.query(rosterQuery, Any);
+    await client.pace(async () => "page");
+    expect(sleeps).toEqual([400, 400]);
   });
 
   it("runs queries started together one after another", async () => {

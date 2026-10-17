@@ -44,6 +44,8 @@ export interface DiscoveryClientOptions {
   sleep?: (ms: number) => Promise<void>;
   /** The pause before every request but the first. */
   delayMs?: number;
+  /** Pause before the first request too: a client that takes over from one whose wiki just failed a request. */
+  pauseFirst?: boolean;
   /** The most requests one client makes. */
   maxRequests?: number;
   /** The longest Retry-After the client waits out; a longer one stops it as rate-limited. */
@@ -103,6 +105,7 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
   const maxRequests = options.maxRequests ?? DISCOVERY_MAX_REQUESTS;
   const maxRetryAfterMs = options.maxRetryAfterMs ?? DISCOVERY_MAX_RETRY_AFTER_MS;
   const maxRetries = options.maxRetries ?? 2;
+  const pauseFirst = options.pauseFirst ?? false;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const apiUrl = options.apiUrl ?? defaultApiUrl(source);
   let count = 0;
@@ -113,7 +116,7 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
     throw new DiscoveryStopped(next);
   };
 
-  /** The cap, then the pause before every request but the first. */
+  /** The cap, then the pause before every request but the first (and the first too, with `pauseFirst`). */
   async function takeTurn(): Promise<void> {
     if (count >= maxRequests) {
       halt({
@@ -122,7 +125,7 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
         message: `Stopped after ${maxRequests} requests (the discovery cap)`,
       });
     }
-    if (count > 0 && delayMs > 0) await sleep(delayMs);
+    if ((count > 0 || pauseFirst) && delayMs > 0) await sleep(delayMs);
     count++;
   }
 

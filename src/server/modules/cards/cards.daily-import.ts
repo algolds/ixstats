@@ -110,7 +110,8 @@ export async function queueDailyLoreImports(): Promise<Partial<Record<CardArticl
     appDb,
     loreCardDiscovery.fetchRandomArticlesWithImages
   );
-  const reasons = Object.values(failed);
-  if (reasons.length > 0) throw new Error(`Daily card import failed: ${reasons.join(" ")}`);
+  // One sentence: each reason without its own closing period, joined by semicolons.
+  const reasons = Object.values(failed).map((reason) => reason.replace(/\.$/, ""));
+  if (reasons.length > 0) throw new Error(`Daily card import failed: ${reasons.join("; ")}.`);
   return queued;
 }
