@@ -81,7 +81,7 @@ interface ItemWhere {
   jobId?: string;
   status?: string;
   updatedAt?: { lt: Date };
-  job?: { status: { in: string[] } };
+  job?: { status: StatusFilter };
 }
 interface CreateData {
   source: string;
@@ -110,7 +110,7 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
     (where.jobId === undefined || item.jobId === where.jobId) &&
     (where.status === undefined || item.status === where.status) &&
     (where.updatedAt === undefined || item.updatedAt < where.updatedAt.lt) &&
-    (where.job === undefined || where.job.status.in.includes(jobStatus(item)));
+    (where.job === undefined || inStatus(jobStatus(item), where.job.status));
   const touch = (item: ItemRow, data: Partial<ItemRow>) =>
     Object.assign(item, data, { updatedAt: new Date() });
   /** The status writes to either table, and whether each ran inside an interactive transaction. */
@@ -394,25 +394,38 @@ describe("runImportJobs", () => {
     expect(jobs[0]!.status).toBe("DONE");
   });
 
-  it.each(["CANCELLED", "FAILED"])(
-    "skips and counts an item a dead runner left under a %s job, in one transaction",
-    async (status) => {
-      const jobs = [jobRow("j", 10, status)];
-      jobs[0]!.processed = 1;
-      jobs[0]!.staged = 1;
-      const items = [itemRow("j", "A", "PROCESSING", "j:A", 6), itemRow("j", "B", "STAGED")];
-      const db = fakeDb(jobs, items);
-      const stage = stageMock();
-      await runImportJobs(db as never, deps(stage));
+  it("skips and counts an item a dead runner left under a cancelled job, in one transaction", async () => {
+    const jobs = [jobRow("j", 10, "CANCELLED")];
+    jobs[0]!.processed = 1;
+    jobs[0]!.staged = 1;
+    const items = [itemRow("j", "A", "PROCESSING", "j:A", 6), itemRow("j", "B", "STAGED")];
+    const db = fakeDb(jobs, items);
+    const stage = stageMock();
+    await runImportJobs(db as never, deps(stage));
 
-      expect(stage).not.toHaveBeenCalled();
-      expect(items[0]).toMatchObject({ status: "SKIPPED", reason: "Cancelled" });
-      expect(jobs[0]).toMatchObject({ status, processed: 2, staged: 1, skipped: 1 });
-      expect(
-        db.$transaction.mock.calls.map(([work]) => Array.isArray(work) && work.length)
-      ).toEqual([2]);
-    }
-  );
+    expect(stage).not.toHaveBeenCalled();
+    expect(items[0]).toMatchObject({ status: "SKIPPED", reason: "Cancelled" });
+    expect(jobs[0]).toMatchObject({ status: "CANCELLED", processed: 2, staged: 1, skipped: 1 });
+    expect(db.$transaction.mock.calls.map(([work]) => Array.isArray(work) && work.length)).toEqual([
+      2,
+    ]);
+  });
+
+  it("puts back an item a dead runner left under a failed job, so Retry works it", async () => {
+    const jobs = [jobRow("j", 10, "FAILED")];
+    const items = [itemRow("j", "A", "PROCESSING", "j:A", 6)];
+    const db = fakeDb(jobs, items);
+    const stage = stageMock();
+    await runImportJobs(db as never, deps(stage));
+    expect(stage).not.toHaveBeenCalled();
+    expect(items[0]).toMatchObject({ status: "QUEUED", reason: null });
+    expect(jobs[0]).toMatchObject({ status: "FAILED", processed: 0, skipped: 0 });
+
+    await retryImportJob(db as never, "j");
+    await runImportJobs(db as never, deps(stage));
+    expect(titlesStaged(stage)).toEqual(["A"]);
+    expect(jobs[0]).toMatchObject({ status: "DONE", processed: 1, staged: 1 });
+  });
 
   it("leaves a job whose last item another runner holds, and goes on to the next job", async () => {
     const jobs = [jobRow("held", 10, "RUNNING"), jobRow("next", 1)];
@@ -673,11 +686,11 @@ describe("runImportJobs", () => {
     await runImportJobs(db as never, deps(stageMock(), { now: () => 10 * MINUTE }));
     const abandoned = { status: "PROCESSING", updatedAt: { lt: new Date(5 * MINUTE) } };
     expect(db.cardImportItem.updateMany).toHaveBeenCalledWith({
-      where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING"] } } },
+      where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING", "FAILED"] } } },
       data: { status: "QUEUED" },
     });
     expect(db.cardImportItem.findMany).toHaveBeenCalledWith({
-      where: { ...abandoned, job: { status: { in: ["CANCELLED", "FAILED"] } } },
+      where: { ...abandoned, job: { status: "CANCELLED" } },
       select: { id: true, jobId: true },
     });
   });

@@ -124,8 +124,9 @@ interface Passed {
 }
 
 /**
- * Items a dead runner left PROCESSING (claimed longer ago than a lease): back to the queue while their job is still
- * to work, else skipped as cancelled and counted, so the job's counters still equal its rows.
+ * Items a dead runner left PROCESSING (claimed longer ago than a lease): back to the queue unless their job was
+ * cancelled (a FAILED job's wait for Retry, like a stop's), else skipped as cancelled and counted, so the job's
+ * counters still equal its rows.
  */
 async function requeueAbandoned(db: PrismaClient, at: number) {
   const abandoned = {
@@ -133,11 +134,11 @@ async function requeueAbandoned(db: PrismaClient, at: number) {
     updatedAt: { lt: new Date(at - IMPORT_LEASE_MS) },
   };
   await db.cardImportItem.updateMany({
-    where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING"] } } },
+    where: { ...abandoned, job: { status: { in: ["QUEUED", "RUNNING", "FAILED"] } } },
     data: { status: "QUEUED" },
   });
   const ended = await db.cardImportItem.findMany({
-    where: { ...abandoned, job: { status: { in: ["CANCELLED", "FAILED"] } } },
+    where: { ...abandoned, job: { status: "CANCELLED" } },
     select: { id: true, jobId: true },
   });
   for (const item of ended) {
