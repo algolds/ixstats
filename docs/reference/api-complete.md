@@ -637,7 +637,6 @@ api.vault.adminListVaults.useQuery({ search?, limit?, offset? })
 api.vault.adminGetVaultConfig.useQuery()
 api.vault.adminListStoreItemsAll.useQuery()
 api.vault.adminGetPriceHistory.useQuery({ itemId })
-api.vault.adminGetIxCardSeason.useQuery()
 api.vault.adminGetPurchaseLogs.useQuery()
 api.vault.adminGetPurchasedItems.useQuery({ userId })
 api.vault.adminGetEquippedCosmetics.useQuery({ userId })
@@ -658,7 +657,6 @@ api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap
 api.vault.adminCreateStoreItem.useMutation() // { name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, effects? }
 api.vault.adminUpdateStoreItem.useMutation() // { id, name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, isActive?, effects? }
 api.vault.adminDeleteStoreItem.useMutation() // { id, hardDelete? }
-api.vault.adminSetIxCardSeason.useMutation() // { season }
 api.vault.adminGrantStoreItem.useMutation() // { userId, itemId }
 api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
