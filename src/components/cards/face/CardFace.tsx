@@ -7,11 +7,9 @@ import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { cardFaceLabel } from "~/lib/cards/face/accessible-name";
+import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import type { CardFaceData, CardFaceSize } from "~/lib/cards/face/types";
 import { RealmCrest } from "./RealmCrest";
-
-/** Widths per size; the 5:7 ratio sets the height. A grid passes `className="w-full"` to fill its cell. */
-export const CARD_FACE_WIDTH: Record<CardFaceSize, string> = { S: "w-32", M: "w-48", L: "w-72" };
 
 const TITLE_TEXT: Record<CardFaceSize, string> = {
   S: "text-caption",
@@ -21,17 +19,35 @@ const TITLE_TEXT: Record<CardFaceSize, string> = {
 const GEM_SIZE: Record<CardFaceSize, string> = { S: "size-3", M: "size-3", L: "size-4" };
 const PRESSABLE = cn("facet-press cursor-pointer", focusRing);
 
-interface CardFaceProps {
+interface FaceBaseProps {
   face: CardFaceData;
   size?: CardFaceSize;
-  /** Opens the card (its sheet). With neither this nor `href`, the face is a picture with the same name. */
-  onOpen?: (face: CardFaceData) => void;
-  /** Opens the card on another page: the face is a link. */
-  href?: string;
-  /** Select mode: whether this face is picked (the caller's `onOpen` toggles it). */
-  selected?: boolean;
   className?: string;
 }
+
+/** A button that opens the card (its sheet). */
+interface ButtonFaceProps extends FaceBaseProps {
+  onOpen: (face: CardFaceData) => void;
+  /** Select mode: whether this face is picked (the caller's `onOpen` toggles it). */
+  selected?: boolean;
+  href?: never;
+}
+
+/** A link that opens the card on another page. */
+interface LinkFaceProps extends FaceBaseProps {
+  href: string;
+  onOpen?: never;
+  selected?: never;
+}
+
+/** A picture with the same name, when the face opens nothing. */
+interface PictureFaceProps extends FaceBaseProps {
+  onOpen?: never;
+  href?: never;
+  selected?: never;
+}
+
+type CardFaceProps = ButtonFaceProps | LinkFaceProps | PictureFaceProps;
 
 /**
  * The one card face: full-bleed art, title and realm crest at the bottom, rarity as edge and gem, finish as sheen, a

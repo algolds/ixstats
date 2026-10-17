@@ -1,7 +1,7 @@
 import { cn } from "~/lib/utils/cn";
 import { VaultLogomark } from "~/lib/navigation/icons/VaultLogomark";
+import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import type { CardFaceSize } from "~/lib/cards/face/types";
-import { CARD_FACE_WIDTH } from "./CardFace";
 
 /** A card waiting to be turned over: the same size as its face, with the Vault mark. Decorative. */
 export function CardFaceDown({

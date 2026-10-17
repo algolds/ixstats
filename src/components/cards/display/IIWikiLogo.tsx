@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
+import type { CardInstance } from "~/types/cards-display";
 
 const IIWIKI_LOGO_URL = "/images/IIWikiLogo.png";
 
@@ -53,9 +54,9 @@ export function IIWikiBadge({
   );
 }
 
-export function isIIWikiCard(card: Record<string, any> | null | undefined): boolean {
+export function isIIWikiCard(
+  card: Pick<CardInstance, "wikiSource" | "metadata"> | null | undefined
+): boolean {
   if (!card) return false;
-  if (card.wikiSource === "iiwiki") return true;
-  const meta = card.metadata as Record<string, any> | null | undefined;
-  return meta?.wikiSource === "iiwiki";
+  return card.wikiSource === "iiwiki" || card.metadata?.wikiSource === "iiwiki";
 }

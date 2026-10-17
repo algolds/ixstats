@@ -18,6 +18,8 @@ import { CardFace } from "~/components/cards/face/CardFace";
 import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
 import { RarityMark } from "~/components/cards/face/RarityMark";
 import { RealmCrest } from "~/components/cards/face/RealmCrest";
+import { isIIWikiCard } from "~/components/cards/display/IIWikiLogo";
+import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 
 const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
@@ -126,9 +128,12 @@ describe("CardFace", () => {
 
   it("falls back to the realm crest when the art fails to load", () => {
     const { container } = render(<CardFace face={face()} />);
+    expect(container.querySelector(".card-face-tint")).toBeNull();
     fireEvent.error(container.querySelector("img")!);
     expect(container.querySelector("img")).toBeNull();
-    expect(screen.getAllByText("I").length).toBeGreaterThan(0);
+    // The crest on the rarity tint joins the one beside the title.
+    expect(container.querySelector(".card-face-tint")).toHaveTextContent("I");
+    expect(screen.getAllByText("I")).toHaveLength(2);
   });
 
   it("tries new art again after the old art failed", () => {
@@ -138,6 +143,17 @@ describe("CardFace", () => {
     expect(container.querySelector("img")?.getAttribute("src")).toContain(
       "/images/cards/caphiria-2.png"
     );
+  });
+
+  it("is a link, a button or a picture, never two at once", () => {
+    // Type pins: typecheck:tests fails if any of these compiles.
+    // @ts-expect-error a link face cannot also open as a button
+    const linkAndButton = <CardFace face={face()} href="/x" onOpen={jest.fn()} />;
+    // @ts-expect-error only the button form can be picked
+    const pickedLink = <CardFace face={face()} href="/x" selected />;
+    // @ts-expect-error only the button form can be picked
+    const pickedPicture = <CardFace face={face()} selected />;
+    expect([linkAndButton, pickedLink, pickedPicture]).toHaveLength(3);
   });
 });
 
@@ -175,6 +191,28 @@ describe("RealmCrest", () => {
     render(<RealmCrest realm={realm({ name: "althistory" })} size="md" muted />);
     expect(screen.getByText("A")).toHaveClass("size-10", "grayscale");
   });
+
+  it("falls back to the initial when the emblem fails to load", () => {
+    const { container } = render(
+      <RealmCrest realm={realm({ crestUrl: "/images/realms/broken.png" })} />
+    );
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("I")).toBeInTheDocument();
+  });
+
+  const CRESTS: [string, Partial<CardRealmBadge>][] = [
+    ["the NationStates logo", { id: "nationstates", slug: "nationstates", name: "NationStates" }],
+    ["the IIWiki logo", { id: "iiwiki", slug: "iiwiki", name: "IIWiki" }],
+    ["an emblem", { crestUrl: "/images/realms/ixnay.png" }],
+    ["an initial", {}],
+  ];
+
+  it.each(CRESTS)("is decorative as %s, since the realm's name sits beside it", (_, overrides) => {
+    const { container } = render(<RealmCrest realm={realm(overrides)} />);
+    expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
+    expect(screen.queryAllByRole("img")).toHaveLength(0);
+  });
 });
 
 describe("CardFaceDown and RarityMark", () => {
@@ -184,6 +222,11 @@ describe("CardFaceDown and RarityMark", () => {
     expect(container.firstElementChild).toHaveClass("card-face-down", "w-32");
   });
 
+  it("sizes a face-down card like its face", () => {
+    const { container } = render(<CardFaceDown size="L" />);
+    expect(container.firstElementChild).toHaveClass(CARD_FACE_WIDTH.L);
+  });
+
   it("names the rarity next to its gem", () => {
     render(<RarityMark rarity="ULTRA_RARE" />);
     const mark = screen.getByText("Ultra Rare").closest("[data-card-rarity]");
@@ -191,5 +234,14 @@ describe("CardFaceDown and RarityMark", () => {
     // Page backgrounds take the theme's paint; the raw-hue face gem is for the title scrim only.
     expect(mark?.querySelector(".card-rarity-gem")).toHaveAttribute("aria-hidden", "true");
     expect(mark?.querySelector(".card-face-gem")).toBeNull();
+  });
+});
+
+describe("isIIWikiCard", () => {
+  it("reads the card's source, then the source its lore metadata recorded", () => {
+    expect(isIIWikiCard({ wikiSource: "iiwiki" })).toBe(true);
+    expect(isIIWikiCard({ wikiSource: null, metadata: { wikiSource: "iiwiki" } })).toBe(true);
+    expect(isIIWikiCard({ wikiSource: "ixwiki", metadata: null })).toBe(false);
+    expect(isIIWikiCard(null)).toBe(false);
   });
 });
