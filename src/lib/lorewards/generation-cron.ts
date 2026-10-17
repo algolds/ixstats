@@ -154,8 +154,10 @@ function tally(result: WikiRunResult, articleTitle: string, outcome: StageOutcom
     result.generated++;
     result.rarityBreakdown[outcome.rarity] = (result.rarityBreakdown[outcome.rarity] || 0) + 1;
   } else if (outcome.status === "FAILED") {
+    const message = `Failed to stage "${articleTitle}": ${outcome.reason}`;
     result.failed++;
-    result.errors.push(`Failed to stage "${articleTitle}": ${outcome.reason}`);
+    result.errors.push(message);
+    console.error(`[Lore Card Cron] ${message}`);
   }
 }
 

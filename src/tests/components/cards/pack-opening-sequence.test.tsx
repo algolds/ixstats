@@ -29,7 +29,16 @@ jest.mock("~/components/cards/pack-opening/Stage1_PackReveal", () => ({
   ),
 }));
 jest.mock("~/components/cards/pack-opening/Stage2_PackExplosion", () => ({
-  Stage2_PackExplosion: () => <div>Explosion stage</div>,
+  Stage2_PackExplosion: ({ cards }: { cards: Array<{ id: string; artwork: string }> }) => (
+    <div>
+      Explosion stage
+      {cards.map((card) => (
+        <span key={card.id} data-testid="pulled-artwork">
+          {card.artwork}
+        </span>
+      ))}
+    </div>
+  ),
 }));
 jest.mock("~/components/cards/pack-opening/Stage3_CardReveal", () => ({
   Stage3_CardReveal: () => null,
@@ -39,7 +48,10 @@ jest.mock("~/components/cards/pack-opening/Stage4_QuickActions", () => ({
 }));
 
 interface OpenPackOptions {
-  onSuccess: (data: { success: boolean; cards: Array<Record<string, string | number>> }) => void;
+  onSuccess: (data: {
+    success: boolean;
+    cards: Array<Record<string, string | number | null>>;
+  }) => void;
   onError: (err: { message: string; data?: { code: string } }) => void;
 }
 
@@ -99,6 +111,17 @@ describe("PackOpeningSequence", () => {
     });
     expect(screen.queryByText("Error opening pack")).toBeNull();
     expect(screen.getByText("Explosion stage")).toBeInTheDocument();
+  });
+
+  it("gives a card without art the Lore placeholder", () => {
+    renderSequence();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "Tap to open pack" }));
+    });
+    act(() => options?.onSuccess({ ...pulled, cards: [{ ...pulled.cards[0]!, artwork: null }] }));
+    expect(screen.getByTestId("pulled-artwork")).toHaveTextContent(
+      "/images/cards/lore-placeholder.svg"
+    );
   });
 
   it("still shows the error when the pack was opened elsewhere and no cards came", () => {

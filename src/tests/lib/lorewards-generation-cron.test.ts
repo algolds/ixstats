@@ -54,7 +54,7 @@ beforeEach(() => {
 });
 
 describe("generateDailyLoreCards", () => {
-  it("stages image-bearing pages, counting staged cards and failures but not skips", async () => {
+  it("stages image-bearing pages, counting and logging failures but not skips", async () => {
     const result = await generateDailyLoreCards();
 
     expect(result).toMatchObject({
@@ -76,6 +76,9 @@ describe("generateDailyLoreCards", () => {
       context
     );
     expect(random).toHaveBeenCalledWith(5, "ixwiki");
+    expect(console.error).toHaveBeenCalledWith(
+      '[Lore Card Cron] Failed to stage "B": socket hang up'
+    );
   });
 
   it("gives each wiki one licence client sized to its run, and stops a wiki that stops answering", async () => {

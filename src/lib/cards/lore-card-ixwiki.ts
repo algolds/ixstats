@@ -206,7 +206,7 @@ export interface IxwikiArticle {
   images: Array<{ title: string }>;
   /** The URL of the page's lead picture, or of the first illustration it uses; undefined when none. */
   image: string | undefined;
-  /** The lead picture's file name ("Flag.svg"), or null. */
+  /** The lead picture's file name ("Flag.svg") when the card shows it (`image`), else null. */
   imageFile: string | null;
   /** Pages that link here, counted up to 500. */
   inboundLinks: number;
@@ -252,6 +252,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
   const files = linked.filter((name) => visible.has(name));
   const leadFile = (named && visible.has(named) ? named : undefined) ?? firstIllustration(files);
   const urls = await ixwikiImageUrls(leadFile ? [leadFile] : []);
+  const image = leadFile ? urls.get(leadFile) : undefined;
   const entry = facts.get(article.id) ?? { earliest: [], contributors: [] };
 
   return {
@@ -260,8 +261,9 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
     extract: cleanWikitextExcerpt(article.wikitext, CARD_EXTRACT_CHARS),
     categories: categories.map((member) => ({ title: `Category:${member.category.name}` })),
     images: files.map((name) => ({ title: `File:${name}` })),
-    image: leadFile ? urls.get(leadFile) : undefined,
-    imageFile: leadFile ?? null,
+    image,
+    // Named only for art the card shows: the importer reads its licence.
+    imageFile: image && leadFile ? leadFile : null,
     inboundLinks: Math.min(inboundLinks, MAX_BACKLINKS),
     authorInfo: buildCardAuthorInfo(entry.earliest, entry.contributors),
   };

@@ -15,7 +15,6 @@ import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/a
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
-import { getRarityThresholds } from "~/server/modules/cards/cards.config";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import type { LoreCategory as LoreCategoryType } from "./category-enums";
@@ -25,15 +24,16 @@ import type { CardArticleSource } from "./card-sources";
 import { ArticleRejected, type LoreCardCandidate } from "./lore-card-candidate";
 import { readsPostgres } from "./lore-card-discovery";
 import {
+  DEFAULT_RARITY_THRESHOLDS,
   qualityScore,
   rarityForScore,
   type ArticleSignals,
-  type RarityThresholds,
 } from "./rarity-engine";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 import {
   buildAuthorInfo,
   firstPage,
+  mwJson,
   mwQuery,
   pickCreator,
   type MwPage,
@@ -80,6 +80,9 @@ interface ArticleData extends MwPage {
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
 
+/** How long one read of a sister wiki may take; a hung answer fails the article, not the run. */
+const WIKI_READ_TIMEOUT_MS = 10_000;
+
 /** Lookup keys an article title may be requested under (raw, lowercase, spaced, underscored). */
 const titleKeys = (title: string | undefined, underscored = false) =>
   title
@@ -108,10 +111,7 @@ class WikiLoreCardGenerator {
   ): Promise<LoreCardCandidate> {
     const articleData = await this.fetchArticleData(articleTitle, wikiSource);
     if (!articleData) {
-      throw new ArticleRejected(
-        "missing",
-        `"${articleTitle}" was not found on ${wikiSource}, or could not be loaded.`
-      );
+      throw new ArticleRejected("missing", `"${articleTitle}" was not found on ${wikiSource}.`);
     }
     if (options.requireImage && !articleData.image) {
       throw new ArticleRejected("no-image", `"${articleTitle}" has no usable image.`);
@@ -142,16 +142,21 @@ class WikiLoreCardGenerator {
     };
   }
 
-  /** Article content, infobox, featured image, backlinks and author info from the wiki API. */
+  /**
+   * Article content, featured image, backlinks and author info from the wiki API; null for a page that is not a card's
+   * source (deleted in WikiOS, missing, or an invalid title). A failed read throws; a refusing wiki throws
+   * DiscoveryStopped (mwJson).
+   */
   private async fetchArticleData(
     title: string,
     wikiSource: CardArticleSource
   ): Promise<ArticleData | null> {
     if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
-    try {
-      // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
-      if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
-      const response = await mwQuery(wikiSource, {
+    // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
+    if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
+    const response = await mwQuery(
+      wikiSource,
+      {
         titles: title,
         prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
         exchars: "2000", // first ~2000 chars for the full excerpt
@@ -165,58 +170,38 @@ class WikiLoreCardGenerator {
         rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
         imlimit: "10",
         pclimit: "10", // up to 10 contributors
-      });
-      if (!response.ok) {
-        throw new Error(
-          `MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`
-        );
-      }
+      },
+      WIKI_READ_TIMEOUT_MS
+    );
+    const data = await mwJson(response, wikiSource);
+    if (!data.query?.pages) throw new Error(`${wikiSource} answered with no page data`);
+    const page = firstPage<MwPage>(data);
+    if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
 
-      const data = await response.json();
-      if (!data.query?.pages) throw new Error(`MediaWiki response contained no page data.`);
+    const wikitext = page.revisions?.[0]?.["*"] || "";
+    const featured = await this.resolveFeaturedImage(page, this.parseInfobox(wikitext), wikiSource);
 
-      const page = firstPage<MwPage & { invalidreason?: string }>(data)!;
-      if (page.missing !== undefined) {
-        throw new Error(
-          `Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`
-        );
-      }
-      if (page.invalid !== undefined) {
-        throw new Error(
-          `Article title "${title}" is invalid: ${page.invalidreason || "bad characters"}`
-        );
-      }
+    const backlinksResponse = await mwQuery(
+      wikiSource,
+      { list: "backlinks", bltitle: title, bllimit: "500" },
+      WIKI_READ_TIMEOUT_MS
+    );
+    const inboundLinks = backlinksResponse.ok
+      ? (await backlinksResponse.json()).query?.backlinks?.length || 0
+      : 0;
 
-      const wikitext = page.revisions?.[0]?.["*"] || "";
-      const infoboxData = this.parseInfobox(wikitext);
-
-      const featured = await this.resolveFeaturedImage(page, infoboxData, wikiSource);
-
-      const backlinksResponse = await mwQuery(wikiSource, {
-        list: "backlinks",
-        bltitle: title,
-        bllimit: "500",
-      });
-      const inboundLinks = backlinksResponse.ok
-        ? (await backlinksResponse.json()).query?.backlinks?.length || 0
-        : 0;
-
-      return {
-        ...page,
-        authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
-        text: this.removeTemplates(wikitext),
-        rawText: wikitext,
-        image: featured?.url,
-        imageFile: featured?.file ?? null,
-        categories: page.categories || [],
-        links: page.links || [],
-        images: page.images || [],
-        inboundLinks,
-      };
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching article "${title}":`, error);
-      return null;
-    }
+    return {
+      ...page,
+      authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
+      text: this.removeTemplates(wikitext),
+      rawText: wikitext,
+      image: featured?.url,
+      imageFile: featured?.file ?? null,
+      categories: page.categories || [],
+      links: page.links || [],
+      images: page.images || [],
+      inboundLinks,
+    };
   }
 
   /** The featured image and its file: the page image, else the infobox image, else the first real image. */
@@ -280,8 +265,8 @@ class WikiLoreCardGenerator {
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    * Used for discovery/preview so we don't run the full generateCard fetch per article
    * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity use the
-   * rarity engine and the source's rarity table with the cheap signals available here; the
-   * exact score is recomputed in generateCard at import time.
+   * rarity engine and the source's default rarity table with the cheap signals available here;
+   * the importer scores the article again, against the tuned table, at import time.
    */
   async fetchArticleMetadataBatch(
     requestedTitles: string[],
@@ -291,7 +276,6 @@ class WikiLoreCardGenerator {
     // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
     const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
     const valuationCfg = await getValuationConfig(db);
-    const thresholds = (await getRarityThresholds(db))[wikiSource];
     const authorsMap = await this.fetchArticleAuthorInfoBatch(titles, wikiSource);
 
     const fetchChunk = async (chunk: string[]): Promise<ArticleMetadataPreview[]> => {
@@ -319,8 +303,8 @@ class WikiLoreCardGenerator {
             const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
             return this.toMetadataPreview(
               p,
+              wikiSource,
               valuationCfg,
-              thresholds,
               authorsMap.get(titleKey) || null
             );
           });
@@ -345,28 +329,17 @@ class WikiLoreCardGenerator {
 
   /** A published IxWiki page's card data, from Postgres (MediaWiki is not asked); null when missing or deleted. */
   private async fetchIxwikiArticleData(title: string): Promise<ArticleData | null> {
-    try {
-      const article = await loadIxwikiArticle(title);
-      if (!article) return null;
-      const { wikitext, ...rest } = article;
-      return {
-        ...rest,
-        text: this.removeTemplates(wikitext),
-        rawText: wikitext,
-        links: [],
-      };
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error reading article "${title}":`, error);
-      return null;
-    }
+    const article = await loadIxwikiArticle(title);
+    if (!article) return null;
+    const { wikitext, ...rest } = article;
+    return { ...rest, text: this.removeTemplates(wikitext), rawText: wikitext, links: [] };
   }
 
   /** Previews of published IxWiki pages from Postgres, in the order asked. */
   private async fetchIxwikiMetadataBatch(titles: string[]): Promise<ArticleMetadataPreview[]> {
-    const [pages, valuationCfg, thresholds, authors] = await Promise.all([
+    const [pages, valuationCfg, authors] = await Promise.all([
       loadIxwikiPreviews(titles),
       getValuationConfig(db),
-      getRarityThresholds(db),
       ixwikiAuthorInfo(titles),
     ]);
     return pages.map((page) =>
@@ -378,8 +351,8 @@ class WikiLoreCardGenerator {
           categories: page.categories,
           original: page.imageUrl ? { source: page.imageUrl } : undefined,
         },
+        "ixwiki",
         valuationCfg,
-        thresholds.ixwiki,
         authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
       )
     );
@@ -387,8 +360,8 @@ class WikiLoreCardGenerator {
 
   private toMetadataPreview(
     page: MediaWikiPageItem & { extract?: string; length?: number },
+    wikiSource: WikiSource,
     cfg: CardValuationConfig,
-    thresholds: RarityThresholds,
     authorInfo?: CardAuthorInfo | null
   ): ArticleMetadataPreview {
     const extract: string = page.extract || "";
@@ -402,7 +375,7 @@ class WikiLoreCardGenerator {
       hasInfobox: length > 4000,
       isFeatured: false,
     });
-    const estimatedRarity = rarityForScore(estimatedQuality, thresholds);
+    const estimatedRarity = rarityForScore(estimatedQuality, DEFAULT_RARITY_THRESHOLDS[wikiSource]);
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -533,11 +506,11 @@ class WikiLoreCardGenerator {
       return (await ixwikiImageUrls([name])).get(name) ?? null;
     }
     try {
-      const response = await mwQuery(wikiSource, {
-        titles: `File:${withoutFileNamespace(filename)}`,
-        prop: "imageinfo",
-        iiprop: "url",
-      });
+      const response = await mwQuery(
+        wikiSource,
+        { titles: `File:${withoutFileNamespace(filename)}`, prop: "imageinfo", iiprop: "url" },
+        WIKI_READ_TIMEOUT_MS
+      );
       if (!response.ok) return null;
 
       const data = await response.json();

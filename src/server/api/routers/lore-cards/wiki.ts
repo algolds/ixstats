@@ -6,7 +6,7 @@ import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
-import { oneOffImportContext, stageArticleCard } from "~/server/modules/cards/cards.importer";
+import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import { CardRarity, CardType } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
@@ -341,15 +341,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Rarity comes from the rarity engine and the card waits in review (cards refresh §2.1), so the input's
       // rarity, category and artwork are no longer applied.
-      const outcome = await stageArticleCard(
-        ctx.db,
-        input.wikiSource,
-        { title: input.articleTitle, requestedBy: ctx.user.id, jobId: null },
-        await oneOffImportContext(ctx.db, input.wikiSource)
-      );
-      if (outcome.status !== "STAGED") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
-      }
+      const card = await stageForAdmin(ctx.db, input.wikiSource, {
+        title: input.articleTitle,
+        requestedBy: ctx.user.id,
+        jobId: null,
+      });
 
       // Record Audit Log
       await Promise.allSettled([
@@ -358,8 +354,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
             userId: ctx.auth?.userId || "admin",
             action: "LORE_CARD_MINT",
             entityType: "CARD",
-            target: outcome.cardId,
-            details: `Staged lore card "${input.articleTitle}" (Rarity: ${outcome.rarity}) from ${input.wikiSource}, pending review`,
+            target: card.cardId,
+            details: `Staged lore card "${input.articleTitle}" (Rarity: ${card.rarity}) from ${input.wikiSource}, pending review`,
             success: true,
           },
         }),
@@ -367,9 +363,9 @@ export const loreCardsWikiRouter = createTRPCRouter({
 
       return {
         success: true,
-        cardId: outcome.cardId,
+        cardId: card.cardId,
         title: input.articleTitle,
-        rarity: outcome.rarity,
+        rarity: card.rarity,
       };
     }),
 

@@ -2,16 +2,19 @@
  * Stage one card from a wiki (cards refresh spec §2.1, §2.4): the page becomes a Lore card in its home realm,
  * PENDING review, with its art's licence recorded (licensing drafts §2.5(b)). Art licensed non-commercial or
  * no-derivatives blocks it; a page with a card, or a realm's nation page, is skipped. Every outcome is a value, so
- * one bad page never stops an import job. Only a wiki that stops answering the licence reads (DiscoveryStopped) is
- * thrown, so the job runner can stop the job, and a database failure.
+ * one bad page never stops an import job. Two things are thrown: DiscoveryStopped, when a wiki stops answering the
+ * article or licence reads (so the job runner can stop the job), and a database failure.
  */
 import { Prisma, type CardRarity, type CardReviewState, type PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { isUniqueViolation } from "~/lib/prisma-error";
 import type { WikiQuery } from "~/lib/realms/lore-import";
+import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
 import { commonsCardTitle } from "~/lib/cards/art-licence";
 import {
   canonicalCardTitle,
+  cardSourceLabel,
   type CardArticleSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
@@ -184,6 +187,7 @@ async function readArticle(
       minLength: input.bypassLengthGate ? 0 : undefined,
     });
   } catch (error) {
+    if (error instanceof DiscoveryStopped) throw error;
     if (error instanceof ArticleRejected) return { status: "SKIPPED", reason: error.message };
     return { status: "FAILED", reason: error instanceof Error ? error.message : String(error) };
   }
@@ -287,4 +291,29 @@ export async function stageCommonsFile(
     },
     licence
   );
+}
+
+/**
+ * Stage one page for an admin procedure, with a one-off context: the card, or a TRPCError saying why not (the
+ * skip, block or failure, or which wiki stopped answering).
+ */
+export async function stageForAdmin(
+  db: PrismaClient,
+  source: CardArticleSource,
+  input: StageInput
+): Promise<{ cardId: string; rarity: CardRarity }> {
+  let outcome: StageOutcome;
+  try {
+    outcome = await stageArticleCard(db, source, input, await oneOffImportContext(db, source));
+  } catch (error) {
+    if (!(error instanceof DiscoveryStopped)) throw error;
+    throw new TRPCError({
+      code: "BAD_GATEWAY",
+      message: `${cardSourceLabel(source)} stopped answering: ${error.message}`,
+      cause: error,
+    });
+  }
+  if (outcome.status !== "STAGED")
+    throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
+  return { cardId: outcome.cardId, rarity: outcome.rarity };
 }

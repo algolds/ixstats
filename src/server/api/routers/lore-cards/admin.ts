@@ -17,7 +17,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { parseCardArticleSource } from "~/lib/cards/card-sources";
-import { oneOffImportContext, stageArticleCard } from "~/server/modules/cards/cards.importer";
+import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import { LedgerError, earnCreditsTx } from "~/lib/vault/vault-ledger";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
@@ -366,23 +366,17 @@ export const loreCardsAdminRouter = createTRPCRouter({
         }
 
         // Stage the card (an image is required), approved: the admin approved the request
-        const source = parseCardArticleSource(request.wikiSource) ?? "ixwiki";
-        const outcome = await stageArticleCard(
+        const { cardId } = await stageForAdmin(
           ctx.db,
-          source,
+          parseCardArticleSource(request.wikiSource) ?? "ixwiki",
           {
             title: request.articleTitle,
             requestedBy: adminUserId,
             jobId: null,
             requireImage: true,
             reviewState: "APPROVED",
-          },
-          await oneOffImportContext(ctx.db, source)
+          }
         );
-        if (outcome.status !== "STAGED") {
-          throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
-        }
-        const cardId = outcome.cardId;
 
         // Update request status
         await ctx.db.loreCardRequest.update({

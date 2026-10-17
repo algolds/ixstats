@@ -67,8 +67,15 @@ function althistory(page: FakePage) {
 }
 
 let guard: FetchGuard;
+/** Whether each request carried an abort signal (a timeout), in order. */
+let signalled: boolean[] = [];
 const read = (page: FakePage, options?: { requireImage?: boolean; minLength?: number }) => {
-  guard = installFetchGuard(althistory(page));
+  signalled = [];
+  const answer = althistory(page);
+  guard = installFetchGuard((url, init) => {
+    signalled.push(init?.signal instanceof AbortSignal);
+    return answer(url);
+  });
   return wikiLoreCardGenerator.generateCard("Aramelia (Roman Survival)", "althistory", options);
 };
 afterEach(() => guard.restore());
@@ -120,6 +127,13 @@ describe("generateCard for a sister wiki", () => {
     expect(card.imageFile).toBe("Aramelia map.png");
     expect(card.artwork).toBe(`${CDN}/1/12/Aramelia_map.png/revision/latest?cb=20200405180536`);
     expect(card.signals.hasInfobox).toBe(true);
+  });
+
+  it("gives every read of the article a timeout", async () => {
+    const wikitext = `{{Infobox country\n| image = File:Aramelia map.png\n}}\n${BODY}`;
+    await read({ wikitext });
+    // The page, its image's URL, its backlinks and its first editors.
+    expect(signalled).toEqual([true, true, true, true]);
   });
 
   it("takes the first article image when there is no page or infobox image, skipping icons", async () => {

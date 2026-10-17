@@ -13,7 +13,6 @@ jest.mock("~/server/db", () => ({
     wikiImageLink: { findMany: jest.fn() },
     wikiLink: { count: jest.fn() },
     wikiAsset: { findMany: jest.fn() },
-    card: { findFirst: jest.fn() },
     systemConfig: { findMany: jest.fn() },
     $queryRaw: jest.fn(),
   },
@@ -40,7 +39,6 @@ const mocked = db as unknown as {
   wikiImageLink: { findMany: jest.Mock };
   wikiLink: { count: jest.Mock };
   wikiAsset: { findMany: jest.Mock };
-  card: { findFirst: jest.Mock };
   systemConfig: { findMany: jest.Mock };
   $queryRaw: jest.Mock;
 };
@@ -86,7 +84,6 @@ beforeEach(() => {
   mocked.wikiImageLink.findMany.mockResolvedValue([]);
   mocked.wikiLink.count.mockResolvedValue(0);
   mocked.wikiAsset.findMany.mockResolvedValue([]);
-  mocked.card.findFirst.mockResolvedValue(null);
   mocked.systemConfig.findMany.mockResolvedValue([]);
   mocked.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) => {
     const sql = strings.join("?");
@@ -104,7 +101,6 @@ describe("generateCard for IxWiki", () => {
       id: "a1",
       title: "Caphiria",
       wikitext: WIKITEXT,
-      updatedAt: day(20),
     });
     mocked.wikiCategoryMember.findMany.mockResolvedValue([
       { category: { name: "Countries" } },
@@ -165,7 +161,6 @@ describe("generateCard for IxWiki", () => {
       id: "a1",
       title: "Caphiria",
       wikitext: `'''Caphiria''' ${BODY}`,
-      updatedAt: day(20),
     });
     mocked.wikiImageLink.findMany.mockResolvedValue([
       { fileName: "Caphiria logo.png" },
@@ -235,7 +230,7 @@ describe("generateCard for IxWiki", () => {
     await expect(wikiLoreCardGenerator.generateCard("Nowhere", "ixwiki")).rejects.toMatchObject({
       name: "ArticleRejected",
       kind: "missing",
-      message: '"Nowhere" was not found on ixwiki, or could not be loaded.',
+      message: '"Nowhere" was not found on ixwiki.',
     });
     expect(guard.calls()).toEqual([]);
   });

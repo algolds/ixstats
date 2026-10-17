@@ -17,12 +17,14 @@ import { ArticleRejected, type LoreCardCandidate } from "~/lib/cards/lore-card-c
 import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
 import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
+import { TRPCError } from "@trpc/server";
 import {
   cardedTitleKeys,
   oneOffImportContext,
   resolveImportRealm,
   stageArticleCard,
   stageCommonsFile,
+  stageForAdmin,
   type ImportContext,
 } from "~/server/modules/cards/cards.importer";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -302,7 +304,7 @@ describe("stageArticleCard", () => {
     );
   });
 
-  it("lets a wiki that stops answering stop the run", async () => {
+  it("lets a wiki that stops answering the licence read stop the run", async () => {
     const db = makeDb();
     const stopped = new DiscoveryStopped({ kind: "blocked", status: 403, message: "refused" });
     capture.mockRejectedValue(stopped);
@@ -310,6 +312,16 @@ describe("stageArticleCard", () => {
       stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context)
     ).rejects.toBe(stopped);
     expect(db.card.create).not.toHaveBeenCalled();
+  });
+
+  it("lets a wiki that stops answering the article read stop the run", async () => {
+    const db = makeDb();
+    const stopped = new DiscoveryStopped({ kind: "blocked", status: 403, message: "refused" });
+    generateCard.mockRejectedValue(stopped);
+    await expect(
+      stageArticleCard(db as never, "iiwiki", input("Union Assembly"), context)
+    ).rejects.toBe(stopped);
+    expect(capture).not.toHaveBeenCalled();
   });
 
   it("reads a lost natural-key race as already a card", async () => {
@@ -465,6 +477,54 @@ describe("stageCommonsFile", () => {
       status: "BLOCKED",
     });
     expect(db.card.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("stageForAdmin", () => {
+  beforeEach(() => jest.mocked(wikiQueryFor).mockReturnValue(context.query));
+
+  it("stages one page with a one-off context, answering the card", async () => {
+    const db = makeDb();
+    await expect(
+      stageForAdmin(db as never, "iiwiki", { ...input("Union Assembly"), requireImage: true })
+    ).resolves.toEqual({ cardId: "card_new", rarity: "RARE" });
+    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki", undefined);
+    expect(generateCard).toHaveBeenCalledWith("Union Assembly", "iiwiki", {
+      requireImage: true,
+      minLength: undefined,
+    });
+  });
+
+  it("refuses a page that did not become a card, with the reason", async () => {
+    const db = makeDb(["union assembly"]);
+    const refused = stageForAdmin(db as never, "iiwiki", input("Union Assembly"));
+    await expect(refused).rejects.toBeInstanceOf(TRPCError);
+    await expect(refused).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Already a card" });
+  });
+
+  it("says which wiki stopped answering", async () => {
+    const db = makeDb();
+    generateCard.mockRejectedValue(
+      new DiscoveryStopped({
+        kind: "blocked",
+        status: 403,
+        message: "iiwiki refused the request (HTTP 403)",
+      })
+    );
+    await expect(
+      stageForAdmin(db as never, "iiwiki", input("Union Assembly"))
+    ).rejects.toMatchObject({
+      code: "BAD_GATEWAY",
+      message: "IIWiki stopped answering: iiwiki refused the request (HTTP 403)",
+    });
+  });
+
+  it("passes any other failure on", async () => {
+    const db = makeDb();
+    db.card.create.mockRejectedValue(new Error("database went away"));
+    await expect(stageForAdmin(db as never, "iiwiki", input("Union Assembly"))).rejects.toThrow(
+      "database went away"
+    );
   });
 });
 
