@@ -112,7 +112,7 @@ function fetchCategoryMembers(
     return postgresList((limit) => ixwikiCategoryTitles(category, limit), reach.limit);
   }
   const cmtitle = /^category:/i.test(category) ? category : `Category:${category}`;
-  const members =
+  const members: Record<string, string> =
     wikiSource === "commons" ? { cmtype: "file" } : { cmtype: "page", cmnamespace: "0" };
   return listAll(
     wikiSource,
