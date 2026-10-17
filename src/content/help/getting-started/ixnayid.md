@@ -18,10 +18,10 @@ Your passport lives at `/@yourname` (also `/id/yourname`). Anyone can view it, s
 
 | Tab | What it shows |
 | --- | --- |
-| Overview | Your featured realm, a showcase (achievements and ribbons, your most valuable cards, Lorewards standing) and affiliations |
+| Overview | Your featured realm, a showcase (achievements and ribbons, your top cards, Lorewards standing) and affiliations |
 | Realms | Every realm you belong to and the nations you hold |
 | Work | Your wiki pages and edits, Onoma languages, MyLeague clubs and directives |
-| Vault | Collector level, deck value and your most valuable cards |
+| Vault | Collector level, deck value and your top cards: your pinned showcase when it is public, otherwise your six most valuable cards |
 | History | Your activity across the platform |
 
 A player's **wiki user profile** now opens their passport on the Work tab (`/id/@username?tab=work`), so wiki links to a user land on their work.

@@ -10,7 +10,7 @@ nextLabel: Auctions & Trading
 
 ## What the shop sells
 
-Besides [card packs](/help/vault/card-packs), the **Vault Shop** sells items for [IxCredits](/help/vault/ixcredits). Open [Vault → Store](/vault/store?tab=store) → **Vault Shop**. Items are on two tabs:
+Besides [card packs](/help/vault/card-packs), the Vault's **Store** sells items for [IxCredits](/help/vault/ixcredits). Open [Vault → Store](/vault/store?view=cosmetics). Items are on two of its tabs:
 
 - **Cosmetics**: profile decorations such as glows, frames and badges. You buy each one once.
 - **Account upgrades**: permanent upgrades and tokens. Upgrades can be bought more than once; the card shows how many you own ("Owned x2").

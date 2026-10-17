@@ -148,7 +148,7 @@ the version registry is an open owner decision (`docs/reference/revision.md` is 
 | **Glow**       | `text-cyan-400`                                                                                                                               |
 | **PWA**        | `IxCards - Trading Card Game` manifest with 8 icon sizes, 3 shortcuts                                                                         |
 | **Prisma**     | `cards.prisma` (MyVault, Card, VaultTransaction, CardValueHistory, etc.)                                                                      |
-| **Key routes** | `/vault/{cards,collections,create,import,inventory,lore-gallery,lore-generator,market,marketplace,ns-deck,ns-library,packs,trading}` |
+| **Key routes** | `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import`, `/vault/achievements` |
 
 #### Sub-systems
 

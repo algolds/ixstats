@@ -278,7 +278,7 @@ the spine.
 | Ribbons: model, award pipeline, Ribbons tab, signature shelf. **Partial (#49):** ribbons derived from real unlocks and a pinned shelf on the passport; the Ribbons tab and community ribbons are open | PF§4, VT-8 | L | Background evaluation |
 | NATION card minting per country; then `card-values` does real work | PF§3 | M | — |
 | Lore-first schema cleanup and the `CardRarity` enum; 40/25/20/10/4/1 distribution | PF§4 | M | — |
-| Vault reorder (Lore Gallery primary, category filters); themed packs; seasons | PF§4 | M | — |
+| Themed and realm packs; seasons (cards refresh Phases 4 and 5; the Vault reorder shipped as the cards hub's Explore) | PF§4 | M | — |
 | ✅ **Done (2026-10-05):** cosmetics visible to other players: the public, batched `vault.getEquippedCosmeticsFor` feeds the passport photo and name and forum post and thread authors | VT-12 | M | — |
 | ✅ **Done (2026-10-05):** the permanently disabled inventory bulk Move and List Market buttons are removed | VT-21 | S | — |
 | 🟡 **MVP and phase 2 done (2026-10-06, D5 (a)):** the Exchange (₷) at `/vault/exchange`: conditional, idempotent `spend`, a 1,000 ₷ seed, IxC ⇄ ₷ conversion (fee, daily cap, convert-out bounded by what went in plus aged contract revenue), companies, B2B contracts and B2G tenders with escrow and admin-decided disputes, a fixed-price share market with dividends, sector indices with zero-sum sector funds, company decisions, notifications, and the `exchange-market` and `exchange-contract-expiry` jobs ([spec](../specs/2026-10-06-exchange-economy-design.md), [system doc](../systems/exchange.md)). Left: the other decision types, faucet tenders, an order book | VT-16 | M | — |

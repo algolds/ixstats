@@ -1,6 +1,6 @@
 # Events & Realtime Channels
 
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-17
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
@@ -112,7 +112,7 @@ Manual scripts under `scripts/`:
 
 ## Consumers
 - Messaging (`useThinkPagesWebSocket` in `src/hooks/useThinkPagesWebSocket.ts`, used by `MessagesRouter.tsx`)
-- Vault auctions (`useAuctionWebSocket` in `src/hooks/marketplace/`, used by `VaultAuctionsTab.tsx`)
+- Vault auctions (`useAuctionWebSocket` in `src/hooks/marketplace/`, used by the cards hub's Market, `src/components/vault/cards/market/MarketPane.tsx`)
 - Compliance modal (`MyCountryComplianceModal.tsx`)
 - External monitoring channels (Discord webhooks)
 

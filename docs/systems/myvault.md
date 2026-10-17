@@ -1,11 +1,11 @@
 # 💎 Vault — Metagame Incentives, Social Economy & Collectibles
 
-**Last updated:** 2026-10-14
+**Last updated:** 2026-10-17
 
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 3` → `VERSIONS.apps.ixvault` in `src/lib/buildVersion.ts`, dev codename `IxVault`)  
-**Subsystems:** Wallet, Achievements (`ACHIEVEMENTS_VERSION = 3`) and Lorewards, 3D Cards & Showcase, Booster Pack Gacha, Atomic Credit Ledger, Store, Auctions & Trading  
+**Subsystems:** Wallet, Achievements (`ACHIEVEMENTS_VERSION = 3`) and Lorewards, the cards hub (Mine, Sets, Market, Explore) and showcases, card packs, Atomic Credit Ledger, Store  
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`, `[data-app="vault"]` in `src/styles/facet/tokens.css`)  
-**Routes:** `/vault`, `/vault/achievements`, `/vault/cards`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)
+**Routes:** `/vault`, `/vault/achievements`, `/vault/cards/{mine,sets,market,explore}`, `/vault/store`, `/vault/import` (plus the redirects below) | **Status:** Release Candidate (platform 1.5.0 "Lobster Crosby") — see [Known Gaps](#known-gaps)
 
 The Vault is the platform's collectathon hub: achievements, cards and the IxCredits store under one app, in the sidebar for every signed-in player (the `showCardsTab` setting is gone), with Lorewards shared between the Vault and WikiOS. IxCredits are **pure metagame**: they reward platform activity (wiki edits, ThinkPages and forum posts, card activity, Lorewards, achievements, the daily reward). A player's country and MyCountry play no part in the Vault economy; the one exception is the 2% nation-card royalty an auction pays the nation's owner. Design: [the 2026-10-14 spec](../specs/2026-10-14-vault-collectathon-hub-design.md).
 
@@ -15,25 +15,23 @@ The Vault is the platform's collectathon hub: achievements, cards and the IxCred
 
 There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapped in a shared layout (`src/app/vault/layout.tsx`: `AuthenticationGuard` + page container). Navigation is the shell sidebar's source list (Vault entry in `src/lib/navigation/app-sections.ts`), five rows:
 
-| Row          | Route                                          | Also matches                                                                                                            |
-| ------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Wallet       | `/vault` (exact)                               |                                                                                                                         |
-| Daily reward | the daily reward dialog (action, with a badge) |                                                                                                                         |
-| Achievements | `/vault/achievements`                          |                                                                                                                         |
-| Cards        | `/vault/cards`                                 | `/vault/inventory`, `/vault/collections`, `/vault/lore-gallery`, `/vault/ns-library`, `/vault/ns-deck`, `/vault/import` |
-| Store        | `/vault/store`                                 | `/vault/marketplace`, `/vault/market`, `/vault/packs`, `/vault/trading`                                                 |
+| Row          | Route                                          | Also matches                    |
+| ------------ | ---------------------------------------------- | ------------------------------- |
+| Wallet       | `/vault` (exact)                               |                                 |
+| Daily reward | the daily reward dialog (action, with a badge) |                                 |
+| Achievements | `/vault/achievements`                          |                                 |
+| Cards        | `/vault/cards/mine`                            | `/vault/cards`, `/vault/import` |
+| Store        | `/vault/store`                                 |                                 |
 
-Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?tab=store|auctions|trading` values carry over), `/vault/market` → `/vault/store?tab=auctions`, `/vault/packs` → `/vault/store?tab=store`, `/vault/trading` → `/vault/store?tab=trading`, `/vault/exchange` → `/labs/exchange` ([Exchange](./exchange.md) is a Labs section now), `/achievements` → `/vault/achievements` (query kept).
+Redirects: `src/proxy.ts` answers every old card address with a 308 to the cards hub (`legacyCardRedirectFor`, `src/lib/cards/hub-routes.ts`), keeping the query so `?card=` opens the sheet there: the old inventory page goes to Mine, collections (and each collection's page) to Sets, the lore gallery and the lore generator to Explore (the generator with `?suggest=1`), the NationStates library and the public NS deck of a nation to Explore for NationStates, the NS deck page to Import, market and marketplace to Market, trading to Market Trades, packs to the Store's Packs, crafting to Mine, and the old public collection gallery to Sets; the Store's old auctions and trading tabs go to Market and Market Trades. `/vault/cards` opens Mine (a 307). Also `/vault/exchange` → `/labs/exchange` ([Exchange](./exchange.md) is a Labs section now) and `/achievements` → `/vault/achievements` (query kept). The full table is in [cards.md](./cards.md#the-hub).
 
-- `src/components/vault/vault-sections.ts` – `getSubTabFromPathname` only (the Cards sub-tab for a path); the navigation itself is the Vault entry of the source list
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): the Wallet page, see [below](#the-wallet-page)
-  - `Cards` (`VaultCardsSection.tsx`, `/vault/cards`, `/vault/inventory`, `/vault/collections`): Card Gallery (the default; `/vault/lore-gallery`, `/vault/ns-library`, lore source selected first), Inventory (rarity/type filters), Collections
-  - `Marketplace` (`VaultMarketplaceSection.tsx`, `/vault/store?tab=store|auctions|trading`): Vault Shop (packs + cosmetics, cinematic pack opening; `?view=my-packs` opens the shop on My packs, which the Wallet showcase's pack card links to), Auctions, P2P Trading
-  - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
+  - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard, with its consent checkbox
   - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
+  - The Store (`marketplace/VaultStoreTab.tsx`, `/vault/store`): My packs, Packs, Cosmetics and Account upgrades (`?view=my-packs|packs|cosmetics|upgrades`, Packs by default); a pack opens in the short reveal
+- **Cards** (`CardsHub`, `src/components/vault/cards/`, `/vault/cards/{mine,sets,market,explore}`): Mine, Sets (showcases), Market (Browse, Trades, Wishlist, Selling) and Explore, with the card sheet (`CardSheetHost` in `src/app/vault/layout.tsx`); see [cards.md](./cards.md#the-hub)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
-- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#removed-in-the-cards-refresh-2026-10-15)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`
 
 ### The Wallet page
 
@@ -41,7 +39,7 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
 
 - **Title** (`dashboard/VaultTitle.tsx`): "Vault" with the Vault mark. On desktop it is the `<h1>` over the Your Vault list; on phones a phone-only `ShellPageHeader` (with `leading`) carries it. No toolbar actions; Claim daily reward (the one primary, only while claimable, through `DailyRewardProvider`) sits in the Balance card's header row.
 - **Balance card** (`dashboard/VaultBalanceCard.tsx`): the IxCredits balance as a large counting figure, the collector level, "+N today" and the login streak; below it one net worth well (credits plus deck value, trophy cards included) with a credits-versus-cards split bar and the card count and value. Figures count with the `number-flow` primitive. No country.
-- **Showcase** (`dashboard/VaultShowcase.tsx`): `cards.getMyTopCards` (the three most valuable owned cards, one per card, trophy cards included) as cutout cards on their real art (a card opens the card details modal), plus one pack card, "N packs waiting", linking to `/vault/store?tab=store&view=my-packs` while any are unopened. An empty collection shows an empty state with a link to the Store.
+- **Showcase** (`dashboard/VaultShowcase.tsx`): the player's display from `cards.getMyDisplay` (their pinned public showcase, else their six most valuable live copies, one per card, trophy cards included) as size M card faces that open the card sheet, plus one pack tile, "N packs waiting", linking to `/vault/store?view=my-packs` while any are unopened, and a "Find more cards" tile linking to Explore while fewer than six cards show. The header names the pinned showcase, or says "Your most valuable cards"; "All cards" links to Mine. An empty collection shows an empty state with a link to Explore.
 - **Statement** (`dashboard/VaultStatement.tsx`, pure grouping and the row icon mapping in `src/lib/vault/statement.ts`): `vault.getTransactions` (offset paging; `direction: "earned" | "spent"` filter; returns each row's `metadata`), grouped by UTC day (Today, Yesterday, then dates), each row with a signed amount and the running balance from `balanceAfter`. A Vault dividend row expands to its stored breakdown; Loreward rows name the contest, place and date (and the page, for payouts made since the tiered table); achievement rows name the achievement and link to `/vault/achievements?a=<key>`. Filters All, Earned and Spent, and "Show earlier". Each row carries a tinted icon for its source (dividend, daily reward, achievement, Loreward, pack, store, market, trade, or a neutral one).
 - **Your Vault** (`dashboard/VaultHoldings.tsx`): a `FacetList` of Achievements (unlocked of the active total, points, rank, a thin progress bar), Lorewards (wins and today's rank from the places tied to the player, or "Edit the wiki to take part" with no ixwiki edits), Cards (a link to the card hub) and Store (one featured item and its price).
 - **Achievements deck** (`dashboard/VaultUnlocks.tsx`): a swipeable deck of the three newest unlocks (`achievements.getMySummary.recent`), each on its category aurora and, from Epic, the foil sheen, then the locked achievement the player is nearest to with its progress (`achievements.getNextUnlock`), each linking to `/vault/achievements?a=<key>`. Hidden until there is either.
@@ -74,7 +72,6 @@ Organized into modular sub-files:
 - `vault/daily-claims.ts` – The daily reward (`claimCombinedDailyClaim`)
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip, `getTransactions` (the statement's feed)
 - `vault/public-cosmetics.ts` – `getEquippedCosmeticsFor`, another player's equipped cosmetics (public)
-- `vault/collections.ts` – Collection details, likes, comments, public collections
 - `vault/admin/` (`store.ts`, `items.ts`, `users.ts`) – Configuration toggles, store catalog, credit adjustments
 - Ledger logic lives in `src/lib/vault/` (`vault-ledger.ts`, `vault-daily-bonus.ts`, `vault-bonus.ts`, `vault-service.ts`, `statement.ts`). The Vault dividend is `src/lib/vault/vault-dividend.ts` (pure maths) and `src/server/modules/vault/vault-dividend-settle.ts` (loads the inputs, writes the rows), run by the `vault-dividend` cron job; see [ixcredits.md](./ixcredits.md#1-the-vault-dividend-earn_passive--no-daily-cap)
 
@@ -106,7 +103,6 @@ Related routers: `cards/`, `card-packs/`, `card-market/` (auctions & bids), `tra
 ## Known Gaps
 
 - **Crafting** was removed on 2026-10-15 (cards refresh Phase 1): the router, rules, seed and tables are gone.
-- **Card Gallery** (lore/NS library browsing) is dev-build only.
 - **Premium multiplier** is shown in Settings but not applied to earnings (`getBalance` returns `isPremium: false`).
 
 ---

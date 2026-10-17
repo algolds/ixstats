@@ -10,12 +10,12 @@ nextLabel: Lore Cards
 
 ## Where it happens
 
-Both live in the Vault's [Store](/vault/store): the **Auctions** tab for public auctions and the **Trading** tab for direct trades with a specific player. A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold or traded twice. Bound cards (trophies and achievement cards) can't be traded or auctioned.
+Both live in [Cards → Market](/vault/cards/market), which has four tabs: **Browse** (every live auction), **Trades** (direct trades with a specific player), **Wishlist** (coming later) and **Selling** (your auctions and the ones you're winning). A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold or traded twice. Bound cards (trophies and achievement cards) can't be traded or auctioned.
 
 ## Selling at auction
 
-1. Open **Auctions** and create an auction.
-2. Pick a card, set a **starting price** and, optionally, a **buyout price** (it must be higher than the starting price).
+1. Open a card you own and choose **Sell at auction**, or open **Selling** and choose **Sell a card**.
+2. Pick the copy, set a **starting price** and, optionally, a **buyout price** (it must be higher than the starting price).
 3. Choose a duration: **30 minutes (Express)** or **60 minutes (Standard)**.
 4. Pay the listing fee: 5 IxC, or 10 IxC for a featured listing.
 
@@ -23,7 +23,7 @@ If nobody bids, the card comes back to you and half the listing fee is refunded.
 
 ## Buying at auction
 
-- Browse and filter by rarity, card type and price, and sort by newest, price or ending soon.
+- In **Browse**, filter by realm and rarity, and sort by ending soon, newest or price. A card's sheet also links to its own listings.
 - **Bid** more than the current highest bid. You're notified if you're outbid.
 - **Buy out** at the buyout price to end the auction at once.
 - A bid in the last 5 minutes extends the auction by 1 minute, so there's time to respond.
@@ -32,12 +32,12 @@ When an auction ends, the highest bidder gets the card and the seller gets the p
 
 ## Trading directly
 
-1. Open **Trading** and start a trade offer with another player.
+1. Open **Trades** and choose **New trade** to start a trade offer with another player.
 2. Choose at least one of your cards to offer and at least one of theirs to ask for. You can add IxCredits on either side, and a message.
 3. Send it. Your offered cards are locked while it's pending.
 4. The other player can **accept**, **reject** or **counter** with different cards or credits.
 
-Offers expire after 24 hours if nobody answers, and you can cancel one you've sent. Your active trades and trade history are on the same tab.
+Offers expire after 24 hours if nobody answers, and you can cancel one you've sent. **Trades** lists the offers made to you (**Incoming**), the ones you sent (**Sent**) and your **History** of trades and auctions.
 
 ## Tips
 

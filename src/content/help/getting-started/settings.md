@@ -73,11 +73,11 @@ Your IxCredits balance, the daily reward (open it here), streak, Vault level and
 
 ## Cosmetics
 
-Items you've bought in the Vault Shop. Equip and unequip cosmetics here. Equipped cosmetics show only to you for now (your profile in Halo's wiki panel). See [Vault Shop Items](/help/vault/shop-items).
+Items you've bought in the Store. Equip and unequip cosmetics here. Equipped cosmetics show only to you for now (your profile in Halo's wiki panel). See [Vault Shop Items](/help/vault/shop-items).
 
 ## NationStates cards
 
-The cards you've imported from NationStates, and the tools to hide a card or request that your cards be taken down. See [Importing NationStates Cards](/help/vault/ns-import).
+How many NationStates cards you have and the newest one, a link to import more, and the takedown and opt-out option. Your cards themselves are in [Cards → Mine](/vault/cards/mine). See [Importing NationStates Cards](/help/vault/ns-import).
 
 ## Quick settings in Halo
 
