@@ -118,6 +118,46 @@ it("lists the Special cards and edits one from its stored values", () => {
   });
 });
 
+const choose = (select: string, option: string) => {
+  fireEvent.click(screen.getByRole("combobox", { name: select }));
+  fireEvent.click(screen.getByRole("option", { name: option }));
+};
+
+it("asks why an edit changes the rarity, and sends the reason", () => {
+  const save = serve({ data: [veteran] });
+  fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
+  expect(screen.queryByLabelText("Why the rarity changes")).not.toBeInTheDocument();
+  choose("Rarity", "Legendary");
+  const saveCard = screen.getByRole("button", { name: "Save card" });
+  expect(saveCard).toBeDisabled();
+  expect(screen.getByRole("status")).toHaveTextContent("Say why the rarity changes.");
+  const reason = screen.getByLabelText("Why the rarity changes");
+  fireEvent.change(reason, { target: { value: "  a  " } });
+  expect(saveCard).toBeDisabled();
+  fireEvent.change(reason, { target: { value: " Two years of the realm " } });
+  fireEvent.click(saveCard);
+  expect(save).toHaveBeenCalledWith(
+    expect.objectContaining({ rarity: "LEGENDARY", reason: "Two years of the realm" })
+  );
+});
+
+it("asks no reason of a new card's rarity", () => {
+  const save = openNew();
+  choose("Rarity", "Legendary");
+  expect(screen.queryByLabelText("Why the rarity changes")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Save card" }));
+  expect(save.mock.calls[0]![0]).not.toHaveProperty("reason");
+});
+
+it("drops the reason field once the rarity is back to the stored one", () => {
+  serve({ data: [veteran] });
+  fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
+  choose("Rarity", "Legendary");
+  choose("Rarity", "Epic");
+  expect(screen.queryByLabelText("Why the rarity changes")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Save card" })).toBeEnabled();
+});
+
 it("fixes the kind, binding and achievement of a card players hold", () => {
   serve({ data: [veteran] });
   fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));

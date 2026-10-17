@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { RECRUITER_ACHIEVEMENT_IDS } from "~/lib/achievements/scope";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
+import { lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity } from "~/lib/cards/enums";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
@@ -38,6 +39,8 @@ export const SpecialCardSchema = z
       .default(null),
     isBound: z.boolean(),
     rewardAchievementKey: z.string().min(1).nullable().default(null),
+    /** Why an edit changes the card's rarity; needed only then, and audited with the override. */
+    reason: z.string().trim().max(500).optional(),
   })
   .refine(
     (card) =>
@@ -118,8 +121,8 @@ type EditedSpecialCard = Awaited<ReturnType<typeof editedCard>>;
 
 /**
  * An old seed row waits for the import, which alone gives it a kind. Once players hold copies, the kind, binding and
- * achievement stay: binding lives on the card, so unbinding one would free every copy at once. Art a takedown or a
- * restricted licence hides is changed only from Compliance.
+ * achievement stay: binding lives on the card, so unbinding one would free every copy at once. A rarity change says
+ * why, as in the Library. Art a takedown or a restricted licence hides is changed only from Compliance.
  */
 function assertEditable(card: EditedSpecialCard, input: SpecialCardInput) {
   if (awaitsSpecialCardImport(card)) {
@@ -132,6 +135,9 @@ function assertEditable(card: EditedSpecialCard, input: SpecialCardInput) {
     card.rewardAchievementKey !== input.rewardAchievementKey;
   if (changesKind && card._count.CardOwnership > 0) {
     throw refused("Players hold copies of this card, so its kind and binding are fixed.");
+  }
+  if (input.rarity !== card.rarity && lacksRarityReason(input.reason)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Say why the rarity changes." });
   }
   if (input.artwork !== card.artwork) assertArtNotHeld(card);
 }
@@ -172,6 +178,29 @@ async function updateSpecialCardTx(
   return updated;
 }
 
+/** The save's audit rows: the save, and a rarity change as the override it is, with its reason (as in the Library). */
+async function auditSaveTx(
+  tx: Prisma.TransactionClient,
+  actor: CardAdminActor,
+  cardId: string,
+  existing: EditedSpecialCard | null,
+  input: SpecialCardInput
+) {
+  await recordCardAudit(tx, {
+    action: "CARD_SPECIAL_SAVE",
+    actor: actor.clerkId,
+    target: cardId,
+    details: `${existing ? "Edited" : "Created"} the Special card "${input.title}"`,
+  });
+  if (!existing || existing.rarity === input.rarity) return;
+  await recordCardAudit(tx, {
+    action: "CARD_RARITY_OVERRIDE",
+    actor: actor.clerkId,
+    target: cardId,
+    details: `Rarity ${existing.rarity} → ${input.rarity}: ${input.reason}`,
+  });
+}
+
 /** Creates a Special card, approved because an admin made it, or edits one in place (its season and type stay). */
 export async function saveSpecialCard(
   db: PrismaClient,
@@ -207,12 +236,7 @@ export async function saveSpecialCard(
             },
             select: { id: true },
           });
-      await recordCardAudit(tx, {
-        action: "CARD_SPECIAL_SAVE",
-        actor: actor.clerkId,
-        target: card.id,
-        details: `${existing ? "Edited" : "Created"} the Special card "${input.title}"`,
-      });
+      await auditSaveTx(tx, actor, card.id, existing, input);
       return card;
     });
   } catch (error) {

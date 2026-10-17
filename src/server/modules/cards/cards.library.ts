@@ -9,7 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
-import { cardCount } from "~/lib/cards/curation-limits";
+import { cardCount, lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
@@ -184,7 +184,7 @@ function assertEditable(card: EditedCard, input: LibraryEdit) {
       message: "This card changed since you opened it. Reopen it and try again.",
     });
   }
-  if (input.rarity !== card.rarity && (input.reason ?? "").trim().length < 3) {
+  if (input.rarity !== card.rarity && lacksRarityReason(input.reason)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Say why the rarity changes" });
   }
   const artChanged = input.artwork !== card.artwork;
