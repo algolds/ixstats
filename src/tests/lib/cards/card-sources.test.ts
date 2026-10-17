@@ -7,7 +7,7 @@ import {
   cardArticleSourceSchema,
   cardSourceLabel,
   cardWikiSourceSchema,
-  parseCardArticleSource,
+  commonsPageUrl,
   parseCardWikiSource,
 } from "~/lib/cards/card-sources";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
@@ -26,9 +26,6 @@ describe("card sources", () => {
   });
 
   it("parses stored values and answers null for anything else", () => {
-    expect(parseCardArticleSource("iiwiki")).toBe("iiwiki");
-    expect(parseCardArticleSource("commons")).toBeNull();
-    expect(parseCardArticleSource(null)).toBeNull();
     expect(parseCardWikiSource("commons")).toBe("commons");
     expect(parseCardWikiSource("stash")).toBeNull();
   });
@@ -40,6 +37,15 @@ describe("card sources", () => {
       "AltHistory Wiki",
       "Wikimedia Commons",
     ]);
+  });
+
+  it("addresses a Commons file on Commons itself", () => {
+    expect(commonsPageUrl("File:Flag of Ireland.svg")).toBe(
+      "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"
+    );
+    expect(commonsPageUrl("File:A&B?.png")).toBe(
+      "https://commons.wikimedia.org/wiki/File:A%26B%3F.png"
+    );
   });
 
   it("canonicalises titles as the natural key does, and refuses ones MediaWiki would", () => {

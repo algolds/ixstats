@@ -16,7 +16,7 @@ jest.mock("next/link", () => ({
 jest.mock("~/trpc/react", () => ({
   api: {
     cards: {
-      getWikiArticleExcerpt: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      getWikiArticleExcerpt: { useQuery: jest.fn(() => ({ data: undefined, isLoading: false })) },
     },
   },
 }));
@@ -28,6 +28,7 @@ jest.mock("~/lib/wiki-os/transformers/wikitext-parser", () => ({
   parseWikitextToHtml: () => "",
 }));
 
+import { api } from "~/trpc/react";
 import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
 import { LoreWikiExcerpt } from "~/components/cards/display/LoreWikiExcerpt";
 import type { CardInstance } from "~/types/cards-display";
@@ -104,6 +105,12 @@ describe("cardWikiHref", () => {
     ).toBe("/wiki/Balkanized_North_America?source=althistory");
   });
 
+  it("links a Commons file to its Commons page, not an IxWiki one", () => {
+    expect(
+      cardWikiHref(card({ wikiArticleTitle: "File:Flag of Ireland.svg", wikiSource: "commons" }))
+    ).toBe("https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg");
+  });
+
   it("keeps a URL that names no article as it is", () => {
     expect(cardWikiHref(card({ wikiUrl: "https://example.com/x", wikiSource: "iiwiki" }))).toBe(
       "https://example.com/x"
@@ -117,6 +124,35 @@ describe("cardWikiHref", () => {
 });
 
 describe("LoreWikiExcerpt link", () => {
+  it("credits AltHistory by name", () => {
+    render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "Page", wikiSource: "althistory" })}
+        wikiUrl="/wiki/Page?source=althistory"
+      />
+    );
+    expect(screen.getByText("From AltHistory Wiki")).not.toBeNull();
+  });
+
+  it("links a Commons card out to Commons, credited, with no article fetch", () => {
+    const useQuery = jest.mocked(api.cards.getWikiArticleExcerpt.useQuery);
+    useQuery.mockClear();
+    render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "File:Flag of Ireland.svg", wikiSource: "commons" })}
+        wikiUrl="https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"
+      />
+    );
+    const link = screen.getByRole("link", { name: "View the file page" });
+    expect(link.getAttribute("href")).toBe(
+      "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"
+    );
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(screen.getByText("From Wikimedia Commons")).not.toBeNull();
+    expect(useQuery.mock.calls[0]?.[1]).toMatchObject({ enabled: false });
+  });
+
   it("links an IxWiki card in-app as Read the full article", () => {
     render(
       <LoreWikiExcerpt

@@ -10,7 +10,7 @@ import type { CardInstance } from "~/types/cards-display";
 import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { deckValue } from "~/lib/cards/copy-value";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
-import { parseCardArticleSource } from "~/lib/cards/card-sources";
+import { commonsPageUrl, parseCardWikiSource } from "~/lib/cards/card-sources";
 
 const CARD_SELECT = {
   id: true,
@@ -87,10 +87,13 @@ export function toVaultFocus(
   return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
-/** Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`). */
+/** Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`); a Commons file opens on Commons. */
 export function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
   if (!card.wikiArticleTitle) return null;
-  return wikiReaderPath(card.wikiArticleTitle, parseCardArticleSource(card.wikiSource) ?? "ixwiki");
+  const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
+  return source === "commons"
+    ? commonsPageUrl(card.wikiArticleTitle)
+    : wikiReaderPath(card.wikiArticleTitle, source);
 }
 
 /** Shape an owned card for `CardDisplay`; JSON columns are passed through as stored. */

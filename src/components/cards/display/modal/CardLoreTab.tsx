@@ -11,11 +11,11 @@ import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { CategoryIcon } from "~/components/cards/icons";
-import { cardSourceLabel, parseCardArticleSource } from "~/lib/cards/card-sources";
+import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
 
 export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: string | null }) {
   const meta = card.metadata as Record<string, unknown> | null | undefined;
-  const source = parseCardArticleSource(card.wikiSource) ?? "ixwiki";
+  const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
   const rawAuthor =
     (meta?.authorInfo as { displayAuthor?: string } | undefined)?.displayAuthor ||
     (meta?.author as string);
