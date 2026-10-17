@@ -119,6 +119,70 @@ describe("discovery client throttling", () => {
   });
 });
 
+describe("paced reads (a caller's own request, in the client's turn)", () => {
+  it("takes the same pause and counts against the same cap as the client's queries", async () => {
+    const { client, sleeps, wiki } = setup(undefined, { maxRequests: 3 });
+    const read = jest.fn(async () => "page");
+    await client.query(rosterQuery, Any);
+    await expect(client.pace(read)).resolves.toBe("page");
+    await client.query(rosterQuery, Any);
+
+    expect(sleeps).toEqual([400, 400]);
+    expect(client.requests()).toBe(3);
+    await expect(client.pace(read)).rejects.toThrow("discovery cap");
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(wiki.calls).toHaveLength(2);
+  });
+
+  it("runs one at a time with the client's queries", async () => {
+    const order: string[] = [];
+    const wiki = fakeIiwiki();
+    const client = createDiscoveryClient("iiwiki", {
+      apiUrl: API,
+      delayMs: 0,
+      fetchImpl: (async (input: string) => {
+        order.push("query sent");
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        order.push("query answered");
+        return wiki.fetch(input);
+      }) as typeof fetch,
+    });
+    await Promise.all([
+      client.query(rosterQuery, Any),
+      client.pace(async () => {
+        order.push("paced read");
+      }),
+      client.query(rosterQuery, Any),
+    ]);
+    expect(order).toEqual([
+      "query sent",
+      "query answered",
+      "paced read",
+      "query sent",
+      "query answered",
+    ]);
+  });
+
+  it("reads nothing once the client has stopped", async () => {
+    const { client } = setup(() => new Response("", { status: 403 }));
+    await expect(client.query(rosterQuery, Any)).rejects.toBeInstanceOf(DiscoveryStopped);
+    const read = jest.fn(async () => "page");
+    await expect(client.pace(read)).rejects.toBeInstanceOf(DiscoveryStopped);
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it("leaves the answer to the caller: a failed read never stops the client", async () => {
+    const { client } = setup();
+    await expect(
+      client.pace(async () => {
+        throw new Error("HTTP 503");
+      })
+    ).rejects.toThrow("HTTP 503");
+    expect(client.stopped()).toBeNull();
+    await expect(client.query(rosterQuery, Any)).resolves.toBeDefined();
+  });
+});
+
 describe("discovery wikis", () => {
   async function firstUrl(source: "commons" | "ixwiki"): Promise<string> {
     const urls: string[] = [];

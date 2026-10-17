@@ -11,7 +11,7 @@ import { Prisma, type CardRarity, type CardReviewState, type PrismaClient } from
 import { TRPCError } from "@trpc/server";
 import { isUniqueViolation } from "~/lib/prisma-error";
 import type { WikiQuery } from "~/lib/realms/lore-import";
-import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
+import { DiscoveryStopped, type Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
 import { commonsCardTitle } from "~/lib/cards/art-licence";
 import {
@@ -36,6 +36,8 @@ import { getRarityThresholds } from "./cards.config";
 export interface ImportContext {
   /** Licence reads for the source: one throttled client per import run. */
   query: WikiQuery;
+  /** The article's own MediaWiki reads, in that client's turns (an import run); unpaced when absent. */
+  pace?: Pace;
   /** The source's rarity table. */
   thresholds: RarityThresholds;
 }
@@ -184,12 +186,14 @@ async function createStagedCard(
 async function readArticle(
   source: CardArticleSource,
   title: string,
-  input: StageInput
+  input: StageInput,
+  pace: Pace | undefined
 ): Promise<LoreCardCandidate | StageOutcome> {
   try {
     return await wikiLoreCardGenerator.generateCard(title, source, {
       requireImage: input.requireImage,
       minLength: input.bypassLengthGate ? 0 : undefined,
+      pace,
     });
   } catch (error) {
     if (error instanceof DiscoveryStopped) throw error;
@@ -216,7 +220,7 @@ export async function stageArticleCard(
     return { status: "SKIPPED", reason: "A realm's nation page does not become a Lore card" };
   }
 
-  const read = await readArticle(source, title, input);
+  const read = await readArticle(source, title, input, context.pace);
   if ("status" in read) return read;
   const licence = read.imageFile
     ? await captureArtLicence(context.query, source, read.imageFile)

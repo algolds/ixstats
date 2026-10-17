@@ -2,7 +2,8 @@
  * The throttled api.php reader world discovery (`iiwiki-discovery.ts`) and card art licence capture use. One
  * request at a time, a pause between requests, Retry-After honoured, a request cap, and no exception for a refusal:
  * when the wiki blocks (HTTP 403, a Cloudflare challenge page) or keeps rate-limiting, the client stops and records
- * why, and every later query stops at once, so the caller returns what it gathered with `blocked` set.
+ * why, and every later query stops at once, so the caller returns what it gathered with `blocked` set. A card import
+ * run also sends the lore-card generator's own article reads through `pace`, so one client paces all of its reads.
  *
  * It never marks the host offline for the rest of the app (the bridge reader's `markExternalHostOffline` does,
  * for five minutes): a refused discovery says nothing about whether readers can see the wiki's pages.
@@ -60,10 +61,18 @@ export const DISCOVERY_MAX_RETRY_AFTER_MS = 20_000;
 const DEFAULT_RETRY_AFTER_MS = 5_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+/** Runs a read in a client's turn (see DiscoveryClient.pace). */
+export type Pace = <T>(read: () => Promise<T>) => Promise<T>;
+
 export interface DiscoveryClient<S extends DiscoveryWiki = RealmWikiSource> {
   source: S;
   /** An `action=query` read (formatversion 2), parsed by `schema`. Throws DiscoveryStopped once stopped. */
   query: WikiQuery;
+  /**
+   * A request the caller sends and reads itself, in the client's turn: one at a time with its queries, after its
+   * pause and counted against its cap. Throws DiscoveryStopped once stopped; its own answer never stops the client.
+   */
+  pace: Pace;
   requests(): number;
   stopped(): DiscoveryStop | null;
 }
@@ -101,7 +110,8 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
     throw new DiscoveryStopped(next);
   };
 
-  async function send(url: URL): Promise<Response> {
+  /** The cap, then the pause before every request but the first. */
+  async function takeTurn(): Promise<void> {
     if (count >= maxRequests) {
       halt({
         kind: "cap",
@@ -111,6 +121,10 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
     }
     if (count > 0 && delayMs > 0) await sleep(delayMs);
     count++;
+  }
+
+  async function send(url: URL): Promise<Response> {
+    await takeTurn();
     try {
       return await fetchImpl(url.toString(), {
         headers: {
@@ -170,16 +184,21 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
     }
   }
 
-  /** Queries run one after another even when a caller starts several at once. */
+  /** Queries and paced reads run one after another even when a caller starts several at once. */
   let queue: Promise<unknown> = Promise.resolve();
-  const query: WikiQuery = <T>(
-    params: Record<string, string>,
-    schema: z.ZodType<T>
-  ): Promise<T> => {
-    const run = queue.then(() => readOne(params, schema));
+  const inTurn = <T>(work: () => Promise<T>): Promise<T> => {
+    const run = queue.then(work);
     queue = run.catch(() => undefined);
     return run;
   };
+  const query: WikiQuery = <T>(params: Record<string, string>, schema: z.ZodType<T>): Promise<T> =>
+    inTurn(() => readOne(params, schema));
+  const pace: Pace = <T>(read: () => Promise<T>): Promise<T> =>
+    inTurn(async () => {
+      if (stop) throw new DiscoveryStopped(stop);
+      await takeTurn();
+      return read();
+    });
 
   async function readOne<T>(params: Record<string, string>, schema: z.ZodType<T>): Promise<T> {
     if (stop) throw new DiscoveryStopped(stop);
@@ -208,5 +227,5 @@ export function createDiscoveryClient<S extends DiscoveryWiki>(
     return parsed.data;
   }
 
-  return { source, query, requests: () => count, stopped: () => stop };
+  return { source, query, pace, requests: () => count, stopped: () => stop };
 }

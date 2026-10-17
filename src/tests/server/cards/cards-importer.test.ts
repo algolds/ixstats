@@ -144,6 +144,17 @@ describe("stageArticleCard", () => {
     expect(db.card.create.mock.calls[0]![0].select).toEqual({ id: true, rarity: true });
   });
 
+  it("reads the article in the turns of the run's client when the context has one", async () => {
+    const db = makeDb();
+    const pace = jest.fn();
+    await stageArticleCard(db as never, "iiwiki", input("Union Assembly"), { ...context, pace });
+    expect(generateCard).toHaveBeenCalledWith(
+      "Union Assembly",
+      "iiwiki",
+      expect.objectContaining({ pace })
+    );
+  });
+
   it("stores the canonical title, and asks for an existing card by its key", async () => {
     const db = makeDb();
     await stageArticleCard(db as never, "iiwiki", input("battle_of_Kiro"), context);
