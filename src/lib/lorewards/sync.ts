@@ -9,7 +9,7 @@ import * as path from "path";
 import type { LorewardEntry, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
-import { contestHolder, groupByContest } from "./contest-identity";
+import { contestEntriesWhere, contestHolder, groupByContest } from "./contest-identity";
 import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
@@ -134,11 +134,46 @@ interface StateEntryWrite {
   rest?: Prisma.LorewardEntryUpdateInput;
 }
 
-/** Creates the entry, or updates its other columns, then writes its places unless an override holds them. */
-async function upsertEntry({ date, type, create, places, rest }: StateEntryWrite): Promise<void> {
+/** What an override writes to every entry of its contest, and its mark. */
+const OVERRIDE_COLUMNS = {
+  winnerUser: true,
+  winnerPage: true,
+  winnerScore: true,
+  winnerBytes: true,
+  runnerUpUser: true,
+  runnerUpPage: true,
+  runnerUpScore: true,
+  runnerUpBytes: true,
+  status: true,
+  overriddenAt: true,
+} as const;
+
+/**
+ * The override another entry of a weekly's or monthly's contest holds (the OOL page's, by its first day), for a
+ * state-keyed twin the sync creates late: the twin takes its places, status and mark, so the contest never disagrees
+ * with itself. Null for a daily, or a contest no override wrote.
+ */
+async function contestOverride({ date, type, create }: StateEntryWrite) {
+  if (type === "daily") return null;
+  return db.lorewardEntry.findFirst({
+    where: {
+      ...contestEntriesWhere({ type, date, dateStart: create.dateStart ?? null }),
+      overriddenAt: { not: null },
+    },
+    select: OVERRIDE_COLUMNS,
+  });
+}
+
+/**
+ * Creates the entry (taking its contest's override, `contestOverride`), or updates its other columns, then writes its
+ * places unless an override holds them.
+ */
+async function upsertEntry(write: StateEntryWrite): Promise<void> {
+  const { date, type, create, places, rest } = write;
+  const inherited = await contestOverride(write);
   await db.lorewardEntry.upsert({
     where: { date_type: { date, type } },
-    create: { date, type, status: "approved", ...create },
+    create: { date, type, status: "approved", ...create, ...inherited },
     update: { ...rest, syncedAt: new Date() },
   });
   await writePlaces({ date, type }, places);

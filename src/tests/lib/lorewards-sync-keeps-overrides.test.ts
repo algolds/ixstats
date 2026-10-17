@@ -244,6 +244,105 @@ describe("the state file", () => {
   });
 });
 
+describe("a state-keyed twin the state file creates late", () => {
+  /** The OOL page's weekly of 12 October as an override left it: Cy and Dee, withheld, marked. */
+  const overriddenOolWeekly = (over: Partial<StoredEntry> = {}) =>
+    storedEntry({
+      id: "w-ool",
+      type: "weekly",
+      date: "2026-10-12",
+      ...CY_AND_DEE,
+      winnerScore: 7,
+      winnerBytes: 42,
+      runnerUpScore: 6,
+      runnerUpBytes: 41,
+      status: "withheld",
+      overriddenAt: OVERRIDDEN,
+      ...over,
+    });
+  const stateWeek = (weekStart: string) => ({
+    weeklyResults: {
+      "2026-W42": {
+        winner: { user: "Amy", page: "Amy's page", score: 90, bytesAdded: 9000 },
+        weekStart,
+        weekEnd: "2026-10-18",
+      },
+    },
+  });
+  const OVERRIDE_COLUMNS = {
+    ...CY_AND_DEE,
+    winnerScore: 7,
+    winnerBytes: 42,
+    runnerUpScore: 6,
+    runnerUpBytes: 41,
+    status: "withheld",
+    overriddenAt: OVERRIDDEN,
+  };
+
+  it("takes the override of its contest's other entry: places, status and mark, with its own range", async () => {
+    store([overriddenOolWeekly()]);
+    stateFile(stateWeek("2026-10-12"));
+
+    await syncCurrentWinners(true);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toMatchObject({
+      id: "new-2",
+      date: "2026-W42",
+      type: "weekly",
+      dateStart: "2026-10-12",
+      dateEnd: "2026-10-18",
+      ...OVERRIDE_COLUMNS,
+    });
+    expect(mocked.lorewardEntry.findFirst).toHaveBeenCalledWith({
+      where: {
+        type: "weekly",
+        OR: [{ dateStart: "2026-10-12" }, { dateStart: null, date: "2026-10-12" }],
+        overriddenAt: { not: null },
+      },
+      select: expect.objectContaining({ winnerUser: true, status: true, overriddenAt: true }),
+    });
+
+    // The next sync leaves both alone
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject(OVERRIDE_COLUMNS);
+  });
+
+  it("takes a monthly's override through the first of its month", async () => {
+    store([overriddenOolWeekly({ id: "m-ool", type: "monthly", date: "2026-07-01" })]);
+    stateFile({
+      monthlyResults: { "2026-07": { winner: { user: "Amy", page: "Amy's page", score: 1 } } },
+    });
+
+    await syncCurrentWinners(true);
+
+    expect(rows[1]).toMatchObject({
+      date: "2026-07",
+      type: "monthly",
+      dateStart: "2026-07-01",
+      dateEnd: "2026-07-31",
+      ...OVERRIDE_COLUMNS,
+    });
+  });
+
+  it("takes nothing from an override of another contest, or from a contest no override wrote", async () => {
+    store([overriddenOolWeekly({ date: "2026-10-05" })]);
+    stateFile(stateWeek("2026-10-12"));
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject({
+      winnerUser: "Amy",
+      winnerPage: "Amy's page",
+      status: "approved",
+      overriddenAt: null,
+    });
+
+    store([overriddenOolWeekly({ overriddenAt: null })]);
+    stateFile(stateWeek("2026-10-12"));
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject({ winnerUser: "Amy", overriddenAt: null });
+  });
+});
+
 describe("the current year's OOL page", () => {
   it("keeps an override's places", async () => {
     store([overriddenDaily()]);

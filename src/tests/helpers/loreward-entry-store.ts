@@ -15,7 +15,10 @@ export interface StoredEntry {
   winnerPage: string | null;
   runnerUpUser: string | null;
   runnerUpPage: string | null;
+  winnerScore: number | null;
   winnerBytes: number | null;
+  runnerUpScore: number | null;
+  runnerUpBytes: number | null;
   /** Set when an admin override wrote the places: no sync writes them again. */
   overriddenAt: Date | null;
 }
@@ -74,10 +77,17 @@ export const storedEntry = (over: Partial<StoredEntry> & { id: string }): Stored
   winnerPage: null,
   runnerUpUser: null,
   runnerUpPage: null,
+  winnerScore: null,
   winnerBytes: null,
+  runnerUpScore: null,
+  runnerUpBytes: null,
   overriddenAt: null,
   ...over,
 });
+
+/** The columns of `row` that `select` names, as Prisma returns them (all of them with no `select`). */
+const picked = (row: StoredEntry, select?: Partial<Record<keyof StoredEntry, boolean>>) =>
+  select ? Object.fromEntries(Object.entries(row).filter(([field]) => field in select)) : row;
 
 /** The table's delegate over `rows` (changed in place by create, update, updateMany and upsert). */
 export function entryStore(rows: StoredEntry[]) {
@@ -94,7 +104,16 @@ export function entryStore(rows: StoredEntry[]) {
         rows.filter((row) => matches(row, where))
     ),
     findFirst: jest.fn(
-      async ({ where }: { where: Where }) => rows.find((row) => matches(row, where)) ?? null
+      async ({
+        where,
+        select,
+      }: {
+        where: Where;
+        select?: Partial<Record<keyof StoredEntry, boolean>>;
+      }) => {
+        const row = rows.find((candidate) => matches(candidate, where));
+        return row ? picked(row, select) : null;
+      }
     ),
     findUnique: jest.fn(async ({ where }: { where: DateType }) => at(where) ?? null),
     create: jest.fn(async ({ data }: { data: Partial<StoredEntry> }) => create(data)),
