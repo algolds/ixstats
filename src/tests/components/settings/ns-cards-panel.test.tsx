@@ -18,21 +18,56 @@ jest.mock("next/link", () => ({
   ),
 }));
 
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { NationStatesCardsPanel } from "~/app/settings/_components/panels/NationStatesCardsPanel";
 
-/** The query as the panel reads it: only the fields it uses. */
-function withCards(cards: Array<{ cardId: string; title: string; acquiredAt: Date }>) {
-  jest
-    .mocked(api.nsImport.getMyNSCards.useQuery)
-    .mockReturnValue({ data: { verifiedNations: [], cards }, isLoading: false } as never);
+type MyNSCards = RouterOutputs["nsImport"]["getMyNSCards"];
+
+/** One card as getMyNSCards lists it. */
+function nsCard(cardId: string, title: string, acquiredAt: string): MyNSCards["cards"][number] {
+  return {
+    id: cardId,
+    cardId,
+    title,
+    description: null,
+    rarity: "COMMON",
+    season: 3,
+    cardType: "NS",
+    category: null,
+    subcategory: null,
+    artwork: "https://www.nationstates.net/images/flags/uploads/flag.png",
+    artworkSource: null,
+    artworkCredit: null,
+    slug: null,
+    marketValue: 0.5,
+    totalSupply: null,
+    nsCardId: 42,
+    nsSeason: 3,
+    isRetired: false,
+    retiredAt: null,
+    metadata: null,
+    acquiredAt: new Date(acquiredAt),
+    nation: title,
+    imageUrl: null,
+    isHidden: false,
+    hiddenAt: null,
+    reason: null,
+  };
+}
+
+function withCards(cards: MyNSCards["cards"]) {
+  const data: MyNSCards = { verifiedNations: [], cards };
+  jest.mocked(api.nsImport.getMyNSCards.useQuery).mockReturnValue({
+    data,
+    isLoading: false,
+  } as never);
 }
 
 describe("NationStatesCardsPanel", () => {
   it("keeps the import link, the last import and the takedown, and no card list", () => {
     withCards([
-      { cardId: "a", title: "Aland", acquiredAt: new Date("2026-10-01T00:00:00Z") },
-      { cardId: "b", title: "Bigtopia", acquiredAt: new Date("2026-10-03T00:00:00Z") },
+      nsCard("a", "Aland", "2026-10-01T00:00:00Z"),
+      nsCard("b", "Bigtopia", "2026-10-03T00:00:00Z"),
     ]);
     render(<NationStatesCardsPanel />);
     expect(screen.getByRole("link", { name: /Import cards/ })).toHaveAttribute(
@@ -53,8 +88,8 @@ describe("NationStatesCardsPanel", () => {
 
   it("opens the last import in its card sheet, not a modal", () => {
     withCards([
-      { cardId: "a", title: "Aland", acquiredAt: new Date("2026-10-01T00:00:00Z") },
-      { cardId: "b", title: "Bigtopia", acquiredAt: new Date("2026-10-03T00:00:00Z") },
+      nsCard("a", "Aland", "2026-10-01T00:00:00Z"),
+      nsCard("b", "Bigtopia", "2026-10-03T00:00:00Z"),
     ]);
     render(<NationStatesCardsPanel />);
     expect(screen.getByRole("link", { name: "Open Bigtopia" })).toHaveAttribute(
@@ -65,7 +100,7 @@ describe("NationStatesCardsPanel", () => {
   });
 
   it("counts one card in the singular", () => {
-    withCards([{ cardId: "a", title: "Aland", acquiredAt: new Date("2026-10-01T00:00:00Z") }]);
+    withCards([nsCard("a", "Aland", "2026-10-01T00:00:00Z")]);
     render(<NationStatesCardsPanel />);
     expect(screen.getByText(/^1 card imported, the last on/)).toBeInTheDocument();
   });

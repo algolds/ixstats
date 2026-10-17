@@ -65,6 +65,18 @@ describe("nsImport cards", () => {
     expect(result.cards[0]).not.toHaveProperty("takedowns");
   });
 
+  it("dates each card by when its copy was acquired, so Settings can name the last import", async () => {
+    const db = createMockPrisma();
+    const acquiredAt = new Date("2026-10-03T00:00:00Z");
+    db.cardOwnership.findMany.mockResolvedValue([{ ...ownedCard(), acquiredAt }]);
+    db.nSVerification.findMany.mockResolvedValue([]);
+
+    const result = await caller(db).getMyNSCards();
+
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].select.acquiredAt).toBe(true);
+    expect(result.cards[0]).toMatchObject({ cardId: "card_ns_7_s3", title: "Heku", acquiredAt });
+  });
+
   it("reads a hidden card's date and reason from its takedown", async () => {
     const db = createMockPrisma();
     const hiddenAt = new Date("2026-10-02T00:00:00Z");
