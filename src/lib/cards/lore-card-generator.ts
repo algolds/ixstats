@@ -519,7 +519,7 @@ class WikiLoreCardGenerator {
   private async getImageUrl(
     filename: string,
     wikiSource: WikiSource,
-    pace: Pace = unpaced
+    pace: Pace
   ): Promise<string | null> {
     if (readsPostgres(wikiSource)) {
       const name = withoutFileNamespace(filename);

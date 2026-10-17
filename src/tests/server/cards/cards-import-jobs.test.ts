@@ -107,7 +107,7 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
     (where.updatedAt === undefined || item.updatedAt < where.updatedAt.lt);
   const touch = (item: ItemRow, data: Partial<ItemRow>) =>
     Object.assign(item, data, { updatedAt: new Date() });
-  return {
+  const db = {
     cardImportJob: {
       findFirst: jest.fn(
         async ({ where }: { where: JobWhere }) =>
@@ -186,6 +186,12 @@ function fakeDb(jobs: JobRow[], items: ItemRow[]) {
     },
     systemConfig: { findMany: jest.fn(async () => []) },
   };
+  /** A transaction over the fake runs its work at once: a callback gets the fake itself, a batch is awaited. */
+  const $transaction = jest.fn(
+    async <T>(work: ((tx: typeof db) => Promise<T>) | Array<Promise<T>>) =>
+      typeof work === "function" ? work(db) : Promise.all(work)
+  );
+  return Object.assign(db, { $transaction });
 }
 
 function jobRow(id: string, minutesAgo: number, status = "QUEUED", source = "iiwiki"): JobRow {
@@ -314,6 +320,24 @@ describe("runImportJobs", () => {
         heartbeatAt: expect.any(Date),
       },
     });
+    // Each item's row and its job's counters are written in one transaction.
+    expect(db.$transaction.mock.calls.map(([work]) => Array.isArray(work) && work.length)).toEqual([
+      2, 2, 2, 2,
+    ]);
+  });
+
+  it("builds the wiki's context before it claims an item, so a failed build strands nothing", async () => {
+    const jobs = [jobRow("j", 1)];
+    const items = [itemRow("j", "A")];
+    const stage = stageMock();
+    const contextFor = jest.fn(async () => {
+      throw new Error("rarity table unreadable");
+    });
+    await expect(
+      runImportJobs(fakeDb(jobs, items) as never, deps(stage, { contextFor }))
+    ).rejects.toThrow("rarity table unreadable");
+    expect(items[0]!.status).toBe("QUEUED");
+    expect(stage).not.toHaveBeenCalled();
   });
 
   it("never stages an item another runner already claimed", async () => {
@@ -395,6 +419,50 @@ describe("runImportJobs", () => {
     error.mockRestore();
   });
 
+  it.each([
+    ["error", 500, "IIWiki stopped answering (HTTP 500)."],
+    ["unreachable", null, "IIWiki stopped answering."],
+  ] as const)(
+    "fails only the item when its licence read gives up (%s), and reads the next with a fresh client",
+    async (kind, status, reason) => {
+      const jobs = [jobRow("j", 1)];
+      const items = [itemRow("j", "A"), itemRow("j", "B")];
+      const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+      const stage = stageMock().mockRejectedValueOnce(
+        new DiscoveryStopped({ kind, status, message: "iiwiki did not answer" })
+      );
+      const contextFor = jest.fn(async () => fakeContext());
+      const result = await runImportJobs(fakeDb(jobs, items) as never, deps(stage, { contextFor }));
+
+      expect(items.map((i) => [i.status, i.reason])).toEqual([
+        ["FAILED", reason],
+        ["STAGED", null],
+      ]);
+      expect(jobs[0]).toMatchObject({ status: "DONE", processed: 2, failed: 1, staged: 1 });
+      expect(result.items).toBe(2);
+      expect(contextFor).toHaveBeenCalledTimes(2);
+      expect(stage.mock.calls[1]![3]).not.toBe(stage.mock.calls[0]![3]);
+      error.mockRestore();
+    }
+  );
+
+  it.each([
+    ["rate-limited", 429],
+    ["cap", null],
+  ] as const)("parks the wiki for the run when it stops as %s", async (kind, status) => {
+    const jobs = [jobRow("j", 2), jobRow("k", 1)];
+    const items = [itemRow("j", "A"), itemRow("j", "B"), itemRow("k", "C")];
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const stage = stageMock(async () => {
+      throw new DiscoveryStopped({ kind, status, message: "iiwiki stopped" });
+    });
+    await runImportJobs(fakeDb(jobs, items) as never, deps(stage));
+    expect(stage).toHaveBeenCalledTimes(1);
+    expect(jobs.map((j) => j.status)).toEqual(["FAILED", "QUEUED"]);
+    expect(items.map((i) => i.status)).toEqual(["QUEUED", "QUEUED", "QUEUED"]);
+    error.mockRestore();
+  });
+
   it("skips the item a stopped wiki was reading when an admin cancelled the job meanwhile", async () => {
     const jobs = [jobRow("j", 1)];
     const items = [itemRow("j", "A"), itemRow("j", "B")];
@@ -410,7 +478,23 @@ describe("runImportJobs", () => {
       ["SKIPPED", "Cancelled"],
       ["SKIPPED", "Cancelled"],
     ]);
+    // Every cancelled item is counted, so the counters still add up to the rows.
+    expect(jobs[0]).toMatchObject({ processed: 2, skipped: 2 });
     jest.mocked(console.error).mockRestore();
+  });
+
+  it("records the item a cancelled job was staging, and leaves the job cancelled", async () => {
+    const jobs = [jobRow("j", 1)];
+    const items = [itemRow("j", "A"), itemRow("j", "B")];
+    const db = fakeDb(jobs, items);
+    const stage = stageMock(async () => {
+      await cancelImportJob(db as never, "j");
+      return staged;
+    });
+    const result = await runImportJobs(db as never, deps(stage));
+    expect(result.items).toBe(1);
+    expect(items.map((i) => i.status)).toEqual(["STAGED", "SKIPPED"]);
+    expect(jobs[0]).toMatchObject({ status: "CANCELLED", processed: 2, staged: 1, skipped: 1 });
   });
 
   it("records an item whose stage throws as failed and goes on", async () => {
@@ -597,13 +681,18 @@ describe("job lifecycle", () => {
     const jobs = [jobRow("j", 1, "RUNNING"), jobRow("done", 2, "DONE")];
     const items = [itemRow("j", "A", "STAGED"), itemRow("j", "B")];
     const db = fakeDb(jobs, items);
+    jobs[0]!.processed = 1;
+    jobs[0]!.staged = 1;
     await cancelImportJob(db as never, "j");
     expect(jobs[0]).toMatchObject({ status: "CANCELLED", finishedAt: expect.any(Date) });
     expect(items.map((i) => [i.status, i.reason])).toEqual([
       ["STAGED", null],
       ["SKIPPED", "Cancelled"],
     ]);
+    // A cancelled item counts as skipped, and as processed.
+    expect(jobs[0]).toMatchObject({ processed: 2, staged: 1, skipped: 1 });
     await expect(cancelImportJob(db as never, "done")).rejects.toThrow(/already finished/);
+    expect(jobs[1]).toMatchObject({ status: "DONE", processed: 0, skipped: 0 });
   });
 
   it("cancels a queued or failed job too", async () => {

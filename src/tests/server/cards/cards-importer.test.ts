@@ -499,7 +499,7 @@ describe("stageForAdmin", () => {
     await expect(
       stageForAdmin(db as never, "iiwiki", { ...input("Union Assembly"), requireImage: true })
     ).resolves.toEqual({ cardId: "card_new", rarity: "RARE" });
-    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki", undefined);
+    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki");
     expect(generateCard).toHaveBeenCalledWith("Union Assembly", "iiwiki", {
       requireImage: true,
       minLength: undefined,
@@ -618,12 +618,6 @@ describe("the importer's lookups", () => {
       query,
       thresholds: tuned,
     });
-    expect(wikiQueryFor).toHaveBeenCalledWith("althistory", undefined);
-  });
-
-  it("gives a longer run a bigger licence budget", async () => {
-    const db = makeDb();
-    await oneOffImportContext(db as never, "iiwiki", 300);
-    expect(wikiQueryFor).toHaveBeenCalledWith("iiwiki", 300);
+    expect(wikiQueryFor).toHaveBeenCalledWith("althistory");
   });
 });

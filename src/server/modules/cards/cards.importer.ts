@@ -63,16 +63,15 @@ const ALREADY_CARDED: StageOutcome = { status: "SKIPPED", reason: "Already a car
 const INVALID_TITLE: StageOutcome = { status: "FAILED", reason: "Not a valid page title" };
 
 /**
- * A context for staging pages outside a job (a procedure, an accepted suggestion, the daily cron), with the
- * source's stored rarity table. `maxRequests` caps its licence reads (wikiQueryFor's default when omitted).
+ * A context for staging pages outside a job (a procedure, an accepted suggestion), with the source's stored rarity
+ * table.
  */
 export async function oneOffImportContext(
   db: PrismaClient,
-  source: CardWikiSource,
-  maxRequests?: number
+  source: CardWikiSource
 ): Promise<ImportContext> {
   return {
-    query: wikiQueryFor(source, maxRequests),
+    query: wikiQueryFor(source),
     thresholds: (await getRarityThresholds(db))[source],
   };
 }

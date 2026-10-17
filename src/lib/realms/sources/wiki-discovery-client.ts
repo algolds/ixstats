@@ -61,7 +61,10 @@ export const DISCOVERY_MAX_RETRY_AFTER_MS = 20_000;
 const DEFAULT_RETRY_AFTER_MS = 5_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
 
-/** Runs a read in a client's turn (see DiscoveryClient.pace). */
+/**
+ * Runs a read in a client's turn (see DiscoveryClient.pace). A query or pace call made inside the callback deadlocks:
+ * it waits for the turn the callback holds.
+ */
 export type Pace = <T>(read: () => Promise<T>) => Promise<T>;
 
 export interface DiscoveryClient<S extends DiscoveryWiki = RealmWikiSource> {

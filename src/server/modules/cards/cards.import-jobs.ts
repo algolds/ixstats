@@ -4,7 +4,9 @@
  * admin tab never stops it. Items are claimed QUEUED → PROCESSING by compare-and-swap, oldest job first. A run reads
  * each wiki through one throttled discovery client: the licence reads through its query, the article reads through
  * its pace. A wiki that refuses or rate-limits (DiscoveryStopped) fails the job with its reason, leaves its items
- * queued for Retry and is read no more in that run; any other failure is the item's, recorded with its reason.
+ * queued for Retry and is read no more in that run. Any other failure is the item's, recorded with its reason: a
+ * licence read the client gave up on (an HTTP error, a timeout) fails that item, and the next gets a fresh client.
+ * A job's counters always equal its item rows: a cancelled item counts as skipped, and as processed.
  */
 import type {
   CardImportItem,
@@ -21,6 +23,7 @@ import {
   createDiscoveryClient,
   DISCOVERY_DELAY_MS,
   DiscoveryStopped,
+  type DiscoveryStopKind,
 } from "~/lib/realms/sources/wiki-discovery-client";
 import {
   cardSourceLabel,
@@ -47,6 +50,8 @@ const IMPORT_RUN_BUDGET_MS = 4 * MINUTE;
 /** One run's requests per wiki: twice what its budget allows at the client's pace, so only a runaway reaches it. */
 const RUN_REQUEST_CAP = (2 * IMPORT_RUN_BUDGET_MS) / DISCOVERY_DELAY_MS;
 const CANCELLED = "Cancelled";
+/** The stops that fail only the item being read (the client gave up on one answer); the others park the wiki. */
+const ITEM_STOPS: ReadonlySet<DiscoveryStopKind> = new Set(["error", "unreachable"]);
 
 export interface CreateImportJobInput {
   source: CardWikiSource;
@@ -169,30 +174,33 @@ const COUNTER: Record<StageOutcome["status"], "staged" | "skipped" | "blocked" |
   FAILED: "failed",
 };
 
+/** The item's outcome and its job's counters, in one transaction. */
 async function recordOutcome(
   db: PrismaClient,
   jobId: string,
   itemId: string,
   outcome: StageOutcome
 ) {
-  await db.cardImportItem.update({
-    where: { id: itemId },
-    data:
-      outcome.status === "STAGED"
-        ? {
-            status: "STAGED",
-            cardId: outcome.cardId,
-            rarity: outcome.rarity,
-            licence: outcome.licence,
-          }
-        : { status: outcome.status, reason: outcome.reason.slice(0, 500) },
-  });
   const counts: Prisma.CardImportJobUpdateInput = {
     processed: { increment: 1 },
     heartbeatAt: new Date(),
   };
   counts[COUNTER[outcome.status]] = { increment: 1 };
-  await db.cardImportJob.update({ where: { id: jobId }, data: counts });
+  await db.$transaction([
+    db.cardImportItem.update({
+      where: { id: itemId },
+      data:
+        outcome.status === "STAGED"
+          ? {
+              status: "STAGED",
+              cardId: outcome.cardId,
+              rarity: outcome.rarity,
+              licence: outcome.licence,
+            }
+          : { status: outcome.status, reason: outcome.reason.slice(0, 500) },
+    }),
+    db.cardImportJob.update({ where: { id: jobId }, data: counts }),
+  ]);
 }
 
 /** Ends a job with nothing left to work on; false while another runner still holds one of its items. */
@@ -219,14 +227,19 @@ async function failJob(db: PrismaClient, jobId: string, reason: string): Promise
 
 /** The wiki stopped answering: the job fails and the item waits for Retry, or is skipped if the job was cancelled. */
 async function stopJob(db: PrismaClient, jobId: string, itemId: string, reason: string) {
-  const failed = await failJob(db, jobId, reason);
-  await db.cardImportItem.update({
-    where: { id: itemId },
-    data: failed ? { status: "QUEUED" } : { status: "SKIPPED", reason: CANCELLED },
-  });
+  if (await failJob(db, jobId, reason)) {
+    await db.cardImportItem.update({ where: { id: itemId }, data: { status: "QUEUED" } });
+    return;
+  }
+  await recordOutcome(db, jobId, itemId, { status: "SKIPPED", reason: CANCELLED });
 }
 
-/** One claimed item staged and recorded; false when its wiki stopped answering and the job was stopped instead. */
+/**
+ * How a claimed item ended: recorded; recorded as failed after its wiki's client gave up on a read (the run builds a
+ * fresh one); or put back for Retry because its wiki stopped answering, which stopped the job.
+ */
+type ItemEnd = "recorded" | "client-lost" | "wiki-stopped";
+
 async function workItem(
   db: PrismaClient,
   stage: StageItem,
@@ -234,7 +247,7 @@ async function workItem(
   job: CardImportJob,
   item: CardImportItem,
   context: ImportContext
-): Promise<boolean> {
+): Promise<ItemEnd> {
   const input: StageInput = {
     title: item.title,
     requestedBy: job.requestedBy,
@@ -242,21 +255,31 @@ async function workItem(
     requireImage: job.requireImage,
   };
   let outcome: StageOutcome;
+  let end: ItemEnd = "recorded";
   try {
     outcome = await stage(db, source, input, context);
   } catch (error) {
-    if (error instanceof DiscoveryStopped) {
+    if (!(error instanceof DiscoveryStopped)) {
+      console.error(`[Card imports] Staging "${item.title}" failed:`, error);
+      outcome = {
+        status: "FAILED",
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    } else {
       console.error(
         `[Card imports] ${cardSourceLabel(source)} stopped answering for "${item.title}": ${error.message}`
       );
-      await stopJob(db, job.id, item.id, stoppedWikiMessage(source, error.stop));
-      return false;
+      const reason = stoppedWikiMessage(source, error.stop);
+      if (!ITEM_STOPS.has(error.stop.kind)) {
+        await stopJob(db, job.id, item.id, reason);
+        return "wiki-stopped";
+      }
+      outcome = { status: "FAILED", reason };
+      end = "client-lost";
     }
-    console.error(`[Card imports] Staging "${item.title}" failed:`, error);
-    outcome = { status: "FAILED", reason: error instanceof Error ? error.message : String(error) };
   }
   await recordOutcome(db, job.id, item.id, outcome);
-  return true;
+  return end;
 }
 
 /** Works through queued imports, oldest job first, until none is left or the time budget is spent. */
@@ -281,15 +304,18 @@ export async function runImportJobs(
       await failJob(db, job.id, `Unknown source wiki "${job.source}"`);
       continue;
     }
+    // Built before the claim, so a failure here leaves no item PROCESSING.
+    const context = contexts.get(source) ?? (await contextFor(db, source));
+    contexts.set(source, context);
     const item = await claimNextItem(db, job.id);
     if (!item) {
       if (!(await finishJob(db, job.id))) passed.jobs.add(job.id);
       continue;
     }
-    const context = contexts.get(source) ?? (await contextFor(db, source));
-    contexts.set(source, context);
-    if (await workItem(db, stage, source, job, item, context)) items++;
-    else passed.sources.add(source);
+    const end = await workItem(db, stage, source, job, item, context);
+    if (end === "wiki-stopped") passed.sources.add(source);
+    else items++;
+    if (end !== "recorded") contexts.delete(source);
   }
   return { items };
 }
@@ -306,17 +332,24 @@ export function kickImportRunner(db: PrismaClient): void {
   }).catch((error) => console.error("[Card imports] Run failed:", error));
 }
 
+/** Cancels an unfinished job: what is still queued is skipped, and counted as skipped and processed. */
 export async function cancelImportJob(db: PrismaClient, jobId: string): Promise<void> {
-  const cancelled = await db.cardImportJob.updateMany({
-    where: { id: jobId, status: { in: ["QUEUED", "RUNNING", "FAILED"] } },
-    data: { status: "CANCELLED", finishedAt: new Date() },
-  });
-  if (cancelled.count !== 1) {
-    throw new TRPCError({ code: "CONFLICT", message: "This import has already finished" });
-  }
-  await db.cardImportItem.updateMany({
-    where: { jobId, status: "QUEUED" },
-    data: { status: "SKIPPED", reason: CANCELLED },
+  await db.$transaction(async (tx) => {
+    const cancelled = await tx.cardImportJob.updateMany({
+      where: { id: jobId, status: { in: ["QUEUED", "RUNNING", "FAILED"] } },
+      data: { status: "CANCELLED", finishedAt: new Date() },
+    });
+    if (cancelled.count !== 1) {
+      throw new TRPCError({ code: "CONFLICT", message: "This import has already finished" });
+    }
+    const skipped = await tx.cardImportItem.updateMany({
+      where: { jobId, status: "QUEUED" },
+      data: { status: "SKIPPED", reason: CANCELLED },
+    });
+    await tx.cardImportJob.update({
+      where: { id: jobId },
+      data: { processed: { increment: skipped.count }, skipped: { increment: skipped.count } },
+    });
   });
 }
 
