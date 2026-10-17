@@ -17,6 +17,7 @@ type Tx = Prisma.TransactionClient;
 const TAKEDOWN_LOCK_NAMESPACE = 7335;
 
 const ANSWERED = "This takedown has been answered";
+const ALREADY_ACTIVE = "This card already has an open takedown";
 const ORIGIN_NAMES: Record<CardTakedownOrigin, string> = {
   NS_SELF_SERVICE: "flag owner",
   AUTHOR_REQUEST: "author",
@@ -26,30 +27,38 @@ const ORIGIN_NAMES: Record<CardTakedownOrigin, string> = {
 const NOT_HIDDEN = "Only hidden art can be restored";
 
 /**
- * Takes the card's takedown lock for the rest of the transaction, so finding no active request and filing one cannot
- * interleave with another filing. `$executeRaw`: Prisma cannot deserialize the `void` the lock returns.
+ * Takes the card's takedown lock for the rest of the transaction: filing, self-service, restore and the licence
+ * review serialise on it, so a check (no active request, the licence) and the write that follows cannot interleave
+ * with another. `$executeRaw`: Prisma cannot deserialize the `void` the lock returns.
  */
 async function lockCardTakedownsTx(tx: Tx, cardId: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TAKEDOWN_LOCK_NAMESPACE}::int, hashtext(${cardId}))`;
 }
 
-/** The card's active request, read under its lock. */
-async function lockedActiveTakedown(tx: Tx, cardId: string) {
-  await lockCardTakedownsTx(tx, cardId);
+/** The card's active request. The caller holds the card's takedown lock. */
+function activeTakedown(tx: Tx, cardId: string) {
   return tx.cardTakedown.findFirst({
     where: { cardId, status: { in: ["OPEN", "HIDDEN"] } },
     select: { id: true, status: true },
   });
 }
 
+/** An old takedown's marker: the card was hidden (and retired) before the queue, and has no request for it yet. */
+const hasLegacyMarker = (metadata: Prisma.JsonValue): boolean =>
+  isJsonObject(metadata) && isJsonObject(metadata.nsTakedown);
+
 /**
  * Hide the art for an open request: the art moves onto the takedown, and the card is retired (out of packs and
- * Explore; owned copies stay, with the placeholder face). The status claim makes a second answer fail.
+ * Explore; owned copies stay, with the placeholder face). The status claim makes a second answer fail, and the card
+ * write matches the art and retirement it read, so art written in between is never dropped unsaved. A card an old
+ * takedown hid counts as retired by this one, so restore brings it back.
  */
 async function hideArt(tx: Tx, takedownId: string, resolvedBy: string | null): Promise<string> {
   const takedown = await tx.cardTakedown.findUnique({
     where: { id: takedownId },
-    select: { card: { select: { id: true, artwork: true, isRetired: true } } },
+    select: {
+      card: { select: { id: true, artwork: true, isRetired: true, metadata: true } },
+    },
   });
   if (!takedown) throw new TRPCError({ code: "NOT_FOUND", message: "Takedown not found" });
   const { card } = takedown;
@@ -59,16 +68,22 @@ async function hideArt(tx: Tx, takedownId: string, resolvedBy: string | null): P
     data: {
       status: "HIDDEN",
       savedArtwork: card.artwork,
-      retiredByTakedown: !card.isRetired,
+      retiredByTakedown: !card.isRetired || hasLegacyMarker(card.metadata),
       resolvedAt: now,
       resolvedBy,
     },
   });
   if (claimed.count !== 1) throw new TRPCError({ code: "CONFLICT", message: ANSWERED });
-  await tx.card.update({
-    where: { id: card.id },
+  const hidden = await tx.card.updateMany({
+    where: { id: card.id, artwork: card.artwork, isRetired: card.isRetired },
     data: { artwork: null, isRetired: true, ...(card.isRetired ? {} : { retiredAt: now }) },
   });
+  if (hidden.count !== 1) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "The card changed while its art was being hidden. Try again.",
+    });
+  }
   return card.id;
 }
 
@@ -128,12 +143,38 @@ export async function fileTakedown(
 ): Promise<{ takedownId: string }> {
   await cardOrThrow(db, input.cardId);
   const takedownId = await db.$transaction(async (tx) => {
-    if (await lockedActiveTakedown(tx, input.cardId)) {
-      throw new TRPCError({ code: "CONFLICT", message: "This card already has an open takedown" });
+    await lockCardTakedownsTx(tx, input.cardId);
+    if (await activeTakedown(tx, input.cardId)) {
+      throw new TRPCError({ code: "CONFLICT", message: ALREADY_ACTIVE });
     }
     return createTakedownTx(tx, actor, input);
   });
   return { takedownId };
+}
+
+/**
+ * File a licence-review request and hide the art for each card a licence check found restricted (the backfill's
+ * `--fetch`). A card that already has an active request is skipped and counted.
+ */
+export async function fileLicenceTakedowns(
+  db: PrismaClient,
+  cards: ReadonlyArray<{ cardId: string; licence: string | null }>
+): Promise<{ filed: number; skipped: number }> {
+  let filed = 0;
+  for (const card of cards) {
+    try {
+      await fileTakedown(db, null, {
+        cardId: card.cardId,
+        origin: "LICENCE_REVIEW",
+        reason: restrictedReason(card.licence),
+        hideNow: true,
+      });
+      filed += 1;
+    } catch (error) {
+      if (!(error instanceof TRPCError && error.message === ALREADY_ACTIVE)) throw error;
+    }
+  }
+  return { filed, skipped: cards.length - filed };
 }
 
 export async function hideTakedownArt(
@@ -209,6 +250,13 @@ export async function restoreTakedown(
   takedownId: string
 ): Promise<void> {
   await db.$transaction(async (tx) => {
+    const ref = await tx.cardTakedown.findUnique({
+      where: { id: takedownId },
+      select: { cardId: true },
+    });
+    if (!ref) throw new TRPCError({ code: "NOT_FOUND", message: "Takedown not found" });
+    // Under the card's lock, so a restricted mark landing now is seen before the art comes back
+    await lockCardTakedownsTx(tx, ref.cardId);
     const takedown = await tx.cardTakedown.findUnique({
       where: { id: takedownId },
       select: {
@@ -285,7 +333,8 @@ export async function selfServiceTakedown(
   input: { cardId: string; verifiedNation: string; reason?: string; requestedBy: string | null }
 ): Promise<{ alreadyHidden: boolean }> {
   return db.$transaction(async (tx) => {
-    const active = await lockedActiveTakedown(tx, input.cardId);
+    await lockCardTakedownsTx(tx, input.cardId);
+    const active = await activeTakedown(tx, input.cardId);
     if (active?.status === "HIDDEN") return { alreadyHidden: true };
     const reason = input.reason?.trim() || "Flag owner takedown";
     const now = new Date();
@@ -341,15 +390,24 @@ export async function listLicenceReview(
   return { rows, total };
 }
 
-/** Hide restricted art: through the card's active request if one is waiting, else a new licence-review request. */
+function restrictedReason(licence: string | null): string {
+  return licence
+    ? `Licensed ${licence}, which does not allow commercial use or changes`
+    : "Its licence does not allow commercial use or changes";
+}
+
+/**
+ * Hide restricted art: through the card's active request if one is waiting, else a new licence-review request. The
+ * caller holds the card's takedown lock.
+ */
 async function hideRestrictedArtTx(tx: Tx, actor: CardAdminActor, cardId: string, licence: string) {
-  const active = await lockedActiveTakedown(tx, cardId);
+  const active = await activeTakedown(tx, cardId);
   if (active?.status === "HIDDEN") return;
   if (!active) {
     await createTakedownTx(tx, actor, {
       cardId,
       origin: "LICENCE_REVIEW",
-      reason: `Licensed ${licence}, which does not allow commercial use or changes`,
+      reason: restrictedReason(licence),
       hideNow: true,
     });
     return;
@@ -378,6 +436,7 @@ export async function setCardLicence(
     reviewedAt: new Date(),
   };
   await db.$transaction(async (tx) => {
+    await lockCardTakedownsTx(tx, card.id);
     await tx.cardArtLicence.upsert({
       where: { cardId: card.id },
       update: review,

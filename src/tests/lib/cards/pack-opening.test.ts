@@ -40,6 +40,8 @@ interface FakeCard {
   totalSupply?: number | null;
   metadata?: any;
   lorewardEntryId?: string | null;
+  /** The card's art licence record; none when absent. */
+  artLicence?: { status: string };
 }
 
 /** Evaluates the subset of Prisma CardWhereInput the pack pool uses. */
@@ -49,6 +51,8 @@ function matches(card: FakeCard, where: any): boolean {
   if (where.OR) return where.OR.some((w: any) => matches(card, w));
   return Object.entries(where).every(([key, cond]: [string, any]) => {
     if (key === "metadata") return card.metadata?.[cond.path[0]] === cond.equals;
+    // A to-one `isNot` keeps a card with no related row
+    if (key === "artLicence") return card.artLicence?.status !== cond.isNot.status;
     const value = (card as any)[key] ?? null;
     if (cond && typeof cond === "object") {
       if ("not" in cond) return value !== cond.not;
@@ -225,6 +229,31 @@ describe("openPack", () => {
     ]);
     const pulled = await openPack(db, USER, USER_PACK_ID);
     expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
+  });
+
+  it("never pulls restricted-licence art, but pulls art with no licence record", async () => {
+    const { db } = makeDb([
+      {
+        id: "restricted",
+        rarity: "COMMON",
+        cardType: "LORE",
+        artLicence: { status: "RESTRICTED" },
+      },
+      { id: "unrecorded", rarity: "COMMON", cardType: "LORE" },
+    ]);
+    const pulled = await openPack(db, USER, USER_PACK_ID);
+    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("unrecorded"));
+    expect(db.card.count.mock.calls[0][0].where.AND[0].AND).toContainEqual({
+      artLicence: { isNot: { status: "RESTRICTED" } },
+    });
+  });
+
+  it("pulls art whose licence is open", async () => {
+    const { db } = makeDb([
+      { id: "open", rarity: "COMMON", cardType: "LORE", artLicence: { status: "OPEN" } },
+    ]);
+    const pulled = await openPack(db, USER, USER_PACK_ID);
+    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("open"));
   });
 
   it("never pulls a Loreward trophy card", async () => {

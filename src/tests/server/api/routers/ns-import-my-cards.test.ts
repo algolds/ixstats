@@ -14,7 +14,14 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const caller = (db: ReturnType<typeof createMockPrisma>) =>
   createCallerFactory(nsImportCardsRouter)(createMockRouterContext({ db }) as never);
 
-const ownedCard = (fields: Record<string, unknown> = {}) => ({
+/** The fields a case changes on an owned NS card. */
+interface OwnedCardFields {
+  isRetired: boolean;
+  retiredAt: Date | null;
+  takedowns: Array<{ reason: string; resolvedAt: Date }>;
+}
+
+const ownedCard = (fields: Partial<OwnedCardFields> = {}) => ({
   cardId: "card_ns_7_s3",
   acquiredAt: new Date(),
   cards: {
@@ -97,11 +104,18 @@ describe("nsImport hideMyCard", () => {
     db.cardTakedown.create.mockResolvedValue({ id: "td_ns" });
     db.cardTakedown.findUnique.mockResolvedValue({
       id: "td_ns",
-      card: { id: "card_ns_7_s3", artwork: "flag.png", isRetired: false },
+      card: { id: "card_ns_7_s3", artwork: "flag.png", isRetired: false, metadata: {} },
     });
     db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+    db.card.updateMany.mockResolvedValue({ count: 1 });
     return db;
   }
+
+  /** Nothing was filed or hidden. */
+  const expectUntouched = (db: ReturnType<typeof setup>) => {
+    expect(db.cardTakedown.create).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
+  };
 
   it("files and hides through the takedown queue for an owner verified for the card's nation", async () => {
     const db = setup();
@@ -121,7 +135,10 @@ describe("nsImport hideMyCard", () => {
       contact: "NationStates: Heku of Ix",
       requestedBy: "user_db_id_1",
     });
-    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({ artwork: null, isRetired: true });
+    expect(db.card.updateMany.mock.calls[0]![0].data).toMatchObject({
+      artwork: null,
+      isRetired: true,
+    });
   });
 
   it("says so when the art is already hidden", async () => {
@@ -131,7 +148,17 @@ describe("nsImport hideMyCard", () => {
     await expect(caller(db).hideMyCard({ nsCardId: 7, nsSeason: 3 })).resolves.toMatchObject({
       message: '"Heku" is already hidden.',
     });
-    expect(db.card.update).not.toHaveBeenCalled();
+    expectUntouched(db);
+  });
+
+  it("refuses a player who does not own the card", async () => {
+    const db = setup();
+    db.cardOwnership.findFirst.mockResolvedValue(null);
+
+    await expect(caller(db).hideMyCard({ nsCardId: 7, nsSeason: 3 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expectUntouched(db);
   });
 
   it("refuses an owner not verified for the card's nation", async () => {
@@ -141,6 +168,6 @@ describe("nsImport hideMyCard", () => {
     await expect(caller(db).hideMyCard({ nsCardId: 7, nsSeason: 3 })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
-    expect(db.cardTakedown.create).not.toHaveBeenCalled();
+    expectUntouched(db);
   });
 });

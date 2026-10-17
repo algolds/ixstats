@@ -3,8 +3,8 @@
  * One-off: bring the cards from before the takedown queue into Compliance.
  *   1. Every NationStates takedown marker (`metadata.nsTakedown`) becomes a HIDDEN takedown, restorable from the flag.
  *   2. Every Lore card with art and no licence record gets one: UNKNOWN, or with --fetch the licence its wiki states
- *      (run --fetch on the production server: IIWiki answers only there). Restricted ones are listed in
- *      Compliance, Licence review, where an admin hides their art.
+ *      (run --fetch on the production server: IIWiki answers only there). Each restricted one also gets a licence
+ *      review takedown that hides its art, unless the card already has an active request.
  *
  *   bun scripts/cards/backfill-card-compliance.ts                    # dry run: prints the counts, writes nothing
  *   bun scripts/cards/backfill-card-compliance.ts --apply            # write the takedowns and UNKNOWN records
@@ -16,6 +16,7 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 import { parseCardWikiSource, type CardWikiSource } from "~/lib/cards/card-sources";
 import { legacyTakedownRow, licenceBackfillRow } from "~/lib/cards/compliance-backfill";
 import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
+import { fileLicenceTakedowns } from "~/server/modules/cards/cards.compliance";
 
 const db = new PrismaClient();
 const APPLY = process.argv.includes("--apply");
@@ -85,9 +86,15 @@ async function backfillLicences() {
       skipDuplicates: true,
     });
   }
-  const restricted = rows.filter((row) => row.status === "RESTRICTED").length;
+  const restricted = rows.filter((row) => row.status === "RESTRICTED");
+  console.log(`Licence records written; ${restricted.length} restricted.`);
+  if (restricted.length === 0) return;
+  const { filed, skipped } = await fileLicenceTakedowns(
+    db,
+    restricted.map((row) => ({ cardId: row.cardId, licence: row.licence ?? null }))
+  );
   console.log(
-    `Licence records written; ${restricted} restricted, listed in Compliance under Licence review.`
+    `${filed} restricted cards hidden by a licence review takedown; ${skipped} already had a request, listed in Compliance.`
   );
 }
 

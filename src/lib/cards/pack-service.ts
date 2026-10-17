@@ -5,6 +5,7 @@ import { CardType, LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { getRarityTier } from "./display-utils";
+import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
 import { copyRoom } from "./capacity";
 import { CardFinish } from "./enums";
 import { mintCopy } from "./mint";
@@ -264,7 +265,7 @@ export function generatePackCards(pack: {
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
  * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
- * only approved cards (imports wait in review).
+ * only approved cards (imports wait in review), and never restricted-licence art.
  */
 export async function packPoolWhere(
   tx: Prisma.TransactionClient,
@@ -288,6 +289,7 @@ export async function packPoolWhere(
     { isRetired: false },
     // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
     { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },
+    EXCLUDE_RESTRICTED_ART,
     ...themeFilterWhere(pack.themeFilter),
   ];
   if (pack.cardType) and.push({ cardType: pack.cardType });

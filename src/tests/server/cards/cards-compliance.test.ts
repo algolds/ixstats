@@ -5,6 +5,7 @@
  */
 import {
   declineTakedown,
+  fileLicenceTakedowns,
   fileTakedown,
   hideTakedownArt,
   listLicenceReview,
@@ -18,14 +19,20 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const RECEIVED = new Date("2026-10-01T09:00:00Z");
 const ELM = "https://iiwiki.com/images/a/ab/Elm.png";
+const FLAG = "https://www.nationstates.net/images/flags/x.png";
 
-/** A mock database whose transactions run on itself and whose advisory locks resolve. */
-const mockDb = () => createMockPrisma({ $executeRaw: jest.fn() });
+/** A mock database whose transactions run on itself, whose advisory locks resolve and whose card writes match. */
+function mockDb() {
+  const db = createMockPrisma({ $executeRaw: jest.fn() });
+  db.card.updateMany.mockResolvedValue({ count: 1 });
+  return db;
+}
+type MockDb = ReturnType<typeof mockDb>;
 
-/** The takedown row hiding reads: the card's art and whether it is retired. */
-const takedownOf = (card: { artwork: string | null; isRetired: boolean }) => ({
+/** The takedown row hiding reads: the card's art, whether it is retired, and its metadata. */
+const takedownOf = (card: { artwork: string | null; isRetired: boolean; metadata?: object }) => ({
   id: "td_1",
-  card: { id: "card_1", ...card },
+  card: { id: "card_1", metadata: {}, ...card },
 });
 
 /** The takedown row restore reads. */
@@ -35,14 +42,22 @@ const hiddenTakedown = (fields: {
   card?: Partial<{ artwork: string | null; metadata: object; artLicence: { status: string } }>;
 }) => ({
   id: "td_1",
+  cardId: "card_1",
   status: "HIDDEN",
   savedArtwork: fields.savedArtwork,
   retiredByTakedown: fields.retiredByTakedown,
   card: { id: "card_1", artwork: null, metadata: {}, artLicence: null, ...fields.card },
 });
 
-const audits = (db: ReturnType<typeof mockDb>) =>
+const audits = (db: MockDb) =>
   db.auditLog.create.mock.calls.map(([arg]: [{ data: object }]) => arg.data);
+
+/** The card write hiding made: `{ where, data }`. */
+const hideWrite = (db: MockDb, call = 0) => db.card.updateMany.mock.calls[call]![0];
+
+/** Whether the card's takedown lock was taken before `mock`'s first call. */
+const lockedBefore = (db: MockDb, mock: jest.Mock, call = 0) =>
+  db.$executeRaw.mock.invocationCallOrder[0]! < mock.mock.invocationCallOrder[call]!;
 
 describe("fileTakedown", () => {
   it("files a request due 14 days after it arrived, under the card's lock, with an audit row", async () => {
@@ -61,6 +76,7 @@ describe("fileTakedown", () => {
     ).resolves.toEqual({ takedownId: "td_1" });
 
     expect(db.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(lockedBefore(db, db.cardTakedown.findFirst)).toBe(true);
     expect(db.cardTakedown.create).toHaveBeenCalledWith({
       data: {
         cardId: "card_1",
@@ -72,7 +88,7 @@ describe("fileTakedown", () => {
         dueAt: new Date("2026-10-15T09:00:00Z"),
       },
     });
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
     expect(audits(db)).toEqual([
       expect.objectContaining({ action: "CARD_TAKEDOWN", userId: "clerk_admin", target: "card_1" }),
     ]);
@@ -151,8 +167,8 @@ describe("fileTakedown", () => {
         resolvedBy: "db_admin",
       }),
     });
-    const { data } = db.card.update.mock.calls[0]![0];
-    expect(db.card.update.mock.calls[0]![0].where).toEqual({ id: "card_1" });
+    const { where, data } = hideWrite(db);
+    expect(where).toEqual({ id: "card_1", artwork: ELM, isRetired: false });
     expect(data).toEqual({ artwork: null, isRetired: true, retiredAt: expect.any(Date) });
     expect(data).not.toHaveProperty("reviewState");
   });
@@ -169,8 +185,8 @@ describe("hideTakedownArt", () => {
     expect(db.cardTakedown.updateMany.mock.calls[0]![0].data).toMatchObject({
       retiredByTakedown: false,
     });
-    expect(db.card.update).toHaveBeenCalledWith({
-      where: { id: "card_1" },
+    expect(hideWrite(db)).toEqual({
+      where: { id: "card_1", artwork: ELM, isRetired: true },
       data: { artwork: null, isRetired: true },
     });
     expect(audits(db)).toEqual([
@@ -182,6 +198,19 @@ describe("hideTakedownArt", () => {
     ]);
   });
 
+  it("refuses when the card's art changed after it was read, so no art is dropped unsaved", async () => {
+    const db = mockDb();
+    db.cardTakedown.findUnique.mockResolvedValue(takedownOf({ artwork: ELM, isRetired: false }));
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+    db.card.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(hideTakedownArt(db as never, actor, "td_1")).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringMatching(/card changed/),
+    });
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+
   it("refuses a request that has been answered, touching no card", async () => {
     const db = mockDb();
     db.cardTakedown.findUnique.mockResolvedValue(takedownOf({ artwork: ELM, isRetired: false }));
@@ -190,7 +219,7 @@ describe("hideTakedownArt", () => {
     await expect(hideTakedownArt(db as never, actor, "td_1")).rejects.toMatchObject({
       code: "CONFLICT",
     });
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
 
@@ -202,8 +231,51 @@ describe("hideTakedownArt", () => {
   });
 });
 
+describe("a card an old takedown hid, before the backfill", () => {
+  it("files and hides, then restores to a live card with its flag and no marker", async () => {
+    const legacy = { nsData: { flag: FLAG }, nsTakedown: { selfService: true, reason: "old" } };
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue({ id: "card_1" });
+    db.cardTakedown.create.mockResolvedValue({ id: "td_1" });
+    db.cardTakedown.findUnique.mockResolvedValue(
+      takedownOf({ artwork: null, isRetired: true, metadata: legacy })
+    );
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+
+    await fileTakedown(db as never, actor, {
+      cardId: "card_1",
+      origin: "ADMIN",
+      reason: "Bring it into the queue",
+      hideNow: true,
+    });
+
+    // The old takedown retired the card, so this one owns the retirement
+    const hidden = db.cardTakedown.updateMany.mock.calls[0]![0].data;
+    expect(hidden).toMatchObject({ savedArtwork: null, retiredByTakedown: true });
+
+    db.cardTakedown.findUnique.mockResolvedValue(
+      hiddenTakedown({
+        savedArtwork: hidden.savedArtwork,
+        retiredByTakedown: hidden.retiredByTakedown,
+        card: { artwork: null, metadata: legacy },
+      })
+    );
+    await restoreTakedown(db as never, actor, "td_1");
+
+    expect(db.card.update).toHaveBeenCalledWith({
+      where: { id: "card_1" },
+      data: {
+        artwork: FLAG,
+        isRetired: false,
+        retiredAt: null,
+        metadata: { nsData: { flag: FLAG }, nsTakedown: null },
+      },
+    });
+  });
+});
+
 describe("restoreTakedown", () => {
-  it("restores the saved art and un-retires only a card the takedown retired", async () => {
+  it("restores the saved art and un-retires only a card the takedown retired, under the card's lock", async () => {
     const db = mockDb();
     db.cardTakedown.findUnique.mockResolvedValue(
       hiddenTakedown({ savedArtwork: ELM, retiredByTakedown: false })
@@ -212,6 +284,8 @@ describe("restoreTakedown", () => {
 
     await restoreTakedown(db as never, actor, "td_1");
 
+    // The licence is read (second read) and the art written only once the lock is held
+    expect(lockedBefore(db, db.cardTakedown.findUnique, 1)).toBe(true);
     expect(db.cardTakedown.updateMany).toHaveBeenCalledWith({
       where: { id: "td_1", status: "HIDDEN" },
       data: { status: "RESTORED", resolvedAt: expect.any(Date), resolvedBy: "db_admin" },
@@ -231,12 +305,11 @@ describe("restoreTakedown", () => {
 
   it("restores a takedown from before Phase 2 from the NationStates flag", async () => {
     const db = mockDb();
-    const flag = "https://www.nationstates.net/images/flags/x.png";
     db.cardTakedown.findUnique.mockResolvedValue(
       hiddenTakedown({
         savedArtwork: null,
         retiredByTakedown: true,
-        card: { metadata: { nsData: { flag }, nsTakedown: { reason: "old" } } },
+        card: { metadata: { nsData: { flag: FLAG }, nsTakedown: { reason: "old" } } },
       })
     );
     db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
@@ -246,11 +319,26 @@ describe("restoreTakedown", () => {
     expect(db.card.update).toHaveBeenCalledWith({
       where: { id: "card_1" },
       data: {
-        artwork: flag,
+        artwork: FLAG,
         isRetired: false,
         retiredAt: null,
-        metadata: { nsData: { flag }, nsTakedown: null },
+        metadata: { nsData: { flag: FLAG }, nsTakedown: null },
       },
+    });
+  });
+
+  it("leaves a card with no saved art and no flag without art", async () => {
+    const db = mockDb();
+    db.cardTakedown.findUnique.mockResolvedValue(
+      hiddenTakedown({ savedArtwork: null, retiredByTakedown: true })
+    );
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+
+    await restoreTakedown(db as never, actor, "td_1");
+
+    expect(db.card.update).toHaveBeenCalledWith({
+      where: { id: "card_1" },
+      data: { isRetired: false, retiredAt: null },
     });
   });
 
@@ -306,6 +394,14 @@ describe("restoreTakedown", () => {
     });
     expect(db.card.update).not.toHaveBeenCalled();
   });
+
+  it("refuses a takedown that does not exist", async () => {
+    const db = mockDb();
+    await expect(restoreTakedown(db as never, actor, "td_x")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.$executeRaw).not.toHaveBeenCalled();
+  });
 });
 
 describe("declineTakedown", () => {
@@ -325,7 +421,7 @@ describe("declineTakedown", () => {
         resolvedBy: "db_admin",
       },
     });
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
     expect(audits(db)).toEqual([
       expect.objectContaining({
         action: "CARD_TAKEDOWN",
@@ -390,6 +486,7 @@ describe("selfServiceTakedown", () => {
     ).resolves.toEqual({ alreadyHidden: false });
 
     expect(db.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(lockedBefore(db, db.cardTakedown.findFirst)).toBe(true);
     expect(db.cardTakedown.create.mock.calls[0]![0].data).toMatchObject({
       origin: "NS_SELF_SERVICE",
       reason: "Flag owner takedown",
@@ -400,7 +497,7 @@ describe("selfServiceTakedown", () => {
       id: "td_ns",
       status: "OPEN",
     });
-    expect(db.card.update).toHaveBeenCalledTimes(1);
+    expect(db.card.updateMany).toHaveBeenCalledTimes(1);
     expect(audits(db)).toEqual([
       expect.objectContaining({ action: "CARD_TAKEDOWN", userId: null, target: "card_1" }),
     ]);
@@ -417,7 +514,7 @@ describe("selfServiceTakedown", () => {
       })
     ).resolves.toEqual({ alreadyHidden: true });
     expect(db.cardTakedown.create).not.toHaveBeenCalled();
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
   });
 
   it("hides through a request that is already waiting, filing no second one", async () => {
@@ -445,7 +542,7 @@ describe("selfServiceTakedown", () => {
 });
 
 describe("licence review", () => {
-  it("marks a licence open, recording who checked it, and files no takedown", async () => {
+  it("marks a licence open under the card's lock, recording who checked it, and files no takedown", async () => {
     const db = mockDb();
     db.card.findUnique.mockResolvedValue({ id: "card_1", wikiSource: "althistory" });
 
@@ -456,6 +553,7 @@ describe("licence review", () => {
       note: "Uploader confirmed",
     });
 
+    expect(lockedBefore(db, db.cardArtLicence.upsert)).toBe(true);
     expect(db.cardArtLicence.upsert).toHaveBeenCalledWith({
       where: { cardId: "card_1" },
       update: expect.objectContaining({
@@ -467,7 +565,7 @@ describe("licence review", () => {
       create: expect.objectContaining({ cardId: "card_1", wiki: "althistory", status: "OPEN" }),
     });
     expect(db.cardTakedown.create).not.toHaveBeenCalled();
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
     expect(audits(db)).toEqual([
       expect.objectContaining({ action: "CARD_LICENCE", target: "card_1" }),
     ]);
@@ -489,15 +587,13 @@ describe("licence review", () => {
       licence: "CC BY-NC 4.0",
     });
 
+    expect(lockedBefore(db, db.cardArtLicence.upsert)).toBe(true);
     expect(db.cardTakedown.create.mock.calls[0]![0].data).toMatchObject({
       cardId: "card_1",
       origin: "LICENCE_REVIEW",
       reason: expect.stringContaining("CC BY-NC 4.0"),
     });
-    expect(db.card.update).toHaveBeenCalledWith({
-      where: { id: "card_1" },
-      data: expect.objectContaining({ artwork: null, isRetired: true }),
-    });
+    expect(hideWrite(db).data).toMatchObject({ artwork: null, isRetired: true });
   });
 
   it("marks a licence restricted on a card with a waiting request by hiding that request's art", async () => {
@@ -521,7 +617,7 @@ describe("licence review", () => {
       id: "td_open",
       status: "OPEN",
     });
-    expect(db.card.update).toHaveBeenCalledTimes(1);
+    expect(db.card.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it("marks a licence restricted on hidden art without touching the card again", async () => {
@@ -538,7 +634,7 @@ describe("licence review", () => {
     expect(db.cardArtLicence.upsert).toHaveBeenCalledTimes(1);
     expect(db.cardTakedown.create).not.toHaveBeenCalled();
     expect(db.cardTakedown.updateMany).not.toHaveBeenCalled();
-    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses a card that does not exist", async () => {
@@ -563,5 +659,48 @@ describe("licence review", () => {
       take: 100,
     });
     expect(db.cardArtLicence.count).toHaveBeenCalledWith({ where: { status: "UNKNOWN" } });
+  });
+});
+
+describe("fileLicenceTakedowns", () => {
+  it("files a licence takedown that hides the art for each restricted card, skipping one with a request", async () => {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue({ id: "card_1" });
+    db.cardTakedown.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "td_open", status: "OPEN" });
+    db.cardTakedown.create.mockResolvedValue({ id: "td_lr" });
+    db.cardTakedown.findUnique.mockResolvedValue({
+      ...takedownOf({ artwork: ELM, isRetired: false }),
+      id: "td_lr",
+    });
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      fileLicenceTakedowns(db as never, [
+        { cardId: "card_1", licence: "CC BY-NC 4.0" },
+        { cardId: "card_2", licence: null },
+      ])
+    ).resolves.toEqual({ filed: 1, skipped: 1 });
+
+    expect(db.$executeRaw).toHaveBeenCalledTimes(2);
+    expect(db.cardTakedown.create).toHaveBeenCalledTimes(1);
+    expect(db.cardTakedown.create.mock.calls[0]![0].data).toMatchObject({
+      cardId: "card_1",
+      origin: "LICENCE_REVIEW",
+      reason: "Licensed CC BY-NC 4.0, which does not allow commercial use or changes",
+      requestedBy: null,
+    });
+    expect(hideWrite(db).data).toMatchObject({ artwork: null, isRetired: true });
+    expect(audits(db)).toEqual([
+      expect.objectContaining({ action: "CARD_TAKEDOWN", userId: null }),
+    ]);
+  });
+
+  it("stops on any other failure", async () => {
+    const db = mockDb();
+    await expect(
+      fileLicenceTakedowns(db as never, [{ cardId: "gone", licence: "CC BY-NC 4.0" }])
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

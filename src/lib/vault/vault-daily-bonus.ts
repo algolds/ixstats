@@ -4,6 +4,7 @@ import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { CardFinish } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
+import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
@@ -164,8 +165,12 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
   );
 }
 
-/** The cards a daily claim can draw: approved, never a Loreward trophy. */
-const DAILY_POOL = { reviewState: "APPROVED", ...EXCLUDE_TROPHY_CARDS } as const;
+/** The cards a daily claim can draw: approved, never a Loreward trophy or restricted-licence art. */
+const DAILY_POOL = {
+  reviewState: "APPROVED",
+  ...EXCLUDE_TROPHY_CARDS,
+  ...EXCLUDE_RESTRICTED_ART,
+} as const;
 
 /** Random non-retired card from the pool, falling back to any pool card; null when none exist. */
 async function pickRandomCard(db: PrismaClient) {

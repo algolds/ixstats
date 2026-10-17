@@ -155,6 +155,9 @@ describe("ComplianceTab takedowns", () => {
       { enabled: true }
     );
     fireEvent.click(within(dialog).getByRole("button", { name: /^Elm/ }));
+    // Once a card is chosen there is no field to label, so no label points at one
+    expect(dialog.querySelector('label[for="takedown-card"]')).toBeNull();
+    expect(within(dialog).getByText("Card")).toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText("Reason"), {
       target: { value: "The author asked by email" },
     });

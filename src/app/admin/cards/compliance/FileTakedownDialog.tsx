@@ -100,16 +100,19 @@ export function FileTakedownDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
-            <Label htmlFor="takedown-card">Card</Label>
             {card ? (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-callout">{card.title}</span>
-                <Button size="xs" variant="ghost" onClick={() => setCard(null)}>
-                  Change
-                </Button>
-              </div>
+              <>
+                <p className="text-subhead leading-none font-medium">Card</p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-callout">{card.title}</span>
+                  <Button size="xs" variant="ghost" onClick={() => setCard(null)}>
+                    Change
+                  </Button>
+                </div>
+              </>
             ) : (
               <>
+                <Label htmlFor="takedown-card">Card</Label>
                 <Input
                   id="takedown-card"
                   placeholder="Search card titles"
