@@ -2,6 +2,7 @@
 
 import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
+import { CardSheetHost } from "~/components/cards/sheet/CardSheetHost";
 
 export default function VaultLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export default function VaultLayout({ children }: { children: React.ReactNode })
         <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:py-6 md:py-8">
           {children}
         </div>
+        <CardSheetHost />
       </AuthenticationGuard>
     </div>
   );

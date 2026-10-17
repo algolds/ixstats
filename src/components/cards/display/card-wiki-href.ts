@@ -7,7 +7,15 @@ import {
   parseCardWikiSource,
   type CardArticleSource,
 } from "~/lib/cards/card-sources";
-import type { CardInstance } from "~/types/cards-display";
+
+/** What a card needs to find its wiki page. A Commons card stored with no title is found by its description URL or art. */
+export interface CardWikiRef {
+  wikiSource: string | null;
+  wikiArticleTitle: string | null;
+  wikiUrl?: string | null;
+  artwork?: string | null;
+  descriptionUrl?: string | null;
+}
 
 /** The in-app WikiOS article path for a page title; the plain reader path when it is not a canonical title. */
 function wikiOsHref(title: string, source: CardArticleSource): string {
@@ -33,14 +41,8 @@ function sisterTitleFromUrl(
 }
 
 /** A Commons card's file page; a legacy one, stored with no title, is found by its description URL or art. */
-function commonsHref(card: CardInstance): string | null {
-  const descriptionUrl = card.metadata?.descriptionUrl;
-  const page = commonsCardPageUrl({
-    wikiArticleTitle: card.wikiArticleTitle,
-    artwork: card.artwork,
-    descriptionUrl: typeof descriptionUrl === "string" ? descriptionUrl : null,
-  });
-  return page ?? card.wikiUrl;
+function commonsHref(card: CardWikiRef): string | null {
+  return commonsCardPageUrl(card) ?? card.wikiUrl ?? null;
 }
 
 /**
@@ -49,10 +51,10 @@ function commonsHref(card: CardInstance): string | null {
  * wrong (`/w/<title>`); a stored URL is only read when the card has no title, and kept as it is when it names no
  * article.
  */
-export function cardWikiHref(card: CardInstance | null): string | null {
+export function cardWikiHref(card: CardWikiRef | null): string | null {
   if (!card) return null;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
-  const url = card.wikiUrl;
+  const url = card.wikiUrl ?? null;
   if (source === "commons") return commonsHref(card);
   if (url?.startsWith("/wiki/")) return url;
   if (card.wikiArticleTitle) return wikiOsHref(card.wikiArticleTitle, source);
