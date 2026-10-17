@@ -20,7 +20,7 @@ import type { CardAuthorInfo } from "~/types/cards-display";
 import type { LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
 import { fileNameFromArtworkUrl } from "./art-licence";
-import type { CardArticleSource } from "./card-sources";
+import { cardSourceLabel, type CardArticleSource } from "./card-sources";
 import { ArticleRejected, type LoreCardCandidate } from "./lore-card-candidate";
 import { readsPostgres } from "./lore-card-discovery";
 import {
@@ -111,7 +111,10 @@ class WikiLoreCardGenerator {
   ): Promise<LoreCardCandidate> {
     const articleData = await this.fetchArticleData(articleTitle, wikiSource);
     if (!articleData) {
-      throw new ArticleRejected("missing", `"${articleTitle}" was not found on ${wikiSource}.`);
+      throw new ArticleRejected(
+        "missing",
+        `"${articleTitle}" was not found on ${cardSourceLabel(wikiSource)}.`
+      );
     }
     if (options.requireImage && !articleData.image) {
       throw new ArticleRejected("no-image", `"${articleTitle}" has no usable image.`);
@@ -144,8 +147,9 @@ class WikiLoreCardGenerator {
 
   /**
    * Article content, featured image, backlinks and author info from the wiki API; null for a page that is not a card's
-   * source (deleted in WikiOS, missing, or an invalid title). A failed read throws; a refusing wiki throws
-   * DiscoveryStopped (mwJson).
+   * source (deleted in WikiOS, missing, or an invalid title). A failed read of the page, its image's address or its
+   * backlinks throws, and a refusing wiki throws DiscoveryStopped (mwJson), so a refused read never makes a card
+   * without its art. Only the author lookup answers "none" when it fails.
    */
   private async fetchArticleData(
     title: string,
@@ -174,21 +178,24 @@ class WikiLoreCardGenerator {
       WIKI_READ_TIMEOUT_MS
     );
     const data = await mwJson(response, wikiSource);
-    if (!data.query?.pages) throw new Error(`${wikiSource} answered with no page data`);
+    if (!data.query?.pages) {
+      throw new Error(`${cardSourceLabel(wikiSource)} answered with no page data.`);
+    }
     const page = firstPage<MwPage>(data);
     if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
 
     const wikitext = page.revisions?.[0]?.["*"] || "";
     const featured = await this.resolveFeaturedImage(page, this.parseInfobox(wikitext), wikiSource);
 
-    const backlinksResponse = await mwQuery(
-      wikiSource,
-      { list: "backlinks", bltitle: title, bllimit: "500" },
-      WIKI_READ_TIMEOUT_MS
+    const backlinks = await mwJson(
+      await mwQuery(
+        wikiSource,
+        { list: "backlinks", bltitle: title, bllimit: "500" },
+        WIKI_READ_TIMEOUT_MS
+      ),
+      wikiSource
     );
-    const inboundLinks = backlinksResponse.ok
-      ? (await backlinksResponse.json()).query?.backlinks?.length || 0
-      : 0;
+    const inboundLinks = backlinks.query?.backlinks?.length ?? 0;
 
     return {
       ...page,
@@ -499,26 +506,24 @@ class WikiLoreCardGenerator {
     return cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "").replace(/<ref[^>]*\/>/gi, "");
   }
 
-  /** Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API. */
+  /**
+   * Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API; null when the wiki has
+   * no such file. A failed or refused read throws (mwJson).
+   */
   private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
     if (readsPostgres(wikiSource)) {
       const name = withoutFileNamespace(filename);
       return (await ixwikiImageUrls([name])).get(name) ?? null;
     }
-    try {
-      const response = await mwQuery(
+    const data = await mwJson(
+      await mwQuery(
         wikiSource,
         { titles: `File:${withoutFileNamespace(filename)}`, prop: "imageinfo", iiprop: "url" },
         WIKI_READ_TIMEOUT_MS
-      );
-      if (!response.ok) return null;
-
-      const data = await response.json();
-      return firstPage<MediaWikiPageItem>(data)?.imageinfo?.[0]?.url || null;
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching image URL:`, error);
-      return null;
-    }
+      ),
+      wikiSource
+    );
+    return firstPage<MwPage>(data)?.imageinfo?.[0]?.url || null;
   }
 
   private analyzeArticleQuality(articleData: ArticleData): ArticleSignals {

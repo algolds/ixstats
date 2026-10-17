@@ -230,7 +230,7 @@ describe("generateCard for IxWiki", () => {
     await expect(wikiLoreCardGenerator.generateCard("Nowhere", "ixwiki")).rejects.toMatchObject({
       name: "ArticleRejected",
       kind: "missing",
-      message: '"Nowhere" was not found on ixwiki.',
+      message: '"Nowhere" was not found on IxWiki.',
     });
     expect(guard.calls()).toEqual([]);
   });

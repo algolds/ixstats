@@ -502,20 +502,61 @@ describe("stageForAdmin", () => {
     await expect(refused).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Already a card" });
   });
 
-  it("says which wiki stopped answering", async () => {
+  it.each([
+    [{ kind: "blocked", status: 403 }, "IIWiki stopped answering (HTTP 403)."],
+    [{ kind: "rate-limited", status: 429 }, "IIWiki stopped answering (HTTP 429)."],
+    [{ kind: "blocked", status: 200 }, "IIWiki answered with a web page instead of data."],
+    [{ kind: "blocked", status: null }, "IIWiki does not allow reading its pages."],
+    [{ kind: "unreachable", status: null }, "IIWiki stopped answering."],
+  ] as const)("says which wiki stopped answering (%o), naming it once", async (stop, message) => {
     const db = makeDb();
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
     generateCard.mockRejectedValue(
-      new DiscoveryStopped({
-        kind: "blocked",
-        status: 403,
-        message: "iiwiki refused the request (HTTP 403)",
-      })
+      new DiscoveryStopped({ ...stop, message: "iiwiki refused the request (HTTP 403)" })
     );
     await expect(
       stageForAdmin(db as never, "iiwiki", input("Union Assembly"))
-    ).rejects.toMatchObject({
+    ).rejects.toMatchObject({ code: "BAD_GATEWAY", message });
+    // The wiki's own words are for the server log.
+    expect(error).toHaveBeenCalledWith(
+      '[Card import] IIWiki stopped answering for "Union Assembly": iiwiki refused the request (HTTP 403)'
+    );
+  });
+
+  it("reports a failed read as the wiki's, without its raw error, and logs the error", async () => {
+    const db = makeDb();
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    generateCard.mockRejectedValue(
+      new Error("Invalid `prisma.wikiArticle.findFirst()` invocation")
+    );
+    const failed = stageForAdmin(db as never, "iiwiki", input("Union Assembly"));
+    await expect(failed).rejects.toBeInstanceOf(TRPCError);
+    await expect(failed).rejects.toMatchObject({
       code: "BAD_GATEWAY",
-      message: "IIWiki stopped answering: iiwiki refused the request (HTTP 403)",
+      message: 'Could not read "Union Assembly" from IIWiki. Try again later.',
+    });
+    expect(error).toHaveBeenCalledWith(
+      '[Card import] Could not read "Union Assembly" from IIWiki: Invalid `prisma.wikiArticle.findFirst()` invocation'
+    );
+  });
+
+  it("refuses a title MediaWiki would refuse as a bad request, not a failed read", async () => {
+    const db = makeDb();
+    await expect(stageForAdmin(db as never, "iiwiki", input("a|b"))).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Not a valid page title",
+    });
+  });
+
+  it("refuses blocked art as a bad request, with its reason", async () => {
+    const db = makeDb();
+    capture.mockResolvedValue({ ...openLicence, licence: "CC BY-NC-SA 4.0", status: "RESTRICTED" });
+    await expect(
+      stageForAdmin(db as never, "iiwiki", input("Union Assembly"))
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message:
+        "Its art is licensed CC BY-NC-SA 4.0, which does not allow commercial use or changes",
     });
   });
 

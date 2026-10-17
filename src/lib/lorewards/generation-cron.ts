@@ -162,7 +162,7 @@ function tally(result: WikiRunResult, articleTitle: string, outcome: StageOutcom
 }
 
 /**
- * Stage cards from a specific wiki; a wiki that stops answering the licence reads ends its run
+ * Stage cards from a specific wiki; a wiki that stops answering (the article reads or the licence reads) ends its run
  */
 async function generateCardsFromWiki(
   wikiSource: CardArticleSource,

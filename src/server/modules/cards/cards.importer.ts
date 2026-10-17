@@ -2,8 +2,10 @@
  * Stage one card from a wiki (cards refresh spec §2.1, §2.4): the page becomes a Lore card in its home realm,
  * PENDING review, with its art's licence recorded (licensing drafts §2.5(b)). Art licensed non-commercial or
  * no-derivatives blocks it; a page with a card, or a realm's nation page, is skipped. Every outcome is a value, so
- * one bad page never stops an import job. Two things are thrown: DiscoveryStopped, when a wiki stops answering the
- * article or licence reads (so the job runner can stop the job), and a database failure.
+ * one bad page never stops an import job: a failed read of the article, its database read included, is a FAILED
+ * outcome. stageArticleCard and stageCommonsFile throw only DiscoveryStopped, when a wiki stops answering the article
+ * or licence reads (so the job runner can stop the job), and a failure of the importer's own database reads and
+ * writes. stageForAdmin answers an admin procedure with a TRPCError instead.
  */
 import { Prisma, type CardRarity, type CardReviewState, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -22,6 +24,7 @@ import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { articleHomePage } from "~/lib/cards/home-realm";
 import { wikiFallbackRealm } from "~/lib/cards/legacy-mapping";
 import { ArticleRejected, type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
+import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { rarityForScore, type RarityThresholds } from "~/lib/cards/rarity-engine";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
@@ -54,6 +57,8 @@ export type StageOutcome =
   | { status: "SKIPPED" | "BLOCKED" | "FAILED"; reason: string };
 
 const ALREADY_CARDED: StageOutcome = { status: "SKIPPED", reason: "Already a card" };
+/** A title MediaWiki would refuse: bad input, which stageForAdmin does not report as a failed read. */
+const INVALID_TITLE: StageOutcome = { status: "FAILED", reason: "Not a valid page title" };
 
 /**
  * A context for staging pages outside a job (a procedure, an accepted suggestion, the daily cron), with the
@@ -204,7 +209,7 @@ export async function stageArticleCard(
   context: ImportContext
 ): Promise<StageOutcome> {
   const title = canonicalCardTitle(source, input.title);
-  if (!title) return { status: "FAILED", reason: "Not a valid page title" };
+  if (!title) return INVALID_TITLE;
   if ((await cardedTitleKeys(db, source, [title])).size > 0) return ALREADY_CARDED;
   const home = await resolveImportRealm(db, source, title);
   if (home.nationPage) {
@@ -294,26 +299,37 @@ export async function stageCommonsFile(
 }
 
 /**
- * Stage one page for an admin procedure, with a one-off context: the card, or a TRPCError saying why not (the
- * skip, block or failure, or which wiki stopped answering).
+ * Stage one page for an admin procedure, with a one-off context: the card, or a TRPCError saying why not. A skip, a
+ * block or bad input is a BAD_REQUEST with its reason. A failed read, or a wiki that stopped answering, is a
+ * BAD_GATEWAY naming the wiki, with the raw reason in the server log only.
  */
 export async function stageForAdmin(
   db: PrismaClient,
   source: CardArticleSource,
   input: StageInput
 ): Promise<{ cardId: string; rarity: CardRarity }> {
+  const label = cardSourceLabel(source);
   let outcome: StageOutcome;
   try {
     outcome = await stageArticleCard(db, source, input, await oneOffImportContext(db, source));
   } catch (error) {
     if (!(error instanceof DiscoveryStopped)) throw error;
+    console.error(
+      `[Card import] ${label} stopped answering for "${input.title}": ${error.message}`
+    );
     throw new TRPCError({
       code: "BAD_GATEWAY",
-      message: `${cardSourceLabel(source)} stopped answering: ${error.message}`,
+      message: stoppedWikiMessage(source, error.stop),
       cause: error,
     });
   }
-  if (outcome.status !== "STAGED")
-    throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
-  return { cardId: outcome.cardId, rarity: outcome.rarity };
+  if (outcome.status === "STAGED") return { cardId: outcome.cardId, rarity: outcome.rarity };
+  if (outcome.status === "FAILED" && outcome !== INVALID_TITLE) {
+    console.error(`[Card import] Could not read "${input.title}" from ${label}: ${outcome.reason}`);
+    throw new TRPCError({
+      code: "BAD_GATEWAY",
+      message: `Could not read "${input.title}" from ${label}. Try again later.`,
+    });
+  }
+  throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
 }
