@@ -4,8 +4,8 @@
  */
 
 import type { CardAuthorInfo } from "~/types/cards-display";
-import type { WikiSource } from "~/lib/wiki-os/config";
-import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { SISTER_WIKI_HOSTS, sisterWikiApiUrl } from "~/lib/wiki-os/wiki-hosts";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
 import {
   DiscoveryStopped,
@@ -18,18 +18,22 @@ import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 export type MwPage = MediaWikiPageItem & { original?: { source?: string }; pageimage?: string };
 export type RevisionUser = { user: string; timestamp: string };
 
+/** A card source wiki's api.php: IxWiki's and the sister readers' as configured, and Commons'. */
+const apiUrlOf = (source: CardWikiSource): string =>
+  source === "commons" ? sisterWikiApiUrl(SISTER_WIKI_HOSTS.commons) : getMediaWikiApiUrl(source);
+
 /** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
 export function mwQuery(
-  wikiSource: WikiSource,
+  wikiSource: CardWikiSource,
   params: Record<string, string>,
   timeoutMs?: number
 ) {
-  const url = new URL(getMediaWikiApiUrl(wikiSource));
+  const url = new URL(apiUrlOf(wikiSource));
   for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
     url.searchParams.set(key, value);
   }
   return fetch(url.toString(), {
-    headers: { "User-Agent": getWikiUserAgent(wikiSource) },
+    headers: { "User-Agent": DEFAULT_USER_AGENT },
     ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
   });
 }
@@ -66,7 +70,7 @@ export function stoppedWikiMessage(
     : `${label} answered with a web page instead of data.`;
 }
 
-function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | null): never {
+function stopped(source: CardWikiSource, kind: DiscoveryStopKind, status: number | null): never {
   throw new DiscoveryStopped({
     kind,
     status,
@@ -82,7 +86,7 @@ function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | n
  */
 export async function mwJson<T extends MwError = MwQueryResponse>(
   response: Response,
-  wikiSource: WikiSource
+  wikiSource: CardWikiSource
 ): Promise<T> {
   const label = cardSourceLabel(wikiSource);
   if (!response.ok) {

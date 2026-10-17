@@ -393,6 +393,23 @@ describe("stageArticleCard", () => {
   });
 });
 
+describe("a page outside the main namespace", () => {
+  it.each([
+    ["iiwiki", "User:Elm/Draft"],
+    ["althistory", "Template talk:Infobox nation"],
+    ["ixwiki", "Category:Nations"],
+    ["ixwiki", "IxWiki:About"],
+  ] as const)("is skipped on %s (%s) without reading it", async (source, title) => {
+    const db = makeDb();
+    expect(await stageArticleCard(db as never, source, input(title), context)).toEqual({
+      status: "SKIPPED",
+      reason: "Not an article",
+    });
+    expect(generateCard).not.toHaveBeenCalled();
+    expect(db.$queryRaw).not.toHaveBeenCalled();
+  });
+});
+
 describe("stageCommonsFile", () => {
   const commons: ImportContext = { ...context, thresholds: DEFAULT_RARITY_THRESHOLDS.commons };
   const flag = {

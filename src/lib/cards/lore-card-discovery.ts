@@ -1,13 +1,15 @@
 /**
- * Finding pages to import: category search and counts, category members, every main-namespace page, and random
- * image-bearing pages. IxWiki's come from Postgres once WikiOS v1 is on (v1-switch.ts); a sister wiki's from its
- * MediaWiki API with the IxStats-Builder user agent (mwQuery).
+ * Finding pages to import: category search and counts, category members (a Commons category's files too), every
+ * main-namespace page, and random image-bearing pages. IxWiki's come from Postgres once WikiOS v1 is on
+ * (v1-switch.ts); another wiki's from its MediaWiki API with the IxStats-Builder user agent (mwQuery).
  */
 import type { MediaWikiAllCategoriesItem } from "~/lib/wiki-os/types";
 import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
+import type { CardWikiSource } from "./card-sources";
 import { mwJson, mwQuery, type MwError } from "./lore-card-mediawiki";
 import {
   ixwikiCategoryTitles,
@@ -16,7 +18,7 @@ import {
 } from "./lore-card-ixwiki";
 
 /** IxWiki card data: from Postgres once WikiOS v1 is on, from MediaWiki before it. */
-export const readsPostgres = (wikiSource: WikiSource) =>
+export const readsPostgres = (wikiSource: CardWikiSource) =>
   wikiSource === "ixwiki" && isWikiosV1Enabled();
 
 export interface CategoryCounts {
@@ -26,70 +28,110 @@ export interface CategoryCounts {
   subcats: number;
 }
 
+/** The titles a list read, and whether the wiki holds more than it read. */
+export interface TitleList {
+  titles: string[];
+  /** The list was cut: by its limit, by its time running out, or with the wiki's answer still continuing. */
+  truncated: boolean;
+}
+
+/** How far a list reads: at most `limit` titles, no page asked for after `deadline`, each request in `pace`'s turn. */
+export interface ListReach {
+  limit: number;
+  /** A `Date.now()` time. */
+  deadline: number;
+  pace: Pace;
+}
+
 /** One page of a `list=` query's answer. */
 interface ListPage extends MwError {
   query?: Record<string, Array<{ title?: string }>>;
   continue?: Record<string, string>;
 }
 
+/** The titles cut to the limit, with the pages WikiOS deleted left out first, so `truncated` holds. */
+async function cutList(
+  wikiSource: CardWikiSource,
+  titles: string[],
+  limit: number,
+  more: boolean
+): Promise<TitleList> {
+  const kept = await withoutArchivedTitles(titles, wikiSource);
+  return { titles: kept.slice(0, limit), truncated: more || kept.length > limit };
+}
+
 /**
- * Page titles from a paged `list=` query, up to `limit`. Every page is read through mwJson, so a wiki that refuses
- * throws DiscoveryStopped and a failed page throws, rather than the list coming back empty or cut short.
+ * Titles from a paged `list=` query, as far as `reach` goes. Every page is read through mwJson in the pace's turn, so
+ * a wiki that refuses throws DiscoveryStopped and a failed page throws, rather than the list coming back empty or
+ * cut short. Running out of time is not a failure: what was read comes back, truncated.
  */
 async function listAll(
-  wikiSource: WikiSource,
+  wikiSource: CardWikiSource,
   params: Record<string, string>,
   listKey: string,
   continueKey: string,
-  limit: number
-): Promise<string[]> {
+  reach: ListReach
+): Promise<TitleList> {
   const titles: string[] = [];
   let cont: string | undefined;
-  do {
-    const response = await mwQuery(
-      wikiSource,
-      { ...params, ...(cont && { [continueKey]: cont }) },
-      12000
+  let more = true;
+  while (more && titles.length < reach.limit) {
+    if (Date.now() >= reach.deadline) return cutList(wikiSource, titles, reach.limit, true);
+    const asked = { ...params, ...(cont && { [continueKey]: cont }) };
+    const data = await reach.pace(async () =>
+      mwJson<ListPage>(await mwQuery(wikiSource, asked, 12000), wikiSource)
     );
-    const data = await mwJson<ListPage>(response, wikiSource);
     for (const member of data.query?.[listKey] ?? []) {
       if (member.title) titles.push(member.title);
     }
     cont = data.continue?.[continueKey];
-  } while (cont && titles.length < limit);
-  return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
+    more = cont !== undefined;
+  }
+  return cutList(wikiSource, titles, reach.limit, more);
 }
 
-/** Page titles (and, when asked, files) in a live wiki category; a sister wiki's failed read throws (listAll). */
+/** A Postgres list asked for one title past the limit, so a cut list says so. */
+async function postgresList(
+  read: (limit: number) => Promise<string[]>,
+  limit: number
+): Promise<TitleList> {
+  const titles = await read(limit + 1);
+  return { titles: titles.slice(0, limit), truncated: titles.length > limit };
+}
+
+/**
+ * A live category's articles (namespace 0), or a Commons category's files. Subcategories never count. Another
+ * wiki's failed read throws (listAll).
+ */
 function fetchCategoryMembers(
   category: string,
-  wikiSource: WikiSource,
-  limit = 10000,
-  type: "page" | "file" | "page|file" = "page"
-): Promise<string[]> {
+  wikiSource: CardWikiSource,
+  reach: ListReach
+): Promise<TitleList> {
   if (readsPostgres(wikiSource)) {
-    const kinds: Array<"page" | "file"> = type === "page|file" ? ["page", "file"] : [type];
-    return ixwikiCategoryTitles(category, kinds, limit);
+    return postgresList((limit) => ixwikiCategoryTitles(category, limit), reach.limit);
   }
-  const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
+  const cmtitle = /^category:/i.test(category) ? category : `Category:${category}`;
+  const members =
+    wikiSource === "commons" ? { cmtype: "file" } : { cmtype: "page", cmnamespace: "0" };
   return listAll(
     wikiSource,
-    { list: "categorymembers", cmtitle, cmtype: type, cmlimit: "500" },
+    { list: "categorymembers", cmtitle, cmlimit: "500", ...members },
     "categorymembers",
     "cmcontinue",
-    limit
+    reach
   );
 }
 
-/** Every main-namespace page that is not a redirect; a sister wiki's failed read throws (listAll). */
-function fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
-  if (readsPostgres(wikiSource)) return ixwikiMainNamespaceTitles(limit);
+/** Every main-namespace page that is not a redirect; another wiki's failed read throws (listAll). */
+function fetchAllMainNamespacePages(wikiSource: WikiSource, reach: ListReach): Promise<TitleList> {
+  if (readsPostgres(wikiSource)) return postgresList(ixwikiMainNamespaceTitles, reach.limit);
   return listAll(
     wikiSource,
     { list: "allpages", apnamespace: "0", apfilterredir: "nonredirects", aplimit: "500" },
     "allpages",
     "apcontinue",
-    limit
+    reach
   );
 }
 

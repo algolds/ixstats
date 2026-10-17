@@ -133,11 +133,17 @@ export function commonsFileName(url: string | null | undefined): string | null {
   return decodedName(COMMONS_FILE_PAGE.exec(parsed.pathname)?.[1]);
 }
 
+/** The file types card art can be. */
+const CARD_IMAGE_FILE = /\.(svg|png|jpe?g|webp|gif)$/i;
+
+/** Whether a file can be a card's art, by its type. */
+export const isCardImageFile = (fileTitle: string): boolean => CARD_IMAGE_FILE.test(fileTitle);
+
 /** A Commons file's card title: no namespace, no extension, underscores as spaces. */
 export function commonsCardTitle(fileTitle: string): string {
   return fileTitle
     .replace(/^file:/i, "")
-    .replace(/\.(svg|png|jpe?g|webp|gif)$/i, "")
+    .replace(CARD_IMAGE_FILE, "")
     .replace(/_/g, " ")
     .trim();
 }

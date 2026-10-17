@@ -7,10 +7,14 @@ import {
   cardArticleSourceSchema,
   cardSourceLabel,
   cardWikiSourceSchema,
+  categoryName,
+  isArticleTitle,
   commonsCardPageUrl,
   commonsPageUrl,
   parseCardArticleSource,
   parseCardWikiSource,
+  sourceCount,
+  sourceNoun,
 } from "~/lib/cards/card-sources";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
 
@@ -118,5 +122,36 @@ describe("commonsCardPageUrl", () => {
         artwork: "https://evil.example/Flag.svg",
       })
     ).toBeNull();
+  });
+});
+
+describe("import wording", () => {
+  it("names a category without the namespace an admin may type", () => {
+    expect(categoryName(" Category : Flags of Europe ")).toBe("Flags of Europe");
+    expect(categoryName("category:Elm")).toBe("Elm");
+    expect(categoryName("Elm")).toBe("Elm");
+  });
+
+  it("counts Commons in files and the wikis in pages", () => {
+    expect(sourceNoun("commons", 1)).toBe("file");
+    expect(sourceNoun("iiwiki", 2)).toBe("pages");
+    expect(sourceCount("commons", 2000)).toBe("2,000 files");
+    expect(sourceCount("ixwiki", 1)).toBe("1 page");
+  });
+});
+
+describe("isArticleTitle", () => {
+  it.each([
+    ["ixwiki", "Caphiria", true],
+    ["ixwiki", "IxWiki:About", false],
+    ["ixwiki", "Template:Infobox country", false],
+    ["iiwiki", "Union Assembly", true],
+    ["iiwiki", "Elm (Timeline)", true],
+    ["iiwiki", "User talk:Elm", false],
+    ["althistory", "Category:Nations", false],
+    ["althistory", "Module:Arguments", false],
+    ["althistory", "Aramelia (Roman Survival)", true],
+  ] as const)("on %s, %s is an article: %s", (source, title, article) => {
+    expect(isArticleTitle(source, title)).toBe(article);
   });
 });

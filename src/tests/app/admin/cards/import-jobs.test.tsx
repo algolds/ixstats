@@ -125,6 +125,23 @@ describe("ImportJobs", () => {
     expect(screen.getByText("IIWiki · Showing 2 of 4 pages")).toBeInTheDocument();
   });
 
+  it("polls a running job's results, and stops once the live job finishes", () => {
+    serve([job({})]);
+    const { rerender } = render(<ImportJobs />);
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    const items = jest.mocked(api.cards.admin.imports.items.useQuery);
+    expect(items.mock.calls.at(-1)).toEqual([
+      { jobId: "job_1" },
+      expect.objectContaining({ enabled: true, refetchInterval: 5_000 }),
+    ]);
+
+    serve([job({ status: "DONE", processed: 4, finishedAt: new Date() })]);
+    rerender(<ImportJobs />);
+    expect(items.mock.calls.at(-1)?.[1]).toEqual(
+      expect.objectContaining({ enabled: true, refetchInterval: false })
+    );
+  });
+
   it("says what to do when there are no imports", () => {
     serve([]);
     render(<ImportJobs />);

@@ -77,10 +77,19 @@ describe("the lore-card generator leaves out a page WikiOS deleted", () => {
   });
 
   it("does not list it among a category's members, a wiki's pages or random pages, and no wiki is asked", async () => {
-    expect(await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki")).toEqual([
-      "Shown land",
-    ]);
-    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki")).toEqual(["Shown land"]);
+    const reach = {
+      limit: 100,
+      deadline: Date.now() + 60_000,
+      pace: <T>(read: () => Promise<T>) => read(),
+    };
+    expect(await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", reach)).toEqual({
+      titles: ["Shown land"],
+      truncated: false,
+    });
+    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki", reach)).toEqual({
+      titles: ["Shown land"],
+      truncated: false,
+    });
     expect(await loreCardDiscovery.fetchRandomArticlesWithImages(10, "ixwiki")).toEqual([
       "Shown land",
     ]);

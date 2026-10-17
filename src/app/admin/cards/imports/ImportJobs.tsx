@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Hourglass } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
+import { cardSourceLabel, parseCardWikiSource, sourceCount } from "~/lib/cards/card-sources";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -59,6 +59,7 @@ const sourceName = (source: string) => {
   return wiki ? cardSourceLabel(wiki) : source;
 };
 
+/** The job's results, read live: `job` is the jobs list's current row, so the sheet stops polling once it ends. */
 function JobItems({ job, onClose }: { job: Job | null; onClose: () => void }) {
   const items = api.cards.admin.imports.items.useQuery(
     { jobId: job?.id ?? "" },
@@ -74,7 +75,7 @@ function JobItems({ job, onClose }: { job: Job | null; onClose: () => void }) {
             {job ? sourceName(job.source) : ""}
             {job &&
               rows.length < job.total &&
-              ` · Showing ${rows.length} of ${job.total} ${job.source === "commons" ? "files" : "pages"}`}
+              ` · Showing ${rows.length} of ${sourceCount(parseCardWikiSource(job.source) ?? "ixwiki", job.total)}`}
           </SheetDescription>
         </SheetHeader>
         <Table>
@@ -154,13 +155,14 @@ export function ImportJobs() {
         query.state.data?.some(isOpen) ? OPEN_REFRESH_MS : IDLE_REFRESH_MS,
     }
   );
-  const [viewing, setViewing] = useState<Job | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const refresh = () => void utils.cards.admin.imports.jobs.invalidate();
   const onError = (error: { message: string }) => notify.error("Import not changed", error.message);
   const cancel = api.cards.admin.imports.cancel.useMutation({ onSuccess: refresh, onError });
   const retry = api.cards.admin.imports.retry.useMutation({ onSuccess: refresh, onError });
   const resume = api.cards.admin.imports.resume.useMutation({ onSuccess: refresh, onError });
   const list = jobs.data ?? [];
+  const viewing = list.find((job) => job.id === viewingId) ?? null;
 
   return (
     <Card content="data">
@@ -204,7 +206,7 @@ export function ImportJobs() {
                   <TableCell className="space-x-1 text-right whitespace-nowrap">
                     <JobActions
                       job={job}
-                      onView={() => setViewing(job)}
+                      onView={() => setViewingId(job.id)}
                       onResume={() => resume.mutate()}
                       onRetry={() => retry.mutate({ jobId: job.id })}
                       onCancel={() => cancel.mutate({ jobId: job.id })}
@@ -216,7 +218,7 @@ export function ImportJobs() {
           </Table>
         )}
       </CardContent>
-      <JobItems job={viewing} onClose={() => setViewing(null)} />
+      <JobItems job={viewing} onClose={() => setViewingId(null)} />
     </Card>
   );
 }

@@ -17,7 +17,7 @@ import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { withoutArchivedFiles } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { CategoryService, type MemberKind } from "~/lib/wiki-os/core/category-service";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { isAnonymousAuthor } from "~/lib/wiki-os/core/anonymous-author";
 import { extractLeadImageFileName, getImagePath } from "~/lib/wiki-os/transformers/image-url";
@@ -358,13 +358,9 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
 // Lists of titles
 // ---------------------------------------------------------------------------
 
-/** The titles of the published members of a category: its pages and/or its files, in category order. */
-export function ixwikiCategoryTitles(
-  category: string,
-  kinds: readonly Extract<MemberKind, "page" | "file">[],
-  limit: number
-): Promise<string[]> {
-  return CategoryService.getMemberTitles(category, kinds, limit);
+/** The titles of a category's published articles (main namespace), in category order. */
+export function ixwikiCategoryTitles(category: string, limit: number): Promise<string[]> {
+  return CategoryService.getMemberTitles(category, ["article"], limit);
 }
 
 /** The published main-namespace pages that are not redirects, by title. */

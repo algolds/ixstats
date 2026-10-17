@@ -17,6 +17,7 @@ import { commonsCardTitle, commonsFileName } from "~/lib/cards/art-licence";
 import {
   canonicalCardTitle,
   cardSourceLabel,
+  isArticleTitle,
   type CardArticleSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
@@ -61,6 +62,8 @@ export type StageOutcome =
 const ALREADY_CARDED: StageOutcome = { status: "SKIPPED", reason: "Already a card" };
 /** A title MediaWiki would refuse: bad input, which stageForAdmin does not report as a failed read. */
 const INVALID_TITLE: StageOutcome = { status: "FAILED", reason: "Not a valid page title" };
+/** A page outside the main namespace (a user draft, a template, a category) is no Lore card's source. */
+const NOT_AN_ARTICLE: StageOutcome = { status: "SKIPPED", reason: "Not an article" };
 
 /**
  * A context for staging pages outside a job (a procedure, an accepted suggestion), with the source's stored rarity
@@ -231,6 +234,7 @@ export async function stageArticleCard(
 ): Promise<StageOutcome> {
   const title = canonicalCardTitle(source, input.title);
   if (!title) return INVALID_TITLE;
+  if (!isArticleTitle(source, title)) return NOT_AN_ARTICLE;
   if ((await cardedTitleKeys(db, source, [title])).size > 0) return ALREADY_CARDED;
   const home = await resolveImportRealm(db, source, title);
   if (home.nationPage) {

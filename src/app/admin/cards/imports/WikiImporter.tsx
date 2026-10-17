@@ -8,7 +8,13 @@ import { Download, Search } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useNotify } from "~/hooks/useNotify";
-import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
+import {
+  categoryName,
+  parseCardArticleSource,
+  sourceCount,
+  sourceNoun,
+  type CardWikiSource,
+} from "~/lib/cards/card-sources";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -40,13 +46,6 @@ const MODE_OPTIONS: ReadonlyArray<{ value: Mode; label: string }> = [
   { value: "titles", label: "A list" },
 ];
 
-/** Commons holds files; the wikis, pages. */
-const nounOf = (source: CardWikiSource, count: number) =>
-  `${source === "commons" ? "file" : "page"}${count === 1 ? "" : "s"}`;
-const countOf = (source: CardWikiSource, count: number) =>
-  `${count.toLocaleString()} ${nounOf(source, count)}`;
-
-const withoutNamespace = (category: string) => category.replace(/^\s*category\s*:\s*/i, "").trim();
 const lines = (text: string) =>
   text
     .split("\n")
@@ -55,7 +54,7 @@ const lines = (text: string) =>
 
 function jobLabel(source: CardWikiSource, mode: Mode, category: string): string {
   if (mode === "category") return `Category:${category}`;
-  return mode === "all" ? "Every page" : `Chosen ${nounOf(source, 2)}`;
+  return mode === "all" ? "Every page" : `Chosen ${sourceNoun(source, 2)}`;
 }
 
 /** The category field, with the wiki's matching categories and their page counts to pick from. */
@@ -68,7 +67,7 @@ function CategoryField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const prefix = useDebounce(withoutNamespace(value), 300);
+  const prefix = useDebounce(categoryName(value), 300);
   // Commons has no category search here: its categories are typed.
   const wiki = parseCardArticleSource(source);
   const searching = wiki !== null && prefix.length >= 2;
@@ -139,14 +138,14 @@ function FoundPages({
 
   if (found.entries.length === 0) {
     return (
-      <p className="text-footnote text-label-secondary">No {nounOf(found.source, 2)} found.</p>
+      <p className="text-footnote text-label-secondary">No {sourceNoun(found.source, 2)} found.</p>
     );
   }
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-footnote text-label-secondary">
-          {countOf(found.source, found.entries.length)} found · {carded.toLocaleString()}{" "}
+          {sourceCount(found.source, found.entries.length)} found · {carded.toLocaleString()}{" "}
           {carded === 1 ? "already has a card" : "already have a card"}
         </p>
         {importable.length > 0 && (
@@ -175,7 +174,7 @@ function FoundPages({
         ))}
       </ul>
       <Button disabled={selected.size === 0 || importing} onClick={onImport}>
-        Import {countOf(found.source, selected.size)}
+        Import {sourceCount(found.source, selected.size)}
       </Button>
     </div>
   );
@@ -201,7 +200,7 @@ export function WikiImporter() {
       setSelected(new Set(importableOf(result.entries)));
       if (result.truncated) {
         notify.info(
-          `Showing ${countOf(asked.source, result.entries.length)}`,
+          `Showing ${sourceCount(asked.source, result.entries.length)}`,
           "The ones with no card come first. Import them, then find again for the rest."
         );
       }
@@ -213,7 +212,7 @@ export function WikiImporter() {
     onSuccess: (result, variables) => {
       notify.success(
         "Import queued",
-        `${countOf(variables.source, result.queued)} will import in the background.`
+        `${sourceCount(variables.source, result.queued)} will import in the background.`
       );
       setFound(null);
       void utils.cards.admin.imports.jobs.invalidate();
@@ -232,13 +231,13 @@ export function WikiImporter() {
   };
 
   const ready =
-    mode === "all" || (mode === "category" ? withoutNamespace(category) : pasted.trim()) !== "";
+    mode === "all" || (mode === "category" ? categoryName(category) : pasted.trim()) !== "";
 
   const findPages = () =>
     crawl.mutate({
       source,
       mode,
-      category: mode === "category" ? withoutNamespace(category) : undefined,
+      category: mode === "category" ? categoryName(category) : undefined,
       titles: mode === "titles" ? lines(pasted) : undefined,
     });
 
@@ -291,7 +290,7 @@ export function WikiImporter() {
 
         <Button variant="secondary" onClick={findPages} disabled={!ready || crawl.isPending}>
           <Search className="size-4" />
-          Find {nounOf(source, 2)}
+          Find {sourceNoun(source, 2)}
         </Button>
 
         {found && (

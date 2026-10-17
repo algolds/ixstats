@@ -41,6 +41,31 @@ export function cardSourceLabel(source: CardWikiSource): string {
   return SISTER_WIKI_HOSTS[source].name;
 }
 
+/** A category's name without the namespace an admin may type ("Category: Elm" is "Elm"). */
+export const categoryName = (category: string): string =>
+  category.replace(/^\s*category\s*:\s*/i, "").trim();
+
+/** What a source holds, in its noun: Commons holds files, the wikis pages. */
+export const sourceNoun = (source: CardWikiSource, count: number): string =>
+  `${source === "commons" ? "file" : "page"}${count === 1 ? "" : "s"}`;
+
+/** A count of what a source holds ("1 file", "2,000 pages"). */
+export const sourceCount = (source: CardWikiSource, count: number): string =>
+  `${count.toLocaleString()} ${sourceNoun(source, count)}`;
+
+/** MediaWiki's own namespaces, which every wiki has, and their talk pages: a title in one is not an article. */
+const CORE_NAMESPACE =
+  /^(?:media|special|talk|(?:user|project|file|image|mediawiki|template|help|category|module)(?: talk)?)\s*:/i;
+
+/**
+ * Whether a page title names an article (the main namespace). IxWiki's namespaces are all known; another wiki's are
+ * read as MediaWiki's own (a wiki's project namespace is named after it, so it is not caught).
+ */
+export function isArticleTitle(source: CardArticleSource, title: string): boolean {
+  if (source === "ixwiki") return canonicalizeTitle(title)?.namespaceId === 0;
+  return !CORE_NAMESPACE.test(title);
+}
+
 /** A Commons page's own address, the attribution link its licences ask for (a file page has no WikiOS reader path). */
 export function commonsPageUrl(title: string): string {
   return `${SISTER_WIKI_HOSTS.commons.origin}/wiki/${titleUrlPath(title)}`;
