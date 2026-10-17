@@ -143,9 +143,17 @@
   .card-face-tint {
     background-color: color-mix(in oklab, var(--card-rarity) 24%, var(--color-surface-secondary));
   }
-  .card-face-gem {
-    background-color: var(--card-rarity-paint);
+  .card-face-gem,
+  .card-rarity-gem {
     clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+  /* The face gem sits on the title scrim in both themes, so its contrast is against the scrim. */
+  .card-face-gem {
+    background-color: var(--card-rarity);
+  }
+  /* The RarityMark gem sits on page backgrounds, so it takes the theme's paint. */
+  .card-rarity-gem {
+    background-color: var(--card-rarity-paint);
   }
   /* Keeps the title legible over any art. */
   .card-face-scrim {
