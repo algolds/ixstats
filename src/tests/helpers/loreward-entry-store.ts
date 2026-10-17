@@ -35,6 +35,9 @@ function fieldOf(row: StoredEntry, field: string): Field {
 }
 
 function holds(value: Field, condition: Condition): boolean {
+  if (condition instanceof Date) {
+    return value instanceof Date && value.getTime() === condition.getTime();
+  }
   if (condition === null || typeof condition !== "object") return value === condition;
   if (condition.in) return condition.in.includes(value);
   if (condition.startsWith !== undefined) {
@@ -77,8 +80,9 @@ export function entryStore(rows: StoredEntry[]) {
     return row;
   };
   return {
-    findMany: jest.fn(async ({ where }: { where: Where }) =>
-      rows.filter((row) => matches(row, where))
+    findMany: jest.fn(
+      async ({ where }: { where: Where; select?: object; orderBy?: object; take?: number }) =>
+        rows.filter((row) => matches(row, where))
     ),
     findFirst: jest.fn(
       async ({ where }: { where: Where }) => rows.find((row) => matches(row, where)) ?? null

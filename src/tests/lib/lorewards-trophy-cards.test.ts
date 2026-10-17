@@ -666,7 +666,7 @@ describe("trophy cards when an override writes the place while a run waits", () 
     await mintTrophyCards(db);
     links.set("Kir Republic", "u1");
     // Only the transaction's read sees the card retired
-    const retiredRead = jest.fn(async () => ({ ...cards[0], isRetired: true }));
+    const retiredRead = jest.fn(async (_args: object) => ({ ...cards[0], isRetired: true }));
     distinctTx([entry()], { card: { ...db.card, findUnique: retiredRead } });
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });

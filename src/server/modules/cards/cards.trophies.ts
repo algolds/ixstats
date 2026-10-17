@@ -84,7 +84,9 @@ const NOTHING_STORED: EntryFields = {
 };
 
 /** One place's four fields, as an override gives them (`PlaceInput`) or as an entry stores them (`PlaceValues`). */
-function placeFieldsOf<F extends LorewardOverride>(fields: F, place: LorewardPlace) {
+function placeFieldsOf(fields: EntryFields, place: LorewardPlace): PlaceValues;
+function placeFieldsOf(fields: LorewardOverride, place: LorewardPlace): PlaceInput;
+function placeFieldsOf(fields: LorewardOverride, place: LorewardPlace): PlaceInput {
   return place === "winner"
     ? {
         user: fields.winnerUser,
