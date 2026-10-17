@@ -30,7 +30,6 @@ import {
   clearUserPerksCache as perksClearUserPerksCache,
   getCardCapacityBoost as perksGetCardCapacityBoost,
   getYieldBoostMultiplier as perksGetYieldBoostMultiplier,
-  getLoreTokensBalance as perksGetLoreTokensBalance,
   getVaultConfig,
   invalidateVaultConfigCache,
   type PerksDb,
@@ -193,10 +192,6 @@ export class VaultService {
 
   getYieldBoostMultiplier(userId: string, db: PrismaClient) {
     return perksGetYieldBoostMultiplier(userId, db);
-  }
-
-  getLoreTokensBalance(userId: string, db: PrismaClient) {
-    return perksGetLoreTokensBalance(userId, db);
   }
 }
 

@@ -6,6 +6,7 @@
 import {
   applyRetiredItemRefund,
   isRetiredStoreItem,
+  ledgerMetadata,
   planRetiredItemRefunds,
   retiredItemRefundKey,
   type RetiredItemRefund,
@@ -68,6 +69,18 @@ describe("planRetiredItemRefunds", () => {
   it("knows which items are retired", () => {
     expect(isRetiredStoreItem(TOKEN)).toBe(true);
     expect(isRetiredStoreItem("upgrade_card_capacity")).toBe(false);
+  });
+});
+
+describe("ledgerMetadata", () => {
+  it("reads a JSON string or an object, and anything else as empty", () => {
+    expect(ledgerMetadata(JSON.stringify({ itemId: TOKEN }))).toEqual({ itemId: TOKEN });
+    expect(ledgerMetadata({ itemId: TOKEN })).toEqual({ itemId: TOKEN });
+    expect(ledgerMetadata("not json")).toEqual({});
+    expect(ledgerMetadata(JSON.stringify([TOKEN]))).toEqual({});
+    expect(ledgerMetadata([TOKEN])).toEqual({});
+    expect(ledgerMetadata(7)).toEqual({});
+    expect(ledgerMetadata(null)).toEqual({});
   });
 });
 

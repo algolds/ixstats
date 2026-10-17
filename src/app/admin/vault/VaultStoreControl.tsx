@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { api } from "~/trpc/react";
+import type { Prisma } from "@prisma/client";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -46,6 +48,10 @@ import {
 } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
+type StoreItem = RouterOutputs["vault"]["adminListStoreItemsAll"][number];
+type CosmeticEffects = Record<string, Record<string, string | boolean>>;
+type StoreItemEffects = { perks: Record<string, number> } | { customizations: CosmeticEffects };
+
 export function VaultStoreControl() {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -78,7 +84,6 @@ export function VaultStoreControl() {
     effectIcon: "Crown",
     yieldBoostPct: 0, // % bonus to the Vault dividend
     cardCapacity: 0, // extra card slots
-    loreTokens: 0, // extra lore tokens
   });
 
   // Price History Query
@@ -136,7 +141,6 @@ export function VaultStoreControl() {
       effectIcon: "Crown",
       yieldBoostPct: 0,
       cardCapacity: 0,
-      loreTokens: 0,
     });
   };
 
@@ -145,17 +149,18 @@ export function VaultStoreControl() {
     setIsOpen(true);
   };
 
-  const handleOpenEdit = (item: any) => {
+  const handleOpenEdit = (item: StoreItem) => {
     setEditingItem(item);
-    const effects = (item.effects ?? {}) as any;
-    const cust = effects.customizations ?? {};
-    const perks = effects.perks ?? {};
+    const fx: Prisma.JsonObject = isJsonObject(item.effects) ? item.effects : {};
+    const cust: Prisma.JsonObject = isJsonObject(fx.customizations) ? fx.customizations : {};
+    const { yieldBoost, cardCapacity }: Prisma.JsonObject = isJsonObject(fx.perks) ? fx.perks : {};
     const cosmeticKind: "avatarGlow" | "neonFrame" | "chatBadge" = cust.chatBadge
       ? "chatBadge"
       : cust.neonFrame
         ? "neonFrame"
         : "avatarGlow";
-    const activeCust = cust[cosmeticKind] ?? {};
+    const active = cust[cosmeticKind];
+    const { color, icon }: Prisma.JsonObject = isJsonObject(active) ? active : {};
     setFormData({
       name: item.name,
       description: item.description || "",
@@ -167,26 +172,24 @@ export function VaultStoreControl() {
       category: item.category,
       isActive: item.isActive,
       cosmeticKind,
-      effectColor: activeCust.color || "#f59e0b",
-      effectIcon: activeCust.icon || "Crown",
-      yieldBoostPct: typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
-      cardCapacity: typeof perks.cardCapacity === "number" ? perks.cardCapacity : 0,
-      loreTokens: typeof perks.loreTokens === "number" ? perks.loreTokens : 0,
+      effectColor: typeof color === "string" && color ? color : "#f59e0b",
+      effectIcon: typeof icon === "string" && icon ? icon : "Crown",
+      yieldBoostPct: typeof yieldBoost === "number" ? Math.round(yieldBoost * 100) : 0,
+      cardCapacity: typeof cardCapacity === "number" ? cardCapacity : 0,
     });
     setIsOpen(true);
   };
 
   // Assemble the effects JSON the rest of the app reads (useActiveCosmetics for
   // rendering, vault-service getPurchasedItemsEffects for perks/yield).
-  const buildEffects = (): Record<string, any> | undefined => {
+  const buildEffects = (): StoreItemEffects | undefined => {
     if (formData.category === "upgrades") {
       const perks: Record<string, number> = {};
       if (formData.yieldBoostPct) perks.yieldBoost = formData.yieldBoostPct / 100;
       if (formData.cardCapacity) perks.cardCapacity = formData.cardCapacity;
-      if (formData.loreTokens) perks.loreTokens = formData.loreTokens;
       return Object.keys(perks).length ? { perks } : undefined;
     }
-    const customizations: Record<string, any> = {};
+    const customizations: CosmeticEffects = {};
     if (formData.cosmeticKind === "avatarGlow") {
       customizations.avatarGlow = {
         enabled: true,
@@ -219,10 +222,10 @@ export function VaultStoreControl() {
       effectIcon: _ei,
       yieldBoostPct: _yb,
       cardCapacity: _cc,
-      loreTokens: _lt,
       ...base
     } = formData;
-    const payload = { ...base, effects: buildEffects() ?? null };
+    // No effects to send (an upgrade with no perks set) leaves the stored ones as they are.
+    const payload = { ...base, effects: buildEffects() };
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, ...payload });
     } else {
@@ -554,7 +557,7 @@ export function VaultStoreControl() {
               </Label>
 
               {formData.category === "upgrades" ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fx-yield">Dividend boost (%)</Label>
                     <Input
@@ -578,19 +581,6 @@ export function VaultStoreControl() {
                       value={formData.cardCapacity}
                       onChange={(e) =>
                         setFormData({ ...formData, cardCapacity: Number(e.target.value) })
-                      }
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fx-lore">Lore Tokens (+)</Label>
-                    <Input
-                      id="fx-lore"
-                      type="number"
-                      min={0}
-                      value={formData.loreTokens}
-                      onChange={(e) =>
-                        setFormData({ ...formData, loreTokens: Number(e.target.value) })
                       }
                       className="font-mono"
                     />

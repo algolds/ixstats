@@ -28,16 +28,21 @@ import {
 } from "~/lib/vault/store-purchases";
 import { globalCache } from "~/lib/cache";
 import {
-  isRetiredStoreItem,
   RETIRED_STORE_ITEM_IDS,
   RETIRED_STORE_ITEM_MESSAGE,
 } from "~/lib/vault/retired-store-items";
+import { LORE_TOKEN_ITEM_IDS } from "~/lib/vault/lore-token-refunds";
 import { type VaultTransactionType } from "@prisma/client";
 import { resolveVaultUserId } from "./_resolveUserId";
 import { toggleEquippedCosmetic } from "./_equippedCosmetics";
 import { vaultTransactionTypeEnum } from "./_transactionType";
 
 const STORE_SPEND_TYPES: VaultTransactionType[] = ["SPEND_COSMETIC", "SPEND_BOOST"];
+/** Never sold again: the retired items and the lore tokens withdrawn with paid lore requests. */
+const UNSOLD_STORE_ITEM_IDS: readonly string[] = [
+  ...RETIRED_STORE_ITEM_IDS,
+  ...LORE_TOKEN_ITEM_IDS,
+];
 
 export const vaultStoreRouter = createTRPCRouter({
   /**
@@ -134,8 +139,8 @@ export const vaultStoreRouter = createTRPCRouter({
       if (!item || !item.isActive) {
         throw new TRPCError({ code: "NOT_FOUND", message: "This item is not available." });
       }
-      // Retired items stay refused even if an admin reactivates the row.
-      if (isRetiredStoreItem(item.id)) {
+      // Retired and withdrawn items stay refused even if an admin reactivates the row.
+      if (UNSOLD_STORE_ITEM_IDS.includes(item.id)) {
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: RETIRED_STORE_ITEM_MESSAGE });
       }
 
@@ -207,7 +212,7 @@ export const vaultStoreRouter = createTRPCRouter({
   listStoreItems: protectedProcedure.query(async ({ ctx }) => {
     try {
       const items = await ctx.db.vaultStoreItem.findMany({
-        where: { isActive: true, id: { notIn: [...RETIRED_STORE_ITEM_IDS] } },
+        where: { isActive: true, id: { notIn: [...UNSOLD_STORE_ITEM_IDS] } },
         orderBy: { price: "asc" },
       });
       return items;
