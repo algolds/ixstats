@@ -68,13 +68,26 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/lorewards/card-value-cron")).updateCardValues,
   },
   {
+    // Queues the daily lore import per switched-on wiki; the card-import-jobs run works the items.
     name: "lore-card-generation",
     defaultSchedule: "0 2 * * *",
     lockName: "lore-card-generation",
-    timeoutMs: 60 * MINUTE,
-    modulePath: "~/lib/lorewards/generation-cron",
-    exportName: "generateDailyLoreCards",
-    load: async () => (await import("~/lib/lorewards/generation-cron")).generateDailyLoreCards,
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/server/modules/cards/cards.daily-import",
+    exportName: "queueDailyLoreImports",
+    load: async () =>
+      (await import("~/server/modules/cards/cards.daily-import")).queueDailyLoreImports,
+  },
+  {
+    // Card imports (the cards admin's Imports tab and the daily import). The admin's Start also kicks a run.
+    name: "card-import-jobs",
+    defaultSchedule: "* * * * *",
+    lockName: "card-import-jobs",
+    timeoutMs: 5 * MINUTE,
+    modulePath: "~/server/modules/cards/cards.import-jobs",
+    exportName: "runQueuedCardImports",
+    load: async () =>
+      (await import("~/server/modules/cards/cards.import-jobs")).runQueuedCardImports,
   },
   {
     name: "lorewards-full-sync",
