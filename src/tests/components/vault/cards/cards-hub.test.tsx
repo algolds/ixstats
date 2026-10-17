@@ -1,6 +1,6 @@
 /** The cards hub: four tabs, each its own address, and the query each pane reads and writes. */
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
   usePathname: () => window.location.pathname,
@@ -74,6 +74,21 @@ describe("CardsHub", () => {
     expect(pushState).toHaveBeenCalledWith(null, "", "/vault/cards/sets");
     expect(screen.getByRole("tabpanel", { name: "Sets" })).toHaveTextContent("Sets pane");
     expect(screen.queryByText("Mine pane")).toBeNull();
+  });
+
+  it("moves focus along the tabs with the arrow keys, and switches only on Enter or Space", async () => {
+    at("/vault/cards/mine");
+    render(<CardsHub initialTab="mine" />);
+    spyOnHistory();
+    const tab = (name: string) => screen.getByRole("tab", { name });
+    tab("Mine").focus();
+    fireEvent.keyDown(tab("Mine"), { key: "ArrowRight" });
+    await waitFor(() => expect(tab("Sets")).toHaveFocus());
+    expect(pushState).not.toHaveBeenCalled();
+    expect(screen.getByRole("tabpanel", { name: "Mine" })).toHaveTextContent("Mine pane");
+    fireEvent.keyDown(tab("Sets"), { key: "Enter" });
+    expect(pushState).toHaveBeenCalledWith(null, "", "/vault/cards/sets");
+    expect(screen.getByRole("tabpanel", { name: "Sets" })).toHaveTextContent("Sets pane");
   });
 
   it("opens the card sheet from Mine", () => {

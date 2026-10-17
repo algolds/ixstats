@@ -47,6 +47,8 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
       <h1 className="sr-only">Cards</h1>
       <SegmentedControl
         asTabs
+        // Each tab is its own address: an arrow key moves focus only, so passing a tab never pushes a history entry.
+        activationMode="manual"
         fullWidth
         aria-label="Cards"
         value={tab}

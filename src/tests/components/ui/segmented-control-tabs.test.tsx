@@ -9,11 +9,12 @@ const TABS = [
   { value: "three", label: "Three" },
 ];
 
-function Harness() {
+function Harness({ activationMode }: { activationMode?: "automatic" | "manual" }) {
   const [active, setActive] = useState("one");
   return (
     <SegmentedControl
       asTabs
+      activationMode={activationMode}
       options={TABS}
       value={active}
       onValueChange={setActive}
@@ -54,5 +55,31 @@ describe("SegmentedControl asTabs accessibility", () => {
     fireEvent.keyDown(tab("Three"), { key: "Home" });
     await waitFor(() => expect(tab("One")).toHaveAttribute("aria-selected", "true"));
     expect(tab("One")).toHaveFocus();
+  });
+
+  it("with manual activation, moves focus with the arrow keys and selects only on Enter or Space", async () => {
+    render(<Harness activationMode="manual" />);
+    const tab = (name: string) => screen.getByRole("tab", { name });
+
+    tab("One").focus();
+    fireEvent.keyDown(tab("One"), { key: "ArrowRight" });
+    await waitFor(() => expect(tab("Two")).toHaveFocus());
+    expect(tab("Two")).toHaveAttribute("aria-selected", "false");
+    expect(tab("One")).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(tab("Two"), { key: "Enter" });
+    expect(tab("Two")).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(tab("Two"), { key: "End" });
+    await waitFor(() => expect(tab("Three")).toHaveFocus());
+    expect(tab("Two")).toHaveAttribute("aria-selected", "true");
+    fireEvent.keyDown(tab("Three"), { key: " " });
+    expect(tab("Three")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("selects a tab on press with manual activation too", () => {
+    render(<Harness activationMode="manual" />);
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Three" }));
+    expect(screen.getByRole("tab", { name: "Three" })).toHaveAttribute("aria-selected", "true");
   });
 });

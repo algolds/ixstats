@@ -61,6 +61,12 @@ interface SegmentedControlProps<T extends string = string> extends Omit<
   asTabs?: boolean;
   /** With `asTabs`: the id of the panel each tab controls. */
   getTabPanelId?: (value: T) => string;
+  /**
+   * With `asTabs`: `automatic` selects a tab as the arrow keys focus it; `manual` only moves focus, and Enter or Space
+   * selects (for tabs whose switch is costly, such as a new address).
+   * @default "automatic"
+   */
+  activationMode?: "automatic" | "manual";
   /** Class for each segment button. */
   itemClassName?: string;
   /**
@@ -97,6 +103,7 @@ export function SegmentedControl<T extends string = string>({
   disabled = false,
   asTabs = false,
   getTabPanelId,
+  activationMode,
   itemClassName,
   scrollable: scrollableProp,
   className,
@@ -225,7 +232,11 @@ export function SegmentedControl<T extends string = string>({
 
   if (asTabs) {
     return (
-      <TabsPrimitive.Root value={value ?? ""} onValueChange={select}>
+      <TabsPrimitive.Root
+        value={value ?? ""}
+        onValueChange={select}
+        activationMode={activationMode}
+      >
         <TabsPrimitive.List
           ref={trackRef}
           data-slot="segmented-control"
