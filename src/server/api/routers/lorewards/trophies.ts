@@ -3,7 +3,12 @@
  * own with what Loreward bonuses have paid them.
  */
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
 import { loadMyTrophies, myRaceRank } from "~/lib/lorewards/my-trophies";
 import { verifiedLorewardUser } from "~/lib/lorewards/resolve-user";
@@ -39,10 +44,10 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
   getTodayRace: publicProcedure.query(() => getTodayRace()),
 
   /**
-   * A wiki user's trophies. The cards are those held by the account that verified the name, and are left out
-   * when that account hides its Vault cards on its passport.
+   * A wiki user's trophies (rate-limited: any name can be asked for). The cards are those held by the account
+   * that verified the name, and are left out when that account hides its Vault cards on its passport.
    */
-  getTrophies: publicProcedure
+  getTrophies: rateLimitedPublicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
     .query(async ({ ctx, input }) => {
       const holder = await verifiedLorewardUser(ctx.db, input.username);
