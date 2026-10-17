@@ -39,6 +39,8 @@ interface CandidateScore {
   largestEdit: number;
   editCount: number;
   isMinorOnly: boolean;
+  /** The distinct `authorId`s of the scored revisions (null: mirrored from MediaWiki), for the dividend. */
+  authorIds: Array<string | null>;
   // Quality signals
   proseRatio: number;
   proseMultiplier: number;
@@ -79,12 +81,14 @@ interface Candidate {
   editCount: number;
   isMinorOnly: boolean;
   hasNewArticle: boolean;
+  authorIds: Set<string | null>;
 }
 
 /** The revision columns `scoreDailyWikiOS` reads. */
 interface RevisionRow {
   articleId: string;
   author: string | null;
+  authorId: string | null;
   byteSize: number;
   byteDelta: number;
   minor: boolean;
@@ -112,6 +116,7 @@ function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
         editCount: 0,
         isMinorOnly: true,
         hasNewArticle: diff > 500 && row.byteSize === diff,
+        authorIds: new Set(),
       };
       byUserPage.set(key, entry);
     }
@@ -119,6 +124,7 @@ function aggregateCandidates(revRows: RevisionRow[]): Candidate[] {
     if (diff > 0) entry.bytesAdded += diff;
     entry.largestEdit = Math.max(entry.largestEdit, diff);
     entry.editCount++;
+    entry.authorIds.add(row.authorId);
     if (!row.minor) entry.isMinorOnly = false;
   }
 
@@ -143,6 +149,7 @@ const candidateBase = (c: Candidate) => ({
   largestEdit: c.largestEdit,
   editCount: c.editCount,
   isMinorOnly: c.isMinorOnly,
+  authorIds: [...c.authorIds],
   isCollaborative: false,
   collaborativeMultiplier: 1,
 });
@@ -263,6 +270,7 @@ export async function scoreDailyWikiOS(
         id: true,
         articleId: true,
         author: true,
+        authorId: true,
         byteSize: true,
         byteDelta: true,
         minor: true,

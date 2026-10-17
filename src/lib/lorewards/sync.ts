@@ -503,9 +503,9 @@ function payoutDay(entry: { type: string; date: string; dateEnd: string | null }
 
 /**
  * Pay the winner and the runner-up of every approved daily, weekly and monthly entry from the payout start
- * (`LOREWARD_PAYOUT_START`) on, by contest and place. Each place pays the VERIFIED ixwiki `WikiAccountLink` of its
- * name, else the WikiOS account that made every one of its winning edits (`resolveLorewardPlace`); a place whose
- * winning edits are MediaWiki's, shared or not mirrored pays no one. Entries before the start are never paid, so
+ * (`LOREWARD_PAYOUT_START`) on, by contest and place (`resolveLorewardPlace`). A plain name pays only the exact holder
+ * of its VERIFIED ixwiki `WikiAccountLink`; a `wikios>Label` name pays the one WikiOS account behind the label's
+ * edits to the winning page in the contest. Anything else pays no one. Entries before the start are never paid, so
  * an account found later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
  * `lorewardBonusKey(entryId, place)`, so re-running after each sync only pays new places.
  * Returns the number of newly-granted bonuses.

@@ -46,6 +46,19 @@ describe("scoreDailyWikiOS enrichAll", () => {
     expect(r.candidates.every((c) => c.proseRatio !== -1)).toBe(true);
   });
 
+  it("carries the WikiOS accounts of each candidate's scored revisions, for the dividend", async () => {
+    const [first] = revisions(1);
+    jest.mocked(db.wikiRevision.findMany).mockResolvedValue([
+      { ...first, id: "r0", authorId: "u1" },
+      { ...first, id: "r1", authorId: null },
+      { ...first, id: "r2", authorId: "u1" },
+    ] as never);
+    const r = await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS, { enrichAll: true });
+    expect(r.candidates.map((c) => c.authorIds)).toEqual([["u1", null]]);
+    const args = jest.mocked(db.wikiRevision.findMany).mock.calls[0]?.[0];
+    expect(args?.select).toHaveProperty("authorId", true);
+  });
+
   it("does not read the revision text it never uses", async () => {
     jest.mocked(db.wikiRevision.findMany).mockResolvedValue([] as never);
     await scoreDailyWikiOS("2026-10-01", DEFAULT_WEIGHTS);

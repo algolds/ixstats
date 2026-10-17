@@ -1,9 +1,9 @@
 /** @jest-environment node */
 /**
- * Loreward payouts by contest and place. The credits go to the owner of a VERIFIED ixwiki WikiAccountLink (an exact
- * match on the normalized name), else to the WikiOS account that made every one of the place's winning edits. Never
- * to whoever holds the legacy User.wikiUsername (which could be set without proof), to no one when the winning edits
- * are MediaWiki's, shared or not mirrored, and only for entries from the payout start on.
+ * Loreward payouts by contest and place. A plain (MediaWiki) name pays only the owner of its VERIFIED ixwiki
+ * WikiAccountLink (an exact match on the normalized name); a `wikios>Label` name pays the one WikiOS account behind
+ * the label's edits to the winning page in the contest. Never to whoever holds the legacy User.wikiUsername (which
+ * could be set without proof), and only for entries from the payout start on.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -135,39 +135,56 @@ describe("grantLorewardBonuses", () => {
     expect(mocked.user.findFirst).not.toHaveBeenCalled();
   });
 
-  it("pays the WikiOS account behind the place's winning edits, on its page and day", async () => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ winnerPage: "Seneca front" })]);
+  it("pays a wikios> winner's WikiOS account for the label's edits to the page in the contest", async () => {
+    mocked.lorewardEntry.findMany.mockResolvedValue([
+      daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" }),
+    ]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
     expect(await grantLorewardBonuses()).toBe(1);
     expect(mocked.wikiRevision.groupBy).toHaveBeenCalledWith({
       by: ["authorId"],
       where: {
         source: "ixwiki",
-        author: { in: ["Kir_Republic", "Kir Republic"] },
+        author: "Kir_Republic",
         createdAt: {
           gte: new Date("2026-10-16T00:00:00.000Z"),
-          lt: new Date("2026-10-17T00:00:00.000Z"),
+          lt: new Date("2026-10-17T06:00:00.000Z"),
         },
-        article: { source: "ixwiki", title: "Seneca front" },
+        article: { source: "ixwiki", title: "Seneca front", redirectTargetSlug: null },
       },
     });
+    // A link never applies to a wikios> name.
+    expect(mocked.wikiAccountLink.findFirst).not.toHaveBeenCalled();
     expect(grants()).toEqual([["u_wikios", "bonus:loreward:e1", 500]]);
   });
 
-  it("pays nobody when a winning edit is an unverified MediaWiki edit", async () => {
-    mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ winnerPage: "Seneca front" })]);
+  it("pays nobody for a wikios> place whose label two accounts, or a MediaWiki editor, used", async () => {
+    mocked.lorewardEntry.findMany.mockResolvedValue([
+      daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" }),
+    ]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }, { authorId: null }]);
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonus).not.toHaveBeenCalled();
   });
 
-  it("pays nobody for an unlinked place whose winning page is not recorded", async () => {
-    // Weekly and monthly results carry no page, so only a verified link can be paid for them.
+  it("pays nobody for a plain name without a link, and never reads its edits", async () => {
     mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
+    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ winnerPage: "Seneca front" })]);
+    mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(mocked.wikiRevision.groupBy).not.toHaveBeenCalled();
+  });
+
+  it("pays nobody for a wikios> weekly with no recorded range", async () => {
     mocked.lorewardEntry.findMany.mockResolvedValue([
-      daily({ id: "w1", type: "weekly", date: "2026-W43", dateEnd: "2026-10-25" }),
+      daily({
+        id: "w1",
+        type: "weekly",
+        date: "2026-10-19",
+        dateEnd: "2026-10-25",
+        winnerUser: "wikios>Kir_Republic",
+        winnerPage: "Seneca front",
+      }),
     ]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
     expect(await grantLorewardBonuses()).toBe(0);

@@ -1,8 +1,8 @@
 /**
  * Loreward trophy cards: every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a
  * one-of-one, tradeable lore card for that wiki user. The card is minted once per (entry, edition) and held
- * unowned until the place's account can be told (a verified wiki link, or the one WikiOS account behind the
- * place's winning edits: `resolveLorewardPlace`), then granted exactly once.
+ * unowned until the place's account can be told (a plain name's exact verified wiki link, or the one WikiOS account
+ * behind a `wikios>` name's edits: `resolveLorewardPlace`), then granted exactly once.
  * No IxCredits are written here: trophy cards are collectibles, kept out of deck value (`EXCLUDE_TROPHY_CARDS`).
  *
  * A trophy card carries the winning page's `wikiArticleTitle` like any lore card, so random lore generation
@@ -230,8 +230,8 @@ const editionOf = (edition: string | null): LorewardPlace | null =>
   edition === "winner" || edition === "runner-up" ? edition : null;
 
 /**
- * Grants each unowned trophy card to its place's account once `resolveLorewardPlace` tells it. A card granted
- * before is never granted again, even if its owner later sold, junked or crafted it away.
+ * Grants each unowned trophy card of an approved entry to its place's account once `resolveLorewardPlace` tells
+ * it. A card granted before is never granted again, even if its owner later sold, junked or crafted it away.
  */
 export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
   const unowned = await db.card.findMany({
@@ -241,7 +241,7 @@ export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ grant
   const waiting = unowned.filter((card) => !metaOf(card.metadata).grantedTo);
   const entryIds = [...new Set(waiting.flatMap((card) => card.lorewardEntryId ?? []))];
   const entries = await db.lorewardEntry.findMany({
-    where: { id: { in: entryIds } },
+    where: { id: { in: entryIds }, status: "approved" },
     select: ENTRY_SELECT,
   });
   const entryById = new Map(entries.map((entry) => [entry.id, entry]));

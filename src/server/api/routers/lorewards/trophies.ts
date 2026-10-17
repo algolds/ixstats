@@ -10,7 +10,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
-import { loadMyTrophies, myRaceRank } from "~/lib/lorewards/my-trophies";
+import { loadMyTrophies, myRaceRank, viewerNames } from "~/lib/lorewards/my-trophies";
 import { verifiedLorewardUser } from "~/lib/lorewards/resolve-user";
 import { getTodayRace, type TodayRace } from "~/lib/lorewards/today-race";
 import { loadTrophies, lorewardCreditsPaid } from "~/lib/lorewards/trophy-summary";
@@ -20,7 +20,7 @@ const RACE_WAIT_MS = 2_000;
 
 /**
  * The viewer's rank in today's race (`rankOf`). The race scores a whole UTC day, so it never holds the trophies
- * back: a slow or failed run only leaves the rank out.
+ * back: the race and the rank lookup share one two-second budget, and a slow or failed run only leaves the rank out.
  */
 async function rankInTodayRace(
   rankOf: (race: TodayRace) => Promise<number | null>
@@ -30,8 +30,7 @@ async function rankInTodayRace(
     timer = setTimeout(() => resolve(null), RACE_WAIT_MS);
   });
   try {
-    const race = await Promise.race([getTodayRace(), waited]);
-    return race ? await rankOf(race) : null;
+    return await Promise.race([getTodayRace().then(rankOf), waited]);
   } catch {
     return null;
   } finally {
@@ -56,16 +55,17 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
     }),
 
   /**
-   * The viewer's trophies (`loadMyTrophies`: their verified name's record, else only the places tied to them),
-   * what Loreward bonuses paid, and today's rank.
+   * The viewer's trophies (`loadMyTrophies`: only the places the payout rule pays to them), what Loreward bonuses
+   * paid, and today's rank.
    */
   getMyTrophies: protectedProcedure.query(async ({ ctx }) => {
-    const mine = await loadMyTrophies(ctx.db, ctx.user.id);
+    const names = await viewerNames(ctx.db, ctx.user.id);
+    const mine = await loadMyTrophies(ctx.db, ctx.user.id, names);
     if (!mine.wikiUsername) return { ...mine, paid: 0, todayRank: null };
 
     const [paid, todayRank] = await Promise.all([
       lorewardCreditsPaid(ctx.db, ctx.user.id),
-      rankInTodayRace((race) => myRaceRank(ctx.db, race, mine, ctx.user.id)),
+      rankInTodayRace((race) => myRaceRank(ctx.db, race, names, ctx.user.id)),
     ]);
     return { ...mine, paid, todayRank };
   }),

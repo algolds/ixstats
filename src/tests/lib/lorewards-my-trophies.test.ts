@@ -1,10 +1,10 @@
 /** @jest-environment node */
 /**
- * The viewer's own Lorewards: a verified link makes the name's record theirs; without one, only the places whose
- * winning edits are all theirs in WikiOS count, never the shared stats row of a name they happen to carry.
+ * The viewer's own Lorewards: a place is theirs when the payout rule pays it to them (a plain name's exact verified
+ * link, or a `wikios>` name's WikiOS edits), never because a name they carry matches a stats row.
  */
 import { afterEach, beforeEach, describe, expect, it } from "@jest/globals";
-import { loadMyTrophies, myRaceRank } from "~/lib/lorewards/my-trophies";
+import { loadMyTrophies, myRaceRank, viewerNames } from "~/lib/lorewards/my-trophies";
 
 interface Revision {
   author: string;
@@ -30,7 +30,7 @@ interface Link {
 type LinkWhere = { userId?: string; username?: string };
 type RevisionWhere = {
   authorId?: string;
-  author?: { in: string[] };
+  author?: string;
   createdAt?: { gte: Date; lt: Date };
   article?: { title: string };
 };
@@ -39,18 +39,10 @@ type EntryWhere = {
   OR: [{ winnerUser: { in: string[] } }, { runnerUpUser: { in: string[] } }];
 };
 
-const STATS = {
-  dailyWins: 6,
-  dailyRunnerUps: 2,
-  weeklyWins: 1,
-  monthlyWins: 0,
-  currentStreak: 3,
-};
-
 const at = (r: Revision) => new Date(r.createdAt);
 
 const placeMatches = (r: Revision, where: RevisionWhere) =>
-  (where.author?.in ?? []).includes(r.author) &&
+  r.author === where.author &&
   !!where.createdAt &&
   at(r) >= where.createdAt.gte &&
   at(r) < where.createdAt.lt &&
@@ -98,7 +90,7 @@ function fakeDb(revisions: Revision[], entries: Entry[], links: Link[] = []) {
         );
       }),
     },
-    lorewardUserStats: { findFirst: jest.fn(async () => STATS) },
+    lorewardUserStats: { findFirst: jest.fn(async () => null) },
     cardOwnership: { findMany: jest.fn(async () => []) },
   };
 }
@@ -114,13 +106,17 @@ const daily = (date: string, over: Partial<Entry> = {}): Entry => ({
   date,
   dateStart: null,
   dateEnd: null,
-  winnerUser: "Kir Republic",
+  winnerUser: "wikios>Kir_Republic",
   winnerPage: null,
   runnerUpUser: null,
   runnerUpPage: null,
   status: "approved",
   ...over,
 });
+
+async function mineOf(db: ReturnType<typeof fakeDb>, userId: string) {
+  return loadMyTrophies(db as never, userId, await viewerNames(db as never, userId));
+}
 
 beforeEach(() => {
   jest.useFakeTimers({ now: new Date("2026-10-17T12:00:00.000Z") });
@@ -130,23 +126,31 @@ afterEach(() => {
 });
 
 describe("loadMyTrophies", () => {
-  it("gives a viewer with a verified link the name's whole record, without reading revisions", async () => {
-    const db = fakeDb([], [], [{ userId: "u2", username: "Kir Republic" }]);
-    expect(await loadMyTrophies(db as never, "u2")).toEqual({
+  it("counts the places under the viewer's verified name from the entries, not the name's stats row", async () => {
+    const db = fakeDb(
+      [],
+      [
+        daily("2026-10-16", { winnerUser: "Kir Republic" }),
+        { ...daily("2026-W42"), type: "weekly", winnerUser: "Kir_Republic" },
+        daily("2026-10-15", { winnerUser: "Rumahoki", runnerUpUser: "Kir Republic" }),
+      ],
+      [{ userId: "u2", username: "Kir Republic" }]
+    );
+    expect(await mineOf(db, "u2")).toEqual({
       wikiUsername: "Kir Republic",
       verified: true,
       unmatched: 0,
-      wins: { daily: 6, weekly: 1, monthly: 0 },
-      runnerUps: 2,
-      streak: 3,
+      wins: { daily: 1, weekly: 1, monthly: 0 },
+      runnerUps: 1,
+      streak: 1,
       cards: [],
     });
-    expect(db.wikiRevision.groupBy).not.toHaveBeenCalled();
+    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
   });
 
   it("has no wiki name for a viewer with no link and no ixwiki edits", async () => {
     const db = fakeDb([], [daily("2026-10-16")]);
-    expect(await loadMyTrophies(db as never, "u2")).toMatchObject({
+    expect(await mineOf(db, "u2")).toMatchObject({
       wikiUsername: null,
       verified: false,
       unmatched: 0,
@@ -155,56 +159,63 @@ describe("loadMyTrophies", () => {
     expect(db.lorewardEntry.findMany).not.toHaveBeenCalled();
   });
 
-  it("counts only the places whose winning edits are all the viewer's, never the name's stats row", async () => {
+  it("counts a wikios> place the viewer's WikiOS edits won, and no other", async () => {
     const db = fakeDb(
       [
         edit("Kir_Republic", "u2", "2026-10-14T09:00:00.000Z", "First steps"),
-        edit("Kir_Republic", "u2", "2026-10-16T10:00:00.000Z", "Seneca front"),
-        edit("Kir_Republic", "u2", "2026-10-17T10:00:00.000Z", "Tide charts"),
-        edit("Kir Republic", null, "2026-10-17T11:00:00.000Z", "Tide charts"),
+        // An Eastern-evening edit, after midnight UTC: still the 16th's contest.
+        edit("Kir_Republic", "u2", "2026-10-17T01:00:00.000Z", "Seneca front"),
         edit("Kir_Republic", "u2", "2026-10-15T10:00:00.000Z", "Isurians"),
+        // Another player's country carries the same label on this page.
+        edit("Kir_Republic", "u2", "2026-10-13T10:00:00.000Z", "Shared page"),
+        edit("Kir_Republic", "u7", "2026-10-13T11:00:00.000Z", "Shared page"),
       ],
       [
         daily("2026-10-16", { winnerPage: "Seneca front" }),
-        // A MediaWiki edit under the name is among the winning edits.
-        daily("2026-10-17", { winnerPage: "Tide charts" }),
         daily("2026-10-15", {
           winnerUser: "Rumahoki",
-          runnerUpUser: "Kir Republic",
+          runnerUpUser: "wikios>Kir_Republic",
           runnerUpPage: "Isurians",
         }),
-        // Before the viewer's first WikiOS edit: the real winner's, not theirs.
+        daily("2026-10-13", { winnerPage: "Shared page" }),
+        // Before the viewer's first WikiOS edit: never theirs, and never looked up.
         daily("2019-05-01", { winnerPage: "Old page" }),
-        { ...daily("2026-W42"), type: "weekly", dateStart: "2026-10-12", dateEnd: "2026-10-18" },
       ]
     );
 
-    expect(await loadMyTrophies(db as never, "u2")).toEqual({
+    expect(await mineOf(db, "u2")).toEqual({
       wikiUsername: "Kir_Republic",
       verified: false,
-      unmatched: 3,
+      unmatched: 0,
       wins: { daily: 1, weekly: 0, monthly: 0 },
       runnerUps: 1,
       streak: 1,
       cards: [],
     });
-    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-    // The 2019 place is never looked up: it ended before the viewer's first edit.
     const pages = db.wikiRevision.groupBy.mock.calls.map(([args]) => args.where.article?.title);
     expect(pages).not.toContain("Old page");
   });
 
-  it("leaves out a place whose name another account verified", async () => {
+  it("never ties a plain-named place to an unlinked viewer, and counts it as possibly theirs", async () => {
+    // A classic-wiki win under the viewer's label: only a verified link could claim it.
     const db = fakeDb(
-      [edit("Kir Republic", "u2", "2026-10-16T10:00:00.000Z", "Seneca front")],
-      [daily("2026-10-16", { winnerPage: "Seneca front" })],
-      [{ userId: "u9", username: "Kir Republic" }]
+      [edit("Ostrozava", "u2", "2026-10-16T10:00:00.000Z", "Seneca front")],
+      [daily("2026-10-16", { winnerUser: "Ostrozava", winnerPage: "Seneca front" })]
     );
-    expect(await loadMyTrophies(db as never, "u2")).toMatchObject({
-      wikiUsername: "Kir Republic",
-      unmatched: 0,
+    expect(await mineOf(db, "u2")).toMatchObject({
+      wikiUsername: "Ostrozava",
+      unmatched: 1,
       wins: { daily: 0, weekly: 0, monthly: 0 },
     });
+  });
+
+  it("leaves out a plain-named place whose name another account verified", async () => {
+    const db = fakeDb(
+      [edit("Ostrozava", "u2", "2026-10-16T10:00:00.000Z", "Seneca front")],
+      [daily("2026-10-16", { winnerUser: "Ostrozava", winnerPage: "Seneca front" })],
+      [{ userId: "u9", username: "Ostrozava" }]
+    );
+    expect(await mineOf(db, "u2")).toMatchObject({ unmatched: 0, wins: { daily: 0 } });
   });
 });
 
@@ -215,15 +226,23 @@ describe("myRaceRank", () => {
     entries: [
       {
         rank: 1,
-        user: "Kir Republic",
+        user: "Kir_Republic",
         page: "Shared page",
         score: 900,
         bytesAdded: 1,
         editCount: 2,
       },
       {
-        rank: 3,
+        rank: 2,
         user: "Kir Republic",
+        page: "Linked page",
+        score: 600,
+        bytesAdded: 1,
+        editCount: 1,
+      },
+      {
+        rank: 3,
+        user: "Kir_Republic",
         page: "Tide charts",
         score: 300,
         bytesAdded: 1,
@@ -231,24 +250,26 @@ describe("myRaceRank", () => {
       },
     ],
   };
+  const revisions = [
+    edit("Kir_Republic", "u2", "2026-10-17T08:00:00.000Z", "Shared page"),
+    edit("Kir_Republic", "u7", "2026-10-17T09:00:00.000Z", "Shared page"),
+    edit("Kir Republic", null, "2026-10-17T09:30:00.000Z", "Linked page"),
+    edit("Kir_Republic", "u2", "2026-10-17T10:00:00.000Z", "Tide charts"),
+  ];
 
-  it("ranks a verified viewer by their name", async () => {
-    const db = fakeDb([], []);
-    const mine = { wikiUsername: "kir republic", verified: true };
-    expect(await myRaceRank(db as never, race, mine, "u2")).toBe(1);
+  it("ranks the viewer by an entry whose scored edits are theirs", async () => {
+    const db = fakeDb(revisions, []);
+    const names = { link: null, labels: ["Kir_Republic"], since: 0 };
+    expect(await myRaceRank(db as never, race, names, "u2")).toBe(3);
+    expect(await myRaceRank(db as never, race, names, "u9")).toBeNull();
   });
 
-  it("ranks an unlinked viewer only by an entry whose edits today are all theirs", async () => {
-    const db = fakeDb(
-      [
-        edit("Kir_Republic", "u2", "2026-10-17T08:00:00.000Z", "Shared page"),
-        edit("Kir Republic", null, "2026-10-17T09:00:00.000Z", "Shared page"),
-        edit("Kir_Republic", "u2", "2026-10-17T10:00:00.000Z", "Tide charts"),
-      ],
-      []
-    );
-    const mine = { wikiUsername: "Kir_Republic", verified: false };
-    expect(await myRaceRank(db as never, race, mine, "u2")).toBe(3);
-    expect(await myRaceRank(db as never, race, mine, "u9")).toBeNull();
+  it("ranks a linked viewer by MediaWiki edits under their exact name", async () => {
+    const db = fakeDb(revisions, [], [{ userId: "u5", username: "Kir Republic" }]);
+    const names = { link: "Kir Republic", labels: [], since: Infinity };
+    expect(await myRaceRank(db as never, race, names, "u5")).toBe(2);
+    // The same name lower-cased is another MediaWiki account.
+    const other = { link: "Kir republic", labels: [], since: Infinity };
+    expect(await myRaceRank(db as never, race, other, "u5")).toBeNull();
   });
 });
