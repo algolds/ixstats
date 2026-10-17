@@ -24,7 +24,11 @@ import {
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { articleHomePage } from "~/lib/cards/home-realm";
 import { wikiFallbackRealm } from "~/lib/cards/legacy-mapping";
-import { ArticleRejected, type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
+import {
+  ArticleRejected,
+  NOT_ARTICLE_REASON,
+  type LoreCardCandidate,
+} from "~/lib/cards/lore-card-candidate";
 import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { rarityForScore, type RarityThresholds } from "~/lib/cards/rarity-engine";
@@ -62,8 +66,11 @@ export type StageOutcome =
 const ALREADY_CARDED: StageOutcome = { status: "SKIPPED", reason: "Already a card" };
 /** A title MediaWiki would refuse: bad input, which stageForAdmin does not report as a failed read. */
 const INVALID_TITLE: StageOutcome = { status: "FAILED", reason: "Not a valid page title" };
-/** A page outside the main namespace (a user draft, a template, a category) is no Lore card's source. */
-const NOT_AN_ARTICLE: StageOutcome = { status: "SKIPPED", reason: "Not an article" };
+/**
+ * A page outside the main namespace (a user draft, a template, a category) is no Lore card's source. The title's
+ * prefix is checked before any read; the generator's read of the page checks the namespace its wiki reports.
+ */
+const NOT_AN_ARTICLE: StageOutcome = { status: "SKIPPED", reason: NOT_ARTICLE_REASON };
 
 /**
  * A context for staging pages outside a job (a procedure, an accepted suggestion), with the source's stored rarity

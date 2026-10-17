@@ -23,10 +23,13 @@ export interface LoreCardCandidate {
   authorInfo?: CardAuthorInfo;
 }
 
+/** The reason recorded for a page outside the main namespace (a portal, a user blog, a template). */
+export const NOT_ARTICLE_REASON = "Not an article";
+
 /** Why an article cannot become a card; the importer records the reason and skips the page. */
 export class ArticleRejected extends Error {
   constructor(
-    public readonly kind: "missing" | "no-image" | "too-short",
+    public readonly kind: "missing" | "not-article" | "no-image" | "too-short",
     message: string
   ) {
     super(message);

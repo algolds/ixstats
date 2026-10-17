@@ -410,6 +410,22 @@ describe("a page outside the main namespace", () => {
   });
 });
 
+describe("a page whose wiki reports another namespace", () => {
+  it.each([
+    ["iiwiki", "Portal:Eurth"],
+    ["althistory", "User blog:Elm/Post"],
+  ] as const)("is skipped on %s (%s) as the generator's read finds it", async (source, title) => {
+    generateCard.mockRejectedValue(new ArticleRejected("not-article", "Not an article"));
+    const db = makeDb();
+    expect(await stageArticleCard(db as never, source, input(title), context)).toEqual({
+      status: "SKIPPED",
+      reason: "Not an article",
+    });
+    expect(generateCard).toHaveBeenCalledWith(title, source, expect.any(Object));
+    expect(db.card.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("stageCommonsFile", () => {
   const commons: ImportContext = { ...context, thresholds: DEFAULT_RARITY_THRESHOLDS.commons };
   const flag = {

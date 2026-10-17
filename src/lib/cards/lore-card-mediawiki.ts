@@ -4,10 +4,10 @@
  */
 
 import type { CardAuthorInfo } from "~/types/cards-display";
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
-import { SISTER_WIKI_HOSTS, sisterWikiApiUrl } from "~/lib/wiki-os/wiki-hosts";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
 import {
+  defaultApiUrl,
   DiscoveryStopped,
   type DiscoveryStop,
   type DiscoveryStopKind,
@@ -18,17 +18,13 @@ import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 export type MwPage = MediaWikiPageItem & { original?: { source?: string }; pageimage?: string };
 export type RevisionUser = { user: string; timestamp: string };
 
-/** A card source wiki's api.php: IxWiki's and the sister readers' as configured, and Commons'. */
-const apiUrlOf = (source: CardWikiSource): string =>
-  source === "commons" ? sisterWikiApiUrl(SISTER_WIKI_HOSTS.commons) : getMediaWikiApiUrl(source);
-
 /** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
 export function mwQuery(
   wikiSource: CardWikiSource,
   params: Record<string, string>,
   timeoutMs?: number
 ) {
-  const url = new URL(apiUrlOf(wikiSource));
+  const url = new URL(defaultApiUrl(wikiSource));
   for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
     url.searchParams.set(key, value);
   }

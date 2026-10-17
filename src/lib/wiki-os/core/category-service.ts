@@ -78,14 +78,10 @@ interface CountRow {
   files: bigint;
 }
 
-/**
- * What a category's member is, by its namespace: a subcategory (14), a file (6), else a page. An article is a page in
- * the main namespace (0).
- */
-export type MemberKind = "page" | "article" | "subcat" | "file";
+/** What a category's member is, by its namespace: an article (0), a subcategory (14) or a file (6). */
+export type MemberKind = "article" | "subcat" | "file";
 
 const KIND_CONDITION: Record<MemberKind, Prisma.Sql> = {
-  page: Prisma.sql`a."namespace" NOT IN (6, 14)`,
   article: Prisma.sql`a."namespace" = 0`,
   subcat: Prisma.sql`a."namespace" = 14`,
   file: Prisma.sql`a."namespace" = 6`,

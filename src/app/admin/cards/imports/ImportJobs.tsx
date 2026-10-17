@@ -1,6 +1,6 @@
 "use client";
 /** Import jobs: progress, per-page results (rarity, licence, why a page was skipped), cancel, retry and resume. */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Hourglass } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -59,12 +59,23 @@ const sourceName = (source: string) => {
   return wiki ? cardSourceLabel(wiki) : source;
 };
 
-/** The job's results, read live: `job` is the jobs list's current row, so the sheet stops polling once it ends. */
+/**
+ * The job's results, read live: `job` is the jobs list's latest row for it, so the sheet polls while the job runs,
+ * then reads once more when it ends, to show its final results.
+ */
 function JobItems({ job, onClose }: { job: Job | null; onClose: () => void }) {
+  const running = job !== null && isOpen(job);
   const items = api.cards.admin.imports.items.useQuery(
     { jobId: job?.id ?? "" },
-    { enabled: job !== null, refetchInterval: job && isOpen(job) ? OPEN_REFRESH_MS : false }
+    { enabled: job !== null, refetchInterval: running ? OPEN_REFRESH_MS : false }
   );
+  const { refetch } = items;
+  const runningId = useRef<string | null>(null);
+  const jobId = job?.id ?? null;
+  useEffect(() => {
+    if (jobId !== null && runningId.current === jobId && !running) void refetch();
+    runningId.current = running ? jobId : null;
+  }, [jobId, running, refetch]);
   const rows = items.data ?? [];
   return (
     <Sheet open={job !== null} onOpenChange={(open) => !open && onClose()}>
@@ -155,14 +166,19 @@ export function ImportJobs() {
         query.state.data?.some(isOpen) ? OPEN_REFRESH_MS : IDLE_REFRESH_MS,
     }
   );
-  const [viewingId, setViewingId] = useState<string | null>(null);
+  // The viewed job as the list last showed it, so the sheet stays open once newer jobs push it out of the list.
+  const [viewed, setViewed] = useState<Job | null>(null);
   const refresh = () => void utils.cards.admin.imports.jobs.invalidate();
   const onError = (error: { message: string }) => notify.error("Import not changed", error.message);
   const cancel = api.cards.admin.imports.cancel.useMutation({ onSuccess: refresh, onError });
   const retry = api.cards.admin.imports.retry.useMutation({ onSuccess: refresh, onError });
   const resume = api.cards.admin.imports.resume.useMutation({ onSuccess: refresh, onError });
   const list = jobs.data ?? [];
-  const viewing = list.find((job) => job.id === viewingId) ?? null;
+  const live = viewed ? list.find((job) => job.id === viewed.id) : undefined;
+  useEffect(() => {
+    if (live && live !== viewed) setViewed(live);
+  }, [live, viewed]);
+  const viewing = live ?? viewed;
 
   return (
     <Card content="data">
@@ -206,7 +222,7 @@ export function ImportJobs() {
                   <TableCell className="space-x-1 text-right whitespace-nowrap">
                     <JobActions
                       job={job}
-                      onView={() => setViewingId(job.id)}
+                      onView={() => setViewed(job)}
                       onResume={() => resume.mutate()}
                       onRetry={() => retry.mutate({ jobId: job.id })}
                       onCancel={() => cancel.mutate({ jobId: job.id })}
@@ -218,7 +234,7 @@ export function ImportJobs() {
           </Table>
         )}
       </CardContent>
-      <JobItems job={viewing} onClose={() => setViewingId(null)} />
+      <JobItems job={viewing} onClose={() => setViewed(null)} />
     </Card>
   );
 }

@@ -197,6 +197,8 @@ function canonicalTitles(titles: readonly string[]): Map<string, string[]> {
 /** What a full card is made from, as Postgres holds it. */
 export interface IxwikiArticle {
   title: string;
+  /** The page's namespace, as MediaWiki numbers it (0 for an article). */
+  ns: number;
   wikitext: string;
   /** The page's plain text, to read an excerpt from. */
   extract: string;
@@ -219,7 +221,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
   if (!canon) return null;
   const article = await db.wikiArticle.findFirst({
     where: { source: "ixwiki", title: canon.title, status: "PUBLISHED" },
-    select: { id: true, title: true, wikitext: true },
+    select: { id: true, title: true, namespace: true, wikitext: true },
   });
   if (!article) return null;
 
@@ -257,6 +259,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
 
   return {
     title: article.title,
+    ns: article.namespace,
     wikitext: article.wikitext,
     extract: cleanWikitextExcerpt(article.wikitext, CARD_EXTRACT_CHARS),
     categories: categories.map((member) => ({ title: `Category:${member.category.name}` })),

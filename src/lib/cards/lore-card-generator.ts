@@ -19,7 +19,7 @@ import type { LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
 import { fileNameFromArtworkUrl } from "./art-licence";
 import { cardSourceLabel, type CardArticleSource } from "./card-sources";
-import { ArticleRejected, type LoreCardCandidate } from "./lore-card-candidate";
+import { ArticleRejected, NOT_ARTICLE_REASON, type LoreCardCandidate } from "./lore-card-candidate";
 import { readsPostgres } from "./lore-card-discovery";
 import { qualityScore, type ArticleSignals } from "./rarity-engine";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
@@ -89,6 +89,11 @@ const titleKeys = (title: string | undefined, underscored = false) =>
 
 const FILE_IMAGE = /\.(jpe?g|png|svg)$/;
 const NON_ARTICLE_IMAGE = /icon|flag|logo/;
+/** A page outside the main namespace, by the namespace its wiki reports, is not a card's source. */
+function assertArticle(page: { ns?: number }): void {
+  if ((page.ns ?? 0) !== 0) throw new ArticleRejected("not-article", NOT_ARTICLE_REASON);
+}
+
 /** A file name without its `File:` (or `Image:`) namespace. */
 const withoutFileNamespace = (name: string) => name.replace(/^(File|Image):/i, "");
 
@@ -143,7 +148,8 @@ class WikiLoreCardGenerator {
 
   /**
    * Article content, featured image, backlinks and author info from the wiki API; null for a page that is not a card's
-   * source (deleted in WikiOS, missing, or an invalid title). A failed read of the page, its image's address or its
+   * source (deleted in WikiOS, missing, or an invalid title), and ArticleRejected for a page outside the main
+   * namespace, before its image and backlinks are read. A failed read of the page, its image's address or its
    * backlinks throws, and a refusing wiki throws DiscoveryStopped (mwJson), so a refused read never makes a card
    * without its art. Only the author lookup answers "none" when it fails.
    */
@@ -177,6 +183,7 @@ class WikiLoreCardGenerator {
     }
     const page = firstPage<MwPage>(data);
     if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
+    assertArticle(page);
 
     const wikitext = page.revisions?.[0]?.["*"] || "";
     const featured = await this.resolveFeaturedImage(
@@ -326,6 +333,7 @@ class WikiLoreCardGenerator {
   private async fetchIxwikiArticleData(title: string): Promise<ArticleData | null> {
     const article = await loadIxwikiArticle(title);
     if (!article) return null;
+    assertArticle(article);
     const { wikitext, ...rest } = article;
     return { ...rest, text: this.removeTemplates(wikitext), rawText: wikitext, links: [] };
   }

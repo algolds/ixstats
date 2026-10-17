@@ -585,3 +585,44 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
     expect(mocked.wikiArticle.findFirst).not.toHaveBeenCalled();
   });
 });
+
+describe("a page outside the main namespace", () => {
+  it("is refused on IxWiki by the namespace WikiOS stores", async () => {
+    mocked.wikiArticle.findFirst.mockResolvedValue({
+      id: "a1",
+      title: "IxWiki:About",
+      namespace: 4,
+      wikitext: WIKITEXT,
+    });
+    await expect(
+      wikiLoreCardGenerator.generateCard("IxWiki:About", "ixwiki")
+    ).rejects.toMatchObject({
+      name: "ArticleRejected",
+      kind: "not-article",
+      message: "Not an article",
+    });
+    expect(mocked.wikiArticle.findFirst.mock.calls[0]?.[0]).toMatchObject({
+      select: { namespace: true },
+    });
+  });
+
+  it.each([
+    ["iiwiki", "Portal:Eurth", 100, "iiwiki.com"],
+    ["althistory", "User blog:Elm/Post", 500, "althistory.fandom.com"],
+  ] as const)(
+    "is refused on %s (%s, namespace %s) by the namespace the wiki reports, before its image or backlinks are read",
+    async (source, title, ns, host) => {
+      guard.restore();
+      guard = installFetchGuard(() => ({
+        query: { pages: { "5": { pageid: 5, ns, title, revisions: [{ "*": BODY }] } } },
+      }));
+      await expect(wikiLoreCardGenerator.generateCard(title, source)).rejects.toMatchObject({
+        name: "ArticleRejected",
+        kind: "not-article",
+        message: "Not an article",
+      });
+      expect(guard.calls()).toHaveLength(1);
+      expect(new URL(guard.calls()[0]!).hostname).toBe(host);
+    }
+  );
+});

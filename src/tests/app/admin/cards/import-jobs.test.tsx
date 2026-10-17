@@ -34,13 +34,17 @@ const mutation = (mutate: jest.Mock) => ({ mutate, isPending: false }) as never;
 const cancel = jest.fn();
 const retry = jest.fn();
 const resume = jest.fn();
+const refetchItems = jest.fn();
 
 function serve(jobs: object[], items: object[] = []) {
   jest.mocked(api.useUtils).mockReturnValue({
     cards: { admin: { imports: { jobs: { invalidate: jest.fn() } } } },
   } as never);
   jest.mocked(api.cards.admin.imports.jobs.useQuery).mockReturnValue({ data: jobs } as never);
-  jest.mocked(api.cards.admin.imports.items.useQuery).mockReturnValue({ data: items } as never);
+  jest.mocked(api.cards.admin.imports.items.useQuery).mockReturnValue({
+    data: items,
+    refetch: refetchItems,
+  } as never);
   jest.mocked(api.cards.admin.imports.cancel.useMutation).mockReturnValue(mutation(cancel));
   jest.mocked(api.cards.admin.imports.retry.useMutation).mockReturnValue(mutation(retry));
   jest.mocked(api.cards.admin.imports.resume.useMutation).mockReturnValue(mutation(resume));
@@ -125,7 +129,7 @@ describe("ImportJobs", () => {
     expect(screen.getByText("IIWiki · Showing 2 of 4 pages")).toBeInTheDocument();
   });
 
-  it("polls a running job's results, and stops once the live job finishes", () => {
+  it("polls a running job's results, stops once the live job finishes, and reads its final results once", () => {
     serve([job({})]);
     const { rerender } = render(<ImportJobs />);
     fireEvent.click(screen.getByRole("button", { name: "View" }));
@@ -134,12 +138,38 @@ describe("ImportJobs", () => {
       { jobId: "job_1" },
       expect.objectContaining({ enabled: true, refetchInterval: 5_000 }),
     ]);
+    expect(refetchItems).not.toHaveBeenCalled();
 
-    serve([job({ status: "DONE", processed: 4, finishedAt: new Date() })]);
+    const done = job({ status: "DONE", processed: 4, finishedAt: new Date() });
+    serve([done]);
     rerender(<ImportJobs />);
     expect(items.mock.calls.at(-1)?.[1]).toEqual(
       expect.objectContaining({ enabled: true, refetchInterval: false })
     );
+    expect(refetchItems).toHaveBeenCalledTimes(1);
+
+    serve([{ ...done }]);
+    rerender(<ImportJobs />);
+    expect(refetchItems).toHaveBeenCalledTimes(1);
+  });
+
+  it("reads a finished job's results without an extra read when opened", () => {
+    serve([job({ status: "DONE", processed: 4, finishedAt: new Date() })]);
+    render(<ImportJobs />);
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    expect(refetchItems).not.toHaveBeenCalled();
+  });
+
+  it("keeps the sheet open on the job it shows when newer jobs push that job out of the list", () => {
+    serve([job({})]);
+    const { rerender } = render(<ImportJobs />);
+    fireEvent.click(screen.getByRole("button", { name: "View" }));
+    serve([job({ id: "job_9", label: "Category:Oak" })]);
+    rerender(<ImportJobs />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Category:Elm");
+    expect(jest.mocked(api.cards.admin.imports.items.useQuery).mock.calls.at(-1)?.[0]).toEqual({
+      jobId: "job_1",
+    });
   });
 
   it("says what to do when there are no imports", () => {
