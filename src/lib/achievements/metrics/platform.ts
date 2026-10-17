@@ -90,9 +90,11 @@ function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
  * once their link was verified), plus the classic-wiki edits imported before that, with no `authorId` and `author`
  * exactly their verified link's name, which the link proves they own. A signed-in WikiOS edit carries its author's
  * `authorId`, so another player's edits under the same label never count. A system save with no signed-in user (the
- * story-chain wiki sync, under a country name) carries none, and `wiki_revisions` has no column that tells it from
- * a MediaWiki import (`mwRevId` is stamped on mirrored WikiOS rows too), so such a save under exactly the link's name
- * counts for the link holder. With no link the name is bound as NULL, and `author = NULL` matches no row.
+ * story-chain wiki sync, under a country name) carries none, and `mwRevId` cannot tell it from a MediaWiki import
+ * (it is stamped on mirrored WikiOS rows too). Where the WikiOS `revId` trigger is installed (the hand-applied
+ * `2026-09-30-wikios-api.sql`), `revId = mwRevId` marks an import, because a native row keeps its sequence id; this
+ * code does not rely on that, so such a save under exactly the link's name counts for the link holder. With no link
+ * the name is bound as NULL, and `author = NULL` matches no row.
  */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
