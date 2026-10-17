@@ -7,6 +7,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity, CardType } from "@prisma/client";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
+import { blankUnseenArt } from "~/lib/cards/hub/market-faces";
 import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 /**
@@ -133,7 +134,9 @@ export const cardsInventoryRouter = createTRPCRouter({
           take: input.limit,
         });
 
-        return ownerships;
+        const rows = await blankUnseenArt(ctx.db, ctx.user.id, ownerships);
+        // No client reads a partner's card metadata, and it holds admin-only fields (qualityScore)
+        return rows.map((row) => ({ ...row, cards: { ...row.cards, metadata: null } }));
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in getUserCards:", error);
         if (error instanceof TRPCError) {

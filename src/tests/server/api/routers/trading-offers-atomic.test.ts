@@ -28,6 +28,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { tradingOffersRouter } from "~/server/api/routers/trading/offers";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
+import { notificationAPI } from "~/lib/notifications/api";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
@@ -163,6 +164,9 @@ describe("respondToTrade ACCEPT", () => {
     const result = await caller.respondToTrade(acceptInput);
 
     expect(result).toMatchObject({ id: "trade_1", status: "ACCEPTED" });
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "clerk_init", href: "/vault/cards/market?tab=trades" })
+    );
     expect(db.cardOwnership.updateMany).toHaveBeenCalledTimes(2);
     expect(db.cardOwnership.updateMany).toHaveBeenNthCalledWith(1, {
       where: { id: { in: ["ci_1"] }, ownerId: INITIATOR, isLocked: true },
@@ -249,6 +253,46 @@ describe("respondToTrade ACCEPT", () => {
 });
 
 describe("createtradeOffer", () => {
+  /** A valid offer of one card for one card; the created trade names its initiator by `initiator`. */
+  function offerCaller(initiator: { handle: string | null }) {
+    const { db, caller } = makeCaller();
+    db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);
+    db.cardOwnership.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([{ id: "ci_1", inscription: null }] as never)
+      .mockResolvedValueOnce([{ id: "cr_1", inscription: null }] as never);
+    db.cardOwnership.updateMany = jest.fn().mockResolvedValue({ count: 1 } as never);
+    db.tradeOffer.create = jest.fn().mockResolvedValue(
+      makeTrade({
+        initiator: { id: RECIPIENT, clerkUserId: "test_user_clerk_id", ...initiator },
+      }) as never
+    );
+    return caller;
+  }
+  const offer = {
+    recipientId: "clerk_recip",
+    initiatorCardIds: ["ci_1"],
+    recipientCardIds: ["cr_1"],
+  };
+
+  it("tells the recipient who sent the offer by handle, and links to the Market's trades", async () => {
+    await offerCaller({ handle: "ann" }).createtradeOffer(offer);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "clerk_recip",
+        message: "@ann sent you a trade offer with 1 card(s)",
+        href: "/vault/cards/market?tab=trades",
+      })
+    );
+  });
+
+  it("names a sender with no handle as a player", async () => {
+    await offerCaller({ handle: null }).createtradeOffer(offer);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "A player sent you a trade offer with 1 card(s)" })
+    );
+  });
+
   it("refuses a recipient whose trade-offer setting excludes the sender (SL-4)", async () => {
     const { db, caller } = makeCaller();
     db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);

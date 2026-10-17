@@ -1024,16 +1024,11 @@ export class AuctionService {
     }
   }
 
-  /**
-   * Get active auctions with filters
-   *
-   * @param params Query parameters
-   * @param db Prisma client
-   * @returns Paginated auction results
-   */
+  /** One page of active auctions, with filters. */
   async getActiveAuctions(
     params: {
       cardId?: string;
+      realmId?: string;
       sellerId?: string;
       isFeatured?: boolean;
       rarity?: CardRarity;
@@ -1053,6 +1048,7 @@ export class AuctionService {
       ...(params.cardId ? { id: params.cardId } : {}),
       ...(params.rarity ? { rarity: params.rarity } : {}),
       ...(params.cardType ? { cardType: params.cardType } : {}),
+      ...(params.realmId ? { realmId: params.realmId } : {}),
     };
     const currentBid: Prisma.IntFilter = {
       ...(params.minPrice !== undefined ? { gte: params.minPrice } : {}),

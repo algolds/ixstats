@@ -6,11 +6,12 @@ const PARTY_SELECT = {
   select: {
     id: true,
     clerkUserId: true,
+    handle: true,
     country: { select: { name: true, flag: true } },
   },
 } as const;
 
-/** Both sides of a trade with the country badge shown in the trade UI. */
+/** Both sides of a trade with the handle the trade UI shows. */
 export const TRADE_PARTIES_INCLUDE = { initiator: PARTY_SELECT, recipient: PARTY_SELECT } as const;
 
 export const FINISHED_TRADE_STATUSES = [
