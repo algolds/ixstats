@@ -1,0 +1,195 @@
+import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({
+    href,
+    children,
+    ...rest
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+import { CardFace } from "~/components/cards/face/CardFace";
+import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
+import { RarityMark } from "~/components/cards/face/RarityMark";
+import { RealmCrest } from "~/components/cards/face/RealmCrest";
+import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
+
+const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
+const face = (overrides: Partial<CardFaceData> = {}): CardFaceData => ({
+  cardId: "c1",
+  title: "Caphiria",
+  rarity: "EPIC",
+  cardType: "LORE",
+  realm: IXNAY,
+  artwork: "/images/cards/caphiria.png",
+  silhouette: false,
+  number: 42,
+  season: null,
+  isRetired: false,
+  copy: { ownershipId: "o1", finish: "FOIL", serialNumber: 7, level: 4 },
+  ...overrides,
+});
+
+describe("CardFace", () => {
+  it("is a real button named by title, rarity, finish and realm, and opens the card", () => {
+    const onOpen = jest.fn();
+    render(<CardFace face={face()} onOpen={onOpen} />);
+    const button = screen.getByRole("button", { name: "Caphiria, Epic, Foil, Ixnay" });
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).not.toHaveAttribute("aria-pressed");
+    fireEvent.click(button);
+    expect(onOpen).toHaveBeenCalledWith(face());
+  });
+
+  it("carries the rarity and finish for the art sheet, and draws the art", () => {
+    const { container } = render(<CardFace face={face()} />);
+    const root = screen.getByRole("img", { name: "Caphiria, Epic, Foil, Ixnay" });
+    expect(root).toHaveAttribute("data-card-rarity", "EPIC");
+    expect(root).toHaveAttribute("data-card-finish", "FOIL");
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+      "/images/cards/caphiria.png"
+    );
+  });
+
+  it("puts the sheen and the face gem under the element that carries the finish", () => {
+    render(<CardFace face={face()} />);
+    const root = screen.getByRole("img");
+    expect(root).toHaveAttribute("data-card-face");
+    expect(root.querySelector(".card-face-sheen")).not.toBeNull();
+    expect(root.querySelector(".card-face-gem")).not.toBeNull();
+  });
+
+  it("gives a catalogue entry the standard finish", () => {
+    render(<CardFace face={face({ copy: null })} />);
+    expect(screen.getByRole("img")).toHaveAttribute("data-card-finish", "STANDARD");
+  });
+
+  it("links to another page when given an href", () => {
+    render(<CardFace face={face()} href="/vault/cards/mine?card=c1" />);
+    expect(screen.getByRole("link", { name: "Caphiria, Epic, Foil, Ixnay" })).toHaveAttribute(
+      "href",
+      "/vault/cards/mine?card=c1"
+    );
+  });
+
+  it("shows a silhouette's number and no art", () => {
+    const { container } = render(
+      <CardFace face={face({ artwork: null, silhouette: true, copy: null })} size="S" />
+    );
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("No. 42")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Caphiria, Epic, Ixnay, not collected" })
+    ).toBeInTheDocument();
+  });
+
+  it("shows a season chip only for cards that have a season", () => {
+    const { rerender } = render(<CardFace face={face({ cardType: "NS", season: 3 })} />);
+    expect(screen.getByText("S3")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Caphiria, Epic, Foil, Ixnay, season 3" })
+    ).toBeInTheDocument();
+    rerender(<CardFace face={face()} />);
+    expect(screen.queryByText(/^S\d+$/)).toBeNull();
+  });
+
+  it("shows level and serial only at size L", () => {
+    const { rerender } = render(<CardFace face={face()} size="M" />);
+    expect(screen.queryByText(/Level 4/)).toBeNull();
+    rerender(<CardFace face={face()} size="L" />);
+    expect(screen.getByText("Level 4 · #7")).toBeInTheDocument();
+  });
+
+  it("puts nothing else on the front: no value, excerpt, country or category", () => {
+    const { container } = render(<CardFace face={face()} size="L" />);
+    // The realm initial (Ixnay has no emblem), the title, and the size-L level line: nothing more.
+    expect(container.textContent).toBe("ICaphiriaLevel 4 · #7");
+  });
+
+  it("marks a picked face in select mode", () => {
+    const { rerender } = render(<CardFace face={face()} onOpen={jest.fn()} selected />);
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "true");
+    rerender(<CardFace face={face()} onOpen={jest.fn()} selected={false} />);
+    expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("says a retired card is retired", () => {
+    render(<CardFace face={face({ isRetired: true, artwork: null })} />);
+    expect(screen.getByText("Retired")).toBeInTheDocument();
+  });
+
+  it("falls back to the realm crest when the art fails to load", () => {
+    const { container } = render(<CardFace face={face()} />);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getAllByText("I").length).toBeGreaterThan(0);
+  });
+
+  it("tries new art again after the old art failed", () => {
+    const { container, rerender } = render(<CardFace face={face()} />);
+    fireEvent.error(container.querySelector("img")!);
+    rerender(<CardFace face={face({ artwork: "/images/cards/caphiria-2.png" })} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toContain(
+      "/images/cards/caphiria-2.png"
+    );
+  });
+});
+
+describe("RealmCrest", () => {
+  const realm = (overrides: Partial<CardRealmBadge>): CardRealmBadge => ({
+    ...IXNAY,
+    ...overrides,
+  });
+
+  it("draws the NationStates logo for the NationStates realm", () => {
+    render(
+      <RealmCrest
+        realm={realm({ id: "nationstates", slug: "nationstates", name: "NationStates" })}
+      />
+    );
+    expect(screen.getByAltText("NationStates")).toBeInTheDocument();
+  });
+
+  it("draws the IIWiki logo for the IIWiki realm", () => {
+    render(<RealmCrest realm={realm({ id: "iiwiki", slug: "iiwiki", name: "IIWiki" })} />);
+    expect(screen.getByAltText("IIWiki")).toBeInTheDocument();
+  });
+
+  it("draws a realm's emblem when it has one", () => {
+    const { container } = render(
+      <RealmCrest realm={realm({ crestUrl: "/images/realms/ixnay.png" })} size="lg" />
+    );
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toContain("/images/realms/ixnay.png");
+    expect(img).toHaveAttribute("alt", "");
+    expect(img).toHaveClass("size-16");
+  });
+
+  it("falls back to the realm's initial, greyed when muted", () => {
+    render(<RealmCrest realm={realm({ name: "althistory" })} size="md" muted />);
+    expect(screen.getByText("A")).toHaveClass("size-10", "grayscale");
+  });
+});
+
+describe("CardFaceDown and RarityMark", () => {
+  it("draws a face-down card that assistive tech skips", () => {
+    const { container } = render(<CardFaceDown size="S" />);
+    expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
+    expect(container.firstElementChild).toHaveClass("card-face-down", "w-32");
+  });
+
+  it("names the rarity next to its gem", () => {
+    render(<RarityMark rarity="ULTRA_RARE" />);
+    const mark = screen.getByText("Ultra Rare").closest("[data-card-rarity]");
+    expect(mark).toHaveAttribute("data-card-rarity", "ULTRA_RARE");
+    // Page backgrounds take the theme's paint; the raw-hue face gem is for the title scrim only.
+    expect(mark?.querySelector(".card-rarity-gem")).toHaveAttribute("aria-hidden", "true");
+    expect(mark?.querySelector(".card-face-gem")).toBeNull();
+  });
+});
