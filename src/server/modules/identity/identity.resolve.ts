@@ -12,8 +12,13 @@ import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { validateHandle } from "./identity.handle";
 import { IDENTITY_COUNTRY_SELECT, type IdentityCountry } from "./identity.selects";
 import type { IdentityForumGateway, ResolvedIdentity } from "./identity.types";
+import { likeLiteral } from "~/lib/utils/like-literal";
 
-const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as const });
+/** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
+const insensitive = (value: string) => ({
+  equals: likeLiteral(value),
+  mode: "insensitive" as const,
+});
 
 /** The user holding the stored handle the segment names; only a valid handle can name one. */
 async function findUserByStoredHandle(segment: string) {
