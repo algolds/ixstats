@@ -6,6 +6,7 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   overrideFields,
+  overrideToast,
   trophyChangeNote,
   type OverridePlaceForm,
 } from "~/lib/lorewards/override-form";
@@ -71,6 +72,33 @@ describe("trophyChangeNote", () => {
     );
     expect(trophyChangeNote({ reassigned: 1, voided: 0, mintDeferred: true })).toBe(
       "1 trophy moved. New trophies are minted on the next sync."
+    );
+  });
+});
+
+describe("overrideToast", () => {
+  const synced = { title: "Winner overridden", message: "The override is saved and synced." };
+  const moved = { reassigned: 1, voided: 0, mintDeferred: false };
+  const nothing = { reassigned: 0, voided: 0, mintDeferred: false };
+
+  it("is the caller's success when the bot was told, with the trophy note", () => {
+    expect(overrideToast(true, synced, moved)).toEqual({
+      tone: "success",
+      title: "Winner overridden",
+      message: "The override is saved and synced. 1 trophy moved",
+    });
+    expect(overrideToast(true, synced, nothing).message).toBe("The override is saved and synced.");
+  });
+
+  it("says the override is saved and the bot catches up when the bot was not told", () => {
+    expect(overrideToast(false, synced, moved)).toEqual({
+      tone: "warning",
+      title: "Saved",
+      message:
+        "The Discord bot was not told; it picks the change up on its next sync. 1 trophy moved",
+    });
+    expect(overrideToast(false, synced, { ...nothing, mintDeferred: true }).message).toBe(
+      "The Discord bot was not told; it picks the change up on its next sync. New trophies are minted on the next sync."
     );
   });
 });

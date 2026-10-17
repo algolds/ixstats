@@ -35,7 +35,7 @@ import {
   CommandGroup,
 } from "~/components/ui/command";
 import { ValueSelect } from "~/components/ui/value-select";
-import { trophyChangeNote } from "~/lib/lorewards/override-form";
+import { overrideToast } from "~/lib/lorewards/override-form";
 import { LorewardOverrideCard } from "./LorewardOverrideCard";
 
 export function LorewardsBotSection() {
@@ -202,8 +202,12 @@ export function LorewardsBotSection() {
 
   const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
     onSuccess: (result) => {
-      const note = trophyChangeNote(result);
-      notify.success("Saved", `Saved the winner details as an override.${note ? ` ${note}` : ""}`);
+      const toast = overrideToast(
+        result.botSynced,
+        { title: "Saved", message: "Saved the winner details as an override and synced the bot." },
+        result
+      );
+      notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => notify.error("Override Error", err.message),
   });

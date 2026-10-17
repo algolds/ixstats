@@ -14,7 +14,7 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { ValueSelect } from "~/components/ui/value-select";
-import { overrideFields, trophyChangeNote } from "~/lib/lorewards/override-form";
+import { overrideFields, overrideToast } from "~/lib/lorewards/override-form";
 
 export function LorewardOverrideCard() {
   const notify = useNotify();
@@ -34,12 +34,13 @@ export function LorewardOverrideCard() {
   const [overrideNoRunnerUp, setOverrideNoRunnerUp] = useState(false);
 
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
-    onSuccess: ({ trophies }) => {
-      const note = trophyChangeNote(trophies);
-      notify.success(
-        "Winner overridden",
-        `The override is saved and synced.${note ? ` ${note}` : ""}`
+    onSuccess: ({ trophies, botSynced }) => {
+      const toast = overrideToast(
+        botSynced,
+        { title: "Winner overridden", message: "The override is saved and synced." },
+        trophies
       );
+      notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {
       notify.error("Override Failed", err.message);
@@ -83,7 +84,8 @@ export function LorewardOverrideCard() {
         <CardDescription>
           Manually rewrite the winning details of past daily, weekly, or monthly entries and push
           announcement updates to the Discord bot. A blank field keeps its stored value, except a
-          new holder starts with no page or score. The place's trophy moves with the override.
+          new holder starts with no page or score. The place's trophy moves with the override. Any
+          day of a weekly or monthly contest finds it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

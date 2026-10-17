@@ -13,6 +13,7 @@ import {
 } from "~/lib/lorewards";
 import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
+import { tellBotOfOverride } from "~/lib/lorewards/bot-client";
 import { adminActor } from "~/server/shared/admin-actor";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { writeConfigKeys } from "./_config-kv";
@@ -141,7 +142,8 @@ export const adminWikiRouter = createTRPCRouter({
         status: z.string().default("approved"),
       })
     )
-    // The scored result is an override like any other: its places' trophies follow, and no sync writes over it
+    // The scored result is an override like any other: its places' trophies follow, no sync writes over it, and the
+    // bot is told as `lorewards.overrideWinner` tells it (`botSynced` false when it could not be; the override stands)
     .mutation(async ({ ctx, input }) => {
       const { date, type, status, ...fields } = input;
       const result = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
@@ -151,7 +153,8 @@ export const adminWikiRouter = createTRPCRouter({
         status,
       });
       await invalidateCache(["lorewards."]);
-      return result;
+      const botSynced = await tellBotOfOverride({ date: result.day, type, ...result.written });
+      return { ...result, botSynced };
     }),
 
   pushLorewardToBot: adminProcedure

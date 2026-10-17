@@ -1,6 +1,6 @@
 /**
  * The admin's Loreward override form (`lorewards.overrideWinner`): what it sends, and what its success says about the
- * trophies. A field the admin leaves blank is left out, so the stored value stays; only "No winner" or "No runner-up"
+ * trophies and the bot. A field the admin leaves blank is left out, so the stored value stays; only "No winner" or "No runner-up"
  * empties a place. A new holder starts with no page or score: the server clears the blank ones when the name changes
  * (`overrideLorewardEntry`), since only it knows the stored holder. The form's description says so.
  */
@@ -57,11 +57,13 @@ const trophies = (count: number) => `${count} ${count === 1 ? "trophy" : "trophi
  * What the override did to the trophies, for its success message: "1 trophy moved, 2 trophies voided", and a note
  * when new trophies wait for the next sync. Empty when nothing changed.
  */
-export function trophyChangeNote(result: {
+interface TrophyChanges {
   reassigned: number;
   voided: number;
   mintDeferred: boolean;
-}): string {
+}
+
+export function trophyChangeNote(result: TrophyChanges): string {
   const parts: string[] = [];
   if (result.reassigned > 0) parts.push(`${trophies(result.reassigned)} moved`);
   if (result.voided > 0) parts.push(`${trophies(result.voided)} voided`);
@@ -69,4 +71,27 @@ export function trophyChangeNote(result: {
   if (!result.mintDeferred) return changes;
   const later = "New trophies are minted on the next sync.";
   return changes ? `${changes}. ${later}` : later;
+}
+
+/**
+ * An override's success toast: `synced` when the bot was told, else a warning that the override is saved and the bot
+ * picks it up on its next sync. The trophy note follows either.
+ */
+export function overrideToast(
+  botSynced: boolean,
+  synced: { title: string; message: string },
+  changes: TrophyChanges
+): { tone: "success" | "warning"; title: string; message: string } {
+  const told = botSynced
+    ? synced
+    : {
+        title: "Saved",
+        message: "The Discord bot was not told; it picks the change up on its next sync.",
+      };
+  const note = trophyChangeNote(changes);
+  return {
+    tone: botSynced ? "success" : "warning",
+    title: told.title,
+    message: note ? `${told.message} ${note}` : told.message,
+  };
 }
