@@ -28,7 +28,7 @@ export type PackPool = z.infer<typeof PackPoolSchema>;
 
 export const PackSeasonSchema = z.number().int().min(1).max(MAX_CARD_SEASON).nullable();
 
-/** A whole number from 1 to `max`. Every failure reads `message`, so the admin's toast is one sentence. */
+/** A whole number from 1 to `max`; every failure carries `message` (the editor checks the same bounds first). */
 const wholeNumber = (max: number, message: string) =>
   z.number().int(message).min(1, message).max(max, message);
 const LIMIT_RANGE = `a whole number from 1 to ${PACK_MAX_LIMIT.toLocaleString("en")}`;
