@@ -16,6 +16,7 @@ import {
   exploreFilterInput,
   type CardFilters,
 } from "~/lib/cards/face/filters";
+import { TYPE_ORDER } from "~/lib/cards/face/labels";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import type { ExplorePage, RealmShelf as Shelf } from "~/lib/cards/hub/explore";
 import { STORE_PATH } from "~/lib/cards/hub-routes";
@@ -35,11 +36,13 @@ const EXPLORE_DIMENSIONS: readonly FilterDimension[] = [
   "category",
   "region",
 ];
+/** Trophy cards are not in Explore: they live in Lorewards and Mine. */
+const EXPLORE_TYPES = TYPE_ORDER.filter((type) => type !== "TROPHY");
 const PAGE = 48;
 /** Regions change only when NationStates cards are imported. */
 const REGIONS_STALE_MS = 10 * 60 * 1000;
 
-/** The shelf realm a `?realm=` slug names; Ixnay's old slugs still find it. */
+/** The realm a `?realm=` slug names; Ixnay's old slugs still find it. */
 function realmForSlug(realms: readonly CardRealmBadge[], slug: string) {
   return realms.find((realm) =>
     isIxnaySlug(slug) ? realm.id === DEFAULT_REALM_ID : realm.slug === slug
@@ -65,7 +68,7 @@ function withRegionInRealm(filters: CardFilters, nsRealmId: string | undefined):
 }
 
 /**
- * The grid's filters. A `?realm=` slug picks its realm once the shelves list it, and again only when the slug
+ * The grid's filters. A `?realm=` slug picks its realm once the realms have loaded, and again only when the slug
  * changes, so the player's own choice of realm is never undone.
  */
 function useExploreFilters(realms: readonly CardRealmBadge[], slug: string | null) {
@@ -120,7 +123,7 @@ export function ExplorePane({
   onSuggestingChange,
 }: ExplorePaneProps) {
   const shelves = api.cards.exploreShelves.useQuery();
-  const realms = useMemo(() => (shelves.data ?? []).map((shelf) => shelf.realm), [shelves.data]);
+  const realms = useMemo(() => shelves.data?.realms ?? [], [shelves.data]);
   const { filters, setFilters, change, nsRealmId } = useExploreFilters(realms, initialRealmSlug);
   const [sort, setSort] = useState<ExploreSort>("newest");
   const gridSection = useRef<HTMLElement>(null);
@@ -154,7 +157,7 @@ export function ExplorePane({
         loading={shelves.isLoading}
         failed={shelves.isError && !shelves.data}
         onRetry={() => void shelves.refetch()}
-        shelves={shelves.data ?? []}
+        shelves={shelves.data?.shelves ?? []}
         onOpen={open}
         onBrowse={browseRealm}
       />
@@ -176,6 +179,7 @@ export function ExplorePane({
           filters={filters}
           onChange={change}
           dimensions={EXPLORE_DIMENSIONS}
+          types={EXPLORE_TYPES}
           realms={realms}
           regions={regions}
           regionSearch={regionSearch}

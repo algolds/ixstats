@@ -35,17 +35,28 @@ function ownedWhere(owned: ExploreQuery["owned"], viewerId: string): Prisma.Card
   return {};
 }
 
-/** The catalogue narrowed by the grid's filters. Trophy cards stay in the grid (they leave only the shelves). */
+/**
+ * Explore's catalogue. Trophy cards leave Explore entirely, grid and shelves (owner, overriding Q10): every Loreward
+ * place is one, and they live in Lorewards and Mine. `CATALOGUE_WHERE` keeps them, so a bare sheet link still opens one.
+ */
+const EXPLORE_CATALOGUE_WHERE = {
+  ...CATALOGUE_WHERE,
+  cardType: { not: "TROPHY" },
+} satisfies Prisma.CardWhereInput;
+
+/** The catalogue narrowed by the grid's filters. A title search matches `%` and `_` literally. */
 export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.CardWhereInput {
   return {
-    ...CATALOGUE_WHERE,
+    ...EXPLORE_CATALOGUE_WHERE,
     ...(query.realmId ? { realmId: query.realmId } : {}),
     ...(query.rarities?.length ? { rarity: { in: query.rarities } } : {}),
-    ...(query.types?.length ? { cardType: { in: query.types } } : {}),
+    ...(query.types?.length ? { cardType: { not: "TROPHY", in: query.types } } : {}),
     ...(query.categories?.length ? { category: { in: query.categories } } : {}),
     ...(query.season ? { season: query.season } : {}),
     ...(query.region ? { metadata: { path: ["nsData", "region"], equals: query.region } } : {}),
-    ...(query.search ? { title: { contains: query.search, mode: "insensitive" } } : {}),
+    ...(query.search
+      ? { title: { contains: likeLiteral(query.search), mode: "insensitive" } }
+      : {}),
     ...ownedWhere(query.owned, viewerId),
   };
 }
@@ -110,6 +121,13 @@ export interface RealmShelf {
   mostWanted: ShelfCard[];
 }
 
+export interface ExploreShelves {
+  /** The top twelve realms' shelves. */
+  shelves: RealmShelf[];
+  /** Every public, published realm with cards in Explore, in shelf order: the realm filters' list (Explore, Market). */
+  realms: CardRealmBadge[];
+}
+
 const SHELF_SIZE = 6;
 const MAX_SHELVES = 12;
 const SHELF_SELECT = {
@@ -120,7 +138,7 @@ type ShelfRow = Prisma.CardGetPayload<{ select: typeof SHELF_SELECT }>;
 
 /** Only public realms get a shelf; an unlisted realm's cards are still in the grid. */
 const SHELF_CATALOGUE_WHERE = {
-  ...CATALOGUE_WHERE,
+  ...EXPLORE_CATALOGUE_WHERE,
   realm: { ...CATALOGUE_WHERE.realm, visibility: "public" },
 } satisfies Prisma.CardWhereInput;
 
@@ -134,16 +152,12 @@ function shelfOrder(
   return b.count - a.count || a.realmId.localeCompare(b.realmId);
 }
 
-/** A shelf's two strips. Trophy cards stay off them: every Loreward place would crowd Ixnay's newest. */
+/** A shelf's two strips. */
 async function shelfStrips(
   db: Pick<PrismaClient, "card">,
   realmId: string
 ): Promise<{ newest: ShelfRow[]; wanted: ShelfRow[] }> {
-  const where = {
-    ...CATALOGUE_WHERE,
-    realmId,
-    cardType: { not: "TROPHY" },
-  } satisfies Prisma.CardWhereInput;
+  const where = { ...EXPLORE_CATALOGUE_WHERE, realmId } satisfies Prisma.CardWhereInput;
   const [newest, wanted] = await Promise.all([
     db.card.findMany({
       where,
@@ -162,24 +176,24 @@ async function shelfStrips(
 }
 
 /**
- * The realm shelves (spec §2.3 Explore): banner, card count, the newest cards and the most wanted. The count is the
- * realm's total in the grid; a realm with only trophy cards has nothing to shelve and is left out.
+ * The realm shelves (spec §2.3 Explore): banner, card count (the realm's total in the grid), the newest cards and the
+ * most wanted, for the top twelve realms; and every realm with cards, for the realm filters.
  */
 export async function exploreShelves(
   db: Pick<PrismaClient, "card" | "realm"> & ArtDb,
   viewerId: string
-): Promise<RealmShelf[]> {
+): Promise<ExploreShelves> {
   const groups = await db.card.groupBy({
     by: ["realmId"],
     where: SHELF_CATALOGUE_WHERE,
     _count: { _all: true },
   });
-  if (groups.length === 0) return [];
+  if (groups.length === 0) return { shelves: [], realms: [] };
   const ordered = groups
     .map((g) => ({ realmId: g.realmId, count: g._count._all }))
-    .sort(shelfOrder)
-    .slice(0, MAX_SHELVES);
-  const [realms, strips] = await Promise.all([
+    .sort(shelfOrder);
+  const shelved = ordered.slice(0, MAX_SHELVES);
+  const [realmRows, strips] = await Promise.all([
     db.realm.findMany({
       where: { id: { in: ordered.map((g) => g.realmId) } },
       select: {
@@ -191,7 +205,7 @@ export async function exploreShelves(
         bannerUrl: true,
       },
     }),
-    Promise.all(ordered.map((g) => shelfStrips(db, g.realmId))),
+    Promise.all(shelved.map((g) => shelfStrips(db, g.realmId))),
   ]);
   const visible = await cardsWithVisibleArt(
     db,
@@ -202,8 +216,8 @@ export async function exploreShelves(
     face: toCardFace(row, { revealArt: visible.has(row.id) }),
     wanted: row._count.watchlist,
   });
-  const realmById = new Map(realms.map((r) => [r.id, r]));
-  return ordered.flatMap((group, index) => {
+  const realmById = new Map(realmRows.map((r) => [r.id, r]));
+  const shelves = shelved.flatMap((group, index) => {
     const realm = realmById.get(group.realmId);
     const strip = strips[index];
     if (!realm || !strip || strip.newest.length === 0) return [];
@@ -217,6 +231,11 @@ export async function exploreShelves(
       },
     ];
   });
+  const realms = ordered.flatMap((group) => {
+    const realm = realmById.get(group.realmId);
+    return realm ? [toRealmBadge(realm)] : [];
+  });
+  return { shelves, realms };
 }
 
 /** The region filter's search: blank means none. */

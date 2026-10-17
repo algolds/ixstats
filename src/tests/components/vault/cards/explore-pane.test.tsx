@@ -30,7 +30,7 @@ jest.mock("next/link", () => ({
 
 import { api } from "~/trpc/react";
 import { ExplorePane } from "~/components/vault/cards/ExplorePane";
-import type { CardFaceData } from "~/lib/cards/face/types";
+import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import type { ExplorePage, RealmShelf } from "~/lib/cards/hub/explore";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
@@ -107,14 +107,21 @@ const grid = () => jest.mocked(api.cards.exploreGrid.useInfiniteQuery);
 const regions = () => jest.mocked(api.cards.exploreRegions.useQuery);
 const lastGridInput = () => grid().mock.calls.at(-1)![0];
 
-function setShelves(state: { data?: RealmShelf[]; isLoading?: boolean; isError?: boolean }) {
+/** The shelves, and the realm filters' list: by default the shelved realms. */
+function setShelves(state: {
+  data?: RealmShelf[];
+  realms?: CardRealmBadge[];
+  isLoading?: boolean;
+  isError?: boolean;
+}) {
   const refetch = jest.fn();
+  const { data, realms, ...rest } = state;
   shelvesQuery().mockReturnValue({
-    data: undefined,
+    data: data && { shelves: data, realms: realms ?? data.map((shelf) => shelf.realm) },
     isLoading: false,
     isError: false,
     refetch,
-    ...state,
+    ...rest,
   } as never);
   return refetch;
 }
@@ -229,6 +236,39 @@ describe("ExplorePane", () => {
     const [input, options] = regions().mock.calls.at(-1)!;
     expect(input).toEqual({ search: "" });
     expect(options).toMatchObject({ enabled: true, placeholderData: keepPreviousData });
+  });
+
+  it("lists every realm with cards in the realm filter, with a shelf or not", () => {
+    setShelves({
+      data: [ixnayShelf()],
+      realms: [realm("default", "Ixnay", "ixnay"), realm("small", "Small realm")],
+    });
+    render(pane());
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Every realm",
+      "Ixnay",
+      "Small realm",
+    ]);
+    fireEvent.click(screen.getByRole("option", { name: "Small realm" }));
+    expect(lastGridInput()).toMatchObject({ realmId: "small" });
+  });
+
+  it("preselects a linked realm that has no shelf", () => {
+    setShelves({
+      data: [ixnayShelf()],
+      realms: [realm("default", "Ixnay", "ixnay"), realm("small", "Small realm")],
+    });
+    render(pane({ initialRealmSlug: "small" }));
+    expect(lastGridInput()).toMatchObject({ realmId: "small" });
+  });
+
+  it("offers no trophy type: trophy cards are not in Explore", () => {
+    render(pane());
+    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
+    expect(screen.getByRole("button", { name: "Lore" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Trophy" })).not.toBeInTheDocument();
   });
 
   it("finds Ixnay by its old slugs too, and ignores a slug no shelf has", () => {
