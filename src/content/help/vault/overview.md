@@ -33,7 +33,7 @@ The claim prompt opens by itself at most once a day. If you close it, claim late
 
 - **Card Gallery:** browse every card in the game, including NationStates and lore cards.
 - **Inventory:** the cards you own. Filter by rarity, type, season, level and value, and switch between grid, list and compact views.
-- **Collections:** group your cards into named collections. Public collections can be browsed at [/explore/collections](/explore/collections).
+- **Collections:** group your cards into named collections.
 
 Select a card to see it up close with its details. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
 
