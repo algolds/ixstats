@@ -5,10 +5,17 @@ import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 const IXWIKI_URL = new RegExp(`^https?:\\/\\/${mediaWikiHostPattern()}\\/(.+)$`, "i");
 
 /**
+ * A Fandom CDN file (`static.wikia.nocookie.net/<wiki>/images/a/ab/<file>/revision/latest?cb=`) of a wiki the media
+ * proxy knows. It is fetched by name through that wiki's proxy, which resolves it with `imageinfo`.
+ */
+const FANDOM_CDN_FILE =
+  /^https?:\/\/static\.wikia\.nocookie\.net\/(althistory)\/images\/[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i;
+
+/**
  * Converts a card artwork URL to use our proxy endpoint if needed.
  * Supports:
  * 1. NationStates images (proxied via /api/proxy-ns-image)
- * 2. Wiki images (ixwiki, iiwiki, althistory proxied via their respective mediawiki proxies)
+ * 2. Wiki images (ixwiki, iiwiki, althistory and AltHistory's Fandom CDN, through their media proxies)
  * 3. Relative URLs (returns as-is, prepended with basePath)
  */
 export function proxyCardArtwork(artworkUrl: string | null | undefined): string {
@@ -20,6 +27,13 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
   // If relative URL, return prepended with basePath
   if (artworkUrl.startsWith("/")) {
     return withBasePath(artworkUrl);
+  }
+
+  const fandom = FANDOM_CDN_FILE.exec(artworkUrl);
+  if (fandom) {
+    return withBasePath(
+      `/api/mediawiki/${fandom[1].toLowerCase()}/wiki/Special:FilePath/${fandom[2]}`
+    );
   }
 
   // Handle Wiki URLs

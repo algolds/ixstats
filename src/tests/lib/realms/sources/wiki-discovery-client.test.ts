@@ -5,12 +5,16 @@ import {
   DiscoveryStopped,
   retryAfterMs,
 } from "~/lib/realms/sources/wiki-discovery-client";
+import { mediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { fakeIiwiki, json } from "~/tests/helpers/iiwiki-fixtures";
 
 const API = "https://iiwiki.com/api.php";
 const Any = z.object({ query: z.unknown().optional() }).passthrough();
 
-function setup(respond?: Parameters<typeof fakeIiwiki>[0], options: { maxRetryAfterMs?: number; maxRequests?: number } = {}) {
+function setup(
+  respond?: Parameters<typeof fakeIiwiki>[0],
+  options: { maxRetryAfterMs?: number; maxRequests?: number } = {}
+) {
   const wiki = fakeIiwiki(respond);
   const sleeps: number[] = [];
   const client = createDiscoveryClient("iiwiki", {
@@ -59,7 +63,9 @@ describe("discovery client throttling", () => {
 
   it("waits out a short Retry-After on a 429 and retries", async () => {
     const { client, sleeps, wiki } = setup((_url, index) =>
-      index === 0 ? new Response("slow down", { status: 429, headers: { "Retry-After": "3" } }) : undefined
+      index === 0
+        ? new Response("slow down", { status: 429, headers: { "Retry-After": "3" } })
+        : undefined
     );
     const data = await client.query(rosterQuery, Any);
 
@@ -110,6 +116,28 @@ describe("discovery client throttling", () => {
     });
     await client.query({ list: "categorymembers" }, Any);
     expect(seen[0]).toMatchObject({ "User-Agent": "IxStats-Builder" });
+  });
+});
+
+describe("discovery wikis", () => {
+  async function firstUrl(source: "commons" | "ixwiki"): Promise<string> {
+    const urls: string[] = [];
+    const client = createDiscoveryClient(source, {
+      fetchImpl: (async (url: string) => {
+        urls.push(url);
+        return json({ query: {} });
+      }) as typeof fetch,
+    });
+    await client.query({ list: "categorymembers" }, Any);
+    expect(client.source).toBe(source);
+    return urls[0] ?? "";
+  }
+
+  it("reads Commons from its own api.php and IxWiki from its configured one", async () => {
+    expect(await firstUrl("commons")).toMatch(/^https:\/\/commons\.wikimedia\.org\/w\/api\.php\?/);
+    expect((await firstUrl("ixwiki")).startsWith(`${mediaWikiApiUrl({ internal: true })}?`)).toBe(
+      true
+    );
   });
 });
 
