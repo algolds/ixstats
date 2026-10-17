@@ -71,8 +71,13 @@ function matchesFacets({ row }: MineEntry, query: MineQuery): boolean {
   );
 }
 
-function matches(entry: MineEntry, query: MineQuery, copies: ReadonlyMap<string, number>): boolean {
-  const search = query.search?.toLowerCase();
+/** `search` is the query's search, lower-cased once by the caller. */
+function matches(
+  entry: MineEntry,
+  query: MineQuery,
+  search: string | undefined,
+  copies: ReadonlyMap<string, number>
+): boolean {
   return (
     matchesFacets(entry, query) &&
     (!query.duplicates || (copies.get(entry.row.cardId) ?? 0) > 1) &&
@@ -99,7 +104,8 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
     copies.set(row.cardId, (copies.get(row.cardId) ?? 0) + 1);
     realms.set(row.cards.realm.id, toRealmBadge(row.cards.realm));
   }
-  const picked = entries.filter((e) => matches(e, query, copies)).sort(COMPARE[query.sort]);
+  const search = query.search?.toLowerCase();
+  const picked = entries.filter((e) => matches(e, query, search, copies)).sort(COMPARE[query.sort]);
   const start = query.cursor ?? 0;
   const page = picked.slice(start, start + query.limit);
   const next = start + page.length;
@@ -130,7 +136,8 @@ export async function listMine(
   const rows = await db.cardOwnership.findMany({
     where: { ownerId },
     select: MINE_COPY_SELECT,
-    orderBy: { acquiredAt: "desc" },
+    // The id breaks timestamp ties, and the sorts are stable, so offset paging is deterministic for every sort.
+    orderBy: [{ acquiredAt: "desc" }, { id: "asc" }],
     take: MAX_MINE_COPIES,
   });
   // A hidden (retired) copy is worth nothing, as in the Wallet's figures and the dividend.

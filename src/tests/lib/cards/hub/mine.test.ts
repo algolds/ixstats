@@ -59,13 +59,21 @@ describe("selectMine", () => {
     entry({ id: "a", title: "Alpha", rarity: "EPIC" }, { finish: "FOIL", level: 3 }, 500),
     entry({ id: "a", title: "Alpha", rarity: "EPIC" }, {}, 150),
     entry({ id: "b", title: "Bravo", cardType: "NS", category: null, realm: NS }, {}, 30),
-    entry({ id: "c", title: "Charlie", rarity: "RARE", isRetired: true }, {}, 90),
+    entry(
+      { id: "c", title: "Charlie", rarity: "RARE", isRetired: true, artwork: "https://art/c.png" },
+      {},
+      90
+    ),
   ];
 
   it("keeps retired copies, newest first by default, and counts copies per card", () => {
     const page = selectMine(all, query());
     expect(page.rows.map((r) => r.face.title)).toEqual(["Charlie", "Bravo", "Alpha", "Alpha"]);
-    expect(page.rows.find((r) => r.face.title === "Charlie")!.face.isRetired).toBe(true);
+    // A retired copy still lists, with the placeholder face toCardFace gives it (no art).
+    expect(page.rows.find((r) => r.face.title === "Charlie")!.face).toMatchObject({
+      isRetired: true,
+      artwork: null,
+    });
     expect(page.rows.filter((r) => r.face.cardId === "a").map((r) => r.copies)).toEqual([2, 2]);
     expect(page.rows.find((r) => r.face.cardId === "b")!.copies).toBe(1);
     expect(page).toMatchObject({ total: 4, totalCopies: 4, nextCursor: null });
@@ -202,7 +210,7 @@ describe("listMine", () => {
     expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
       where: { ownerId: "u1" },
-      orderBy: { acquiredAt: "desc" },
+      orderBy: [{ acquiredAt: "desc" }, { id: "asc" }],
       take: 5000,
     });
     expect(copyValue).toHaveBeenCalledWith(one.row);
