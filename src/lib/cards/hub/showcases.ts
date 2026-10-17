@@ -2,10 +2,10 @@
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
+import { DISPLAY_SIZE, SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { ContextRules } from "./art-visibility";
-import { DISPLAY_SIZE, displayedCopies } from "./displayed";
+import { displayedCopies } from "./displayed";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 
 type ShowcaseDb = Pick<

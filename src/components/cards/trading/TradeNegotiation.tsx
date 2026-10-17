@@ -70,18 +70,19 @@ function sidesOf(trade: TradeTotals, isRecipient: boolean): { give: SideFacts; g
 
 /**
  * Where each side's cards open their sheet. A live offer shows all its art to its recipient (the offer context);
- * otherwise the partner's copies open as theirs (the holder context), and the player's own need no context.
+ * otherwise the partner's copies open as theirs (the holder context, by their passport handle), and the player's
+ * own need no context.
  */
 function sheetContexts(
   tradeId: string,
   liveOfferToViewer: boolean,
-  partnerHandle: string | null
+  partnerHandle: string
 ): { give: SheetFrom | null; get: SheetFrom | null } {
   if (liveOfferToViewer) {
     const offer: SheetFrom = { kind: "offer", id: tradeId };
     return { give: offer, get: offer };
   }
-  return { give: null, get: partnerHandle ? { kind: "holder", handle: partnerHandle } : null };
+  return { give: null, get: { kind: "holder", handle: partnerHandle } };
 }
 
 /** One side of a trade: its cards, any credits, and the total value. */
@@ -223,7 +224,12 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const partner = isRecipient ? trade.initiator : trade.recipient;
     const live = trade.status === "PENDING" && !isExpired;
     const sides = sidesOf(trade, isRecipient);
-    const contexts = sheetContexts(tradeId, isRecipient && live, partner.handle);
+    // A partner with no stored handle is named by their Clerk id, the passport handle the holder context resolves.
+    const contexts = sheetContexts(
+      tradeId,
+      isRecipient && live,
+      partner.handle ?? partner.clerkUserId
+    );
     const open = (from: SheetFrom | null) => (face: CardFaceData) =>
       onOpenCard?.(face.cardId, from);
 

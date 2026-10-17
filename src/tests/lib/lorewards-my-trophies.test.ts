@@ -144,6 +144,7 @@ describe("loadMyTrophies", () => {
       runnerUps: 1,
       streak: 1,
       cards: [],
+      holderHandle: null,
     });
     expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
   });
@@ -155,6 +156,7 @@ describe("loadMyTrophies", () => {
       verified: false,
       unmatched: 0,
       wins: { daily: 0, weekly: 0, monthly: 0 },
+      holderHandle: null,
     });
     expect(db.lorewardEntry.findMany).not.toHaveBeenCalled();
   });
@@ -191,6 +193,7 @@ describe("loadMyTrophies", () => {
       runnerUps: 1,
       streak: 1,
       cards: [],
+      holderHandle: null,
     });
     const pages = db.wikiRevision.groupBy.mock.calls.map(([args]) => args.where.article?.title);
     expect(pages).not.toContain("Old page");

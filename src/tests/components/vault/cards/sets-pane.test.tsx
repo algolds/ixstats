@@ -5,6 +5,7 @@ jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
   const utils = {
     cards: { listMyShowcases: invalidate(), getShowcase: invalidate(), getMyDisplay: invalidate() },
+    ixnayid: { getPassport: invalidate() },
   };
   const mutation = () => ({ useMutation: jest.fn() });
   return {
@@ -206,6 +207,8 @@ describe("SetsPane, one showcase", () => {
     expect(utils().getShowcase.invalidate).toHaveBeenCalledWith();
     expect(utils().listMyShowcases.invalidate).toHaveBeenCalled();
     expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
+    // The Passport's highlight is the pinned showcase too.
+    expect(api.useUtils().ixnayid.getPassport.invalidate).toHaveBeenCalled();
     jest.clearAllMocks();
     fireEvent.click(screen.getByRole("button", { name: "Remove Caphiria" }));
     expect(remove).toHaveBeenCalledWith({ showcaseId: "s1", ownershipId: "o1" });

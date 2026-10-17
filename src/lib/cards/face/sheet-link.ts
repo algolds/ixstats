@@ -5,16 +5,29 @@ export type SheetFrom =
   | { kind: "offer"; id: string }
   | { kind: "holder"; handle: string };
 
-type FromBuilder = (value: string) => SheetFrom;
+type FromBuilder = (value: string) => SheetFrom | null;
 
-/** Each `?from=` kind, building the place from its value: the only list of kinds (the pattern takes any word). */
+/** A showcase's or an offer's id. */
+const ID_VALUE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * A passport handle as `passportHandleOf` emits it: a stored handle, a verified wiki name or a forum name (with
+ * spaces and any letters, such as "Takatta Loa"), else a Clerk id. MediaWiki names run to 255 characters.
+ */
+const HANDLE_VALUE = /^[^\p{Cc}]{1,255}$/u;
+
+/**
+ * Each `?from=` kind, building the place from its value when the value fits the kind: the only list of kinds (the
+ * pattern takes any word).
+ */
 const FROM_KINDS: ReadonlyMap<string, FromBuilder> = new Map<string, FromBuilder>([
-  ["showcase", (id) => ({ kind: "showcase", id })],
-  ["offer", (id) => ({ kind: "offer", id })],
-  ["holder", (handle) => ({ kind: "holder", handle })],
+  ["showcase", (id) => (ID_VALUE.test(id) ? { kind: "showcase", id } : null)],
+  ["offer", (id) => (ID_VALUE.test(id) ? { kind: "offer", id } : null)],
+  ["holder", (handle) => (HANDLE_VALUE.test(handle) ? { kind: "holder", handle } : null)],
 ]);
 
-const FROM_PATTERN = /^([a-z]+)\.([A-Za-z0-9_-]{1,64})$/;
+/** A kind, a dot, and its value; a handle may hold dots of its own, so the first dot splits. */
+const FROM_PATTERN = /^([a-z]+)\.(.+)$/;
 
 export function encodeSheetFrom(from: SheetFrom): string {
   return from.kind === "holder" ? `holder.${from.handle}` : `${from.kind}.${from.id}`;

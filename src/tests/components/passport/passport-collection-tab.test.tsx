@@ -2,8 +2,8 @@
  * The passport Collection tab: collector level, deck value, IxCredits, Focus, the most valuable
  * cards, and achievements with the pinned shelf. Real data only, with empty and private states.
  */
-import { describe, expect, it } from "@jest/globals";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "@jest/globals";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type React from "react";
 import {
   PassportCollectionTab,
@@ -14,15 +14,22 @@ import type {
   PassportRibbon,
   PassportVault,
 } from "~/components/passport/types";
-import type { CardInstance } from "~/types/cards-display";
+import { useCardSheet } from "~/hooks/useCardSheet";
+import type { CardFaceData } from "~/lib/cards/face/types";
 
-jest.mock("~/components/cards/display/CardDisplay", () => ({
-  CardDisplay: ({ card }: { card: { title: string } }) => <div>{card.title}</div>,
+jest.mock("~/components/cards/sheet/CardSheetHost", () => ({
+  CardSheetHost: () => <div data-testid="card-sheet-host" />,
 }));
-jest.mock("~/components/cards/display/CardDetailsModal", () => ({ CardDetailsModal: () => null }));
+jest.mock("~/hooks/useCardSheet", () => ({ useCardSheet: jest.fn(() => ({ open: jest.fn() })) }));
 jest.mock("~/components/vault/IxCreditsSymbol", () => ({
   IxCreditsSymbol: () => <span data-testid="ixcredits-symbol" />,
 }));
+
+const open = jest.fn();
+beforeEach(() => {
+  open.mockClear();
+  jest.mocked(useCardSheet).mockReturnValue({ open, cardId: null, from: null, close: jest.fn() });
+});
 
 const ribbon = (key: string, rarity: string, pinned = false): PassportRibbon => ({
   key,
@@ -36,33 +43,19 @@ const ribbon = (key: string, rarity: string, pinned = false): PassportRibbon => 
   pinned,
 });
 
-/** A top card as `identity.vault` maps an ownership row; only title, rarity and value matter here. */
-const card = (
-  id: string,
-  title: string,
-  rarity: CardInstance["rarity"],
-  marketValue: number
-): CardInstance => ({
-  id,
+/** A displayed card's face, as `identity.vault` builds it: the holder's display shows its art. */
+const card = (cardId: string, title: string, rarity: CardFaceData["rarity"]): CardFaceData => ({
+  cardId,
   title,
-  description: null,
-  artwork: "",
-  cardType: "NATION",
   rarity,
-  season: 1,
-  nsCardId: null,
-  nsSeason: null,
-  wikiSource: null,
-  wikiArticleTitle: null,
-  wikiUrl: null,
-  countryId: null,
-  ownershipId: `o_${id}`,
-  marketValue,
-  totalSupply: 1,
-  level: 1,
-  createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-  lastTrade: null,
+  cardType: "LORE",
+  realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
+  artwork: `/art/${cardId}.png`,
+  silhouette: false,
+  number: 1,
+  season: null,
+  isRetired: false,
+  copy: { ownershipId: `o_${cardId}`, finish: "STANDARD", serialNumber: 1, level: 1 },
 });
 
 const vault: PassportVault = {
@@ -73,10 +66,7 @@ const vault: PassportVault = {
   xpPerLevel: 500,
   credits: 1250,
   focus: { categoryCount: 5, categoryTotal: 12, topCategory: "MILITARY" },
-  topCards: [
-    card("c1", "Imperial Crown", "LEGENDARY", 900),
-    card("c2", "Senate Seal", "ULTRA_RARE", 400),
-  ],
+  topCards: [card("c1", "Imperial Crown", "LEGENDARY"), card("c2", "Senate Seal", "ULTRA_RARE")],
 };
 
 const achievements: PassportAchievements = {
@@ -125,10 +115,14 @@ describe("PassportCollectionTab", () => {
     expect(screen.getAllByTestId("ixcredits-symbol")).toHaveLength(1);
   });
 
-  it("shows the most valuable cards and the achievements shelf", () => {
+  it("shows the holder's displayed cards as their faces, and the achievements shelf", () => {
     renderTab();
-    expect(screen.getByText("Imperial Crown")).toBeInTheDocument();
-    expect(screen.getByText("Senate Seal")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Imperial Crown, Legendary, Standard, Ixnay" })
+    ).toHaveAttribute("data-card-face");
+    expect(
+      screen.getByRole("button", { name: "Senate Seal, Ultra Rare, Standard, Ixnay" })
+    ).toBeInTheDocument();
     expect(screen.getByText(/2 \/ 76 unlocked · 20 pts/)).toBeInTheDocument();
     expect(screen.getByText("Top ribbons")).toBeInTheDocument();
     expect(screen.getByText("Ribbon legend")).toBeInTheDocument();
@@ -171,6 +165,19 @@ describe("PassportCollectionTab", () => {
   it("links nowhere: there is no public vault page to send a visitor to", () => {
     renderTab();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("opens a card's sheet through the holder's display, which shows its art", () => {
+    renderTab({ handle: "ann" });
+    fireEvent.click(screen.getByRole("button", { name: /^Imperial Crown,/ }));
+    expect(open).toHaveBeenCalledWith("c1", { kind: "holder", handle: "ann" });
+    // The Passport is outside the Vault layout, so it hosts the sheet itself.
+    expect(screen.getAllByTestId("card-sheet-host")).toHaveLength(1);
+  });
+
+  it("hosts no sheet when there are no cards to open", () => {
+    renderTab({ vault: { ...vault, topCards: [], totalCards: 0 } });
+    expect(screen.queryByTestId("card-sheet-host")).not.toBeInTheDocument();
   });
 
   it("shows empty states instead of invented data", () => {

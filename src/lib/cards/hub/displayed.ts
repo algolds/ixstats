@@ -1,9 +1,7 @@
 // src/lib/cards/hub/displayed.ts
 import type { PrismaClient } from "@prisma/client";
+import { DISPLAY_SIZE } from "~/lib/cards/face/showcase-limits";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, type CardFaceRow, type CopyFaceRow } from "./faces";
-
-/** How many cards a player's showcase shows on the wallet and the Passport. */
-export const DISPLAY_SIZE = 6;
 
 export interface DisplayedCopy {
   card: CardFaceRow;
@@ -43,8 +41,8 @@ export async function displayedCopies(
     };
   }
   // ponytail: the ceiling is the player's live copies. The relation-first orderBy keeps Prisma's distinct and take
-  // in memory, so this reads every live copy they own (as getMyTopCards does); if players hold thousands of copies,
-  // read the cards first, with the take in SQL, and one copy of each.
+  // in memory, so this reads every live copy they own; if players hold thousands of copies, read the cards first,
+  // with the take in SQL, and one copy of each.
   const top = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { isRetired: false } },
     orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }, { id: "asc" }],

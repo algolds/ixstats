@@ -1,25 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
-import { useReducedMotion } from "motion/react";
+import React from "react";
 import { EyeClosed, Pin, Trophy, ViewGrid } from "iconoir-react";
 import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { getRarityColor } from "~/components/achievements/constants";
-import { CardDisplay } from "~/components/cards/display/CardDisplay";
-import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
+import { CardFace } from "~/components/cards/face/CardFace";
+import { CardSheetHost } from "~/components/cards/sheet/CardSheetHost";
 import { Progress } from "~/components/ui/progress";
 import { Stat } from "~/components/ui/stat";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { useCardSheet } from "~/hooks/useCardSheet";
 import { cn } from "~/lib/utils";
-import type { CardInstance } from "~/types/cards-display";
 import type { PassportAchievements, PassportRibbon, PassportVault } from "../types";
 
 /** How many ribbons the signature shelf holds. */
 const SIGNATURE_SHELF_SIZE = 3;
-
-/** How many of the most valuable cards the tab shows. */
-const TOP_CARDS_SIZE = 6;
 
 /** The signature shelf: the owner's pinned ribbons, or their top ribbons when none are pinned. */
 export function signatureRibbons(ribbons: ReadonlyArray<PassportRibbon>): {
@@ -117,33 +113,28 @@ function CollectorStats({ vault }: { vault: PassportVault }) {
   );
 }
 
+/**
+ * The holder's display as card faces. A face opens its sheet through the holder (`from=holder.<handle>`), whose
+ * display shows the art. The Passport is outside the Vault layout, so it hosts the sheet itself.
+ */
 function TopCards({ vault, handle }: { vault: PassportVault; handle: string }) {
-  const [selectedCard, setSelectedCard] = useState<CardInstance | null>(null);
-  const shouldReduceMotion = useReducedMotion();
-  const topCards = vault.topCards.slice(0, TOP_CARDS_SIZE);
+  const sheet = useCardSheet();
 
   if (vault.totalCards === 0) return <Note>@{handle} has not collected any IxCards yet.</Note>;
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {topCards.map((card) => (
-          <CardDisplay
-            key={`${card.id}-${card.ownershipId ?? ""}`}
-            card={card}
-            size="small"
-            enable3D={!shouldReduceMotion}
-            performanceMode={!!shouldReduceMotion}
-            hideExcerpt={false}
-            onClick={setSelectedCard}
-            className="w-full will-change-transform"
+        {vault.topCards.map((card) => (
+          <CardFace
+            key={card.copy?.ownershipId ?? card.cardId}
+            face={card}
+            size="S"
+            className="w-full"
+            onOpen={() => sheet.open(card.cardId, { kind: "holder", handle })}
           />
         ))}
       </div>
-      <CardDetailsModal
-        card={selectedCard}
-        open={selectedCard !== null}
-        onClose={() => setSelectedCard(null)}
-      />
+      <CardSheetHost />
     </>
   );
 }

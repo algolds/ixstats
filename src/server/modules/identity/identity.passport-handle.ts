@@ -50,3 +50,12 @@ export async function loadPassportHandle(user: PassportHandleUser): Promise<stri
   if (user.handle) return user.handle;
   return passportHandleOf(user, await loadVerifiedWikiName(user.id));
 }
+
+/** The passport handle of the user with this id (`loadPassportHandle`); null when there is no such user. */
+export async function loadPassportHandleById(userId: string): Promise<string | null> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
+  });
+  return user ? loadPassportHandle(user) : null;
+}

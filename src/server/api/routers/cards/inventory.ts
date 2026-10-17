@@ -58,23 +58,6 @@ export const cardsInventoryRouter = createTRPCRouter({
       }
     }),
 
-  /**
-   * The caller's most valuable cards (the Wallet showcase): one ownership per card, trophy cards
-   * included, so the Vault page never loads the whole inventory for three of them. Hidden (retired)
-   * cards are left out: they count for nothing in the deck value, so they never lead the showcase.
-   */
-  getMyTopCards: protectedProcedure
-    .input(z.object({ limit: z.number().int().min(1).max(12).default(3) }).default({ limit: 3 }))
-    .query(({ ctx, input }) =>
-      ctx.db.cardOwnership.findMany({
-        where: { ownerId: ctx.user.id, cards: { isRetired: false } },
-        include: { cards: true },
-        orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }],
-        distinct: ["cardId"],
-        take: input.limit,
-      })
-    ),
-
   /** Another player's tradeable copies, for building a trade offer. */
   getUserCards: protectedProcedure
     .input(

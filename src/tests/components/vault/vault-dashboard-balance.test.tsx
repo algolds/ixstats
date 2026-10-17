@@ -24,11 +24,7 @@ jest.mock("~/components/vault/DailyRewardProvider", () => ({
 }));
 // The statement and the showcase render for real; only their data and heavy art are stubbed.
 jest.mock("next/dynamic", () => () => () => null);
-jest.mock("~/components/cards/display/CardDisplay", () => ({
-  CardDisplay: ({ card }: { card: { title: string } }) => (
-    <div data-testid="gallery-card">{card.title}</div>
-  ),
-}));
+jest.mock("~/hooks/useCardSheet", () => ({ useCardSheet: () => ({ open: jest.fn() }) }));
 jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
   PackHolographicCover: () => <div />,
 }));
@@ -113,19 +109,30 @@ describe("Vault Wallet page", () => {
           },
         ],
       },
-      getMyTopCards: [
-        {
-          id: "o1",
-          cards: {
-            id: "c1",
+      getMyDisplay: {
+        showcase: null,
+        faces: [
+          {
+            cardId: "c1",
             title: "Ostrozava 1st Ed.",
             rarity: "LEGENDARY",
-            marketValue: 2400,
-            cardType: "NS_IMPORT",
+            cardType: "NS",
+            realm: {
+              id: "nationstates",
+              slug: "nationstates",
+              name: "NationStates",
+              crestUrl: null,
+              isSystem: true,
+            },
             artwork: "/art/c1.png",
+            silhouette: false,
+            number: null,
+            season: 1,
+            isRetired: false,
+            copy: { ownershipId: "o1", finish: "STANDARD", serialNumber: 1, level: 1 },
           },
-        },
-      ],
+        ],
+      },
       getMyPacks: {
         success: true,
         packs: [{ id: "up1", pack: { name: "Veteran", packType: "BASIC" } }],
@@ -191,12 +198,12 @@ describe("Vault Wallet page", () => {
     expect(slot(container, "vault-unlocks").querySelector("a")!.className).toContain("h-full");
   });
 
-  it("shows the real gallery card tiles in the showcase", () => {
+  it("shows the player's display in the showcase, as card faces", () => {
     const { container } = render(<VaultDashboardSection />);
-    const tiles = slot(container, "vault-showcase").querySelectorAll(
-      '[data-testid="gallery-card"]'
-    );
-    expect(Array.from(tiles).map((tile) => tile.textContent)).toEqual(["Ostrozava 1st Ed."]);
+    const faces = slot(container, "vault-showcase").querySelectorAll("[data-card-face]");
+    expect(Array.from(faces).map((face) => face.getAttribute("aria-label"))).toEqual([
+      "Ostrozava 1st Ed., Legendary, Standard, NationStates, season 1",
+    ]);
   });
 
   it("hides the achievements for a player with no unlock and none in reach", () => {

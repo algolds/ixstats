@@ -178,7 +178,7 @@ async function tiePlaces(
 }
 
 /** Wins, daily runner-ups and the current daily streak, counted from the tied places only. */
-function countPlaces(tied: TiedPlace[]): Omit<Trophies, "cards"> {
+function countPlaces(tied: TiedPlace[]): Omit<Trophies, "cards" | "holderHandle"> {
   const wins = { daily: 0, weekly: 0, monthly: 0 };
   let runnerUps = 0;
   const winDays: string[] = [];
@@ -211,6 +211,8 @@ export async function loadMyTrophies(
     unmatched,
     ...countPlaces(tied),
     cards,
+    // The viewer's own trophies open in Mine, through no holder.
+    holderHandle: null,
   };
 }
 

@@ -1,6 +1,11 @@
 /** @jest-environment node */
-/** cards.getSheet: parses `from`, ignores a malformed one, and checks showcases against the passport switch. */
-jest.mock("~/server/db", () => ({ db: {} }));
+/**
+ * cards.getSheet: parses `from`, ignores a malformed one, checks showcases against the passport switch, and finds a
+ * holder by the passport handle they show (`holderOf`, the real handle chain over a mocked database).
+ */
+jest.mock("~/server/db", () => ({
+  db: { user: { findUnique: jest.fn(), findFirst: jest.fn() } },
+}));
 jest.mock("~/lib/cards/hub/sheet", () => ({ loadCardSheet: jest.fn(async () => null) }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({
   loadPassportSettings: jest.fn(async () => ({ visibility: { vaultCards: false } })),
@@ -12,7 +17,8 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
-import { vaultVisible } from "~/server/api/routers/cards/_passport";
+import { holderOf, vaultVisible } from "~/server/api/routers/cards/_passport";
+import { db as serverDb } from "~/server/db";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
 import { getArticleIntro, getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
@@ -39,8 +45,19 @@ describe("cards.getSheet", () => {
     expect(passedDb).toBe(db);
     expect([viewer, card, options.from]).toEqual(["db_me", "c1", { kind: "showcase", id: "s1" }]);
     expect(options.rules.vaultVisible).toBe(vaultVisible);
+    expect(options.rules.holderOf).toBe(holderOf);
     await expect(options.rules.vaultVisible("owner")).resolves.toBe(false);
     expect(loadPassportSettings).toHaveBeenCalledWith("owner");
+  });
+
+  it("takes any passport handle as the holder, up to MediaWiki's 255 characters", async () => {
+    const caller = createCaller(createMockRouterContext({ db: createMockPrisma() }) as never);
+    await caller.getSheet({ cardId: "c1", from: "holder.Takatta Loa" });
+    await caller.getSheet({ cardId: "c1", from: `holder.${"x".repeat(255)}` });
+    expect(jest.mocked(loadCardSheet).mock.calls.map((call) => call[3].from)).toEqual([
+      { kind: "holder", handle: "Takatta Loa" },
+      { kind: "holder", handle: "x".repeat(255) },
+    ]);
   });
 
   it("drops a malformed or missing from", async () => {
@@ -59,7 +76,7 @@ describe("cards.getSheet", () => {
       code: "BAD_REQUEST",
     });
     await expect(caller.getSheet({ cardId: "" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(caller.getSheet({ cardId: "c1", from: "x".repeat(81) })).rejects.toMatchObject({
+    await expect(caller.getSheet({ cardId: "c1", from: "x".repeat(263) })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
     expect(loadCardSheet).not.toHaveBeenCalled();
@@ -73,6 +90,39 @@ describe("vaultVisible", () => {
     } as never);
     await expect(vaultVisible("u1")).resolves.toBe(true);
     expect(loadPassportSettings).toHaveBeenCalledWith("u1");
+  });
+});
+
+describe("holderOf", () => {
+  const users = jest.mocked(serverDb.user);
+
+  it("finds a holder with no stored handle by their forum name or their Clerk id", async () => {
+    users.findUnique.mockResolvedValue(null);
+    users.findFirst.mockResolvedValueOnce({ id: "u_forum" } as never);
+    await expect(holderOf("Helvianir")).resolves.toBe("u_forum");
+    expect(users.findFirst.mock.calls[0]![0]!.where!.OR).toEqual(
+      expect.arrayContaining([{ forumUsername: { equals: "Helvianir", mode: "insensitive" } }])
+    );
+    users.findFirst.mockResolvedValueOnce({ id: "u_clerk" } as never);
+    await expect(holderOf("user_2abcDEF345ghiJKL678mnoPQR90s")).resolves.toBe("u_clerk");
+    expect(users.findFirst.mock.calls[1]![0]!.where!.OR).toEqual(
+      expect.arrayContaining([{ clerkUserId: "user_2abcDEF345ghiJKL678mnoPQR90s" }])
+    );
+  });
+
+  it("finds a holder by their stored handle first", async () => {
+    users.findUnique.mockResolvedValueOnce({ id: "u_stored" } as never);
+    await expect(holderOf("ann")).resolves.toBe("u_stored");
+    expect(users.findUnique.mock.calls[0]![0].where).toEqual({ handle: "ann" });
+    expect(users.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("names nobody for a handle no player has, or when the lookup fails", async () => {
+    users.findUnique.mockResolvedValue(null);
+    users.findFirst.mockResolvedValueOnce(null);
+    await expect(holderOf("Takatta Loa")).resolves.toBeNull();
+    users.findFirst.mockRejectedValueOnce(new Error("database down"));
+    await expect(holderOf("Takatta Loa")).resolves.toBeNull();
   });
 });
 
