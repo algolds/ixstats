@@ -3,37 +3,43 @@
  * One-off: bring the cards from before the takedown queue into Compliance.
  *   1. Every NationStates takedown marker (`metadata.nsTakedown`) becomes a HIDDEN takedown, restorable from the flag.
  *   2. Every Lore card with art and no licence record gets one: UNKNOWN, or with --fetch the licence its wiki states
- *      (run --fetch on the production server: IIWiki answers only there). Each restricted one also gets a licence
- *      review takedown that hides its art, unless the card already has an active request.
+ *      (run --fetch on the production server: IIWiki answers only there).
+ *   3. Every restricted licence whose art still shows, and whose card has no active request, gets a licence review
+ *      takedown that hides the art. This step reads the database, so a re-run finishes what an earlier run left.
  *
  *   bun scripts/cards/backfill-card-compliance.ts                    # dry run: prints the counts, writes nothing
  *   bun scripts/cards/backfill-card-compliance.ts --apply            # write the takedowns and UNKNOWN records
  *   bun scripts/cards/backfill-card-compliance.ts --apply --fetch    # write the licences the wikis state
  *
- * Idempotent: a card with a takedown or a licence record is skipped.
+ * Idempotent: a card with an active takedown or a licence record is skipped.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { parseCardWikiSource, type CardWikiSource } from "~/lib/cards/card-sources";
 import { legacyTakedownRow, licenceBackfillRow } from "~/lib/cards/compliance-backfill";
 import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
-import { fileLicenceTakedowns } from "~/server/modules/cards/cards.compliance";
+import {
+  fileLicenceTakedowns,
+  type LicenceTakedownReport,
+} from "~/server/modules/cards/cards.compliance";
 
-const db = new PrismaClient();
-const APPLY = process.argv.includes("--apply");
-const FETCH = process.argv.includes("--fetch");
 const BATCH = 500;
 /** One throttled client per wiki for the whole run. */
 const FETCH_REQUEST_CAP = 10_000;
+/** A request that is waiting or hiding the art; a declined or restored one leaves the card to these steps. */
+const ACTIVE_REQUEST = {
+  status: { in: ["OPEN", "HIDDEN"] },
+} satisfies Prisma.CardTakedownWhereInput;
 
-async function backfillTakedowns() {
+/** Step 1: the takedown rows for old markers; written with `apply`. Returns how many there are. */
+export async function backfillTakedowns(db: PrismaClient, apply: boolean): Promise<number> {
   // Every hidden NS card was retired; a card a restore brought back has its marker cleared (legacyTakedownRow skips it)
   const cards = await db.card.findMany({
-    where: { isRetired: true, takedowns: { none: {} } },
+    where: { isRetired: true, takedowns: { none: ACTIVE_REQUEST } },
     select: { id: true, retiredAt: true, metadata: true },
   });
   const rows = cards.flatMap((card) => legacyTakedownRow(card) ?? []);
-  console.log(`${rows.length} NationStates takedowns to bring into the queue.`);
-  if (APPLY && rows.length > 0) await db.cardTakedown.createMany({ data: rows });
+  if (apply && rows.length > 0) await db.cardTakedown.createMany({ data: rows });
+  return rows.length;
 }
 
 /** The licence the file's wiki states, over the UNKNOWN row; the row as it was when the wiki gives nothing. */
@@ -63,7 +69,8 @@ async function withFetchedLicence(
   };
 }
 
-async function backfillLicences() {
+/** Step 2: a licence record for every Lore card with art and none; checked on its wiki with `fetchLicences`. */
+async function backfillLicences(db: PrismaClient, apply: boolean, fetchLicences: boolean) {
   const cards = await db.card.findMany({
     where: { cardType: "LORE", artwork: { not: null }, artLicence: { is: null } },
     select: { id: true, wikiSource: true, artwork: true },
@@ -73,8 +80,8 @@ async function backfillLicences() {
   console.log(
     `${rows.length} Lore cards with art and no licence record (${unnamed} whose art names no wiki file).`
   );
-  if (!APPLY) return;
-  if (FETCH) {
+  if (!apply) return;
+  if (fetchLicences) {
     const queries = new Map<CardWikiSource, ReturnType<typeof wikiQueryFor>>();
     const fetched: Prisma.CardArtLicenceCreateManyInput[] = [];
     for (const row of rows) fetched.push(await withFetchedLicence(row, queries));
@@ -86,27 +93,78 @@ async function backfillLicences() {
       skipDuplicates: true,
     });
   }
-  const restricted = rows.filter((row) => row.status === "RESTRICTED");
-  console.log(`Licence records written; ${restricted.length} restricted.`);
-  if (restricted.length === 0) return;
-  const { filed, skipped } = await fileLicenceTakedowns(
-    db,
-    restricted.map((row) => ({ cardId: row.cardId, licence: row.licence ?? null }))
-  );
-  console.log(
-    `${filed} restricted cards hidden by a licence review takedown; ${skipped} already had a request, listed in Compliance.`
-  );
+  const restricted = rows.filter((row) => row.status === "RESTRICTED").length;
+  console.log(`Licence records written; ${restricted} restricted.`);
+}
+
+/** Restricted licences whose art still shows, on cards no request is waiting on or hiding. */
+const RESTRICTED_ART_SHOWING = {
+  status: "RESTRICTED",
+  card: { artwork: { not: null }, takedowns: { none: ACTIVE_REQUEST } },
+} satisfies Prisma.CardArtLicenceWhereInput;
+
+/**
+ * Step 3: hide every restricted art that still shows, read from the database and paged by card id. Without `apply`,
+ * only counts them.
+ */
+export async function hideRestrictedArt(
+  db: PrismaClient,
+  apply: boolean,
+  pageSize = BATCH
+): Promise<LicenceTakedownReport & { pending: number }> {
+  const report: LicenceTakedownReport & { pending: number } = {
+    pending: 0,
+    filed: 0,
+    skipped: 0,
+    failed: [],
+  };
+  if (!apply) {
+    report.pending = await db.cardArtLicence.count({ where: RESTRICTED_ART_SHOWING });
+    return report;
+  }
+  let last = "";
+  for (;;) {
+    const page = await db.cardArtLicence.findMany({
+      where: { ...RESTRICTED_ART_SHOWING, cardId: { gt: last } },
+      orderBy: { cardId: "asc" },
+      take: pageSize,
+      select: { cardId: true, licence: true },
+    });
+    report.pending += page.length;
+    const result = await fileLicenceTakedowns(db, page);
+    report.filed += result.filed;
+    report.skipped += result.skipped;
+    report.failed.push(...result.failed);
+    if (page.length < pageSize) return report;
+    last = page[page.length - 1]!.cardId;
+  }
 }
 
 async function main() {
-  await backfillTakedowns();
-  await backfillLicences();
-  if (!APPLY) console.log("Dry run: nothing written. Re-run with --apply.");
+  const apply = process.argv.includes("--apply");
+  const db = new PrismaClient();
+  try {
+    const takedowns = await backfillTakedowns(db, apply);
+    console.log(`${takedowns} NationStates takedowns to bring into the queue.`);
+    await backfillLicences(db, apply, process.argv.includes("--fetch"));
+    const hidden = await hideRestrictedArt(db, apply);
+    console.log(
+      apply
+        ? `${hidden.filed} restricted cards hidden by a licence review takedown; ${hidden.skipped} already had a request.`
+        : `${hidden.pending} restricted cards whose art still shows, to hide.`
+    );
+    for (const { cardId, reason } of hidden.failed) {
+      console.error(`${cardId}: not hidden (${reason}). Re-run to try again.`);
+    }
+    if (!apply) console.log("Dry run: nothing written. Re-run with --apply.");
+  } finally {
+    await db.$disconnect();
+  }
 }
 
-main()
-  .catch((error) => {
+if (require.main === module) {
+  main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
-  })
-  .finally(() => void db.$disconnect());
+  });
+}

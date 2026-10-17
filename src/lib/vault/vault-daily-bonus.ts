@@ -165,23 +165,22 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
   );
 }
 
-/** The cards a daily claim can draw: approved, never a Loreward trophy or restricted-licence art. */
+/**
+ * The cards a daily claim can draw: live (a card whose art a takedown hid is retired), approved, never a Loreward
+ * trophy or restricted-licence art.
+ */
 const DAILY_POOL = {
+  isRetired: false,
   reviewState: "APPROVED",
   ...EXCLUDE_TROPHY_CARDS,
   ...EXCLUDE_RESTRICTED_ART,
 } as const;
 
-/** Random non-retired card from the pool, falling back to any pool card; null when none exist. */
+/** A random card from the pool; null when the pool is empty. */
 async function pickRandomCard(db: PrismaClient) {
-  const activeCount = await db.card.count({ where: { isRetired: false, ...DAILY_POOL } });
-  const total = activeCount > 0 ? activeCount : await db.card.count({ where: DAILY_POOL });
+  const total = await db.card.count({ where: DAILY_POOL });
   if (total === 0) return null;
-
-  return db.card.findFirst({
-    where: activeCount > 0 ? { isRetired: false, ...DAILY_POOL } : DAILY_POOL,
-    skip: Math.floor(Math.random() * total),
-  });
+  return db.card.findFirst({ where: DAILY_POOL, skip: Math.floor(Math.random() * total) });
 }
 
 /**

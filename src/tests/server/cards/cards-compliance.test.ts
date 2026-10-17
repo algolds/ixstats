@@ -681,7 +681,7 @@ describe("fileLicenceTakedowns", () => {
         { cardId: "card_1", licence: "CC BY-NC 4.0" },
         { cardId: "card_2", licence: null },
       ])
-    ).resolves.toEqual({ filed: 1, skipped: 1 });
+    ).resolves.toEqual({ filed: 1, skipped: 1, failed: [] });
 
     expect(db.$executeRaw).toHaveBeenCalledTimes(2);
     expect(db.cardTakedown.create).toHaveBeenCalledTimes(1);
@@ -697,10 +697,26 @@ describe("fileLicenceTakedowns", () => {
     ]);
   });
 
-  it("stops on any other failure", async () => {
+  it("counts any other failure and carries on with the next card", async () => {
     const db = mockDb();
+    db.card.findUnique.mockResolvedValueOnce(null).mockResolvedValue({ id: "card_2" });
+    db.cardTakedown.create.mockResolvedValue({ id: "td_lr" });
+    db.cardTakedown.findUnique.mockResolvedValue({
+      ...takedownOf({ artwork: ELM, isRetired: false }),
+      id: "td_lr",
+    });
+    db.cardTakedown.updateMany.mockResolvedValue({ count: 1 });
+
     await expect(
-      fileLicenceTakedowns(db as never, [{ cardId: "gone", licence: "CC BY-NC 4.0" }])
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      fileLicenceTakedowns(db as never, [
+        { cardId: "gone", licence: "CC BY-NC 4.0" },
+        { cardId: "card_2", licence: "CC BY-ND 4.0" },
+      ])
+    ).resolves.toEqual({
+      filed: 1,
+      skipped: 0,
+      failed: [{ cardId: "gone", reason: "Card not found" }],
+    });
+    expect(db.cardTakedown.create.mock.calls[0]![0].data).toMatchObject({ cardId: "card_2" });
   });
 });

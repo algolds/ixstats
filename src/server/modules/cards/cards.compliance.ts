@@ -152,15 +152,24 @@ export async function fileTakedown(
   return { takedownId };
 }
 
+export interface LicenceTakedownReport {
+  filed: number;
+  /** Cards that already had an active request. */
+  skipped: number;
+  /** Cards whose filing failed; each was rolled back and stays restricted with its art showing. */
+  failed: Array<{ cardId: string; reason: string }>;
+}
+
 /**
- * File a licence-review request and hide the art for each card a licence check found restricted (the backfill's
- * `--fetch`). A card that already has an active request is skipped and counted.
+ * File a licence-review request and hide the art for each card a licence check found restricted (the compliance
+ * backfill). A card that already has an active request is skipped; one card's failure is counted and never stops the
+ * rest.
  */
 export async function fileLicenceTakedowns(
   db: PrismaClient,
   cards: ReadonlyArray<{ cardId: string; licence: string | null }>
-): Promise<{ filed: number; skipped: number }> {
-  let filed = 0;
+): Promise<LicenceTakedownReport> {
+  const report: LicenceTakedownReport = { filed: 0, skipped: 0, failed: [] };
   for (const card of cards) {
     try {
       await fileTakedown(db, null, {
@@ -169,12 +178,16 @@ export async function fileLicenceTakedowns(
         reason: restrictedReason(card.licence),
         hideNow: true,
       });
-      filed += 1;
+      report.filed += 1;
     } catch (error) {
-      if (!(error instanceof TRPCError && error.message === ALREADY_ACTIVE)) throw error;
+      if (error instanceof TRPCError && error.message === ALREADY_ACTIVE) report.skipped += 1;
+      else {
+        const reason = error instanceof Error ? error.message : String(error);
+        report.failed.push({ cardId: card.cardId, reason });
+      }
     }
   }
-  return { filed, skipped: cards.length - filed };
+  return report;
 }
 
 export async function hideTakedownArt(
