@@ -1,6 +1,6 @@
 "use client";
 /** The cards admin (cards refresh spec §2.4): nine flat tabs, the active one in `?tab=`. */
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -34,6 +34,16 @@ export default function CardsPanel() {
   const [tab, setTab] = useState<CardsAdminTab>(() =>
     cardsAdminTabFromParam(searchParams.get("tab"), searchParams.get("subtab"))
   );
+
+  // Back and forward move between tabs, as the other single-page routers do.
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setTab(cardsAdminTabFromParam(params.get("tab"), params.get("subtab")));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const select = (value: string) => {
     const next = cardsAdminTabFromParam(value);

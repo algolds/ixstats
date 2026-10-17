@@ -24,34 +24,45 @@ describe("ReasonDialog", () => {
     expect(onConfirm).toHaveBeenCalledWith("duplicate grant");
   });
 
-  it("stays disabled while pending, and clears the reason when cancelled", () => {
+  it("stays disabled while pending, and asks the parent to close on Cancel", () => {
     const onOpenChange = jest.fn();
-    const { rerender } = render(
-      <ReasonDialog
-        open
-        onOpenChange={onOpenChange}
-        title="Void this trade"
-        description="Both sides get their cards back."
-        confirmLabel="Void"
-        pending
-        onConfirm={jest.fn()}
-      />
-    );
+    render(<VoidDialog open pending onOpenChange={onOpenChange} onConfirm={jest.fn()} />);
     fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "fraud" } });
     expect(screen.getByRole("button", { name: "Void" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    rerender(
-      <ReasonDialog
-        open
-        onOpenChange={onOpenChange}
-        title="Void this trade"
-        description="Both sides get their cards back."
-        confirmLabel="Void"
-        onConfirm={jest.fn()}
-      />
+  });
+
+  it("opens empty again after a confirmed action closes it", () => {
+    const onConfirm = jest.fn();
+    const { rerender } = render(
+      <VoidDialog open onOpenChange={() => undefined} onConfirm={onConfirm} />
     );
+    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "fraud ring" } });
+    fireEvent.click(screen.getByRole("button", { name: "Void" }));
+    expect(onConfirm).toHaveBeenCalledWith("fraud ring");
+
+    rerender(<VoidDialog open={false} onOpenChange={() => undefined} onConfirm={onConfirm} />);
+    rerender(<VoidDialog open onOpenChange={() => undefined} onConfirm={onConfirm} />);
     expect(screen.getByLabelText("Reason")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Void" })).toBeDisabled();
   });
 });
+
+/** The dialog as a trade void would open it. */
+function VoidDialog(props: {
+  open: boolean;
+  pending?: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (reason: string) => void;
+}) {
+  return (
+    <ReasonDialog
+      {...props}
+      title="Void this trade"
+      description="Both sides get their cards back."
+      confirmLabel="Void"
+    />
+  );
+}

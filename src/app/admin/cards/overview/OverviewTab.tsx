@@ -1,7 +1,7 @@
 "use client";
 /** Overview: card counts by type, rarity and realm, what waits on an admin, and the card-only activity feed. */
 import { Activity, Clock, Database, Download, WarningTriangle } from "iconoir-react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -14,9 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { useRelativeTime } from "~/hooks/useRelativeTime";
 import { CARD_TYPE_LABELS, RARITY_LABELS, labelOf } from "../shared/card-labels";
 
 const REFRESH_MS = 30_000;
+
+type Summary = RouterOutputs["cards"]["admin"]["overview"]["summary"];
+type FeedItem = RouterOutputs["cards"]["admin"]["overview"]["activity"][number];
 
 interface BreakdownRow {
   key: string;
@@ -24,16 +28,17 @@ interface BreakdownRow {
   count: number;
 }
 
-interface FeedItem {
-  id: string;
-  at: Date;
-  title: string;
-  detail: string | null;
-  ok: boolean;
-}
-
 /** A count, or "–" until it has loaded. */
 const figure = (value: number | undefined) => (value === undefined ? "–" : value.toLocaleString());
+
+/** What shows instead of a section whose query failed; the poll keeps retrying it. */
+function LoadError({ what }: { what: string }) {
+  return (
+    <p role="alert" className="text-destructive text-footnote">
+      {what} did not load. Retrying every 30 seconds.
+    </p>
+  );
+}
 
 function Breakdown({
   title,
@@ -73,8 +78,23 @@ function Breakdown({
   );
 }
 
-function ActivityFeed({ items }: { items: FeedItem[] | undefined }) {
-  if (!items) return null;
+/** How long ago, kept fresh by the minute; the exact time is in the tooltip. */
+function FeedTime({ at }: { at: Date }) {
+  const ago = useRelativeTime(at);
+  const when = new Date(at);
+  return (
+    <time
+      className="text-caption text-label-secondary"
+      dateTime={when.toISOString()}
+      title={when.toLocaleString()}
+    >
+      {ago}
+    </time>
+  );
+}
+
+function ActivityFeed({ items, failed }: { items: FeedItem[] | undefined; failed: boolean }) {
+  if (!items) return failed ? <LoadError what="Card activity" /> : null;
   if (items.length === 0) {
     return (
       <EmptyState
@@ -85,7 +105,7 @@ function ActivityFeed({ items }: { items: FeedItem[] | undefined }) {
     );
   }
   return (
-    <ul>
+    <ul data-content="feed">
       {items.map((item) => (
         <li key={item.id} className="flex items-start justify-between gap-3 py-3">
           <div className="min-w-0">
@@ -96,12 +116,7 @@ function ActivityFeed({ items }: { items: FeedItem[] | undefined }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {!item.ok && <Badge variant="destructive">Failed</Badge>}
-            <time
-              className="text-caption text-label-secondary"
-              dateTime={new Date(item.at).toISOString()}
-            >
-              {new Date(item.at).toLocaleString()}
-            </time>
+            <FeedTime at={item.at} />
           </div>
         </li>
       ))}
@@ -109,18 +124,10 @@ function ActivityFeed({ items }: { items: FeedItem[] | undefined }) {
   );
 }
 
-export function OverviewTab() {
-  const summary = api.cards.admin.overview.summary.useQuery(undefined, {
-    refetchInterval: REFRESH_MS,
-  });
-  const activity = api.cards.admin.overview.activity.useQuery(
-    { limit: 50 },
-    { refetchInterval: REFRESH_MS }
-  );
-  const data = summary.data;
-
+function SummarySection({ data, failed }: { data: Summary | undefined; failed: boolean }) {
+  if (!data && failed) return <LoadError what="Card counts" />;
   return (
-    <div className="space-y-6">
+    <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card padding="md">
           <Stat label="Cards" value={figure(data?.total)} icon={<Database />} />
@@ -160,13 +167,29 @@ export function OverviewTab() {
         />
         <Breakdown title="By realm" column="Realm" rows={data?.byRealm ?? []} />
       </div>
+    </>
+  );
+}
+
+export function OverviewTab() {
+  const summary = api.cards.admin.overview.summary.useQuery(undefined, {
+    refetchInterval: REFRESH_MS,
+  });
+  const activity = api.cards.admin.overview.activity.useQuery(
+    { limit: 50 },
+    { refetchInterval: REFRESH_MS }
+  );
+
+  return (
+    <div className="space-y-6">
+      <SummarySection data={summary.data} failed={summary.isError} />
 
       <Card content="feed">
         <CardHeader className="pt-5">
           <CardTitle icon={<Activity />}>Card activity</CardTitle>
         </CardHeader>
         <CardContent className="pb-5">
-          <ActivityFeed items={activity.data} />
+          <ActivityFeed items={activity.data} failed={activity.isError} />
         </CardContent>
       </Card>
     </div>

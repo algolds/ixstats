@@ -1,7 +1,7 @@
 /** The cards admin Overview (cards refresh spec §2.4): counts, what waits on an admin, and a card-only feed. */
 import type { CardImportJob, PrismaClient, SyncLog } from "@prisma/client";
 import { CardRarity } from "~/lib/cards/enums";
-import { CARD_AUDIT_PREFIXES, type CardAuditAction } from "./cards.audit";
+import { CARD_FEED_ACTIONS, type CardAuditAction } from "./cards.audit";
 
 export interface CountRow {
   key: string;
@@ -152,7 +152,7 @@ function syncItem(log: SyncLog): ActivityItem {
 export async function cardsActivity(db: PrismaClient, limit = 50): Promise<ActivityItem[]> {
   const [audits, jobs, syncs] = await Promise.all([
     db.auditLog.findMany({
-      where: { OR: CARD_AUDIT_PREFIXES.map((prefix) => ({ action: { startsWith: prefix } })) },
+      where: { action: { in: [...CARD_FEED_ACTIONS] } },
       orderBy: { timestamp: "desc" },
       take: limit,
     }),

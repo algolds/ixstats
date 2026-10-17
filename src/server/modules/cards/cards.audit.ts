@@ -1,6 +1,6 @@
 /**
  * The card admin's audit trail: one AuditLog row per admin action, naming the admin, the card (or job, pack or
- * player) and what happened. The Overview's activity feed reads these rows (actions starting CARD_ or TROPHY_).
+ * player) and what happened. The Overview's activity feed reads these rows (`CARD_FEED_ACTIONS`).
  */
 import type { Prisma } from "@prisma/client";
 
@@ -27,8 +27,17 @@ export const CARD_AUDIT_ACTIONS = [
 ] as const;
 export type CardAuditAction = (typeof CARD_AUDIT_ACTIONS)[number];
 
-/** The prefixes every card audit action starts with. */
-export const CARD_AUDIT_PREFIXES = ["CARD_", "TROPHY_"] as const;
+/** Card actions older code wrote before this trail (the designer mint, the Lore author backfill). */
+const LEGACY_CARD_AUDIT_ACTIONS = ["CARD_DESIGNER_MINT", "CARD_AUTHORS_BACKFILLED"] as const;
+
+/**
+ * Every action the Overview feed reads. An exact list rather than a `CARD_` prefix, because `action IN (...)` uses the
+ * AuditLog action index and a `LIKE 'CARD\_%'` does not under the database's collation.
+ */
+export const CARD_FEED_ACTIONS: readonly string[] = [
+  ...CARD_AUDIT_ACTIONS,
+  ...LEGACY_CARD_AUDIT_ACTIONS,
+];
 
 /** The admin acting: DB id for the rows they change, Clerk id for the audit row. */
 export interface CardAdminActor {

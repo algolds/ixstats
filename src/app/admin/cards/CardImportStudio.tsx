@@ -2,7 +2,7 @@
 // src/app/admin/cards/CardImportStudio.tsx
 // Unified Import Studio for Wiki Lore, NationStates Sync, and Commons Flags
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -13,44 +13,24 @@ import { NSImportSuiteAdmin } from "./NSImportSuiteAdmin";
 import { CommonsFlagImporterAdmin } from "./CommonsFlagImporterAdmin";
 import { Card } from "~/components/ui/card";
 
-export type ImportSubtab = "wiki" | "ns" | "flags";
+type ImportSubtab = "wiki" | "ns" | "flags";
 
-interface CardImportStudioProps {
-  initialSubtab?: ImportSubtab;
-  onSubtabChange?: (subtab: ImportSubtab) => void;
-}
-
-export function CardImportStudio({
-  initialSubtab = "wiki",
-  onSubtabChange,
-}: CardImportStudioProps) {
+export function CardImportStudio() {
   const searchParams = useSearchParams();
 
   const [activeSubtab, setActiveSubtabState] = useState<ImportSubtab>(() => {
     const urlSubtab = searchParams.get("subtab");
-    if (urlSubtab === "wiki" || urlSubtab === "lore") return "wiki";
     if (urlSubtab === "ns" || urlSubtab === "nationstates" || urlSubtab === "import") return "ns";
     if (urlSubtab === "flags" || urlSubtab === "commons") return "flags";
-    return initialSubtab;
+    return "wiki";
   });
-
-  // Sync state if initialSubtab changes
-  useEffect(() => {
-    if (initialSubtab) {
-      setActiveSubtabState(initialSubtab);
-    }
-  }, [initialSubtab]);
 
   const setActiveSubtab = (subtab: ImportSubtab) => {
     setActiveSubtabState(subtab);
-    if (onSubtabChange) {
-      onSubtabChange(subtab);
-    } else {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", "imports");
-      url.searchParams.set("subtab", subtab);
-      window.history.pushState({}, "", url.toString());
-    }
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", "imports");
+    url.searchParams.set("subtab", subtab);
+    window.history.pushState({}, "", url.toString());
   };
 
   // Live stat badges for subtabs

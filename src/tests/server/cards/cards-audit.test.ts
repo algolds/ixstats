@@ -3,7 +3,7 @@
 import { adminActor } from "~/server/api/routers/cards/admin/_actor";
 import {
   CARD_AUDIT_ACTIONS,
-  CARD_AUDIT_PREFIXES,
+  CARD_FEED_ACTIONS,
   recordCardAudit,
 } from "~/server/modules/cards/cards.audit";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -44,11 +44,16 @@ describe("recordCardAudit", () => {
     expect(data.details).toHaveLength(1000);
   });
 
-  it("names every action with one of the feed's prefixes", () => {
-    const offenders = CARD_AUDIT_ACTIONS.filter(
-      (action) => !CARD_AUDIT_PREFIXES.some((prefix) => action.startsWith(prefix))
+  it("feeds every action the trail writes, plus the two older card actions, once each", () => {
+    expect(CARD_FEED_ACTIONS).toEqual(
+      expect.arrayContaining([
+        ...CARD_AUDIT_ACTIONS,
+        "CARD_DESIGNER_MINT",
+        "CARD_AUTHORS_BACKFILLED",
+      ])
     );
-    expect(offenders).toEqual([]);
+    expect(CARD_FEED_ACTIONS).toHaveLength(CARD_AUDIT_ACTIONS.length + 2);
+    expect(new Set(CARD_FEED_ACTIONS).size).toBe(CARD_FEED_ACTIONS.length);
   });
 });
 

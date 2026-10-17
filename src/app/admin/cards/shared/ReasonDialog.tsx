@@ -1,6 +1,6 @@
 "use client";
 /** A confirmation that asks for a reason, which the action records in the audit trail. */
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -34,23 +34,22 @@ export function ReasonDialog({
   pending = false,
   onConfirm,
 }: ReasonDialogProps) {
+  const fieldId = useId();
   const [reason, setReason] = useState("");
   const trimmed = reason.trim();
-  const close = (next: boolean) => {
-    if (!next) setReason("");
-    onOpenChange(next);
-  };
+  // Each opening starts empty, however the last one ended (cancel, dismiss, or the parent closing it on success).
+  useEffect(() => setReason(""), [open]);
   return (
-    <Dialog open={open} onOpenChange={close}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="reason-dialog-reason">Reason</Label>
+          <Label htmlFor={fieldId}>Reason</Label>
           <Textarea
-            id="reason-dialog-reason"
+            id={fieldId}
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             maxLength={500}
@@ -58,7 +57,7 @@ export function ReasonDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="secondary" onClick={() => close(false)}>
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button

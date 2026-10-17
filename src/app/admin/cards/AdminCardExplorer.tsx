@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import type { Card as CardRow, CardRarity } from "@prisma/client";
@@ -22,29 +22,18 @@ import { Card } from "~/components/ui/card";
 
 const PAGE_SIZE = 25;
 
-interface AdminCardExplorerProps {
-  initialCategory?: LoreCategory | "all";
-}
-
-export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorerProps = {}) {
+export function AdminCardExplorer() {
   const notify = useNotify();
 
   const [search, setSearch] = useState("");
   const [cardTypeFilter, setCardTypeFilter] = useState<CardTypeFilter>("all");
-  const [categoryFilter, setCategoryFilter] = useState<LoreCategory | "all">(initialCategory);
+  const [categoryFilter, setCategoryFilter] = useState<LoreCategory | "all">("all");
   const [cteFilter, setCteFilter] = useState<"all" | "cte_only" | "active_only">("all");
   const [takedownFilter, setTakedownFilter] = useState<"all" | "visible" | "takedown">("all");
   const [season, setSeason] = useState<number | "all">("all");
   const [rarity, setRarity] = useState<CardRarity | "all">("all");
   const [sortBy, setSortBy] = useState<SortByOption>("recent");
   const [offset, setOffset] = useState(0);
-
-  // Sync category filter if initialCategory changes
-  useEffect(() => {
-    if (initialCategory) {
-      setCategoryFilter(initialCategory);
-    }
-  }, [initialCategory]);
 
   // 3D Card Modal Viewer state
   const [selectedCardForViewer, setSelectedCardForViewer] = useState<CardInstance | null>(null);

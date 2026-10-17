@@ -10,6 +10,7 @@ import {
   findCards,
   realmOptions,
 } from "~/server/modules/cards/cards.overview";
+import { CARD_AUDIT_ACTIONS } from "~/server/modules/cards/cards.audit";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -156,7 +157,7 @@ describe("cardsActivity", () => {
     expect(db.auditLog.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          OR: [{ action: { startsWith: "CARD_" } }, { action: { startsWith: "TROPHY_" } }],
+          action: { in: [...CARD_AUDIT_ACTIONS, "CARD_DESIGNER_MINT", "CARD_AUTHORS_BACKFILLED"] },
         },
       })
     );
