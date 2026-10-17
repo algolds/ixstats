@@ -37,6 +37,7 @@ const stored = (card: Record<string, unknown>, copies = 0) => ({
   isBound: false,
   rewardAchievementKey: null,
   artwork: null,
+  wikiSource: null,
   artLicence: null,
   _count: { CardOwnership: copies, takedowns: 0 },
   ...card,
@@ -169,6 +170,50 @@ describe("saveSpecialCard", () => {
     await expect(edit(art)).resolves.toEqual({ id: "card_1" });
     db.card.findUnique.mockResolvedValue(stored({ _count: { CardOwnership: 0, takedowns: 1 } }));
     await expect(edit(null)).resolves.toEqual({ id: "card_1" });
+  });
+
+  it("takes the licence row and credit with new art, and drops the row with the art, as the Library does", async () => {
+    const db = mockDb();
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    const edit = (artwork: string | null) =>
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...event, id: "card_1", artwork })
+      );
+    const art = "https://ixwiki.com/images/gala.png";
+
+    db.card.findUnique.mockResolvedValue(stored({}));
+    await edit(art);
+    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({
+      artwork: art,
+      artworkCredit: null,
+    });
+    expect(db.cardArtLicence.upsert.mock.calls[0]![0]).toMatchObject({
+      where: { cardId: "card_1" },
+      update: {
+        wiki: "ixwiki",
+        status: "UNKNOWN",
+        fileUrl: art,
+        note: "Art changed in the Designer",
+      },
+    });
+    expect(db.cardArtLicence.upsert.mock.invocationCallOrder[0]).toBeGreaterThan(
+      db.card.update.mock.invocationCallOrder[0]!
+    );
+
+    db.card.findUnique.mockResolvedValue(stored({ artwork: art }));
+    await edit(null);
+    expect(db.card.update.mock.calls[1]![0].data).toMatchObject({
+      artwork: null,
+      artworkCredit: null,
+    });
+    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledWith({ where: { cardId: "card_1" } });
+
+    await edit(art);
+    expect(db.card.update.mock.calls[2]![0].data).not.toHaveProperty("artworkCredit");
+    expect(db.cardArtLicence.upsert).toHaveBeenCalledTimes(1);
+    expect(db.cardArtLicence.deleteMany).toHaveBeenCalledTimes(1);
   });
 
   it("refuses to edit a card that is gone or not a Special card", async () => {

@@ -38,6 +38,8 @@ export async function backfillTakedowns(db: PrismaClient, apply: boolean): Promi
     select: { id: true, retiredAt: true, metadata: true },
   });
   const rows = cards.flatMap((card) => legacyTakedownRow(card) ?? []);
+  // These HIDDEN rows are written without the card takedown lock (7335) every app hide takes, which the Library edit
+  // relies on. That is safe for this one-off runbook step: the cards are already hidden and artless.
   if (apply && rows.length > 0) await db.cardTakedown.createMany({ data: rows });
   return rows.length;
 }

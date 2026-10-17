@@ -14,7 +14,12 @@ import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
-import { HIDDEN_TAKEDOWNS, assertArtNotHeld, lockCardTakedownsTx } from "./cards.compliance";
+import {
+  HIDDEN_TAKEDOWNS,
+  artLicenceFollowsTx,
+  assertArtNotHeld,
+  lockCardTakedownsTx,
+} from "./cards.compliance";
 
 export const SpecialCardSchema = z
   .object({
@@ -97,6 +102,7 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
       isBound: true,
       rewardAchievementKey: true,
       artwork: true,
+      wikiSource: true,
       artLicence: { select: { status: true } },
       _count: { select: { CardOwnership: true, takedowns: HIDDEN_TAKEDOWNS } },
     },
@@ -105,12 +111,14 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
   return card;
 }
 
+type EditedSpecialCard = Awaited<ReturnType<typeof editedCard>>;
+
 /**
  * An old seed row waits for the import, which alone gives it a kind. Once players hold copies, the kind, binding and
  * achievement stay: binding lives on the card, so unbinding one would free every copy at once. Art a takedown or a
  * restricted licence hides is changed only from Compliance.
  */
-function assertEditable(card: Awaited<ReturnType<typeof editedCard>>, input: SpecialCardInput) {
+function assertEditable(card: EditedSpecialCard, input: SpecialCardInput) {
   if (awaitsSpecialCardImport(card)) {
     throw refused("Run the Special card import before editing this card.");
   }
@@ -130,6 +138,23 @@ function assertRewardAchievement(key: string | null, storedKey: string | null) {
   if (key && key !== storedKey && !rewardAchievementOptions().some((option) => option.id === key)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "No such achievement" });
   }
+}
+
+/** An edit's write. New art takes its licence row and credit with it, as in the Library. */
+async function updateSpecialCardTx(
+  tx: Prisma.TransactionClient,
+  card: EditedSpecialCard,
+  data: Prisma.CardUncheckedUpdateInput,
+  artwork: string | null
+) {
+  const artChanged = artwork !== card.artwork;
+  const updated = await tx.card.update({
+    where: { id: card.id },
+    data: artChanged ? { ...data, artworkCredit: null } : data,
+    select: { id: true },
+  });
+  if (artChanged) await artLicenceFollowsTx(tx, card, artwork, "Designer");
+  return updated;
 }
 
 /** Creates a Special card, approved because an admin made it, or edits one in place (its season and type stay). */
@@ -155,7 +180,7 @@ export async function saveSpecialCard(
       if (existing) assertEditable(existing, input);
       assertRewardAchievement(input.rewardAchievementKey, existing?.rewardAchievementKey ?? null);
       const card = existing
-        ? await tx.card.update({ where: { id: existing.id }, data, select: { id: true } })
+        ? await updateSpecialCardTx(tx, existing, data, input.artwork)
         : await tx.card.create({
             data: {
               ...data,

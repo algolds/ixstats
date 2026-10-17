@@ -7,14 +7,19 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { EXCLUDE_RESTRICTED_ART, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
-import { cardWikiSourceSchema, parseCardWikiSource } from "~/lib/cards/card-sources";
+import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
+import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
-import { HIDDEN_TAKEDOWNS, assertArtNotHeld, lockCardTakedownsTx } from "./cards.compliance";
+import {
+  HIDDEN_TAKEDOWNS,
+  artLicenceFollowsTx,
+  assertArtNotHeld,
+  lockCardTakedownsTx,
+} from "./cards.compliance";
 
 export const LibraryFilterSchema = z.object({
   realmId: z.string().min(1).max(100).optional(),
@@ -81,7 +86,7 @@ function changeWhere(filter: LibraryFilter, asOf: Date, retired: boolean): Prism
 /**
  * The Library as of one moment, `asOf`: cards made later are left out of the page and the counts alike. `hideable`
  * and `unhideable` count what each bulk change would change; it sends `asOf` and its count back, so it acts on
- * exactly the cards the admin was shown.
+ * exactly the cards the admin was shown. With no filter both are 0, as bulk changes need one.
  */
 export async function listLibrary(
   db: PrismaClient,
@@ -89,6 +94,9 @@ export async function listLibrary(
 ) {
   const asOf = new Date();
   const where = shownWhere(input.filter, asOf);
+  const bulkable = filterScope(input.filter) !== "";
+  const changing = (retired: boolean) =>
+    bulkable ? db.card.count({ where: changeWhere(input.filter, asOf, retired) }) : 0;
   const [rows, total, hideable, unhideable] = await Promise.all([
     db.card.findMany({
       where,
@@ -115,8 +123,8 @@ export async function listLibrary(
       },
     }),
     db.card.count({ where }),
-    db.card.count({ where: changeWhere(input.filter, asOf, true) }),
-    db.card.count({ where: changeWhere(input.filter, asOf, false) }),
+    changing(true),
+    changing(false),
   ]);
   return { rows, total, hideable, unhideable, asOf };
 }
@@ -208,41 +216,6 @@ function wordsAndArt(card: EditedCard, input: LibraryEdit) {
 }
 
 /**
- * The licence row describes the card's art file, so it follows an art change: new art waits in Licence review as
- * unknown, named by its file when it is on the card's own wiki, and a card with no art has no row.
- */
-async function artLicenceFollowsTx(
-  tx: Prisma.TransactionClient,
-  card: EditedCard,
-  artwork: string | null
-) {
-  if (artwork === null) {
-    await tx.cardArtLicence.deleteMany({ where: { cardId: card.id } });
-    return;
-  }
-  const wiki = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
-  const licence = {
-    wiki,
-    status: "UNKNOWN" as const,
-    fileUrl: artwork,
-    fileTitle: fileNameFromArtworkUrl(artwork, wiki),
-    descriptionUrl: null,
-    licence: null,
-    licenceUrl: null,
-    artist: null,
-    attribution: null,
-    reviewedBy: null,
-    reviewedAt: null,
-    note: "Art changed in the Library",
-  };
-  await tx.cardArtLicence.upsert({
-    where: { cardId: card.id },
-    create: { cardId: card.id, ...licence },
-    update: licence,
-  });
-}
-
-/**
  * Edit one card: its words, art, rarity (with a reason, re-priced and audited) and whether it is hidden. It runs
  * under the card's takedown lock, which every hide takes, so the hold it reads stands until it commits; the write
  * holds only over the art, visibility and rarity it read, which a bulk hide or a sync may change meanwhile.
@@ -275,6 +248,9 @@ export async function updateLibraryCard(
     }
     if (Object.keys(data).length === 0) return;
 
+    // No `takedowns none HIDDEN` term: every hide in the app holds the lock this edit holds. The one exception is the
+    // compliance backfill (scripts/cards/backfill-card-compliance.ts), a one-off runbook step that writes HIDDEN rows
+    // without it, for cards already hidden and artless.
     const written = await tx.card.updateMany({
       where: { id: card.id, artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
       data,
@@ -285,7 +261,7 @@ export async function updateLibraryCard(
         message: "This card changed while you edited it. Reload and try again.",
       });
     }
-    if (edited.includes("art")) await artLicenceFollowsTx(tx, card, input.artwork);
+    if (edited.includes("art")) await artLicenceFollowsTx(tx, card, input.artwork, "Library");
     const audit = (action: "CARD_RARITY_OVERRIDE" | "CARD_UPDATE" | "CARD_HIDE", details: string) =>
       recordCardAudit(tx, { action, actor: actor.clerkId, target: card.id, details });
     if (rarityChanged) {

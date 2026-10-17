@@ -108,6 +108,16 @@ describe("listLibrary", () => {
   });
 });
 
+describe("listLibrary with no filter", () => {
+  it("counts no bulk change, which needs a filter, and skips both counts", async () => {
+    const db = createMockPrisma();
+    db.card.count.mockResolvedValue(70_000);
+    const page = await listLibrary(db as never, { filter: filter({}), offset: 0, limit: 50 });
+    expect(page).toMatchObject({ total: 70_000, hideable: 0, unhideable: 0 });
+    expect(db.card.count).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("updateLibraryCard", () => {
   interface Stored {
     id: string;

@@ -7,6 +7,8 @@
  */
 import type { CardLicenceStatus, CardTakedownOrigin, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
+import { parseCardWikiSource } from "~/lib/cards/card-sources";
 import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
 import { takedownDueAt } from "~/lib/cards/takedown-deadline";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
@@ -67,6 +69,43 @@ export function assertArtNotHeld(card: HoldCheckedCard): void {
         "A takedown or a restricted licence hides this card's art. Change it from Compliance.",
     });
   }
+}
+
+/**
+ * The licence row describes the card's art file, so it follows an art change made in the Library or the Designer:
+ * new art waits in Licence review as unknown, named by its file when it is on the card's own wiki, and a card with no
+ * art has no row. The caller holds the card's takedown lock and has checked no hold stands.
+ */
+export async function artLicenceFollowsTx(
+  tx: Tx,
+  card: { id: string; wikiSource: string | null },
+  artwork: string | null,
+  changedIn: "Library" | "Designer"
+): Promise<void> {
+  if (artwork === null) {
+    await tx.cardArtLicence.deleteMany({ where: { cardId: card.id } });
+    return;
+  }
+  const wiki = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
+  const licence = {
+    wiki,
+    status: "UNKNOWN" as const,
+    fileUrl: artwork,
+    fileTitle: fileNameFromArtworkUrl(artwork, wiki),
+    descriptionUrl: null,
+    licence: null,
+    licenceUrl: null,
+    artist: null,
+    attribution: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    note: `Art changed in the ${changedIn}`,
+  };
+  await tx.cardArtLicence.upsert({
+    where: { cardId: card.id },
+    create: { cardId: card.id, ...licence },
+    update: licence,
+  });
 }
 
 /** The card's active request. The caller holds the card's takedown lock. */
