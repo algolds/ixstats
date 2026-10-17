@@ -132,6 +132,18 @@ describe("syncCurrentWinners", () => {
     });
   });
 
+  it("keeps a kept wikios> name's null page when the page's line names another holder", async () => {
+    store([storedEntry({ id: "d1", winnerUser: "wikios>Kir Republic", winnerPage: null })]);
+    jest
+      .mocked(parseOOLPage)
+      .mockReturnValue([fromPage({ winnerUser: "Urcea", winnerPage: "Isurians" })]);
+
+    await syncCurrentWinners(true);
+
+    // Isurians is Urcea's page, not Kir Republic's: it would pay the label's edits to someone else's article.
+    expect(places(rows[0])).toMatchObject({ winnerUser: "wikios>Kir Republic", winnerPage: null });
+  });
+
   it("still takes the page's plain names, and its own wikios> names, everywhere else", async () => {
     store([
       storedEntry({
