@@ -1,14 +1,14 @@
 /**
  * Lore Card Generation Cron Job
  *
- * Runs daily to automatically generate LORE cards from IxWiki and IIWiki articles.
- * Generates 10-20 cards per day (5-10 from each wiki) based on quality scoring.
+ * Runs daily to stage LORE cards from random IxWiki and IIWiki articles that have an image. Every card
+ * goes through the importer (cards.importer.ts): rarity from the rarity engine, PENDING review, art licence
+ * recorded. Up to 20 cards per wiki per day.
  *
  * Schedule: Daily at 2:00 AM UTC
  *
  * Features:
  * - Multi-wiki support (IxWiki + IIWiki)
- * - Quality filtering (minimum score threshold)
  * - Duplicate prevention
  * - Balanced wiki sourcing (50/50 split)
  * - Comprehensive logging
@@ -20,8 +20,14 @@
  */
 
 import { db } from "~/server/db";
-import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import type { CardArticleSource } from "~/lib/cards/card-sources";
+import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
+import { DiscoveryStopped } from "~/lib/realms/sources/wiki-discovery-client";
+import {
+  oneOffImportContext,
+  stageArticleCard,
+  type StageOutcome,
+} from "~/server/modules/cards/cards.importer";
 
 /**
  * Generation result for monitoring
@@ -36,7 +42,6 @@ interface LoreCardGenerationResult {
   duration: number;
   timestamp: Date;
   rarityBreakdown: Record<string, number>;
-  categoryBreakdown: Record<string, number>;
 }
 
 /**
@@ -46,16 +51,16 @@ const GENERATION_CONFIG = {
   // Target cards per wiki per day
   targetPerWiki: 20,
 
-  // Minimum quality score to generate a card. Image presence + the stub-length floor
-  // in generateCard are the real gate; quality only drives rarity, so keep this low.
-  minQualityScore: 1,
-
   // Maximum attempts per wiki
   maxAttempts: 30,
 
-  // Timeout per card generation (ms)
-  generationTimeout: 10000,
+  // Random articles asked for per attempt
+  articlesPerAttempt: 5,
 };
+
+// Licence reads per wiki: at most two (file info, then the File page) for every article a run looks at.
+const LICENCE_REQUESTS_PER_WIKI =
+  GENERATION_CONFIG.maxAttempts * GENERATION_CONFIG.articlesPerAttempt * 2;
 
 /**
  * Main daily lore card generation function
@@ -76,7 +81,6 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
     duration: 0,
     timestamp: new Date(),
     rarityBreakdown: {},
-    categoryBreakdown: {},
   };
 
   try {
@@ -90,9 +94,6 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
     for (const [rarity, count] of Object.entries(ixwikiResults.rarityBreakdown)) {
       result.rarityBreakdown[rarity] = (result.rarityBreakdown[rarity] || 0) + count;
     }
-    for (const [category, count] of Object.entries(ixwikiResults.categoryBreakdown)) {
-      result.categoryBreakdown[category] = (result.categoryBreakdown[category] || 0) + count;
-    }
 
     // Generate cards from IIWiki
     const iiwikiResults = await generateCardsFromWiki("iiwiki", GENERATION_CONFIG.targetPerWiki);
@@ -103,9 +104,6 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
     // Merge breakdowns
     for (const [rarity, count] of Object.entries(iiwikiResults.rarityBreakdown)) {
       result.rarityBreakdown[rarity] = (result.rarityBreakdown[rarity] || 0) + count;
-    }
-    for (const [category, count] of Object.entries(iiwikiResults.categoryBreakdown)) {
-      result.categoryBreakdown[category] = (result.categoryBreakdown[category] || 0) + count;
     }
 
     result.generated = result.ixwikiCount + result.iiwikiCount;
@@ -118,8 +116,7 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
         `  Generated: ${result.generated} cards (IxWiki: ${result.ixwikiCount}, IIWiki: ${result.iiwikiCount})\n` +
         `  Failed: ${result.failed}\n` +
         `  Duration: ${(result.duration / 1000).toFixed(2)}s\n` +
-        `  Rarity breakdown: ${JSON.stringify(result.rarityBreakdown)}\n` +
-        `  Category breakdown: ${JSON.stringify(result.categoryBreakdown)}`
+        `  Rarity breakdown: ${JSON.stringify(result.rarityBreakdown)}`
     );
 
     if (result.errors.length > 0) {
@@ -143,35 +140,38 @@ export async function generateDailyLoreCards(): Promise<LoreCardGenerationResult
   }
 }
 
-/**
- * Generate cards from a specific wiki
- */
-async function generateCardsFromWiki(
-  wikiSource: WikiSource,
-  targetCount: number
-): Promise<{
+/** One wiki's run. */
+interface WikiRunResult {
   generated: number;
   failed: number;
   errors: string[];
   rarityBreakdown: Record<string, number>;
-  categoryBreakdown: Record<string, number>;
-}> {
+}
+
+/** Adds one article's outcome to the run: a staged card, or a failure (a skip or a block is neither). */
+function tally(result: WikiRunResult, articleTitle: string, outcome: StageOutcome): void {
+  if (outcome.status === "STAGED") {
+    result.generated++;
+    result.rarityBreakdown[outcome.rarity] = (result.rarityBreakdown[outcome.rarity] || 0) + 1;
+  } else if (outcome.status === "FAILED") {
+    const message = `Failed to stage "${articleTitle}": ${outcome.reason}`;
+    result.failed++;
+    result.errors.push(message);
+    console.error(`[Lore Card Cron] ${message}`);
+  }
+}
+
+/**
+ * Stage cards from a specific wiki; a wiki that stops answering (the article reads or the licence reads) ends its run
+ */
+async function generateCardsFromWiki(
+  wikiSource: CardArticleSource,
+  targetCount: number
+): Promise<WikiRunResult> {
   console.log(`[Lore Card Cron] Generating ${targetCount} cards from ${wikiSource}...`);
 
-  const result: {
-    generated: number;
-    failed: number;
-    errors: string[];
-    rarityBreakdown: Record<string, number>;
-    categoryBreakdown: Record<string, number>;
-  } = {
-    generated: 0,
-    failed: 0,
-    errors: [],
-    rarityBreakdown: {},
-    categoryBreakdown: {},
-  };
-
+  const result: WikiRunResult = { generated: 0, failed: 0, errors: [], rarityBreakdown: {} };
+  const context = await oneOffImportContext(db, wikiSource, LICENCE_REQUESTS_PER_WIKI);
   let attempts = 0;
 
   while (result.generated < targetCount && attempts < GENERATION_CONFIG.maxAttempts) {
@@ -179,8 +179,8 @@ async function generateCardsFromWiki(
 
     try {
       // Fetch random articles
-      const articleTitles = await wikiLoreCardGenerator.fetchRandomArticlesWithImages(
-        5,
+      const articleTitles = await loreCardDiscovery.fetchRandomArticlesWithImages(
+        GENERATION_CONFIG.articlesPerAttempt,
         wikiSource
       );
 
@@ -192,59 +192,20 @@ async function generateCardsFromWiki(
       // Process each article
       for (const articleTitle of articleTitles) {
         if (result.generated >= targetCount) break;
-
-        try {
-          // Generate card with timeout
-          const candidate = await Promise.race([
-            wikiLoreCardGenerator.generateCard(articleTitle, wikiSource, { requireImage: true }),
-            new Promise<null>((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Generation timeout")),
-                GENERATION_CONFIG.generationTimeout
-              )
-            ),
-          ]);
-
-          if (!candidate) {
-            // Card already exists or article not suitable
-            continue;
-          }
-
-          // Check quality threshold
-          if (candidate.qualityScore < GENERATION_CONFIG.minQualityScore) {
-            console.log(
-              `[Lore Card Cron] Skipping "${articleTitle}" - quality score ${candidate.qualityScore.toFixed(1)} ` +
-                `below threshold ${GENERATION_CONFIG.minQualityScore}`
-            );
-            continue;
-          }
-
-          // Create card in database
-          await wikiLoreCardGenerator.createCard(candidate);
-
-          result.generated++;
-
-          // Track breakdowns
-          result.rarityBreakdown[candidate.rarity] =
-            (result.rarityBreakdown[candidate.rarity] || 0) + 1;
-          result.categoryBreakdown[candidate.category] =
-            (result.categoryBreakdown[candidate.category] || 0) + 1;
-
-          console.log(
-            `[Lore Card Cron] ✓ Generated ${candidate.rarity} card: "${candidate.title}" ` +
-              `(${wikiSource}, quality: ${candidate.qualityScore.toFixed(1)})`
-          );
-        } catch (error) {
-          result.failed++;
-          const errorMsg = `Failed to generate card for "${articleTitle}": ${error}`;
-          result.errors.push(errorMsg);
-          console.error(`[Lore Card Cron] ${errorMsg}`);
-        }
+        const outcome = await stageArticleCard(
+          db,
+          wikiSource,
+          { title: articleTitle, requestedBy: null, jobId: null, requireImage: true },
+          context
+        );
+        tally(result, articleTitle, outcome);
       }
     } catch (error) {
-      const errorMsg = `Error fetching articles from ${wikiSource}: ${error}`;
+      const errorMsg = `Error staging cards from ${wikiSource}: ${error}`;
       result.errors.push(errorMsg);
       console.error(`[Lore Card Cron] ${errorMsg}`);
+      if (error instanceof DiscoveryStopped) break;
+      result.failed++;
     }
   }
 

@@ -59,7 +59,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             title: card.name,
             rarity: card.rarity as CardRarity,
             cardType: card.cardType as CardType,
-            artwork: card.artwork ?? "/default-card-artwork.png",
+            artwork: card.artwork ?? "/images/cards/lore-placeholder.svg",
             season: card.season,
           }));
 

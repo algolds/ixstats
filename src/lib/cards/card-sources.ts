@@ -29,6 +29,11 @@ export function parseCardWikiSource(value: string | null | undefined): CardWikiS
   return CARD_WIKI_SOURCES.find((source) => source === value) ?? null;
 }
 
+/** A stored article source; null for Commons or anything else (never a fallback to IxWiki). */
+export function parseCardArticleSource(value: string | null | undefined): CardArticleSource | null {
+  return CARD_ARTICLE_SOURCES.find((source) => source === value) ?? null;
+}
+
 export function cardSourceLabel(source: CardWikiSource): string {
   if (source === "ixwiki") return "IxWiki";
   if (source === "commons") return "Wikimedia Commons";

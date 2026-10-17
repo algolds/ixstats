@@ -5,6 +5,8 @@ import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
+import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
+import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import { CardRarity, CardType } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
@@ -337,31 +339,13 @@ export const loreCardsWikiRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const candidate = await wikiLoreCardGenerator.generateCard(
-        input.articleTitle,
-        input.wikiSource as any
-      );
-
-      if (!candidate) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Could not generate lore card for "${input.articleTitle}". Article not found or incomplete.`,
-        });
-      }
-
-      if (input.targetRarity) {
-        candidate.rarity = input.targetRarity;
-      }
-
-      if (input.category) {
-        candidate.category = input.category;
-      }
-
-      if (input.artworkUrl) {
-        candidate.artwork = input.artworkUrl;
-      }
-
-      const cardId = await wikiLoreCardGenerator.createCard(candidate);
+      // Rarity comes from the rarity engine and the card waits in review (cards refresh §2.1), so the input's
+      // rarity, category and artwork are no longer applied.
+      const card = await stageForAdmin(ctx.db, input.wikiSource, {
+        title: input.articleTitle,
+        requestedBy: ctx.user.id,
+        jobId: null,
+      });
 
       // Record Audit Log
       await Promise.allSettled([
@@ -370,8 +354,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
             userId: ctx.auth?.userId || "admin",
             action: "LORE_CARD_MINT",
             entityType: "CARD",
-            target: cardId,
-            details: `Minted lore card "${candidate.title}" (Rarity: ${candidate.rarity}, Category: ${candidate.category}) from ${input.wikiSource}`,
+            target: card.cardId,
+            details: `Staged lore card "${input.articleTitle}" (Rarity: ${card.rarity}) from ${input.wikiSource}, pending review`,
             success: true,
           },
         }),
@@ -379,10 +363,9 @@ export const loreCardsWikiRouter = createTRPCRouter({
 
       return {
         success: true,
-        cardId,
-        title: candidate.title,
-        rarity: candidate.rarity,
-        category: candidate.category,
+        cardId: card.cardId,
+        title: input.articleTitle,
+        rarity: card.rarity,
       };
     }),
 
@@ -580,7 +563,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
         "Error searching wiki categories",
         { categories: [], source: input.source },
         async () => {
-          const categories = await wikiLoreCardGenerator.searchCategories(
+          const categories = await loreCardDiscovery.searchCategories(
             input.prefix,
             input.source,
             input.limit
@@ -601,15 +584,12 @@ export const loreCardsWikiRouter = createTRPCRouter({
       })
     )
     .query(({ input }) => {
-      const noStats: Awaited<ReturnType<typeof wikiLoreCardGenerator.getCategoriesInfo>> = {};
+      const noStats: Awaited<ReturnType<typeof loreCardDiscovery.getCategoriesInfo>> = {};
       return orFallback(
         "Error getting category stats",
         { stats: noStats, source: input.source },
         async () => {
-          const stats = await wikiLoreCardGenerator.getCategoriesInfo(
-            input.categories,
-            input.source
-          );
+          const stats = await loreCardDiscovery.getCategoriesInfo(input.categories, input.source);
           return { stats, source: input.source };
         }
       );
@@ -633,7 +613,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
         { titles: [], category: input.category, source: input.source, count: 0 },
         async () => {
           const cleanCat = input.category.replace(/^category:\s*/i, "").trim();
-          const titles = await wikiLoreCardGenerator.fetchCategoryMembers(
+          const titles = await loreCardDiscovery.fetchCategoryMembers(
             cleanCat,
             input.source,
             input.limit,
@@ -659,7 +639,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
         "Error fetching all main namespace pages",
         { titles: [], source: input.source, count: 0 },
         async () => {
-          const titles = await wikiLoreCardGenerator.fetchAllMainNamespacePages(
+          const titles = await loreCardDiscovery.fetchAllMainNamespacePages(
             input.source,
             input.limit
           );

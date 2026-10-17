@@ -132,7 +132,9 @@ async function loadAuthorFacts(articleIds: readonly string[]): Promise<Map<strin
     // Neither are anonymous (IP) editors or hidden users credited by name: MediaWiki's contributor list leaves
     // them out.
     if (group.author && !group.userDeleted && !isAnonymousAuthor(group.author)) {
-      facts.get(group.articleId)?.contributors.push({ name: group.author, edits: group._count._all });
+      facts
+        .get(group.articleId)
+        ?.contributors.push({ name: group.author, edits: group._count._all });
     }
   }
   for (const entry of facts.values()) {
@@ -145,7 +147,9 @@ async function loadAuthorFacts(articleIds: readonly string[]): Promise<Map<strin
  * The credit of each published page among `titles`, under every spelling a caller may ask it by
  * (the title as given, canonical, lower-cased, with spaces or underscores).
  */
-export async function ixwikiAuthorInfo(titles: readonly string[]): Promise<Map<string, CardAuthorInfo>> {
+export async function ixwikiAuthorInfo(
+  titles: readonly string[]
+): Promise<Map<string, CardAuthorInfo>> {
   const result = new Map<string, CardAuthorInfo>();
   const byCanonical = canonicalTitles(titles);
   if (byCanonical.size === 0) return result;
@@ -202,9 +206,10 @@ export interface IxwikiArticle {
   images: Array<{ title: string }>;
   /** The URL of the page's lead picture, or of the first illustration it uses; undefined when none. */
   image: string | undefined;
+  /** The lead picture's file name ("Flag.svg") when the card shows it (`image`), else null. */
+  imageFile: string | null;
   /** Pages that link here, counted up to 500. */
   inboundLinks: number;
-  lastModified: Date;
   authorInfo: CardAuthorInfo;
 }
 
@@ -214,11 +219,11 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
   if (!canon) return null;
   const article = await db.wikiArticle.findFirst({
     where: { source: "ixwiki", title: canon.title, status: "PUBLISHED" },
-    select: { id: true, title: true, wikitext: true, updatedAt: true },
+    select: { id: true, title: true, wikitext: true },
   });
   if (!article) return null;
 
-  const [categories, imageLinks, inboundLinks, newest, facts] = await Promise.all([
+  const [categories, imageLinks, inboundLinks, facts] = await Promise.all([
     db.wikiCategoryMember.findMany({
       where: { articleId: article.id },
       orderBy: { category: { name: "asc" } },
@@ -237,11 +242,6 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
         sourceArticle: { source: "ixwiki", status: "PUBLISHED" },
       },
     }),
-    db.wikiRevision.findFirst({
-      where: { articleId: article.id, parked: false },
-      orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
-    }),
     loadAuthorFacts([article.id]),
   ]);
 
@@ -252,6 +252,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
   const files = linked.filter((name) => visible.has(name));
   const leadFile = (named && visible.has(named) ? named : undefined) ?? firstIllustration(files);
   const urls = await ixwikiImageUrls(leadFile ? [leadFile] : []);
+  const image = leadFile ? urls.get(leadFile) : undefined;
   const entry = facts.get(article.id) ?? { earliest: [], contributors: [] };
 
   return {
@@ -260,9 +261,10 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
     extract: cleanWikitextExcerpt(article.wikitext, CARD_EXTRACT_CHARS),
     categories: categories.map((member) => ({ title: `Category:${member.category.name}` })),
     images: files.map((name) => ({ title: `File:${name}` })),
-    image: leadFile ? urls.get(leadFile) : undefined,
+    image,
+    // Named only for art the card shows: the importer reads its licence.
+    imageFile: image && leadFile ? leadFile : null,
     inboundLinks: Math.min(inboundLinks, MAX_BACKLINKS),
-    lastModified: newest?.createdAt ?? article.updatedAt,
     authorInfo: buildCardAuthorInfo(entry.earliest, entry.contributors),
   };
 }
@@ -329,7 +331,9 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
   const members = await loadCategoryNames(rows.map((row) => row.id));
   const named = new Map(rows.map((row) => [row.id, extractLeadImageFileName(row.head)]));
   // A lead picture whose `File:` page WikiOS deleted is not shown.
-  const visible = new Set(await withoutArchivedFiles([...new Set([...named.values()].flatMap((f) => f ?? []))]));
+  const visible = new Set(
+    await withoutArchivedFiles([...new Set([...named.values()].flatMap((f) => f ?? []))])
+  );
   const leadFiles = new Map(
     [...named].map(([id, file]) => [id, file && visible.has(file) ? file : undefined])
   );
@@ -376,19 +380,15 @@ export async function ixwikiMainNamespaceTitles(limit: number): Promise<string[]
 }
 
 /**
- * `count` random published main-namespace pages that are not redirects. With `withImage`, only pages
- * whose text names a lead picture count (a few times `count` are looked at to find enough).
+ * `count` random published main-namespace pages that are not redirects and whose text names a lead picture
+ * (a few times `count` are looked at to find enough).
  */
-export async function ixwikiRandomTitles(
-  count: number,
-  { withImage }: { withImage: boolean }
-): Promise<string[]> {
-  const pool = withImage ? Math.min(count * IMAGE_POOL_FACTOR, MAX_IMAGE_POOL) : count;
+export async function ixwikiRandomTitles(count: number): Promise<string[]> {
+  const pool = Math.min(count * IMAGE_POOL_FACTOR, MAX_IMAGE_POOL);
   // The random pick is made on ids alone, then joined back for the start of the text: `left()` on every
   // page before the sort took over a second on 6,000 pages. The outer ORDER BY keeps the pick's random order.
   const rows = await db.$queryRaw<Array<{ title: string; head: string }>>`
-    SELECT a."title" AS "title",
-           ${withImage ? Prisma.sql`left(a."wikitext", ${PREVIEW_HEAD_CHARS}::int)` : Prisma.sql`''`} AS "head"
+    SELECT a."title" AS "title", left(a."wikitext", ${PREVIEW_HEAD_CHARS}::int) AS "head"
     FROM (
       SELECT p."id" AS "id", random() AS "r"
       FROM wiki_articles p
@@ -399,6 +399,8 @@ export async function ixwikiRandomTitles(
     ) picked
     JOIN wiki_articles a ON a."id" = picked."id"
     ORDER BY picked."r"`;
-  const picked = withImage ? rows.filter((row) => extractLeadImageFileName(row.head)) : rows;
-  return picked.slice(0, count).map((row) => row.title);
+  return rows
+    .filter((row) => extractLeadImageFileName(row.head))
+    .slice(0, count)
+    .map((row) => row.title);
 }

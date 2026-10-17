@@ -7,9 +7,15 @@ import type { CardAuthorInfo } from "~/types/cards-display";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
+import {
+  DiscoveryStopped,
+  type DiscoveryStop,
+  type DiscoveryStopKind,
+} from "~/lib/realms/sources/wiki-discovery-client";
+import { cardSourceLabel, type CardWikiSource } from "~/lib/cards/card-sources";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 
-export type MwPage = MediaWikiPageItem & { original?: { source?: string } };
+export type MwPage = MediaWikiPageItem & { original?: { source?: string }; pageimage?: string };
 export type RevisionUser = { user: string; timestamp: string };
 
 /** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
@@ -26,6 +32,69 @@ export function mwQuery(
     headers: { "User-Agent": getWikiUserAgent(wikiSource) },
     ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
   });
+}
+
+/** An `action=query` answer: its pages, its backlinks, or the API's error. */
+export interface MwQueryResponse {
+  query?: { pages?: Record<string, MwPage>; backlinks?: Array<{ title: string }> };
+  error?: { code?: string; info?: string };
+}
+
+/** The HTTP answers that mean the wiki will not serve this run: a refusal, and a rate limit. */
+const STOPPING_STATUSES = new Map<number, DiscoveryStopKind>([
+  [403, "blocked"],
+  [429, "rate-limited"],
+]);
+
+/** What a wiki that stopped answering did, for people: the wiki's label once, in sentence case. */
+export function stoppedWikiMessage(
+  source: CardWikiSource,
+  stop: Pick<DiscoveryStop, "kind" | "status">
+): string {
+  const label = cardSourceLabel(source);
+  if (stop.status !== null && stop.status >= 400) {
+    return `${label} stopped answering (HTTP ${stop.status}).`;
+  }
+  if (stop.kind !== "blocked") return `${label} stopped answering.`;
+  // A refusal with no HTTP error is the API's `readapidenied`; one with an OK status is a challenge page.
+  return stop.status === null
+    ? `${label} does not allow reading its pages.`
+    : `${label} answered with a web page instead of data.`;
+}
+
+function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | null): never {
+  throw new DiscoveryStopped({
+    kind,
+    status,
+    message: stoppedWikiMessage(source, { kind, status }),
+  });
+}
+
+/**
+ * The JSON of a wiki's answer. A refusal (HTTP 403, or the API's `readapidenied`), a rate limit (HTTP 429), or an
+ * answer that is not data (a Cloudflare challenge page) means the wiki will not serve this run: DiscoveryStopped.
+ * Any other HTTP error, or another API error, throws. An error answer's body is let go unread.
+ */
+export async function mwJson(response: Response, wikiSource: WikiSource): Promise<MwQueryResponse> {
+  const label = cardSourceLabel(wikiSource);
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    const kind = STOPPING_STATUSES.get(response.status);
+    if (kind) stopped(wikiSource, kind, response.status);
+    throw new Error(`${label} answered HTTP ${response.status}.`);
+  }
+  const body = await response.text();
+  let data: MwQueryResponse;
+  try {
+    data = JSON.parse(body) as MwQueryResponse;
+  } catch {
+    return stopped(wikiSource, "blocked", response.status);
+  }
+  if (data.error?.code === "readapidenied") stopped(wikiSource, "blocked", null);
+  if (data.error) {
+    throw new Error(`${label} answered with an error: ${data.error.info ?? data.error.code}`);
+  }
+  return data;
 }
 
 /** The first page of an `action=query` response's `pages` map. */

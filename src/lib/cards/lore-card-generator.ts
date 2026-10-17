@@ -1,46 +1,39 @@
 /**
- * Wiki Lore Card Generator Service
- *
- * Automatically generates LORE-type cards from IxWiki and IIWiki articles.
- * Uses quality scoring to determine rarity and generates card metadata.
- *
- * Features:
- * - Multi-wiki support (IxWiki + IIWiki)
- * - Quality-based rarity calculation
- * - Category detection (Historical Figures, Locations, Events, Artifacts, Culture)
- * - Image extraction from infoboxes/articles
- * - Summary generation
- * - Duplicate prevention
+ * The lore-card generator: reads a wiki article into a card candidate (summary, excerpt, lead image and its file
+ * name, category, quality signals and score, author credit), and previews many articles cheaply for discovery.
+ * IxWiki's articles come from Postgres once WikiOS v1 is on; a sister wiki's from its MediaWiki API. It mints
+ * nothing: the importer (src/server/modules/cards/cards.importer.ts) decides rarity, realm, licence and review.
  *
  * Usage:
- *   import { wikiLoreCardGenerator } from '~/lib/wiki-lore-card-generator';
- *   const card = await wikiLoreCardGenerator.generateCard('Article_Title', 'ixwiki');
+ *   import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
+ *   const candidate = await wikiLoreCardGenerator.generateCard("Article_Title", "ixwiki");
  */
 
 import { db } from "~/server/db";
-import { CardType, CardRarity, Prisma } from "@prisma/client";
-import { getCurrentIxCardSeason } from "./season";
+import type { CardRarity } from "@prisma/client";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
-import { CategoryService } from "~/lib/wiki-os/core/category-service";
-import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
-import type {
-  MediaWikiPageItem,
-  MediaWikiCategoryItem,
-  MediaWikiAllCategoriesItem,
-} from "~/lib/wiki-os/types";
+import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
-import { isUniqueViolation } from "~/lib/prisma-error";
 import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
-import { LoreCategory, type LoreCategory as LoreCategoryType } from "./category-enums";
+import type { LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
-import { articleHomeRealm } from "./home-realm";
-import { canonicalArticleTitle } from "./legacy-mapping";
+import { fileNameFromArtworkUrl } from "./art-licence";
+import { cardSourceLabel, type CardArticleSource } from "./card-sources";
+import { ArticleRejected, type LoreCardCandidate } from "./lore-card-candidate";
+import { readsPostgres } from "./lore-card-discovery";
+import {
+  DEFAULT_RARITY_THRESHOLDS,
+  qualityScore,
+  rarityForScore,
+  type ArticleSignals,
+} from "./rarity-engine";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 import {
   buildAuthorInfo,
   firstPage,
+  mwJson,
   mwQuery,
   pickCreator,
   type MwPage,
@@ -48,40 +41,13 @@ import {
 } from "./lore-card-mediawiki";
 import {
   ixwikiAuthorInfo,
-  ixwikiCategoryTitles,
   ixwikiImageUrls,
-  ixwikiMainNamespaceTitles,
-  ixwikiRandomTitles,
   loadIxwikiArticle,
   loadIxwikiPreviews,
 } from "./lore-card-ixwiki";
 
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
-
-interface ArticleQuality {
-  length: number;
-  referenceCount: number;
-  inboundLinks: number;
-  categoryCount: number;
-  hasInfobox: boolean;
-  isFeatured: boolean;
-  lastModified: Date;
-}
-
-interface LoreCardCandidate {
-  title: string;
-  description: string;
-  fullExcerpt: string;
-  artwork: string;
-  rarity: CardRarity;
-  wikiSource: string;
-  wikiArticleTitle: string;
-  wikiUrl: string;
-  category: LoreCategoryType;
-  qualityScore: number;
-  authorInfo?: CardAuthorInfo;
-}
 
 /** Lightweight article metadata for discovery/preview (no full generateCard fetch). */
 interface ArticleMetadataPreview {
@@ -98,10 +64,24 @@ interface ArticleMetadataPreview {
   authorInfo?: CardAuthorInfo | null;
 }
 
+/** An article as the generator reads it: MediaWiki's page plus what it derived, or the same fields from Postgres. */
+interface ArticleData extends MwPage {
+  /** Wikitext without templates or references. */
+  text: string;
+  rawText: string;
+  image?: string;
+  imageFile?: string | null;
+  inboundLinks: number;
+  authorInfo?: CardAuthorInfo;
+}
+
 // Stub floor: an article must have at least this many cleaned-text chars to become a card.
 // Image presence is the primary gate; this just skips near-empty stubs.
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
+
+/** How long one read of a sister wiki may take; a hung answer fails the article, not the run. */
+const WIKI_READ_TIMEOUT_MS = 10_000;
 
 /** Lookup keys an article title may be requested under (raw, lowercase, spaced, underscored). */
 const titleKeys = (title: string | undefined, underscored = false) =>
@@ -116,105 +96,71 @@ const titleKeys = (title: string | undefined, underscored = false) =>
 
 const FILE_IMAGE = /\.(jpe?g|png|svg)$/;
 const NON_ARTICLE_IMAGE = /icon|flag|logo/;
-
-const RARITY_THRESHOLDS: Array<[minScore: number, rarity: CardRarity]> = [
-  [96, CardRarity.LEGENDARY],
-  [81, CardRarity.EPIC],
-  [61, CardRarity.ULTRA_RARE],
-  [41, CardRarity.RARE],
-  [21, CardRarity.UNCOMMON],
-];
-
-const BASE_MARKET_VALUE: Record<string, number> = {
-  [CardRarity.COMMON]: 5,
-  [CardRarity.UNCOMMON]: 15,
-  [CardRarity.RARE]: 40,
-  [CardRarity.ULTRA_RARE]: 100,
-  [CardRarity.EPIC]: 250,
-  [CardRarity.LEGENDARY]: 600,
-};
+/** A file name without its `File:` (or `Image:`) namespace. */
+const withoutFileNamespace = (name: string) => name.replace(/^(File|Image):/i, "");
 
 const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
 const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
 
-/** IxWiki card data: from Postgres once WikiOS v1 is on, from MediaWiki before it (v1-switch.ts). */
-const readsPostgres = (wikiSource: WikiSource) => wikiSource === "ixwiki" && isWikiosV1Enabled();
-
 class WikiLoreCardGenerator {
-  /** Generate a lore card candidate from a wiki article; throws a descriptive error when it can't. */
+  /** An article read into a card candidate; throws ArticleRejected when the page cannot become a card. */
   async generateCard(
     articleTitle: string,
-    wikiSource: WikiSource,
-    options?: { requireImage?: boolean }
-  ): Promise<LoreCardCandidate | null> {
-    try {
-      console.log(`[Lore Card Generator] Generating card for "${articleTitle}" from ${wikiSource}`);
-
-      const articleData = await this.fetchArticleData(articleTitle, wikiSource);
-      if (!articleData) {
-        throw new Error(
-          `Article "${articleTitle}" was not found or could not be loaded from ${wikiSource}.`
-        );
-      }
-      if (options?.requireImage && !articleData.image) {
-        throw new Error(
-          `Article "${articleTitle}" has no usable images (image requirement enabled).`
-        );
-      }
-      if (await this.checkCardExists(articleTitle, wikiSource)) {
-        throw new Error(
-          `A lore card for "${articleTitle}" (${wikiSource}) already exists in the collection.`
-        );
-      }
-
-      const quality = this.analyzeArticleQuality(articleData);
-
-      // Minimal floor: skip near-empty stubs (image is the gate, this drops one-liners)
-      if (quality.length < MIN_ARTICLE_LENGTH) {
-        throw new Error(
-          `Article "${articleTitle}" is too short (${quality.length} chars; minimum is ${MIN_ARTICLE_LENGTH} chars).`
-        );
-      }
-
-      const qualityScore = this.calculateQualityScore(quality);
-      const rarity = this.determineRarity(qualityScore);
-      const category = this.detectCategory(articleData);
-
-      // Short summary for the card face, longer excerpt for the lore tab
-      const rawExcerpt = articleData.extract || articleData.text || "";
-
-      const candidate: LoreCardCandidate = {
-        title: articleTitle.replace(/_/g, " "),
-        description: this.generateSummary(rawExcerpt),
-        fullExcerpt: rawExcerpt.slice(0, 2000).trim(),
-        artwork: articleData.image || "/images/cards/lore-placeholder.svg",
-        rarity,
-        wikiSource,
-        wikiArticleTitle: articleTitle,
-        wikiUrl: wikiReaderPath(articleTitle, wikiSource),
-        category,
-        qualityScore,
-        authorInfo: articleData.authorInfo as CardAuthorInfo | undefined,
-      };
-
-      console.log(
-        `[Lore Card Generator] Generated ${rarity} card for "${articleTitle}" ` +
-          `(quality: ${qualityScore.toFixed(1)}, category: ${category})`
+    wikiSource: CardArticleSource,
+    options: { requireImage?: boolean; minLength?: number } = {}
+  ): Promise<LoreCardCandidate> {
+    const articleData = await this.fetchArticleData(articleTitle, wikiSource);
+    if (!articleData) {
+      throw new ArticleRejected(
+        "missing",
+        `"${articleTitle}" was not found on ${cardSourceLabel(wikiSource)}.`
       );
-      return candidate;
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error generating card for "${articleTitle}":`, error);
-      throw error;
     }
+    if (options.requireImage && !articleData.image) {
+      throw new ArticleRejected("no-image", `"${articleTitle}" has no usable image.`);
+    }
+    const signals = this.analyzeArticleQuality(articleData);
+    const minLength = options.minLength ?? MIN_ARTICLE_LENGTH;
+    if (signals.length < minLength) {
+      throw new ArticleRejected(
+        "too-short",
+        `"${articleTitle}" is too short (${signals.length} characters; the minimum is ${minLength}).`
+      );
+    }
+    // Short summary for the card face, longer excerpt for the lore tab
+    const rawExcerpt = articleData.extract || articleData.text || "";
+    return {
+      title: articleTitle.replace(/_/g, " "),
+      description: this.generateSummary(rawExcerpt),
+      fullExcerpt: rawExcerpt.slice(0, 2000).trim(),
+      artwork: articleData.image ?? null,
+      imageFile: articleData.imageFile ?? null,
+      wikiSource,
+      wikiArticleTitle: articleTitle,
+      wikiUrl: wikiReaderPath(articleTitle, wikiSource),
+      category: this.detectCategory(articleData),
+      signals,
+      qualityScore: qualityScore(signals),
+      authorInfo: articleData.authorInfo,
+    };
   }
 
-  /** Article content, infobox, featured image, backlinks and author info from the wiki API. */
-  private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
+  /**
+   * Article content, featured image, backlinks and author info from the wiki API; null for a page that is not a card's
+   * source (deleted in WikiOS, missing, or an invalid title). A failed read of the page, its image's address or its
+   * backlinks throws, and a refusing wiki throws DiscoveryStopped (mwJson), so a refused read never makes a card
+   * without its art. Only the author lookup answers "none" when it fails.
+   */
+  private async fetchArticleData(
+    title: string,
+    wikiSource: CardArticleSource
+  ): Promise<ArticleData | null> {
     if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
-    try {
-      // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
-      if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
-      const response = await mwQuery(wikiSource, {
+    // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
+    if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
+    const response = await mwQuery(
+      wikiSource,
+      {
         titles: title,
         prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
         exchars: "2000", // first ~2000 chars for the full excerpt
@@ -228,82 +174,64 @@ class WikiLoreCardGenerator {
         rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
         imlimit: "10",
         pclimit: "10", // up to 10 contributors
-      });
-      if (!response.ok) {
-        throw new Error(
-          `MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`
-        );
-      }
-
-      const data = await response.json();
-      if (!data.query?.pages) throw new Error(`MediaWiki response contained no page data.`);
-
-      const page = firstPage<MwPage & { invalidreason?: string }>(data)!;
-      if (page.missing !== undefined) {
-        throw new Error(
-          `Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`
-        );
-      }
-      if (page.invalid !== undefined) {
-        throw new Error(
-          `Article title "${title}" is invalid: ${page.invalidreason || "bad characters"}`
-        );
-      }
-
-      const wikitext = page.revisions?.[0]?.["*"] || "";
-      const infoboxData = this.parseInfobox(wikitext);
-
-      const featuredImage = await this.resolveFeaturedImage(page, infoboxData, wikiSource);
-
-      const backlinksResponse = await mwQuery(wikiSource, {
-        list: "backlinks",
-        bltitle: title,
-        bllimit: "500",
-      });
-      const inboundLinks = backlinksResponse.ok
-        ? (await backlinksResponse.json()).query?.backlinks?.length || 0
-        : 0;
-
-      return {
-        ...page,
-        authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
-        text: this.removeTemplates(wikitext),
-        rawText: wikitext,
-        image: featuredImage,
-        infobox: infoboxData,
-        categories: page.categories || [],
-        links: page.links || [],
-        images: page.images || [],
-        inboundLinks,
-        lastModified: page.revisions?.[0]?.timestamp
-          ? new Date(page.revisions[0].timestamp)
-          : new Date(),
-        url: page.fullurl,
-      };
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching article "${title}":`, error);
-      return null;
+      },
+      WIKI_READ_TIMEOUT_MS
+    );
+    const data = await mwJson(response, wikiSource);
+    if (!data.query?.pages) {
+      throw new Error(`${cardSourceLabel(wikiSource)} answered with no page data.`);
     }
+    const page = firstPage<MwPage>(data);
+    if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
+
+    const wikitext = page.revisions?.[0]?.["*"] || "";
+    const featured = await this.resolveFeaturedImage(page, this.parseInfobox(wikitext), wikiSource);
+
+    const backlinks = await mwJson(
+      await mwQuery(
+        wikiSource,
+        { list: "backlinks", bltitle: title, bllimit: "500" },
+        WIKI_READ_TIMEOUT_MS
+      ),
+      wikiSource
+    );
+    const inboundLinks = backlinks.query?.backlinks?.length ?? 0;
+
+    return {
+      ...page,
+      authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
+      text: this.removeTemplates(wikitext),
+      rawText: wikitext,
+      image: featured?.url,
+      imageFile: featured?.file ?? null,
+      categories: page.categories || [],
+      links: page.links || [],
+      images: page.images || [],
+      inboundLinks,
+    };
   }
 
-  /** Featured image: the page image, else the infobox image, else the first real image in the article. */
+  /** The featured image and its file: the page image, else the infobox image, else the first real image. */
   private async resolveFeaturedImage(
     page: MwPage,
     infobox: Record<string, string>,
-    wikiSource: WikiSource
-  ): Promise<string | undefined> {
-    if (page.original?.source) return page.original.source;
+    wikiSource: CardArticleSource
+  ): Promise<{ url: string; file: string | null } | undefined> {
+    if (page.original?.source) {
+      const url = page.original.source;
+      return { url, file: page.pageimage ?? fileNameFromArtworkUrl(url, wikiSource) };
+    }
     if (infobox.image) {
       const url = await this.getImageUrl(infobox.image, wikiSource);
-      if (url) return url;
+      if (url) return { url, file: withoutFileNamespace(infobox.image) };
     }
     const firstImage = page.images?.find((img: { title?: string }) => {
       const filename = img.title?.toLowerCase() || "";
       return !NON_ARTICLE_IMAGE.test(filename) && FILE_IMAGE.test(filename);
     });
-    return firstImage?.title
-      ? ((await this.getImageUrl(firstImage.title, wikiSource)) ?? undefined)
-      : undefined;
+    if (!firstImage?.title) return undefined;
+    const url = await this.getImageUrl(firstImage.title, wikiSource);
+    return url ? { url, file: withoutFileNamespace(firstImage.title) } : undefined;
   }
 
   /** Creator: earliest non-bot editor, else the first non-bot editor among the fetched revisions. */
@@ -343,9 +271,9 @@ class WikiLoreCardGenerator {
   /**
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    * Used for discovery/preview so we don't run the full generateCard fetch per article
-   * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity reuse
-   * the real scorers with the cheap signals available here; the exact score is recomputed
-   * in generateCard at actual generation time.
+   * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity use the
+   * rarity engine and the source's default rarity table with the cheap signals available here;
+   * the importer scores the article again, against the tuned table, at import time.
    */
   async fetchArticleMetadataBatch(
     requestedTitles: string[],
@@ -380,7 +308,12 @@ class WikiLoreCardGenerator {
           .filter((p) => !p.missing)
           .map((p) => {
             const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
-            return this.toMetadataPreview(p, valuationCfg, authorsMap.get(titleKey) || null);
+            return this.toMetadataPreview(
+              p,
+              wikiSource,
+              valuationCfg,
+              authorsMap.get(titleKey) || null
+            );
           });
       } catch (e) {
         console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
@@ -402,22 +335,11 @@ class WikiLoreCardGenerator {
   }
 
   /** A published IxWiki page's card data, from Postgres (MediaWiki is not asked); null when missing or deleted. */
-  private async fetchIxwikiArticleData(title: string) {
-    try {
-      const article = await loadIxwikiArticle(title);
-      if (!article) return null;
-      const { wikitext, ...rest } = article;
-      return {
-        ...rest,
-        text: this.removeTemplates(wikitext),
-        rawText: wikitext,
-        infobox: this.parseInfobox(wikitext),
-        links: [],
-      };
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error reading article "${title}":`, error);
-      return null;
-    }
+  private async fetchIxwikiArticleData(title: string): Promise<ArticleData | null> {
+    const article = await loadIxwikiArticle(title);
+    if (!article) return null;
+    const { wikitext, ...rest } = article;
+    return { ...rest, text: this.removeTemplates(wikitext), rawText: wikitext, links: [] };
   }
 
   /** Previews of published IxWiki pages from Postgres, in the order asked. */
@@ -436,6 +358,7 @@ class WikiLoreCardGenerator {
           categories: page.categories,
           original: page.imageUrl ? { source: page.imageUrl } : undefined,
         },
+        "ixwiki",
         valuationCfg,
         authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
       )
@@ -444,22 +367,22 @@ class WikiLoreCardGenerator {
 
   private toMetadataPreview(
     page: MediaWikiPageItem & { extract?: string; length?: number },
+    wikiSource: WikiSource,
     cfg: CardValuationConfig,
     authorInfo?: CardAuthorInfo | null
   ): ArticleMetadataPreview {
     const extract: string = page.extract || "";
     const length: number = page.length ?? extract.length;
     const categoryCount: number = page.categories?.length ?? 0;
-    const estimatedQuality = this.calculateQualityScore({
+    const estimatedQuality = qualityScore({
       length,
       referenceCount: 0,
       inboundLinks: 0,
       categoryCount,
       hasInfobox: length > 4000,
       isFeatured: false,
-      lastModified: new Date(),
     });
-    const estimatedRarity = this.determineRarity(estimatedQuality);
+    const estimatedRarity = rarityForScore(estimatedQuality, DEFAULT_RARITY_THRESHOLDS[wikiSource]);
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -545,142 +468,6 @@ class WikiLoreCardGenerator {
     return resultMap;
   }
 
-  /** Page titles from a paged `list=` query, up to `limit`. */
-  private async listAll(
-    wikiSource: WikiSource,
-    params: Record<string, string>,
-    listKey: string,
-    continueKey: string,
-    limit: number
-  ): Promise<string[]> {
-    const titles: string[] = [];
-    let cont: string | undefined;
-    do {
-      try {
-        const res = await mwQuery(
-          wikiSource,
-          { ...params, ...(cont && { [continueKey]: cont }) },
-          12000
-        );
-        if (!res.ok) {
-          console.error(`[Lore Card Generator] ${params.list} error: ${res.status}`);
-          break;
-        }
-        const data = await res.json();
-        for (const m of data.query?.[listKey] ?? []) {
-          if (m.title) titles.push(m.title as string);
-        }
-        cont = data.continue?.[continueKey];
-      } catch (e) {
-        console.error(`[Lore Card Generator] ${params.list} fetch failed:`, e);
-        break;
-      }
-    } while (cont && titles.length < limit);
-    return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
-  }
-
-  /** List page titles in a live wiki category (namespace-0 pages and files, with paging). */
-  fetchCategoryMembers(
-    category: string,
-    wikiSource: WikiSource,
-    limit = 10000,
-    type: "page" | "file" | "page|file" = "page|file"
-  ): Promise<string[]> {
-    if (readsPostgres(wikiSource)) {
-      const kinds: Array<"page" | "file"> = type === "page|file" ? ["page", "file"] : [type];
-      return ixwikiCategoryTitles(category, kinds, limit);
-    }
-    const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
-    return this.listAll(
-      wikiSource,
-      { list: "categorymembers", cmtitle, cmtype: type, cmlimit: "500" },
-      "categorymembers",
-      "cmcontinue",
-      limit
-    );
-  }
-
-  /** List all pages in the main namespace (namespace 0, excluding redirects). */
-  fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
-    if (readsPostgres(wikiSource)) return ixwikiMainNamespaceTitles(limit);
-    return this.listAll(
-      wikiSource,
-      { list: "allpages", apnamespace: "0", apfilterredir: "nonredirects", aplimit: "500" },
-      "allpages",
-      "apcontinue",
-      limit
-    );
-  }
-
-  /** Search live wiki categories by prefix — feeds the discovery category picker. */
-  async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
-    if (readsPostgres(wikiSource)) {
-      return CategoryService.autocomplete(prefix, Math.min(Math.max(limit, 1), 100));
-    }
-    try {
-      const res = await mwQuery(
-        wikiSource,
-        {
-          list: "allcategories",
-          acprefix: prefix,
-          aclimit: String(Math.min(Math.max(limit, 1), 100)),
-        },
-        8000
-      );
-      if (!res.ok) {
-        console.error(`[Lore Card Generator] allcategories error: ${res.status}`);
-        return [];
-      }
-      const data = await res.json();
-      return (data.query?.allcategories ?? []).map(
-        (c: MediaWikiAllCategoriesItem) => (c["*"] || c.title || "") as string
-      );
-    } catch (e) {
-      console.error(`[Lore Card Generator] allcategories fetch failed:`, e);
-      return [];
-    }
-  }
-
-  /** Category statistics (size, pages, files, subcats). */
-  async getCategoriesInfo(
-    categories: string[],
-    wikiSource: WikiSource
-  ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
-    const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
-      {};
-    if (readsPostgres(wikiSource)) {
-      const names = categories.map((c) => c.replace(/^Category:\s*/i, "")).slice(0, 50);
-      for (const [name, { pages, files, subcats }] of await CategoryService.getCounts(names)) {
-        const counts = { size: pages + files + subcats, pages, files, subcats };
-        result[name] = result[`Category:${name}`] = counts;
-      }
-      return result;
-    }
-    const formattedTitles = categories
-      .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
-      .slice(0, 50);
-    if (formattedTitles.length === 0) return result;
-
-    try {
-      const res = await mwQuery(
-        wikiSource,
-        { prop: "categoryinfo", titles: formattedTitles.join("|") },
-        10000
-      );
-      if (res.ok) {
-        const data = await res.json();
-        for (const p of Object.values<any>(data.query?.pages ?? {})) {
-          if (!p.categoryinfo) continue;
-          result[p.title?.replace(/^Category:\s*/i, "") || ""] = p.categoryinfo;
-          result[p.title] = p.categoryinfo;
-        }
-      }
-    } catch (e) {
-      console.warn("[Lore Card Generator] getCategoriesInfo failed:", e);
-    }
-    return result;
-  }
-
   /** Infobox fields (lowercased keys, templates/links/HTML stripped) from wikitext. */
   private parseInfobox(wikitext: string): Record<string, string> {
     const infobox: Record<string, string> = {};
@@ -719,52 +506,27 @@ class WikiLoreCardGenerator {
     return cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "").replace(/<ref[^>]*\/>/gi, "");
   }
 
-  /** Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API. */
+  /**
+   * Image URL from a file name: IxWiki's from Postgres, a sister wiki's via its MediaWiki API; null when the wiki has
+   * no such file. A failed or refused read throws (mwJson).
+   */
   private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
     if (readsPostgres(wikiSource)) {
-      const name = filename.replace(/^(File|Image):/i, "");
+      const name = withoutFileNamespace(filename);
       return (await ixwikiImageUrls([name])).get(name) ?? null;
     }
-    try {
-      const response = await mwQuery(wikiSource, {
-        titles: `File:${filename.replace(/^(File|Image):/i, "")}`,
-        prop: "imageinfo",
-        iiprop: "url",
-      });
-      if (!response.ok) return null;
-
-      const data = await response.json();
-      return firstPage<MediaWikiPageItem>(data)?.imageinfo?.[0]?.url || null;
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching image URL:`, error);
-      return null;
-    }
-  }
-
-  /** Whether the article already has a Lore card: one per wiki and canonical title, whatever its spelling (§5.1). */
-  private async checkCardExists(articleTitle: string, wikiSource: WikiSource): Promise<boolean> {
-    const existing = await db.card.findFirst({
-      where: {
+    const data = await mwJson(
+      await mwQuery(
         wikiSource,
-        cardType: CardType.LORE,
-        wikiArticleTitle: {
-          equals: canonicalArticleTitle(articleTitle, wikiSource),
-          mode: "insensitive",
-        },
-      },
-      select: { id: true },
-    });
-    return existing !== null;
+        { titles: `File:${withoutFileNamespace(filename)}`, prop: "imageinfo", iiprop: "url" },
+        WIKI_READ_TIMEOUT_MS
+      ),
+      wikiSource
+    );
+    return firstPage<MwPage>(data)?.imageinfo?.[0]?.url || null;
   }
 
-  private analyzeArticleQuality(
-    articleData: MediaWikiPageItem & {
-      rawText?: string;
-      text?: string;
-      inboundLinks?: number;
-      lastModified?: Date;
-    }
-  ): ArticleQuality {
+  private analyzeArticleQuality(articleData: ArticleData): ArticleSignals {
     // Raw text for template/reference detection, cleaned text for length
     const rawText = articleData.rawText || articleData.text || "";
     const isFeatured =
@@ -781,24 +543,7 @@ class WikiLoreCardGenerator {
       categoryCount: articleData.categories?.length || 0,
       hasInfobox: /{{infobox/i.test(rawText),
       isFeatured,
-      lastModified: articleData.lastModified ?? new Date(),
     };
-  }
-
-  /** Quality score (0-100): length, references, inbound links, featured/infobox/category bonuses. */
-  private calculateQualityScore(quality: ArticleQuality): number {
-    const score =
-      Math.min((quality.length / 1000) * 0.3, 30) +
-      Math.min(quality.referenceCount * 5 * 0.3, 30) +
-      Math.min(quality.inboundLinks * 2 * 0.2, 20) +
-      (quality.isFeatured ? 20 : 0) +
-      (quality.hasInfobox ? 5 : 0) +
-      Math.min(quality.categoryCount * 0.5, 5);
-    return Math.min(score, 100);
-  }
-
-  private determineRarity(qualityScore: number): CardRarity {
-    return RARITY_THRESHOLDS.find(([min]) => qualityScore >= min)?.[1] ?? CardRarity.COMMON;
   }
 
   private detectCategory(
@@ -831,111 +576,6 @@ class WikiLoreCardGenerator {
       if (openCount > closeCount) summary = summary.replace(/\[\[[^\]]*$/, "") + "...";
     }
     return summary;
-  }
-
-  /** Create the card from a candidate: its canonical title, its home realm (§5.3), one per article (§5.1). */
-  async createCard(candidate: LoreCardCandidate): Promise<string> {
-    const season = await getCurrentIxCardSeason(db);
-    const wikiArticleTitle = canonicalArticleTitle(
-      candidate.wikiArticleTitle,
-      candidate.wikiSource
-    );
-    try {
-      const card = await db.card.create({
-        data: {
-          title: candidate.title,
-          description: candidate.description,
-          artwork: candidate.artwork,
-          category: candidate.category as LoreCategory,
-          cardType: CardType.LORE,
-          realmId: await articleHomeRealm(db, candidate.wikiSource, wikiArticleTitle),
-          rarity: candidate.rarity,
-          season,
-          wikiSource: candidate.wikiSource,
-          wikiArticleTitle,
-          metadata: {
-            wikiUrl: candidate.wikiUrl,
-            category: candidate.category,
-            qualityScore: candidate.qualityScore,
-            fullExcerpt: candidate.fullExcerpt,
-            ...(candidate.authorInfo
-              ? { authorInfo: candidate.authorInfo as unknown as Prisma.InputJsonValue }
-              : {}),
-            ...(candidate.authorInfo?.displayAuthor
-              ? { author: candidate.authorInfo.displayAuthor }
-              : {}),
-          },
-          totalSupply: 0, // Unlimited for lore cards
-          marketValue: BASE_MARKET_VALUE[candidate.rarity]!,
-        },
-      });
-
-      console.log(`[Lore Card Generator] Created card ${card.id} for "${candidate.title}"`);
-      return card.id;
-    } catch (error) {
-      if (isUniqueViolation(error)) {
-        throw new Error(
-          `A lore card for "${candidate.title}" (${candidate.wikiSource}) already exists in the collection.`,
-          { cause: error }
-        );
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Random articles that have a page image, for lore card generation. One request:
-   * `generator=random` returns random pages and `prop=pageimages` says which have an image
-   * (a per-article image check tripped the wiki's rate limit). Over-fetches via grnlimit to
-   * cover pages without an image.
-   */
-  async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
-    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: true });
-    try {
-      const response = await mwQuery(wikiSource, {
-        generator: "random",
-        grnnamespace: "0",
-        grnlimit: String(Math.min(count * 3, 50)),
-        prop: "pageimages",
-        piprop: "original",
-        pilimit: "max",
-      });
-      if (!response.ok) {
-        console.error(`[Lore Card Generator] Random+images fetch error: ${response.status}`);
-        return [];
-      }
-
-      const data = await response.json();
-      const pages = Object.values(data.query?.pages ?? {}) as MwPage[];
-      const titles = pages.filter((p) => p?.original?.source).map((p) => p.title as string);
-      return withoutArchivedTitles(titles.slice(0, count), wikiSource);
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching random articles with images:`, error);
-      return [];
-    }
-  }
-
-  /** Random main-namespace article titles. */
-  async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
-    if (readsPostgres(wikiSource)) return ixwikiRandomTitles(count, { withImage: false });
-    try {
-      const response = await mwQuery(wikiSource, {
-        list: "random",
-        rnnamespace: "0",
-        rnlimit: count.toString(),
-      });
-      if (!response.ok) {
-        console.error(`[Lore Card Generator] Random articles fetch error: ${response.status}`);
-        return [];
-      }
-
-      const data = await response.json();
-      const titles = ((data.query?.random || []) as Array<{ title: string }>).map((a) => a.title);
-      return withoutArchivedTitles(titles, wikiSource);
-    } catch (error) {
-      console.error(`[Lore Card Generator] Error fetching random articles:`, error);
-      return [];
-    }
   }
 }
 

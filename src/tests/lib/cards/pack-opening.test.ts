@@ -33,6 +33,7 @@ interface FakeCard {
   rarity: string;
   cardType: string;
   isRetired?: boolean;
+  reviewState?: string;
   season?: number;
   category?: string | null;
   description?: string | null;
@@ -57,6 +58,7 @@ function matches(card: FakeCard, where: any): boolean {
         return typeof value === "string" && value.startsWith(cond.startsWith);
     }
     if (key === "isRetired") return (value ?? false) === cond;
+    if (key === "reviewState") return (value ?? "APPROVED") === cond; // the column's default
     return value === cond;
   });
 }
@@ -210,6 +212,16 @@ describe("openPack", () => {
       },
       { id: "retired", rarity: "COMMON", cardType: "NATION", isRetired: true },
       { id: "ok", rarity: "COMMON", cardType: "NATION" },
+    ]);
+    const pulled = await openPack(db, USER, USER_PACK_ID);
+    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
+  });
+
+  it("never pulls a card waiting in review, or one rejected", async () => {
+    const { db } = makeDb([
+      { id: "pending", rarity: "COMMON", cardType: "LORE", reviewState: "PENDING" },
+      { id: "rejected", rarity: "COMMON", cardType: "LORE", reviewState: "REJECTED" },
+      { id: "ok", rarity: "COMMON", cardType: "LORE", reviewState: "APPROVED" },
     ]);
     const pulled = await openPack(db, USER, USER_PACK_ID);
     expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
