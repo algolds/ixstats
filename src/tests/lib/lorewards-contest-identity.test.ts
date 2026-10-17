@@ -6,9 +6,11 @@
 import { describe, it, expect } from "@jest/globals";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
+  contestDay,
   contestEntriesWhere,
   contestHolder,
   contestIdentity,
+  contestsHoldingDayWhere,
   contestPlaceKey,
   describeConflict,
   groupByContest,
@@ -69,6 +71,66 @@ describe("contestEntriesWhere", () => {
     expect(contestEntriesWhere({ type: "daily", date: "2026-10-16", dateStart: null })).toEqual({
       type: "daily",
       date: "2026-10-16",
+    });
+  });
+});
+
+describe("contestDay", () => {
+  it("is a weekly's or monthly's first day under either key, and a daily's date", () => {
+    expect(contestDay(stateKeyed("a"))).toBe("2026-10-12");
+    expect(contestDay(entry("b"))).toBe("2026-10-12");
+    expect(contestDay({ type: "daily", date: "2026-10-16", dateStart: "2026-10-01" })).toBe(
+      "2026-10-16"
+    );
+  });
+});
+
+describe("contestsHoldingDayWhere", () => {
+  const rows = [
+    storedEntry({ id: "before", type: "weekly", date: "2026-10-05" }),
+    storedEntry({ id: "ool", type: "weekly", date: "2026-10-12" }),
+    storedEntry({ id: "state", type: "weekly", date: "2026-W42", dateStart: "2026-10-12" }),
+    storedEntry({ id: "next", type: "weekly", date: "2026-W43", dateStart: "2026-10-19" }),
+    storedEntry({ id: "daily", type: "daily", date: "2026-10-14" }),
+    storedEntry({ id: "jul", type: "monthly", date: "2026-07", dateStart: "2026-07-01" }),
+    storedEntry({ id: "jul-ool", type: "monthly", date: "2026-07-01" }),
+    storedEntry({ id: "aug-ool", type: "monthly", date: "2026-08-01" }),
+  ];
+  const holding = (type: "weekly" | "monthly", day: string) =>
+    rows
+      .filter((row) =>
+        matches(row, contestsHoldingDayWhere(type, day) as Parameters<typeof matches>[1])
+      )
+      .map((row) => row.id);
+
+  it("finds the weekly whose first day is one of the seven ending on the day, under either key", () => {
+    expect(contestsHoldingDayWhere("weekly", "2026-10-14")).toEqual({
+      type: "weekly",
+      OR: [
+        { dateStart: { gte: "2026-10-08", lte: "2026-10-14" } },
+        { dateStart: null, date: { gte: "2026-10-08", lte: "2026-10-14" } },
+      ],
+    });
+    expect(holding("weekly", "2026-10-12")).toEqual(["ool", "state"]);
+    expect(holding("weekly", "2026-10-14")).toEqual(["ool", "state"]);
+    expect(holding("weekly", "2026-10-18")).toEqual(["ool", "state"]);
+    expect(holding("weekly", "2026-10-19")).toEqual(["next"]);
+    expect(holding("weekly", "2026-10-11")).toEqual(["before"]);
+  });
+
+  it("finds the monthly of the day's month, by its first, under either key", () => {
+    expect(contestsHoldingDayWhere("monthly", "2026-07-17")).toEqual({
+      type: "monthly",
+      OR: [{ dateStart: "2026-07-01" }, { dateStart: null, date: "2026-07-01" }],
+    });
+    expect(holding("monthly", "2026-07-17")).toEqual(["jul", "jul-ool"]);
+    expect(holding("monthly", "2026-08-31")).toEqual(["aug-ool"]);
+    expect(holding("monthly", "2026-09-01")).toEqual([]);
+  });
+
+  it("counts the seven days across a month and a year end", () => {
+    expect(contestsHoldingDayWhere("weekly", "2027-01-02").OR).toContainEqual({
+      dateStart: { gte: "2026-12-27", lte: "2027-01-02" },
     });
   });
 });

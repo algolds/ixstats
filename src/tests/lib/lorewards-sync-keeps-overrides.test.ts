@@ -3,7 +3,8 @@
 //
 // An admin override of a Loreward place (cards refresh §2.4) marks the entries it writes (`overriddenAt`), and its
 // trophy moves with it. No sync writes those places again: not the bot's state file, not the current year's OOL page,
-// not the OOL backfill's write over a state-keyed twin. Everything else still syncs.
+// not the OOL backfill's write over a state-keyed twin. Everything else still syncs. The mark is checked in the write
+// itself, so an override that commits while a sync runs is never written over (nor then frozen by its own mark).
 jest.mock("fs", () => {
   const actual = jest.requireActual<typeof import("fs")>("fs");
   return { ...actual, readFileSync: jest.fn(actual.readFileSync) };
@@ -27,7 +28,6 @@ import * as fs from "fs";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
 import { parseOOLPage } from "~/lib/lorewards/ool-parser";
-import { CONTEST_ENTRY_SELECT } from "~/lib/lorewards/contest-store";
 import { syncCurrentWinners, syncFromOOLPages } from "~/lib/lorewards/sync";
 import { entryStore, storedEntry, type StoredEntry } from "~/tests/helpers/loreward-entry-store";
 
@@ -109,6 +109,39 @@ const CY_AND_DEE = {
   runnerUpPage: "Dee's page",
 };
 
+/**
+ * An override of `row` to Cy and Dee commits just before the sync's first write to the table, after every read the
+ * sync made: the sync read the row unmarked.
+ */
+function overrideCommitsMidSync(row: StoredEntry) {
+  const land = () => Object.assign(row, { ...CY_AND_DEE, overriddenAt: OVERRIDDEN });
+  const { updateMany, upsert } = mocked.lorewardEntry;
+  const [updatedMany, upserted] = [
+    updateMany.getMockImplementation()!,
+    upsert.getMockImplementation()!,
+  ];
+  updateMany.mockImplementationOnce(async (args) => {
+    land();
+    return updatedMany(args);
+  });
+  upsert.mockImplementationOnce(async (args) => {
+    land();
+    return upserted(args);
+  });
+}
+
+/** A weekly the state file keys `2026-W42`, with its range, as no override left it. */
+const stateWeekly = (over: Partial<StoredEntry> = {}) =>
+  storedEntry({
+    id: "w-state",
+    type: "weekly",
+    date: "2026-W42",
+    dateStart: "2026-10-12",
+    winnerUser: "Amy",
+    winnerPage: "Amy's page",
+    ...over,
+  });
+
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -127,37 +160,41 @@ describe("the state file", () => {
 
     expect(places(rows[0])).toEqual(CY_AND_DEE);
     expect(rows[0]).toMatchObject({ winnerBytes: 42, editCount: 12, overriddenAt: OVERRIDDEN });
-    expect(mocked.lorewardEntry.findMany).toHaveBeenCalledWith({
-      where: { overriddenAt: { not: null } },
-      select: CONTEST_ENTRY_SELECT,
-      orderBy: { id: "asc" },
-      take: 500,
+    // The places are written only where no override holds them, checked in the write
+    expect(mocked.lorewardEntry.updateMany).toHaveBeenCalledWith({
+      where: { date: "2026-10-16", type: "daily", overriddenAt: null },
+      data: expect.objectContaining({ winnerUser: "Amy", runnerUpUser: "Bee", winnerBytes: 9000 }),
     });
+    expect(mocked.lorewardEntry.upsert.mock.calls[0]![0].update).not.toHaveProperty("winnerUser");
   });
 
-  it("reads the overridden keys in pages, so an override past the first 500 still holds", async () => {
+  it("keeps an override that commits while the sync runs", async () => {
     store([overriddenDaily({ overriddenAt: null })]);
     stateFile(stateDaily);
-    const fullPage = Array.from({ length: 500 }, (_, i) =>
-      storedEntry({ id: `x${String(i).padStart(3, "0")}`, date: `2019-01-01`, type: `old${i}` })
-    );
-    const readTable = mocked.lorewardEntry.findMany.getMockImplementation()!;
-    let keyPages = 0;
-    mocked.lorewardEntry.findMany.mockImplementation(async (args) => {
-      if (!("overriddenAt" in args.where) && !("AND" in args.where)) return readTable(args);
-      keyPages++;
-      // The second page holds the 16 October daily's entry, overridden
-      return keyPages === 1 ? fullPage : [storedEntry({ id: "y1" })];
-    });
+    overrideCommitsMidSync(rows[0]!);
 
     await syncCurrentWinners(true);
 
     expect(places(rows[0])).toEqual(CY_AND_DEE);
-    expect(mocked.lorewardEntry.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { AND: [{ overriddenAt: { not: null } }, { id: { gt: "x499" } }] },
-      })
-    );
+    expect(rows[0]).toMatchObject({ editCount: 12, overriddenAt: OVERRIDDEN });
+  });
+
+  it("keeps a weekly's override that commits while the sync runs", async () => {
+    store([stateWeekly()]);
+    stateFile({
+      weeklyResults: {
+        "2026-W42": {
+          winner: { user: "Bo", page: "Bo's page", score: 1, bytesAdded: 1 },
+          weekStart: "2026-10-12",
+          weekEnd: "2026-10-18",
+        },
+      },
+    });
+    overrideCommitsMidSync(rows[0]!);
+
+    await syncCurrentWinners(true);
+
+    expect(rows[0]).toMatchObject({ ...CY_AND_DEE, dateEnd: "2026-10-18" });
   });
 
   it("keeps the winner an override gave a state-keyed weekly", async () => {
@@ -207,6 +244,105 @@ describe("the state file", () => {
   });
 });
 
+describe("a state-keyed twin the state file creates late", () => {
+  /** The OOL page's weekly of 12 October as an override left it: Cy and Dee, withheld, marked. */
+  const overriddenOolWeekly = (over: Partial<StoredEntry> = {}) =>
+    storedEntry({
+      id: "w-ool",
+      type: "weekly",
+      date: "2026-10-12",
+      ...CY_AND_DEE,
+      winnerScore: 7,
+      winnerBytes: 42,
+      runnerUpScore: 6,
+      runnerUpBytes: 41,
+      status: "withheld",
+      overriddenAt: OVERRIDDEN,
+      ...over,
+    });
+  const stateWeek = (weekStart: string) => ({
+    weeklyResults: {
+      "2026-W42": {
+        winner: { user: "Amy", page: "Amy's page", score: 90, bytesAdded: 9000 },
+        weekStart,
+        weekEnd: "2026-10-18",
+      },
+    },
+  });
+  const OVERRIDE_COLUMNS = {
+    ...CY_AND_DEE,
+    winnerScore: 7,
+    winnerBytes: 42,
+    runnerUpScore: 6,
+    runnerUpBytes: 41,
+    status: "withheld",
+    overriddenAt: OVERRIDDEN,
+  };
+
+  it("takes the override of its contest's other entry: places, status and mark, with its own range", async () => {
+    store([overriddenOolWeekly()]);
+    stateFile(stateWeek("2026-10-12"));
+
+    await syncCurrentWinners(true);
+
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toMatchObject({
+      id: "new-2",
+      date: "2026-W42",
+      type: "weekly",
+      dateStart: "2026-10-12",
+      dateEnd: "2026-10-18",
+      ...OVERRIDE_COLUMNS,
+    });
+    expect(mocked.lorewardEntry.findFirst).toHaveBeenCalledWith({
+      where: {
+        type: "weekly",
+        OR: [{ dateStart: "2026-10-12" }, { dateStart: null, date: "2026-10-12" }],
+        overriddenAt: { not: null },
+      },
+      select: expect.objectContaining({ winnerUser: true, status: true, overriddenAt: true }),
+    });
+
+    // The next sync leaves both alone
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject(OVERRIDE_COLUMNS);
+  });
+
+  it("takes a monthly's override through the first of its month", async () => {
+    store([overriddenOolWeekly({ id: "m-ool", type: "monthly", date: "2026-07-01" })]);
+    stateFile({
+      monthlyResults: { "2026-07": { winner: { user: "Amy", page: "Amy's page", score: 1 } } },
+    });
+
+    await syncCurrentWinners(true);
+
+    expect(rows[1]).toMatchObject({
+      date: "2026-07",
+      type: "monthly",
+      dateStart: "2026-07-01",
+      dateEnd: "2026-07-31",
+      ...OVERRIDE_COLUMNS,
+    });
+  });
+
+  it("takes nothing from an override of another contest, or from a contest no override wrote", async () => {
+    store([overriddenOolWeekly({ date: "2026-10-05" })]);
+    stateFile(stateWeek("2026-10-12"));
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject({
+      winnerUser: "Amy",
+      winnerPage: "Amy's page",
+      status: "approved",
+      overriddenAt: null,
+    });
+
+    store([overriddenOolWeekly({ overriddenAt: null })]);
+    stateFile(stateWeek("2026-10-12"));
+    await syncCurrentWinners(true);
+    expect(rows[1]).toMatchObject({ winnerUser: "Amy", overriddenAt: null });
+  });
+});
+
 describe("the current year's OOL page", () => {
   it("keeps an override's places", async () => {
     store([overriddenDaily()]);
@@ -215,6 +351,38 @@ describe("the current year's OOL page", () => {
     await syncCurrentWinners(true);
 
     expect(places(rows[0])).toEqual(CY_AND_DEE);
+  });
+
+  it("keeps an override that commits after the page's entries were read", async () => {
+    store([overriddenDaily({ overriddenAt: null })]);
+    jest.mocked(parseOOLPage).mockReturnValue([fromPage()]);
+    overrideCommitsMidSync(rows[0]!);
+
+    await syncCurrentWinners(true);
+
+    expect(places(rows[0])).toEqual(CY_AND_DEE);
+  });
+
+  it("keeps an override of a state-keyed twin that commits after it was read", async () => {
+    store([stateWeekly()]);
+    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
+    overrideCommitsMidSync(rows[0]!);
+
+    await syncCurrentWinners(true);
+
+    expect(rows).toHaveLength(1);
+    expect(places(rows[0])).toEqual(CY_AND_DEE);
+  });
+
+  it("still inserts a contest it does not hold yet, with the page's places", async () => {
+    store([]);
+    jest.mocked(parseOOLPage).mockReturnValue([fromPage()]);
+
+    await syncCurrentWinners(true);
+
+    expect(rows).toEqual([
+      expect.objectContaining({ date: "2026-10-16", type: "daily", winnerUser: "Amy" }),
+    ]);
   });
 
   it("keeps an override's places on the state-keyed twin it writes a weekly over", async () => {
@@ -263,6 +431,16 @@ describe("syncFromOOLPages", () => {
     await syncFromOOLPages();
 
     expect(rows).toHaveLength(1);
+    expect(places(rows[0])).toEqual(CY_AND_DEE);
+  });
+
+  it("keeps an override of the twin that commits after the twin was read", async () => {
+    store([stateWeekly()]);
+    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ type: "weekly", date: "2026-10-12" })]);
+    overrideCommitsMidSync(rows[0]!);
+
+    await syncFromOOLPages();
+
     expect(places(rows[0])).toEqual(CY_AND_DEE);
   });
 

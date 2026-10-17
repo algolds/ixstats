@@ -14,7 +14,7 @@ import {
   FloppyDisk as Save,
 } from "iconoir-react";
 import { ValueSelect } from "~/components/ui/value-select";
-import { overrideFields, trophyChangeNote } from "~/lib/lorewards/override-form";
+import { overrideFields, overrideToast } from "~/lib/lorewards/override-form";
 
 export function LorewardOverrideCard() {
   const notify = useNotify();
@@ -34,21 +34,18 @@ export function LorewardOverrideCard() {
   const [overrideNoRunnerUp, setOverrideNoRunnerUp] = useState(false);
 
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
-    onSuccess: ({ trophies }) => {
-      const note = trophyChangeNote(trophies);
-      notify.success(
-        "Winner overridden",
-        `The override is saved and synced.${note ? ` ${note}` : ""}`
-      );
+    onSuccess: ({ trophies, botSynced }) => {
+      const toast = overrideToast(botSynced, trophies);
+      notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {
-      notify.error("Override Failed", err.message);
+      notify.error("Override failed", err.message);
     },
   });
 
   const handleOverrideSubmit = () => {
     if (!overrideDate) {
-      notify.error("Validation Error", "Please select a date for the override.");
+      notify.error("Validation error", "Please select a date for the override.");
       return;
     }
     overrideWinnerMutation.mutate({
@@ -83,7 +80,8 @@ export function LorewardOverrideCard() {
         <CardDescription>
           Manually rewrite the winning details of past daily, weekly, or monthly entries and push
           announcement updates to the Discord bot. A blank field keeps its stored value, except a
-          new holder starts with no page or score. The place's trophy moves with the override.
+          new holder starts with no page or score. The place's trophy moves with the override. Any
+          day of a weekly or monthly contest finds it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -114,7 +112,7 @@ export function LorewardOverrideCard() {
         </div>
 
         <div className="border-separator space-y-2 border-t pt-2">
-          <span className="text-eyebrow text-yellow">1. Winner Details</span>
+          <h4 className="text-label text-subhead font-semibold">Winner details</h4>
           <label className="text-label-secondary text-subhead flex items-center gap-2">
             <Switch checked={overrideNoWinner} onCheckedChange={setOverrideNoWinner} />
             No winner
@@ -168,7 +166,7 @@ export function LorewardOverrideCard() {
         </div>
 
         <div className="border-separator space-y-2 border-t pt-2">
-          <span className="text-label-secondary text-eyebrow">2. Runner-up Details</span>
+          <h4 className="text-label text-subhead font-semibold">Runner-up details</h4>
           <label className="text-label-secondary text-subhead flex items-center gap-2">
             <Switch checked={overrideNoRunnerUp} onCheckedChange={setOverrideNoRunnerUp} />
             No runner-up
@@ -231,7 +229,7 @@ export function LorewardOverrideCard() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save and Sync Winner Override
+          Save and sync winner override
         </Button>
       </CardContent>
     </Card>
