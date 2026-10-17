@@ -14,7 +14,7 @@ import { useDebounce } from "~/hooks/useDebounce";
 import { EMPTY_CARD_FILTERS, mineFilterInput, type CardFilters } from "~/lib/cards/face/filters";
 import { MINE_SORT_OPTIONS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import type { MineRow } from "~/lib/cards/hub/mine";
+import type { MinePage, MineRow } from "~/lib/cards/hub/mine";
 import { CARD_HUB_PATHS, STORE_PATH } from "~/lib/cards/hub-routes";
 import { cn } from "~/lib/utils/cn";
 import { CardFilterBar, type FilterDimension } from "./CardFilterBar";
@@ -40,6 +40,8 @@ interface ViewOption {
   icon: ReactNode;
 }
 
+const VIEW_LABEL: Record<MineView, string> = { grid: "Grid", list: "List" };
+
 /** Icons alone on a phone, where the bar is short of room. */
 const VIEW_OPTIONS: readonly ViewOption[] = [
   {
@@ -56,6 +58,21 @@ const VIEW_OPTIONS: readonly ViewOption[] = [
   },
 ];
 
+const copyIdOf = (row: MineRow) => row.face.copy?.ownershipId ?? row.face.cardId;
+
+/** Every loaded row once: a copy minted or moved between page fetches shifts the offsets, so pages can overlap. */
+function uniqueRows(pages: readonly MinePage[]): MineRow[] {
+  const seen = new Set<string>();
+  return pages
+    .flatMap((p) => p.rows)
+    .filter((row) => {
+      const id = copyIdOf(row);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+}
+
 /** The set with `id` added, or taken out when it is already there. */
 function toggled(set: ReadonlySet<string> | null, id: string): Set<string> {
   const next = new Set(set ?? []);
@@ -63,12 +80,28 @@ function toggled(set: ReadonlySet<string> | null, id: string): Set<string> {
   return next;
 }
 
+/** Select mode's picks (null outside it), kept to the copies listed now. */
+function useMinePicks(listed: ReadonlySet<string>) {
+  const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
+  // Picks a search or filter now hides, and copies that left Mine, are dropped, so an add never sends unseen cards.
+  if (selected && [...selected].some((id) => !listed.has(id))) {
+    setSelected(new Set([...selected].filter((id) => listed.has(id))));
+  }
+  const picked = useMemo(() => (selected ? [...selected] : []), [selected]);
+  return {
+    selected,
+    picked,
+    toggle: (id: string) => setSelected((previous) => toggled(previous, id)),
+    start: () => setSelected(new Set()),
+    stop: () => setSelected(null),
+  };
+}
+
 /** Mine: every copy the player holds, as a still grid or a list with values, and a select mode for bulk actions. */
 export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void }) {
   const [filters, setFilters] = useState<CardFilters>(EMPTY_CARD_FILTERS);
   const [sort, setSort] = useState<MineSort>("acquired");
   const [view, setView] = useState<MineView>("grid");
-  const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
   const [showcasing, setShowcasing] = useState(false);
   const panelId = useId();
   const search = useDebounce(filters.search, 300);
@@ -80,26 +113,29 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
       placeholderData: keepPreviousData,
     }
   );
-  const pages = query.data?.pages ?? [];
-  const rows = pages.flatMap((p) => p.rows);
-  const totalCopies = pages[0]?.totalCopies ?? 0;
-  const picked = useMemo(() => (selected ? [...selected] : []), [selected]);
+  const pages = query.data?.pages;
+  const rows = useMemo(() => uniqueRows(pages ?? []), [pages]);
+  const listed = useMemo(() => new Set(rows.map(copyIdOf)), [rows]);
+  const first = pages?.[0];
+  const totalCopies = first?.totalCopies ?? 0;
+  const picks = useMinePicks(listed);
+  const selected = picks.selected;
   // Select mode picks from the grid, whichever view was on.
   const shownView: MineView = selected ? "grid" : view;
 
   const open = (face: CardFaceData) => {
     const copyId = face.copy?.ownershipId;
     if (!selected) onOpenCard(face.cardId);
-    else if (copyId) setSelected((previous) => toggled(previous, copyId));
+    else if (copyId) picks.toggle(copyId);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <CardFilterBar
         filters={filters}
         onChange={setFilters}
         dimensions={MINE_DIMENSIONS}
-        realms={pages[0]?.realms ?? []}
+        realms={first?.realms ?? []}
         sort={sort}
         sortOptions={MINE_SORT_OPTIONS}
         onSortChange={setSort}
@@ -118,14 +154,28 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
             <Button
               variant="secondary"
               disabled={totalCopies === 0}
-              onClick={() => setSelected(selected ? null : new Set())}
+              onClick={selected ? picks.stop : picks.start}
             >
               {selected ? "Cancel" : "Select"}
             </Button>
           </>
         }
       />
-      <div role="tabpanel" id={panelId}>
+      {selected && (
+        // First in the DOM, so the keyboard reaches it before the cards; drawn last, held above the tab bar.
+        <MineBulkBar
+          className="order-last"
+          count={selected.size}
+          onAddToShowcase={() => setShowcasing(true)}
+          onDone={picks.stop}
+        />
+      )}
+      <div
+        role="tabpanel"
+        id={panelId}
+        aria-label={VIEW_LABEL[shownView]}
+        aria-busy={query.isFetching && !query.isFetchingNextPage}
+      >
         <MineBody
           loading={query.isLoading}
           // A failed refresh keeps the cards it already has; only a list that never loaded says so.
@@ -139,26 +189,45 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
           onClearFilters={() => setFilters(EMPTY_CARD_FILTERS)}
         />
       </div>
-      {query.hasNextPage && (
-        <Button
-          variant="secondary"
-          className="w-full"
-          disabled={query.isFetchingNextPage}
-          onClick={() => void query.fetchNextPage()}
-        >
-          Show more
-        </Button>
-      )}
-      {selected && (
-        <MineBulkBar
-          count={selected.size}
-          onAddToShowcase={() => setShowcasing(true)}
-          onDone={() => setSelected(null)}
-        />
-      )}
-      {/* Closing keeps the picked copies, so a dismissed dialog loses nothing; Done or Cancel lets them go. */}
-      <AddToShowcaseDialog open={showcasing} onOpenChange={setShowcasing} ownershipIds={picked} />
+      <MoreCards
+        hasMore={query.hasNextPage}
+        loading={query.isFetchingNextPage}
+        failed={query.isFetchNextPageError}
+        onMore={() => void query.fetchNextPage()}
+      />
+      {/* A dismissed dialog keeps the picks; once they are in a showcase, select mode ends. */}
+      <AddToShowcaseDialog
+        open={showcasing}
+        onOpenChange={setShowcasing}
+        ownershipIds={picks.picked}
+        onAdded={picks.stop}
+      />
     </div>
+  );
+}
+
+/** The next page's button, or why the next page did not load. */
+function MoreCards(props: {
+  hasMore: boolean;
+  loading: boolean;
+  failed: boolean;
+  onMore: () => void;
+}) {
+  if (props.failed) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-callout text-label-secondary">More cards did not load.</p>
+        <Button size="sm" variant="secondary" onClick={props.onMore}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+  if (!props.hasMore) return null;
+  return (
+    <Button variant="secondary" className="w-full" disabled={props.loading} onClick={props.onMore}>
+      Show more
+    </Button>
   );
 }
 

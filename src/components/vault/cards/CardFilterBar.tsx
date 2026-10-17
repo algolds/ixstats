@@ -1,8 +1,9 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
-import { Filter } from "iconoir-react";
+import { useId, useState, type ReactNode } from "react";
+import { Check, Filter } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Command, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
 import { Label } from "~/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { SearchField } from "~/components/ui/search-field";
@@ -119,6 +120,121 @@ function regionOptions(regions: readonly string[], current: string | null): Opti
   return listed.map((region) => ({ value: region, label: region }));
 }
 
+/** The realms to offer: a chosen realm stays listed under the name it was offered with, so it can be turned off. */
+function realmOptions(
+  realms: readonly CardRealmBadge[],
+  chosen: string | null,
+  names: ReadonlyMap<string, string>
+): Option[] {
+  const options = realms.map((realm) => ({ value: realm.id, label: realm.name }));
+  if (chosen === null || realms.some((realm) => realm.id === chosen)) return options;
+  return [{ value: chosen, label: names.get(chosen) ?? "Unlisted realm" }, ...options];
+}
+
+/** Every realm name the bar has been offered, so a chosen realm that drops out of `realms` keeps its name. */
+function useRealmNames(realms: readonly CardRealmBadge[]): ReadonlyMap<string, string> {
+  const [names, setNames] = useState<ReadonlyMap<string, string>>(() => new Map());
+  if (realms.some((realm) => names.get(realm.id) !== realm.name)) {
+    setNames(new Map([...names, ...realms.map((realm) => [realm.id, realm.name] as const)]));
+  }
+  return names;
+}
+
+/** How the region filter searches the server's regions, when the caller does. */
+export interface RegionSearchOptions {
+  /** Whether regions apply at all (the NationStates realm is picked); a search that matches nothing keeps its input. */
+  available: boolean;
+  /** Called on each keystroke; the caller debounces it and passes the matches as `regions`. */
+  onSearch: (search: string) => void;
+}
+
+function RegionOption(props: { label: string; on: boolean; onSelect: () => void }) {
+  return (
+    <CommandItem value={props.label} aria-current={props.on || undefined} onSelect={props.onSelect}>
+      <span className="min-w-0 flex-1 truncate">{props.label}</span>
+      {props.on && <Check aria-hidden className="text-tint" />}
+    </CommandItem>
+  );
+}
+
+/** The region filter as a search: the matches come from the caller, so the list is never filtered here. */
+function RegionSearch(props: {
+  value: string | null;
+  regions: readonly string[];
+  search: RegionSearchOptions;
+  onChange: (region: string | null) => void;
+}) {
+  const [term, setTerm] = useState("");
+  return (
+    <div className="space-y-2">
+      {/* Shown for sight; cmdk names its input with its own label. */}
+      <p aria-hidden="true" className="text-subhead font-medium">
+        NationStates region
+      </p>
+      <Command
+        label="NationStates region"
+        shouldFilter={false}
+        className="border-separator rounded-control border"
+      >
+        <CommandInput
+          value={term}
+          maxLength={SEARCH_MAX}
+          placeholder="Search regions"
+          onValueChange={(next) => {
+            setTerm(next);
+            props.search.onSearch(next);
+          }}
+        />
+        <CommandList className="max-h-48 p-1">
+          <RegionOption
+            label="Any region"
+            on={props.value === null}
+            onSelect={() => props.onChange(null)}
+          />
+          {regionOptions(props.regions, props.value).map((option) => (
+            <RegionOption
+              key={option.value}
+              label={option.label}
+              on={option.value === props.value}
+              onSelect={() => props.onChange(option.value)}
+            />
+          ))}
+        </CommandList>
+        {term.trim() !== "" && props.regions.length === 0 && (
+          <p className="text-footnote text-label-secondary px-3 py-2">No regions match.</p>
+        )}
+      </Command>
+    </div>
+  );
+}
+
+/** The region filter: a search when the caller searches the server, else a select over `regions`. */
+function RegionField(props: {
+  value: string | null;
+  regions: readonly string[];
+  search?: RegionSearchOptions;
+  onChange: (region: string | null) => void;
+}) {
+  const { value, regions, search } = props;
+  // A region that is on always shows, so it can be turned off.
+  const shown = value !== null || (search ? search.available : regions.length > 0);
+  if (!shown) return null;
+  if (search) {
+    return (
+      <RegionSearch value={value} regions={regions} search={search} onChange={props.onChange} />
+    );
+  }
+  return (
+    <PickOne
+      label="NationStates region"
+      anyLabel="Any region"
+      value={value}
+      options={regionOptions(regions, value)}
+      onChange={props.onChange}
+    />
+  );
+}
+
 function DuplicatesSwitch({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
   const id = useId();
   return (
@@ -134,7 +250,9 @@ function FilterFields(props: {
   set: SetFilter;
   has: (dimension: FilterDimension) => boolean;
   realms: readonly CardRealmBadge[];
+  realmNames: ReadonlyMap<string, string>;
   regions: readonly string[];
+  regionSearch?: RegionSearchOptions;
 }) {
   const { filters, set, has } = props;
   return (
@@ -148,12 +266,12 @@ function FilterFields(props: {
           options={OWNED_OPTIONS}
         />
       )}
-      {has("realm") && props.realms.length > 0 && (
+      {has("realm") && (props.realms.length > 0 || filters.realmId !== null) && (
         <PickOne
           label="Realm"
           anyLabel="Every realm"
           value={filters.realmId}
-          options={props.realms.map((realm) => ({ value: realm.id, label: realm.name }))}
+          options={realmOptions(props.realms, filters.realmId, props.realmNames)}
           onChange={(realmId) => set("realmId", realmId)}
         />
       )}
@@ -193,12 +311,11 @@ function FilterFields(props: {
           onChange={(value) => set("category", value && isValidLoreCategory(value) ? value : null)}
         />
       )}
-      {has("region") && (props.regions.length > 0 || filters.region !== null) && (
-        <PickOne
-          label="NationStates region"
-          anyLabel="Any region"
+      {has("region") && (
+        <RegionField
           value={filters.region}
-          options={regionOptions(props.regions, filters.region)}
+          regions={props.regions}
+          search={props.regionSearch}
           onChange={(region) => set("region", region)}
         />
       )}
@@ -215,6 +332,8 @@ interface CardFilterBarProps<S extends string> {
   dimensions: readonly FilterDimension[];
   realms: readonly CardRealmBadge[];
   regions?: readonly string[];
+  /** Makes the region filter a search over the server's regions; without it, a select over `regions`. */
+  regionSearch?: RegionSearchOptions;
   sort: S;
   sortOptions: ReadonlyArray<{ value: S; label: string }>;
   onSortChange: (sort: S) => void;
@@ -227,6 +346,7 @@ export function CardFilterBar<S extends string>(props: CardFilterBarProps<S>) {
   const { filters, onChange, sortOptions } = props;
   const set: SetFilter = (key, value) => onChange({ ...filters, [key]: value });
   const count = activeFilterCount(filters);
+  const realmNames = useRealmNames(props.realms);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <SearchField
@@ -255,7 +375,9 @@ export function CardFilterBar<S extends string>(props: CardFilterBarProps<S>) {
             set={set}
             has={(dimension) => props.dimensions.includes(dimension)}
             realms={props.realms}
+            realmNames={realmNames}
             regions={props.regions ?? []}
+            regionSearch={props.regionSearch}
           />
           <Button
             variant="ghost"

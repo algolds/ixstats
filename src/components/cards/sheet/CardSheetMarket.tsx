@@ -18,7 +18,7 @@ interface CardSheetMarketProps {
 
 const credits = (amount: number) => (
   <span className="inline-flex items-center gap-1 tabular-nums">
-    <IxCreditsSymbol decorative className="size-[0.8em]" />
+    <IxCreditsSymbol className="size-[0.8em]" />
     {amount.toLocaleString()}
   </span>
 );

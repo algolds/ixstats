@@ -23,6 +23,8 @@ interface AddToShowcaseDialogProps {
   onOpenChange: (open: boolean) => void;
   /** The copies to add (one from the sheet, several from Mine's select mode). */
   ownershipIds: string[];
+  /** Called once the copies are in a showcase, never on a dismissal: Mine then leaves select mode. */
+  onAdded?: () => void;
 }
 
 interface ShowcaseChoice {
@@ -100,6 +102,7 @@ export function AddToShowcaseDialog({
   open,
   onOpenChange,
   ownershipIds,
+  onAdded,
 }: AddToShowcaseDialogProps) {
   const [name, setName] = useState("");
   // While the dialog animates out, the caller may already have let go of the cards: keep saying what it was adding.
@@ -123,6 +126,7 @@ export function AddToShowcaseDialog({
     void utils.cards.getMyDisplay.invalidate();
     setName("");
     onOpenChange(false);
+    onAdded?.();
   };
   const add = api.cards.addToShowcase.useMutation({
     onSuccess: (result) => done(result.added),

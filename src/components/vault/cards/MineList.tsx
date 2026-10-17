@@ -3,6 +3,7 @@
 import { Card } from "~/components/ui/card";
 import { focusRing } from "~/components/ui/button";
 import { RarityMark } from "~/components/cards/face/RarityMark";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { MineRow } from "~/lib/cards/hub/mine";
@@ -34,7 +35,14 @@ function MineListRow({ row, onOpen }: { row: MineRow; onOpen: (face: CardFaceDat
       </td>
       <td className={cn("p-3", WIDE)}>{face.copy ? FINISH_LABEL[face.copy.finish] : "–"}</td>
       <td className="hidden p-3 md:table-cell">{face.copy?.level ?? "–"}</td>
-      <td className="p-3 text-right">{row.value.toLocaleString()} IxC</td>
+      <td className="p-3 text-right">
+        {/* A retired copy is worth nothing; say why beside the 0. */}
+        {face.isRetired && <span className="text-footnote text-label-secondary mr-2">Retired</span>}
+        <span className="inline-flex items-center gap-1">
+          <IxCreditsSymbol className="size-[0.8em]" />
+          {row.value.toLocaleString()}
+        </span>
+      </td>
     </tr>
   );
 }

@@ -3,6 +3,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { CardFilterBar, type FilterDimension } from "~/components/vault/cards/CardFilterBar";
 import { EMPTY_CARD_FILTERS, type CardFilters } from "~/lib/cards/face/filters";
 import { EXPLORE_SORT_OPTIONS, type ExploreSort } from "~/lib/cards/face/explore-options";
+import type { CardRealmBadge } from "~/lib/cards/face/types";
+import { stubResizeObserver } from "~/tests/helpers/resize-observer";
+
+beforeAll(() => {
+  // The region search is a cmdk list, which measures itself and scrolls its active option into view.
+  stubResizeObserver();
+  Element.prototype.scrollIntoView ??= () => undefined;
+});
 
 const realms = [
   { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
@@ -21,17 +29,19 @@ function setUp(
     dimensions?: readonly FilterDimension[];
     regions?: readonly string[];
     withRealms?: boolean;
+    realmList?: readonly CardRealmBadge[];
+    regionSearch?: { available: boolean; onSearch: (search: string) => void };
   } = {}
 ) {
   const onChange = jest.fn<void, [CardFilters]>();
   const onSortChange = jest.fn<void, [ExploreSort]>();
   const filters = { ...EMPTY_CARD_FILTERS, ...options.filters };
-  render(
+  const bar = (next: typeof options) => (
     <CardFilterBar
-      filters={filters}
+      filters={{ ...EMPTY_CARD_FILTERS, ...next.filters }}
       onChange={onChange}
       dimensions={
-        options.dimensions ?? [
+        next.dimensions ?? [
           "owned",
           "realm",
           "rarity",
@@ -42,15 +52,18 @@ function setUp(
           "region",
         ]
       }
-      realms={options.withRealms === false ? [] : realms}
-      regions={options.regions}
+      realms={next.realmList ?? (next.withRealms === false ? [] : realms)}
+      regions={next.regions}
+      regionSearch={next.regionSearch}
       sort="newest"
       sortOptions={EXPLORE_SORT_OPTIONS}
       onSortChange={onSortChange}
       trailing={<button type="button">Trailing</button>}
     />
   );
-  return { onChange, onSortChange, filters };
+  const view = render(bar(options));
+  const rerender = (next: typeof options) => view.rerender(bar({ ...options, ...next }));
+  return { onChange, onSortChange, filters, rerender };
 }
 
 const openFilters = (name = "Filters") => fireEvent.click(screen.getByRole("button", { name }));
@@ -200,5 +213,88 @@ describe("CardFilterBar", () => {
     setUp({ filters: { search: "lion" } });
     openFilters();
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeDisabled();
+  });
+  it("keeps a chosen realm by its name once it is no longer offered", () => {
+    const old = { id: "r9", slug: "old", name: "Old Ixnay", crestUrl: null, isSystem: false };
+    const { onChange, rerender } = setUp({
+      realmList: [...realms, old],
+      filters: { realmId: "r9" },
+    });
+    rerender({ realmList: realms });
+    openFilters("Filters, 1 on");
+    expect(screen.getByRole("combobox", { name: "Realm" })).toHaveTextContent("Old Ixnay");
+    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
+    fireEvent.click(screen.getByRole("option", { name: "Every realm" }));
+    expect(lastChange(onChange).realmId).toBeNull();
+  });
+
+  it("keeps a chosen realm it never saw, under a plain name, when no realm is offered", () => {
+    setUp({ withRealms: false, filters: { realmId: "r9" } });
+    openFilters("Filters, 1 on");
+    expect(screen.getByRole("combobox", { name: "Realm" })).toHaveTextContent("Unlisted realm");
+  });
+
+  describe("with a region search", () => {
+    const search = (available = true) => ({ available, onSearch: jest.fn<void, [string]>() });
+    const regionBox = () => screen.getByRole("combobox", { name: "NationStates region" });
+
+    it("searches the regions as the player types, and picks one", () => {
+      const regionSearch = search();
+      const { onChange } = setUp({ regionSearch, regions: ["The Pacific", "Lazarus"] });
+      openFilters();
+      fireEvent.change(regionBox(), { target: { value: "laz" } });
+      expect(regionSearch.onSearch).toHaveBeenLastCalledWith("laz");
+      expect(screen.queryByText("No regions match.")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("option", { name: "Lazarus" }));
+      expect(lastChange(onChange).region).toBe("Lazarus");
+    });
+
+    it("keeps its input when a search matches nothing", () => {
+      const regionSearch = search();
+      const { rerender } = setUp({ regionSearch, regions: ["The Pacific"] });
+      openFilters();
+      fireEvent.change(regionBox(), { target: { value: "zzz" } });
+      rerender({ regionSearch, regions: [] });
+      expect(regionBox()).toHaveValue("zzz");
+      expect(screen.getByText("No regions match.")).toBeInTheDocument();
+    });
+
+    it("marks the region that is on, keeps it listed, and turns it off", () => {
+      const { onChange } = setUp({
+        regionSearch: search(),
+        regions: ["The Pacific"],
+        filters: { region: "Balder" },
+      });
+      openFilters("Filters, 1 on");
+      expect(screen.getByRole("option", { name: "Balder" })).toHaveAttribute(
+        "aria-current",
+        "true"
+      );
+      expect(screen.getByRole("option", { name: "The Pacific" })).not.toHaveAttribute(
+        "aria-current"
+      );
+      fireEvent.click(screen.getByRole("option", { name: "Any region" }));
+      expect(lastChange(onChange).region).toBeNull();
+    });
+
+    it("marks any region when none is on, and says nothing about matches before a search", () => {
+      setUp({ regionSearch: search(), regions: [] });
+      openFilters();
+      expect(screen.getByRole("option", { name: "Any region" })).toHaveAttribute(
+        "aria-current",
+        "true"
+      );
+      expect(screen.queryByText("No regions match.")).not.toBeInTheDocument();
+    });
+
+    it("hides the region filter where regions do not apply, unless one is on", () => {
+      const { rerender } = setUp({ regionSearch: search(false), regions: ["The Pacific"] });
+      openFilters();
+      expect(
+        screen.queryByRole("combobox", { name: "NationStates region" })
+      ).not.toBeInTheDocument();
+      rerender({ regionSearch: search(false), filters: { region: "Balder" } });
+      expect(regionBox()).toBeInTheDocument();
+    });
   });
 });
