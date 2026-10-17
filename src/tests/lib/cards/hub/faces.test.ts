@@ -52,6 +52,25 @@ describe("toCardFace", () => {
     expect(toCardFace(row({ cardType: "NATION", season: 5 }), { revealArt: true }).season).toBe(5);
   });
 
+  it("gives a retired card the placeholder face, even on a copy the viewer owns", () => {
+    expect(toCardFace(row({ isRetired: true }), { revealArt: true, copy })).toMatchObject({
+      artwork: null,
+      silhouette: false,
+      isRetired: true,
+      copy: { ownershipId: "o1" },
+    });
+    expect(
+      toCardFace(row({ isRetired: true, cardType: "NS" }), { revealArt: false })
+    ).toMatchObject({
+      artwork: null,
+      silhouette: false,
+    });
+    expect(toCardFace(row({ isRetired: true }), { revealArt: false })).toMatchObject({
+      artwork: null,
+      silhouette: true,
+    });
+  });
+
   it("treats a stored placeholder as no art", () => {
     expect(
       toCardFace(row({ artwork: "/images/placeholder-flag.svg" }), { revealArt: true })

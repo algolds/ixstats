@@ -32,6 +32,8 @@ const copyOf = (id: string) => ({
 const visible = { vaultVisible: jest.fn(async () => true) };
 const hidden = { vaultVisible: jest.fn(async () => false) };
 
+beforeEach(() => jest.clearAllMocks());
+
 describe("cardsWithVisibleArt", () => {
   it("joins the viewer's copies with the cards on a live auction", async () => {
     const db = createMockPrisma();
@@ -195,7 +197,7 @@ describe("contextRevealsArt", () => {
 });
 
 describe("displayedCopies", () => {
-  it("shows the latest pinned showcase, in the order its cards were added, leaving hidden cards out", async () => {
+  it("shows the latest public pinned showcase, in the order its cards were added, leaving hidden cards out", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue({
       id: "s1",
@@ -205,8 +207,12 @@ describe("displayedCopies", () => {
     const shown = await displayedCopies(db as never, "u1");
     expect(shown.showcase).toEqual({ id: "s1", name: "Best of Ixnay" });
     expect(shown.copies).toEqual([{ card: card("c1"), copy: copyOf("c1") }]);
+    expect(db.cardCollection.findFirst.mock.calls[0]![0].where).toEqual({
+      userId: "u1",
+      isPublic: true,
+      pinnedAt: { not: null },
+    });
     expect(db.cardCollection.findFirst.mock.calls[0]![0]).toMatchObject({
-      where: { userId: "u1", pinnedAt: { not: null } },
       orderBy: { pinnedAt: "desc" },
       select: {
         items: {
@@ -230,7 +236,7 @@ describe("displayedCopies", () => {
     });
     expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
       where: { ownerId: "u1", cards: { isRetired: false } },
-      orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }],
+      orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }, { id: "asc" }],
       distinct: ["cardId"],
       take: 4,
     });

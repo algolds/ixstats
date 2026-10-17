@@ -47,7 +47,8 @@ function faceSeason(row: CardFaceRow): number | null {
 
 /**
  * The face a browser may receive. Art the viewer may not see is stripped here, not hidden in the client (spec §2.3
- * Discovery); NationStates flags are public on NationStates itself, so they always show.
+ * Discovery); NationStates flags are public on NationStates itself, so they always show. A retired card never shows
+ * its art (the placeholder face): a Library hide retires a card without clearing its artwork.
  */
 export function toCardFace(
   row: CardFaceRow,
@@ -61,7 +62,7 @@ export function toCardFace(
     rarity: row.rarity,
     cardType: row.cardType,
     realm: toRealmBadge(row.realm),
-    artwork: reveal ? normalizeArtwork(row.artwork) : null,
+    artwork: reveal && !row.isRetired ? normalizeArtwork(row.artwork) : null,
     silhouette: !reveal,
     number: row.collectorNumber,
     season: faceSeason(row),
