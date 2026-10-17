@@ -76,6 +76,8 @@ model Card {
   retiredAt        DateTime?
   lorewardEntryId  String?
   lorewardEdition  String?
+  /// Its number within its home realm (silhouettes show it). Set by the `cards_assign_collector_number` trigger.
+  collectorNumber  Int?
   reviewState          CardReviewState   @default(APPROVED)
   reviewedAt           DateTime?
   /// DB user id of the admin (or realm owner) who reviewed it.
@@ -96,6 +98,7 @@ model Card {
 
   @@unique([nsCardId, nsSeason])
   @@unique([lorewardEntryId, lorewardEdition])
+  @@unique([realmId, collectorNumber])
   @@index([cardType, rarity, season])
   @@index([category, rarity, season])
   @@index([marketValue])
@@ -172,6 +175,8 @@ model CardCollection {
   name        String
   description String?
   isPublic    Boolean              @default(false)
+  /// Set when the owner pins it; the latest pin is the player's showcase (wallet, Passport).
+  pinnedAt    DateTime?
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @default(now())
   User        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,6 +185,7 @@ model CardCollection {
   comments    CollectionComment[]
 
   @@index([userId])
+  @@index([userId, pinnedAt])
 }
 
 model CardCollectionItem {

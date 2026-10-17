@@ -80,4 +80,16 @@ describe("deploy-production.sh applies the SQL db push cannot", () => {
     expect(admin).toBeGreaterThan(constraints);
     expect(push).toBeGreaterThan(admin);
   });
+
+  it("runs the cards face-hub SQL as the last SQL before the schema push, and stops the deploy if it fails", () => {
+    const run =
+      "bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql || exit 1";
+    const push = script.indexOf("bun run db:push:force");
+    const faceHub = script.indexOf(run);
+    expect(faceHub).toBeGreaterThan(script.indexOf("bun run db:backup"));
+    expect(faceHub).toBeGreaterThan(
+      script.indexOf("20261028120000_cards_admin/migration.sql || exit 1")
+    );
+    expect(faceHub).toBe(script.lastIndexOf("bunx prisma db execute", push));
+  });
 });
