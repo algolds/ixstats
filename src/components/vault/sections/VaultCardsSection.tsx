@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { VaultSubTabNav } from "../VaultSubTabNav";
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
@@ -14,17 +12,11 @@ import { CollectionsTab } from "./cards/CollectionsTab";
 import { CardGalleryTab } from "./cards/CardGalleryTab";
 import { ownedCardToInstance } from "~/lib/cards/ownership-card";
 
-const LoreCardGenerator = dynamic(
-  () => import("~/components/cards/lore/LoreCardGenerator").then((m) => m.LoreCardGenerator),
-  { ssr: false }
-);
-
 export function VaultCardsSection() {
   const { activeTab, setActiveTab, viewMode, sortBy, hideValue, filters, resetFilters } =
     useVaultCardsState();
 
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
-  const [loreGeneratorOpen, setLoreGeneratorOpen] = useState(false);
 
   // Gallery Filters State
   const [gallerySource, setGallerySource] = useState<"all" | "ns" | "lore">("lore");
@@ -89,12 +81,6 @@ export function VaultCardsSection() {
           onSortByChange={setGallerySortBy}
         />
       )}
-
-      <Dialog open={loreGeneratorOpen} onOpenChange={setLoreGeneratorOpen}>
-        <DialogContent className="max-w-xl">
-          <LoreCardGenerator onRequestSubmitted={() => setLoreGeneratorOpen(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

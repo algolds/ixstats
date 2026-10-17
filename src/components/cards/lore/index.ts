@@ -1,2 +1,1 @@
-export { LoreCardGenerator } from "./LoreCardGenerator";
-export { ArticleSearch } from "./ArticleSearch";
+export { CardSuggestionForm } from "./CardSuggestionForm";

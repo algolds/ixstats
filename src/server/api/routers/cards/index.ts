@@ -7,6 +7,7 @@
  * Domains:
  *  - inventory:   user inventory, the card library and its NationStates stats
  *  - collections: collection CRUD + wiki article excerpt lookup
+ *  - suggestions: free lore card suggestions
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -14,6 +15,7 @@ import { cardsInventoryRouter } from "./inventory";
 import { cardsSettingsRouter } from "./settings";
 import { cardsLegacyAdminRouter } from "./admin-legacy";
 import { cardsCollectionsRouter } from "./collections";
+import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -21,5 +23,6 @@ export const cardsRouter = mergeRouters(
   cardsSettingsRouter,
   cardsLegacyAdminRouter,
   cardsCollectionsRouter,
+  cardsSuggestionsRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );
