@@ -51,7 +51,7 @@ export function CardSheetCopies({
 
 /**
  * For a card the viewer does not hold: where it comes from, and the market for one that can be bought. A retired card
- * no longer comes from anywhere, so nothing is said.
+ * no longer comes from anywhere, so nothing is said, and packs never draw a Special card (`packPoolWhere`).
  */
 function HowToGet({ card, realmName }: { card: CardSheetData["card"]; realmName: string }) {
   if (card.isRetired) {
@@ -64,9 +64,13 @@ function HowToGet({ card, realmName }: { card: CardSheetData["card"]; realmName:
       </p>
     );
   }
+  const from =
+    card.cardType === "SPECIAL"
+      ? "It is given out at events, and is on the market and in trades."
+      : `It comes in ${realmName} packs, on the market and in trades.`;
   return (
     <p className="text-callout text-label-secondary">
-      You do not have this card yet. It comes in {realmName} packs, on the market and in trades.{" "}
+      You do not have this card yet. {from}{" "}
       <Link
         href={`${CARD_HUB_PATHS.market}?for=${encodeURIComponent(card.id)}`}
         className={cn("text-tint underline", focusRing)}
