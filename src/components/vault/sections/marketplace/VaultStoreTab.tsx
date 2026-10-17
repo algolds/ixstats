@@ -53,7 +53,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { StoreItemCard, type StoreItem } from "./StoreItemCard";
 import { useNotify } from "~/hooks/useNotify";
-import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard";
+import { PackHolographicCard } from "./store/PackHolographicCard";
 import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
@@ -108,16 +108,16 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
 
 const STORE_TABS = [
   { id: "my-packs" as const, label: "My packs", icon: Package },
-  { id: "boosters" as const, label: "Marketplace", icon: Store },
+  { id: "packs" as const, label: "Packs", icon: Store },
   { id: "cosmetics" as const, label: "Cosmetics", icon: Sparkles },
   { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
 ];
 
 type StoreView = (typeof STORE_TABS)[number]["id"];
 
-/** The store sub-tab a `view` URL param names; the marketplace by default. */
+/** The store sub-tab a `view` URL param names; Packs by default (old `boosters` links included). */
 export function resolveStoreView(view: string | null | undefined): StoreView {
-  return STORE_TABS.find((tab) => tab.id === view)?.id ?? "boosters";
+  return STORE_TABS.find((tab) => tab.id === view)?.id ?? "packs";
 }
 
 export function VaultStoreTab({ initialView }: { initialView?: string | null }) {
@@ -178,11 +178,10 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
     },
   });
 
-  const packs: any[] = (packsData as any)?.packs || (Array.isArray(packsData) ? packsData : []);
-  const myPacks: any[] =
-    (myPacksData as any)?.packs || (Array.isArray(myPacksData) ? myPacksData : []);
+  const packs = packsData?.packs ?? [];
+  const myPacks = myPacksData?.packs ?? [];
 
-  const cosmeticItems: StoreItem[] = ((storeItemsData || []) as any[])
+  const cosmeticItems: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "cosmetics")
     .map((item) => ({
       id: item.id,
@@ -195,7 +194,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       category: item.category,
     }));
 
-  const upgradeItems: StoreItem[] = ((storeItemsData || []) as any[])
+  const upgradeItems: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "upgrades")
     .filter((item) => storePrerequisiteMet(item.id, ownedData?.purchaseCounts))
     .map((item) => ({
@@ -216,11 +215,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
   };
 
   const isLoading =
-    storeTab === "my-packs"
-      ? myPacksLoading
-      : storeTab === "boosters"
-        ? packsLoading
-        : itemsLoading;
+    storeTab === "my-packs" ? myPacksLoading : storeTab === "packs" ? packsLoading : itemsLoading;
 
   const activeConfig = {
     "my-packs": {
@@ -230,12 +225,12 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       badgeStyle: "border-blue/20 text-blue bg-blue/5",
       statusText: "Inventory",
     },
-    boosters: {
-      title: "Booster packs",
+    packs: {
+      title: "Packs",
       icon: <Store className="text-tint h-4 w-4" />,
-      description: "Purchase new card packs to expand your collection.",
+      description: "Packs from every realm. Each shows its odds.",
       badgeStyle: "border-yellow/20 text-yellow bg-yellow/5",
-      statusText: "Marketplace",
+      statusText: "Packs",
     },
     cosmetics: {
       title: "Profile customizations",
@@ -248,8 +243,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
     upgrades: {
       title: "Vault system upgrades",
       icon: <TrendingUp className="text-green h-4 w-4" />,
-      description:
-        "Permanent collection expansion, passive credit yield buffs, and wiki lore submission tokens.",
+      description: "Permanent card space and passive credit yield.",
       badgeStyle: "border-green/20 text-green bg-green/5",
       statusText: "Account upgrades",
     },
@@ -300,8 +294,8 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
               {storeTab === "my-packs" &&
                 (myPacks && myPacks.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
-                    {myPacks.map((userPack: any) => {
-                      const packData = userPack.pack as PackItem;
+                    {myPacks.map((userPack) => {
+                      const packData = userPack.pack;
                       return (
                         <div key={userPack.id} className="shrink-0">
                           <PackHolographicCard
@@ -330,26 +324,25 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                     <Package className="text-label-tertiary mb-3 h-12 w-12" />
                     <h4 className="text-label text-headline">No unopened packs</h4>
                     <p className="text-label-secondary text-footnote mt-1 mb-4 max-w-xs">
-                      You don't have any packs in your inventory right now. Head over to the
-                      marketplace to get some!
+                      You have no unopened packs. Buy one from Packs.
                     </p>
-                    <Button size="sm" onClick={() => setStoreTab("boosters")}>
-                      <Store className="mr-2 h-3.5 w-3.5" /> Browse Marketplace
+                    <Button size="sm" onClick={() => setStoreTab("packs")}>
+                      <Store className="mr-2 h-3.5 w-3.5" /> Browse packs
                     </Button>
                   </div>
                 ))}
 
-              {storeTab === "boosters" &&
+              {storeTab === "packs" &&
                 (packs && packs.length > 0 ? (
                   <div className="flex flex-wrap justify-center gap-8 py-6">
-                    {packs.map((pack: any) => {
+                    {packs.map((pack) => {
                       const isPending =
                         purchasePackMutation.isPending &&
                         purchasePackMutation.variables?.packId === pack.id;
                       return (
                         <div key={pack.id} className="shrink-0">
                           <PackHolographicCard
-                            pack={pack as PackItem}
+                            pack={pack}
                             actionButton={
                               <Button
                                 size="sm"
