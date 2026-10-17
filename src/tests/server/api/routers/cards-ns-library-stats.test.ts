@@ -12,7 +12,11 @@ it("leaves cards waiting in review, or rejected, out of every count", async () =
   const db = createMockPrisma({ $queryRaw: queryRaw });
   db.card.count.mockResolvedValueOnce(10).mockResolvedValueOnce(4).mockResolvedValueOnce(1);
   const caller = createCallerFactory(cardsInventoryRouter)(
-    createMockRouterContext({ db, auth: { userId: "clerk_me" }, user: { id: "db_me" } }) as never
+    createMockRouterContext({
+      db,
+      auth: { userId: "clerk_me" },
+      user: { id: "db_me", clerkUserId: "clerk_me" },
+    }) as never
   );
 
   await expect(caller.getNSLibraryStats()).resolves.toMatchObject({

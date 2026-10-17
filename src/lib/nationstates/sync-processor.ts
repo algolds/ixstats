@@ -380,7 +380,7 @@ export async function processCTENationFilter(
   const counts: CteCounts = { totalProcessed: 0, cteCount: 0, activeCount: 0 };
   let last: string | null = null;
   for (;;) {
-    const cards = await db.card.findMany({
+    const cards: Array<Pick<Card, "id" | "title" | "metadata">> = await db.card.findMany({
       where: { cardType: CardType.NS, ...(last ? { id: { gt: last } } : {}) },
       select: { id: true, title: true, metadata: true },
       orderBy: { id: "asc" },

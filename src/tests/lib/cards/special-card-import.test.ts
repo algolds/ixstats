@@ -4,6 +4,7 @@ import {
   LEGACY_SPECIAL_CARDS,
   awaitsSpecialCardImport,
   planSpecialCardImport,
+  type ExistingSpecialCard,
 } from "~/lib/cards/special-card-import";
 import { getAchievementById } from "~/lib/achievements/definitions";
 
@@ -31,7 +32,7 @@ describe("LEGACY_SPECIAL_CARDS", () => {
 describe("planSpecialCardImport", () => {
   it("creates missing cards and points the old seed's rows at their achievement", () => {
     const plan = planSpecialCardImport(
-      new Map([
+      new Map<string, ExistingSpecialCard>([
         [first!.id, seeded],
         [second!.id, done(second!.achievementKey)],
       ])
@@ -58,7 +59,7 @@ describe("planSpecialCardImport", () => {
 
   it("leaves an achievement another card already rewards, and a card an admin changed, alone", () => {
     const plan = planSpecialCardImport(
-      new Map([
+      new Map<string, ExistingSpecialCard>([
         [second!.id, seeded],
         [
           third!.id,
@@ -92,7 +93,7 @@ describe("planSpecialCardImport", () => {
 
   it("points a retired legacy card at its achievement but never backfills it", () => {
     const plan = planSpecialCardImport(
-      new Map([
+      new Map<string, ExistingSpecialCard>([
         [first!.id, { ...seeded, isRetired: true }],
         [second!.id, done(second!.achievementKey, true)],
       ])
