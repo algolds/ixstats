@@ -1,25 +1,19 @@
 /** What the cards admin calls each rarity, type, review state and source, in sentence case. */
 import { CARD_WIKI_SOURCES, cardSourceLabel, type CardWikiSource } from "~/lib/cards/card-sources";
+import { RARITY_LABEL } from "~/lib/cards/face/labels";
+import type { CardRarity, CardType } from "~/lib/cards/face/types";
 
-export const RARITIES = ["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"] as const;
-export type RarityValue = (typeof RARITIES)[number];
-export const RARITY_LABELS: Record<RarityValue, string> = {
-  COMMON: "Common",
-  UNCOMMON: "Uncommon",
-  RARE: "Rare",
+export {
+  RARITY_ORDER as RARITIES,
+  TYPE_ORDER as CARD_TYPES,
+  TYPE_LABEL as CARD_TYPE_LABELS,
+} from "~/lib/cards/face/labels";
+export type RarityValue = CardRarity;
+export type CardTypeValue = CardType;
+/** The player labels, but the admin keeps sentence case: "Ultra rare" (Phase 3 ruling Q9). */
+export const RARITY_LABELS: Readonly<Record<CardRarity, string>> = {
+  ...RARITY_LABEL,
   ULTRA_RARE: "Ultra rare",
-  EPIC: "Epic",
-  LEGENDARY: "Legendary",
-};
-
-export const CARD_TYPES = ["LORE", "NATION", "NS", "SPECIAL", "TROPHY"] as const;
-export type CardTypeValue = (typeof CARD_TYPES)[number];
-export const CARD_TYPE_LABELS: Record<CardTypeValue, string> = {
-  LORE: "Lore",
-  NATION: "Nation",
-  NS: "NationStates",
-  SPECIAL: "Special",
-  TROPHY: "Trophy",
 };
 
 export const REVIEW_STATE_LABELS = {
