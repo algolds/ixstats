@@ -75,14 +75,17 @@ describe("Halo registry: card destinations", () => {
     expect(command("Lore card gallery")).toBeUndefined();
   });
 
-  it("opens the Store's Packs tab for card packs, and never says booster", () => {
+  it("opens the Store's Packs tab for card packs, once, and never says booster", () => {
     const packs = [...CORE_COMMANDS, ...CORE_FEATURES].filter((e) => e.name === "Open card packs");
-    expect(packs).toHaveLength(2);
-    for (const entry of packs) {
-      expect(entry).toMatchObject({
-        path: "/vault/store?view=packs",
-        description: "Buy and open card packs in the Store",
-      });
-    }
+    expect(packs).toHaveLength(1);
+    expect(packs[0]).toMatchObject({
+      path: "/vault/store?view=packs",
+      description: "Buy and open card packs in the Store",
+    });
+  });
+
+  it("lists each entry once, so a search never shows the same result twice", () => {
+    const names = [...CORE_COMMANDS, ...CORE_FEATURES].map((e) => e.name);
+    expect(names.filter((name, index) => names.indexOf(name) !== index)).toEqual([]);
   });
 });

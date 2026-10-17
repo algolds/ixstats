@@ -475,14 +475,6 @@ export const CORE_FEATURES: FeatureEntry[] = [
     keywords: ["maps", "atlas", "globe"],
   },
   {
-    name: "Open card packs",
-    path: "/vault/store?view=packs",
-    icon: Page,
-    category: "Vault",
-    description: "Buy and open card packs in the Store",
-    keywords: ["packs", "cards", "booster"],
-  },
-  {
     name: "Refresh data",
     path: "#reload-data",
     icon: RefreshDouble,
