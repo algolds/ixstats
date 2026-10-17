@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { marketTabOf, type MarketTab } from "~/lib/cards/hub-routes";
 import { MarketBrowse } from "./MarketBrowse";
@@ -22,6 +23,8 @@ interface MarketPaneProps {
 
 /** The cards hub's Market: Browse, Trades, Wishlist and Selling, each a `?tab=`. */
 export function MarketPane(props: MarketPaneProps) {
+  // One set of live subscriptions for every tab: Browse and Selling both show running auctions.
+  useAuctionWebSocket();
   return (
     <Tabs
       value={props.tab}
@@ -39,6 +42,7 @@ export function MarketPane(props: MarketPaneProps) {
           forCardId={props.forCardId}
           onClearFor={props.onClearFor}
           onOpenCard={props.onOpenCard}
+          onShowSelling={() => props.onTabChange("selling")}
         />
       </TabsContent>
       <TabsContent value="trades">

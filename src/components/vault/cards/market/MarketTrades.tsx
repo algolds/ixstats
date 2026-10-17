@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@clerk/nextjs";
 import { Plus } from "iconoir-react";
@@ -20,7 +20,15 @@ const TradeOfferModal = dynamic(
 type TradesView = "incoming" | "sent" | "history";
 type OpenCard = (cardId: string, from?: SheetFrom | null) => void;
 
-const countBadge = (count: number) => (count > 0 ? count : undefined);
+const VIEW_LABEL: Record<TradesView, string> = {
+  incoming: "Incoming",
+  sent: "Sent",
+  history: "History",
+};
+
+/** A segment's offer count: shown as a badge, read as "2 offers". */
+const offerCount = (count: number) =>
+  count > 0 ? { badge: count, badgeLabel: count === 1 ? "1 offer" : `${count} offers` } : {};
 
 interface OfferListProps {
   tradeIds: readonly string[];
@@ -65,6 +73,8 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
   const incoming = trades.filter((t) => t.recipient.clerkUserId === userId).map((t) => t.id);
   const sent = trades.filter((t) => t.initiator.clerkUserId === userId).map((t) => t.id);
   const refresh = () => void active.refetch();
+  const panelPrefix = useId();
+  const panelId = (tab: TradesView) => `${panelPrefix}-trades-${tab}`;
 
   return (
     <div className="space-y-4">
@@ -74,10 +84,11 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
           aria-label="Trades"
           value={view}
           onValueChange={setView}
+          getTabPanelId={panelId}
           options={[
-            { value: "incoming", label: "Incoming", badge: countBadge(incoming.length) },
-            { value: "sent", label: "Sent", badge: countBadge(sent.length) },
-            { value: "history", label: "History" },
+            { value: "incoming", label: VIEW_LABEL.incoming, ...offerCount(incoming.length) },
+            { value: "sent", label: VIEW_LABEL.sent, ...offerCount(sent.length) },
+            { value: "history", label: VIEW_LABEL.history },
           ]}
         />
         <Button size="sm" onClick={() => setCreating(true)}>
@@ -85,16 +96,18 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
           New trade
         </Button>
       </div>
-      {view === "history" ? (
-        <MarketHistory onOpenCard={onOpenCard} />
-      ) : (
-        <OfferList
-          tradeIds={view === "incoming" ? incoming : sent}
-          incoming={view === "incoming"}
-          onRefresh={refresh}
-          onOpenCard={onOpenCard}
-        />
-      )}
+      <div role="tabpanel" id={panelId(view)} aria-label={VIEW_LABEL[view]}>
+        {view === "history" ? (
+          <MarketHistory onOpenCard={onOpenCard} />
+        ) : (
+          <OfferList
+            tradeIds={view === "incoming" ? incoming : sent}
+            incoming={view === "incoming"}
+            onRefresh={refresh}
+            onOpenCard={onOpenCard}
+          />
+        )}
+      </div>
       <TradeOfferModal
         open={creating}
         onClose={() => {

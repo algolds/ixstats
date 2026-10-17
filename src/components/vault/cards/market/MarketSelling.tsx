@@ -9,7 +9,7 @@ import { CardFace } from "~/components/cards/face/CardFace";
 import { timeLeftPhrase } from "~/lib/cards/face/time-left";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { bidCountLabel } from "./AuctionRow";
+import { bidCountLabel, type AuctionRowData } from "./AuctionRow";
 import { CreateAuctionModal } from "./CreateAuctionModal";
 
 interface MarketSellingProps {
@@ -34,6 +34,52 @@ function ListingCard({
       )}
       <p className="text-callout min-w-0 flex-1 truncate">{face?.title ?? "A card"}</p>
     </>
+  );
+}
+
+type OwnListingData = Pick<
+  AuctionRowData,
+  "id" | "currentBid" | "startingPrice" | "bidCount" | "endTime" | "face"
+>;
+
+/** One of the player's listings. A listing with bids cannot be cancelled, and says so where Cancel is. */
+function OwnListing({
+  auction,
+  onOpenCard,
+  onCancel,
+  cancelling,
+}: {
+  auction: OwnListingData;
+  onOpenCard: (cardId: string) => void;
+  onCancel: () => void;
+  cancelling: boolean;
+}) {
+  const hasBids = auction.bidCount > 0;
+  const reasonId = `cancel-reason-${auction.id}`;
+  return (
+    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+      <ListingCard face={auction.face} onOpenCard={onOpenCard} />
+      <div className="space-y-1">
+        <p className="text-footnote text-label-secondary tabular-nums">
+          {(auction.currentBid || auction.startingPrice).toLocaleString()} IxC ·{" "}
+          {bidCountLabel(auction.bidCount)} · {timeLeftPhrase(auction.endTime)}
+        </p>
+        {hasBids && (
+          <p id={reasonId} className="text-footnote text-label-secondary">
+            Has bids, so it cannot be cancelled
+          </p>
+        )}
+      </div>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={hasBids || cancelling}
+        aria-describedby={hasBids ? reasonId : undefined}
+        onClick={onCancel}
+      >
+        Cancel
+      </Button>
+    </li>
   );
 }
 
@@ -75,24 +121,13 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
           <Card content="data">
             <ul className="divide-separator divide-y">
               {mine.map((auction) => (
-                <li key={auction.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <ListingCard face={auction.face} onOpenCard={onOpenCard} />
-                  <p className="text-footnote text-label-secondary tabular-nums">
-                    {(auction.currentBid || auction.startingPrice).toLocaleString()} IxC ·{" "}
-                    {bidCountLabel(auction.bidCount)} · {timeLeftPhrase(auction.endTime)}
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={auction.bidCount > 0 || cancel.isPending}
-                    title={
-                      auction.bidCount > 0 ? "A listing with bids cannot be cancelled" : undefined
-                    }
-                    onClick={() => cancel.mutate({ auctionId: auction.id })}
-                  >
-                    Cancel
-                  </Button>
-                </li>
+                <OwnListing
+                  key={auction.id}
+                  auction={auction}
+                  onOpenCard={onOpenCard}
+                  onCancel={() => cancel.mutate({ auctionId: auction.id })}
+                  cancelling={cancel.isPending}
+                />
               ))}
             </ul>
           </Card>

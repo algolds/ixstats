@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -56,8 +56,11 @@ export function CreateAuctionModal({
   const utils = api.useUtils();
   const mine = api.cards.listMine.useQuery({ sort: "value", limit: 120 }, { enabled: open });
   const rows = (mine.data?.rows ?? []).filter((row) => !row.isLocked);
+  // Counts closes, so a listing that lands after the player closed the form does not close it again.
+  const closes = useRef(0);
   // The form starts over each time it opens.
   const close = () => {
+    closes.current += 1;
     setPicked(initialOwnershipId);
     setStartingPrice("");
     setBuyoutPrice("");
@@ -70,7 +73,6 @@ export function CreateAuctionModal({
       void utils.cardMarket.getActiveAuctions.invalidate();
       void utils.cardMarket.getMyActiveAuctions.invalidate();
       void utils.cards.listMine.invalidate();
-      close();
     },
     onError: (error) => vaultNotify.error(error.message),
   });
@@ -85,7 +87,15 @@ export function CreateAuctionModal({
       vaultNotify.error("The buy-now price must be above the starting price");
       return;
     }
-    create.mutate({ cardId: picked, startingPrice: start, buyoutPrice: buyout, duration });
+    const opened = closes.current;
+    create.mutate(
+      { cardId: picked, startingPrice: start, buyoutPrice: buyout, duration },
+      {
+        onSuccess: () => {
+          if (opened === closes.current) close();
+        },
+      }
+    );
   };
 
   return (
@@ -119,7 +129,10 @@ export function CreateAuctionModal({
                     className="h-auto w-full justify-start gap-3 py-2"
                     onClick={() => setPicked(copy.ownershipId)}
                   >
-                    <CardFace face={face} size="S" className="w-16" />
+                    {/* The title and serial name the copy; the face would say the title again. */}
+                    <span aria-hidden="true" className="shrink-0">
+                      <CardFace face={face} size="S" className="w-16" />
+                    </span>
                     <span className="min-w-0 truncate text-left">
                       {face.title}
                       <span className="text-footnote text-label-secondary block tabular-nums">

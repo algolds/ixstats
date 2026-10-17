@@ -43,8 +43,9 @@ const row = (ownershipId: string, serialNumber: number, isLocked = false) => ({
   isLocked,
 });
 
+type Listed = (result: { message: string }) => void;
 let mutate: jest.Mock;
-let onSuccess: (result: { message: string }) => void = () => undefined;
+let onSuccess: Listed = () => undefined;
 
 beforeEach(() => {
   mutate = jest.fn();
@@ -63,6 +64,12 @@ beforeEach(() => {
 const field = (name: RegExp, value: string) =>
   fireEvent.change(screen.getByLabelText(name), { target: { value } });
 const list = () => screen.getByRole("button", { name: "List it" });
+/** What the last listing sent, and the callback that closes the form once it lands. */
+const listing = () => mutate.mock.calls.at(-1)?.[0];
+const landed = (message: string) => {
+  onSuccess({ message });
+  (mutate.mock.calls.at(-1)?.[1] as { onSuccess: Listed }).onSuccess({ message });
+};
 
 describe("CreateAuctionModal", () => {
   it("lists copies, not cards, and leaves out a copy already listed or traded", () => {
@@ -71,6 +78,8 @@ describe("CreateAuctionModal", () => {
     expect(copies).toHaveLength(2);
     expect(copies[0]).toHaveTextContent("Caphiria#4 · Foil");
     expect(copies[1]).toHaveTextContent("Caphiria#9 · Foil");
+    // The face is hidden from the button's name, which says the title once.
+    expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
     expect(screen.queryByText(/#12/)).toBeNull();
   });
 
@@ -82,7 +91,7 @@ describe("CreateAuctionModal", () => {
     field(/Starting price/, "40");
     field(/Buy-now price/, "90");
     fireEvent.click(list());
-    expect(mutate).toHaveBeenCalledWith({
+    expect(listing()).toEqual({
       cardId: "o2",
       startingPrice: 40,
       buyoutPrice: 90,
@@ -96,7 +105,7 @@ describe("CreateAuctionModal", () => {
     field(/Starting price/, "25");
     fireEvent.click(screen.getByRole("radio", { name: "30 minutes" }));
     fireEvent.click(list());
-    expect(mutate).toHaveBeenCalledWith({
+    expect(listing()).toEqual({
       cardId: "o1",
       startingPrice: 25,
       buyoutPrice: undefined,
@@ -123,8 +132,22 @@ describe("CreateAuctionModal", () => {
   it("closes once the copy is listed", () => {
     const onClose = jest.fn();
     render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
-    onSuccess({ message: "Auction created" });
+    field(/Starting price/, "25");
+    fireEvent.click(list());
+    landed("Auction created");
     expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes only once when the player closes it while the listing is on its way", () => {
+    const onClose = jest.fn();
+    render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
+    field(/Starting price/, "25");
+    fireEvent.click(list());
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    landed("Auction created");
+    expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

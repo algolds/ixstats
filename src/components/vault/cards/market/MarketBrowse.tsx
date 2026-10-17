@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
-import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { RARITY_LABEL, RARITY_ORDER } from "~/lib/cards/face/labels";
 import type { CardRarity } from "~/lib/cards/face/types";
 import { AuctionRow } from "./AuctionRow";
@@ -43,25 +42,34 @@ interface MarketBrowseProps {
   forCardId: string | null;
   onClearFor: () => void;
   onOpenCard: (cardId: string) => void;
+  onShowSelling: () => void;
 }
 
 /** Browse: the live listings. "Ending soon" is a sort, not a list of its own. */
-export function MarketBrowse({ forCardId, onClearFor, onOpenCard }: MarketBrowseProps) {
+export function MarketBrowse({
+  forCardId,
+  onClearFor,
+  onOpenCard,
+  onShowSelling,
+}: MarketBrowseProps) {
   const [realmId, setRealmId] = useState<string | null>(null);
   const [rarity, setRarity] = useState<CardRarity | null>(null);
   const [sort, setSort] = useState<AuctionSort>("ending_soon");
   const [limit, setLimit] = useState(PAGE);
   const [selling, setSelling] = useState(false);
   const shelves = api.cards.exploreShelves.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
-  const query = api.cardMarket.getActiveAuctions.useQuery({
-    cardId: forCardId ?? undefined,
-    realmId: realmId ?? undefined,
-    rarity: rarity ?? undefined,
-    sortBy: sort,
-    limit,
-  });
+  const query = api.cardMarket.getActiveAuctions.useQuery(
+    {
+      cardId: forCardId ?? undefined,
+      realmId: realmId ?? undefined,
+      rarity: rarity ?? undefined,
+      sortBy: sort,
+      limit,
+    },
+    // A longer page or a new filter keeps the current listings on screen until the new ones arrive.
+    { placeholderData: (previous) => previous }
+  );
   const { placeBid, executeBuyout, isBidding, isBuyingOut } = useAuctionBid();
-  useAuctionWebSocket({ enabled: true });
   const auctions = query.data?.auctions ?? [];
   const sell = () => setSelling(true);
 
@@ -139,6 +147,7 @@ export function MarketBrowse({ forCardId, onClearFor, onOpenCard }: MarketBrowse
                 key={auction.id}
                 auction={auction}
                 onOpenCard={onOpenCard}
+                onShowSelling={onShowSelling}
                 onBid={placeBid}
                 onBuyout={executeBuyout}
                 busy={isBidding || isBuyingOut}
@@ -151,6 +160,7 @@ export function MarketBrowse({ forCardId, onClearFor, onOpenCard }: MarketBrowse
         <Button
           variant="secondary"
           className="w-full"
+          disabled={query.isPlaceholderData}
           onClick={() => setLimit((n) => Math.min(MAX_PAGE, n + PAGE))}
         >
           Show more

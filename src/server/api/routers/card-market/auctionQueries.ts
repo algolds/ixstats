@@ -61,9 +61,14 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
           ctx.db
         );
 
+        const auctions = await withAuctionFaces(ctx.db, ctx.user.id, result.auctions, true);
+        // A seller cannot bid on their own listing, so the page shows it without bid controls
         return {
           ...result,
-          auctions: await withAuctionFaces(ctx.db, ctx.user.id, result.auctions, true),
+          auctions: auctions.map((auction) => ({
+            ...auction,
+            isMine: auction.sellerId === ctx.user.id,
+          })),
         };
       } catch (error) {
         console.error("[Card Market Router] Error getting active auctions:", error);

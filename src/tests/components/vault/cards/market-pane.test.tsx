@@ -61,6 +61,7 @@ jest.mock("~/components/vault/cards/market/CreateAuctionModal", () => ({
 
 import { api } from "~/trpc/react";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
+import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import { MarketPane } from "~/components/vault/cards/market/MarketPane";
 import type { MarketTab } from "~/lib/cards/hub-routes";
 
@@ -88,6 +89,7 @@ const auction = {
   // A little over 3 hours, so the rows still read "3h 0m" a few milliseconds later.
   endTime: new Date(Date.now() + 3 * HOUR + 30_000),
   bidCount: 2,
+  isMine: false,
   face,
 };
 
@@ -105,12 +107,18 @@ function renderPane(
     onOpenCard: jest.fn(),
     ...overrides,
   };
-  render(<MarketPane {...props} />);
-  return props;
+  const view = render(<MarketPane {...props} />);
+  return { ...props, rerender: () => view.rerender(<MarketPane {...props} />) };
 }
 
 const lastAuctionQuery = () =>
   jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mock.calls.at(-1)?.[0];
+const listingsAt = (overrides: Partial<typeof auction>, extra: object = {}) =>
+  jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
+    data: { auctions: [{ ...auction, ...overrides }], total: 1, hasMore: false },
+    isLoading: false,
+    ...extra,
+  } as never);
 
 beforeEach(() => {
   jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
@@ -145,11 +153,11 @@ describe("MarketPane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay" }));
     expect(props.onOpenCard).toHaveBeenCalledWith("c1");
     expect(screen.getByText("2 bids · 3h 0m left")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Bid" }));
+    fireEvent.click(screen.getByRole("button", { name: "Bid 105 IxC" }));
     expect(placeBid).toHaveBeenCalledWith("a1", 105);
   });
 
-  it("never sends a bid below the next step, and buys outright", () => {
+  it("bids the minimum for a typed bid below it, so a rise never leaves Bid stuck, and buys outright", () => {
     const placeBid = jest.fn();
     const executeBuyout = jest.fn();
     jest.mocked(useAuctionBid).mockReturnValue({
@@ -159,15 +167,34 @@ describe("MarketPane", () => {
       isBuyingOut: false,
       error: null,
     });
-    renderPane("browse");
+    const pane = renderPane("browse");
     const amount = screen.getByLabelText("Bid, now 100 IxC");
     fireEvent.change(amount, { target: { value: "104" } });
-    expect(screen.getByRole("button", { name: "Bid" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Bid 105 IxC" }));
+    expect(placeBid).toHaveBeenLastCalledWith("a1", 105);
     fireEvent.change(amount, { target: { value: "120" } });
-    fireEvent.click(screen.getByRole("button", { name: "Bid" }));
-    expect(placeBid).toHaveBeenCalledWith("a1", 120);
+    fireEvent.click(screen.getByRole("button", { name: "Bid 120 IxC" }));
+    expect(placeBid).toHaveBeenLastCalledWith("a1", 120);
+    // Someone outbids the typed 120: the floor rises to 137 and Bid follows it.
+    listingsAt({ currentBid: 130 });
+    pane.rerender();
+    expect(screen.getByLabelText("Bid, now 130 IxC")).toHaveValue(120);
+    fireEvent.click(screen.getByRole("button", { name: "Bid 137 IxC" }));
+    expect(placeBid).toHaveBeenLastCalledWith("a1", 137);
+    fireEvent.change(amount, { target: { value: "150.5" } });
+    expect(screen.getByRole("button", { name: /^Bid / })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Buy now for 500 IxC" }));
     expect(executeBuyout).toHaveBeenCalledWith("a1");
+  });
+
+  it("shows the player's own listing without bid controls, and points to Selling", () => {
+    listingsAt({ isMine: true });
+    const props = renderPane("browse");
+    expect(screen.getByText("Your listing")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Bid / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Buy now/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "See it in Selling" }));
+    expect(props.onTabChange).toHaveBeenCalledWith("selling");
   });
 
   it("narrows Browse to one card from the sheet's link, and lets the player see everything again", () => {
@@ -189,6 +216,26 @@ describe("MarketPane", () => {
     }
     expect(lastAuctionQuery()).toMatchObject({ limit: 100 });
     expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+  });
+
+  it("keeps the listings on screen while the next page loads", () => {
+    const previous = { auctions: [auction], total: 300, hasMore: true };
+    listingsAt({}, { data: previous, isPlaceholderData: true });
+    renderPane("browse");
+    const options = jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mock.calls.at(-1)?.[1];
+    const keep = options?.placeholderData as (data: typeof previous) => typeof previous;
+    expect(keep(previous)).toBe(previous);
+    expect(screen.getByRole("list", { name: "Listings" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show more" })).toBeDisabled();
+  });
+
+  it("listens for live market events once, on every tab", () => {
+    jest.mocked(useAuctionWebSocket).mockClear();
+    renderPane("browse");
+    expect(useAuctionWebSocket).toHaveBeenCalledTimes(1);
+    jest.mocked(useAuctionWebSocket).mockClear();
+    renderPane("selling");
+    expect(useAuctionWebSocket).toHaveBeenCalledTimes(1);
   });
 
   it("says when nothing is listed, and offers to sell", () => {
@@ -233,6 +280,8 @@ describe("MarketPane", () => {
     expect(listings.getByText("100 IxC · 2 bids · Ended")).toBeInTheDocument();
     const [open, ended] = listings.getAllByRole("button", { name: "Cancel" });
     expect(ended).toBeDisabled();
+    expect(ended).toHaveAccessibleDescription("Has bids, so it cannot be cancelled");
+    expect(listings.getAllByText("Has bids, so it cannot be cancelled")).toHaveLength(1);
     fireEvent.click(open!);
     expect(cancel).toHaveBeenCalledWith({ auctionId: "mine-open" });
     const bids = within(screen.getByRole("region", { name: "Your bids" }));
@@ -256,10 +305,15 @@ describe("MarketPane", () => {
       refetch: jest.fn(),
     } as never);
     renderPane("trades");
-    expect(screen.getByText("Offer t1, to you")).toBeInTheDocument();
+    const incoming = screen.getByRole("tab", { name: /^Incoming\s*, 1 offer$/ });
+    const panel = screen.getByRole("tabpanel", { name: "Incoming" });
+    expect(incoming).toHaveAttribute("aria-controls", panel.id);
+    expect(within(panel).getByText("Offer t1, to you")).toBeInTheDocument();
     expect(screen.queryByText(/Offer t2/)).toBeNull();
-    fireEvent.mouseDown(screen.getByRole("tab", { name: /Sent/ }));
-    expect(screen.getByText("Offer t2, from you")).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: /^Sent\s*, 1 offer$/ }));
+    expect(
+      within(screen.getByRole("tabpanel", { name: "Sent" })).getByText("Offer t2, from you")
+    ).toBeInTheDocument();
     fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("No trades or auctions yet")).toBeInTheDocument();
   });

@@ -20,28 +20,84 @@ export interface AuctionRowData {
   endTime: Date;
   bidCount: number;
   face: CardFaceData | null;
+  /** The viewer's own listing, which they cannot bid on. */
+  isMine: boolean;
 }
 
-interface AuctionRowProps {
+interface BidFormProps {
   auction: AuctionRowData;
-  onOpenCard: (cardId: string) => void;
   onBid: (auctionId: string, amount: number) => void;
   onBuyout: (auctionId: string) => void;
   busy: boolean;
 }
 
+interface AuctionRowProps extends BidFormProps {
+  onOpenCard: (cardId: string) => void;
+  /** Opens Selling, where the viewer manages their own listings. */
+  onShowSelling: () => void;
+}
+
 export const bidCountLabel = (count: number) => (count === 1 ? "1 bid" : `${count} bids`);
 
-/** One live auction: the card's face, where it stands, time left, and the bid and buy-now controls. */
-export function AuctionRow({ auction, onOpenCard, onBid, onBuyout, busy }: AuctionRowProps) {
+/**
+ * The bid and buy-now controls. An empty bid, or one typed under the floor, bids the floor: a bid from anyone raises
+ * it, and a stale typed number must not leave Bid stuck. The button names the amount it sends.
+ */
+function BidForm({ auction, onBid, onBuyout, busy }: BidFormProps) {
   const current = auction.currentBid || auction.startingPrice;
   const minimum = Math.ceil(current * BID_STEP);
-  // Empty bids the minimum, so a bid from someone else raises it without stale input to clear.
   const [draft, setDraft] = useState("");
-  const amount = draft === "" ? minimum : Number(draft);
-  const valid = Number.isInteger(amount) && amount >= minimum;
-  const face = auction.face;
+  const typed = Number(draft);
+  const amount = draft === "" || typed < minimum ? minimum : typed;
+  const valid = Number.isInteger(amount);
   const inputId = `bid-${auction.id}`;
+  return (
+    <form
+      // The field's min and step are spinner hints; the floor rule above decides, not the browser's validation.
+      noValidate
+      className="flex flex-wrap items-end gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (valid) onBid(auction.id, amount);
+      }}
+    >
+      <div className="space-y-1">
+        <Label htmlFor={inputId} className="text-footnote text-label-secondary">
+          Bid, now {current.toLocaleString()} IxC
+        </Label>
+        <Input
+          id={inputId}
+          type="number"
+          inputMode="numeric"
+          min={minimum}
+          step={1}
+          placeholder={String(minimum)}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          className="w-28 tabular-nums"
+        />
+      </div>
+      <Button type="submit" size="sm" variant="secondary" disabled={busy || !valid}>
+        Bid {amount.toLocaleString()} IxC
+      </Button>
+      {auction.buyoutPrice !== null && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() => onBuyout(auction.id)}
+        >
+          Buy now for {auction.buyoutPrice.toLocaleString()} IxC
+        </Button>
+      )}
+    </form>
+  );
+}
+
+/** One live auction: the card's face, where it stands, time left, and the bid and buy-now controls. */
+export function AuctionRow({ auction, onOpenCard, onShowSelling, ...bidding }: AuctionRowProps) {
+  const face = auction.face;
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
       {face && (
@@ -54,44 +110,16 @@ export function AuctionRow({ auction, onOpenCard, onBid, onBuyout, busy }: Aucti
           {bidCountLabel(auction.bidCount)} · {timeLeftPhrase(auction.endTime)}
         </p>
       </div>
-      <form
-        className="flex flex-wrap items-end gap-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (valid) onBid(auction.id, amount);
-        }}
-      >
-        <div className="space-y-1">
-          <Label htmlFor={inputId} className="text-footnote text-label-secondary">
-            Bid, now {current.toLocaleString()} IxC
-          </Label>
-          <Input
-            id={inputId}
-            type="number"
-            inputMode="numeric"
-            min={minimum}
-            step={1}
-            placeholder={String(minimum)}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            className="w-28 tabular-nums"
-          />
-        </div>
-        <Button type="submit" size="sm" variant="secondary" disabled={busy || !valid}>
-          Bid
-        </Button>
-        {auction.buyoutPrice !== null && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => onBuyout(auction.id)}
-          >
-            Buy now for {auction.buyoutPrice.toLocaleString()} IxC
+      {auction.isMine ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-footnote text-label-secondary">Your listing</p>
+          <Button variant="link" size="sm" className="px-0" onClick={onShowSelling}>
+            See it in Selling
           </Button>
-        )}
-      </form>
+        </div>
+      ) : (
+        <BidForm auction={auction} {...bidding} />
+      )}
     </li>
   );
 }
