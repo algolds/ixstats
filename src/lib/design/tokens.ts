@@ -252,6 +252,19 @@ export const GOLD = {
 } as const;
 
 /**
+ * Card rarity hues: content art, so the same in both themes and never tinted. `--color-rarity-*` in tokens.css carries
+ * them and card-art.css reads them by `data-card-rarity`; the light theme paints the edge and gem darker (`--card-rarity-paint`).
+ */
+export const CARD_RARITY_HEX = {
+  common: "#94a3b8",
+  uncommon: "#10b981",
+  rare: "#3b82f6",
+  "ultra-rare": "#06b6d4",
+  epic: "#a855f7",
+  legendary: "#eab308",
+} as const;
+
+/**
  * An `accent` on a card: a system colour role, the app tint or gold. It recolours the card's own
  * wash, glow and header strip through the scoped `--facet-accent` property.
  */

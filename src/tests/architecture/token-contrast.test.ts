@@ -14,6 +14,7 @@ import {
   APP_IDS,
   APP_TINTS,
   BACKGROUND_ROLES,
+  CARD_RARITY_HEX,
   COLOR_ROLES,
   COLOR_ROLES_MORE_CONTRAST,
   CUTOUT_RADIUS,
@@ -604,6 +605,30 @@ describe("identity: contrast", () => {
         for (const bg of BACKGROUND_ROLES) {
           const ratio = contrast(color, role(appearance, bg, more));
           expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+        }
+      }
+    });
+
+    it("card rarity: the edge and the RarityMark gem, as painted in this theme, reach 3:1 on every background role", () => {
+      // card-art.css paints `--card-rarity-paint`: the palette darkened in the light theme, as is in the dark theme.
+      const darkened =
+        /--card-rarity-paint:\s*color-mix\(in srgb, var\(--card-rarity\) (\d+)%, black\);/.exec(
+          cardArtCss
+        );
+      expect(darkened).not.toBeNull();
+      expect(cardArtCss).toMatch(/@variant dark \{\s*--card-rarity-paint:\s*var\(--card-rarity\);/);
+      // The edge and the RarityMark gem sit on page backgrounds, so they paint it; the face gem sits on the scrim.
+      expect(cardArtCss).toMatch(/\.card-face-edge \{[^}]*var\(--card-rarity-paint\)/);
+      expect(cardArtCss).toMatch(/\.card-rarity-gem \{[^}]*var\(--card-rarity-paint\)/);
+      expect(cardArtCss).toMatch(/\.card-face-gem \{[^}]*var\(--card-rarity\);/);
+      const weight = Number(darkened![1]) / 100;
+      for (const [name, hex] of Object.entries(CARD_RARITY_HEX)) {
+        const painted = appearance === "light" ? mix(hex, "#000000", weight) : hex;
+        for (const more of [false, true]) {
+          for (const bg of BACKGROUND_ROLES) {
+            const ratio = contrast(painted, role(appearance, bg, more));
+            expect({ name, bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+          }
         }
       }
     });

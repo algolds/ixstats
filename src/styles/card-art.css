@@ -105,3 +105,151 @@
     }
   }
 }
+
+/* Card faces, flips and reveals (src/components/cards/face/). `data-card-rarity` picks the edge, gem and tint from the one
+   rarity palette; `data-card-finish` adds the sheen. Grids stay still: the sheen only drifts while a pointer rests on the
+   card, and never under Reduce Motion. */
+@layer components {
+  [data-card-rarity] {
+    --card-rarity: var(--color-rarity-common);
+    /* What the edge and gem paint: darkened in the light theme so every rarity reaches 3:1 on the light roles
+       (token-contrast.test.ts); the dark theme paints the palette as it is. */
+    --card-rarity-paint: color-mix(in srgb, var(--card-rarity) 70%, black);
+    @variant dark {
+      --card-rarity-paint: var(--card-rarity);
+    }
+  }
+  [data-card-rarity="UNCOMMON"] {
+    --card-rarity: var(--color-rarity-uncommon);
+  }
+  [data-card-rarity="RARE"] {
+    --card-rarity: var(--color-rarity-rare);
+  }
+  [data-card-rarity="ULTRA_RARE"] {
+    --card-rarity: var(--color-rarity-ultra-rare);
+  }
+  [data-card-rarity="EPIC"] {
+    --card-rarity: var(--color-rarity-epic);
+  }
+  [data-card-rarity="LEGENDARY"] {
+    --card-rarity: var(--color-rarity-legendary);
+  }
+
+  .card-face-edge {
+    border: 2px solid var(--card-rarity-paint);
+    background-color: var(--color-surface-secondary);
+  }
+  /* A card with no art: the realm crest on the rarity tint. */
+  .card-face-tint {
+    background-color: color-mix(in oklab, var(--card-rarity) 24%, var(--color-surface-secondary));
+  }
+  .card-face-gem,
+  .card-rarity-gem {
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+  /* The face gem sits on the title scrim in both themes, so its contrast is against the scrim. */
+  .card-face-gem {
+    background-color: var(--card-rarity);
+  }
+  /* The RarityMark gem sits on page backgrounds, so it takes the theme's paint. */
+  .card-rarity-gem {
+    background-color: var(--card-rarity-paint);
+  }
+  /* Keeps the title legible over any art. */
+  .card-face-scrim {
+    background-image: linear-gradient(to top, rgb(0 0 0 / 0.8), rgb(0 0 0 / 0.35) 55%, transparent);
+  }
+  /* The holo colours, shared by the HOLO sheen and the tilt highlight (as r g b channels). */
+  .card-face-sheen,
+  .card-holo {
+    --holo-pink: 255 128 214;
+    --holo-cyan: 128 222 255;
+    --holo-gold: 255 236 140;
+  }
+  .card-face-sheen {
+    pointer-events: none;
+    background-size: 250% 100%;
+    background-position: 100% 0;
+    transition: background-position var(--duration-slow) var(--ease-out-facet);
+    @variant motion-reduce {
+      transition: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+  [data-card-finish="FOIL"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 35%,
+      rgb(255 255 255 / 0.22) 48%,
+      transparent 60%
+    );
+  }
+  [data-card-finish="HOLO"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 20%,
+      rgb(var(--holo-pink) / 0.2) 36%,
+      rgb(var(--holo-cyan) / 0.2) 50%,
+      rgb(var(--holo-gold) / 0.2) 64%,
+      transparent 80%
+    );
+  }
+  [data-card-finish="SERIALISED"] .card-face-sheen {
+    background-image: linear-gradient(
+      115deg,
+      transparent 35%,
+      color-mix(in oklab, var(--color-rarity-legendary) 35%, transparent) 50%,
+      transparent 65%
+    );
+  }
+  @media (hover: hover) {
+    [data-card-face]:hover .card-face-sheen {
+      background-position: 0 0;
+      @variant motion-reduce {
+        background-position: 100% 0;
+      }
+    }
+  }
+
+  /* The tilt highlight, only in the sheet and the pack reveal; CardFlip moves it with the pointer. */
+  .card-holo {
+    pointer-events: none;
+    background-image:
+      radial-gradient(
+        circle at var(--holo-x, 50%) var(--holo-y, 50%),
+        rgb(255 255 255 / 0.35),
+        transparent 45%
+      ),
+      linear-gradient(
+        115deg,
+        rgb(var(--holo-pink) / 0.16),
+        rgb(var(--holo-cyan) / 0.16),
+        rgb(var(--holo-gold) / 0.16)
+      );
+    mix-blend-mode: overlay;
+    @variant motion-reduce {
+      display: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+
+  /* A card waiting to be turned over (the pack reveal, the daily reward). */
+  .card-face-down {
+    background-color: var(--color-surface-elevated);
+    background-image: repeating-linear-gradient(
+      45deg,
+      color-mix(in oklab, var(--tint) 22%, transparent) 0 2px,
+      transparent 2px 10px
+    );
+  }
+}
