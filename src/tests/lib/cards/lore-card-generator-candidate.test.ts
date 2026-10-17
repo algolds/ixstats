@@ -187,6 +187,30 @@ describe("generateCard for a sister wiki", () => {
     );
   });
 
+  it("cleans the excerpt from the wikitext, as IxWiki's is, when the wiki has no TextExtracts", async () => {
+    const wikitext = [
+      "{{Infobox country\n| name = Aramelia\n}}",
+      "[[File:001 islam.gif|thumb|The faith of the half world]]",
+      '<p style="text-align:justify">In this timeline the [[Ottoman Empire (Ottoman World)|Ottomans]] ' +
+        "held the '''straits''' for [[Constantinople]].{{cn}}</p>",
+      "== History ==",
+      "=== Rise ===",
+      BODY,
+    ].join("\n");
+    const card = await read({ wikitext });
+
+    for (const text of [card.fullExcerpt, card.description]) {
+      for (const markup of ["[[", "]]", "{{", "}}", "==", "'''", "<p", "style=", "File:", "thumb"])
+        expect(text).not.toContain(markup);
+      expect(text).toMatch(
+        /^In this timeline the Ottomans held the straits for Constantinople\. Aramelia/
+      );
+    }
+    expect(card.fullExcerpt.length).toBeLessThanOrEqual(2000);
+    // The length gate still counts the article's text, not the cleaned excerpt
+    expect(card.signals.length).toBeGreaterThan(card.fullExcerpt.length);
+  });
+
   it("rejects a stub, unless the caller lowers the length gate", async () => {
     await expect(read({ wikitext: "'''Aramelia''' is a nation." })).rejects.toMatchObject({
       kind: "too-short",
