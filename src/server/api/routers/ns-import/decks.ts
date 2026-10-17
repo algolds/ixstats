@@ -216,7 +216,8 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
   const claimed: Array<{ card: Card; key: LedgerKey }> = [];
   for (const nsCard of run.cards) {
     const label = cardLabel(nsCard);
-    const definition = await upsertNSCardDefinition(tx, nsCard, run.nationName, run.valCfg);
+    // A card the library lacks is created waiting for review; the player's copy is minted all the same
+    const definition = await upsertNSCardDefinition(tx, nsCard, run.nationName, run.valCfg, null);
     if (!definition) {
       outcome.skipped.push(label);
       continue;

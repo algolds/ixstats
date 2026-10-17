@@ -15,7 +15,6 @@ import {
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { CardType } from "~/lib/cards/enums";
 import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
@@ -257,19 +256,6 @@ export const nsImportCardsRouter = createTRPCRouter({
         selfService: meta.nsTakedown?.selfService ?? false,
       };
     });
-  }),
-
-  /**
-   * Admin: Filter imported NS cards against the daily active nations dump (nations.xml.gz).
-   * Tags every NS card with metadata.isCTE (true if nation has Ceased To Exist).
-   */
-  filterCTECards: adminProcedure.mutation(async ({ ctx }) => {
-    const result = await processCTENationFilter(ctx.db);
-    return {
-      success: true,
-      ...result,
-      message: `CTE filter complete: ${result.totalProcessed} cards processed (${result.activeCount} active, ${result.cteCount} CTE'd).`,
-    };
   }),
 
   // ─── Self-serve flag-owner opt-out (user settings) ────────────────
