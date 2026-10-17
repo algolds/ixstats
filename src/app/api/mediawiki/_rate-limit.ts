@@ -1,7 +1,5 @@
 /**
- * Shared per-client rate limits for the unauthenticated MediaWiki-facing routes:
- *   - `wiki_proxy`: the fan-out routes (`/api/wiki/{random-articles,categories,category-articles,preview-article}`),
- *     on the default limiter config.
+ * Shared per-client rate limit for the unauthenticated MediaWiki-facing routes:
  *   - `wiki_media`: the two media proxies (`ixwiki/[...path]`, `[wiki]/[...path]`). A page of articles loads
  *     dozens of images at once, so this bucket is generous: 600 requests a minute per client.
  *
@@ -34,11 +32,6 @@ async function rateLimitResponse(
       headers: { "Retry-After": String(Math.ceil((rateLimit.resetAt.getTime() - Date.now()) / 1000)) },
     }
   );
-}
-
-/** A 429 response when `request`'s client is over the `wiki_proxy` limit, otherwise null. */
-export function wikiProxyRateLimitResponse(request: Request, label: string): Promise<NextResponse | null> {
-  return rateLimitResponse(request, label, "wiki_proxy");
 }
 
 /** A 429 response when `request`'s client is over the `wiki_media` limit, otherwise null. */

@@ -24,7 +24,6 @@ IxVault is the collectathon hub in IxStats: achievements, trading cards and the 
 | `/vault/import`                                   | `VaultImportSection`      | NationStates deck import wizard                                                                         |
 | `/vault/ns-deck`                                  | `ImportWizard`            | Legacy NS deck import wizard (the source list uses `/vault/import`)                                     |
 | `/vault/ns-deck/[nation]`                         | NS deck viewer            | Public NS deck for a nation                                                                             |
-| `/vault/admin`                                    | admin gate                | Admin-only vault tools (`useIsAdmin`)                                                                   |
 | `/vault/marketplace`                              | —                         | **Redirect stub** → `/vault/store`, keeping the query                                                   |
 | `/vault/market`, `/vault/packs`, `/vault/trading` | —                         | **Redirect stubs** → `/vault/store?tab=auctions\|store\|trading`                                        |
 
