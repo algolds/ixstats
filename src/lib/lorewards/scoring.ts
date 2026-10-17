@@ -153,7 +153,7 @@ async function enrichCandidate(c: Candidate, weights: ScoringWeights): Promise<C
     .count({ where: { targetSlug: toArticleSlug(c.page) } })
     .catch(() => 0);
   const depth = await db.wikiRevision
-    .count({ where: { articleId: c.articleId, author: c.user } })
+    .count({ where: { source: "ixwiki", articleId: c.articleId, author: c.user } })
     .catch(() => 1);
 
   const proseMultiplier = 1 - weights.proseWeight + PROSE_RATIO * weights.proseWeight;
@@ -237,7 +237,7 @@ export async function loadScoringWeights(
 }
 
 /**
- * Score a UTC day's edits. Only the top ten candidates get the full quality signals (and are returned) unless
+ * Score a UTC day's IxWiki edits. Only the top ten candidates get the full quality signals (and are returned) unless
  * `enrichAll` is set, which the Vault dividend uses to score every editor.
  */
 export async function scoreDailyWikiOS(
@@ -252,7 +252,9 @@ export async function scoreDailyWikiOS(
 
   const revRows: RevisionRow[] = await db.wikiRevision
     .findMany({
+      // Lorewards is IxWiki's contest: other wikis' revisions never score, so a name wins only from IxWiki edits.
       where: {
+        source: "ixwiki",
         createdAt: { gte: startOfDay, lte: endOfDay },
         author: { not: null },
         article: { namespace: 0 },
