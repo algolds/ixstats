@@ -14,7 +14,8 @@ import {
   processCTENationFilter,
   processRegionCardsFromDump,
 } from "~/lib/nationstates/sync-processor";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 /** Every NationStates card season with a dump; an admin may narrow it. */
 export const DEFAULT_SYNC_SEASONS: readonly number[] = Array.from({ length: 13 }, (_, i) => i + 1);

@@ -13,7 +13,8 @@ import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import {
   HIDDEN_TAKEDOWNS,
   artLicenceFollowsTx,

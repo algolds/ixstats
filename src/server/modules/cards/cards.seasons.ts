@@ -9,7 +9,8 @@ import {
   getCurrentIxCardSeason,
   setCurrentIxCardSeason,
 } from "~/lib/cards/season";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 /** Sets the card season; a season equal to the current one writes and audits nothing. */
 export async function setCardSeason(

@@ -14,7 +14,8 @@ import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
 import { computeCardValue, readValuationConfig } from "~/lib/cards/valuation";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import {
   HIDDEN_TAKEDOWNS,
   artLicenceFollowsTx,

@@ -10,7 +10,8 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
 import { EXCLUDE_RESTRICTED_ART, RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import { stageForAdmin } from "./cards.importer";
 
 export interface QueueFilter {

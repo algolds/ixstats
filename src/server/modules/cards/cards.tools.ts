@@ -23,7 +23,8 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { TradeStatus, claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 const MAX_COPIES_SHOWN = 500;
 const ownershipIds = z.array(z.string()).catch([]);

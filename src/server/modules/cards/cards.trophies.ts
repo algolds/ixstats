@@ -24,7 +24,8 @@ import { CONTEST_ENTRY_SELECT, lockContestPlace } from "~/lib/lorewards/contest-
 import { placeOf, resolveLorewardPlace, type LorewardPlaceRef } from "~/lib/lorewards/resolve-user";
 import { mintTrophyCards, mintTrophyCopyTx, trophyCardText } from "~/lib/lorewards/trophy-cards";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 /**
  * What an override sets (`lorewards.overrideWinner`, `admin.saveLorewardWinnerOverride`): a field left out keeps its

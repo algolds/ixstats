@@ -44,12 +44,6 @@ export const CARD_FEED_ACTIONS: readonly string[] = [
   ...LEGACY_CARD_AUDIT_ACTIONS,
 ];
 
-/** The admin acting: DB id for the rows they change, Clerk id for the audit row. */
-export interface CardAdminActor {
-  dbId: string;
-  clerkId: string;
-}
-
 export interface CardAuditEntry {
   action: CardAuditAction;
   /** The admin's Clerk id, as the audit middleware records it; null for a cron. */

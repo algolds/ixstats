@@ -1,5 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import type { CardAdminActor } from "~/server/modules/cards/cards.audit";
+
+/** The admin acting: DB id for the rows they change, Clerk id for the audit row. */
+export interface CardAdminActor {
+  dbId: string;
+  clerkId: string;
+}
 
 /**
  * The signed-in admin as the card modules take them; adminProcedure guarantees both, this refuses otherwise.

@@ -23,7 +23,8 @@ import {
 } from "~/lib/cards/card-sources";
 import { loreCardDiscovery, type TitleList } from "~/lib/cards/lore-card-discovery";
 import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import { cardedTitleKeys } from "./cards.importer";
 import { MAX_IMPORT_TITLES, createImportJob, kickImportRunner } from "./cards.import-jobs";
 
