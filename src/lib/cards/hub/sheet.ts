@@ -248,10 +248,11 @@ function toSheetCopy(
 }
 
 /**
- * The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). On a silhouette the
- * art credit and the file page go too, since both link straight to the image; the article link stays.
+ * The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). When the art is
+ * hidden (a silhouette, or a retired card, often a takedown or a restricted licence) the art credit and the file page
+ * go too, since both link straight to the image; the article link stays.
  */
-function toSheetCard(card: SheetCardRow, silhouette: boolean): CardSheetData["card"] {
+function toSheetCard(card: SheetCardRow, artHidden: boolean): CardSheetData["card"] {
   return {
     id: card.id,
     title: card.title,
@@ -265,8 +266,8 @@ function toSheetCard(card: SheetCardRow, silhouette: boolean): CardSheetData["ca
     wikiArticleTitle: card.wikiArticleTitle,
     excerpt: storedExcerpt(card),
     author: storedAuthor(card.metadata),
-    descriptionUrl: silhouette ? null : storedDescriptionUrl(card.metadata),
-    artCredit: silhouette ? null : artCreditOf(card),
+    descriptionUrl: artHidden ? null : storedDescriptionUrl(card.metadata),
+    artCredit: artHidden ? null : artCreditOf(card),
     ns: card.cardType === "NS" ? nsProvenanceOf(card) : null,
     // A hidden (retired) card is worth nothing, as in Mine, the Wallet's figures and the dividend.
     value: card.isRetired ? 0 : copyValue({ cards: card }),
@@ -314,7 +315,7 @@ export async function loadCardSheet(
   const face = toCardFace(card, { revealArt, copy: copies[0] ?? null });
   return {
     face,
-    card: toSheetCard(card, face.silhouette),
+    card: toSheetCard(card, face.silhouette || card.isRetired),
     copies: copies.map((copy) => toSheetCopy(card, copy, trailOf, handleOf)),
     market: { listings, recentSales, wantedBy },
   };

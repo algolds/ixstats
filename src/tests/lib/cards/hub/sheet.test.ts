@@ -383,6 +383,31 @@ describe("loadCardSheet", () => {
     }
   );
 
+  it("gives a retired card's holder no link to its art", async () => {
+    const db = setup({
+      catalogued: 0,
+      card: {
+        ...CARD,
+        isRetired: true,
+        artLicence: {
+          fileTitle: "File:Map.png",
+          licence: "CC BY-SA 4.0",
+          artist: "Ann",
+          attribution: null,
+          descriptionUrl: "https://ixwiki.com/wiki/File:Map.png",
+        },
+        metadata: { descriptionUrl: "https://commons.wikimedia.org/wiki/File:Map.png" },
+      },
+    });
+    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.face).toMatchObject({ silhouette: false, artwork: null });
+    expect(sheet!.card).toMatchObject({
+      artCredit: null,
+      descriptionUrl: null,
+      wikiArticleTitle: "Caphiria",
+    });
+  });
+
   it("values a retired card at nothing and shows its placeholder face to its holder", async () => {
     const db = setup({ card: { ...CARD, isRetired: true }, catalogued: 0 });
     const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
