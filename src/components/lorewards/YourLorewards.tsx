@@ -73,7 +73,7 @@ interface ViewerTrophies {
   unmatched: number;
 }
 
-/** Places sit under the viewer's wiki name, but none could be tied to their account, and they hold nothing. */
+/** Classic-wiki places sit under the viewer's wiki name that a verified link could claim, and nothing else is theirs. */
 const onlyUnmatched = (mine: ViewerTrophies) =>
   mine.unmatched > 0 &&
   mine.cards.length === 0 &&
@@ -137,8 +137,8 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     return (
       <EmptyState
         icon={<Trophy />}
-        title="Your wiki name isn't matched to your account"
-        message={`Lorewards recorded under ${mine.data.wikiUsername} could not be tied to your account. Verify your wiki account in Settings to claim them.`}
+        title="Classic wiki wins need a verified link"
+        message={`Some wins under ${mine.data.wikiUsername} may be yours. Verify your wiki account in Settings to claim the ones you made on the classic wiki.`}
         action={
           <Button asChild variant="outline" size="sm">
             <Link href={ixstatesLinkHref("/settings?tab=account")}>Verify your wiki account</Link>

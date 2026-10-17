@@ -257,7 +257,7 @@ describe("you focus", () => {
     expect(screen.queryByRole("link", { name: "Open settings" })).not.toBeInTheDocument();
   });
 
-  it("tells a viewer whose wiki name could not be matched to verify the link, not that they have no edits", () => {
+  it("tells a viewer that classic-wiki wins under their name may be theirs, without assuming so", () => {
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
       ok({
         wikiUsername: "Ostrozava",
@@ -273,8 +273,12 @@ describe("you focus", () => {
     );
     render(<LorewardsView focus="you" />);
 
-    expect(screen.getByText("Your wiki name isn't matched to your account")).toBeInTheDocument();
-    expect(screen.getByText(/recorded under Ostrozava could not be tied/)).toBeInTheDocument();
+    expect(screen.getByText("Classic wiki wins need a verified link")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Some wins under Ostrozava may be yours. Verify your wiki account in Settings to claim the ones you made on the classic wiki."
+      )
+    ).toBeInTheDocument();
     expect(screen.queryByText("No wiki edits yet")).toBeNull();
     expect(screen.getByRole("link", { name: "Verify your wiki account" })).toHaveAttribute(
       "href",
