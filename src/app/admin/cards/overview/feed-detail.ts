@@ -42,7 +42,10 @@ function fieldLabels(fields: string): string {
 
 export function feedDetail(detail: string): string {
   const fields = FIELD_SAVE.exec(detail);
-  if (fields) return `${fields[1]}: ${fieldLabels(fields[2] ?? "")}`;
+  if (fields) {
+    const [, section = "", list = ""] = fields;
+    return `${section}: ${fieldLabels(list)}`;
+  }
   return detail
     .replace(SOURCE_KEY, (match, lead: string, key: string) =>
       SOURCE_LABELS.has(key) ? `${lead}${SOURCE_LABELS.get(key)}` : match
