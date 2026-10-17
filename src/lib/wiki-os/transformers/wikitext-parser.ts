@@ -319,6 +319,16 @@ export function stripWikitextFiles(text: string): string {
   return pieces.join("");
 }
 
+/** A link to a file's page rather than the file: `[[:File:Name|words]]`, also `Image:` and `Media:`. */
+const FILE_PAGE_LINK = /\[\[:((?:file|image|media):[^\]|]*)(?:\|([^\]]*))?\]\]/gi;
+
+/** File-page links read as their words (or the file title), for text that must not lead to the file. */
+function unlinkFilePages(text: string): string {
+  return text.replace(FILE_PAGE_LINK, (_link, target: string, words: string | undefined) =>
+    words ? words : target
+  );
+}
+
 /**
  * ponytail: COMPILE_CEILING, 300,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
  * the in-process fallback for a page MediaWiki could not render (a reader's page or an old revision, an
@@ -435,12 +445,21 @@ function formatParagraphs(text: string): string {
 }
 
 /**
+ * `images: false` leaves out file links and the infobox image, and reads links to file pages as plain words: a card
+ * sheet that hides a card's art.
+ */
+interface WikitextHtmlOptions {
+  images?: boolean;
+}
+
+/**
  * Robust wikitext parser that converts raw MediaWiki markup into clean HTML
  * for display in card modals, wiki previews, and lore excerpts.
  */
 export function parseWikitextToHtml(
   wikitext: string | null | undefined,
-  wikiSource: string = "ixwiki"
+  wikiSource: string = "ixwiki",
+  { images = true }: WikitextHtmlOptions = {}
 ): string {
   if (!wikitext || !wikitext.trim()) return "";
   if (wikitext.length > COMPILE_CEILING) return plainFallbackHtml(wikitext);
@@ -468,7 +487,7 @@ export function parseWikitextToHtml(
   text = parseWikitables(text);
 
   // 6b. Extract and convert Infobox template to HTML table before stripping
-  const infoboxHtml = parseInfoboxToHtml(text);
+  const infoboxHtml = parseInfoboxToHtml(text, { images });
 
   // 7. Strip recursively nested templates: {{...}}
   text = stripWikitextTemplates(text);
@@ -483,7 +502,9 @@ export function parseWikitextToHtml(
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
-  text = convertWikitextImages(text, wikiSource);
+  text = images
+    ? convertWikitextImages(text, wikiSource)
+    : unlinkFilePages(stripWikitextFiles(text));
 
   // 10. Convert wikitext headings
   text = replaceHeadings(

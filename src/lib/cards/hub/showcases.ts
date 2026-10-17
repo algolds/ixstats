@@ -2,6 +2,7 @@
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { ContextRules } from "./art-visibility";
 import { DISPLAY_SIZE, displayedCopies } from "./displayed";
@@ -12,11 +13,8 @@ type ShowcaseDb = Pick<
   "cardCollection" | "cardCollectionItem" | "cardOwnership" | "$transaction"
 >;
 
-/**
- * Showcases are stored as `CardCollection` rows holding copies (`CardCollectionItem`). The name and description keep
- * the old collection limits, so a migrated collection stays editable as it stands.
- */
-export const SHOWCASE_LIMITS = { perPlayer: 20, items: 60, name: 100, description: 500 } as const;
+/** Showcases are stored as `CardCollection` rows holding copies (`CardCollectionItem`). */
+export { SHOWCASE_LIMITS };
 
 export const ShowcaseFieldsSchema = z.object({
   name: z.string().trim().min(1).max(SHOWCASE_LIMITS.name),

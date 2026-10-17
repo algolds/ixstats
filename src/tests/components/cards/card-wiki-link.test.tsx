@@ -25,16 +25,33 @@ jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiHtmlContent: () => null,
 }));
 jest.mock("~/lib/wiki-os/transformers/wikitext-parser", () => ({
-  parseWikitextToHtml: () => "",
+  parseWikitextToHtml: jest.fn(() => ""),
 }));
 
 import { api } from "~/trpc/react";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
 import { LoreWikiExcerpt } from "~/components/cards/display/LoreWikiExcerpt";
-import type { CardInstance } from "~/types/cards-display";
 
-const card = (overrides: Partial<CardInstance>) =>
-  ({ id: "c", title: "Ostrozava", ...overrides }) as CardInstance;
+const card = (
+  overrides: Partial<{
+    description: string | null;
+    excerpt: string | null;
+    wikiSource: string | null;
+    wikiArticleTitle: string | null;
+    wikiUrl: string | null;
+    artwork: string | null;
+    descriptionUrl: string | null;
+  }>
+) => ({
+  title: "Ostrozava",
+  description: null,
+  excerpt: null,
+  wikiSource: null,
+  wikiArticleTitle: null,
+  wikiUrl: null,
+  ...overrides,
+});
 
 describe("cardWikiHref", () => {
   it("opens an IxWiki article in WikiOS, with no ixwiki.com host", () => {
@@ -114,16 +131,14 @@ describe("cardWikiHref", () => {
   it("links a legacy Commons card, stored with no title, to the file its description URL or art names", () => {
     const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
     const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
-    expect(
-      cardWikiHref(card({ wikiSource: "commons", metadata: { descriptionUrl: upload } }))
-    ).toBe(page);
+    expect(cardWikiHref(card({ wikiSource: "commons", descriptionUrl: upload }))).toBe(page);
     expect(cardWikiHref(card({ wikiSource: "commons", artwork: upload }))).toBe(page);
     expect(
       cardWikiHref(
         card({
           wikiSource: "commons",
           wikiUrl: null,
-          metadata: { descriptionUrl: "javascript:alert(1)" },
+          descriptionUrl: "javascript:alert(1)",
         })
       )
     ).toBeNull();
@@ -137,6 +152,7 @@ describe("cardWikiHref", () => {
 
   it("has no link without a URL or title", () => {
     expect(cardWikiHref(card({}))).toBeNull();
+    expect(cardWikiHref({ wikiSource: "ixwiki", wikiArticleTitle: null })).toBeNull();
     expect(cardWikiHref(null)).toBeNull();
   });
 });
@@ -200,5 +216,68 @@ describe("LoreWikiExcerpt link", () => {
     expect(link.getAttribute("href")).toBe("/wiki/Page?source=iiwiki");
     expect(link.getAttribute("target")).toBeNull();
     expect(screen.getByText("From IIWiki")).not.toBeNull();
+  });
+
+  it("shows the stored excerpt while the article loads, and asks the card's own wiki", () => {
+    const useQuery = jest.mocked(api.cards.getWikiArticleExcerpt.useQuery);
+    useQuery.mockClear();
+    useQuery.mockReturnValueOnce({ data: undefined, isLoading: true } as never);
+    render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "Page", wikiSource: "iiwiki", excerpt: "Stored words" })}
+        wikiUrl="/wiki/Page?source=iiwiki"
+      />
+    );
+    expect(screen.queryByText("Loading article excerpt...")).toBeNull();
+    expect(useQuery.mock.calls[0]?.[0]).toEqual({ articleTitle: "Page", wikiSource: "iiwiki" });
+    expect(useQuery.mock.calls[0]?.[1]).toMatchObject({ enabled: true });
+  });
+
+  it("titles the excerpt below the section that holds it", () => {
+    render(<LoreWikiExcerpt card={card({ wikiArticleTitle: "Velarc_City" })} wikiUrl={null} />);
+    expect(screen.getByRole("heading", { level: 4, name: "Velarc City" })).not.toBeNull();
+  });
+
+  it("hides a Commons card's file page while its art is hidden, since the page is the image", () => {
+    render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "File:Flag of Ireland.svg", wikiSource: "commons" })}
+        wikiUrl="https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"
+        artHidden
+      />
+    );
+    expect(screen.queryByRole("link", { name: "View the file page" })).toBeNull();
+  });
+
+  it("draws the excerpt without its images while the art is hidden, keeping the article link", () => {
+    const parse = jest.mocked(parseWikitextToHtml);
+    jest.mocked(api.cards.getWikiArticleExcerpt.useQuery).mockReturnValue({
+      data: { wikitext: "Words [[File:Velarc.png]]", extract: null },
+      isLoading: false,
+    } as never);
+    parse.mockClear();
+    const { unmount } = render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "Velarc", wikiSource: "ixwiki" })}
+        wikiUrl="/wiki/Velarc"
+        artHidden
+      />
+    );
+    expect(parse).toHaveBeenLastCalledWith("Words [[File:Velarc.png]]", "ixwiki", {
+      images: false,
+    });
+    expect(screen.getByRole("link", { name: "Read the full article" })).not.toBeNull();
+    unmount();
+    render(
+      <LoreWikiExcerpt
+        card={card({ wikiArticleTitle: "Velarc", wikiSource: "ixwiki" })}
+        wikiUrl="/wiki/Velarc"
+      />
+    );
+    expect(parse).toHaveBeenLastCalledWith("Words [[File:Velarc.png]]", "ixwiki", { images: true });
+    jest.mocked(api.cards.getWikiArticleExcerpt.useQuery).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as never);
   });
 });

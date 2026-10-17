@@ -75,4 +75,42 @@ describe("wikitext-parser — wikitable and image parsing", () => {
   });
 });
 
+describe("wikitext-parser — images left out", () => {
+  const article = `{{Infobox country
+| name = Velarc
+| image_flag = Flag of Velarc.svg
+| capital = [[Kirav]]
+}}
+'''Velarc''' is a country. [[File:Velarc coast.jpg|thumb|The [[Kirav]] coast]] It borders the sea. [[Image:Map.png|200px]]`;
 
+  it("draws the article's images by default", () => {
+    const html = parseWikitextToHtml(article, "ixwiki");
+    expect(html).toContain("<img");
+    expect(html).toContain("infobox-image-row");
+  });
+
+  it("leaves out file links and the infobox image, keeping the text and the rest of the infobox", () => {
+    const html = parseWikitextToHtml(article, "ixwiki", { images: false });
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<figure");
+    expect(html).not.toContain("infobox-image-row");
+    expect(html).not.toContain("Velarc coast");
+    expect(html).not.toContain("Flag of Velarc");
+    expect(html).toContain("It borders the sea.");
+    expect(html).toContain("Capital");
+  });
+
+  it("reads a link to a file page as its plain words", () => {
+    const links =
+      "See [[:File:Flag of Velarc.svg|the flag]], [[:Image:Map.png]] and [[:media:Anthem.ogg|the anthem]].";
+    const html = parseWikitextToHtml(links, "ixwiki", { images: false });
+    expect(html).toContain("See the flag, Image:Map.png and the anthem.");
+    expect(html).not.toContain("<a");
+    expect(html).not.toMatch(/File|Anthem\.ogg/);
+  });
+
+  it("keeps links to file pages as links by default", () => {
+    const html = parseWikitextToHtml("See [[:File:Flag of Velarc.svg|the flag]].", "ixwiki");
+    expect(html).toContain('<a href="/wiki/%3AFile%3AFlag_of_Velarc.svg"');
+  });
+});

@@ -7,6 +7,7 @@ import type { ArtCredit } from "~/lib/cards/face/art-credit";
 import type { NsProvenance } from "~/lib/cards/face/ns-provenance";
 import { trailLabel, trailParties, type TrailEvent } from "~/lib/cards/face/trail";
 import type { CardFaceData } from "~/lib/cards/face/types";
+import { ArtCreditLine } from "./ArtCreditLine";
 import { RealmCrest } from "./RealmCrest";
 
 /** How many moves the back lists; the sheet's copy rows have the rest. */
@@ -73,7 +74,7 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
         </ol>
       )}
       {ns && <NsLine ns={ns} />}
-      {artCredit && <ArtCreditLine credit={artCredit} />}
+      {artCredit && <ArtCreditLine credit={artCredit} className="mt-auto" />}
     </div>
   );
 }
@@ -110,27 +111,5 @@ function NsLine({ ns }: { ns: NsProvenance }) {
         <NationStatesDataCredit linkClassName={cn("underline", focusRing)} />
       </p>
     </div>
-  );
-}
-
-/** The credit, linked to the art's source when it has one; the licence follows unless the line already names it. */
-function ArtCreditLine({ credit }: { credit: ArtCredit }) {
-  const licence = credit.licence && !credit.line.includes(credit.licence) ? credit.licence : null;
-  return (
-    <p className="text-label-secondary mt-auto">
-      {credit.sourceUrl ? (
-        <a
-          href={credit.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn("underline", focusRing)}
-        >
-          {credit.line}
-        </a>
-      ) : (
-        credit.line
-      )}
-      {licence && ` · ${licence}`}
-    </p>
   );
 }

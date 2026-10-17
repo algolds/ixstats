@@ -1,8 +1,8 @@
 "use client";
 /**
  * LoreWikiExcerpt — Shows first few paragraphs of a wiki article for lore cards.
- * Checks metadata.fullExcerpt first, then fetches on-demand via tRPC.
- * Used inside the Lore tab of CardDetailsModal.
+ * Shows the card's stored excerpt first, then fetches on-demand via tRPC.
+ * Used in the card sheet's About section.
  */
 
 import React, { useMemo } from "react";
@@ -13,19 +13,25 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import type { CardInstance } from "~/types/cards-display";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 interface LoreWikiExcerptProps {
-  card: CardInstance;
+  card: {
+    title: string;
+    description: string | null;
+    excerpt: string | null;
+    wikiSource: string | null;
+    wikiArticleTitle: string | null;
+  };
   wikiUrl: string | null;
+  /** The viewer may not see the card's art: the excerpt draws no images, and a Commons file page is not linked. */
+  artHidden?: boolean;
 }
 
-export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl }) => {
-  const meta = card.metadata as Record<string, unknown> | undefined;
-  const storedExcerpt = meta?.fullExcerpt as string | undefined;
+export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl, artHidden }) => {
+  const storedExcerpt = card.excerpt;
   const targetArticleTitle = card.wikiArticleTitle || card.title;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
   // Commons has files and no articles: no wikitext to fetch, no reader page to preview.
@@ -46,16 +52,16 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
     fetchedExcerpt?.wikitext || fetchedExcerpt?.extract || storedExcerpt || card.description;
 
   const parsedHtml = useMemo(
-    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki"),
-    [excerptText, articleSource]
+    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki", { images: !artHidden }),
+    [excerptText, articleSource, artHidden]
   );
 
   return (
     <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
-      <h3 className="text-label text-headline flex items-center gap-2">
+      <h4 className="text-label text-headline flex items-center gap-2">
         <BookOpen className="text-tint h-4 w-4" />
         {card.wikiArticleTitle?.replace(/_/g, " ") || card.title}
-      </h3>
+      </h4>
 
       {isLoading && !storedExcerpt ? (
         <div className="text-label-secondary text-footnote flex items-center gap-2 py-4">
@@ -70,7 +76,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
         <div className="text-label-secondary text-footnote py-2">No article excerpt available.</div>
       )}
 
-      {wikiUrl && articleSource === null && (
+      {wikiUrl && articleSource === null && !artHidden && (
         <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
           <a
             href={wikiUrl}

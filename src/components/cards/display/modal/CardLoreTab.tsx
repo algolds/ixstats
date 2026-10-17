@@ -52,6 +52,9 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         : null
   ) as LoreCategory | null;
 
+  const fullExcerpt = meta?.fullExcerpt;
+  const storedExcerpt = typeof fullExcerpt === "string" ? fullExcerpt : null;
+
   const categoryTheme = resolvedCategory ? getCategoryTheme(resolvedCategory) : null;
   const categoryLabel = resolvedCategory ? getCategoryLabel(resolvedCategory) : null;
 
@@ -107,7 +110,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
       </div>
 
       {/* Wiki article excerpt (full paragraphs) */}
-      <LoreWikiExcerpt card={card} wikiUrl={wikiUrl} />
+      <LoreWikiExcerpt card={{ ...card, excerpt: storedExcerpt }} wikiUrl={wikiUrl} />
     </motion.div>
   );
 }
