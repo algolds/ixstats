@@ -409,18 +409,3 @@ export function classifyLoreArticle(input: ArticleClassificationInput): LoreCate
   // If no signals scored at all, default to NATION
   return highestScore > 0 ? highestCategory : LoreCategory.NATION;
 }
-
-/**
- * Fast one-line classification helper from wikitext string.
- */
-export function classifyFromWikitext(
-  wikitext: string | null | undefined,
-  title?: string | null,
-  categories?: string[]
-): LoreCategoryType {
-  return classifyLoreArticle({
-    text: wikitext,
-    title,
-    categories,
-  });
-}

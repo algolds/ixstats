@@ -31,17 +31,3 @@ export function NationStatesLogo({ className, size = "sm" }: NationStatesLogoPro
     />
   );
 }
-
-export function NationStatesBadge({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "rounded-control-sm border-blue/30 bg-blue/20 shadow-card inline-flex items-center justify-center gap-1 border px-2 py-0.5",
-        className
-      )}
-      title="NationStates card"
-    >
-      <NationStatesLogo size="xs" />
-    </span>
-  );
-}

@@ -36,16 +36,15 @@ const GONE = [
   "src/server/api/routers/cards/collections.ts",
 ];
 
-/** Names of the old palettes and renderers; none may come back under another file. */
+/** Names of the old palettes, renderers and their badges; none may come back under another file. */
 const BANNED =
-  /\b(RARITY_COLORS|RARITY_THEMES|RARITY_MATERIALS|getRarityTheme|getRarityGlow|getRarityConfig|getRarityHex|getRarityTier|getCardTypeLabel|CardDisplay|CardDetailsModal|Card3DViewer|CardHolographicCover|HolographicOverlay|RarityBadge|PackOpeningSequence|GlassSplashEffect|CometCard)\b/;
+  /\b(RARITY_COLORS|RARITY_THEMES|RARITY_MATERIALS|getRarityTheme|getRarityGlow|getRarityConfig|getRarityHex|getRarityTier|getCardTypeLabel|CardDisplay|CardDetailsModal|Card3DViewer|CardHolographicCover|HolographicOverlay|RarityBadge|PackOpeningSequence|GlassSplashEffect|CometCard|IIWikiBadge|isIIWikiCard|NationStatesBadge|classifyFromWikitext)\b/;
 
-/** The rarity palette: the Facet tokens, the face's sheet, and their TypeScript mirror (CARD_RARITY_HEX). */
-const PALETTE = [
-  "src/styles/facet/tokens.css",
-  "src/styles/card-art.css",
-  "src/lib/design/tokens.ts",
-];
+/** The rarity palette: the Facet tokens and the face's sheet. */
+const PALETTE = ["src/styles/facet/tokens.css", "src/styles/card-art.css"];
+
+/** CARD_RARITY_HEX's doc comment names the tokens (`--color-rarity-*`); no other mention is allowed outside PALETTE. */
+const PALETTE_MENTIONS = new Set(["src/lib/design/tokens.ts: --color-rarity-*"]);
 
 function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -71,8 +70,11 @@ describe("cards face and hub removals", () => {
 
   it("keeps the rarity colours in the one palette", () => {
     const outside = sources
-      .filter(({ file, text }) => /--color-rarity-/.test(text) && !PALETTE.includes(file))
-      .map(({ file }) => file);
+      .filter(({ file }) => !PALETTE.includes(file))
+      .flatMap(({ file, text }) =>
+        Array.from(text.matchAll(/--color-rarity-[\w*-]*/g), (m) => `${file}: ${m[0]}`)
+      )
+      .filter((hit) => !PALETTE_MENTIONS.has(hit));
     expect(outside).toEqual([]);
   });
 });

@@ -11,6 +11,19 @@ describe("card vocabulary", () => {
     expect(categories).toHaveLength(12);
     expect(BROWSABLE_CATEGORIES).toEqual(categories);
     expect(Object.keys(CATEGORY_SYNONYMS).sort()).toEqual([...categories].sort());
-    for (const category of categories) expect(getCategoryLabel(category)).toBeTruthy();
+    expect(categories.map(getCategoryLabel)).toEqual([
+      "Military",
+      "Diplomacy",
+      "Geography",
+      "Religion",
+      "Culture",
+      "Government",
+      "People",
+      "Economy",
+      "Science",
+      "History",
+      "Nation",
+      "Special",
+    ]);
   });
 });
