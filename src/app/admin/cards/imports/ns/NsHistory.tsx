@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useDialogTarget } from "~/app/admin/vault/player-cards/useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 import { RARITY_LABELS, REVIEW_STATE_LABELS, labelOf } from "../../shared/card-labels";
 
 type Log = RouterOutputs["cards"]["admin"]["nationstates"]["logs"][number];

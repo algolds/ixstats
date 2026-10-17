@@ -6,7 +6,7 @@ import { ReasonDialog } from "~/app/admin/cards/shared/ReasonDialog";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { useDialogTarget } from "./useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 
 type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
 type Pending =

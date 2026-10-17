@@ -18,6 +18,7 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
 const stage = jest.mocked(stageForAdmin);
 const RESTRICTED = { artLicence: { is: { status: "RESTRICTED" } } };
+const EXCLUDE_RESTRICTED = { artLicence: { isNot: { status: "RESTRICTED" } } };
 const AS_OF = new Date("2026-10-01T12:00:00Z");
 
 /** A database whose `$transaction` hands its callback a separate client, so a test sees which writes it holds. */
@@ -91,7 +92,7 @@ describe("reviewCards", () => {
     const chosen = { id: { in: ["a", "b", "c"] }, reviewState: { in: ["PENDING", "REJECTED"] } };
     expect(tx.card.count).toHaveBeenCalledWith({ where: { ...chosen, ...RESTRICTED } });
     expect(tx.card.updateMany).toHaveBeenCalledWith({
-      where: { ...chosen, NOT: RESTRICTED },
+      where: { ...chosen, ...EXCLUDE_RESTRICTED },
       data: expect.objectContaining({ reviewState: "APPROVED", reviewedBy: "db_admin" }),
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({
@@ -144,7 +145,7 @@ describe("reviewCards", () => {
     expect(tx.card.count).toHaveBeenNthCalledWith(1, { where: seen });
     expect(tx.card.count).toHaveBeenNthCalledWith(2, { where: { ...seen, ...RESTRICTED } });
     expect(tx.card.updateMany).toHaveBeenCalledWith({
-      where: { ...seen, NOT: RESTRICTED },
+      where: { ...seen, ...EXCLUDE_RESTRICTED },
       data: expect.objectContaining({ reviewState: "APPROVED" }),
     });
     expect(tx.auditLog.create).toHaveBeenCalledWith({

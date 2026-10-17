@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { EmptyState } from "~/components/ui/empty-state";
 import { ValueSelect } from "~/components/ui/value-select";
-import { useDialogTarget } from "~/app/admin/vault/player-cards/useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 import {
   CARD_TYPES,
   CARD_TYPE_LABELS,

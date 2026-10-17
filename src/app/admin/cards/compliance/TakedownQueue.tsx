@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useDialogTarget } from "~/app/admin/vault/player-cards/useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 import { CARD_TYPE_LABELS, labelOf } from "../shared/card-labels";
 import { ReasonDialog } from "../shared/ReasonDialog";
 import { FileTakedownDialog } from "./FileTakedownDialog";

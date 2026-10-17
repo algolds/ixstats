@@ -8,6 +8,7 @@ import type { CardType, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
+import { EXCLUDE_RESTRICTED_ART, RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 import { stageForAdmin } from "./cards.importer";
@@ -20,7 +21,6 @@ export interface QueueFilter {
 }
 
 const ADMIN_REALMS: Prisma.RealmWhereInput = { OR: [{ isSystem: true }, { id: DEFAULT_REALM_ID }] };
-const RESTRICTED_ART: Prisma.CardWhereInput = { artLicence: { is: { status: "RESTRICTED" } } };
 
 function realmWhere(realm: string): Prisma.CardWhereInput {
   if (realm === "all") return {};
@@ -171,7 +171,7 @@ export async function reviewCards(
       ? await tx.card.count({ where: { ...choice.where, ...RESTRICTED_ART } })
       : 0;
     const result = await tx.card.updateMany({
-      where: approve ? { ...choice.where, NOT: RESTRICTED_ART } : choice.where,
+      where: approve ? { ...choice.where, ...EXCLUDE_RESTRICTED_ART } : choice.where,
       data: {
         reviewState: approve ? "APPROVED" : "REJECTED",
         reviewedAt: new Date(),

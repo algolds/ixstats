@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useDialogTarget } from "./useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 
 type Copy = RouterOutputs["cards"]["admin"]["tools"]["playerCards"]["copies"][number];
 interface Pending {

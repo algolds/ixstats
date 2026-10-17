@@ -36,7 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { useDialogTarget } from "~/app/admin/vault/player-cards/useDialogTarget";
+import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 
 type Status = "UNKNOWN" | "RESTRICTED";
 type Row = RouterOutputs["cards"]["admin"]["compliance"]["licences"]["rows"][number];

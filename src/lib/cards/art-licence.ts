@@ -14,6 +14,8 @@ export type LicenceStatus = "OPEN" | "RESTRICTED" | "UNKNOWN";
  * daily card draw through it, so restricted art never drops even before its takedown hides it.
  */
 export const EXCLUDE_RESTRICTED_ART = { artLicence: { isNot: { status: "RESTRICTED" } } } as const;
+/** The cards whose art licence is restricted (curation counts them as held back from approval). */
+export const RESTRICTED_ART = { artLicence: { is: { status: "RESTRICTED" } } } as const;
 
 const RESTRICTED = [/\bnc\b/i, /non[\s-]?commercial/i, /\bnd\b/i, /no[\s-]?deriv/i];
 const OPEN = [
