@@ -30,7 +30,7 @@ A Loreward pays by contest and place, into your [Vault](/help/vault/overview):
 
 Each place pays once. These amounts apply to results dated 15 October 2026 or later; earlier results keep what they paid, and yearly winners don't pay. Runner-up places are only paid where the results record them, which today is the daily contest. Admins can change the amounts.
 
-You're only paid if IxStats can match the winner to your account: through a **verified** wiki link, or, with no link, when every IxWiki edit under that name was made in WikiOS from your account. If the name also has edits made through MediaWiki, or another account has edited under it, nobody is paid until the name's owner verifies the link. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
+WikiOS edits earn without a link; MediaWiki edits need a verified link. A place is paid to the account with a **verified** wiki link for the winner's name. With no link, it is paid to you only when every winning edit (your edits under that name to the winning page during the contest) was made in WikiOS from your account. If a winning edit was made on the classic wiki, or another account also edited the page under that name, nobody is paid until the name's owner verifies the link. Weekly and monthly results don't record a winning page, so they pay through a verified link only. Link it in [Settings → IxnayID & Passport → Linked Accounts](/help/getting-started/ixnayid#link-your-wiki-accounts). Results from before the payout date are never back-paid, so linking later does not pay history.
 
 ## Trophy cards
 

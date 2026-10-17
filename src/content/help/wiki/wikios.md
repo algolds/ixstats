@@ -43,7 +43,7 @@ A player's wiki user profile now opens their [IxnayID passport](/help/getting-st
 
 ## Lorewards
 
-Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits once the name is matched to your account (a verified wiki link, or edits made only from your account in WikiOS), every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
+Lorewards are the community's daily, weekly and monthly awards for wiki writing, picked by the Lorewards bot. Winners and runner-ups are paid IxCredits (WikiOS edits earn without a link; MediaWiki edits need a verified link), every place also becomes a trophy card, your standing shows on your passport and in the Vault, today's race and the standings are on the [Lorewards page](/util/lorewards), and winning articles carry a **Loreward winner** badge. See [Lorewards](/help/wiki/lorewards).
 
 ## Good to know
 
