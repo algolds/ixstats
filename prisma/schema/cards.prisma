@@ -455,7 +455,7 @@ model CardTransferEvent {
   fromUserId   String?
   /// Null when the copy leaves every player (REVOKE, VOID).
   toUserId     String?
-  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "REVOKE" | "REASSIGN" | "VOID"
+  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "REVOKE" | "REASSIGN" | "VOID" | "REISSUE"
   price        Int?
   createdAt    DateTime @default(now())
 

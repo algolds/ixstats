@@ -149,3 +149,88 @@ describe("mintCopy", () => {
     }
   );
 });
+
+describe("mintCopy reissuing a serial", () => {
+  type ReissueCard = { isBound: boolean; totalSupply: number | null } | null;
+
+  /** A card, its live copies and how many trail rows hold the asked serial, as the reissue reads them. */
+  function reissueTx(card: ReissueCard, live = 0, issued = 1) {
+    return {
+      $executeRaw: jest.fn().mockResolvedValue(1),
+      card: { findUnique: jest.fn().mockResolvedValue(card) },
+      cardOwnership: {
+        count: jest.fn().mockResolvedValue(live),
+        create: jest.fn(async ({ data }: { data: Omit<CopyRow, "id"> }) => ({
+          id: "own_new",
+          ...data,
+        })),
+      },
+      cardTransferEvent: { count: jest.fn().mockResolvedValue(issued), create: jest.fn() },
+    };
+  }
+  const reissue = (tx: ReturnType<typeof reissueTx>, serialNumber = 1) =>
+    mintCopy(tx as never, {
+      cardId: "trophy",
+      ownerId: "u2",
+      finish: "SERIALISED",
+      source: "TROPHY",
+      serialNumber,
+    });
+
+  it("mints a bound one-of-one's voided serial again, under its lock, and records the mint row as REISSUE", async () => {
+    const tx = reissueTx({ isBound: true, totalSupply: 1 });
+
+    await expect(reissue(tx)).resolves.toMatchObject({ serialNumber: 1 });
+
+    expect(tx.cardOwnership.create).toHaveBeenCalledWith({
+      data: { cardId: "trophy", ownerId: "u2", serialNumber: 1, finish: "SERIALISED" },
+    });
+    expect(tx.cardTransferEvent.create).toHaveBeenCalledWith({
+      data: {
+        ownershipId: "own_new",
+        cardId: "trophy",
+        serialNumber: 1,
+        toUserId: "u2",
+        action: "REISSUE",
+      },
+    });
+    expect(tx.card.findUnique).toHaveBeenCalledWith({
+      where: { id: "trophy" },
+      select: { isBound: true, totalSupply: true },
+    });
+    expect(tx.cardOwnership.count).toHaveBeenCalledWith({ where: { cardId: "trophy" } });
+    expect(tx.cardTransferEvent.count).toHaveBeenCalledWith({
+      where: { cardId: "trophy", serialNumber: 1 },
+    });
+    const [strings, namespace, cardId] = tx.$executeRaw.mock.calls[0];
+    expect(strings.join("?")).toContain("pg_advisory_xact_lock");
+    expect([namespace, cardId]).toEqual([7331, "trophy"]);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.cardOwnership.count.mock.invocationCallOrder[0]!
+    );
+  });
+
+  it.each<[string, ReissueCard, number, number]>([
+    ["an unbound card", { isBound: false, totalSupply: 1 }, 0, 1],
+    ["a card with a longer run", { isBound: true, totalSupply: 5 }, 0, 1],
+    ["a card with no run size", { isBound: true, totalSupply: null }, 0, 1],
+    ["a missing card", null, 0, 1],
+    ["a one-of-one with a live copy", { isBound: true, totalSupply: 1 }, 1, 1],
+    ["a one-of-one that never issued the serial", { isBound: true, totalSupply: 1 }, 0, 0],
+  ])("refuses to reissue a serial of %s", async (_, card, live, issued) => {
+    const tx = reissueTx(card, live, issued);
+
+    await expect(reissue(tx)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "Only a bound one-of-one with no live copy can have its serial reissued",
+    });
+    expect(tx.cardOwnership.create).not.toHaveBeenCalled();
+  });
+
+  it("keeps the run check on a reissue: a one-of-one's serial 2 is past its run", async () => {
+    const tx = reissueTx({ isBound: true, totalSupply: 1 });
+
+    await expect(reissue(tx, 2)).rejects.toThrow("Every copy of this card's run has been minted");
+    expect(tx.cardOwnership.create).not.toHaveBeenCalled();
+  });
+});
