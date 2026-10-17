@@ -14,6 +14,7 @@
  */
 import { weekKey } from "~/lib/achievements/time-buckets";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
+import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { MetricContext, MetricLoader } from "./registry";
 import { zeroed } from "./zeroed";
 
@@ -228,7 +229,11 @@ export const cardsDeckLoader: MetricLoader = {
   },
 };
 
-/** Loreward wins and runner-ups from the stats row of the linked wiki account (daily runner-ups only exist). */
+/**
+ * Loreward wins and runner-ups from the stats row of exactly the linked wiki account (daily runner-ups only exist):
+ * MediaWiki usernames are case-sensitive after the first letter, so only the normalized name matches, as
+ * `resolveLorewardPlace` matches a plain name. Places won under a `wikios>` name are not in this row.
+ */
 export const lorewardsLoader: MetricLoader = {
   id: "platform-lorewards",
   scope: "account",
@@ -237,7 +242,7 @@ export const lorewardsLoader: MetricLoader = {
     const username = await verifiedWikiUsername(ctx);
     const stats = username
       ? await ctx.db.lorewardUserStats.findFirst({
-          where: { username: { equals: username, mode: "insensitive" } },
+          where: { username: normalizeWikiUsername(username) },
         })
       : null;
     return {
@@ -252,8 +257,10 @@ export const lorewardsLoader: MetricLoader = {
 
 /**
  * 1 when the current or previous ISO week holds a wiki edit, a human post or reply, and card
- * activity (a pack opened, a trade accepted or a sale). One query: the distinct (kind, ISO week)
- * pairs of the last 14 days, kept where all three kinds meet. Week keys match `weekKey`.
+ * activity (a pack opened, a trade accepted or a sale). A wiki edit is one of the account's own revisions
+ * (`authorId`: a WikiOS edit, or a MediaWiki edit imported under its verified link), never one that only carries
+ * the link's name. One query: the distinct (kind, ISO week) pairs of the last 14 days, kept where all three kinds
+ * meet. Week keys match `weekKey`.
  */
 export const renaissanceLoader: MetricLoader = {
   id: "platform-renaissance",
@@ -261,9 +268,6 @@ export const renaissanceLoader: MetricLoader = {
   keys: ["renaissanceWeek"],
   async load(ctx) {
     const { db, userId, clerkUserId, now } = ctx;
-    const username = await verifiedWikiUsername(ctx);
-    // Without a verified link there is no wiki edit to find, so the week cannot be met.
-    if (!username) return { renaissanceWeek: 0 };
     const since = new Date(now.getTime() - LOOKBACK_DAYS * DAY_MS);
     const weeks = [weekKey(now), weekKey(new Date(now.getTime() - WEEK_MS))];
     const [row] = await db.$queryRaw<Array<{ weeks: number }>>`
@@ -271,7 +275,7 @@ export const renaissanceLoader: MetricLoader = {
         SELECT wk FROM (
           SELECT 'wiki' AS kind, to_char(r."createdAt", 'IYYY-"W"IW') AS wk
           FROM wiki_revisions r
-          WHERE r.author = ${username} AND r.source = 'ixwiki' AND r.parked = false
+          WHERE r."authorId" = ${userId} AND r.source = 'ixwiki' AND r.parked = false
             AND r."userDeleted" = false AND r."createdAt" >= ${since}
           UNION
           SELECT 'post', to_char(p."createdAt", 'IYYY-"W"IW')
