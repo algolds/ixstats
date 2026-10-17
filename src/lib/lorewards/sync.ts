@@ -10,7 +10,6 @@ import type { LorewardEntry, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import { contestHolder, groupByContest } from "./contest-identity";
-import { findContestEntries } from "./contest-store";
 import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
@@ -117,42 +116,35 @@ function monthRange(date: string, result: StateFileResult) {
 }
 
 /**
- * The `date|type` keys of the entries an admin override wrote (`overriddenAt`): no sync writes their places again.
- * Read in pages (`findContestEntries`), so the 1,000-row cap drops none, whatever year the state file reaches back to.
+ * Writes the place columns of the entries `where` selects, unless an admin override wrote them (`overriddenAt`): no
+ * sync writes an override's places again. The mark is checked in the write itself, never read beforehand: an
+ * override that commits while a sync runs holds its rows' locks until then, so this update waits for it and skips them.
  */
-async function overriddenKeys(): Promise<ReadonlySet<string>> {
-  const rows = await findContestEntries(db, { overriddenAt: { not: null } });
-  return new Set(rows.map((row) => `${row.date}|${row.type}`));
-}
+const writePlaces = (
+  where: Prisma.LorewardEntryWhereInput,
+  places: Prisma.LorewardEntryUpdateManyMutationInput
+) => db.lorewardEntry.updateMany({ where: { ...where, overriddenAt: null }, data: places });
 
 /** One state-file result: `places` are its winner and runner-up columns, `rest` the others it updates. */
 interface StateEntryWrite {
   date: string;
   type: "daily" | "weekly" | "monthly";
   create: Omit<Prisma.LorewardEntryCreateInput, "date" | "type">;
-  places: Prisma.LorewardEntryUpdateInput;
+  places: Prisma.LorewardEntryUpdateManyMutationInput;
   rest?: Prisma.LorewardEntryUpdateInput;
 }
 
-/** Creates the entry, or updates it, writing its places only when no admin override holds them. */
-const upsertEntry = (
-  { date, type, create, places, rest }: StateEntryWrite,
-  overridden: ReadonlySet<string>
-) =>
-  db.lorewardEntry.upsert({
+/** Creates the entry, or updates its other columns, then writes its places unless an override holds them. */
+async function upsertEntry({ date, type, create, places, rest }: StateEntryWrite): Promise<void> {
+  await db.lorewardEntry.upsert({
     where: { date_type: { date, type } },
     create: { date, type, status: "approved", ...create },
-    update: {
-      ...rest,
-      ...(overridden.has(`${date}|${type}`) ? {} : places),
-      syncedAt: new Date(),
-    },
+    update: { ...rest, syncedAt: new Date() },
   });
+  await writePlaces({ date, type }, places);
+}
 
-async function syncDaily(
-  results: Record<string, StateFileResult> | undefined,
-  overridden: ReadonlySet<string>
-): Promise<number> {
+async function syncDaily(results: Record<string, StateFileResult> | undefined): Promise<number> {
   let synced = 0;
   for (const [date, result] of Object.entries(results ?? {})) {
     if (result.status !== "approved") continue;
@@ -169,10 +161,7 @@ async function syncDaily(
       editCount: result.editCount ?? 0,
       metadata: result.candidates ? JSON.stringify(result.candidates) : null,
     };
-    await upsertEntry(
-      { date, type: "daily", create: { ...places, ...rest }, places, rest },
-      overridden
-    );
+    await upsertEntry({ date, type: "daily", create: { ...places, ...rest }, places, rest });
     synced++;
   }
 
@@ -180,56 +169,44 @@ async function syncDaily(
 }
 
 /** Weekly results carry weekStart/weekEnd for date range display. */
-async function syncWeekly(
-  results: Record<string, StateFileResult> | undefined,
-  overridden: ReadonlySet<string>
-): Promise<number> {
+async function syncWeekly(results: Record<string, StateFileResult> | undefined): Promise<number> {
   let synced = 0;
   for (const [date, result] of Object.entries(results ?? {})) {
-    await upsertEntry(
-      {
-        date,
-        type: "weekly",
-        create: {
-          dateStart: result.weekStart ?? null,
-          dateEnd: result.weekEnd ?? null,
-          ...winnerOf(result),
-          winnerScore: result.winner?.score ?? null,
-          winnerBytes: result.winner?.bytesAdded ?? null,
-        },
-        places: winnerOf(result),
-        rest: { dateStart: result.weekStart ?? undefined, dateEnd: result.weekEnd ?? undefined },
+    await upsertEntry({
+      date,
+      type: "weekly",
+      create: {
+        dateStart: result.weekStart ?? null,
+        dateEnd: result.weekEnd ?? null,
+        ...winnerOf(result),
+        winnerScore: result.winner?.score ?? null,
+        winnerBytes: result.winner?.bytesAdded ?? null,
       },
-      overridden
-    );
+      places: winnerOf(result),
+      rest: { dateStart: result.weekStart ?? undefined, dateEnd: result.weekEnd ?? undefined },
+    });
     synced++;
   }
 
   return synced;
 }
 
-async function syncMonthly(
-  results: Record<string, StateFileResult> | undefined,
-  overridden: ReadonlySet<string>
-): Promise<number> {
+async function syncMonthly(results: Record<string, StateFileResult> | undefined): Promise<number> {
   let synced = 0;
   for (const [date, result] of Object.entries(results ?? {})) {
     const { start, end } = monthRange(date, result);
-    await upsertEntry(
-      {
-        date,
-        type: "monthly",
-        create: {
-          dateStart: start,
-          dateEnd: end,
-          ...winnerOf(result),
-          winnerScore: result.winner?.score ?? null,
-        },
-        places: winnerOf(result),
-        rest: { dateStart: start ?? undefined, dateEnd: end ?? undefined },
+    await upsertEntry({
+      date,
+      type: "monthly",
+      create: {
+        dateStart: start,
+        dateEnd: end,
+        ...winnerOf(result),
+        winnerScore: result.winner?.score ?? null,
       },
-      overridden
-    );
+      places: winnerOf(result),
+      rest: { dateStart: start ?? undefined, dateEnd: end ?? undefined },
+    });
     synced++;
   }
 
@@ -248,11 +225,10 @@ export async function syncFromStateFile(): Promise<number> {
     return 0;
   }
 
-  const overridden = await overriddenKeys();
   return (
-    (await syncDaily(state.dailyResults, overridden)) +
-    (await syncWeekly(state.weeklyResults, overridden)) +
-    (await syncMonthly(state.monthlyResults, overridden))
+    (await syncDaily(state.dailyResults)) +
+    (await syncWeekly(state.weeklyResults)) +
+    (await syncMonthly(state.monthlyResults))
   );
 }
 
@@ -529,7 +505,7 @@ function oolPlace(
 
 /**
  * The place columns the OOL page writes over `stored` (none when the entry is new), under the `wikios>` guard. An
- * entry an admin override wrote (`overriddenAt`) keeps its own.
+ * entry an admin override wrote (`overriddenAt`) keeps its own, and `writePlaces` writes nothing over it.
  */
 function oolPlaces(
   stored: (PlaceColumns & { overriddenAt: Date | null }) | undefined,
@@ -588,7 +564,7 @@ async function writeStateTwin(entry: ParsedEntry): Promise<boolean> {
     select: STORED_PLACES,
   });
   if (!twin) return false;
-  await db.lorewardEntry.update({ where: { id: twin.id }, data: oolPlaces(twin, entry) });
+  await writePlaces({ id: twin.id }, oolPlaces(twin, entry));
   return true;
 }
 
@@ -602,13 +578,10 @@ async function writeOOLEntry(
   year: number
 ): Promise<Array<string | null>> {
   const key = `${entry.date}|${entry.type}`;
-  const own = stored.own.get(key);
-  const twin = own ? undefined : stored.twins.get(key);
-  const places = oolPlaces(own ?? twin, entry);
-  if (twin) {
-    await db.lorewardEntry.update({ where: { id: twin.id }, data: places });
-  } else {
-    // Upsert so we get updates/corrections made on the wiki
+  const target = stored.own.get(key) ?? stored.twins.get(key);
+  const places = oolPlaces(target, entry);
+  if (!target) {
+    // A contest it does not hold yet: created with the page's places (an upsert, should a writer create it meanwhile)
     await db.lorewardEntry.upsert({
       where: { date_type: { date: entry.date, type: entry.type } },
       create: {
@@ -619,9 +592,11 @@ async function writeOOLEntry(
         month: entry.month,
         year: entry.year ?? year,
       },
-      update: places,
+      update: {},
     });
   }
+  // Updates and corrections made on the wiki, over the stored entry
+  await writePlaces(target ? { id: target.id } : { date: entry.date, type: entry.type }, places);
   return [places.winnerUser, places.runnerUpUser];
 }
 
