@@ -1,6 +1,6 @@
 // src/lib/cards/hub/explore.ts
-import { CardRarity, CardType, LoreCategory } from "@prisma/client";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { CardRarity, CardType, LoreCategory, Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { normalizeArtwork } from "~/lib/cards/face/artwork";
 import { EXPLORE_SORTS, OWNED_FILTERS, type ExploreSort } from "~/lib/cards/face/explore-options";
@@ -91,7 +91,8 @@ export async function exploreGrid(
     rows.map((card) => ({ card }))
   );
   const next = skip + rows.length;
-  return { faces, total, nextCursor: next < total ? next : null };
+  // An empty page (the catalogue shrank between the count and the read) ends the pages.
+  return { faces, total, nextCursor: rows.length > 0 && next < total ? next : null };
 }
 
 export interface ShelfCard {
@@ -122,14 +123,14 @@ const SHELF_CATALOGUE_WHERE = {
   realm: { ...CATALOGUE_WHERE.realm, visibility: "public" },
 } satisfies Prisma.CardWhereInput;
 
-/** Ixnay first (it is the home world), then the realms with the most cards. */
+/** Ixnay first (it is the home world), then the realms with the most cards, ties by id. */
 function shelfOrder(
   a: { realmId: string; count: number },
   b: { realmId: string; count: number }
 ): number {
   if (a.realmId === DEFAULT_REALM_ID) return -1;
   if (b.realmId === DEFAULT_REALM_ID) return 1;
-  return b.count - a.count;
+  return b.count - a.count || a.realmId.localeCompare(b.realmId);
 }
 
 /** A shelf's two strips. Trophy cards stay off them: every Loreward place would crowd Ixnay's newest. */
@@ -159,7 +160,10 @@ async function shelfStrips(
   return { newest, wanted };
 }
 
-/** The realm shelves (spec §2.3 Explore): banner, card count, the newest cards and the most wanted. */
+/**
+ * The realm shelves (spec §2.3 Explore): banner, card count, the newest cards and the most wanted. The count is the
+ * realm's total in the grid; a realm with only trophy cards has nothing to shelve and is left out.
+ */
 export async function exploreShelves(
   db: Pick<PrismaClient, "card" | "realm"> & ArtDb,
   viewerId: string
@@ -201,7 +205,7 @@ export async function exploreShelves(
   return ordered.flatMap((group, index) => {
     const realm = realmById.get(group.realmId);
     const strip = strips[index];
-    if (!realm || !strip) return [];
+    if (!realm || !strip || strip.newest.length === 0) return [];
     return [
       {
         realm: toRealmBadge(realm),
@@ -214,15 +218,34 @@ export async function exploreShelves(
   });
 }
 
-/** NationStates regions with cards, most cards first, for the region filter (spec §2.1: region stays a filter). */
-export async function exploreRegions(db: Pick<PrismaClient, "$queryRaw">): Promise<string[]> {
-  const rows = await db.$queryRaw<Array<{ region: string }>>`
+/** The region filter's search: blank means none. */
+export const ExploreRegionsQuerySchema = z.object({
+  search: z.string().trim().max(100).optional(),
+});
+
+/** `value` as the literal part of an ILIKE pattern. */
+const likeLiteral = (value: string): string => value.replace(/[\\%_]/g, "\\$&");
+
+/**
+ * NationStates regions with cards, most cards first, for the region filter (spec §2.1: region stays a filter). There
+ * are thousands, so the picker searches: a search matches anywhere in the name, case-insensitively.
+ */
+export async function exploreRegions(
+  db: Pick<PrismaClient, "$queryRaw">,
+  search?: string
+): Promise<string[]> {
+  const term = search?.trim();
+  const matching = term
+    ? Prisma.sql`AND metadata->'nsData'->>'region' ILIKE ${`%${likeLiteral(term)}%`}`
+    : Prisma.empty;
+  const rows = await db.$queryRaw<Array<{ region: string }>>(Prisma.sql`
     SELECT metadata->'nsData'->>'region' AS region
     FROM cards
     WHERE "cardType" = 'NS' AND "reviewState" = 'APPROVED' AND "isRetired" = false
       AND COALESCE(metadata->'nsData'->>'region', '') <> ''
+      ${matching}
     GROUP BY 1
     ORDER BY COUNT(*) DESC, 1
-    LIMIT 60`;
+    LIMIT 60`);
   return rows.map((r) => r.region);
 }

@@ -41,7 +41,23 @@ describe("cards.explore", () => {
     await caller.exploreShelves();
     expect(exploreShelves).toHaveBeenCalledWith(db, "db_me");
     await expect(caller.exploreRegions()).resolves.toEqual(["The Pacific"]);
-    expect(exploreRegions).toHaveBeenCalledWith(db);
+    expect(exploreRegions).toHaveBeenCalledWith(db, undefined);
+  });
+
+  it("passes a trimmed region search through, and refuses one over 100 characters", async () => {
+    const db = createMockPrisma();
+    const caller = createCaller(
+      createMockRouterContext({
+        db,
+        auth: { userId: "c" },
+        user: { id: "db_me", clerkUserId: "c" },
+      }) as never
+    );
+    await caller.exploreRegions({ search: "  pacific " });
+    expect(exploreRegions).toHaveBeenCalledWith(db, "pacific");
+    await expect(caller.exploreRegions({ search: "x".repeat(101) })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 
   it("refuses a grid query outside the schema", async () => {
@@ -55,5 +71,7 @@ describe("cards.explore", () => {
     await expect(caller.exploreGrid({})).rejects.toThrow(/Authentication required/);
     await expect(caller.exploreRegions()).rejects.toThrow(/Authentication required/);
     expect(exploreShelves).not.toHaveBeenCalled();
+    expect(exploreGrid).not.toHaveBeenCalled();
+    expect(exploreRegions).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,6 @@
 /** @jest-environment node */
 /** Explore (spec §2.3): realm shelves first, then a filtered grid, with silhouettes for unowned art. */
+import type { Prisma } from "@prisma/client";
 import type { z } from "zod";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
@@ -119,6 +120,14 @@ describe("exploreGrid", () => {
     expect(db.card.findMany.mock.calls[0]![0]).toMatchObject({ skip: 2, take: 2 });
   });
 
+  it("never hands back its own cursor for an empty page", async () => {
+    const db = createMockPrisma();
+    db.card.count.mockResolvedValue(5);
+    db.card.findMany.mockResolvedValue([]);
+    const page = await exploreGrid(db as never, "me", query({ limit: 2, cursor: 2 }));
+    expect(page).toEqual({ faces: [], total: 5, nextCursor: null });
+  });
+
   it("leaves out draft and generating realms, and keeps trophy cards", async () => {
     const db = createMockPrisma();
     db.card.count.mockResolvedValue(1);
@@ -159,6 +168,56 @@ describe("exploreShelves", () => {
     expect(shelves[0]!.mostWanted[0]).toMatchObject({ wanted: 2 });
   });
 
+  it("breaks card-count ties by realm id, keeping Ixnay first", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { realmId: "b", _count: { _all: 5 } },
+      { realmId: "a", _count: { _all: 5 } },
+      { realmId: "default", _count: { _all: 1 } },
+    ]);
+    db.realm.findMany.mockResolvedValue(
+      ["b", "a", "default"].map((id) => ({ ...realm(id, id), bannerUrl: null }))
+    );
+    db.card.findMany.mockResolvedValue([card("new")]);
+    const shelves = await exploreShelves(db as never, "me");
+    expect(shelves.map((s) => s.realm.id)).toEqual(["default", "a", "b"]);
+  });
+
+  it("keeps at most twelve shelves, dropping the realms with the fewest cards", async () => {
+    const db = createMockPrisma();
+    const ids = Array.from({ length: 13 }, (_, i) => `r${String(i).padStart(2, "0")}`);
+    db.card.groupBy.mockResolvedValue(
+      ids.map((id, i) => ({ realmId: id, _count: { _all: 100 - i } }))
+    );
+    db.realm.findMany.mockResolvedValue(ids.map((id) => ({ ...realm(id, id), bannerUrl: null })));
+    db.card.findMany.mockResolvedValue([card("new")]);
+    const shelves = await exploreShelves(db as never, "me");
+    expect(shelves.map((s) => s.realm.id)).toEqual(ids.slice(0, 12));
+    expect(db.realm.findMany.mock.calls[0]![0]).toMatchObject({
+      where: { id: { in: ids.slice(0, 12) } },
+    });
+    expect(db.card.findMany).toHaveBeenCalledTimes(24);
+  });
+
+  it("leaves out a realm with only trophy cards, and keeps the grid's total as the count", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { realmId: "default", _count: { _all: 4 } },
+      { realmId: "trophies", _count: { _all: 2 } },
+    ]);
+    db.realm.findMany.mockResolvedValue([
+      { ...realm("default", "Ixnay"), bannerUrl: null },
+      { ...realm("trophies", "Trophies"), bannerUrl: null },
+    ]);
+    db.card.findMany.mockImplementation(async (args: { where: { realmId: string } }) =>
+      args.where.realmId === "trophies" ? [] : [card("new")]
+    );
+    const shelves = await exploreShelves(db as never, "me");
+    expect(shelves.map((s) => [s.realm.id, s.cardCount, s.newest.length])).toEqual([
+      ["default", 4, 1],
+    ]);
+  });
+
   it("shows art on the shelves for cards the viewer holds", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 1 } }]);
@@ -191,16 +250,34 @@ describe("exploreShelves", () => {
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 4 } }]);
     db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
     await exploreShelves(db as never, "me");
-    const strips = db.card.findMany.mock.calls.map((call) => call[0].where);
+    const strips = db.card.findMany.mock.calls.map((call) => call[0]);
     expect(strips).toHaveLength(2);
-    for (const where of strips) {
-      expect(where).toMatchObject({
+    for (const args of strips) {
+      expect(args.where).toMatchObject({
         ...CATALOGUE_WHERE,
         realmId: "default",
         cardType: { not: "TROPHY" },
       });
     }
     expect(db.card.groupBy.mock.calls[0]![0].where).not.toHaveProperty("cardType");
+  });
+
+  it("takes the six newest and the six most wanted, each with a stable order", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 4 } }]);
+    db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
+    await exploreShelves(db as never, "me");
+    const [newest, wanted] = db.card.findMany.mock.calls.map((call) => call[0]);
+    const select = expect.objectContaining({ _count: { select: { watchlist: true } } });
+    expect(newest).toMatchObject({ take: 6, orderBy: [{ createdAt: "desc" }, { id: "asc" }] });
+    expect(newest.where).not.toHaveProperty("watchlist");
+    expect(newest.select).toEqual(select);
+    expect(wanted).toMatchObject({
+      where: { watchlist: { some: {} } },
+      take: 6,
+      orderBy: [{ watchlist: { _count: "desc" } }, { id: "asc" }],
+    });
+    expect(wanted.select).toEqual(select);
   });
 
   it("has no shelves when nothing is in the catalogue", async () => {
@@ -212,13 +289,45 @@ describe("exploreShelves", () => {
 });
 
 describe("exploreRegions", () => {
-  it("lists the regions of approved, unhidden NationStates cards", async () => {
+  const regionsDb = () => {
     const db = createMockPrisma();
     db.$queryRaw = jest.fn().mockResolvedValue([{ region: "The Pacific" }, { region: "Lazarus" }]);
+    return db;
+  };
+  const sentQuery = (db: ReturnType<typeof regionsDb>): Prisma.Sql =>
+    db.$queryRaw.mock.calls[0]![0];
+
+  it("lists the 60 biggest regions of approved, unhidden NationStates cards", async () => {
+    const db = regionsDb();
     await expect(exploreRegions(db as never)).resolves.toEqual(["The Pacific", "Lazarus"]);
-    const sql = (db.$queryRaw.mock.calls[0]![0] as TemplateStringsArray).join("?");
+    const { sql, values } = sentQuery(db);
     expect(sql).toMatch(/"cardType" = 'NS'/);
     expect(sql).toMatch(/"reviewState" = 'APPROVED'/);
     expect(sql).toMatch(/"isRetired" = false/);
+    expect(sql).toMatch(/ORDER BY COUNT\(\*\) DESC, 1\s+LIMIT 60/);
+    expect(sql).not.toMatch(/ILIKE/);
+    expect(values).toEqual([]);
+  });
+
+  it("treats a blank search as none", async () => {
+    const db = regionsDb();
+    await exploreRegions(db as never, "   ");
+    expect(sentQuery(db).sql).not.toMatch(/ILIKE/);
+  });
+
+  it("searches regions case-insensitively through a bound parameter, still the 60 biggest", async () => {
+    const db = regionsDb();
+    await exploreRegions(db as never, " pacific ");
+    const { sql, values } = sentQuery(db);
+    expect(sql).toMatch(/metadata->'nsData'->>'region' ILIKE \?/);
+    expect(sql).toMatch(/ORDER BY COUNT\(\*\) DESC, 1\s+LIMIT 60/);
+    expect(sql).not.toContain("pacific");
+    expect(values).toEqual(["%pacific%"]);
+  });
+
+  it("matches %, _ and \\ literally", async () => {
+    const db = regionsDb();
+    await exploreRegions(db as never, "100%_a\\b");
+    expect(sentQuery(db).values).toEqual(["%100\\%\\_a\\\\b%"]);
   });
 });
