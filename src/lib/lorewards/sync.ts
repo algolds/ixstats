@@ -488,14 +488,16 @@ const isImportName = (name: string | null | undefined): name is string =>
 
 /**
  * The OOL page's name and page for one place, unless they would turn a stored `wikios>` name into a plain one: then
- * the stored name and its page. A `wikios>` name pays only the WikiOS account behind its edits to its page, a plain
+ * the stored name, with its stored page (or the OOL page's when it stored none). A `wikios>` name pays only the WikiOS account behind its edits to its page, a plain
  * one whoever verifies that MediaWiki account.
  */
 function oolPlace(
   stored: { name: string | null; page: string | null } | undefined,
   fromPage: { name: string | null; page: string | null }
 ): { name: string | null; page: string | null } {
-  return stored && isImportName(stored.name) && !isImportName(fromPage.name) ? stored : fromPage;
+  if (!stored || !isImportName(stored.name) || isImportName(fromPage.name)) return fromPage;
+  // The kept name keeps its page; one stored with none takes the page's, so the place stays payable.
+  return { name: stored.name, page: stored.page ?? fromPage.page };
 }
 
 /** The place columns the OOL page writes over `stored` (none when the entry is new), under the `wikios>` guard. */

@@ -120,6 +120,18 @@ describe("syncCurrentWinners", () => {
     );
   });
 
+  it("gives a kept wikios> name the page's page when it stored none", async () => {
+    store([storedEntry({ id: "d1", winnerUser: "wikios>Kir Republic", winnerPage: null })]);
+    jest.mocked(parseOOLPage).mockReturnValue([fromPage({ winnerPage: "Seneca front" })]);
+
+    await syncCurrentWinners(true);
+
+    expect(places(rows[0])).toMatchObject({
+      winnerUser: "wikios>Kir Republic",
+      winnerPage: "Seneca front",
+    });
+  });
+
   it("still takes the page's plain names, and its own wikios> names, everywhere else", async () => {
     store([
       storedEntry({
