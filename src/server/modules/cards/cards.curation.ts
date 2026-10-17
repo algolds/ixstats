@@ -9,9 +9,10 @@ import { TRPCError } from "@trpc/server";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
 import { EXCLUDE_RESTRICTED_ART, RESTRICTED_ART } from "~/lib/cards/art-licence";
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { cardCount } from "~/lib/cards/curation-limits";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
+import { assertBulkRead, assertBulkRecountTx } from "./cards.bulk";
 import { stageForAdmin } from "./cards.importer";
 
 export interface QueueFilter {
@@ -36,8 +37,6 @@ export function queueWhere(filter: QueueFilter): Prisma.CardWhereInput {
     ...(filter.cardType ? { cardType: filter.cardType } : {}),
   };
 }
-
-const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
 
 /**
  * The queue as of one moment, `asOf`: cards imported later are left out of the page and the total alike. A filter
@@ -125,19 +124,10 @@ function reviewChoice(input: ReviewInput, approve: boolean): ReviewChoice {
   if (!input.asOf || input.expected === undefined) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Reload the queue and try again." });
   }
-  // A read time after now would let the review take cards imported after the admin's read.
-  if (input.asOf.getTime() > Date.now()) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "The queue's read time is in the future. Reload the queue and try again.",
-    });
-  }
-  if (input.expected > MAX_FILTER_REVIEW) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Review at most ${MAX_FILTER_REVIEW.toLocaleString()} cards at once. Narrow the filter.`,
-    });
-  }
+  assertBulkRead(
+    { asOf: input.asOf, expected: input.expected },
+    { list: "The queue's", verb: "Review" }
+  );
   return {
     where: { ...queueWhere(input.filter), createdAt: { lte: input.asOf } },
     expected: input.expected,
@@ -147,16 +137,13 @@ function reviewChoice(input: ReviewInput, approve: boolean): ReviewChoice {
 
 /** Refuses a filter review whose cards changed since the admin's queue was read. */
 async function assertQueueUnchanged(tx: Prisma.TransactionClient, choice: ReviewChoice) {
-  if (choice.expected === undefined) return;
-  const matching = await tx.card.count({ where: choice.where });
-  if (matching === choice.expected) return;
-  throw new TRPCError({
-    code: "CONFLICT",
-    message:
-      matching > choice.expected
-        ? "New cards arrived since you loaded the queue. Reload and try again."
-        : "Some cards were reviewed since you loaded the queue. Reload and try again.",
-  });
+  const seen = choice.expected;
+  if (seen === undefined) return;
+  await assertBulkRecountTx(tx, choice.where, seen, (matching) =>
+    matching > seen
+      ? "New cards arrived since you loaded the queue. Reload and try again."
+      : "Some cards were reviewed since you loaded the queue. Reload and try again."
+  );
 }
 
 export async function reviewCards(

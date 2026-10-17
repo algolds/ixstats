@@ -8,3 +8,7 @@ export const MAX_IMPORT_TITLES = 2000;
  * it: one click hides or unhides at most this many cards.
  */
 export const MAX_FILTER_REVIEW = MAX_IMPORT_TITLES;
+
+/** A count of cards as the bulk changes word it: "1 card", "2,000 cards". */
+export const cardCount = (count: number) =>
+  `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
