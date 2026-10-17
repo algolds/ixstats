@@ -13,6 +13,8 @@ jest.mock("~/server/db", () => {
     wikiRevision: { groupBy: jest.fn(async () => []) },
     systemConfig: { findMany: jest.fn() },
     user: { findFirst: jest.fn() },
+    // A twin's Loreward bonus already paid under its own key.
+    vaultTransaction: { findFirst: jest.fn() },
   };
   return { __esModule: true, db };
 });
@@ -34,6 +36,7 @@ const mocked = db as unknown as {
   wikiRevision: { groupBy: jest.Mock };
   systemConfig: { findMany: jest.Mock };
   user: { findFirst: jest.Mock };
+  vaultTransaction: { findFirst: jest.Mock };
 };
 
 type Entry = {
@@ -52,6 +55,7 @@ const daily = (over: Partial<Entry> = {}): Entry => ({
   id: "e1",
   type: "daily",
   date: "2026-10-16",
+  dateStart: null,
   dateEnd: null,
   winnerUser: "Kir_Republic",
   runnerUpUser: null,
@@ -85,7 +89,8 @@ describe("grantLorewardBonuses page metadata", () => {
         runnerUpUser: "Other",
         runnerUpPage: "Other page",
       }),
-      daily({ id: "e2", winnerUser: "NoPage", winnerPage: null }),
+      // Another day: two dailies of one date cannot exist (the (date, type) key).
+      daily({ id: "e2", date: "2026-10-17", winnerUser: "NoPage", winnerPage: null }),
     ]);
     await grantLorewardBonuses();
     expect(metadataOf(0)).toMatchObject({ place: "winner", page: "Kir Republic" });
@@ -106,11 +111,68 @@ describe("grantLorewardBonuses", () => {
     mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
     mocked.lorewardEntry.findMany.mockReset().mockResolvedValue([daily()]);
     mocked.wikiRevision.groupBy.mockReset().mockResolvedValue([]);
+    mocked.vaultTransaction.findFirst.mockReset().mockResolvedValue(null);
     jest.spyOn(console, "log").mockImplementation(() => undefined);
+  });
+
+  /** A weekly stored twice: by its first day (the OOL page) and as `2026-W43` with its range (the state file). */
+  const weeklyTwins = (oolWinner: string, stateWinner: string) => [
+    daily({
+      id: "w-ool",
+      type: "weekly",
+      date: "2026-10-19",
+      dateEnd: null,
+      winnerUser: oolWinner,
+    }),
+    daily({
+      id: "w-state",
+      type: "weekly",
+      date: "2026-W43",
+      dateStart: "2026-10-19",
+      dateEnd: "2026-10-25",
+      winnerUser: stateWinner,
+    }),
+  ];
+
+  it("pays an agreeing weekly pair once, through its state-keyed entry", async () => {
+    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Kir_Republic", "Kir_Republic"));
+    expect(await grantLorewardBonuses()).toBe(1);
+    expect(grants()).toEqual([["u_verified", "bonus:loreward:w-state", 1500]]);
+    expect(mocked.vaultTransaction.findFirst).toHaveBeenCalledWith({
+      where: {
+        type: "EARN_BONUS",
+        source: { in: ["bonus:loreward:w-ool", "bonus:loreward:w-state"] },
+      },
+      select: { id: true },
+    });
+  });
+
+  it("does not pay a pair again when one entry was already paid under its own key", async () => {
+    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Kir_Republic", "Kir_Republic"));
+    mocked.vaultTransaction.findFirst.mockResolvedValue({ id: "paid" });
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonus).not.toHaveBeenCalled();
+  });
+
+  it("pays neither entry of a pair that disagrees on a place, and logs both", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Urcea", "Nasastan"));
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonus).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toEqual(
+      expect.stringContaining("w-ool (2026-10-19) names Urcea")
+    );
+    expect(warn.mock.calls[0]?.[0]).toEqual(
+      expect.stringContaining("w-state (2026-W43) names Nasastan")
+    );
+    warn.mockRestore();
   });
 
   it("pays the owner of the verified ixwiki link, matching the normalized name", async () => {
     expect(await grantLorewardBonuses()).toBe(1);
+    // A contest stored once is paid as before, with no twin to check.
+    expect(mocked.vaultTransaction.findFirst).not.toHaveBeenCalled();
     expect(mocked.wikiAccountLink.findFirst).toHaveBeenCalledWith({
       where: { source: "ixwiki", username: "Kir Republic", verifiedAt: { not: null } },
       select: { userId: true },

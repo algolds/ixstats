@@ -426,6 +426,72 @@ describe("grantUnownedTrophyCards", () => {
   });
 });
 
+/** A weekly stored twice: by its first day (the OOL page) and as `2026-W42` with its range (the state file). */
+const weeklyTwins = (oolWinner: string, stateWinner: string): EntryRow[] => [
+  entry({ id: "w-ool", type: "weekly", date: "2026-10-12", winnerUser: oolWinner }),
+  entry({
+    id: "w-state",
+    type: "weekly",
+    date: "2026-W42",
+    dateStart: "2026-10-12",
+    dateEnd: "2026-10-18",
+    winnerUser: stateWinner,
+  }),
+];
+
+/** A trophy card minted before contests were told apart: one per entry of a pair. */
+const legacyCard = (id: string, entryId: string): CardRow =>
+  ({
+    id,
+    lorewardEntryId: entryId,
+    lorewardEdition: "winner",
+    title: "Seneca front",
+    rarity: "EPIC",
+    cardType: "LORE",
+    totalSupply: 1,
+    wikiArticleTitle: "Seneca front",
+    metadata: { contest: "weekly", place: "winner", entryId, wikiUser: "Kir_Republic" },
+  }) as CardRow;
+
+describe("trophy cards of a contest stored twice", () => {
+  it("mints one card for an agreeing pair, through its state-keyed entry", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(cards.map((c) => c.lorewardEntryId)).toEqual(["w-state"]);
+  });
+
+  it("mints no second card once either entry of the pair has one", async () => {
+    entries = [weeklyTwins("Kir_Republic", "Kir_Republic")[0]!];
+    await mintTrophyCards(db);
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toHaveLength(1);
+  });
+
+  it("mints nothing for a place the pair disagrees on", async () => {
+    entries = weeklyTwins("Urcea", "Nasastan");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+  });
+
+  it("grants one card per contest place, the state-keyed entry's, when the pair has two", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
+    links.set("Kir Republic", "u1");
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(ownerships.map((o) => o.cardId)).toEqual(["c-state"]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+  });
+
+  it("grants nothing for a place the pair disagrees on", async () => {
+    entries = weeklyTwins("Kir_Republic", "Nasastan");
+    cards = [legacyCard("c-ool", "w-ool")];
+    links.set("Kir Republic", "u1");
+    links.set("Nasastan", "u2");
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+  });
+});
+
 describe("backfillTrophyCards", () => {
   beforeEach(() => {
     entries = [
