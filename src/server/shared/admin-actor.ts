@@ -1,7 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import type { CardAdminActor } from "~/server/modules/cards/cards.audit";
 
-/** The signed-in admin as the card modules take them; adminProcedure guarantees both, this refuses otherwise. */
+/**
+ * The signed-in admin as the card modules take them; adminProcedure guarantees both, this refuses otherwise.
+ * Shared by the card, Loreward and wiki admin routers.
+ */
 export function adminActor(ctx: {
   user: { id: string } | null;
   auth: { userId: string | null } | null;

@@ -11,7 +11,7 @@ import {
   stopSync,
   syncLogCards,
 } from "~/server/modules/cards/cards.ns-sync";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 const syncInput = z.object({ syncLogId: z.string().min(1) });
 

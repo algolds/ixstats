@@ -1,11 +1,11 @@
 # Complete tRPC API Reference
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-17
 
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (77 Routers, 1081 Endpoints)
+### Live tRPC API Inventory (77 Routers, 1030 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -21,8 +21,8 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.cache`** | 1 | 0 | 0 | **1** | `src/server/api/routers/cache.ts` |
 | **`api.cardImages`** | 2 | 2 | 0 | **4** | `src/server/api/routers/cardImages.ts` |
 | **`api.cardMarket`** | 7 | 4 | 0 | **11** | `src/server/api/routers/card-market/index.ts` |
-| **`api.cardPacks`** | 3 | 6 | 0 | **9** | `src/server/api/routers/card-packs/index.ts` |
-| **`api.cards`** | 15 | 10 | 0 | **25** | `src/server/api/routers/cards/index.ts` |
+| **`api.cardPacks`** | 2 | 2 | 0 | **4** | `src/server/api/routers/card-packs/index.ts` |
+| **`api.cards`** | 9 | 4 | 0 | **13** | `src/server/api/routers/cards/index.ts` |
 | **`api.commons`** | 6 | 0 | 0 | **6** | `src/server/api/routers/commons.ts` |
 | **`api.countries`** | 0 | 0 | 0 | **1** | `src/server/api/routers/countries/index.ts` |
 | **`api.countryGeo`** | 3 | 6 | 0 | **9** | `src/server/api/routers/countryGeo.ts` |
@@ -54,7 +54,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent.ts` |
 | **`api.ixnayid`** | 9 | 7 | 0 | **16** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
-| **`api.loreCards`** | 13 | 8 | 0 | **21** | `src/server/api/routers/lore-cards/index.ts` |
+| **`api.loreCards`** | 2 | 0 | 0 | **2** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 11 | 4 | 0 | **15** | `src/server/api/routers/lorewards/index.ts` |
 | **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
 | **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
@@ -63,7 +63,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.nationalIssues`** | 11 | 10 | 0 | **21** | `src/server/api/routers/national-issues/index.ts` |
 | **`api.notifications`** | 7 | 14 | 0 | **21** | `src/server/api/routers/notifications/index.ts` |
 | **`api.npcPersonalities`** | 1 | 4 | 0 | **5** | `src/server/api/routers/npcPersonalities/index.ts` |
-| **`api.nsImport`** | 7 | 13 | 0 | **20** | `src/server/api/routers/ns-import/index.ts` |
+| **`api.nsImport`** | 2 | 5 | 0 | **7** | `src/server/api/routers/ns-import/index.ts` |
 | **`api.onoma`** | 17 | 26 | 0 | **43** | `src/server/api/routers/onoma/index.ts` |
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
@@ -83,13 +83,13 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.transport`** | 5 | 5 | 0 | **10** | `src/server/api/routers/transport/index.ts` |
 | **`api.userLogging`** | 0 | 1 | 0 | **1** | `src/server/api/routers/user-logging.ts` |
 | **`api.users`** | 10 | 12 | 0 | **22** | `src/server/api/routers/users/index.ts` |
-| **`api.vault`** | 23 | 19 | 0 | **42** | `src/server/api/routers/vault/index.ts` |
+| **`api.vault`** | 22 | 18 | 0 | **40** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
 | **`api.wikios`** | 72 | 33 | 0 | **107** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **516** | **551** | **0** | **1081** | **77 registered namespaces** |
+| **TOTALS** | **492** | **524** | **0** | **1030** | **77 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
-> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand.
+> **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 13, and its 60 `cards.admin.*` procedures are listed under [cards Router](#cards-router-73-procedures).
 
 ---
 
@@ -662,34 +662,44 @@ api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (19 procedures)
+### cards Router (73 procedures)
 
-Wiki and Commons imports are queued from the card admin (`api.cards.admin.imports.*`).
+13 player procedures at `api.cards.*`, and 60 admin procedures under `api.cards.admin.<tab>.*`, one sub-router per
+`/admin/cards` tab plus NationStates imports and the player tools (all `adminProcedure`; the inventory above counts
+only the 13). Wiki and Commons imports are queued from `api.cards.admin.imports.*`.
 
 ```typescript
-// Queries (10)
+// Queries (9)
 api.cards.getMyCards.useQuery({ sortBy?, filterRarity? })
+api.cards.getMyTopCards.useQuery({ limit? })
 api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? })
-api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, categoryFilter?, cardTypeFilter?, cteFilter?, isRetired?, includeRetired?, sortBy? })
+api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, cteFilter?, sortBy? })
 api.cards.getNSLibraryStats.useQuery()
-api.cards.getValuationConfig.useQuery()
-api.cards.getBonusConfig.useQuery()
-api.cards.getGeneralConfig.useQuery()
 api.cards.getMyCollections.useQuery()
 api.cards.getCollectionCards.useQuery({ collectionId })
 api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
+api.cards.mySuggestions.useQuery()
 
-// Mutations (9)
-api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation? }
-api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
-api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, autoGenerateLoreThumbnails? }
-api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
-api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
-api.cards.recomputeCardValues.useMutation()
+// Mutations (4)
 api.cards.createCollection.useMutation() // { name, description?, isPublic? }
 api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
 api.cards.deleteCollection.useMutation() // { collectionId }
+api.cards.suggestCard.useMutation() // { source, title }; free, 3 in any 24 hours
 ```
+
+| `api.cards.admin.*` | Queries | Mutations |
+| :--- | :--- | :--- |
+| `overview` | `summary`, `activity`, `realms`, `findCards` | |
+| `library` | `list` | `update`, `bulkSetRetired` |
+| `imports` | `searchCategories`, `categoryCounts`, `jobs`, `items` | `crawl`, `start`, `cancel`, `retry`, `resume` |
+| `nationstates` | `logs`, `logCards`, `active` | `start`, `pause`, `resume`, `stop`, `discoverRegions`, `filterCte` |
+| `curation` | `queue`, `suggestions` | `review`, `acceptSuggestion`, `declineSuggestion` |
+| `packs` | `list`, `preview` | `save`, `setActive` |
+| `economy` | `get` | `saveValues`, `recomputeValues`, `saveMarket`, `saveBonuses`, `saveLorewardPayouts`, `saveRarityThresholds`, `saveDailyImport` |
+| `seasons` | `get` | `set` |
+| `compliance` | `takedowns`, `licences` | `file`, `hide`, `decline`, `restore`, `setLicence` |
+| `designer` | `list`, `achievements` | `save` |
+| `tools` | `playerCards` | `grant`, `revoke`, `cancelAuction`, `voidTrade`, `awardPack` |
 
 ### cardPacks Router (4 procedures)
 
@@ -706,35 +716,22 @@ api.cardPacks.purchasePack.useMutation() // { packId }
 api.cardPacks.openPack.useMutation() // { userPackId }
 ```
 
-### nsImport Router (21 procedures)
+### nsImport Router (7 procedures)
 
-Replaces the former `nsIntegration` router (NationStates deck verification, import and sync).
+NationStates deck verification and import, and the flag owner's takedowns (they file and hide through the cards
+admin's Compliance queue). Region syncs and the CTE filter are `api.cards.admin.nationstates.*`.
 
 ```typescript
-// Queries (7)
-api.nsImport.getSyncHealth.useQuery()
-api.nsImport.getSyncLogs.useQuery({ syncTypeFilter?, limit? })
-api.nsImport.getSyncLogCards.useQuery({ syncLogId, limit?, offset?, search? })
-api.nsImport.getActiveJobs.useQuery()
+// Queries (2)
 api.nsImport.getVerificationUrl.useQuery({ nationName })
-api.nsImport.listHiddenNSCards.useQuery()
 api.nsImport.getMyNSCards.useQuery()
 
-// Mutations (14)
+// Mutations (5)
 api.nsImport.requestVerification.useMutation() // { nationName }
 api.nsImport.checkVerification.useMutation() // { verificationId, checksum }
 api.nsImport.importDeck.useMutation() // { verificationId }
-api.nsImport.fetchRegionCards.useMutation() // { regionNames, seasons? }
-api.nsImport.pauseRegionFetch.useMutation() // { syncLogId }
-api.nsImport.resumeRegionFetch.useMutation() // { syncLogId }
-api.nsImport.stopRegionFetch.useMutation() // { syncLogId }
-api.nsImport.discoverTopRegions.useMutation() // { limit?, tag? }
 api.nsImport.requestSelfServiceTakedown.useMutation() // { cardId, nationName, checksum, reason? }
-api.nsImport.hideNSCard.useMutation() // { nsCardId, nsSeason, reason? }
-api.nsImport.restoreNSCard.useMutation() // { nsCardId, nsSeason }
-api.nsImport.filterCTECards.useMutation()
 api.nsImport.hideMyCard.useMutation() // { nsCardId, nsSeason, reason? }
-api.nsImport.refreshCardValues.useMutation()
 ```
 
 ---

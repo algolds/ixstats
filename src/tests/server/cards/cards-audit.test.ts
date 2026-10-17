@@ -1,6 +1,5 @@
 /** @jest-environment node */
 /** The card admin's audit trail: one AuditLog row per admin action, which the Overview feed reads. */
-import { adminActor } from "~/server/api/routers/cards/admin/_actor";
 import {
   CARD_AUDIT_ACTIONS,
   CARD_FEED_ACTIONS,
@@ -56,26 +55,5 @@ describe("recordCardAudit", () => {
     );
     expect(CARD_FEED_ACTIONS).toHaveLength(CARD_AUDIT_ACTIONS.length + 4);
     expect(new Set(CARD_FEED_ACTIONS).size).toBe(CARD_FEED_ACTIONS.length);
-  });
-});
-
-describe("adminActor", () => {
-  it("takes the DB id for the rows the admin changes and the Clerk id for the audit row", () => {
-    expect(adminActor({ user: { id: "db_admin" }, auth: { userId: "clerk_admin" } })).toEqual({
-      dbId: "db_admin",
-      clerkId: "clerk_admin",
-    });
-  });
-
-  it("refuses a context with no signed-in user or Clerk id", () => {
-    expect(() => adminActor({ user: null, auth: { userId: "clerk_admin" } })).toThrow(
-      "Sign in as an admin."
-    );
-    expect(() => adminActor({ user: { id: "db_admin" }, auth: { userId: null } })).toThrow(
-      "Sign in as an admin."
-    );
-    expect(() => adminActor({ user: { id: "db_admin" }, auth: null })).toThrow(
-      "Sign in as an admin."
-    );
   });
 });

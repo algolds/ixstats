@@ -9,7 +9,7 @@ import {
   restoreTakedown,
   setCardLicence,
 } from "~/server/modules/cards/cards.compliance";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 const takedownInput = z.object({ takedownId: z.string().min(1) });
 const limit = z.number().int().min(1).max(200).default(100);

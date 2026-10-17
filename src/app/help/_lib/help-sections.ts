@@ -454,7 +454,7 @@ export const helpSections: HelpSection[] = [
       {
         id: "lore-cards",
         title: "Lore Cards",
-        description: "Cards made from wiki articles, and requesting a new one.",
+        description: "Cards made from wiki articles, and suggesting a new one.",
         path: "/help/vault/lore-cards",
         tags: ["lore", "wiki", "cards"],
       },

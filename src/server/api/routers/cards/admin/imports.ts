@@ -17,7 +17,7 @@ import {
   listImportJobs,
   retryImportJob,
 } from "~/server/modules/cards/cards.import-jobs";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 const jobInput = z.object({ jobId: z.string().min(1) });
 

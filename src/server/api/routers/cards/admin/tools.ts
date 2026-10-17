@@ -9,7 +9,7 @@ import {
   revokeCopy,
   voidTrade,
 } from "~/server/modules/cards/cards.tools";
-import { adminActor } from "./_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 
 const reason = z.string().trim().min(3).max(500);
 

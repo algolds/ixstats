@@ -1,7 +1,7 @@
 import type { LorewardEntry } from "@prisma/client";
 import { z } from "zod/v4";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { adminActor } from "~/server/api/routers/cards/admin/_actor";
+import { adminActor } from "~/server/shared/admin-actor";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
