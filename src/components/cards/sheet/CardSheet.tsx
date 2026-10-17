@@ -16,7 +16,9 @@ import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { returnFocusToSheetOpener } from "~/hooks/useCardSheet";
 import type { CardSheetData } from "~/lib/cards/hub/sheet";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardFlip } from "~/components/cards/face/CardFlip";
+import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
 import { AddToShowcaseDialog } from "~/components/cards/showcase/AddToShowcaseDialog";
 import { CardSheetCopies } from "./CardSheetCopies";
@@ -97,9 +99,14 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
   // Null until the first turn, so the status line stays quiet when the sheet opens.
   const [side, setSide] = useState<Side | null>(null);
   const [showcasing, setShowcasing] = useState<string[] | null>(null);
-  const flipped = side === "back";
-  const flip = useCallback(() => setSide((shown) => (shown === "back" ? "front" : "back")), []);
+  const reduce = useFacetReducedMotion();
   const { face, card } = sheet;
+  const flipped = side === "back";
+  // Turning to the back is a reveal (its provenance), so it gets the pack reveal's feedback for its rarity.
+  const flip = useCallback(() => {
+    setSide(flipped ? "front" : "back");
+    if (!flipped) playRevealFeedback(face.rarity, reduce);
+  }, [flipped, face.rarity, reduce]);
 
   // Focus the card once it is drawn, so Space turns it over instead of pressing the close button.
   useEffect(() => {

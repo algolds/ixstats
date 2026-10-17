@@ -116,7 +116,11 @@ function makeDb(cards: FakeCard[], pack: Record<string, unknown> = {}, userPack:
         async ({ where, skip }: any) => cards.filter((c) => matches(c, where))[skip ?? 0] ?? null
       ),
     },
-    cardOwnership: { count: jest.fn().mockResolvedValue(0) },
+    // findMany: the router reads the minted copies' faces back.
+    cardOwnership: {
+      count: jest.fn().mockResolvedValue(0),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   };
   db.$transaction = jest.fn((cb: (tx: any) => Promise<unknown>) => cb(db));
   return { db };

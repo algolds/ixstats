@@ -46,6 +46,7 @@ jest.mock("~/components/cards/showcase/AddToShowcaseDialog", () => ({
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
+jest.mock("~/components/cards/reveal/reveal-feedback", () => ({ playRevealFeedback: jest.fn() }));
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({
@@ -61,6 +62,7 @@ jest.mock("next/link", () => ({
 
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
+import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
 import { useCardSheet } from "~/hooks/useCardSheet";
 import type { CardSheetData, SheetCopy, SheetListing } from "~/lib/cards/hub/sheet";
@@ -160,6 +162,19 @@ describe("CardSheet", () => {
     expect(screen.getByRole("button", { name: "Show the front" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "f" });
     expect(screen.getByRole("button", { name: "Show the back" })).toBeInTheDocument();
+  });
+
+  it("gives the reveal's feedback when the card turns to its back, and none when it turns back", () => {
+    showSheet();
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Show the back" }));
+    // Reduce Motion is on in these tests, so the buzz stays off.
+    expect(playRevealFeedback).toHaveBeenCalledTimes(1);
+    expect(playRevealFeedback).toHaveBeenCalledWith("EPIC", true);
+    fireEvent.keyDown(window, { key: "f" });
+    expect(playRevealFeedback).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(window, { key: "f" });
+    expect(playRevealFeedback).toHaveBeenCalledTimes(2);
   });
 
   it("starts the next card on its front", () => {
