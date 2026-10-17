@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link as LinkIcon } from "iconoir-react";
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Link as LinkIcon, LogIn } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils/cn";
+import { createUrl } from "~/lib/utils/url-utils";
 import { withBasePath } from "~/lib/base-path";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import { RARITY_LABEL } from "~/lib/cards/face/labels";
@@ -35,9 +38,14 @@ type Side = "front" | "back";
 
 const SIDE_SHOWN: Record<Side, string> = { front: "Showing the front", back: "Showing the back" };
 
-/** The one card sheet: no tabs; the card, then Your copies, Market and About. Stacks on phones. */
+/**
+ * The one card sheet: no tabs; the card, then Your copies, Market and About. Stacks on phones. A signed-out visitor
+ * sees it only for a card a player shows publicly, and is asked to sign in for any other.
+ */
 export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
   const query = api.cards.getSheet.useQuery({ cardId, from: from ? encodeSheetFrom(from) : null });
+  const data = query.data;
+  const sheet = data && !("signIn" in data) ? data : null;
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent
@@ -48,13 +56,14 @@ export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
           returnFocusToSheetOpener();
         }}
       >
-        {query.data ? (
-          <SheetBody key={query.data.card.id} sheet={query.data} />
+        {sheet ? (
+          <SheetBody key={sheet.card.id} sheet={sheet} />
         ) : (
           <>
             <SheetTitle className="sr-only">Card</SheetTitle>
             <SheetPlaceholder
               loading={query.isLoading}
+              signIn={Boolean(data && "signIn" in data)}
               failed={query.isError}
               onRetry={() => void query.refetch()}
             />
@@ -65,18 +74,42 @@ export function CardSheet({ cardId, from, onClose }: CardSheetProps) {
   );
 }
 
+/** Signing in brings the visitor back to this address, with the sheet open on the same card. */
+function SignInToSee() {
+  const pathname = usePathname();
+  const query = useSearchParams()?.toString();
+  const here = query ? `${pathname}?${query}` : pathname;
+  // createUrl: the redirect is a plain URL.
+  const signInHref = `/sign-in?redirect_url=${encodeURIComponent(createUrl(here))}`;
+  return (
+    <EmptyState
+      icon={<LogIn />}
+      title="Sign in to see this card"
+      message="Without an account, a card opens only where a player shows it publicly."
+      action={
+        <Button asChild>
+          <Link href={signInHref}>Sign in</Link>
+        </Button>
+      }
+    />
+  );
+}
+
 function SheetPlaceholder({
   loading,
+  signIn,
   failed,
   onRetry,
 }: {
   loading: boolean;
+  signIn: boolean;
   failed: boolean;
   onRetry: () => void;
 }) {
   if (loading) {
     return <Skeleton className={cn("rounded-card mx-auto aspect-[5/7]", CARD_FACE_WIDTH.L)} />;
   }
+  if (signIn) return <SignInToSee />;
   if (failed) {
     return (
       <EmptyState
@@ -169,13 +202,20 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
             Copy link
           </Button>
         </header>
-        <CardSheetCopies
-          card={card}
-          realmName={face.realm.name}
-          copies={sheet.copies}
-          onAddToShowcase={(id) => setShowcasing([id])}
+        {sheet.signedIn && (
+          <CardSheetCopies
+            card={card}
+            realmName={face.realm.name}
+            copies={sheet.copies}
+            onAddToShowcase={(id) => setShowcasing([id])}
+          />
+        )}
+        <CardSheetMarket
+          cardId={card.id}
+          value={card.value}
+          market={sheet.market}
+          signedIn={sheet.signedIn}
         />
-        <CardSheetMarket cardId={card.id} value={card.value} market={sheet.market} />
         <CardSheetAbout card={card} artHidden={face.silhouette || card.isRetired} />
       </div>
       <AddToShowcaseDialog

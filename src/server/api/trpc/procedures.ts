@@ -70,6 +70,9 @@ export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);
 /** Signed-in reads that cost the server something (previews, credentials lists), on the read-only bucket. */
 export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
 
+/** The same read-only bucket for a read a signed-out visitor may make too (counted by their IP then). */
+export const publicReadOnlyProcedure = publicProcedure.use(readOnlyRateLimit);
+
 /** Public article reads, on their own generous `wiki_read` bucket (see `wikiReadRateLimit`). */
 export const wikiReadProcedure = publicProcedure.use(wikiReadRateLimit);
 

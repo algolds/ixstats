@@ -278,8 +278,8 @@ const signedAt = new Date("2026-10-02T12:00:00Z");
 const trailEvent = (id: string, overrides: Partial<TrailEvent> = {}): TrailEvent => ({
   id,
   action: "TRADE",
-  fromHandle: "ann",
-  toHandle: "max",
+  from: { handle: "ann" },
+  to: { handle: "max" },
   price: null,
   at: new Date("2026-10-01T12:00:00Z"),
   ...overrides,
@@ -329,7 +329,7 @@ describe("CardBackProvenance", () => {
     expect(screen.queryByRole("link", { name: "View on NationStates" })).toBeNull();
   });
 
-  it("signs an unknown signer as a collector, and keeps the licence once", () => {
+  it("signs a signer it may not name as a player, and keeps the licence once", () => {
     render(
       <CardBackProvenance
         face={face()}
@@ -346,7 +346,7 @@ describe("CardBackProvenance", () => {
         ns={null}
       />
     );
-    expect(screen.getByText("Signed by a collector")).toBeInTheDocument();
+    expect(screen.getByText("Signed by a player")).toBeInTheDocument();
     expect(screen.getByText("Map.png by Ann, CC BY-SA 4.0")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("list")).toBeNull();
@@ -360,7 +360,7 @@ describe("CardBackProvenance", () => {
           experience: 10,
           inscription: null,
           trail: [
-            trailEvent("e1", { action: "PACK_OPEN", fromHandle: null, toHandle: null }),
+            trailEvent("e1", { action: "PACK_OPEN", from: null, to: null }),
             trailEvent("e2"),
             trailEvent("e3"),
             trailEvent("e4"),

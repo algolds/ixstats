@@ -122,6 +122,24 @@ export async function loadPassportSettings(
   return toPassportSettings(row);
 }
 
+/**
+ * Which of these users show their Vault cards on their passport, in one read: a user with no stored settings does (the
+ * default). A failed read shows nobody's, so a player who hides their cards is never named on a guess.
+ */
+export async function loadVaultCardsShown(userIds: readonly string[]): Promise<Set<string>> {
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return new Set();
+  const rows = await db.passportPreference
+    .findMany({ where: { userId: { in: ids } }, select: { userId: true, showVault: true } })
+    .catch((err: unknown) => {
+      console.warn("[PassportPrivacy] Failed to load the Vault cards switch of", ids.length, err);
+      return null;
+    });
+  if (!rows) return new Set();
+  const stored = new Map(rows.map((row) => [row.userId, row.showVault]));
+  return new Set(ids.filter((id) => stored.get(id) ?? DEFAULT_PASSPORT_VISIBILITY.vaultCards));
+}
+
 export interface PassportSettingsUpdate {
   visibility?: Partial<PassportVisibility>;
   signature?: string | null;

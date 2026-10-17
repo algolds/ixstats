@@ -25,6 +25,7 @@ export {
   premiumMutationProcedure,
   rateLimitedPublicProcedure,
   readOnlyProcedure,
+  publicReadOnlyProcedure,
   wikiReadProcedure,
   cachedPublicProcedure,
   cachedStaticProcedure,

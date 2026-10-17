@@ -110,10 +110,20 @@ describe("trail", () => {
   });
 
   it("names the handles on each side", () => {
-    expect(trailParties({ fromHandle: "a", toHandle: "b" })).toBe("@a to @b");
-    expect(trailParties({ fromHandle: null, toHandle: "b" })).toBe("to @b");
-    expect(trailParties({ fromHandle: "a", toHandle: null })).toBe("from @a");
-    expect(trailParties({ fromHandle: null, toHandle: null })).toBeNull();
+    const a = { handle: "a" };
+    const b = { handle: "b" };
+    expect(trailParties({ from: a, to: b })).toBe("@a to @b");
+    expect(trailParties({ from: null, to: b })).toBe("to @b");
+    expect(trailParties({ from: a, to: null })).toBe("from @a");
+    expect(trailParties({ from: null, to: null })).toBeNull();
+  });
+
+  it("calls a player whose Passport hides Vault cards a player", () => {
+    const hidden = { handle: null };
+    expect(trailParties({ from: hidden, to: { handle: "b" } })).toBe("a player to @b");
+    expect(trailParties({ from: { handle: "a" }, to: hidden })).toBe("@a to a player");
+    expect(trailParties({ from: null, to: hidden })).toBe("to a player");
+    expect(trailParties({ from: hidden, to: null })).toBe("from a player");
   });
 });
 

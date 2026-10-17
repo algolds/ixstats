@@ -19,7 +19,7 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
   useFacetReducedMotion: () => true,
 }));
 jest.mock("~/components/cards/display/CardPriceHistoryChart", () => ({
-  CardPriceHistoryChart: () => null,
+  CardPriceHistoryChart: () => <p>Price history</p>,
 }));
 jest.mock("~/components/cards/display/LoreWikiExcerpt", () => ({
   LoreWikiExcerpt: ({ wikiUrl, artHidden }: { wikiUrl: string | null; artHidden?: boolean }) => (
@@ -29,7 +29,10 @@ jest.mock("~/components/cards/display/LoreWikiExcerpt", () => ({
     </p>
   ),
 }));
-jest.mock("next/navigation", () => ({ useSearchParams: jest.fn(() => new URLSearchParams()) }));
+jest.mock("next/navigation", () => ({
+  usePathname: jest.fn(() => "/vault/cards/mine"),
+  useSearchParams: jest.fn(() => new URLSearchParams()),
+}));
 jest.mock("~/components/cards/display/CardTakedownVerificationModal", () => ({
   CardTakedownVerificationModal: ({
     isOpen,
@@ -60,12 +63,13 @@ jest.mock("next/link", () => ({
   ),
 }));
 
+import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
 import { useCardSheet } from "~/hooks/useCardSheet";
-import type { CardSheetData, SheetCopy, SheetListing } from "~/lib/cards/hub/sheet";
+import type { CardSheetData, SheetCopy, SheetListing, SheetSignIn } from "~/lib/cards/hub/sheet";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = {
@@ -110,6 +114,7 @@ const copy = (overrides: Partial<SheetCopy> = {}): SheetCopy => ({
 });
 const sheet = (overrides: Partial<CardSheetData> = {}): CardSheetData => ({
   face,
+  signedIn: true,
   card,
   copies: [copy()],
   market: { listings: [], recentSales: [], wantedBy: 12 },
@@ -128,7 +133,7 @@ const listing = (overrides: Partial<SheetListing> = {}): SheetListing => ({
 
 const useSheet = () => jest.mocked(api.cards.getSheet.useQuery);
 const useAuthor = () => jest.mocked(api.loreCards.getCardAuthorInfo.useQuery);
-const showSheet = (data: CardSheetData | null = sheet()) =>
+const showSheet = (data: CardSheetData | SheetSignIn | null = sheet()) =>
   useSheet().mockReturnValue({ data, isLoading: false } as never);
 
 beforeEach(() => {
@@ -325,6 +330,39 @@ describe("CardSheet", () => {
     expect(screen.queryByRole("group")).toBeNull();
   });
 
+  it("asks a signed-out visitor to sign in, and brings them back to this card", () => {
+    jest.mocked(usePathname).mockReturnValueOnce("/@takatta");
+    jest
+      .mocked(useSearchParams)
+      .mockReturnValueOnce(
+        new URLSearchParams("tab=collection&card=c1&from=holder.takatta") as never
+      );
+    showSheet({ signIn: true });
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByText("Sign in to see this card")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      `/sign-in?redirect_url=${encodeURIComponent("/@takatta?tab=collection&card=c1&from=holder.takatta")}`
+    );
+    expect(screen.queryByText("This card is not available")).toBeNull();
+    expect(screen.queryByText("Could not load this card")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Card" })).toBeInTheDocument();
+  });
+
+  it("shows a signed-out visitor the card and its market, with no copies or price history to ask for", () => {
+    showSheet(sheet({ signedIn: false, copies: [], face: { ...face, copy: null } }));
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { level: 2, name: "Caphiria" })).toBeInTheDocument();
+    expect(
+      within(dialog)
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent)
+    ).toEqual(["Market", "About"]);
+    expect(screen.queryByText(/You do not have this card yet/)).toBeNull();
+    expect(screen.queryByText("Price history")).toBeNull();
+  });
+
   it("tells a failed load apart from a missing card, and retries", () => {
     const refetch = jest.fn();
     useSheet().mockReturnValue({
@@ -415,14 +453,15 @@ describe("CardSheet market", () => {
     expect(screen.getByText("On no wishlists yet")).toBeInTheDocument();
   });
 
-  it("names a seller with no handle plainly, and points to the market when nothing is listed", () => {
+  it("calls a seller whose Passport hides Vault cards a player, and points to the market when nothing is listed", () => {
     showSheet(
       sheet({
         market: { listings: [listing({ sellerHandle: null })], recentSales: [], wantedBy: 1 },
       })
     );
     const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByRole("list", { name: "Live listings" })).toHaveTextContent("A collector");
+    expect(screen.getByRole("list", { name: "Live listings" })).toHaveTextContent("A player");
+    expect(screen.getByText("Price history")).toBeInTheDocument();
     unmount();
     showSheet();
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
