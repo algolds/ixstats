@@ -41,6 +41,7 @@ function entry(
         cardType: "LORE",
         artwork: null,
         isRetired: false,
+        isBound: false,
         collectorNumber: seq,
         season: 1,
         nsSeason: null,
@@ -79,10 +80,18 @@ describe("selectMine", () => {
     expect(page).toMatchObject({ total: 4, totalCopies: 4, nextCursor: null });
   });
 
-  it("carries each copy's value, acquisition date and lock", () => {
+  it("carries each copy's value, acquisition date, lock and whether its card is bound", () => {
     const locked = entry({ title: "Locked" }, { isLocked: true }, 42);
     const [row] = selectMine([locked], query()).rows;
-    expect(row).toMatchObject({ value: 42, acquiredAt: locked.row.acquiredAt, isLocked: true });
+    expect(row).toMatchObject({
+      value: 42,
+      acquiredAt: locked.row.acquiredAt,
+      isLocked: true,
+      isBound: false,
+    });
+    expect(
+      selectMine([entry({ cardType: "TROPHY", isBound: true })], query()).rows[0]
+    ).toMatchObject({ isBound: true });
     expect(row!.face.copy).toEqual({
       ownershipId: locked.row.id,
       finish: "STANDARD",

@@ -73,6 +73,7 @@ const row = (n: number, value = 100, copies = 1, isRetired = false): MineRow => 
   copies,
   acquiredAt: new Date("2026-10-01T00:00:00Z"),
   isLocked: false,
+  isBound: false,
 });
 const listMine = () => jest.mocked(api.cards.listMine.useInfiniteQuery);
 interface QueryState {

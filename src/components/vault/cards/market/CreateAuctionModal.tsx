@@ -18,6 +18,7 @@ import {
 } from "~/components/ui/dialog";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
+import type { MineRow } from "~/lib/cards/hub/mine";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 type Duration = "30" | "60";
@@ -40,9 +41,61 @@ const credits = (text: string) => {
   return text !== "" && Number.isInteger(value) ? value : null;
 };
 
+interface CopyPickerProps {
+  rows: readonly MineRow[];
+  loading: boolean;
+  picked: string | null;
+  onPick: (ownershipId: string) => void;
+}
+
+/** The copies the player can list, one row per copy. */
+function CopyPicker({ rows, loading, picked, onPick }: CopyPickerProps) {
+  if (loading) return <Skeleton className="rounded-row h-40" />;
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        compact
+        title="No cards to sell"
+        message="Cards already listed or in a trade, and bound cards, cannot be listed."
+      />
+    );
+  }
+  return (
+    <ul aria-label="Your cards" className="max-h-64 space-y-1 overflow-y-auto">
+      {rows.map(({ face }) => {
+        const copy = face.copy;
+        if (!copy) return null;
+        const chosen = picked === copy.ownershipId;
+        return (
+          <li key={copy.ownershipId}>
+            <Button
+              variant={chosen ? "secondary" : "ghost"}
+              aria-pressed={chosen}
+              className="h-auto w-full justify-start gap-3 py-2"
+              onClick={() => onPick(copy.ownershipId)}
+            >
+              {/* The title and serial name the copy; the face would say the title again. */}
+              <span aria-hidden="true" className="shrink-0">
+                <CardFace face={face} size="S" className="w-16" />
+              </span>
+              <span className="min-w-0 truncate text-left">
+                {face.title}
+                <span className="text-footnote text-label-secondary block tabular-nums">
+                  #{copy.serialNumber} · {FINISH_LABEL[copy.finish]}
+                </span>
+              </span>
+            </Button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /**
- * Lists one copy at auction. It picks copies, not cards: two copies of one card are two rows, and a copy already in
- * a listing or a trade is left out. Phase 4 adds longer durations.
+ * Lists one copy at auction. It picks copies, not cards: two copies of one card are two rows. A copy already in a
+ * listing or a trade is left out, and so is a bound copy (trophies, achievement rewards), which the server refuses
+ * anyway. Phase 4 adds longer durations.
  */
 export function CreateAuctionModal({
   open,
@@ -55,7 +108,12 @@ export function CreateAuctionModal({
   const [duration, setDuration] = useState<Duration>("60");
   const utils = api.useUtils();
   const mine = api.cards.listMine.useQuery({ sort: "value", limit: 120 }, { enabled: open });
-  const rows = (mine.data?.rows ?? []).filter((row) => !row.isLocked);
+  const held = mine.data?.rows ?? [];
+  const rows = held.filter((row) => !row.isLocked && !row.isBound);
+  // The sheet never offers a bound copy for sale, but an old or hand-made `?sell=` link can name one.
+  const sentBound = held.some(
+    (row) => row.isBound && row.face.copy?.ownershipId === initialOwnershipId
+  );
   // Counts closes, so a listing that lands after the player closed the form does not close it again.
   const closes = useRef(0);
   // The form starts over each time it opens.
@@ -107,81 +165,54 @@ export function CreateAuctionModal({
             Listing costs 5 IxC, and half of it comes back if the card does not sell.
           </DialogDescription>
         </DialogHeader>
-        {mine.isLoading ? (
-          <Skeleton className="rounded-row h-40" />
-        ) : rows.length === 0 ? (
+        {sentBound ? (
           <EmptyState
             compact
-            title="No cards to sell"
-            message="Cards already listed or in a trade cannot be listed again."
+            title="Bound cards can't be sold"
+            message="Trophies and achievement rewards stay with the player who earned them."
           />
         ) : (
-          <ul aria-label="Your cards" className="max-h-64 space-y-1 overflow-y-auto">
-            {rows.map(({ face }) => {
-              const copy = face.copy;
-              if (!copy) return null;
-              const chosen = picked === copy.ownershipId;
-              return (
-                <li key={copy.ownershipId}>
-                  <Button
-                    variant={chosen ? "secondary" : "ghost"}
-                    aria-pressed={chosen}
-                    className="h-auto w-full justify-start gap-3 py-2"
-                    onClick={() => setPicked(copy.ownershipId)}
-                  >
-                    {/* The title and serial name the copy; the face would say the title again. */}
-                    <span aria-hidden="true" className="shrink-0">
-                      <CardFace face={face} size="S" className="w-16" />
-                    </span>
-                    <span className="min-w-0 truncate text-left">
-                      {face.title}
-                      <span className="text-footnote text-label-secondary block tabular-nums">
-                        #{copy.serialNumber} · {FINISH_LABEL[copy.finish]}
-                      </span>
-                    </span>
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            <CopyPicker rows={rows} loading={mine.isLoading} picked={picked} onPick={setPicked} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="auction-start">Starting price (IxC)</Label>
+                <Input
+                  id="auction-start"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  value={startingPrice}
+                  onChange={(event) => setStartingPrice(event.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="auction-buyout">Buy-now price (IxC), optional</Label>
+                <Input
+                  id="auction-buyout"
+                  type="number"
+                  inputMode="numeric"
+                  min={2}
+                  step={1}
+                  value={buyoutPrice}
+                  onChange={(event) => setBuyoutPrice(event.target.value)}
+                />
+              </div>
+            </div>
+            <SegmentedControl
+              aria-label="Duration"
+              value={duration}
+              onValueChange={setDuration}
+              options={DURATIONS}
+            />
+            <DialogFooter>
+              <Button disabled={!picked || !priced || create.isPending} onClick={submit}>
+                List it
+              </Button>
+            </DialogFooter>
+          </>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label htmlFor="auction-start">Starting price (IxC)</Label>
-            <Input
-              id="auction-start"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              step={1}
-              value={startingPrice}
-              onChange={(event) => setStartingPrice(event.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="auction-buyout">Buy-now price (IxC), optional</Label>
-            <Input
-              id="auction-buyout"
-              type="number"
-              inputMode="numeric"
-              min={2}
-              step={1}
-              value={buyoutPrice}
-              onChange={(event) => setBuyoutPrice(event.target.value)}
-            />
-          </div>
-        </div>
-        <SegmentedControl
-          aria-label="Duration"
-          value={duration}
-          onValueChange={setDuration}
-          options={DURATIONS}
-        />
-        <DialogFooter>
-          <Button disabled={!picked || !priced || create.isPending} onClick={submit}>
-            List it
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

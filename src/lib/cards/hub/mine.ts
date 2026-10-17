@@ -28,7 +28,7 @@ const MINE_COPY_SELECT = {
   cardId: true,
   acquiredAt: true,
   isLocked: true,
-  cards: { select: { ...CARD_FACE_SELECT, category: true, marketValue: true } },
+  cards: { select: { ...CARD_FACE_SELECT, category: true, marketValue: true, isBound: true } },
 } satisfies Prisma.CardOwnershipSelect;
 type MineCopyRow = Prisma.CardOwnershipGetPayload<{ select: typeof MINE_COPY_SELECT }>;
 
@@ -44,6 +44,8 @@ export interface MineRow {
   copies: number;
   acquiredAt: Date;
   isLocked: boolean;
+  /** A trophy or achievement-reward copy, which can never be traded, listed or transferred. */
+  isBound: boolean;
 }
 
 export interface MinePage {
@@ -116,6 +118,7 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
       copies: copies.get(row.cardId) ?? 1,
       acquiredAt: row.acquiredAt,
       isLocked: row.isLocked,
+      isBound: row.cards.isBound,
     })),
     total: picked.length,
     nextCursor: next < picked.length ? next : null,
