@@ -46,6 +46,9 @@ import {
 } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
+type CosmeticEffects = Record<string, Record<string, string | boolean>>;
+type StoreItemEffects = { perks: Record<string, number> } | { customizations: CosmeticEffects };
+
 export function VaultStoreControl() {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -78,7 +81,6 @@ export function VaultStoreControl() {
     effectIcon: "Crown",
     yieldBoostPct: 0, // % bonus to the Vault dividend
     cardCapacity: 0, // extra card slots
-    loreTokens: 0, // extra lore tokens
   });
 
   // Price History Query
@@ -136,7 +138,6 @@ export function VaultStoreControl() {
       effectIcon: "Crown",
       yieldBoostPct: 0,
       cardCapacity: 0,
-      loreTokens: 0,
     });
   };
 
@@ -171,22 +172,20 @@ export function VaultStoreControl() {
       effectIcon: activeCust.icon || "Crown",
       yieldBoostPct: typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
       cardCapacity: typeof perks.cardCapacity === "number" ? perks.cardCapacity : 0,
-      loreTokens: typeof perks.loreTokens === "number" ? perks.loreTokens : 0,
     });
     setIsOpen(true);
   };
 
   // Assemble the effects JSON the rest of the app reads (useActiveCosmetics for
   // rendering, vault-service getPurchasedItemsEffects for perks/yield).
-  const buildEffects = (): Record<string, any> | undefined => {
+  const buildEffects = (): StoreItemEffects | undefined => {
     if (formData.category === "upgrades") {
       const perks: Record<string, number> = {};
       if (formData.yieldBoostPct) perks.yieldBoost = formData.yieldBoostPct / 100;
       if (formData.cardCapacity) perks.cardCapacity = formData.cardCapacity;
-      if (formData.loreTokens) perks.loreTokens = formData.loreTokens;
       return Object.keys(perks).length ? { perks } : undefined;
     }
-    const customizations: Record<string, any> = {};
+    const customizations: CosmeticEffects = {};
     if (formData.cosmeticKind === "avatarGlow") {
       customizations.avatarGlow = {
         enabled: true,
@@ -219,7 +218,6 @@ export function VaultStoreControl() {
       effectIcon: _ei,
       yieldBoostPct: _yb,
       cardCapacity: _cc,
-      loreTokens: _lt,
       ...base
     } = formData;
     const payload = { ...base, effects: buildEffects() ?? null };
@@ -554,7 +552,7 @@ export function VaultStoreControl() {
               </Label>
 
               {formData.category === "upgrades" ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="fx-yield">Dividend boost (%)</Label>
                     <Input
@@ -578,19 +576,6 @@ export function VaultStoreControl() {
                       value={formData.cardCapacity}
                       onChange={(e) =>
                         setFormData({ ...formData, cardCapacity: Number(e.target.value) })
-                      }
-                      className="font-mono"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fx-lore">Lore Tokens (+)</Label>
-                    <Input
-                      id="fx-lore"
-                      type="number"
-                      min={0}
-                      value={formData.loreTokens}
-                      onChange={(e) =>
-                        setFormData({ ...formData, loreTokens: Number(e.target.value) })
                       }
                       className="font-mono"
                     />

@@ -5,7 +5,7 @@
  */
 
 import { purchasePack } from "~/lib/cards/pack-service";
-import { getLoreTokensBalance, invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
+import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 
 const USER = "user_db_id_1";
 
@@ -123,32 +123,5 @@ describe("purchasePack goes through the ledger", () => {
     await expect(purchasePack(db, USER, "pack_1")).rejects.toThrow(/Insufficient credits/);
     expect(state.credits).toBe(100);
     expect(db.userPack.create).not.toHaveBeenCalled();
-  });
-});
-
-describe("getLoreTokensBalance", () => {
-  it("gives a token back when its request was rejected", async () => {
-    const db: any = {
-      myVault: { findUnique: jest.fn().mockResolvedValue({ id: "v1" }) },
-      vaultTransaction: {
-        findMany: jest
-          .fn()
-          .mockImplementation(async ({ where }: any) =>
-            where.source === "LORE_CARD_REQUEST"
-              ? [
-                  { metadata: JSON.stringify({ useToken: true, requestId: "r1" }) },
-                  { metadata: JSON.stringify({ tokenRefund: true, requestId: "r1" }) },
-                ]
-              : [{ metadata: { itemId: "token_pack" } }]
-          ),
-      },
-      vaultStoreItem: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([{ id: "token_pack", effects: { perks: { loreTokens: 1 } } }]),
-      },
-    };
-    // 1 granted, 1 used, 1 given back => 1 available
-    expect(await getLoreTokensBalance("perks_user_refund", db)).toBe(1);
   });
 });

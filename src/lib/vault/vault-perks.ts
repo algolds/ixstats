@@ -8,7 +8,6 @@ export type PerksDb = Pick<PrismaClient, "vaultTransaction" | "vaultStoreItem">;
 interface VaultEffectPerks {
   cardCapacity?: number;
   yieldBoost?: number;
-  loreTokens?: number;
   [key: string]: unknown;
 }
 
@@ -259,57 +258,4 @@ export async function getYieldBoostMultiplier(userId: string, db: PrismaClient):
     }
   }
   return totalBoost;
-}
-
-/**
- * Calculate current lore request tokens balance
- */
-export async function getLoreTokensBalance(userId: string, db: PrismaClient): Promise<number> {
-  const effects = await getPurchasedItemsEffects(userId, db);
-  let totalGranted = 0;
-  for (const eff of effects) {
-    const perks = eff.perks;
-    if (perks && typeof perks.loreTokens === "number") {
-      totalGranted += perks.loreTokens;
-    }
-  }
-
-  const vault = await db.myVault.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-  if (!vault) return 0;
-
-  const transactions = await db.vaultTransaction.findMany({
-    where: {
-      vaultId: vault.id,
-      source: "LORE_CARD_REQUEST",
-    },
-    select: {
-      metadata: true,
-    },
-  });
-
-  let usedTokenCount = 0;
-  for (const tx of transactions) {
-    let meta = tx.metadata;
-    if (typeof meta === "string") {
-      try {
-        meta = JSON.parse(meta);
-      } catch {
-        // non-JSON metadata — treated as no item match
-      }
-    }
-    if (meta && typeof meta === "object") {
-      const metaObj = meta as Record<string, unknown>;
-      if (metaObj.useToken === true) {
-        usedTokenCount++;
-      } else if (metaObj.tokenRefund === true) {
-        // A rejected request gives its token back
-        usedTokenCount--;
-      }
-    }
-  }
-
-  return Math.max(0, totalGranted - usedTokenCount);
 }

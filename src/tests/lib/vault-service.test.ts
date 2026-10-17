@@ -19,9 +19,6 @@ describe("VaultService - Upgrades & Perks", () => {
       vaultStoreItem: {
         findMany: jest.fn(),
       },
-      myVault: {
-        findUnique: jest.fn(),
-      },
     };
   });
 
@@ -171,59 +168,6 @@ describe("VaultService - Upgrades & Perks", () => {
 
       const multiplier = await vaultService.getYieldBoostMultiplier("user_123", mockDb);
       expect(multiplier).toBeCloseTo(0.15);
-    });
-  });
-
-  describe("getLoreTokensBalance", () => {
-    it("should calculate balance correctly based on granted tokens and transaction history", async () => {
-      // Mock store items granting 3 tokens in total
-      mockDb.vaultTransaction.findMany.mockImplementation(async (args: any) => {
-        // First call is for purchased store items in getPurchasedItemsEffects
-        if (args.where?.type) {
-          return [
-            { metadata: { itemId: "item_token_2" } },
-            { metadata: { itemId: "item_token_1" } },
-          ];
-        }
-        // Second call is for LORE_CARD_REQUEST transactions inside getLoreTokensBalance
-        return [
-          { metadata: { useToken: true } },
-          { metadata: { useToken: false } },
-          { metadata: null },
-        ];
-      });
-
-      mockDb.vaultStoreItem.findMany.mockResolvedValue([
-        {
-          id: "item_token_2",
-          effects: {
-            perks: {
-              loreTokens: 2,
-            },
-          },
-        },
-        {
-          id: "item_token_1",
-          effects: {
-            perks: {
-              loreTokens: 1,
-            },
-          },
-        },
-      ]);
-
-      mockDb.myVault.findUnique.mockResolvedValue({ id: "vault_abc" });
-
-      const balance = await vaultService.getLoreTokensBalance("user_123", mockDb);
-      expect(balance).toBe(2); // 3 total - 1 used = 2 remaining
-    });
-
-    it("should return 0 if user has no vault", async () => {
-      mockDb.vaultTransaction.findMany.mockResolvedValue([]);
-      mockDb.myVault.findUnique.mockResolvedValue(null);
-
-      const balance = await vaultService.getLoreTokensBalance("user_123", mockDb);
-      expect(balance).toBe(0);
     });
   });
 
