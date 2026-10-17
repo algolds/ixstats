@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { cardArticleSourceSchema } from "~/lib/cards/card-sources";
 
 export const loreCardsWikiRouter = createTRPCRouter({
   /**
-   * Resolve author info for a wiki article (Page Creator + Top Contributor)
+   * Resolve author info for a wiki article (Page Creator + Top Contributor). Public, and it reads the article's
+   * history from its wiki, so it is rate limited: an anonymous caller cannot make the server hammer a sister wiki.
    */
-  getCardAuthorInfo: publicProcedure
+  getCardAuthorInfo: rateLimitedPublicProcedure
     .input(
       z.object({
         articleTitle: z.string().min(1),
