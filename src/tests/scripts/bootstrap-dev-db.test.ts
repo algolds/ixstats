@@ -8,6 +8,7 @@ import {
   CARDS_ADMIN_SQL,
   CARDS_BACKFILL_SCRIPT,
   CARDS_CONSTRAINTS_SQL,
+  CARDS_FACE_HUB_SQL,
   CARDS_FOUNDATIONS_SQL,
   DB_SETUP_SQL_FILES,
   MAP_GEOMETRY_TRIGGERS_SQL,
@@ -102,6 +103,19 @@ describe("the SQL a fresh database needs besides db push", () => {
     expect(constraints).toBeGreaterThan(0);
     expect(admin).toBeGreaterThan(constraints);
     expect(seed).toBeGreaterThan(admin);
+  });
+
+  it("runs the cards face-hub SQL after Phase 2's admin SQL, before the seed", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    // Prettier wraps these calls one argument per line, so match across the line break.
+    const admin = source.search(/"--file",\s*CARDS_ADMIN_SQL/);
+    const faceHub = source.search(/"--file",\s*CARDS_FACE_HUB_SQL/);
+    const seed = source.indexOf("scripts/setup/seed-db.ts");
+    expect(CARDS_FACE_HUB_SQL).toContain("20261031120000_cards_face_hub");
+    expect(DB_SETUP_SQL_FILES).not.toContain(CARDS_FACE_HUB_SQL);
+    expect(admin).toBeGreaterThan(0);
+    expect(faceHub).toBeGreaterThan(admin);
+    expect(seed).toBeGreaterThan(faceHub);
   });
 
   it("the cards admin SQL is idempotent and creates the import, licence and takedown tables", () => {
