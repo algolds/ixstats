@@ -12,12 +12,15 @@ type ShowcaseDb = Pick<
   "cardCollection" | "cardCollectionItem" | "cardOwnership" | "$transaction"
 >;
 
-/** Showcases are stored as `CardCollection` rows holding copies (`CardCollectionItem`). */
-export const SHOWCASE_LIMITS = { perPlayer: 20, items: 60 } as const;
+/**
+ * Showcases are stored as `CardCollection` rows holding copies (`CardCollectionItem`). The name and description keep
+ * the old collection limits, so a migrated collection stays editable as it stands.
+ */
+export const SHOWCASE_LIMITS = { perPlayer: 20, items: 60, name: 100, description: 500 } as const;
 
 export const ShowcaseFieldsSchema = z.object({
-  name: z.string().trim().min(1).max(60),
-  description: z.string().trim().max(280).optional(),
+  name: z.string().trim().min(1).max(SHOWCASE_LIMITS.name),
+  description: z.string().trim().max(SHOWCASE_LIMITS.description).optional(),
   isPublic: z.boolean().default(false),
 });
 export type ShowcaseFields = z.infer<typeof ShowcaseFieldsSchema>;
@@ -217,13 +220,19 @@ export async function removeFromShowcase(
   await db.cardCollectionItem.deleteMany({
     where: { collectionId: id, cardOwnershipId: ownershipId },
   });
+  await db.cardCollection.update({ where: { id }, data: { updatedAt: new Date() } });
 }
 
 /**
  * One pinned showcase per player: pinning clears the others. Only a public showcase pins; the pin re-checks it in the
- * same transaction, so a showcase made private meanwhile stays unpinned.
+ * same transaction, so a showcase made private meanwhile stays unpinned and `pinned` comes back false.
  */
-export async function pinShowcase(db: ShowcaseDb, userId: string, id: string, pinned: boolean) {
+export async function pinShowcase(
+  db: ShowcaseDb,
+  userId: string,
+  id: string,
+  pinned: boolean
+): Promise<{ pinned: boolean }> {
   const showcase = await ownShowcase(db, userId, id);
   if (pinned && !showcase.isPublic) {
     throw new TRPCError({
@@ -231,7 +240,7 @@ export async function pinShowcase(db: ShowcaseDb, userId: string, id: string, pi
       message: "Make the showcase public before you pin it.",
     });
   }
-  await db.$transaction([
+  const [, pin] = await db.$transaction([
     db.cardCollection.updateMany({
       where: { userId, pinnedAt: { not: null } },
       data: { pinnedAt: null },
@@ -245,6 +254,8 @@ export async function pinShowcase(db: ShowcaseDb, userId: string, id: string, pi
         ]
       : []),
   ]);
+  // `pin` exists only when pinning.
+  return { pinned: pinned && pin.count > 0 };
 }
 
 /** The wallet's showcase: the pinned one, else the player's most valuable copies (spec §2.3 Sets). */

@@ -15,7 +15,7 @@ jest.mock("~/lib/cards/hub/showcases", () => {
     deleteShowcase: jest.fn(async () => undefined),
     addToShowcase: jest.fn(async () => ({ added: 1 })),
     removeFromShowcase: jest.fn(async () => undefined),
-    pinShowcase: jest.fn(async () => undefined),
+    pinShowcase: jest.fn(async () => ({ pinned: true })),
   };
 });
 jest.mock("~/server/api/routers/cards/_passport", () => ({
@@ -93,8 +93,17 @@ describe("cards showcases router", () => {
       name: "Best",
       isPublic: true,
     });
-    await callerFor(db).pinShowcase({ showcaseId: "s1", pinned: true });
+    await expect(callerFor(db).pinShowcase({ showcaseId: "s1", pinned: true })).resolves.toEqual({
+      pinned: true,
+    });
     expect(pinShowcase).toHaveBeenCalledWith(db, "db_me", "s1", true);
+  });
+
+  it("requires isPublic on an update, so leaving it out cannot make a showcase private", async () => {
+    await expect(
+      callerFor().updateShowcase({ showcaseId: "s1", name: "Best" } as never)
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(updateShowcase).not.toHaveBeenCalled();
   });
 
   it("refuses signed-out callers", async () => {

@@ -35,7 +35,8 @@ export const cardsShowcasesRouter = createTRPCRouter({
     .input(ShowcaseFieldsSchema)
     .mutation(({ ctx, input }) => createShowcase(ctx.db, ctx.user.id, input)),
   updateShowcase: rateLimitedMutationProcedure
-    .input(ShowcaseFieldsSchema.extend({ showcaseId: Id }))
+    // No default here: an update that leaves `isPublic` out must not make the showcase private and unpin it.
+    .input(ShowcaseFieldsSchema.extend({ showcaseId: Id, isPublic: z.boolean() }))
     .mutation(({ ctx, input: { showcaseId, ...fields } }) =>
       updateShowcase(ctx.db, ctx.user.id, showcaseId, fields)
     ),

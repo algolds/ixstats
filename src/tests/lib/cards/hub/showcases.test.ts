@@ -44,16 +44,19 @@ const hidden = { vaultVisible: jest.fn(async () => false) };
 const owned = (isPublic: boolean, items = 1) => ({ id: "s1", isPublic, _count: { items } });
 
 describe("ShowcaseFieldsSchema", () => {
-  it("trims, bounds the name and description, and starts private", () => {
+  it("trims, keeps the old collection bounds on the name and description, and starts private", () => {
     expect(ShowcaseFieldsSchema.parse({ name: "  Best  " })).toEqual({
       name: "Best",
       isPublic: false,
     });
     expect(ShowcaseFieldsSchema.safeParse({ name: " " }).success).toBe(false);
-    expect(ShowcaseFieldsSchema.safeParse({ name: "x".repeat(61) }).success).toBe(false);
-    expect(
-      ShowcaseFieldsSchema.safeParse({ name: "x", description: "y".repeat(281) }).success
-    ).toBe(false);
+    const fits = { name: "x".repeat(100), description: "y".repeat(500) };
+    expect(SHOWCASE_LIMITS).toMatchObject({ name: 100, description: 500 });
+    expect(ShowcaseFieldsSchema.safeParse(fits).success).toBe(true);
+    expect(ShowcaseFieldsSchema.safeParse({ ...fits, name: "x".repeat(101) }).success).toBe(false);
+    expect(ShowcaseFieldsSchema.safeParse({ ...fits, description: "y".repeat(501) }).success).toBe(
+      false
+    );
   });
 });
 
@@ -317,6 +320,10 @@ describe("editing", () => {
     expect(db.cardCollectionItem.deleteMany).toHaveBeenCalledWith({
       where: { collectionId: "s1", cardOwnershipId: "o1" },
     });
+    expect(db.cardCollection.update).toHaveBeenCalledWith({
+      where: { id: "s1" },
+      data: { updatedAt: expect.any(Date) },
+    });
   });
 });
 
@@ -324,7 +331,10 @@ describe("pinShowcase", () => {
   it("pins one public showcase at a time", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue({ ...owned(true), id: "s2" });
-    await pinShowcase(db as never, "u1", "s2", true);
+    db.cardCollection.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 1 });
+    await expect(pinShowcase(db as never, "u1", "s2", true)).resolves.toEqual({ pinned: true });
     expect(db.cardCollection.updateMany).toHaveBeenNthCalledWith(1, {
       where: { userId: "u1", pinnedAt: { not: null } },
       data: { pinnedAt: null },
@@ -336,10 +346,20 @@ describe("pinShowcase", () => {
     expect(db.$transaction).toHaveBeenCalledTimes(1);
   });
 
+  it("says the pin did not land when the showcase was made private meanwhile", async () => {
+    const db = createMockPrisma();
+    db.cardCollection.findFirst.mockResolvedValue(owned(true));
+    db.cardCollection.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    await expect(pinShowcase(db as never, "u1", "s1", true)).resolves.toEqual({ pinned: false });
+  });
+
   it("unpins, a private showcase too, without pinning another", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(owned(false));
-    await pinShowcase(db as never, "u1", "s1", false);
+    db.cardCollection.updateMany.mockResolvedValueOnce({ count: 1 });
+    await expect(pinShowcase(db as never, "u1", "s1", false)).resolves.toEqual({ pinned: false });
     expect(db.cardCollection.updateMany).toHaveBeenCalledTimes(1);
     expect(db.cardCollection.updateMany).toHaveBeenCalledWith({
       where: { userId: "u1", pinnedAt: { not: null } },
