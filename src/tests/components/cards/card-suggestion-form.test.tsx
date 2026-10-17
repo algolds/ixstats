@@ -14,14 +14,14 @@ jest.mock("~/trpc/react", () => ({
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
-jest.mock("~/components/cards/lore/ArticleSearch", () => ({
+jest.mock("~/components/cards/suggest/ArticleSearch", () => ({
   ArticleSearch: ({ id, onSelect }: { id?: string; onSelect: (title: string) => void }) => (
     <input id={id} onChange={(event) => onSelect(event.target.value)} />
   ),
 }));
 
 import { api } from "~/trpc/react";
-import { CardSuggestionForm } from "~/components/cards/lore";
+import { CardSuggestionForm } from "~/components/cards/suggest/CardSuggestionForm";
 
 describe("CardSuggestionForm", () => {
   it("suggests the chosen article from the chosen wiki, and lists the player's suggestions", () => {
