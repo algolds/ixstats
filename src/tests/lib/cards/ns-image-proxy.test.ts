@@ -9,10 +9,14 @@ describe("proxyCardArtwork", () => {
       "https://static.wikia.nocookie.net/althistory/images/e/e8/Geraldine-ferraro.jpg/revision/latest?cb=20151117051220",
       "Geraldine-ferraro.jpg",
     ],
-    // The name stays percent-encoded, as it came.
+    // The name is decoded, then encoded once as one path segment.
     [
       "https://static.wikia.nocookie.net/AltHistory/images/5/5c/Ronaldo_%28cropped%29.jpg/revision/latest",
-      "Ronaldo_%28cropped%29.jpg",
+      "Ronaldo_(cropped).jpg",
+    ],
+    [
+      "https://static.wikia.nocookie.net/althistory/images/a/ab/..\\..\\..\\api\\x",
+      "..%5C..%5C..%5Capi%5Cx",
     ],
     [
       "https://vignette.wikia.nocookie.net/althistory/images/a/ab/Elm.png/revision/latest?cb=1",
@@ -40,6 +44,9 @@ describe("proxyCardArtwork", () => {
     "https://static.wikia.nocookie.net\\@attacker.com/althistory/images/a/ab/X.png",
     "https://evil-static.wikia.nocookie.net/althistory/images/a/ab/X.png",
     "https://static.wikia.nocookie.net:444/althistory/images/a/ab/X.png",
+    // A path step is never sent to the proxy.
+    "https://img1.wikia.nocookie.net/__cb1/althistory/images/a/ab/%2e%2e",
+    "https://static.wikia.nocookie.net/althistory/images/a/ab/..",
   ])("leaves %s alone", (url) => {
     expect(proxyCardArtwork(url)).toBe(url);
   });
@@ -64,6 +71,9 @@ describe("proxyCardArtwork", () => {
     for (const url of [
       "https://www.nationstates.net/images/cards/s3/x.jpg",
       "https://upload.wikimedia.org/wikipedia/en/4/45/Not_on_Commons.png",
+      // A path step names no Commons file, so it never reaches Special:FilePath.
+      "https://upload.wikimedia.org/wikipedia/commons/4/45/File:..",
+      "https://upload.wikimedia.org/wikipedia/commons/4/45/File:%2e%2e",
     ]) {
       expect(proxyCardArtwork(url)).toBe(`/api/proxy-ns-image?url=${encodeURIComponent(url)}`);
     }

@@ -29,25 +29,33 @@ export function classifyLicence(texts: ReadonlyArray<string | null | undefined>)
 
 /**
  * Template names in a File page's wikitext, each with its one-token positional parameters ("{{self|cc-by-4.0}}" →
- * "self", "cc-by-4.0"). Named parameters and free text ("{{Information|description=PD scan}}", "{{en|PD scan}}")
- * are left out, so a description never reads as a licence.
+ * "self", "cc-by-4.0"). Magic words and parser functions (a name with `:`, "{{DEFAULTSORT:PD logo}}", "{{#if:x|PD}}"),
+ * named parameters and multi-word text ("{{Information|description=PD scan}}", "{{en|PD scan}}") are left out, so
+ * text never reads as a licence.
  */
 export function licenceTemplates(wikitext: string): string[] {
   const names: string[] = [];
   for (const match of wikitext.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) {
     const [name, ...params] = match[1].split("|").map((part) => part.trim());
-    names.push(...[name, ...params.filter((param) => /^[^\s=]+$/.test(param))].filter(Boolean));
+    if (!name || name.includes(":")) continue;
+    names.push(name, ...params.filter((param) => /^[^\s=]+$/.test(param)));
   }
   return names;
 }
 
+/** Fandom's CDN hosts (static, and the older vignette, img and images.wikia.com), shared by every Fandom wiki. */
+const FANDOM_CDN_HOSTS = String.raw`(?:(?:static|vignette\d*|img\d+)\.wikia\.nocookie\.net|images\.wikia\.com)`;
+const FANDOM_CDN_HOST = new RegExp(`^${FANDOM_CDN_HOSTS}$`, "i");
+
 /**
- * AltHistory's files on Fandom's CDN: `static.wikia.nocookie.net/althistory/images/a/ab/<file>/revision/latest?cb=`,
- * and the older vignette, img and images.wikia.com hosts (which may put `__cb<time>/` first). The host is exact (a
- * `/` follows it), and no other Fandom wiki's path matches. Group 1 is the file, still percent-encoded.
+ * AltHistory's files on Fandom's CDN: `<host>/althistory/images/a/ab/<file>/revision/latest?cb=`, where the older
+ * hosts may put `__cb<time>/` first. The host is exact (a `/` follows it), and no other Fandom wiki's path matches.
+ * Group 1 is the file, still percent-encoded.
  */
-export const ALTHISTORY_CDN_FILE =
-  /^https?:\/\/(?:(?:static|vignette\d*|img\d+)\.wikia\.nocookie\.net|images\.wikia\.com)\/(?:__cb\d+\/)?althistory\/images\/[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i;
+const ALTHISTORY_CDN_FILE = new RegExp(
+  String.raw`^https?:\/\/${FANDOM_CDN_HOSTS}\/(?:__cb\d+\/)?althistory\/images\/[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)`,
+  "i"
+);
 
 /** A file's path on its wiki's own hosts: MediaWiki's `/images/` and Commons' upload path, original or thumbnail. */
 const FILE_PATHS = [
@@ -58,24 +66,31 @@ const FILE_PATHS = [
 /** A file WikiOS serves itself, a path on this app: an IxWiki file. */
 const STAGED_FILE = /\/api\/wiki\/file\/([^/?#]+)/i;
 
-function decodedName(name: string | undefined): string | null {
-  if (!name) return null;
+/** A file name from a URL segment, percent-decoded. Null for none, and for `.` or `..`: a path step is no file. */
+function decodedName(segment: string | undefined): string | null {
+  if (!segment) return null;
+  let name = segment;
   try {
-    return decodeURIComponent(name);
+    name = decodeURIComponent(segment);
   } catch {
-    return name;
+    // A malformed escape is kept as it came.
   }
+  return /^(?:file:)?\.\.?$/i.test(name) ? null : name;
 }
 
-/** The path of an http(s) URL on one of the wiki's file hosts, else null. */
-function pathOnWiki(url: string, source: CardWikiSource): string | null {
+/** An http(s) URL, or null. */
+function webUrl(url: string): URL | null {
   try {
     const parsed = new URL(url);
-    const web = parsed.protocol === "https:" || parsed.protocol === "http:";
-    return web && wikiFileHosts(source).has(parsed.hostname) ? parsed.pathname : null;
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed : null;
   } catch {
     return null;
   }
+}
+
+/** The AltHistory file a Fandom CDN URL points at, percent-decoded; null for any other URL. */
+export function althistoryCdnFileName(url: string): string | null {
+  return decodedName(ALTHISTORY_CDN_FILE.exec(url)?.[1]);
 }
 
 /**
@@ -91,12 +106,14 @@ export function fileNameFromArtworkUrl(
   if (url.startsWith("/")) {
     return source === "ixwiki" ? decodedName(STAGED_FILE.exec(url)?.[1]) : null;
   }
-  const cdnFile = ALTHISTORY_CDN_FILE.exec(url)?.[1];
-  if (cdnFile) return source === "althistory" ? decodedName(cdnFile) : null;
-  const path = pathOnWiki(url, source);
-  return path
-    ? decodedName(FILE_PATHS.map((pattern) => pattern.exec(path)?.[1]).find(Boolean))
-    : null;
+  const parsed = webUrl(url);
+  if (!parsed) return null;
+  // Every Fandom wiki shares the CDN, so only an AltHistory file path names a file there.
+  if (FANDOM_CDN_HOST.test(parsed.hostname)) {
+    return source === "althistory" ? althistoryCdnFileName(url) : null;
+  }
+  if (!wikiFileHosts(source).has(parsed.hostname)) return null;
+  return decodedName(FILE_PATHS.map((pattern) => pattern.exec(parsed.pathname)?.[1]).find(Boolean));
 }
 
 /** A Commons file's card title: no namespace, no extension, underscores as spaces. */

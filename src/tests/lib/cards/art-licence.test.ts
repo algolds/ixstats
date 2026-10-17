@@ -56,6 +56,15 @@ describe("licenceTemplates", () => {
     ]);
     expect(licenceTemplates("{{en|PD scan}}")).toEqual(["en"]);
     expect(licenceTemplates("{{Fairuse|Logo of ND Corp}}")).toEqual(["Fairuse"]);
+    expect(licenceTemplates("{{ |PD}}")).toEqual([]);
+  });
+
+  it.each([
+    "{{Fairuse}}{{DEFAULTSORT:Public domain logo}}",
+    "{{Fairuse}}{{#if:x|PD}}",
+    "{{DISPLAYTITLE:Map of the ND region}}",
+  ])("skips magic words and parser functions, so %s stays unknown", (wikitext) => {
+    expect(classifyLicence(licenceTemplates(wikitext))).toBe("UNKNOWN");
   });
 });
 
@@ -133,6 +142,14 @@ describe("fileNameFromArtworkUrl", () => {
     ["/api/wiki/file/X.svg", "commons"],
     ["/images/cards/lore-placeholder.svg", "ixwiki"],
     ["ftp://iiwiki.com/images/a/ab/X.png", "iiwiki"],
+    // A path step is never a file name.
+    ["https://upload.wikimedia.org/wikipedia/commons/4/45/File:..", "commons"],
+    ["https://upload.wikimedia.org/wikipedia/commons/4/45/File:%2e%2e", "commons"],
+    [`https://${FANDOM}/a/ab/%2e%2e`, "althistory"],
+    [`https://${FANDOM}/a/ab/./revision/latest`, "althistory"],
+    // On Fandom's shared CDN only an AltHistory file path names a file.
+    ["https://static.wikia.nocookie.net/images/a/ab/X.png", "althistory"],
+    ["https://static.wikia.nocookie.net/wikipedia/commons/4/45/X.png", "althistory"],
     ["https://www.nationstates.net/images/cards/s3/ab.jpg", "ixwiki"],
     ["not a url", "ixwiki"],
   ])("%s names no %s file", (url, source) => {

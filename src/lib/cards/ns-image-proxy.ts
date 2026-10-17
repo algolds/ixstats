@@ -1,5 +1,5 @@
 import { withBasePath } from "~/lib/base-path";
-import { ALTHISTORY_CDN_FILE, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
+import { althistoryCdnFileName, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
 import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 
@@ -25,9 +25,8 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
     return withBasePath(artworkUrl);
   }
 
-  const fandomFile = ALTHISTORY_CDN_FILE.exec(artworkUrl)?.[1];
-  if (fandomFile)
-    return withBasePath(`/api/mediawiki/althistory/wiki/Special:FilePath/${fandomFile}`);
+  const fandomFile = althistoryCdnFileName(artworkUrl);
+  if (fandomFile) return proxiedFileUrl("althistory", null, fandomFile);
 
   const commonsFile = fileNameFromArtworkUrl(artworkUrl, "commons");
   if (commonsFile) return proxiedFileUrl("commons", null, commonsFile);
