@@ -93,13 +93,15 @@ function UnlockSlide({
  */
 export function VaultUnlocks() {
   const { data: summary } = api.achievements.getMySummary.useQuery();
-  const { data: next } = api.achievements.getNextUnlock.useQuery(undefined, {
+  const { data: nearest } = api.achievements.getNextUnlock.useQuery(undefined, {
     staleTime: 5 * 60_000,
   });
   const track = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
 
   const recent = summary?.recent ?? [];
+  // The next-up query is cached longer than the summary, so it can still name an achievement just earned.
+  const next = nearest && !recent.some((unlock) => unlock.key === nearest.key) ? nearest : null;
   const count = recent.length + (next ? 1 : 0);
 
   // A resize moves every slide's offset, so the shown slide is measured again.

@@ -236,6 +236,23 @@ describe("VaultUnlocks", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
+  it("leaves out a next-up achievement the player has just earned, so it never shows twice", () => {
+    // getNextUnlock is cached longer than the summary, so it can still name the newest unlock.
+    mockSummary = summary(LATEST, { ...LATEST, key: "b", title: "Second" });
+    mockNext = { data: { ...NEXT.data, key: LATEST.key, title: LATEST.title } };
+    render(<VaultUnlocks />);
+    expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      expect.stringContaining("Newest"),
+      expect.stringContaining("Second"),
+    ]);
+    expect(screen.queryByText(/Next up/)).toBeNull();
+    expect(screen.getAllByRole("group").map((g) => g.getAttribute("aria-label"))).toEqual([
+      "1 of 2",
+      "2 of 2",
+    ]);
+    expect(screen.getAllByRole("button", { name: /Show achievement/ })).toHaveLength(2);
+  });
+
   it("is hidden when there is no unlock yet", () => {
     mockSummary = summary(null);
     const { container } = render(<VaultUnlocks />);
