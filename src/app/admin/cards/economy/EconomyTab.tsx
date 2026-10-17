@@ -12,6 +12,7 @@ import {
   BONUS_SWITCH_FIELD,
   CARD_VALUE_FIELDS,
   MARKET_FIELDS,
+  floorsProblem,
 } from "~/lib/cards/economy-fields";
 import { DailyImportsCard } from "./DailyImportsCard";
 import { LorewardPayoutsCard } from "./LorewardPayoutsCard";
@@ -37,12 +38,13 @@ export function EconomyTab() {
           "Cards not revalued",
           "The card values are saved. Revalue every card to try again."
         );
-      } else notify.success(`Card values saved, ${updated.toLocaleString()} cards revalued`);
+      } else notify.success(`Card values saved, ${updated.toLocaleString()} cards changed value`);
     },
     onError: failed("Card values not saved"),
   });
   const recompute = api.cards.admin.economy.recomputeValues.useMutation({
-    onSuccess: ({ updated }) => notify.success(`${updated.toLocaleString()} cards revalued`),
+    onSuccess: ({ updated }) =>
+      notify.success(`Every card revalued, ${updated.toLocaleString()} changed value`),
     onError: failed("Cards not revalued"),
   });
   const saveMarket = api.cards.admin.economy.saveMarket.useMutation({
@@ -76,6 +78,7 @@ export function EconomyTab() {
         saveLabel="Save card values"
         pending={saveValues.isPending || recompute.isPending}
         onSave={(changed) => saveValues.mutate(changed)}
+        check={(values) => floorsProblem(values)}
         action={
           <Button
             variant="ghost"

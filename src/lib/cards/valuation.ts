@@ -17,7 +17,7 @@
  * coefficient here only if catalog value needs to move with float.
  */
 
-import { type PrismaClient } from "@prisma/client";
+import { type Prisma, type PrismaClient } from "@prisma/client";
 
 export interface CardValuationConfig {
   floorCommon: number;
@@ -60,8 +60,13 @@ const KEY = {
 let cache: { value: CardValuationConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
+/** Forget the cached config; a caller that writes it in a transaction calls this once the transaction commits. */
+export function clearValuationCache(): void {
+  cache = null;
+}
+
 /** The stored config, defaults overlaid with any SystemConfig rows, read past the cache. */
-async function readValuationConfig(
+export async function readValuationConfig(
   db: Pick<PrismaClient, "systemConfig">
 ): Promise<CardValuationConfig> {
   const rows = await db.systemConfig.findMany({
@@ -90,7 +95,10 @@ export async function getValuationConfig(db: PrismaClient): Promise<CardValuatio
   return merged;
 }
 
-/** Update a single config value (DM admin). Invalidates the in-memory cache. */
+/**
+ * Update a single config value (DM admin). The app client's write is visible at once, so it clears the cache here; a
+ * transaction's caller clears it after the commit, as a read before then would cache the old value again.
+ */
 export async function setValuationConfig(
   db: Pick<PrismaClient, "systemConfig">,
   field: keyof CardValuationConfig,
@@ -101,7 +109,7 @@ export async function setValuationConfig(
     create: { key: KEY[field], value: String(value), description: `Card valuation: ${field}` },
     update: { value: String(value) },
   });
-  cache = null;
+  if ("$transaction" in db) clearValuationCache();
 }
 
 /** The configured rarity floor for a given rarity string. */
@@ -142,15 +150,34 @@ export function computeCardValue(
   return Math.round(Math.max(base, ns) * 100) / 100;
 }
 
+/** Arbitrary constant; identifies the revalue lock in pg_locks. */
+const REVALUE_LOCK_NAMESPACE = 7336;
+/** Six set-based updates over every card take seconds, well past the interactive transaction's default 5 s. */
+const REVALUE_TIMEOUT_MS = 60_000;
+
 /**
  * Recompute marketValue for every card under the current config. Set-based UPDATEs
  * grouped by rarity (handles 56k+ NS cards in 6 statements, not 56k round-trips).
  * NS source value is read from metadata.nsData so re-running is idempotent.
- * The config is read past the cache: a read during an Economy save's transaction can
- * cache the old values again before the new ones commit.
+ * One revalue runs at a time, in one transaction under its lock, and reads the config
+ * after taking it, past the cache: two interleaved revalues could otherwise leave a
+ * rarity valued under the older config. Only cards whose value changes are written.
  */
 export async function recomputeAllCardValues(db: PrismaClient): Promise<{ updated: number }> {
-  const cfg = await readValuationConfig(db);
+  return db.$transaction(
+    async (tx) => {
+      // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REVALUE_LOCK_NAMESPACE}::int, 0)`;
+      return revalueCards(tx, await readValuationConfig(tx));
+    },
+    { timeout: REVALUE_TIMEOUT_MS }
+  );
+}
+
+async function revalueCards(
+  tx: Prisma.TransactionClient,
+  cfg: CardValuationConfig
+): Promise<{ updated: number }> {
   const rarities: Array<[string, number]> = [
     ["COMMON", cfg.floorCommon],
     ["UNCOMMON", cfg.floorUncommon],
@@ -163,17 +190,18 @@ export async function recomputeAllCardValues(db: PrismaClient): Promise<{ update
   let updated = 0;
   for (const [rarity, floor] of rarities) {
     // All numbers below come from validated numeric config; rarity is from a fixed list.
-    const sql = `
-      UPDATE cards SET "marketValue" = CASE
+    const value = `CASE
         WHEN "cardType" = 'NS'
           THEN GREATEST(${floor}, COALESCE(NULLIF(metadata->'nsData'->>'market_value', '')::numeric, 0) * ${cfg.nsPremium})
         WHEN "cardType" = 'SPECIAL' THEN ${floor * cfg.multSpecial}
         WHEN "cardType" = 'NATION'  THEN ${floor * cfg.multNation}
         ELSE ${floor}
-      END,
+      END`;
+    const sql = `
+      UPDATE cards SET "marketValue" = ${value},
       "updatedAt" = now()
-      WHERE rarity = '${rarity}'`;
-    updated += await db.$executeRawUnsafe(sql);
+      WHERE rarity = '${rarity}' AND "marketValue" IS DISTINCT FROM ${value}`;
+    updated += await tx.$executeRawUnsafe(sql);
   }
   return { updated };
 }

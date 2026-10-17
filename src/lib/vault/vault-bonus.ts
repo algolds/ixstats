@@ -13,6 +13,12 @@
  */
 
 import { type Prisma, type PrismaClient } from "@prisma/client";
+import {
+  LOREWARD_PLACES,
+  LOREWARD_TYPES,
+  type LorewardPlace,
+  type LorewardType,
+} from "./loreward-places";
 import { earnCreditsOnce, earnCreditsOnceTx, vaultService } from "./vault-service";
 import type { LedgerEarnInput } from "./vault-ledger";
 
@@ -57,6 +63,11 @@ const KEY = {
 let cache: { value: VaultBonusConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
+/** Forget the cached config; a caller that writes it in a transaction calls this once the transaction commits. */
+export function clearBonusConfigCache(): void {
+  cache = null;
+}
+
 export async function getBonusConfig(
   db: Pick<PrismaClient, "systemConfig">
 ): Promise<VaultBonusConfig> {
@@ -82,6 +93,10 @@ export async function getBonusConfig(
   return merged;
 }
 
+/**
+ * The app client's write is visible at once, so it clears the cache here; a transaction's caller clears it after the
+ * commit.
+ */
 export async function setBonusConfig(
   db: Pick<PrismaClient, "systemConfig">,
   field: keyof VaultBonusConfig,
@@ -92,11 +107,10 @@ export async function setBonusConfig(
     create: { key: KEY[field], value: String(value), description: `Vault bonus: ${field}` },
     update: { value: String(value) },
   });
-  cache = null;
+  if ("$transaction" in db) clearBonusConfigCache();
 }
 
-export type LorewardType = "daily" | "weekly" | "monthly";
-export type LorewardPlace = "winner" | "runner-up";
+export type { LorewardPlace, LorewardType } from "./loreward-places";
 
 /** Credits per contest and place. SystemConfig `vault_bonus_loreward_<type>_<place>` overrides a cell. */
 export const LOREWARD_PAYOUTS: Record<LorewardType, Record<LorewardPlace, number>> = {
@@ -128,8 +142,8 @@ export async function getLorewardPayouts(
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
 
   const payouts = structuredClone(LOREWARD_PAYOUTS);
-  for (const type of Object.keys(payouts) as LorewardType[]) {
-    for (const place of Object.keys(payouts[type]) as LorewardPlace[]) {
+  for (const type of LOREWARD_TYPES) {
+    for (const place of LOREWARD_PLACES) {
       const parsed = Number(byKey.get(lorewardPayoutConfigKey(type, place)));
       if (byKey.has(lorewardPayoutConfigKey(type, place)) && parsed >= 0) {
         payouts[type][place] = parsed;

@@ -17,11 +17,13 @@ import {
   CARD_VALUE_FIELDS,
   MARKET_FIELDS,
   dailyImportCountField,
+  floorsProblem,
   lorewardPayoutField,
   numberFieldProblem,
   type EconomyNumberField,
 } from "~/lib/cards/economy-fields";
 import {
+  clearGeneralCardSettingsCache,
   getGeneralCardSettings,
   setGeneralCardSetting,
   type CardGeneralSettings,
@@ -32,12 +34,15 @@ import {
   type RarityThresholds,
 } from "~/lib/cards/rarity-engine";
 import {
+  clearValuationCache,
   getValuationConfig,
+  readValuationConfig,
   recomputeAllCardValues,
   setValuationConfig,
   type CardValuationConfig,
 } from "~/lib/cards/valuation";
 import {
+  clearBonusConfigCache,
   getBonusConfig,
   getLorewardPayouts,
   setBonusConfig,
@@ -74,17 +79,30 @@ function refuse(message: string): never {
   throw new TRPCError({ code: "BAD_REQUEST", message });
 }
 
-/** Runs `write` and the audit row for `details` in one transaction. */
+/**
+ * Runs `write` and the audit row for `details` in one transaction, then `clear`s the section's cache. The clear waits
+ * for the commit: a read before it would cache the old values again.
+ */
 async function saveAudited(
   db: PrismaClient,
   actor: CardAdminActor,
   details: string,
-  write: (tx: Tx) => Promise<void>
+  write: (tx: Tx) => Promise<void>,
+  clear?: () => void
 ): Promise<void> {
   await db.$transaction(async (tx) => {
     await write(tx);
     await recordCardAudit(tx, { action: "CARD_ECONOMY_SAVE", actor: actor.clerkId, details });
   });
+  clear?.();
+}
+
+interface FieldSave<K extends string> {
+  write: (tx: Tx, key: K, value: number) => Promise<void>;
+  /** Clears the section's cache once the save commits. */
+  clear: () => void;
+  /** Refuses the sent fields against the stored ones, inside the transaction and before any write. */
+  check?: (tx: Tx, sent: ReadonlyArray<[K, number]>) => Promise<void>;
 }
 
 /**
@@ -97,7 +115,7 @@ async function saveFields<K extends string>(
   section: string,
   fields: ReadonlyArray<EconomyNumberField<K>>,
   input: Partial<Record<K, number>>,
-  write: (tx: Tx, key: K, value: number) => Promise<void>
+  save: FieldSave<K>
 ): Promise<boolean> {
   const sent: Array<[K, number]> = [];
   for (const field of fields) {
@@ -109,30 +127,41 @@ async function saveFields<K extends string>(
   }
   if (sent.length === 0) return false;
   const details = `${section}: ${sent.map(([key, value]) => `${key} ${value}`).join(", ")}`;
-  await saveAudited(db, actor, details, async (tx) => {
-    for (const [key, value] of sent) await write(tx, key, value);
-  });
+  const write = async (tx: Tx) => {
+    await save.check?.(tx, sent);
+    for (const [key, value] of sent) await save.write(tx, key, value);
+  };
+  await saveAudited(db, actor, details, write, save.clear);
   return true;
 }
 
+/** Refuses floors that would not rise with rarity once the sent values replace the stored ones. */
+async function checkFloors(
+  tx: Tx,
+  sent: ReadonlyArray<[keyof CardValuationConfig, number]>
+): Promise<void> {
+  const problem = floorsProblem({
+    ...(await readValuationConfig(tx)),
+    ...Object.fromEntries(sent),
+  });
+  if (problem) refuse(problem);
+}
+
 /**
- * Saves the sent card values, then revalues every card. The revalue runs after the commit, as an update of every card
- * is too long for the transaction. A failed revalue keeps the saved values and returns a null count, so the admin
- * is told to revalue again rather than that nothing saved.
+ * Saves the sent card values, then revalues every card. The revalue runs after the commit in its own transaction, as
+ * an update of every card is too long for the save's. A failed revalue keeps the saved values and returns a null
+ * count, so the admin is told to revalue again rather than that nothing saved.
  */
 export async function saveCardValues(
   db: PrismaClient,
   actor: CardAdminActor,
   input: Partial<CardValuationConfig>
 ): Promise<{ updated: number | null }> {
-  const saved = await saveFields(
-    db,
-    actor,
-    "Card values",
-    CARD_VALUE_FIELDS,
-    input,
-    setValuationConfig
-  );
+  const saved = await saveFields(db, actor, "Card values", CARD_VALUE_FIELDS, input, {
+    write: setValuationConfig,
+    clear: clearValuationCache,
+    check: checkFloors,
+  });
   if (!saved) return { updated: 0 };
   try {
     return await recomputeAllCardValues(db);
@@ -142,16 +171,21 @@ export async function saveCardValues(
   }
 }
 
+/** Revalues every card. A failed audit row after a revalue that ran is logged, so the admin is not told it failed. */
 export async function recomputeValues(
   db: PrismaClient,
   actor: CardAdminActor
 ): Promise<{ updated: number }> {
   const result = await recomputeAllCardValues(db);
-  await recordCardAudit(db, {
-    action: "CARD_ECONOMY_SAVE",
-    actor: actor.clerkId,
-    details: `Revalued ${result.updated.toLocaleString("en-US")} cards`,
-  });
+  try {
+    await recordCardAudit(db, {
+      action: "CARD_ECONOMY_SAVE",
+      actor: actor.clerkId,
+      details: `Revalued every card, ${result.updated.toLocaleString("en-US")} changed value`,
+    });
+  } catch (error) {
+    console.error("[cards.economy] The audit row for a revalue failed:", error);
+  }
   return result;
 }
 
@@ -160,7 +194,10 @@ export async function saveMarket(
   actor: CardAdminActor,
   input: Partial<CardGeneralSettings>
 ): Promise<void> {
-  await saveFields(db, actor, "Market", MARKET_FIELDS, input, setGeneralCardSetting);
+  await saveFields(db, actor, "Market", MARKET_FIELDS, input, {
+    write: setGeneralCardSetting,
+    clear: clearGeneralCardSettingsCache,
+  });
 }
 
 const BONUS_SAVE_FIELDS: ReadonlyArray<EconomyNumberField<keyof VaultBonusConfig>> = [
@@ -173,7 +210,10 @@ export async function saveBonuses(
   actor: CardAdminActor,
   input: Partial<VaultBonusConfig>
 ): Promise<void> {
-  await saveFields(db, actor, "Bonuses", BONUS_SAVE_FIELDS, input, setBonusConfig);
+  await saveFields(db, actor, "Bonuses", BONUS_SAVE_FIELDS, input, {
+    write: setBonusConfig,
+    clear: clearBonusConfigCache,
+  });
 }
 
 export async function saveLorewardPayouts(

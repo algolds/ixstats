@@ -18,6 +18,9 @@ import { Input } from "~/components/ui/input";
 import { RARITY_LABELS } from "../shared/card-labels";
 import { fieldNumber } from "./NumberConfigCard";
 
+/** Five columns at every width, so the one header row lines up with every wiki's inputs. */
+const RARITY_GRID = "grid grid-cols-5 gap-2";
+
 function SourceTable({ source, initial }: { source: CardWikiSource; initial: RarityThresholds }) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -40,7 +43,7 @@ function SourceTable({ source, initial }: { source: CardWikiSource; initial: Rar
   return (
     <div className="space-y-2">
       <p className="text-subhead text-label">{label}</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className={RARITY_GRID}>
         {TIERED_RARITIES.map((rarity) => (
           <Input
             key={rarity}
@@ -86,11 +89,19 @@ export function RarityThresholdsCard({
       <CardHeader className="pt-5">
         <CardTitle icon={<StatsUpSquare />}>Rarity tables</CardTitle>
         <CardDescription>
-          The lowest quality score, 0 to 100, for Uncommon, Rare, Ultra rare, Epic and Legendary.
-          New imports use these; existing cards keep their rarity.
+          The lowest quality score, 0 to 100, for each rarity; a lower score is Common. New imports
+          use these; existing cards keep their rarity.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 pb-5">
+        {/* The inputs carry their own names; this row shows the columns to sighted admins. */}
+        <div aria-hidden="true" className={`${RARITY_GRID} text-footnote text-label-secondary`}>
+          {TIERED_RARITIES.map((rarity) => (
+            <span key={rarity} className="break-words hyphens-auto">
+              {RARITY_LABELS[rarity]}
+            </span>
+          ))}
+        </div>
         {CARD_WIKI_SOURCES.map((source) => (
           <SourceTable key={source} source={source} initial={initial[source]} />
         ))}

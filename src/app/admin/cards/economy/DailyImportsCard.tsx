@@ -62,6 +62,7 @@ function SourceRow({ source, initial }: { source: CardArticleSource; initial: Se
           onChange={(event) => setDraft((current) => ({ ...current, count: event.target.value }))}
           className="w-24 tabular-nums"
         />
+        <span className="text-callout text-label-secondary">cards a day</span>
         <Button
           size="sm"
           variant="secondary"

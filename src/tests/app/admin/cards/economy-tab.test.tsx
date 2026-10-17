@@ -168,7 +168,7 @@ it("says when the values were saved but the revalue after them failed", () => {
   );
   result = { updated: 70_000 };
   fireEvent.click(button("Save card values"));
-  expect(notify.success).toHaveBeenCalledWith("Card values saved, 70,000 cards revalued");
+  expect(notify.success).toHaveBeenCalledWith("Card values saved, 70,000 cards changed value");
 });
 
 it("hints and blocks Save for an out-of-range or empty field, with the server's sentence", () => {
@@ -205,6 +205,29 @@ it("switches bonus payments off at once", () => {
   render(<EconomyTab />);
   fireEvent.click(screen.getByRole("switch", { name: "Pay bonuses" }));
   expect(mutations.saveBonuses).toHaveBeenCalledWith({ enabled: 0 });
+});
+
+it("refuses floors that do not rise with rarity, and a floor over its ceiling", () => {
+  serve({ data });
+  render(<EconomyTab />);
+  type("Epic floor", "10");
+  expect(
+    screen.getByText("Each rarity needs a floor at least as high as the one below it")
+  ).toBeInTheDocument();
+  expect(button("Save card values")).toBeDisabled();
+  type("Epic floor", "2000000");
+  expect(screen.getByText("Epic floor: enter a number from 0 to 1,000,000.")).toBeInTheDocument();
+  type("Epic floor", "1500");
+  expect(button("Save card values")).toBeEnabled();
+});
+
+it("labels the rarity columns and the daily count where everyone can see them", () => {
+  serve({ data });
+  render(<EconomyTab />);
+  for (const rarity of ["Uncommon", "Rare", "Ultra rare", "Epic", "Legendary"]) {
+    expect(screen.getByText(rarity)).toBeVisible();
+  }
+  expect(screen.getAllByText("cards a day")).toHaveLength(3);
 });
 
 it("shows no junk control", () => {

@@ -4,7 +4,7 @@
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { readConfigKeys } from "~/server/shared/config-kv";
+import { readConfigKeys, writeConfigKey } from "~/server/shared/config-kv";
 import {
   CARD_ARTICLE_SOURCES,
   CARD_WIKI_SOURCES,
@@ -22,14 +22,6 @@ const thresholdsKey = (source: CardWikiSource) => `card_rarity_thresholds_${sour
 
 /** A setter's client: the app's, or the Economy tab's transaction that also writes the audit row. */
 type ConfigWriter = Pick<Prisma.TransactionClient, "systemConfig">;
-
-async function writeConfigKey(db: ConfigWriter, key: string, value: string, description: string) {
-  await db.systemConfig.upsert({
-    where: { key },
-    update: { value },
-    create: { key, value, description },
-  });
-}
 
 /** A stored JSON value read by `schema`; null when it is missing, not JSON, or fails the schema. */
 function parseStoredConfig<T>(raw: string | undefined, schema: z.ZodType<T>): T | null {

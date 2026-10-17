@@ -4,7 +4,8 @@
  */
 import type { CardGeneralSettings } from "~/lib/cards/general-settings";
 import type { CardValuationConfig } from "~/lib/cards/valuation";
-import type { LorewardPlace, LorewardType, VaultBonusConfig } from "~/lib/vault/vault-bonus";
+import type { LorewardPlace, LorewardType } from "~/lib/vault/loreward-places";
+import type { VaultBonusConfig } from "~/lib/vault/vault-bonus";
 
 export interface EconomyNumberField<K extends string = string> {
   key: K;
@@ -35,15 +36,17 @@ export function numberFieldProblem(field: EconomyNumberField, value: number): st
   return `${field.label}: enter ${kind} ${range}.`;
 }
 
-const multiplier = { min: 0, step: 0.1 } as const;
+// Ceilings against a slipped digit: a floor or bonus that is paid or minted at once.
+const floor = { min: 0, max: 1_000_000 } as const;
+const multiplier = { min: 0, max: 100, step: 0.1 } as const;
 
 export const CARD_VALUE_FIELDS: ReadonlyArray<EconomyNumberField<keyof CardValuationConfig>> = [
-  { key: "floorCommon", label: "Common floor", min: 0 },
-  { key: "floorUncommon", label: "Uncommon floor", min: 0 },
-  { key: "floorRare", label: "Rare floor", min: 0 },
-  { key: "floorUltraRare", label: "Ultra rare floor", min: 0 },
-  { key: "floorEpic", label: "Epic floor", min: 0 },
-  { key: "floorLegendary", label: "Legendary floor", min: 0 },
+  { key: "floorCommon", label: "Common floor", ...floor },
+  { key: "floorUncommon", label: "Uncommon floor", ...floor },
+  { key: "floorRare", label: "Rare floor", ...floor },
+  { key: "floorUltraRare", label: "Ultra rare floor", ...floor },
+  { key: "floorEpic", label: "Epic floor", ...floor },
+  { key: "floorLegendary", label: "Legendary floor", ...floor },
   {
     key: "nsPremium",
     label: "NationStates bank value multiplier",
@@ -53,6 +56,24 @@ export const CARD_VALUE_FIELDS: ReadonlyArray<EconomyNumberField<keyof CardValua
   { key: "multSpecial", label: "Special card multiplier", ...multiplier },
   { key: "multNation", label: "Nation card multiplier", ...multiplier },
 ];
+
+/** The rarity floors, lowest rarity first. */
+const FLOOR_KEYS = [
+  "floorCommon",
+  "floorUncommon",
+  "floorRare",
+  "floorUltraRare",
+  "floorEpic",
+  "floorLegendary",
+] as const satisfies ReadonlyArray<keyof CardValuationConfig>;
+
+/** Why the floors do not rise with rarity, as a sentence; null when each is at least the one below it. */
+export function floorsProblem(
+  values: Readonly<Record<(typeof FLOOR_KEYS)[number], number>>
+): string | null {
+  const rising = FLOOR_KEYS.every((key, i) => i === 0 || values[key] >= values[FLOOR_KEYS[i - 1]]);
+  return rising ? null : "Each rarity needs a floor at least as high as the one below it";
+}
 
 export const MARKET_FIELDS: ReadonlyArray<EconomyNumberField<keyof CardGeneralSettings>> = [
   {
@@ -74,7 +95,7 @@ export const MARKET_FIELDS: ReadonlyArray<EconomyNumberField<keyof CardGeneralSe
 ];
 
 type BonusAmount = Exclude<keyof VaultBonusConfig, "enabled">;
-const credits = { min: 0, whole: true } as const;
+const credits = { min: 0, max: 100_000, whole: true } as const;
 
 export const BONUS_FIELDS: ReadonlyArray<EconomyNumberField<BonusAmount>> = [
   { key: "newPlayer", label: "New player", ...credits },
@@ -96,13 +117,6 @@ export const BONUS_SWITCH_FIELD: EconomyNumberField<"enabled"> = {
   whole: true,
 };
 
-export const LOREWARD_TYPES = [
-  "daily",
-  "weekly",
-  "monthly",
-] as const satisfies readonly LorewardType[];
-export const LOREWARD_PLACES = ["winner", "runner-up"] as const satisfies readonly LorewardPlace[];
-
 const CONTEST_LABELS: Record<LorewardType, string> = {
   daily: "Daily",
   weekly: "Weekly",
@@ -115,15 +129,12 @@ export const LOREWARD_PLACE_LABELS: Record<LorewardPlace, string> = {
 
 export const lorewardContestLabel = (type: LorewardType): string => CONTEST_LABELS[type];
 
-export const MAX_LOREWARD_PAYOUT = 100_000;
-
 /** One cell of the Loreward payout grid ("Daily runner-up"), in IxC. */
 export function lorewardPayoutField(type: LorewardType, place: LorewardPlace): EconomyNumberField {
   return {
     key: `${type}:${place}`,
     label: `${CONTEST_LABELS[type]} ${LOREWARD_PLACE_LABELS[place].toLowerCase()}`,
     ...credits,
-    max: MAX_LOREWARD_PAYOUT,
   };
 }
 

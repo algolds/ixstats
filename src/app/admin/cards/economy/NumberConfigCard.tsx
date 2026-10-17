@@ -20,6 +20,8 @@ interface NumberConfigCardProps<K extends string> {
   saveLabel: string;
   pending: boolean;
   onSave: (changed: Partial<Record<K, number>>) => void;
+  /** A problem with the section as a whole, as a sentence; checked once every field is in bounds. */
+  check?: (values: Readonly<Record<K, number>>) => string | null;
   /** Shown above the Save row. */
   children?: ReactNode;
   /** Shown beside Save. */
@@ -36,6 +38,7 @@ export function NumberConfigCard<K extends string>({
   saveLabel,
   pending,
   onSave,
+  check,
   children,
   action,
 }: NumberConfigCardProps<K>) {
@@ -45,11 +48,15 @@ export function NumberConfigCard<K extends string>({
     const value = fieldNumber(raw);
     return { field, raw, value, problem: numberFieldProblem(field, value) };
   });
+  const values: Record<K, number> = { ...initial };
   const changed: Partial<Record<K, number>> = {};
   for (const row of rows) {
+    values[row.field.key] = row.value;
     if (row.value !== initial[row.field.key]) changed[row.field.key] = row.value;
   }
-  const blocked = rows.some((row) => row.problem) || Object.keys(changed).length === 0;
+  const fieldsFit = rows.every((row) => row.problem === null);
+  const sectionProblem = fieldsFit && check ? check(values) : null;
+  const blocked = !fieldsFit || sectionProblem !== null || Object.keys(changed).length === 0;
 
   return (
     <Card content="input">
@@ -96,6 +103,7 @@ export function NumberConfigCard<K extends string>({
             );
           })}
         </div>
+        {sectionProblem && <p className="text-destructive text-footnote">{sectionProblem}</p>}
         {children}
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={pending || blocked} onClick={() => onSave(changed)}>

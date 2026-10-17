@@ -2,11 +2,39 @@
 /** The Economy tab's numbers are SystemConfig-backed, checked at the server, saved per section and audited. */
 jest.mock("~/lib/cards/valuation", () => ({
   getValuationConfig: jest.fn().mockResolvedValue({ floorCommon: 10 }),
+  readValuationConfig: jest.fn().mockResolvedValue({
+    floorCommon: 10,
+    floorUncommon: 30,
+    floorRare: 100,
+    floorUltraRare: 300,
+    floorEpic: 1000,
+    floorLegendary: 3000,
+    nsPremium: 1.5,
+    multSpecial: 2,
+    multNation: 1.5,
+  }),
   setValuationConfig: jest.fn(),
+  clearValuationCache: jest.fn(),
   recomputeAllCardValues: jest.fn().mockResolvedValue({ updated: 42 }),
 }));
+jest.mock("~/lib/cards/general-settings", () => ({
+  ...jest.requireActual<typeof import("~/lib/cards/general-settings")>(
+    "~/lib/cards/general-settings"
+  ),
+  clearGeneralCardSettingsCache: jest.fn(),
+}));
+jest.mock("~/lib/vault/vault-bonus", () => ({
+  ...jest.requireActual<typeof import("~/lib/vault/vault-bonus")>("~/lib/vault/vault-bonus"),
+  clearBonusConfigCache: jest.fn(),
+}));
 
-import { recomputeAllCardValues, setValuationConfig } from "~/lib/cards/valuation";
+import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
+import {
+  clearValuationCache,
+  recomputeAllCardValues,
+  setValuationConfig,
+} from "~/lib/cards/valuation";
+import { clearBonusConfigCache } from "~/lib/vault/vault-bonus";
 import {
   economySettings,
   recomputeValues,
@@ -56,11 +84,30 @@ describe("card values", () => {
   it("refuses a negative value with a sentence naming the field, and writes nothing", async () => {
     const db = createMockPrisma();
     await expect(saveCardValues(db as never, actor, { floorRare: -1 })).rejects.toThrow(
-      "Rare floor: enter a number of 0 or more."
+      "Rare floor: enter a number from 0 to 1,000,000."
+    );
+    await expect(saveCardValues(db as never, actor, { floorRare: 1_000_001 })).rejects.toThrow(
+      "Rare floor: enter a number from 0 to 1,000,000."
+    );
+    await expect(saveCardValues(db as never, actor, { multNation: 101 })).rejects.toThrow(
+      "Nation card multiplier: enter a number from 0 to 100."
     );
     expect(setValuationConfig).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
     expect(recomputeAllCardValues).not.toHaveBeenCalled();
+  });
+
+  it("refuses floors that do not rise with rarity, read against the stored floors", async () => {
+    const db = createMockPrisma();
+    await expect(saveCardValues(db as never, actor, { floorEpic: 10 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Each rarity needs a floor at least as high as the one below it",
+    });
+    expect(setValuationConfig).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(recomputeAllCardValues).not.toHaveBeenCalled();
+    await saveCardValues(db as never, actor, { floorEpic: 300, floorLegendary: 300 });
+    expect(setValuationConfig).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the saved values when the revalue after them fails, and says so with a null count", async () => {
@@ -89,9 +136,64 @@ describe("card values", () => {
     expect(db.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         action: "CARD_ECONOMY_SAVE",
-        details: "Revalued 42 cards",
+        details: "Revalued every card, 42 changed value",
       }),
     });
+  });
+
+  it("reports a revalue that ran as done when only its audit row fails", async () => {
+    const db = createMockPrisma();
+    db.auditLog.create.mockRejectedValueOnce(new Error("connection reset"));
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(await recomputeValues(db as never, actor)).toEqual({ updated: 42 });
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+});
+
+describe("caches", () => {
+  /** A client whose transaction records when it commits. */
+  const committing = (order: string[]) => {
+    const tx = createMockPrisma();
+    return createMockPrisma({
+      $transaction: jest.fn(async (write: (client: typeof tx) => Promise<void>) => {
+        await write(tx);
+        order.push("commit");
+      }),
+    });
+  };
+
+  it.each([
+    [
+      "card values",
+      (db: never) => saveCardValues(db, actor, { floorRare: 120 }),
+      clearValuationCache,
+    ],
+    [
+      "market",
+      (db: never) => saveMarket(db, actor, { maxInventoryCards: 200 }),
+      clearGeneralCardSettingsCache,
+    ],
+    ["bonuses", (db: never) => saveBonuses(db, actor, { newPlayer: 4000 }), clearBonusConfigCache],
+  ])("clears the %s cache after the commit", async (_section, save, clear) => {
+    const order: string[] = [];
+    jest.mocked(clear).mockImplementation(() => {
+      order.push("clear");
+    });
+    await save(committing(order) as never);
+    expect(order).toEqual(["commit", "clear"]);
+  });
+
+  it("clears nothing when the transaction fails", async () => {
+    const db = createMockPrisma({
+      $transaction: jest.fn(async () => {
+        throw new Error("deadlock");
+      }),
+    });
+    await expect(saveMarket(db as never, actor, { maxInventoryCards: 200 })).rejects.toThrow(
+      "deadlock"
+    );
+    expect(clearGeneralCardSettingsCache).not.toHaveBeenCalled();
   });
 });
 
@@ -145,7 +247,10 @@ describe("market and bonuses", () => {
       ["vault_bonus_ns_per_card", "60"],
     ]);
     await expect(saveBonuses(db as never, actor, { newPlayer: 2.5 })).rejects.toThrow(
-      "New player: enter a whole number of 0 or more."
+      "New player: enter a whole number from 0 to 100,000."
+    );
+    await expect(saveBonuses(db as never, actor, { nsCap: 100_001 })).rejects.toThrow(
+      "NationStates import, most per nation: enter a whole number from 0 to 100,000."
     );
     await expect(saveBonuses(db as never, actor, { enabled: 2 })).rejects.toThrow(
       "Pay bonuses: enter a whole number from 0 to 1."

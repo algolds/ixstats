@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { cardArticleSourceSchema, cardWikiSourceSchema } from "~/lib/cards/card-sources";
-import { LOREWARD_PLACES, LOREWARD_TYPES } from "~/lib/cards/economy-fields";
+import { LOREWARD_PLACES, LOREWARD_TYPES } from "~/lib/vault/loreward-places";
 import {
   economySettings,
   recomputeValues,

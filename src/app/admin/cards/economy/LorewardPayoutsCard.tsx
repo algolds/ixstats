@@ -16,13 +16,12 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import {
-  LOREWARD_PLACES,
   LOREWARD_PLACE_LABELS,
-  LOREWARD_TYPES,
   lorewardContestLabel,
   lorewardPayoutField,
   numberFieldProblem,
 } from "~/lib/cards/economy-fields";
+import { LOREWARD_PLACES, LOREWARD_TYPES } from "~/lib/vault/loreward-places";
 import { fieldNumber } from "./NumberConfigCard";
 
 type Payouts = RouterOutputs["cards"]["admin"]["economy"]["get"]["lorewardPayouts"];
