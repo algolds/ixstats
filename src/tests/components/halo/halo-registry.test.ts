@@ -1,4 +1,4 @@
-import { CORE_COMMANDS } from "~/components/halo/halo-registry";
+import { CORE_COMMANDS, CORE_FEATURES } from "~/components/halo/halo-registry";
 
 function command(name: string) {
   return CORE_COMMANDS.find((entry) => entry.name === name);
@@ -44,5 +44,45 @@ describe("Halo registry: ThinkPages destinations", () => {
   it("gives every command a unique name (result ids are built from it)", () => {
     const names = CORE_COMMANDS.map((entry) => entry.name);
     expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe("Halo registry: card destinations", () => {
+  it("sends every card entry to the cards hub, the Store or the import, never an old card address", () => {
+    const old =
+      /^\/vault\/(inventory|collections|lore-gallery|ns-library|ns-deck|packs|market\b|marketplace|trading|crafting|lore-generator)|^\/vault\/store\?tab=|^\/vault\/cards$/;
+    const all = [...CORE_COMMANDS, ...CORE_FEATURES];
+    expect(all.filter((entry) => entry.path && old.test(entry.path))).toEqual([]);
+  });
+
+  it("names each card destination for what it is now", () => {
+    expect(command("IxVault cards")).toMatchObject({
+      path: "/vault/cards/mine",
+      description: "Your cards, showcases and the card market",
+      keywords: expect.arrayContaining(["mine", "showcase"]),
+    });
+    expect(command("Card market")).toMatchObject({
+      path: "/vault/cards/market",
+      description: "Bid on, sell and trade cards",
+    });
+    expect(command("Explore cards")).toMatchObject({
+      path: "/vault/cards/explore",
+      description: "Every realm's cards, collected or not",
+      keywords: ["explore", "gallery", "lore", "cards", "realms", "catalogue"],
+    });
+    expect(command("Import NationStates cards")).toMatchObject({ path: "/vault/import" });
+    expect(command("Marketplace and auctions")).toBeUndefined();
+    expect(command("Lore card gallery")).toBeUndefined();
+  });
+
+  it("opens the Store's Packs tab for card packs, and never says booster", () => {
+    const packs = [...CORE_COMMANDS, ...CORE_FEATURES].filter((e) => e.name === "Open card packs");
+    expect(packs).toHaveLength(2);
+    for (const entry of packs) {
+      expect(entry).toMatchObject({
+        path: "/vault/store?view=packs",
+        description: "Buy and open card packs in the Store",
+      });
+    }
   });
 });

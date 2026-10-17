@@ -14,6 +14,7 @@ import {
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
 import { RAW_PATH_HEADER, RAW_ROUTE_PATH } from "~/lib/wiki-os/raw-path";
 import { REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
+import { cardHubIndexRedirectFor, legacyCardRedirectFor } from "~/lib/cards/hub-routes";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -183,6 +184,22 @@ function handleWikiRawRewrite(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * Old card addresses move to the cards hub or the Store for good (308), and the bare hub address opens Mine (307).
+ * A redirect thrown by a page would stream as a 200 under the Vault's loading boundary, so the proxy answers them.
+ */
+function handleCardRoutes(req: NextRequest): NextResponse | null {
+  const { pathname, search } = req.nextUrl;
+  const legacy = legacyCardRedirectFor(pathname, search);
+  const target = legacy ?? cardHubIndexRedirectFor(pathname, search);
+  if (!target) return null;
+  const url = req.nextUrl.clone(); // keeps the base path
+  const [path = "/", query = ""] = target.split("?");
+  url.pathname = path;
+  url.search = query;
+  return NextResponse.redirect(url, legacy ? 308 : 307);
+}
+
+/**
  * A direct request to the raw route carrying `x-wikios-raw-path` is a client forging the proxy's
  * header: continue with it removed (the route needs neither Clerk nor the page security headers).
  */
@@ -328,6 +345,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
     );
     return new NextResponse("Forbidden", { status: 403 });
   }
+
+  const cardRedirect = handleCardRoutes(req);
+  if (cardRedirect) return cardRedirect;
 
   const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
   if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;

@@ -292,27 +292,15 @@ export const APPS: readonly AppDefinition[] = [
       },
       // The nation boards (GDP, population, density, growth); achievement points rank on Achievements.
       { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
+      // The hub's four tabs and the NationStates import; the old card and Store addresses redirect in src/proxy.ts.
       {
         id: "cards",
         label: "Cards",
-        href: "/vault/cards",
+        href: "/vault/cards/mine",
         icon: MultiplePages,
-        match: [
-          "/vault/inventory",
-          "/vault/collections",
-          "/vault/lore-gallery",
-          "/vault/ns-library",
-          "/vault/ns-deck",
-          "/vault/import",
-        ],
+        match: ["/vault/cards", "/vault/import"],
       },
-      {
-        id: "store",
-        label: "Store",
-        href: "/vault/store",
-        icon: Cart,
-        match: ["/vault/marketplace", "/vault/market", "/vault/packs", "/vault/trading"],
-      },
+      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
     ],
   },
   {

@@ -171,11 +171,24 @@ function legacyPageOf(path: string): { route: LegacyCardRoute; param?: string } 
 /**
  * The new home of an old card address, for `src/proxy.ts` to answer with a 308 (a redirect thrown by the page would
  * stream as a 200 under the Vault's loading boundary); null for every other address. `search` is the request's query
- * string, read only once the path matches. The bare hub address `/vault/cards` is not an old one: its page opens Mine.
+ * string, read only once the path matches. The bare hub address `/vault/cards` is not an old one (see below).
  */
 export function legacyCardRedirectFor(pathname: string, search: string): string | null {
   const path = barePath(pathname);
   if (path === STORE_PATH) return storeTabRedirect(pageQueryOf(search));
   const page = legacyPageOf(path);
   return page ? legacyCardRedirect(page.route, pageQueryOf(search), page.param) : null;
+}
+
+/** The hub's own address, which has no page: it opens on Mine. */
+const CARD_HUB_INDEX = "/vault/cards";
+
+/**
+ * For `src/proxy.ts`: the bare hub address opens Mine with its query (`?card=`) kept; null for every other address.
+ * The proxy answers it with a 307, not a 308, so browsers do not remember which tab the hub opens on.
+ */
+export function cardHubIndexRedirectFor(pathname: string, search: string): string | null {
+  return barePath(pathname) === CARD_HUB_INDEX
+    ? withQuery(CARD_HUB_PATHS.mine, pageQueryOf(search))
+    : null;
 }

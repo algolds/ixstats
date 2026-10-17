@@ -1,8 +1,8 @@
 {
   "name": "IxCards - Trading Card Game",
   "short_name": "IxCards",
-  "description": "Collect, trade, and craft digital trading cards in the IxStats universe",
-  "start_url": "/vault/packs",
+  "description": "Collect and trade cards across the realms of IxStates",
+  "start_url": "/vault/cards/mine",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#3b82f6",
@@ -77,10 +77,10 @@
   "categories": ["games", "entertainment"],
   "shortcuts": [
     {
-      "name": "Open Packs",
+      "name": "Open packs",
       "short_name": "Packs",
       "description": "Open card packs",
-      "url": "/vault/packs",
+      "url": "/vault/store?view=packs",
       "icons": [
         {
           "src": "/images/icons/pack-shortcut.png",
@@ -89,10 +89,10 @@
       ]
     },
     {
-      "name": "Inventory",
+      "name": "Cards",
       "short_name": "Cards",
-      "description": "View card inventory",
-      "url": "/vault/inventory",
+      "description": "Your cards",
+      "url": "/vault/cards/mine",
       "icons": [
         {
           "src": "/images/icons/inventory-shortcut.png",
@@ -101,10 +101,10 @@
       ]
     },
     {
-      "name": "Marketplace",
+      "name": "Card market",
       "short_name": "Market",
-      "description": "Browse marketplace",
-      "url": "/vault/marketplace",
+      "description": "Bid on and trade cards",
+      "url": "/vault/cards/market",
       "icons": [
         {
           "src": "/images/icons/market-shortcut.png",

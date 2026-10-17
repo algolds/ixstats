@@ -1,17 +1,16 @@
 // src/server/api/routers/cards/inventory.ts
-// Inventory & Library sub-router for IxCards
+// Inventory sub-router for IxCards
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { getUserCards } from "~/lib/cards/card-service";
-import { CardRarity, CardType } from "@prisma/client";
+import { CardRarity } from "@prisma/client";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
 import { blankUnseenArt } from "~/lib/cards/hub/market-faces";
-import { cteFilterSchema, LIBRARY_ORDER, LIBRARY_SORTS, libraryWhere } from "./_library";
 
 /**
- * Cards Inventory & Library router
+ * Cards Inventory router
  */
 export const cardsInventoryRouter = createTRPCRouter({
   /**
@@ -148,96 +147,4 @@ export const cardsInventoryRouter = createTRPCRouter({
         });
       }
     }),
-
-  /** The card library for signed-in players: every live card, filterable; never a retired or pending one. */
-  getNSCards: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(100).optional().default(50),
-        offset: z.number().int().min(0).optional().default(0),
-        search: z.string().max(100).optional(),
-        season: z.number().int().min(1).optional(),
-        rarity: z.nativeEnum(CardRarity).optional(),
-        region: z.string().max(100).optional(),
-        cteFilter: cteFilterSchema.optional().default("all"),
-        sortBy: z.enum(LIBRARY_SORTS).optional().default("recent"),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const where = libraryWhere(input);
-      const [total, cards] = await Promise.all([
-        ctx.db.card.count({ where }),
-        ctx.db.card.findMany({
-          where,
-          orderBy: LIBRARY_ORDER[input.sortBy],
-          take: input.limit,
-          skip: input.offset,
-        }),
-      ]);
-      return { cards, total, hasMore: input.offset + input.limit < total };
-    }),
-
-  /**
-   * Get NS Library statistics: the library players browse, so approved cards only.
-   */
-  getNSLibraryStats: protectedProcedure.query(async ({ ctx }) => {
-    const library = { cardType: CardType.NS, reviewState: "APPROVED" } as const;
-    try {
-      const [totalCards, cteCardsCount, retiredCardsCount, cardsByRegion, lastSync] =
-        await Promise.all([
-          ctx.db.card.count({
-            where: {
-              ...library,
-              isRetired: false,
-            },
-          }),
-          ctx.db.card.count({
-            where: {
-              ...library,
-              isRetired: false,
-              metadata: { path: ["isCTE"], equals: true },
-            },
-          }),
-          ctx.db.card.count({
-            where: {
-              ...library,
-              isRetired: true,
-            },
-          }),
-          ctx.db.$queryRaw<Array<{ region: string; count: number }>>`
-            SELECT metadata->'nsData'->>'region' AS region, COUNT(*)::int AS count
-            FROM cards
-            WHERE "cardType" = 'NS' AND "reviewState" = 'APPROVED' AND "isRetired" = false
-              AND COALESCE(metadata->'nsData'->>'region', '') <> ''
-            GROUP BY 1
-            ORDER BY count DESC
-            LIMIT 20
-          `,
-          ctx.db.syncLog.findFirst({
-            where: { syncType: { startsWith: "NS_" } },
-            orderBy: { startedAt: "desc" },
-            select: { startedAt: true, status: true, syncType: true },
-          }),
-        ]);
-
-      const activeCardsCount = Math.max(0, totalCards - cteCardsCount);
-
-      return {
-        totalCards,
-        cteCardsCount,
-        retiredCardsCount,
-        activeCardsCount,
-        cardsByRegion: cardsByRegion ?? [],
-        lastSync: lastSync
-          ? { at: lastSync.startedAt, status: lastSync.status, type: lastSync.syncType }
-          : null,
-      };
-    } catch (error) {
-      console.error("[CARDS_ROUTER] Error in getNSLibraryStats:", error);
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch NS library stats",
-      });
-    }
-  }),
 });
