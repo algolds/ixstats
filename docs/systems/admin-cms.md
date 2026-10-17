@@ -96,7 +96,7 @@ The atomic government components (64) and economic components (27), including th
 ## Analytics & Monitoring
 
 - **Autosave Monitor (`/admin/autosave-monitor`)**: Opens the Platform panel's autosave tab — autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
-- **Card imports (`/admin/cards?tab=imports`)**: the Cards panel's Imports tab (`src/app/admin/cards/imports/`): one importer for IxWiki, IIWiki, AltHistory and Wikimedia Commons, run as server-side import jobs (`cards.admin.imports`), and NationStates (`ns-import/`). Every imported card waits in Curation. The `/admin/ns-sync` and `/admin/lore-cards/batch-generator` routes were removed.
+- **Cards (`/admin/cards`)**: nine tabs (Overview, Library, Imports with the wiki importer and NationStates, Curation, Packs, Economy, Seasons, Compliance, Designer), served by `cards.admin.*` (`src/server/api/routers/cards/admin/`). The Imports tab (`src/app/admin/cards/imports/`) runs one importer for IxWiki, IIWiki, AltHistory and Wikimedia Commons as server-side import jobs, and NationStates region syncs; every imported card waits in Curation. The `/admin/ns-sync` and `/admin/lore-cards/batch-generator` routes were removed. See [cards.md](cards.md#cards-admin).
 - **Maps Admin (`/admin/maps`, `/admin/maps/realms/<slug>`, `/admin/maps/studio`, `/admin/maps/editor`, `/admin/maps/style-editor`)**: Atlas (realm overview, jobs, edit queue, map style, map import, realm pages) and World Studio, served by the `atlas` router (`src/server/api/routers/atlas/`); province and city imports in `geoAdmin` (`src/server/api/routers/geo/admin/`). See [maps.md](maps.md#atlas-and-world-studio).
 
 ---

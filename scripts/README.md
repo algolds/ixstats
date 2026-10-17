@@ -23,6 +23,7 @@ scripts/
 ├── onoma/                        # Linguistics lexicon & Kokoro TTS dictionary tools
 ├── ops/                          # Nginx & server configuration templates
 ├── realms/                       # Realms data backfill (owners, Ixnay slug, wiki links, visibility) + realm lore index import
+├── cards/                        # Cards refresh one-offs (dry run by default, --apply writes)
 ├── migrations/                   # One-off data migrations (dry run by default, --apply writes)
 ├── reports/                      # Generated report outputs
 ├── *.sh / *.js / *.ts            # Core root runners (with-base-path.sh, deploy-production.sh, wiki sync, etc.)
@@ -93,6 +94,21 @@ scripts/
 | [`scripts/realms/backfill-foundation.ts`](realms/backfill-foundation.ts) | Realms Phase 1 data backfill (owners, Ixnay slug, ixwiki link rows, visibility, map layers with no realm → Ixnay). Dry run by default; `--apply` writes. Run after `db:push:force`, before deploying the realms-foundation code (`bun scripts/realms/backfill-foundation.ts [--apply]`). |
 | [`scripts/realms/backfill-plan.ts`](realms/backfill-plan.ts) | Pure planning helper for the owner-backfill step above (`planOwnerBackfill`) — never guesses on multi-user collisions, reports them for manual resolution. |
 | [`scripts/realms/import-realm-lore.ts`](realms/import-realm-lore.ts) | One-time realm lore **index** import (titles only, never content): crawls a wiki category tree (keyword subcategories only, depth 5, 5,000-page cap, truncation reported), takes nations from a curated roster category (`--nation-roster`, one subcategory per nation; retired rosters refused) or, without one, from pages whose lead uses `Infobox country`/`Infobox former country`, and writes `RealmPage` rows. Dry run (the preview) by default; `--apply` writes. Needs the realm to exist first (`/admin/realms` → New realm). `bun scripts/realms/import-realm-lore.ts --realm eurth --source iiwiki --category "Category:Eurth" --keyword Eurth --nation-roster "Category:Countries (Eurth)" [--apply]` |
+
+---
+
+## 🃏 Cards (`scripts/cards/`)
+
+Cards refresh one-offs. Each is a dry run that prints its plan and writes nothing unless given `--apply`, and each is idempotent (a second run plans nothing). Production order: the [Phase 2 deploy runbook](../docs/systems/cards.md#phase-2-deploy-runbook-owner) (Phase 1's is in its plan).
+
+| Script | Purpose & Command |
+| :--- | :--- |
+| [`scripts/cards/backfill-cards-refresh.ts`](cards/backfill-cards-refresh.ts) | Phase 1 backfill on the in-between schema (types, rarities, realms, finishes, serials, the NS import ledger), in one transaction. `deploy-production.sh` runs it with `--apply` between `20261027120000_cards_foundations` and its constraint SQL. Unknown types or rarities, and copies held as `quantity > 1`, fail the dry run (exit 1) and block `--apply`. `bun scripts/cards/backfill-cards-refresh.ts [--apply]`. Pure planner and shapes: `backfill-cards-refresh-plan.ts`, `backfill-cards-refresh-types.ts`. |
+| [`scripts/cards/backfill-card-compliance.ts`](cards/backfill-card-compliance.ts) | Phase 2: brings legacy NationStates takedowns (`metadata.nsTakedown`) into the Compliance queue, records a licence for every Lore card with art and none (UNKNOWN, or with `--fetch` the licence its wiki states), and hides restricted art by a licence review takedown. Run `--apply --fetch` on the production server (IIWiki answers only there); `--apply` alone records UNKNOWN and leaves `--fetch` nothing to read. Run it before the Library is used. `bun scripts/cards/backfill-card-compliance.ts [--apply [--fetch]]`. |
+| [`scripts/cards/import-special-cards.ts`](cards/import-special-cards.ts) | Phase 2: creates the five achievement reward Special cards if missing, points the old seed's rows at their achievement, and awards each live card to players who already hold its achievement. `bun scripts/cards/import-special-cards.ts [--apply]`. |
+| [`scripts/cards/convert-lore-requests.ts`](cards/convert-lore-requests.ts) | Phase 2: old paid lore requests become free suggestions (approved requests not yet made go back to waiting, open ones get a realm). No refund. `bun scripts/cards/convert-lore-requests.ts [--apply]`. |
+| [`scripts/cards/refund-lore-tokens.ts`](cards/refund-lore-tokens.ts) | Phase 2: refunds every unused lore request token a player bought at what they paid (a `REFUND` row keyed `retired_item_refund:<purchase id>`) and withdraws the token items from the store. Run it after `bun run audit:vault-exploits:apply`, with a `db:backup` first. `bun scripts/cards/refund-lore-tokens.ts [--apply]`. |
+| [`scripts/backfill-loreward-trophy-cards.ts`](backfill-loreward-trophy-cards.ts) | Mints a trophy card for every recorded Loreward place back to 2017 and gives each to its verified winner, with no IxCredits. `bun scripts/backfill-loreward-trophy-cards.ts [--apply]`. |
 
 ---
 

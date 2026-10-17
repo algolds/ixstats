@@ -31,4 +31,4 @@ You earn 50 IxCredits for each newly imported card, up to 5,000 IxCredits. The b
 
 ## For NationStates nation owners
 
-If a card of your NationStates nation appears in IxStats and you'd like it removed, open the card's details and use the takedown option at the bottom. You verify you own the nation the same way as above, and the card is retired.
+If a card of your NationStates nation appears in IxStats and you'd like it removed, open the card's details and use the takedown option at the bottom. You verify you own the nation the same way as above, and the card's art is hidden at once. You can also ask us at [admin@ixwiki.com](mailto:admin@ixwiki.com) to take down any card's art; we answer within 14 days.
