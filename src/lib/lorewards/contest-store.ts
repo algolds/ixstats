@@ -7,7 +7,7 @@ import { contestEntriesWhere, type ContestEntry } from "./contest-identity";
 /** Arbitrary constant; identifies these locks in pg_locks (the card serial locks use 7331). */
 const CONTEST_PLACE_LOCK_NAMESPACE = 7332;
 
-/** Entries per page: an explicit `take` and `cursor` keep `~/server/db`'s 1,000-row findMany cap off. */
+/** Entries per page: an explicit `take` keeps `~/server/db`'s 1,000-row findMany cap off. */
 const PAGE = 500;
 
 /** The entry columns a contest place is paid, minted and granted from. */
@@ -27,25 +27,27 @@ export type StoredContestEntry = Prisma.LorewardEntryGetPayload<{
   select: typeof CONTEST_ENTRY_SELECT;
 }>;
 
-/** Every entry `where` selects, read in pages of 500 by id so that none is dropped. */
+/**
+ * Every entry `where` selects, read in pages of 500 by id so that none is dropped. Keyset paging (`id > last`), not
+ * Prisma's `cursor`, whose `OFFSET 1` skips the next row when the cursor row stops matching between pages.
+ */
 export async function findContestEntries(
   db: Pick<PrismaClient, "lorewardEntry">,
   where: Prisma.LorewardEntryWhereInput
 ): Promise<StoredContestEntry[]> {
   const rows: StoredContestEntry[] = [];
-  let cursor: string | undefined;
+  let after: string | undefined;
   for (;;) {
     const page = await db.lorewardEntry.findMany({
-      where,
+      where: after ? { AND: [where, { id: { gt: after } }] } : where,
       select: CONTEST_ENTRY_SELECT,
       orderBy: { id: "asc" },
       take: PAGE,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     rows.push(...page);
     const last = page.at(-1);
     if (page.length < PAGE || !last) return rows;
-    cursor = last.id;
+    after = last.id;
   }
 }
 

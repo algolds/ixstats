@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The contest reads and the contest-place lock. Entries are read in pages of 500 by id (an explicit `take` and
- * `cursor` keep `~/server/db`'s 1,000-row cap off), and inside a place's lock the contest's entries are read again.
+ * The contest reads and the contest-place lock. Entries are read in pages of 500 by id (an explicit `take` keeps
+ * `~/server/db`'s 1,000-row cap off), and inside a place's lock the contest's entries are read again.
  */
 import { describe, it, expect } from "@jest/globals";
 import {
@@ -12,22 +12,20 @@ import {
 } from "~/lib/lorewards/contest-store";
 
 interface Page {
-  where: object;
+  where: { AND?: [object, { id: { gt: string } }] };
   select: object;
   orderBy: { id: "asc" };
   take: number;
-  cursor?: { id: string };
-  skip?: number;
 }
 
-/** A table of `count` entries whose findMany honours `orderBy: id`, `take`, `cursor` and `skip`, as Prisma does. */
+/** A table of `count` entries whose findMany honours `orderBy: id`, `take` and an `id > after` keyset, as Prisma does. */
 function pagedTable(count: number) {
   const rows = Array.from({ length: count }, (_, i) => ({ id: `e${String(i).padStart(5, "0")}` }));
   return {
     lorewardEntry: {
-      findMany: jest.fn(async ({ take, cursor, skip = 0 }: Page) => {
-        const start = cursor ? rows.findIndex((row) => row.id === cursor.id) : 0;
-        return rows.slice(start + skip, start + skip + take);
+      findMany: jest.fn(async ({ where, take }: Page) => {
+        const after = where.AND?.[1].id.gt;
+        return rows.filter((row) => after === undefined || row.id > after).slice(0, take);
       }),
     },
   };
@@ -49,8 +47,15 @@ describe("findContestEntries", () => {
       orderBy: { id: "asc" },
       take: 500,
     });
-    expect(pages[1]).toMatchObject({ cursor: { id: "e00499" }, skip: 1, take: 500 });
-    expect(pages[2]).toMatchObject({ cursor: { id: "e00999" }, skip: 1, take: 500 });
+    expect(pages[1]).toMatchObject({
+      where: { AND: [where, { id: { gt: "e00499" } }] },
+      take: 500,
+    });
+    expect(pages[2]).toMatchObject({
+      where: { AND: [where, { id: { gt: "e00999" } }] },
+      take: 500,
+    });
+    expect(pages.every((page) => !("cursor" in page) && !("skip" in page))).toBe(true);
   });
 
   it("stops after one page when the table is smaller", async () => {
