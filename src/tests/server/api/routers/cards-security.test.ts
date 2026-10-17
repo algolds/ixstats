@@ -1,8 +1,7 @@
 /** @jest-environment node */
-/** Cards refresh §3 security: admin-only reads, tradeable-only partner cards, no retired cards for players. */
+/** Cards refresh §3 security: tradeable-only partner cards, no retired cards for players. */
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
-import { cardsLegacyAdminRouter as cardsAdminRouter } from "~/server/api/routers/cards/admin-legacy";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -12,25 +11,12 @@ const player = (db: ReturnType<typeof createMockPrisma>) =>
     user: { id: "db1", clerkUserId: "user_1", role: { name: "user", level: 100 } },
     db,
   }) as never;
-const admin = (db: ReturnType<typeof createMockPrisma>) =>
-  createMockRouterContext({
-    auth: { userId: "admin_1" },
-    user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
-    db,
-  }) as never;
 /** The trade partner, found by Clerk or DB id. */
 const partner = { id: "db2", clerkUserId: "user_2" };
 /** The part of a `userConnection.findMany` query the SL-4 helpers branch on. */
 type ConnectionQuery = { where: { connectionType: string } };
 
 describe("cards router security", () => {
-  it("serves the explorer read to admins only", async () => {
-    const db = createMockPrisma();
-    await expect(
-      createCallerFactory(cardsAdminRouter)(player(db)).adminCardExplorer({})
-    ).rejects.toThrow(/Admin privileges required/);
-  });
-
   it("shows a trade partner only their tradeable copies", async () => {
     const db = createMockPrisma();
     db.user.findUnique.mockResolvedValue(partner);
@@ -90,23 +76,6 @@ describe("cards router security", () => {
       ])
     );
     expect(db.card.count.mock.calls[0]![0].where).toBe(where);
-  });
-
-  it("shows admins retired cards in the explorer only when asked", async () => {
-    const db = createMockPrisma();
-    db.card.count.mockResolvedValue(0);
-    const explorer = createCallerFactory(cardsAdminRouter)(admin(db));
-    await explorer.adminCardExplorer({});
-    await explorer.adminCardExplorer({ includeRetired: true });
-    await explorer.adminCardExplorer({ isRetired: true, includeRetired: false });
-    await explorer.adminCardExplorer({ cardTypeFilter: "NS", categoryFilter: "MILITARY" });
-    const terms = db.card.findMany.mock.calls.map((call) => call[0].where.AND);
-    expect(terms).toEqual([
-      [{ isRetired: false }],
-      [],
-      [{ isRetired: true }],
-      [{ category: "MILITARY" }, { cardType: "NS" }, { isRetired: false }],
-    ]);
   });
 
   it("no longer has a junk procedure", () => {

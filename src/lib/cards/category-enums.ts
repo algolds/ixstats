@@ -32,22 +32,6 @@ export const LoreCategory = {
 
 export type LoreCategory = (typeof LoreCategory)[keyof typeof LoreCategory];
 
-/**
- * How a card's artwork was sourced.
- */
-export const ArtworkSource = {
-  /** No image — fully procedural rendering (Tier 1) */
-  PROCEDURAL: "PROCEDURAL",
-  /** Image pulled from wiki article via MediaWiki API (Tier 3) */
-  WIKI_FETCHED: "WIKI_FETCHED",
-  /** Admin-uploaded custom art (Tier 3) */
-  UPLOADED: "UPLOADED",
-  /** Country flag, auto-fetched (Tier 3) */
-  FLAG: "FLAG",
-} as const;
-
-export type ArtworkSource = (typeof ArtworkSource)[keyof typeof ArtworkSource];
-
 /** Every lore category, in display order (for filters and navigation). */
 export const BROWSABLE_CATEGORIES: LoreCategory[] = Object.values(LoreCategory);
 

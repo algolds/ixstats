@@ -1,6 +1,6 @@
 // src/server/api/routers/cards/_library.ts
-/** The card library's filters and orders, shared by the players' read (getNSCards) and the admin explorer. */
-import type { CardRarity, CardReviewState, CardType, LoreCategory, Prisma } from "@prisma/client";
+/** The card library's filters and orders, for the players' read (getNSCards). The admin Library has its own. */
+import type { CardRarity, CardReviewState, Prisma } from "@prisma/client";
 import { z } from "zod";
 
 export const LIBRARY_SORTS = [
@@ -28,8 +28,6 @@ export interface LibraryFilter {
   rarity?: CardRarity;
   region?: string;
   cteFilter: z.infer<typeof cteFilterSchema>;
-  cardType?: CardType;
-  category?: LoreCategory;
   /** true: only retired; false: only live; undefined: both. */
   retired?: boolean;
   /** Only cards in this review state (players see APPROVED only). */
@@ -40,8 +38,6 @@ export interface LibraryFilter {
 export function libraryWhere(filter: LibraryFilter): Prisma.CardWhereInput {
   const and: Prisma.CardWhereInput[] = [];
   const term = filter.search?.trim();
-  if (filter.category) and.push({ category: filter.category });
-  if (filter.cardType) and.push({ cardType: filter.cardType });
   if (filter.season) and.push({ season: filter.season });
   if (filter.rarity) and.push({ rarity: filter.rarity });
   if (filter.retired !== undefined) and.push({ isRetired: filter.retired });

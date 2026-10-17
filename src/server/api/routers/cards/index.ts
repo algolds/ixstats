@@ -12,14 +12,12 @@
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "./inventory";
-import { cardsLegacyAdminRouter } from "./admin-legacy";
 import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
   cardsInventoryRouter,
-  cardsLegacyAdminRouter,
   cardsCollectionsRouter,
   cardsSuggestionsRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
