@@ -167,7 +167,8 @@ export const helpSections: HelpSection[] = [
       {
         id: "editor",
         title: "The Country Editor",
-        description: "Change your nation's name, identity, government and size, section by section.",
+        description:
+          "Change your nation's name, identity, government and size, section by section.",
         path: "/help/mycountry/editor",
         tags: ["editor", "builder", "edit", "identity"],
       },
