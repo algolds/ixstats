@@ -89,7 +89,7 @@ export interface ActivityItem {
   ok: boolean;
 }
 
-export const SYSTEM_ACTOR = "System";
+const SYSTEM_ACTOR = "System";
 
 const AUDIT_TITLES: Record<CardAuditAction, string> = {
   CARD_REVIEW: "Cards reviewed",

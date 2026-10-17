@@ -182,6 +182,15 @@ async function loadRegionCardsFromDumps(
  * Marks a sync alive while it reads the season dumps, which can take minutes each. It merges into the stored
  * metadata, which still holds what a resume needs (the region list and the last card worked).
  */
+/** Who started a sync, read once from its log, so the progress writes that replace its metadata keep it. */
+async function startedByOf(db: PrismaClient, syncLogId: string): Promise<{ startedBy?: string }> {
+  const log = await db.syncLog.findUnique({ where: { id: syncLogId }, select: { metadata: true } });
+  const meta = log?.metadata;
+  return isJsonObject(meta) && typeof meta.startedBy === "string"
+    ? { startedBy: meta.startedBy }
+    : {};
+}
+
 async function beatHeartbeat(db: PrismaClient, syncLogId: string): Promise<void> {
   const log = await db.syncLog.findUnique({ where: { id: syncLogId }, select: { metadata: true } });
   const metadata = log?.metadata;
@@ -220,6 +229,7 @@ export async function processRegionCardsFromDump(
   activeRunningJobs.add(syncLogId);
   try {
     const valCfg = await getValuationConfig(db);
+    const keep = await startedByOf(db, syncLogId);
     const matches = await loadRegionCardsFromDumps(regionNames, seasons, () =>
       beatHeartbeat(db, syncLogId)
     );
@@ -291,6 +301,7 @@ export async function processRegionCardsFromDump(
           cardsCreated,
           cardsUpdated,
           metadata: {
+            ...keep,
             regionNames,
             seasons,
             totalCards: matches.length,
@@ -318,6 +329,7 @@ export async function processRegionCardsFromDump(
         errorMessage: errors.length > 0 ? errors.slice(0, 20).join("; ") : null,
         completedAt: new Date(),
         metadata: {
+          ...keep,
           regionNames,
           seasons,
           totalCards: matches.length,
@@ -383,6 +395,7 @@ export async function processCTENationFilter(
 ): Promise<CteCounts> {
   const activeNations = await nsApiClient.fetchActiveNationsDump();
   await assertWholeDump(db, activeNations.size);
+  const keep = await startedByOf(db, syncLogId);
   const counts: CteCounts = { totalProcessed: 0, cteCount: 0, activeCount: 0 };
   let last: string | null = null;
   for (;;) {
@@ -423,7 +436,7 @@ export async function processCTENationFilter(
       status: "SUCCESS",
       completedAt: new Date(),
       itemsProcessed: counts.totalProcessed,
-      metadata: { ...counts, activeNations: activeNations.size },
+      metadata: { ...keep, ...counts, activeNations: activeNations.size },
     },
   });
   console.log(

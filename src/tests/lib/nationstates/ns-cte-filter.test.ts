@@ -139,3 +139,19 @@ describe("a dump that cannot be whole", () => {
     });
   });
 });
+
+it("keeps who started the filter in the log's metadata, so the Overview feed can name them", async () => {
+  jest.mocked(nsApiClient.fetchActiveNationsDump).mockResolvedValue(nations(1_000));
+  const db = createMockPrisma();
+  db.syncLog.findFirst.mockResolvedValue(null);
+  db.syncLog.findUnique.mockResolvedValue({ metadata: { startedBy: "db_admin" } });
+  db.card.findMany.mockResolvedValue([]);
+  await processCTENationFilter(db as never, "cte_log");
+  expect(db.syncLog.update).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        metadata: expect.objectContaining({ startedBy: "db_admin" }),
+      }),
+    })
+  );
+});

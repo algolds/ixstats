@@ -9,7 +9,7 @@ import { CheckCircle } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { parseCardArticleSource, type CardWikiSource } from "~/lib/cards/card-sources";
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { MAX_FILTER_REVIEW, cardCount } from "~/lib/cards/curation-limits";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import {
   AlertDialog,
@@ -60,8 +60,6 @@ const TYPE_FILTER: ReadonlyArray<readonly [AnyType, string]> = [
   ["any", "Any type"],
   ...CARD_TYPES.map((type) => [type, CARD_TYPE_LABELS[type]] as const),
 ];
-
-const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
 
 function QueueRow({
   card,

@@ -9,7 +9,7 @@ import { api, type RouterInputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
 import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { MAX_FILTER_REVIEW, cardCount } from "~/lib/cards/curation-limits";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -49,8 +49,6 @@ function filterOf(state: LibraryFilterState): Filter {
     search: state.search.trim() || undefined,
   };
 }
-
-const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
 
 const BULK_COPY = {
   hide: {

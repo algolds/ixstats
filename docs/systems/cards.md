@@ -155,7 +155,7 @@ All card operations route through modularized subdirectories:
 
 Outside the tabs:
 - **Player card tools** (`cards.tools.ts`, `cards.admin.tools.*`): the Vault admin's user directory (`/admin/vault`) → **Cards and packs** shows a player's copies, unopened packs, auctions and pending trades, and grants or revokes a card (with a reason), awards a pack, cancels an auction (refunding its bid and half the listing fee) and voids a trade.
-- **Trophy fixes** (`cards.trophies.ts`): an admin override of a Loreward winner or runner-up (`lorewards.overrideWinner`, `admin.wiki.saveLorewardWinnerOverride`) is written to every entry of its contest, marked `overriddenAt` so no sync writes over it, and reassigns or voids each changed place's trophy, with an audit row, a transfer event and a provenance note.
+- **Trophy fixes** (`cards.trophies.ts`): an admin override of a Loreward winner or runner-up (`lorewards.overrideWinner`, `admin.wiki.saveLorewardWinnerOverride`) is written to every entry of its contest, marked `overriddenAt` so no sync writes over it, and reassigns or voids each changed place's trophy, with an audit row, a transfer event and a provenance note. Any day of a recorded weekly or monthly contest finds it (a day no contest holds is refused), the date must be a real calendar date, a field left out keeps its stored value, and a new holder starts with no page or score. Both override paths tell the Discord bot after the commit; if the bot is unreachable the override still stands and returns `botSynced: false`.
 
 ---
 
