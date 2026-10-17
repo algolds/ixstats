@@ -152,6 +152,16 @@ describe("admin.saveLorewardWinnerOverride", () => {
     error.mockRestore();
   });
 
+  it("refuses an override date the calendar lacks", async () => {
+    for (const date of ["2026-02-30", "2026-04-31"]) {
+      await expect(
+        caller("admin").saveLorewardWinnerOverride({ date, winnerUser: "Cy", winnerPage: "Page" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+    expect(overrideLorewardEntry).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("refuses an ordinary user", async () => {
     await expect(
       caller("user").saveLorewardWinnerOverride({

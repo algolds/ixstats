@@ -234,4 +234,16 @@ describe("WK-9: Lorewards admin procedures", () => {
       error.mockRestore();
     }
   });
+
+  it("refuses an override date the calendar lacks, or one not given as YYYY-MM-DD", async () => {
+    for (const date of ["2026-02-30", "2026-W43", "Oct 22"]) {
+      await expect(
+        adminCaller().overrideWinner({ date, type: "daily", winnerUser: "Cy" })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
+    await expect(
+      adminCaller().overrideWinner({ date: "2026-02-30", type: "daily", winnerUser: "Cy" })
+    ).rejects.toThrow(/Enter a real calendar date, as YYYY-MM-DD\./);
+    expect(overrideLorewardEntry).not.toHaveBeenCalled();
+  });
 });

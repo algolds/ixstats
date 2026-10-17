@@ -5,6 +5,7 @@
  */
 import { describe, it, expect } from "@jest/globals";
 import {
+  overrideDateSchema,
   overrideFields,
   overrideToast,
   trophyChangeNote,
@@ -98,6 +99,31 @@ describe("overrideToast", () => {
     });
     expect(overrideToast(false, { ...nothing, mintDeferred: true }).message).toBe(
       "The Discord bot was not told; it picks the change up on its next sync. New trophies are minted on the next sync."
+    );
+  });
+});
+
+describe("overrideDateSchema", () => {
+  it("takes a real calendar date, leap days included", () => {
+    for (const day of ["2026-10-22", "2026-02-28", "2024-02-29", "2026-12-31"]) {
+      expect(overrideDateSchema.safeParse(day).success).toBe(true);
+    }
+  });
+
+  it("refuses a day the calendar lacks, a state key and anything not YYYY-MM-DD", () => {
+    for (const day of [
+      "2026-02-30",
+      "2026-02-29",
+      "2026-04-31",
+      "2026-13-01",
+      "2026-W43",
+      "2026-07",
+      "",
+    ]) {
+      expect(overrideDateSchema.safeParse(day).success).toBe(false);
+    }
+    expect(overrideDateSchema.safeParse("2026-02-30").error?.issues[0]?.message).toBe(
+      "Enter a real calendar date, as YYYY-MM-DD."
     );
   });
 });

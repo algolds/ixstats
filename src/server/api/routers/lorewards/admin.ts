@@ -6,6 +6,7 @@ import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
 import { postToBot, tellBotOfOverride } from "~/lib/lorewards/bot-client";
+import { overrideDateSchema } from "~/lib/lorewards/override-form";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 
 const OVERRIDE_FIELDS = {
@@ -162,7 +163,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
   overrideWinner: adminProcedure
     .input(
       z.object({
-        date: z.string().min(1),
+        date: overrideDateSchema,
         type: z.enum(["daily", "weekly", "monthly"]),
         ...OVERRIDE_FIELDS,
       })

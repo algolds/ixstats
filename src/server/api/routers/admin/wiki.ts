@@ -14,6 +14,7 @@ import {
 import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
 import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
 import { tellBotOfOverride } from "~/lib/lorewards/bot-client";
+import { overrideDateSchema } from "~/lib/lorewards/override-form";
 import { adminActor } from "~/server/shared/admin-actor";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { writeConfigKeys } from "./_config-kv";
@@ -129,7 +130,7 @@ export const adminWikiRouter = createTRPCRouter({
   saveLorewardWinnerOverride: adminProcedure
     .input(
       z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        date: overrideDateSchema,
         type: z.enum(["daily", "weekly", "monthly"]).default("daily"),
         winnerUser: z.string(),
         winnerPage: z.string(),

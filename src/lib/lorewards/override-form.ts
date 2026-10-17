@@ -4,6 +4,10 @@
  * empties a place. A new holder starts with no page or score: the server clears the blank ones when the name changes
  * (`overrideLorewardEntry`), since only it knows the stored holder. The form's description says so.
  */
+import { z } from "zod";
+
+/** The day an override names, in both override procedures: a real calendar date as YYYY-MM-DD (not 2026-02-30). */
+export const overrideDateSchema = z.iso.date("Enter a real calendar date, as YYYY-MM-DD.");
 
 /** One place as the form holds it: the four inputs, and whether the admin emptied the place. */
 export interface OverridePlaceForm {
