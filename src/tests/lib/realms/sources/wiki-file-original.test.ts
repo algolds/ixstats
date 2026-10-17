@@ -29,7 +29,9 @@ afterAll(() => {
 const sha1 = (bytes: Uint8Array) => createHash("sha1").update(bytes).digest("hex");
 let png: Buffer;
 beforeAll(async () => {
-  png = await sharp({ create: { width: 64, height: 32, channels: 3, background: { r: 200, g: 10, b: 10 } } })
+  png = await sharp({
+    create: { width: 64, height: 32, channels: 3, background: { r: 200, g: 10, b: 10 } },
+  })
     .png()
     .toBuffer();
 });
@@ -55,7 +57,10 @@ const infoFor = (bytes: Uint8Array, over: Partial<WikiFileInfo> = {}): WikiFileI
 });
 
 const image = (bytes: Uint8Array, headers: Record<string, string> = {}) =>
-  new Response(new Uint8Array(bytes), { status: 200, headers: { "content-type": "image/png", ...headers } });
+  new Response(new Uint8Array(bytes), {
+    status: 200,
+    headers: { "content-type": "image/png", ...headers },
+  });
 
 async function failure(promise: Promise<unknown>): Promise<WikiFileFetchError> {
   const error = await promise.then(
@@ -97,19 +102,24 @@ describe("downloadWikiFileOriginal", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it.each(["https://evil.example/map.png", "https://upload.wikimedia.org/x/map.png", "http://169.254.169.254/"])(
-    "refuses a redirect off the wiki's hosts (%s) without following it",
-    async (location) => {
-      fetchMock.mockResolvedValue(new Response(null, { status: 302, headers: { Location: location } }));
-      const error = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)));
-      expect(error.code).toBe("HOST_NOT_ALLOWED");
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    }
-  );
+  it.each([
+    "https://evil.example/map.png",
+    "https://upload.wikimedia.org/x/map.png",
+    "http://169.254.169.254/",
+  ])("refuses a redirect off the wiki's hosts (%s) without following it", async (location) => {
+    fetchMock.mockResolvedValue(
+      new Response(null, { status: 302, headers: { Location: location } })
+    );
+    const error = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)));
+    expect(error.code).toBe("HOST_NOT_ALLOWED");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 
   it("follows a redirect that stays on the wiki", async () => {
     fetchMock
-      .mockResolvedValueOnce(new Response(null, { status: 301, headers: { Location: "/images/3/3a/moved.png" } }))
+      .mockResolvedValueOnce(
+        new Response(null, { status: 301, headers: { Location: "/images/3/3a/moved.png" } })
+      )
       .mockResolvedValueOnce(image(png));
     const original = await downloadWikiFileOriginal("iiwiki", infoFor(png));
     expect(original.width).toBe(64);
@@ -117,34 +127,48 @@ describe("downloadWikiFileOriginal", () => {
   });
 
   it("refuses a file imageinfo says is over the cap, before downloading", async () => {
-    const error = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png, { size: MAX_ORIGINAL_BYTES + 1 })));
+    const error = await failure(
+      downloadWikiFileOriginal("iiwiki", infoFor(png, { size: MAX_ORIGINAL_BYTES + 1 }))
+    );
     expect(error.code).toBe("TOO_LARGE");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("refuses a body whose Content-Length or streamed size is over the cap", async () => {
     fetchMock.mockResolvedValue(image(png, { "content-length": String(MAX_ORIGINAL_BYTES + 1) }));
-    expect((await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)))).code).toBe("TOO_LARGE");
+    expect((await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)))).code).toBe(
+      "TOO_LARGE"
+    );
 
     fetchMock.mockResolvedValue(image(png));
-    const small = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png, { size: 10 }), { maxBytes: 100 }));
+    const small = await failure(
+      downloadWikiFileOriginal("iiwiki", infoFor(png, { size: 10 }), { maxBytes: 100 })
+    );
     expect(small.code).toBe("TOO_LARGE");
   });
 
   it("refuses an answer that is not an image", async () => {
-    fetchMock.mockResolvedValue(new Response("<html>login</html>", { status: 200, headers: { "content-type": "text/html" } }));
-    expect((await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)))).code).toBe("NOT_AN_IMAGE");
+    fetchMock.mockResolvedValue(
+      new Response("<html>login</html>", { status: 200, headers: { "content-type": "text/html" } })
+    );
+    expect((await failure(downloadWikiFileOriginal("iiwiki", infoFor(png)))).code).toBe(
+      "NOT_AN_IMAGE"
+    );
   });
 
   it("refuses bytes whose SHA-1 differs from the wiki's", async () => {
     fetchMock.mockResolvedValue(image(png));
-    const error = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png, { sha1: "0".repeat(40) })));
+    const error = await failure(
+      downloadWikiFileOriginal("iiwiki", infoFor(png, { sha1: "0".repeat(40) }))
+    );
     expect(error.code).toBe("SHA1_MISMATCH");
   });
 
   it("refuses an image over the pixel limit, read from its header", async () => {
     fetchMock.mockResolvedValue(image(png));
-    const error = await failure(downloadWikiFileOriginal("iiwiki", infoFor(png), { maxPixels: 1000 }));
+    const error = await failure(
+      downloadWikiFileOriginal("iiwiki", infoFor(png), { maxPixels: 1000 })
+    );
     expect(error.code).toBe("TOO_MANY_PIXELS");
   });
 
@@ -160,18 +184,30 @@ describe("fetchWikiFileOriginal", () => {
   it("reads the file's imageinfo on the realm's wiki first, then checks the download against it", async () => {
     // The recorded imageinfo gives a SHA-1 these test bytes do not have.
     const wiki = fakeIiwiki();
-    const query = createDiscoveryClient("iiwiki", { fetchImpl: wiki.fetch, apiUrl: "https://iiwiki.com/api.php" }).query;
+    const query = createDiscoveryClient("iiwiki", {
+      fetchImpl: wiki.fetch,
+      apiUrl: "https://iiwiki.com/api.php",
+    }).query;
     fetchMock.mockResolvedValue(image(png));
 
-    const error = await failure(fetchWikiFileOriginal("iiwiki", "Eurth_political_map_2024.png", { query }));
+    const error = await failure(
+      fetchWikiFileOriginal("iiwiki", "Eurth_political_map_2024.png", { query })
+    );
     expect(error.code).toBe("SHA1_MISMATCH");
-    expect(wiki.calls[0]!.searchParams.get("titles")).toContain("File:Eurth political map 2024.png");
+    expect(wiki.calls[0]!.searchParams.get("titles")).toContain(
+      "File:Eurth political map 2024.png"
+    );
   });
 
   it("says when the wiki has no such file", async () => {
     const wiki = fakeIiwiki();
-    const query = createDiscoveryClient("iiwiki", { fetchImpl: wiki.fetch, apiUrl: "https://iiwiki.com/api.php" }).query;
-    const error = await failure(fetchWikiFileOriginal("iiwiki", "File:Rostervania locator.png", { query }));
+    const query = createDiscoveryClient("iiwiki", {
+      fetchImpl: wiki.fetch,
+      apiUrl: "https://iiwiki.com/api.php",
+    }).query;
+    const error = await failure(
+      fetchWikiFileOriginal("iiwiki", "File:Rostervania locator.png", { query })
+    );
     expect(error.code).toBe("NOT_FOUND");
     expect(fetchMock).not.toHaveBeenCalled();
   });
