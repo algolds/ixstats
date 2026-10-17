@@ -1,4 +1,6 @@
 import { withBasePath } from "~/lib/base-path";
+import { althistoryCdnFileName, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
+import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 
 /** An absolute URL on the wiki's own host; group 1 is the path. */
@@ -8,7 +10,8 @@ const IXWIKI_URL = new RegExp(`^https?:\\/\\/${mediaWikiHostPattern()}\\/(.+)$`,
  * Converts a card artwork URL to use our proxy endpoint if needed.
  * Supports:
  * 1. NationStates images (proxied via /api/proxy-ns-image)
- * 2. Wiki images (ixwiki, iiwiki, althistory proxied via their respective mediawiki proxies)
+ * 2. Wiki images (ixwiki, iiwiki, althistory, AltHistory's Fandom CDN and Commons uploads, through their media
+ *    proxies; the CDN and Commons files by name, which the proxy resolves with `imageinfo`)
  * 3. Relative URLs (returns as-is, prepended with basePath)
  */
 export function proxyCardArtwork(artworkUrl: string | null | undefined): string {
@@ -21,6 +24,12 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
   if (artworkUrl.startsWith("/")) {
     return withBasePath(artworkUrl);
   }
+
+  const fandomFile = althistoryCdnFileName(artworkUrl);
+  if (fandomFile) return proxiedFileUrl("althistory", null, fandomFile);
+
+  const commonsFile = fileNameFromArtworkUrl(artworkUrl, "commons");
+  if (commonsFile) return proxiedFileUrl("commons", null, commonsFile);
 
   // Handle Wiki URLs
   const ixwikiMatch = artworkUrl.match(IXWIKI_URL);
@@ -38,7 +47,7 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
     return withBasePath(`/api/mediawiki/althistory/${althistoryMatch[1]}`);
   }
 
-  // Handle NationStates & Wikimedia URLs (CORS / Same-Origin restricted)
+  // Handle NationStates & other Wikimedia URLs (CORS / Same-Origin restricted)
   if (artworkUrl.includes("nationstates.net") || artworkUrl.includes("wikimedia.org")) {
     const encodedUrl = encodeURIComponent(artworkUrl);
     return withBasePath(`/api/proxy-ns-image?url=${encodedUrl}`);

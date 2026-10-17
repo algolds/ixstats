@@ -1,13 +1,23 @@
 /**
  * A wiki file's facts from `prop=imageinfo` (formatversion 2): its original URL, size, type, SHA-1, description
  * page, a thumbnail, and its licence and author from `extmetadata`. Used by world discovery's map candidates, the
- * infobox hints export and the original-file fetch. Pure parsing plus one batched read through a WikiQuery.
+ * infobox hints export, the original-file fetch and card art licences. Pure parsing plus one batched read through a
+ * WikiQuery.
  */
 import { z } from "zod";
 import { withBasePath } from "~/lib/base-path";
-import { sisterWikiFileHosts, SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
-import { normalizeWikiTitle, type RealmWikiSource } from "~/lib/realms/realm-wiki-settings";
+import { wikiFileHosts, type FileWiki } from "~/lib/wiki-os/media-hosts";
+import { SISTER_WIKI_HOSTS, type SisterWikiId } from "~/lib/wiki-os/wiki-hosts";
+import { normalizeWikiTitle } from "~/lib/realms/realm-wiki-settings";
 import type { WikiQuery } from "~/lib/realms/lore-import";
+
+export type { FileWiki } from "~/lib/wiki-os/media-hosts";
+
+/** Where Commons serves its files. IxWiki shows Commons files too (InstantCommons), from these hosts. */
+const COMMONS_FILE_HOSTS = wikiFileHosts("commons");
+
+const fileWikiName = (source: FileWiki): string =>
+  source === "ixwiki" ? "IxWiki" : SISTER_WIKI_HOSTS[source].name;
 
 export interface WikiFileInfo {
   /** "File:Eurth political map.png" */
@@ -54,7 +64,13 @@ const ImageInfoSchema = z.object({
   size: z.number(),
   mime: z.string().optional(),
   sha1: z.string().optional(),
-  extmetadata: z.record(z.string(), MetaValue).optional(),
+  // IxWiki and Fandom may answer an empty array for a file with none (PHP's empty array).
+  extmetadata: z
+    .union([
+      z.record(z.string(), MetaValue),
+      z.tuple([]).transform((): Record<string, z.infer<typeof MetaValue>> => ({})),
+    ])
+    .optional(),
 });
 
 export const ImageInfoResponseSchema = z.object({
@@ -65,6 +81,8 @@ export const ImageInfoResponseSchema = z.object({
         z.object({
           title: z.string(),
           missing: z.boolean().optional(),
+          /** A file of a foreign repository (IxWiki's InstantCommons): no local page, so `missing`, yet known. */
+          known: z.boolean().optional(),
           invalid: z.boolean().optional(),
           imageinfo: z.array(ImageInfoSchema).optional(),
         })
@@ -102,16 +120,50 @@ function httpsUrl(value: string | null | undefined): string | null {
 }
 
 /**
+ * A file's URL and the wiki holding it, or null when the URL is not https or not on the wiki or its upload CDN (a
+ * file is only ever fetched from there). A Commons file IxWiki shows is held by Commons: credited to it, with its
+ * thumbnail through the Commons proxy.
+ */
+function servedFile(
+  source: FileWiki,
+  hosts: ReadonlySet<string>,
+  value: string
+): { url: string; holder: FileWiki } | null {
+  const https = httpsUrl(value);
+  if (!https) return null;
+  const url = new URL(https);
+  if (!hosts.has(url.hostname)) return null;
+  // Commons adds a tracking query (`?utm_source=...`), which is not part of the file. The rest stays byte for byte.
+  url.search = url.search
+    .slice(1)
+    .split("&")
+    .filter((pair) => !pair.startsWith("utm_"))
+    .join("&");
+  return {
+    url: url.toString(),
+    holder: COMMONS_FILE_HOSTS.has(url.hostname) ? "commons" : source,
+  };
+}
+
+/**
  * A browser-safe path for a file URL of the wiki: the wiki's own `/images/...` path through the media proxy
  * (`/api/mediawiki/<wiki>/images/...`), else the file by name (`Special:FilePath`), which the proxy resolves.
  */
-export function proxiedFileUrl(source: RealmWikiSource, url: string | null, fileTitle: string): string {
+export function proxiedFileUrl(
+  source: SisterWikiId,
+  url: string | null,
+  fileTitle: string
+): string {
   const host = SISTER_WIKI_HOSTS[source];
   const origin = new URL(host.origin);
   if (url) {
     try {
       const parsed = new URL(url, host.origin);
-      if (parsed.hostname === origin.hostname && parsed.pathname.startsWith("/images/") && !parsed.search) {
+      if (
+        parsed.hostname === origin.hostname &&
+        parsed.pathname.startsWith("/images/") &&
+        !parsed.search
+      ) {
         return withBasePath(`/api/mediawiki/${source}${parsed.pathname}`);
       }
     } catch {
@@ -124,35 +176,42 @@ export function proxiedFileUrl(source: RealmWikiSource, url: string | null, file
 
 /** The credit line: the file's own Attribution field, else "<author>, <licence>, via <wiki>". */
 export function attributionLine(
-  source: RealmWikiSource,
+  source: FileWiki,
   fileTitle: string,
   meta: { attribution: string | null; artist: string | null; licence: string | null }
 ): string {
   if (meta.attribution) return meta.attribution;
   const name = fileTitle.replace(/^File:/, "");
   const parts = [meta.artist ? `${name} by ${meta.artist}` : name, meta.licence].filter(Boolean);
-  return `${parts.join(", ")}, via ${SISTER_WIKI_HOSTS[source].name}`;
+  return `${parts.join(", ")}, via ${fileWikiName(source)}`;
 }
 
 /** The files of an imageinfo response, by their (normalized) title. Missing files and bad URLs are left out. */
-export function parseImageInfo(source: RealmWikiSource, data: ImageInfoResponse): Map<string, WikiFileInfo> {
+export function parseImageInfo(
+  source: FileWiki,
+  data: ImageInfoResponse
+): Map<string, WikiFileInfo> {
   const files = new Map<string, WikiFileInfo>();
-  const hosts = new Set(sisterWikiFileHosts(SISTER_WIKI_HOSTS[source]));
+  const hosts = wikiFileHosts(source);
   for (const page of data.query?.pages ?? []) {
     const info = page.imageinfo?.[0];
-    if (page.missing || page.invalid || !info) continue;
-    const url = httpsUrl(info.url);
-    // A file is only ever fetched from its own wiki or that wiki's upload CDN.
-    if (!url || !hosts.has(new URL(url).hostname)) continue;
+    if ((page.missing && !page.known) || page.invalid || !info) continue;
+    const served = servedFile(source, hosts, info.url);
+    if (!served) continue;
+    const { url, holder } = served;
     const meta = info.extmetadata ?? {};
-    const licence = metadataText(meta.LicenseShortName?.value) ?? metadataText(meta.UsageTerms?.value);
+    const licence =
+      metadataText(meta.LicenseShortName?.value) ?? metadataText(meta.UsageTerms?.value);
     const artist = metadataText(meta.Artist?.value);
     const attribution = metadataText(meta.Attribution?.value);
     files.set(page.title, {
       fileTitle: page.title,
       url,
       descriptionUrl: httpsUrl(info.descriptionurl),
-      thumbUrl: info.thumburl ? proxiedFileUrl(source, httpsUrl(info.thumburl), page.title) : null,
+      thumbUrl:
+        holder !== "ixwiki" && info.thumburl
+          ? proxiedFileUrl(holder, httpsUrl(info.thumburl), page.title)
+          : null,
       width: info.width,
       height: info.height,
       size: info.size,
@@ -162,7 +221,7 @@ export function parseImageInfo(source: RealmWikiSource, data: ImageInfoResponse)
       licenceUrl: httpsUrl(metadataText(meta.LicenseUrl?.value)),
       artist,
       credit: metadataText(meta.Credit?.value),
-      attribution: attributionLine(source, page.title, { attribution, artist, licence }),
+      attribution: attributionLine(holder, page.title, { attribution, artist, licence }),
     });
   }
   return files;
@@ -180,7 +239,7 @@ export function asFileTitle(name: string): string {
  * title asked for. Partial results stay in `into` when the client stops part-way.
  */
 export async function fetchWikiFileInfo(
-  source: RealmWikiSource,
+  source: FileWiki,
   query: WikiQuery,
   names: string[],
   into: Map<string, WikiFileInfo> = new Map(),
