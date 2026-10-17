@@ -1,5 +1,5 @@
 /** The cards admin Overview (cards refresh spec §2.4): counts, what waits on an admin, and a card-only feed. */
-import type { AuditLog, CardImportJob, Prisma, PrismaClient, SyncLog } from "@prisma/client";
+import type { AuditLog, CardImportJob, PrismaClient, SyncLog } from "@prisma/client";
 import { CardRarity } from "~/lib/cards/enums";
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";

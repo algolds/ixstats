@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { ValueSelect } from "~/components/ui/value-select";
+import { lacksRarityReason } from "~/lib/cards/curation-limits";
 import { RARITIES, RARITY_LABELS, type RarityValue } from "../shared/card-labels";
 
 export type LibraryRow = RouterOutputs["cards"]["admin"]["library"]["list"]["rows"][number];
@@ -41,7 +42,7 @@ function saveBlocker(card: LibraryRow, draft: Draft): string | null {
   if (artwork !== "" && artwork !== card.artwork && !/^https:\/\/\S+$/i.test(artwork)) {
     return "Art is an https:// address.";
   }
-  if (draft.rarity !== card.rarity && draft.reason.trim().length < 3) {
+  if (draft.rarity !== card.rarity && lacksRarityReason(draft.reason)) {
     return "Say why the rarity changes.";
   }
   return null;

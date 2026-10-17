@@ -64,7 +64,7 @@ function SpecialCardsTable({
           <TableHead>Rarity</TableHead>
           <TableHead>Realm</TableHead>
           <TableHead className="text-right">Copies</TableHead>
-          <TableHead>
+          <TableHead pinned>
             <span className="sr-only">Edit</span>
           </TableHead>
         </TableRow>
@@ -85,7 +85,7 @@ function SpecialCardsTable({
             <TableCell className="text-right tabular-nums">
               {row._count.CardOwnership.toLocaleString()}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell pinned className="text-right">
               <Button
                 size="sm"
                 variant="ghost"

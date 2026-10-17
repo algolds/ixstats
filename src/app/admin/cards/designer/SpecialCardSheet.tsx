@@ -117,7 +117,7 @@ export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardShe
   return (
     <Sheet open onOpenChange={onOpenChange}>
       <SheetContent aria-describedby={undefined} className="flex flex-col overflow-hidden">
-        <SheetHeader>
+        <SheetHeader className="pr-8">
           <SheetTitle>{form.id ? `Edit ${draft.title}` : "New Special card"}</SheetTitle>
         </SheetHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-4 pr-1">
