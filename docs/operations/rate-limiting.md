@@ -123,7 +123,7 @@ table lists every bucket the WikiOS code names: grep `rateLimiter.check(` and `d
 | `wiki_export` | `/api/wiki/export` (Special:Export) | 10 per minute | client or signed-in user |
 | `wiki_raw` | `/api/wiki/raw` (`/wiki/<title>?action=raw`, for bots reading wikitext in bulk) | 300 per minute | client |
 | `wiki_read` | `wikios.getArticleHtml`, the reader's article query (a page load and every hover prefetch; the shared `public` tier of 100 per minute would answer readers with a false 404/busy). Added by the F10 change of the integration sweep | 600 per minute | client |
-| `wiki_proxy` | the fan-out routes `/api/wiki/{random-articles,categories,category-articles,preview-article}` and `/api/mediawiki/[wiki]/api.php` | the default (`RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS`, 100 per minute) | client |
+| `wiki_proxy` | the `/api/mediawiki/[wiki]/api.php` proxy | the default (`RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS`, 100 per minute) | client |
 | `wiki-sync-webhook` | `/api/wiki/sync-webhook` (MediaWiki pushing a changed page) | 600 per minute with the valid `WIKI_SYNC_WEBHOOK_SECRET`; 10 per minute without it (those answer 401/503) | `secret:<first 16 hex of sha256(secret)>` with the secret, the client without |
 | `wikios-inbound-sync` | `/api/wikios/inbound-sync` (the cron / webhook that runs an inbound sync cycle) | same as `wiki-sync-webhook` | same as `wiki-sync-webhook` |
 
