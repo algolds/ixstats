@@ -1,6 +1,10 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { CardFilterBar, type FilterDimension } from "~/components/vault/cards/CardFilterBar";
+import {
+  CardFilterBar,
+  type FilterDimension,
+  type RegionSearchOptions,
+} from "~/components/vault/cards/CardFilterBar";
 import { EMPTY_CARD_FILTERS, type CardFilters } from "~/lib/cards/face/filters";
 import { EXPLORE_SORT_OPTIONS, type ExploreSort } from "~/lib/cards/face/explore-options";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
@@ -30,7 +34,7 @@ function setUp(
     regions?: readonly string[];
     withRealms?: boolean;
     realmList?: readonly CardRealmBadge[];
-    regionSearch?: { available: boolean; onSearch: (search: string) => void };
+    regionSearch?: RegionSearchOptions;
   } = {}
 ) {
   const onChange = jest.fn<void, [CardFilters]>();
@@ -235,7 +239,11 @@ describe("CardFilterBar", () => {
   });
 
   describe("with a region search", () => {
-    const search = (available = true) => ({ available, onSearch: jest.fn<void, [string]>() });
+    const search = (available = true, term = "") => ({
+      available,
+      term,
+      onSearch: jest.fn<void, [string]>(),
+    });
     const regionBox = () => screen.getByRole("combobox", { name: "NationStates region" });
 
     it("searches the regions as the player types, and picks one", () => {
@@ -254,9 +262,33 @@ describe("CardFilterBar", () => {
       const { rerender } = setUp({ regionSearch, regions: ["The Pacific"] });
       openFilters();
       fireEvent.change(regionBox(), { target: { value: "zzz" } });
-      rerender({ regionSearch, regions: [] });
+      rerender({ regionSearch: { ...regionSearch, term: "zzz" }, regions: [] });
       expect(regionBox()).toHaveValue("zzz");
       expect(screen.getByText("No regions match.")).toBeInTheDocument();
+    });
+
+    it("shows the caller's term, so a reopened search still agrees with its matches", () => {
+      setUp({ regionSearch: search(true, "laz"), regions: ["Lazarus"] });
+      openFilters();
+      expect(regionBox()).toHaveValue("laz");
+      expect(screen.getByRole("option", { name: "Lazarus" })).toBeInTheDocument();
+    });
+
+    it("says a caller's term matched nothing as soon as it opens", () => {
+      setUp({ regionSearch: search(true, "zzz"), regions: [] });
+      openFilters();
+      expect(regionBox()).toHaveValue("zzz");
+      expect(screen.getByText("No regions match.")).toBeInTheDocument();
+    });
+
+    it("holds no term of its own: the box shows what the caller passes back", () => {
+      const regionSearch = search();
+      setUp({ regionSearch, regions: ["Lazarus"] });
+      openFilters();
+      fireEvent.change(regionBox(), { target: { value: "laz" } });
+      expect(regionSearch.onSearch).toHaveBeenLastCalledWith("laz");
+      expect(regionBox()).toHaveValue("");
+      expect(screen.queryByText("No regions match.")).not.toBeInTheDocument();
     });
 
     it("marks the region that is on, keeps it listed, and turns it off", () => {

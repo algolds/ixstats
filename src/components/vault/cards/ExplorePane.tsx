@@ -58,6 +58,12 @@ function uniqueFaces(pages: readonly ExplorePage[]): CardFaceData[] {
     });
 }
 
+/** A region narrows NationStates cards: picking another realm drops it, while every realm keeps it. */
+function withRegionInRealm(filters: CardFilters, nsRealmId: string | undefined): CardFilters {
+  const otherRealm = filters.realmId !== null && filters.realmId !== nsRealmId;
+  return otherRealm && filters.region !== null ? { ...filters, region: null } : filters;
+}
+
 /**
  * The grid's filters. A `?realm=` slug picks its realm once the shelves list it, and again only when the slug
  * changes, so the player's own choice of realm is never undone.
@@ -65,12 +71,18 @@ function uniqueFaces(pages: readonly ExplorePage[]): CardFaceData[] {
 function useExploreFilters(realms: readonly CardRealmBadge[], slug: string | null) {
   const [filters, setFilters] = useState<CardFilters>(EMPTY_CARD_FILTERS);
   const [appliedSlug, setAppliedSlug] = useState<string | null>(null);
+  const nsRealmId = realms.find((realm) => realm.slug === NS_REALM_ID)?.id;
+  // A slug the address drops is forgotten, so the same slug coming back picks its realm again.
+  if (slug === null && appliedSlug !== null) setAppliedSlug(null);
   if (slug && slug !== appliedSlug && realms.length > 0) {
     setAppliedSlug(slug);
     const realm = realmForSlug(realms, slug);
-    if (realm) setFilters((current) => ({ ...current, realmId: realm.id }));
+    if (realm) {
+      setFilters((current) => withRegionInRealm({ ...current, realmId: realm.id }, nsRealmId));
+    }
   }
-  return [filters, setFilters] as const;
+  const change = (next: CardFilters) => setFilters(withRegionInRealm(next, nsRealmId));
+  return { filters, setFilters, change, nsRealmId };
 }
 
 /** The region filter's search over the server's NationStates regions, loaded only while that realm is picked. */
@@ -85,7 +97,10 @@ function useRegionSearch(nsPicked: boolean): {
     // The last matches stay listed while the next search loads, so the list never flashes "No regions match".
     { enabled: nsPicked, staleTime: REGIONS_STALE_MS, placeholderData: keepPreviousData }
   );
-  return { regions: query.data ?? [], regionSearch: { available: nsPicked, onSearch: setTerm } };
+  return {
+    regions: query.data ?? [],
+    regionSearch: { available: nsPicked, term, onSearch: setTerm },
+  };
 }
 
 interface ExplorePaneProps {
@@ -106,7 +121,7 @@ export function ExplorePane({
 }: ExplorePaneProps) {
   const shelves = api.cards.exploreShelves.useQuery();
   const realms = useMemo(() => (shelves.data ?? []).map((shelf) => shelf.realm), [shelves.data]);
-  const [filters, setFilters] = useExploreFilters(realms, initialRealmSlug);
+  const { filters, setFilters, change, nsRealmId } = useExploreFilters(realms, initialRealmSlug);
   const [sort, setSort] = useState<ExploreSort>("newest");
   const gridSection = useRef<HTMLElement>(null);
   const gridHeading = useRef<HTMLHeadingElement>(null);
@@ -122,10 +137,8 @@ export function ExplorePane({
   );
   const pages = query.data?.pages;
   const faces = useMemo(() => uniqueFaces(pages ?? []), [pages]);
-  const nsRealm = realms.find((realm) => realm.slug === NS_REALM_ID);
-  const { regions, regionSearch } = useRegionSearch(
-    nsRealm !== undefined && filters.realmId === nsRealm.id
-  );
+  // A picked realm id is a string or null, so with no NationStates shelf this is false.
+  const { regions, regionSearch } = useRegionSearch(filters.realmId === nsRealmId);
   const open = (face: CardFaceData) => onOpenCard(face.cardId);
 
   const browseRealm = (realmId: string) => {
@@ -161,7 +174,7 @@ export function ExplorePane({
         </div>
         <CardFilterBar
           filters={filters}
-          onChange={setFilters}
+          onChange={change}
           dimensions={EXPLORE_DIMENSIONS}
           realms={realms}
           regions={regions}

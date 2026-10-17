@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { NavArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -13,18 +13,21 @@ import type { RealmShelf as Shelf, ShelfCard } from "~/lib/cards/hub/explore";
 
 function Strip(props: {
   label: string;
+  realmName: string;
   cards: readonly ShelfCard[];
   onOpen: (face: CardFaceData) => void;
   showWanted?: boolean;
 }) {
-  const id = useId();
   if (props.cards.length === 0) return null;
   return (
     <div className="space-y-2">
-      <h4 id={id} className="text-subhead text-label-secondary">
-        {props.label}
-      </h4>
-      <ul aria-labelledby={id} className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
+      <h4 className="text-subhead text-label-secondary">{props.label}</h4>
+      {/* Named with its realm, since every shelf has a Newest and a Most wanted list. The padding keeps the
+          focus outline inside the scroller, which would clip it. */}
+      <ul
+        aria-label={`${props.label} in ${props.realmName}`}
+        className="-m-1 flex snap-x gap-3 overflow-x-auto p-1"
+      >
         {props.cards.map(({ face, wanted }) => (
           <li key={face.cardId} className="shrink-0 snap-start space-y-1">
             <CardFace face={face} size="S" onOpen={props.onOpen} />
@@ -87,8 +90,14 @@ export function RealmShelf({
             <NavArrowRight />
           </Button>
         </div>
-        <Strip label="Newest" cards={shelf.newest} onOpen={onOpen} />
-        <Strip label="Most wanted" cards={shelf.mostWanted} onOpen={onOpen} showWanted />
+        <Strip label="Newest" realmName={shelf.realm.name} cards={shelf.newest} onOpen={onOpen} />
+        <Strip
+          label="Most wanted"
+          realmName={shelf.realm.name}
+          cards={shelf.mostWanted}
+          onOpen={onOpen}
+          showWanted
+        />
       </div>
     </Card>
   );

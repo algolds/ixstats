@@ -163,12 +163,12 @@ describe("ExplorePane", () => {
     expect(screen.getByText("1 card")).toBeInTheDocument();
   });
 
-  it("names each strip by its heading, and leaves out a strip with no cards", () => {
+  it("names each strip by its realm and its heading, and leaves out a strip with no cards", () => {
     render(pane());
-    const ixnay = screen.getByRole("list", { name: "Newest" });
+    const ixnay = screen.getByRole("list", { name: "Newest in Ixnay" });
     expect(within(ixnay).getAllByRole("button")).toHaveLength(1);
-    expect(screen.getAllByRole("list", { name: "Newest" })).toHaveLength(1);
-    expect(screen.getAllByRole("list", { name: "Most wanted" })).toHaveLength(1);
+    expect(screen.getByRole("list", { name: "Most wanted in Ixnay" })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /in NationStates$/ })).not.toBeInTheDocument();
   });
 
   it("opens a card's sheet from a shelf", () => {
@@ -249,6 +249,15 @@ describe("ExplorePane", () => {
     expect(lastGridInput()).toMatchObject({ realmId: "ns" });
   });
 
+  it("applies the same linked realm again once the address has dropped it", () => {
+    const view = render(pane({ initialRealmSlug: "nationstates" }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse all Ixnay cards" }));
+    view.rerender(pane({ initialRealmSlug: null }));
+    expect(lastGridInput()).toMatchObject({ realmId: "default" });
+    view.rerender(pane({ initialRealmSlug: "nationstates" }));
+    expect(lastGridInput()).toMatchObject({ realmId: "ns" });
+  });
+
   it("waits for the shelves before it applies a linked realm", () => {
     setShelves({ isLoading: true });
     const view = render(pane({ initialRealmSlug: "nationstates" }));
@@ -275,6 +284,53 @@ describe("ExplorePane", () => {
     expect(regions().mock.calls.at(-1)![0]).toEqual({ search: "pac" });
     fireEvent.click(screen.getByRole("option", { name: "The Pacific" }));
     expect(lastGridInput()).toMatchObject({ realmId: "ns", region: "The Pacific" });
+  });
+
+  it("keeps the region search and its matches when the filters close and reopen", () => {
+    render(pane({ initialRealmSlug: "nationstates" }));
+    const filtersButton = () => screen.getByRole("button", { name: "Filters, 1 on" });
+    fireEvent.click(filtersButton());
+    fireEvent.change(screen.getByRole("combobox", { name: "NationStates region" }), {
+      target: { value: "pac" },
+    });
+    fireEvent.click(filtersButton());
+    expect(screen.queryByRole("combobox", { name: "NationStates region" })).not.toBeInTheDocument();
+    fireEvent.click(filtersButton());
+    expect(screen.getByRole("combobox", { name: "NationStates region" })).toHaveValue("pac");
+    expect(regions().mock.calls.at(-1)![0]).toEqual({ search: "pac" });
+    expect(screen.getByRole("option", { name: "The Pacific" })).toBeInTheDocument();
+  });
+
+  /** Picks a NationStates region from the Filters popover, which is left open. */
+  function pickNsRegion() {
+    render(pane({ initialRealmSlug: "nationstates" }));
+    fireEvent.click(screen.getByRole("button", { name: "Filters, 1 on" }));
+    fireEvent.click(screen.getByRole("option", { name: "The Pacific" }));
+    expect(lastGridInput()).toMatchObject({ realmId: "ns", region: "The Pacific" });
+  }
+  const pickRealm = (name: string) => {
+    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
+    fireEvent.click(screen.getByRole("option", { name }));
+  };
+
+  it("drops the region when another realm is picked", () => {
+    pickNsRegion();
+    pickRealm("Ixnay");
+    expect(lastGridInput()).toEqual({ realmId: "default", sort: "newest", limit: 48 });
+  });
+
+  it("drops the region when a new link picks another realm", () => {
+    const view = render(pane({ initialRealmSlug: "nationstates" }));
+    fireEvent.click(screen.getByRole("button", { name: "Filters, 1 on" }));
+    fireEvent.click(screen.getByRole("option", { name: "The Pacific" }));
+    view.rerender(pane({ initialRealmSlug: "ixnay" }));
+    expect(lastGridInput()).toEqual({ realmId: "default", sort: "newest", limit: 48 });
+  });
+
+  it("keeps the region across every realm, where it still narrows NationStates cards", () => {
+    pickNsRegion();
+    pickRealm("Every realm");
+    expect(lastGridInput()).toEqual({ region: "The Pacific", sort: "newest", limit: 48 });
   });
 
   it("hides the region filter outside the NationStates realm", () => {
