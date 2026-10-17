@@ -5,7 +5,7 @@
  * licence is unknown or restricted, and restricted art is hidden. NationStates flag owners keep their self-service
  * takedown, which files and hides in one step.
  */
-import type { CardTakedownOrigin, Prisma, PrismaClient } from "@prisma/client";
+import type { CardLicenceStatus, CardTakedownOrigin, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
 import { takedownDueAt } from "~/lib/cards/takedown-deadline";
@@ -27,12 +27,46 @@ const ORIGIN_NAMES: Record<CardTakedownOrigin, string> = {
 const NOT_HIDDEN = "Only hidden art can be restored";
 
 /**
- * Takes the card's takedown lock for the rest of the transaction: filing, self-service, restore and the licence
- * review serialise on it, so a check (no active request, the licence) and the write that follows cannot interleave
- * with another. `$executeRaw`: Prisma cannot deserialize the `void` the lock returns.
+ * Takes the card's takedown lock for the rest of the transaction: filing, hiding, self-service, restore, the licence
+ * review and the Library and Designer edits serialise on it, so a check (no active request, the licence, a hold) and
+ * the write that follows cannot interleave with another. `$executeRaw`: Prisma cannot deserialize the `void` the lock
+ * returns.
  */
-async function lockCardTakedownsTx(tx: Tx, cardId: string): Promise<void> {
+export async function lockCardTakedownsTx(tx: Tx, cardId: string): Promise<void> {
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TAKEDOWN_LOCK_NAMESPACE}::int, hashtext(${cardId}))`;
+}
+
+/** Takes the lock of the card a takedown is for; refuses a takedown that does not exist. */
+async function lockTakedownCardTx(tx: Tx, takedownId: string): Promise<void> {
+  const ref = await tx.cardTakedown.findUnique({
+    where: { id: takedownId },
+    select: { cardId: true },
+  });
+  if (!ref) throw new TRPCError({ code: "NOT_FOUND", message: "Takedown not found" });
+  await lockCardTakedownsTx(tx, ref.cardId);
+}
+
+/** A card's takedowns that hide its art, for a `_count` select a hold check reads. */
+export const HIDDEN_TAKEDOWNS = { where: { status: "HIDDEN" } } as const;
+
+/** What a hold check reads: the card's hiding takedowns (`HIDDEN_TAKEDOWNS`) and its licence. */
+export interface HoldCheckedCard {
+  artLicence: { status: CardLicenceStatus } | null;
+  _count: { takedowns: number };
+}
+
+/**
+ * Refuses a change to art Compliance holds: art a takedown hid, or whose licence is restricted, is changed and shown
+ * again only from Compliance. The caller holds the card's takedown lock.
+ */
+export function assertArtNotHeld(card: HoldCheckedCard): void {
+  if (card._count.takedowns > 0 || card.artLicence?.status === "RESTRICTED") {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message:
+        "A takedown or a restricted licence hides this card's art. Change it from Compliance.",
+    });
+  }
 }
 
 /** The card's active request. The caller holds the card's takedown lock. */
@@ -196,6 +230,8 @@ export async function hideTakedownArt(
   takedownId: string
 ): Promise<void> {
   await db.$transaction(async (tx) => {
+    // Under the card's lock, so a Library or Designer edit cannot write art over the hide
+    await lockTakedownCardTx(tx, takedownId);
     const cardId = await hideArt(tx, takedownId, actor.dbId);
     await recordCardAudit(tx, {
       action: "CARD_TAKEDOWN",
@@ -263,13 +299,8 @@ export async function restoreTakedown(
   takedownId: string
 ): Promise<void> {
   await db.$transaction(async (tx) => {
-    const ref = await tx.cardTakedown.findUnique({
-      where: { id: takedownId },
-      select: { cardId: true },
-    });
-    if (!ref) throw new TRPCError({ code: "NOT_FOUND", message: "Takedown not found" });
     // Under the card's lock, so a restricted mark landing now is seen before the art comes back
-    await lockCardTakedownsTx(tx, ref.cardId);
+    await lockTakedownCardTx(tx, takedownId);
     const takedown = await tx.cardTakedown.findUnique({
       where: { id: takedownId },
       select: {

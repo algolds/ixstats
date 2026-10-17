@@ -29,9 +29,9 @@ export const cardsAdminLibraryRouter = createTRPCRouter({
       z.object({
         filter: LibraryFilterSchema,
         retired: z.boolean(),
-        // The Library read it came from: its `asOf` and the total it showed.
+        // The Library read it came from: its `asOf` and its count for this change.
         asOf: z.date(),
-        expected: z.number().int().min(0),
+        expected: z.number().int().min(1),
         reason: z.string().trim().min(3).max(500),
       })
     )

@@ -7,13 +7,14 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
-import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
+import { EXCLUDE_RESTRICTED_ART, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
+import { cardWikiSourceSchema, parseCardWikiSource } from "~/lib/cards/card-sources";
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import { HIDDEN_TAKEDOWNS, assertArtNotHeld, lockCardTakedownsTx } from "./cards.compliance";
 
 export const LibraryFilterSchema = z.object({
   realmId: z.string().min(1).max(100).optional(),
@@ -25,14 +26,12 @@ export const LibraryFilterSchema = z.object({
 });
 export type LibraryFilter = z.infer<typeof LibraryFilterSchema>;
 
-const ART_HIDDEN = { status: "HIDDEN" } as const;
 const SHOW_WHERE: Readonly<Record<LibraryFilter["show"], Prisma.CardWhereInput>> = {
   all: {},
   retired: { isRetired: true },
-  art_hidden: { takedowns: { some: ART_HIDDEN } },
+  art_hidden: { takedowns: { some: HIDDEN_TAKEDOWNS.where } },
   bound: { isBound: true },
 };
-const NO_HIDDEN_TAKEDOWN: Prisma.CardWhereInput = { takedowns: { none: ART_HIDDEN } };
 
 /** Legacy IxWiki Lore cards may have no source; the natural key reads them as IxWiki too. */
 function sourceWhere(source: LibraryFilter["source"]): Prisma.CardWhereInput {
@@ -63,8 +62,26 @@ const shownWhere = (filter: LibraryFilter, asOf: Date): { AND: Prisma.CardWhereI
 });
 
 /**
- * The Library as of one moment, `asOf`: cards made later are left out of the page and the total alike. Bulk hide
- * sends `asOf` and the total back, so it acts on exactly the cards the admin was shown.
+ * The shown cards a bulk hide (`retired`) or unhide would change: those not that way yet, less the cards whose art
+ * Compliance holds and, for a hide, achievement reward cards (hiding one pauses its award, so that is done card by
+ * card from the edit).
+ */
+function changeWhere(filter: LibraryFilter, asOf: Date, retired: boolean): Prisma.CardWhereInput {
+  return {
+    AND: [
+      ...shownWhere(filter, asOf).AND,
+      { isRetired: !retired },
+      { takedowns: { none: HIDDEN_TAKEDOWNS.where } },
+      EXCLUDE_RESTRICTED_ART,
+      ...(retired ? [{ rewardAchievementKey: null }] : []),
+    ],
+  };
+}
+
+/**
+ * The Library as of one moment, `asOf`: cards made later are left out of the page and the counts alike. `hideable`
+ * and `unhideable` count what each bulk change would change; it sends `asOf` and its count back, so it acts on
+ * exactly the cards the admin was shown.
  */
 export async function listLibrary(
   db: PrismaClient,
@@ -72,7 +89,7 @@ export async function listLibrary(
 ) {
   const asOf = new Date();
   const where = shownWhere(input.filter, asOf);
-  const [rows, total] = await Promise.all([
+  const [rows, total, hideable, unhideable] = await Promise.all([
     db.card.findMany({
       where,
       orderBy: [{ createdAt: "desc" }, { id: "asc" }],
@@ -89,16 +106,19 @@ export async function listLibrary(
         artwork: true,
         isRetired: true,
         isBound: true,
+        rewardAchievementKey: true,
         reviewState: true,
         marketValue: true,
         realm: { select: { name: true } },
         artLicence: { select: { status: true } },
-        _count: { select: { CardOwnership: true, takedowns: { where: ART_HIDDEN } } },
+        _count: { select: { CardOwnership: true, takedowns: HIDDEN_TAKEDOWNS } },
       },
     }),
     db.card.count({ where }),
+    db.card.count({ where: changeWhere(input.filter, asOf, true) }),
+    db.card.count({ where: changeWhere(input.filter, asOf, false) }),
   ]);
-  return { rows, total, asOf };
+  return { rows, total, hideable, unhideable, asOf };
 }
 
 export const LibraryEditSchema = z.object({
@@ -110,6 +130,12 @@ export const LibraryEditSchema = z.object({
   rarity: z.enum(CardRarity),
   retired: z.boolean(),
   reason: z.string().trim().max(500).optional(),
+  /** The card as the admin opened it: an edit over anything changed since is refused. */
+  expected: z.object({
+    artwork: z.string().max(2000).nullable(),
+    isRetired: z.boolean(),
+    rarity: z.enum(CardRarity),
+  }),
 });
 export type LibraryEdit = z.infer<typeof LibraryEditSchema>;
 
@@ -127,15 +153,27 @@ function editedCard(tx: Prisma.TransactionClient, id: string) {
       artwork: true,
       rarity: true,
       cardType: true,
+      wikiSource: true,
       isRetired: true,
       metadata: true,
       artLicence: { select: { status: true } },
-      _count: { select: { takedowns: { where: ART_HIDDEN } } },
+      _count: { select: { takedowns: HIDDEN_TAKEDOWNS } },
     },
   });
 }
 
 function assertEditable(card: EditedCard, input: LibraryEdit) {
+  const { expected } = input;
+  if (
+    card.artwork !== expected.artwork ||
+    card.isRetired !== expected.isRetired ||
+    card.rarity !== expected.rarity
+  ) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "This card changed since you opened it. Reopen it and try again.",
+    });
+  }
   if (input.rarity !== card.rarity && (input.reason ?? "").trim().length < 3) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Say why the rarity changes" });
   }
@@ -143,14 +181,7 @@ function assertEditable(card: EditedCard, input: LibraryEdit) {
   if (artChanged && input.artwork !== null && !HTTPS_URL.safeParse(input.artwork).success) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Art is an https:// address" });
   }
-  const heldByCompliance = card._count.takedowns > 0 || card.artLicence?.status === "RESTRICTED";
-  if (heldByCompliance && (artChanged || input.retired !== card.isRetired)) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message:
-        "A takedown or a restricted licence hides this card's art. Change it from Compliance.",
-    });
-  }
+  if (artChanged || input.retired !== card.isRetired) assertArtNotHeld(card);
 }
 
 /** The words and art an edit changes, as written and as the audit row names them. */
@@ -169,14 +200,52 @@ function wordsAndArt(card: EditedCard, input: LibraryEdit) {
   if (input.artwork !== card.artwork) {
     data.artwork = input.artwork;
     data.artworkSource = input.artwork ? "UPLOADED" : "PROCEDURAL";
+    // The credit named the old file's artist
+    data.artworkCredit = null;
     edited.push("art");
   }
   return { data, edited };
 }
 
 /**
- * Edit one card: its words, art, rarity (with a reason, re-priced and audited) and whether it is hidden. The write
- * holds only over the art, visibility and rarity it read, so a takedown hiding the art meanwhile makes it miss.
+ * The licence row describes the card's art file, so it follows an art change: new art waits in Licence review as
+ * unknown, named by its file when it is on the card's own wiki, and a card with no art has no row.
+ */
+async function artLicenceFollowsTx(
+  tx: Prisma.TransactionClient,
+  card: EditedCard,
+  artwork: string | null
+) {
+  if (artwork === null) {
+    await tx.cardArtLicence.deleteMany({ where: { cardId: card.id } });
+    return;
+  }
+  const wiki = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
+  const licence = {
+    wiki,
+    status: "UNKNOWN" as const,
+    fileUrl: artwork,
+    fileTitle: fileNameFromArtworkUrl(artwork, wiki),
+    descriptionUrl: null,
+    licence: null,
+    licenceUrl: null,
+    artist: null,
+    attribution: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    note: "Art changed in the Library",
+  };
+  await tx.cardArtLicence.upsert({
+    where: { cardId: card.id },
+    create: { cardId: card.id, ...licence },
+    update: licence,
+  });
+}
+
+/**
+ * Edit one card: its words, art, rarity (with a reason, re-priced and audited) and whether it is hidden. It runs
+ * under the card's takedown lock, which every hide takes, so the hold it reads stands until it commits; the write
+ * holds only over the art, visibility and rarity it read, which a bulk hide or a sync may change meanwhile.
  */
 export async function updateLibraryCard(
   db: PrismaClient,
@@ -184,6 +253,7 @@ export async function updateLibraryCard(
   input: LibraryEdit
 ): Promise<void> {
   await db.$transaction(async (tx) => {
+    await lockCardTakedownsTx(tx, input.cardId);
     const card = await editedCard(tx, input.cardId);
     if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
     assertEditable(card, input);
@@ -206,13 +276,7 @@ export async function updateLibraryCard(
     if (Object.keys(data).length === 0) return;
 
     const written = await tx.card.updateMany({
-      where: {
-        id: card.id,
-        artwork: card.artwork,
-        isRetired: card.isRetired,
-        rarity: card.rarity,
-        ...(edited.includes("art") || retiredChanged ? NO_HIDDEN_TAKEDOWN : {}),
-      },
+      where: { id: card.id, artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
       data,
     });
     if (written.count !== 1) {
@@ -221,6 +285,7 @@ export async function updateLibraryCard(
         message: "This card changed while you edited it. Reload and try again.",
       });
     }
+    if (edited.includes("art")) await artLicenceFollowsTx(tx, card, input.artwork);
     const audit = (action: "CARD_RARITY_OVERRIDE" | "CARD_UPDATE" | "CARD_HIDE", details: string) =>
       recordCardAudit(tx, { action, actor: actor.clerkId, target: card.id, details });
     if (rarityChanged) {
@@ -239,7 +304,7 @@ export async function updateLibraryCard(
 export interface BulkSetRetiredInput {
   filter: LibraryFilter;
   retired: boolean;
-  /** When the admin's Library was read (`listLibrary`'s `asOf`), and the total it showed. */
+  /** When the admin's Library was read (`listLibrary`'s `asOf`), and its count for this change. */
   asOf: Date;
   expected: number;
   reason: string;
@@ -262,8 +327,12 @@ function filterScope(filter: LibraryFilter): string {
 const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
 
 /**
- * Hide or unhide the cards a Library read showed (its `asOf` and total), at most MAX_FILTER_REVIEW of them. Cards
- * already that way are left as they are, and so are cards whose art a takedown or a restricted licence hides.
+ * Hide or unhide the cards a Library read counted for this change (its `asOf` and `hideable` or `unhideable`), at
+ * least one and at most MAX_FILTER_REVIEW of them.
+ *
+ * One race is accepted: this takes no takedown lock, so an unhide racing `hideTakedownArt` on a card that was already
+ * hidden can un-hide it just as its art is hidden. The art stays hidden (it moved onto the takedown); the card shows
+ * the placeholder face in packs until an admin hides it again.
  */
 export async function bulkSetRetired(
   db: PrismaClient,
@@ -272,6 +341,9 @@ export async function bulkSetRetired(
 ): Promise<{ count: number }> {
   const scope = filterScope(input.filter);
   if (!scope) throw new TRPCError({ code: "BAD_REQUEST", message: "Narrow the filter first" });
+  if (input.expected < 1) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "No matching card would change" });
+  }
   // A read time after now would let the change take cards made after the admin's read.
   if (input.asOf.getTime() > Date.now()) {
     throw new TRPCError({
@@ -285,24 +357,17 @@ export async function bulkSetRetired(
       message: `Hide or unhide at most ${MAX_FILTER_REVIEW.toLocaleString()} cards at once. Narrow the filter.`,
     });
   }
-  const shown = shownWhere(input.filter, input.asOf);
+  const where = changeWhere(input.filter, input.asOf, input.retired);
   return db.$transaction(async (tx) => {
-    const matching = await tx.card.count({ where: shown });
-    if (matching !== input.expected) {
+    const changing = await tx.card.count({ where });
+    if (changing !== input.expected) {
       throw new TRPCError({
         code: "CONFLICT",
         message: "The matching cards changed since you loaded the Library. Reload and try again.",
       });
     }
     const result = await tx.card.updateMany({
-      where: {
-        AND: [
-          ...shown.AND,
-          { isRetired: !input.retired },
-          NO_HIDDEN_TAKEDOWN,
-          EXCLUDE_RESTRICTED_ART,
-        ],
-      },
+      where,
       data: { isRetired: input.retired, retiredAt: input.retired ? new Date() : null },
     });
     await recordCardAudit(tx, {

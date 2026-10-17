@@ -14,6 +14,7 @@ import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import { HIDDEN_TAKEDOWNS, assertArtNotHeld, lockCardTakedownsTx } from "./cards.compliance";
 
 export const SpecialCardSchema = z
   .object({
@@ -80,9 +81,13 @@ const cardGone = () =>
 
 const refused = (message: string) => new TRPCError({ code: "PRECONDITION_FAILED", message });
 
-/** The card an edit saves over, read under the card's serial lock: mints take it too, so its copy count holds. */
+/**
+ * The card an edit saves over, read under the card's serial lock (mints take it too, so its copy count holds) and
+ * then its takedown lock (a hide takes it too, so its art hold holds).
+ */
 async function editedCard(tx: Prisma.TransactionClient, id: string) {
   await lockCardSerialsTx(tx, id);
+  await lockCardTakedownsTx(tx, id);
   const card = await tx.card.findUnique({
     where: { id },
     select: {
@@ -91,7 +96,9 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
       specialKind: true,
       isBound: true,
       rewardAchievementKey: true,
-      _count: { select: { CardOwnership: true } },
+      artwork: true,
+      artLicence: { select: { status: true } },
+      _count: { select: { CardOwnership: true, takedowns: HIDDEN_TAKEDOWNS } },
     },
   });
   if (!card || card.cardType !== "SPECIAL") throw cardGone();
@@ -100,7 +107,8 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
 
 /**
  * An old seed row waits for the import, which alone gives it a kind. Once players hold copies, the kind, binding and
- * achievement stay: binding lives on the card, so unbinding one would free every copy at once.
+ * achievement stay: binding lives on the card, so unbinding one would free every copy at once. Art a takedown or a
+ * restricted licence hides is changed only from Compliance.
  */
 function assertEditable(card: Awaited<ReturnType<typeof editedCard>>, input: SpecialCardInput) {
   if (awaitsSpecialCardImport(card)) {
@@ -114,6 +122,7 @@ function assertEditable(card: Awaited<ReturnType<typeof editedCard>>, input: Spe
   if (changesKind && card._count.CardOwnership > 0) {
     throw refused("Players hold copies of this card, so its kind and binding are fixed.");
   }
+  if (input.artwork !== card.artwork) assertArtNotHeld(card);
 }
 
 /** A newly chosen achievement must be live; a card keeps the one it has after that achievement retires. */

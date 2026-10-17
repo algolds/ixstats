@@ -50,14 +50,13 @@ function filterOf(state: LibraryFilterState): Filter {
   };
 }
 
-const cards = (count: number) => (count === 1 ? "card" : "cards");
-const cardCount = (count: number) => `${count.toLocaleString()} ${cards(count)}`;
+const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
 
 const BULK_COPY = {
   hide: {
     verb: "Hide",
     description:
-      "They leave packs and Explore, and players keep their copies. Cards already hidden are left as they are.",
+      "They leave packs and Explore, and players keep their copies. Achievement reward cards stay: hide one from its own edit.",
   },
   unhide: {
     verb: "Unhide",
@@ -190,11 +189,19 @@ export function LibraryTab() {
   const rows = list.data?.rows ?? [];
   const total = list.data?.total ?? 0;
   const asOf = list.data?.asOf;
+  // What each bulk change would change, which is what it is capped and confirmed by
+  const hideable = list.data?.hideable ?? 0;
+  const unhideable = list.data?.unhideable ?? 0;
   const narrowed = Object.values(filter).some((value) => value !== undefined);
-  const tooMany = narrowed && total > MAX_FILTER_REVIEW;
-  const canBulk = narrowed && total > 0 && !tooMany;
+  const canChange = (count: number) => narrowed && count > 0 && count <= MAX_FILTER_REVIEW;
+  const overCap = [
+    hideable > MAX_FILTER_REVIEW ? "hide" : null,
+    unhideable > MAX_FILTER_REVIEW ? "unhide" : null,
+  ]
+    .filter(Boolean)
+    .join(" or ");
   const openBulk = (retired: boolean) => {
-    if (asOf) bulk.open({ filter, retired, asOf, expected: total });
+    if (asOf) bulk.open({ filter, retired, asOf, expected: retired ? hideable : unhideable });
   };
   const changeFilter = (next: LibraryFilterState) => {
     setState(next);
@@ -208,20 +215,30 @@ export function LibraryTab() {
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pt-5">
         <CardTitle icon={<Book />}>Library</CardTitle>
         <div className="flex gap-2">
-          <Button size="sm" variant="secondary" disabled={!canBulk} onClick={() => openBulk(true)}>
-            Hide matching
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!canChange(hideable)}
+            onClick={() => openBulk(true)}
+          >
+            Hide {cardCount(hideable)}
           </Button>
-          <Button size="sm" variant="ghost" disabled={!canBulk} onClick={() => openBulk(false)}>
-            Unhide matching
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!canChange(unhideable)}
+            onClick={() => openBulk(false)}
+          >
+            Unhide {cardCount(unhideable)}
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pb-5">
         <LibraryFilters value={state} onChange={changeFilter} />
-        {tooMany && (
+        {narrowed && overCap && (
           <p className="text-footnote text-label-secondary">
-            Narrow the filter to hide or unhide every match: at most{" "}
-            {MAX_FILTER_REVIEW.toLocaleString()} cards at once.
+            Narrow the filter to {overCap} these cards: at most {MAX_FILTER_REVIEW.toLocaleString()}{" "}
+            cards change at once.
           </p>
         )}
         {list.isError ? (
@@ -251,7 +268,7 @@ export function LibraryTab() {
       <ReasonDialog
         open={bulk.target !== null}
         onOpenChange={(open) => !open && bulk.close()}
-        title={`${copy.verb} ${shownCount.toLocaleString()} matching ${cards(shownCount)}`}
+        title={`${copy.verb} ${cardCount(shownCount)}`}
         description={copy.description}
         confirmLabel={copy.verb}
         destructive={copy === BULK_COPY.hide}

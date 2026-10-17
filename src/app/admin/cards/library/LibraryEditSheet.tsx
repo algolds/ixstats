@@ -70,7 +70,11 @@ export function LibraryEditSheet({
       void utils.cards.admin.library.list.invalidate();
       onOpenChange(false);
     },
-    onError: (error) => notify.error("Card not saved", error.message),
+    onError: (error) => {
+      notify.error("Card not saved", error.message);
+      // The card changed since this sheet opened: read the list again, so reopening it shows the card as it is.
+      if (error.data?.code === "CONFLICT") void utils.cards.admin.library.list.invalidate();
+    },
   });
   const set =
     <K extends keyof Draft>(key: K) =>
@@ -88,6 +92,7 @@ export function LibraryEditSheet({
       rarity: draft.rarity,
       retired: draft.retired,
       ...(rarityChanged ? { reason: draft.reason.trim() } : {}),
+      expected: { artwork: card.artwork, isRetired: card.isRetired, rarity: card.rarity },
     });
 
   return (
@@ -159,6 +164,11 @@ export function LibraryEditSheet({
               <Label htmlFor="library-hidden">Hidden from packs and Explore</Label>
             </div>
             <p className="text-footnote text-label-secondary">Players keep the copies they own.</p>
+            {card.rewardAchievementKey && (
+              <p className="text-footnote text-label-secondary">
+                Players who unlock this achievement while the card is hidden get no card.
+              </p>
+            )}
           </div>
         </div>
         <SheetFooter className="border-separator shrink-0 border-t pt-4 sm:items-center">

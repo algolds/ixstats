@@ -1,6 +1,6 @@
 // src/server/api/routers/cards/_library.ts
 /** The card library's filters and orders, for the players' read (getNSCards). The admin Library has its own. */
-import type { CardRarity, CardReviewState, Prisma } from "@prisma/client";
+import type { CardRarity, Prisma } from "@prisma/client";
 import { z } from "zod";
 
 export const LIBRARY_SORTS = [
@@ -28,20 +28,17 @@ export interface LibraryFilter {
   rarity?: CardRarity;
   region?: string;
   cteFilter: z.infer<typeof cteFilterSchema>;
-  /** true: only retired; false: only live; undefined: both. */
-  retired?: boolean;
-  /** Only cards in this review state (players see APPROVED only). */
-  reviewState?: CardReviewState;
 }
 
-/** The library `where`: each filter is one AND term (the CTE and region filters both read metadata). */
+/**
+ * The library `where`: live, approved cards only (players never see a retired or pending one), then each filter as
+ * one AND term (the CTE and region filters both read metadata).
+ */
 export function libraryWhere(filter: LibraryFilter): Prisma.CardWhereInput {
-  const and: Prisma.CardWhereInput[] = [];
+  const and: Prisma.CardWhereInput[] = [{ isRetired: false }, { reviewState: "APPROVED" }];
   const term = filter.search?.trim();
   if (filter.season) and.push({ season: filter.season });
   if (filter.rarity) and.push({ rarity: filter.rarity });
-  if (filter.retired !== undefined) and.push({ isRetired: filter.retired });
-  if (filter.reviewState) and.push({ reviewState: filter.reviewState });
   if (filter.cteFilter !== "all")
     and.push({ metadata: { path: ["isCTE"], equals: filter.cteFilter === "cte_only" } });
   if (filter.region)
