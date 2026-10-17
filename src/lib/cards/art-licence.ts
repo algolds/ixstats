@@ -9,6 +9,12 @@ import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
 export type LicenceStatus = "OPEN" | "RESTRICTED" | "UNKNOWN";
 
+/**
+ * A card filter that leaves out art whose licence is restricted, keeping cards with no licence record. Packs and the
+ * daily card draw through it, so restricted art never drops even before its takedown hides it.
+ */
+export const EXCLUDE_RESTRICTED_ART = { artLicence: { isNot: { status: "RESTRICTED" } } } as const;
+
 const RESTRICTED = [/\bnc\b/i, /non[\s-]?commercial/i, /\bnd\b/i, /no[\s-]?deriv/i];
 const OPEN = [
   /\bcc0\b/i,

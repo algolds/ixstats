@@ -200,10 +200,10 @@ describe("claimCombinedDailyClaim", () => {
     expect(db.vaultTransaction.create).toHaveBeenCalledTimes(1);
   });
 
-  it("CARD: never picks a trophy card or one waiting in review, active or fallback", async () => {
+  it("CARD: picks only a live, approved card, never a trophy or restricted-licence art", async () => {
     const db = makeDb();
     db.myVault.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-    db.card.count = jest.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(1);
+    db.card.count = jest.fn().mockResolvedValue(1);
     db.card.findFirst = jest
       .fn()
       .mockResolvedValue({ id: "card_1", title: "Test Card", rarity: "COMMON", artwork: null });
@@ -212,15 +212,29 @@ describe("claimCombinedDailyClaim", () => {
 
     await claimCombinedDailyClaim("user_1", "CARD", db as never);
 
-    expect(db.card.count).toHaveBeenNthCalledWith(1, {
-      where: { isRetired: false, reviewState: "APPROVED", cardType: { not: "TROPHY" } },
-    });
-    expect(db.card.count).toHaveBeenNthCalledWith(2, {
-      where: { reviewState: "APPROVED", cardType: { not: "TROPHY" } },
-    });
-    expect(db.card.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { reviewState: "APPROVED", cardType: { not: "TROPHY" } } })
-    );
+    const pool = {
+      isRetired: false,
+      reviewState: "APPROVED",
+      cardType: { not: "TROPHY" },
+      artLicence: { isNot: { status: "RESTRICTED" } },
+    };
+    expect(db.card.count).toHaveBeenCalledTimes(1);
+    expect(db.card.count).toHaveBeenCalledWith({ where: pool });
+    expect(db.card.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: pool }));
+  });
+
+  it("CARD: awards nothing when only retired cards remain, so hidden art is never drawn", async () => {
+    const db = makeDb();
+    db.card.count = jest.fn().mockResolvedValue(0);
+    db.card.findFirst = jest.fn();
+    db.cardOwnership.create = jest.fn();
+
+    const result = await claimCombinedDailyClaim("user_1", "CARD", db as never);
+
+    expect(result).toMatchObject({ success: false, rewardType: "card" });
+    expect(db.card.count).toHaveBeenCalledTimes(1);
+    expect(db.card.findFirst).not.toHaveBeenCalled();
+    expect(db.cardOwnership.create).not.toHaveBeenCalled();
   });
 
   it("CARD: a second same-day claim awards nothing", async () => {

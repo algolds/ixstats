@@ -1,1 +1,1 @@
-export { CardTakedownsAdmin as ComplianceTab } from "../CardTakedownsAdmin";
+export { ComplianceTab } from "./ComplianceTab";
