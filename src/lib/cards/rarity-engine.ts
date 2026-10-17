@@ -60,13 +60,13 @@ export const RarityThresholdsSchema = z
   );
 
 /** The generator's calibration on IxWiki. The other wikis start from it until an admin tunes their table. */
-const IXWIKI_THRESHOLDS: RarityThresholds = {
+const IXWIKI_THRESHOLDS: Readonly<RarityThresholds> = Object.freeze({
   UNCOMMON: 21,
   RARE: 41,
   ULTRA_RARE: 61,
   EPIC: 81,
   LEGENDARY: 96,
-};
+});
 
 export const DEFAULT_RARITY_THRESHOLDS: Readonly<Record<CardWikiSource, RarityThresholds>> = {
   ixwiki: IXWIKI_THRESHOLDS,

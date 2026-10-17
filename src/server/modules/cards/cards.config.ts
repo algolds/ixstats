@@ -31,9 +31,8 @@ export async function getRarityThresholds(
   const stored = await readConfigKeys(db, CARD_WIKI_SOURCES.map(thresholdsKey));
   const tables: Record<CardWikiSource, RarityThresholds> = { ...DEFAULT_RARITY_THRESHOLDS };
   for (const source of CARD_WIKI_SOURCES) {
-    tables[source] =
-      parseStoredConfig(stored[thresholdsKey(source)], RarityThresholdsSchema) ??
-      DEFAULT_RARITY_THRESHOLDS[source];
+    const parsed = parseStoredConfig(stored[thresholdsKey(source)], RarityThresholdsSchema);
+    if (parsed) tables[source] = parsed;
   }
   return tables;
 }

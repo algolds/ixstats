@@ -5,9 +5,10 @@ import { DEFAULT_RARITY_THRESHOLDS } from "~/lib/cards/rarity-engine";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 describe("rarity thresholds config", () => {
-  it("falls back to the defaults for a missing, malformed or non-rising stored table", async () => {
+  it("falls back to the defaults for a partial, malformed or non-rising stored table", async () => {
     const db = createMockPrisma();
     db.systemConfig.findMany.mockResolvedValue([
+      { key: "card_rarity_thresholds_ixwiki", value: JSON.stringify({ UNCOMMON: 5 }) },
       {
         key: "card_rarity_thresholds_iiwiki",
         value: JSON.stringify({ UNCOMMON: 10, RARE: 30, ULTRA_RARE: 50, EPIC: 70, LEGENDARY: 90 }),
