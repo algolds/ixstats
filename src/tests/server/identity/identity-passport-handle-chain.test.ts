@@ -22,8 +22,9 @@ jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
-import { resolveIdentity } from "~/server/modules/identity/identity.resolve";
 import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
+import { escapeRegExp } from "~/lib/utils/escape-regexp";
+import { resolveHandleUser, resolveIdentity } from "~/server/modules/identity/identity.resolve";
 
 interface Row {
   id: string;
@@ -38,12 +39,28 @@ const mocked = db as unknown as { user: { findUnique: jest.Mock; findFirst: jest
 
 type Clause = Record<string, string | { equals: string }>;
 
+/** Postgres ILIKE, which Prisma's insensitive `equals` compiles to: `%` and `_` are wildcards, `\\` escapes. */
+function ilike(value: string, pattern: string): boolean {
+  const source = pattern.replace(
+    /\\(.)|([%_])|([^\\%_]+)/gs,
+    (_m, escaped: string, wild: string, text: string) =>
+      escaped !== undefined
+        ? escapeRegExp(escaped)
+        : wild !== undefined
+          ? wild === "%"
+            ? ".*"
+            : "."
+          : escapeRegExp(text)
+  );
+  return new RegExp(`^${source}$`, "is").test(value);
+}
+
 /** One `legacyNameWhere` clause: an exact id, or a case-insensitive name. */
 function matches(row: Row, clause: Clause): boolean {
   return Object.entries(clause).every(([field, test]) => {
     const value = row[field as keyof Row];
     if (typeof value !== "string") return false;
-    return typeof test === "string" ? value === test : value.toLowerCase() === test.equals.toLowerCase();
+    return typeof test === "string" ? value === test : ilike(value, test.equals);
   });
 }
 
@@ -105,5 +122,17 @@ describe("passport handle chain round trip", () => {
     expect(forumClash).toEqual({ handle: namesake.clerkUserId, resolvedId: "namesake" });
     const wikiClash = await roundTrip(namesake, "Zed");
     expect(wikiClash.resolvedId).toBe("namesake");
+  });
+
+  it("treats % and _ in a name literally, so a wildcard names nobody", async () => {
+    const helvianir = row("h", { forumUsername: "Helvianir" });
+    const dax = row("c", { forumUsername: "Dax_" });
+    usersTable([helvianir, dax]);
+
+    for (const probe of ["%", "H%", "_elvianir", "Helviani_", "Da%"]) {
+      expect(await resolveHandleUser(probe)).toBeNull();
+    }
+    expect((await resolveHandleUser("helvianir"))?.id).toBe("h");
+    expect((await resolveHandleUser("Dax_"))?.id).toBe("c");
   });
 });

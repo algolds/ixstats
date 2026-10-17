@@ -17,8 +17,13 @@ import type {
 import type { DirectiveRow } from "./identity.mappers";
 import type { IdentityUser } from "./identity.selects";
 import type { ResolvedIdentity } from "./identity.types";
+import { likeLiteral } from "~/lib/utils/like-literal";
 
-const insensitive = (value: string) => ({ equals: value, mode: "insensitive" as const });
+/** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
+const insensitive = (value: string) => ({
+  equals: likeLiteral(value),
+  mode: "insensitive" as const,
+});
 
 async function orEmpty<T>(work: Promise<T[]>): Promise<T[]> {
   return work.catch(() => []);
@@ -156,8 +161,8 @@ export async function loadAuthoredArticleRows(
           ...names.flatMap((name) =>
             name
               ? [
-                  { title: { contains: name, mode: "insensitive" as const } },
-                  { slug: { contains: name.toLowerCase() } },
+                  { title: { contains: likeLiteral(name), mode: "insensitive" as const } },
+                  { slug: { contains: likeLiteral(name.toLowerCase()) } },
                 ]
               : []
           ),
@@ -230,9 +235,7 @@ export async function loadDirectives(
  * The user's personal ThinkPages persona ("you", not a nation or a character): the passport card's
  * stored name, avatar and bio, read without a Clerk call.
  */
-export async function loadPersonalPersona(
-  user: Pick<IdentityUser, "clerkUserId"> | null
-) {
+export async function loadPersonalPersona(user: Pick<IdentityUser, "clerkUserId"> | null) {
   if (!user) return null;
   return orNull(
     db.thinkpagesAccount.findFirst({
@@ -259,9 +262,8 @@ export async function loadClerkProfile(identity: ResolvedIdentity): Promise<Cler
     const client = await clerkClient();
     const found = clerkId
       ? await client.users.getUser(clerkId).catch(() => null)
-      : ((await client.users
-          .getUserList({ username: [handle, strippedHandle] })
-          .catch(() => null))?.data[0] ?? null);
+      : ((await client.users.getUserList({ username: [handle, strippedHandle] }).catch(() => null))
+          ?.data[0] ?? null);
     if (!found) return null;
     return {
       createdAt: new Date(found.createdAt),

@@ -18,6 +18,7 @@ import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import { resolveStoredImageUrl } from "../transformers/image-url";
 import { cleanWikiMarkup } from "../transformers/wikitext-parser";
 import { toArticleSlug } from "./domain-types";
+import { likeLiteral } from "~/lib/utils/like-literal";
 
 const SNIPPET_FALLBACK = "WikiOS article entry.";
 
@@ -196,9 +197,6 @@ const withoutNul = (query: string): string => query.replaceAll("\u0000", "");
 /** The query as text to match titles with: spaces for underscores, one space between words. */
 const normalizeQuery = (query: string): string =>
   withoutNul(query).replace(/_/g, " ").replace(/\s+/g, " ").trim();
-
-/** `value` as the literal part of a LIKE pattern. */
-const likeLiteral = (value: string): string => value.replace(/[\\%_]/g, "\\$&");
 
 /** What a typeahead query for `trimmed` looks in: Template:, Category: and User: pages have their own prefix. */
 function typeaheadNamespace(trimmed: string): number {
