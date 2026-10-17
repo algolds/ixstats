@@ -232,15 +232,18 @@ describe("card source wikis", () => {
     expect(files.has("File:Gone.png")).toBe(false);
   });
 
-  it("keeps a query that is not tracking (Fandom's cache buster)", () => {
-    const data = ImageInfoResponseSchema.parse(
-      file(
-        "https://static.wikia.nocookie.net/althistory/images/a/ab/X.png/revision/latest?cb=20200405180536&utm_medium=x",
-        []
-      )
-    );
-    expect(parseImageInfo("althistory", data).get("File:X.png")?.url).toBe(
-      "https://static.wikia.nocookie.net/althistory/images/a/ab/X.png/revision/latest?cb=20200405180536"
-    );
+  const CDN = "https://static.wikia.nocookie.net/althistory/images/a/ab/X.png/revision/latest";
+
+  it.each([
+    // Fandom's cache buster is kept.
+    [`${CDN}?cb=20200405180536&utm_medium=x`, `${CDN}?cb=20200405180536`],
+    // The rest of a mixed query is kept byte for byte.
+    [`${CDN}?a=b%20c&q=(1)!&utm_source=x&flag`, `${CDN}?a=b%20c&q=(1)!&flag`],
+    [`${CDN}?cb=1&path-prefix=de`, `${CDN}?cb=1&path-prefix=de`],
+    [`${CDN}?utm_source=x`, CDN],
+    [CDN, CDN],
+  ])("reads %s as %s (only the tracking pairs dropped)", (url, kept) => {
+    const data = ImageInfoResponseSchema.parse(file(url, []));
+    expect(parseImageInfo("althistory", data).get("File:X.png")?.url).toBe(kept);
   });
 });

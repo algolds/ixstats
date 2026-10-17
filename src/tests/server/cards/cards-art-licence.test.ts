@@ -179,11 +179,10 @@ describe("captureArtLicence", () => {
   it("reads a local file with only DateTime and ObjectName as unlicensed, and takes a licence category", async () => {
     const title = "File:Theodora-CYG-GoN.jpg";
     const { query, calls } = fakeQuery({
-      imageinfo: imageinfo(
-        title,
-        `${mediaWikiOrigin()}/images/8/8c/Theodora-CYG-GoN.jpg`,
-        LOCAL_ONLY
-      ),
+      imageinfo: imageinfo(title, `${mediaWikiOrigin()}/images/8/8c/Theodora-CYG-GoN.jpg`, {
+        ...LOCAL_ONLY,
+        Artist: { value: '<a href="/wiki/User:Kerr">Kerr</a>' },
+      }),
       "categories|revisions": filePage(title, "A portrait.", [
         "Category:People",
         "Category:CC-BY-SA-4.0",
@@ -192,7 +191,36 @@ describe("captureArtLicence", () => {
     expect(await captureArtLicence(query, "ixwiki", "Theodora-CYG-GoN.jpg")).toMatchObject({
       status: "OPEN",
       licence: "CC-BY-SA-4.0",
-      attribution: "Theodora-CYG-GoN.jpg, CC-BY-SA-4.0, via IxWiki",
+      artist: "Kerr",
+      attribution: "Theodora-CYG-GoN.jpg by Kerr, CC-BY-SA-4.0, via IxWiki",
+    });
+    expect(calls).toEqual(["imageinfo", "categories|revisions"]);
+  });
+
+  it("takes a restricted hint over an open one that comes first", async () => {
+    const title = "File:Elm.png";
+    const { query } = fakeQuery({
+      imageinfo: imageinfo(title, "https://iiwiki.com/images/a/ab/Elm.png", []),
+      "categories|revisions": filePage(title, "{{cc-by-nc-4.0}}", ["Category:CC-BY-SA-4.0"]),
+    });
+    expect(await captureArtLicence(query, "iiwiki", "Elm.png")).toMatchObject({
+      status: "RESTRICTED",
+      licence: "cc-by-nc-4.0",
+    });
+  });
+
+  it("does not read a licence from a named parameter's free text", async () => {
+    const title = "File:Map scan.png";
+    const { query, calls } = fakeQuery({
+      imageinfo: imageinfo(title, "https://iiwiki.com/images/a/ab/Map_scan.png", []),
+      "categories|revisions": filePage(
+        title,
+        "{{Information|description=PD scan of a map|author=me}}"
+      ),
+    });
+    expect(await captureArtLicence(query, "iiwiki", "Map_scan.png")).toMatchObject({
+      status: "UNKNOWN",
+      licence: null,
     });
     expect(calls).toEqual(["imageinfo", "categories|revisions"]);
   });

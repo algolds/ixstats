@@ -1,21 +1,17 @@
 import { withBasePath } from "~/lib/base-path";
+import { ALTHISTORY_CDN_FILE, fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
+import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 
 /** An absolute URL on the wiki's own host; group 1 is the path. */
 const IXWIKI_URL = new RegExp(`^https?:\\/\\/${mediaWikiHostPattern()}\\/(.+)$`, "i");
 
 /**
- * A Fandom CDN file (`static.wikia.nocookie.net/<wiki>/images/a/ab/<file>/revision/latest?cb=`) of a wiki the media
- * proxy knows. It is fetched by name through that wiki's proxy, which resolves it with `imageinfo`.
- */
-const FANDOM_CDN_FILE =
-  /^https?:\/\/static\.wikia\.nocookie\.net\/(althistory)\/images\/[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i;
-
-/**
  * Converts a card artwork URL to use our proxy endpoint if needed.
  * Supports:
  * 1. NationStates images (proxied via /api/proxy-ns-image)
- * 2. Wiki images (ixwiki, iiwiki, althistory and AltHistory's Fandom CDN, through their media proxies)
+ * 2. Wiki images (ixwiki, iiwiki, althistory, AltHistory's Fandom CDN and Commons uploads, through their media
+ *    proxies; the CDN and Commons files by name, which the proxy resolves with `imageinfo`)
  * 3. Relative URLs (returns as-is, prepended with basePath)
  */
 export function proxyCardArtwork(artworkUrl: string | null | undefined): string {
@@ -29,12 +25,12 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
     return withBasePath(artworkUrl);
   }
 
-  const fandom = FANDOM_CDN_FILE.exec(artworkUrl);
-  if (fandom) {
-    return withBasePath(
-      `/api/mediawiki/${fandom[1].toLowerCase()}/wiki/Special:FilePath/${fandom[2]}`
-    );
-  }
+  const fandomFile = ALTHISTORY_CDN_FILE.exec(artworkUrl)?.[1];
+  if (fandomFile)
+    return withBasePath(`/api/mediawiki/althistory/wiki/Special:FilePath/${fandomFile}`);
+
+  const commonsFile = fileNameFromArtworkUrl(artworkUrl, "commons");
+  if (commonsFile) return proxiedFileUrl("commons", null, commonsFile);
 
   // Handle Wiki URLs
   const ixwikiMatch = artworkUrl.match(IXWIKI_URL);
@@ -52,7 +48,7 @@ export function proxyCardArtwork(artworkUrl: string | null | undefined): string 
     return withBasePath(`/api/mediawiki/althistory/${althistoryMatch[1]}`);
   }
 
-  // Handle NationStates & Wikimedia URLs (CORS / Same-Origin restricted)
+  // Handle NationStates & other Wikimedia URLs (CORS / Same-Origin restricted)
   if (artworkUrl.includes("nationstates.net") || artworkUrl.includes("wikimedia.org")) {
     const encodedUrl = encodeURIComponent(artworkUrl);
     return withBasePath(`/api/proxy-ns-image?url=${encodedUrl}`);

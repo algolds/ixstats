@@ -6,6 +6,8 @@ import {
   fileNameFromArtworkUrl,
   licenceTemplates,
 } from "~/lib/cards/art-licence";
+import type { CardWikiSource } from "~/lib/cards/card-sources";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 describe("classifyLicence", () => {
   it.each([
@@ -39,49 +41,108 @@ describe("classifyLicence", () => {
 });
 
 describe("licenceTemplates", () => {
-  it("reads every template name and parameter on a File page", () => {
+  it("reads every template name and its one-token positional parameters on a File page", () => {
     expect(
       licenceTemplates("== Licensing ==\n{{Fairuse}}\n{{self|cc-by-sa-4.0}}\n[[Category:People]]")
     ).toEqual(["Fairuse", "self", "cc-by-sa-4.0"]);
     expect(licenceTemplates("{{ PD-old | }}")).toEqual(["PD-old"]);
+    expect(licenceTemplates("{{self|GFDL|PD-self}}")).toEqual(["self", "GFDL", "PD-self"]);
     expect(licenceTemplates("")).toEqual([]);
+  });
+
+  it("never reads named parameters or free text", () => {
+    expect(licenceTemplates("{{Information|description=PD scan|author=NC}}")).toEqual([
+      "Information",
+    ]);
+    expect(licenceTemplates("{{en|PD scan}}")).toEqual(["en"]);
+    expect(licenceTemplates("{{Fairuse|Logo of ND Corp}}")).toEqual(["Fairuse"]);
   });
 });
 
 describe("fileNameFromArtworkUrl", () => {
-  it.each([
+  const FANDOM = "static.wikia.nocookie.net/althistory/images";
+
+  it.each<[string, CardWikiSource, string]>([
     [
-      "https://static.wikia.nocookie.net/althistory/images/d/df/0A3512348.jpeg/revision/latest?cb=20190116171422",
+      `https://${FANDOM}/d/df/0A3512348.jpeg/revision/latest?cb=20190116171422`,
+      "althistory",
       "0A3512348.jpeg",
     ],
     [
-      "https://static.wikia.nocookie.net/althistory/images/5/5c/Cristiano_Ronaldo_2018_%28cropped%29.jpg/revision/latest?cb=1",
+      `https://${FANDOM}/5/5c/Cristiano_Ronaldo_2018_%28cropped%29.jpg/revision/latest?cb=1`,
+      "althistory",
       "Cristiano_Ronaldo_2018_(cropped).jpg",
     ],
     [
+      "https://vignette.wikia.nocookie.net/althistory/images/a/ab/Elm.png/revision/latest?cb=1",
+      "althistory",
+      "Elm.png",
+    ],
+    [
+      "https://img1.wikia.nocookie.net/__cb20120101/althistory/images/a/ab/Elm.png",
+      "althistory",
+      "Elm.png",
+    ],
+    ["https://images.wikia.com/althistory/images/a/ab/Elm.png", "althistory", "Elm.png"],
+    ["https://althistory.fandom.com/images/a/ab/Elm.png", "althistory", "Elm.png"],
+    [
       "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg?utm_source=commons.wikimedia.org",
+      "commons",
       "Flag_of_Ireland.svg",
     ],
     [
       "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/320px-Flag_of_Ireland.svg.png",
+      "commons",
       "Flag_of_Ireland.svg",
     ],
-    ["https://ixwiki.com/images/1/16/%22HMPH%21%22_Original.png", '"HMPH!"_Original.png'],
-    ["https://iiwiki.com/images/thumb/a/ab/Elm.png/300px-Elm.png", "Elm.png"],
-    ["/api/wiki/file/Caphiria_flag.svg", "Caphiria_flag.svg"],
-    ["https://iiwiki.com/images/a/ab/100%25_Bad.png", "100%_Bad.png"],
-    ["https://iiwiki.com/images/a/ab/Broken%E0%A4%A.png", "Broken%E0%A4%A.png"],
-  ])("%s names %s", (url, name) => {
-    expect(fileNameFromArtworkUrl(url)).toBe(name);
+    // IxWiki shows Commons files through InstantCommons.
+    [
+      "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg",
+      "ixwiki",
+      "Flag_of_Ireland.svg",
+    ],
+    [
+      `${mediaWikiOrigin()}/images/1/16/%22HMPH%21%22_Original.png`,
+      "ixwiki",
+      '"HMPH!"_Original.png',
+    ],
+    ["https://iiwiki.com/images/thumb/a/ab/Elm.png/300px-Elm.png", "iiwiki", "Elm.png"],
+    ["/api/wiki/file/Caphiria_flag.svg", "ixwiki", "Caphiria_flag.svg"],
+    ["https://iiwiki.com/images/a/ab/100%25_Bad.png", "iiwiki", "100%_Bad.png"],
+    ["https://iiwiki.com/images/a/ab/Broken%E0%A4%A.png", "iiwiki", "Broken%E0%A4%A.png"],
+  ])("%s names %s's %s", (url, source, name) => {
+    expect(fileNameFromArtworkUrl(url, source)).toBe(name);
   });
 
-  it("is null for art that names no wiki file", () => {
-    expect(
-      fileNameFromArtworkUrl("https://www.nationstates.net/images/cards/s3/ab.jpg")
-    ).toBeNull();
-    expect(fileNameFromArtworkUrl(null)).toBeNull();
-    expect(fileNameFromArtworkUrl(undefined)).toBeNull();
-    expect(fileNameFromArtworkUrl("")).toBeNull();
+  it.each<[string, CardWikiSource]>([
+    // Another host's art never names a source wiki's same-named file.
+    ["https://evil.example/images/a/ab/X.png", "iiwiki"],
+    ["https://evil.example/images/a/ab/X.png", "ixwiki"],
+    ["https://iiwiki.com.evil.example/images/a/ab/X.png", "iiwiki"],
+    ["https://iiwiki.com/images/a/ab/X.png", "althistory"],
+    [`${mediaWikiOrigin()}/images/1/16/X.png`, "iiwiki"],
+    ["https://upload.wikimedia.org/wikipedia/commons/4/45/X.svg", "iiwiki"],
+    ["https://upload.wikimedia.org/wikipedia/en/4/45/X.svg", "commons"],
+    // Another Fandom wiki's file (and AltHistory's German wiki is another wiki).
+    ["https://static.wikia.nocookie.net/starwars/images/a/ab/X.png", "althistory"],
+    [
+      "https://static.wikia.nocookie.net/althistory/de/images/a/ab/X.png/revision/latest",
+      "althistory",
+    ],
+    [`https://${FANDOM}/a/ab/X.png/revision/latest`, "iiwiki"],
+    ["/api/wiki/file/X.svg", "commons"],
+    ["/images/cards/lore-placeholder.svg", "ixwiki"],
+    ["ftp://iiwiki.com/images/a/ab/X.png", "iiwiki"],
+    ["https://www.nationstates.net/images/cards/s3/ab.jpg", "ixwiki"],
+    ["not a url", "ixwiki"],
+  ])("%s names no %s file", (url, source) => {
+    expect(fileNameFromArtworkUrl(url, source)).toBeNull();
+  });
+
+  it("is null without a URL", () => {
+    expect(fileNameFromArtworkUrl(null, "ixwiki")).toBeNull();
+    expect(fileNameFromArtworkUrl(undefined, "ixwiki")).toBeNull();
+    expect(fileNameFromArtworkUrl("", "ixwiki")).toBeNull();
   });
 });
 

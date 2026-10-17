@@ -6,34 +6,18 @@
  */
 import { z } from "zod";
 import { withBasePath } from "~/lib/base-path";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
-import {
-  sisterWikiFileHosts,
-  SISTER_WIKI_HOSTS,
-  type SisterWikiId,
-} from "~/lib/wiki-os/wiki-hosts";
+import { wikiFileHosts, type FileWiki } from "~/lib/wiki-os/media-hosts";
+import { SISTER_WIKI_HOSTS, type SisterWikiId } from "~/lib/wiki-os/wiki-hosts";
 import { normalizeWikiTitle } from "~/lib/realms/realm-wiki-settings";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 
-/** A wiki whose files can be read: IxWiki or any sister wiki (Commons included). */
-export type FileWiki = "ixwiki" | SisterWikiId;
+export type { FileWiki } from "~/lib/wiki-os/media-hosts";
 
 /** Where Commons serves its files. IxWiki shows Commons files too (InstantCommons), from these hosts. */
-const COMMONS_FILE_HOSTS = sisterWikiFileHosts(SISTER_WIKI_HOSTS.commons);
+const COMMONS_FILE_HOSTS = wikiFileHosts("commons");
 
-/** A file wiki's name and the hosts its file URLs may point at. */
-function fileWiki(source: FileWiki): { name: string; hosts: Set<string> } {
-  if (source === "ixwiki") {
-    return {
-      name: "IxWiki",
-      hosts: new Set([new URL(mediaWikiOrigin()).hostname, ...COMMONS_FILE_HOSTS]),
-    };
-  }
-  return {
-    name: SISTER_WIKI_HOSTS[source].name,
-    hosts: new Set(sisterWikiFileHosts(SISTER_WIKI_HOSTS[source])),
-  };
-}
+const fileWikiName = (source: FileWiki): string =>
+  source === "ixwiki" ? "IxWiki" : SISTER_WIKI_HOSTS[source].name;
 
 export interface WikiFileInfo {
   /** "File:Eurth political map.png" */
@@ -142,19 +126,22 @@ function httpsUrl(value: string | null | undefined): string | null {
  */
 function servedFile(
   source: FileWiki,
-  hosts: Set<string>,
+  hosts: ReadonlySet<string>,
   value: string
 ): { url: string; holder: FileWiki } | null {
   const https = httpsUrl(value);
   if (!https) return null;
   const url = new URL(https);
   if (!hosts.has(url.hostname)) return null;
-  // Commons adds a tracking query (`?utm_source=...`), which is not part of the file.
-  const tracking = [...url.searchParams.keys()].filter((key) => key.startsWith("utm_"));
-  for (const key of tracking) url.searchParams.delete(key);
+  // Commons adds a tracking query (`?utm_source=...`), which is not part of the file. The rest stays byte for byte.
+  url.search = url.search
+    .slice(1)
+    .split("&")
+    .filter((pair) => !pair.startsWith("utm_"))
+    .join("&");
   return {
     url: url.toString(),
-    holder: COMMONS_FILE_HOSTS.includes(url.hostname) ? "commons" : source,
+    holder: COMMONS_FILE_HOSTS.has(url.hostname) ? "commons" : source,
   };
 }
 
@@ -196,7 +183,7 @@ export function attributionLine(
   if (meta.attribution) return meta.attribution;
   const name = fileTitle.replace(/^File:/, "");
   const parts = [meta.artist ? `${name} by ${meta.artist}` : name, meta.licence].filter(Boolean);
-  return `${parts.join(", ")}, via ${fileWiki(source).name}`;
+  return `${parts.join(", ")}, via ${fileWikiName(source)}`;
 }
 
 /** The files of an imageinfo response, by their (normalized) title. Missing files and bad URLs are left out. */
@@ -205,7 +192,7 @@ export function parseImageInfo(
   data: ImageInfoResponse
 ): Map<string, WikiFileInfo> {
   const files = new Map<string, WikiFileInfo>();
-  const { hosts } = fileWiki(source);
+  const hosts = wikiFileHosts(source);
   for (const page of data.query?.pages ?? []) {
     const info = page.imageinfo?.[0];
     if ((page.missing && !page.known) || page.invalid || !info) continue;
