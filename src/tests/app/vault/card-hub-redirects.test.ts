@@ -5,7 +5,7 @@
  * boundary, so the old pages are gone.
  */
 import { existsSync } from "node:fs";
-import { beforeAll, describe, expect, it } from "@jest/globals";
+import { afterAll, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { NextRequest, type NextFetchEvent } from "next/server";
 
 type Middleware = (req: NextRequest, event: NextFetchEvent) => Promise<Response>;
@@ -16,7 +16,13 @@ beforeAll(async () => {
   delete process.env.CLERK_SECRET_KEY;
   delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   delete process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
-  middleware = (await import("~/proxy")).default as unknown as Middleware;
+  // The first request to pass through says Clerk is not configured.
+  jest.spyOn(console, "log").mockImplementation(() => {});
+  middleware = (await import("~/proxy")).default as Middleware;
+});
+
+afterAll(() => {
+  jest.restoreAllMocks();
 });
 
 const BASE_PATH = "/projects/ixstates";
@@ -62,9 +68,17 @@ describe("proxy: old card addresses", () => {
   });
 
   it("still refuses a spoofed internal header before redirecting", async () => {
-    const res = await run("/vault/inventory", { headers: { "x-middleware-subrequest": "1" } });
-    expect(res.status).toBe(403);
-    expect(locationOf(res)).toBeNull();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const res = await run("/vault/inventory", { headers: { "x-middleware-subrequest": "1" } });
+      expect(res.status).toBe(403);
+      expect(locationOf(res)).toBeNull();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("[Security] Blocked spoofed x-middleware-subrequest header")
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

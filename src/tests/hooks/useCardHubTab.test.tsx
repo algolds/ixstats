@@ -31,6 +31,26 @@ describe("useCardHubTab", () => {
     expect(result.current.tab).toBe("sets");
   });
 
+  it("starts on the address's tab when a Back restores another tab's page there", () => {
+    // Back across a soft navigation can restore Mine's page tree at the Market's address.
+    mockPathname = "/vault/cards/market";
+    const seen: string[] = [];
+    renderHook(() => {
+      const hub = useCardHubTab("mine");
+      seen.push(hub.tab);
+      return hub;
+    });
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((tab) => tab === "market")).toBe(true);
+  });
+
+  it("starts on the page's tab when the address names none", () => {
+    mockPathname = null;
+    expect(renderHook(() => useCardHubTab("sets")).result.current.tab).toBe("sets");
+    mockPathname = "/vault";
+    expect(renderHook(() => useCardHubTab("explore")).result.current.tab).toBe("explore");
+  });
+
   it("switches tabs in place, writing the tab's own address, title and scroll", () => {
     const { result } = renderHook(() => useCardHubTab("mine"));
     act(() => result.current.navigate("market"));
@@ -56,6 +76,25 @@ describe("useCardHubTab", () => {
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(result.current.tab).toBe("mine");
+  });
+
+  it("names the page after the tab on screen on Back and Forward too", () => {
+    const { result } = renderHook(() => useCardHubTab("mine"));
+    act(() => result.current.navigate("market"));
+    expect(document.title).toBe("Market · Cards - IxStates");
+    act(() => {
+      window.history.replaceState(null, "", "/vault/cards/mine");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(result.current.tab).toBe("mine");
+    expect(document.title).toBe("Mine · Cards - IxStates");
+  });
+
+  it("names the page after the tab a link re-syncs it to", () => {
+    const { rerender } = renderHook(() => useCardHubTab("mine"));
+    mockPathname = "/vault/cards/sets";
+    rerender();
+    expect(document.title).toBe("Sets · Cards - IxStates");
   });
 
   it("keeps its tab when back leaves the hub's four addresses", () => {

@@ -130,6 +130,16 @@ describe("CardsHub", () => {
     expect(search()).toBe("?card=c3");
   });
 
+  it("keeps the address's fragment when it rewrites the query", () => {
+    at("/vault/cards/sets#binders");
+    render(<CardsHub initialTab="sets" />);
+    spyOnHistory();
+    act(() => lastProps(SetsPane).onShowcaseChange("s2"));
+    expect(pushState).toHaveBeenCalledWith(null, "", "/vault/cards/sets?showcase=s2#binders");
+    act(() => lastProps(SetsPane).onShowcaseChange(null));
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/vault/cards/sets#binders");
+  });
+
   it("gives Sets no showcase when the address has none", () => {
     at("/vault/cards/sets");
     render(<CardsHub initialTab="sets" />);
