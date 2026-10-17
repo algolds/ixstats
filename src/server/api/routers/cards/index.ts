@@ -6,10 +6,11 @@
  *
  * Domains:
  *  - inventory:   user inventory, the card library and its NationStates stats
- *  - collections: collection CRUD + wiki article excerpt lookup
+ *  - collections: collection CRUD
  *  - suggestions: free lore card suggestions
  *  - mine:        the caller's copies (the hub's Mine tab)
  *  - explore:     realm shelves, the catalogue grid, regions
+ *  - sheet:       the card sheet and the wiki excerpt
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -18,6 +19,7 @@ import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsMineRouter } from "./mine";
 import { cardsExploreRouter } from "./explore";
+import { cardsSheetRouter } from "./sheet";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -26,5 +28,6 @@ export const cardsRouter = mergeRouters(
   cardsSuggestionsRouter,
   cardsMineRouter,
   cardsExploreRouter,
+  cardsSheetRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );
