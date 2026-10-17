@@ -69,13 +69,17 @@ export async function POST(request: Request) {
       runnerUpBytes: toNumberOrNull(payload.runnerUpBytes),
     };
     const rest = { status, metadata: metadata ? String(metadata) : null };
-    const where = { date_type: { date, type } };
-    // An entry an admin override wrote keeps its places (cards refresh §2.4); the bot still updates the rest
-    const stored = await db.lorewardEntry.findUnique({ where, select: { overriddenAt: true } });
+    // An entry an admin override wrote keeps its places and its status, so a status that withholds a contest stays;
+    // the bot still updates its metadata. The override is checked in the write itself, so one that commits while
+    // this runs is never written over.
+    await db.lorewardEntry.updateMany({
+      where: { date, type, overriddenAt: null },
+      data: { ...places, status },
+    });
     const entry = await db.lorewardEntry.upsert({
-      where,
+      where: { date_type: { date, type } },
       create: { date, type, ...places, ...rest },
-      update: { ...(stored?.overriddenAt ? {} : places), ...rest, syncedAt: new Date() },
+      update: { metadata: rest.metadata, syncedAt: new Date() },
     });
 
     if (winnerUser) await recomputeUserStats(winnerUser);

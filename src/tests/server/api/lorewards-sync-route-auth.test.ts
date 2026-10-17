@@ -13,6 +13,7 @@ jest.mock("~/lib/cache", () => ({ invalidateCache: jest.fn() }));
 
 import { describe, expect, it, beforeAll } from "@jest/globals";
 import { NextRequest } from "next/server";
+import { entryStore, storedEntry, type StoredEntry } from "~/tests/helpers/loreward-entry-store";
 
 const SECRET = "cron-s3cret";
 
@@ -98,17 +99,17 @@ describe("/api/bot/lorewards/sync", () => {
 describe("/api/bot/lorewards/sync over an admin override", () => {
   let POST: (req: Request) => Promise<Response>;
   const { db } = jest.requireMock<{ db: { lorewardEntry?: object } }>("~/server/db");
-  const upsert = jest.fn(async (_args: object) => ({ id: "e1" }));
+  const OVERRIDDEN = new Date("2026-10-17T12:00:00.000Z");
+  let store: ReturnType<typeof entryStore>;
   beforeAll(async () => {
     process.env.BOT_API_KEY = "bot-s3cret";
     ({ POST } = await import("~/app/api/bot/lorewards/sync/route"));
   });
 
-  /** The bot pushes the daily of 16 October, naming Amy and Bee, onto an entry stored with `overriddenAt`. */
-  async function push(overriddenAt: Date | null) {
-    const findUnique = jest.fn(async (_args: object) => (overriddenAt ? { overriddenAt } : null));
-    upsert.mockClear();
-    db.lorewardEntry = { findUnique, upsert };
+  /** The bot pushes the daily of 16 October, naming Amy and Bee, onto the `rows` stored. */
+  async function push(rows: StoredEntry[]) {
+    store = entryStore(rows);
+    db.lorewardEntry = store;
     const res = await POST(
       new Request("http://localhost/api/bot/lorewards/sync", {
         method: "POST",
@@ -125,35 +126,73 @@ describe("/api/bot/lorewards/sync over an admin override", () => {
       })
     );
     expect(res.status).toBe(200);
-    expect(findUnique).toHaveBeenCalledWith({
-      where: { date_type: { date: "2026-10-16", type: "daily" } },
-      select: { overriddenAt: true },
-    });
-    return upsert.mock.calls[0]![0];
+    return rows;
   }
 
-  const places = {
-    winnerUser: "Amy",
-    winnerPage: "Amy's page",
-    winnerScore: 90,
-    winnerBytes: null,
-    runnerUpUser: "Bee",
-    runnerUpPage: null,
-    runnerUpScore: null,
-    runnerUpBytes: null,
-  };
+  /** The daily of 16 October as an override left it: Cy and Dee, withheld, marked. */
+  const overridden = storedEntry({
+    id: "d1",
+    winnerUser: "Cy",
+    winnerPage: "Cy's page",
+    runnerUpUser: "Dee",
+    status: "withheld",
+    overriddenAt: OVERRIDDEN,
+  });
 
-  it("keeps the places of an entry an override wrote, and still writes the rest", async () => {
-    expect(await push(new Date("2026-10-17T12:00:00.000Z"))).toEqual({
-      where: { date_type: { date: "2026-10-16", type: "daily" } },
-      create: { date: "2026-10-16", type: "daily", ...places, status: "approved", metadata: "[]" },
-      update: { status: "approved", metadata: "[]", syncedAt: expect.any(Date) },
+  it("keeps the places and the status of an entry an override wrote: only its metadata and syncedAt update", async () => {
+    const [row] = await push([{ ...overridden }]);
+
+    expect(row).toMatchObject({
+      winnerUser: "Cy",
+      winnerPage: "Cy's page",
+      runnerUpUser: "Dee",
+      status: "withheld",
+      overriddenAt: OVERRIDDEN,
+      metadata: "[]",
+      syncedAt: expect.any(Date),
     });
   });
 
-  it("writes the places of an entry no override wrote", async () => {
-    expect(await push(null)).toMatchObject({
-      update: { ...places, status: "approved", metadata: "[]" },
+  it("checks for the override in the write itself, so one that commits meanwhile is never written over", async () => {
+    await push([{ ...overridden }]);
+
+    expect(store.updateMany).toHaveBeenCalledWith({
+      where: { date: "2026-10-16", type: "daily", overriddenAt: null },
+      data: expect.objectContaining({ winnerUser: "Amy", status: "approved" }),
     });
+    expect(store.upsert.mock.calls[0]![0].update).toEqual({
+      metadata: "[]",
+      syncedAt: expect.any(Date),
+    });
+  });
+
+  it("writes the places and the status of an entry no override wrote", async () => {
+    const [row] = await push([{ ...overridden, overriddenAt: null }]);
+
+    expect(row).toMatchObject({
+      winnerUser: "Amy",
+      winnerPage: "Amy's page",
+      winnerScore: 90,
+      runnerUpUser: "Bee",
+      runnerUpPage: null,
+      status: "approved",
+      metadata: "[]",
+    });
+  });
+
+  it("creates an entry the bot pushes first, with everything", async () => {
+    const rows = await push([]);
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2026-10-16",
+        type: "daily",
+        winnerUser: "Amy",
+        runnerUpUser: "Bee",
+        status: "approved",
+        metadata: "[]",
+        overriddenAt: null,
+      }),
+    ]);
   });
 });
