@@ -1,4 +1,4 @@
-/** Plan 331: per-card advisory lock taken before max(serial) is read. */
+/** Plan 331: per-card advisory lock taken before max(serial) is read; a removed copy's serial is never reissued. */
 
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 
@@ -6,6 +6,7 @@ function makeTx() {
   return {
     $executeRaw: jest.fn().mockResolvedValue(1),
     cardOwnership: { findFirst: jest.fn() },
+    cardTransferEvent: { findFirst: jest.fn() },
   };
 }
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
@@ -39,6 +40,22 @@ describe("allocateSerialNumberTx", () => {
       orderBy: { serialNumber: "desc" },
       select: { serialNumber: true },
     });
+  });
+
+  it("counts the serials in the card's trail, so a removed copy's serial is never issued again", async () => {
+    const tx = makeTx();
+    tx.cardOwnership.findFirst.mockResolvedValue({ serialNumber: 4 });
+    tx.cardTransferEvent.findFirst.mockResolvedValue({ serialNumber: 7 });
+
+    await expect(allocateSerialNumberTx(asTx(tx), "card_1")).resolves.toBe(8);
+    expect(tx.cardTransferEvent.findFirst).toHaveBeenCalledWith({
+      where: { cardId: "card_1", serialNumber: { not: null } },
+      orderBy: { serialNumber: "desc" },
+      select: { serialNumber: true },
+    });
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.cardTransferEvent.findFirst.mock.invocationCallOrder[0]
+    );
   });
 
   it("returns 1 when the card has no ownership rows yet", async () => {

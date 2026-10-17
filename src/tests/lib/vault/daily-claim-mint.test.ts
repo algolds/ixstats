@@ -50,7 +50,13 @@ it("mints a standard copy with a DAILY_CLAIM mint row and grants it XP", async (
     data: { cardId: "card_1", ownerId: "user_1", serialNumber: 5, finish: "STANDARD" },
   });
   expect(db.cardTransferEvent.create).toHaveBeenCalledWith({
-    data: { ownershipId: "co_1", toUserId: "user_1", action: "DAILY_CLAIM" },
+    data: {
+      ownershipId: "co_1",
+      cardId: "card_1",
+      serialNumber: 5,
+      toUserId: "user_1",
+      action: "DAILY_CLAIM",
+    },
   });
   expect(grantCardXp).toHaveBeenCalledWith(
     db,

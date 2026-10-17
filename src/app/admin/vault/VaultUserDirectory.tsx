@@ -24,13 +24,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { ValueSelect } from "~/components/ui/value-select";
 import {
   SystemRestart as Loader2,
@@ -51,6 +44,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { PlayerCardsSheet, type PlayerRef } from "./PlayerCardsSheet";
 
 export function VaultUserDirectory() {
   const notify = useNotify();
@@ -71,7 +65,6 @@ export function VaultUserDirectory() {
 
   // Dialog open states
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
-  const [isPackOpen, setIsPackOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isStreakOpen, setIsStreakOpen] = useState(false);
   const [isCosmeticsOpen, setIsCosmeticsOpen] = useState(false);
@@ -83,11 +76,9 @@ export function VaultUserDirectory() {
   const [adjustReason, setAdjustReason] = useState("");
   const [adjustNotify, setAdjustNotify] = useState(true);
 
-  // Pack award state
-  const [selectedPackId, setSelectedPackId] = useState("");
-  const [packMethod, setPackMethod] = useState("ADMIN_AWARD");
-  const [packNotify, setPackNotify] = useState(true);
   const [streakDelta, setStreakDelta] = useState(0);
+  // The player whose cards and packs the sheet shows
+  const [cardsPlayer, setCardsPlayer] = useState<PlayerRef | null>(null);
 
   // tRPC Queries
   const {
@@ -103,8 +94,6 @@ export function VaultUserDirectory() {
     { placeholderData: (prev) => prev }
   );
 
-  const { data: packsData } = api.cardPacks.getAllPacks.useQuery();
-
   // tRPC Mutations
   const adjustMutation = api.vault.adminAdjustCredits.useMutation({
     onSuccess: (data) => {
@@ -115,18 +104,6 @@ export function VaultUserDirectory() {
     },
     onError: (error) => {
       notify.error("Error", error.message || "Failed to adjust credits");
-    },
-  });
-
-  const awardPackMutation = api.cardPacks.adminAwardPack.useMutation({
-    onSuccess: (data) => {
-      notify.success("Success", data.message || "Pack awarded successfully");
-      setIsPackOpen(false);
-      resetPackForm();
-      refetchVaults();
-    },
-    onError: (error) => {
-      notify.error("Error", error.message || "Failed to award pack");
     },
   });
 
@@ -198,12 +175,6 @@ export function VaultUserDirectory() {
     setAdjustNotify(true);
   };
 
-  const resetPackForm = () => {
-    setSelectedPackId("");
-    setPackMethod("ADMIN_AWARD");
-    setPackNotify(true);
-  };
-
   // Handlers
   const openDialogFor = (user: any, open: () => void) => {
     setSelectedUser({
@@ -216,7 +187,6 @@ export function VaultUserDirectory() {
     open();
   };
   const handleOpenAdjust = (user: any) => openDialogFor(user, () => setIsAdjustOpen(true));
-  const handleOpenPack = (user: any) => openDialogFor(user, () => setIsPackOpen(true));
   const handleOpenCosmetics = (user: any) => openDialogFor(user, () => setIsCosmeticsOpen(true));
 
   const handleAdjustSubmit = (e: React.FormEvent) => {
@@ -241,21 +211,6 @@ export function VaultUserDirectory() {
       source: adjustSource,
       reason: adjustReason,
       sendNotification: adjustNotify,
-    });
-  };
-
-  const handlePackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser || !selectedPackId) {
-      notify.error("Validation Error", "Please select a pack to award.");
-      return;
-    }
-
-    awardPackMutation.mutate({
-      targetUserId: selectedUser.id,
-      packId: selectedPackId,
-      acquiredMethod: packMethod,
-      sendNotification: packNotify,
     });
   };
 
@@ -387,11 +342,16 @@ export function VaultUserDirectory() {
                   <span>Adjust credits</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => handleOpenPack(user)}
+                  onClick={() =>
+                    setCardsPlayer({
+                      id: user.id,
+                      displayName: user.country?.name ?? user.wikiUsername ?? user.clerkUserId,
+                    })
+                  }
                   className="cursor-pointer gap-2 py-2"
                 >
                   <Gift className="text-blue h-3.5 w-3.5" />
-                  <span>Award card pack</span>
+                  <span>Cards and packs</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenCosmetics(user)}
@@ -685,92 +645,10 @@ export function VaultUserDirectory() {
         </SheetContent>
       </Sheet>
 
-      <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">Award card pack</DialogTitle>
-          </DialogHeader>
-
-          {selectedUser && (
-            <form onSubmit={handlePackSubmit} className="space-y-4 py-2">
-              <div className="bg-fill-4 border-separator rounded-control border p-3">
-                <div className="text-label-secondary text-footnote">Recipient user</div>
-                <div className="mt-0.5 flex items-center gap-2">
-                  {selectedUser.country?.flag && (
-                    <img
-                      src={selectedUser.country.flag}
-                      alt=""
-                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
-                    />
-                  )}
-                  <div className="text-label text-headline truncate">
-                    {selectedUser.displayName}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pack-select">Select card pack template</Label>
-                <Select value={selectedPackId} onValueChange={setSelectedPackId}>
-                  <SelectTrigger id="pack-select">
-                    <SelectValue placeholder="Choose a pack configurations..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {packsData?.packs?.map((pack: any) => (
-                      <SelectItem key={pack.id} value={pack.id}>
-                        {pack.name} ({pack.cardCount} cards, {pack.packType})
-                      </SelectItem>
-                    ))}
-                    {!packsData?.packs ||
-                      (packsData.packs.length === 0 && (
-                        <SelectItem value="none" disabled>
-                          No packs available
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pack-method">Acquired method</Label>
-                <Input
-                  id="pack-method"
-                  type="text"
-                  value={packMethod}
-                  onChange={(e) => setPackMethod(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-label text-caption">Send alert notification</span>
-                  <span className="text-label-secondary text-footnote">
-                    Notify user they received a new pack configuration.
-                  </span>
-                </div>
-                <Switch checked={packNotify} onCheckedChange={setPackNotify} />
-              </div>
-
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" onClick={() => setIsPackOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={awardPackMutation.isPending}>
-                  {awardPackMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Awarding...
-                    </>
-                  ) : (
-                    "Award Pack"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PlayerCardsSheet
+        player={cardsPlayer}
+        onOpenChange={(open) => !open && setCardsPlayer(null)}
+      />
 
       <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
         <DialogContent className="max-w-lg">

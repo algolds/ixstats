@@ -15,6 +15,7 @@ export const MINT_SOURCES = [
   "ACHIEVEMENT",
   "TROPHY",
   "SPORTS",
+  "ADMIN",
 ] as const;
 export type MintSource = (typeof MINT_SOURCES)[number];
 
@@ -45,16 +46,24 @@ export async function mintCopy(
       finish: input.finish,
     },
   });
+  // The card and serial ride on the row so the trail, and the serial's high-water mark, outlive the copy
   await tx.cardTransferEvent.create({
-    data: { ownershipId: copy.id, toUserId: input.ownerId, action: input.source },
+    data: {
+      ownershipId: copy.id,
+      cardId: input.cardId,
+      serialNumber,
+      toUserId: input.ownerId,
+      action: input.source,
+    },
   });
   return copy;
 }
 
-/** Serials are never reused, so the next serial past the run size means the run is minted out. */
+/** A Serialised copy whose serial passes the card's run size (`totalSupply`) is refused; no run size, no limit. */
 async function assertRunOpen(tx: Prisma.TransactionClient, cardId: string, serialNumber: number) {
   const card = await tx.card.findUnique({ where: { id: cardId }, select: { totalSupply: true } });
-  if (card?.totalSupply != null && serialNumber > card.totalSupply) {
+  // Lore cards store 0 for "unlimited", so only a positive totalSupply is a run size
+  if (card?.totalSupply && serialNumber > card.totalSupply) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
       message: "Every copy of this card's run has been minted",

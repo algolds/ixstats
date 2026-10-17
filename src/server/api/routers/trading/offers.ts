@@ -6,27 +6,17 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { assertNoBoundCopies } from "~/lib/cards/bound";
-import { globalCache } from "~/lib/cache";
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  recordTradeTransfersTx,
   TradeStatus,
   transferCardsTx,
   transferCreditsTx,
   unlockCardsTx,
 } from "~/lib/vault/trade-settlement";
+import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
-
-/** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
-async function clearVaultCaches(...users: Array<{ id: string; clerkUserId?: string | null }>) {
-  await Promise.all(
-    users.flatMap((user) => [
-      globalCache.delete(`user_vault_stats:${user.id}`),
-      globalCache.delete(`user_vault_balance:${user.id}`),
-      ...(user.clerkUserId ? [globalCache.delete(`user_vault_balance:${user.clerkUserId}`)] : []),
-    ])
-  );
-}
 
 const createtradeOfferSchema = z.object({
   recipientId: z.string().min(1, "Recipient ID is required"),
@@ -378,40 +368,34 @@ export const tradingOffersRouter = createTRPCRouter({
         // Grant 25 XP per card traded to recipient and log transfer
         for (const ownershipId of initiatorCardIds) {
           await grantCardXp(
-            tx as any,
+            tx,
             ownershipId,
             25,
             "TRADE",
             JSON.stringify({ tradeId: input.tradeId })
           );
-          await (tx as any).cardTransferEvent.create({
-            data: {
-              ownershipId,
-              fromUserId: trade.initiatorId,
-              toUserId: trade.recipientId,
-              action: "TRADE",
-            },
-          });
         }
+        await recordTradeTransfersTx(tx, {
+          ids: initiatorCardIds,
+          fromId: trade.initiatorId,
+          toId: trade.recipientId,
+        });
 
         // Grant 25 XP per card traded to initiator and log transfer
         for (const ownershipId of recipientCardIds) {
           await grantCardXp(
-            tx as any,
+            tx,
             ownershipId,
             25,
             "TRADE",
             JSON.stringify({ tradeId: input.tradeId })
           );
-          await (tx as any).cardTransferEvent.create({
-            data: {
-              ownershipId,
-              fromUserId: trade.recipientId,
-              toUserId: trade.initiatorId,
-              action: "TRADE",
-            },
-          });
         }
+        await recordTradeTransfersTx(tx, {
+          ids: recipientCardIds,
+          fromId: trade.recipientId,
+          toId: trade.initiatorId,
+        });
 
         // Transfer credits (guarded debit + ledger rows for both sides; no-op when 0)
         await transferCreditsTx(tx, {

@@ -1,5 +1,5 @@
 /** The cards admin Overview (cards refresh spec §2.4): counts, what waits on an admin, and a card-only feed. */
-import type { CardImportJob, PrismaClient, SyncLog } from "@prisma/client";
+import type { CardImportJob, Prisma, PrismaClient, SyncLog } from "@prisma/client";
 import { CardRarity } from "~/lib/cards/enums";
 import { CARD_FEED_ACTIONS, type CardAuditAction } from "./cards.audit";
 
@@ -186,10 +186,26 @@ export function realmOptions(db: PrismaClient) {
   });
 }
 
-/** Up to 10 cards whose title contains `query`, for the admin's card pickers. */
-export function findCards(db: PrismaClient, query: string) {
+/**
+ * The cards an admin may grant, as packs and the daily card would draw them: approved by review and not retired. A
+ * trophy moves only with its Loreward, so it is never one.
+ */
+const GRANTABLE_CARDS = {
+  reviewState: "APPROVED",
+  isRetired: false,
+  cardType: { not: "TROPHY" },
+} satisfies Prisma.CardWhereInput;
+
+/**
+ * Up to 10 cards whose title contains `query`, for the admin's card pickers. `grantable` keeps only cards a grant
+ * accepts; without it every card matches, whatever its review state (a takedown can name any card).
+ */
+export function findCards(db: PrismaClient, query: string, options: { grantable?: boolean } = {}) {
   return db.card.findMany({
-    where: { title: { contains: query.trim(), mode: "insensitive" } },
+    where: {
+      title: { contains: query.trim(), mode: "insensitive" },
+      ...(options.grantable ? GRANTABLE_CARDS : {}),
+    },
     orderBy: { title: "asc" },
     take: 10,
     select: { id: true, title: true, cardType: true, rarity: true },

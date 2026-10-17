@@ -84,6 +84,31 @@ export async function transferCardsTx(
 }
 
 /**
+ * The trade's row in each moved copy's provenance trail, stamped with the card and serial so the row outlives the
+ * copy. Call after `transferCardsTx` has moved the copies.
+ */
+export async function recordTradeTransfersTx(
+  tx: Tx,
+  args: { ids: string[]; fromId: string; toId: string }
+): Promise<void> {
+  if (args.ids.length === 0) return;
+  const copies = await tx.cardOwnership.findMany({
+    where: { id: { in: args.ids } },
+    select: { id: true, cardId: true, serialNumber: true },
+  });
+  await tx.cardTransferEvent.createMany({
+    data: copies.map((copy) => ({
+      ownershipId: copy.id,
+      cardId: copy.cardId,
+      serialNumber: copy.serialNumber,
+      fromUserId: args.fromId,
+      toUserId: args.toId,
+      action: "TRADE",
+    })),
+  });
+}
+
+/**
  * Guarded credit transfer + ledger rows for both sides. No-op when `amount <= 0`.
  * The debit is compare-and-swap guarded by the ledger; a ledger failure becomes a
  * BAD_REQUEST so the surrounding transaction rolls back with a client-safe error.

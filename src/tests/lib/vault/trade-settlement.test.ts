@@ -13,6 +13,7 @@ import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-le
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  recordTradeTransfersTx,
   TradeStatus,
   transferCardsTx,
   transferCreditsTx,
@@ -142,6 +143,63 @@ describe("transferCardsTx", () => {
       ownerId: "from_1",
       isLocked: true,
     });
+  });
+});
+
+describe("recordTradeTransfersTx", () => {
+  it("writes one TRADE row per moved copy, stamped with its card and serial", async () => {
+    const tx = {
+      cardOwnership: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: "c1", cardId: "card_a", serialNumber: 4 },
+          { id: "c2", cardId: "card_b", serialNumber: 9 },
+        ]),
+      },
+      cardTransferEvent: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
+    };
+
+    await recordTradeTransfersTx(tx as never, {
+      ids: ["c1", "c2"],
+      fromId: "from_1",
+      toId: "to_1",
+    });
+
+    expect(tx.cardOwnership.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["c1", "c2"] } },
+      select: { id: true, cardId: true, serialNumber: true },
+    });
+    expect(tx.cardTransferEvent.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          ownershipId: "c1",
+          cardId: "card_a",
+          serialNumber: 4,
+          fromUserId: "from_1",
+          toUserId: "to_1",
+          action: "TRADE",
+        },
+        {
+          ownershipId: "c2",
+          cardId: "card_b",
+          serialNumber: 9,
+          fromUserId: "from_1",
+          toUserId: "to_1",
+          action: "TRADE",
+        },
+      ],
+    });
+  });
+
+  it("writes nothing for a side that gave no cards", async () => {
+    const tx = {
+      cardOwnership: { findMany: jest.fn() },
+      cardTransferEvent: { createMany: jest.fn() },
+    };
+
+    await recordTradeTransfersTx(tx as never, { ids: [], fromId: "from_1", toId: "to_1" });
+
+    expect(tx.cardOwnership.findMany).not.toHaveBeenCalled();
+    expect(tx.cardTransferEvent.createMany).not.toHaveBeenCalled();
   });
 });
 
