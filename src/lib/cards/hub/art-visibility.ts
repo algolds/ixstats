@@ -67,6 +67,15 @@ export function copyIdsOf(value: Prisma.JsonValue): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
+/** An offer shows its cards' art only to its recipient, while it is pending and unexpired (spec §2.3 Discovery). */
+export function liveOfferTo(viewerId: string) {
+  return {
+    recipientId: viewerId,
+    status: "PENDING",
+    expiresAt: { gt: new Date() },
+  } satisfies Prisma.TradeOfferWhereInput;
+}
+
 async function offerShowsCard(
   db: ContextDb,
   viewerId: string | null,
@@ -75,7 +84,7 @@ async function offerShowsCard(
 ): Promise<boolean> {
   if (!viewerId) return false;
   const offer = await db.tradeOffer.findFirst({
-    where: { id: offerId, recipientId: viewerId, status: "PENDING", expiresAt: { gt: new Date() } },
+    where: { id: offerId, ...liveOfferTo(viewerId) },
     select: { initiatorCardIds: true, recipientCardIds: true },
   });
   if (!offer) return false;

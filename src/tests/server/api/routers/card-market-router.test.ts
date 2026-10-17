@@ -237,7 +237,17 @@ describe("caller-scoped reads", () => {
     );
     expect(db.cardAuction.findMany).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ where: { currentBidderId: "u1", status: "ACTIVE" } })
+      expect.objectContaining({
+        where: { currentBidderId: "u1", status: "ACTIVE", endTime: { gt: expect.any(Date) } },
+      })
+    );
+  });
+
+  it("filters active auctions by realm", async () => {
+    await callerAs("u1", db).getActiveAuctions({ realmId: "r1", sortBy: "ending_soon" });
+    expect(service.getActiveAuctions).toHaveBeenCalledWith(
+      expect.objectContaining({ realmId: "r1", sortBy: "ending_soon" }),
+      db
     );
   });
 

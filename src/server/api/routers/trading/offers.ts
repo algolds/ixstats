@@ -17,6 +17,10 @@ import {
 } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
+import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
+
+/** Trade notifications open the Market's trades tab. */
+const TRADES_HREF = `${CARD_HUB_PATHS.market}?tab=trades`;
 
 const createtradeOfferSchema = z.object({
   recipientId: z.string().min(1, "Recipient ID is required"),
@@ -137,7 +141,7 @@ export const tradingOffersRouter = createTRPCRouter({
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
 
-      const trade = await ctx.db.$transaction(async (tx: any) => {
+      const trade = await ctx.db.$transaction(async (tx) => {
         await lockCardsTx(tx, input.initiatorCardIds, initiatorDbId);
 
         return await tx.tradeOffer.create({
@@ -158,7 +162,8 @@ export const tradingOffersRouter = createTRPCRouter({
 
       // Notify the recipient about the incoming trade offer
       try {
-        const senderName = trade.initiator?.country?.name ?? "A player";
+        // The Vault names players by handle; a sender without one is "A player"
+        const senderName = trade.initiator.handle ? `@${trade.initiator.handle}` : "A player";
         await notificationAPI.create({
           title: "New Trade Offer",
           message: `${senderName} sent you a trade offer with ${input.initiatorCardIds.length} card(s)`,
@@ -167,7 +172,7 @@ export const tradingOffersRouter = createTRPCRouter({
           priority: "high",
           type: "info",
           source: "trading",
-          href: "/vault",
+          href: TRADES_HREF,
           actionable: true,
           metadata: { tradeId: trade.id, cardCount: input.initiatorCardIds.length },
         });
@@ -426,7 +431,7 @@ export const tradingOffersRouter = createTRPCRouter({
           priority: "high",
           type: "success",
           source: "trading",
-          href: "/vault",
+          href: TRADES_HREF,
           metadata: { tradeId: input.tradeId },
         });
       } catch (e) {

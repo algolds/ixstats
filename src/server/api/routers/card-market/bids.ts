@@ -19,6 +19,7 @@ import {
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
+import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
 import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE } from "./_shared";
 
 /**
@@ -133,17 +134,18 @@ export const cardMarketBidsRouter = createTRPCRouter({
     try {
       assertAuthUserId(ctx);
 
-      // Get auctions where user is current bidder
+      // Running auctions where the user is the current bidder; an ended one awaits settlement, then shows in history
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
           currentBidderId: ctx.user.id,
           status: "ACTIVE",
+          endTime: { gt: new Date() },
         },
         include: AUCTION_WITH_SELLER_INCLUDE,
         orderBy: { endTime: "asc" },
       });
 
-      return { auctions };
+      return { auctions: await withAuctionFaces(ctx.db, ctx.user.id, auctions, true) };
     } catch (error) {
       console.error("[Card Market Router] Error getting user bids:", error);
       if (error instanceof TRPCError) {
@@ -191,7 +193,6 @@ export const cardMarketBidsRouter = createTRPCRouter({
                     select: {
                       id: true,
                       title: true,
-                      artwork: true,
                       rarity: true,
                       cardType: true,
                     },
@@ -224,7 +225,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         });
 
         return {
-          auctions: enriched,
+          auctions: await withAuctionFaces(ctx.db, userId, enriched, false),
           total,
           hasMore: input.offset + input.limit < total,
         };

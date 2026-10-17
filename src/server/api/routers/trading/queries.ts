@@ -2,6 +2,9 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "~/lib/vault/trade-settlement";
+import { deckValue } from "~/lib/cards/copy-value";
+import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
+import { tradeView } from "~/lib/cards/hub/market-faces";
 import { FINISHED_TRADE_STATUSES, TRADE_PARTIES_INCLUDE } from "./_shared";
 
 export const tradingQueriesRouter = createTRPCRouter({
@@ -89,33 +92,23 @@ export const tradingQueriesRouter = createTRPCRouter({
 
       // Fetch card details for both sides
       const initiatorCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: trade.initiatorCardIds as string[] } },
+        where: { id: { in: copyIdsOf(trade.initiatorCardIds) } },
         include: {
           cards: true,
         },
       });
 
       const recipientCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: trade.recipientCardIds as string[] } },
+        where: { id: { in: copyIdsOf(trade.recipientCardIds) } },
         include: {
           cards: true,
         },
       });
 
-      const initiatorValue =
-        initiatorCards.reduce((sum: number, c: any) => sum + (c.cards.marketValue || 0), 0) +
-        trade.initiatorCredits;
+      const initiatorValue = deckValue(initiatorCards) + trade.initiatorCredits;
+      const recipientValue = deckValue(recipientCards) + trade.recipientCredits;
 
-      const recipientValue =
-        recipientCards.reduce((sum: number, c: any) => sum + (c.cards.marketValue || 0), 0) +
-        trade.recipientCredits;
-
-      return {
-        ...trade,
-        initiatorCardsData: initiatorCards,
-        recipientCardsData: recipientCards,
-        initiatorValue,
-        recipientValue,
-      };
+      const view = await tradeView(ctx.db, userId, trade, initiatorCards, recipientCards);
+      return { ...trade, ...view, initiatorValue, recipientValue };
     }),
 });

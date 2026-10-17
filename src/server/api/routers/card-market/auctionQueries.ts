@@ -14,6 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { CardRarity, CardType } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
+import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
 import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE, AUCTION_CARD_INCLUDE } from "./_shared";
 
 /**
@@ -29,6 +30,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
     .input(
       z.object({
         cardId: z.string().optional(),
+        realmId: z.string().min(1).max(64).optional(),
         sellerId: z.string().optional(),
         isFeatured: z.boolean().optional(),
         rarity: z.nativeEnum(CardRarity).optional(),
@@ -45,6 +47,7 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
         const result = await auctionService.getActiveAuctions(
           {
             cardId: input.cardId,
+            realmId: input.realmId,
             sellerId: input.sellerId,
             isFeatured: input.isFeatured,
             rarity: input.rarity,
@@ -58,7 +61,10 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
           ctx.db
         );
 
-        return result;
+        return {
+          ...result,
+          auctions: await withAuctionFaces(ctx.db, ctx.user.id, result.auctions, true),
+        };
       } catch (error) {
         console.error("[Card Market Router] Error getting active auctions:", error);
         throw new TRPCError({
@@ -91,7 +97,8 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
         orderBy: { endTime: "asc" },
       });
 
-      return { auctions };
+      // An ended listing stays here until it is settled, so the rule decides (the seller holds the copy)
+      return { auctions: await withAuctionFaces(ctx.db, ctx.user.id, auctions, false) };
     } catch (error) {
       console.error("[Card Market Router] Error getting user auctions:", error);
       if (error instanceof TRPCError) {
