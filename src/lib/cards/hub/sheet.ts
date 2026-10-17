@@ -121,8 +121,14 @@ const textOf = (value: Prisma.JsonValue | undefined): string | null =>
 /** The stored excerpt: the column the importer writes, else `metadata.fullExcerpt`, where older cards keep it. */
 function storedExcerpt(card: Pick<SheetCardRow, "wikiExcerpt" | "metadata">): string | null {
   return (
-    card.wikiExcerpt ?? (isJsonObject(card.metadata) ? textOf(card.metadata.fullExcerpt) : null)
+    textOf(card.wikiExcerpt) ??
+    (isJsonObject(card.metadata) ? textOf(card.metadata.fullExcerpt) : null)
   );
+}
+
+/** A legacy Commons card's file page (`metadata.descriptionUrl`). */
+function storedDescriptionUrl(metadata: Prisma.JsonValue | null): string | null {
+  return isJsonObject(metadata) ? textOf(metadata.descriptionUrl) : null;
 }
 
 /** The article's author as the importer stored it (`metadata.authorInfo.displayAuthor`, else `metadata.author`). */
@@ -241,8 +247,11 @@ function toSheetCopy(
   };
 }
 
-/** The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). */
-function toSheetCard(card: SheetCardRow): CardSheetData["card"] {
+/**
+ * The sheet's facts about the card itself: about, provenance and value (spec §2.3 Detail sheet). On a silhouette the
+ * art credit and the file page go too, since both link straight to the image; the article link stays.
+ */
+function toSheetCard(card: SheetCardRow, silhouette: boolean): CardSheetData["card"] {
   return {
     id: card.id,
     title: card.title,
@@ -256,8 +265,8 @@ function toSheetCard(card: SheetCardRow): CardSheetData["card"] {
     wikiArticleTitle: card.wikiArticleTitle,
     excerpt: storedExcerpt(card),
     author: storedAuthor(card.metadata),
-    descriptionUrl: isJsonObject(card.metadata) ? textOf(card.metadata.descriptionUrl) : null,
-    artCredit: artCreditOf(card),
+    descriptionUrl: silhouette ? null : storedDescriptionUrl(card.metadata),
+    artCredit: silhouette ? null : artCreditOf(card),
     ns: card.cardType === "NS" ? nsProvenanceOf(card) : null,
     // A hidden (retired) card is worth nothing, as in Mine, the Wallet's figures and the dividend.
     value: card.isRetired ? 0 : copyValue({ cards: card }),
@@ -266,8 +275,9 @@ function toSheetCard(card: SheetCardRow): CardSheetData["card"] {
 
 /**
  * The sheet a `?card=` link opens. Art shows to a holder, while the card is on a live listing, or when the sheet was
- * opened from another player's showcase or an offer made to the viewer (spec §2.3 Discovery). Null for a card that
- * does not exist, or one outside the catalogue (in review, hidden) that the viewer does not hold.
+ * opened from another player's showcase or an offer made to the viewer (spec §2.3 Discovery). A card outside the
+ * catalogue (in review, hidden, or in an unpublished realm) opens only in those same places, so a bare link to one is
+ * null, as is a card that does not exist. A retired card still shows no art (`toCardFace`).
  */
 export async function loadCardSheet(
   db: SheetDb,
@@ -286,21 +296,25 @@ export async function loadCardSheet(
     loadListings(db, viewerId, cardId),
     db.card.count({ where: { id: cardId, ...CATALOGUE_WHERE } }),
   ]);
-  if (!card || (catalogued === 0 && copies.length === 0)) return null;
+  if (!card) return null;
 
-  const revealArt =
-    copies.length > 0 ||
-    listings.length > 0 ||
-    (options.from !== null &&
-      (await contextRevealsArt(db, viewerId, cardId, options.from, options.rules)));
-  const [{ trailOf, handleOf }, recentSales, wantedBy] = await Promise.all([
+  // Held or listed already shows the art, so the opening place is asked only otherwise.
+  const shown = copies.length > 0 || listings.length > 0;
+  const [shownThere, { trailOf, handleOf }, recentSales, wantedBy] = await Promise.all([
+    !shown && options.from !== null
+      ? contextRevealsArt(db, viewerId, cardId, options.from, options.rules)
+      : false,
     loadTrails(db, copies),
     loadSales(db, cardId),
     db.cardWatchlist.count({ where: { cardId } }),
   ]);
+  const revealArt = shown || shownThere;
+  if (catalogued === 0 && !revealArt) return null;
+
+  const face = toCardFace(card, { revealArt, copy: copies[0] ?? null });
   return {
-    face: toCardFace(card, { revealArt, copy: copies[0] ?? null }),
-    card: toSheetCard(card),
+    face,
+    card: toSheetCard(card, face.silhouette),
     copies: copies.map((copy) => toSheetCopy(card, copy, trailOf, handleOf)),
     market: { listings, recentSales, wantedBy },
   };

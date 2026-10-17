@@ -94,7 +94,7 @@ const LISTING = {
 beforeEach(() => jest.clearAllMocks());
 
 describe("loadCardSheet", () => {
-  it("shows the art to a holder, with each copy's trail by handle and the frozen signer", async () => {
+  it("shows the art to a holder, with each copy's trail by handle and the signer's current handle", async () => {
     const db = setup();
     const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({
@@ -249,6 +249,26 @@ describe("loadCardSheet", () => {
     expect(sheet!.face).toMatchObject({ artwork: null, silhouette: true });
   });
 
+  it("asks the opening place alongside the market reads, not before them", async () => {
+    const db = setup({ copies: [] });
+    let watchersRead!: () => void;
+    const read = new Promise<void>((resolve) => (watchersRead = resolve));
+    db.cardWatchlist.count.mockImplementation(async () => {
+      watchersRead();
+      return 12;
+    });
+    // Resolves only once the watcher count has been asked for, so a sequential read would never finish.
+    db.tradeOffer.findFirst.mockImplementation(async () => {
+      await read;
+      return null;
+    });
+    const sheet = await loadCardSheet(db as never, "me", "c1", {
+      from: { kind: "offer", id: "t1" },
+      rules,
+    });
+    expect(sheet!.face.silhouette).toBe(true);
+  });
+
   it("does not ask the opening place when the viewer already holds the card", async () => {
     const db = setup();
     await loadCardSheet(db as never, "me", "c1", { from: { kind: "offer", id: "t1" }, rules });
@@ -320,6 +340,38 @@ describe("loadCardSheet", () => {
     const db = setup({ card: { ...CARD, metadata } });
     const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card.author).toBe(author);
+  });
+
+  it("counts a blank excerpt column as missing and reads the older excerpt", async () => {
+    const db = setup({ card: { ...CARD, wikiExcerpt: "  ", metadata: { fullExcerpt: "Older." } } });
+    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.card.excerpt).toBe("Older.");
+  });
+
+  it("points nowhere near the art on a silhouette, but keeps the article", async () => {
+    const db = setup({
+      copies: [],
+      card: {
+        ...CARD,
+        artLicence: {
+          fileTitle: "File:Map.png",
+          licence: "CC BY-SA 4.0",
+          artist: "Ann",
+          attribution: null,
+          descriptionUrl: "https://ixwiki.com/wiki/File:Map.png",
+        },
+        metadata: { descriptionUrl: "https://commons.wikimedia.org/wiki/File:Map.png" },
+      },
+    });
+    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.face.silhouette).toBe(true);
+    expect(sheet!.card).toMatchObject({
+      artCredit: null,
+      descriptionUrl: null,
+      wikiSource: "ixwiki",
+      wikiArticleTitle: "Caphiria",
+      excerpt: "Caphiria is...",
+    });
   });
 
   it.each([[{ fullExcerpt: "  ", descriptionUrl: 3 }], [null]])(
@@ -428,6 +480,51 @@ describe("loadCardSheet", () => {
     const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.copies[0]!.inscription).toMatchObject({ signerHandle: null });
     expect(sheet!.market.recentSales).toEqual([{ price: 140, at: SALE.endTime }]);
+  });
+
+  describe("a card outside the catalogue", () => {
+    const RETIRED = { ...CARD, isRetired: true };
+
+    it("opens with no art from a pending offer to the viewer that holds a retired copy", async () => {
+      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
+      db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
+      db.cardOwnership.count.mockResolvedValue(1);
+      const sheet = await loadCardSheet(db as never, "me", "c1", {
+        from: { kind: "offer", id: "t1" },
+        rules,
+      });
+      expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true, copy: null });
+      expect(sheet!.card).toMatchObject({ isRetired: true, value: 0 });
+    });
+
+    it("opens with no art while a retired card is on a live listing", async () => {
+      const db = setup({ card: RETIRED, copies: [], listed: [LISTING], catalogued: 0 });
+      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true });
+      expect(sheet!.market.listings).toMatchObject([{ auctionId: "a1" }]);
+    });
+
+    it("opens a showcase's placeholder face with no art", async () => {
+      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
+      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+      const sheet = await loadCardSheet(db as never, "me", "c1", {
+        from: { kind: "showcase", id: "s1" },
+        rules,
+      });
+      expect(rules.vaultVisible).toHaveBeenCalledWith("owner");
+      expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true });
+    });
+
+    it("is null when the place it was opened from does not show it", async () => {
+      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
+      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+      await expect(
+        loadCardSheet(db as never, "me", "c1", {
+          from: { kind: "showcase", id: "s1" },
+          rules: hidden,
+        })
+      ).resolves.toBeNull();
+    });
   });
 
   it("is null for an unknown card, and for one in review that the viewer does not hold", async () => {
