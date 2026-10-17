@@ -28,7 +28,7 @@ Redirects: `src/proxy.ts` answers every old card address with a 308 to the cards
 - **Sections** (`src/components/vault/sections/`):
   - `Dashboard` (`VaultDashboardSection.tsx`, `/vault`): the Wallet page, see [below](#the-wallet-page)
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard, with its consent checkbox
-  - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
+  - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`); `?trophy=<card id>` marks that trophy card (`?card=` opens the card sheet anywhere in the Vault; an older link's `?card=` still marks the trophy for one release)
   - The Store (`marketplace/VaultStoreTab.tsx`, `/vault/store`): My packs, Packs, Cosmetics and Account upgrades (`?view=my-packs|packs|cosmetics|upgrades`, Packs by default); a pack opens in the short reveal
 - **Cards** (`CardsHub`, `src/components/vault/cards/`, `/vault/cards/{mine,sets,market,explore}`): Mine, Sets (showcases), Market (Browse, Trades, Wishlist, Selling) and Explore, with the card sheet (`CardSheetHost` in `src/app/vault/layout.tsx`); see [cards.md](./cards.md#the-hub)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
