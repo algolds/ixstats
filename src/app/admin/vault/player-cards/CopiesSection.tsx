@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { useDialogTarget } from "./useDialogTarget";
 
 type Copy = RouterOutputs["cards"]["admin"]["tools"]["playerCards"]["copies"][number];
 interface Pending {
@@ -101,7 +102,7 @@ function GrantSearch({ onPick }: { onPick: (pending: Pending) => void }) {
         placeholder="Card title"
       />
       {term.length >= 2 && matches.data && grantable.length === 0 && (
-        <p className="text-footnote text-label-secondary">No card matches that title.</p>
+        <p className="text-footnote text-label-secondary">No grantable card matches that title.</p>
       )}
       {grantable.length > 0 && (
         <ul className="flex flex-wrap gap-1">
@@ -137,10 +138,11 @@ export function CopiesSection({
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const [pending, setPending] = useState<Pending | null>(null);
+  const dialogTarget = useDialogTarget<Pending>();
+  const pending = dialogTarget.target;
   const done = (title: string) => {
     notify.success(title);
-    setPending(null);
+    dialogTarget.close();
     void utils.cards.admin.tools.playerCards.invalidate({ userId });
   };
   const onError = (error: { message: string }) => notify.error("Nothing changed", error.message);
@@ -158,11 +160,13 @@ export function CopiesSection({
     }
     if (pending?.kind === "revoke") revoke.mutate({ ownershipId: pending.id, reason });
   };
-  const dialog = DIALOG[pending?.kind ?? "grant"];
+  // The copy follows the target last opened, which stays put while the dialog closes
+  const shown = dialogTarget.shown;
+  const dialog = DIALOG[shown?.kind ?? "grant"];
 
   return (
     <div className="space-y-4">
-      <GrantSearch onPick={setPending} />
+      <GrantSearch onPick={dialogTarget.open} />
       {copies.length === 0 ? (
         <EmptyState compact title="No cards yet" message="Grant one above, or award a pack." />
       ) : (
@@ -181,7 +185,7 @@ export function CopiesSection({
               </TableHeader>
               <TableBody>
                 {copies.map((copy) => (
-                  <CopyRow key={copy.id} copy={copy} onRevoke={setPending} />
+                  <CopyRow key={copy.id} copy={copy} onRevoke={dialogTarget.open} />
                 ))}
               </TableBody>
             </Table>
@@ -196,11 +200,11 @@ export function CopiesSection({
       )}
       <ReasonDialog
         open={pending !== null}
-        onOpenChange={(open) => !open && setPending(null)}
-        title={dialog.title(pending?.title ?? "")}
+        onOpenChange={(open) => !open && dialogTarget.close()}
+        title={dialog.title(shown?.title ?? "")}
         description={dialog.description}
         confirmLabel={dialog.confirm}
-        destructive={pending?.kind === "revoke"}
+        destructive={shown?.kind === "revoke"}
         pending={grant.isPending || revoke.isPending}
         onConfirm={confirm}
       />

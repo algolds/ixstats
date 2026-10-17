@@ -261,28 +261,38 @@ interface CancellableAuction {
   currentBid: number;
   currentBidderId: string | null;
   isFeatured: boolean;
+  endTime: Date;
 }
 
-/** Cancels the auction as read, refunding the bid it holds and half the listing fee; returns the fee refunded. */
+/**
+ * Cancels the auction as read, refunding the bid it holds and half the listing fee; returns the fee refunded. An
+ * auction past its end is refused: the cron settles it and pays the seller, so a cancel must not turn a sale into a
+ * refund.
+ */
 async function cancelAuctionTx(
   tx: Prisma.TransactionClient,
   auction: CancellableAuction
 ): Promise<number> {
-  // The bid read before is the one refunded: a new bid or the completion cron in between fails this swap
+  const now = new Date();
+  // The bid read before is the one refunded: a new bid, the end passing or the cron in between fails this swap
   const claimed = await tx.cardAuction.updateMany({
     where: {
       id: auction.id,
       status: "ACTIVE",
       currentBid: auction.currentBid,
       currentBidderId: auction.currentBidderId,
+      endTime: { gt: now },
     },
     data: { status: "CANCELLED" },
   });
   if (claimed.count !== 1) {
-    throw new TRPCError({
-      code: "CONFLICT",
-      message: "This auction changed. Reload and try again.",
-    });
+    // A bid only ever moves the end later, so a read end already passed means the auction ended
+    throw auction.endTime <= now
+      ? new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "This auction has ended; it settles on its own.",
+        })
+      : new TRPCError({ code: "CONFLICT", message: "This auction changed. Reload and try again." });
   }
   await tx.cardOwnership.updateMany({
     where: { id: auction.cardInstanceId },
@@ -316,6 +326,7 @@ export async function adminCancelAuction(
       currentBid: true,
       currentBidderId: true,
       isFeatured: true,
+      endTime: true,
     },
   });
   if (!auction) throw new TRPCError({ code: "NOT_FOUND", message: "Auction not found" });

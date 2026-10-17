@@ -165,6 +165,13 @@ it("grants a card found among the grantable cards by title", () => {
   });
 });
 
+it("says when no grantable card matches the search", () => {
+  setup();
+  jest.mocked(api.cards.admin.overview.findCards.useQuery).mockReturnValue({ data: [] } as never);
+  fireEvent.change(screen.getByLabelText("Grant a card"), { target: { value: "Pending" } });
+  expect(screen.getByText("No grantable card matches that title.")).toBeInTheDocument();
+});
+
 it("awards any pack, marking the ones not on sale", () => {
   setup({
     packs: [

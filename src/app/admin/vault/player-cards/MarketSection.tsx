@@ -1,12 +1,12 @@
 "use client";
 /** A player's live auctions and pending trades: cancel an auction (its held bid is refunded) or void a trade. */
-import { useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { ReasonDialog } from "~/app/admin/cards/shared/ReasonDialog";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { useDialogTarget } from "./useDialogTarget";
 
 type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
 type Pending =
@@ -57,10 +57,11 @@ export function MarketSection({
 }) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const [pending, setPending] = useState<Pending | null>(null);
+  const dialogTarget = useDialogTarget<Pending>();
+  const pending = dialogTarget.target;
   const done = (title: string) => {
     notify.success(title);
-    setPending(null);
+    dialogTarget.close();
     void utils.cards.admin.tools.playerCards.invalidate({ userId });
   };
   const onError = (error: { message: string }) => notify.error("Nothing changed", error.message);
@@ -76,7 +77,8 @@ export function MarketSection({
     if (pending?.kind === "auction") cancel.mutate({ auctionId: pending.id, reason });
     if (pending?.kind === "trade") voidTrade.mutate({ tradeId: pending.id, reason });
   };
-  const dialog = dialogCopy(pending);
+  // The copy follows the target last opened, which stays put while the dialog closes
+  const dialog = dialogCopy(dialogTarget.shown);
 
   if (auctions.length === 0 && trades.length === 0) {
     return <EmptyState compact title="No live auctions or pending trades" />;
@@ -97,7 +99,7 @@ export function MarketSection({
                     variant="ghost"
                     aria-label={`Cancel auction of ${auction.title}`}
                     onClick={() =>
-                      setPending({
+                      dialogTarget.open({
                         kind: "auction",
                         id: auction.id,
                         title: auction.title,
@@ -124,7 +126,7 @@ export function MarketSection({
                     size="xs"
                     variant="ghost"
                     aria-label={`Void trade ${trade.initiating ? "offered by" : "offered to"} this player`}
-                    onClick={() => setPending({ kind: "trade", id: trade.id })}
+                    onClick={() => dialogTarget.open({ kind: "trade", id: trade.id })}
                   >
                     Void trade
                   </Button>
@@ -136,7 +138,7 @@ export function MarketSection({
       </FacetList>
       <ReasonDialog
         open={pending !== null}
-        onOpenChange={(open) => !open && setPending(null)}
+        onOpenChange={(open) => !open && dialogTarget.close()}
         title={dialog.title}
         description={dialog.description}
         confirmLabel={dialog.confirm}

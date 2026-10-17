@@ -322,6 +322,7 @@ describe("adminCancelAuction", () => {
     currentBid: 120,
     currentBidderId: "bidder",
     isFeatured: false,
+    endTime: new Date(Date.now() + 3_600_000),
   };
 
   it("cancels, unlocks the copy, refunds the held bid and half the listing fee, and audits who got what", async () => {
@@ -331,8 +332,15 @@ describe("adminCancelAuction", () => {
 
     await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
 
+    // Still running: the swap itself requires the end to be ahead, so it cannot race the end passing
     expect(db.cardAuction.updateMany).toHaveBeenCalledWith({
-      where: { id: "auc_1", status: "ACTIVE", currentBid: 120, currentBidderId: "bidder" },
+      where: {
+        id: "auc_1",
+        status: "ACTIVE",
+        currentBid: 120,
+        currentBidderId: "bidder",
+        endTime: { gt: expect.any(Date) },
+      },
       data: { status: "CANCELLED" },
     });
     expect(db.cardOwnership.updateMany).toHaveBeenCalledWith({
@@ -386,6 +394,29 @@ describe("adminCancelAuction", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(earnCreditsTx).not.toHaveBeenCalled();
     expect(refundListingFeeTx).not.toHaveBeenCalled();
+  });
+
+  it("refuses an auction past its end that the cron has not settled yet, refunding nothing", async () => {
+    const db = createMockPrisma();
+    db.cardAuction.findUnique.mockResolvedValue({
+      ...auction,
+      endTime: new Date(Date.now() - 1000),
+    });
+    // The swap's endTime condition matches no row once the end has passed
+    db.cardAuction.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(
+      adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" })
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "This auction has ended; it settles on its own.",
+    });
+    expect(db.cardAuction.updateMany.mock.calls[0]![0].where.endTime).toEqual({
+      gt: expect.any(Date),
+    });
+    expect(earnCreditsTx).not.toHaveBeenCalled();
+    expect(refundListingFeeTx).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
   });
 
   it("refuses an auction that has already ended", async () => {
