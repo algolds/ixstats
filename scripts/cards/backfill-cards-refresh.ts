@@ -6,7 +6,8 @@
  *   bun scripts/cards/backfill-cards-refresh.ts            # dry run: prints the report, writes nothing
  *   bun scripts/cards/backfill-cards-refresh.ts --apply    # writes, in one transaction
  *
- * Idempotent: a second run plans nothing. Unknown card types or rarities fail the dry run (exit 1) and block --apply.
+ * Idempotent: a second run plans nothing. Unknown card types or rarities, and copies held as quantity > 1 (the
+ * constraint SQL drops quantity), fail the dry run (exit 1) and block --apply.
  * Raw SQL only: it runs on the in-between schema the Prisma models do not describe. Once the constraint SQL has
  * dropped the legacy columns, it only seeds missing realms (a fresh database, `db:bootstrap`), so every later deploy's
  * --apply is two small reads.
@@ -44,6 +45,7 @@ const EMPTY: Omit<BackfillSnapshot, "realms"> = {
   ledger: [],
   requestSuggestedRarities: [],
   requestNsImportCategories: 0,
+  multiQuantityCopies: 0,
 };
 
 async function hasColumn(table: string, column: string): Promise<boolean> {
@@ -74,6 +76,7 @@ async function loadSnapshot(): Promise<BackfillSnapshot> {
     ledger,
     rarities,
     categories,
+    multiQuantity,
   ] = await Promise.all([
     prisma.$queryRaw<BackfillSnapshot["cards"]>`
         SELECT id, "cardType"::text AS "cardType", rarity::text AS rarity, category::text AS category, title,
@@ -104,6 +107,8 @@ async function loadSnapshot(): Promise<BackfillSnapshot> {
         SELECT DISTINCT "suggestedRarity"::text AS value FROM lore_card_requests WHERE "suggestedRarity" IS NOT NULL`,
     prisma.$queryRaw<Array<{ n: number }>>`
         SELECT count(*)::int AS n FROM lore_card_requests WHERE category::text = ${RETIRED_NS_CATEGORY}`,
+    prisma.$queryRaw<Array<{ n: number }>>`
+        SELECT count(*)::int AS n FROM "CardOwnership" WHERE quantity > 1`,
   ]);
   return {
     realms,
@@ -117,6 +122,7 @@ async function loadSnapshot(): Promise<BackfillSnapshot> {
     ledger,
     requestSuggestedRarities: rarities.map((row) => row.value),
     requestNsImportCategories: categories[0]?.n ?? 0,
+    multiQuantityCopies: multiQuantity[0]?.n ?? 0,
   };
 }
 

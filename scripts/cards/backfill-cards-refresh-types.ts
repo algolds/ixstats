@@ -62,6 +62,8 @@ export interface BackfillSnapshot {
   ledger: Array<{ nsCardId: number; nsSeason: number; nation: string }>;
   requestSuggestedRarities: string[];
   requestNsImportCategories: number;
+  /** Copies whose legacy `quantity` is above 1: the constraint SQL drops the column, so it refuses while any remain. */
+  multiQuantityCopies: number;
 }
 
 export interface PlanOptions {
@@ -155,6 +157,8 @@ export interface BackfillReport {
   serialRenumbers: Array<{ ownershipId: string; cardId: string; from: number; to: number }>;
   requestCategoriesCleared: number;
   artworkCopied: number;
+  /** Copies held as `quantity > 1`; above 0 fails the dry run, as the constraint SQL would refuse. */
+  multiQuantityCopies: number;
 }
 
 export interface PlanResult {

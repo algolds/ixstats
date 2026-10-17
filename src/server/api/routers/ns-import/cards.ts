@@ -18,7 +18,7 @@ import { nsApiClient } from "~/lib/nationstates/api-client";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { CardType } from "~/lib/cards/enums";
-import { nsFactsOf } from "~/lib/cards/ns-facts";
+import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
 import { normalizeNationName } from "~/lib/vault/exploit-corrections";
 
 // ─── Background Processing Functions ──────────────────────────────
@@ -60,9 +60,6 @@ export function nationNamesMatch(a: string, b: string): boolean {
 function cardNationName(card: { title: string; metadata: Prisma.JsonValue }): string {
   return nsFactsOf(card.metadata).name ?? card.title;
 }
-
-const isJsonObject = (value: Prisma.JsonValue | undefined): value is Prisma.JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** When and why a card was hidden by a takedown, from its metadata. */
 function takedownOf(metadata: Prisma.JsonValue): {

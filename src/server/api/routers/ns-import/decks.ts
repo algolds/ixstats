@@ -51,18 +51,23 @@ const isPricedCard = (card: NsCard) =>
     card.name && card.market_value && card.market_value !== "0" && card.market_value !== "0.00"
   );
 
+/** A card as the ledger and the library key it: NS card id and season. */
+const nsKey = (nsCardId: number | null, nsSeason: number | null) => `${nsCardId}-${nsSeason}`;
+const deckKey = (card: NsCard) => nsKey(parseInt(card.id), parseInt(card.season));
+const cardLabel = (card: NsCard) => card.name ?? `Card ${card.id} S${card.season}`;
+
 /** The deck's distinct cards (a deck can hold a card twice; an import gives one copy of each). */
 function distinctCards(cards: NsCard[]): NsCard[] {
   const seen = new Set<string>();
   return cards.filter((card) => {
-    const key = `${card.id}-${card.season}`;
+    const key = deckKey(card);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 }
 
-/** The nation's deck with every card's name and value filled in from NationStates; outside any transaction. */
+/** The nation's distinct deck cards, as NationStates lists them (no names); outside any transaction. */
 async function loadDeck(nationName: string): Promise<NsCard[]> {
   const deck = await fetchDeckOrThrow(nationName);
   if (!deck) {
@@ -77,7 +82,33 @@ async function loadDeck(nationName: string): Promise<NsCard[]> {
       message: "This nation has no cards in their deck.",
     });
   }
-  const cards = distinctCards(deck.cards);
+  return distinctCards(deck.cards);
+}
+
+type PlanDb = Pick<PrismaClient, "nSImportLedger" | "card">;
+
+/** The deck's cards this nation has not imported yet. Read-only: the transaction's ledger claim stays the authority. */
+async function notYetImported(db: PlanDb, nationName: string, cards: NsCard[]): Promise<NsCard[]> {
+  const rows = await db.nSImportLedger.findMany({
+    where: { nation: nsNationKey(nationName) },
+    select: { nsCardId: true, nsSeason: true },
+  });
+  const imported = new Set(rows.map((row) => nsKey(row.nsCardId, row.nsSeason)));
+  return cards.filter((card) => !imported.has(deckKey(card)));
+}
+
+/** The library's NS card definitions for these cards, by key: a known card needs no card info call. */
+async function knownCards(db: PlanDb, cards: NsCard[]) {
+  const ids = [...new Set(cards.map((card) => parseInt(card.id)).filter(Number.isInteger))];
+  const rows = await db.card.findMany({
+    where: { nsCardId: { in: ids } },
+    select: { nsCardId: true, nsSeason: true, title: true, isRetired: true },
+  });
+  return new Map(rows.map((row) => [nsKey(row.nsCardId, row.nsSeason), row]));
+}
+
+/** Names each card the library does not know from NationStates, one card info call each. */
+async function fetchUnknownCards(cards: NsCard[]) {
   for (const card of cards) {
     if (isPricedCard(card)) continue;
     // Null is a failed request (429, 5xx, network): import all of the deck or none of it. A card NationStates
@@ -91,7 +122,40 @@ async function loadDeck(nationName: string): Promise<NsCard[]> {
     }
     Object.assign(card, info);
   }
-  return cards;
+}
+
+interface DeckPlan {
+  /** What the transaction imports: at most the player's room. */
+  cards: NsCard[];
+  alreadyImported: number;
+  skipped: string[];
+}
+
+/**
+ * What an import takes from the deck, before its transaction: the cards this nation has not imported, cut to the
+ * player's room. A known card takes its name from its Card row (a taken-down one takes no room), so NationStates is
+ * asked only for the unknown cards that fit: at most `room` calls, at the client's rate limit, whatever the deck's size.
+ */
+async function planDeckImport(
+  db: PlanDb,
+  nationName: string,
+  deck: NsCard[],
+  room: number
+): Promise<DeckPlan> {
+  const fresh = await notYetImported(db, nationName, deck);
+  const known = await knownCards(db, fresh);
+  const skipped: string[] = [];
+  const open: NsCard[] = [];
+  for (const card of fresh) {
+    const row = known.get(deckKey(card));
+    const named = row ? { ...card, name: card.name ?? row.title } : card;
+    if (row?.isRetired) skipped.push(`${cardLabel(named)} (Taken down)`);
+    else open.push(named);
+  }
+  const cards = open.slice(0, room);
+  skipped.push(...open.slice(cards.length).map((card) => `${cardLabel(card)} (Inventory Full)`));
+  await fetchUnknownCards(cards);
+  return { cards, alreadyImported: deck.length - fresh.length, skipped };
 }
 
 type LedgerKey = { nsCardId: number; nsSeason: number; nation: string };
@@ -109,7 +173,6 @@ interface DeckImport {
   userId: string;
   nationName: string;
   cards: NsCard[];
-  room: number;
   valCfg: CardValuationConfig;
 }
 
@@ -152,11 +215,7 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
   const outcome: DeckImportOutcome = { imported: [], alreadyImported: 0, skipped: [] };
   const claimed: Array<{ card: Card; key: LedgerKey }> = [];
   for (const nsCard of run.cards) {
-    const label = nsCard.name ?? `Card ${nsCard.id} S${nsCard.season}`;
-    if (claimed.length >= run.room) {
-      outcome.skipped.push(`${label} (Inventory Full)`);
-      continue;
-    }
+    const label = cardLabel(nsCard);
     const definition = await upsertNSCardDefinition(tx, nsCard, run.nationName, run.valCfg);
     if (!definition) {
       outcome.skipped.push(label);
@@ -189,19 +248,29 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
 }
 
 /**
- * Everything an import does before its bonus: the deck from NationStates (network, outside any transaction), then
- * the import in one transaction. Any failure here leaves nothing behind.
+ * Everything an import does before its bonus: the deck and the unknown cards' info from NationStates (network,
+ * outside any transaction), then the import in one transaction. Any failure here leaves nothing behind.
  */
-async function importVerifiedDeck(db: PrismaClient, user: ImportUser, nationName: string) {
-  const cards = await loadDeck(nationName);
+async function importVerifiedDeck(
+  db: PrismaClient,
+  user: ImportUser,
+  nationName: string
+): Promise<DeckImportOutcome> {
+  const deck = await loadDeck(nationName);
+  const room = await copyRoom(db, { id: user.id, roleLevel: user.role?.level });
+  const plan = await planDeckImport(db, nationName, deck, room);
   const run: DeckImport = {
     userId: user.id,
     nationName,
-    cards,
-    room: await copyRoom(db, { id: user.id, roleLevel: user.role?.level }),
+    cards: plan.cards,
     valCfg: await getValuationConfig(db),
   };
-  return db.$transaction((tx) => importDeckTx(tx, run), IMPORT_TRANSACTION);
+  const outcome = await db.$transaction((tx) => importDeckTx(tx, run), IMPORT_TRANSACTION);
+  return {
+    imported: outcome.imported,
+    alreadyImported: plan.alreadyImported + outcome.alreadyImported,
+    skipped: [...plan.skipped, ...outcome.skipped],
+  };
 }
 
 /** The deck-import bonus: per imported card, capped, and paid once per nation whichever account imports it. */

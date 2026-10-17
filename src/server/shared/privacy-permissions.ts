@@ -24,6 +24,7 @@
  * owns a verified ThinkPages persona. A missing or unreadable config is "everyone".
  */
 import type { PrismaClient } from "@prisma/client";
+import { recipientsBlockingSender } from "./user-blocks";
 
 export type PermissionKey = "directMessages" | "mentions" | "tradeOffers";
 type Audience = "everyone" | "followers" | "verified" | "nobody";
@@ -250,6 +251,22 @@ export async function recipientsRefusing(
         return false;
     }
   });
+}
+
+/**
+ * Whether the recipient refuses a card trade offer from the sender: outside their `tradeOffers` audience, or on their
+ * block list. Offer creation refuses such a sender, and the recipient's tradeable copies are hidden from them.
+ */
+export async function refusesTradeOffer(
+  db: PrivacyDb,
+  senderClerkId: string,
+  recipientClerkId: string
+): Promise<boolean> {
+  const [refusing, blocking] = await Promise.all([
+    recipientsRefusing(db, senderClerkId, [recipientClerkId], "tradeOffers"),
+    recipientsBlockingSender(db, senderClerkId, [recipientClerkId]),
+  ]);
+  return refusing.length > 0 || blocking.length > 0;
 }
 
 /** The viewer's muted words, lower-cased. Empty for anonymous viewers. */

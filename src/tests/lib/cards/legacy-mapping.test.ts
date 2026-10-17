@@ -159,6 +159,12 @@ describe("home realm", () => {
     expect(wikiFallbackRealm("wikios")).toBe("default");
   });
 
+  it("falls back to Ixnay for a wiki source named like an Object member, never handing back a function", () => {
+    for (const source of ["constructor", "__proto__", "Constructor", "valueOf"]) {
+      expect(wikiFallbackRealm(source)).toBe("default");
+    }
+  });
+
   it("seeds the three system realms with their ids as slugs", () => {
     expect(SYSTEM_REALMS.map((r) => [r.id, r.slug])).toEqual([
       ["nationstates", "nationstates"],

@@ -20,7 +20,8 @@ export type NsFacts = Partial<Record<NsFactKey, string>>;
 
 type JsonInput = Prisma.JsonValue | null | undefined;
 
-const isJsonObject = (value: JsonInput): value is Prisma.JsonObject =>
+/** A JSON value that is an object (not an array or null): the one guard for reading card metadata and filters. */
+export const isJsonObject = (value: JsonInput): value is Prisma.JsonObject =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 function factValue(value: Prisma.JsonValue | undefined): string | undefined {

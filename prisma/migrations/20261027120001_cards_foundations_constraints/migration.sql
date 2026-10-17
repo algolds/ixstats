@@ -91,7 +91,8 @@ BEGIN
     -- Nothing step 7 drops may be lost (backfill steps 5 and 10). Each check runs while its source column exists and
     -- compares what the backfill writes. An NS card's stats facts rank first (legacyNsFacts), so they equal its
     -- metadata.nsData facts: strings trimmed as JS trims, numbers compared as numbers. Each fact in the nsData column
-    -- (it ranks last) is in metadata.nsData. A non-blank artworkUrl is in a blank artwork.
+    -- (it ranks last) is in metadata.nsData. A non-blank artworkUrl is in a blank artwork. No copy holds a quantity
+    -- above 1: the backfill never splits one, so the owner resolves each such row by hand (docs/systems/cards.md).
     IF EXISTS (SELECT 1 FROM information_schema.columns
                WHERE table_schema = current_schema() AND table_name = 'cards' AND column_name = 'stats') THEN
       SELECT count(*) INTO n FROM "cards" c,
@@ -122,6 +123,11 @@ BEGIN
       SELECT count(*) INTO n FROM "cards"
         WHERE btrim("artworkUrl", js_space) <> '' AND btrim(COALESCE("artwork", ''), js_space) = '';
       IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % cards have an artworkUrl but no artwork; run the backfill first', n; END IF;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = current_schema() AND table_name = 'CardOwnership' AND column_name = 'quantity') THEN
+      SELECT count(*) INTO n FROM "CardOwnership" WHERE "quantity" > 1;
+      IF n > 0 THEN RAISE EXCEPTION 'cards refresh: % copies hold quantity > 1, and dropping quantity would lose the extra copies; resolve those rows first (docs/systems/cards.md, deploy runbook notes)', n; END IF;
     END IF;
 
     -- 2. The refreshed CardType. The pre-refresh type (NATION, LORE, NS_IMPORT, SPECIAL, COMMUNITY) is used by no

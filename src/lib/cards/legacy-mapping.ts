@@ -5,7 +5,7 @@
  * use its title and realm rules. It is the one file under src/ that may name the retired type and rarity values.
  */
 import type { Prisma } from "@prisma/client";
-import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { canonicalOrTrimmedTitle, titleKey } from "~/lib/wiki-os/core/title";
 import {
   ALTHISTORY_REALM_ID,
   DEFAULT_REALM_ID,
@@ -13,8 +13,8 @@ import {
   NS_REALM_ID,
 } from "~/lib/realms/realm-ids";
 import { SPORTS_TROPHY_TITLE } from "~/lib/sports/trophy-titles";
-import { CardFinish, CardRarity, CardType, parseCardRarity } from "./enums";
-import { pickNsFacts, type NsFacts } from "./ns-facts";
+import { CardFinish, CardRarity, CardType, parseCardRarity, rarityKey } from "./enums";
+import { isJsonObject, pickNsFacts, type NsFacts } from "./ns-facts";
 
 /** The pre-refresh type of Commons flag cards (they become Lore cards in Ixnay; the dry run lists them). */
 export const COMMONS_LEGACY_TYPE = "COMMONS_IMPORT";
@@ -65,10 +65,7 @@ export interface MappedRarity {
 
 /** A rarity string as the enum (any casing, "ultra-rare" normalised); Mythic and Divine fold into Legendary. */
 export function mapRarity(value: string): MappedRarity | null {
-  const key = value
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]+/g, "_");
+  const key = rarityKey(value);
   if (RETIRED_TOP_TIERS.has(key)) return { rarity: CardRarity.LEGENDARY, retiredTopTier: true };
   const rarity = parseCardRarity(key);
   return rarity ? { rarity, retiredTopTier: false } : null;
@@ -102,11 +99,12 @@ export function boundFor(
   return card.isBound || card.type === CardType.TROPHY || achievementCardIds.has(card.id);
 }
 
-const WIKI_REALMS: Readonly<Record<string, string>> = {
-  ixwiki: DEFAULT_REALM_ID,
-  iiwiki: IIWIKI_REALM_ID,
-  althistory: ALTHISTORY_REALM_ID,
-};
+/** A Map, not an object: a source such as "constructor" must not find an Object.prototype member. */
+const WIKI_REALMS: ReadonlyMap<string, string> = new Map([
+  ["ixwiki", DEFAULT_REALM_ID],
+  ["iiwiki", IIWIKI_REALM_ID],
+  ["althistory", ALTHISTORY_REALM_ID],
+]);
 
 /** A wiki source as the realm sources key it: lower case, "ixwiki" when unset. */
 export function wikiSourceKey(source: string | null | undefined): string {
@@ -115,18 +113,18 @@ export function wikiSourceKey(source: string | null | undefined): string {
 
 /** Where a wiki's cards live when no realm imported their page: IxWiki (and any other wiki) Ixnay. */
 export function wikiFallbackRealm(source: string | null | undefined): string {
-  return WIKI_REALMS[wikiSourceKey(source)] ?? DEFAULT_REALM_ID;
+  return WIKI_REALMS.get(wikiSourceKey(source)) ?? DEFAULT_REALM_ID;
 }
 
 /** A page title in MediaWiki's canonical form; the trimmed title when MediaWiki would refuse it. */
 export function canonicalArticleTitle(title: string, source: string | null | undefined): string {
-  const canonical = canonicalizeTitle(title, { source: wikiSourceKey(source) });
-  return canonical?.title ?? title.replace(/_/g, " ").trim();
+  return canonicalOrTrimmedTitle(title, wikiSourceKey(source));
 }
 
 /** One article's key everywhere (the Lore natural key, the RealmPage match): its wiki and lower-cased canonical title. */
 export function articleKey(source: string | null | undefined, title: string): string {
-  return `${wikiSourceKey(source)}:${canonicalArticleTitle(title, source).toLowerCase()}`;
+  const wiki = wikiSourceKey(source);
+  return `${wiki}:${titleKey(title, wiki)}`;
 }
 
 export interface RealmPageRow {
@@ -172,9 +170,6 @@ export function homeRealmFor(card: HomeRealmInput, lookups: HomeRealmLookups): s
   const key = articleKey(card.wikiSource, card.wikiArticleTitle ?? card.title);
   return lookups.articleRealm.get(key) ?? wikiFallbackRealm(card.wikiSource);
 }
-
-const isJsonObject = (value: Prisma.JsonValue | null | undefined): value is Prisma.JsonObject =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * An NS card's facts from its three pre-refresh homes: `stats` (kept freshest by the value refreshes), then

@@ -12,6 +12,7 @@ import { LoreCategory } from "~/lib/cards/category-enums";
 import { CardFinish, CardRarity, CardType } from "~/lib/cards/enums";
 import { articleHomeRealm } from "~/lib/cards/home-realm";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 import { mintCopy } from "~/lib/cards/mint";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
@@ -58,7 +59,7 @@ interface TrophyEntry {
 }
 
 const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
-  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  isJsonObject(value) ? value : {};
 
 /** Keys (`<entryId>:<edition>`) of the trophy cards that already exist. */
 async function mintedKeys(db: PrismaClient, entryIds?: string[]): Promise<Set<string>> {
@@ -213,9 +214,8 @@ async function grantOne(db: PrismaClient, cardId: string, userId: string): Promi
 }
 
 /**
- * Grants each unowned trophy card to its winner once that wiki account has a verified link. A card granted
- * before is never granted again, A trophy is bound and stays with
- * the account it was granted to (§3).
+ * Grants each unowned trophy card to its winner once that wiki account has a verified link. A card granted before is
+ * never granted again: a trophy is bound and stays with the account it was granted to (§3).
  */
 export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
   const unowned = await db.card.findMany({

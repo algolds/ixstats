@@ -184,6 +184,18 @@ describe("cards foundations: constraint SQL", () => {
     expect(body.indexOf('DROP COLUMN IF EXISTS "artworkUrl"')).toBeGreaterThan(check.at);
   });
 
+  it("refuses, before the drops, while a copy holds quantity > 1, whose extra copies the quantity drop would lose", () => {
+    const check = refusal("copies hold quantity > 1");
+    expect(check.at).toBeGreaterThan(0);
+    expect(check.gatedOn).toBe("column_name = 'quantity'");
+    expect(body).toContain("table_name = 'CardOwnership' AND column_name = 'quantity'");
+    expect(body).toContain('SELECT count(*) INTO n FROM "CardOwnership" WHERE "quantity" > 1;');
+    expect(body.slice(check.at, body.indexOf("', n;", check.at))).toMatch(
+      /lose the extra copies; resolve those rows first/
+    );
+    expect(body.indexOf('DROP COLUMN IF EXISTS "quantity"')).toBeGreaterThan(check.at);
+  });
+
   it("is one block, so its one-shot gate covers every statement in the file", () => {
     expect(body.trim()).toMatch(/^BEGIN;\s*DO \$\$[\s\S]*\$\$;\s*COMMIT;$/);
     expect(body.match(/\$\$/g)).toHaveLength(2);
