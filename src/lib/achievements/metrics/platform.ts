@@ -2,10 +2,12 @@
  * Platform metrics (account scope): wiki, forum, ThinkTank, cards, Lorewards and cross-platform
  * activity of one person. Every query is a count or a short indexed read. Ids differ by model:
  * `ctx.userId` (`User.id`) keys cards, the forum, Onoma and the wiki link; `ctx.clerkUserId` keys
- * ThinkPages, ThinkTanks and Vexel. Wiki activity and Lorewards are attributed only through a
- * VERIFIED ixwiki `WikiAccountLink` (a revision's `authorId` is never set, and the legacy
- * `User.wikiUsername` is unproven), so an unlinked user reads 0 for both. Streaks and the
- * Renaissance week use real UTC days and ISO weeks. Map edits are not loaded here: the account key
+ * ThinkPages, ThinkTanks and Vexel. Wiki activity (edits and the Renaissance week) is the user's own
+ * revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported once their link was
+ * verified), plus rows with no `authorId` under exactly their VERIFIED ixwiki link's name, so an unlinked user's
+ * WikiOS edits count. Lorewards read the stats row of exactly the verified link's name, so an unlinked user reads 0
+ * there. The legacy `User.wikiUsername` is unproven and never read. Streaks and the Renaissance week use real UTC
+ * days and ISO weeks. Map edits are not loaded here: the account key
  * `mapEditsApproved` belongs to the nation loaders.
  *
  * Loader budget: at most 3 indexed queries each, and never a row list that grows with the user's
@@ -86,9 +88,11 @@ function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
  * Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass,
  * over the user's own wiki revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported
  * once their link was verified), plus the classic-wiki edits imported before that, with no `authorId` and `author`
- * exactly their verified link's name, which the link proves they own. A WikiOS row always carries an `authorId`, so
- * another account's edits under the same label never count. With no link the name is bound as NULL, and
- * `author = NULL` matches no row.
+ * exactly their verified link's name, which the link proves they own. A signed-in WikiOS edit carries its author's
+ * `authorId`, so another player's edits under the same label never count. A system save with no signed-in user (the
+ * story-chain wiki sync, under a country name) carries none, and `wiki_revisions` has no column that tells it from
+ * a MediaWiki import (`mwRevId` is stamped on mirrored WikiOS rows too), so such a save under exactly the link's name
+ * counts for the link holder. With no link the name is bound as NULL, and `author = NULL` matches no row.
  */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
