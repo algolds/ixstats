@@ -3,8 +3,9 @@
  * never used is refunded at what they paid for it, through the retired-store-item refund path
  * (`applyRetiredItemRefund`, key `retired_item_refund:<purchase id>`). Used tokens are spent oldest purchase first,
  * across every purchase that granted tokens, except that a retired item's tokens are spent last: its own script
- * refunds that purchase in full, so a used token is always one the player paid for. A token granted free (an admin
- * grant charges 0) is never refunded.
+ * refunds that purchase in full, so used tokens land on lore token purchases first and this script never refunds a
+ * used token. (Used tokens beyond those fall on retired items, which their script refunds in full anyway.) A token
+ * granted free (an admin grant charges 0) is never refunded.
  */
 import type { Prisma } from "@prisma/client";
 import { isJsonObject } from "~/lib/cards/ns-facts";

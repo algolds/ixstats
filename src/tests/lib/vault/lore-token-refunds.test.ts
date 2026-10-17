@@ -78,7 +78,7 @@ describe("planLoreTokenRefunds", () => {
     expect(refunds.map((r) => r.sourceTransactionId)).toEqual(["tok"]);
   });
 
-  it("counts archetype tokens as spent last, so a used token is never one its own script refunds in full", () => {
+  it("counts archetype tokens as spent last, so used tokens land on lore token purchases first", () => {
     const purchases = [
       purchase("arch", "upgrade_archetype_proposal", -3500, 1, 1),
       purchase("tok", "upgrade_lore_token", -2500, 1, 2),
