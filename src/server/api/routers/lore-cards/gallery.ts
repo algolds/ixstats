@@ -15,6 +15,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import type { Prisma } from "@prisma/client";
 import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
@@ -46,10 +47,8 @@ export const loreCardsGalleryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Build where clause
-        const where: any = {
-          cardType: "LORE",
-        };
+        // Build where clause: approved cards only (imports wait in review)
+        const where: Prisma.CardWhereInput = { cardType: "LORE", reviewState: "APPROVED" };
 
         // Wiki source filter
         if (input.wikiSource !== "all") {
@@ -83,7 +82,7 @@ export const loreCardsGalleryRouter = createTRPCRouter({
         }
 
         // Build orderBy
-        let orderBy: any = { createdAt: "desc" }; // dateAdded
+        let orderBy: Prisma.CardOrderByWithRelationInput = { createdAt: "desc" }; // dateAdded
         if (input.sortBy === "rarity") {
           orderBy = { rarity: "desc" };
         } else if (input.sortBy === "season") {

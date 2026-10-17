@@ -8,6 +8,7 @@ import {
   cardSourceLabel,
   cardWikiSourceSchema,
   commonsPageUrl,
+  parseCardArticleSource,
   parseCardWikiSource,
 } from "~/lib/cards/card-sources";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
@@ -28,6 +29,14 @@ describe("card sources", () => {
   it("parses stored values and answers null for anything else", () => {
     expect(parseCardWikiSource("commons")).toBe("commons");
     expect(parseCardWikiSource("stash")).toBeNull();
+  });
+
+  it("parses a stored article source, never reading Commons or nothing as IxWiki", () => {
+    expect(parseCardArticleSource("iiwiki")).toBe("iiwiki");
+    expect(parseCardArticleSource("althistory")).toBe("althistory");
+    expect(parseCardArticleSource("commons")).toBeNull();
+    expect(parseCardArticleSource(null)).toBeNull();
+    expect(parseCardArticleSource(undefined)).toBeNull();
   });
 
   it("names each source", () => {

@@ -1,0 +1,153 @@
+/** @jest-environment node */
+// `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factory relies on the ambient global.
+//
+// Cards refresh Phase 2: the generator reads a sister wiki's article (here AltHistory, through its MediaWiki API) into
+// a card candidate: the lead image with the file name the licence lookup needs, the quality signals and score, and
+// no rarity. A page that cannot become a card is an ArticleRejected with its reason.
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: { wikiArticle: { findMany: async () => [] } },
+  isDatabaseReadOnly: true,
+}));
+
+import { afterEach, describe, expect, it } from "@jest/globals";
+import { ArticleRejected } from "~/lib/cards/lore-card-candidate";
+import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
+import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
+
+const CDN = "https://static.wikia.nocookie.net/althistory/images";
+const BODY = "'''Aramelia''' is a nation of the Roman Survival timeline. ".repeat(14);
+
+interface FakePage {
+  original?: { source: string };
+  pageimage?: string;
+  images?: Array<{ title: string }>;
+  wikitext?: string;
+}
+
+/** AltHistory answering the generator's reads: the page, its backlinks, its first editors and file URLs. */
+function althistory(page: FakePage) {
+  return (url: URL) => {
+    const params = url.searchParams;
+    if (params.get("list") === "backlinks") {
+      return { query: { backlinks: [{ title: "A" }, { title: "B" }] } };
+    }
+    if (params.get("prop") === "imageinfo") {
+      const name = (params.get("titles") ?? "").replace(/^File:/, "").replace(/ /g, "_");
+      const info = [{ url: `${CDN}/1/12/${name}/revision/latest?cb=20200405180536` }];
+      return { query: { pages: { 7: { title: params.get("titles"), imageinfo: info } } } };
+    }
+    if (params.get("prop") === "revisions") {
+      const revisions = [{ user: "Kir", timestamp: "2020-01-01T00:00:00Z" }];
+      return { query: { pages: { 1: { title: "Aramelia (Roman Survival)", revisions } } } };
+    }
+    // AltHistory has no TextExtracts: the page comes back without an `extract`, with a warning.
+    return {
+      warnings: { query: { "*": 'Unrecognized value for parameter "prop": extracts' } },
+      query: {
+        pages: {
+          1: {
+            title: "Aramelia (Roman Survival)",
+            original: page.original,
+            pageimage: page.pageimage,
+            images: page.images,
+            categories: [{ title: "Category:Nations" }, { title: "Category:Roman Survival" }],
+            revisions: [
+              {
+                "*": page.wikitext ?? BODY,
+                user: "Kir",
+                timestamp: "2020-01-01T00:00:00Z",
+              },
+            ],
+          },
+        },
+      },
+    };
+  };
+}
+
+let guard: FetchGuard;
+const read = (page: FakePage, options?: { requireImage?: boolean; minLength?: number }) => {
+  guard = installFetchGuard(althistory(page));
+  return wikiLoreCardGenerator.generateCard("Aramelia (Roman Survival)", "althistory", options);
+};
+afterEach(() => guard.restore());
+
+describe("generateCard for a sister wiki", () => {
+  it("reads the page into a candidate: lead image and its file, signals and score, no rarity", async () => {
+    const source = `${CDN}/a/ab/Aramelia_flag_%28cropped%29.png/revision/latest?cb=20200405180536`;
+    const card = await read({ original: { source }, pageimage: "Aramelia_flag_(cropped).png" });
+
+    expect(card).toMatchObject({
+      title: "Aramelia (Roman Survival)",
+      artwork: source,
+      imageFile: "Aramelia_flag_(cropped).png",
+      wikiSource: "althistory",
+      wikiArticleTitle: "Aramelia (Roman Survival)",
+      signals: {
+        length: BODY.length,
+        referenceCount: 0,
+        inboundLinks: 2,
+        categoryCount: 2,
+        hasInfobox: false,
+        isFeatured: false,
+      },
+    });
+    expect(card.qualityScore).toBeCloseTo((BODY.length / 1000) * 0.3 + 0.8 + 1);
+    expect(card.fullExcerpt).toContain("Aramelia");
+    expect(card.authorInfo).toMatchObject({ creator: "Kir" });
+    expect(card).not.toHaveProperty("rarity");
+    expect(guard.calls().every((url) => new URL(url).hostname === "althistory.fandom.com")).toBe(
+      true
+    );
+  });
+
+  it("names the file from the page image's address when the wiki gives no name", async () => {
+    const source = `${CDN}/a/ab/Aramelia_flag_%28cropped%29.png/revision/latest?cb=20200405180536`;
+    const card = await read({ original: { source } });
+    expect(card.imageFile).toBe("Aramelia_flag_(cropped).png");
+  });
+
+  it("names no file for a page image on another host", async () => {
+    const card = await read({ original: { source: "https://example.org/Aramelia.png" } });
+    expect(card.artwork).toBe("https://example.org/Aramelia.png");
+    expect(card.imageFile).toBeNull();
+  });
+
+  it("takes the infobox image, and its file name without the namespace", async () => {
+    const wikitext = `{{Infobox country\n| image = File:Aramelia map.png\n}}\n${BODY}`;
+    const card = await read({ wikitext });
+    expect(card.imageFile).toBe("Aramelia map.png");
+    expect(card.artwork).toBe(`${CDN}/1/12/Aramelia_map.png/revision/latest?cb=20200405180536`);
+    expect(card.signals.hasInfobox).toBe(true);
+  });
+
+  it("takes the first article image when there is no page or infobox image, skipping icons", async () => {
+    const card = await read({
+      images: [{ title: "File:Aramelia flag icon.png" }, { title: "File:Aramelia coast.jpg" }],
+    });
+    expect(card.imageFile).toBe("Aramelia coast.jpg");
+  });
+
+  it("reads a page without an image as no artwork", async () => {
+    const card = await read({});
+    expect(card.artwork).toBeNull();
+    expect(card.imageFile).toBeNull();
+  });
+
+  it("rejects a page without an image when one is required", async () => {
+    await expect(read({}, { requireImage: true })).rejects.toEqual(
+      new ArticleRejected("no-image", '"Aramelia (Roman Survival)" has no usable image.')
+    );
+  });
+
+  it("rejects a stub, unless the caller lowers the length gate", async () => {
+    await expect(read({ wikitext: "'''Aramelia''' is a nation." })).rejects.toMatchObject({
+      kind: "too-short",
+      message: '"Aramelia (Roman Survival)" is too short (27 characters; the minimum is 600).',
+    });
+    guard.restore();
+    const card = await read({ wikitext: "'''Aramelia''' is a nation." }, { minLength: 0 });
+    expect(card.signals.length).toBe(27);
+  });
+});

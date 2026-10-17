@@ -148,11 +148,8 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(findMatchingCategory("unknown_keyword_xyz")).toBeNull();
   });
 
-  it("should have IXWB preset and category / namespace 0 crawlers configured", () => {
+  it("should have the IXWB preset configured", () => {
     const { CATEGORY_PRESETS } = require("~/app/admin/cards/LoreCardBatchAdmin");
-    const {
-      wikiLoreCardGenerator,
-    } = require("~/lib/wiki-os/adapters/ixstates/lore-card-generator");
 
     // Check IXWB preset
     const ixwbPreset = CATEGORY_PRESETS.find(
@@ -163,12 +160,6 @@ describe("Card Designer Studio & Game-Icons Library", () => {
     expect(ixwbPreset.wikiSourceFilter).toBe("ixwiki");
     expect(ixwbPreset.terms.length).toBeGreaterThanOrEqual(10);
     expect(ixwbPreset.synonyms).toContain("ixwb");
-
-    // Check methods on wikiLoreCardGenerator
-    expect(typeof wikiLoreCardGenerator.searchCategories).toBe("function");
-    expect(typeof wikiLoreCardGenerator.fetchCategoryMembers).toBe("function");
-    expect(typeof wikiLoreCardGenerator.getCategoriesInfo).toBe("function");
-    expect(typeof wikiLoreCardGenerator.fetchAllMainNamespacePages).toBe("function");
   });
 
   it("should have getSyncLogCards and getSyncLogs configured on nsImportSyncRouter", () => {

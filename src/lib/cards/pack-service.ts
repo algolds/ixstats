@@ -237,7 +237,8 @@ export function generatePackCards(pack: {
 
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
- * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted.
+ * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
+ * only approved cards (imports wait in review).
  */
 async function packPoolWhere(
   tx: Prisma.TransactionClient,
@@ -257,6 +258,7 @@ async function packPoolWhere(
   });
 
   const and: Prisma.CardWhereInput[] = [
+    { reviewState: "APPROVED" },
     { isRetired: false },
     // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
     { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },

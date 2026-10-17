@@ -20,6 +20,7 @@ jest.mock("~/server/db", () => {
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
+import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
 
 const fetchMock = jest.fn();
 const realFetch = global.fetch;
@@ -76,22 +77,19 @@ describe("the lore-card generator leaves out a page WikiOS deleted", () => {
   });
 
   it("does not list it among a category's members, a wiki's pages or random pages, and no wiki is asked", async () => {
-    expect(await wikiLoreCardGenerator.fetchCategoryMembers("Nations", "ixwiki")).toEqual([
+    expect(await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki")).toEqual([
       "Shown land",
     ]);
-    expect(await wikiLoreCardGenerator.fetchAllMainNamespacePages("ixwiki")).toEqual([
-      "Shown land",
-    ]);
-    expect(await wikiLoreCardGenerator.fetchRandomArticles(10, "ixwiki")).toEqual(["Shown land"]);
-    expect(await wikiLoreCardGenerator.fetchRandomArticlesWithImages(10, "ixwiki")).toEqual([
+    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki")).toEqual(["Shown land"]);
+    expect(await loreCardDiscovery.fetchRandomArticlesWithImages(10, "ixwiki")).toEqual([
       "Shown land",
     ]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("makes no card from it, and never reads its text from the wiki", async () => {
-    await expect(wikiLoreCardGenerator.generateCard("Hidden land", "ixwiki")).rejects.toThrow(
-      "was not found"
+    await expect(wikiLoreCardGenerator.generateCard("Hidden land", "ixwiki")).rejects.toMatchObject(
+      { name: "ArticleRejected", kind: "missing" }
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

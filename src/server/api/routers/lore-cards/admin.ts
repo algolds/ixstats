@@ -16,8 +16,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
-import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { parseCardArticleSource } from "~/lib/cards/card-sources";
+import { oneOffImportContext, stageArticleCard } from "~/server/modules/cards/cards.importer";
 import { LedgerError, earnCreditsTx } from "~/lib/vault/vault-ledger";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
@@ -365,22 +365,24 @@ export const loreCardsAdminRouter = createTRPCRouter({
           });
         }
 
-        // Generate lore card (require image for production cards)
-        const candidate = await wikiLoreCardGenerator.generateCard(
-          request.articleTitle,
-          request.wikiSource as WikiSource,
-          { requireImage: true }
+        // Stage the card (an image is required), approved: the admin approved the request
+        const source = parseCardArticleSource(request.wikiSource) ?? "ixwiki";
+        const outcome = await stageArticleCard(
+          ctx.db,
+          source,
+          {
+            title: request.articleTitle,
+            requestedBy: adminUserId,
+            jobId: null,
+            requireImage: true,
+            reviewState: "APPROVED",
+          },
+          await oneOffImportContext(ctx.db, source)
         );
-
-        if (!candidate) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Failed to generate card. Article may not exist or quality may be too low.",
-          });
+        if (outcome.status !== "STAGED") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: outcome.reason });
         }
-
-        // Create card in database
-        const cardId = await wikiLoreCardGenerator.createCard(candidate);
+        const cardId = outcome.cardId;
 
         // Update request status
         await ctx.db.loreCardRequest.update({
@@ -399,7 +401,6 @@ export const loreCardsAdminRouter = createTRPCRouter({
         return {
           success: true,
           cardId,
-          card: candidate,
           message: "Lore card generated successfully",
         };
       } catch (error) {

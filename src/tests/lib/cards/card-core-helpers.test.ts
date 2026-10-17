@@ -3,7 +3,7 @@
 import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { copyRoom } from "~/lib/cards/capacity";
 import { copyValue, COPY_VALUE_SQL, deckValue } from "~/lib/cards/copy-value";
-import { articleHomeRealm } from "~/lib/cards/home-realm";
+import { articleHomePage, articleHomeRealm } from "~/lib/cards/home-realm";
 import { invalidateVaultConfigCache, clearUserPerksCache } from "~/lib/vault/vault-perks";
 
 beforeEach(() => {
@@ -75,7 +75,7 @@ describe("copyRoom", () => {
 
 describe("articleHomeRealm", () => {
   it("is the realm that imported the page earliest, asked by canonical title", async () => {
-    const findMany = jest.fn().mockResolvedValue([{ realmId: "eurth" }]);
+    const findMany = jest.fn().mockResolvedValue([{ realmId: "eurth", kind: "lore" }]);
     await expect(articleHomeRealm({ realmPage: { findMany } }, "iiwiki", "foo_bar")).resolves.toBe(
       "eurth"
     );
@@ -83,8 +83,19 @@ describe("articleHomeRealm", () => {
       where: { wikiSource: "iiwiki", title: { equals: "Foo bar", mode: "insensitive" } },
       orderBy: [{ importedAt: "asc" }, { realmId: "asc" }],
       take: 1,
-      select: { realmId: true },
+      select: { realmId: true, kind: true },
     });
+  });
+
+  it("comes from the home page, which also says what kind of page it is", async () => {
+    const findMany = jest.fn().mockResolvedValue([{ realmId: "eurth", kind: "nation" }]);
+    await expect(articleHomePage({ realmPage: { findMany } }, "iiwiki", "Elm")).resolves.toEqual({
+      realmId: "eurth",
+      kind: "nation",
+    });
+    await expect(
+      articleHomePage({ realmPage: { findMany: jest.fn().mockResolvedValue([]) } }, null, "Elm")
+    ).resolves.toBeNull();
   });
 
   it("falls back to the wiki's realm", async () => {

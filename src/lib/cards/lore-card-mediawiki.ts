@@ -9,7 +9,7 @@ import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 
-export type MwPage = MediaWikiPageItem & { original?: { source?: string } };
+export type MwPage = MediaWikiPageItem & { original?: { source?: string }; pageimage?: string };
 export type RevisionUser = { user: string; timestamp: string };
 
 /** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */

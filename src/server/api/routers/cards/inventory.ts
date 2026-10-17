@@ -166,7 +166,7 @@ export const cardsInventoryRouter = createTRPCRouter({
     return { totalCards, totalLoreCards, totalNSCards, pendingRequests, categoryBreakdown };
   }),
 
-  /** The card library for signed-in players: every live card, filterable; never a retired one. */
+  /** The card library for signed-in players: every live card, filterable; never a retired or pending one. */
   getNSCards: protectedProcedure
     .input(
       z.object({
@@ -181,7 +181,7 @@ export const cardsInventoryRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const where = libraryWhere({ ...input, retired: false });
+      const where = libraryWhere({ ...input, retired: false, reviewState: "APPROVED" });
       const [total, cards] = await Promise.all([
         ctx.db.card.count({ where }),
         ctx.db.card.findMany({

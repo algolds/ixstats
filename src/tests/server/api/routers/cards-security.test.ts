@@ -86,7 +86,7 @@ describe("cards router security", () => {
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
-  it("never lists retired cards to players", async () => {
+  it("never lists retired cards, or cards waiting in review, to players", async () => {
     const db = createMockPrisma();
     db.card.count.mockResolvedValue(0);
     await createCallerFactory(cardsInventoryRouter)(player(db)).getNSCards({ region: "Abydos" });
@@ -94,9 +94,11 @@ describe("cards router security", () => {
     expect(where.AND).toEqual(
       expect.arrayContaining([
         { isRetired: false },
+        { reviewState: "APPROVED" },
         { metadata: { path: ["nsData", "region"], string_contains: "Abydos" } },
       ])
     );
+    expect(db.card.count.mock.calls[0]![0].where).toBe(where);
   });
 
   it("shows admins retired cards in the explorer only when asked", async () => {
