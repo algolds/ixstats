@@ -7,6 +7,7 @@ import { describe, it, expect } from "@jest/globals";
 import {
   contestHolder,
   contestIdentity,
+  contestPlaceKey,
   describeConflict,
   groupByContest,
   type ContestEntry,
@@ -38,6 +39,14 @@ describe("contestIdentity", () => {
     expect(contestIdentity({ type: "daily", date: "2026-10-16", dateStart: null })).toBe(
       "daily:2026-10-16"
     );
+  });
+});
+
+describe("contestPlaceKey", () => {
+  it("is one key for a place of a contest, whichever entry of it is asked", () => {
+    expect(contestPlaceKey(stateKeyed("a"), "winner")).toBe("weekly:2026-10-12:winner");
+    expect(contestPlaceKey(entry("b"), "winner")).toBe("weekly:2026-10-12:winner");
+    expect(contestPlaceKey(entry("b"), "runner-up")).toBe("weekly:2026-10-12:runner-up");
   });
 });
 

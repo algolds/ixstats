@@ -16,7 +16,8 @@ import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
-import { contestHolder, groupByContest, type Contest } from "./contest-identity";
+import { contestHolder, contestPlaceKey, groupByContest, type Contest } from "./contest-identity";
+import { lockContestPlace } from "./contest-lock";
 import { placeOf, resolveLorewardPlace, type LorewardPlaceRef } from "./resolve-user";
 
 /** Prisma `where` fragment for a card relation that leaves trophy cards out (deck value, collection interest). */
@@ -91,11 +92,22 @@ async function mintedKeys(db: PrismaClient): Promise<Set<string>> {
   return new Set(rows.map((r) => `${r.lorewardEntryId}:${r.lorewardEdition}`));
 }
 
+/** Whether a card of this place of the contest (its entries `entryIds`) exists: inside the place's lock. */
+async function contestPlaceMinted(
+  tx: Prisma.TransactionClient,
+  entryIds: string[],
+  place: LorewardPlace
+): Promise<boolean> {
+  const count = await tx.card.count({
+    where: { lorewardEntryId: { in: entryIds }, lorewardEdition: place },
+  });
+  return count > 0;
+}
+
 async function mintOne(
   db: PrismaClient,
   season: number,
-  entry: TrophyEntry & { type: LorewardType },
-  place: LorewardPlace
+  { entry, place, entryIds }: MissingPlace
 ): Promise<boolean> {
   const recorded = placeOf(entry, place);
   if (!recorded) return false;
@@ -105,7 +117,10 @@ async function mintOne(
   const rarity = trophyRarity(entry.type, place);
   const userId = await resolveLorewardPlace(db, recorded);
   try {
-    await db.$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
+      // One card per contest place: a concurrent sync waits here, then finds this card.
+      await lockContestPlace(tx, contestPlaceKey(entry, place));
+      if (await contestPlaceMinted(tx, entryIds, place)) return false;
       const card = await tx.card.create({
         data: {
           title: page ?? `${label} Loreward ${entry.date}`,
@@ -134,8 +149,8 @@ async function mintOne(
         const serial = await allocateSerialNumberTx(tx, card.id);
         await tx.cardOwnership.create({ data: ownershipData(card.id, userId, serial) });
       }
+      return true;
     });
-    return true;
   } catch (error) {
     // Another run minted this place between the existence check and the insert.
     if (error instanceof Error && isUniqueViolation(error)) return false;
@@ -146,6 +161,8 @@ async function mintOne(
 interface MissingPlace {
   entry: TrophyEntry & { type: LorewardType };
   place: LorewardPlace;
+  /** The ids of every entry of the place's contest. */
+  entryIds: string[];
 }
 
 /** The entry columns a trophy card's place is resolved from. */
@@ -190,7 +207,11 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
         continue;
       const { entry } = holder;
       if (isContest(entry.type) && placeOf(entry, place)) {
-        missing.push({ entry: { ...entry, type: entry.type }, place });
+        missing.push({
+          entry: { ...entry, type: entry.type },
+          place,
+          entryIds: contest.map((e) => e.id),
+        });
       }
     }
   }
@@ -212,24 +233,60 @@ export async function mintTrophyCards(
     getCurrentIxCardSeason(db),
   ]);
   let minted = 0;
-  for (const { entry, place } of missing) if (await mintOne(db, season, entry, place)) minted++;
+  for (const place of missing) if (await mintOne(db, season, place)) minted++;
   return { minted };
 }
 
-/** Gives one unowned trophy card to `userId` unless it gained an owner, or was granted before, in the meantime. */
-async function grantOne(db: PrismaClient, cardId: string, userId: string): Promise<boolean> {
+/** One trophy card to grant, the place it is resolved from, and that place's contest. */
+interface TrophyGrant {
+  cardId: string;
+  recorded: LorewardPlaceRef;
+  place: LorewardPlace;
+  /** `contestPlaceKey` of the place: its advisory lock. */
+  lockKey: string;
+  /** The ids of every entry of the place's contest. */
+  entryIds: string[];
+}
+
+/** Whether a card of this place of the contest is owned, or was granted before: inside the place's lock. */
+async function contestPlaceSettled(
+  tx: Prisma.TransactionClient,
+  entryIds: string[],
+  place: LorewardPlace
+): Promise<boolean> {
+  const where = { lorewardEntryId: { in: entryIds }, lorewardEdition: place };
+  const [owned, placeCards] = await Promise.all([
+    tx.cardOwnership.count({ where: { cards: where } }),
+    tx.card.findMany({ where, select: { metadata: true } }),
+  ]);
+  return owned > 0 || placeCards.some((card) => Boolean(metaOf(card.metadata).grantedTo));
+}
+
+/**
+ * Gives one unowned trophy card to `userId`, unless a card of its contest place (this one or a twin's) gained an owner
+ * or was granted in the meantime.
+ */
+async function grantOne(db: PrismaClient, grant: TrophyGrant, userId: string): Promise<boolean> {
   return db.$transaction(async (tx) => {
-    // Takes the per-card lock, so a concurrent grant waits and then sees this one.
-    const serial = await allocateSerialNumberTx(tx, cardId);
-    const card = await tx.card.findUnique({ where: { id: cardId }, select: { metadata: true } });
-    const meta = metaOf(card?.metadata);
-    if (!card || meta.grantedTo || (await tx.cardOwnership.count({ where: { cardId } })) > 0) {
-      return false;
-    }
-    await tx.cardOwnership.create({ data: ownershipData(cardId, userId, serial) });
+    // One card per contest place: a concurrent grant of it waits here, then sees this one.
+    await lockContestPlace(tx, grant.lockKey);
+    if (await contestPlaceSettled(tx, grant.entryIds, grant.place)) return false;
+    const serial = await allocateSerialNumberTx(tx, grant.cardId);
+    const card = await tx.card.findUnique({
+      where: { id: grant.cardId },
+      select: { metadata: true },
+    });
+    if (!card) return false;
+    await tx.cardOwnership.create({ data: ownershipData(grant.cardId, userId, serial) });
     await tx.card.update({
-      where: { id: cardId },
-      data: { metadata: { ...meta, grantedTo: userId, grantedAt: new Date().toISOString() } },
+      where: { id: grant.cardId },
+      data: {
+        metadata: {
+          ...metaOf(card.metadata),
+          grantedTo: userId,
+          grantedAt: new Date().toISOString(),
+        },
+      },
     });
     return true;
   });
@@ -251,7 +308,7 @@ function cardsToGrant(
   unowned: UnownedCard[],
   all: Array<Contest<TrophyEntry>>,
   minted: Set<string>
-): Array<{ cardId: string; recorded: LorewardPlaceRef }> {
+): TrophyGrant[] {
   const waiting = new Map(
     unowned.map((card) => [
       `${card.lorewardEntryId}:${card.lorewardEdition}`,
@@ -261,7 +318,7 @@ function cardsToGrant(
   // A card that exists but is not waiting is owned; one granted before (then removed) stays settled.
   const settled = (key: string) => minted.has(key) && (waiting.get(key)?.granted ?? true);
 
-  const grants: Array<{ cardId: string; recorded: LorewardPlaceRef }> = [];
+  const grants: TrophyGrant[] = [];
   for (const contest of all) {
     for (const place of PLACES) {
       const holder = contestHolder(contest, place);
@@ -271,7 +328,15 @@ function cardsToGrant(
         waiting.get(`${holder.entry.id}:${place}`) ??
         keys.map((key) => waiting.get(key)).find((found) => found !== undefined);
       const recorded = placeOf(holder.entry, place);
-      if (card && recorded) grants.push({ cardId: card.id, recorded });
+      if (card && recorded) {
+        grants.push({
+          cardId: card.id,
+          recorded,
+          place,
+          lockKey: contestPlaceKey(holder.entry, place),
+          entryIds: contest.map((entry) => entry.id),
+        });
+      }
     }
   }
   return grants;
@@ -290,9 +355,9 @@ export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ grant
   const [all, minted] = await Promise.all([contests(db), mintedKeys(db)]);
 
   let granted = 0;
-  for (const { cardId, recorded } of cardsToGrant(unowned, all, minted)) {
-    const userId = await resolveLorewardPlace(db, recorded);
-    if (userId && (await grantOne(db, cardId, userId))) granted++;
+  for (const grant of cardsToGrant(unowned, all, minted)) {
+    const userId = await resolveLorewardPlace(db, grant.recorded);
+    if (userId && (await grantOne(db, grant, userId))) granted++;
   }
   return { granted };
 }

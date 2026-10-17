@@ -6,19 +6,26 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import type { LorewardEntry } from "@prisma/client";
+import type { LorewardEntry, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import {
   getBonusConfig,
   getLorewardPayouts,
-  grantBonus,
+  grantBonusTx,
   LOREWARD_PAYOUT_START,
   lorewardBonusKey,
   type LorewardPlace,
   type LorewardType,
 } from "~/lib/vault/vault-bonus";
-import { contestHolder, describeConflict, groupByContest, type Contest } from "./contest-identity";
+import {
+  contestHolder,
+  contestPlaceKey,
+  describeConflict,
+  groupByContest,
+  type Contest,
+} from "./contest-identity";
+import { lockContestPlace } from "./contest-lock";
 import { placeOf, resolveLorewardPlace } from "./resolve-user";
 import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
@@ -662,10 +669,16 @@ function paidEntries() {
   });
 }
 
-/** Whether another entry of the contest was paid for the place under its own key (before the twin appeared). */
-async function twinPaid(contest: Contest<PaidEntry>, place: LorewardPlace): Promise<boolean> {
-  if (contest.length < 2) return false;
-  const paid = await db.vaultTransaction.findFirst({
+/**
+ * Whether a Loreward bonus was paid for this place of this contest already, to anyone, under the key of any of its
+ * entries. A place pays once, whoever holds it now: a later holder (an OOL write, a twin, an override) is not paid.
+ */
+async function contestPlacePaid(
+  tx: Prisma.TransactionClient,
+  contest: Contest<PaidEntry>,
+  place: LorewardPlace
+): Promise<boolean> {
+  const paid = await tx.vaultTransaction.findFirst({
     where: {
       type: "EARN_BONUS",
       source: { in: contest.map((entry) => lorewardBonusKey(entry.id, place)) },
@@ -675,7 +688,10 @@ async function twinPaid(contest: Contest<PaidEntry>, place: LorewardPlace): Prom
   return paid !== null;
 }
 
-/** Pay one place of one contest, once, through the entry `contestHolder` chooses. Returns whether it paid. */
+/**
+ * Pay one place of one contest, once, through the entry `contestHolder` chooses: in one transaction that first takes
+ * the place's advisory lock, so two overlapping payout runs pay it at most once. Returns whether it paid.
+ */
 async function payPlace(
   contest: Contest<PaidEntry>,
   place: LorewardPlace,
@@ -684,30 +700,41 @@ async function payPlace(
   const holder = contestHolder(contest, place);
   if ("conflict" in holder) {
     console.warn(
-      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree (overrideWinner settles it).`
+      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page); an overrideWinner on one copy is rewritten by the next sync.`
     );
     return false;
   }
   const e = holder.entry;
   const recorded = placeOf(e, place);
   if (!isPaidType(e.type) || !recorded || payouts[e.type][place] <= 0) return false;
-  if (await twinPaid(contest, place)) return false;
   const userId = await resolveLorewardPlace(db, recorded);
   if (!userId) return false; // no account can be told behind the place: skip
 
-  const res = await grantBonus(db, userId, lorewardBonusKey(e.id, place), payouts[e.type][place], {
-    oneTime: true,
-    metadata: {
-      entryId: e.id,
-      date: e.date,
-      type: e.type,
-      place,
-      wikiUser: recorded.wikiUser,
-      winnerUser: e.winnerUser,
-      ...(recorded.page ? { page: recorded.page } : {}),
-    },
-  });
-  return res.granted;
+  const metadata = {
+    entryId: e.id,
+    date: e.date,
+    type: e.type,
+    place,
+    wikiUser: recorded.wikiUser,
+    winnerUser: e.winnerUser,
+    ...(recorded.page ? { page: recorded.page } : {}),
+  };
+  try {
+    return await db.$transaction(async (tx) => {
+      await lockContestPlace(tx, contestPlaceKey(e, place));
+      if (await contestPlacePaid(tx, contest, place)) return false;
+      return grantBonusTx(
+        tx,
+        userId,
+        lorewardBonusKey(e.id, place),
+        payouts[e.type][place],
+        metadata
+      );
+    });
+  } catch (error) {
+    console.error(`[Lorewards] Paying ${contestPlaceKey(e, place)} failed:`, error);
+    return false;
+  }
 }
 
 /**
@@ -716,9 +743,10 @@ async function payPlace(
  * of its VERIFIED ixwiki `WikiAccountLink`; a `wikios>Label` name pays the one WikiOS account behind the label's
  * edits to the winning page in the contest. Anything else pays no one. A contest stored twice (`groupByContest`)
  * pays each place once, through its state-keyed entry, and not at all while its entries name different holders.
- * Entries before the start are never paid, so an account found later does not back-pay history. Idempotent:
- * grantBonus(oneTime) keys off `lorewardBonusKey(entryId, place)` of the entry paid through, and a contest none of
- * whose entries' keys was paid yet, so re-running after each sync only pays new places.
+ * Entries before the start are never paid, so an account found later does not back-pay history. Idempotent and
+ * safe to overlap: each place pays inside one transaction holding its advisory lock (`contestPlaceKey`), and only
+ * when no entry of the contest was paid for it yet, to anyone, under `lorewardBonusKey(entryId, place)`. So a place
+ * pays its first holder only; a later holder (an OOL write, a twin, an admin override after payment) is not paid.
  * Returns the number of newly-granted bonuses.
  */
 export async function grantLorewardBonuses(): Promise<number> {

@@ -77,6 +77,24 @@ const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
 
 const inList = (ids: string[] | undefined, id: string) => !ids || ids.includes(id);
 
+/** The trophy-card filter of one contest place: its entries' cards of one edition. */
+interface CardWhere {
+  lorewardEntryId?: { in?: string[]; not?: null };
+  lorewardEdition?: string;
+}
+const inContestPlace = (card: CardRow, where: CardWhere) =>
+  inList(where.lorewardEntryId?.in, card.lorewardEntryId ?? "") &&
+  (!where.lorewardEdition || card.lorewardEdition === where.lorewardEdition);
+
+/** The values bound to the contest-place advisory lock calls, among all `$executeRaw` calls. */
+function contestLocks(database: PrismaClient): string[] {
+  const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
+  return raw.mock.calls
+    .filter(([strings]: [string[]]) => strings.join("?").includes("pg_advisory_xact_lock"))
+    .flatMap(([, ...values]: [string[], ...Array<string | number>]) => values)
+    .filter((value): value is string => typeof value === "string" && value.includes(":"));
+}
+
 function buildDb(): PrismaClient {
   const credit = (name: string) => () => {
     creditWrites.push(name);
@@ -116,12 +134,18 @@ function buildDb(): PrismaClient {
       ),
     },
     card: {
-      findMany: jest.fn(async ({ where }: { where: { CardOwnership?: unknown } }) =>
-        cards.filter(
-          (c) =>
-            c.lorewardEntryId !== null &&
-            (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
-        )
+      findMany: jest.fn(
+        async ({ where }: { where: CardWhere & { CardOwnership?: { none: object } } }) =>
+          cards.filter(
+            (c) =>
+              c.lorewardEntryId !== null &&
+              inContestPlace(c, where) &&
+              (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
+          )
+      ),
+      count: jest.fn(
+        async ({ where }: { where: CardWhere }) =>
+          cards.filter((c) => inContestPlace(c, where)).length
       ),
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         cards.find((c) => c.id === where.id)
@@ -158,8 +182,13 @@ function buildDb(): PrismaClient {
     },
     cardOwnership: {
       count: jest.fn(
-        async ({ where }: { where: { cardId: string } }) =>
-          ownerships.filter((o) => o.cardId === where.cardId).length
+        async ({ where }: { where: { cardId?: string; cards?: CardWhere } }) =>
+          ownerships.filter((o) => {
+            const card = cards.find((c) => c.id === o.cardId);
+            return where.cards
+              ? !!card && inContestPlace(card, where.cards)
+              : o.cardId === where.cardId;
+          }).length
       ),
       findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
         const mine = ownerships.filter((o) => o.cardId === where.cardId);
@@ -489,6 +518,49 @@ describe("trophy cards of a contest stored twice", () => {
     links.set("Nasastan", "u2");
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownerships).toEqual([]);
+  });
+});
+
+describe("trophy cards under the contest place lock", () => {
+  it("takes the contest place's lock, by its identity key, to mint and to grant", async () => {
+    await mintTrophyCards(db);
+    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner"]);
+    links.set("Kir Republic", "u1");
+    await grantUnownedTrophyCards(db);
+    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner", "daily:2026-10-16:winner"]);
+  });
+
+  it("mints nothing when another sync minted the contest place's card while it waited", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool")];
+    // This run listed the cards before the other sync's insert landed.
+    const findMany = db.card.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => []);
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toHaveLength(1);
+  });
+
+  it("grants nothing when another sync granted a twin's card while it waited", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
+    links.set("Kir Republic", "u1");
+    // This run listed both cards unowned; the other sync then gave c-ool to its holder.
+    const findMany = db.card.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => {
+      const listed = cards.map((card) => ({ ...card }));
+      ownerships.push({
+        id: "o-other",
+        cardId: "c-ool",
+        userId: "u1",
+        ownerId: "u1",
+        serialNumber: 1,
+        isLocked: false,
+        quantity: 1,
+      });
+      return listed;
+    });
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships.map((o) => o.cardId)).toEqual(["c-ool"]);
   });
 });
 

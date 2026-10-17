@@ -24,6 +24,12 @@ export function contestIdentity(entry: Pick<ContestEntry, "type" | "date" | "dat
   return `${entry.type}:${day}`;
 }
 
+/** The key of one place of one contest (`<type>:<first day>:<place>`): its advisory lock, and its log name. */
+export const contestPlaceKey = (
+  entry: Pick<ContestEntry, "type" | "date" | "dateStart">,
+  place: LorewardPlace
+): string => `${contestIdentity(entry)}:${place}`;
+
 const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 const holderOf = (entry: ContestEntry, place: LorewardPlace) =>
