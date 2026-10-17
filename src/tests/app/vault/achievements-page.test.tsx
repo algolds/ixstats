@@ -2,6 +2,12 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 
 const sync = jest.fn();
+const mockInvalidate = {
+  getAllWithStatus: jest.fn(),
+  getMySummary: jest.fn(),
+  getNextUnlock: jest.fn(),
+};
+let mockOnSync: (() => void) | undefined;
 jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace: jest.fn() }),
@@ -12,14 +18,20 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({
       achievements: {
-        getAllWithStatus: { invalidate: jest.fn() },
-        getMySummary: { invalidate: jest.fn() },
+        getAllWithStatus: { invalidate: mockInvalidate.getAllWithStatus },
+        getMySummary: { invalidate: mockInvalidate.getMySummary },
+        getNextUnlock: { invalidate: mockInvalidate.getNextUnlock },
       },
     }),
     users: { getProfile: { useQuery: () => ({ data: { countryId: "c1" } }) } },
     achievements: {
       getAllWithStatus: { useQuery: () => ({ data: [] }) },
-      syncMyCollectorAchievements: { useMutation: () => ({ mutate: sync }) },
+      syncMyCollectorAchievements: {
+        useMutation: (options: { onSuccess: () => void }) => {
+          mockOnSync = options.onSuccess;
+          return { mutate: sync };
+        },
+      },
     },
   },
 }));
@@ -46,5 +58,14 @@ describe("/vault/achievements", () => {
     ]);
     expect(screen.getByTestId("catalogue")).toBeInTheDocument();
     expect(sync).toHaveBeenCalled();
+  });
+
+  it("refreshes the catalogue, the Wallet summary and the next-up achievement after a sync", () => {
+    render(<VaultAchievementsPage />);
+    mockOnSync?.();
+    expect(mockInvalidate.getAllWithStatus).toHaveBeenCalled();
+    expect(mockInvalidate.getMySummary).toHaveBeenCalled();
+    // An unlock can leave the nearest locked achievement out of date.
+    expect(mockInvalidate.getNextUnlock).toHaveBeenCalled();
   });
 });

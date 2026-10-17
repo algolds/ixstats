@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser, SignInButton } from "~/context/auth-context";
@@ -8,6 +9,7 @@ import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
+import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { AwardHistory } from "./AwardHistory";
 import { LorewardsSection } from "./LorewardsSection";
 import { StreakCalendar } from "./StreakCalendar";
@@ -64,6 +66,24 @@ function TrophyFigures({
   );
 }
 
+interface ViewerTrophies {
+  wins: { daily: number; weekly: number; monthly: number };
+  runnerUps: number;
+  cards: ReadonlyArray<{ id: string }>;
+  unmatched: number;
+  verified: boolean;
+}
+
+/**
+ * An unverified viewer with classic-wiki places under their wiki name that a verified link could claim, and nothing
+ * else theirs. A verified viewer is never offered to verify.
+ */
+const onlyUnmatched = (mine: ViewerTrophies) =>
+  !mine.verified &&
+  mine.unmatched > 0 &&
+  mine.cards.length === 0 &&
+  mine.runnerUps + mine.wins.daily + mine.wins.weekly + mine.wins.monthly === 0;
+
 /** The trophies pane and what hangs off it: calendar and history, for the viewer or for `username`. */
 export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourLorewardsProps) {
   const { user, isLoaded } = useUser();
@@ -77,10 +97,11 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     { enabled: Boolean(username), staleTime: 60_000 }
   );
 
-  const wikiUsername = username ?? mine.data?.wikiUsername ?? undefined;
+  // The name's public record (stats row, calendar, history) is the viewer's only through a verified link.
+  const recordName = username ?? (mine.data?.verified ? mine.data.wikiUsername : null) ?? undefined;
   const { data: userStats } = api.lorewards.getUserStats.useQuery(
-    { username: wikiUsername ?? "" },
-    { enabled: Boolean(wikiUsername), staleTime: 60_000 }
+    { username: recordName ?? "" },
+    { enabled: Boolean(recordName), staleTime: 60_000 }
   );
 
   if (!username && isLoaded && !signedIn) {
@@ -117,6 +138,21 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
     );
   }
 
+  if (!username && mine.data && onlyUnmatched(mine.data)) {
+    return (
+      <EmptyState
+        icon={<Trophy />}
+        title="Classic wiki wins need a verified link"
+        message={`Some wins under ${mine.data.wikiUsername} may be yours. Verify your wiki account in Settings to claim the ones you made on the classic wiki.`}
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link href={ixstatesLinkHref("/settings?tab=account")}>Verify your wiki account</Link>
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       <LorewardsSection
@@ -147,13 +183,13 @@ export function YourLorewards({ username, highlightCardId, trophiesOnly }: YourL
           </Card>
         )}
       </LorewardsSection>
-      {wikiUsername && !trophiesOnly && (
+      {recordName && !trophiesOnly && (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <StreakCalendar username={wikiUsername} />
+            <StreakCalendar username={recordName} />
           </div>
           <div className="lg:col-span-3">
-            <AwardHistory username={wikiUsername} />
+            <AwardHistory username={recordName} />
           </div>
         </div>
       )}

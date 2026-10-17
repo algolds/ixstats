@@ -1,12 +1,10 @@
 /** @jest-environment node */
 jest.mock("~/lib/lorewards/scoring", () => ({ scoreDailyWikiOS: jest.fn() }));
-jest.mock("~/lib/lorewards/resolve-user", () => ({ resolveLorewardUser: jest.fn() }));
 jest.mock("~/lib/vault/vault-perks", () => ({ getYieldBoostMultiplier: jest.fn() }));
 jest.mock("~/lib/vault/vault-service", () => ({ earnCreditsOnce: jest.fn() }));
 
 import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { resolveLorewardUser } from "~/lib/lorewards/resolve-user";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
 import { dividendKey, parseDividendMetadata } from "~/lib/vault/vault-dividend";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
@@ -56,6 +54,8 @@ let config: Map<string, string>;
 const START_KEY = "vault_dividend_started_on";
 let rows: { userId: string; amount: number; idempotencyKey: string; metadata?: object }[];
 let db: PrismaClient;
+/** Verified ixwiki links: username to user id. */
+let links: Map<string, string>;
 
 function group<T extends Dated>(
   data: T[],
@@ -75,6 +75,12 @@ function group<T extends Dated>(
 function buildDb(): PrismaClient {
   const fake = {
     myVault: { findMany: jest.fn(async () => world.vaults) },
+    wikiAccountLink: {
+      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
+        const userId = links.get(where.username);
+        return userId ? { userId } : null;
+      }),
+    },
     thinkpagesPost: { groupBy: jest.fn(group(world.posts, "createdAt", "accountId")) },
     thinkpagesAccount: { findMany: jest.fn(async () => world.accounts) },
     user: { findMany: jest.fn(async () => world.users) },
@@ -139,7 +145,7 @@ beforeEach(() => {
   rows = [];
   db = buildDb();
   jest.mocked(scoreDailyWikiOS).mockResolvedValue({ candidates: [] } as never);
-  jest.mocked(resolveLorewardUser).mockResolvedValue(null);
+  links = new Map();
   jest.mocked(getYieldBoostMultiplier).mockResolvedValue(0);
   jest.mocked(earnCreditsOnce).mockImplementation(async (_db, input) => {
     const key = input.idempotencyKey;
@@ -277,23 +283,28 @@ describe("settleDividendDay", () => {
     );
   });
 
-  it("gives a wiki line only to editors with a verified linked account", async () => {
+  it("credits a wiki line from the scored revisions: their WikiOS author, else the name's link", async () => {
     vault("u1");
     vault("u2");
+    vault("u9");
+    links.set("Linked", "u9");
     jest.mocked(scoreDailyWikiOS).mockResolvedValue({
       candidates: [
-        { user: "Linked", finalScore: 500 },
-        { user: "Linked", finalScore: 300 },
-        { user: "Stranger", finalScore: 9000 },
+        // Every scored revision came from MediaWiki: the name's verified-link holder.
+        { user: "Linked", page: "Seneca front", finalScore: 800, authorIds: [null] },
+        // WikiOS edits by u2 under a name u9 verified: u2's, never the link holder's.
+        { user: "Linked", page: "Tide charts", finalScore: 1600, authorIds: ["u2"] },
+        // Mixed revisions: no one.
+        { user: "Linked", page: "Shared page", finalScore: 4000, authorIds: ["u2", null] },
+        // MediaWiki edits under a name nobody verified: no one.
+        { user: "Stranger", page: "Seneca front", finalScore: 9000, authorIds: [null] },
       ],
     } as never);
-    jest
-      .mocked(resolveLorewardUser)
-      .mockImplementation(async (_db, name) => (name === "Linked" ? "u1" : null));
     await settleDividendDay(db, D);
     expect(scoreDailyWikiOS).toHaveBeenCalledWith(D, undefined, { enrichAll: true });
-    expect(rowsFor("u1")[0]?.amount).toBe(10); // 800 / 80
-    expect(rowsFor("u2")).toEqual([]);
+    expect(rowsFor("u9")[0]?.amount).toBe(10); // 800 / 80
+    expect(rowsFor("u2")[0]?.amount).toBe(20); // 1600 / 80
+    expect(rowsFor("u1")).toEqual([]);
   });
 
   it("scales by the effective streak and the owned upgrades", async () => {

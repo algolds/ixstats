@@ -302,6 +302,15 @@ describe("AchievementService.checkAndUnlock without a country", () => {
     expect(db.userAchievement.create).not.toHaveBeenCalled();
   });
 
+  it("reads the locked achievements in key order, so a tie on share and points always picks the same one", async () => {
+    const db = setup(["gen-welcome"]);
+    await achievementService.nearestLocked(CLERK_ID, null, db as never);
+    expect(db.achievement.findMany).toHaveBeenLastCalledWith({
+      where: { isActive: true, key: { notIn: ["gen-welcome"] } },
+      orderBy: { key: "asc" },
+    });
+  });
+
   it("pays nothing when a concurrent run already created the unlock", async () => {
     const db = setup();
     db.userAchievement.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));

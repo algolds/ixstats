@@ -2,10 +2,12 @@
  * Platform metrics (account scope): wiki, forum, ThinkTank, cards, Lorewards and cross-platform
  * activity of one person. Every query is a count or a short indexed read. Ids differ by model:
  * `ctx.userId` (`User.id`) keys cards, the forum, Onoma and the wiki link; `ctx.clerkUserId` keys
- * ThinkPages, ThinkTanks and Vexel. Wiki activity and Lorewards are attributed only through a
- * VERIFIED ixwiki `WikiAccountLink` (a revision's `authorId` is never set, and the legacy
- * `User.wikiUsername` is unproven), so an unlinked user reads 0 for both. Streaks and the
- * Renaissance week use real UTC days and ISO weeks. Map edits are not loaded here: the account key
+ * ThinkPages, ThinkTanks and Vexel. Wiki activity (edits and the Renaissance week) is the user's own
+ * revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported once their link was
+ * verified), plus rows with no `authorId` under exactly their VERIFIED ixwiki link's name, so an unlinked user's
+ * WikiOS edits count. Lorewards read the stats row of exactly the verified link's name, so an unlinked user reads 0
+ * there. The legacy `User.wikiUsername` is unproven and never read. Streaks and the Renaissance week use real UTC
+ * days and ISO weeks. Map edits are not loaded here: the account key
  * `mapEditsApproved` belongs to the nation loaders.
  *
  * Loader budget: at most 3 indexed queries each, and never a row list that grows with the user's
@@ -14,8 +16,8 @@
  */
 import { weekKey } from "~/lib/achievements/time-buckets";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
+import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { MetricContext, MetricLoader } from "./registry";
-import { zeroed } from "./zeroed";
 
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
@@ -65,8 +67,8 @@ export function effectiveClaimStreak(
 const usernames = new WeakMap<MetricContext, Promise<string | null>>();
 
 /**
- * The username of the user's verified ixwiki link (MediaWiki-normalised, as `WikiRevision.author` is).
- * The wiki, Lorewards and Renaissance loaders share one evaluation's context, so it is read once.
+ * The username of the user's verified ixwiki link, `normalizeWikiUsername`-normalised (the form `WikiRevision.author`
+ * holds), or null. The wiki, Lorewards and Renaissance loaders share one evaluation's context, so it is read once.
  */
 function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
   let username = usernames.get(ctx);
@@ -76,20 +78,30 @@ function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
         where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
         select: { username: true },
       })
-      .then((link) => link?.username ?? null);
+      .then((link) => (link ? normalizeWikiUsername(link.username) : null));
     usernames.set(ctx, username);
   }
   return username;
 }
 
-/** Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass. */
+/**
+ * Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass,
+ * over the user's own wiki revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported
+ * once their link was verified), plus the classic-wiki edits imported before that, with no `authorId` and `author`
+ * exactly their verified link's name, which the link proves they own. A signed-in WikiOS edit carries its author's
+ * `authorId`, so another player's edits under the same label never count. A system save with no signed-in user (the
+ * story-chain wiki sync, under a country name) carries none, and `mwRevId` cannot tell it from a MediaWiki import
+ * (it is stamped on mirrored WikiOS rows too). Where the WikiOS `revId` trigger is installed (the hand-applied
+ * `2026-09-30-wikios-api.sql`), `revId = mwRevId` marks an import, because a native row keeps its sequence id; this
+ * code does not rely on that, so such a save under exactly the link's name counts for the link holder. With no link
+ * the name is bound as NULL, and `author = NULL` matches no row.
+ */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
   scope: "account",
   keys: WIKI_KEYS,
   async load(ctx) {
     const username = await verifiedWikiUsername(ctx);
-    if (!username) return zeroed(WIKI_KEYS);
     const [row] = await ctx.db.$queryRaw<Array<{ edits: number; created: number; pages: number }>>`
       SELECT COUNT(*)::int AS edits,
         (COUNT(*) FILTER (WHERE r."parentRevisionId" IS NULL AND a.namespace = 0
@@ -97,8 +109,8 @@ export const wikiLoader: MetricLoader = {
         COUNT(DISTINCT r."articleId")::int AS pages
       FROM wiki_revisions r
       JOIN wiki_articles a ON a.id = r."articleId"
-      WHERE r.author = ${username} AND r.source = 'ixwiki' AND r.parked = false
-        AND r."userDeleted" = false`;
+      WHERE (r."authorId" = ${ctx.userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+        AND r.source = 'ixwiki' AND r.parked = false AND r."userDeleted" = false`;
     return {
       wikiEdits: row?.edits ?? 0,
       wikiArticlesCreated: row?.created ?? 0,
@@ -229,7 +241,11 @@ export const cardsDeckLoader: MetricLoader = {
   },
 };
 
-/** Loreward wins and runner-ups from the stats row of the linked wiki account (daily runner-ups only exist). */
+/**
+ * Loreward wins and runner-ups from the stats row of exactly the linked wiki account (daily runner-ups only exist):
+ * MediaWiki usernames are case-sensitive after the first letter, so only the normalized name matches, as
+ * `resolveLorewardPlace` matches a plain name. Places won under a `wikios>` name are not in this row.
+ */
 export const lorewardsLoader: MetricLoader = {
   id: "platform-lorewards",
   scope: "account",
@@ -238,7 +254,7 @@ export const lorewardsLoader: MetricLoader = {
     const username = await verifiedWikiUsername(ctx);
     const stats = username
       ? await ctx.db.lorewardUserStats.findFirst({
-          where: { username: { equals: username, mode: "insensitive" } },
+          where: { username },
         })
       : null;
     return {
@@ -253,8 +269,9 @@ export const lorewardsLoader: MetricLoader = {
 
 /**
  * 1 when the current or previous ISO week holds a wiki edit, a human post or reply, and card
- * activity (a pack opened, a trade accepted or a sale). One query: the distinct (kind, ISO week)
- * pairs of the last 14 days, kept where all three kinds meet. Week keys match `weekKey`.
+ * activity (a pack opened, a trade accepted or a sale). A wiki edit is one of the user's own revisions, as the
+ * wiki loader reads them. One query: the distinct (kind, ISO week) pairs of the last 14 days, kept where all three
+ * kinds meet. Week keys match `weekKey`.
  */
 export const renaissanceLoader: MetricLoader = {
   id: "platform-renaissance",
@@ -263,8 +280,6 @@ export const renaissanceLoader: MetricLoader = {
   async load(ctx) {
     const { db, userId, clerkUserId, now } = ctx;
     const username = await verifiedWikiUsername(ctx);
-    // Without a verified link there is no wiki edit to find, so the week cannot be met.
-    if (!username) return { renaissanceWeek: 0 };
     const since = new Date(now.getTime() - LOOKBACK_DAYS * DAY_MS);
     const weeks = [weekKey(now), weekKey(new Date(now.getTime() - WEEK_MS))];
     const [row] = await db.$queryRaw<Array<{ weeks: number }>>`
@@ -272,7 +287,8 @@ export const renaissanceLoader: MetricLoader = {
         SELECT wk FROM (
           SELECT 'wiki' AS kind, to_char(r."createdAt", 'IYYY-"W"IW') AS wk
           FROM wiki_revisions r
-          WHERE r.author = ${username} AND r.source = 'ixwiki' AND r.parked = false
+          WHERE (r."authorId" = ${userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+            AND r.source = 'ixwiki' AND r.parked = false
             AND r."userDeleted" = false AND r."createdAt" >= ${since}
           UNION
           SELECT 'post', to_char(p."createdAt", 'IYYY-"W"IW')

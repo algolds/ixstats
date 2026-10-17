@@ -3,32 +3,34 @@
  * own with what Loreward bonuses have paid them.
  */
 import { z } from "zod/v4";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
-import { lorewardNameOf, resolveLorewardUser } from "~/lib/lorewards/resolve-user";
-import { getTodayRace } from "~/lib/lorewards/today-race";
 import {
-  loadTrophies,
-  lorewardCreditsPaid,
-  NO_TROPHIES,
-  todayRankOf,
-} from "~/lib/lorewards/trophy-summary";
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
+import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
+import { loadMyTrophies, myRaceRank, viewerNames } from "~/lib/lorewards/my-trophies";
+import { verifiedLorewardUser } from "~/lib/lorewards/resolve-user";
+import { getTodayRace, type TodayRace } from "~/lib/lorewards/today-race";
+import { loadTrophies, lorewardCreditsPaid } from "~/lib/lorewards/trophy-summary";
 
 /** How long `getMyTrophies` waits for a cold race before it leaves the rank out. */
 const RACE_WAIT_MS = 2_000;
 
 /**
- * The wiki user's rank in today's race. The race scores a whole UTC day, so it never holds the trophies
- * back: a slow or failed run only leaves the rank out.
+ * The viewer's rank in today's race (`rankOf`). The race scores a whole UTC day, so it never holds the trophies
+ * back: the race and the rank lookup share one two-second budget, and a slow or failed run only leaves the rank out.
  */
-async function rankInTodayRace(wikiUsername: string): Promise<number | null> {
+async function rankInTodayRace(
+  rankOf: (race: TodayRace) => Promise<number | null>
+): Promise<number | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const waited = new Promise<null>((resolve) => {
     timer = setTimeout(() => resolve(null), RACE_WAIT_MS);
   });
   try {
-    const race = await Promise.race([getTodayRace(), waited]);
-    return race ? todayRankOf(race, wikiUsername) : null;
+    return await Promise.race([getTodayRace().then(rankOf), waited]);
   } catch {
     return null;
   } finally {
@@ -41,29 +43,30 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
   getTodayRace: publicProcedure.query(() => getTodayRace()),
 
   /**
-   * A wiki user's trophies; the cards are those held by the account that verified the name, and are left out
-   * when that account hides its Vault cards on its passport.
+   * A wiki user's trophies (rate-limited: any name can be asked for). The cards are those held by the account
+   * that verified the name, and are left out when that account hides its Vault cards on its passport.
    */
-  getTrophies: publicProcedure
+  getTrophies: rateLimitedPublicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
     .query(async ({ ctx, input }) => {
-      const resolved = await resolveLorewardUser(ctx.db, input.username);
-      const showCards = resolved
-        ? (await loadPassportSettings(resolved)).visibility.vaultCards
-        : false;
-      return loadTrophies(ctx.db, input.username, showCards ? resolved : null);
+      const holder = await verifiedLorewardUser(ctx.db, input.username);
+      const showCards = holder ? (await loadPassportSettings(holder)).visibility.vaultCards : false;
+      return loadTrophies(ctx.db, input.username, showCards ? holder : null);
     }),
 
-  /** The viewer's trophies under their wiki name (WikiOS edits or a verified link), what Loreward bonuses paid, and today's rank. */
+  /**
+   * The viewer's trophies (`loadMyTrophies`: only the places the payout rule pays to them), what Loreward bonuses
+   * paid, and today's rank.
+   */
   getMyTrophies: protectedProcedure.query(async ({ ctx }) => {
-    const wikiUsername = await lorewardNameOf(ctx.db, ctx.user.id);
-    if (!wikiUsername) return { wikiUsername: null, ...NO_TROPHIES, paid: 0, todayRank: null };
+    const names = await viewerNames(ctx.db, ctx.user.id);
+    const mine = await loadMyTrophies(ctx.db, ctx.user.id, names);
+    if (!mine.wikiUsername) return { ...mine, paid: 0, todayRank: null };
 
-    const [trophies, paid, todayRank] = await Promise.all([
-      loadTrophies(ctx.db, wikiUsername, ctx.user.id),
+    const [paid, todayRank] = await Promise.all([
       lorewardCreditsPaid(ctx.db, ctx.user.id),
-      rankInTodayRace(wikiUsername),
+      rankInTodayRace((race) => myRaceRank(ctx.db, race, names, ctx.user.id)),
     ]);
-    return { wikiUsername, ...trophies, paid, todayRank };
+    return { ...mine, paid, todayRank };
   }),
 });
