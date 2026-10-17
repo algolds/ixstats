@@ -43,13 +43,13 @@ export function LorewardOverrideCard() {
       notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {
-      notify.error("Override Failed", err.message);
+      notify.error("Override failed", err.message);
     },
   });
 
   const handleOverrideSubmit = () => {
     if (!overrideDate) {
-      notify.error("Validation Error", "Please select a date for the override.");
+      notify.error("Validation error", "Please select a date for the override.");
       return;
     }
     overrideWinnerMutation.mutate({
@@ -116,7 +116,7 @@ export function LorewardOverrideCard() {
         </div>
 
         <div className="border-separator space-y-2 border-t pt-2">
-          <span className="text-eyebrow text-yellow">1. Winner Details</span>
+          <h4 className="text-label text-subhead font-semibold">Winner details</h4>
           <label className="text-label-secondary text-subhead flex items-center gap-2">
             <Switch checked={overrideNoWinner} onCheckedChange={setOverrideNoWinner} />
             No winner
@@ -170,7 +170,7 @@ export function LorewardOverrideCard() {
         </div>
 
         <div className="border-separator space-y-2 border-t pt-2">
-          <span className="text-label-secondary text-eyebrow">2. Runner-up Details</span>
+          <h4 className="text-label text-subhead font-semibold">Runner-up details</h4>
           <label className="text-label-secondary text-subhead flex items-center gap-2">
             <Switch checked={overrideNoRunnerUp} onCheckedChange={setOverrideNoRunnerUp} />
             No runner-up
@@ -233,7 +233,7 @@ export function LorewardOverrideCard() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save and Sync Winner Override
+          Save and sync winner override
         </Button>
       </CardContent>
     </Card>
