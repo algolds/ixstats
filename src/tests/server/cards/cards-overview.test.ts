@@ -218,8 +218,9 @@ describe("cardsActivity", () => {
         at: new Date("2026-10-28T09:00:00Z"),
         kind: "sync",
         title: "NationStates CTE filter",
+        subject: null,
         detail: "0 new, 0 updated",
-        actor: null,
+        actor: "System",
         ok: true,
       },
       {
@@ -227,8 +228,9 @@ describe("cardsActivity", () => {
         at: new Date("2026-10-28T07:00:00Z"),
         kind: "audit",
         title: "Card designer mint",
+        subject: null,
         detail: null,
-        actor: "clerk_admin",
+        actor: "Unknown user",
         ok: false,
       },
     ]);
@@ -251,10 +253,123 @@ describe("cardsActivity", () => {
       at: new Date("2026-10-28T06:00:00Z"),
       kind: "import",
       title: "Category:Oak",
+      subject: null,
       detail: "1 staged, 2 skipped, 1 blocked, 1 failed of 5",
-      actor: null,
+      actor: "System",
       ok: false,
     });
+  });
+
+  it("names every actor, player and card by name, never by id, in one batch of reads", async () => {
+    const PLAYER = "cmuuth78o0001f9jiqi63dw14";
+    const ADMIN = "cmadmin000000000000000001";
+    const at = (hour: number) => new Date(`2026-10-28T${String(hour).padStart(2, "0")}:00:00Z`);
+    const db = createMockPrisma();
+    db.auditLog.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        action: "CARD_GRANT",
+        target: "card_elm",
+        details: `Granted Elm #3 to ${PLAYER}: a gift`,
+        userId: "clerk_admin",
+        success: true,
+        timestamp: at(10),
+      },
+      {
+        id: "a2",
+        action: "CARD_RARITY_OVERRIDE",
+        target: "card_ahk",
+        details: "Rarity COMMON → RARE: a banner",
+        userId: "clerk_gone",
+        success: true,
+        timestamp: at(9),
+      },
+      {
+        id: "a3",
+        action: "CARD_PACK_AWARD",
+        target: PLAYER,
+        details: "Awarded Season I Recruit Pack",
+        userId: "clerk_admin",
+        success: true,
+        timestamp: at(8),
+      },
+      {
+        id: "a4",
+        action: "CARD_TAKEDOWN",
+        target: "card_ahk",
+        details: "The flag owner (Elm) hid the art: mine",
+        userId: null,
+        success: true,
+        timestamp: at(7),
+      },
+    ]);
+    db.cardImportJob.findMany.mockResolvedValue([
+      {
+        id: "j1",
+        label: "Daily IxWiki import",
+        status: "DONE",
+        total: 1,
+        staged: 1,
+        skipped: 0,
+        blocked: 0,
+        failed: 0,
+        requestedBy: ADMIN,
+        createdAt: at(6),
+        startedAt: null,
+        finishedAt: null,
+      },
+    ]);
+    db.syncLog.findMany.mockResolvedValue([
+      {
+        id: "s1",
+        syncType: "NS_REGION_LAZARUS",
+        status: "SUCCESS",
+        cardsCreated: 1,
+        cardsUpdated: 0,
+        metadata: { regionNames: ["lazarus"], startedBy: ADMIN },
+        startedAt: at(5),
+        completedAt: null,
+      },
+    ]);
+    db.user.findMany.mockImplementation(
+      async ({ where }: { where: { id?: { in: string[] }; clerkUserId?: { in: string[] } } }) =>
+        where.id
+          ? [
+              { id: PLAYER, clerkUserId: "clerk_player" },
+              { id: ADMIN, clerkUserId: "clerk_admin" },
+            ].filter((user) => where.id!.in.includes(user.id))
+          : [
+              { clerkUserId: "clerk_player", country: { name: "E2E Testland" } },
+              { clerkUserId: "clerk_admin", country: { name: "Admin Isles" } },
+            ].filter((user) => where.clerkUserId!.in.includes(user.clerkUserId))
+    );
+    db.card.findMany.mockResolvedValue([
+      { id: "card_elm", title: "Elm" },
+      { id: "card_ahk", title: "Ahkmala" },
+    ]);
+
+    const feed = await cardsActivity(db as never, 10);
+
+    expect(feed.map(({ subject, detail, actor }) => ({ subject, detail, actor }))).toEqual([
+      // The card is already named in the detail, so it is not named twice.
+      { subject: null, detail: "Granted Elm #3 to E2E Testland: a gift", actor: "Admin Isles" },
+      { subject: "Ahkmala", detail: "Rarity COMMON → RARE: a banner", actor: "Unknown user" },
+      { subject: "E2E Testland", detail: "Awarded Season I Recruit Pack", actor: "Admin Isles" },
+      { subject: "Ahkmala", detail: "The flag owner (Elm) hid the art: mine", actor: "System" },
+      {
+        subject: null,
+        detail: "1 staged, 0 skipped, 0 blocked, 0 failed of 1",
+        actor: "Admin Isles",
+      },
+      { subject: null, detail: "1 new, 0 updated", actor: "Admin Isles" },
+    ]);
+    expect(JSON.stringify(feed)).not.toMatch(/cm[a-z0-9]{23}|clerk_/);
+    expect(db.card.findMany).toHaveBeenCalledTimes(1);
+    expect(db.card.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["card_elm", "card_ahk", PLAYER] } },
+      select: { id: true, title: true },
+    });
+    expect(db.user.findMany).toHaveBeenCalledTimes(2);
   });
 });
 
