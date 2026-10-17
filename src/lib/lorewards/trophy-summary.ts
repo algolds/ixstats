@@ -38,7 +38,10 @@ const placeOf = (edition: string | null): LorewardPlace | null =>
   edition === "winner" || edition === "runner-up" ? edition : null;
 
 /** The trophy cards `userId` owns; a card whose contest or place was not recorded is left out. */
-export async function ownedTrophyCards(db: TrophyDb, userId: string): Promise<TrophyCardSummary[]> {
+export async function ownedTrophyCards(
+  db: Pick<PrismaClient, "cardOwnership">,
+  userId: string
+): Promise<TrophyCardSummary[]> {
   const owned = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { lorewardEntryId: { not: null } } },
     select: { cards: { select: { id: true, title: true, lorewardEdition: true, metadata: true } } },

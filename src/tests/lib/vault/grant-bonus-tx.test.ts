@@ -32,7 +32,7 @@ describe("grantBonusTx", () => {
       where: { OR: [{ id: "clerk_1" }, { clerkUserId: "clerk_1" }] },
       select: { id: true },
     });
-    expect(earnCreditsTx).toHaveBeenCalledWith(tx, {
+    expect(earnCreditsTx).toHaveBeenCalledWith(tx as never, {
       userId: "u1",
       amount: 500,
       type: "EARN_BONUS",

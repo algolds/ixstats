@@ -68,7 +68,9 @@ describe("findContestEntries", () => {
 describe("contestEntryIds", () => {
   it("reads the ids of every entry of the contest, whichever key each is stored under", async () => {
     const tx = {
-      lorewardEntry: { findMany: jest.fn(async () => [{ id: "ool" }, { id: "state" }]) },
+      lorewardEntry: {
+        findMany: jest.fn(async (_args: object) => [{ id: "ool" }, { id: "state" }]),
+      },
     };
     const ids = await contestEntryIds(tx as never, {
       type: "weekly",

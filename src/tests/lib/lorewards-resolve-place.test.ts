@@ -63,13 +63,20 @@ const matches = (r: Revision, where: RevisionWhere) => {
 function fakeDb(revisions: Revision[], links: Link[] = []) {
   return {
     wikiAccountLink: {
-      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
-        const link = links.find((l) => l.username === where.username);
-        return link ? { userId: link.userId } : null;
-      }),
+      findFirst: jest.fn(
+        async ({
+          where,
+        }: {
+          where: { username: string; source?: string; verifiedAt?: object };
+          select?: object;
+        }) => {
+          const link = links.find((l) => l.username === where.username);
+          return link ? { userId: link.userId } : null;
+        }
+      ),
     },
     wikiRevision: {
-      groupBy: jest.fn(async ({ where }: { where: RevisionWhere }) =>
+      groupBy: jest.fn(async ({ where }: { by?: string[]; where: RevisionWhere }) =>
         [...new Set(revisions.filter((r) => matches(r, where)).map((r) => r.authorId))].map(
           (authorId) => ({ authorId })
         )

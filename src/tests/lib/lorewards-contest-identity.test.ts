@@ -58,10 +58,11 @@ describe("contestEntriesWhere", () => {
       storedEntry({ id: "next", type: "weekly", date: "2026-W43", dateStart: "2026-10-19" }),
       storedEntry({ id: "daily", type: "daily", date: "2026-10-12" }),
     ];
-    expect(rows.filter((row) => matches(row, where)).map((row) => row.id)).toEqual([
-      "ool",
-      "state",
-    ]);
+    expect(
+      rows
+        .filter((row) => matches(row, where as Parameters<typeof matches>[1]))
+        .map((row) => row.id)
+    ).toEqual(["ool", "state"]);
   });
 
   it("finds a daily by its date", () => {
