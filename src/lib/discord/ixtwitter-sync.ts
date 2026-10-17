@@ -15,11 +15,15 @@ import { withJobLock } from "~/lib/system/job-lock";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
-import { DOMParser } from "@xmldom/xmldom";
 import { buildDiscordPollObject } from "./poll";
 import { ordinal, parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 import { cleanPostContent } from "./thinkpages-feed";
+import { htmlToDiscordMarkdown } from "./markdown";
+import { APP_URL, CLEAN_BASE_PATH } from "./site-url";
 import { APP_TINTS } from "~/lib/design/tokens";
+
+// Callers and tests import the converter from here.
+export { htmlToDiscordMarkdown };
 
 /** ThinkPages posts on Discord wear the ThinkPages tint; the dark value reads on Discord's dark embeds. */
 const THINKPAGES_EMBED_COLOR = parseInt(APP_TINTS.thinkpages.dark.tint.slice(1), 16);
@@ -30,15 +34,6 @@ const IXTWITTER_CHANNEL_ID = process.env.DISCORD_IXTWITTER_CHANNEL_ID || "557223
 const FEED_TO_IXTWITTER_ENABLED = false;
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
-const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
-const APP_URL = (
-  process.env.APP_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://maps.ixwiki.com"
-).replace(/\/$/, "");
-const CLEAN_BASE_PATH = BASE_PATH
-  ? (BASE_PATH.startsWith("/") ? BASE_PATH : `/${BASE_PATH}`).replace(/\/$/, "")
-  : "";
 
 const DEFAULT_COUNTRY_ID = process.env.DISCORD_POST_COUNTRY_ID || "";
 
@@ -976,185 +971,4 @@ export async function removeDiscordReaction(
     );
     return false;
   }
-}
-
-function decodeHtmlEntities(str: string): string {
-  if (!str) return "";
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&nbsp;/g, " ");
-}
-
-function autoCloseHtmlTags(html: string): string {
-  const tags = [
-    "strong",
-    "b",
-    "em",
-    "i",
-    "u",
-    "s",
-    "del",
-    "strike",
-    "code",
-    "pre",
-    "p",
-    "a",
-    "ul",
-    "ol",
-    "li",
-  ];
-  let closedHtml = html;
-
-  for (const tag of tags) {
-    const openCount = (closedHtml.match(new RegExp(`<${tag}\\b[^>]*>`, "gi")) || []).length;
-    const closeCount = (closedHtml.match(new RegExp(`</${tag}>`, "gi")) || []).length;
-
-    if (openCount > closeCount) {
-      const missing = openCount - closeCount;
-      closedHtml += `</${tag}>`.repeat(missing);
-    }
-  }
-
-  return closedHtml;
-}
-
-export function htmlToDiscordMarkdown(html: string): string {
-  if (!html) return "";
-
-  const closedHtml = autoCloseHtmlTags(html);
-
-  try {
-    const parser = new DOMParser({
-      onError: (level, message) => {
-        if (level === "fatalError") {
-          throw new Error(message);
-        }
-      },
-    });
-
-    const doc = parser.parseFromString(`<div>${closedHtml}</div>`, "text/xml");
-    const root = doc.documentElement;
-    if (root) {
-      const result = convertNodeToMarkdown(root).trim();
-      return result.replace(/\n{3,}/g, "\n\n");
-    }
-  } catch (err) {
-    console.warn("[htmlToDiscordMarkdown] XML parsing failed, using regex fallback:", err);
-  }
-
-  return fallbackHtmlToMarkdown(closedHtml);
-}
-
-/** Site-relative links become absolute so they work outside IxStates. */
-const absoluteUrl = (href: string) =>
-  href.startsWith("/") && !href.startsWith("//") ? `${APP_URL}${CLEAN_BASE_PATH}${href}` : href;
-
-const wikiEmbedMarkdown = (title: string, summary: string, source: string) => {
-  const wikiUrl = `${APP_URL}${CLEAN_BASE_PATH}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
-  return `\n**Wiki Embed: [${title}](${wikiUrl})**\n*Source: ${source}*\n> ${summary}\n`;
-};
-
-/** Markdown wrapping per element; tags not listed pass their children through. */
-const TAG_MARKDOWN: Record<string, (children: string) => string> = {
-  p: (c) => `\n${c}\n`,
-  strong: (c) => `**${c}**`,
-  b: (c) => `**${c}**`,
-  em: (c) => `*${c}*`,
-  i: (c) => `*${c}*`,
-  u: (c) => `__${c}__`,
-  s: (c) => `~~${c}~~`,
-  del: (c) => `~~${c}~~`,
-  strike: (c) => `~~${c}~~`,
-  code: (c) => `\`${c}\``,
-  pre: (c) => `\`\`\`\n${c}\n\`\`\``,
-  ul: (c) => `\n${c}\n`,
-  ol: (c) => `\n${c}\n`,
-  li: (c) => `- ${c.trim()}\n`,
-  br: () => "\n",
-};
-
-function convertNodeToMarkdown(node: any): string {
-  if (!node) return "";
-  if (node.nodeType === 3) return decodeHtmlEntities(node.nodeValue || "");
-  if (node.nodeType !== 1) return "";
-
-  const tagName = node.tagName.toLowerCase();
-  const children = Array.from(node.childNodes || [])
-    .map((child) => convertNodeToMarkdown(child))
-    .join("");
-  const attr = (name: string): string => node.getAttribute?.(name) || "";
-
-  switch (tagName) {
-    case "div":
-      return attr("data-wikiembed") === "true"
-        ? wikiEmbedMarkdown(
-            attr("data-title"),
-            attr("data-summary"),
-            attr("data-source") || "ixwiki"
-          )
-        : children;
-    case "a":
-      return `[${children}](${absoluteUrl(attr("href"))})`;
-    case "img":
-      return `[Image: ${attr("alt") || "image"}](${attr("src")})`;
-    default:
-      return TAG_MARKDOWN[tagName]?.(children) ?? children;
-  }
-}
-
-function fallbackHtmlToMarkdown(html: string): string {
-  // Tag pairs whose content is wrapped as-is
-  const wrap =
-    (tags: string[], open: string, close = open) =>
-    (text: string) =>
-      tags.reduce(
-        (acc, tag) =>
-          acc.replace(new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, "gi"), `${open}$1${close}`),
-        text
-      );
-
-  let text = html.replace(
-    /<div[^>]*data-wikiembed="true"[^>]*data-title="([^"]+)"[^>]*data-summary="([^"]*)"[^>]*data-source="([^"]*)"[^>]*><\/div>/gi,
-    (_, title, summary, source) =>
-      wikiEmbedMarkdown(
-        decodeHtmlEntities(title),
-        decodeHtmlEntities(summary),
-        decodeHtmlEntities(source || "ixwiki")
-      )
-  );
-
-  // Structural elements
-  text = text
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<(?:p|ul|ol)[^>]*>|<\/(?:p|ul|ol)>/gi, "\n")
-    .replace(/<li[^>]*>/gi, "- ")
-    .replace(/<\/li>/gi, "\n");
-
-  // Inline formatting
-  text = wrap(["strong", "b"], "**")(text);
-  text = wrap(["em", "i"], "*")(text);
-  text = wrap(["u"], "__")(text);
-  text = wrap(["s", "del", "strike"], "~~")(text);
-  text = wrap(["code"], "`")(text);
-  text = wrap(["pre"], "```\n", "\n```")(text);
-
-  text = text
-    .replace(
-      /<a[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/gi,
-      (_, href, content) => `[${content}](${absoluteUrl(href)})`
-    )
-    .replace(
-      /<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*\/?>/gi,
-      (_, src, alt) => `[Image: ${alt || "image"}](${src})`
-    )
-    .replace(/<[^>]+>/g, "");
-
-  return decodeHtmlEntities(text)
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
