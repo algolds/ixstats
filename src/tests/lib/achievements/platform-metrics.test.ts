@@ -109,7 +109,7 @@ describe("registry shape", () => {
     }
   });
 
-  it("resolves the verified wiki username once per evaluation, whichever loaders ask", async () => {
+  it("reads the verified wiki link once per evaluation: only the Lorewards loader needs it", async () => {
     const db = rawDb([{ edits: 1, created: 0, pages: 1 }], [{ weeks: 0 }]);
     linked(db);
     db.lorewardUserStats.findFirst.mockResolvedValue(null);
@@ -120,20 +120,18 @@ describe("registry shape", () => {
 });
 
 describe("wiki loader", () => {
-  it("is zero and queries no revisions without a verified link", async () => {
-    const db = rawDb();
+  it("counts the WikiOS edits of a player with no verified link, by their account", async () => {
+    const db = rawDb([{ edits: 3, created: 1, pages: 2 }]);
     unlinked(db);
-    const result = await wikiLoader.load(ctx(db));
-    expect(result).toEqual({ wikiEdits: 0, wikiArticlesCreated: 0, wikiDistinctPages: 0 });
-    expect(db.wikiAccountLink.findFirst.mock.calls[0]![0].where).toEqual({
-      userId: "u1",
-      source: "ixwiki",
-      verifiedAt: { not: null },
+    expect(await wikiLoader.load(ctx(db))).toEqual({
+      wikiEdits: 3,
+      wikiArticlesCreated: 1,
+      wikiDistinctPages: 2,
     });
-    expect(db.$queryRaw).not.toHaveBeenCalled();
+    expect(sqlOf(db).params).toEqual(["u1"]);
   });
 
-  it("aggregates edits, created articles and distinct pages in one query on the link's username", async () => {
+  it("aggregates edits, created articles and distinct pages in one query on the account's own revisions", async () => {
     const db = rawDb([{ edits: 120, created: 11, pages: 50 }]);
     linked(db, "Urcea");
     const result = await wikiLoader.load(ctx(db));
@@ -141,9 +139,11 @@ describe("wiki loader", () => {
     expect(result).toEqual({ wikiEdits: 120, wikiArticlesCreated: 11, wikiDistinctPages: 50 });
     expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const { sql, params } = sqlOf(db);
-    expect(params).toEqual(["Urcea"]);
+    // The account's id, never the link's name: another player whose WikiOS label is "Urcea" is not counted.
+    expect(params).toEqual(["u1"]);
+    expect(sql).toContain('r."authorId" = ?');
+    expect(sql).not.toContain("r.author =");
     expect(sql).toContain('COUNT(DISTINCT r."articleId")');
-    expect(sql).toContain("r.author = ?");
     expect(sql).toContain("r.parked = false");
     expect(sql).toContain('r."userDeleted" = false');
     expect(sql).toContain('r."parentRevisionId" IS NULL AND a.namespace = 0');

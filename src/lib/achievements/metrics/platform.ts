@@ -16,7 +16,6 @@ import { weekKey } from "~/lib/achievements/time-buckets";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import type { MetricContext, MetricLoader } from "./registry";
-import { zeroed } from "./zeroed";
 
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
@@ -63,34 +62,25 @@ export function effectiveClaimStreak(
   return dayNumber(now) - dayNumber(vault.lastLoginDate) <= 1 ? vault.loginStreak : 0;
 }
 
-const usernames = new WeakMap<MetricContext, Promise<string | null>>();
-
-/**
- * The username of the user's verified ixwiki link (MediaWiki-normalised, as `WikiRevision.author` is).
- * The wiki, Lorewards and Renaissance loaders share one evaluation's context, so it is read once.
- */
-function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
-  let username = usernames.get(ctx);
-  if (!username) {
-    username = ctx.db.wikiAccountLink
-      .findFirst({
-        where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
-        select: { username: true },
-      })
-      .then((link) => link?.username ?? null);
-    usernames.set(ctx, username);
-  }
-  return username;
+/** The username of the user's verified ixwiki link (MediaWiki-normalised), or null. */
+async function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
+  const link = await ctx.db.wikiAccountLink.findFirst({
+    where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
+    select: { username: true },
+  });
+  return link?.username ?? null;
 }
 
-/** Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass. */
+/**
+ * Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass,
+ * over the account's own revisions (`authorId`: its WikiOS edits, and MediaWiki edits imported under its verified
+ * link), never ones that only carry the link's name.
+ */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
   scope: "account",
   keys: WIKI_KEYS,
   async load(ctx) {
-    const username = await verifiedWikiUsername(ctx);
-    if (!username) return zeroed(WIKI_KEYS);
     const [row] = await ctx.db.$queryRaw<Array<{ edits: number; created: number; pages: number }>>`
       SELECT COUNT(*)::int AS edits,
         (COUNT(*) FILTER (WHERE r."parentRevisionId" IS NULL AND a.namespace = 0
@@ -98,7 +88,7 @@ export const wikiLoader: MetricLoader = {
         COUNT(DISTINCT r."articleId")::int AS pages
       FROM wiki_revisions r
       JOIN wiki_articles a ON a.id = r."articleId"
-      WHERE r.author = ${username} AND r.source = 'ixwiki' AND r.parked = false
+      WHERE r."authorId" = ${ctx.userId} AND r.source = 'ixwiki' AND r.parked = false
         AND r."userDeleted" = false`;
     return {
       wikiEdits: row?.edits ?? 0,
