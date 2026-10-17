@@ -10,10 +10,22 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 const NOW = new Date("2026-10-28T12:00:00Z");
 
 function makeDb(
-  opts: { recent?: number; carded?: string[]; open?: boolean; pageKind?: string } = {}
+  opts: {
+    recent?: number;
+    carded?: string[];
+    /** The review state of each card the carded title has (default: one approved card). */
+    reviewStates?: string[];
+    open?: boolean;
+    pageKind?: string;
+  } = {}
 ) {
+  const reviewStates = opts.reviewStates ?? ["APPROVED"];
   const db = createMockPrisma({
-    $queryRaw: jest.fn().mockResolvedValue((opts.carded ?? []).map((key) => ({ key }))),
+    $queryRaw: jest.fn(async (sql: TemplateStringsArray) =>
+      sql.join("?").includes('"reviewState"')
+        ? reviewStates.map((reviewState) => ({ reviewState }))
+        : (opts.carded ?? []).map((key) => ({ key }))
+    ),
     $executeRaw: jest.fn().mockResolvedValue(1),
   });
   db.loreCardRequest.count.mockResolvedValue(opts.recent ?? 0);
@@ -119,6 +131,46 @@ describe("suggestCard", () => {
         NOW
       )
     ).rejects.toThrow("A realm's nation page does not become a lore card");
+  });
+
+  it("says an article whose card was turned down in review was turned down, and keeps refusing one in review", async () => {
+    const rejected = makeDb({ carded: ["elm"], reviewStates: ["REJECTED"] });
+    await expect(
+      suggestCard(rejected as never, "p", { source: "iiwiki", title: "Elm" }, NOW)
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This article was reviewed and turned down.",
+    });
+    expect(rejected.loreCardRequest.create).not.toHaveBeenCalled();
+    const [sql, ...values] = rejected.$queryRaw.mock.calls[1]!;
+    expect(sql.join("?")).toContain("\"cardType\" = 'LORE'");
+    expect(values).toEqual(["iiwiki", "elm"]);
+
+    await expect(
+      suggestCard(
+        makeDb({ carded: ["elm"], reviewStates: ["PENDING"] }) as never,
+        "p",
+        { source: "iiwiki", title: "Elm" },
+        NOW
+      )
+    ).rejects.toThrow("This article already has a card");
+    await expect(
+      suggestCard(
+        makeDb({ carded: ["elm"], reviewStates: ["REJECTED", "APPROVED"] }) as never,
+        "p",
+        { source: "iiwiki", title: "Elm" },
+        NOW
+      )
+    ).rejects.toThrow("This article already has a card");
+    // No card read by title (one deleted in between): the plain refusal, never "turned down".
+    await expect(
+      suggestCard(
+        makeDb({ carded: ["elm"], reviewStates: [] }) as never,
+        "p",
+        { source: "iiwiki", title: "Elm" },
+        NOW
+      )
+    ).rejects.toThrow("This article already has a card");
   });
 
   it("refuses a title that is not an article before counting anything", async () => {

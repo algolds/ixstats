@@ -22,7 +22,7 @@ Every imported card waits for an admin's review before it can drop from packs. A
 ## Suggesting a lore card
 
 1. Open [Suggest a lore card](/vault/lore-generator).
-2. Choose the wiki, then search for an article that has no card yet and select it.
+2. Choose the wiki, then search for an article that has no card yet and select it. An article whose card an admin reviewed and turned down can't be suggested again.
 3. Send the suggestion. It's free, and you can send three a day.
 4. An admin reviews it. If it's accepted, the card is made and joins the card pool. If it's declined, your list of suggestions on the same page shows why.
 
