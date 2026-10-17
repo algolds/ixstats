@@ -721,7 +721,9 @@ async function payPlace(
   }
   const e = holder.entry;
   const recorded = placeOf(e, place);
-  if (!isPaidType(e.type) || !recorded || payouts[e.type][place] <= 0) return "unpaid";
+  if (!isPaidType(e.type) || !recorded) return "unpaid";
+  const amount = payouts[e.type][place];
+  if (amount <= 0) return "unpaid";
   const userId = await resolveLorewardPlace(db, recorded);
   if (!userId) return "unpaid"; // no account can be told behind the place: skip
 
@@ -738,13 +740,7 @@ async function payPlace(
     const paid = await db.$transaction(async (tx) => {
       await lockContestPlace(tx, contestPlaceKey(e, place));
       if (await contestPlacePaid(tx, await contestEntryIds(tx, e), place)) return false;
-      return grantBonusTx(
-        tx,
-        userId,
-        lorewardBonusKey(e.id, place),
-        payouts[e.type][place],
-        metadata
-      );
+      return grantBonusTx(tx, userId, lorewardBonusKey(e.id, place), amount, metadata);
     });
     return paid ? "paid" : "unpaid";
   } catch (error) {
