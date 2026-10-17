@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/components/vault/IxCreditsSymbol", () => ({ IxCreditsSymbol: () => <i /> }));
 jest.mock("next/link", () => ({
@@ -41,6 +41,39 @@ const summary = (latest: unknown, ...older: unknown[]) => ({
   isLoading: false,
   isError: false,
 });
+/** jsdom has no ResizeObserver; these are resized by hand. */
+const observers = new Set<ResizeObserverStub>();
+class ResizeObserverStub implements ResizeObserver {
+  readonly callback: ResizeObserverCallback;
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    observers.add(this);
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {
+    observers.delete(this);
+  }
+}
+const resizeAll = () => act(() => observers.forEach((o) => o.callback([], o)));
+
+/** Gives the track a layout: jsdom measures every element as 0 wide. */
+function layOut(track: HTMLElement, width: number, scrollLeft: number) {
+  Object.defineProperty(track, "clientWidth", { configurable: true, value: width });
+  Object.defineProperty(track, "scrollLeft", { configurable: true, value: scrollLeft });
+}
+
+const NEXT = {
+  data: {
+    key: "d",
+    title: "Tycoon",
+    rarity: "Legendary",
+    category: "Cards",
+    iconUrl: null,
+    current: 40,
+    target: 50,
+  },
+};
 const LATEST = {
   key: "first trade",
   title: "First trade",
@@ -51,6 +84,10 @@ const LATEST = {
 };
 
 describe("VaultUnlocks", () => {
+  beforeAll(() => {
+    globalThis.ResizeObserver = ResizeObserverStub;
+  });
+
   beforeEach(() => {
     mockNext = {};
   });
@@ -104,17 +141,7 @@ describe("VaultUnlocks", () => {
       { ...LATEST, key: "b", title: "Second" },
       { ...LATEST, key: "c", title: "Third" }
     );
-    mockNext = {
-      data: {
-        key: "d",
-        title: "Tycoon",
-        rarity: "Legendary",
-        category: "Cards",
-        iconUrl: null,
-        current: 40,
-        target: 50,
-      },
-    };
+    mockNext = NEXT;
     const { container } = render(<VaultUnlocks />);
     const slides = screen.getAllByRole("link");
     expect(slides.map((a) => a.textContent)).toEqual([
@@ -132,10 +159,63 @@ describe("VaultUnlocks", () => {
     const dots = screen.getAllByRole("button", { name: /Show achievement/ });
     expect(dots).toHaveLength(4);
     expect(dots[0]).toHaveAttribute("aria-current", "true");
+  });
+
+  it("labels each slide by its place in the deck", () => {
+    mockSummary = summary(LATEST, { ...LATEST, key: "b", title: "Second" });
+    mockNext = NEXT;
+    render(<VaultUnlocks />);
+    const slides = screen.getAllByRole("group");
+    expect(slides.map((s) => s.getAttribute("aria-label"))).toEqual(["1 of 3", "2 of 3", "3 of 3"]);
+    for (const slide of slides) expect(slide).toHaveAttribute("aria-roledescription", "slide");
+    expect(screen.getByRole("group", { name: "3 of 3" }).textContent).toContain("Tycoon");
+  });
+
+  it("gives each dot a 24px target around the dot itself", () => {
+    mockSummary = summary(LATEST, { ...LATEST, key: "b", title: "Second" });
+    render(<VaultUnlocks />);
+    const [first, second] = screen.getAllByRole("button", { name: /Show achievement/ });
+    // p-2.25 is 9px a side around the 6px (size-1.5) dot.
+    expect(first!.className).toContain("p-2.25");
+    expect(first!.firstElementChild!.className).toMatch(/size-1\.5.*bg-tint/);
+    expect(second!.firstElementChild!.className).toContain("bg-fill-2");
+  });
+
+  it("scrolls to a dot's slide through the track's scroll-behavior, which reduced motion turns off", () => {
+    mockSummary = summary(LATEST);
+    mockNext = NEXT;
+    const { container } = render(<VaultUnlocks />);
     const track = container.querySelector(".snap-x") as HTMLElement;
+    expect(track.className).toContain("motion-safe:scroll-smooth");
+    layOut(track, 320, 0);
     track.scrollTo = jest.fn();
-    fireEvent.click(dots[3]!);
-    expect(track.scrollTo).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Show achievement 2 of 2" }));
+    expect(track.scrollTo).toHaveBeenCalledWith({ left: 320 });
+  });
+
+  it("follows the track when it is swiped, and measures the shown slide again on a resize", () => {
+    mockSummary = summary(LATEST, { ...LATEST, key: "b", title: "Second" });
+    mockNext = NEXT;
+    const { container } = render(<VaultUnlocks />);
+    const track = container.querySelector(".snap-x") as HTMLElement;
+    const current = () =>
+      screen
+        .getAllByRole("button", { name: /Show achievement/ })
+        .findIndex((dot) => dot.getAttribute("aria-current") === "true");
+
+    layOut(track, 320, 320);
+    fireEvent.scroll(track);
+    expect(current()).toBe(1);
+
+    // The same scroll offset is the third slide once the track is half as wide.
+    layOut(track, 160, 320);
+    resizeAll();
+    expect(current()).toBe(2);
+
+    // A hidden track has no width; that reads as the first slide, never NaN.
+    layOut(track, 0, 0);
+    resizeAll();
+    expect(current()).toBe(0);
   });
 
   it("shows the nearest locked achievement alone, without dots, before any unlock", () => {
@@ -154,6 +234,23 @@ describe("VaultUnlocks", () => {
     render(<VaultUnlocks />);
     expect(screen.getByRole("link").textContent).toContain("Next up, 1 of 4");
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("leaves out a next-up achievement the player has just earned, so it never shows twice", () => {
+    // getNextUnlock is cached longer than the summary, so it can still name the newest unlock.
+    mockSummary = summary(LATEST, { ...LATEST, key: "b", title: "Second" });
+    mockNext = { data: { ...NEXT.data, key: LATEST.key, title: LATEST.title } };
+    render(<VaultUnlocks />);
+    expect(screen.getAllByRole("link").map((a) => a.textContent)).toEqual([
+      expect.stringContaining("Newest"),
+      expect.stringContaining("Second"),
+    ]);
+    expect(screen.queryByText(/Next up/)).toBeNull();
+    expect(screen.getAllByRole("group").map((g) => g.getAttribute("aria-label"))).toEqual([
+      "1 of 2",
+      "2 of 2",
+    ]);
+    expect(screen.getAllByRole("button", { name: /Show achievement/ })).toHaveLength(2);
   });
 
   it("is hidden when there is no unlock yet", () => {

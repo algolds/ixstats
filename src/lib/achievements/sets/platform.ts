@@ -1,6 +1,7 @@
 /**
  * Platform achievements (account level): Wiki, Community (Social), Cards, Lorewards and General.
- * Rules read the keys of `metrics/platform.ts`; wiki and Loreward keys are 0 until a verified wiki
+ * Rules read the keys of `metrics/platform.ts`; wiki keys count the account's own revisions (WikiOS
+ * edits, and classic-wiki edits under its verified link's name), and Loreward keys are 0 until a verified wiki
  * link exists. "First approved map edit" reads `mapEditsApproved`, the account key of the nation
  * loaders. There are no set-completion achievements: completed sets are not a thing the game records.
  */
@@ -11,7 +12,8 @@ export const PLATFORM_DEFINITIONS: AchievementDefinition[] = [
   {
     id: "wiki-first-edit",
     title: "First Edit",
-    description: "Make an edit on the wiki with your verified wiki account",
+    description:
+      "Make an edit on the wiki: in WikiOS, or on the classic wiki with your verified wiki account",
     category: "Wiki",
     rarity: "Common",
     points: 10,

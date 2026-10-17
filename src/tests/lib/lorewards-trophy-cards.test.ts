@@ -1,11 +1,13 @@
 /** @jest-environment node */
 /**
- * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the winner's wiki
- * account is verified-linked. Minting, granting and the backfill never write IxCredits.
+ * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the place's account
+ * can be told (a plain name's verified wiki link, or for a `wikios>` name the WikiOS account behind its edits).
+ * Minting, granting and the backfill never write IxCredits.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { ConflictError } from "~/lib/app-error";
+import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
   backfillTrophyCards,
   grantUnownedTrophyCards,
@@ -18,6 +20,8 @@ interface EntryRow {
   id: string;
   type: string;
   date: string;
+  dateStart: string | null;
+  dateEnd: string | null;
   status: string;
   winnerUser: string | null;
   winnerPage: string | null;
@@ -50,6 +54,10 @@ let entries: EntryRow[];
 let cards: CardRow[];
 let ownerships: OwnershipRow[];
 let links: Map<string, string>;
+/** The authorIds of each page's edits under the queried label, by page title, as the place query groups them. */
+let winningEdits: Map<string, Array<string | null>>;
+/** The label and page of every place query the fake answered. */
+let placeQueries: Array<{ author: string; title: string }>;
 let creditWrites: string[];
 let failNextCardCreate: boolean;
 let failNextCardCreateAsConflict: boolean;
@@ -58,6 +66,8 @@ const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
   id: "e1",
   type: "daily",
   date: "2026-10-16",
+  dateStart: null,
+  dateEnd: null,
   status: "approved",
   winnerUser: "Kir_Republic",
   winnerPage: "Seneca front",
@@ -68,6 +78,38 @@ const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
 
 const inList = (ids: string[] | undefined, id: string) => !ids || ids.includes(id);
 
+/** The trophy-card filter of one contest place: its entries' cards of one edition. */
+interface CardWhere {
+  lorewardEntryId?: { in?: string[]; not?: null };
+  lorewardEdition?: string;
+}
+const inContestPlace = (card: CardRow, where: CardWhere) =>
+  inList(where.lorewardEntryId?.in, card.lorewardEntryId ?? "") &&
+  (!where.lorewardEdition || card.lorewardEdition === where.lorewardEdition);
+
+/** The values bound to the contest-place advisory lock calls, among all `$executeRaw` calls. */
+function contestLocks(database: PrismaClient): string[] {
+  const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
+  return raw.mock.calls
+    .filter(([strings]: [string[]]) => strings.join("?").includes("pg_advisory_xact_lock"))
+    .flatMap(([, ...values]: [string[], ...Array<string | number>]) => values)
+    .filter((value): value is string => typeof value === "string" && value.includes(":"));
+}
+
+/** When each contest-place lock was taken (jest's invocation order), among all `$executeRaw` calls. */
+function contestLockOrder(database: PrismaClient): number[] {
+  const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
+  return raw.mock.calls.flatMap(
+    ([, ...values]: [string[], ...Array<string | number>], i: number) =>
+      values.some((value) => typeof value === "string" && value.includes(":"))
+        ? [raw.mock.invocationCallOrder[i]!]
+        : []
+  );
+}
+
+/** When a fake delegate method was first called (jest's invocation order). */
+const firstCall = (method: object) => (method as jest.Mock).mock.invocationCallOrder[0];
+
 function buildDb(): PrismaClient {
   const credit = (name: string) => () => {
     creditWrites.push(name);
@@ -75,32 +117,41 @@ function buildDb(): PrismaClient {
   };
   const fake = {
     lorewardEntry: {
-      findMany: jest.fn(
-        async ({ where }: { where: { id?: { in: string[] }; type: { in: string[] } } }) =>
-          entries.filter(
-            (e) =>
-              e.status === "approved" &&
-              where.type.in.includes(e.type) &&
-              inList(where.id?.in, e.id)
-          )
+      // The real `where` (the contests read, and the contest re-read inside a place's lock); one page holds them all.
+      findMany: jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+        entries.filter((e) => matches(storedEntry(e), where))
       ),
     },
     systemConfig: { findUnique: jest.fn(async () => ({ value: "3" })) },
     wikiAccountLink: {
-      findFirst: jest.fn(async ({ where }: { where: { username: { equals: string } } }) => {
-        const userId = links.get(where.username.equals);
+      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
+        const userId = links.get(where.username);
         return userId ? { userId } : null;
       }),
     },
-    // No WikiOS edits: the WikiOS-author fallback finds nobody.
-    wikiRevision: { findFirst: jest.fn(async () => null) },
+    wikiRevision: {
+      groupBy: jest.fn(
+        async ({ where }: { where: { author: string; article: { title: string } } }) => {
+          placeQueries.push({ author: where.author, title: where.article.title });
+          return [...new Set(winningEdits.get(where.article.title) ?? [])].map((authorId) => ({
+            authorId,
+          }));
+        }
+      ),
+    },
     card: {
-      findMany: jest.fn(async ({ where }: { where: { CardOwnership?: unknown } }) =>
-        cards.filter(
-          (c) =>
-            c.lorewardEntryId !== null &&
-            (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
-        )
+      findMany: jest.fn(
+        async ({ where }: { where: CardWhere & { CardOwnership?: { none: object } } }) =>
+          cards.filter(
+            (c) =>
+              c.lorewardEntryId !== null &&
+              inContestPlace(c, where) &&
+              (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
+          )
+      ),
+      count: jest.fn(
+        async ({ where }: { where: CardWhere }) =>
+          cards.filter((c) => inContestPlace(c, where)).length
       ),
       findUnique: jest.fn(async ({ where }: { where: { id: string } }) =>
         cards.find((c) => c.id === where.id)
@@ -137,8 +188,13 @@ function buildDb(): PrismaClient {
     },
     cardOwnership: {
       count: jest.fn(
-        async ({ where }: { where: { cardId: string } }) =>
-          ownerships.filter((o) => o.cardId === where.cardId).length
+        async ({ where }: { where: { cardId?: string; cards?: CardWhere } }) =>
+          ownerships.filter((o) => {
+            const card = cards.find((c) => c.id === o.cardId);
+            return where.cards
+              ? !!card && inContestPlace(card, where.cards)
+              : o.cardId === where.cardId;
+          }).length
       ),
       findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
         const mine = ownerships.filter((o) => o.cardId === where.cardId);
@@ -167,6 +223,8 @@ beforeEach(() => {
   cards = [];
   ownerships = [];
   links = new Map();
+  winningEdits = new Map();
+  placeQueries = [];
   creditWrites = [];
   failNextCardCreate = false;
   failNextCardCreateAsConflict = false;
@@ -262,6 +320,20 @@ describe("mintTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
 
+  it("mints a wikios> winner's card owned by the WikiOS account behind the label's edits", async () => {
+    entries = [entry({ winnerUser: "wikios>Kir_Republic" })];
+    winningEdits.set("Seneca front", ["u2"]);
+    await mintTrophyCards(db);
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+    expect(placeQueries).toEqual([{ author: "Kir_Republic", title: "Seneca front" }]);
+  });
+
+  it("mints a plain-named winner's card unowned without a link, even with WikiOS edits on the page", async () => {
+    winningEdits.set("Seneca front", ["u2"]);
+    await mintTrophyCards(db);
+    expect(ownersOf("c1")).toEqual([]);
+  });
+
   it("gives a linked winner an unlocked, tradeable copy as serial 1", async () => {
     links.set("Kir Republic", "u1");
 
@@ -322,6 +394,31 @@ describe("grantUnownedTrophyCards", () => {
     expect(ownersOf("c1")).toHaveLength(1);
   });
 
+  it("grants a wikios> winner's card to the WikiOS account behind the label's edits", async () => {
+    entries[0]!.winnerUser = "wikios>Kir_Republic";
+    winningEdits.set("Seneca front", ["u2", "u2"]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+  });
+
+  it("grants nothing for a plain name without a link, or for a label two accounts share", async () => {
+    // A plain name is a MediaWiki editor: WikiOS edits under it on the page prove nothing.
+    winningEdits.set("Seneca front", ["u9"]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    entries[0]!.winnerUser = "wikios>Kir_Republic";
+    winningEdits.set("Seneca front", ["u9", "u3"]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+  });
+
+  it("grants nothing for an entry that is no longer approved", async () => {
+    links.set("Kir Republic", "u1");
+    entries[0]!.status = "rejected";
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+  });
+
   it("does not hand a card back that its owner has since removed", async () => {
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
@@ -361,6 +458,130 @@ describe("grantUnownedTrophyCards", () => {
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     expect(creditWrites).toEqual([]);
+  });
+});
+
+/** A weekly stored twice: by its first day (the OOL page) and as `2026-W42` with its range (the state file). */
+const weeklyTwins = (oolWinner: string, stateWinner: string): EntryRow[] => [
+  entry({ id: "w-ool", type: "weekly", date: "2026-10-12", winnerUser: oolWinner }),
+  entry({
+    id: "w-state",
+    type: "weekly",
+    date: "2026-W42",
+    dateStart: "2026-10-12",
+    dateEnd: "2026-10-18",
+    winnerUser: stateWinner,
+  }),
+];
+
+/** A trophy card minted before contests were told apart: one per entry of a pair. */
+const legacyCard = (id: string, entryId: string): CardRow =>
+  ({
+    id,
+    lorewardEntryId: entryId,
+    lorewardEdition: "winner",
+    title: "Seneca front",
+    rarity: "EPIC",
+    cardType: "LORE",
+    totalSupply: 1,
+    wikiArticleTitle: "Seneca front",
+    metadata: { contest: "weekly", place: "winner", entryId, wikiUser: "Kir_Republic" },
+  }) as CardRow;
+
+describe("trophy cards of a contest stored twice", () => {
+  it("mints one card for an agreeing pair, through its state-keyed entry", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(cards.map((c) => c.lorewardEntryId)).toEqual(["w-state"]);
+  });
+
+  it("mints no second card once either entry of the pair has one", async () => {
+    entries = [weeklyTwins("Kir_Republic", "Kir_Republic")[0]!];
+    await mintTrophyCards(db);
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toHaveLength(1);
+  });
+
+  it("mints nothing for a place the pair disagrees on", async () => {
+    entries = weeklyTwins("Urcea", "Nasastan");
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+  });
+
+  it("grants one card per contest place, the state-keyed entry's, when the pair has two", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
+    links.set("Kir Republic", "u1");
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(ownerships.map((o) => o.cardId)).toEqual(["c-state"]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+  });
+
+  it("grants nothing for a place the pair disagrees on", async () => {
+    entries = weeklyTwins("Kir_Republic", "Nasastan");
+    cards = [legacyCard("c-ool", "w-ool")];
+    links.set("Kir Republic", "u1");
+    links.set("Nasastan", "u2");
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+  });
+});
+
+describe("trophy cards under the contest place lock", () => {
+  it("takes the contest place's lock, by its identity key, before each re-check", async () => {
+    await mintTrophyCards(db);
+    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner"]);
+    // The mint's in-lock re-check (does a card of the place exist?) runs after the lock.
+    expect(contestLockOrder(db)[0]).toBeLessThan(firstCall(db.card.count)!);
+
+    links.set("Kir Republic", "u1");
+    await grantUnownedTrophyCards(db);
+    expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner", "daily:2026-10-16:winner"]);
+    // The grant's in-lock re-check (is a card of the place owned?) runs after its lock.
+    expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
+  });
+
+  it("mints nothing when the lock's re-read finds a twin's card this run never listed", async () => {
+    // Run B listed [ool, state] and minted the state entry's card; run A listed only [ool], then waited.
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-state", "w-state")];
+    const findMany = db.lorewardEntry.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => [entries[0]]);
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards.map((card) => card.id)).toEqual(["c-state"]);
+  });
+
+  it("mints nothing when another sync minted the contest place's card while it waited", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool")];
+    // This run listed the cards before the other sync's insert landed.
+    const findMany = db.card.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => []);
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toHaveLength(1);
+  });
+
+  it("grants nothing when another sync granted a twin's card while it waited", async () => {
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-ool", "w-ool"), legacyCard("c-state", "w-state")];
+    links.set("Kir Republic", "u1");
+    // This run listed both cards unowned; the other sync then gave c-ool to its holder.
+    const findMany = db.card.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => {
+      const listed = cards.map((card) => ({ ...card }));
+      ownerships.push({
+        id: "o-other",
+        cardId: "c-ool",
+        userId: "u1",
+        ownerId: "u1",
+        serialNumber: 1,
+        isLocked: false,
+        quantity: 1,
+      });
+      return listed;
+    });
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships.map((o) => o.cardId)).toEqual(["c-ool"]);
   });
 });
 

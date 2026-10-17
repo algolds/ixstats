@@ -6,20 +6,37 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import type { LorewardEntry, Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { parseOOLPage, OOL_YEARS, parseActiveMembers, parseAnnualWinners } from "./ool-parser";
 import {
   getBonusConfig,
   getLorewardPayouts,
-  grantBonus,
+  grantBonusTx,
   LOREWARD_PAYOUT_START,
   lorewardBonusKey,
   type LorewardPlace,
   type LorewardType,
 } from "~/lib/vault/vault-bonus";
-import { resolveLorewardUser } from "./resolve-user";
+import {
+  contestHolder,
+  contestPlaceKey,
+  describeConflict,
+  groupByContest,
+  type Contest,
+} from "./contest-identity";
+import {
+  contestEntryIds,
+  findContestEntries,
+  lockContestPlace,
+  type StoredContestEntry,
+} from "./contest-store";
+import { placeOf, resolveLorewardPlace } from "./resolve-user";
+import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
+import { LedgerError } from "~/lib/vault/vault-ledger";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
+import { labelOfImportName } from "~/lib/wiki-os/services/import-label";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 
 /**
@@ -249,6 +266,11 @@ export async function syncFromOOLPages(): Promise<number> {
           where: { date_type: { date: entry.date, type: entry.type } },
         });
         if (existing) continue;
+        // A weekly or monthly the state file holds under its own key is written there, not stored twice.
+        if (await writeStateTwin(entry)) {
+          yearSynced++;
+          continue;
+        }
 
         await db.lorewardEntry.create({
           data: {
@@ -278,8 +300,62 @@ export async function syncFromOOLPages(): Promise<number> {
   return totalSynced;
 }
 
+/** `entries` with the other entries of their contests: a weekly's or monthly's twin under the other key. */
+async function withTwins(entries: LorewardEntry[]): Promise<LorewardEntry[]> {
+  const ranged = entries.filter((e) => e.type === "weekly" || e.type === "monthly");
+  if (ranged.length === 0) return entries;
+  const twins = await db.lorewardEntry.findMany({
+    where: {
+      status: "approved",
+      OR: ranged.flatMap((e) => {
+        const day = e.dateStart ?? e.date;
+        return [
+          { type: e.type, date: day },
+          { type: e.type, dateStart: day },
+        ];
+      }),
+    },
+    orderBy: { date: "asc" },
+  });
+  const known = new Set(entries.map((e) => e.id));
+  return [...entries, ...twins.filter((twin) => !known.has(twin.id))];
+}
+
 /**
- * Recompute aggregate stats for a specific user.
+ * A user's wins, daily runner-ups, streaks and bytes, counting each contest once (`groupByContest`): through the
+ * entry `contestHolder` chooses, and for neither name while the contest's entries disagree on the place.
+ */
+function countUserPlaces(entries: LorewardEntry[], username: string) {
+  const stats = { dailyWins: 0, dailyRunnerUps: 0, weeklyWins: 0, monthlyWins: 0 };
+  let totalBytes = 0;
+  let lastWinDate: string | null = null;
+  const winDates: string[] = [];
+
+  for (const contest of groupByContest(entries)) {
+    const won = contestHolder(contest, "winner");
+    if (!("conflict" in won) && won.entry.winnerUser === username) {
+      const e = won.entry;
+      if (e.type === "daily") {
+        stats.dailyWins++;
+        winDates.push(e.date);
+      }
+      if (e.type === "weekly") stats.weeklyWins++;
+      if (e.type === "monthly") stats.monthlyWins++;
+      totalBytes += e.winnerBytes ?? 0;
+      lastWinDate = e.date;
+    }
+    const ran = contestHolder(contest, "runner-up");
+    if (!("conflict" in ran) && ran.entry.runnerUpUser === username && ran.entry.type === "daily") {
+      stats.dailyRunnerUps++;
+    }
+  }
+
+  const { current, longest } = calculateStreaks(winDates);
+  return { ...stats, currentStreak: current, longestStreak: longest, totalBytes, lastWinDate };
+}
+
+/**
+ * Recompute aggregate stats for a specific user, counting each contest once (`countUserPlaces`).
  * Does NOT overwrite totalScore — that comes from the canonical main OOL page medal scores.
  */
 export async function recomputeUserStats(username: string): Promise<void> {
@@ -290,34 +366,7 @@ export async function recomputeUserStats(username: string): Promise<void> {
     },
     orderBy: { date: "asc" },
   });
-
-  const stats = { dailyWins: 0, dailyRunnerUps: 0, weeklyWins: 0, monthlyWins: 0 };
-  let totalBytes = 0;
-  let lastWinDate: string | null = null;
-  const winDates: string[] = [];
-
-  for (const e of entries) {
-    if (e.winnerUser === username) {
-      if (e.type === "daily") {
-        stats.dailyWins++;
-        winDates.push(e.date);
-      }
-      if (e.type === "weekly") stats.weeklyWins++;
-      if (e.type === "monthly") stats.monthlyWins++;
-      totalBytes += e.winnerBytes ?? 0;
-      lastWinDate = e.date;
-    }
-    if (e.runnerUpUser === username && e.type === "daily") stats.dailyRunnerUps++;
-  }
-
-  const { current, longest } = calculateStreaks(winDates);
-  const computed = {
-    ...stats,
-    currentStreak: current,
-    longestStreak: longest,
-    totalBytes,
-    lastWinDate,
-  };
+  const computed = countUserPlaces(await withTwins(entries), username);
 
   // totalScore is left untouched on update: it comes from the main OOL page medal scores
   await db.lorewardUserStats.upsert({
@@ -419,24 +468,132 @@ export async function fullSync(): Promise<{
   return { stateEntries, oolEntries, users, members };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const daysBetween = (from: string, to: string) =>
-  (new Date(to).getTime() - new Date(from).getTime()) / DAY_MS;
+type ParsedEntry = ReturnType<typeof parseOOLPage>[number];
 
-function calculateStreaks(winDates: string[]): { current: number; longest: number } {
-  if (winDates.length === 0) return { current: 0, longest: 0 };
+/** The four place columns the OOL page writes. */
+interface PlaceColumns {
+  winnerUser: string | null;
+  winnerPage: string | null;
+  runnerUpUser: string | null;
+  runnerUpPage: string | null;
+}
 
-  const sorted = [...winDates].sort();
-  let longest = 1;
-  let run = 1; // after the loop: the consecutive-day run ending at the last win
-  for (let i = 1; i < sorted.length; i++) {
-    run = daysBetween(sorted[i - 1]!, sorted[i]!) === 1 ? run + 1 : 1;
-    longest = Math.max(longest, run);
+const STORED_PLACES = {
+  id: true,
+  date: true,
+  type: true,
+  dateStart: true,
+  winnerUser: true,
+  winnerPage: true,
+  runnerUpUser: true,
+  runnerUpPage: true,
+} as const;
+
+const isImportName = (name: string | null | undefined): name is string =>
+  !!name && labelOfImportName(name) !== null;
+
+/**
+ * The OOL page's name and page for one place, unless they would turn a stored `wikios>` name into a plain one: then
+ * the stored name, with its stored page (or, when it stored none, the OOL page's if its line names the same holder). A `wikios>` name pays only the WikiOS account behind its edits to its page, a plain
+ * one whoever verifies that MediaWiki account.
+ */
+function oolPlace(
+  stored: { name: string | null; page: string | null } | undefined,
+  fromPage: { name: string | null; page: string | null }
+): { name: string | null; page: string | null } {
+  if (!stored || !isImportName(stored.name) || isImportName(fromPage.name)) return fromPage;
+  // The kept name keeps its page. One stored with none takes the page's only when the page's line names the same
+  // holder (the label itself): another holder's page is their article, not one the label's edits won.
+  const sameHolder = labelOfImportName(stored.name) === fromPage.name;
+  return { name: stored.name, page: stored.page ?? (sameHolder ? fromPage.page : null) };
+}
+
+/** The place columns the OOL page writes over `stored` (none when the entry is new), under the `wikios>` guard. */
+function oolPlaces(stored: PlaceColumns | undefined, entry: PlaceColumns): PlaceColumns {
+  const winner = oolPlace(stored && { name: stored.winnerUser, page: stored.winnerPage }, {
+    name: entry.winnerUser,
+    page: entry.winnerPage,
+  });
+  const runnerUp = oolPlace(stored && { name: stored.runnerUpUser, page: stored.runnerUpPage }, {
+    name: entry.runnerUpUser,
+    page: entry.runnerUpPage,
+  });
+  return {
+    winnerUser: winner.name,
+    winnerPage: winner.page,
+    runnerUpUser: runnerUp.name,
+    runnerUpPage: runnerUp.page,
+  };
+}
+
+/**
+ * The stored entries of the parsed entries' keys (`date|type`), and the weekly and monthly entries the state file
+ * stores under their own key (`2026-W42`) whose first day (`dateStart`) is a parsed date: the same contest.
+ */
+async function storedFor(parsed: ParsedEntry[]) {
+  const dates = [...new Set(parsed.map((entry) => entry.date))];
+  const rows = await db.lorewardEntry.findMany({
+    where: {
+      OR: [
+        { date: { in: dates } },
+        { type: { in: ["weekly", "monthly"] }, dateStart: { in: dates } },
+      ],
+    },
+    select: STORED_PLACES,
+  });
+  const twins = rows.filter((row) => row.dateStart !== null && row.dateStart !== row.date);
+  return {
+    own: new Map(rows.map((row) => [`${row.date}|${row.type}`, row])),
+    twins: new Map(twins.map((row) => [`${row.dateStart}|${row.type}`, row])),
+  };
+}
+
+/**
+ * The state-keyed entry of a weekly or monthly the OOL page keys by its first day, written with the page's places
+ * (under the guard) instead of a second entry. Returns whether there was one.
+ */
+async function writeStateTwin(entry: ParsedEntry): Promise<boolean> {
+  if (entry.type === "daily") return false;
+  const twin = await db.lorewardEntry.findFirst({
+    where: { type: entry.type, dateStart: entry.date },
+    select: STORED_PLACES,
+  });
+  if (!twin) return false;
+  await db.lorewardEntry.update({ where: { id: twin.id }, data: oolPlaces(twin, entry) });
+  return true;
+}
+
+/**
+ * Write one current-year entry of the OOL page: over the entry of its key, else over the state-keyed entry of the
+ * same weekly or monthly, else as a new entry. Returns the names it stores.
+ */
+async function writeOOLEntry(
+  entry: ParsedEntry,
+  stored: Awaited<ReturnType<typeof storedFor>>,
+  year: number
+): Promise<Array<string | null>> {
+  const key = `${entry.date}|${entry.type}`;
+  const own = stored.own.get(key);
+  const twin = own ? undefined : stored.twins.get(key);
+  const places = oolPlaces(own ?? twin, entry);
+  if (twin) {
+    await db.lorewardEntry.update({ where: { id: twin.id }, data: places });
+  } else {
+    // Upsert so we get updates/corrections made on the wiki
+    await db.lorewardEntry.upsert({
+      where: { date_type: { date: entry.date, type: entry.type } },
+      create: {
+        date: entry.date,
+        type: entry.type,
+        ...places,
+        status: "approved",
+        month: entry.month,
+        year: entry.year ?? year,
+      },
+      update: places,
+    });
   }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const streakBroken = daysBetween(sorted[sorted.length - 1]!, today) > 1;
-  return { current: streakBroken ? 0 : run, longest };
+  return [places.winnerUser, places.runnerUpUser];
 }
 
 let lastAutoSyncTime = 0;
@@ -467,34 +624,13 @@ export async function syncCurrentWinners(force = false): Promise<void> {
     if (wikitext) {
       const parsed = parseOOLPage(wikitext, currentYear);
       const activeUsernames = new Set<string>();
+      const stored = await storedFor(parsed);
 
       for (const entry of parsed) {
         if (!entry.winnerUser) continue;
-
-        activeUsernames.add(entry.winnerUser);
-        if (entry.runnerUpUser) activeUsernames.add(entry.runnerUpUser);
-
-        // Upsert so we get updates/corrections made on the wiki
-        await db.lorewardEntry.upsert({
-          where: { date_type: { date: entry.date, type: entry.type } },
-          create: {
-            date: entry.date,
-            type: entry.type,
-            winnerUser: entry.winnerUser,
-            winnerPage: entry.winnerPage,
-            runnerUpUser: entry.runnerUpUser,
-            runnerUpPage: entry.runnerUpPage,
-            status: "approved",
-            month: entry.month,
-            year: entry.year ?? currentYear,
-          },
-          update: {
-            winnerUser: entry.winnerUser,
-            winnerPage: entry.winnerPage,
-            runnerUpUser: entry.runnerUpUser,
-            runnerUpPage: entry.runnerUpPage,
-          },
-        });
+        for (const name of await writeOOLEntry(entry, stored, currentYear)) {
+          if (name) activeUsernames.add(name);
+        }
       }
 
       // Recompute stats for only the users active in the current year to save DB overhead
@@ -521,62 +657,135 @@ function payoutDay(entry: { type: string; date: string; dateEnd: string | null }
 }
 
 /**
- * Pay the winner and the runner-up of every approved daily, weekly and monthly entry from the payout start
- * (`LOREWARD_PAYOUT_START`) on, by contest and place. A wiki name maps to a platform account only through a
- * VERIFIED ixwiki `WikiAccountLink` (see `resolveLorewardUser`); entries before the start are never paid, so
- * a link made later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
- * `lorewardBonusKey(entryId, place)`, so re-running after each sync only pays new places.
+ * A month before `day`: the earliest first day of a weekly or monthly that ends on or after it, so a first-day twin
+ * (no range) of a contest that ends after the payout start is read with its state-keyed entry.
+ */
+const monthBefore = (day: string) =>
+  new Date(Date.parse(`${day}T00:00:00.000Z`) - 31 * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * The approved entries a payout can reach: a payout day (a daily's date, a weekly's or monthly's `dateEnd`) on or
+ * after `LOREWARD_PAYOUT_START`, plus the first-day twins of the contests that end after it. Read in pages, so the
+ * 1,000-row cap never drops one.
+ */
+function paidEntries(): Promise<StoredContestEntry[]> {
+  const ranged = { type: { in: ["weekly", "monthly"] } };
+  return findContestEntries(db, {
+    status: "approved",
+    OR: [
+      { type: "daily", date: { gte: LOREWARD_PAYOUT_START } },
+      { ...ranged, dateEnd: { gte: LOREWARD_PAYOUT_START } },
+      { ...ranged, dateEnd: null, date: { gte: monthBefore(LOREWARD_PAYOUT_START) } },
+    ],
+  });
+}
+
+/**
+ * Whether a Loreward bonus was paid for this place already, to anyone, under the key of any of `entryIds` (the
+ * contest's entries, read inside the place's lock). A place pays once, whoever holds it now.
+ */
+async function contestPlacePaid(
+  tx: Prisma.TransactionClient,
+  entryIds: string[],
+  place: LorewardPlace
+): Promise<boolean> {
+  const paid = await tx.vaultTransaction.findFirst({
+    where: {
+      type: "EARN_BONUS",
+      source: { in: entryIds.map((id) => lorewardBonusKey(id, place)) },
+    },
+    select: { id: true },
+  });
+  return paid !== null;
+}
+
+/** What paying one place came to: paid, refused by the ledger (earning off, maintenance), or not paid. */
+type PlaceOutcome = "paid" | "refused" | "unpaid";
+
+/**
+ * Pay one place of one contest, once, through the entry `contestHolder` chooses: in one transaction that takes the
+ * place's advisory lock, then reads the contest's entries again and pays only when none was paid for the place, so
+ * overlapping or successive runs that listed different entries pay it at most once.
+ */
+async function payPlace(
+  contest: Contest<StoredContestEntry>,
+  place: LorewardPlace,
+  payouts: Awaited<ReturnType<typeof getLorewardPayouts>>
+): Promise<PlaceOutcome> {
+  const holder = contestHolder(contest, place);
+  if ("conflict" in holder) {
+    console.warn(
+      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page); an overrideWinner on one copy is rewritten by the next sync.`
+    );
+    return "unpaid";
+  }
+  const e = holder.entry;
+  const recorded = placeOf(e, place);
+  if (!isPaidType(e.type) || !recorded || payouts[e.type][place] <= 0) return "unpaid";
+  const userId = await resolveLorewardPlace(db, recorded);
+  if (!userId) return "unpaid"; // no account can be told behind the place: skip
+
+  const metadata = {
+    entryId: e.id,
+    date: e.date,
+    type: e.type,
+    place,
+    wikiUser: recorded.wikiUser,
+    winnerUser: e.winnerUser,
+    ...(recorded.page ? { page: recorded.page } : {}),
+  };
+  try {
+    const paid = await db.$transaction(async (tx) => {
+      await lockContestPlace(tx, contestPlaceKey(e, place));
+      if (await contestPlacePaid(tx, await contestEntryIds(tx, e), place)) return false;
+      return grantBonusTx(
+        tx,
+        userId,
+        lorewardBonusKey(e.id, place),
+        payouts[e.type][place],
+        metadata
+      );
+    });
+    return paid ? "paid" : "unpaid";
+  } catch (error) {
+    // The ledger refusing an earn (earning switched off, maintenance) rolls the payment back: the key stays free.
+    if (error instanceof LedgerError) return "refused";
+    console.error(`[Lorewards] Paying ${contestPlaceKey(e, place)} failed:`, error);
+    return "unpaid";
+  }
+}
+
+/**
+ * Pay the winner and the runner-up of every approved daily, weekly and monthly contest from the payout start
+ * (`LOREWARD_PAYOUT_START`) on, by contest and place (`resolveLorewardPlace`). A plain name pays only the exact holder
+ * of its VERIFIED ixwiki `WikiAccountLink`; a `wikios>Label` name pays the one WikiOS account behind the label's
+ * edits to the winning page in the contest. Anything else pays no one. A contest stored twice (`groupByContest`)
+ * pays each place once, through its state-keyed entry, and not at all while its entries name different holders.
+ * Entries before the start are never paid, so an account found later does not back-pay history. Idempotent and
+ * safe to overlap: each place pays inside one transaction holding its advisory lock (`contestPlaceKey`), and only
+ * when no entry of the contest was paid for it yet, to anyone, under `lorewardBonusKey(entryId, place)`. So a place
+ * pays its first holder only; a later holder (an OOL write, a twin, an admin override after payment) is not paid.
  * Returns the number of newly-granted bonuses.
  */
 export async function grantLorewardBonuses(): Promise<number> {
   const cfg = await getBonusConfig(db);
   if (!cfg.enabled) return 0;
   const payouts = await getLorewardPayouts(db);
+  const entries = await paidEntries();
 
-  const entries = await db.lorewardEntry.findMany({
-    where: {
-      status: "approved",
-      OR: [{ winnerUser: { not: null } }, { runnerUpUser: { not: null } }],
-    },
-    select: {
-      id: true,
-      date: true,
-      dateEnd: true,
-      type: true,
-      winnerUser: true,
-      winnerPage: true,
-      runnerUpUser: true,
-      runnerUpPage: true,
-    },
-  });
-
-  let granted = 0;
-  for (const e of entries) {
-    if (!isPaidType(e.type)) continue;
-    if (payoutDay(e) < LOREWARD_PAYOUT_START) continue;
-
-    for (const place of PAID_PLACES) {
-      const wikiUser = place === "winner" ? e.winnerUser : e.runnerUpUser;
-      const page = place === "winner" ? e.winnerPage : e.runnerUpPage;
-      const amount = payouts[e.type][place];
-      if (!wikiUser || amount <= 0) continue;
-      const userId = await resolveLorewardUser(db, wikiUser);
-      if (!userId) continue; // no verified platform account: skip
-
-      const res = await grantBonus(db, userId, lorewardBonusKey(e.id, place), amount, {
-        oneTime: true,
-        metadata: {
-          entryId: e.id,
-          date: e.date,
-          type: e.type,
-          place,
-          wikiUser,
-          winnerUser: e.winnerUser,
-          ...(page ? { page } : {}),
-        },
-      });
-      if (res.granted) granted++;
-    }
+  const outcomes: PlaceOutcome[] = [];
+  for (const contest of groupByContest(entries.filter((e) => isPaidType(e.type)))) {
+    // The contest's payout day is read from its state-keyed entry (the one with a range), as it pays through it.
+    const lead = contest.find((e) => e.dateStart !== null) ?? contest[0];
+    if (payoutDay(lead) < LOREWARD_PAYOUT_START) continue;
+    for (const place of PAID_PLACES) outcomes.push(await payPlace(contest, place, payouts));
+  }
+  const granted = outcomes.filter((outcome) => outcome === "paid").length;
+  const refused = outcomes.filter((outcome) => outcome === "refused").length;
+  if (refused > 0) {
+    console.warn(
+      `[Lorewards] The ledger refused ${refused} Loreward bonuses (earning is off or in maintenance); their places stay unpaid and are tried again on the next run.`
+    );
   }
   console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
   return granted;
@@ -584,7 +793,8 @@ export async function grantLorewardBonuses(): Promise<number> {
 
 /**
  * Trophy cards for the recorded Loreward places: mint the ones that have no card yet, then give each unowned
- * card to its winner once that wiki account is verified-linked. Idempotent, and writes no IxCredits.
+ * card to its winner once an account can be told behind the place (`resolveLorewardPlace`). Idempotent, and
+ * writes no IxCredits.
  */
 export async function syncTrophyCards(): Promise<{ minted: number; granted: number }> {
   const { minted } = await mintTrophyCards(db);

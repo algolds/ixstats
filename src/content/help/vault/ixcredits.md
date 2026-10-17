@@ -45,7 +45,7 @@ Once per UTC day, claim either **IxCredits** or **one random card**:
 Every night (UTC) you can be paid a dividend for the day just ended. It has two kinds of part:
 
 - **Collection interest:** 0.25% of the value of your cards a day, up to 25. Loreward trophy cards don't count.
-- **Activity:** 1 IxCredit for every 80 Loreward score points your wiki edits earned that day (up to 30; your wiki account must be [linked](/help/getting-started/ixnayid#link-your-wiki-accounts)), 2 for each of your ThinkPages posts and forum posts or replies (up to 20), and for card activity 2 per pack opened, 5 per completed trade and 3 per card sold (up to 20).
+- **Activity:** 1 IxCredit for every 80 Loreward score points your wiki edits earned that day (up to 30; edits you make in WikiOS count without a link, edits made on the classic wiki need a [verified link](/help/getting-started/ixnayid#link-your-wiki-accounts)), 2 for each of your ThinkPages posts and forum posts or replies (up to 20), and for card activity 2 per pack opened, 5 per completed trade and 3 per card sold (up to 20).
 
 A login streak raises the activity parts by 5% for each day of streak, up to 10 days (so at most +50%). Account upgrades that boost the dividend multiply the total. The total is at most 150 a day. If a night is missed, the unpaid days from the last week are paid from that day's own activity. Open a **Vault dividend** row in your statement to see how that day's amount was worked out.
 

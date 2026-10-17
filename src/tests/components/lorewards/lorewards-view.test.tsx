@@ -85,9 +85,16 @@ beforeEach(() => {
       },
     ]) as never
   );
-  jest
-    .mocked(lore.getMyTrophies.useQuery)
-    .mockReturnValue(ok({ wikiUsername: "Ada", ...TROPHIES, paid: 2150, todayRank: 2 }) as never);
+  jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
+    ok({
+      wikiUsername: "Ada",
+      verified: true,
+      unmatched: 0,
+      ...TROPHIES,
+      paid: 2150,
+      todayRank: 2,
+    }) as never
+  );
   jest.mocked(lore.getTrophies.useQuery).mockReturnValue(ok(TROPHIES) as never);
   jest.mocked(lore.getUserStats.useQuery).mockReturnValue(
     ok({
@@ -234,6 +241,8 @@ describe("you focus", () => {
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
       ok({
         wikiUsername: null,
+        verified: false,
+        unmatched: 0,
         wins: { daily: 0, weekly: 0, monthly: 0 },
         runnerUps: 0,
         streak: 0,
@@ -246,6 +255,93 @@ describe("you focus", () => {
 
     expect(screen.getByText("No wiki edits yet")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open settings" })).not.toBeInTheDocument();
+  });
+
+  it("tells a viewer that classic-wiki wins under their name may be theirs, without assuming so", () => {
+    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
+      ok({
+        wikiUsername: "Ostrozava",
+        verified: false,
+        unmatched: 3,
+        wins: { daily: 0, weekly: 0, monthly: 0 },
+        runnerUps: 0,
+        streak: 0,
+        cards: [],
+        paid: 0,
+        todayRank: null,
+      }) as never
+    );
+    render(<LorewardsView focus="you" />);
+
+    expect(screen.getByText("Classic wiki wins need a verified link")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Some wins under Ostrozava may be yours. Verify your wiki account in Settings to claim the ones you made on the classic wiki."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No wiki edits yet")).toBeNull();
+    expect(screen.getByRole("link", { name: "Verify your wiki account" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/settings?tab=account")
+    );
+  });
+
+  it("never offers a verified viewer to verify, even with unmatched places under a label", () => {
+    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
+      ok({
+        wikiUsername: "Ada",
+        verified: true,
+        unmatched: 2,
+        wins: { daily: 0, weekly: 0, monthly: 0 },
+        runnerUps: 0,
+        streak: 0,
+        cards: [],
+        paid: 0,
+        todayRank: null,
+      }) as never
+    );
+    render(<LorewardsView focus="you" />);
+
+    expect(screen.queryByText("Classic wiki wins need a verified link")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Verify your wiki account" })).toBeNull();
+    expect(headings()[0]).toBe("Your trophies");
+  });
+
+  it("counts an unverified viewer's tied places, without the name's shared record", () => {
+    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
+      ok({
+        wikiUsername: "Ostrozava",
+        verified: false,
+        unmatched: 1,
+        wins: { daily: 1, weekly: 0, monthly: 0 },
+        runnerUps: 0,
+        streak: 1,
+        cards: [],
+        paid: 500,
+        todayRank: null,
+      }) as never
+    );
+    jest.mocked(lore.getUserAwardHistory.useQuery).mockClear();
+    jest.mocked(lore.getStreakCalendar.useQuery).mockClear();
+    // A disabled query has no data.
+    const stats = jest.mocked(lore.getUserStats.useQuery).getMockImplementation();
+    jest
+      .mocked(lore.getUserStats.useQuery)
+      .mockImplementation((input, options) =>
+        options?.enabled === false ? ({ data: undefined } as never) : stats!(input, options)
+      );
+    render(<LorewardsView focus="you" />);
+
+    expect(headings()[0]).toBe("Your trophies");
+    expect(statValue("Daily wins")).toBe("1");
+    // The name's stats row, calendar and history may be someone else's: none is read.
+    expect(lore.getUserStats.useQuery).toHaveBeenCalledWith(
+      { username: "" },
+      expect.objectContaining({ enabled: false })
+    );
+    expect(statValue("Rank")).toBe("Unranked");
+    expect(lore.getUserAwardHistory.useQuery).not.toHaveBeenCalled();
+    expect(lore.getStreakCalendar.useQuery).not.toHaveBeenCalled();
   });
 
   it("shows another author's trophies for a username, without payouts", () => {

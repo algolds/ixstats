@@ -25,6 +25,7 @@ export default function VaultAchievementsPage() {
     onSuccess: () => {
       void utils.achievements.getAllWithStatus.invalidate();
       void utils.achievements.getMySummary.invalidate();
+      void utils.achievements.getNextUnlock.invalidate();
     },
   });
 

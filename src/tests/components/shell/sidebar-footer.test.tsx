@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { BUILD_VERSION } from "~/lib/buildVersion";
 
