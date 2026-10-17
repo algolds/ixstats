@@ -693,7 +693,9 @@ api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
 api.cards.deleteCollection.useMutation() // { collectionId }
 ```
 
-### cardPacks Router (9 procedures)
+### cardPacks Router (6 procedures)
+
+Packs are created and edited in the card admin (`api.cards.admin.packs.*`).
 
 ```typescript
 // Queries (3)
@@ -701,12 +703,9 @@ api.cardPacks.getAvailablePacks.useQuery()
 api.cardPacks.getAllPacks.useQuery()
 api.cardPacks.getMyPacks.useQuery({ isOpened? })
 
-// Mutations (6)
+// Mutations (3)
 api.cardPacks.purchasePack.useMutation() // { packId }
 api.cardPacks.openPack.useMutation() // { userPackId }
-api.cardPacks.createPack.useMutation() // { name, description?, artwork?, packType, priceCredits, cardCount?, guaranteedRarity?, isActive? }
-api.cardPacks.updatePack.useMutation() // { packId, updates }
-api.cardPacks.deactivatePack.useMutation() // { packId }
 api.cardPacks.adminAwardPack.useMutation() // { targetUserId, packId, acquiredMethod?, sendNotification? }
 ```
 

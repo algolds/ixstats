@@ -3,142 +3,16 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { PackType } from "@prisma/client";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { notificationAPI } from "~/lib/notifications/api";
 
 /**
- * Card Packs Router
- * Handles pack creation, purchasing, and opening mechanics
+ * Card Packs Router (admin): awarding a pack to a player. The pack editor is `cards.admin.packs`.
  */
 export const cardPacksAdminRouter = createTRPCRouter({
   // ============================================================
   // ADMIN ENDPOINTS
   // ============================================================
-
-  /**
-   * Create new pack configuration
-   * Admin-only endpoint
-   */
-  createPack: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1).max(100),
-        description: z.string().optional(),
-        artwork: z.string().optional(),
-        packType: z.nativeEnum(PackType),
-        priceCredits: z.number().positive(),
-        cardCount: z.number().int().min(1).max(20).default(5),
-        guaranteedRarity: z.string().optional(),
-        isActive: z.boolean().default(true),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const pack = await ctx.db.cardPack.create({
-          data: {
-            name: input.name,
-            description: input.description,
-            artwork: input.artwork,
-            packType: input.packType,
-            priceCredits: input.priceCredits,
-            cardCount: input.cardCount,
-            guaranteedRarity: input.guaranteedRarity,
-            isActive: input.isActive,
-          },
-        });
-
-        return {
-          success: true,
-          message: "Pack created successfully",
-          pack,
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-
-        console.error("[CardPacks] Error creating pack:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to create pack",
-        });
-      }
-    }),
-
-  /**
-   * Update pack configuration
-   * Admin-only endpoint
-   */
-  updatePack: adminProcedure
-    .input(
-      z.object({
-        packId: z.string().min(1),
-        updates: z.object({
-          name: z.string().min(1).max(100).optional(),
-          description: z.string().optional(),
-          artwork: z.string().optional().nullable(),
-          cardCount: z.number().int().min(1).max(20).optional(),
-          packType: z.nativeEnum(PackType).optional(),
-          priceCredits: z.number().positive().optional(),
-          guaranteedRarity: z.string().optional(),
-          isActive: z.boolean().optional(),
-        }),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const pack = await ctx.db.cardPack.update({
-          where: { id: input.packId },
-          data: input.updates,
-        });
-
-        return {
-          success: true,
-          message: "Pack updated successfully",
-          pack,
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-
-        console.error("[CardPacks] Error updating pack:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update pack",
-        });
-      }
-    }),
-
-  /**
-   * Deactivate pack
-   * Admin-only endpoint
-   */
-  deactivatePack: adminProcedure
-    .input(
-      z.object({
-        packId: z.string().min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const pack = await ctx.db.cardPack.update({
-          where: { id: input.packId },
-          data: {
-            isActive: false,
-          },
-        });
-
-        return {
-          success: true,
-          message: "Pack deactivated successfully",
-          pack,
-        };
-      } catch (error) {
-        console.error("[CardPacks] Error deactivating pack:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to deactivate pack",
-        });
-      }
-    }),
 
   /**
    * Award a pack directly to a user (admin only)

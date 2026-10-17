@@ -9,6 +9,7 @@ import { copyRoom } from "./capacity";
 import { CardFinish } from "./enums";
 import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
+import { PACK_ODDS_FIELDS, type PackOdds } from "./pack-odds";
 import { grantCardXp } from "./xp-utils";
 
 /**
@@ -28,9 +29,11 @@ export class PackError extends Error {
 /**
  * Optional `CardPack.themeFilter` shape. Each listed key narrows the pool (keys combine with
  * AND, values within a key with OR); unknown keys are ignored.
- *   { "categories": ["MILITARY"], "subcategories": [...], "cardTypes": ["LORE"], "countryIds": [...] }
+ *   { "realmIds": ["iiwiki"], "categories": ["MILITARY"], "subcategories": [...],
+ *     "cardTypes": ["LORE"], "countryIds": [...] }
  */
 export interface PackThemeFilter {
+  realmIds?: string[];
   categories?: string[];
   subcategories?: string[];
   cardTypes?: string[];
@@ -67,27 +70,50 @@ export function themeFilterWhere(themeFilter: Prisma.JsonValue | null): Prisma.C
   }
   const countryIds = stringList(themeFilter.countryIds);
   if (countryIds.length > 0) where.push({ countryId: { in: countryIds } });
+  const realmIds = stringList(themeFilter.realmIds);
+  if (realmIds.length > 0) where.push({ realmId: { in: realmIds } });
 
   return where;
 }
 
-interface PackOdds {
-  commonOdds: number;
-  uncommonOdds: number;
-  rareOdds: number;
-  ultraRareOdds: number;
-  epicOdds: number;
-  legendaryOdds: number;
+/** The theme keys the pack editor shows (realms, categories, types); other keys stay as stored. */
+export function packThemePool(themeFilter: Prisma.JsonValue | null): {
+  realmIds: string[];
+  categories: LoreCategory[];
+  cardTypes: CardType[];
+} {
+  if (!isJsonObject(themeFilter)) return { realmIds: [], categories: [], cardTypes: [] };
+  return {
+    realmIds: stringList(themeFilter.realmIds),
+    categories: known(stringList(themeFilter.categories), Object.values(LoreCategory)),
+    cardTypes: known(stringList(themeFilter.cardTypes), Object.values(CardType)),
+  };
 }
 
-const RARITY_DISTRIBUTION: readonly [CardRarity, keyof PackOdds][] = [
-  ["COMMON", "commonOdds"],
-  ["UNCOMMON", "uncommonOdds"],
-  ["RARE", "rareOdds"],
-  ["ULTRA_RARE", "ultraRareOdds"],
-  ["EPIC", "epicOdds"],
-  ["LEGENDARY", "legendaryOdds"],
-] as const;
+/** The stored values outside the enum, which the pack editor cannot carry. */
+function unknownValues(value: Prisma.JsonValue | undefined, allowed: readonly string[]): string[] {
+  return stringList(value).filter((item) => !allowed.includes(item));
+}
+
+/**
+ * The stored theme with the editor's pool written over it. Keys the editor does not show stay, and so do stored
+ * categories and types outside the enums: a theme naming only those matches nothing, so dropping them would widen it.
+ */
+export function mergePackTheme(
+  existing: Prisma.JsonValue | null,
+  pool: { realmIds: readonly string[]; categories: readonly string[]; cardTypes: readonly string[] }
+): Prisma.InputJsonObject {
+  const stored: Prisma.JsonObject = isJsonObject(existing) ? existing : {};
+  return {
+    ...stored,
+    realmIds: [...pool.realmIds],
+    categories: [
+      ...pool.categories,
+      ...unknownValues(stored.categories, Object.values(LoreCategory)),
+    ],
+    cardTypes: [...pool.cardTypes, ...unknownValues(stored.cardTypes, Object.values(CardType))],
+  };
+}
 
 /**
  * Weighted random selection based on rarity odds
@@ -96,7 +122,7 @@ function selectRarityByOdds(odds: PackOdds): CardRarity {
   const random = Math.random() * 100;
   let cumulative = 0;
 
-  for (const [rarity, key] of RARITY_DISTRIBUTION) {
+  for (const [rarity, key] of PACK_ODDS_FIELDS) {
     cumulative += odds[key] ?? 0;
     if (random < cumulative) return rarity;
   }
@@ -188,7 +214,7 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
 }
 
 /** Pack rarity tiers, lowest first (the order of the odds table). */
-const RARITY_ORDER: readonly CardRarity[] = RARITY_DISTRIBUTION.map(([rarity]) => rarity);
+const RARITY_ORDER: readonly CardRarity[] = PACK_ODDS_FIELDS.map(([rarity]) => rarity);
 
 function rarityRank(rarity: string | null | undefined): number {
   return RARITY_ORDER.indexOf(rarity as CardRarity);
@@ -240,7 +266,7 @@ export function generatePackCards(pack: {
  * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
  * only approved cards (imports wait in review).
  */
-async function packPoolWhere(
+export async function packPoolWhere(
   tx: Prisma.TransactionClient,
   pack: { cardType: CardType | null; season: number | null; themeFilter: Prisma.JsonValue | null }
 ): Promise<Prisma.CardWhereInput> {
