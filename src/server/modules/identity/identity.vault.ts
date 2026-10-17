@@ -87,7 +87,10 @@ export function toVaultFocus(
   return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
-/** Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`); a Commons file opens on Commons. */
+/**
+ * Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`); a Commons file
+ * opens on Commons.
+ */
 export function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
   if (!card.wikiArticleTitle) return null;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";

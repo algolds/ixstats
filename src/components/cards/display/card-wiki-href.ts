@@ -33,16 +33,17 @@ function sisterTitleFromUrl(
 }
 
 /**
- * Where a card's wiki article lives: always an in-app WikiOS path, for every source wiki (a sister wiki's article
- * opens in WikiOS's reader with `?source=`), except a Commons file, which has no reader page and links to Commons. The title wins over a stored URL, which older lore cards got wrong
- * (`/w/<title>`); a stored URL is only read when the card has no title, and kept as it is when it names no article.
+ * Where a card's wiki page lives. An article opens in WikiOS's reader (a sister wiki's with `?source=`); a Commons
+ * file has no reader page, so it links to Commons. The title wins over a stored URL, which older lore cards got
+ * wrong (`/w/<title>`); a stored URL is only read when the card has no title, and kept as it is when it names no
+ * article.
  */
 export function cardWikiHref(card: CardInstance | null): string | null {
   if (!card) return null;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
   const url = card.wikiUrl;
   if (source === "commons")
-    return card.wikiArticleTitle ? commonsPageUrl(card.wikiArticleTitle) : (url ?? null);
+    return card.wikiArticleTitle ? commonsPageUrl(card.wikiArticleTitle) : url;
   if (url?.startsWith("/wiki/")) return url;
   if (card.wikiArticleTitle) return wikiOsHref(card.wikiArticleTitle, source);
   if (!url) return null;
