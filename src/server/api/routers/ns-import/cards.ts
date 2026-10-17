@@ -178,7 +178,7 @@ export const nsImportCardsRouter = createTRPCRouter({
       .map(({ acquiredAt, cards: { takedowns, ...card } }) => {
         const facts = nsFactsOf(card.metadata);
         const flag = facts.flag ?? card.artwork ?? null;
-        const takedown = takedowns[0];
+        const takedown = takedowns.at(0);
         return {
           ...card,
           cardId: card.id,
