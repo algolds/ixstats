@@ -22,6 +22,18 @@ jest.mock("~/hooks/useDebounce", () => ({ useDebounce: <T,>(value: T) => value }
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({
+    href,
+    children,
+    ...rest
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
 
 import { keepPreviousData } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
@@ -31,14 +43,11 @@ import type { CardFaceData } from "~/lib/cards/face/types";
 import type { MinePage, MineRow } from "~/lib/cards/hub/mine";
 import { ShowcaseEditorDialog } from "~/components/vault/cards/ShowcaseEditorDialog";
 import { ShowcasePickerDialog } from "~/components/vault/cards/ShowcasePickerDialog";
+import { failingMutation, fakeMutation } from "~/tests/helpers/fake-mutation";
+import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
-// Radix's switch measures itself inside a form; jsdom has no ResizeObserver.
-class ResizeObserverStub implements ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-globalThis.ResizeObserver ??= ResizeObserverStub;
+// Radix's switch measures itself inside a form.
+beforeAll(stubResizeObserver);
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = (n: number): CardFaceData => ({
@@ -76,25 +85,8 @@ const mine = (data: MinePage | undefined, state: Partial<Record<string, boolean>
 
 type MutationName = "createShowcase" | "updateShowcase" | "addToShowcase";
 
-interface MutationOptions<TData, TInput> {
-  onSuccess?: (data: TData, input: TInput) => void;
-  onError?: (error: { message: string }) => void;
-}
-
-/** Stands in for the server: `mutate` records its input, then answers with what `respond` returns, if anything. */
-function mockMutation<TInput, TData>(name: MutationName, respond?: (input: TInput) => TData) {
-  const mutate = jest.fn<void, [TInput]>();
-  jest.mocked(api.cards[name].useMutation).mockImplementation(((
-    options: MutationOptions<TData, TInput> = {}
-  ) => ({
-    mutate: (input: TInput) => {
-      mutate(input);
-      if (respond) options.onSuccess?.(respond(input), input);
-    },
-    isPending: false,
-  })) as never);
-  return mutate;
-}
+const mockMutation = <TInput, TData>(name: MutationName, respond?: (input: TInput) => TData) =>
+  fakeMutation(jest.mocked(api.cards[name].useMutation), respond);
 
 const utils = () => api.useUtils().cards;
 
@@ -203,12 +195,10 @@ describe("ShowcaseEditorDialog", () => {
   });
 
   it("says what went wrong and stays open", () => {
-    jest.mocked(api.cards.createShowcase.useMutation).mockImplementation(((
-      options: MutationOptions<{ id: string }, { name: string }>
-    ) => ({
-      mutate: () => options.onError?.({ message: "You can keep up to 20 showcases." }),
-      isPending: false,
-    })) as never);
+    failingMutation(
+      jest.mocked(api.cards.createShowcase.useMutation),
+      "You can keep up to 20 showcases."
+    );
     const { dialog, onSaved } = openEditor(null);
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "One more" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Create" }));
@@ -219,11 +209,12 @@ describe("ShowcaseEditorDialog", () => {
 });
 
 describe("ShowcasePickerDialog", () => {
-  const openPicker = (existing: ReadonlySet<string> = new Set()) => {
+  const openPicker = (existing: ReadonlySet<string> = new Set(), focusAfterAdd = jest.fn()) => {
     render(
       <ShowcasePickerDialog
         showcaseId="s1"
         existing={existing}
+        focusAfterAdd={focusAfterAdd}
         trigger={<button type="button">Open picker</button>}
       />
     );
@@ -251,6 +242,39 @@ describe("ShowcasePickerDialog", () => {
     expect(utils().getShowcase.invalidate).toHaveBeenCalledWith({ showcaseId: "s1" });
     expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("hands focus on after an add, and back to its button after a dismissal", async () => {
+    mockMutation("addToShowcase", () => ({ added: 1 }));
+    mine(page([row(1)]));
+    const focusAfterAdd = jest.fn();
+    let dialog = openPicker(new Set(), focusAfterAdd);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open picker" })).toHaveFocus());
+    expect(focusAfterAdd).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Open picker" }));
+    dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Card 1, Rare, Standard, Ixnay" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add 1 card" }));
+    await waitFor(() => expect(focusAfterAdd).toHaveBeenCalledTimes(1));
+    // The next dismissal gives focus back to the button again.
+    fireEvent.click(screen.getByRole("button", { name: "Open picker" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open picker" })).toHaveFocus());
+    expect(focusAfterAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the search to the length Mine takes", () => {
+    const dialog = openPicker();
+    expect(within(dialog).getByRole("searchbox")).toHaveAttribute("maxLength", "100");
+  });
+
+  it("points to the Store when there are no cards to pick", () => {
+    const dialog = openPicker();
+    expect(within(dialog).getByRole("link", { name: "Go to the Store" })).toHaveAttribute(
+      "href",
+      "/vault/store"
+    );
   });
 
   it("adds nothing until a card is picked, and a second press takes the pick back", () => {
@@ -334,12 +358,10 @@ describe("ShowcasePickerDialog", () => {
   });
 
   it("says what went wrong and keeps the picks", () => {
-    jest.mocked(api.cards.addToShowcase.useMutation).mockImplementation(((
-      options: MutationOptions<{ added: number }, { showcaseId: string }>
-    ) => ({
-      mutate: () => options.onError?.({ message: "A card you picked is no longer yours." }),
-      isPending: false,
-    })) as never);
+    failingMutation(
+      jest.mocked(api.cards.addToShowcase.useMutation),
+      "A card you picked is no longer yours."
+    );
     mine(page([row(1)]));
     const dialog = openPicker();
     fireEvent.click(within(dialog).getByRole("button", { name: "Card 1, Rare, Standard, Ixnay" }));

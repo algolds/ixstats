@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
@@ -13,7 +13,7 @@ jest.mock("~/trpc/react", () => {
       cards: {
         listMyShowcases: { useQuery: jest.fn() },
         getShowcase: { useQuery: jest.fn() },
-        listMine: { useQuery: jest.fn(() => ({ data: undefined, isLoading: true })) },
+        listMine: { useQuery: jest.fn() },
         createShowcase: mutation(),
         updateShowcase: mutation(),
         deleteShowcase: mutation(),
@@ -33,8 +33,10 @@ import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
+import type { MinePage } from "~/lib/cards/hub/mine";
 import type { ShowcaseSummary, ShowcaseView } from "~/lib/cards/hub/showcases";
 import { SetsPane } from "~/components/vault/cards/SetsPane";
+import { fakeMutation } from "~/tests/helpers/fake-mutation";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = (n: number, overrides: Partial<CardFaceData> = {}): CardFaceData => ({
@@ -83,25 +85,9 @@ type MutationName =
   | "removeFromShowcase"
   | "pinShowcase";
 
-interface MutationOptions<TData, TInput> {
-  onSuccess?: (data: TData, input: TInput) => void;
-  onError?: (error: { message: string }) => void;
-}
-
-/** Stands in for the server: `mutate` records its input, then answers with what `respond` returns, if anything. */
-function mockMutation<TInput, TData>(name: MutationName, respond?: (input: TInput) => TData) {
-  const mutate = jest.fn<void, [TInput]>();
-  jest.mocked(api.cards[name].useMutation).mockImplementation(((
-    options: MutationOptions<TData, TInput> = {}
-  ) => ({
-    mutate: (input: TInput) => {
-      mutate(input);
-      if (respond) options.onSuccess?.(respond(input), input);
-    },
-    isPending: false,
-  })) as never);
-  return mutate;
-}
+const mockMutation = <TInput, TData>(name: MutationName, respond?: (input: TInput) => TData) =>
+  fakeMutation(jest.mocked(api.cards[name].useMutation), respond);
+const utils = () => api.useUtils().cards;
 
 const listed = (data: ShowcaseSummary[]) =>
   jest
@@ -118,11 +104,13 @@ const shown = (
 const renderPane = (showcaseId: string | null = null) => {
   const onOpenCard = jest.fn();
   const onShowcaseChange = jest.fn();
-  render(
-    <SetsPane onOpenCard={onOpenCard} showcaseId={showcaseId} onShowcaseChange={onShowcaseChange} />
+  const pane = (id: string | null) => (
+    <SetsPane onOpenCard={onOpenCard} showcaseId={id} onShowcaseChange={onShowcaseChange} />
   );
-  return { onOpenCard, onShowcaseChange };
+  const { rerender } = render(pane(showcaseId));
+  return { onOpenCard, onShowcaseChange, showPane: (id: string | null) => rerender(pane(id)) };
 };
+const tile = "Open Best of Ixnay, 3 cards, public";
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -138,17 +126,20 @@ beforeEach(() => {
   }
   listed([]);
   shown(undefined);
+  jest
+    .mocked(api.cards.listMine.useQuery)
+    .mockReturnValue({ data: undefined, isLoading: true, isError: false } as never);
 });
 
 describe("SetsPane, the list", () => {
   it("lists showcases, marks the pinned one, and keeps a place for set binders", () => {
-    listed([summary({ pinned: true })]);
+    listed([summary({ pinned: true, itemCount: 12 })]);
     const { onShowcaseChange } = renderPane();
     expect(screen.getByText("Pinned")).toBeInTheDocument();
     expect(screen.getByText("Public")).toBeInTheDocument();
-    expect(screen.getByText("3 cards")).toBeInTheDocument();
+    expect(screen.getByText("12 cards")).toBeInTheDocument();
     expect(screen.getByText("No set binders yet")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open Best of Ixnay" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open Best of Ixnay, 12 cards, pinned" }));
     expect(onShowcaseChange).toHaveBeenCalledWith("s1");
   });
 
@@ -162,8 +153,8 @@ describe("SetsPane, the list", () => {
     renderPane();
     expect(screen.getByText("Private")).toBeInTheDocument();
     expect(screen.getByText("0 cards")).toBeInTheDocument();
-    const tile = screen.getByRole("button", { name: "Open Best of Ixnay" });
-    expect(tile.querySelector(".card-face-down")).not.toBeNull();
+    const empty = screen.getByRole("button", { name: "Open Best of Ixnay, 0 cards, private" });
+    expect(empty.querySelector(".card-face-down")).not.toBeNull();
   });
 
   it("says what to do when there are no showcases yet", () => {
@@ -205,14 +196,20 @@ describe("SetsPane, one showcase", () => {
   });
 
   it("lets the owner pin, remove a card and add cards", () => {
-    const pin = mockMutation("pinShowcase");
-    const remove = mockMutation("removeFromShowcase");
+    const pin = mockMutation("pinShowcase", () => ({ pinned: true }));
+    const remove = mockMutation("removeFromShowcase", () => undefined);
     shown(view());
     renderPane("s1");
     fireEvent.click(screen.getByRole("button", { name: "Pin to wallet" }));
     expect(pin).toHaveBeenCalledWith({ showcaseId: "s1", pinned: true });
+    // The pin moved off whichever showcase held it, so every cached showcase reads again.
+    expect(utils().getShowcase.invalidate).toHaveBeenCalledWith();
+    expect(utils().listMyShowcases.invalidate).toHaveBeenCalled();
+    expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
+    jest.clearAllMocks();
     fireEvent.click(screen.getByRole("button", { name: "Remove Caphiria" }));
     expect(remove).toHaveBeenCalledWith({ showcaseId: "s1", ownershipId: "o1" });
+    expect(utils().getShowcase.invalidate).toHaveBeenCalledWith({ showcaseId: "s1" });
     expect(screen.getByRole("button", { name: "Add cards" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
     expect(screen.queryByText("By @me")).toBeNull();
@@ -226,7 +223,8 @@ describe("SetsPane, one showcase", () => {
     fireEvent.click(screen.getByRole("button", { name: "Unpin from wallet" }));
     expect(pin).toHaveBeenCalledWith({ showcaseId: "s1", pinned: false });
     expect(vaultNotify.error).not.toHaveBeenCalled();
-    expect(api.useUtils().cards.getMyDisplay.invalidate).toHaveBeenCalled();
+    expect(utils().getShowcase.invalidate).toHaveBeenCalledWith();
+    expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
   });
 
   it("says why a private showcase cannot be pinned", () => {
@@ -296,23 +294,93 @@ describe("SetsPane, one showcase", () => {
     expect(within(card).getByText("Retired")).toBeInTheDocument();
   });
 
-  it("says when a showcase has no cards yet", () => {
+  it("offers the owner of an empty showcase one way to add cards", () => {
     shown(view({ items: [] }));
     renderPane("s1");
     expect(screen.getByText("No cards in this showcase yet")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Add cards" })).toHaveLength(1);
   });
 
-  it("goes back to the list", () => {
+  it("gives the showcase's heading focus after an add, which may have disabled Add cards", async () => {
+    const add = mockMutation("addToShowcase", () => ({ added: 1 }));
+    const mine: MinePage = {
+      rows: [
+        {
+          face: face(2),
+          value: 1,
+          copies: 1,
+          acquiredAt: new Date(),
+          isLocked: false,
+          isBound: false,
+        },
+      ],
+      total: 1,
+      nextCursor: null,
+      realms: [realm],
+      totalCopies: 1,
+    };
+    jest
+      .mocked(api.cards.listMine.useQuery)
+      .mockReturnValue({ data: mine, isLoading: false, isError: false } as never);
     shown(view());
-    const { onShowcaseChange } = renderPane("s1");
+    renderPane("s1");
+    fireEvent.click(screen.getByRole("button", { name: "Add cards" }));
+    const dialog = screen.getByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Card 2, Epic, Standard, Ixnay" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add 1 card" }));
+    expect(add).toHaveBeenCalledWith({ showcaseId: "s1", ownershipIds: ["o2"] });
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Best" })).toHaveFocus());
+  });
+
+  it("names each Remove after its own copy when two share a title", () => {
+    const remove = mockMutation("removeFromShowcase");
+    const second = face(1, {
+      copy: { ownershipId: "o9", finish: "FOIL", serialNumber: 9, level: 1 },
+    });
+    shown(
+      view({
+        items: [
+          { itemId: "i1", face: face(1) },
+          { itemId: "i9", face: second },
+        ],
+      })
+    );
+    renderPane("s1");
+    expect(screen.queryByRole("button", { name: "Remove Caphiria" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remove Caphiria, Epic, Foil, Ixnay, #9" }));
+    expect(remove).toHaveBeenCalledWith({ showcaseId: "s1", ownershipId: "o9" });
+    expect(
+      screen.getByRole("button", { name: "Remove Caphiria, Epic, Standard, Ixnay, #1" })
+    ).toBeInTheDocument();
+  });
+
+  it("goes back to the list, and focus goes to its heading", () => {
+    shown(view());
+    const { onShowcaseChange, showPane } = renderPane("s1");
     fireEvent.click(screen.getByRole("button", { name: "Sets" }));
     expect(onShowcaseChange).toHaveBeenCalledWith(null);
+    showPane(null);
+    expect(screen.getByRole("heading", { name: "Showcases" })).toHaveFocus();
+  });
+
+  it("takes no focus on the first screen, and gives a showcase's heading focus when it opens", () => {
+    shown(view({ id: "s9", name: "Shiny" }));
+    const { showPane } = renderPane(null);
+    expect(document.body).toHaveFocus();
+    showPane("s9");
+    expect(screen.getByRole("heading", { name: "Shiny" })).toHaveFocus();
+  });
+
+  it("gives an opened showcase's heading no focus on the first screen", () => {
+    shown(view());
+    renderPane("s1");
+    expect(screen.getByRole("heading", { name: "Best" })).not.toHaveFocus();
   });
 
   it("deletes the showcase after asking, then goes back to the list", () => {
     const destroy = mockMutation("deleteShowcase", () => undefined);
     shown(view());
-    const { onShowcaseChange } = renderPane("s1");
+    const { onShowcaseChange, showPane } = renderPane("s1");
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     const dialog = screen.getByRole("alertdialog");
     expect(
@@ -321,7 +389,9 @@ describe("SetsPane, one showcase", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete showcase" }));
     expect(destroy).toHaveBeenCalledWith({ showcaseId: "s1" });
     expect(onShowcaseChange).toHaveBeenCalledWith(null);
-    expect(api.useUtils().cards.listMyShowcases.invalidate).toHaveBeenCalled();
+    showPane(null);
+    expect(screen.getByRole("heading", { name: "Showcases" })).toHaveFocus();
+    expect(utils().listMyShowcases.invalidate).toHaveBeenCalled();
   });
 });
 
@@ -334,9 +404,30 @@ describe("SetsPane, a showcase it cannot show", () => {
       .mocked(api.cards.getShowcase.useQuery)
       .mockReturnValue({ isLoading: false, isError: false, ...state } as never);
     listed([summary()]);
-    renderPane("best-of-ixnay");
+    const { onShowcaseChange } = renderPane("best-of-ixnay");
     expect(screen.getByRole("heading", { name: "Showcases" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Open Best of Ixnay" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: tile })).toBeInTheDocument();
     expect(vaultNotify.error).not.toHaveBeenCalled();
+    // The address lets go of it, so pressing its tile again asks for it afresh.
+    expect(onShowcaseChange).toHaveBeenCalledTimes(1);
+    expect(onShowcaseChange).toHaveBeenCalledWith(null);
+  });
+
+  it("takes no focus when an address's showcase turns out unknown on the first screen", () => {
+    shown(undefined, { isLoading: true });
+    const { showPane } = renderPane("best-of-ixnay");
+    shown(null);
+    showPane("best-of-ixnay");
+    showPane(null);
+    expect(screen.getByRole("heading", { name: "Showcases" })).not.toHaveFocus();
+  });
+
+  it("keeps the address while the showcase loads, and once it shows", () => {
+    shown(undefined, { isLoading: true });
+    const { onShowcaseChange, showPane } = renderPane("s1");
+    shown(view());
+    showPane("s1");
+    expect(screen.getByRole("heading", { name: "Best" })).toBeInTheDocument();
+    expect(onShowcaseChange).not.toHaveBeenCalled();
   });
 });

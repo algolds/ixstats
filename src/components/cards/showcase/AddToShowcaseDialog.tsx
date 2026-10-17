@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { useShowcaseRefresh } from "~/hooks/useShowcaseRefresh";
 import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import { focusedElement, refocus } from "~/lib/utils/focus";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
@@ -113,6 +114,7 @@ export function AddToShowcaseDialog({
   // No Radix trigger opens this dialog, so it gives focus back to what had it.
   const opener = useRef<HTMLElement | null>(null);
   const utils = api.useUtils();
+  const refresh = useShowcaseRefresh();
   const showcases = api.cards.listMyShowcases.useQuery(undefined, { enabled: open });
 
   const done = (added: number) => {
@@ -121,9 +123,7 @@ export function AddToShowcaseDialog({
       added === 0 ? "Already in this showcase" : `Added ${cardCount(added)}`,
       showcaseName
     );
-    void utils.cards.listMyShowcases.invalidate();
-    void utils.cards.getShowcase.invalidate({ showcaseId: id });
-    void utils.cards.getMyDisplay.invalidate();
+    refresh(id);
     setName("");
     onOpenChange(false);
     onAdded?.();

@@ -327,6 +327,43 @@ describe("editing", () => {
   });
 });
 
+interface PinRow {
+  id: string;
+  userId: string;
+  isPublic: boolean;
+  pinnedAt: Date | null;
+}
+interface PinWhere {
+  id?: string;
+  userId?: string;
+  isPublic?: boolean;
+  pinnedAt?: { not: null };
+}
+const pinRow = (id: string, pinnedAt: Date | null, userId = "u1"): PinRow => ({
+  id,
+  userId,
+  isPublic: true,
+  pinnedAt,
+});
+const pinMatches = (row: PinRow, where: PinWhere) =>
+  (where.id === undefined || row.id === where.id) &&
+  (where.userId === undefined || row.userId === where.userId) &&
+  (where.isPublic === undefined || row.isPublic === where.isPublic) &&
+  (where.pinnedAt === undefined || row.pinnedAt !== null);
+
+/** A mock whose `updateMany` edits `rows` in place, for the filters pinShowcase writes. */
+function pinDb(rows: PinRow[]) {
+  const db = createMockPrisma();
+  db.cardCollection.updateMany.mockImplementation(
+    async ({ where, data }: { where: PinWhere; data: { pinnedAt: Date | null } }) => {
+      const hit = rows.filter((row) => pinMatches(row, where));
+      for (const row of hit) row.pinnedAt = data.pinnedAt;
+      return { count: hit.length };
+    }
+  );
+  return db;
+}
+
 describe("pinShowcase", () => {
   it("pins one public showcase at a time", async () => {
     const db = createMockPrisma();
@@ -362,9 +399,20 @@ describe("pinShowcase", () => {
     await expect(pinShowcase(db as never, "u1", "s1", false)).resolves.toEqual({ pinned: false });
     expect(db.cardCollection.updateMany).toHaveBeenCalledTimes(1);
     expect(db.cardCollection.updateMany).toHaveBeenCalledWith({
-      where: { userId: "u1", pinnedAt: { not: null } },
+      where: { id: "s1", userId: "u1" },
       data: { pinnedAt: null },
     });
+  });
+
+  it("unpinning one showcase leaves another's pin alone, and pinning moves it", async () => {
+    // An unpin from a stale screen: B looks pinned there, but A holds the pin now.
+    const rows = [pinRow("A", new Date("2026-10-16")), pinRow("B", null), pinRow("X", null, "u2")];
+    const db = pinDb(rows);
+    db.cardCollection.findFirst.mockResolvedValue({ ...owned(true), id: "B" });
+    await expect(pinShowcase(db as never, "u1", "B", false)).resolves.toEqual({ pinned: false });
+    expect(rows.map((r) => r.pinnedAt !== null)).toEqual([true, false, false]);
+    await expect(pinShowcase(db as never, "u1", "B", true)).resolves.toEqual({ pinned: true });
+    expect(rows.map((r) => r.pinnedAt !== null)).toEqual([false, true, false]);
   });
 
   it("refuses to pin a private showcase, and another player's", async () => {

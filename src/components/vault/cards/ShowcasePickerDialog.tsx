@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -22,30 +23,50 @@ import { cardCount } from "~/lib/cards/curation-limits";
 import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { MinePage } from "~/lib/cards/hub/mine";
+import { STORE_PATH } from "~/lib/cards/hub-routes";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CardGrid } from "./CardGrid";
 
 /** Mine's largest page; a search finds the copies past it. */
 const PAGE = 120;
+/** The longest search Mine's query takes. */
+const SEARCH_MAX = 100;
 
 interface ShowcasePickerDialogProps {
   showcaseId: string;
   /** Copies already in the showcase: left out of the picker, and counted against its room. */
   existing: ReadonlySet<string>;
-  /** The button that opens the picker; focus goes back to it when the picker closes. */
+  /** The button that opens the picker; focus goes back to it when the picker is dismissed. */
   trigger: ReactNode;
+  /** Where focus goes after an add instead: the add can fill the showcase, which disables the button. */
+  focusAfterAdd: () => void;
 }
 
 const roomLabel = (room: number) => (room === 1 ? "1 more card" : `${room} more cards`);
 
 /** Picks copies from Mine to add to a showcase. Bound copies may go on a showcase too. */
-export function ShowcasePickerDialog({ showcaseId, existing, trigger }: ShowcasePickerDialogProps) {
+export function ShowcasePickerDialog({
+  showcaseId,
+  existing,
+  trigger,
+  focusAfterAdd,
+}: ShowcasePickerDialogProps) {
   const [open, setOpen] = useState(false);
+  // Set by an add, so the close that follows hands focus on rather than back to the button.
+  const added = useRef(false);
   const room = SHOWCASE_LIMITS.items - existing.size;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
+      <DialogContent
+        className="max-h-[85dvh] max-w-3xl overflow-y-auto"
+        onCloseAutoFocus={(event) => {
+          if (!added.current) return;
+          added.current = false;
+          event.preventDefault();
+          focusAfterAdd();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-title-3">Add cards</DialogTitle>
           <DialogDescription>{`Room for ${roomLabel(room)}.`}</DialogDescription>
@@ -55,7 +76,10 @@ export function ShowcasePickerDialog({ showcaseId, existing, trigger }: Showcase
           showcaseId={showcaseId}
           existing={existing}
           room={room}
-          onAdded={() => setOpen(false)}
+          onAdded={() => {
+            added.current = true;
+            setOpen(false);
+          }}
         />
       </DialogContent>
     </Dialog>
@@ -105,6 +129,7 @@ function PickerBody({
     <>
       <SearchField
         aria-label="Search your cards"
+        maxLength={SEARCH_MAX}
         placeholder="Search your cards"
         value={search}
         onValueChange={setSearch}
@@ -170,10 +195,17 @@ function PickerCards({
     .map((row) => row.face)
     .filter((face) => face.copy && !existing.has(face.copy.ownershipId));
   if (rows.length === 0) {
+    if (searching) return <EmptyState compact title="No cards match this search" />;
     return (
       <EmptyState
         compact
-        title={searching ? "No cards match this search" : "You have no cards yet"}
+        title="You have no cards yet"
+        message="Buy a pack in the Store, then add its cards here."
+        action={
+          <Button asChild size="sm" variant="secondary">
+            <Link href={STORE_PATH}>Go to the Store</Link>
+          </Button>
+        }
       />
     );
   }
