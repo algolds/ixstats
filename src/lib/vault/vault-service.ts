@@ -63,15 +63,7 @@ export async function earnCreditsOnce(
   input: LedgerEarnInput & { idempotencyKey: string }
 ): Promise<EarnOnceResult> {
   try {
-    const r = await db.$transaction(async (tx) => {
-      const existing = await tx.vaultTransaction.findUnique({
-        where: { idempotencyKey: input.idempotencyKey },
-        select: { balanceAfter: true },
-      });
-      if (existing) return { newBalance: existing.balanceAfter, alreadyApplied: true };
-      const { newBalance } = await ledgerEarnCreditsTx(tx, input);
-      return { newBalance, alreadyApplied: false };
-    });
+    const r = await db.$transaction((tx) => earnCreditsOnceTx(tx, input));
     return { success: true, alreadyApplied: r.alreadyApplied, newBalance: r.newBalance };
   } catch (error) {
     const duplicate =
@@ -94,6 +86,24 @@ export async function earnCreditsOnce(
       message: "Failed to earn credits",
     };
   }
+}
+
+/**
+ * `earnCreditsOnce`'s transaction body, for a caller that already holds a transaction (and its locks): a ledger row
+ * carrying the key means nothing is written; otherwise the earn is written with the key. A duplicate raised by the
+ * unique index aborts the caller's transaction, so the caller treats it as `alreadyApplied`.
+ */
+export async function earnCreditsOnceTx(
+  tx: Prisma.TransactionClient,
+  input: LedgerEarnInput & { idempotencyKey: string }
+): Promise<{ newBalance: number; alreadyApplied: boolean }> {
+  const existing = await tx.vaultTransaction.findUnique({
+    where: { idempotencyKey: input.idempotencyKey },
+    select: { balanceAfter: true },
+  });
+  if (existing) return { newBalance: existing.balanceAfter, alreadyApplied: true };
+  const { newBalance } = await ledgerEarnCreditsTx(tx, input);
+  return { newBalance, alreadyApplied: false };
 }
 
 export class VaultService {
