@@ -36,14 +36,27 @@ const SPACE_CONTROL = [
   "[role='switch']",
 ].join(", ");
 
-/** Space or F flips the card, unless the user is typing or Space would press another control. */
-export function isFlipKey(event: KeyboardEvent): boolean {
-  if (event.defaultPrevented || event.repeat) return false;
+const DIALOG = "[role='dialog'], [role='alertdialog']";
+
+/** Space or F aimed at the card, repeats included: not typed, not handled, and Space not on another control. */
+function aimsAtCard(event: KeyboardEvent): boolean {
+  if (event.defaultPrevented) return false;
   if (event.altKey || event.ctrlKey || event.metaKey) return false;
   const target = event.target instanceof Element ? event.target : null;
   if (target?.closest(TYPING_TARGET)) return false;
   if (event.key === "f" || event.key === "F") return true;
   return event.key === " " && !target?.closest(SPACE_CONTROL);
+}
+
+/** Space or F flips the card, unless the user is typing or Space would press another control. */
+export function isFlipKey(event: KeyboardEvent): boolean {
+  return !event.repeat && aimsAtCard(event);
+}
+
+/** A key pressed in a dialog stacked over the card (or a popover beside it) belongs to that layer. */
+function inOtherDialog(target: EventTarget | null, own: Element | null): boolean {
+  const dialog = target instanceof Element ? target.closest(DIALOG) : null;
+  return dialog !== null && dialog !== (own?.closest(DIALOG) ?? null);
 }
 
 interface CardFlipProps {
@@ -62,11 +75,19 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
   const tiltX = useSpring(0, TILT_SPRING);
   const tiltY = useSpring(0, TILT_SPRING);
   const holo = useRef<HTMLSpanElement>(null);
+  const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!isFlipKey(event)) return;
+      const own = root.current;
+      if (!aimsAtCard(event) || inOtherDialog(event.target, own)) return;
+      // A held key flips once, but its repeats are still claimed so a held Space cannot scroll the sheet.
       event.preventDefault();
+      if (event.repeat) return;
+      // The side turning away goes inert (or unmounts), which would drop its focus to the body.
+      if (own && event.target instanceof Node && own.contains(event.target)) {
+        own.focus({ preventScroll: true });
+      }
       onFlip();
     };
     window.addEventListener("keydown", onKey);
@@ -100,7 +121,7 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
 
   if (reduce) {
     return (
-      <div className="mx-auto grid w-fit">
+      <div ref={root} tabIndex={-1} className="mx-auto grid w-fit outline-none">
         <AnimatePresence initial={false}>
           <motion.div
             key={flipped ? "back" : "front"}
@@ -119,7 +140,9 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
 
   return (
     <div
-      className="mx-auto w-fit perspective-distant"
+      ref={root}
+      tabIndex={-1}
+      className="mx-auto w-fit outline-none perspective-distant"
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >

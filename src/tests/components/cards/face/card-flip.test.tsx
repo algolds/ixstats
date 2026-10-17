@@ -8,6 +8,7 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
 import { CardFlip, isFlipKey } from "~/components/cards/face/CardFlip";
+import { focusRing } from "~/components/ui/button";
 import type { TrailEvent } from "~/lib/cards/face/trail";
 import type { CardFaceData, CardFinish } from "~/lib/cards/face/types";
 
@@ -175,11 +176,101 @@ describe("CardFlip", () => {
       <CardFlip face={face()} back={<p>The back</p>} flipped={false} onFlip={onFlip} />
     );
     expect(container.querySelector(".card-holo")).toBeNull();
+    expect(container.querySelector(".perspective-distant, .transform-3d")).toBeNull();
     expect(screen.queryByText("The back")).toBeNull();
     fireEvent.keyDown(window, { key: " " });
     expect(onFlip).toHaveBeenCalledTimes(1);
     rerender(<CardFlip face={face()} back={<p>The back</p>} flipped onFlip={onFlip} />);
     expect(screen.getByText("The back")).toBeInTheDocument();
+  });
+});
+
+describe("CardFlip keys", () => {
+  beforeEach(() => jest.mocked(useFacetReducedMotion).mockReturnValue(false));
+
+  it("leaves keys pressed in a dialog stacked over the card to that dialog", () => {
+    const onFlip = jest.fn();
+    render(
+      <>
+        <div role="dialog">
+          <CardFlip face={face()} back={null} flipped={false} onFlip={onFlip} />
+          <button type="button">Copy link</button>
+        </div>
+        <div role="alertdialog">
+          <button type="button">Add</button>
+        </div>
+      </>
+    );
+    expect(fireEvent.keyDown(screen.getByRole("button", { name: "Add" }), { key: "f" })).toBe(true);
+    expect(onFlip).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Copy link" }), { key: "f" });
+    expect(onFlip).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document.body, { key: "f" });
+    expect(onFlip).toHaveBeenCalledTimes(2);
+  });
+
+  it("leaves keys in any dialog to it when the card sits outside one", () => {
+    const onFlip = jest.fn();
+    render(
+      <>
+        <CardFlip face={face()} back={null} flipped={false} onFlip={onFlip} />
+        <div role="dialog">
+          <button type="button">Add</button>
+        </div>
+      </>
+    );
+    fireEvent.keyDown(screen.getByRole("button", { name: "Add" }), { key: "f" });
+    expect(onFlip).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: "f" });
+    expect(onFlip).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([false, true])(
+    "keeps focus on the card when the side holding it turns away (Reduce Motion %s)",
+    (reduce) => {
+      jest.mocked(useFacetReducedMotion).mockReturnValue(reduce);
+      const onFlip = jest.fn();
+      const { container } = render(
+        <CardFlip face={face()} back={<a href="/x">Back link</a>} flipped onFlip={onFlip} />
+      );
+      const root = container.firstElementChild;
+      expect(root).toHaveAttribute("tabindex", "-1");
+      const link = screen.getByText("Back link");
+      link.focus();
+      fireEvent.keyDown(link, { key: "f" });
+      expect(onFlip).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(root);
+    }
+  );
+
+  it("leaves focus where it is when the key came from outside the card", () => {
+    render(
+      <>
+        <CardFlip face={face()} back={null} flipped={false} onFlip={jest.fn()} />
+        <button type="button">Elsewhere</button>
+      </>
+    );
+    const elsewhere = screen.getByRole("button", { name: "Elsewhere" });
+    elsewhere.focus();
+    fireEvent.keyDown(elsewhere, { key: "f" });
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
+  it("flips once for a held Space, and keeps its repeats from scrolling", () => {
+    const onFlip = jest.fn();
+    render(
+      <>
+        <CardFlip face={face()} back={null} flipped={false} onFlip={onFlip} />
+        <button type="button">Copy link</button>
+      </>
+    );
+    expect(fireEvent.keyDown(window, { key: " " })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: " ", repeat: true })).toBe(false);
+    expect(fireEvent.keyDown(window, { key: " ", repeat: true })).toBe(false);
+    expect(onFlip).toHaveBeenCalledTimes(1);
+    const button = screen.getByRole("button", { name: "Copy link" });
+    expect(fireEvent.keyDown(button, { key: " ", repeat: true })).toBe(true);
+    expect(fireEvent.keyDown(window, { key: "Enter", repeat: true })).toBe(true);
   });
 });
 
@@ -231,6 +322,7 @@ describe("CardBackProvenance", () => {
     expect(credit).toHaveAttribute("href", "https://ixwiki.com/wiki/File:Map.png");
     expect(credit).toHaveAttribute("target", "_blank");
     expect(credit).toHaveAttribute("rel", "noopener noreferrer");
+    expect(credit).toHaveClass(...focusRing.split(" "));
     expect(credit.parentElement).toHaveTextContent(/^Map by Ann · CC BY-SA 4\.0$/);
     expect(screen.queryByRole("link", { name: "View on NationStates" })).toBeNull();
   });
@@ -309,9 +401,14 @@ describe("CardBackProvenance", () => {
     );
     expect(screen.getByText("Not in your collection")).toBeInTheDocument();
     expect(screen.queryByText(/^Level/)).toBeNull();
-    expect(
-      screen.getByText("Card data from the NationStates API. Not affiliated with NationStates.")
-    ).toBeInTheDocument();
+    for (const link of screen.getAllByRole("link")) {
+      expect(link).toHaveClass(...focusRing.split(" "));
+    }
+    const api = screen.getByRole("link", { name: "NationStates API" });
+    expect(api).toHaveAttribute("href", "https://www.nationstates.net/pages/api.html#cards");
+    expect(api.parentElement).toHaveTextContent(
+      "Data via official NationStates API. Not affiliated with or endorsed by NationStates."
+    );
   });
 
   it("links an NS card to its nation when the card page is unknown", () => {

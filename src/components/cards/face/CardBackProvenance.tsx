@@ -1,4 +1,6 @@
 import { cn } from "~/lib/utils/cn";
+import { focusRing } from "~/components/ui/button";
+import { NationStatesDataCredit } from "~/components/cards/display/NationStatesAttribution";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import { CARD_FACE_WIDTH } from "~/lib/cards/face/face-size";
 import type { ArtCredit } from "~/lib/cards/face/art-credit";
@@ -100,12 +102,12 @@ function NsLine({ ns }: { ns: NsProvenance }) {
         href={ns.cardUrl ?? ns.nationUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-tint underline"
+        className={cn("text-tint underline", focusRing)}
       >
         View on NationStates
       </a>
       <p className="text-label-secondary">
-        Card data from the NationStates API. Not affiliated with NationStates.
+        <NationStatesDataCredit linkClassName={cn("underline", focusRing)} />
       </p>
     </div>
   );
@@ -117,7 +119,12 @@ function ArtCreditLine({ credit }: { credit: ArtCredit }) {
   return (
     <p className="text-label-secondary mt-auto">
       {credit.sourceUrl ? (
-        <a href={credit.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline">
+        <a
+          href={credit.sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn("underline", focusRing)}
+        >
           {credit.line}
         </a>
       ) : (
