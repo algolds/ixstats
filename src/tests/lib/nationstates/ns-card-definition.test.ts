@@ -71,7 +71,98 @@ describe("nsCardDefinitionData", () => {
   });
 });
 
+/**
+ * A SyncLog an admin can stop mid-run. An `update` always lands; an `updateMany` only while the log's status is one
+ * its `where` names. Only the status and the message are kept.
+ */
+function stoppableLog(db: ReturnType<typeof createMockPrisma>) {
+  const log: { status: string; errorMessage: string | null } = {
+    status: "IN_PROGRESS",
+    errorMessage: null,
+  };
+  const write = (data: Partial<typeof log>) => {
+    if (data.status !== undefined) log.status = data.status;
+    if (data.errorMessage !== undefined) log.errorMessage = data.errorMessage;
+  };
+  db.syncLog.findUnique.mockImplementation(async () => ({ status: log.status, metadata: {} }));
+  db.syncLog.update.mockImplementation(async ({ data }: { data: Partial<typeof log> }) => {
+    write(data);
+    return log;
+  });
+  db.syncLog.updateMany.mockImplementation(
+    async ({ where, data }: { where: { status: { in: string[] } }; data: Partial<typeof log> }) => {
+      if (!where.status.in.includes(log.status)) return { count: 0 };
+      write(data);
+      return { count: 1 };
+    }
+  );
+  const stop = () => Object.assign(log, { status: "FAILED", errorMessage: "Stopped by an admin" });
+  return { log, stop };
+}
+
 describe("processRegionCardsFromDump", () => {
+  it("keeps an admin's stop when the dumps it went on reading match no card", async () => {
+    const db = createMockPrisma();
+    const { log, stop } = stoppableLog(db);
+    jest.mocked(nsApiClient.fetchCardDump).mockImplementation(async () => {
+      stop();
+      return "<xml/>" as never;
+    });
+    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([] as never);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3]);
+
+    expect(log).toEqual({ status: "FAILED", errorMessage: "Stopped by an admin" });
+    jest.mocked(console.warn).mockRestore();
+  });
+
+  it("still fails a run whose dumps match no card when no one stopped it", async () => {
+    const db = createMockPrisma();
+    const { log } = stoppableLog(db);
+    jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
+    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([] as never);
+    jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3]);
+
+    expect(log).toMatchObject({
+      status: "FAILED",
+      errorMessage: "No cards matched the requested region(s) in the card dumps.",
+    });
+    jest.mocked(console.warn).mockRestore();
+  });
+
+  it("keeps an admin's stop that lands after the last card's check", async () => {
+    const db = createMockPrisma();
+    const { log, stop } = stoppableLog(db);
+    jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
+    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([elm] as never);
+    db.card.create.mockImplementation(async () => {
+      stop();
+      return { id: "card_ns_123_s3" };
+    });
+
+    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3]);
+
+    expect(log).toEqual({ status: "FAILED", errorMessage: "Stopped by an admin" });
+  });
+
+  it("finishes a run paused after the last card's check, since no card is left to resume", async () => {
+    const db = createMockPrisma();
+    const { log } = stoppableLog(db);
+    jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
+    jest.mocked(nsApiClient.parseNSDump).mockResolvedValue([elm] as never);
+    db.card.create.mockImplementation(async () => {
+      log.status = "PAUSED";
+      return { id: "card_ns_123_s3" };
+    });
+
+    await processRegionCardsFromDump(db as never, "log_1", ["lazarus"], [3]);
+
+    expect(log).toEqual({ status: "SUCCESS", errorMessage: null });
+  });
+
   it("creates each new card of the region waiting for review, under the sync's id", async () => {
     jest.mocked(nsApiClient.fetchCardDump).mockResolvedValue("<xml/>" as never);
     jest
@@ -89,8 +180,8 @@ describe("processRegionCardsFromDump", () => {
       reviewState: "PENDING",
       metadata: { importedFrom: "region:lazarus", syncLogId: "log_1" },
     });
-    expect(db.syncLog.update).toHaveBeenLastCalledWith({
-      where: { id: "log_1" },
+    expect(db.syncLog.updateMany).toHaveBeenLastCalledWith({
+      where: { id: "log_1", status: { in: ["IN_PROGRESS", "PAUSED"] } },
       data: expect.objectContaining({ status: "SUCCESS", cardsCreated: 1 }),
     });
   });
