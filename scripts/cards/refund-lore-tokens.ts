@@ -15,8 +15,8 @@ import { PrismaClient } from "@prisma/client";
 import { round2 } from "~/lib/exchange/amounts";
 import {
   LORE_TOKEN_ITEM_IDS,
-  loreTokensOf,
   planLoreTokenRefunds,
+  tokensByItem,
   tokensUsed,
   type LoreTokenRefund,
   type TokenPurchase,
@@ -34,10 +34,10 @@ const APPLY = process.argv.includes("--apply");
 function itemOutcome(itemId: string): string {
   if (LORE_TOKEN_ITEM_IDS.includes(itemId)) return "unused tokens refunded";
   if (isRetiredStoreItem(itemId)) return "retired, its own script refunds it in full";
-  return "perk removed, not refunded";
+  return "perk no longer used, not refunded";
 }
 
-async function tokenPurchases(tokensByItem: ReadonlyMap<string, number>): Promise<TokenPurchase[]> {
+async function tokenPurchases(perItem: ReadonlyMap<string, number>): Promise<TokenPurchase[]> {
   const rows = await db.vaultTransaction.findMany({
     where: { type: { in: ["SPEND_COSMETIC", "SPEND_BOOST"] } },
     select: {
@@ -52,7 +52,7 @@ async function tokenPurchases(tokensByItem: ReadonlyMap<string, number>): Promis
   return rows.flatMap((row) => {
     const itemId = ledgerMetadata(row.metadata).itemId;
     if (typeof itemId !== "string") return [];
-    const tokens = tokensByItem.get(itemId) ?? 0;
+    const tokens = perItem.get(itemId) ?? 0;
     const { id, vaultId, credits, createdAt } = row;
     return tokens > 0
       ? [{ id, vaultId, userId: row.vault.userId, itemId, credits, tokens, createdAt }]
@@ -73,29 +73,28 @@ async function tokensUsedByVault(): Promise<Map<string, number>> {
 }
 
 async function main() {
+  const items = await db.vaultStoreItem.findMany({
+    select: { id: true, name: true, effects: true },
+  });
+  // Throws (before anything is written) when no lore token item reports a token count.
+  const perItem = tokensByItem(items);
+  for (const item of items.filter((row) => perItem.has(row.id))) {
+    const tokens = perItem.get(item.id);
+    console.log(
+      `Item ${item.id} (${item.name}): ${tokens} token(s) per purchase, ${itemOutcome(item.id)}`
+    );
+  }
+
   if (APPLY) {
-    // Withdraw first, so no token is sold while the refunds are worked out.
+    // Withdraw before reading purchases, so no token is sold while the refunds are worked out.
     await db.vaultStoreItem.updateMany({
       where: { id: { in: [...LORE_TOKEN_ITEM_IDS] } },
       data: { isActive: false },
     });
   }
 
-  const items = await db.vaultStoreItem.findMany({
-    select: { id: true, name: true, effects: true },
-  });
-  const tokensByItem = new Map<string, number>();
-  for (const item of items) {
-    const tokens = loreTokensOf(item.effects);
-    if (tokens <= 0) continue;
-    tokensByItem.set(item.id, tokens);
-    console.log(
-      `Item ${item.id} (${item.name}): ${tokens} token(s) per purchase, ${itemOutcome(item.id)}`
-    );
-  }
-
   const [purchases, used, corrections] = await Promise.all([
-    tokenPurchases(tokensByItem),
+    tokenPurchases(perItem),
     tokensUsedByVault(),
     db.vaultTransaction.findMany({
       where: { type: "ADMIN_ADJUSTMENT", source: { startsWith: "exploit_correction:" } },

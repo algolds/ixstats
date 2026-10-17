@@ -2,13 +2,16 @@
  * Lore request tokens are retired with paid lore requests (cards refresh spec §2.2). Every token a player bought and
  * never used is refunded at what they paid for it, through the retired-store-item refund path
  * (`applyRetiredItemRefund`, key `retired_item_refund:<purchase id>`). Used tokens are spent oldest purchase first,
- * across every purchase that granted tokens. A token granted free (an admin grant charges 0) is never refunded.
+ * across every purchase that granted tokens, except that a retired item's tokens are spent last: its own script
+ * refunds that purchase in full, so a used token is always one the player paid for. A token granted free (an admin
+ * grant charges 0) is never refunded.
  */
 import type { Prisma } from "@prisma/client";
 import { isJsonObject } from "~/lib/cards/ns-facts";
 import { round2 } from "~/lib/exchange/amounts";
 import {
   correctionsByPurchase,
+  isRetiredStoreItem,
   ledgerMetadata,
   retiredItemRefundKey,
   type LedgerCorrectionRow,
@@ -41,6 +44,27 @@ export function loreTokensOf(effects: Prisma.JsonValue | null): number {
   return typeof tokens === "number" ? Math.max(0, tokens) : 0;
 }
 
+/**
+ * Tokens per purchase of each store item carrying the perk. Throws when no lore token item reports a count (its row
+ * deleted or its perk edited away), since planning from that would silently refund nothing.
+ */
+export function tokensByItem(
+  items: ReadonlyArray<{ id: string; effects: Prisma.JsonValue | null }>
+): Map<string, number> {
+  const tokens = new Map<string, number>();
+  for (const item of items) {
+    const count = loreTokensOf(item.effects);
+    if (count > 0) tokens.set(item.id, count);
+  }
+  if (!LORE_TOKEN_ITEM_IDS.some((id) => tokens.has(id))) {
+    throw new Error(
+      `No lore token item (${LORE_TOKEN_ITEM_IDS.join(", ")}) has a loreTokens perk, so no refund can be planned. ` +
+        `Restore its effects to {"perks":{"loreTokens":1}} and re-run; nothing was written.`
+    );
+  }
+  return tokens;
+}
+
 /** Tokens a vault used: request markers that spent one, less those a rejected request gave back. */
 export function tokensUsed(markers: ReadonlyArray<{ metadata: Prisma.JsonValue | null }>): number {
   let used = 0;
@@ -52,9 +76,13 @@ export function tokensUsed(markers: ReadonlyArray<{ metadata: Prisma.JsonValue |
   return Math.max(0, used);
 }
 
-/** Oldest first; a tie on time goes by id, so every run spends the same purchases. */
-const byPurchaseTime = (a: TokenPurchase, b: TokenPurchase) =>
-  a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id);
+const retiredLast = (purchase: TokenPurchase) => (isRetiredStoreItem(purchase.itemId) ? 1 : 0);
+
+/** Retired items last, then oldest first; a tie on time goes by id, so every run spends the same purchases. */
+const bySpendOrder = (a: TokenPurchase, b: TokenPurchase) =>
+  retiredLast(a) - retiredLast(b) ||
+  a.createdAt.getTime() - b.createdAt.getTime() ||
+  a.id.localeCompare(b.id);
 
 /**
  * One refund per Lore Request Token purchase with unused tokens, for its share of what was paid net of the exploit
@@ -74,7 +102,7 @@ export function planLoreTokenRefunds(
   const refunds: LoreTokenRefund[] = [];
   for (const [vaultId, vaultPurchases] of byVault) {
     let used = usedByVault.get(vaultId) ?? 0;
-    for (const purchase of [...vaultPurchases].sort(byPurchaseTime)) {
+    for (const purchase of [...vaultPurchases].sort(bySpendOrder)) {
       const spent = Math.min(purchase.tokens, used);
       used -= spent;
       const unspent = purchase.tokens - spent;

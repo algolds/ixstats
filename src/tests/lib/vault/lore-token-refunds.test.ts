@@ -4,6 +4,7 @@ import {
   LORE_TOKEN_ITEM_IDS,
   loreTokensOf,
   planLoreTokenRefunds,
+  tokensByItem,
   tokensUsed,
   type TokenPurchase,
 } from "~/lib/vault/lore-token-refunds";
@@ -75,6 +76,17 @@ describe("planLoreTokenRefunds", () => {
       []
     );
     expect(refunds.map((r) => r.sourceTransactionId)).toEqual(["tok"]);
+  });
+
+  it("counts archetype tokens as spent last, so a used token is never one its own script refunds in full", () => {
+    const purchases = [
+      purchase("arch", "upgrade_archetype_proposal", -3500, 1, 1),
+      purchase("tok", "upgrade_lore_token", -2500, 1, 2),
+    ];
+    expect(planLoreTokenRefunds(purchases, new Map([["v1", 1]]), [])).toEqual([]);
+    expect(
+      planLoreTokenRefunds(purchases, new Map(), []).map((r) => r.sourceTransactionId)
+    ).toEqual(["tok"]);
   });
 
   it("never refunds a token granted free, which still counts as spent first when older", () => {
@@ -172,5 +184,30 @@ describe("token accounting", () => {
     expect(loreTokensOf({ perks: { loreTokens: "2" } })).toBe(0);
     expect(loreTokensOf({ perks: [2] })).toBe(0);
     expect(loreTokensOf(null)).toBe(0);
+  });
+});
+
+describe("tokensByItem", () => {
+  it("maps each item carrying the perk to its tokens per purchase", () => {
+    expect(
+      tokensByItem([
+        { id: "upgrade_lore_token", effects: { perks: { loreTokens: 1 } } },
+        { id: "upgrade_myclub_license", effects: { perks: { loreTokens: 2 } } },
+        { id: "frame_gold", effects: null },
+      ])
+    ).toEqual(
+      new Map([
+        ["upgrade_lore_token", 1],
+        ["upgrade_myclub_license", 2],
+      ])
+    );
+  });
+
+  it("refuses to plan when no lore token item reports a token count, rather than refunding nothing", () => {
+    const missing = /upgrade_lore_token.*nothing was written/;
+    expect(() =>
+      tokensByItem([{ id: "upgrade_myclub_license", effects: { perks: { loreTokens: 1 } } }])
+    ).toThrow(missing);
+    expect(() => tokensByItem([{ id: "upgrade_lore_token", effects: null }])).toThrow(missing);
   });
 });

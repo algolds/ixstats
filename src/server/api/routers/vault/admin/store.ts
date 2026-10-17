@@ -1,6 +1,11 @@
+import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { LORE_TOKEN_ITEM_IDS } from "~/lib/vault/lore-token-refunds";
 import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
+
+const WITHDRAWN_ITEM_MESSAGE = "This item was withdrawn and cannot be put back on sale.";
 
 export const vaultAdminStoreRouter = createTRPCRouter({
   /**
@@ -159,6 +164,10 @@ export const vaultAdminStoreRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Lore tokens went with paid lore requests (cards refresh spec §2.2). An omitted isActive reads as true.
+      if (input.isActive && LORE_TOKEN_ITEM_IDS.includes(input.id)) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: WITHDRAWN_ITEM_MESSAGE });
+      }
       try {
         if (!ctx.auth?.userId) {
           throw new Error("Unauthorized");
@@ -184,7 +193,10 @@ export const vaultAdminStoreRouter = createTRPCRouter({
             badgeText: input.badgeText ?? "Custom Item",
             category: input.category,
             isActive: input.isActive,
-            ...(input.effects !== undefined && { effects: input.effects }),
+            // A Json column takes DbNull, not null, to clear it.
+            ...(input.effects !== undefined && {
+              effects: input.effects === null ? Prisma.DbNull : input.effects,
+            }),
           },
         });
 

@@ -46,20 +46,24 @@ const upgrade = {
   effects: { perks: { cardCapacity: 50, loreTokens: 1 } },
 };
 
+function renderWith(item: typeof upgrade) {
+  jest.mocked(api.vault.adminListStoreItemsAll.useQuery).mockReturnValue({
+    data: [item],
+    isLoading: false,
+    refetch: jest.fn(),
+  } as never);
+  const update = jest.fn();
+  jest
+    .mocked(api.vault.adminUpdateStoreItem.useMutation)
+    .mockReturnValue({ mutate: update, isPending: false } as never);
+  render(<VaultStoreControl />);
+  fireEvent.click(screen.getByTitle("Edit item"));
+  return update;
+}
+
 describe("VaultStoreControl upgrade perks", () => {
   it("offers no lore token field, and saving drops the perk", () => {
-    jest.mocked(api.vault.adminListStoreItemsAll.useQuery).mockReturnValue({
-      data: [upgrade],
-      isLoading: false,
-      refetch: jest.fn(),
-    } as never);
-    const update = jest.fn();
-    jest
-      .mocked(api.vault.adminUpdateStoreItem.useMutation)
-      .mockReturnValue({ mutate: update, isPending: false } as never);
-
-    render(<VaultStoreControl />);
-    fireEvent.click(screen.getByTitle("Edit item"));
+    const update = renderWith(upgrade);
 
     expect(screen.getByLabelText("Card Capacity (+)")).toHaveValue(50);
     expect(screen.queryByLabelText(/lore tokens/i)).toBeNull();
@@ -68,5 +72,14 @@ describe("VaultStoreControl upgrade perks", () => {
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({ id: upgrade.id, effects: { perks: { cardCapacity: 50 } } })
     );
+  });
+
+  it("saves an item whose only perk was lore tokens, leaving its effects untouched", () => {
+    const update = renderWith({ ...upgrade, effects: { perks: { loreTokens: 1 } } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Item" }));
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0]).toMatchObject({ id: upgrade.id, price: 5000 });
+    expect(update.mock.calls[0][0].effects).toBeUndefined();
   });
 });

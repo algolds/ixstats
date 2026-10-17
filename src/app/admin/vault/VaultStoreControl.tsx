@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { api } from "~/trpc/react";
+import type { Prisma } from "@prisma/client";
+import { api, type RouterOutputs } from "~/trpc/react";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -46,6 +48,7 @@ import {
 } from "iconoir-react";
 import { ICON_MAP } from "~/components/vault/sections/marketplace/VaultStoreTab";
 
+type StoreItem = RouterOutputs["vault"]["adminListStoreItemsAll"][number];
 type CosmeticEffects = Record<string, Record<string, string | boolean>>;
 type StoreItemEffects = { perks: Record<string, number> } | { customizations: CosmeticEffects };
 
@@ -146,17 +149,18 @@ export function VaultStoreControl() {
     setIsOpen(true);
   };
 
-  const handleOpenEdit = (item: any) => {
+  const handleOpenEdit = (item: StoreItem) => {
     setEditingItem(item);
-    const effects = (item.effects ?? {}) as any;
-    const cust = effects.customizations ?? {};
-    const perks = effects.perks ?? {};
+    const fx: Prisma.JsonObject = isJsonObject(item.effects) ? item.effects : {};
+    const cust: Prisma.JsonObject = isJsonObject(fx.customizations) ? fx.customizations : {};
+    const { yieldBoost, cardCapacity }: Prisma.JsonObject = isJsonObject(fx.perks) ? fx.perks : {};
     const cosmeticKind: "avatarGlow" | "neonFrame" | "chatBadge" = cust.chatBadge
       ? "chatBadge"
       : cust.neonFrame
         ? "neonFrame"
         : "avatarGlow";
-    const activeCust = cust[cosmeticKind] ?? {};
+    const active = cust[cosmeticKind];
+    const { color, icon }: Prisma.JsonObject = isJsonObject(active) ? active : {};
     setFormData({
       name: item.name,
       description: item.description || "",
@@ -168,10 +172,10 @@ export function VaultStoreControl() {
       category: item.category,
       isActive: item.isActive,
       cosmeticKind,
-      effectColor: activeCust.color || "#f59e0b",
-      effectIcon: activeCust.icon || "Crown",
-      yieldBoostPct: typeof perks.yieldBoost === "number" ? Math.round(perks.yieldBoost * 100) : 0,
-      cardCapacity: typeof perks.cardCapacity === "number" ? perks.cardCapacity : 0,
+      effectColor: typeof color === "string" && color ? color : "#f59e0b",
+      effectIcon: typeof icon === "string" && icon ? icon : "Crown",
+      yieldBoostPct: typeof yieldBoost === "number" ? Math.round(yieldBoost * 100) : 0,
+      cardCapacity: typeof cardCapacity === "number" ? cardCapacity : 0,
     });
     setIsOpen(true);
   };
@@ -220,7 +224,8 @@ export function VaultStoreControl() {
       cardCapacity: _cc,
       ...base
     } = formData;
-    const payload = { ...base, effects: buildEffects() ?? null };
+    // No effects to send (an upgrade with no perks set) leaves the stored ones as they are.
+    const payload = { ...base, effects: buildEffects() };
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, ...payload });
     } else {
