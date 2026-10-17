@@ -5,7 +5,7 @@
  * `api.cards.admin.<tab>.*` (cards refresh spec §2.4).
  *
  * Domains:
- *  - inventory:   user inventory, the card library, Lore stats (admin)
+ *  - inventory:   user inventory, the card library and its NationStates stats
  *  - collections: collection CRUD + wiki article excerpt lookup
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
@@ -14,7 +14,6 @@ import { cardsInventoryRouter } from "./inventory";
 import { cardsSettingsRouter } from "./settings";
 import { cardsLegacyAdminRouter } from "./admin-legacy";
 import { cardsCollectionsRouter } from "./collections";
-import { cardsOperationsRouter } from "./operations";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -22,6 +21,5 @@ export const cardsRouter = mergeRouters(
   cardsSettingsRouter,
   cardsLegacyAdminRouter,
   cardsCollectionsRouter,
-  cardsOperationsRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );

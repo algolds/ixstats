@@ -17,7 +17,8 @@ import type { WikiQuery } from "~/lib/realms/lore-import";
 /** The wikis a discovery client reads: the WikiOS sources and every sister wiki, Commons included. */
 export type DiscoveryWiki = WikiSource | SisterWikiId;
 
-const defaultApiUrl = (source: DiscoveryWiki): string =>
+/** A wiki's api.php: the WikiOS sources' as configured (iiwiki's development proxy when set), and Commons'. */
+export const defaultApiUrl = (source: DiscoveryWiki): string =>
   source === "commons" ? sisterWikiApiUrl(SISTER_WIKI_HOSTS.commons) : getMediaWikiApiUrl(source);
 
 /** Why a discovery stopped before it finished. */

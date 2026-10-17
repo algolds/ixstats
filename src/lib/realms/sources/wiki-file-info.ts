@@ -38,6 +38,10 @@ export interface WikiFileInfo {
   licenceUrl: string | null;
   artist: string | null;
   credit: string | null;
+  /** The file's own Attribution field, the credit its licence asks for when it has one. */
+  ownAttribution: string | null;
+  /** The wiki holding the file, which the credit names: Commons for a Commons file IxWiki shows. */
+  holder: FileWiki;
   /** The credit line to show with the map: the file's own Attribution field, else author, licence and wiki. */
   attribution: string;
 }
@@ -221,6 +225,8 @@ export function parseImageInfo(
       licenceUrl: httpsUrl(metadataText(meta.LicenseUrl?.value)),
       artist,
       credit: metadataText(meta.Credit?.value),
+      ownAttribution: attribution,
+      holder,
       attribution: attributionLine(holder, page.title, { attribution, artist, licence }),
     });
   }

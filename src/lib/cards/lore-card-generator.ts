@@ -9,27 +9,19 @@
  *   const candidate = await wikiLoreCardGenerator.generateCard("Article_Title", "ixwiki");
  */
 
-import { db } from "~/server/db";
-import type { CardRarity } from "@prisma/client";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
-import { getValuationConfig, computeCardValue, type CardValuationConfig } from "./valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import type { LoreCategory as LoreCategoryType } from "./category-enums";
 import { classifyLoreArticle } from "./category-classifier";
 import { fileNameFromArtworkUrl } from "./art-licence";
 import { cardSourceLabel, type CardArticleSource } from "./card-sources";
-import { ArticleRejected, type LoreCardCandidate } from "./lore-card-candidate";
+import { ArticleRejected, NOT_ARTICLE_REASON, type LoreCardCandidate } from "./lore-card-candidate";
 import { readsPostgres } from "./lore-card-discovery";
-import {
-  DEFAULT_RARITY_THRESHOLDS,
-  qualityScore,
-  rarityForScore,
-  type ArticleSignals,
-} from "./rarity-engine";
+import { qualityScore, type ArticleSignals } from "./rarity-engine";
 import { BOT_REGEX, cleanWikiUsername } from "./lore-card-author-info";
 import {
   buildAuthorInfo,
@@ -59,9 +51,6 @@ interface ArticleMetadataPreview {
   extract: string;
   categoryCount: number;
   category?: LoreCategoryType;
-  estimatedQuality: number;
-  estimatedRarity: CardRarity;
-  estimatedValue: number; // catalog value in IxCredits at the estimated rarity (LORE card)
   authorInfo?: CardAuthorInfo | null;
 }
 
@@ -100,6 +89,11 @@ const titleKeys = (title: string | undefined, underscored = false) =>
 
 const FILE_IMAGE = /\.(jpe?g|png|svg)$/;
 const NON_ARTICLE_IMAGE = /icon|flag|logo/;
+/** A page outside the main namespace, by the namespace its wiki reports, is not a card's source. */
+function assertArticle(page: { ns?: number }): void {
+  if ((page.ns ?? 0) !== 0) throw new ArticleRejected("not-article", NOT_ARTICLE_REASON);
+}
+
 /** A file name without its `File:` (or `Image:`) namespace. */
 const withoutFileNamespace = (name: string) => name.replace(/^(File|Image):/i, "");
 
@@ -154,7 +148,8 @@ class WikiLoreCardGenerator {
 
   /**
    * Article content, featured image, backlinks and author info from the wiki API; null for a page that is not a card's
-   * source (deleted in WikiOS, missing, or an invalid title). A failed read of the page, its image's address or its
+   * source (deleted in WikiOS, missing, or an invalid title), and ArticleRejected for a page outside the main
+   * namespace, before its image and backlinks are read. A failed read of the page, its image's address or its
    * backlinks throws, and a refusing wiki throws DiscoveryStopped (mwJson), so a refused read never makes a card
    * without its art. Only the author lookup answers "none" when it fails.
    */
@@ -188,6 +183,7 @@ class WikiLoreCardGenerator {
     }
     const page = firstPage<MwPage>(data);
     if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
+    assertArticle(page);
 
     const wikitext = page.revisions?.[0]?.["*"] || "";
     const featured = await this.resolveFeaturedImage(
@@ -277,9 +273,8 @@ class WikiLoreCardGenerator {
   /**
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    * Used for discovery/preview so we don't run the full generateCard fetch per article
-   * (that per-article storm tripped the wiki's rate limit). estimatedQuality/Rarity use the
-   * rarity engine and the source's default rarity table with the cheap signals available here;
-   * the importer scores the article again, against the tuned table, at import time.
+   * (that per-article storm tripped the wiki's rate limit). Previews carry no rarity or value:
+   * the importer scores the article, against the source's tuned table, at import time.
    */
   async fetchArticleMetadataBatch(
     requestedTitles: string[],
@@ -288,7 +283,6 @@ class WikiLoreCardGenerator {
     if (readsPostgres(wikiSource)) return this.fetchIxwikiMetadataBatch(requestedTitles);
     // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
     const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
-    const valuationCfg = await getValuationConfig(db);
     const authorsMap = await this.fetchArticleAuthorInfoBatch(titles, wikiSource);
 
     const fetchChunk = async (chunk: string[]): Promise<ArticleMetadataPreview[]> => {
@@ -314,12 +308,7 @@ class WikiLoreCardGenerator {
           .filter((p) => !p.missing)
           .map((p) => {
             const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
-            return this.toMetadataPreview(
-              p,
-              wikiSource,
-              valuationCfg,
-              authorsMap.get(titleKey) || null
-            );
+            return this.toMetadataPreview(p, authorsMap.get(titleKey) || null);
           });
       } catch (e) {
         console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
@@ -344,15 +333,15 @@ class WikiLoreCardGenerator {
   private async fetchIxwikiArticleData(title: string): Promise<ArticleData | null> {
     const article = await loadIxwikiArticle(title);
     if (!article) return null;
+    assertArticle(article);
     const { wikitext, ...rest } = article;
     return { ...rest, text: this.removeTemplates(wikitext), rawText: wikitext, links: [] };
   }
 
   /** Previews of published IxWiki pages from Postgres, in the order asked. */
   private async fetchIxwikiMetadataBatch(titles: string[]): Promise<ArticleMetadataPreview[]> {
-    const [pages, valuationCfg, authors] = await Promise.all([
+    const [pages, authors] = await Promise.all([
       loadIxwikiPreviews(titles),
-      getValuationConfig(db),
       ixwikiAuthorInfo(titles),
     ]);
     return pages.map((page) =>
@@ -364,8 +353,6 @@ class WikiLoreCardGenerator {
           categories: page.categories,
           original: page.imageUrl ? { source: page.imageUrl } : undefined,
         },
-        "ixwiki",
-        valuationCfg,
         authors.get(page.title.replace(/_/g, " ").trim().toLowerCase()) ?? null
       )
     );
@@ -373,22 +360,11 @@ class WikiLoreCardGenerator {
 
   private toMetadataPreview(
     page: MediaWikiPageItem & { extract?: string; length?: number },
-    wikiSource: WikiSource,
-    cfg: CardValuationConfig,
     authorInfo?: CardAuthorInfo | null
   ): ArticleMetadataPreview {
     const extract: string = page.extract || "";
     const length: number = page.length ?? extract.length;
     const categoryCount: number = page.categories?.length ?? 0;
-    const estimatedQuality = qualityScore({
-      length,
-      referenceCount: 0,
-      inboundLinks: 0,
-      categoryCount,
-      hasInfobox: length > 4000,
-      isFeatured: false,
-    });
-    const estimatedRarity = rarityForScore(estimatedQuality, DEFAULT_RARITY_THRESHOLDS[wikiSource]);
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -401,9 +377,6 @@ class WikiLoreCardGenerator {
         text: extract,
         categories: page.categories,
       }),
-      estimatedQuality,
-      estimatedRarity,
-      estimatedValue: computeCardValue({ rarity: estimatedRarity, cardType: "LORE" }, cfg),
       authorInfo: authorInfo ?? null,
     };
   }

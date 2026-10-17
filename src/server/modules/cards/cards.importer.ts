@@ -13,17 +13,22 @@ import { isUniqueViolation } from "~/lib/prisma-error";
 import type { WikiQuery } from "~/lib/realms/lore-import";
 import { DiscoveryStopped, type Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
-import { commonsCardTitle } from "~/lib/cards/art-licence";
+import { commonsCardTitle, commonsFileName } from "~/lib/cards/art-licence";
 import {
   canonicalCardTitle,
   cardSourceLabel,
+  isArticleTitle,
   type CardArticleSource,
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
 import { classifyLoreArticle } from "~/lib/cards/category-classifier";
 import { articleHomePage } from "~/lib/cards/home-realm";
 import { wikiFallbackRealm } from "~/lib/cards/legacy-mapping";
-import { ArticleRejected, type LoreCardCandidate } from "~/lib/cards/lore-card-candidate";
+import {
+  ArticleRejected,
+  NOT_ARTICLE_REASON,
+  type LoreCardCandidate,
+} from "~/lib/cards/lore-card-candidate";
 import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { rarityForScore, type RarityThresholds } from "~/lib/cards/rarity-engine";
@@ -61,6 +66,11 @@ export type StageOutcome =
 const ALREADY_CARDED: StageOutcome = { status: "SKIPPED", reason: "Already a card" };
 /** A title MediaWiki would refuse: bad input, which stageForAdmin does not report as a failed read. */
 const INVALID_TITLE: StageOutcome = { status: "FAILED", reason: "Not a valid page title" };
+/**
+ * A page outside the main namespace (a user draft, a template, a category) is no Lore card's source. The title's
+ * prefix is checked before any read; the generator's read of the page checks the namespace its wiki reports.
+ */
+const NOT_AN_ARTICLE: StageOutcome = { status: "SKIPPED", reason: NOT_ARTICLE_REASON };
 
 /**
  * A context for staging pages outside a job (a procedure, an accepted suggestion), with the source's stored rarity
@@ -77,8 +87,22 @@ export async function oneOffImportContext(
 }
 
 /**
- * The keys among `titles` that already have a Lore card from `source` (the natural key). Each key is
- * `titleKey(title, source)`, which is what callers compare with.
+ * The keys of the Commons files legacy Commons cards show. The old flag importer stored those cards with no title,
+ * so their file is the one their art or their metadata.descriptionUrl names.
+ */
+async function legacyCommonsKeys(db: PrismaClient): Promise<Set<string>> {
+  // `lower(...) IS NULL` rather than a plain IS NULL, so the natural-key index finds the titleless Commons cards.
+  const rows = await db.$queryRaw<Array<{ artwork: string | null; descriptionUrl: string | null }>>`
+    SELECT "artwork", "metadata"->>'descriptionUrl' AS "descriptionUrl" FROM "cards"
+    WHERE COALESCE("wikiSource", 'ixwiki') = 'commons' AND "cardType" = 'LORE'
+      AND lower("wikiArticleTitle") IS NULL`;
+  const names = rows.flatMap((row) => [row.artwork, row.descriptionUrl].map(commonsFileName));
+  return new Set(names.flatMap((name) => (name ? [titleKey(`File:${name}`, "commons")] : [])));
+}
+
+/**
+ * The keys among `titles` that already have a Lore card from `source`: by the natural key, and for Commons also by
+ * the file a legacy card shows. Each key is `titleKey(title, source)`, which is what callers compare with.
  */
 export async function cardedTitleKeys(
   db: PrismaClient,
@@ -91,7 +115,11 @@ export async function cardedTitleKeys(
     SELECT lower("wikiArticleTitle") AS "key" FROM "cards"
     WHERE COALESCE("wikiSource", 'ixwiki') = ${source} AND "cardType" = 'LORE'
       AND lower("wikiArticleTitle") IN (${Prisma.join(keys)})`;
-  return new Set(rows.map((row) => row.key));
+  const carded = new Set(rows.map((row) => row.key));
+  if (source !== "commons" || carded.size === keys.length) return carded;
+  const legacy = await legacyCommonsKeys(db);
+  for (const key of keys) if (legacy.has(key)) carded.add(key);
+  return carded;
 }
 
 /** The realm that imported the page first (its home), else the source's system realm. */
@@ -213,6 +241,7 @@ export async function stageArticleCard(
 ): Promise<StageOutcome> {
   const title = canonicalCardTitle(source, input.title);
   if (!title) return INVALID_TITLE;
+  if (!isArticleTitle(source, title)) return NOT_AN_ARTICLE;
   if ((await cardedTitleKeys(db, source, [title])).size > 0) return ALREADY_CARDED;
   const home = await resolveImportRealm(db, source, title);
   if (home.nationPage) {
@@ -267,7 +296,7 @@ export async function stageCommonsFile(
   input: StageInput,
   context: ImportContext
 ): Promise<StageOutcome> {
-  const fileTitle = canonicalCardTitle("commons", `File:${input.title.replace(/^file:/i, "")}`);
+  const fileTitle = canonicalCardTitle("commons", input.title);
   if (!fileTitle) return { status: "FAILED", reason: "Not a valid file name" };
   if ((await cardedTitleKeys(db, "commons", [fileTitle])).size > 0) return ALREADY_CARDED;
 

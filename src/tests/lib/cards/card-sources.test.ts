@@ -7,9 +7,14 @@ import {
   cardArticleSourceSchema,
   cardSourceLabel,
   cardWikiSourceSchema,
+  categoryName,
+  isArticleTitle,
+  commonsCardPageUrl,
   commonsPageUrl,
   parseCardArticleSource,
   parseCardWikiSource,
+  sourceCount,
+  sourceNoun,
 } from "~/lib/cards/card-sources";
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
 
@@ -64,5 +69,89 @@ describe("card sources", () => {
       canonicalArticleTitle("United_States_of_Elm", "iiwiki")
     );
     expect(canonicalCardTitle("althistory", "a|b")).toBeNull();
+  });
+
+  it("keeps an AltHistory title's timeline whole: it is part of the page's name", () => {
+    expect(canonicalCardTitle("althistory", "Aramelia_(Roman_Survival)")).toBe(
+      "Aramelia (Roman Survival)"
+    );
+  });
+
+  it("names a Commons file as Commons does: always File:, the name's first letter capitalised", () => {
+    expect(canonicalCardTitle("commons", "flag_of_Ireland.svg")).toBe("File:Flag of Ireland.svg");
+    expect(canonicalCardTitle("commons", "file : flag of Ireland.svg")).toBe(
+      "File:Flag of Ireland.svg"
+    );
+    expect(canonicalCardTitle("commons", "Image:map.png")).toBe("File:Map.png");
+    expect(canonicalCardTitle("commons", "File:Flag of Ireland.svg")).toBe(
+      "File:Flag of Ireland.svg"
+    );
+    expect(canonicalCardTitle("commons", "File:")).toBeNull();
+    expect(canonicalCardTitle("commons", "File:a|b.svg")).toBeNull();
+  });
+});
+
+describe("commonsCardPageUrl", () => {
+  const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
+  const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
+
+  it("addresses a Commons card's file by its title", () => {
+    expect(commonsCardPageUrl({ wikiArticleTitle: "File:Flag of Ireland.svg", artwork: "x" })).toBe(
+      page
+    );
+  });
+
+  it("finds a legacy card's file, stored with no title, from its description URL, else its art", () => {
+    expect(commonsCardPageUrl({ wikiArticleTitle: null, descriptionUrl: upload })).toBe(page);
+    expect(
+      commonsCardPageUrl({
+        wikiArticleTitle: null,
+        descriptionUrl: "https://commons.wikimedia.org/wiki/File%3AFlag%20of%20Ireland.svg",
+      })
+    ).toBe(page);
+    expect(
+      commonsCardPageUrl({ wikiArticleTitle: null, descriptionUrl: null, artwork: upload })
+    ).toBe(page);
+  });
+
+  it("has no page when neither names a Commons file", () => {
+    expect(
+      commonsCardPageUrl({
+        wikiArticleTitle: null,
+        descriptionUrl: "javascript:alert(1)",
+        artwork: "https://evil.example/Flag.svg",
+      })
+    ).toBeNull();
+  });
+});
+
+describe("import wording", () => {
+  it("names a category without the namespace an admin may type", () => {
+    expect(categoryName(" Category : Flags of Europe ")).toBe("Flags of Europe");
+    expect(categoryName("category:Elm")).toBe("Elm");
+    expect(categoryName("Elm")).toBe("Elm");
+  });
+
+  it("counts Commons in files and the wikis in pages", () => {
+    expect(sourceNoun("commons", 1)).toBe("file");
+    expect(sourceNoun("iiwiki", 2)).toBe("pages");
+    expect(sourceCount("commons", 2000)).toBe("2,000 files");
+    expect(sourceCount("ixwiki", 1)).toBe("1 page");
+  });
+});
+
+describe("isArticleTitle", () => {
+  it.each([
+    ["ixwiki", "Caphiria", true],
+    ["ixwiki", "IxWiki:About", false],
+    ["ixwiki", "Template:Infobox country", false],
+    ["iiwiki", "Union Assembly", true],
+    ["iiwiki", "Elm (Timeline)", true],
+    ["iiwiki", "User talk:Elm", false],
+    ["althistory", "Category:Nations", false],
+    ["althistory", "Module:Arguments", false],
+    ["althistory", "Aramelia (Roman Survival)", true],
+  ] as const)("on %s, %s is an article: %s", (source, title, article) => {
+    expect(isArticleTitle(source, title)).toBe(article);
   });
 });

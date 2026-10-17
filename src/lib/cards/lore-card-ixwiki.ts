@@ -17,7 +17,7 @@ import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { withoutArchivedFiles } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
-import { CategoryService, type MemberKind } from "~/lib/wiki-os/core/category-service";
+import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { isAnonymousAuthor } from "~/lib/wiki-os/core/anonymous-author";
 import { extractLeadImageFileName, getImagePath } from "~/lib/wiki-os/transformers/image-url";
@@ -197,6 +197,8 @@ function canonicalTitles(titles: readonly string[]): Map<string, string[]> {
 /** What a full card is made from, as Postgres holds it. */
 export interface IxwikiArticle {
   title: string;
+  /** The page's namespace, as MediaWiki numbers it (0 for an article). */
+  ns: number;
   wikitext: string;
   /** The page's plain text, to read an excerpt from. */
   extract: string;
@@ -219,7 +221,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
   if (!canon) return null;
   const article = await db.wikiArticle.findFirst({
     where: { source: "ixwiki", title: canon.title, status: "PUBLISHED" },
-    select: { id: true, title: true, wikitext: true },
+    select: { id: true, title: true, namespace: true, wikitext: true },
   });
   if (!article) return null;
 
@@ -257,6 +259,7 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
 
   return {
     title: article.title,
+    ns: article.namespace,
     wikitext: article.wikitext,
     extract: cleanWikitextExcerpt(article.wikitext, CARD_EXTRACT_CHARS),
     categories: categories.map((member) => ({ title: `Category:${member.category.name}` })),
@@ -358,13 +361,9 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
 // Lists of titles
 // ---------------------------------------------------------------------------
 
-/** The titles of the published members of a category: its pages and/or its files, in category order. */
-export function ixwikiCategoryTitles(
-  category: string,
-  kinds: readonly Extract<MemberKind, "page" | "file">[],
-  limit: number
-): Promise<string[]> {
-  return CategoryService.getMemberTitles(category, kinds, limit);
+/** The titles of a category's published articles (main namespace), in category order. */
+export function ixwikiCategoryTitles(category: string, limit: number): Promise<string[]> {
+  return CategoryService.getMemberTitles(category, ["article"], limit);
 }
 
 /** The published main-namespace pages that are not redirects, by title. */

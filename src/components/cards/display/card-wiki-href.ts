@@ -3,7 +3,7 @@ import { wikiReaderPath, wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { articleHref } from "~/lib/wiki-os/wiki-path";
 import {
-  commonsPageUrl,
+  commonsCardPageUrl,
   parseCardWikiSource,
   type CardArticleSource,
 } from "~/lib/cards/card-sources";
@@ -32,6 +32,17 @@ function sisterTitleFromUrl(
   }
 }
 
+/** A Commons card's file page; a legacy one, stored with no title, is found by its description URL or art. */
+function commonsHref(card: CardInstance): string | null {
+  const descriptionUrl = card.metadata?.descriptionUrl;
+  const page = commonsCardPageUrl({
+    wikiArticleTitle: card.wikiArticleTitle,
+    artwork: card.artwork,
+    descriptionUrl: typeof descriptionUrl === "string" ? descriptionUrl : null,
+  });
+  return page ?? card.wikiUrl;
+}
+
 /**
  * Where a card's wiki page lives. An article opens in WikiOS's reader (a sister wiki's with `?source=`); a Commons
  * file has no reader page, so it links to Commons. The title wins over a stored URL, which older lore cards got
@@ -42,8 +53,7 @@ export function cardWikiHref(card: CardInstance | null): string | null {
   if (!card) return null;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
   const url = card.wikiUrl;
-  if (source === "commons")
-    return card.wikiArticleTitle ? commonsPageUrl(card.wikiArticleTitle) : url;
+  if (source === "commons") return commonsHref(card);
   if (url?.startsWith("/wiki/")) return url;
   if (card.wikiArticleTitle) return wikiOsHref(card.wikiArticleTitle, source);
   if (!url) return null;

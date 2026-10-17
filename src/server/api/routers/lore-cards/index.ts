@@ -14,12 +14,10 @@ import { loreCardsUserRouter } from "./user";
 import { loreCardsAdminRouter } from "./admin";
 import { loreCardsGalleryRouter } from "./gallery";
 import { loreCardsWikiRouter } from "./wiki";
-import { loreCardsMaintenanceRouter } from "./maintenance";
 
 export const loreCardsRouter = mergeRouters(
   loreCardsUserRouter,
   loreCardsAdminRouter,
   loreCardsGalleryRouter,
-  loreCardsWikiRouter,
-  loreCardsMaintenanceRouter
+  loreCardsWikiRouter
 );

@@ -32,6 +32,8 @@ describe("imageinfo parsing", () => {
       licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0",
       artist: "Cartographer Eurth",
       credit: "Own work",
+      ownAttribution: null,
+      holder: "iiwiki",
       attribution: "Eurth political map 2024.png by Cartographer Eurth, CC BY-SA 4.0, via IIWiki",
     });
   });
@@ -39,6 +41,7 @@ describe("imageinfo parsing", () => {
   it("prefers the file's own Attribution field and falls back to UsageTerms for the licence", () => {
     expect(files.get("File:Eurth world map.svg")).toMatchObject({
       licence: "Creative Commons Attribution 3.0",
+      ownAttribution: "Eurth community map team",
       attribution: "Eurth community map team",
     });
   });
@@ -226,6 +229,7 @@ describe("card source wikis", () => {
       url: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Ban_Huahat07.jpg",
       licence: "CC BY-SA 3.0",
       thumbUrl: withBasePath("/api/mediawiki/commons/wiki/Special:FilePath/Ban_Huahat07.jpg"),
+      holder: "commons",
       attribution: "Ban Huahat07.jpg, CC BY-SA 3.0, via Commons",
     });
     // A file with no page that no repository knows is still left out.

@@ -96,8 +96,7 @@ The atomic government components (64) and economic components (27), including th
 ## Analytics & Monitoring
 
 - **Autosave Monitor (`/admin/autosave-monitor`)**: Opens the Platform panel's autosave tab — autosave queues, failure analysis, and retry buffers (`autosaveMonitoring.ts`).
-- **NationStates card import (`/admin/cards`)**: `CardImportStudio` in the Cards panel (`ns-import/`). The `/admin/ns-sync` route was removed.
-- **Lore Cards Batch Generator (`/admin/cards`)**: `LoreCardBatchAdmin` in the Cards panel (`lore-cards/`). The `/admin/lore-cards/batch-generator` route was removed.
+- **Card imports (`/admin/cards?tab=imports`)**: the Cards panel's Imports tab (`src/app/admin/cards/imports/`): one importer for IxWiki, IIWiki, AltHistory and Wikimedia Commons, run as server-side import jobs (`cards.admin.imports`), and NationStates (`ns-import/`). Every imported card waits in Curation. The `/admin/ns-sync` and `/admin/lore-cards/batch-generator` routes were removed.
 - **Maps Admin (`/admin/maps`, `/admin/maps/realms/<slug>`, `/admin/maps/studio`, `/admin/maps/editor`, `/admin/maps/style-editor`)**: Atlas (realm overview, jobs, edit queue, map style, map import, realm pages) and World Studio, served by the `atlas` router (`src/server/api/routers/atlas/`); province and city imports in `geoAdmin` (`src/server/api/routers/geo/admin/`). See [maps.md](maps.md#atlas-and-world-studio).
 
 ---

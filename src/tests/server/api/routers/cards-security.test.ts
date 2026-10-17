@@ -24,20 +24,11 @@ const partner = { id: "db2", clerkUserId: "user_2" };
 type ConnectionQuery = { where: { connectionType: string } };
 
 describe("cards router security", () => {
-  it("serves the lore stats and the explorer read to admins only", async () => {
+  it("serves the explorer read to admins only", async () => {
     const db = createMockPrisma();
-    await expect(
-      createCallerFactory(cardsInventoryRouter)(player(db)).getLoreStats()
-    ).rejects.toThrow(/Admin privileges required/);
     await expect(
       createCallerFactory(cardsAdminRouter)(player(db)).adminCardExplorer({})
     ).rejects.toThrow(/Admin privileges required/);
-    db.card.groupBy.mockResolvedValue([]);
-    await expect(
-      createCallerFactory(cardsInventoryRouter)(admin(db)).getLoreStats()
-    ).resolves.toMatchObject({
-      totalCards: null,
-    });
   });
 
   it("shows a trade partner only their tradeable copies", async () => {

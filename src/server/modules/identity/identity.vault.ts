@@ -10,7 +10,8 @@ import type { CardInstance } from "~/types/cards-display";
 import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { deckValue } from "~/lib/cards/copy-value";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
-import { commonsPageUrl, parseCardWikiSource } from "~/lib/cards/card-sources";
+import { commonsCardPageUrl, parseCardWikiSource } from "~/lib/cards/card-sources";
+import { isJsonObject } from "~/lib/cards/ns-facts";
 
 const CARD_SELECT = {
   id: true,
@@ -89,14 +90,19 @@ export function toVaultFocus(
 
 /**
  * Where a card's article opens: the in-app WikiOS reader path (a sister wiki's carries `?source=`); a Commons file
- * opens on Commons.
+ * opens on Commons, a legacy one (stored with no title) found by its description URL or art.
  */
 export function wikiUrlOf(card: OwnershipRow["cards"]): string | null {
-  if (!card.wikiArticleTitle) return null;
   const source = parseCardWikiSource(card.wikiSource) ?? "ixwiki";
-  return source === "commons"
-    ? commonsPageUrl(card.wikiArticleTitle)
-    : wikiReaderPath(card.wikiArticleTitle, source);
+  if (source === "commons") {
+    const descriptionUrl = isJsonObject(card.metadata) ? card.metadata.descriptionUrl : null;
+    return commonsCardPageUrl({
+      wikiArticleTitle: card.wikiArticleTitle,
+      artwork: card.artwork,
+      descriptionUrl: typeof descriptionUrl === "string" ? descriptionUrl : null,
+    });
+  }
+  return card.wikiArticleTitle ? wikiReaderPath(card.wikiArticleTitle, source) : null;
 }
 
 /** Shape an owned card for `CardDisplay`; JSON columns are passed through as stored. */

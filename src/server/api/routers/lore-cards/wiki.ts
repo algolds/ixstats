@@ -5,8 +5,6 @@ import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import { loreCardDiscovery } from "~/lib/cards/lore-card-discovery";
-import { stageForAdmin } from "~/server/modules/cards/cards.importer";
 import { CardRarity, CardType } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
 import { autoMatchSubcategory } from "~/lib/cards/subcategory-registry";
@@ -324,52 +322,6 @@ async function searchRemoteLore(query: string, wikiSrc: WikiSource) {
 
 export const loreCardsWikiRouter = createTRPCRouter({
   /**
-   * Direct admin generation of a lore card from article title & parameters
-   */
-  generateLoreCard: adminProcedure
-    .input(
-      z.object({
-        articleTitle: z.string().min(1),
-        wikiSource: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-        category: z.nativeEnum(LoreCategory).optional(),
-        targetRarity: z.nativeEnum(CardRarity).optional(),
-        artworkUrl: z.string().url().optional(),
-        artworkSource: z.nativeEnum(ArtworkSource).optional(),
-        customPrompt: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Rarity comes from the rarity engine and the card waits in review (cards refresh §2.1), so the input's
-      // rarity, category and artwork are no longer applied.
-      const card = await stageForAdmin(ctx.db, input.wikiSource, {
-        title: input.articleTitle,
-        requestedBy: ctx.user.id,
-        jobId: null,
-      });
-
-      // Record Audit Log
-      await Promise.allSettled([
-        ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth?.userId || "admin",
-            action: "LORE_CARD_MINT",
-            entityType: "CARD",
-            target: card.cardId,
-            details: `Staged lore card "${input.articleTitle}" (Rarity: ${card.rarity}) from ${input.wikiSource}, pending review`,
-            success: true,
-          },
-        }),
-      ]);
-
-      return {
-        success: true,
-        cardId: card.cardId,
-        title: input.articleTitle,
-        rarity: card.rarity,
-      };
-    }),
-
-  /**
    * Create a custom designed card from the Card Designer studio
    */
   createCustomDesignedCard: adminProcedure
@@ -546,127 +498,6 @@ export const loreCardsWikiRouter = createTRPCRouter({
         };
       }
     }),
-
-  /**
-   * Search live wiki categories by prefix
-   */
-  searchWikiCategories: adminProcedure
-    .input(
-      z.object({
-        source: z.enum(["ixwiki", "iiwiki"]),
-        prefix: z.string().default(""),
-        limit: z.number().min(1).max(100).default(30),
-      })
-    )
-    .query(({ input }) =>
-      orFallback(
-        "Error searching wiki categories",
-        { categories: [], source: input.source },
-        async () => {
-          const categories = await loreCardDiscovery.searchCategories(
-            input.prefix,
-            input.source,
-            input.limit
-          );
-          return { categories, source: input.source };
-        }
-      )
-    ),
-
-  /**
-   * Fetch category statistics (size, pages, files, subcats) for a list of categories
-   */
-  getCategoryStats: adminProcedure
-    .input(
-      z.object({
-        source: z.enum(["ixwiki", "iiwiki"]),
-        categories: z.array(z.string()),
-      })
-    )
-    .query(({ input }) => {
-      const noStats: Awaited<ReturnType<typeof loreCardDiscovery.getCategoriesInfo>> = {};
-      return orFallback(
-        "Error getting category stats",
-        { stats: noStats, source: input.source },
-        async () => {
-          const stats = await loreCardDiscovery.getCategoriesInfo(input.categories, input.source);
-          return { stats, source: input.source };
-        }
-      );
-    }),
-
-  /**
-   * Fetch member page titles from a live wiki category (all pages & files up to 10,000)
-   */
-  fetchWikiCategoryMembers: adminProcedure
-    .input(
-      z.object({
-        source: z.enum(["ixwiki", "iiwiki"]),
-        category: z.string(),
-        limit: z.number().min(1).max(20000).default(10000),
-        type: z.enum(["page", "file", "page|file"]).default("page|file"),
-      })
-    )
-    .query(({ input }) =>
-      orFallback(
-        "Error fetching category members",
-        { titles: [], category: input.category, source: input.source, count: 0 },
-        async () => {
-          const cleanCat = input.category.replace(/^category:\s*/i, "").trim();
-          const titles = await loreCardDiscovery.fetchCategoryMembers(
-            cleanCat,
-            input.source,
-            input.limit,
-            input.type
-          );
-          return { titles, category: cleanCat, source: input.source, count: titles.length };
-        }
-      )
-    ),
-
-  /**
-   * Fetch all page titles in the main namespace (namespace 0) for a wiki (up to 10,000)
-   */
-  fetchAllMainNamespacePages: adminProcedure
-    .input(
-      z.object({
-        source: z.enum(["ixwiki", "iiwiki"]),
-        limit: z.number().min(1).max(20000).default(10000),
-      })
-    )
-    .query(({ input }) =>
-      orFallback(
-        "Error fetching all main namespace pages",
-        { titles: [], source: input.source, count: 0 },
-        async () => {
-          const titles = await loreCardDiscovery.fetchAllMainNamespacePages(
-            input.source,
-            input.limit
-          );
-          return { titles, source: input.source, count: titles.length };
-        }
-      )
-    ),
-
-  /**
-   * Batch fetch article metadata (images, excerpts, categories, estimated values)
-   */
-  fetchArticlePreviewsBatch: adminProcedure
-    .input(
-      z.object({
-        titles: z.array(z.string()).min(1).max(200),
-        source: z.enum(["ixwiki", "iiwiki"]).default("ixwiki"),
-      })
-    )
-    .query(({ input }) =>
-      orFallback("Error fetching article previews batch", { previews: [] }, async () => {
-        const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(
-          input.titles,
-          input.source
-        );
-        return { previews };
-      })
-    ),
 
   /**
    * Resolve author info for a wiki article (Page Creator + Top Contributor)

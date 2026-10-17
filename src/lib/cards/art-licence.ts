@@ -5,6 +5,7 @@
  */
 import type { CardWikiSource } from "~/lib/cards/card-sources";
 import { wikiFileHosts } from "~/lib/wiki-os/media-hosts";
+import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
 export type LicenceStatus = "OPEN" | "RESTRICTED" | "UNKNOWN";
 
@@ -116,11 +117,33 @@ export function fileNameFromArtworkUrl(
   return decodedName(FILE_PATHS.map((pattern) => pattern.exec(parsed.pathname)?.[1]).find(Boolean));
 }
 
+const COMMONS_PAGE_HOST = new URL(SISTER_WIKI_HOSTS.commons.origin).hostname;
+/** A file page on Commons, `/wiki/File:<name>`, with the colon as typed or percent-encoded. Group 1 is the name. */
+const COMMONS_FILE_PAGE = /^\/wiki\/(?:file|image)(?::|%3a)([^/]+)$/i;
+
+/**
+ * The Commons file a URL names ("Flag_of_Ireland.svg"), percent-decoded: an upload URL (the original or a
+ * thumbnail), or the file's page on Commons. Null for any other URL. Legacy Commons cards name their file only so.
+ */
+export function commonsFileName(url: string | null | undefined): string | null {
+  const uploaded = fileNameFromArtworkUrl(url, "commons");
+  if (uploaded || !url) return uploaded;
+  const parsed = webUrl(url);
+  if (parsed?.hostname !== COMMONS_PAGE_HOST) return null;
+  return decodedName(COMMONS_FILE_PAGE.exec(parsed.pathname)?.[1]);
+}
+
+/** The file types card art can be. */
+const CARD_IMAGE_FILE = /\.(svg|png|jpe?g|webp|gif)$/i;
+
+/** Whether a file can be a card's art, by its type. */
+export const isCardImageFile = (fileTitle: string): boolean => CARD_IMAGE_FILE.test(fileTitle);
+
 /** A Commons file's card title: no namespace, no extension, underscores as spaces. */
 export function commonsCardTitle(fileTitle: string): string {
   return fileTitle
     .replace(/^file:/i, "")
-    .replace(/\.(svg|png|jpe?g|webp|gif)$/i, "")
+    .replace(CARD_IMAGE_FILE, "")
     .replace(/_/g, " ")
     .trim();
 }

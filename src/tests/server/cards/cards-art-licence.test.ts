@@ -197,6 +197,39 @@ describe("captureArtLicence", () => {
     expect(calls).toEqual(["imageinfo", "categories|revisions"]);
   });
 
+  it("credits a Commons file IxWiki describes locally to Commons, when its File page gives the licence", async () => {
+    const title = "File:Ban Huahat07.jpg";
+    const { query } = fakeQuery({
+      imageinfo: imageinfo(
+        title,
+        "https://upload.wikimedia.org/wikipedia/commons/a/ae/Ban_Huahat07.jpg",
+        LOCAL_ONLY
+      ),
+      "categories|revisions": filePage(title, "{{cc-by-sa-3.0}}"),
+    });
+    expect(await captureArtLicence(query, "ixwiki", "Ban_Huahat07.jpg")).toMatchObject({
+      status: "OPEN",
+      licence: "cc-by-sa-3.0",
+      attribution: "Ban Huahat07.jpg, cc-by-sa-3.0, via Commons",
+    });
+  });
+
+  it("keeps the file's own Attribution as its credit when the File page gives the licence", async () => {
+    const title = "File:Elm.png";
+    const { query } = fakeQuery({
+      imageinfo: imageinfo(title, "https://iiwiki.com/images/a/ab/Elm.png", {
+        Attribution: { value: "Drawn by the Elm Map Society" },
+        Artist: { value: "Kerr" },
+      }),
+      "categories|revisions": filePage(title, "{{cc-by-4.0}}"),
+    });
+    expect(await captureArtLicence(query, "iiwiki", "Elm.png")).toMatchObject({
+      status: "OPEN",
+      licence: "cc-by-4.0",
+      attribution: "Drawn by the Elm Map Society",
+    });
+  });
+
   it("takes a restricted hint over an open one that comes first", async () => {
     const title = "File:Elm.png";
     const { query } = fakeQuery({

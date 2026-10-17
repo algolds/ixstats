@@ -201,7 +201,6 @@ configuration object, never from a literal:
 - **Links and display URLs** to public IxWiki pages and files, built into an `href` or text (`publicArticleUrl`, `mediaWikiImageUrl`,
   `isMediaWikiUrl`): `src/app/(wiki-os)/util/repository/page.tsx`,
   `src/app/(wiki-os)/util/search/page.tsx` (a link to WikiOS's own `/wiki/index.php` compatibility path),
-  `src/app/admin/cards/LoreCardBatchAdmin.tsx`, `src/app/admin/cards/lore-batch/LoreBatchDialogs.tsx`,
   `src/app/admin/realms/_components/ClaimsTab.tsx` (a claimed nation page's history on its own wiki), `src/components/cards/display/card-wiki-href.ts`,
   `src/components/mycountry/dossier/dossier/WikiSectionCard.tsx`, `src/components/wiki-os/commons/CommonsDetailPanel.tsx`,
   `src/components/wiki-os/margin/modals/MarginShareModal.tsx`, `src/components/wiki-os/margin/tabs/MarginMarkupTab.tsx`,

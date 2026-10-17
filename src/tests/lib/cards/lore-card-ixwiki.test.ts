@@ -414,43 +414,41 @@ describe("credits skip a user whose revisions were hidden", () => {
   });
 });
 
+/** A list's reach: as far as `limit`, a minute to read, each request at once. */
+const reach = (limit: number) => ({ limit, deadline: Date.now() + 60_000, pace: unpaced });
+
 describe("lists for IxWiki", () => {
-  it("lists a category's pages and files from its members, never asking a wiki", async () => {
-    titles = [{ title: "Caphiria" }, { title: "File:Map.png" }];
+  it("lists a category's articles (the main namespace) from its members, never asking a wiki", async () => {
+    titles = [{ title: "Caphiria" }, { title: "Urcea" }];
 
     expect(
-      await loreCardDiscovery.fetchCategoryMembers("Category:Nations", "ixwiki", 100, "page|file")
-    ).toEqual(["Caphiria", "File:Map.png"]);
+      await loreCardDiscovery.fetchCategoryMembers("Category:Nations", "ixwiki", reach(100))
+    ).toEqual({ titles: ["Caphiria", "Urcea"], truncated: false });
     const call = mocked.$queryRaw.mock.calls[0]!;
     expect(sqlOf(call)).toContain(`a."status" = 'PUBLISHED'`);
     const kinds = JSON.stringify(call);
-    expect(kinds).toContain(`a.\\"namespace\\" NOT IN (6, 14)`);
-    expect(kinds).toContain(`a.\\"namespace\\" = 6`);
+    expect(kinds).toContain(`a.\\"namespace\\" = 0`);
+    expect(kinds).not.toContain("NOT IN (6, 14)");
+    // One row past the limit is asked for, so a cut list says so.
+    expect(call).toContain(101);
     expect(guard.calls()).toEqual([]);
   });
 
-  it("lists only a category's files, or only its pages (the default), when asked", async () => {
-    await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", 100, "file");
-    await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", 100, "page");
-    await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", 100);
-
-    const [files, pages, byDefault] = mocked.$queryRaw.mock.calls.map((call) =>
-      JSON.stringify(call)
-    );
-    expect(byDefault).toBe(pages);
-    expect(files).toContain(`a.\\"namespace\\" = 6`);
-    expect(files).not.toContain("NOT IN (6, 14)");
-    expect(pages).toContain("NOT IN (6, 14)");
-    expect(pages).not.toContain(`a.\\"namespace\\" = 6`);
+  it("says when a category has more articles than the limit", async () => {
+    titles = [{ title: "A" }, { title: "B" }, { title: "C" }];
+    expect(await loreCardDiscovery.fetchCategoryMembers("Nations", "ixwiki", reach(2))).toEqual({
+      titles: ["A", "B"],
+      truncated: true,
+    });
   });
 
   it("lists the main namespace's pages that are not redirects, by title", async () => {
     titles = [{ title: "Alpha" }, { title: "Beta" }];
 
-    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki", 500)).toEqual([
-      "Alpha",
-      "Beta",
-    ]);
+    expect(await loreCardDiscovery.fetchAllMainNamespacePages("ixwiki", reach(500))).toEqual({
+      titles: ["Alpha", "Beta"],
+      truncated: false,
+    });
     const sql = sqlOf(mocked.$queryRaw.mock.calls[0]!);
     expect(sql).toContain(`a."namespace" = 0`);
     expect(sql).toContain(`"redirectTargetSlug" IS NULL`);
@@ -555,10 +553,16 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
       "fetchArticleAuthorInfoBatch",
       () => wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["Elm"], "iiwiki"),
     ],
-    ["fetchCategoryMembers", () => loreCardDiscovery.fetchCategoryMembers("Elms", "iiwiki")],
+    [
+      "fetchCategoryMembers",
+      () => loreCardDiscovery.fetchCategoryMembers("Elms", "iiwiki", reach(10)),
+    ],
     ["searchCategories", () => loreCardDiscovery.searchCategories("El", "iiwiki")],
     ["getCategoriesInfo", () => loreCardDiscovery.getCategoriesInfo(["Elms"], "iiwiki")],
-    ["fetchAllMainNamespacePages", () => loreCardDiscovery.fetchAllMainNamespacePages("iiwiki")],
+    [
+      "fetchAllMainNamespacePages",
+      () => loreCardDiscovery.fetchAllMainNamespacePages("iiwiki", reach(10)),
+    ],
     ["getImageUrl", () => generatorInternals.getImageUrl("Elm.png", "iiwiki", unpaced)],
     [
       "fetchRandomArticlesWithImages",
@@ -580,4 +584,45 @@ describe("a sister wiki's pages (iiwiki) are still read from that wiki", () => {
     expect(mocked.$queryRaw).not.toHaveBeenCalled();
     expect(mocked.wikiArticle.findFirst).not.toHaveBeenCalled();
   });
+});
+
+describe("a page outside the main namespace", () => {
+  it("is refused on IxWiki by the namespace WikiOS stores", async () => {
+    mocked.wikiArticle.findFirst.mockResolvedValue({
+      id: "a1",
+      title: "IxWiki:About",
+      namespace: 4,
+      wikitext: WIKITEXT,
+    });
+    await expect(
+      wikiLoreCardGenerator.generateCard("IxWiki:About", "ixwiki")
+    ).rejects.toMatchObject({
+      name: "ArticleRejected",
+      kind: "not-article",
+      message: "Not an article",
+    });
+    expect(mocked.wikiArticle.findFirst.mock.calls[0]?.[0]).toMatchObject({
+      select: { namespace: true },
+    });
+  });
+
+  it.each([
+    ["iiwiki", "Portal:Eurth", 100, "iiwiki.com"],
+    ["althistory", "User blog:Elm/Post", 500, "althistory.fandom.com"],
+  ] as const)(
+    "is refused on %s (%s, namespace %s) by the namespace the wiki reports, before its image or backlinks are read",
+    async (source, title, ns, host) => {
+      guard.restore();
+      guard = installFetchGuard(() => ({
+        query: { pages: { "5": { pageid: 5, ns, title, revisions: [{ "*": BODY }] } } },
+      }));
+      await expect(wikiLoreCardGenerator.generateCard(title, source)).rejects.toMatchObject({
+        name: "ArticleRejected",
+        kind: "not-article",
+        message: "Not an article",
+      });
+      expect(guard.calls()).toHaveLength(1);
+      expect(new URL(guard.calls()[0]!).hostname).toBe(host);
+    }
+  );
 });

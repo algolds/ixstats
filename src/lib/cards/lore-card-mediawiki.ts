@@ -4,10 +4,10 @@
  */
 
 import type { CardAuthorInfo } from "~/types/cards-display";
-import type { WikiSource } from "~/lib/wiki-os/config";
-import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
 import {
+  defaultApiUrl,
   DiscoveryStopped,
   type DiscoveryStop,
   type DiscoveryStopKind,
@@ -20,24 +20,28 @@ export type RevisionUser = { user: string; timestamp: string };
 
 /** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
 export function mwQuery(
-  wikiSource: WikiSource,
+  wikiSource: CardWikiSource,
   params: Record<string, string>,
   timeoutMs?: number
 ) {
-  const url = new URL(getMediaWikiApiUrl(wikiSource));
+  const url = new URL(defaultApiUrl(wikiSource));
   for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
     url.searchParams.set(key, value);
   }
   return fetch(url.toString(), {
-    headers: { "User-Agent": getWikiUserAgent(wikiSource) },
+    headers: { "User-Agent": DEFAULT_USER_AGENT },
     ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
   });
 }
 
-/** An `action=query` answer: its pages, its backlinks, or the API's error. */
-export interface MwQueryResponse {
-  query?: { pages?: Record<string, MwPage>; backlinks?: Array<{ title: string }> };
+/** An API error, as any action answers it. */
+export interface MwError {
   error?: { code?: string; info?: string };
+}
+
+/** An `action=query` answer: its pages, its backlinks, or the API's error. */
+export interface MwQueryResponse extends MwError {
+  query?: { pages?: Record<string, MwPage>; backlinks?: Array<{ title: string }> };
 }
 
 /** The HTTP answers that mean the wiki will not serve this run: a refusal, and a rate limit. */
@@ -62,7 +66,7 @@ export function stoppedWikiMessage(
     : `${label} answered with a web page instead of data.`;
 }
 
-function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | null): never {
+function stopped(source: CardWikiSource, kind: DiscoveryStopKind, status: number | null): never {
   throw new DiscoveryStopped({
     kind,
     status,
@@ -71,11 +75,15 @@ function stopped(source: WikiSource, kind: DiscoveryStopKind, status: number | n
 }
 
 /**
- * The JSON of a wiki's answer. A refusal (HTTP 403, or the API's `readapidenied`), a rate limit (HTTP 429), or an
- * answer that is not data (a Cloudflare challenge page) means the wiki will not serve this run: DiscoveryStopped.
- * Any other HTTP error, or another API error, throws. An error answer's body is let go unread.
+ * The JSON of a wiki's answer, as `T` (an `action=query` answer unless the caller names its own shape). A refusal
+ * (HTTP 403, or the API's `readapidenied`), a rate limit (HTTP 429), or an answer that is not data (a Cloudflare
+ * challenge page) means the wiki will not serve this run: DiscoveryStopped. Any other HTTP error, or another API
+ * error, throws. An error answer's body is let go unread.
  */
-export async function mwJson(response: Response, wikiSource: WikiSource): Promise<MwQueryResponse> {
+export async function mwJson<T extends MwError = MwQueryResponse>(
+  response: Response,
+  wikiSource: CardWikiSource
+): Promise<T> {
   const label = cardSourceLabel(wikiSource);
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);
@@ -84,9 +92,9 @@ export async function mwJson(response: Response, wikiSource: WikiSource): Promis
     throw new Error(`${label} answered HTTP ${response.status}.`);
   }
   const body = await response.text();
-  let data: MwQueryResponse;
+  let data: T;
   try {
-    data = JSON.parse(body) as MwQueryResponse;
+    data = JSON.parse(body) as T;
   } catch {
     return stopped(wikiSource, "blocked", response.status);
   }

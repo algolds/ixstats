@@ -662,31 +662,29 @@ api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }
 ```
 
-### cards Router (23 procedures)
+### cards Router (19 procedures)
+
+Wiki and Commons imports are queued from the card admin (`api.cards.admin.imports.*`).
 
 ```typescript
-// Queries (13)
+// Queries (10)
 api.cards.getMyCards.useQuery({ sortBy?, filterRarity? })
 api.cards.getUserCards.useQuery({ userId, sortBy?, filterRarity?, limit? })
-api.cards.getLoreStats.useQuery()
 api.cards.getNSCards.useQuery({ limit?, offset?, search?, season?, rarity?, region?, categoryFilter?, cardTypeFilter?, cteFilter?, isRetired?, includeRetired?, sortBy? })
 api.cards.getNSLibraryStats.useQuery()
 api.cards.getValuationConfig.useQuery()
 api.cards.getBonusConfig.useQuery()
 api.cards.getGeneralConfig.useQuery()
-api.cards.fetchCommonsCategoryMembers.useQuery({ category, limit? })
 api.cards.getMyCollections.useQuery()
 api.cards.getCollectionCards.useQuery({ collectionId })
 api.cards.getWikiArticleExcerpt.useQuery({ articleTitle, wikiSource })
-api.cards.getUnifiedAuditLogs.useQuery({ category?, limit?, offset?, search? })
 
-// Mutations (10)
+// Mutations (9)
 api.cards.setValuationConfig.useMutation() // { floorCommon?, floorUncommon?, floorRare?, floorUltraRare?, floorEpic?, floorLegendary?, nsPremium?, multSpecial?, multNation? }
 api.cards.setBonusConfig.useMutation() // { enabled?, newPlayer?, nsPerCard?, nsCap?, achievementCommon?, achievementUncommon?, achievementRare?, achievementEpic?, achievementLegendary? }
 api.cards.setGeneralConfig.useMutation() // { tradingEnabled?, auctionHouseRakePct?, dailyFreePacks?, dailyPackCooldownHours?, allowPlayerMinting?, maxInventoryCards?, autoGenerateLoreThumbnails? }
 api.cards.updateCardDetails.useMutation() // { cardId, title?, marketValue?, isRetired?, category?, cardType?, rarity?, artworkUrl?, artworkSource?, description? }
 api.cards.bulkToggleVisibility.useMutation() // { isRetired, cardTypeFilter?, cteFilter?, categoryFilter?, season?, rarity? }
-api.cards.importCommonsFlags.useMutation() // { items, defaultRarity?, season? }
 api.cards.recomputeCardValues.useMutation()
 api.cards.createCollection.useMutation() // { name, description?, isPublic? }
 api.cards.addToCollection.useMutation() // { collectionId, cardOwnershipId }
