@@ -17,7 +17,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({
       vault: { getBalance: { invalidate: jest.fn() } },
-      cards: { getMyCards: { invalidate: jest.fn() } },
+      cards: { listMine: { invalidate: jest.fn() } },
     }),
     admin: {
       getNavigationSettings: { useQuery: () => ({ data: undefined }) },
@@ -40,9 +40,6 @@ jest.mock("~/components/shell/ShellHalo", () => ({ ShellHalo: () => null }));
 jest.mock("~/lib/sound/cuelume", () => ({ soundCues: {}, soundEffects: {} }));
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { error: jest.fn(), success: jest.fn() },
-}));
-jest.mock("~/components/cards/display/CardHolographicCover", () => ({
-  CardHolographicCover: () => null,
 }));
 
 import { AppShell } from "~/components/shell/AppShell";

@@ -61,7 +61,7 @@ Administrators can toggle individual economic features at runtime (`VaultConfig`
 - `isAuctionsEnabled`: Marketplace listing and bidding
 - `isMaintenanceMode`: Emergency master switch blocking all ledger writes
 - Crafting has no switch any more: it is retired and its router is deleted; a leftover `vault_isCraftingEnabled` row is ignored
-- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50; nothing pays `EARN_SOCIAL` any more), `xpPerLevel` (1,000), `maxStreakBonus` (7) and `premiumMultiplier` (display-only today). The store item's `yieldBoost` effect is labelled "Dividend boost" in the admin store form and multiplies the nightly Vault dividend. Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
+- Also tunable: `activeDailyCap` (100), `socialDailyCap` (50; nothing pays `EARN_SOCIAL` any more), `xpPerLevel` (1,000) and `premiumMultiplier` (display-only today). The store item's `yieldBoost` effect is labelled "Dividend boost" in the admin store form and multiplies the nightly Vault dividend. Store prices are each item's `VaultStoreItem.price`, edited in the store-item editor (the old `vault_price*` keys were removed on 2026-10-05)
 
 ---
 
@@ -71,7 +71,7 @@ Organized into modular sub-files:
 
 - `vault/index.ts` – Router combination
 - `vault/balance-credits.ts` – Balance, level, today's earnings and user stats (`getUserStats` returns `{ totalCards, deckValue, deckValueExTrophy }`, computed live from the copies (`copyValue`, `src/lib/cards/copy-value.ts`); `deckValue` counts trophy cards and `deckValueExTrophy`, which the dividend and deck-value achievements use, does not). `getBalance` is a plain read (the old missed-day catch-up is gone). It also pays the one-time new-player bonus to an account that never received it (see [ixcredits.md](./ixcredits.md#4-metagame-bonuses-earn_bonus--uncapped)); new accounts are paid at sign-up, with or without a country
-- `vault/daily-claims.ts` – Daily bonus / combined daily claim
+- `vault/daily-claims.ts` – The daily reward (`claimCombinedDailyClaim`)
 - `vault/store.ts` – Store listing, purchased items, cosmetic equip, `getTransactions` (the statement's feed)
 - `vault/public-cosmetics.ts` – `getEquippedCosmeticsFor`, another player's equipped cosmetics (public)
 - `vault/collections.ts` – Collection details, likes, comments, public collections

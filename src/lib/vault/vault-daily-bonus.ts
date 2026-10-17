@@ -1,6 +1,5 @@
 import { type Prisma, type PrismaClient } from "@prisma/client";
 import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-ledger";
-import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { CardFinish } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
@@ -103,49 +102,6 @@ async function claimSlotAndEarn(
   }
 }
 
-/**
- * Claim daily login bonus with streak tracking
- */
-export async function claimDailyBonus(
-  userId: string,
-  db: PrismaClient
-): Promise<{ success: boolean; bonus: number; streak: number; message?: string }> {
-  try {
-    const vault = await getOrCreateVault(userId, db);
-    const vaultCfg = await getVaultConfig(db);
-
-    const payout = await claimSlotAndEarn(db, userId, vault, new Date(), "DAILY_LOGIN", (streak) =>
-      Math.min(streak, vaultCfg.maxStreakBonus)
-    );
-
-    if (payout.status === "already-claimed") {
-      return {
-        success: false,
-        bonus: 0,
-        streak: payout.streak,
-        message: "Daily bonus already claimed today",
-      };
-    }
-    if (payout.status === "earn-failed") {
-      return { success: false, bonus: 0, streak: payout.streak, message: payout.message };
-    }
-
-    console.log(
-      `[Vault Service] User ${userId} claimed daily bonus: ${payout.amount} IxC (streak: ${payout.streak})`
-    );
-
-    return { success: true, bonus: payout.amount, streak: payout.streak };
-  } catch (error) {
-    console.error(`[Vault Service] Failed to claim daily login bonus for ${userId}:`, error);
-    return {
-      success: false,
-      bonus: 0,
-      streak: 0,
-      message: "Failed to claim daily bonus",
-    };
-  }
-}
-
 function rollDailyCredits(streak: number, vaultLevel: number): number {
   const roll = Math.random() * 100;
   let baseCredits = 0;
@@ -194,7 +150,7 @@ export async function claimCombinedDailyClaim(
   success: boolean;
   rewardType: "credits" | "card";
   creditsAwarded?: number;
-  cardAwarded?: { id: string; title: string; rarity: string; artwork: string };
+  cardAwarded?: { id: string; ownershipId: string; title: string; rarity: string; artwork: string };
   streak: number;
   message?: string;
 }> {
@@ -244,7 +200,7 @@ export async function claimCombinedDailyClaim(
     }
 
     // Slot, mint (serial, copy, mint row), XP and ledger row: one transaction
-    const streak = await db.$transaction(async (tx) => {
+    const claimed = await db.$transaction(async (tx) => {
       const slot = await claimDailySlot(tx, vault, now);
       if (!slot.claimed) return null;
 
@@ -269,21 +225,22 @@ export async function claimCombinedDailyClaim(
         },
       });
 
-      return slot.streak;
+      return { streak: slot.streak, ownershipId: ownership.id };
     });
 
-    if (streak === null) return alreadyClaimed;
+    if (claimed === null) return alreadyClaimed;
 
     return {
       success: true,
       rewardType,
       cardAwarded: {
         id: card.id,
+        ownershipId: claimed.ownershipId,
         title: card.title,
         rarity: card.rarity,
         artwork: card.artwork || CARD_ARTWORK_PLACEHOLDER,
       },
-      streak,
+      streak: claimed.streak,
       message: `Claimed daily card: ${card.title}!`,
     };
   } catch (error) {

@@ -21,7 +21,6 @@ import {
   getEarningsSummary as ledgerGetEarningsSummary,
 } from "./vault-ledger";
 import {
-  claimDailyBonus as bonusClaimDailyBonus,
   claimCombinedDailyClaim as bonusClaimCombinedDailyClaim,
   updateLoginStreak as bonusUpdateLoginStreak,
 } from "./vault-daily-bonus";
@@ -160,10 +159,6 @@ export class VaultService {
     direction?: TransactionDirection
   ) {
     return ledgerGetTransactionHistory(userId, db, limit, offset, type, direction);
-  }
-
-  claimDailyBonus(userId: string, db: PrismaClient) {
-    return bonusClaimDailyBonus(userId, db);
   }
 
   claimCombinedDailyClaim(userId: string, choice: "CREDITS" | "CARD", db: PrismaClient) {

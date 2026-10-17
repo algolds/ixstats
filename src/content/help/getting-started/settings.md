@@ -69,7 +69,7 @@ This panel shows only the options that work today.
 
 ## Vault status
 
-Your IxCredits balance, daily login bonus (claim it here), streak, Vault level and lifetime totals. See [Your Vault](/help/vault/overview).
+Your IxCredits balance, the daily reward (open it here), streak, Vault level and lifetime totals. See [Your Vault](/help/vault/overview).
 
 ## Cosmetics
 

@@ -62,7 +62,6 @@ One payout per user per UTC day, written at midnight UTC by the `vault-dividend`
 - **Admin:** the cron and tuning widgets point at `vault-dividend`. The store item effect `yieldBoost` is labelled "Dividend boost".
 
 ### 2. Active Gameplay (`EARN_ACTIVE`) — 100 IxC Daily Cap
-- **Login Streak** (`vault.claimDailyBonus`): 1 to 7 IxC daily (`min(streak, maxStreakBonus)`)
 - **Combined Daily Claim** (`vault.claimCombinedDailyClaim`): choose a randomized credit roll (10–10,000 IxC before the cap) or a random card of the day. The claim dialog (`DailyRewardProvider.tsx`) describes the roll as paid up to the daily earning cap (the 100 IxC active cap always applies). It auto-opens at most once per user per UTC day (tracked in `localStorage`); after that it stays available from the sidebar "Daily reward" row and the Wallet's `DailyRewardStatus` until claimed
 - Removed: diplomatic action rewards (embassies, cultural exchanges), diplomatic scenario responses, the per-post ThinkPages reward and the forum action reward. No country action pays IxCredits any more.
 
@@ -119,7 +118,7 @@ try {
 - `useVaultStats()` – The card count and deck value
 - `useCollections()` – Collection list
 
-There is no client-side earn hook: credits are only awarded server-side. Daily claims call `api.vault.claimDailyBonus` / `claimCombinedDailyClaim` directly (e.g. `DailyRewardProvider`).
+There is no client-side earn hook: credits are only awarded server-side. The daily claim calls `api.vault.claimCombinedDailyClaim` directly (`DailyRewardProvider`); a card claim returns the minted copy's face (`cardFace`).
 
 ---
 
