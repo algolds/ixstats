@@ -6,6 +6,16 @@
  * could be set without proof), and only for entries from the payout start on.
  */
 jest.mock("~/server/db", () => {
+  // The client the payout's transaction runs on: distinct from `db`, so a lock or check made on `db` is caught.
+  const tx = {
+    $executeRaw: jest.fn(
+      async (_strings: TemplateStringsArray, ..._values: Array<string | number>) => 0
+    ),
+    // The contest's entries, read again inside the place's lock.
+    lorewardEntry: { findMany: jest.fn() },
+    // A Loreward bonus already paid for the contest place, under any of its entries' keys.
+    vaultTransaction: { findFirst: jest.fn(async () => null) },
+  };
   const db = {
     lorewardEntry: { findMany: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
@@ -13,12 +23,11 @@ jest.mock("~/server/db", () => {
     wikiRevision: { groupBy: jest.fn(async () => []) },
     systemConfig: { findMany: jest.fn() },
     user: { findFirst: jest.fn() },
-    // A Loreward bonus already paid for the contest place, under any of its entries' keys.
     vaultTransaction: { findFirst: jest.fn(async () => null) },
     $executeRaw: jest.fn(async () => 0),
-    $transaction: jest.fn(async (run: (tx: object) => Promise<boolean>) => run(db)),
+    $transaction: jest.fn(async (run: (client: typeof tx) => Promise<boolean>) => run(tx)),
   };
-  return { __esModule: true, db };
+  return { __esModule: true, db, tx };
 });
 
 jest.mock("~/lib/vault/vault-bonus", () => ({
@@ -29,6 +38,8 @@ jest.mock("~/lib/vault/vault-bonus", () => ({
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { db } from "~/server/db";
+import { LedgerError } from "~/lib/vault/vault-ledger";
+import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import { getBonusConfig, grantBonusTx, LOREWARD_PAYOUT_START } from "~/lib/vault/vault-bonus";
 import { grantLorewardBonuses } from "~/lib/lorewards/sync";
 
@@ -42,6 +53,15 @@ const mocked = db as unknown as {
   $executeRaw: jest.Mock;
   $transaction: jest.Mock;
 };
+
+/** The transaction client the `$transaction` mock hands the payout. */
+const { tx } = jest.requireMock<{
+  tx: {
+    $executeRaw: jest.Mock<Promise<number>, [TemplateStringsArray, ...Array<string | number>]>;
+    lorewardEntry: { findMany: jest.Mock };
+    vaultTransaction: { findFirst: jest.Mock };
+  };
+}>("~/server/db");
 
 type Entry = {
   id: string;
@@ -66,6 +86,25 @@ const daily = (over: Partial<Entry> = {}): Entry => ({
   ...over,
 });
 
+/** The entries the run lists; by default the lock's re-read finds the same ones, through the real `where`. */
+let listed: Entry[] = [];
+function listing(rows: Entry[]) {
+  listed = rows;
+  mocked.lorewardEntry.findMany.mockResolvedValue(rows);
+}
+const reread = async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+  listed.filter((row) => matches(storedEntry(row), where)).map((row) => ({ id: row.id }));
+
+/** A fresh transaction client per test, and nothing carried over from an earlier test. */
+function resetTransaction() {
+  mocked.$transaction.mockClear();
+  mocked.$executeRaw.mockClear();
+  mocked.vaultTransaction.findFirst.mockClear();
+  tx.$executeRaw.mockClear();
+  tx.lorewardEntry.findMany.mockReset().mockImplementation(reread);
+  tx.vaultTransaction.findFirst.mockReset().mockResolvedValue(null);
+}
+
 function grants() {
   return jest
     .mocked(grantBonusTx)
@@ -81,13 +120,14 @@ describe("grantLorewardBonuses page metadata", () => {
       .mockResolvedValue({ enabled: 1 } as never);
     mocked.systemConfig.findMany.mockReset().mockResolvedValue([]);
     mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
+    resetTransaction();
     jest.spyOn(console, "log").mockImplementation(() => undefined);
   });
 
   const metadataOf = (call: number) => jest.mocked(grantBonusTx).mock.calls[call]?.[4];
 
   it("records each place's own page, and omits a missing one", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({
         winnerPage: "Kir Republic",
         runnerUpUser: "Other",
@@ -113,9 +153,10 @@ describe("grantLorewardBonuses", () => {
     mocked.user.findFirst.mockReset();
     mocked.systemConfig.findMany.mockReset().mockResolvedValue([]);
     mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue({ userId: "u_verified" });
-    mocked.lorewardEntry.findMany.mockReset().mockResolvedValue([daily()]);
+    mocked.lorewardEntry.findMany.mockReset();
+    listing([daily()]);
     mocked.wikiRevision.groupBy.mockReset().mockResolvedValue([]);
-    mocked.vaultTransaction.findFirst.mockReset().mockResolvedValue(null);
+    resetTransaction();
     jest.spyOn(console, "log").mockImplementation(() => undefined);
   });
 
@@ -139,10 +180,10 @@ describe("grantLorewardBonuses", () => {
   ];
 
   it("pays an agreeing weekly pair once, through its state-keyed entry", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Kir_Republic", "Kir_Republic"));
+    listing(weeklyTwins("Kir_Republic", "Kir_Republic"));
     expect(await grantLorewardBonuses()).toBe(1);
     expect(grants()).toEqual([["u_verified", "bonus:loreward:w-state", 1500]]);
-    expect(mocked.vaultTransaction.findFirst).toHaveBeenCalledWith({
+    expect(tx.vaultTransaction.findFirst).toHaveBeenCalledWith({
       where: {
         type: "EARN_BONUS",
         source: { in: ["bonus:loreward:w-ool", "bonus:loreward:w-state"] },
@@ -152,8 +193,8 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("does not pay a pair again when one entry was already paid under its own key", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Kir_Republic", "Kir_Republic"));
-    mocked.vaultTransaction.findFirst.mockResolvedValue({ id: "paid" });
+    listing(weeklyTwins("Kir_Republic", "Kir_Republic"));
+    tx.vaultTransaction.findFirst.mockResolvedValue({ id: "paid" });
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonusTx).not.toHaveBeenCalled();
   });
@@ -165,36 +206,92 @@ describe("grantLorewardBonuses", () => {
       paid.add(source);
       return true;
     });
-    mocked.vaultTransaction.findFirst.mockImplementation(
+    tx.vaultTransaction.findFirst.mockImplementation(
       async ({ where }: { where: { source: { in: string[] } } }) =>
         where.source.in.some((source) => paid.has(source)) ? { id: "paid" } : null
     );
 
     expect(await grantLorewardBonuses()).toBe(1);
     // An OOL write (or an override) names another holder on the same row before the next run.
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ winnerUser: "Other" })]);
+    listing([daily({ winnerUser: "Other" })]);
     mocked.wikiAccountLink.findFirst.mockResolvedValue({ userId: "u_other" });
     expect(await grantLorewardBonuses()).toBe(0);
 
     expect(grants()).toEqual([["u_verified", "bonus:loreward:e1", 500]]);
   });
 
-  it("takes the contest place's lock, by its identity key, before it checks and pays", async () => {
+  it("locks the place by its identity key, then re-reads, checks and pays, all on the transaction's client", async () => {
     await grantLorewardBonuses();
 
-    const [strings, ...values] = mocked.$executeRaw.mock.calls[0]!;
-    expect((strings as string[]).join("?")).toContain("pg_advisory_xact_lock");
+    const [strings, ...values] = tx.$executeRaw.mock.calls[0]!;
+    expect(strings.join("?")).toContain("pg_advisory_xact_lock");
     expect(values).toContain("daily:2026-10-16:winner");
-    const [lock] = mocked.$executeRaw.mock.invocationCallOrder;
-    const [check] = mocked.vaultTransaction.findFirst.mock.invocationCallOrder;
-    const [grant] = jest.mocked(grantBonusTx).mock.invocationCallOrder;
-    expect(lock).toBeLessThan(check!);
-    expect(check).toBeLessThan(grant!);
+    const order = [
+      tx.$executeRaw.mock.invocationCallOrder[0],
+      tx.lorewardEntry.findMany.mock.invocationCallOrder[0],
+      tx.vaultTransaction.findFirst.mock.invocationCallOrder[0],
+      jest.mocked(grantBonusTx).mock.invocationCallOrder[0],
+    ];
+    expect(order.every((at) => at !== undefined)).toBe(true);
+    expect(order).toEqual([...order].sort((a, b) => a! - b!));
+    expect(jest.mocked(grantBonusTx).mock.calls[0]![0]).toBe(tx);
+    // Neither the lock nor the check runs on the root client.
+    expect(mocked.$executeRaw).not.toHaveBeenCalled();
+    expect(mocked.vaultTransaction.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("does not pay a place the lock's re-read finds paid under a twin this run never listed", async () => {
+    // Run B listed [ool, state] and paid under the state entry's key; run A listed only [ool], then waited.
+    const [ool] = weeklyTwins("Kir_Republic", "Kir_Republic");
+    listing([ool!]);
+    tx.lorewardEntry.findMany.mockResolvedValueOnce([{ id: "w-ool" }, { id: "w-state" }]);
+    tx.vaultTransaction.findFirst.mockImplementation(
+      async ({ where }: { where: { source: { in: string[] } } }) =>
+        where.source.in.includes("bonus:loreward:w-state") ? { id: "paid-by-b" } : null
+    );
+
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonusTx).not.toHaveBeenCalled();
+  });
+
+  it("reads only the entries a payout can reach, in pages, from the payout start on", async () => {
+    await grantLorewardBonuses();
+    expect(mocked.lorewardEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          status: "approved",
+          OR: [
+            { type: "daily", date: { gte: "2026-10-15" } },
+            { type: { in: ["weekly", "monthly"] }, dateEnd: { gte: "2026-10-15" } },
+            // A first-day twin of a weekly or monthly that ends after the start began at most a month before it.
+            { type: { in: ["weekly", "monthly"] }, dateEnd: null, date: { gte: "2026-09-14" } },
+          ],
+        },
+        orderBy: { id: "asc" },
+        take: 500,
+      })
+    );
+  });
+
+  it("logs a ledger refusal once per run, as a warning, and pays nothing", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    listing([daily({ runnerUpUser: "Second_Place" })]);
+    jest
+      .mocked(grantBonusTx)
+      .mockRejectedValue(new LedgerError("EARNING_DISABLED", "Earning credits is off."));
+
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toEqual(expect.stringContaining("refused 2 Loreward bonuses"));
+    expect(error).not.toHaveBeenCalled();
+    warn.mockRestore();
+    error.mockRestore();
   });
 
   it("pays neither entry of a pair that disagrees on a place, and logs both", async () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    mocked.lorewardEntry.findMany.mockResolvedValue(weeklyTwins("Urcea", "Nasastan"));
+    listing(weeklyTwins("Urcea", "Nasastan"));
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonusTx).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledTimes(1);
@@ -214,7 +311,7 @@ describe("grantLorewardBonuses", () => {
   it("pays the owner of the verified ixwiki link, matching the normalized name", async () => {
     expect(await grantLorewardBonuses()).toBe(1);
     // A contest stored once is checked for an earlier payment of its place too, then paid as before.
-    expect(mocked.vaultTransaction.findFirst).toHaveBeenCalledWith({
+    expect(tx.vaultTransaction.findFirst).toHaveBeenCalledWith({
       where: { type: "EARN_BONUS", source: { in: ["bonus:loreward:e1"] } },
       select: { id: true },
     });
@@ -240,9 +337,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays a wikios> winner's WikiOS account for the label's edits to the page in the contest", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
-      daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" }),
-    ]);
+    listing([daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" })]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
     expect(await grantLorewardBonuses()).toBe(1);
     expect(mocked.wikiRevision.groupBy).toHaveBeenCalledWith({
@@ -263,9 +358,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays nobody for a wikios> place whose label two accounts, or a MediaWiki editor, used", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
-      daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" }),
-    ]);
+    listing([daily({ winnerUser: "wikios>Kir_Republic", winnerPage: "Seneca front" })]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }, { authorId: null }]);
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonusTx).not.toHaveBeenCalled();
@@ -273,14 +366,14 @@ describe("grantLorewardBonuses", () => {
 
   it("pays nobody for a plain name without a link, and never reads its edits", async () => {
     mocked.wikiAccountLink.findFirst.mockResolvedValue(null);
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ winnerPage: "Seneca front" })]);
+    listing([daily({ winnerPage: "Seneca front" })]);
     mocked.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u_wikios" }]);
     expect(await grantLorewardBonuses()).toBe(0);
     expect(mocked.wikiRevision.groupBy).not.toHaveBeenCalled();
   });
 
   it("pays nobody for a wikios> weekly with no recorded range", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({
         id: "w1",
         type: "weekly",
@@ -296,7 +389,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays the winner and the runner-up of a daily by place, under distinct keys", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ runnerUpUser: "Second_Place" })]);
+    listing([daily({ runnerUpUser: "Second_Place" })]);
     mocked.wikiAccountLink.findFirst
       .mockResolvedValueOnce({ userId: "u_win" })
       .mockResolvedValueOnce({ userId: "u_run" });
@@ -314,7 +407,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays weekly and monthly winners their own amounts", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({ id: "w1", type: "weekly", date: "2026-W43", dateEnd: "2026-10-25" }),
       daily({ id: "m1", type: "monthly", date: "2026-10-01", dateEnd: "2026-10-31" }),
     ]);
@@ -326,7 +419,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("pays a recorded weekly runner-up its amount", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({
         id: "w1",
         type: "weekly",
@@ -342,7 +435,7 @@ describe("grantLorewardBonuses", () => {
 
   it("pays nothing for entries before the payout start, comparing date for dailies and dateEnd for the rest", async () => {
     expect(LOREWARD_PAYOUT_START).toBe("2026-10-15");
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({ id: "old", date: "2026-10-14", runnerUpUser: "R" }),
       daily({ id: "w-old", type: "weekly", date: "2026-W41", dateEnd: "2026-10-11" }),
       daily({ id: "w-straddle", type: "weekly", date: "2026-W42", dateEnd: "2026-10-18" }),
@@ -356,7 +449,7 @@ describe("grantLorewardBonuses", () => {
   });
 
   it("skips annual entries and entries with nobody recorded", async () => {
-    mocked.lorewardEntry.findMany.mockResolvedValue([
+    listing([
       daily({ id: "a1", type: "annual", date: "2026-12-31" }),
       daily({ id: "n1", winnerUser: null }),
     ]);
@@ -370,7 +463,7 @@ describe("grantLorewardBonuses", () => {
       { key: "vault_bonus_loreward_daily_runner_up", value: "0" },
       { key: "vault_bonus_loreward_weekly_winner", value: "not a number" },
     ]);
-    mocked.lorewardEntry.findMany.mockResolvedValue([daily({ runnerUpUser: "R" })]);
+    listing([daily({ runnerUpUser: "R" })]);
     await grantLorewardBonuses();
     expect(mocked.systemConfig.findMany).toHaveBeenCalledWith({
       where: { key: { startsWith: "vault_bonus_loreward_" } },

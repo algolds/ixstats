@@ -7,6 +7,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { ConflictError } from "~/lib/app-error";
+import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
   backfillTrophyCards,
   grantUnownedTrophyCards,
@@ -95,6 +96,20 @@ function contestLocks(database: PrismaClient): string[] {
     .filter((value): value is string => typeof value === "string" && value.includes(":"));
 }
 
+/** When each contest-place lock was taken (jest's invocation order), among all `$executeRaw` calls. */
+function contestLockOrder(database: PrismaClient): number[] {
+  const raw = (database as unknown as { $executeRaw: jest.Mock }).$executeRaw;
+  return raw.mock.calls.flatMap(
+    ([, ...values]: [string[], ...Array<string | number>], i: number) =>
+      values.some((value) => typeof value === "string" && value.includes(":"))
+        ? [raw.mock.invocationCallOrder[i]!]
+        : []
+  );
+}
+
+/** When a fake delegate method was first called (jest's invocation order). */
+const firstCall = (method: object) => (method as jest.Mock).mock.invocationCallOrder[0];
+
 function buildDb(): PrismaClient {
   const credit = (name: string) => () => {
     creditWrites.push(name);
@@ -102,18 +117,9 @@ function buildDb(): PrismaClient {
   };
   const fake = {
     lorewardEntry: {
-      findMany: jest.fn(
-        async ({
-          where,
-        }: {
-          where: { status?: string; id?: { in: string[] }; type?: { in: string[] } };
-        }) =>
-          entries.filter(
-            (e) =>
-              (!where.status || e.status === where.status) &&
-              (!where.type || where.type.in.includes(e.type)) &&
-              inList(where.id?.in, e.id)
-          )
+      // The real `where` (the contests read, and the contest re-read inside a place's lock); one page holds them all.
+      findMany: jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+        entries.filter((e) => matches(storedEntry(e), where))
       ),
     },
     systemConfig: { findUnique: jest.fn(async () => ({ value: "3" })) },
@@ -522,12 +528,27 @@ describe("trophy cards of a contest stored twice", () => {
 });
 
 describe("trophy cards under the contest place lock", () => {
-  it("takes the contest place's lock, by its identity key, to mint and to grant", async () => {
+  it("takes the contest place's lock, by its identity key, before each re-check", async () => {
     await mintTrophyCards(db);
     expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner"]);
+    // The mint's in-lock re-check (does a card of the place exist?) runs after the lock.
+    expect(contestLockOrder(db)[0]).toBeLessThan(firstCall(db.card.count)!);
+
     links.set("Kir Republic", "u1");
     await grantUnownedTrophyCards(db);
     expect(contestLocks(db)).toEqual(["daily:2026-10-16:winner", "daily:2026-10-16:winner"]);
+    // The grant's in-lock re-check (is a card of the place owned?) runs after its lock.
+    expect(contestLockOrder(db)[1]).toBeLessThan(firstCall(db.cardOwnership.count)!);
+  });
+
+  it("mints nothing when the lock's re-read finds a twin's card this run never listed", async () => {
+    // Run B listed [ool, state] and minted the state entry's card; run A listed only [ool], then waited.
+    entries = weeklyTwins("Kir_Republic", "Kir_Republic");
+    cards = [legacyCard("c-state", "w-state")];
+    const findMany = db.lorewardEntry.findMany as unknown as jest.Mock;
+    findMany.mockImplementationOnce(async () => [entries[0]]);
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards.map((card) => card.id)).toEqual(["c-state"]);
   });
 
   it("mints nothing when another sync minted the contest place's card while it waited", async () => {

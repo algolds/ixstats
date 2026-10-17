@@ -4,6 +4,7 @@
  * day (a daily's date), and its places pay, mint, grant and count once per identity: through the state-keyed
  * entry, and not at all while its entries name different holders for a place.
  */
+import type { Prisma } from "@prisma/client";
 import type { LorewardPlace } from "~/lib/vault/vault-bonus";
 
 export interface ContestEntry {
@@ -22,6 +23,18 @@ export type Contest<T> = [T, ...T[]];
 export function contestIdentity(entry: Pick<ContestEntry, "type" | "date" | "dateStart">): string {
   const day = entry.type === "daily" ? entry.date : (entry.dateStart ?? entry.date);
   return `${entry.type}:${day}`;
+}
+
+/**
+ * The `where` of every entry of a contest, matching `contestIdentity`: a daily by its type and date; a weekly or
+ * monthly by its type and first day, stored state-keyed (`dateStart`) or by that day with no range.
+ */
+export function contestEntriesWhere(
+  entry: Pick<ContestEntry, "type" | "date" | "dateStart">
+): Prisma.LorewardEntryWhereInput {
+  if (entry.type === "daily") return { type: entry.type, date: entry.date };
+  const day = entry.dateStart ?? entry.date;
+  return { type: entry.type, OR: [{ dateStart: day }, { dateStart: null, date: day }] };
 }
 
 /** The key of one place of one contest (`<type>:<first day>:<place>`): its advisory lock, and its log name. */

@@ -4,7 +4,9 @@
  * first day by the OOL page. Its identity is its type and first day, so its places act once.
  */
 import { describe, it, expect } from "@jest/globals";
+import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import {
+  contestEntriesWhere,
   contestHolder,
   contestIdentity,
   contestPlaceKey,
@@ -39,6 +41,34 @@ describe("contestIdentity", () => {
     expect(contestIdentity({ type: "daily", date: "2026-10-16", dateStart: null })).toBe(
       "daily:2026-10-16"
     );
+  });
+});
+
+describe("contestEntriesWhere", () => {
+  it("finds every entry of a weekly, under either key, and only those", () => {
+    const where = contestEntriesWhere(entry("b"));
+    expect(where).toEqual({
+      type: "weekly",
+      OR: [{ dateStart: "2026-10-12" }, { dateStart: null, date: "2026-10-12" }],
+    });
+    expect(contestEntriesWhere(stateKeyed("a"))).toEqual(where);
+    const rows = [
+      storedEntry({ id: "ool", type: "weekly", date: "2026-10-12" }),
+      storedEntry({ id: "state", type: "weekly", date: "2026-W42", dateStart: "2026-10-12" }),
+      storedEntry({ id: "next", type: "weekly", date: "2026-W43", dateStart: "2026-10-19" }),
+      storedEntry({ id: "daily", type: "daily", date: "2026-10-12" }),
+    ];
+    expect(rows.filter((row) => matches(row, where)).map((row) => row.id)).toEqual([
+      "ool",
+      "state",
+    ]);
+  });
+
+  it("finds a daily by its date", () => {
+    expect(contestEntriesWhere({ type: "daily", date: "2026-10-16", dateStart: null })).toEqual({
+      type: "daily",
+      date: "2026-10-16",
+    });
   });
 });
 

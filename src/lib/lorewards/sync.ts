@@ -25,10 +25,16 @@ import {
   groupByContest,
   type Contest,
 } from "./contest-identity";
-import { lockContestPlace } from "./contest-lock";
+import {
+  contestEntryIds,
+  findContestEntries,
+  lockContestPlace,
+  type StoredContestEntry,
+} from "./contest-store";
 import { placeOf, resolveLorewardPlace } from "./resolve-user";
 import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
+import { LedgerError } from "~/lib/vault/vault-ledger";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { labelOfImportName } from "~/lib/wiki-os/services/import-label";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
@@ -648,69 +654,74 @@ function payoutDay(entry: { type: string; date: string; dateEnd: string | null }
   return entry.type === "daily" ? entry.date : (entry.dateEnd ?? entry.date);
 }
 
-type PaidEntry = Awaited<ReturnType<typeof paidEntries>>[number];
+/**
+ * A month before `day`: the earliest first day of a weekly or monthly that ends on or after it, so a first-day twin
+ * (no range) of a contest that ends after the payout start is read with its state-keyed entry.
+ */
+const monthBefore = (day: string) =>
+  new Date(Date.parse(`${day}T00:00:00.000Z`) - 31 * 86_400_000).toISOString().slice(0, 10);
 
-/** The approved entries that record a winner or a runner-up, with what paying a place reads. */
-function paidEntries() {
-  return db.lorewardEntry.findMany({
-    where: {
-      status: "approved",
-      OR: [{ winnerUser: { not: null } }, { runnerUpUser: { not: null } }],
-    },
-    select: {
-      id: true,
-      date: true,
-      dateStart: true,
-      dateEnd: true,
-      type: true,
-      winnerUser: true,
-      winnerPage: true,
-      runnerUpUser: true,
-      runnerUpPage: true,
-    },
+/**
+ * The approved entries a payout can reach: a payout day (a daily's date, a weekly's or monthly's `dateEnd`) on or
+ * after `LOREWARD_PAYOUT_START`, plus the first-day twins of the contests that end after it. Read in pages, so the
+ * 1,000-row cap never drops one.
+ */
+function paidEntries(): Promise<StoredContestEntry[]> {
+  const ranged = { type: { in: ["weekly", "monthly"] } };
+  return findContestEntries(db, {
+    status: "approved",
+    OR: [
+      { type: "daily", date: { gte: LOREWARD_PAYOUT_START } },
+      { ...ranged, dateEnd: { gte: LOREWARD_PAYOUT_START } },
+      { ...ranged, dateEnd: null, date: { gte: monthBefore(LOREWARD_PAYOUT_START) } },
+    ],
   });
 }
 
 /**
- * Whether a Loreward bonus was paid for this place of this contest already, to anyone, under the key of any of its
- * entries. A place pays once, whoever holds it now: a later holder (an OOL write, a twin, an override) is not paid.
+ * Whether a Loreward bonus was paid for this place already, to anyone, under the key of any of `entryIds` (the
+ * contest's entries, read inside the place's lock). A place pays once, whoever holds it now.
  */
 async function contestPlacePaid(
   tx: Prisma.TransactionClient,
-  contest: Contest<PaidEntry>,
+  entryIds: string[],
   place: LorewardPlace
 ): Promise<boolean> {
   const paid = await tx.vaultTransaction.findFirst({
     where: {
       type: "EARN_BONUS",
-      source: { in: contest.map((entry) => lorewardBonusKey(entry.id, place)) },
+      source: { in: entryIds.map((id) => lorewardBonusKey(id, place)) },
     },
     select: { id: true },
   });
   return paid !== null;
 }
 
+/** What paying one place came to: paid, refused by the ledger (earning off, maintenance), or not paid. */
+type PlaceOutcome = "paid" | "refused" | "unpaid";
+
 /**
- * Pay one place of one contest, once, through the entry `contestHolder` chooses: in one transaction that first takes
- * the place's advisory lock, so two overlapping payout runs pay it at most once. Returns whether it paid.
+ * Pay one place of one contest, once, through the entry `contestHolder` chooses: in one transaction that takes the
+ * place's advisory lock, then reads the contest's entries again and pays only when none was paid for the place, so
+ * overlapping or successive runs that listed different entries pay it at most once.
  */
 async function payPlace(
-  contest: Contest<PaidEntry>,
+  contest: Contest<StoredContestEntry>,
   place: LorewardPlace,
   payouts: Awaited<ReturnType<typeof getLorewardPayouts>>
-): Promise<boolean> {
+): Promise<PlaceOutcome> {
   const holder = contestHolder(contest, place);
   if ("conflict" in holder) {
     console.warn(
       `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page); an overrideWinner on one copy is rewritten by the next sync.`
     );
-    return false;
+    return "unpaid";
   }
   const e = holder.entry;
   const recorded = placeOf(e, place);
-  if (!isPaidType(e.type) || !recorded || payouts[e.type][place] <= 0) return false;
+  if (!isPaidType(e.type) || !recorded || payouts[e.type][place] <= 0) return "unpaid";
   const userId = await resolveLorewardPlace(db, recorded);
-  if (!userId) return false; // no account can be told behind the place: skip
+  if (!userId) return "unpaid"; // no account can be told behind the place: skip
 
   const metadata = {
     entryId: e.id,
@@ -722,9 +733,9 @@ async function payPlace(
     ...(recorded.page ? { page: recorded.page } : {}),
   };
   try {
-    return await db.$transaction(async (tx) => {
+    const paid = await db.$transaction(async (tx) => {
       await lockContestPlace(tx, contestPlaceKey(e, place));
-      if (await contestPlacePaid(tx, contest, place)) return false;
+      if (await contestPlacePaid(tx, await contestEntryIds(tx, e), place)) return false;
       return grantBonusTx(
         tx,
         userId,
@@ -733,9 +744,12 @@ async function payPlace(
         metadata
       );
     });
+    return paid ? "paid" : "unpaid";
   } catch (error) {
+    // The ledger refusing an earn (earning switched off, maintenance) rolls the payment back: the key stays free.
+    if (error instanceof LedgerError) return "refused";
     console.error(`[Lorewards] Paying ${contestPlaceKey(e, place)} failed:`, error);
-    return false;
+    return "unpaid";
   }
 }
 
@@ -757,12 +771,19 @@ export async function grantLorewardBonuses(): Promise<number> {
   const payouts = await getLorewardPayouts(db);
   const entries = await paidEntries();
 
-  let granted = 0;
+  const outcomes: PlaceOutcome[] = [];
   for (const contest of groupByContest(entries.filter((e) => isPaidType(e.type)))) {
     // The contest's payout day is read from its state-keyed entry (the one with a range), as it pays through it.
     const lead = contest.find((e) => e.dateStart !== null) ?? contest[0];
     if (payoutDay(lead) < LOREWARD_PAYOUT_START) continue;
-    for (const place of PAID_PLACES) if (await payPlace(contest, place, payouts)) granted++;
+    for (const place of PAID_PLACES) outcomes.push(await payPlace(contest, place, payouts));
+  }
+  const granted = outcomes.filter((outcome) => outcome === "paid").length;
+  const refused = outcomes.filter((outcome) => outcome === "refused").length;
+  if (refused > 0) {
+    console.warn(
+      `[Lorewards] The ledger refused ${refused} Loreward bonuses (earning is off or in maintenance); their places stay unpaid and are tried again on the next run.`
+    );
   }
   console.log(`[Lorewards] Granted ${granted} new Loreward bonuses.`);
   return granted;

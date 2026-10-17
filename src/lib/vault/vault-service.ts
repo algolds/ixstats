@@ -91,7 +91,9 @@ export async function earnCreditsOnce(
 /**
  * `earnCreditsOnce`'s transaction body, for a caller that already holds a transaction (and its locks): a ledger row
  * carrying the key means nothing is written; otherwise the earn is written with the key. A duplicate raised by the
- * unique index aborts the caller's transaction, so the caller treats it as `alreadyApplied`.
+ * unique index, or a `LedgerError` (earning switched off, maintenance), throws and rolls the caller's transaction
+ * back, so nothing is written and the key stays free. `earnCreditsOnce` maps those to `alreadyApplied` and to a
+ * failure; the Loreward payout (through `grantBonusTx`) counts a `LedgerError` as a refusal it logs once per run.
  */
 export async function earnCreditsOnceTx(
   tx: Prisma.TransactionClient,

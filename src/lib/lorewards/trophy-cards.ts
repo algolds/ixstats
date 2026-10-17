@@ -17,7 +17,12 @@ import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
 import { contestHolder, contestPlaceKey, groupByContest, type Contest } from "./contest-identity";
-import { lockContestPlace } from "./contest-lock";
+import {
+  contestEntryIds,
+  findContestEntries,
+  lockContestPlace,
+  type StoredContestEntry,
+} from "./contest-store";
 import { placeOf, resolveLorewardPlace, type LorewardPlaceRef } from "./resolve-user";
 
 /** Prisma `where` fragment for a card relation that leaves trophy cards out (deck value, collection interest). */
@@ -50,17 +55,7 @@ export function trophyRarity(type: LorewardType, place: LorewardPlace): CardRari
   return CardRarity.RARE;
 }
 
-interface TrophyEntry {
-  id: string;
-  type: string;
-  date: string;
-  dateStart: string | null;
-  dateEnd: string | null;
-  winnerUser: string | null;
-  winnerPage: string | null;
-  runnerUpUser: string | null;
-  runnerUpPage: string | null;
-}
+type TrophyEntry = StoredContestEntry;
 
 const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -92,7 +87,7 @@ async function mintedKeys(db: PrismaClient): Promise<Set<string>> {
   return new Set(rows.map((r) => `${r.lorewardEntryId}:${r.lorewardEdition}`));
 }
 
-/** Whether a card of this place of the contest (its entries `entryIds`) exists: inside the place's lock. */
+/** Whether a card of this place of the contest (its entries `entryIds`, read inside the place's lock) exists. */
 async function contestPlaceMinted(
   tx: Prisma.TransactionClient,
   entryIds: string[],
@@ -107,7 +102,7 @@ async function contestPlaceMinted(
 async function mintOne(
   db: PrismaClient,
   season: number,
-  { entry, place, entryIds }: MissingPlace
+  { entry, place }: MissingPlace
 ): Promise<boolean> {
   const recorded = placeOf(entry, place);
   if (!recorded) return false;
@@ -120,7 +115,7 @@ async function mintOne(
     return await db.$transaction(async (tx) => {
       // One card per contest place: a concurrent sync waits here, then finds this card.
       await lockContestPlace(tx, contestPlaceKey(entry, place));
-      if (await contestPlaceMinted(tx, entryIds, place)) return false;
+      if (await contestPlaceMinted(tx, await contestEntryIds(tx, entry), place)) return false;
       const card = await tx.card.create({
         data: {
           title: page ?? `${label} Loreward ${entry.date}`,
@@ -161,31 +156,16 @@ async function mintOne(
 interface MissingPlace {
   entry: TrophyEntry & { type: LorewardType };
   place: LorewardPlace;
-  /** The ids of every entry of the place's contest. */
-  entryIds: string[];
 }
 
-/** The entry columns a trophy card's place is resolved from. */
-const ENTRY_SELECT = {
-  id: true,
-  type: true,
-  date: true,
-  dateStart: true,
-  dateEnd: true,
-  winnerUser: true,
-  winnerPage: true,
-  runnerUpUser: true,
-  runnerUpPage: true,
-} as const;
-
-/** The approved daily, weekly and monthly entries, by contest (`groupByContest`: a contest can be stored twice). */
+/**
+ * Every approved daily, weekly and monthly entry, by contest (`groupByContest`: a contest can be stored twice), read
+ * in pages so the 1,000-row cap drops none.
+ */
 async function contests(db: PrismaClient) {
-  const entries = await db.lorewardEntry.findMany({
-    where: { status: "approved", type: { in: CONTESTS } },
-    select: ENTRY_SELECT,
-    orderBy: { date: "asc" },
-  });
-  return groupByContest(entries);
+  return groupByContest(
+    await findContestEntries(db, { status: "approved", type: { in: CONTESTS } })
+  );
 }
 
 const cardKeys = (contest: Contest<TrophyEntry>, place: LorewardPlace) =>
@@ -207,11 +187,7 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
         continue;
       const { entry } = holder;
       if (isContest(entry.type) && placeOf(entry, place)) {
-        missing.push({
-          entry: { ...entry, type: entry.type },
-          place,
-          entryIds: contest.map((e) => e.id),
-        });
+        missing.push({ entry: { ...entry, type: entry.type }, place });
       }
     }
   }
@@ -237,18 +213,18 @@ export async function mintTrophyCards(
   return { minted };
 }
 
-/** One trophy card to grant, the place it is resolved from, and that place's contest. */
+/** One trophy card to grant, the place it is resolved from, and the contest entry it is chosen through. */
 interface TrophyGrant {
   cardId: string;
   recorded: LorewardPlaceRef;
   place: LorewardPlace;
-  /** `contestPlaceKey` of the place: its advisory lock. */
-  lockKey: string;
-  /** The ids of every entry of the place's contest. */
-  entryIds: string[];
+  entry: TrophyEntry;
 }
 
-/** Whether a card of this place of the contest is owned, or was granted before: inside the place's lock. */
+/**
+ * Whether a card of this place of the contest (its entries `entryIds`, read inside the place's lock) is owned, or was
+ * granted before.
+ */
 async function contestPlaceSettled(
   tx: Prisma.TransactionClient,
   entryIds: string[],
@@ -269,8 +245,9 @@ async function contestPlaceSettled(
 async function grantOne(db: PrismaClient, grant: TrophyGrant, userId: string): Promise<boolean> {
   return db.$transaction(async (tx) => {
     // One card per contest place: a concurrent grant of it waits here, then sees this one.
-    await lockContestPlace(tx, grant.lockKey);
-    if (await contestPlaceSettled(tx, grant.entryIds, grant.place)) return false;
+    await lockContestPlace(tx, contestPlaceKey(grant.entry, grant.place));
+    const entryIds = await contestEntryIds(tx, grant.entry);
+    if (await contestPlaceSettled(tx, entryIds, grant.place)) return false;
     const serial = await allocateSerialNumberTx(tx, grant.cardId);
     const card = await tx.card.findUnique({
       where: { id: grant.cardId },
@@ -329,13 +306,7 @@ function cardsToGrant(
         keys.map((key) => waiting.get(key)).find((found) => found !== undefined);
       const recorded = placeOf(holder.entry, place);
       if (card && recorded) {
-        grants.push({
-          cardId: card.id,
-          recorded,
-          place,
-          lockKey: contestPlaceKey(holder.entry, place),
-          entryIds: contest.map((entry) => entry.id),
-        });
+        grants.push({ cardId: card.id, recorded, place, entry: holder.entry });
       }
     }
   }
