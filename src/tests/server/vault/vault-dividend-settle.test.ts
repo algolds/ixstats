@@ -1,12 +1,12 @@
 /** @jest-environment node */
 jest.mock("~/lib/lorewards/scoring", () => ({ scoreDailyWikiOS: jest.fn() }));
-jest.mock("~/lib/lorewards/resolve-user", () => ({ resolveLorewardUser: jest.fn() }));
+jest.mock("~/lib/lorewards/resolve-user", () => ({ resolveLorewardPlace: jest.fn() }));
 jest.mock("~/lib/vault/vault-perks", () => ({ getYieldBoostMultiplier: jest.fn() }));
 jest.mock("~/lib/vault/vault-service", () => ({ earnCreditsOnce: jest.fn() }));
 
 import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { resolveLorewardUser } from "~/lib/lorewards/resolve-user";
+import { resolveLorewardPlace } from "~/lib/lorewards/resolve-user";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
 import { dividendKey, parseDividendMetadata } from "~/lib/vault/vault-dividend";
 import { getYieldBoostMultiplier } from "~/lib/vault/vault-perks";
@@ -140,7 +140,7 @@ beforeEach(() => {
   rows = [];
   db = buildDb();
   jest.mocked(scoreDailyWikiOS).mockResolvedValue({ candidates: [] } as never);
-  jest.mocked(resolveLorewardUser).mockResolvedValue(null);
+  jest.mocked(resolveLorewardPlace).mockResolvedValue(null);
   jest.mocked(getYieldBoostMultiplier).mockResolvedValue(0);
   jest.mocked(earnCreditsOnce).mockImplementation(async (_db, input) => {
     const key = input.idempotencyKey;
@@ -282,22 +282,33 @@ describe("settleDividendDay", () => {
     );
   });
 
-  it("gives a wiki line only to editors with a verified linked account", async () => {
+  it("gives a wiki line only for the edits an account can be told behind, page by page", async () => {
     vault("u1");
     vault("u2");
     jest.mocked(scoreDailyWikiOS).mockResolvedValue({
       candidates: [
-        { user: "Linked", finalScore: 500 },
-        { user: "Linked", finalScore: 300 },
-        { user: "Stranger", finalScore: 9000 },
+        { user: "Linked", page: "Seneca front", finalScore: 500 },
+        { user: "Linked", page: "Tide charts", finalScore: 300 },
+        { user: "Linked", page: "Shared page", finalScore: 4000 },
+        { user: "Stranger", page: "Seneca front", finalScore: 9000 },
       ],
     } as never);
     jest
-      .mocked(resolveLorewardUser)
-      .mockImplementation(async (_db, name) => (name === "Linked" ? "u1" : null));
+      .mocked(resolveLorewardPlace)
+      .mockImplementation(async (_db, place) =>
+        place.wikiUser === "Linked" && place.page !== "Shared page" ? "u1" : null
+      );
     await settleDividendDay(db, D);
     expect(scoreDailyWikiOS).toHaveBeenCalledWith(D, undefined, { enrichAll: true });
-    expect(rowsFor("u1")[0]?.amount).toBe(10); // 800 / 80
+    // Each candidate is its own place: the name's edits to that page on that day.
+    expect(resolveLorewardPlace).toHaveBeenCalledWith(db, {
+      wikiUser: "Linked",
+      page: "Tide charts",
+      date: D,
+      dateStart: null,
+      dateEnd: null,
+    });
+    expect(rowsFor("u1")[0]?.amount).toBe(10); // (500 + 300) / 80; the shared page counts for no one
     expect(rowsFor("u2")).toEqual([]);
   });
 

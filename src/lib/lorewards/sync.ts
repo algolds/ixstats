@@ -17,7 +17,8 @@ import {
   type LorewardPlace,
   type LorewardType,
 } from "~/lib/vault/vault-bonus";
-import { resolveLorewardUser } from "./resolve-user";
+import { placeOf, resolveLorewardPlace } from "./resolve-user";
+import { calculateStreaks } from "./streaks";
 import { grantUnownedTrophyCards, mintTrophyCards } from "./trophy-cards";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
@@ -419,26 +420,6 @@ export async function fullSync(): Promise<{
   return { stateEntries, oolEntries, users, members };
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const daysBetween = (from: string, to: string) =>
-  (new Date(to).getTime() - new Date(from).getTime()) / DAY_MS;
-
-function calculateStreaks(winDates: string[]): { current: number; longest: number } {
-  if (winDates.length === 0) return { current: 0, longest: 0 };
-
-  const sorted = [...winDates].sort();
-  let longest = 1;
-  let run = 1; // after the loop: the consecutive-day run ending at the last win
-  for (let i = 1; i < sorted.length; i++) {
-    run = daysBetween(sorted[i - 1]!, sorted[i]!) === 1 ? run + 1 : 1;
-    longest = Math.max(longest, run);
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const streakBroken = daysBetween(sorted[sorted.length - 1]!, today) > 1;
-  return { current: streakBroken ? 0 : run, longest };
-}
-
 let lastAutoSyncTime = 0;
 const AUTO_SYNC_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
 
@@ -522,10 +503,10 @@ function payoutDay(entry: { type: string; date: string; dateEnd: string | null }
 
 /**
  * Pay the winner and the runner-up of every approved daily, weekly and monthly entry from the payout start
- * (`LOREWARD_PAYOUT_START`) on, by contest and place. A wiki name maps to a platform account only through a
- * VERIFIED ixwiki `WikiAccountLink`, or the one WikiOS account behind every ixwiki edit under the name (see
- * `resolveLorewardUser`); a shared name pays no one. Entries before the start are never paid, so an account
- * found later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
+ * (`LOREWARD_PAYOUT_START`) on, by contest and place. Each place pays the VERIFIED ixwiki `WikiAccountLink` of its
+ * name, else the WikiOS account that made every one of its winning edits (`resolveLorewardPlace`); a place whose
+ * winning edits are MediaWiki's, shared or not mirrored pays no one. Entries before the start are never paid, so
+ * an account found later does not back-pay history. Idempotent: grantBonus(oneTime) keys off
  * `lorewardBonusKey(entryId, place)`, so re-running after each sync only pays new places.
  * Returns the number of newly-granted bonuses.
  */
@@ -542,6 +523,7 @@ export async function grantLorewardBonuses(): Promise<number> {
     select: {
       id: true,
       date: true,
+      dateStart: true,
       dateEnd: true,
       type: true,
       winnerUser: true,
@@ -557,12 +539,12 @@ export async function grantLorewardBonuses(): Promise<number> {
     if (payoutDay(e) < LOREWARD_PAYOUT_START) continue;
 
     for (const place of PAID_PLACES) {
-      const wikiUser = place === "winner" ? e.winnerUser : e.runnerUpUser;
-      const page = place === "winner" ? e.winnerPage : e.runnerUpPage;
+      const recorded = placeOf(e, place);
       const amount = payouts[e.type][place];
-      if (!wikiUser || amount <= 0) continue;
-      const userId = await resolveLorewardUser(db, wikiUser);
-      if (!userId) continue; // no account can be told behind the name: skip
+      if (!recorded || amount <= 0) continue;
+      const userId = await resolveLorewardPlace(db, recorded);
+      if (!userId) continue; // no account can be told behind the place: skip
+      const { wikiUser, page } = recorded;
 
       const res = await grantBonus(db, userId, lorewardBonusKey(e.id, place), amount, {
         oneTime: true,
@@ -585,7 +567,7 @@ export async function grantLorewardBonuses(): Promise<number> {
 
 /**
  * Trophy cards for the recorded Loreward places: mint the ones that have no card yet, then give each unowned
- * card to its winner once an account can be told behind the name (`resolveLorewardUser`). Idempotent, and
+ * card to its winner once an account can be told behind the place (`resolveLorewardPlace`). Idempotent, and
  * writes no IxCredits.
  */
 export async function syncTrophyCards(): Promise<{ minted: number; granted: number }> {

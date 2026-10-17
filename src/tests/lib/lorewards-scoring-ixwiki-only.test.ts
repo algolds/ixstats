@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Lorewards is IxWiki's contest: only ixwiki revisions score, so a name can only win from IxWiki edits (which is all
- * `resolveLorewardUser` checks when it pays the name).
+ * `resolveLorewardPlace` reads when it pays a place).
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,

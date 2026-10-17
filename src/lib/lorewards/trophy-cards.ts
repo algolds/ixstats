@@ -1,8 +1,8 @@
 /**
  * Loreward trophy cards: every recorded Loreward place (daily, weekly or monthly; winner or runner-up) is a
  * one-of-one, tradeable lore card for that wiki user. The card is minted once per (entry, edition) and held
- * unowned until the user's account can be told (a verified wiki link, or the one WikiOS account editing under
- * the name: `resolveLorewardUser`), then granted exactly once.
+ * unowned until the place's account can be told (a verified wiki link, or the one WikiOS account behind the
+ * place's winning edits: `resolveLorewardPlace`), then granted exactly once.
  * No IxCredits are written here: trophy cards are collectibles, kept out of deck value (`EXCLUDE_TROPHY_CARDS`).
  *
  * A trophy card carries the winning page's `wikiArticleTitle` like any lore card, so random lore generation
@@ -16,7 +16,7 @@ import { newCardOwnershipId } from "~/lib/cards/ownership-id";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
-import { resolveLorewardUser } from "./resolve-user";
+import { placeOf, resolveLorewardPlace } from "./resolve-user";
 
 /** Prisma `where` fragment for a card relation that leaves trophy cards out (deck value, collection interest). */
 export const EXCLUDE_TROPHY_CARDS = { lorewardEntryId: null } as const;
@@ -52,6 +52,8 @@ interface TrophyEntry {
   id: string;
   type: string;
   date: string;
+  dateStart: string | null;
+  dateEnd: string | null;
   winnerUser: string | null;
   winnerPage: string | null;
   runnerUpUser: string | null;
@@ -94,13 +96,13 @@ async function mintOne(
   entry: TrophyEntry & { type: LorewardType },
   place: LorewardPlace
 ): Promise<boolean> {
-  const wikiUser = place === "winner" ? entry.winnerUser : entry.runnerUpUser;
-  const page = place === "winner" ? entry.winnerPage : entry.runnerUpPage;
-  if (!wikiUser) return false;
+  const recorded = placeOf(entry, place);
+  if (!recorded) return false;
+  const { wikiUser, page } = recorded;
 
   const label = CONTEST_LABEL[entry.type];
   const rarity = trophyRarity(entry.type, place);
-  const userId = await resolveLorewardUser(db, wikiUser);
+  const userId = await resolveLorewardPlace(db, recorded);
   try {
     await db.$transaction(async (tx) => {
       const card = await tx.card.create({
@@ -145,6 +147,19 @@ interface MissingPlace {
   place: LorewardPlace;
 }
 
+/** The entry columns a trophy card's place is resolved from. */
+const ENTRY_SELECT = {
+  id: true,
+  type: true,
+  date: true,
+  dateStart: true,
+  dateEnd: true,
+  winnerUser: true,
+  winnerPage: true,
+  runnerUpUser: true,
+  runnerUpPage: true,
+} as const;
+
 /** The recorded places of the approved daily, weekly and monthly entries (or only `entryIds`) with no card yet. */
 async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<MissingPlace[]> {
   const [entries, existing] = await Promise.all([
@@ -154,15 +169,7 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
         type: { in: CONTESTS },
         ...(entryIds ? { id: { in: entryIds } } : {}),
       },
-      select: {
-        id: true,
-        type: true,
-        date: true,
-        winnerUser: true,
-        winnerPage: true,
-        runnerUpUser: true,
-        runnerUpPage: true,
-      },
+      select: ENTRY_SELECT,
       orderBy: { date: "asc" },
     }),
     mintedKeys(db, entryIds),
@@ -183,7 +190,7 @@ async function missingPlaces(db: PrismaClient, entryIds?: string[]): Promise<Mis
 
 /**
  * Mints the trophy card of every recorded place of the approved daily, weekly and monthly entries (all of them,
- * or only `entryIds`) that has none yet, owned by the place's user when `resolveLorewardUser` tells one.
+ * or only `entryIds`) that has none yet, owned by the place's user when `resolveLorewardPlace` tells one.
  * Idempotent: the unique (entry, edition) key means a re-run mints nothing new. Entries before the payout start
  * mint too (the history backfill); no credits are paid.
  */
@@ -219,28 +226,33 @@ async function grantOne(db: PrismaClient, cardId: string, userId: string): Promi
   });
 }
 
+const editionOf = (edition: string | null): LorewardPlace | null =>
+  edition === "winner" || edition === "runner-up" ? edition : null;
+
 /**
- * Grants each unowned trophy card to its winner once `resolveLorewardUser` tells their account. A card granted
+ * Grants each unowned trophy card to its place's account once `resolveLorewardPlace` tells it. A card granted
  * before is never granted again, even if its owner later sold, junked or crafted it away.
  */
 export async function grantUnownedTrophyCards(db: PrismaClient): Promise<{ granted: number }> {
   const unowned = await db.card.findMany({
     where: { lorewardEntryId: { not: null }, CardOwnership: { none: {} } },
-    select: { id: true, metadata: true },
+    select: { id: true, metadata: true, lorewardEntryId: true, lorewardEdition: true },
   });
-
-  const byWikiUser = new Map<string, string[]>();
-  for (const card of unowned) {
-    const { wikiUser, grantedTo } = metaOf(card.metadata);
-    if (grantedTo || typeof wikiUser !== "string") continue;
-    byWikiUser.set(wikiUser, [...(byWikiUser.get(wikiUser) ?? []), card.id]);
-  }
+  const waiting = unowned.filter((card) => !metaOf(card.metadata).grantedTo);
+  const entryIds = [...new Set(waiting.flatMap((card) => card.lorewardEntryId ?? []))];
+  const entries = await db.lorewardEntry.findMany({
+    where: { id: { in: entryIds } },
+    select: ENTRY_SELECT,
+  });
+  const entryById = new Map(entries.map((entry) => [entry.id, entry]));
 
   let granted = 0;
-  for (const [wikiUser, cardIds] of byWikiUser) {
-    const userId = await resolveLorewardUser(db, wikiUser);
-    if (!userId) continue;
-    for (const cardId of cardIds) if (await grantOne(db, cardId, userId)) granted++;
+  for (const card of waiting) {
+    const entry = card.lorewardEntryId ? entryById.get(card.lorewardEntryId) : undefined;
+    const edition = editionOf(card.lorewardEdition);
+    const recorded = entry && edition ? placeOf(entry, edition) : null;
+    const userId = recorded ? await resolveLorewardPlace(db, recorded) : null;
+    if (userId && (await grantOne(db, card.id, userId))) granted++;
   }
   return { granted };
 }
@@ -253,8 +265,8 @@ export interface TrophyBackfillReport {
 }
 
 /**
- * The one-time history backfill: a trophy card for every recorded place back to 2017, granted to linked
- * winners, with no credits. Reports what is missing and writes nothing unless `apply`; idempotent.
+ * The one-time history backfill: a trophy card for every recorded place back to 2017, granted where
+ * `resolveLorewardPlace` tells the place's account, with no credits. Reports what is missing and writes nothing unless `apply`; idempotent.
  */
 export async function backfillTrophyCards(
   db: PrismaClient,

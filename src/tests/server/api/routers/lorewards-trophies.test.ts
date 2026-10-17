@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * The Lorewards trophies procedures: the viewer's own (through their verified wiki link, or a wiki name only they
- * edit under) and any wiki user's public ones, plus the standings. Trophy cards come from the trophy cards the user's account owns.
+ * The Lorewards trophies procedures: the viewer's own (their verified wiki link's record, else only the places whose
+ * winning edits are all theirs) and any wiki user's public ones, plus the standings. Trophy cards come from the trophy cards the user's account owns.
  */
 import { beforeEach, describe, expect, it } from "@jest/globals";
 
@@ -99,6 +99,8 @@ describe("lorewards.getMyTrophies", () => {
 
     expect(mine).toEqual({
       wikiUsername: "Ada",
+      verified: true,
+      unmatched: 0,
       wins: { daily: 6, weekly: 1, monthly: 0 },
       runnerUps: 2,
       streak: 3,
@@ -149,42 +151,75 @@ describe("lorewards.getMyTrophies", () => {
     logSpy.mockRestore();
   });
 
-  it("keeps the trophies of a viewer with no link under the name only their WikiOS edits carry", async () => {
+  /** An unlinked viewer whose WikiOS edits carry "Ada", and whose daily win's winning edits group as `authors`. */
+  function unlinkedAda(authors: Array<string | null>) {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
-    db.wikiRevision.findFirst.mockResolvedValue({ author: "Ada" });
-    db.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u1" }]);
+    db.lorewardEntry.findMany.mockResolvedValue([
+      {
+        type: "daily",
+        date: "2026-10-20",
+        dateStart: null,
+        dateEnd: null,
+        winnerUser: "Ada",
+        winnerPage: "Seneca front",
+        runnerUpUser: null,
+        runnerUpPage: null,
+      },
+    ]);
+    db.wikiRevision.groupBy.mockImplementation(async ({ by }: { by: string[] }) =>
+      by[0] === "author"
+        ? [
+            {
+              author: "Ada",
+              _min: { createdAt: new Date("2026-10-01T00:00:00Z") },
+              _max: { createdAt: new Date("2026-10-20T10:00:00Z") },
+            },
+          ]
+        : authors.map((authorId) => ({ authorId }))
+    );
+  }
+
+  it("counts an unlinked viewer's wins from the places tied to them, not the name's stats row", async () => {
+    unlinkedAda(["u1"]);
     db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 500 } });
 
     const mine = await viewer().getMyTrophies();
-    expect(mine.wikiUsername).toBe("Ada");
-    expect(mine.wins.daily).toBe(6);
-    expect(db.wikiRevision.findFirst).toHaveBeenCalledWith(
+    expect(mine).toMatchObject({
+      wikiUsername: "Ada",
+      verified: false,
+      unmatched: 0,
+      wins: { daily: 1, weekly: 0, monthly: 0 },
+      paid: 500,
+    });
+    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
+    expect(db.wikiRevision.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { authorId: "u1", source: "ixwiki", author: { not: null } },
+        by: ["authorId"],
+        where: expect.objectContaining({ article: { source: "ixwiki", title: "Seneca front" } }),
       })
     );
   });
 
-  it("is empty, with no wiki name, when the viewer's edit name is shared with an unverified MediaWiki editor", async () => {
-    db.wikiAccountLink.findFirst.mockResolvedValue(null);
-    db.wikiRevision.findFirst.mockResolvedValue({ author: "Ada" });
-    db.wikiRevision.groupBy.mockResolvedValue([{ authorId: "u1" }, { authorId: null }]);
+  it("tells an unlinked viewer how many places under their name could not be tied to them", async () => {
+    // A MediaWiki edit under "Ada" is among the winning edits: the place is not proven theirs.
+    unlinkedAda(["u1", null]);
 
     expect(await viewer().getMyTrophies()).toMatchObject({
-      wikiUsername: null,
-      paid: 0,
-      cards: [],
+      wikiUsername: "Ada",
+      verified: false,
+      unmatched: 1,
+      wins: { daily: 0, weekly: 0, monthly: 0 },
     });
     expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-    expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
   });
 
   it("is empty, with no wiki name, for a viewer with no link and no wiki edits", async () => {
     db.wikiAccountLink.findFirst.mockResolvedValue(null);
-    db.wikiRevision.findFirst.mockResolvedValue(null);
 
     expect(await viewer().getMyTrophies()).toEqual({
       wikiUsername: null,
+      verified: false,
+      unmatched: 0,
       wins: { daily: 0, weekly: 0, monthly: 0 },
       runnerUps: 0,
       streak: 0,
@@ -246,6 +281,14 @@ describe("lorewards.getTrophies", () => {
     const theirs = await signedOut().getTrophies({ username: "Ada" });
     expect(theirs.cards).toEqual([]);
     expect(theirs.wins.daily).toBe(6);
+  });
+
+  it("finds the name's verified link by an exact match on the normalized name", async () => {
+    await signedOut().getTrophies({ username: "ada_lovelace" });
+    expect(db.wikiAccountLink.findFirst).toHaveBeenCalledWith({
+      where: { source: "ixwiki", username: "Ada lovelace", verifiedAt: { not: null } },
+      select: { userId: true },
+    });
   });
 
   it("skips a trophy card whose contest was not recorded", async () => {

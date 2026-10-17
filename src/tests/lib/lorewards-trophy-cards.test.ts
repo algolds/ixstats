@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the winner's account
- * can be told (a verified wiki link, or the one WikiOS account editing under the name). Minting, granting and
- * the backfill never write IxCredits.
+ * Loreward trophy cards: one one-of-one lore card per recorded place, held unowned until the place's account
+ * can be told (a verified wiki link, or the WikiOS account behind every one of its winning edits). Minting,
+ * granting and the backfill never write IxCredits.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "@jest/globals";
@@ -19,6 +19,8 @@ interface EntryRow {
   id: string;
   type: string;
   date: string;
+  dateStart: string | null;
+  dateEnd: string | null;
   status: string;
   winnerUser: string | null;
   winnerPage: string | null;
@@ -51,6 +53,8 @@ let entries: EntryRow[];
 let cards: CardRow[];
 let ownerships: OwnershipRow[];
 let links: Map<string, string>;
+/** The authorIds of each page's winning edits, by page title, as the place query groups them. */
+let winningEdits: Map<string, Array<string | null>>;
 let creditWrites: string[];
 let failNextCardCreate: boolean;
 let failNextCardCreateAsConflict: boolean;
@@ -59,6 +63,8 @@ const entry = (over: Partial<EntryRow> = {}): EntryRow => ({
   id: "e1",
   type: "daily",
   date: "2026-10-16",
+  dateStart: null,
+  dateEnd: null,
   status: "approved",
   winnerUser: "Kir_Republic",
   winnerPage: "Seneca front",
@@ -77,24 +83,31 @@ function buildDb(): PrismaClient {
   const fake = {
     lorewardEntry: {
       findMany: jest.fn(
-        async ({ where }: { where: { id?: { in: string[] }; type: { in: string[] } } }) =>
+        async ({
+          where,
+        }: {
+          where: { status?: string; id?: { in: string[] }; type?: { in: string[] } };
+        }) =>
           entries.filter(
             (e) =>
-              e.status === "approved" &&
-              where.type.in.includes(e.type) &&
+              (!where.status || e.status === where.status) &&
+              (!where.type || where.type.in.includes(e.type)) &&
               inList(where.id?.in, e.id)
           )
       ),
     },
     systemConfig: { findUnique: jest.fn(async () => ({ value: "3" })) },
     wikiAccountLink: {
-      findFirst: jest.fn(async ({ where }: { where: { username: { equals: string } } }) => {
-        const userId = links.get(where.username.equals);
+      findFirst: jest.fn(async ({ where }: { where: { username: string } }) => {
+        const userId = links.get(where.username);
         return userId ? { userId } : null;
       }),
     },
-    // No ixwiki edits under the name: the WikiOS-author fallback finds nobody.
-    wikiRevision: { groupBy: jest.fn(async () => []) },
+    wikiRevision: {
+      groupBy: jest.fn(async ({ where }: { where: { article: { title: string } } }) =>
+        [...new Set(winningEdits.get(where.article.title) ?? [])].map((authorId) => ({ authorId }))
+      ),
+    },
     card: {
       findMany: jest.fn(async ({ where }: { where: { CardOwnership?: unknown } }) =>
         cards.filter(
@@ -168,6 +181,7 @@ beforeEach(() => {
   cards = [];
   ownerships = [];
   links = new Map();
+  winningEdits = new Map();
   creditWrites = [];
   failNextCardCreate = false;
   failNextCardCreateAsConflict = false;
@@ -263,6 +277,12 @@ describe("mintTrophyCards", () => {
     expect(ownerships).toEqual([]);
   });
 
+  it("mints the card owned by the WikiOS account behind every winning edit", async () => {
+    winningEdits.set("Seneca front", ["u2"]);
+    await mintTrophyCards(db);
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+  });
+
   it("gives a linked winner an unlocked, tradeable copy as serial 1", async () => {
     links.set("Kir Republic", "u1");
 
@@ -321,6 +341,23 @@ describe("grantUnownedTrophyCards", () => {
 
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownersOf("c1")).toHaveLength(1);
+  });
+
+  it("grants the card to the WikiOS account behind every winning edit, with no link", async () => {
+    winningEdits.set("Seneca front", ["u2", "u2"]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ userId: "u2", serialNumber: 1 })]);
+  });
+
+  it("grants nothing to a squatter whose WikiOS edits are not the place's winning edits", async () => {
+    // The winner's MediaWiki edits are not mirrored; the squatter edits another page under the same name.
+    winningEdits.set("My own page", ["u9"]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    // A winning edit from MediaWiki (no authorId) beside a WikiOS one is not proof either.
+    winningEdits.set("Seneca front", ["u9", null]);
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
   });
 
   it("does not hand a card back that its owner has since removed", async () => {
