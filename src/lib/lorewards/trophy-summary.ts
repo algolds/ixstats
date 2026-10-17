@@ -20,11 +20,17 @@ export interface Trophies {
   streak: number;
   /** The trophy cards the user's account holds. */
   cards: TrophyCardSummary[];
-  /** The handle of the account holding the cards, which opens their sheets through its display; null: none. */
+  /** The passport handle of the account holding the cards, which opens their sheets through its display; null: none. */
   holderHandle: string | null;
 }
 
-type TrophyDb = Pick<PrismaClient, "lorewardUserStats" | "cardOwnership" | "user">;
+type TrophyDb = Pick<PrismaClient, "lorewardUserStats" | "cardOwnership">;
+
+/**
+ * The holder's passport handle (`passportHandleOf`), which may be a wiki or forum name or a Clerk id: the router
+ * passes it in, as lib code never imports server modules.
+ */
+type PassportHandleOf = (userId: string) => Promise<string | null>;
 
 export const NO_TROPHIES: Trophies = {
   wins: { daily: 0, weekly: 0, monthly: 0 },
@@ -72,23 +78,21 @@ export async function ownedTrophyCards(
 /**
  * A wiki name's public trophies: counts from that exact name's Lorewards stats (`canonicalWikiName`: MediaWiki names
  * are case-sensitive after the first letter, so "OstroZava" is not "Ostrozava") and the trophy cards held by the
- * platform account `userId` that verified the name (null: none), with that account's handle.
+ * platform account `userId` that verified the name (null: none), with that account's passport handle (`handleOf`).
  */
 export async function loadTrophies(
   db: TrophyDb,
   wikiUsername: string,
-  userId: string | null
+  userId: string | null,
+  handleOf: PassportHandleOf
 ): Promise<Trophies> {
-  const [stats, cards, holder] = await Promise.all([
+  const [stats, cards, holderHandle] = await Promise.all([
     db.lorewardUserStats.findFirst({
       where: { username: canonicalWikiName(wikiUsername) },
     }),
     userId ? ownedTrophyCards(db, userId) : Promise.resolve([]),
-    userId
-      ? db.user.findUnique({ where: { id: userId }, select: { handle: true } })
-      : Promise.resolve(null),
+    userId ? handleOf(userId) : Promise.resolve(null),
   ]);
-  const holderHandle = holder?.handle ?? null;
   if (!stats) return { ...NO_TROPHIES, cards, holderHandle };
   return {
     wins: { daily: stats.dailyWins, weekly: stats.weeklyWins, monthly: stats.monthlyWins },

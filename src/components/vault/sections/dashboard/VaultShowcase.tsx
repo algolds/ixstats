@@ -12,13 +12,12 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { useCardSheet } from "~/hooks/useCardSheet";
+import { DISPLAY_SIZE } from "~/lib/cards/face/showcase-limits";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { IconWell } from "./IconWell";
 import { cn } from "~/lib/utils/cn";
 import { springGentle, tweenFast } from "~/lib/design/motion";
 
-/** As many cards as `cards.getMyDisplay` returns. */
-const SHOWCASE_SIZE = 6;
 const MY_PACKS_HREF = "/vault/store?view=my-packs";
 // The pack and Explore tiles are the size of an M face (`w-48` at 5:7), so the strip is even.
 const TILE_BOX = "aspect-[5/7] w-48 shrink-0";
@@ -87,7 +86,7 @@ function MoreCardsTile() {
 function ShowcaseSkeleton() {
   return (
     <div className="flex gap-3 overflow-x-auto">
-      {Array.from({ length: SHOWCASE_SIZE }, (_, i) => (
+      {Array.from({ length: DISPLAY_SIZE }, (_, i) => (
         <Skeleton key={i} className={cn("rounded-card", TILE_BOX)} />
       ))}
     </div>
@@ -123,7 +122,12 @@ export function VaultShowcase() {
           <CardTitle icon={<MultiplePages />}>Showcase</CardTitle>
           {hasCards && (
             <CardDescription className="text-footnote flex min-w-0 items-center gap-1">
-              {pinned && <Pin aria-hidden className="size-3.5 shrink-0" />}
+              {pinned && (
+                <>
+                  <Pin aria-hidden className="size-3.5 shrink-0" />
+                  <span className="sr-only">Pinned: </span>
+                </>
+              )}
               <span className="truncate">{pinned ? pinned.name : "Your most valuable cards"}</span>
             </CardDescription>
           )}
@@ -166,7 +170,7 @@ export function VaultShowcase() {
               />
             ))}
             {firstPack && <PackTile count={waiting.length} pack={firstPack} />}
-            {faces.length < SHOWCASE_SIZE && <MoreCardsTile />}
+            {faces.length < DISPLAY_SIZE && <MoreCardsTile />}
           </motion.div>
         )}
       </div>

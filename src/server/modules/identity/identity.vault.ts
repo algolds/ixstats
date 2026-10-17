@@ -14,9 +14,6 @@ import { toCardFace } from "~/lib/cards/hub/faces";
 /** Lore card categories a collection can span. */
 const LORE_CATEGORY_COUNT = BROWSABLE_CATEGORIES.length;
 
-/** How many cards the collection highlight shows. */
-const COLLECTION_HIGHLIGHT_SIZE = 6;
-
 export interface PassportVaultFocus {
   /** Distinct lore categories across the live collection (NationStates imports excluded). */
   categoryCount: number;
@@ -91,7 +88,7 @@ export async function resolvePassportVault(
         where: live,
         select: { cards: { select: { marketValue: true, category: true } } },
       }),
-      displayedCopies(db, userId, COLLECTION_HIGHLIGHT_SIZE),
+      displayedCopies(db, userId),
     ]);
 
     if (vault) {

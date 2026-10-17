@@ -4,3 +4,9 @@
  * collection stays editable as it stands.
  */
 export const SHOWCASE_LIMITS = { perPlayer: 20, items: 60, name: 100, description: 500 } as const;
+
+/**
+ * How many cards a player's display (their pinned showcase, else their top cards) shows on the wallet and the
+ * Passport, and so how many the holder context reveals.
+ */
+export const DISPLAY_SIZE = 6;

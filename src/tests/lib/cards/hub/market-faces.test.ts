@@ -220,7 +220,7 @@ describe("tradeView", () => {
       "me",
       "c1",
       { kind: "offer", id: "t1" },
-      { vaultVisible: jest.fn() }
+      { vaultVisible: jest.fn(), holderOf: jest.fn() }
     );
     const liveOffer = {
       id: "t1",

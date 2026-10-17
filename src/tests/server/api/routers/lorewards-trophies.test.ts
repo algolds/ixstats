@@ -11,12 +11,16 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({
   loadPassportSettings: jest.fn(),
 }));
+jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
+  loadPassportHandleById: jest.fn(),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsTrophiesRouter } from "~/server/api/routers/lorewards/trophies";
 import { lorewardsLeaderboardsRouter } from "~/server/api/routers/lorewards/leaderboards";
 import { getTodayRace } from "~/lib/lorewards/today-race";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
+import { loadPassportHandleById } from "~/server/modules/identity/identity.passport-handle";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -155,7 +159,8 @@ beforeEach(() => {
     trophyRow("card1", "Seastead Law", "winner", { contest: "weekly" }),
     trophyRow("card2", "Tide Charts", "runner-up", { contest: "daily" }),
   ]);
-  db.user.findUnique.mockResolvedValue({ handle: "ann" });
+  // The holder's passport handle: here the verified wiki name, as for a player with no stored handle.
+  jest.mocked(loadPassportHandleById).mockClear().mockResolvedValue("Ada");
   db.vaultTransaction.aggregate.mockResolvedValue({ _sum: { credits: 2150 } });
 });
 
@@ -177,7 +182,7 @@ describe("lorewards.getMyTrophies", () => {
       holderHandle: null,
       todayRank: 2,
     });
-    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(loadPassportHandleById).not.toHaveBeenCalled();
   });
 
   it("reads the cards the viewer's account owns, and the payouts of their Loreward bonuses", async () => {
@@ -334,13 +339,10 @@ describe("lorewards.getTrophies", () => {
       runnerUps: 2,
       streak: 3,
       cards: CARD_SUMMARIES,
-      holderHandle: "ann",
+      holderHandle: "Ada",
     });
     expect(theirs.cards[0]!.face.cardId).toBe("card1");
-    expect(db.user.findUnique).toHaveBeenCalledWith({
-      where: { id: "u1" },
-      select: { handle: true },
-    });
+    expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
   });
 
@@ -376,12 +378,12 @@ describe("lorewards.getTrophies", () => {
       runnerUps: 0,
       streak: 0,
       cards: CARD_SUMMARIES,
-      holderHandle: "ann",
+      holderHandle: "Ada",
     });
   });
 
-  it("has a holder handle of null when the account that verified the name has none", async () => {
-    db.user.findUnique.mockResolvedValue({ handle: null });
+  it("has a holder handle of null when the account that verified the name is gone", async () => {
+    jest.mocked(loadPassportHandleById).mockResolvedValue(null);
     expect((await signedOut().getTrophies({ username: "Ada" })).holderHandle).toBeNull();
   });
 
@@ -398,7 +400,7 @@ describe("lorewards.getTrophies", () => {
     expect(theirs.cards).toEqual([]);
     expect(theirs.holderHandle).toBeNull();
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(loadPassportHandleById).not.toHaveBeenCalled();
   });
 
   it("shows no cards for a wiki name with no verified link", async () => {

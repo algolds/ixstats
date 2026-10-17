@@ -29,8 +29,12 @@ const copyOf = (id: string) => ({
   serialNumber: 1,
   level: 1,
 });
-const visible = { vaultVisible: jest.fn(async () => true) };
-const hidden = { vaultVisible: jest.fn(async () => false) };
+/** The passport chain reversed: "ann" (a stored handle) and "Takatta Loa" (a wiki name) name the holder. */
+const holderOf = jest.fn(async (handle: string) =>
+  handle === "ann" || handle === "Takatta Loa" ? "holder" : null
+);
+const visible = { vaultVisible: jest.fn(async () => true), holderOf };
+const hidden = { vaultVisible: jest.fn(async () => false), holderOf };
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -160,12 +164,12 @@ describe("contextRevealsArt", () => {
 
   it("reveals a holder's trophy, or a card they display, when they show their Vault cards", async () => {
     const db = createMockPrisma();
-    db.user.findUnique.mockResolvedValue({ id: "holder" });
     db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
     await expect(
       contextRevealsArt(db as never, "me", "t1", { kind: "holder", handle: "ann" }, visible)
     ).resolves.toBe(true);
-    expect(db.user.findUnique.mock.calls[0]![0].where).toEqual({ handle: "ann" });
+    expect(holderOf).toHaveBeenCalledWith("ann");
+    expect(db.user.findUnique).not.toHaveBeenCalled();
     expect(db.cardOwnership.findFirst.mock.calls[0]![0].where).toEqual({
       ownerId: "holder",
       cardId: "t1",
@@ -187,11 +191,23 @@ describe("contextRevealsArt", () => {
     expect(hidden.vaultVisible).toHaveBeenLastCalledWith("holder");
   });
 
+  it("finds a holder with no stored handle by the passport handle they show", async () => {
+    const db = createMockPrisma();
+    db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
+    await expect(
+      contextRevealsArt(db as never, "me", "t1", { kind: "holder", handle: "Takatta Loa" }, visible)
+    ).resolves.toBe(true);
+    expect(holderOf).toHaveBeenCalledWith("Takatta Loa");
+    expect(visible.vaultVisible).toHaveBeenCalledWith("holder");
+    expect(db.cardOwnership.findFirst.mock.calls[0]![0].where).toMatchObject({ ownerId: "holder" });
+  });
+
   it("reveals nothing for a handle no player has", async () => {
     const db = createMockPrisma();
     await expect(
       contextRevealsArt(db as never, "me", "c1", { kind: "holder", handle: "nobody" }, visible)
     ).resolves.toBe(false);
+    expect(visible.vaultVisible).not.toHaveBeenCalled();
     expect(db.cardOwnership.findFirst).not.toHaveBeenCalled();
   });
 });

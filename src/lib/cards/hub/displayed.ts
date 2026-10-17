@@ -1,9 +1,7 @@
 // src/lib/cards/hub/displayed.ts
 import type { PrismaClient } from "@prisma/client";
+import { DISPLAY_SIZE } from "~/lib/cards/face/showcase-limits";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, type CardFaceRow, type CopyFaceRow } from "./faces";
-
-/** How many cards a player's showcase shows on the wallet and the Passport. */
-export const DISPLAY_SIZE = 6;
 
 export interface DisplayedCopy {
   card: CardFaceRow;

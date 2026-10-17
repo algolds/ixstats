@@ -94,14 +94,17 @@ describe("TradeNegotiation", () => {
     expect(screen.getByRole("button", { name: "Cancel trade" })).toBeInTheDocument();
   });
 
-  it("opens no context once an offer has ended, or for a partner without a handle", () => {
+  it("opens a partner's copies by their Clerk id, their passport handle, when they have no stored handle", () => {
     const onOpenCard = show(
       trade({ status: "ACCEPTED", initiator: { clerkUserId: "clerk_ann", handle: null } }),
       true
     );
     expect(screen.getByRole("heading", { name: "Trade with a player" })).toBeInTheDocument();
+    // The offer has ended, so its cards open as the partner's; the player's own need no context.
     fireEvent.click(cardButton("Caphiria"));
-    expect(onOpenCard).toHaveBeenLastCalledWith("c1", null);
+    expect(onOpenCard).toHaveBeenLastCalledWith("c1", { kind: "holder", handle: "clerk_ann" });
+    fireEvent.click(cardButton("Urcea"));
+    expect(onOpenCard).toHaveBeenLastCalledWith("c2", null);
     expect(screen.queryByRole("button", { name: "Accept trade" })).toBeNull();
   });
 

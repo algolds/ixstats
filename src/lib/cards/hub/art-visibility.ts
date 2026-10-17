@@ -6,7 +6,7 @@ import { toCardFace, type CardFaceRow, type CopyFaceRow } from "./faces";
 import { displayedCopies } from "./displayed";
 
 type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
-type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer" | "user">;
+type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer">;
 
 /** Cards whose art this viewer may see in any list: those they hold a copy of, and those on a live listing. */
 export async function cardsWithVisibleArt(
@@ -62,6 +62,14 @@ export interface ContextRules {
   vaultVisible: (userId: string) => Promise<boolean>;
 }
 
+/**
+ * The holder context also needs the passport handle chain reversed: the user a passport handle names (a stored
+ * handle, a wiki or forum name, a Clerk id), or null. The router supplies it, as lib code never imports server modules.
+ */
+export interface HolderRules extends ContextRules {
+  holderOf: (handle: string) => Promise<string | null>;
+}
+
 /** A trade's card list (stored as JSON) as copy ids. */
 export function copyIdsOf(value: Prisma.JsonValue): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
@@ -111,16 +119,16 @@ async function holderShowsCard(
   db: ContextDb,
   cardId: string,
   handle: string,
-  rules: ContextRules
+  rules: HolderRules
 ): Promise<boolean> {
-  const holder = await db.user.findUnique({ where: { handle }, select: { id: true } });
-  if (!holder || !(await rules.vaultVisible(holder.id))) return false;
+  const holderId = await rules.holderOf(handle);
+  if (!holderId || !(await rules.vaultVisible(holderId))) return false;
   const trophy = await db.cardOwnership.findFirst({
-    where: { ownerId: holder.id, cardId, cards: { cardType: "TROPHY" } },
+    where: { ownerId: holderId, cardId, cards: { cardType: "TROPHY" } },
     select: { id: true },
   });
   if (trophy) return true;
-  const shown = await displayedCopies(db, holder.id);
+  const shown = await displayedCopies(db, holderId);
   return shown.copies.some((c) => c.card.id === cardId);
 }
 
@@ -130,7 +138,7 @@ export async function contextRevealsArt(
   viewerId: string | null,
   cardId: string,
   from: SheetFrom,
-  rules: ContextRules
+  rules: HolderRules
 ): Promise<boolean> {
   if (from.kind === "offer") return offerShowsCard(db, viewerId, cardId, from.id);
   if (from.kind === "showcase") return showcaseShowsCard(db, cardId, from.id, rules);

@@ -4,15 +4,16 @@ import { cardArticleSourceSchema } from "~/lib/cards/card-sources";
 import { parseSheetFrom } from "~/lib/cards/face/sheet-link";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { vaultVisible } from "./_passport";
+import { holderOf, vaultVisible } from "./_passport";
 
 export const cardsSheetRouter = createTRPCRouter({
   getSheet: protectedProcedure
-    .input(z.object({ cardId: z.string().min(1).max(64), from: z.string().max(80).nullish() }))
+    // `from` is a kind, a dot and its value: a passport handle runs to 255 characters (`holder.` plus 255).
+    .input(z.object({ cardId: z.string().min(1).max(64), from: z.string().max(262).nullish() }))
     .query(({ ctx, input }) =>
       loadCardSheet(ctx.db, ctx.user.id, input.cardId, {
         from: parseSheetFrom(input.from),
-        rules: { vaultVisible },
+        rules: { vaultVisible, holderOf },
       })
     ),
 

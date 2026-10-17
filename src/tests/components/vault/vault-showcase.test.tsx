@@ -117,8 +117,11 @@ describe("VaultShowcase", () => {
   it("shows the pinned showcase by name, and opens a card's sheet", () => {
     mockDisplay({ showcase: { id: "s1", name: "Best of Ixnay" }, faces: [face("c1", "Caphiria")] });
     render(<VaultShowcase />);
-    // Marked with a pin, as the Passport marks pinned ribbons.
-    expect(screen.getByText("Best of Ixnay").parentElement!.querySelector("svg")).not.toBeNull();
+    // Marked with a pin, as the Passport marks pinned ribbons, and said in words to a screen reader.
+    const subtitle = screen.getByText("Best of Ixnay").parentElement!;
+    expect(subtitle.querySelector("svg")).toHaveAttribute("aria-hidden");
+    expect(subtitle.textContent).toBe("Pinned: Best of Ixnay");
+    expect(screen.getByText("Pinned:")).toHaveClass("sr-only");
     expect(screen.queryByText("Your most valuable cards")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay" }));
     expect(open).toHaveBeenCalledWith("c1");
@@ -127,8 +130,9 @@ describe("VaultShowcase", () => {
   it("falls back to the most valuable cards when nothing is pinned", () => {
     mockDisplay({ showcase: null, faces: [face("c1", "Caphiria")] });
     render(<VaultShowcase />);
-    const subtitle = screen.getByText("Your most valuable cards");
-    expect(subtitle.parentElement!.querySelector("svg")).toBeNull();
+    const subtitle = screen.getByText("Your most valuable cards").parentElement!;
+    expect(subtitle.querySelector("svg")).toBeNull();
+    expect(subtitle.textContent).toBe("Your most valuable cards");
   });
 
   it("renders each card as its face at size M, in the display's order", () => {

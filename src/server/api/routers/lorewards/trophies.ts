@@ -9,6 +9,7 @@ import {
   publicProcedure,
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
+import { loadPassportHandleById } from "~/server/modules/identity/identity.passport-handle";
 import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
 import { loadMyTrophies, myRaceRank, viewerNames } from "~/lib/lorewards/my-trophies";
 import { verifiedLorewardUser } from "~/lib/lorewards/resolve-user";
@@ -51,7 +52,12 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const holder = await verifiedLorewardUser(ctx.db, input.username);
       const showCards = holder ? (await loadPassportSettings(holder)).visibility.vaultCards : false;
-      return loadTrophies(ctx.db, input.username, showCards ? holder : null);
+      return loadTrophies(
+        ctx.db,
+        input.username,
+        showCards ? holder : null,
+        loadPassportHandleById
+      );
     }),
 
   /**

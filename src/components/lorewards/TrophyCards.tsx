@@ -11,7 +11,7 @@ interface TrophyCardsProps {
   cards: TrophyCardSummary[];
   /** The card an article badge pointed to. */
   highlightCardId?: string;
-  /** Whose trophies these are: their handle opens a sheet through their display, which shows its art. */
+  /** Whose trophies these are: their passport handle opens a sheet through their display, which shows its art. */
   holderHandle: string | null;
   /** The viewer's own trophies: their sheet opens in Mine. */
   own: boolean;

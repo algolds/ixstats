@@ -17,9 +17,6 @@ import type { PassportAchievements, PassportRibbon, PassportVault } from "../typ
 /** How many ribbons the signature shelf holds. */
 const SIGNATURE_SHELF_SIZE = 3;
 
-/** How many of the holder's displayed cards the tab shows. */
-const TOP_CARDS_SIZE = 6;
-
 /** The signature shelf: the owner's pinned ribbons, or their top ribbons when none are pinned. */
 export function signatureRibbons(ribbons: ReadonlyArray<PassportRibbon>): {
   ribbons: PassportRibbon[];
@@ -122,13 +119,12 @@ function CollectorStats({ vault }: { vault: PassportVault }) {
  */
 function TopCards({ vault, handle }: { vault: PassportVault; handle: string }) {
   const sheet = useCardSheet();
-  const topCards = vault.topCards.slice(0, TOP_CARDS_SIZE);
 
   if (vault.totalCards === 0) return <Note>@{handle} has not collected any IxCards yet.</Note>;
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {topCards.map((card) => (
+        {vault.topCards.map((card) => (
           <CardFace
             key={card.copy?.ownershipId ?? card.cardId}
             face={card}

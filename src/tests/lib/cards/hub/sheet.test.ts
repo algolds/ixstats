@@ -44,8 +44,10 @@ const COPY = {
   inscribedById: "u-signer",
 };
 const SALE = { finalPrice: 140, endTime: new Date("2026-09-01T00:00:00Z") };
-const rules = { vaultVisible: jest.fn(async () => true) };
-const hidden = { vaultVisible: jest.fn(async () => false) };
+/** The passport chain reversed: "Takatta Loa", a wiki name with no stored handle, names the owner. */
+const holderOf = jest.fn(async (handle: string) => (handle === "Takatta Loa" ? "owner" : null));
+const rules = { vaultVisible: jest.fn(async () => true), holderOf };
+const hidden = { vaultVisible: jest.fn(async () => false), holderOf };
 
 function setup({
   card = CARD as object,
@@ -236,6 +238,18 @@ describe("loadCardSheet", () => {
     expect(db.tradeOffer.findFirst.mock.calls[0]![0]).toMatchObject({
       where: { id: "t1", recipientId: "me", status: "PENDING" },
     });
+  });
+
+  it("shows a holder's trophy opened through the passport handle they show", async () => {
+    const db = setup({ copies: [] });
+    db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
+    const sheet = await loadCardSheet(db as never, "me", "c1", {
+      from: { kind: "holder", handle: "Takatta Loa" },
+      rules,
+    });
+    expect(holderOf).toHaveBeenCalledWith("Takatta Loa");
+    expect(rules.vaultVisible).toHaveBeenCalledWith("owner");
+    expect(sheet!.face.silhouette).toBe(false);
   });
 
   it("keeps the silhouette when the place it was opened from does not show the card", async () => {

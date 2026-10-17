@@ -7,7 +7,7 @@ import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import type { TrailEvent } from "~/lib/cards/face/trail";
 import type { CardFaceData, CardRarity, CardType } from "~/lib/cards/face/types";
 import { isJsonObject } from "~/lib/cards/ns-facts";
-import { contextRevealsArt, type ContextRules } from "./art-visibility";
+import { contextRevealsArt, type HolderRules } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 
@@ -284,7 +284,7 @@ export async function loadCardSheet(
   db: SheetDb,
   viewerId: string,
   cardId: string,
-  options: { from: SheetFrom | null; rules: ContextRules }
+  options: { from: SheetFrom | null; rules: HolderRules }
 ): Promise<CardSheetData | null> {
   const [card, copies, listings, catalogued] = await Promise.all([
     db.card.findUnique({ where: { id: cardId }, select: SHEET_CARD_SELECT }),

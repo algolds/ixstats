@@ -111,8 +111,28 @@ describe("sheet links", () => {
       { kind: "showcase", id: "cl_1" },
       { kind: "offer", id: "tr_2" },
       { kind: "holder", handle: "maxim_9" },
+      { kind: "holder", handle: "a b" },
+      // A passport handle can be a wiki name with spaces, or a Clerk id.
+      { kind: "holder", handle: "Takatta Loa" },
+      { kind: "holder", handle: "user_2abcDEF345ghiJKL678mnoPQR90s" },
+      { kind: "holder", handle: "Mr. Kir" },
     ] as const) {
       expect(parseSheetFrom(encodeSheetFrom(from))).toEqual(from);
+    }
+  });
+
+  it("carries every passport handle through the address", () => {
+    for (const handle of [
+      "Takatta Loa",
+      "Ostrozava's",
+      "Ürceå Ναός 東京",
+      "Drunk Uncle Kir\u200e",
+      "user_2abcDEF345ghiJKL678mnoPQR90s",
+      "x".repeat(255),
+    ]) {
+      const href = cardSheetHref("/vault/cards/explore", "c1", { kind: "holder", handle });
+      const from = new URL(href, "https://ixstates.test").searchParams.get("from");
+      expect(parseSheetFrom(from)).toEqual({ kind: "holder", handle });
     }
   });
 
@@ -124,20 +144,31 @@ describe("sheet links", () => {
       "showcase",
       "nope.x",
       "offer.",
-      "holder.a b",
+      "holder.",
       "xshowcase.a",
       "showcase.a.b",
+      "showcase.a b",
+      "offer.a'b",
       "Holder.ann",
       "constructor.x",
       "toString.x",
       `showcase.${"x".repeat(65)}`,
+      `offer.${"x".repeat(65)}`,
+      // A handle holds no control characters and is at most MediaWiki's 255.
+      "holder.a\nb",
+      "holder.a\tb",
+      "holder.a\u0000b",
+      "holder.a\u007fb",
+      `holder.${"x".repeat(256)}`,
     ]) {
       expect(parseSheetFrom(raw)).toBeNull();
     }
-    expect(parseSheetFrom(`holder.${"x".repeat(64)}`)).toEqual({
-      kind: "holder",
-      handle: "x".repeat(64),
+    expect(parseSheetFrom(`showcase.${"x".repeat(64)}`)).toEqual({
+      kind: "showcase",
+      id: "x".repeat(64),
     });
+    // The first dot splits: a handle may hold dots of its own.
+    expect(parseSheetFrom("holder.Mr. Kir.")).toEqual({ kind: "holder", handle: "Mr. Kir." });
   });
 
   it("builds a path that opens the sheet", () => {
