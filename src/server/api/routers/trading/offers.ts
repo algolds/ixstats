@@ -6,7 +6,6 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { assertNoBoundCopies } from "~/lib/cards/bound";
-import { globalCache } from "~/lib/cache";
 import {
   claimPendingTradeTx,
   lockCardsTx,
@@ -16,18 +15,8 @@ import {
   transferCreditsTx,
   unlockCardsTx,
 } from "~/lib/vault/trade-settlement";
+import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
-
-/** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
-async function clearVaultCaches(...users: Array<{ id: string; clerkUserId?: string | null }>) {
-  await Promise.all(
-    users.flatMap((user) => [
-      globalCache.delete(`user_vault_stats:${user.id}`),
-      globalCache.delete(`user_vault_balance:${user.id}`),
-      ...(user.clerkUserId ? [globalCache.delete(`user_vault_balance:${user.clerkUserId}`)] : []),
-    ])
-  );
-}
 
 const createtradeOfferSchema = z.object({
   recipientId: z.string().min(1, "Recipient ID is required"),

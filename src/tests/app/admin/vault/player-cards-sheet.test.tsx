@@ -28,8 +28,12 @@ jest.mock("~/components/ui/value-select", () =>
   jest.requireActual("~/tests/helpers/native-value-select")
 );
 
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { PlayerCardsSheet } from "~/app/admin/vault/PlayerCardsSheet";
+
+type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
+type Copy = Inventory["copies"][number];
+type Auction = Inventory["auctions"][number];
 
 const tools = api.cards.admin.tools;
 const mutations = {
@@ -40,7 +44,7 @@ const mutations = {
   voidTrade: jest.fn(),
 };
 
-const copy = (over: Record<string, unknown> = {}) => ({
+const copy = (over: Partial<Copy> = {}): Copy => ({
   id: "own_1",
   serialNumber: 3,
   finish: "STANDARD",
@@ -51,15 +55,23 @@ const copy = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-function setup(inventory: Record<string, unknown> = {}) {
+const auction = (over: Partial<Auction> = {}): Auction => ({
+  id: "auc_1",
+  title: "Elm #3",
+  selling: true,
+  hasBid: true,
+  currentBid: 120,
+  bidCount: 2,
+  endTime: new Date(0),
+  ...over,
+});
+
+function setup(inventory: Partial<Inventory> = {}) {
   jest.mocked(api.useUtils).mockReturnValue({
     cards: { admin: { tools: { playerCards: { invalidate: jest.fn() } } } },
   } as never);
   jest.mocked(api.cards.admin.overview.findCards.useQuery).mockReturnValue({
-    data: [
-      { id: "card_2", title: "Elmwood", cardType: "LORE", rarity: "COMMON" },
-      { id: "card_3", title: "Elm Cup", cardType: "TROPHY", rarity: "EPIC" },
-    ],
+    data: [{ id: "card_2", title: "Elmwood", cardType: "LORE", rarity: "COMMON" }],
   } as never);
   jest.mocked(api.cards.admin.packs.list.useQuery).mockReturnValue({
     data: [
@@ -135,10 +147,14 @@ it("offers no revoke for a locked, an auctioned or a trophy copy", () => {
   expect(screen.queryByRole("button", { name: "Revoke Cup #1" })).not.toBeInTheDocument();
 });
 
-it("grants a card found by title, never a trophy", () => {
+it("grants a card found among the grantable cards by title", () => {
   setup();
   fireEvent.change(screen.getByLabelText("Grant a card"), { target: { value: "Elm" } });
-  expect(screen.queryByRole("button", { name: /Elm Cup/ })).not.toBeInTheDocument();
+  // The server keeps only approved, unretired, non-trophy cards for this picker
+  expect(api.cards.admin.overview.findCards.useQuery).toHaveBeenLastCalledWith(
+    { query: "Elm", grantable: true },
+    { enabled: true }
+  );
   fireEvent.click(screen.getByRole("button", { name: "Elmwood · Lore" }));
   confirmWithReason("Grant Elmwood", "Event prize", "Grant");
   expect(mutations.grant).toHaveBeenCalledWith({
@@ -167,16 +183,7 @@ it("awards any pack, marking the ones not on sale", () => {
 
 it("cancels a live auction and voids a pending trade, each with a reason", () => {
   setup({
-    auctions: [
-      {
-        id: "auc_1",
-        title: "Elm #3",
-        selling: true,
-        currentBid: 120,
-        bidCount: 2,
-        endTime: new Date(0),
-      },
-    ],
+    auctions: [auction()],
     trades: [
       {
         id: "tr_1",
@@ -193,6 +200,9 @@ it("cancels a live auction and voids a pending trade, each with a reason", () =>
   expect(screen.getByText(/^Selling · 2 bids · 120 IxC · ends/)).toBeInTheDocument();
   expect(screen.getByText(/^1 card and 0 IxC for 2 cards and 0 IxC · expires/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Cancel auction of Elm #3" }));
+  expect(
+    screen.getByText(/the highest bid is refunded.*Both players are told why\./)
+  ).toBeInTheDocument();
   confirmWithReason("Cancel the auction of Elm #3", "Seller asked", "Cancel auction");
   expect(mutations.cancelAuction).toHaveBeenCalledWith({
     auctionId: "auc_1",
@@ -202,4 +212,16 @@ it("cancels a live auction and voids a pending trade, each with a reason", () =>
   fireEvent.click(screen.getByRole("button", { name: "Void trade offered by this player" }));
   confirmWithReason("Void this trade", "Scam report", "Void trade");
   expect(mutations.voidTrade).toHaveBeenCalledWith({ tradeId: "tr_1", reason: "Scam report" });
+});
+
+it("tells the admin only the seller hears of a cancel when no bid is held", () => {
+  setup({ auctions: [auction({ hasBid: false, bidCount: 0, currentBid: 50 })] });
+  openTab(/Auctions and trades/);
+  fireEvent.click(screen.getByRole("button", { name: "Cancel auction of Elm #3" }));
+  expect(
+    screen.getByText(
+      "The card goes back to the seller with half the listing fee. The seller is told why."
+    )
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Both players/)).not.toBeInTheDocument();
 });

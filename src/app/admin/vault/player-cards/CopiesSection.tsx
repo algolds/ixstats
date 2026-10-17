@@ -8,6 +8,7 @@ import { CARD_TYPE_LABELS, RARITY_LABELS, labelOf } from "~/app/admin/cards/shar
 import { ReasonDialog } from "~/app/admin/cards/shared/ReasonDialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Label } from "~/components/ui/label";
 import { SearchField } from "~/components/ui/search-field";
@@ -84,15 +85,12 @@ function CopyRow({ copy, onRevoke }: { copy: Copy; onRevoke: (pending: Pending) 
 function GrantSearch({ onPick }: { onPick: (pending: Pending) => void }) {
   const [query, setQuery] = useState("");
   const term = query.trim();
+  // Only cards a grant accepts: approved, not retired, not a trophy
   const matches = api.cards.admin.overview.findCards.useQuery(
-    { query: term },
+    { query: term, grantable: true },
     { enabled: term.length >= 2 }
   );
-  // Trophies move only with their Loreward, so they are never offered
-  const grantable =
-    term.length >= 2
-      ? (matches.data ?? []).filter((card) => card.cardType !== CardType.TROPHY)
-      : [];
+  const grantable = term.length >= 2 ? (matches.data ?? []) : [];
   return (
     <div className="space-y-2">
       <Label htmlFor="grant-card">Grant a card</Label>
@@ -168,23 +166,27 @@ export function CopiesSection({
       {copies.length === 0 ? (
         <EmptyState compact title="No cards yet" message="Grant one above, or award a pack." />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Card</TableHead>
-              <TableHead>Rarity</TableHead>
-              <TableHead className="text-right">Acquired</TableHead>
-              <TableHead>
-                <span className="sr-only">Revoke</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {copies.map((copy) => (
-              <CopyRow key={copy.id} copy={copy} onRevoke={setPending} />
-            ))}
-          </TableBody>
-        </Table>
+        <Card content="data">
+          <CardContent className="py-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Card</TableHead>
+                  <TableHead>Rarity</TableHead>
+                  <TableHead className="text-right">Acquired</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Revoke</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {copies.map((copy) => (
+                  <CopyRow key={copy.id} copy={copy} onRevoke={setPending} />
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
       {copyCount > copies.length && (
         <p className="text-footnote text-label-secondary">
@@ -193,8 +195,6 @@ export function CopiesSection({
         </p>
       )}
       <ReasonDialog
-        // A new target is a new dialog, so a reason typed for one copy never carries to another
-        key={pending ? `${pending.kind}-${pending.id}` : "closed"}
         open={pending !== null}
         onOpenChange={(open) => !open && setPending(null)}
         title={dialog.title(pending?.title ?? "")}

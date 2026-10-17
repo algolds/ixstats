@@ -19,7 +19,7 @@ jest.mock("~/lib/websocket/market-websocket-server", () => ({
 }));
 
 import { TRPCError } from "@trpc/server";
-import { AuctionService } from "~/lib/economy/auction-service";
+import { AuctionService, refundListingFeeTx } from "~/lib/economy/auction-service";
 import { vaultService } from "~/lib/vault/vault-service";
 import { VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 
@@ -300,6 +300,22 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     expect(h.tx.myVault.update).not.toHaveBeenCalled();
     expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
     expect(h.balances).toEqual({ s: 0 });
+  });
+
+  it("refundListingFeeTx gives the seller half the listing fee: 5 IxC of a featured listing's 10", async () => {
+    const h = makeHarness(makeAuction(), { s: 0 });
+
+    await expect(
+      refundListingFeeTx(h.tx, { id: "a1", sellerId: "s", isFeatured: true }, "admin_cancel")
+    ).resolves.toBe(5);
+
+    expect(rowsFor(h, "s")).toEqual([
+      expect.objectContaining({ credits: 5, type: "REFUND", source: "auction_fee_refund" }),
+    ]);
+    expect(JSON.parse(rowsFor(h, "s")[0].metadata)).toEqual({
+      auctionId: "a1",
+      reason: "admin_cancel",
+    });
   });
 
   it("cancelAuction refund is type REFUND and not capped", async () => {

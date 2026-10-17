@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
- * Player card tools: grant and revoke with reason and audit, cancel auctions refunding the held bid, void trades
- * releasing the held cards, award packs.
+ * Player card tools: grant and revoke with reason and audit, cancel auctions refunding the held bid and half the
+ * listing fee, void trades releasing the held cards, award packs. Each clears the touched players' vault caches.
  */
 jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
 jest.mock("~/lib/cards/capacity", () => ({ copyRoom: jest.fn() }));
@@ -11,6 +11,10 @@ jest.mock("~/lib/lorewards/trophy-cards", () => ({
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn().mockResolvedValue("n1") },
 }));
+jest.mock("~/lib/economy/auction-service", () => ({
+  refundListingFeeTx: jest.fn().mockResolvedValue(2.5),
+}));
+jest.mock("~/lib/vault/vault-cache", () => ({ clearVaultCaches: jest.fn() }));
 jest.mock("~/lib/vault/vault-ledger", () => ({
   earnCreditsTx: jest.fn(),
   spendCreditsTx: jest.fn(),
@@ -18,8 +22,10 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
 }));
 
 import { copyRoom } from "~/lib/cards/capacity";
+import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
 import { notificationAPI } from "~/lib/notifications/api";
+import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
 import {
   adminCancelAuction,
@@ -29,9 +35,11 @@ import {
   revokeCopy,
   voidTrade,
 } from "~/server/modules/cards/cards.tools";
-import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { createMockPrisma as createProxy } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
+/** The proxy, plus the raw call the serial lock makes. */
+const createMockPrisma = () => createProxy({ $executeRaw: jest.fn().mockResolvedValue(1) });
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -56,6 +64,7 @@ describe("playerCardInventory", () => {
         id: "auc_1",
         sellerId: "user_1",
         currentBid: 120,
+        currentBidderId: null,
         bidCount: 2,
         endTime: new Date(0),
         CardOwnership: { serialNumber: 3, cards: { title: "Elm" } },
@@ -87,6 +96,7 @@ describe("playerCardInventory", () => {
     expect(inventory.auctions[0]).toMatchObject({
       title: "Elm #3",
       selling: true,
+      hasBid: false,
       currentBid: 120,
     });
     expect(inventory.trades[0]).toMatchObject({
@@ -105,9 +115,19 @@ describe("playerCardInventory", () => {
 });
 
 describe("grantCard", () => {
-  function setup(card: { cardType: string }, room: number) {
+  function setup(
+    card: { cardType?: string; reviewState?: string; isRetired?: boolean },
+    room: number
+  ) {
     const db = createMockPrisma();
-    db.card.findUnique.mockResolvedValue({ id: "card_1", title: "Elm", ...card });
+    db.card.findUnique.mockResolvedValue({
+      id: "card_1",
+      title: "Elm",
+      cardType: "LORE",
+      reviewState: "APPROVED",
+      isRetired: false,
+      ...card,
+    });
     db.user.findUnique.mockResolvedValue({
       id: "user_1",
       clerkUserId: "clerk_1",
@@ -145,6 +165,24 @@ describe("grantCard", () => {
     expect(notificationAPI.create).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "clerk_1", category: "cards" })
     );
+    expect(clearVaultCaches).toHaveBeenCalledWith({ id: "user_1", clerkUserId: "clerk_1" });
+  });
+
+  it.each([
+    [{ reviewState: "PENDING" }, "This card is waiting for review."],
+    [{ reviewState: "REJECTED" }, "This card was rejected."],
+    [{ isRetired: true }, "This card is retired."],
+  ])("respects the review gate: refuses %o", async (card, message) => {
+    const db = setup(card, 5);
+    await expect(grantCard(db as never, actor, input)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message,
+    });
+    expect(db.card.findUnique.mock.calls[0]![0].select).toMatchObject({
+      reviewState: true,
+      isRetired: true,
+    });
+    expect(mintCopy).not.toHaveBeenCalled();
   });
 
   it("refuses a trophy and a full inventory", async () => {
@@ -208,6 +246,22 @@ describe("revokeCopy", () => {
       action: "CARD_REVOKE",
       details: expect.stringContaining("Duplicate grant"),
     });
+    expect(clearVaultCaches).toHaveBeenCalledWith({ id: "user_1", clerkUserId: "clerk_1" });
+  });
+
+  it("takes the card's serial lock before it checks or writes anything", async () => {
+    const db = createMockPrisma();
+    db.cardOwnership.findUnique.mockResolvedValue(copy());
+    db.cardOwnership.deleteMany.mockResolvedValue({ count: 1 });
+
+    await revoke(db);
+
+    const [strings, namespace, cardId] = db.$executeRaw.mock.calls[0]!;
+    expect((strings as string[]).join("?")).toContain("pg_advisory_xact_lock(?::int, hashtext(?))");
+    expect([namespace, cardId]).toEqual([7331, "card_1"]);
+    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      db.cardAuction.count.mock.invocationCallOrder[0]!
+    );
   });
 
   it("refuses a copy with any auction history, so the auction and its bids are never cascaded away", async () => {
@@ -267,9 +321,10 @@ describe("adminCancelAuction", () => {
     cardInstanceId: "own_1",
     currentBid: 120,
     currentBidderId: "bidder",
+    isFeatured: false,
   };
 
-  it("cancels, unlocks the copy and refunds the held bid", async () => {
+  it("cancels, unlocks the copy, refunds the held bid and half the listing fee, and audits who got what", async () => {
     const db = createMockPrisma();
     db.cardAuction.findUnique.mockResolvedValue(auction);
     db.cardAuction.updateMany.mockResolvedValue({ count: 1 });
@@ -293,13 +348,23 @@ describe("adminCancelAuction", () => {
         source: "auction_bid_refund",
       })
     );
+    // The seller's own cancel path: half the listing fee back through the ledger
+    expect(refundListingFeeTx).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ id: "auc_1", sellerId: "seller", isFeatured: false }),
+      "admin_cancel"
+    );
     expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
       action: "CARD_AUCTION_CANCEL",
       target: "auc_1",
+      details:
+        "Cancelled the auction of seller seller: refunded the 120 IxC bid to bidder, refunded 2.5 IxC of the listing fee to the seller. Reason: Seller asked",
     });
+    expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "seller" }));
+    expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "bidder" }));
   });
 
-  it("refunds nothing when the auction has no bid", async () => {
+  it("refunds no bid when the auction has none, still returning half the fee to the seller", async () => {
     const db = createMockPrisma();
     db.cardAuction.findUnique.mockResolvedValue({ ...auction, currentBidderId: null });
     db.cardAuction.updateMany.mockResolvedValue({ count: 1 });
@@ -307,6 +372,9 @@ describe("adminCancelAuction", () => {
     await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
 
     expect(earnCreditsTx).not.toHaveBeenCalled();
+    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
+    expect(db.auditLog.create.mock.calls[0]![0].data.details).toContain("no bid to refund");
+    expect(clearVaultCaches).toHaveBeenCalledTimes(1);
   });
 
   it("refuses an auction the completion cron settled after the admin loaded it, refunding nothing", async () => {
@@ -317,6 +385,7 @@ describe("adminCancelAuction", () => {
       adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(earnCreditsTx).not.toHaveBeenCalled();
+    expect(refundListingFeeTx).not.toHaveBeenCalled();
   });
 
   it("refuses an auction that has already ended", async () => {
@@ -352,8 +421,10 @@ describe("voidTrade", () => {
     });
     expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
       action: "CARD_TRADE_VOID",
-      details: expect.stringContaining("Scam report"),
+      details: "Voided the trade from user_1 to user_2. Reason: Scam report",
     });
+    expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "user_1" }));
+    expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "user_2" }));
   });
 
   it("refuses a trade that is no longer pending, releasing nothing", async () => {

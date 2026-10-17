@@ -26,10 +26,20 @@ const highest = (serials: number[]) => (serials.length > 0 ? Math.max(...serials
 function fakeTx() {
   const copies: CopyRow[] = [];
   const events: EventRow[] = [];
+  /** The order the removal's statements ran in */
+  const log: string[] = [];
   const tx = {
-    $executeRaw: async () => 1,
+    $executeRaw: async (_sql: TemplateStringsArray, ...values: Array<string | number>) => {
+      log.push(`lock ${values.join(" ")}`);
+      return 1;
+    },
     card: { findUnique: async () => ({ totalSupply: 0 }) },
-    cardAuction: { count: async () => 0 },
+    cardAuction: {
+      count: async () => {
+        log.push("check auctions");
+        return 0;
+      },
+    },
     tradeOffer: { count: async () => 0 },
     cardOwnership: {
       findFirst: async ({ where }: { where: { cardId: string } }) => {
@@ -81,10 +91,25 @@ function fakeTx() {
       },
     },
   };
-  return { tx: tx as never, copies, events };
+  return { tx: tx as never, copies, events, log };
 }
 
 describe("removeCopyTx", () => {
+  it("takes the card's serial lock before anything else, so a mint of the card waits for the removal", async () => {
+    const { tx, log } = fakeTx();
+    const copy = await mintCopy(tx, {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "STANDARD",
+      source: "PACK_OPEN",
+    });
+    log.length = 0;
+
+    await removeCopyTx(tx, { id: copy.id, cardId: "c1", serialNumber: 1, ownerId: "u1" }, "REVOKE");
+
+    expect(log.slice(0, 2)).toEqual(["lock 7331 c1", "check auctions"]);
+  });
+
   it("never reissues a revoked serial: revoking the top copy, then minting, gives top + 1", async () => {
     const { tx, copies } = fakeTx();
     for (const owner of ["u1", "u2", "u3"]) {

@@ -14,6 +14,6 @@ export const cardsAdminOverviewRouter = createTRPCRouter({
     .query(({ ctx, input }) => cardsActivity(ctx.db, input.limit)),
   realms: adminProcedure.query(({ ctx }) => realmOptions(ctx.db)),
   findCards: adminProcedure
-    .input(z.object({ query: z.string().min(2).max(100) }))
-    .query(({ ctx, input }) => findCards(ctx.db, input.query)),
+    .input(z.object({ query: z.string().min(2).max(100), grantable: z.boolean().optional() }))
+    .query(({ ctx, input }) => findCards(ctx.db, input.query, { grantable: input.grantable })),
 });

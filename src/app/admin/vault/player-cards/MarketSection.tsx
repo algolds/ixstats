@@ -9,19 +9,27 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
-type Pending = { kind: "auction"; id: string; title: string } | { kind: "trade"; id: string };
+type Pending =
+  { kind: "auction"; id: string; title: string; hasBid: boolean } | { kind: "trade"; id: string };
 
-const DIALOG = {
-  auction: {
-    description:
-      "The card goes back to the seller and the highest bid is refunded. Both players are told why.",
+/** What the confirmation says happens; only an auction with a bid has a second player to tell. */
+function dialogCopy(pending: Pending | null) {
+  if (pending?.kind === "trade") {
+    return {
+      title: "Void this trade",
+      description: "The offered cards are released and no credits move. Both players are told why.",
+      confirm: "Void trade",
+    };
+  }
+  const refund = pending?.hasBid
+    ? "The card goes back to the seller, the highest bid is refunded and the seller gets half the listing fee back. Both players are told why."
+    : "The card goes back to the seller with half the listing fee. The seller is told why.";
+  return {
+    title: `Cancel the auction of ${pending?.title ?? ""}`,
+    description: refund,
     confirm: "Cancel auction",
-  },
-  trade: {
-    description: "The offered cards are released and no credits move. Both players are told why.",
-    confirm: "Void trade",
-  },
-} as const;
+  };
+}
 
 const date = (value: Date | string) => new Date(value).toLocaleDateString();
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
@@ -68,7 +76,7 @@ export function MarketSection({
     if (pending?.kind === "auction") cancel.mutate({ auctionId: pending.id, reason });
     if (pending?.kind === "trade") voidTrade.mutate({ tradeId: pending.id, reason });
   };
-  const dialog = DIALOG[pending?.kind ?? "auction"];
+  const dialog = dialogCopy(pending);
 
   if (auctions.length === 0 && trades.length === 0) {
     return <EmptyState compact title="No live auctions or pending trades" />;
@@ -89,7 +97,12 @@ export function MarketSection({
                     variant="ghost"
                     aria-label={`Cancel auction of ${auction.title}`}
                     onClick={() =>
-                      setPending({ kind: "auction", id: auction.id, title: auction.title })
+                      setPending({
+                        kind: "auction",
+                        id: auction.id,
+                        title: auction.title,
+                        hasBid: auction.hasBid,
+                      })
                     }
                   >
                     Cancel auction
@@ -122,13 +135,9 @@ export function MarketSection({
         )}
       </FacetList>
       <ReasonDialog
-        // A new target is a new dialog, so a reason typed for one auction or trade never carries to another
-        key={pending ? `${pending.kind}-${pending.id}` : "closed"}
         open={pending !== null}
         onOpenChange={(open) => !open && setPending(null)}
-        title={
-          pending?.kind === "auction" ? `Cancel the auction of ${pending.title}` : "Void this trade"
-        }
+        title={dialog.title}
         description={dialog.description}
         confirmLabel={dialog.confirm}
         destructive

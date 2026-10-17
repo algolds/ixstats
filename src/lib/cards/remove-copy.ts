@@ -9,6 +9,7 @@
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "~/lib/vault/trade-settlement";
+import { lockCardSerialsTx } from "./serial-number";
 
 export interface RemovableCopy {
   id: string;
@@ -50,6 +51,10 @@ export async function removeCopyTx(
   copy: RemovableCopy,
   action: "REVOKE" | "VOID"
 ): Promise<void> {
+  // The card's serial lock first: a mint of this card waits until the removal commits, then finds the removed serial
+  // in the trail, whatever order allocation reads in. Lock order: a caller that holds a contest-place lock (7332, a
+  // trophy void) took it before this one (7331), as the trophy grant does, so the two never deadlock.
+  await lockCardSerialsTx(tx, copy.cardId);
   await assertNoMarketHistoryTx(tx, copy.id);
   await tx.cardTransferEvent.updateMany({
     where: { ownershipId: copy.id, cardId: null },

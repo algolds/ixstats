@@ -183,6 +183,26 @@ async function settleSale(
   }
 }
 
+/**
+ * Half the listing fee back to the seller when an auction ends unsold: the seller or an admin cancels it, or it
+ * expires with no bids. REFUND is never capped. Returns the amount refunded.
+ */
+export async function refundListingFeeTx(
+  tx: Prisma.TransactionClient,
+  auction: { id: string; sellerId: string; isFeatured: boolean },
+  reason: "cancelled" | "no_bids" | "admin_cancel"
+): Promise<number> {
+  const refund = auction.isFeatured ? 5 : 2.5; // half of the 10 or 5 IxC listing fee
+  await vaultService.earnCreditsTx(tx, {
+    userId: auction.sellerId,
+    amount: refund,
+    type: "REFUND",
+    source: "auction_fee_refund",
+    metadata: { auctionId: auction.id, reason },
+  });
+  return refund;
+}
+
 export class AuctionService {
   /**
    * Create new auction listing
@@ -872,17 +892,7 @@ export class AuctionService {
             data: { isLocked: false },
           });
 
-          const refund = auction.isFeatured ? 5 : 2.5; // 50% refund
-          await vaultService.earnCreditsTx(tx, {
-            userId: auction.sellerId,
-            amount: refund,
-            type: "REFUND",
-            source: "auction_fee_refund",
-            metadata: {
-              auctionId,
-              reason: "no_bids",
-            },
-          });
+          const refund = await refundListingFeeTx(tx, auction, "no_bids");
 
           console.log(
             `[Auction Service] Expired auction ${auctionId} with no bids - Refunded ${refund} IxC to seller`
@@ -990,18 +1000,8 @@ export class AuctionService {
           data: { isLocked: false },
         });
 
-        // Refund 50% of listing fee — REFUND is never capped
-        const refund = auction.isFeatured ? 5 : 2.5;
-        await vaultService.earnCreditsTx(tx, {
-          userId: params.userId,
-          amount: refund,
-          type: "REFUND",
-          source: "auction_fee_refund",
-          metadata: {
-            auctionId: params.auctionId,
-            reason: "cancelled",
-          },
-        });
+        // The seller check above makes auction.sellerId the caller
+        await refundListingFeeTx(tx, auction, "cancelled");
       });
 
       console.log(`[Auction Service] User ${params.userId} cancelled auction ${params.auctionId}`);

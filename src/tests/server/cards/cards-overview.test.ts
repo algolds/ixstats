@@ -279,6 +279,17 @@ describe("realmOptions and findCards", () => {
       select: { id: true, title: true, cardType: true, rarity: true },
     });
   });
+
+  it("keeps only approved, unretired, non-trophy cards for a grant picker", async () => {
+    const db = createMockPrisma();
+    await findCards(db as never, "elm", { grantable: true });
+    expect(db.card.findMany.mock.calls[0]![0].where).toEqual({
+      title: { contains: "elm", mode: "insensitive" },
+      reviewState: "APPROVED",
+      isRetired: false,
+      cardType: { not: "TROPHY" },
+    });
+  });
 });
 
 describe("cards.admin gate", () => {
@@ -298,6 +309,8 @@ describe("cards.admin gate", () => {
       { id: "c1", title: "Elm", cardType: "LORE", rarity: "RARE" },
     ]);
     await expect(caller.overview.findCards({ query: "e" })).rejects.toThrow();
+    await caller.overview.findCards({ query: "el", grantable: true });
+    expect(db.card.findMany.mock.calls.at(-1)![0].where).toMatchObject({ reviewState: "APPROVED" });
     await expect(caller.overview.activity({ limit: 0 })).rejects.toThrow();
   });
 });

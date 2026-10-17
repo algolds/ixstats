@@ -1,31 +1,51 @@
 /**
  * Player card tools: an admin's view of one player's copies, unopened packs, auctions and pending trades, and the
  * actions on them. Grant and revoke take a reason; cancelling an auction refunds the bid it holds; voiding a trade
- * releases the initiator's locked cards. Every action writes an audit row and tells the player.
+ * releases the initiator's locked cards. Every action writes an audit row, drops the cached vault figures of each
+ * player it touched and tells them.
  */
-import type { CardFinish, PrismaClient } from "@prisma/client";
+import type { CardFinish, CardReviewState, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { copyRoom } from "~/lib/cards/capacity";
+import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
 import { removeCopyTx } from "~/lib/cards/remove-copy";
 import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
 import { notificationAPI } from "~/lib/notifications/api";
 import { TradeStatus, claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
+import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
 import { recordCardAudit, type CardAdminActor } from "./cards.audit";
 
 const MAX_COPIES_SHOWN = 500;
 const ownershipIds = z.array(z.string()).catch([]);
 const TROPHY_REFUSAL = "Trophies move only by reassigning the Loreward";
+const REVIEW_REFUSALS: Record<Exclude<CardReviewState, "APPROVED">, string> = {
+  PENDING: "This card is waiting for review.",
+  REJECTED: "This card was rejected.",
+};
 
-async function notifyPlayer(
+/** Why a card cannot be granted, or null: packs and the daily card draw only approved, unretired cards. */
+function grantRefusal(card: {
+  cardType: string;
+  reviewState: CardReviewState;
+  isRetired: boolean;
+}): string | null {
+  if (isTrophyCard(card)) return TROPHY_REFUSAL;
+  if (card.reviewState !== "APPROVED") return REVIEW_REFUSALS[card.reviewState];
+  return card.isRetired ? "This card is retired." : null;
+}
+
+/** After an action: drop the player's cached vault stats and balance, which it changed, then tell them. */
+async function refreshAndNotify(
   db: PrismaClient,
   userId: string,
   title: string,
   message: string
 ): Promise<void> {
   const user = await db.user.findUnique({ where: { id: userId }, select: { clerkUserId: true } });
+  await clearVaultCaches({ id: userId, clerkUserId: user?.clerkUserId });
   if (!user?.clerkUserId) return;
   await notificationAPI
     .create({
@@ -86,6 +106,7 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
         id: true,
         sellerId: true,
         currentBid: true,
+        currentBidderId: true,
         bidCount: true,
         endTime: true,
         CardOwnership: { select: { serialNumber: true, cards: { select: { title: true } } } },
@@ -124,6 +145,8 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
       id: auction.id,
       title: `${auction.CardOwnership.cards.title} #${auction.CardOwnership.serialNumber}`,
       selling: auction.sellerId === userId,
+      /** A bid is held, so a cancel refunds a bidder too */
+      hasBid: auction.currentBidderId !== null,
       currentBid: auction.currentBid,
       bidCount: auction.bidCount,
       endTime: auction.endTime,
@@ -148,14 +171,13 @@ export async function grantCard(
   const [card, user] = await Promise.all([
     db.card.findUnique({
       where: { id: input.cardId },
-      select: { id: true, title: true, cardType: true },
+      select: { id: true, title: true, cardType: true, reviewState: true, isRetired: true },
     }),
     playerOrThrow(db, input.userId),
   ]);
   if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
-  if (isTrophyCard(card)) {
-    throw new TRPCError({ code: "PRECONDITION_FAILED", message: TROPHY_REFUSAL });
-  }
+  const refusal = grantRefusal(card);
+  if (refusal) throw new TRPCError({ code: "PRECONDITION_FAILED", message: refusal });
   if ((await copyRoom(db, { id: user.id, roleLevel: user.role?.level })) < 1) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
@@ -177,7 +199,7 @@ export async function grantCard(
     });
     return minted;
   });
-  await notifyPlayer(
+  await refreshAndNotify(
     db,
     user.id,
     "A card was added to your collection",
@@ -224,12 +246,59 @@ export async function revokeCopy(
       details: `Revoked ${name} from ${copy.ownerId}: ${input.reason}`,
     });
   });
-  await notifyPlayer(
+  await refreshAndNotify(
     db,
     copy.ownerId,
     "A card was removed from your collection",
     `An admin removed ${name}: ${input.reason}`
   );
+}
+
+interface CancellableAuction {
+  id: string;
+  sellerId: string;
+  cardInstanceId: string;
+  currentBid: number;
+  currentBidderId: string | null;
+  isFeatured: boolean;
+}
+
+/** Cancels the auction as read, refunding the bid it holds and half the listing fee; returns the fee refunded. */
+async function cancelAuctionTx(
+  tx: Prisma.TransactionClient,
+  auction: CancellableAuction
+): Promise<number> {
+  // The bid read before is the one refunded: a new bid or the completion cron in between fails this swap
+  const claimed = await tx.cardAuction.updateMany({
+    where: {
+      id: auction.id,
+      status: "ACTIVE",
+      currentBid: auction.currentBid,
+      currentBidderId: auction.currentBidderId,
+    },
+    data: { status: "CANCELLED" },
+  });
+  if (claimed.count !== 1) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "This auction changed. Reload and try again.",
+    });
+  }
+  await tx.cardOwnership.updateMany({
+    where: { id: auction.cardInstanceId },
+    data: { isLocked: false },
+  });
+  if (auction.currentBidderId) {
+    await earnCreditsTx(tx, {
+      userId: auction.currentBidderId,
+      amount: auction.currentBid,
+      type: "REFUND",
+      source: "auction_bid_refund",
+      metadata: { auctionId: auction.id, reason: "admin_cancel" },
+    });
+  }
+  // The same half-fee refund the seller gets for cancelling their own listing
+  return refundListingFeeTx(tx, auction, "admin_cancel");
 }
 
 export async function adminCancelAuction(
@@ -246,53 +315,29 @@ export async function adminCancelAuction(
       cardInstanceId: true,
       currentBid: true,
       currentBidderId: true,
+      isFeatured: true,
     },
   });
   if (!auction) throw new TRPCError({ code: "NOT_FOUND", message: "Auction not found" });
   if (auction.status !== "ACTIVE") {
     throw new TRPCError({ code: "CONFLICT", message: "This auction has ended" });
   }
+  const bid = auction.currentBidderId
+    ? `refunded the ${auction.currentBid} IxC bid to ${auction.currentBidderId}`
+    : "no bid to refund";
   await db.$transaction(async (tx) => {
-    // The bid read above is the one refunded: a new bid or the completion cron in between fails this swap
-    const claimed = await tx.cardAuction.updateMany({
-      where: {
-        id: auction.id,
-        status: "ACTIVE",
-        currentBid: auction.currentBid,
-        currentBidderId: auction.currentBidderId,
-      },
-      data: { status: "CANCELLED" },
-    });
-    if (claimed.count !== 1) {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: "This auction changed. Reload and try again.",
-      });
-    }
-    await tx.cardOwnership.updateMany({
-      where: { id: auction.cardInstanceId },
-      data: { isLocked: false },
-    });
-    if (auction.currentBidderId) {
-      await earnCreditsTx(tx, {
-        userId: auction.currentBidderId,
-        amount: auction.currentBid,
-        type: "REFUND",
-        source: "auction_bid_refund",
-        metadata: { auctionId: auction.id, reason: "admin_cancel" },
-      });
-    }
+    const fee = await cancelAuctionTx(tx, auction);
     await recordCardAudit(tx, {
       action: "CARD_AUCTION_CANCEL",
       actor: actor.clerkId,
       target: auction.id,
-      details: `Cancelled auction: ${input.reason}`,
+      details: `Cancelled the auction of seller ${auction.sellerId}: ${bid}, refunded ${fee} IxC of the listing fee to the seller. Reason: ${input.reason}`,
     });
   });
   const message = `An admin cancelled an auction: ${input.reason}`;
-  await notifyPlayer(db, auction.sellerId, "Your auction was cancelled", message);
+  await refreshAndNotify(db, auction.sellerId, "Your auction was cancelled", message);
   if (auction.currentBidderId) {
-    await notifyPlayer(db, auction.currentBidderId, "Your bid was refunded", message);
+    await refreshAndNotify(db, auction.currentBidderId, "Your bid was refunded", message);
   }
 }
 
@@ -313,12 +358,12 @@ export async function voidTrade(
       action: "CARD_TRADE_VOID",
       actor: actor.clerkId,
       target: trade.id,
-      details: `Voided trade: ${input.reason}`,
+      details: `Voided the trade from ${trade.initiatorId} to ${trade.recipientId}. Reason: ${input.reason}`,
     });
   });
   const message = `An admin voided a trade: ${input.reason}`;
-  await notifyPlayer(db, trade.initiatorId, "Your trade was voided", message);
-  await notifyPlayer(db, trade.recipientId, "A trade offered to you was voided", message);
+  await refreshAndNotify(db, trade.initiatorId, "Your trade was voided", message);
+  await refreshAndNotify(db, trade.recipientId, "A trade offered to you was voided", message);
 }
 
 /** Any pack, including one the store does not sell (an event pack): opening does not check `isActive`. */
@@ -343,7 +388,7 @@ export async function awardPack(
       details: `Awarded ${pack.name}`,
     });
   });
-  await notifyPlayer(
+  await refreshAndNotify(
     db,
     input.userId,
     "A pack was added to your Vault",
