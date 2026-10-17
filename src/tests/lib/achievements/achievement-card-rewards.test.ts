@@ -1,109 +1,91 @@
 /** @jest-environment node */
-/**
- * Code audit VT-17: achievement cards were never awarded. The seed imported a module that no
- * longer existed, so the commemorative Card rows were never created and every award failed
- * with "Card not found". The definitions now live next to the reward mapping, and an unlock
- * grants the card.
- */
-
+/** An achievement unlock awards the Special card that names it as its reward. */
 jest.mock("~/lib/vault/vault-bonus", () => ({
-  ...jest.requireActual("~/lib/vault/vault-bonus"),
-  getBonusConfig: jest.fn(),
-  grantBonus: jest.fn().mockResolvedValue({ granted: true, amount: 100 }),
+  achievementBonus: jest.fn().mockReturnValue(0),
+  getBonusConfig: jest.fn().mockResolvedValue({}),
+  grantBonus: jest.fn(),
 }));
-jest.mock("~/lib/activity", () => ({
-  ActivityHooks: { User: { onAchievementUnlocked: jest.fn().mockResolvedValue(undefined) } },
-}));
-jest.mock("~/lib/notifications/hooks", () => ({
-  notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
-}));
+jest.mock("~/lib/cards/card-service", () => ({ awardAchievementCard: jest.fn() }));
 
-import {
-  COMMEMORATIVE_CARD_DEFINITIONS,
-  listAchievementCardRewards,
-} from "~/lib/achievements/card-rewards";
-import { getAchievementById } from "~/lib/achievements/definitions";
+import type { Achievement } from "@prisma/client";
+import { awardAchievementCard } from "~/lib/cards/card-service";
 import { syncAchievements } from "~/lib/achievements/sync";
-import { achievementService } from "~/lib/achievements/service";
-import { getBonusConfig, VAULT_BONUS_DEFAULTS } from "~/lib/vault/vault-bonus";
+import { unlockAchievement } from "~/lib/achievements/unlock";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
-const CLERK_ID = "clerk_veteran";
-const DAY = 24 * 60 * 60 * 1000;
+const veteran = {
+  key: "gen-one-year",
+  title: "Veteran",
+  rewardsJson: JSON.stringify({ credits: 50, cardIds: ["card_from_an_old_sync"] }),
+} as Achievement;
 
-beforeEach(() => {
-  jest.clearAllMocks();
-  jest.mocked(getBonusConfig).mockResolvedValue(VAULT_BONUS_DEFAULTS);
-  jest.spyOn(console, "log").mockImplementation(() => {});
+/** A reward card the unlock awards: Special, live and approved. */
+const live = { id: "card_1", cardType: "SPECIAL", isRetired: false, reviewState: "APPROVED" };
+
+beforeEach(() => jest.clearAllMocks());
+
+it("awards the Special card whose reward is this achievement", async () => {
+  const db = createMockPrisma();
+  db.card.findUnique.mockResolvedValue({ ...live, id: "card-achievement-veteran" });
+  await expect(unlockAchievement(db as never, "user_db_1", veteran)).resolves.toBe(true);
+  expect(db.card.findUnique).toHaveBeenCalledWith({
+    where: { rewardAchievementKey: "gen-one-year" },
+    select: { id: true, cardType: true, isRetired: true, reviewState: true },
+  });
+  expect(awardAchievementCard).toHaveBeenCalledTimes(1);
+  expect(awardAchievementCard).toHaveBeenCalledWith(
+    db,
+    "user_db_1",
+    "card-achievement-veteran",
+    "gen-one-year",
+    "Veteran"
+  );
+  const unlock = db.userAchievement.create.mock.calls[0]![0].data;
+  expect(JSON.parse(unlock.metadata).rewards.cardIds).toEqual(["card-achievement-veteran"]);
 });
-afterEach(() => jest.restoreAllMocks());
 
-describe("commemorative card definitions", () => {
-  it("define one SPECIAL card for every achievement card reward", () => {
-    const defs = new Map(COMMEMORATIVE_CARD_DEFINITIONS.map((d) => [d.id, d]));
-    expect(defs.size).toBe(COMMEMORATIVE_CARD_DEFINITIONS.length);
-    const rewards = listAchievementCardRewards();
-    expect(rewards.length).toBeGreaterThan(0);
-    for (const { achievementId, cardId } of rewards) {
-      expect(getAchievementById(achievementId)).toBeDefined();
-      expect(defs.get(cardId)).toMatchObject({ cardType: "SPECIAL" });
-    }
-    expect(new Set(rewards.map((r) => r.cardId))).toEqual(new Set(defs.keys()));
-  });
-
-  it("defines every commemorative card bound, in Ixnay, with no stats", () => {
-    for (const card of COMMEMORATIVE_CARD_DEFINITIONS) {
-      expect(card).toMatchObject({ cardType: "SPECIAL", realmId: "default", isBound: true });
-      expect(card).not.toHaveProperty("stats");
-    }
-  });
+it("awards nothing when no live, approved Special card names the achievement", async () => {
+  const db = createMockPrisma();
+  await unlockAchievement(db as never, "user_db_1", veteran);
+  for (const card of [
+    { ...live, isRetired: true },
+    { ...live, cardType: "LORE" },
+    { ...live, reviewState: "PENDING" },
+    { ...live, reviewState: "REJECTED" },
+  ]) {
+    db.card.findUnique.mockResolvedValue(card);
+    await unlockAchievement(db as never, "user_db_1", veteran);
+  }
+  expect(db.card.findUnique).toHaveBeenCalledTimes(5);
+  expect(awardAchievementCard).not.toHaveBeenCalled();
 });
 
-describe("unlocking an achievement with a card reward", () => {
-  it("grants the commemorative card", async () => {
-    // rewardsJson exactly as the boot-time sync stores it
-    const syncDb = createMockPrisma();
-    await syncAchievements(syncDb as never);
-    const synced = syncDb.achievement.upsert.mock.calls
-      .map(([args]: any[]) => args.create)
-      .find((row: any) => row.key === "gen-one-year");
-    expect(JSON.parse(synced.rewardsJson).cardIds).toEqual(["card-achievement-veteran"]);
+it("never looks for a reward card for a recruiter achievement, which pays nothing", async () => {
+  const db = createMockPrisma();
+  db.card.findUnique.mockResolvedValue(live);
+  const recruiter = { ...veteran, key: "social-recruiter", title: "Recruiter" } as Achievement;
+  await expect(unlockAchievement(db as never, "user_db_1", recruiter)).resolves.toBe(true);
+  expect(db.card.findUnique).not.toHaveBeenCalled();
+  expect(awardAchievementCard).not.toHaveBeenCalled();
+});
 
-    const db = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
-    // the helper's $transaction hands its callback the raw target; hand it the proxy so mintCopy reaches every model
-    db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<never>) => cb(db));
-    db.user.findUnique.mockResolvedValue({
-      id: "user_db_1",
-      createdAt: new Date(Date.now() - 400 * DAY),
-      countryId: null,
-    });
-    db.thinkpagesPost.count.mockResolvedValue(0);
-    db.cardOwnership.count.mockResolvedValue(0);
-    db.achievement.findMany.mockResolvedValue([{ ...synced, iconUrl: null }]);
-    // awardAchievementCard: resolve the user, find the seeded card, create the ownership
-    db.user.findFirst.mockResolvedValue({ id: "user_db_1", clerkUserId: CLERK_ID });
-    db.card.findUnique.mockResolvedValue({ id: "card-achievement-veteran", title: "Veteran" });
-    db.cardOwnership.create.mockImplementation(async ({ data }: any) => data);
+it("awards nothing to an unlock that lost the race", async () => {
+  const db = createMockPrisma();
+  db.card.findUnique.mockResolvedValue(live);
+  db.userAchievement.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));
+  await expect(unlockAchievement(db as never, "user_db_1", veteran)).resolves.toBe(false);
+  expect(awardAchievementCard).not.toHaveBeenCalled();
+});
 
-    const unlocked = await achievementService.checkAndUnlock(CLERK_ID, null, db as never);
-
-    expect(unlocked).toContain("gen-one-year");
-    expect(db.cardOwnership.create).toHaveBeenCalledWith({
-      data: {
-        cardId: "card-achievement-veteran",
-        ownerId: "user_db_1",
-        serialNumber: 1,
-        finish: "STANDARD",
-      },
-    });
-    expect(db.cardTransferEvent.create).toHaveBeenCalledWith({
-      data: {
-        ownershipId: undefined,
-        cardId: "card-achievement-veteran",
-        serialNumber: 1,
-        toUserId: "user_db_1",
-        action: "ACHIEVEMENT",
-      },
-    });
-  });
+it("syncs rewards without card ids", async () => {
+  const db = createMockPrisma();
+  jest.spyOn(console, "log").mockImplementation(() => undefined);
+  await syncAchievements(db as never);
+  const rows: { key: string; rewardsJson: string }[] = db.achievement.upsert.mock.calls.map(
+    ([args]: [{ create: { key: string; rewardsJson: string } }]) => args.create
+  );
+  expect(rows.length).toBeGreaterThan(0);
+  for (const row of rows) expect(JSON.parse(row.rewardsJson)).not.toHaveProperty("cardIds");
+  const vidmaster = rows.find((row) => row.key.startsWith("vid-"));
+  expect(JSON.parse(vidmaster!.rewardsJson)).toMatchObject({ cardPacks: ["pack_lore_master"] });
 });

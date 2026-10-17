@@ -17,6 +17,7 @@ import { CategoryIcon } from "~/components/cards/icons";
 import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
+import { parseCardArticleSource } from "~/lib/cards/card-sources";
 import { RarityBadge } from "../RarityBadge";
 import { IIWikiBadge, isIIWikiCard } from "../IIWikiLogo";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
@@ -67,7 +68,7 @@ export function CardOverviewTab({
   const { data: liveAuthorData } = api.loreCards.getCardAuthorInfo.useQuery(
     {
       articleTitle: card.wikiArticleTitle || "",
-      source: (card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki") as "ixwiki" | "iiwiki",
+      source: parseCardArticleSource(card.wikiSource) ?? "ixwiki",
     },
     {
       enabled: Boolean(isLoreCard && card.wikiArticleTitle && !hasStoredAuthor),

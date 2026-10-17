@@ -5,7 +5,7 @@
 **Primary Action:** `PROGRESS` | **Domain Accent:** Raspberry (the Vault tint, `APP_TINTS.vault`)  
 **Routes:** `/vault/achievements` (`/achievements` redirects there, query kept), `/leaderboards` | **Status:** Release Candidate (platform 1.5.0) — ribbons are derived from unlocks, see [Ribbons](#ribbons)  
 
-Achievements live inside the Vault ([myvault.md](./myvault.md)). The registry holds **161 definitions** (`src/lib/achievements/sets/`): **114 active** and **47 Legacy**. The active ones are Executive 16, Politics 8, Diplomacy 10, Defense 2, Nation 12 (the nation categories, 48 in all) and Social 20, Wiki 7, Cards 15, Lorewards 8, General 16 (the platform categories, 66 in all). 62 of the active ones are account-level and unlock without a country; the other 52 need one. Unlocks grant IxCredits by rarity, optional commemorative cards / packs / titles (per `rewardsJson`), and a showcase shelf entry. Wiki authoring is recognised by **Wiki Awards** (Lorewards), whose trophies are the Lorewards tab of the same page and whose achievements are the Lorewards category.
+Achievements live inside the Vault ([myvault.md](./myvault.md)). The registry holds **161 definitions** (`src/lib/achievements/sets/`): **114 active** and **47 Legacy**. The active ones are Executive 16, Politics 8, Diplomacy 10, Defense 2, Nation 12 (the nation categories, 48 in all) and Social 20, Wiki 7, Cards 15, Lorewards 8, General 16 (the platform categories, 66 in all). 62 of the active ones are account-level and unlock without a country; the other 52 need one. Unlocks grant IxCredits by rarity, an optional reward card (the Special card that names the achievement), packs and titles (per `rewardsJson`), and a showcase shelf entry. Wiki authoring is recognised by **Wiki Awards** (Lorewards), whose trophies are the Lorewards tab of the same page and whose achievements are the Lorewards category.
 
 ---
 
@@ -42,7 +42,7 @@ In accordance with [reference/revision.md](../reference/revision.md), the system
 ### Backend Routers
 All achievement operations route through the modularized tRPC API:
 - `src/server/api/routers/achievements/` (`index.ts`, `country.ts`, `progress.ts`, `management.ts`) – `getAllWithStatus`, `getMySummary` (`{ unlocked, activeTotal, points, rank }`), `getPlayerLeaderboard` (ties share a rank), `getRecentByCountry`, `getAllByCountry`, `getLeaderboard`, `getCountryLeaderboard`, and the `syncMyCollectorAchievements` / `unlock` mutations
-- `src/lib/achievements/` (`definitions.ts`, `service.ts`, `sync.ts`, `card-rewards.ts`) – Condition evaluation (`checkAndUnlock`), reward payout, the registry sync. The definitions are in `sets/` (`index.ts` exports `ALL_DEFINITIONS`; one file per set: `base`, `executive`, `politics`, `diplomacy`, `nation`, `platform`, `legacy`, `end-of-days`, plus `definitions-social.ts`)
+- `src/lib/achievements/` (`definitions.ts`, `service.ts`, `sync.ts`, `unlock.ts`) – Condition evaluation (`checkAndUnlock`), reward payout (the reward card is the Special card whose `rewardAchievementKey` names the achievement, made in the cards admin Designer), the registry sync. The definitions are in `sets/` (`index.ts` exports `ALL_DEFINITIONS`; one file per set: `base`, `executive`, `politics`, `diplomacy`, `nation`, `platform`, `legacy`, `end-of-days`, plus `definitions-social.ts`)
 - `src/lib/achievements/metrics/` – Metric loaders (`registry.ts` lists them; `executive`, `politics`, `diplomacy`, `nation`, `platform`). A loader is account-scope or country-scope, computes named numbers in at most 3 indexed queries with no unbounded row pulls, and a rule reads them from `data.metrics`; `time-buckets.ts` holds the real-time week/month bucketing
 - `src/lib/achievements/scope.ts` – Which achievements are account-level (evaluate without a country) and which need one (derived from the loader scope of the metric a rule reads)
 - `src/lib/achievements/queue.ts` – Background evaluation queue (`queueAchievementCheck`), drained by the worker in `service.ts`
@@ -55,7 +55,7 @@ All achievement operations route through the modularized tRPC API:
 ## Data Models
 
 The system is backed by Prisma models in `prisma/schema/core.prisma` and `prisma/schema/wiki.prisma`:
-- `Achievement`: Master definition keyed by `key`, with `category` and `rarity` (strings), `points`, `iconUrl`, `triggerType`, `conditionJson`, and `rewardsJson` (cards, packs, titles). Credit rewards come from rarity-based bonus config, not a column.
+- `Achievement`: Master definition keyed by `key`, with `category` and `rarity` (strings), `points`, `iconUrl`, `triggerType`, `conditionJson`, and `rewardsJson` (packs, titles). Credit rewards come from rarity-based bonus config, not a column.
 - `UserAchievement`: User-level unlock (denormalized title/category/rarity, `metadata`, `unlockedAt`), unique per `userId` + `achievementId`
 - `LorewardEntry`, `LorewardUserStats`, `LorewardCrossValidation`: Wiki contribution awards and scoring
 

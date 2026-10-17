@@ -120,7 +120,7 @@ Packs never draw Special or Trophy cards, and a second open of one pack is refus
 The full production runbook lives in the Phase 1 plan; three points to keep in mind:
 - **Stop the app first.** Run `pm2 stop` for the app server and the PM2 processes (`ixstats-cron`, `ixstats-ws`, `ixstats-ixtwitter`) before the deploy. `scripts/deploy-production.sh` runs the backfill and the constraint SQL before the build, so no old code may run between the destructive SQL and the new build.
 - **Resolve copies held as `quantity > 1` before the deploy.** The constraint SQL drops `CardOwnership.quantity`, so it refuses while any copy holds more than one, and the backfill dry run reports the count as `multiQuantityCopies` and fails (exit 1) while it is above 0. Read it in the production dry run (`SELECT id, "cardId", "ownerId", quantity FROM "CardOwnership" WHERE quantity > 1`) and settle each row by hand; nothing splits them automatically.
-- **Re-run the achievement-card seed after the deploy** (`bun prisma/seeds/achievement-cards.ts`), so existing achievement cards get `realmId` and `isBound`.
+- Run `bun scripts/cards/import-special-cards.ts --apply` after the deploy: it creates or points the five achievement Special cards (`realmId`, `isBound`, `rewardAchievementKey`) and awards earlier unlocks.
 
 ---
 

@@ -1,1 +1,1 @@
-export { CardDesignerStudio as DesignerTab } from "~/components/cards/designer";
+export { DesignerTab } from "./DesignerTab";

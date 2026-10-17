@@ -22,7 +22,7 @@ All five phases were worked the same day on `rose-garden`; the commits and merge
 
 - **Owner and ops actions (0.3):** rotate the leaked database password, check the IxWiki bot grants, run
   `audit:vault-exploits:apply` and a production restore test, run the deploy-time backfills
-  (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun prisma/seeds/achievement-cards.ts`).
+  (`db:mark-match-revenue-collected`, `db:backfill-transport-realm`, `bun scripts/cards/import-special-cards.ts --apply`).
 - **Decisions:** D18 (get `.github/` onto `master` so Dependabot and scheduled workflows use the fixes). Decided on
   2026-10-06: D2 (a) restore unit authoring, D3 (b) via D20, D5 (a) build the Exchange, D9 approved after the restore
   test, D10 retire the narrator, D11 delete scheduled changes, D20 merge PR #52 (cutover later).
