@@ -285,19 +285,6 @@ const config = {
   async headers() {
     return [
       {
-        source: "/manifest.json",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "application/manifest+json",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400", // Cache for 1 day
-          },
-        ],
-      },
-      {
         source: "/api/trpc/geo.:path*",
         headers: [
           // Let React Query control caching — HTTP cache caused stale data for up to 1hr
@@ -313,23 +300,6 @@ const config = {
             value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
-        ],
-      },
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "application/javascript",
-          },
-          {
-            key: "Service-Worker-Allowed",
-            value: "/",
-          },
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
         ],
       },
     ];
