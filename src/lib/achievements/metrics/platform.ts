@@ -62,25 +62,40 @@ export function effectiveClaimStreak(
   return dayNumber(now) - dayNumber(vault.lastLoginDate) <= 1 ? vault.loginStreak : 0;
 }
 
-/** The username of the user's verified ixwiki link (MediaWiki-normalised), or null. */
-async function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
-  const link = await ctx.db.wikiAccountLink.findFirst({
-    where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
-    select: { username: true },
-  });
-  return link?.username ?? null;
+const usernames = new WeakMap<MetricContext, Promise<string | null>>();
+
+/**
+ * The username of the user's verified ixwiki link, `normalizeWikiUsername`-normalised (the form `WikiRevision.author`
+ * holds), or null. The wiki, Lorewards and Renaissance loaders share one evaluation's context, so it is read once.
+ */
+function verifiedWikiUsername(ctx: MetricContext): Promise<string | null> {
+  let username = usernames.get(ctx);
+  if (!username) {
+    username = ctx.db.wikiAccountLink
+      .findFirst({
+        where: { userId: ctx.userId, source: "ixwiki", verifiedAt: { not: null } },
+        select: { username: true },
+      })
+      .then((link) => (link ? normalizeWikiUsername(link.username) : null));
+    usernames.set(ctx, username);
+  }
+  return username;
 }
 
 /**
  * Edits, articles created (first revision of a main-namespace non-redirect page) and distinct pages, in one pass,
- * over the account's own revisions (`authorId`: its WikiOS edits, and MediaWiki edits imported under its verified
- * link), never ones that only carry the link's name.
+ * over the user's own wiki revisions: those carrying their `authorId` (WikiOS edits, and classic-wiki edits imported
+ * once their link was verified), plus the classic-wiki edits imported before that, with no `authorId` and `author`
+ * exactly their verified link's name, which the link proves they own. A WikiOS row always carries an `authorId`, so
+ * another account's edits under the same label never count. With no link the name is bound as NULL, and
+ * `author = NULL` matches no row.
  */
 export const wikiLoader: MetricLoader = {
   id: "platform-wiki",
   scope: "account",
   keys: WIKI_KEYS,
   async load(ctx) {
+    const username = await verifiedWikiUsername(ctx);
     const [row] = await ctx.db.$queryRaw<Array<{ edits: number; created: number; pages: number }>>`
       SELECT COUNT(*)::int AS edits,
         (COUNT(*) FILTER (WHERE r."parentRevisionId" IS NULL AND a.namespace = 0
@@ -88,8 +103,8 @@ export const wikiLoader: MetricLoader = {
         COUNT(DISTINCT r."articleId")::int AS pages
       FROM wiki_revisions r
       JOIN wiki_articles a ON a.id = r."articleId"
-      WHERE r."authorId" = ${ctx.userId} AND r.source = 'ixwiki' AND r.parked = false
-        AND r."userDeleted" = false`;
+      WHERE (r."authorId" = ${ctx.userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+        AND r.source = 'ixwiki' AND r.parked = false AND r."userDeleted" = false`;
     return {
       wikiEdits: row?.edits ?? 0,
       wikiArticlesCreated: row?.created ?? 0,
@@ -232,7 +247,7 @@ export const lorewardsLoader: MetricLoader = {
     const username = await verifiedWikiUsername(ctx);
     const stats = username
       ? await ctx.db.lorewardUserStats.findFirst({
-          where: { username: normalizeWikiUsername(username) },
+          where: { username },
         })
       : null;
     return {
@@ -247,10 +262,9 @@ export const lorewardsLoader: MetricLoader = {
 
 /**
  * 1 when the current or previous ISO week holds a wiki edit, a human post or reply, and card
- * activity (a pack opened, a trade accepted or a sale). A wiki edit is one of the account's own revisions
- * (`authorId`: a WikiOS edit, or a MediaWiki edit imported under its verified link), never one that only carries
- * the link's name. One query: the distinct (kind, ISO week) pairs of the last 14 days, kept where all three kinds
- * meet. Week keys match `weekKey`.
+ * activity (a pack opened, a trade accepted or a sale). A wiki edit is one of the user's own revisions, as the
+ * wiki loader reads them. One query: the distinct (kind, ISO week) pairs of the last 14 days, kept where all three
+ * kinds meet. Week keys match `weekKey`.
  */
 export const renaissanceLoader: MetricLoader = {
   id: "platform-renaissance",
@@ -258,6 +272,7 @@ export const renaissanceLoader: MetricLoader = {
   keys: ["renaissanceWeek"],
   async load(ctx) {
     const { db, userId, clerkUserId, now } = ctx;
+    const username = await verifiedWikiUsername(ctx);
     const since = new Date(now.getTime() - LOOKBACK_DAYS * DAY_MS);
     const weeks = [weekKey(now), weekKey(new Date(now.getTime() - WEEK_MS))];
     const [row] = await db.$queryRaw<Array<{ weeks: number }>>`
@@ -265,7 +280,8 @@ export const renaissanceLoader: MetricLoader = {
         SELECT wk FROM (
           SELECT 'wiki' AS kind, to_char(r."createdAt", 'IYYY-"W"IW') AS wk
           FROM wiki_revisions r
-          WHERE r."authorId" = ${userId} AND r.source = 'ixwiki' AND r.parked = false
+          WHERE (r."authorId" = ${userId} OR (r."authorId" IS NULL AND r.author = ${username}))
+            AND r.source = 'ixwiki' AND r.parked = false
             AND r."userDeleted" = false AND r."createdAt" >= ${since}
           UNION
           SELECT 'post', to_char(p."createdAt", 'IYYY-"W"IW')

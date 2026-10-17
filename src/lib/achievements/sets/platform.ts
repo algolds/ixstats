@@ -1,7 +1,7 @@
 /**
  * Platform achievements (account level): Wiki, Community (Social), Cards, Lorewards and General.
  * Rules read the keys of `metrics/platform.ts`; wiki keys count the account's own revisions (WikiOS
- * edits, and classic-wiki edits imported under its verified link), and Loreward keys are 0 until a verified wiki
+ * edits, and classic-wiki edits under its verified link's name), and Loreward keys are 0 until a verified wiki
  * link exists. "First approved map edit" reads `mapEditsApproved`, the account key of the nation
  * loaders. There are no set-completion achievements: completed sets are not a thing the game records.
  */
