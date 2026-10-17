@@ -12,6 +12,7 @@ import {
   marketTabOf,
   type CardHubTab,
 } from "~/lib/cards/hub-routes";
+import { addressWith } from "~/lib/utils/address";
 import { ExplorePane } from "./ExplorePane";
 import { MinePane } from "./MinePane";
 import { SetsPane } from "./SetsPane";
@@ -25,11 +26,10 @@ const TABS = CARD_HUB_TABS.map((value) => {
 
 /** Rewrites one query parameter of the hub's address, keeping its fragment; `push` makes a step Back undoes. */
 function setParam(key: string, value: string | null, push = false) {
-  const url = new URL(window.location.href);
-  if (value) url.searchParams.set(key, value);
-  else url.searchParams.delete(key);
-  const search = url.searchParams.toString();
-  const next = `${url.pathname}${search ? `?${search}` : ""}${url.hash}`;
+  const next = addressWith(window.location.href, (query) => {
+    if (value) query.set(key, value);
+    else query.delete(key);
+  });
   if (push) window.history.pushState(null, "", next);
   else window.history.replaceState(null, "", next);
 }
