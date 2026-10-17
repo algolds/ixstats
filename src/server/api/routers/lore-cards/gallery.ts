@@ -15,6 +15,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 
 /**
@@ -27,7 +28,7 @@ export const loreCardsGalleryRouter = createTRPCRouter({
   getAllLoreCards: rateLimitedPublicProcedure
     .input(
       z.object({
-        wikiSource: z.enum(["ixwiki", "iiwiki", "all"]).optional().default("all"),
+        wikiSource: cardWikiSourceSchema.or(z.literal("all")).optional().default("all"),
         rarity: z
           .enum(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY", "all"])
           .optional()

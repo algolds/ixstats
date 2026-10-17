@@ -15,6 +15,7 @@ import {
 import { api } from "~/trpc/react";
 import type { CardInstance } from "~/types/cards-display";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
+import { cardSourceLabel, parseCardArticleSource } from "~/lib/cards/card-sources";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 interface LoreWikiExcerptProps {
@@ -26,7 +27,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const meta = card.metadata as Record<string, unknown> | undefined;
   const storedExcerpt = meta?.fullExcerpt as string | undefined;
   const targetArticleTitle = card.wikiArticleTitle || card.title;
-  const source = (card.wikiSource as "ixwiki" | "iiwiki") || "ixwiki";
+  const source = parseCardArticleSource(card.wikiSource) ?? "ixwiki";
 
   const { data: fetchedExcerpt, isLoading } = api.cards.getWikiArticleExcerpt.useQuery(
     {
@@ -75,7 +76,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               ?.replace(/_/g, " ") ||
             ""
           }
-          wiki={card.wikiSource as "ixwiki" | "iiwiki" | undefined}
+          wiki={source}
         >
           <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
             <Link
@@ -85,8 +86,10 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               <ExternalLink className="h-3.5 w-3.5" />
               Read the full article
             </Link>
-            {card.wikiSource === "iiwiki" && (
-              <span className="text-label-secondary text-footnote">From IIWiki</span>
+            {source !== "ixwiki" && (
+              <span className="text-label-secondary text-footnote">
+                From {cardSourceLabel(source)}
+              </span>
             )}
           </span>
         </WikiLinkPreview>

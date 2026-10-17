@@ -11,9 +11,11 @@ import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 import { CategoryIcon } from "~/components/cards/icons";
+import { cardSourceLabel, parseCardArticleSource } from "~/lib/cards/card-sources";
 
 export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: string | null }) {
   const meta = card.metadata as Record<string, unknown> | null | undefined;
+  const source = parseCardArticleSource(card.wikiSource) ?? "ixwiki";
   const rawAuthor =
     (meta?.authorInfo as { displayAuthor?: string } | undefined)?.displayAuthor ||
     (meta?.author as string);
@@ -65,13 +67,13 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         <span
           className={cn(
             "rounded-control text-caption shadow-card inline-flex items-center gap-1 border px-3 py-1",
-            card.wikiSource === "iiwiki"
+            source !== "ixwiki"
               ? "border-green/30 bg-green/15 text-green"
               : "border-wiki/30 bg-wiki/15 text-wiki"
           )}
         >
           <Globe className="h-3 w-3" />
-          {card.wikiSource === "iiwiki" ? "IIWiki" : "Wiki"}
+          {cardSourceLabel(source)}
         </span>
 
         {resolvedCategory && categoryLabel && (

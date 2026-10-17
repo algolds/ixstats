@@ -87,6 +87,23 @@ describe("cardWikiHref", () => {
     ).toBe("/wiki/Page?source=iiwiki");
   });
 
+  it("opens an AltHistory article in WikiOS's reader with its source", () => {
+    expect(
+      cardWikiHref(card({ wikiArticleTitle: "Balkanized North America", wikiSource: "althistory" }))
+    ).toBe("/wiki/Balkanized_North_America?source=althistory");
+  });
+
+  it("reads an AltHistory article URL when the card has no title", () => {
+    expect(
+      cardWikiHref(
+        card({
+          wikiUrl: "https://althistory.fandom.com/wiki/Balkanized_North_America",
+          wikiSource: "althistory",
+        })
+      )
+    ).toBe("/wiki/Balkanized_North_America?source=althistory");
+  });
+
   it("keeps a URL that names no article as it is", () => {
     expect(cardWikiHref(card({ wikiUrl: "https://example.com/x", wikiSource: "iiwiki" }))).toBe(
       "https://example.com/x"

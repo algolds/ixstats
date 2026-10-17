@@ -6,7 +6,7 @@ import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
-import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -17,7 +17,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 interface WikiLinkPreviewProps {
   title: string;
-  wiki?: "ixwiki" | "iiwiki";
+  wiki?: WikiSource;
   children: React.ReactNode;
 }
 
