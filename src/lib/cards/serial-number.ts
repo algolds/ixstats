@@ -19,16 +19,25 @@ export async function lockCardSerialsTx(
 /**
  * Must be called inside `$transaction`. Serializes serial allocation per card for the life of the transaction, so two
  * concurrent mints of one card cannot read the same `max(serial)`.
+ *
+ * The next serial is one past the card's high-water mark: the highest serial held by a copy or recorded in the
+ * card's transfer events. A revoked or voided copy's serial lives on in its trail, so it is never issued again.
  */
 export async function allocateSerialNumberTx(
   tx: Prisma.TransactionClient,
   cardId: string
 ): Promise<number> {
   await lockCardSerialsTx(tx, cardId);
-  const max = await tx.cardOwnership.findFirst({
+  const held = await tx.cardOwnership.findFirst({
     where: { cardId },
     orderBy: { serialNumber: "desc" },
     select: { serialNumber: true },
   });
-  return (max?.serialNumber ?? 0) + 1;
+  // Postgres sorts nulls first in a descending order, hence the not-null filter
+  const recorded = await tx.cardTransferEvent.findFirst({
+    where: { cardId, serialNumber: { not: null } },
+    orderBy: { serialNumber: "desc" },
+    select: { serialNumber: true },
+  });
+  return Math.max(held?.serialNumber ?? 0, recorded?.serialNumber ?? 0) + 1;
 }

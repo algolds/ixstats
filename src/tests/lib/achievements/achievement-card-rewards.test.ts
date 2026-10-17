@@ -97,7 +97,13 @@ describe("unlocking an achievement with a card reward", () => {
       },
     });
     expect(db.cardTransferEvent.create).toHaveBeenCalledWith({
-      data: { ownershipId: undefined, toUserId: "user_db_1", action: "ACHIEVEMENT" },
+      data: {
+        ownershipId: undefined,
+        cardId: "card-achievement-veteran",
+        serialNumber: 1,
+        toUserId: "user_db_1",
+        action: "ACHIEVEMENT",
+      },
     });
   });
 });

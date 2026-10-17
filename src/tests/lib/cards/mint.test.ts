@@ -1,6 +1,6 @@
 /** @jest-environment node */
 /** Cards refresh §5.4: mintCopy is the one way a copy comes into being. */
-import { mintCopy } from "~/lib/cards/mint";
+import { MINT_SOURCES, mintCopy } from "~/lib/cards/mint";
 
 interface CopyRow {
   id: string;
@@ -16,7 +16,7 @@ interface CopyRow {
  */
 function fakeDatabase(runs: Record<string, number | null> = {}) {
   const copies: CopyRow[] = [];
-  const events: Array<Record<string, string | null>> = [];
+  const events: Array<Record<string, string | number | null>> = [];
   const create = jest.fn(async ({ data }: { data: Omit<CopyRow, "id"> }) => {
     await tick();
     const row = { id: `cuid_${copies.length + 1}`, ...data };
@@ -53,10 +53,11 @@ function fakeDatabase(runs: Record<string, number | null> = {}) {
         create,
       },
       cardTransferEvent: {
-        create: async ({ data }: { data: Record<string, string | null> }) => {
+        create: async ({ data }: { data: Record<string, string | number | null> }) => {
           events.push(data);
           return data;
         },
+        findFirst: async () => null,
       },
     };
     try {
@@ -96,14 +97,29 @@ describe("mintCopy", () => {
     expect(copy.id).toBe("cuid_1");
   });
 
-  it("writes the mint row of the provenance trail with its source", async () => {
+  it("writes the mint row of the provenance trail with its source, card and serial", async () => {
     const db = fakeDatabase();
     await db.transaction((tx) =>
       mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "NS_DECK_IMPORT" })
     );
     expect(db.events).toEqual([
-      { ownershipId: "cuid_1", toUserId: "u1", action: "NS_DECK_IMPORT" },
+      {
+        ownershipId: "cuid_1",
+        cardId: "c1",
+        serialNumber: 1,
+        toUserId: "u1",
+        action: "NS_DECK_IMPORT",
+      },
     ]);
+  });
+
+  it("mints an admin grant as the ADMIN source", async () => {
+    expect(MINT_SOURCES).toContain("ADMIN");
+    const db = fakeDatabase();
+    await db.transaction((tx) =>
+      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "ADMIN" })
+    );
+    expect(db.events[0]).toMatchObject({ action: "ADMIN" });
   });
 
   it("refuses a Serialised copy past its run, and never limits a Standard one", async () => {
@@ -116,4 +132,20 @@ describe("mintCopy", () => {
     await expect(serial("SERIALISED")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     await expect(serial("STANDARD")).resolves.toMatchObject({ serialNumber: 2 });
   });
+
+  it.each([
+    ["0", 0],
+    ["null", null],
+  ])(
+    "treats a totalSupply of %s as no run size, so a Serialised copy always mints",
+    async (_, run) => {
+      const db = fakeDatabase({ lore: run });
+      const serial = () =>
+        db.transaction((tx) =>
+          mintCopy(tx, { cardId: "lore", ownerId: "u1", finish: "SERIALISED", source: "ADMIN" })
+        );
+      await expect(serial()).resolves.toMatchObject({ serialNumber: 1 });
+      await expect(serial()).resolves.toMatchObject({ serialNumber: 2 });
+    }
+  );
 });

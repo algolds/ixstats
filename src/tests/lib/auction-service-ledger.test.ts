@@ -134,6 +134,8 @@ function makeAuction(overrides: Record<string, unknown> = {}) {
     endTime: inTenMinutes(),
     CardOwnership: {
       id: "c1",
+      cardId: "card1",
+      serialNumber: 7,
       cards: { id: "card1", title: "Test Card", cardType: "LORE", countryId: null },
     },
     AuctionBid: [],
@@ -248,6 +250,8 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     expect(h.tx.cardTransferEvent.create).toHaveBeenCalledWith({
       data: {
         ownershipId: "c1",
+        cardId: "card1",
+        serialNumber: 7,
         fromUserId: "s",
         toUserId: "p",
         action: "AUCTION_END",
@@ -273,6 +277,8 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     expect(h.tx.cardTransferEvent.create).toHaveBeenCalledWith({
       data: {
         ownershipId: "c1",
+        cardId: "card1",
+        serialNumber: 7,
         fromUserId: "s",
         toUserId: "b",
         action: "AUCTION_BUYOUT",

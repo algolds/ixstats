@@ -152,6 +152,13 @@ describe("respondToTrade ACCEPT", () => {
       .fn()
       .mockResolvedValueOnce({ count: 1 } as never)
       .mockResolvedValueOnce({ count: 2 } as never);
+    db.cardOwnership.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([{ id: "ci_1", cardId: "card_i", serialNumber: 1 }] as never)
+      .mockResolvedValueOnce([
+        { id: "cr_1", cardId: "card_r", serialNumber: 2 },
+        { id: "cr_2", cardId: "card_r", serialNumber: 3 },
+      ] as never);
 
     const result = await caller.respondToTrade(acceptInput);
 
@@ -172,6 +179,39 @@ describe("respondToTrade ACCEPT", () => {
       expect.objectContaining({ userId: RECIPIENT, amount: 50, type: "EARN_CARDS" })
     );
     expect(db.tradeOffer.update).not.toHaveBeenCalled();
+    // Each moved copy's trail row carries its card and serial, so it outlives the copy
+    expect(db.cardTransferEvent.createMany).toHaveBeenNthCalledWith(1, {
+      data: [
+        {
+          ownershipId: "ci_1",
+          cardId: "card_i",
+          serialNumber: 1,
+          fromUserId: INITIATOR,
+          toUserId: RECIPIENT,
+          action: "TRADE",
+        },
+      ],
+    });
+    expect(db.cardTransferEvent.createMany).toHaveBeenNthCalledWith(2, {
+      data: [
+        {
+          ownershipId: "cr_1",
+          cardId: "card_r",
+          serialNumber: 2,
+          fromUserId: RECIPIENT,
+          toUserId: INITIATOR,
+          action: "TRADE",
+        },
+        {
+          ownershipId: "cr_2",
+          cardId: "card_r",
+          serialNumber: 3,
+          fromUserId: RECIPIENT,
+          toUserId: INITIATOR,
+          action: "TRADE",
+        },
+      ],
+    });
   });
 
   it("expired trade: expires it only if still PENDING and releases the initiator's locked cards", async () => {

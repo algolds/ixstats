@@ -163,10 +163,12 @@ async function settleSale(
     where: { id: auction.cardInstanceId },
     data: { ownerId: buyerId, isLocked: false },
   });
-  // The sale's row in the copy's provenance trail, with its price (cards refresh §3)
+  // The sale's row in the copy's provenance trail, with its price, card and serial (cards refresh §3)
   await tx.cardTransferEvent.create({
     data: {
       ownershipId: auction.cardInstanceId,
+      cardId: auction.CardOwnership.cardId,
+      serialNumber: auction.CardOwnership.serialNumber,
       fromUserId: auction.sellerId,
       toUserId: buyerId,
       action: sale.action,

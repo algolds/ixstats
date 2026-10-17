@@ -10,6 +10,7 @@ import { globalCache } from "~/lib/cache";
 import {
   claimPendingTradeTx,
   lockCardsTx,
+  recordTradeTransfersTx,
   TradeStatus,
   transferCardsTx,
   transferCreditsTx,
@@ -378,40 +379,34 @@ export const tradingOffersRouter = createTRPCRouter({
         // Grant 25 XP per card traded to recipient and log transfer
         for (const ownershipId of initiatorCardIds) {
           await grantCardXp(
-            tx as any,
+            tx,
             ownershipId,
             25,
             "TRADE",
             JSON.stringify({ tradeId: input.tradeId })
           );
-          await (tx as any).cardTransferEvent.create({
-            data: {
-              ownershipId,
-              fromUserId: trade.initiatorId,
-              toUserId: trade.recipientId,
-              action: "TRADE",
-            },
-          });
         }
+        await recordTradeTransfersTx(tx, {
+          ids: initiatorCardIds,
+          fromId: trade.initiatorId,
+          toId: trade.recipientId,
+        });
 
         // Grant 25 XP per card traded to initiator and log transfer
         for (const ownershipId of recipientCardIds) {
           await grantCardXp(
-            tx as any,
+            tx,
             ownershipId,
             25,
             "TRADE",
             JSON.stringify({ tradeId: input.tradeId })
           );
-          await (tx as any).cardTransferEvent.create({
-            data: {
-              ownershipId,
-              fromUserId: trade.recipientId,
-              toUserId: trade.initiatorId,
-              action: "TRADE",
-            },
-          });
         }
+        await recordTradeTransfersTx(tx, {
+          ids: recipientCardIds,
+          fromId: trade.recipientId,
+          toId: trade.initiatorId,
+        });
 
         // Transfer credits (guarded debit + ledger rows for both sides; no-op when 0)
         await transferCreditsTx(tx, {
