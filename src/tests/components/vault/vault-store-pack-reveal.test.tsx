@@ -9,6 +9,7 @@ interface RevealStubProps {
   onOpenNext?: () => void;
   onOpenCard: (cardId: string) => void;
   onClose: () => void;
+  returnFocus?: () => HTMLElement | null;
 }
 
 // The reveal itself is tested on its own; here a stub shows what the Store hands it.
@@ -22,6 +23,7 @@ jest.mock("next/dynamic", () => ({
       onOpenNext,
       onOpenCard,
       onClose,
+      returnFocus,
     }: RevealStubProps) {
       return (
         <div role="dialog" aria-label={`Revealing ${pack.name}`}>
@@ -30,6 +32,7 @@ jest.mock("next/dynamic", () => ({
           {onOpenNext && <button onClick={onOpenNext}>Next pack</button>}
           <button onClick={() => onOpenCard("c2")}>Open card</button>
           <button onClick={onClose}>Close reveal</button>
+          <button onClick={() => returnFocus?.()?.focus()}>Return focus</button>
         </div>
       );
     },
@@ -166,5 +169,12 @@ describe("the Store's pack reveal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open card" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(useRouter().push).toHaveBeenCalledWith("/vault/cards/mine?card=c2");
+  });
+
+  it("sends focus back to the My packs tab once the opened pack's button has left the list", () => {
+    render(<VaultStoreTab initialView="my-packs" />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Rip open pack" })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Return focus" }));
+    expect(screen.getByRole("tab", { name: /My packs/ })).toHaveFocus();
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { CardFace } from "~/components/cards/face/CardFace";
@@ -25,9 +26,16 @@ export function RevealSummary({
   onClose,
 }: RevealSummaryProps) {
   const best = rarestFace(faces);
+  const heading = useRef<HTMLHeadingElement>(null);
+  // The fan's controls leave the page with it, so focus starts on the result.
+  useEffect(() => {
+    heading.current?.focus();
+  }, []);
   return (
     <div className="flex flex-col items-center gap-6">
-      {best && <p className="text-title-3">Best pull: {RARITY_LABEL[best.rarity]}</p>}
+      <h3 ref={heading} tabIndex={-1} className="text-title-3 outline-none">
+        {best ? `Best pull: ${RARITY_LABEL[best.rarity]}` : "This pack had no cards"}
+      </h3>
       <ul aria-label="Cards pulled" className="flex flex-wrap justify-center gap-3">
         {faces.map((face) => (
           <li key={face.copy?.ownershipId ?? face.cardId}>

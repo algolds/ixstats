@@ -1,7 +1,7 @@
 "use client";
 
 import { springSmooth } from "~/lib/design/motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -128,6 +128,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
   const [showCelebration, setShowCelebration] = useState(false);
   const [activeCheckoutItem, setActiveCheckoutItem] = useState<StoreItem | null>(null);
   const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
+  const sections = useRef<HTMLDivElement>(null);
 
   const utils = api.useUtils();
 
@@ -246,12 +247,14 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       {/* Large Storefront Showcase Window */}
       <Card className="relative min-h-[380px] w-full overflow-hidden p-6">
         {/* Category Sub-Tabs Selector */}
-        <StoreCategoryHeader
-          tabs={STORE_TABS}
-          activeTab={storeTab}
-          onTabChange={setStoreTab}
-          myPacksCount={myPacks.length}
-        />
+        <div ref={sections}>
+          <StoreCategoryHeader
+            tabs={STORE_TABS}
+            activeTab={storeTab}
+            onTabChange={setStoreTab}
+            myPacksCount={myPacks.length}
+          />
+        </div>
 
         {/* Storefront Window Header */}
         <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
@@ -449,6 +452,11 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
             router.push(cardSheetHref(CARD_HUB_PATHS.mine, cardId));
           }}
           onClose={() => setOpening(null)}
+          // An opened pack's "Rip open pack" button leaves My packs, so focus goes back to the section's tab.
+          returnFocus={() =>
+            sections.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
+            null
+          }
         />
       )}
     </div>

@@ -64,11 +64,17 @@ interface OpenPackOptions {
 
 type Props = React.ComponentProps<typeof PackReveal>;
 
-/** Renders the reveal. `answer` opens the pack as soon as it is asked (the default), or leaves it pending. */
-function setup(overrides: Partial<Props> = {}, answer: "now" | "later" = "now") {
+/**
+ * Renders the reveal. `answer` opens the pack as soon as it is asked (the default), or leaves it pending; `pulled` is
+ * what the pack gives.
+ */
+function setup(
+  overrides: Partial<Props> = {},
+  { answer = "now", pulled = faces }: { answer?: "now" | "later"; pulled?: CardFaceData[] } = {}
+) {
   let options: OpenPackOptions | undefined;
   const mutate = jest.fn(() => {
-    if (answer === "now") options?.onSuccess({ faces });
+    if (answer === "now") options?.onSuccess({ faces: pulled });
   });
   jest.mocked(api.cardPacks.openPack.useMutation).mockImplementation(((opts: OpenPackOptions) => {
     options = opts;
@@ -82,8 +88,8 @@ function setup(overrides: Partial<Props> = {}, answer: "now" | "later" = "now") 
     onClose: jest.fn(),
     ...overrides,
   };
-  render(<PackReveal {...props} />);
-  return { props, mutate, options: () => options };
+  const view = render(<PackReveal {...props} />);
+  return { props, mutate, options: () => options, rerender: view.rerender };
 }
 
 const openPack = () => fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
@@ -188,6 +194,60 @@ describe("PackReveal", () => {
     expect(props.onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("says when Reveal all or Esc has turned every card", () => {
+    setup();
+    openPack();
+    press("Escape");
+    expect(screen.getByRole("status")).toHaveTextContent("All 3 cards turned");
+  });
+
+  it("announces each turn, a second copy of the same card too", () => {
+    const copy = { ownershipId: "o1b", finish: "STANDARD" as const, serialNumber: 9, level: 1 };
+    const twin: CardFaceData = { ...face(1, "COMMON"), copy };
+    setup({}, { pulled: [face(1, "COMMON"), twin] });
+    openPack();
+    press("ArrowRight");
+    const status = screen.getByRole("status");
+    const first = status.firstChild;
+    expect(status).toHaveTextContent("Card 1, Common, Standard, Ixnay");
+    act(() => jest.advanceTimersByTime(1000));
+    press("ArrowRight");
+    expect(faceDown()).toHaveLength(0);
+    expect(status).toHaveTextContent("Card 1, Common, Standard, Ixnay");
+    // A new node, not the same text left in place, so a screen reader reads it again.
+    expect(status.firstChild).not.toBe(first);
+  });
+
+  it("keeps focus on the next card after a turn, on Continue after Reveal all, then on the summary", () => {
+    setup();
+    openPack();
+    expect(screen.getByRole("button", { name: "Card 1 of 3, face down" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Card 2 of 3, face down" }));
+    expect(screen.getByRole("button", { name: "Card 3 of 3, face down" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Reveal all" }));
+    expect(screen.getByRole("button", { name: "Continue" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(screen.getByRole("heading", { name: "Best pull: Epic" })).toHaveFocus();
+  });
+
+  it("gives focus back to what opened it, or to returnFocus once that has left the page", () => {
+    const opener = document.createElement("button");
+    const fallback = document.createElement("button");
+    document.body.append(opener, fallback);
+    for (const leaves of [false, true]) {
+      opener.focus();
+      const { props, rerender } = setup({ returnFocus: () => fallback });
+      openPack();
+      if (leaves) opener.remove();
+      rerender(<PackReveal {...props} open={false} />);
+      act(() => jest.runOnlyPendingTimers());
+      expect(leaves ? fallback : opener).toHaveFocus();
+      document.body.append(opener);
+    }
+    opener.remove();
+    fallback.remove();
+  });
+
   it("skips straight to the summary, with no next pack to offer", () => {
     setup();
     openPack();
@@ -199,7 +259,7 @@ describe("PackReveal", () => {
 
 describe("PackReveal, opening twice", () => {
   it("opens the pack once on a double tap, and a CONFLICT after the cards keeps the reveal", () => {
-    const { mutate, options } = setup({}, "later");
+    const { mutate, options } = setup({}, { answer: "later" });
     act(() => {
       openPack();
       openPack();
@@ -213,11 +273,35 @@ describe("PackReveal, opening twice", () => {
     expect(faceDown()).toHaveLength(3);
   });
 
-  it("shows the error when the pack was opened elsewhere and no cards came, and lets a retry through", () => {
-    const { mutate, options } = setup({}, "later");
+  it("says a pack already open is open, with its cards in Mine, and refreshes both lists", () => {
+    // Opened in another tab, or by a first try that failed after it committed and was retried.
+    const { props, options } = setup({}, { answer: "later" });
     openPack();
     act(() => options()?.onError(conflict));
-    expect(screen.getByText(conflict.message)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This pack is already open. Its cards are in Mine."
+    );
+    expect(screen.queryByRole("button", { name: "Open pack" })).toBeNull();
+    const utils = api.useUtils();
+    expect(utils.cards.listMine.invalidate).toHaveBeenCalled();
+    expect(utils.cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
+    const mine = screen.getByRole("link", { name: "Go to Mine" });
+    expect(mine).toHaveAttribute("href", "/vault/cards/mine");
+    fireEvent.click(mine);
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it("shows a failure of another kind and lets a retry through", () => {
+    const { mutate, options } = setup({}, { answer: "later" });
+    openPack();
+    act(() =>
+      options()?.onError({
+        message: "Failed to open pack",
+        data: { code: "INTERNAL_SERVER_ERROR" },
+      })
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Failed to open pack");
+    expect(api.useUtils().cards.listMine.invalidate).not.toHaveBeenCalled();
     openPack();
     expect(mutate).toHaveBeenCalledTimes(2);
   });
