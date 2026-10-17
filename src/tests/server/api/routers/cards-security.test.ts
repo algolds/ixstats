@@ -2,7 +2,7 @@
 /** Cards refresh §3 security: admin-only reads, tradeable-only partner cards, no retired cards for players. */
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
-import { cardsAdminRouter } from "~/server/api/routers/cards/admin";
+import { cardsLegacyAdminRouter as cardsAdminRouter } from "~/server/api/routers/cards/admin-legacy";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
