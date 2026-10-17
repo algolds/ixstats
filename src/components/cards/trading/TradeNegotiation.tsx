@@ -70,7 +70,7 @@ function sidesOf(trade: TradeTotals, isRecipient: boolean): { give: SideFacts; g
 
 /**
  * Where each side's cards open their sheet. A live offer shows all its art to its recipient (the offer context);
- * otherwise the partner's copies open as theirs (the holder context, by their passport handle), and the player's
+ * otherwise the partner's copies open as theirs (the holder context, by any handle that resolves to them), and the player's
  * own need no context.
  */
 function sheetContexts(
@@ -224,7 +224,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const partner = isRecipient ? trade.initiator : trade.recipient;
     const live = trade.status === "PENDING" && !isExpired;
     const sides = sidesOf(trade, isRecipient);
-    // A partner with no stored handle is named by their Clerk id, the passport handle the holder context resolves.
+    // A partner with no stored handle is named by their Clerk id, which the holder context resolves to them too.
     const contexts = sheetContexts(
       tradeId,
       isRecipient && live,
