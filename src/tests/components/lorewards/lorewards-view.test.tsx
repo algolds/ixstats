@@ -286,6 +286,27 @@ describe("you focus", () => {
     );
   });
 
+  it("never offers a verified viewer to verify, even with unmatched places under a label", () => {
+    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
+      ok({
+        wikiUsername: "Ada",
+        verified: true,
+        unmatched: 2,
+        wins: { daily: 0, weekly: 0, monthly: 0 },
+        runnerUps: 0,
+        streak: 0,
+        cards: [],
+        paid: 0,
+        todayRank: null,
+      }) as never
+    );
+    render(<LorewardsView focus="you" />);
+
+    expect(screen.queryByText("Classic wiki wins need a verified link")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Verify your wiki account" })).toBeNull();
+    expect(headings()[0]).toBe("Your trophies");
+  });
+
   it("counts an unverified viewer's tied places, without the name's shared record", () => {
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
       ok({

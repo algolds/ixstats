@@ -71,10 +71,15 @@ interface ViewerTrophies {
   runnerUps: number;
   cards: ReadonlyArray<{ id: string }>;
   unmatched: number;
+  verified: boolean;
 }
 
-/** Classic-wiki places sit under the viewer's wiki name that a verified link could claim, and nothing else is theirs. */
+/**
+ * An unverified viewer with classic-wiki places under their wiki name that a verified link could claim, and nothing
+ * else theirs. A verified viewer is never offered to verify.
+ */
 const onlyUnmatched = (mine: ViewerTrophies) =>
+  !mine.verified &&
   mine.unmatched > 0 &&
   mine.cards.length === 0 &&
   mine.runnerUps + mine.wins.daily + mine.wins.weekly + mine.wins.monthly === 0;
