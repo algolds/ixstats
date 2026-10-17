@@ -613,12 +613,12 @@ api.geoEditor.rebuildAdjacency.useMutation() // { realmId? }
 
 ## IxVault (Cards & Credits)
 
-### vault Router (42 procedures)
+### vault Router (39 procedures)
 
 Balance, level and transaction reads use the signed-in user (no `userId` input).
 
 ```typescript
-// Queries (22)
+// Queries (21)
 api.vault.getBalance.useQuery()
 api.vault.getVaultLevel.useQuery()
 api.vault.getTodayEarnings.useQuery()
@@ -637,12 +637,11 @@ api.vault.adminListVaults.useQuery({ search?, limit?, offset? })
 api.vault.adminGetVaultConfig.useQuery()
 api.vault.adminListStoreItemsAll.useQuery()
 api.vault.adminGetPriceHistory.useQuery({ itemId })
-api.vault.adminGetIxCardSeason.useQuery()
 api.vault.adminGetPurchaseLogs.useQuery()
 api.vault.adminGetPurchasedItems.useQuery({ userId })
 api.vault.adminGetEquippedCosmetics.useQuery({ userId })
 
-// Mutations (19)
+// Mutations (18)
 api.vault.spendCredits.useMutation() // { amount, type, source, metadata? }
 api.vault.claimDailyBonus.useMutation()
 api.vault.claimCombinedDailyClaim.useMutation() // { choice }
@@ -658,7 +657,6 @@ api.vault.adminSaveVaultConfig.useMutation() // { activeDailyCap, socialDailyCap
 api.vault.adminCreateStoreItem.useMutation() // { name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, effects? }
 api.vault.adminUpdateStoreItem.useMutation() // { id, name, description?, price, icon?, glowColor?, quality?, badgeText?, category?, isActive?, effects? }
 api.vault.adminDeleteStoreItem.useMutation() // { id, hardDelete? }
-api.vault.adminSetIxCardSeason.useMutation() // { season }
 api.vault.adminGrantStoreItem.useMutation() // { userId, itemId }
 api.vault.adminRevokeStoreItem.useMutation() // { userId, itemId }
 api.vault.adminToggleEquipCosmetic.useMutation() // { userId, itemId }

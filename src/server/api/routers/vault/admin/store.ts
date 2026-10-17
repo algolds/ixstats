@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { getVaultConfig, invalidateVaultConfigCache } from "~/lib/vault/vault-service";
-import { getCurrentIxCardSeason, setCurrentIxCardSeason } from "~/lib/cards/season";
 
 export const vaultAdminStoreRouter = createTRPCRouter({
   /**
@@ -251,16 +250,5 @@ export const vaultAdminStoreRouter = createTRPCRouter({
         console.error("[Vault Router] adminGetPriceHistory error:", error);
         throw new Error("Failed to retrieve price history", { cause: error });
       }
-    }),
-
-  adminGetIxCardSeason: adminProcedure.query(async ({ ctx }) => {
-    return getCurrentIxCardSeason(ctx.db);
-  }),
-
-  adminSetIxCardSeason: adminProcedure
-    .input(z.object({ season: z.number().int().min(1).max(100) }))
-    .mutation(async ({ ctx, input }) => {
-      await setCurrentIxCardSeason(ctx.db, input.season);
-      return { success: true, season: input.season };
     }),
 });

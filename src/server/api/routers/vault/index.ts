@@ -10,7 +10,7 @@
  *  - store:           storefront — list, config, purchase, purchased items, transactions
  *  - public-cosmetics: another player's equipped cosmetics (public, batched)
  *  - collections:     card collection CRUD, public browse, comments, leaderboard, likes
- *  - admin:           credit adjustments, store-item CRUD, vault config, season, purchase logs
+ *  - admin:           credit adjustments, store-item CRUD, vault config, purchase logs
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { vaultBalanceCreditsRouter } from "./balance-credits";
