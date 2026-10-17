@@ -18,8 +18,9 @@ export const createQueryClient = () =>
         throwOnError: false,
       },
       mutations: {
-        // Mutations should retry less aggressively
-        retry: process.env.NODE_ENV === "production" ? 1 : 0,
+        // Never re-send a mutation: one that committed but lost its response would run twice (a second bid,
+        // purchase or pack open). The player sees the error and retries on purpose.
+        retry: 0,
         throwOnError: false,
       },
       dehydrate: {
