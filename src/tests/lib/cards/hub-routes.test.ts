@@ -4,6 +4,7 @@ import {
   CARD_HUB_PATHS,
   CARD_HUB_TABS,
   CARD_HUB_TITLES,
+  cardHubIndexRedirectFor,
   cardHubTabOf,
   legacyCardRedirect,
   legacyCardRedirectFor,
@@ -52,12 +53,17 @@ describe("hub tabs under a base path", () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
     let tabOf: typeof cardHubTabOf = () => null;
     let redirectFor: typeof legacyCardRedirectFor = () => null;
+    let indexFor: typeof cardHubIndexRedirectFor = () => null;
     await jest.isolateModulesAsync(async () => {
-      ({ cardHubTabOf: tabOf, legacyCardRedirectFor: redirectFor } =
-        await import("~/lib/cards/hub-routes"));
+      ({
+        cardHubTabOf: tabOf,
+        legacyCardRedirectFor: redirectFor,
+        cardHubIndexRedirectFor: indexFor,
+      } = await import("~/lib/cards/hub-routes"));
     });
     expect(tabOf("/projects/ixstates/vault/cards/market")).toBe("market");
     expect(redirectFor("/projects/ixstates/vault/inventory", "")).toBe("/vault/cards/mine");
+    expect(indexFor("/projects/ixstates/vault/cards", "")).toBe("/vault/cards/mine");
   });
 });
 
@@ -205,4 +211,21 @@ describe("legacyCardRedirectFor", () => {
       }
     }
   });
+});
+
+describe("cardHubIndexRedirectFor", () => {
+  it.each([
+    ["/vault/cards", "", "/vault/cards/mine"],
+    ["/vault/cards/", "?card=c1", "/vault/cards/mine?card=c1"],
+    ["/vault/cards", "card=c1&from=offer.o1", "/vault/cards/mine?card=c1&from=offer.o1"],
+  ])("opens Mine from %s%s", (pathname, search, target) => {
+    expect(cardHubIndexRedirectFor(pathname, search)).toBe(target);
+  });
+
+  it.each(["/vault/cards/mine", "/vault/cards/x", "/vault", "/vault/inventory"])(
+    "leaves %s alone",
+    (pathname) => {
+      expect(cardHubIndexRedirectFor(pathname, "?card=c1")).toBeNull();
+    }
+  );
 });

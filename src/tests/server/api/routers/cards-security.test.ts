@@ -1,5 +1,5 @@
 /** @jest-environment node */
-/** Cards refresh §3 security: tradeable-only partner cards, no retired cards for players. */
+/** Cards refresh §3 security: tradeable-only partner cards. */
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -63,22 +63,10 @@ describe("cards router security", () => {
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
-  it("never lists retired cards, or cards waiting in review, to players", async () => {
-    const db = createMockPrisma();
-    db.card.count.mockResolvedValue(0);
-    await createCallerFactory(cardsInventoryRouter)(player(db)).getNSCards({ region: "Abydos" });
-    const where = db.card.findMany.mock.calls[0]![0].where;
-    expect(where.AND).toEqual(
-      expect.arrayContaining([
-        { isRetired: false },
-        { reviewState: "APPROVED" },
-        { metadata: { path: ["nsData", "region"], string_contains: "Abydos" } },
-      ])
-    );
-    expect(db.card.count.mock.calls[0]![0].where).toBe(where);
-  });
-
-  it("no longer has a junk procedure", () => {
-    expect(Object.keys(cardsInventoryRouter._def.procedures)).not.toContain("junkCards");
+  it("no longer has a junk procedure or the old card library", () => {
+    // Explore's catalogue keeps the library's promise: never a retired or pending card (explore.test.ts).
+    for (const gone of ["junkCards", "getNSCards", "getNSLibraryStats"]) {
+      expect(Object.keys(cardsInventoryRouter._def.procedures)).not.toContain(gone);
+    }
   });
 });

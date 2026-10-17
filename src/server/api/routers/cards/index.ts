@@ -5,8 +5,7 @@
  * `api.cards.admin.<tab>.*` (cards refresh spec §2.4).
  *
  * Domains:
- *  - inventory:   user inventory, the card library and its NationStates stats
- *  - collections: collection CRUD
+ *  - inventory:   the caller's cards and a trade partner's tradeable copies
  *  - suggestions: free lore card suggestions
  *  - mine:        the caller's copies (the hub's Mine tab)
  *  - explore:     realm shelves, the catalogue grid, regions
@@ -16,7 +15,6 @@
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "./inventory";
-import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
 import { cardsMineRouter } from "./mine";
 import { cardsExploreRouter } from "./explore";
@@ -26,7 +24,6 @@ import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
   cardsInventoryRouter,
-  cardsCollectionsRouter,
   cardsSuggestionsRouter,
   cardsMineRouter,
   cardsExploreRouter,

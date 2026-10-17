@@ -75,6 +75,21 @@ describe("exploreWhere", () => {
     });
   });
 
+  it("never lists a retired card, or one waiting in review, whatever the filters", () => {
+    for (const filters of [
+      {},
+      { region: "Abydos" },
+      { types: ["NS" as const], season: 2 },
+      { owned: "owned" as const },
+      { owned: "missing" as const },
+    ]) {
+      expect(exploreWhere(query(filters), "me")).toMatchObject({
+        reviewState: "APPROVED",
+        isRetired: false,
+      });
+    }
+  });
+
   it("splits what the viewer has collected from what they are missing", () => {
     expect(exploreWhere(query({ owned: "owned" }), "me")).toMatchObject({
       CardOwnership: { some: { ownerId: "me" } },

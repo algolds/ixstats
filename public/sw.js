@@ -2,7 +2,7 @@
 // Service Worker for IxCards PWA
 // Provides offline fallback, caching, and background sync
 
-const CACHE_NAME = "ixcards-v1";
+const CACHE_NAME = "ixcards-v2";
 const RUNTIME_CACHE = "ixcards-runtime-v1";
 const IMAGE_CACHE = "ixcards-images-v1";
 
@@ -11,9 +11,9 @@ const IMAGE_CACHE = "ixcards-images-v1";
  */
 const PRECACHE_ASSETS = [
   "/",
-  "/vault/packs",
-  "/vault/inventory",
-  "/vault/marketplace",
+  "/vault/store",
+  "/vault/cards/mine",
+  "/vault/cards/market",
   "/offline.html",
 ];
 
