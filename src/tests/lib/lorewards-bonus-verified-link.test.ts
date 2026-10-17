@@ -41,7 +41,7 @@ import { db } from "~/server/db";
 import { LedgerError } from "~/lib/vault/vault-ledger";
 import { matches, storedEntry } from "~/tests/helpers/loreward-entry-store";
 import { getBonusConfig, grantBonusTx, LOREWARD_PAYOUT_START } from "~/lib/vault/vault-bonus";
-import { grantLorewardBonuses } from "~/lib/lorewards/sync";
+import { grantLorewardBonuses } from "~/lib/lorewards/payout";
 
 const mocked = db as unknown as {
   lorewardEntry: { findMany: jest.Mock };
