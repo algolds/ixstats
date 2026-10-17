@@ -8,17 +8,20 @@
  *  - inventory:   user inventory, the card library and its NationStates stats
  *  - collections: collection CRUD + wiki article excerpt lookup
  *  - suggestions: free lore card suggestions
+ *  - mine:        the caller's copies (the hub's Mine tab)
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
 import { cardsInventoryRouter } from "./inventory";
 import { cardsCollectionsRouter } from "./collections";
 import { cardsSuggestionsRouter } from "./suggestions";
+import { cardsMineRouter } from "./mine";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
   cardsInventoryRouter,
   cardsCollectionsRouter,
   cardsSuggestionsRouter,
+  cardsMineRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );
