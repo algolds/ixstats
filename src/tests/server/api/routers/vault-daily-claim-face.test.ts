@@ -55,11 +55,17 @@ describe("vault daily claims", () => {
   });
 
   it("still reports the committed claim when the face read fails", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    const quiet = jest.spyOn(console, "error").mockImplementation(() => {});
     jest.mocked(ownedFaces).mockRejectedValueOnce(new Error("connection reset"));
-    const result = await callerFor(createMockPrisma()).claimCombinedDailyClaim({ choice: "CARD" });
-    expect(result).toMatchObject({ success: true, cardAwarded: { ownershipId: "o1" } });
-    expect(result.cardFace).toBeNull();
+    try {
+      const result = await callerFor(createMockPrisma()).claimCombinedDailyClaim({
+        choice: "CARD",
+      });
+      expect(result).toMatchObject({ success: true, cardAwarded: { ownershipId: "o1" } });
+      expect(result.cardFace).toBeNull();
+    } finally {
+      quiet.mockRestore();
+    }
   });
 
   it("has no second daily claim", () => {

@@ -34,7 +34,10 @@ describe("VaultStatusPanel", () => {
     jest.mocked(useDailyReward).mockReturnValue({ open });
     render(<VaultStatusPanel />);
     expect(screen.queryByRole("button", { name: /Claim daily bonus/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Open daily reward" }));
+    const button = screen.getByRole("button", { name: "Open daily reward" });
+    // Pressed like the panel's other controls
+    expect(button).toHaveAttribute("data-cuelume-press", "soft");
+    fireEvent.click(button);
     expect(open).toHaveBeenCalled();
   });
 

@@ -95,7 +95,13 @@ export function VaultStatusPanel() {
           icon={Gift}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <Button type="button" variant="secondary" size="sm" onClick={openDailyReward}>
+          <Button
+            type="button"
+            onClick={openDailyReward}
+            data-cuelume-press="soft"
+            variant="secondary"
+            size="sm"
+          >
             Open daily reward
           </Button>
         </SettingsRow>

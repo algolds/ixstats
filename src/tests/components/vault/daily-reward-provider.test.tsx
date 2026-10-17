@@ -157,6 +157,32 @@ describe("DailyRewardProvider", () => {
     expect(invalidateMine).toHaveBeenCalledTimes(1);
   });
 
+  it("names the pulled card and still links to it when its face could not be read", async () => {
+    render(<Widget />);
+    fireEvent.click(within(dialog()).getByRole("button", { name: /Card pull/ }));
+    act(() =>
+      mutationOptions.onSuccess({
+        cardAwarded: {
+          id: "c1",
+          ownershipId: "o1",
+          title: "Caphiria",
+          rarity: "ULTRA_RARE",
+          artwork: "",
+        },
+        cardFace: null,
+        streak: 5,
+      })
+    );
+    // On screen, not only in the screen-reader description (motion keeps jsdom at opacity 0, so no toBeVisible)
+    const title = await screen.findByText("Caphiria");
+    expect(title.closest(".sr-only")).toBeNull();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByRole("link", { name: "View card" })).toHaveAttribute(
+      "href",
+      "/vault/cards/mine?card=c1"
+    );
+  });
+
   it("refreshes the statement and today's earnings after a claim", () => {
     render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));

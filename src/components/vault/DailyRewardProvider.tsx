@@ -29,6 +29,8 @@ type ClaimChoice = "CREDITS" | "CARD";
 
 interface ClaimResult {
   creditsAwarded?: number;
+  /** The pulled card, kept for when its face could not be read after the claim committed. */
+  cardAwarded?: { id: string; title: string };
   /** The pulled copy's face; null for a credits claim. */
   cardFace?: CardFaceData | null;
   streak: number;
@@ -301,6 +303,8 @@ function DailyRewardDialog({
     [claiming, setIsOpen]
   );
 
+  const pulledCardId = claimResult?.cardFace?.cardId ?? claimResult?.cardAwarded?.id;
+
   // Transforms are dropped for reduced-motion users by the root <MotionConfig>.
   const fade = {
     initial: { opacity: 0, y: 8 },
@@ -378,6 +382,9 @@ function DailyRewardDialog({
                 <CreditsReveal amount={claimResult.creditsAwarded} />
               )}
               {claimResult.cardFace && <CardReveal face={claimResult.cardFace} />}
+              {!claimResult.cardFace && claimResult.cardAwarded && (
+                <p className="text-headline text-label">{claimResult.cardAwarded.title}</p>
+              )}
 
               <ClaimFacts streak={claimResult.streak} />
 
@@ -385,10 +392,10 @@ function DailyRewardDialog({
                 <Button className="sm:flex-1" onClick={() => handleOpenChange(false)}>
                   Collect
                 </Button>
-                {claimResult.cardFace && (
+                {pulledCardId && (
                   <Button variant="outline" className="sm:flex-1" asChild>
                     <Link
-                      href={cardSheetHref(CARD_HUB_PATHS.mine, claimResult.cardFace.cardId)}
+                      href={cardSheetHref(CARD_HUB_PATHS.mine, pulledCardId)}
                       onClick={() => handleOpenChange(false)}
                     >
                       View card
