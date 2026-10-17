@@ -21,7 +21,6 @@
   "src/hooks/useWikiNarrator.ts": 806,
   "src/lib/nationstates/api-client.ts": 802,
   "src/app/admin/vault/VaultUserDirectory.tsx": 793,
-  "src/components/cards/display/CardBack.tsx": 788,
   "src/lib/maps/province-importer/alignment.ts": 760,
   "src/lib/government/tax/atomic-tax-components.ts": 742,
   "src/hooks/useProvinceImporter.ts": 738,

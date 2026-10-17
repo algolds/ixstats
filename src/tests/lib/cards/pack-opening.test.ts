@@ -420,4 +420,9 @@ describe("bestPulledRarity", () => {
     ).toBe("EPIC");
     expect(bestPulledRarity([])).toBe("COMMON");
   });
+
+  it("never lets an unknown rarity beat Common", () => {
+    expect(bestPulledRarity([{ rarity: "MYTHIC" }])).toBe("COMMON");
+    expect(bestPulledRarity([{ rarity: "MYTHIC" }, { rarity: "RARE" }])).toBe("RARE");
+  });
 });
