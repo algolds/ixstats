@@ -4,9 +4,9 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { DISPLAY_SIZE, SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import type { ContextRules } from "./art-visibility";
 import { displayedCopies } from "./displayed";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
+import type { PlayerRules } from "./players";
 
 type ShowcaseDb = Pick<
   PrismaClient,
@@ -44,6 +44,7 @@ export interface ShowcaseView {
   description: string | null;
   isPublic: boolean;
   pinned: boolean;
+  /** Another player's showcase names its owner by passport handle; null on the viewer's own. */
   ownerHandle: string | null;
   isOwner: boolean;
   items: ShowcaseItem[];
@@ -99,12 +100,15 @@ export async function listMyShowcases(db: ShowcaseDb, userId: string): Promise<S
   }));
 }
 
-/** A showcase as the viewer may see it: its owner always; anyone else while it is public and its owner shows Vault cards. */
+/**
+ * A showcase as the viewer may see it: its owner always; anyone else while it is public and its owner shows Vault
+ * cards. Others never see its retired copies, as the display leaves them out; its owner sees their placeholder faces.
+ */
 export async function getShowcase(
   db: ShowcaseDb,
   viewerId: string,
   id: string,
-  rules: ContextRules
+  rules: PlayerRules
 ): Promise<ShowcaseView | null> {
   const row = await db.cardCollection.findUnique({
     where: { id },
@@ -115,22 +119,24 @@ export async function getShowcase(
       isPublic: true,
       pinnedAt: true,
       userId: true,
-      User: { select: { handle: true } },
       items: { orderBy: { addedAt: "asc" }, take: SHOWCASE_LIMITS.items, select: ITEM_SELECT },
     },
   });
   if (!row) return null;
   const isOwner = row.userId === viewerId;
-  if (!isOwner && !(row.isPublic && (await rules.vaultVisible(row.userId)))) return null;
+  if (!isOwner && !row.isPublic) return null;
+  const owner = isOwner ? null : (await rules.playersOf([row.userId])).get(row.userId);
+  if (!isOwner && !owner?.showsVault) return null;
+  const items = isOwner ? row.items : row.items.filter((i) => !i.cardOwnership.cards.isRetired);
   return {
     id: row.id,
     name: row.name,
     description: row.description,
     isPublic: row.isPublic,
     pinned: pinTime(row) > 0,
-    ownerHandle: row.User.handle,
+    ownerHandle: owner?.handle ?? null,
     isOwner,
-    items: row.items.map((item) => ({ itemId: item.id, face: itemFace(item) })),
+    items: items.map((item) => ({ itemId: item.id, face: itemFace(item) })),
   };
 }
 
