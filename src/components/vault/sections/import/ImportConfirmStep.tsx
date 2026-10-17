@@ -1,7 +1,7 @@
 "use client";
 
 import { springSmooth } from "~/lib/design/motion";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { motion } from "motion/react";
 import {
   CheckCircle,
@@ -12,27 +12,22 @@ import {
   Coins,
   ArrowRight,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
-import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Card } from "~/components/ui/card";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { CardFace } from "~/components/cards/face/CardFace";
+import type { CardFaceData } from "~/lib/cards/face/types";
+
+/** How many of the imported copies the summary shows; the rest are counted. */
+const SHOWN_FACES = 12;
 
 export interface ImportResult {
   cardsImported: number;
   bonusCredits: number;
   nation: string;
-  cards: Array<{
-    id: string;
-    title: string;
-    artwork: string;
-    rarity: string;
-    season: number;
-    marketValue: number;
-  }>;
+  /** The copies just imported. */
+  faces: CardFaceData[];
 }
 
 export function ImportConfirmStep({
@@ -107,6 +102,8 @@ export function ImportCompleteStep({
   importResult: ImportResult;
   onReset: () => void;
 }) {
+  const moreFaces = importResult.faces.length - SHOWN_FACES;
+  const facesLabel = useId();
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center py-4 text-center">
@@ -180,63 +177,29 @@ export function ImportCompleteStep({
       </motion.div>
 
       {/* Imported cards preview */}
-      {importResult.cards.length > 0 && (
+      {importResult.faces.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
           className="space-y-2"
         >
-          <p className="text-label-secondary text-footnote font-semibold">Your cards</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-            {importResult.cards.slice(0, 12).map((card, idx) => (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 + idx * 0.05 }}
-                className={cn(
-                  "rounded-control relative overflow-hidden border p-2",
-                  card.rarity === "LEGENDARY" && "border-yellow/40 bg-yellow/10",
-                  card.rarity === "EPIC" && "border-purple/40 bg-purple/10",
-                  card.rarity === "ULTRA_RARE" && "border-red/40 bg-red/10",
-                  card.rarity === "RARE" && "border-blue/40 bg-blue/10",
-                  card.rarity === "UNCOMMON" && "border-green/40 bg-green/10",
-                  (!card.rarity || card.rarity === "COMMON") && "border-separator bg-fill-4"
-                )}
-              >
-                <div className="relative mx-auto mb-1 h-10 w-10 overflow-hidden rounded">
-                  <CardHolographicCover
-                    cardType="NS"
-                    rarity={card.rarity || "COMMON"}
-                    title={card.title}
-                  />
-                  {card.artwork && card.artwork !== CARD_ARTWORK_PLACEHOLDER && (
-                    <img
-                      src={proxyCardArtwork(card.artwork)}
-                      alt={card.title}
-                      className="absolute inset-0 h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  )}
-                </div>
-                <p className="text-footnote truncate text-center leading-tight font-semibold">
-                  {card.title}
-                </p>
-                <p className="text-label-secondary text-footnote text-center">
-                  S{card.season} ·{" "}
-                  {card.marketValue > 0
-                    ? `${card.marketValue.toFixed(2)} MV`
-                    : (card.rarity?.toLowerCase() ?? "common")}
-                </p>
-              </motion.div>
+          <p id={facesLabel} className="text-label-secondary text-footnote font-semibold">
+            Your cards
+          </p>
+          <ul
+            aria-labelledby={facesLabel}
+            className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-3"
+          >
+            {importResult.faces.slice(0, SHOWN_FACES).map((face) => (
+              <li key={face.copy?.ownershipId ?? face.cardId}>
+                <CardFace face={face} size="S" className="w-full" />
+              </li>
             ))}
-          </div>
-          {importResult.cards.length > 12 && (
+          </ul>
+          {moreFaces > 0 && (
             <p className="text-label-secondary text-footnote text-center">
-              +{importResult.cards.length - 12} more cards
+              +{moreFaces} more {moreFaces === 1 ? "card" : "cards"}
             </p>
           )}
         </motion.div>
@@ -244,7 +207,7 @@ export function ImportCompleteStep({
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
         <Button onClick={onReset} variant="outline" className="w-full">
-          <ArrowRight className="mr-2 h-4 w-4" /> Import Another Nation
+          <ArrowRight className="mr-2 h-4 w-4" /> Import another nation
         </Button>
       </motion.div>
     </div>
