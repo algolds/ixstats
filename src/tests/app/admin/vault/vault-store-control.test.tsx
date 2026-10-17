@@ -43,7 +43,7 @@ const upgrade = {
   badgeText: "MyClub",
   category: "upgrades",
   isActive: true,
-  effects: { perks: { cardCapacity: 50, loreTokens: 1 } },
+  effects: { perks: { cardCapacity: 50, loreTokens: 1 } as Record<string, number> },
 };
 
 function renderWith(item: typeof upgrade) {
