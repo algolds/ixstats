@@ -290,6 +290,28 @@ describe("saveSpecialCard on a card players hold", () => {
     ).rejects.toMatchObject(fixed);
   });
 
+  it("saves a held card with no kind as the event card it opens as", async () => {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue(stored({ specialKind: null }, 2));
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    await expect(
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...event, id: "card_1", title: "Founders' ball" })
+      )
+    ).resolves.toEqual({ id: "card_1" });
+    expect(db.card.update.mock.calls[0]![0].data).toMatchObject({ title: "Founders' ball" });
+    db.card.findUnique.mockResolvedValue(stored({ specialKind: null }, 2));
+    await expect(
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...reward, id: "card_1", rewardAchievementKey: "gen-one-year" })
+      )
+    ).rejects.toMatchObject(fixed);
+  });
+
   it("still saves every other field", async () => {
     const db = mockDb();
     db.card.findUnique.mockResolvedValue(heldReward);

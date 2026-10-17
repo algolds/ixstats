@@ -106,8 +106,9 @@ function assertEditable(card: Awaited<ReturnType<typeof editedCard>>, input: Spe
   if (awaitsSpecialCardImport(card)) {
     throw refused("Run the Special card import before editing this card.");
   }
+  // A held Special card with no kind (an old SPECIAL type) opens as an event card; saving it as one is no change.
   const changesKind =
-    card.specialKind !== input.kind ||
+    (card.specialKind ?? "EVENT") !== input.kind ||
     card.isBound !== input.isBound ||
     card.rewardAchievementKey !== input.rewardAchievementKey;
   if (changesKind && card._count.CardOwnership > 0) {
