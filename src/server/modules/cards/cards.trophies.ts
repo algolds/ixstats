@@ -12,7 +12,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { articleHomeRealm } from "~/lib/cards/home-realm";
-import { isJsonObject } from "~/lib/cards/ns-facts";
 import { removeCopyTx, type RemovableCopy } from "~/lib/cards/remove-copy";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import {
@@ -22,9 +21,15 @@ import {
 } from "~/lib/lorewards/contest-identity";
 import { CONTEST_ENTRY_SELECT, lockContestPlace } from "~/lib/lorewards/contest-store";
 import { placeOf, resolveLorewardPlace, type LorewardPlaceRef } from "~/lib/lorewards/resolve-user";
-import { mintTrophyCards, mintTrophyCopyTx, trophyCardText } from "~/lib/lorewards/trophy-cards";
+import {
+  metaOf,
+  mintTrophyCards,
+  mintTrophyCopyTx,
+  trophyCardText,
+} from "~/lib/lorewards/trophy-cards";
 import type { LorewardPlace, LorewardType } from "~/lib/vault/vault-bonus";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 /**
  * What an override sets (`lorewards.overrideWinner`, `admin.saveLorewardWinnerOverride`): a field left out keeps its
@@ -173,9 +178,6 @@ interface NextHolder extends PlaceTarget {
   label: string;
 }
 
-const metadataOf = (card: TrophyCard): Prisma.JsonObject =>
-  isJsonObject(card.metadata) ? card.metadata : {};
-
 /** The name the card records its place's holder under. */
 function recordedHolder(meta: Prisma.JsonObject): string | null {
   return typeof meta.wikiUser === "string" ? meta.wikiUser : null;
@@ -186,7 +188,7 @@ function recordedHolder(meta: Prisma.JsonObject): string | null {
  * override, `voidedAt`) for an empty place. A card that disagrees is reconciled even when the entries do not change.
  */
 function cardRecords(card: TrophyCard, target: PlaceTarget | null): boolean {
-  const meta = metadataOf(card);
+  const meta = metaOf(card.metadata);
   if (!target) return Boolean(meta.voidedAt);
   return (
     !meta.voidedAt && meta.wikiUser === target.ref.wikiUser && card.title === target.text.title
@@ -273,7 +275,7 @@ async function reassignTrophyTx(
   next: NextHolder,
   userId: string | null
 ): Promise<Outcome> {
-  const meta = metadataOf(card);
+  const meta = metaOf(card.metadata);
   const from = recordedHolder(meta);
   const to = next.ref.wikiUser;
   const granted = await settleCopyTx(tx, card.id, copies, userId);
@@ -311,7 +313,7 @@ async function duplicateTrophyTx(
   next: NextHolder,
   keeperId: string
 ): Promise<Outcome> {
-  const meta = metadataOf(card);
+  const meta = metaOf(card.metadata);
   const from = recordedHolder(meta);
   const to = next.ref.wikiUser;
   for (const copy of copies) await removeCopyTx(tx, copy, "VOID");
@@ -347,7 +349,7 @@ async function voidTrophyTx(
   { card, copies }: HeldTrophy,
   label: string
 ): Promise<Outcome> {
-  const meta = metadataOf(card);
+  const meta = metaOf(card.metadata);
   const from = recordedHolder(meta);
   const voidedAt = new Date();
   for (const copy of copies) await removeCopyTx(tx, copy, "VOID");

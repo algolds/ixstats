@@ -9,11 +9,13 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
-import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
+import { cardCount, lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
+import { assertBulkRead, assertBulkRecountTx } from "./cards.bulk";
 import {
   HIDDEN_TAKEDOWNS,
   artLicenceFollowsTx,
@@ -182,7 +184,7 @@ function assertEditable(card: EditedCard, input: LibraryEdit) {
       message: "This card changed since you opened it. Reopen it and try again.",
     });
   }
-  if (input.rarity !== card.rarity && (input.reason ?? "").trim().length < 3) {
+  if (input.rarity !== card.rarity && lacksRarityReason(input.reason)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Say why the rarity changes" });
   }
   const artChanged = input.artwork !== card.artwork;
@@ -300,8 +302,6 @@ function filterScope(filter: LibraryFilter): string {
     .join(", ");
 }
 
-const cardCount = (count: number) => `${count.toLocaleString()} ${count === 1 ? "card" : "cards"}`;
-
 /**
  * Hide or unhide the cards a Library read counted for this change (its `asOf` and `hideable` or `unhideable`), at
  * least one and at most MAX_FILTER_REVIEW of them.
@@ -320,28 +320,15 @@ export async function bulkSetRetired(
   if (input.expected < 1) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "No matching card would change" });
   }
-  // A read time after now would let the change take cards made after the admin's read.
-  if (input.asOf.getTime() > Date.now()) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "The Library's read time is in the future. Reload and try again.",
-    });
-  }
-  if (input.expected > MAX_FILTER_REVIEW) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Hide or unhide at most ${MAX_FILTER_REVIEW.toLocaleString()} cards at once. Narrow the filter.`,
-    });
-  }
+  assertBulkRead(input, { list: "The Library's", verb: "Hide or unhide" });
   const where = changeWhere(input.filter, input.asOf, input.retired);
   return db.$transaction(async (tx) => {
-    const changing = await tx.card.count({ where });
-    if (changing !== input.expected) {
-      throw new TRPCError({
-        code: "CONFLICT",
-        message: "The matching cards changed since you loaded the Library. Reload and try again.",
-      });
-    }
+    await assertBulkRecountTx(
+      tx,
+      where,
+      input.expected,
+      () => "The matching cards changed since you loaded the Library. Reload and try again."
+    );
     const result = await tx.card.updateMany({
       where,
       data: { isRetired: input.retired, retiredAt: input.retired ? new Date() : null },

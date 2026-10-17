@@ -23,7 +23,7 @@ function setup() {
 }
 
 describe("cards.getMyTopCards", () => {
-  it("reads the caller's own unretired cards, most valuable first (ties by card id), one per card", async () => {
+  it("reads the caller's own cards, retired ones included, most valuable first (ties by card id), one per card", async () => {
     const { db, caller } = setup();
     await expect(caller.getMyTopCards({ limit: 3 })).resolves.toEqual([
       { id: "o1", cards: { id: "c1" } },
@@ -31,7 +31,7 @@ describe("cards.getMyTopCards", () => {
 
     expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
-      where: { ownerId: "db_me", cards: { isRetired: false } },
+      where: { ownerId: "db_me" },
       include: { cards: true },
       orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }],
       distinct: ["cardId"],

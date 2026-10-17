@@ -3,7 +3,8 @@
  * One-off: bring the cards from before the takedown queue into Compliance.
  *   1. Every NationStates takedown marker (`metadata.nsTakedown`) becomes a HIDDEN takedown, restorable from the flag.
  *   2. Every Lore card with art and no licence record gets one: UNKNOWN, or with --fetch the licence its wiki states
- *      (run --fetch on the production server: IIWiki answers only there).
+ *      (run --fetch on the production server: IIWiki answers only there). With --fetch, a card its wiki did not
+ *      answer for gets no record, so a re-run reads it.
  *   3. Every restricted licence whose art still shows, and whose card has no active request, gets a licence review
  *      takedown that hides the art. This step reads the database, so a re-run finishes what an earlier run left.
  *
@@ -14,17 +15,29 @@
  * Idempotent: a card with an active takedown or a licence record is skipped.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { parseCardWikiSource, type CardWikiSource } from "~/lib/cards/card-sources";
+import {
+  cardSourceLabel,
+  parseCardWikiSource,
+  type CardWikiSource,
+} from "~/lib/cards/card-sources";
 import { legacyTakedownRow, licenceBackfillRow } from "~/lib/cards/compliance-backfill";
-import { captureArtLicence, wikiQueryFor } from "~/server/modules/cards/cards.art-licence";
+import type { WikiQuery } from "~/lib/realms/lore-import";
+import {
+  createDiscoveryClient,
+  DiscoveryStopped,
+  type DiscoveryStopKind,
+} from "~/lib/realms/sources/wiki-discovery-client";
+import { captureArtLicence, type CapturedLicence } from "~/server/modules/cards/cards.art-licence";
 import {
   fileLicenceTakedowns,
   type LicenceTakedownReport,
 } from "~/server/modules/cards/cards.compliance";
 
 const BATCH = 500;
-/** One throttled client per wiki for the whole run. */
+/** One throttled client per wiki, replaced after a read it gave up on; this cap is far above a run's reads. */
 const FETCH_REQUEST_CAP = 10_000;
+/** The stops that lose only the read in hand (an HTTP error, a timeout), as in the import runner. */
+const READ_STOPS: ReadonlySet<DiscoveryStopKind> = new Set(["error", "unreachable"]);
 /** A request that is waiting or hiding the art; a declined or restored one leaves the card to these steps. */
 const ACTIVE_REQUEST = {
   status: { in: ["OPEN", "HIDDEN"] },
@@ -44,19 +57,14 @@ export async function backfillTakedowns(db: PrismaClient, apply: boolean): Promi
   return rows.length;
 }
 
-/** The licence the file's wiki states, over the UNKNOWN row; the row as it was when the wiki gives nothing. */
-async function withFetchedLicence(
-  row: Prisma.CardArtLicenceCreateManyInput,
-  queries: Map<CardWikiSource, ReturnType<typeof wikiQueryFor>>
-): Promise<Prisma.CardArtLicenceCreateManyInput> {
-  const wiki = parseCardWikiSource(row.wiki);
-  if (!wiki || !row.fileTitle) return row;
-  const query = queries.get(wiki) ?? wikiQueryFor(wiki, FETCH_REQUEST_CAP);
-  queries.set(wiki, query);
-  const captured = await captureArtLicence(query, wiki, row.fileTitle).catch((error: Error) => {
-    console.warn(`${row.cardId}: ${row.fileTitle} not checked (${error.message})`);
-    return null;
-  });
+type LicenceRow = Prisma.CardArtLicenceCreateManyInput;
+
+/** A fresh client's query. Its first request waits too: it may replace a client whose last request just failed. */
+const freshWikiQuery = (wiki: CardWikiSource): WikiQuery =>
+  createDiscoveryClient(wiki, { maxRequests: FETCH_REQUEST_CAP, pauseFirst: true }).query;
+
+/** The licence the file's wiki states, over the UNKNOWN row; the row as it was when the wiki has no such file. */
+function withCapturedLicence(row: LicenceRow, captured: CapturedLicence | null): LicenceRow {
   if (!captured) return row;
   return {
     ...row,
@@ -71,8 +79,52 @@ async function withFetchedLicence(
   };
 }
 
+interface FetchedLicences {
+  rows: LicenceRow[];
+  /** Per wiki, the cards whose licence was not read. They get no row, so a re-run reads them. */
+  unread: Map<CardWikiSource, number>;
+}
+
+/**
+ * Each row checked on its file's wiki, one client per wiki, as the import runner reads. A read the client gave up on
+ * (an HTTP error, a timeout) leaves that card unread, and the next card gets a fresh client. A wiki that refuses,
+ * rate-limits or reaches the cap is read no more in this run. A row that names no wiki file is kept, unchecked.
+ */
+async function fetchLicenceRows(rows: LicenceRow[]): Promise<FetchedLicences> {
+  const queries = new Map<CardWikiSource, WikiQuery>();
+  const parked = new Set<CardWikiSource>();
+  const fetched: FetchedLicences = { rows: [], unread: new Map() };
+  const leaveUnread = (wiki: CardWikiSource) =>
+    fetched.unread.set(wiki, (fetched.unread.get(wiki) ?? 0) + 1);
+  for (const row of rows) {
+    const wiki = parseCardWikiSource(row.wiki);
+    if (!wiki || !row.fileTitle) {
+      fetched.rows.push(row);
+      continue;
+    }
+    if (parked.has(wiki)) {
+      leaveUnread(wiki);
+      continue;
+    }
+    const query = queries.get(wiki) ?? freshWikiQuery(wiki);
+    queries.set(wiki, query);
+    try {
+      fetched.rows.push(
+        withCapturedLicence(row, await captureArtLicence(query, wiki, row.fileTitle))
+      );
+    } catch (error) {
+      leaveUnread(wiki);
+      console.warn(`${row.cardId}: ${row.fileTitle} not checked (${String(error)})`);
+      if (!(error instanceof DiscoveryStopped)) continue;
+      queries.delete(wiki);
+      if (!READ_STOPS.has(error.stop.kind)) parked.add(wiki);
+    }
+  }
+  return fetched;
+}
+
 /** Step 2: a licence record for every Lore card with art and none; checked on its wiki with `fetchLicences`. */
-async function backfillLicences(db: PrismaClient, apply: boolean, fetchLicences: boolean) {
+export async function backfillLicences(db: PrismaClient, apply: boolean, fetchLicences: boolean) {
   const cards = await db.card.findMany({
     where: { cardType: "LORE", artwork: { not: null }, artLicence: { is: null } },
     select: { id: true, wikiSource: true, artwork: true },
@@ -84,10 +136,13 @@ async function backfillLicences(db: PrismaClient, apply: boolean, fetchLicences:
   );
   if (!apply) return;
   if (fetchLicences) {
-    const queries = new Map<CardWikiSource, ReturnType<typeof wikiQueryFor>>();
-    const fetched: Prisma.CardArtLicenceCreateManyInput[] = [];
-    for (const row of rows) fetched.push(await withFetchedLicence(row, queries));
-    rows = fetched;
+    const fetched = await fetchLicenceRows(rows);
+    rows = fetched.rows;
+    for (const [wiki, count] of fetched.unread) {
+      console.log(
+        `${count} ${cardSourceLabel(wiki)} cards not checked, so not recorded. Re-run --apply --fetch to read them.`
+      );
+    }
   }
   for (let start = 0; start < rows.length; start += BATCH) {
     await db.cardArtLicence.createMany({

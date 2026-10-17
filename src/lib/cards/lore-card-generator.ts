@@ -11,6 +11,7 @@
 
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import type { MediaWikiPageItem, MediaWikiCategoryItem } from "~/lib/wiki-os/types";
 import { LORE_CATEGORIES } from "~/lib/lorewards";
@@ -70,6 +71,9 @@ interface ArticleData extends MwPage {
 // ponytail: lone knob — raise to be pickier, lower to generate from shorter pages.
 const MIN_ARTICLE_LENGTH = 600;
 
+/** The longest excerpt a card keeps for its lore tab. */
+const EXCERPT_CHARS = 2000;
+
 /** How long one read of a sister wiki may take; a hung answer fails the article, not the run. */
 const WIKI_READ_TIMEOUT_MS = 10_000;
 
@@ -128,12 +132,14 @@ class WikiLoreCardGenerator {
         `"${articleTitle}" is too short (${signals.length} characters; the minimum is ${minLength}).`
       );
     }
-    // Short summary for the card face, longer excerpt for the lore tab
-    const rawExcerpt = articleData.extract || articleData.text || "";
+    // Short summary for the card face, longer excerpt for the lore tab. A wiki without TextExtracts (AltHistory) gives
+    // no extract, so the excerpt is its wikitext cleaned to plain text, as IxWiki's from Postgres is.
+    const rawExcerpt =
+      articleData.extract || cleanWikitextExcerpt(articleData.rawText, EXCERPT_CHARS);
     return {
       title: articleTitle.replace(/_/g, " "),
       description: this.generateSummary(rawExcerpt),
-      fullExcerpt: rawExcerpt.slice(0, 2000).trim(),
+      fullExcerpt: rawExcerpt.slice(0, EXCERPT_CHARS).trim(),
       artwork: articleData.image ?? null,
       imageFile: articleData.imageFile ?? null,
       wikiSource,
@@ -166,9 +172,10 @@ class WikiLoreCardGenerator {
     const data = await read({
       titles: title,
       prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
-      exchars: "2000", // first ~2000 chars for the full excerpt
+      exchars: String(EXCERPT_CHARS), // first ~2000 chars for the full excerpt
       exlimit: "1",
       explaintext: "1",
+      exsectionformat: "plain", // section headings as plain lines, not `== Heading ==`
       piprop: "original|name",
       pithumbsize: "500",
       inprop: "url",

@@ -17,7 +17,8 @@ import {
 } from "~/lib/cards/pack-odds";
 import { mergePackTheme, packPoolWhere, packThemePool } from "~/lib/cards/pack-service";
 import { MAX_CARD_SEASON } from "~/lib/cards/season";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 export const PackPoolSchema = z.object({
   realmIds: z.array(z.string().min(1).max(64)).max(50),

@@ -1,8 +1,12 @@
 "use client";
-/** Edit one Special card: plain card fields, a realm, the bound toggle and, for a reward, the achievement that awards it. */
+/**
+ * Edit one Special card: plain card fields, a realm, the bound toggle and, for a reward, the achievement that awards
+ * it. Changing a saved card's rarity asks why, as the Library does.
+ */
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { lacksRarityReason } from "~/lib/cards/curation-limits";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -45,13 +49,18 @@ const KIND_OPTIONS = [
   { value: "ACHIEVEMENT_REWARD", label: "Achievement reward" },
 ] as const;
 
-/** Why the card cannot be saved yet, or null. The server checks the same rules; this says which one. */
-function saveBlocker(form: SpecialCardDraft): string | null {
+/**
+ * Why the card cannot be saved yet, or null. The server checks the same rules; this says which one. `rarityReason` is
+ * null unless the edit changes a saved card's rarity.
+ */
+function saveBlocker(form: SpecialCardDraft, rarityReason: string | null): string | null {
   if (form.title.trim().length < 2) return "Give the card a title of at least 2 characters.";
   if (form.kind === "ACHIEVEMENT_REWARD" && form.rewardAchievementKey === "")
     return "Choose the achievement that awards this card.";
   const artwork = form.artwork.trim();
   if (artwork !== "" && !/^https:\/\/\S+$/i.test(artwork)) return "Art is an https:// address.";
+  if (rarityReason !== null && lacksRarityReason(rarityReason))
+    return "Say why the rarity changes.";
   return null;
 }
 
@@ -66,6 +75,7 @@ export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardShe
   const notify = useNotify();
   const utils = api.useUtils();
   const [form, setForm] = useState(draft);
+  const [reason, setReason] = useState("");
   const realms = api.cards.admin.overview.realms.useQuery();
   const achievements = api.cards.admin.designer.achievements.useQuery();
   const save = api.cards.admin.designer.save.useMutation({
@@ -80,7 +90,8 @@ export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardShe
     setForm((current) => ({ ...current, [key]: value }));
   const reward = form.kind === "ACHIEVEMENT_REWARD";
   const fixed = copies > 0;
-  const blocker = saveBlocker(form);
+  const rarityChanged = draft.id !== undefined && form.rarity !== draft.rarity;
+  const blocker = saveBlocker(form, rarityChanged ? reason : null);
   const achievementOptions = (achievements.data ?? []).map(
     (achievement) => [achievement.id, achievement.title] as const
   );
@@ -100,6 +111,7 @@ export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardShe
       artwork: form.artwork.trim() || null,
       isBound: reward || form.isBound,
       rewardAchievementKey: reward ? form.rewardAchievementKey : null,
+      ...(rarityChanged ? { reason: reason.trim() } : {}),
     });
 
   return (
@@ -162,6 +174,17 @@ export function SpecialCardSheet({ draft, copies, onOpenChange }: SpecialCardShe
               />
             </div>
           </div>
+          {rarityChanged && (
+            <div className="space-y-1">
+              <Label htmlFor="special-reason">Why the rarity changes</Label>
+              <Input
+                id="special-reason"
+                maxLength={500}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-1">
             <Label htmlFor="special-art">Art URL</Label>
             <Input

@@ -51,7 +51,8 @@ import {
   type LorewardType,
   type VaultBonusConfig,
 } from "~/lib/vault/vault-bonus";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import {
   getDailyImportConfig,
   getRarityThresholds,

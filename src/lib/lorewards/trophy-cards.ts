@@ -94,7 +94,8 @@ export async function mintTrophyCopyTx(
 
 type TrophyEntry = StoredContestEntry;
 
-const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
+/** A card's metadata as an object; an empty one when it holds none. */
+export const metaOf = (value: Prisma.JsonValue | null | undefined): Prisma.JsonObject =>
   isJsonObject(value) ? value : {};
 
 /** Keys (`<entryId>:<edition>`) of the trophy cards that already exist. */

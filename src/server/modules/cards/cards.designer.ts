@@ -8,12 +8,15 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { RECRUITER_ACHIEVEMENT_IDS } from "~/lib/achievements/scope";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
+import { lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity } from "~/lib/cards/enums";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
+import { computeCardValue, readValuationConfig } from "~/lib/cards/valuation";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 import {
   HIDDEN_TAKEDOWNS,
   artLicenceFollowsTx,
@@ -36,6 +39,8 @@ export const SpecialCardSchema = z
       .default(null),
     isBound: z.boolean(),
     rewardAchievementKey: z.string().min(1).nullable().default(null),
+    /** Why an edit changes the card's rarity; needed only then, and audited with the override. */
+    reason: z.string().trim().max(500).optional(),
   })
   .refine(
     (card) =>
@@ -98,6 +103,7 @@ async function editedCard(tx: Prisma.TransactionClient, id: string) {
     select: {
       id: true,
       cardType: true,
+      rarity: true,
       specialKind: true,
       isBound: true,
       rewardAchievementKey: true,
@@ -115,8 +121,8 @@ type EditedSpecialCard = Awaited<ReturnType<typeof editedCard>>;
 
 /**
  * An old seed row waits for the import, which alone gives it a kind. Once players hold copies, the kind, binding and
- * achievement stay: binding lives on the card, so unbinding one would free every copy at once. Art a takedown or a
- * restricted licence hides is changed only from Compliance.
+ * achievement stay: binding lives on the card, so unbinding one would free every copy at once. A rarity change says
+ * why, as in the Library. Art a takedown or a restricted licence hides is changed only from Compliance.
  */
 function assertEditable(card: EditedSpecialCard, input: SpecialCardInput) {
   if (awaitsSpecialCardImport(card)) {
@@ -130,6 +136,9 @@ function assertEditable(card: EditedSpecialCard, input: SpecialCardInput) {
   if (changesKind && card._count.CardOwnership > 0) {
     throw refused("Players hold copies of this card, so its kind and binding are fixed.");
   }
+  if (input.rarity !== card.rarity && lacksRarityReason(input.reason)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Say why the rarity changes." });
+  }
   if (input.artwork !== card.artwork) assertArtNotHeld(card);
 }
 
@@ -140,21 +149,56 @@ function assertRewardAchievement(key: string | null, storedKey: string | null) {
   }
 }
 
-/** An edit's write. New art takes its licence row and credit with it, as in the Library. */
+/**
+ * A Special card's value at a rarity, as the revalue sets it (its floor times the Special multiplier), under the
+ * config as this transaction reads it.
+ */
+async function specialCardValueTx(tx: Prisma.TransactionClient, rarity: CardRarity) {
+  return computeCardValue({ rarity, cardType: "SPECIAL" }, await readValuationConfig(tx));
+}
+
+/**
+ * An edit's write. New art takes its licence row and credit with it, and a new rarity its value, as in the Library.
+ */
 async function updateSpecialCardTx(
   tx: Prisma.TransactionClient,
   card: EditedSpecialCard,
   data: Prisma.CardUncheckedUpdateInput,
-  artwork: string | null
+  input: Pick<SpecialCardInput, "artwork" | "rarity">
 ) {
-  const artChanged = artwork !== card.artwork;
+  const artChanged = input.artwork !== card.artwork;
+  const revalued =
+    input.rarity !== card.rarity ? { marketValue: await specialCardValueTx(tx, input.rarity) } : {};
   const updated = await tx.card.update({
     where: { id: card.id },
-    data: artChanged ? { ...data, artworkCredit: null } : data,
+    data: { ...data, ...revalued, ...(artChanged ? { artworkCredit: null } : {}) },
     select: { id: true },
   });
-  if (artChanged) await artLicenceFollowsTx(tx, card, artwork, "Designer");
+  if (artChanged) await artLicenceFollowsTx(tx, card, input.artwork, "Designer");
   return updated;
+}
+
+/** The save's audit rows: the save, and a rarity change as the override it is, with its reason (as in the Library). */
+async function auditSaveTx(
+  tx: Prisma.TransactionClient,
+  actor: CardAdminActor,
+  cardId: string,
+  existing: EditedSpecialCard | null,
+  input: SpecialCardInput
+) {
+  await recordCardAudit(tx, {
+    action: "CARD_SPECIAL_SAVE",
+    actor: actor.clerkId,
+    target: cardId,
+    details: `${existing ? "Edited" : "Created"} the Special card "${input.title}"`,
+  });
+  if (!existing || existing.rarity === input.rarity) return;
+  await recordCardAudit(tx, {
+    action: "CARD_RARITY_OVERRIDE",
+    actor: actor.clerkId,
+    target: cardId,
+    details: `Rarity ${existing.rarity} → ${input.rarity}: ${input.reason}`,
+  });
 }
 
 /** Creates a Special card, approved because an admin made it, or edits one in place (its season and type stay). */
@@ -180,10 +224,11 @@ export async function saveSpecialCard(
       if (existing) assertEditable(existing, input);
       assertRewardAchievement(input.rewardAchievementKey, existing?.rewardAchievementKey ?? null);
       const card = existing
-        ? await updateSpecialCardTx(tx, existing, data, input.artwork)
+        ? await updateSpecialCardTx(tx, existing, data, input)
         : await tx.card.create({
             data: {
               ...data,
+              marketValue: await specialCardValueTx(tx, input.rarity),
               cardType: "SPECIAL",
               category: "SPECIAL",
               season: await getCurrentIxCardSeason(tx),
@@ -191,12 +236,7 @@ export async function saveSpecialCard(
             },
             select: { id: true },
           });
-      await recordCardAudit(tx, {
-        action: "CARD_SPECIAL_SAVE",
-        actor: actor.clerkId,
-        target: card.id,
-        details: `${existing ? "Edited" : "Created"} the Special card "${input.title}"`,
-      });
+      await auditSaveTx(tx, actor, card.id, existing, input);
       return card;
     });
   } catch (error) {

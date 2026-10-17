@@ -7,6 +7,7 @@ import {
   rewardAchievementOptions,
   saveSpecialCard,
 } from "~/server/modules/cards/cards.designer";
+import { CARD_VALUATION_DEFAULTS, computeCardValue } from "~/lib/cards/valuation";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
@@ -29,10 +30,11 @@ const duplicateKey = (field: string) =>
 /** A client whose `$executeRaw` takes the card's serial lock, as an edit does. */
 const mockDb = () => createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
 
-/** A stored card as the edit's pre-read selects it: by default an event card nobody holds. */
+/** A stored card as the edit's pre-read selects it: by default an epic event card nobody holds. */
 const stored = (card: Record<string, unknown>, copies = 0) => ({
   id: "card_1",
   cardType: "SPECIAL",
+  rarity: "EPIC",
   specialKind: "EVENT",
   isBound: false,
   rewardAchievementKey: null,
@@ -315,6 +317,137 @@ describe("saveSpecialCard", () => {
   });
 });
 
+describe("saveSpecialCard's card value", () => {
+  /** A client whose transaction runs on its own client, so a read inside it is told apart from one outside. */
+  const transacting = () => {
+    const tx = mockDb();
+    const db = createMockPrisma({
+      $transaction: jest.fn((work: (client: typeof tx) => Promise<object>) => work(tx)),
+    });
+    return { db, tx };
+  };
+
+  it("values a new card as the revalue does, at its rarity's floor times the Special multiplier", async () => {
+    const { db, tx } = transacting();
+    tx.card.create.mockResolvedValue({ id: "card_new" });
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, rarity: "RARE" })
+    );
+    await saveSpecialCard(db as never, actor, SpecialCardSchema.parse(event));
+    // The default config: rare 100 × 2, epic 1,000 × 2
+    expect(tx.card.create.mock.calls[0]![0].data).toMatchObject({
+      rarity: "RARE",
+      marketValue: 200,
+    });
+    expect(tx.card.create.mock.calls[1]![0].data).toMatchObject({
+      rarity: "EPIC",
+      marketValue: 2000,
+    });
+    expect(tx.card.create.mock.calls[0]![0].data.marketValue).toBe(
+      computeCardValue({ rarity: "RARE", cardType: "SPECIAL" }, CARD_VALUATION_DEFAULTS)
+    );
+  });
+
+  it("reads the valuation config inside the transaction, past the cache", async () => {
+    const { db, tx } = transacting();
+    tx.card.create.mockResolvedValue({ id: "card_new" });
+    tx.systemConfig.findMany.mockResolvedValue([
+      { key: "card_valuation_mult_special", value: "3" },
+    ]);
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, rarity: "RARE" })
+    );
+    expect(tx.card.create.mock.calls[0]![0].data.marketValue).toBe(300);
+    expect(db.systemConfig.findMany).not.toHaveBeenCalled();
+  });
+
+  it("revalues an edit that changes the rarity, and leaves the value of one that does not", async () => {
+    const { db, tx } = transacting();
+    tx.card.update.mockResolvedValue({ id: "card_1" });
+    tx.card.findUnique.mockResolvedValue(stored({}));
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({
+        ...event,
+        id: "card_1",
+        rarity: "LEGENDARY",
+        reason: "Finale prize",
+      })
+    );
+    expect(tx.card.update.mock.calls[0]![0].data).toMatchObject({
+      rarity: "LEGENDARY",
+      marketValue: 6000,
+    });
+
+    await saveSpecialCard(
+      db as never,
+      actor,
+      SpecialCardSchema.parse({ ...event, id: "card_1", title: "Renamed gala" })
+    );
+    expect(tx.card.update.mock.calls[1]![0].data).not.toHaveProperty("marketValue");
+    expect(tx.systemConfig.findMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("saveSpecialCard's rarity override", () => {
+  const edit = (input: Record<string, unknown>) =>
+    SpecialCardSchema.parse({ ...event, id: "card_1", rarity: "LEGENDARY", ...input });
+
+  it("asks why an edit changes the rarity, and saves nothing without a reason", async () => {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue(stored({}));
+    for (const reason of [undefined, "", "   ", " a "]) {
+      await expect(saveSpecialCard(db as never, actor, edit({ reason }))).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: "Say why the rarity changes.",
+      });
+    }
+    expect(db.card.update).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("audits the override with its reason, as the Library does", async () => {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue(stored({}));
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    await saveSpecialCard(db as never, actor, edit({ reason: "  Season finale prize " }));
+    expect(db.auditLog.create.mock.calls.map(([arg]: [{ data: object }]) => arg.data)).toEqual([
+      expect.objectContaining({ action: "CARD_SPECIAL_SAVE", target: "card_1" }),
+      expect.objectContaining({
+        action: "CARD_RARITY_OVERRIDE",
+        userId: "clerk_admin",
+        target: "card_1",
+        details: "Rarity EPIC → LEGENDARY: Season finale prize",
+      }),
+    ]);
+  });
+
+  it("asks no reason of a new card, or of an edit that keeps the rarity", async () => {
+    const db = mockDb();
+    db.card.create.mockResolvedValue({ id: "card_new" });
+    db.card.update.mockResolvedValue({ id: "card_1" });
+    db.card.findUnique.mockResolvedValue(stored({}));
+    await expect(
+      saveSpecialCard(
+        db as never,
+        actor,
+        SpecialCardSchema.parse({ ...event, rarity: "LEGENDARY" })
+      )
+    ).resolves.toEqual({ id: "card_new" });
+    await expect(saveSpecialCard(db as never, actor, edit({ rarity: "EPIC" }))).resolves.toEqual({
+      id: "card_1",
+    });
+    expect(
+      db.auditLog.create.mock.calls.map(([arg]: [{ data: { action: string } }]) => arg.data.action)
+    ).toEqual(["CARD_SPECIAL_SAVE", "CARD_SPECIAL_SAVE"]);
+  });
+});
+
 describe("saveSpecialCard on a card players hold", () => {
   const fixed = {
     code: "PRECONDITION_FAILED",
@@ -396,6 +529,7 @@ describe("saveSpecialCard on a card players hold", () => {
       title: "Veteran of the realm",
       description: "Two years now.",
       rarity: "LEGENDARY",
+      reason: "Two years of the realm",
       artwork: "https://ixwiki.com/images/veteran.png",
     } as const;
     await expect(

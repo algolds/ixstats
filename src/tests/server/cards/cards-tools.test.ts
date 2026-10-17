@@ -116,7 +116,12 @@ describe("playerCardInventory", () => {
 
 describe("grantCard", () => {
   function setup(
-    card: { cardType?: string; reviewState?: string; isRetired?: boolean },
+    card: {
+      cardType?: string;
+      reviewState?: string;
+      isRetired?: boolean;
+      artLicence?: { status: string } | null;
+    },
     room: number
   ) {
     const db = createMockPrisma();
@@ -126,6 +131,7 @@ describe("grantCard", () => {
       cardType: "LORE",
       reviewState: "APPROVED",
       isRetired: false,
+      artLicence: null,
       ...card,
     });
     db.user.findUnique.mockResolvedValue({
@@ -172,7 +178,8 @@ describe("grantCard", () => {
     [{ reviewState: "PENDING" }, "This card is waiting for review."],
     [{ reviewState: "REJECTED" }, "This card was rejected."],
     [{ isRetired: true }, "This card is retired."],
-  ])("respects the review gate: refuses %o", async (card, message) => {
+    [{ artLicence: { status: "RESTRICTED" } }, "This card's art licence is restricted."],
+  ])("respects the review and licence gates: refuses %o", async (card, message) => {
     const db = setup(card, 5);
     await expect(grantCard(db as never, actor, input)).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
@@ -181,8 +188,14 @@ describe("grantCard", () => {
     expect(db.card.findUnique.mock.calls[0]![0].select).toMatchObject({
       reviewState: true,
       isRetired: true,
+      artLicence: { select: { status: true } },
     });
     expect(mintCopy).not.toHaveBeenCalled();
+  });
+
+  it.each(["OPEN", "UNKNOWN"])("grants a card whose art licence is %s", async (status) => {
+    const db = setup({ artLicence: { status } }, 5);
+    await expect(grantCard(db as never, actor, input)).resolves.toMatchObject({ serialNumber: 9 });
   });
 
   it("refuses a trophy and a full inventory", async () => {

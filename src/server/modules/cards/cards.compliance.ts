@@ -11,7 +11,8 @@ import { fileNameFromArtworkUrl } from "~/lib/cards/art-licence";
 import { parseCardWikiSource } from "~/lib/cards/card-sources";
 import { isJsonObject, nsFactsOf } from "~/lib/cards/ns-facts";
 import { takedownDueAt } from "~/lib/cards/takedown-deadline";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 type Tx = Prisma.TransactionClient;
 

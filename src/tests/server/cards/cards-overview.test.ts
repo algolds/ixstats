@@ -280,7 +280,7 @@ describe("realmOptions and findCards", () => {
     });
   });
 
-  it("keeps only approved, unretired, non-trophy cards for a grant picker", async () => {
+  it("keeps only approved, unretired, non-trophy cards without restricted art for a grant picker", async () => {
     const db = createMockPrisma();
     await findCards(db as never, "elm", { grantable: true });
     expect(db.card.findMany.mock.calls[0]![0].where).toEqual({
@@ -288,6 +288,7 @@ describe("realmOptions and findCards", () => {
       reviewState: "APPROVED",
       isRetired: false,
       cardType: { not: "TROPHY" },
+      artLicence: { isNot: { status: "RESTRICTED" } },
     });
   });
 });

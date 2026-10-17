@@ -4,9 +4,16 @@
  * releases the initiator's locked cards. Every action writes an audit row, drops the cached vault figures of each
  * player it touched and tells them.
  */
-import type { CardFinish, CardReviewState, Prisma, PrismaClient } from "@prisma/client";
+import type {
+  CardFinish,
+  CardLicenceStatus,
+  CardReviewState,
+  Prisma,
+  PrismaClient,
+} from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { copyRoom } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
@@ -16,7 +23,8 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { TradeStatus, claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
-import { recordCardAudit, type CardAdminActor } from "./cards.audit";
+import type { CardAdminActor } from "~/server/shared/admin-actor";
+import { recordCardAudit } from "./cards.audit";
 
 const MAX_COPIES_SHOWN = 500;
 const ownershipIds = z.array(z.string()).catch([]);
@@ -26,15 +34,29 @@ const REVIEW_REFUSALS: Record<Exclude<CardReviewState, "APPROVED">, string> = {
   REJECTED: "This card was rejected.",
 };
 
-/** Why a card cannot be granted, or null: packs and the daily card draw only approved, unretired cards. */
+/**
+ * The cards an admin may grant, as packs and the daily card would draw them: approved by review, not retired, and
+ * not restricted art. A trophy moves only with its Loreward, so it is never one. The card pickers search by it;
+ * `grantRefusal` is the same rule for one card, with its reason.
+ */
+export const GRANTABLE_CARDS = {
+  reviewState: "APPROVED",
+  isRetired: false,
+  cardType: { not: "TROPHY" },
+  ...EXCLUDE_RESTRICTED_ART,
+} satisfies Prisma.CardWhereInput;
+
+/** Why a card cannot be granted, or null when GRANTABLE_CARDS would match it. */
 function grantRefusal(card: {
   cardType: string;
   reviewState: CardReviewState;
   isRetired: boolean;
+  artLicence: { status: CardLicenceStatus } | null;
 }): string | null {
   if (isTrophyCard(card)) return TROPHY_REFUSAL;
   if (card.reviewState !== "APPROVED") return REVIEW_REFUSALS[card.reviewState];
-  return card.isRetired ? "This card is retired." : null;
+  if (card.isRetired) return "This card is retired.";
+  return card.artLicence?.status === "RESTRICTED" ? "This card's art licence is restricted." : null;
 }
 
 /** After an action: drop the player's cached vault stats and balance, which it changed, then tell them. */
@@ -171,7 +193,14 @@ export async function grantCard(
   const [card, user] = await Promise.all([
     db.card.findUnique({
       where: { id: input.cardId },
-      select: { id: true, title: true, cardType: true, reviewState: true, isRetired: true },
+      select: {
+        id: true,
+        title: true,
+        cardType: true,
+        reviewState: true,
+        isRetired: true,
+        artLicence: { select: { status: true } },
+      },
     }),
     playerOrThrow(db, input.userId),
   ]);

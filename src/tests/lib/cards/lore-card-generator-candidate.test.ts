@@ -23,6 +23,14 @@ interface FakePage {
   pageimage?: string;
   images?: Array<{ title: string }>;
   wikitext?: string;
+  /** A wiki with TextExtracts: the lead and its sections, which it heads as asked (`exsectionformat`). */
+  sections?: { lead: string; headings: string[] };
+}
+
+/** TextExtracts' plain text: section headings as `== Heading ==` lines, unless asked for plain ones. */
+function textExtract(sections: NonNullable<FakePage["sections"]>, format: string | null): string {
+  const heading = (title: string) => (format === "plain" ? title : `== ${title} ==`);
+  return [sections.lead, ...sections.headings.map(heading)].join("\n\n");
 }
 
 /** AltHistory answering the generator's reads: the page, its backlinks, its first editors and file URLs. */
@@ -48,6 +56,7 @@ function althistory(page: FakePage) {
         pages: {
           1: {
             title: "Aramelia (Roman Survival)",
+            extract: page.sections && textExtract(page.sections, params.get("exsectionformat")),
             original: page.original,
             pageimage: page.pageimage,
             images: page.images,
@@ -184,6 +193,42 @@ describe("generateCard for a sister wiki", () => {
   it("rejects a page without an image when one is required", async () => {
     await expect(read({}, { requireImage: true })).rejects.toEqual(
       new ArticleRejected("no-image", '"Aramelia (Roman Survival)" has no usable image.')
+    );
+  });
+
+  it("cleans the excerpt from the wikitext, as IxWiki's is, when the wiki has no TextExtracts", async () => {
+    const wikitext = [
+      "{{Infobox country\n| name = Aramelia\n}}",
+      "[[File:001 islam.gif|thumb|The faith of the half world]]",
+      '<p style="text-align:justify">In this timeline the [[Ottoman Empire (Ottoman World)|Ottomans]] ' +
+        "held the '''straits''' for [[Constantinople]].{{cn}}</p>",
+      "== History ==",
+      "=== Rise ===",
+      BODY,
+    ].join("\n");
+    const card = await read({ wikitext });
+
+    for (const text of [card.fullExcerpt, card.description]) {
+      for (const markup of ["[[", "]]", "{{", "}}", "==", "'''", "<p", "style=", "File:", "thumb"])
+        expect(text).not.toContain(markup);
+      expect(text).toMatch(
+        /^In this timeline the Ottomans held the straits for Constantinople\. Aramelia/
+      );
+    }
+    expect(card.fullExcerpt.length).toBeLessThanOrEqual(2000);
+    // The length gate still counts the article's text, not the cleaned excerpt
+    expect(card.signals.length).toBeGreaterThan(card.fullExcerpt.length);
+  });
+
+  it("asks TextExtracts for plain section headings, so the excerpt keeps no == lines", async () => {
+    const sections = {
+      lead: "Aramelia is a nation of the Roman Survival timeline.",
+      headings: ["History", "Rise"],
+    };
+    const card = await read({ sections });
+    expect(card.fullExcerpt).not.toContain("==");
+    expect(card.fullExcerpt).toBe(
+      "Aramelia is a nation of the Roman Survival timeline.\n\nHistory\n\nRise"
     );
   });
 

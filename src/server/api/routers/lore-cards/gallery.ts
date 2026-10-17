@@ -47,8 +47,12 @@ export const loreCardsGalleryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Build where clause: approved cards only (imports wait in review)
-        const where: Prisma.CardWhereInput = { cardType: "LORE", reviewState: "APPROVED" };
+        // Build where clause: approved cards only (imports wait in review), and never a hidden (retired) one
+        const where: Prisma.CardWhereInput = {
+          cardType: "LORE",
+          reviewState: "APPROVED",
+          isRetired: false,
+        };
 
         // Wiki source filter
         if (input.wikiSource !== "all") {
