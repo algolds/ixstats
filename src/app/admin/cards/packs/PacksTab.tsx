@@ -40,7 +40,7 @@ function PacksTable({
           <TableHead>Guarantee</TableHead>
           <TableHead className="text-right">Issued</TableHead>
           <TableHead>On sale</TableHead>
-          <TableHead>
+          <TableHead pinned>
             <span className="sr-only">Edit</span>
           </TableHead>
         </TableRow>
@@ -66,7 +66,7 @@ function PacksTable({
                 onCheckedChange={(isActive) => onActiveChange(pack, isActive)}
               />
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell pinned className="text-right">
               <Button
                 size="sm"
                 variant="ghost"

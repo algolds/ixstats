@@ -55,7 +55,7 @@ function SyncRow({
         {/* A sync reads the season dumps before it knows how many cards it has */}
         {sync.totalCards > 0 ? `${sync.processed} of ${sync.totalCards}` : "Reading the card dumps"}
       </TableCell>
-      <TableCell className="space-x-1 text-right whitespace-nowrap">
+      <TableCell pinned className="space-x-1 text-right whitespace-nowrap">
         {!paused && (
           <Button size="xs" variant="secondary" disabled={busy} onClick={onPause}>
             Pause
@@ -124,7 +124,7 @@ export function NsImports() {
                   <TableHead>Region</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Done</TableHead>
-                  <TableHead>
+                  <TableHead pinned>
                     <span className="sr-only">Actions</span>
                   </TableHead>
                 </TableRow>

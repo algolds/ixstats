@@ -69,7 +69,7 @@ function SyncCards({
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent size="wide">
-        <SheetHeader>
+        <SheetHeader className="pr-8">
           <SheetTitle>Cards from {log?.region}</SheetTitle>
           <SheetDescription>
             {cards.data?.exact === false
@@ -156,7 +156,7 @@ export function NsHistory() {
                 <TableHead>Started</TableHead>
                 <TableHead className="text-right">New</TableHead>
                 <TableHead className="text-right">Updated</TableHead>
-                <TableHead>
+                <TableHead pinned>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -184,7 +184,7 @@ export function NsHistory() {
                   <TableCell className="text-right tabular-nums">
                     {log.region ? log.cardsUpdated.toLocaleString() : "–"}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell pinned className="text-right">
                     {log.region && (
                       <Button size="xs" variant="ghost" onClick={() => viewing.open(log)}>
                         Cards

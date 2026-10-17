@@ -90,7 +90,7 @@ function TakedownRow({
           </Badge>
         )}
       </TableCell>
-      <TableCell className="space-x-1 text-right whitespace-nowrap">
+      <TableCell pinned className="space-x-1 text-right whitespace-nowrap">
         {waiting && (
           <>
             <Button size="xs" disabled={actions.busy} onClick={() => actions.onHide(takedown)}>
@@ -188,7 +188,7 @@ export function TakedownQueue() {
                 <TableHead>From</TableHead>
                 <TableHead>Reason</TableHead>
                 <TableHead>{view === "OPEN" ? "Due" : "Answered"}</TableHead>
-                <TableHead>
+                <TableHead pinned>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>

@@ -85,7 +85,7 @@ export function SuggestionsList() {
                 <TableHead>Article</TableHead>
                 <TableHead>Realm</TableHead>
                 <TableHead>Suggested</TableHead>
-                <TableHead>
+                <TableHead pinned>
                   <span className="sr-only">Answer</span>
                 </TableHead>
               </TableRow>
@@ -103,7 +103,7 @@ export function SuggestionsList() {
                   <TableCell className="tabular-nums">
                     {new Date(request.requestedAt).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="space-x-1 text-right whitespace-nowrap">
+                  <TableCell pinned className="space-x-1 text-right whitespace-nowrap">
                     {request.status === "PENDING" ? (
                       <>
                         <Button
