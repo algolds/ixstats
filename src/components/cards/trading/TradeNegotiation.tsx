@@ -6,7 +6,6 @@
  */
 
 import React, { useMemo } from "react";
-import Image from "next/image";
 import {
   CheckCircle,
   XmarkCircle as XCircle,
@@ -21,8 +20,9 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { formatDistanceToNow } from "date-fns";
-import { CardHolographicCover } from "../display/CardHolographicCover";
-import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
+import { CardFace } from "~/components/cards/face/CardFace";
+import type { CardFaceData } from "~/lib/cards/face/types";
+import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 
 /**
  * TradeNegotiation component props
@@ -34,14 +34,109 @@ interface TradeNegotiationProps {
   isRecipient: boolean;
   /** Refresh callback after action */
   onRefresh?: () => void;
+  /** Opens a card's sheet, with the place that shows its art. */
+  onOpenCard?: (cardId: string, from?: SheetFrom | null) => void;
+}
+
+interface SideFacts {
+  faces: readonly CardFaceData[];
+  credits: number;
+  value: number;
+}
+
+interface TradeTotals {
+  initiatorFaces: readonly CardFaceData[];
+  recipientFaces: readonly CardFaceData[];
+  initiatorCredits: number;
+  recipientCredits: number;
+  initiatorValue: number;
+  recipientValue: number;
+}
+
+/** The trade from the player's side: what they give and what they get. */
+function sidesOf(trade: TradeTotals, isRecipient: boolean): { give: SideFacts; get: SideFacts } {
+  const initiator = {
+    faces: trade.initiatorFaces,
+    credits: trade.initiatorCredits,
+    value: trade.initiatorValue,
+  };
+  const recipient = {
+    faces: trade.recipientFaces,
+    credits: trade.recipientCredits,
+    value: trade.recipientValue,
+  };
+  return isRecipient ? { give: recipient, get: initiator } : { give: initiator, get: recipient };
+}
+
+/**
+ * Where each side's cards open their sheet. A live offer shows all its art to its recipient (the offer context);
+ * otherwise the partner's copies open as theirs (the holder context), and the player's own need no context.
+ */
+function sheetContexts(
+  tradeId: string,
+  liveOfferToViewer: boolean,
+  partnerHandle: string | null
+): { give: SheetFrom | null; get: SheetFrom | null } {
+  if (liveOfferToViewer) {
+    const offer: SheetFrom = { kind: "offer", id: tradeId };
+    return { give: offer, get: offer };
+  }
+  return { give: null, get: partnerHandle ? { kind: "holder", handle: partnerHandle } : null };
+}
+
+/** One side of a trade: its cards, any credits, and the total value. */
+function TradeSide({
+  title,
+  faces,
+  credits,
+  value,
+  onOpen,
+}: SideFacts & { title: string; onOpen: (face: CardFaceData) => void }) {
+  const headingId = React.useId();
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="bg-surface-secondary border-separator rounded-control border p-4"
+    >
+      <h4 id={headingId} className="text-headline mb-3">
+        {title}
+      </h4>
+
+      {faces.length > 0 && (
+        <ul className="mb-4 grid grid-cols-3 gap-2">
+          {faces.map((face) => (
+            <li key={face.copy?.ownershipId ?? face.cardId}>
+              <CardFace face={face} size="S" className="w-full" onOpen={onOpen} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Credits */}
+      {credits > 0 && (
+        <div className="bg-fill-3 rounded-control mb-3 flex items-center gap-2 p-3">
+          <Coins aria-hidden className="text-yellow h-5 w-5" />
+          <span className="text-label font-semibold tabular-nums">
+            +{credits.toLocaleString()} IxC
+          </span>
+        </div>
+      )}
+
+      {/* Total value */}
+      <div className="border-separator border-t pt-3">
+        <p className="text-body text-label-secondary">Total value</p>
+        <p className="text-title-2 text-label tabular-nums">{value.toLocaleString()} IxC</p>
+      </div>
+    </section>
+  );
 }
 
 /**
  * TradeNegotiation - Active trade view with actions
  *
  * Features:
- * - Split view: Your side | Their side
- * - Card displays for both sides
+ * - Split view: what you give | what you get
+ * - Card faces for both sides, each opening its sheet
  * - Credits display
  * - Trade status and expiration
  * - Accept/Decline/Counter buttons
@@ -54,77 +149,12 @@ interface TradeNegotiationProps {
  *   tradeId="trade_123"
  *   isRecipient={true}
  *   onRefresh={() => refetch()}
+ *   onOpenCard={sheet.open}
  * />
  * ```
  */
-/** One side of a trade: its cards, any credits, and the total value. */
-function TradeSideCard({
-  title,
-  titleClassName,
-  cards,
-  credits,
-  value,
-}: {
-  title: string;
-  titleClassName: string;
-  cards: any[];
-  credits: number;
-  value: number;
-}) {
-  return (
-    <div className="bg-surface-secondary border-separator rounded-control border p-4">
-      <h4 className={cn("text-headline mb-3", titleClassName)}>{title}</h4>
-
-      {/* Cards */}
-      <div className="mb-4 space-y-3">
-        {cards.map((ownership: any) => (
-          <div key={ownership.id} className="bg-fill-3 rounded-control flex items-center gap-3 p-2">
-            <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
-              <CardHolographicCover
-                cardType={ownership.cards.cardType || "NATION"}
-                rarity={ownership.cards.rarity || "COMMON"}
-                title={ownership.cards.title}
-              />
-              <Image
-                src={ownership.cards.artwork || CARD_ARTWORK_PLACEHOLDER}
-                alt={ownership.cards.title}
-                fill
-                className="object-cover"
-                unoptimized
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-body text-label truncate font-medium">{ownership.cards.title}</p>
-              <p className="text-footnote text-label-secondary">
-                {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()} credits
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Credits */}
-      {credits > 0 && (
-        <div className="bg-fill-3 rounded-control mb-3 flex items-center gap-2 p-3">
-          <Coins className="text-yellow h-5 w-5" />
-          <span className="text-label font-semibold">+{credits.toLocaleString()} IxCredits</span>
-        </div>
-      )}
-
-      {/* Total value */}
-      <div className="border-separator border-t pt-3">
-        <p className="text-body text-label-secondary">Total value</p>
-        <p className="text-title-2 text-label">{value.toLocaleString()} credits</p>
-      </div>
-    </div>
-  );
-}
-
 export const TradeNegotiation = React.memo<TradeNegotiationProps>(
-  ({ tradeId, isRecipient, onRefresh }) => {
+  ({ tradeId, isRecipient, onRefresh, onOpenCard }) => {
     // Fetch trade details
     const { data: trade, isLoading } = api.trading.getTradeById.useQuery({ tradeId });
 
@@ -190,18 +220,12 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
       );
     }
 
-    const initiatorCards = trade.initiatorCardsData || [];
-    const recipientCards = trade.recipientCardsData || [];
-
-    const yourCards = isRecipient ? recipientCards : initiatorCards;
-    const theirCards = isRecipient ? initiatorCards : recipientCards;
-    const yourCredits = isRecipient ? trade.recipientCredits : trade.initiatorCredits;
-    const theirCredits = isRecipient ? trade.initiatorCredits : trade.recipientCredits;
-
-    const yourValue = isRecipient ? trade.recipientValue : trade.initiatorValue;
-    const theirValue = isRecipient ? trade.initiatorValue : trade.recipientValue;
-
-    const tradePartner = isRecipient ? trade.initiator : trade.recipient;
+    const partner = isRecipient ? trade.initiator : trade.recipient;
+    const live = trade.status === "PENDING" && !isExpired;
+    const sides = sidesOf(trade, isRecipient);
+    const contexts = sheetContexts(tradeId, isRecipient && live, partner.handle);
+    const open = (from: SheetFrom | null) => (face: CardFaceData) =>
+      onOpenCard?.(face.cardId, from);
 
     return (
       <div className="space-y-4">
@@ -209,18 +233,18 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-title-3 text-label flex items-center gap-2 font-semibold">
-                <ArrowRightLeft className="text-blue h-5 w-5" />
-                Trade with {tradePartner.country?.name || "Unknown"}
+                <ArrowRightLeft aria-hidden className="text-blue h-5 w-5" />
+                Trade with {partner.handle ? `@${partner.handle}` : "a player"}
               </h3>
               {trade.message && (
                 <div className="text-body text-label-secondary mt-2 flex items-start gap-2">
-                  <MessageSquare className="mt-0.5 h-4 w-4" />
+                  <MessageSquare aria-hidden className="mt-0.5 h-4 w-4" />
                   <p>{trade.message}</p>
                 </div>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="text-label-secondary h-4 w-4" />
+              <Clock aria-hidden className="text-label-secondary h-4 w-4" />
               <span className={cn("text-body font-medium", isExpired ? "text-red" : "text-label")}>
                 {timeRemaining}
               </span>
@@ -230,24 +254,12 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
         {/* Trade display */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <TradeSideCard
-            title={`You ${isRecipient ? "Receive" : "Offer"}`}
-            titleClassName="text-blue"
-            cards={yourCards}
-            credits={yourCredits}
-            value={yourValue}
-          />
-          <TradeSideCard
-            title={`They ${isRecipient ? "Offer" : "Receive"}`}
-            titleClassName="text-green"
-            cards={theirCards}
-            credits={theirCredits}
-            value={theirValue}
-          />
+          <TradeSide title="You give" {...sides.give} onOpen={open(contexts.give)} />
+          <TradeSide title="You get" {...sides.get} onOpen={open(contexts.get)} />
         </div>
 
         {/* Actions */}
-        {trade.status === "PENDING" && !isExpired && (
+        {live && (
           <div className="bg-surface-secondary border-separator rounded-control border p-4">
             {isRecipient ? (
               <div className="flex flex-wrap justify-end gap-3">
@@ -290,7 +302,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                   className="bg-green/20 hover:bg-green/30"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  {respondToTrade.isPending ? "Processing..." : "Accept Trade"}
+                  {respondToTrade.isPending ? "Processing..." : "Accept trade"}
                 </Button>
               </div>
             ) : (

@@ -275,6 +275,10 @@ describe("caller-scoped reads", () => {
     });
   });
 
+  it("has no ending-soon list: ending soon is a sort (spec §2.3 Market)", () => {
+    expect("getEndingSoon" in cardMarketRouter._def.procedures).toBe(false);
+  });
+
   it("caps the active-auction page size", async () => {
     await expect(callerAs("u1", db).getActiveAuctions({ limit: 101 })).rejects.toMatchObject({
       code: "BAD_REQUEST",

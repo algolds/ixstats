@@ -6,7 +6,7 @@
  *
  * Domains:
  *  - auctionManagement: auction create/cancel/buyout + demo seeding (mutations)
- *  - auctionQueries:    active/by-id/history/featured/ending-soon/my-auctions reads
+ *  - auctionQueries:    active/by-id/history/featured/my-auctions reads
  *  - bids:              place bid, bid history, my active bids, my participation
  *  - analytics:         market trends, value/transfer history, dust, inscribe
  */

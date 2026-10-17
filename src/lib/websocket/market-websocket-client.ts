@@ -183,6 +183,13 @@ class MarketWebSocketClient {
     return () => this.unsubscribe(subscriptionId);
   }
 
+  /** Every event of one type, unfiltered: a list screen refetches on any of them. */
+  subscribeToAll(type: Subscription["type"], callback: () => void): () => void {
+    const subscriptionId = `all-${type}-${Math.random()}`;
+    this.subscriptions.set(subscriptionId, { id: subscriptionId, type, callback });
+    return () => this.unsubscribe(subscriptionId);
+  }
+
   /**
    * Unsubscribe from updates
    */

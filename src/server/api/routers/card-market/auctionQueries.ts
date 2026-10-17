@@ -15,7 +15,7 @@ import { CardRarity, CardType } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
-import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE, AUCTION_CARD_INCLUDE } from "./_shared";
+import { assertAuthUserId, AUCTION_CARD_INCLUDE } from "./_shared";
 
 /**
  * Card Market Router
@@ -110,42 +110,4 @@ export const cardMarketAuctionQueriesRouter = createTRPCRouter({
       });
     }
   }),
-
-  /**
-   * Get ending soon auctions
-   * Admin-only endpoint
-   */
-  getEndingSoon: protectedProcedure
-    .input(
-      z.object({
-        limit: z.number().int().min(1).max(50).optional().default(10),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const now = new Date();
-        const soon = new Date(now.getTime() + 60 * 60 * 1000); // Next hour
-
-        const auctions = await ctx.db.cardAuction.findMany({
-          where: {
-            status: "ACTIVE",
-            endTime: {
-              gte: now,
-              lte: soon,
-            },
-          },
-          include: AUCTION_WITH_SELLER_INCLUDE,
-          orderBy: { endTime: "asc" },
-          take: input.limit,
-        });
-
-        return { auctions };
-      } catch (error) {
-        console.error("[Card Market Router] Error getting ending soon auctions:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch ending soon auctions",
-        });
-      }
-    }),
 });
