@@ -16,8 +16,10 @@ import { isJsonObject } from "~/lib/cards/ns-facts";
 import { removeCopyTx, type RemovableCopy } from "~/lib/cards/remove-copy";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import {
+  contestDay,
   contestEntriesWhere,
   contestPlaceKey,
+  contestsHoldingDayWhere,
   type Contest,
 } from "~/lib/lorewards/contest-identity";
 import { CONTEST_ENTRY_SELECT, lockContestPlace } from "~/lib/lorewards/contest-store";
@@ -460,21 +462,49 @@ function assertPlacesSettled(contest: Contest<ContestRow>, fields: LorewardOverr
   }
 }
 
+const CONTEST_KEY_SELECT = { type: true, date: true, dateStart: true } as const;
+type ContestKey = Prisma.LorewardEntryGetPayload<{ select: typeof CONTEST_KEY_SELECT }>;
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
- * Writes the override to every entry of its contest, marked `overriddenAt` (creating the entry, approved, when the
- * contest has none), under both places' contest locks, then reconciles the trophy of each place it sets.
+ * The contest an override names: the entry stored under its key, else, for a weekly or monthly, a recorded contest
+ * that holds the day (`contestsHoldingDayWhere`), so a day other than its first never starts a stray entry. A daily
+ * with no entry is its date. A weekly or monthly day no recorded contest holds is refused.
+ */
+async function contestKeyTx(tx: Tx, { date, type }: OverrideInput): Promise<ContestKey> {
+  const keyed = await tx.lorewardEntry.findUnique({
+    where: { date_type: { date, type } },
+    select: CONTEST_KEY_SELECT,
+  });
+  if (keyed) return keyed;
+  if (type === "daily") return { type, date, dateStart: null };
+  const held = ISO_DAY.test(date)
+    ? await tx.lorewardEntry.findFirst({
+        where: contestsHoldingDayWhere(type, date),
+        select: CONTEST_KEY_SELECT,
+        // A recorded range first; the twins of one contest share its first day, so either names it
+        orderBy: [{ dateStart: { sort: "desc", nulls: "last" } }, { date: "desc" }],
+      })
+    : null;
+  if (held) return held;
+  throw new TRPCError({
+    code: "BAD_REQUEST",
+    message: `No ${type} contest is recorded for ${date}. Enter a day of a recorded ${type} contest.`,
+  });
+}
+
+/**
+ * Writes the override to every entry of its contest (`contestKeyTx`), marked `overriddenAt` (creating a daily's entry,
+ * approved, when it has none), under both places' contest locks, then reconciles the trophy of each place it sets.
  */
 async function overrideTx(
   tx: Tx,
   actor: CardAdminActor,
   input: OverrideInput
-): Promise<{ entryIds: string[]; outcomes: Outcome[]; written: EntryFields }> {
-  const key = { date_type: { date: input.date, type: input.type } };
-  const keyed = await tx.lorewardEntry.findUnique({
-    where: key,
-    select: { type: true, date: true, dateStart: true },
-  });
-  const identity = keyed ?? { type: input.type, date: input.date, dateStart: null };
+): Promise<{ entryIds: string[]; outcomes: Outcome[]; written: EntryFields; day: string }> {
+  const identity = await contestKeyTx(tx, input);
+  const day = contestDay(identity);
   for (const place of PLACES) await lockContestPlace(tx, contestPlaceKey(identity, place));
   const [first, ...rest] = await tx.lorewardEntry.findMany({
     where: contestEntriesWhere(identity),
@@ -485,12 +515,18 @@ async function overrideTx(
   if (!first) {
     const written = entryFields(input.fields, NOTHING_STORED);
     const created = await tx.lorewardEntry.upsert({
-      where: key,
-      create: { date: input.date, type: input.type, status: "approved", ...written, ...marked },
+      where: { date_type: { date: identity.date, type: identity.type } },
+      create: {
+        date: identity.date,
+        type: identity.type,
+        status: "approved",
+        ...written,
+        ...marked,
+      },
       update: { ...written, ...marked },
       select: { id: true },
     });
-    return { entryIds: [created.id], outcomes: [], written };
+    return { entryIds: [created.id], outcomes: [], written, day };
   }
 
   const contest: Contest<ContestRow> = [first, ...rest];
@@ -509,16 +545,20 @@ async function overrideTx(
     const overridden = { contest, lead, type: input.type, fields: written };
     outcomes.push(...(await reconcilePlaceTx(tx, actor, overridden, place)));
   }
-  return { entryIds, outcomes, written };
+  return { entryIds, outcomes, written, day };
 }
 
-/** What an override did: the trophies it moved, voided and minted, and the eight fields it wrote. */
+/**
+ * What an override did: the trophies it moved, voided and minted, the eight fields it wrote, and the contest's first
+ * day (a daily's date), which the bot is told the override under.
+ */
 export interface LorewardOverrideResult {
   reassigned: number;
   voided: number;
   minted: number;
   mintDeferred: boolean;
   written: EntryFields;
+  day: string;
 }
 
 /**
@@ -531,7 +571,7 @@ export async function overrideLorewardEntry(
   actor: CardAdminActor,
   input: OverrideInput
 ): Promise<LorewardOverrideResult> {
-  const { entryIds, outcomes, written } = await db.$transaction((tx) =>
+  const { entryIds, outcomes, written, day } = await db.$transaction((tx) =>
     overrideTx(tx, actor, input)
   );
   let minted = 0;
@@ -551,5 +591,6 @@ export async function overrideLorewardEntry(
     minted,
     mintDeferred,
     written,
+    day,
   };
 }

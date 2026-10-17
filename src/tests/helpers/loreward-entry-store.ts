@@ -1,7 +1,7 @@
 /**
  * An in-memory `lorewardEntry` table for the Lorewards sync tests. It answers the `where` shapes the sync uses
- * (equality, `in`, `startsWith`, `not: null`, `OR`, the `date_type` key), so a test reads what a query really
- * selects instead of a canned answer.
+ * (equality, `in`, `startsWith`, `gte` and `lte`, `not: null`, `OR`, the `date_type` key), so a test reads what a
+ * query really selects instead of a canned answer.
  */
 
 export interface StoredEntry {
@@ -21,7 +21,8 @@ export interface StoredEntry {
 }
 
 type Field = string | number | Date | null;
-type Condition = Field | { in?: Field[]; startsWith?: string; not?: null };
+type Condition =
+  Field | { in?: Field[]; startsWith?: string; gte?: string; lte?: string; not?: null };
 interface Where {
   [field: string]: Condition | Where[] | undefined;
 }
@@ -42,6 +43,14 @@ function holds(value: Field, condition: Condition): boolean {
   if (condition.in) return condition.in.includes(value);
   if (condition.startsWith !== undefined) {
     return typeof value === "string" && value.startsWith(condition.startsWith);
+  }
+  const { gte, lte } = condition;
+  if (gte !== undefined || lte !== undefined) {
+    return (
+      typeof value === "string" &&
+      (gte === undefined || value >= gte) &&
+      (lte === undefined || value <= lte)
+    );
   }
   return value !== null;
 }
@@ -70,7 +79,7 @@ export const storedEntry = (over: Partial<StoredEntry> & { id: string }): Stored
   ...over,
 });
 
-/** The table's delegate over `rows` (changed in place by create, update and upsert). */
+/** The table's delegate over `rows` (changed in place by create, update, updateMany and upsert). */
 export function entryStore(rows: StoredEntry[]) {
   const at = ({ date_type }: DateType) =>
     rows.find((row) => row.date === date_type.date && row.type === date_type.type);
@@ -96,6 +105,11 @@ export function entryStore(rows: StoredEntry[]) {
         return row;
       }
     ),
+    updateMany: jest.fn(async ({ where, data }: { where: Where; data: Partial<StoredEntry> }) => {
+      const hit = rows.filter((row) => matches(row, where));
+      for (const row of hit) Object.assign(row, data);
+      return { count: hit.length };
+    }),
     upsert: jest.fn(
       async (args: {
         where: DateType;

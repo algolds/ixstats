@@ -166,7 +166,10 @@ function setup({
 const override = (
   { db }: Harness,
   fields: LorewardOverride,
-  key: { date: string; type: "daily" | "weekly" } = { date: "2026-10-20", type: "daily" }
+  key: { date: string; type: "daily" | "weekly" | "monthly" } = {
+    date: "2026-10-20",
+    type: "daily",
+  }
 ) => overrideLorewardEntry(db as never, actor, { ...key, fields });
 
 /** The advisory locks taken, in order, as `<namespace> <key>`. */
@@ -1055,5 +1058,108 @@ describe("a contest stored twice", () => {
       ["trophy_b", "user_cy"],
     ]);
     expect(resolveLorewardPlace).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the day an override names", () => {
+  const CONTEST_KEY = { type: true, date: true, dateStart: true };
+
+  it("finds a weekly by any day of it, and writes its entries under its first day, starting none", async () => {
+    const [, state] = weeklyTwins("Amy", "Amy");
+    const h = setup({ contest: weeklyTwins("Amy", "Amy"), keyed: null });
+    h.tx.lorewardEntry.findFirst.mockResolvedValue(state);
+
+    const result = await override(h, winner("Cy", "Page"), { date: "2026-10-22", type: "weekly" });
+
+    expect(h.tx.lorewardEntry.findFirst).toHaveBeenCalledWith({
+      where: {
+        type: "weekly",
+        OR: [
+          { dateStart: { gte: "2026-10-16", lte: "2026-10-22" } },
+          { dateStart: null, date: { gte: "2026-10-16", lte: "2026-10-22" } },
+        ],
+      },
+      select: CONTEST_KEY,
+      orderBy: [{ dateStart: { sort: "desc", nulls: "last" } }, { date: "desc" }],
+    });
+    expect(callOrder(h.tx.lorewardEntry.findFirst)).toBeLessThan(callOrder(h.tx.$executeRaw));
+    expect(locks(h)).toEqual(["7332 weekly:2026-10-19:winner", "7332 weekly:2026-10-19:runner-up"]);
+    expect(h.tx.lorewardEntry.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["w_ool", "w_state"] } },
+      data: expect.objectContaining({ winnerUser: "Cy", overriddenAt: expect.any(Date) }),
+    });
+    expect(h.tx.lorewardEntry.upsert).not.toHaveBeenCalled();
+    // The bot is told of the contest by its first day
+    expect(result.day).toBe("2026-10-19");
+  });
+
+  it("finds a monthly by any day of it, through the first of its month", async () => {
+    const july = {
+      ...daily("Amy", "Page"),
+      id: "m_state",
+      type: "monthly",
+      date: "2026-07",
+      dateStart: "2026-07-01",
+      dateEnd: "2026-07-31",
+    };
+    const h = setup({ contest: [july], keyed: null });
+    h.tx.lorewardEntry.findFirst.mockResolvedValue(july);
+
+    const result = await override(h, winner("Cy", "Page"), {
+      date: "2026-07-17",
+      type: "monthly",
+    });
+
+    expect(h.tx.lorewardEntry.findFirst.mock.calls[0]![0].where).toEqual({
+      type: "monthly",
+      OR: [{ dateStart: "2026-07-01" }, { dateStart: null, date: "2026-07-01" }],
+    });
+    expect(locks(h)[0]).toBe("7332 monthly:2026-07-01:winner");
+    expect(h.tx.lorewardEntry.upsert).not.toHaveBeenCalled();
+    expect(result.day).toBe("2026-07-01");
+  });
+
+  it("refuses a weekly or monthly day no recorded contest holds, writing and locking nothing", async () => {
+    for (const key of [
+      { date: "2026-10-22", type: "weekly" as const },
+      { date: "2026-07-17", type: "monthly" as const },
+    ]) {
+      const h = setup({ contest: [], keyed: null });
+
+      await expect(override(h, winner("Cy", "Page"), key)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: `No ${key.type} contest is recorded for ${key.date}. Enter a day of a recorded ${key.type} contest.`,
+      });
+      expect(locks(h)).toEqual([]);
+      expect(h.tx.lorewardEntry.upsert).not.toHaveBeenCalled();
+      expect(h.tx.lorewardEntry.updateMany).not.toHaveBeenCalled();
+    }
+    expect(mintTrophyCards).not.toHaveBeenCalled();
+  });
+
+  it("refuses a weekly key no entry is stored under without reading it as a day", async () => {
+    const h = setup({ contest: [], keyed: null });
+
+    await expect(
+      override(h, winner("Cy", "Page"), { date: "2026-W44", type: "weekly" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(h.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("names a contest stored under its key by its first day, and a daily by its date", async () => {
+    const [, state] = weeklyTwins("Amy", "Amy");
+    const keyed = setup({ contest: weeklyTwins("Amy", "Amy"), keyed: state });
+    await expect(
+      override(keyed, winner("Cy", "Page"), { date: "2026-W43", type: "weekly" })
+    ).resolves.toMatchObject({ day: "2026-10-19" });
+    expect(keyed.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
+
+    const h = setup({ contest: [daily("Amy", "Old page")] });
+    await expect(override(h, winner("Cy", "Page"))).resolves.toMatchObject({ day: "2026-10-20" });
+    const fresh = setup({ contest: [], keyed: null });
+    await expect(override(fresh, winner("Cy", "Page"))).resolves.toMatchObject({
+      day: "2026-10-20",
+    });
+    expect(fresh.tx.lorewardEntry.findFirst).not.toHaveBeenCalled();
   });
 });
