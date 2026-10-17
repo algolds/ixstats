@@ -135,6 +135,29 @@ describe("AddToShowcaseDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it("tells the caller once the copies are added, and not when adding fails", () => {
+    listed([showcase()]);
+    let fails = true;
+    mutations({
+      add: (options) =>
+        fails ? options.onError?.({ message: "No room." }) : options.onSuccess?.({ added: 2 }),
+    });
+    const onAdded = jest.fn();
+    render(
+      <AddToShowcaseDialog
+        open
+        onOpenChange={jest.fn()}
+        ownershipIds={["o1", "o2"]}
+        onAdded={onAdded}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
+    expect(onAdded).not.toHaveBeenCalled();
+    fails = false;
+    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
+    expect(onAdded).toHaveBeenCalledTimes(1);
+  });
+
   it("forgets a half-typed name once the cards are added elsewhere", () => {
     listed([showcase()]);
     mutations({ add: (options) => options.onSuccess?.({ added: 1 }) });

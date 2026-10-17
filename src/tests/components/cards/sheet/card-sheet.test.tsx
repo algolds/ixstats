@@ -395,7 +395,8 @@ describe("CardSheet market", () => {
     expect(
       within(screen.getByRole("list", { name: "Recent sales" })).getByText("800")
     ).toBeInTheDocument();
-    expect(screen.getByText("1,200")).toBeInTheDocument();
+    // The value is announced with its currency, "IxCredits 1,200".
+    expect(within(screen.getByText("1,200")).getByRole("img", { name: "IxCredits" })).toBeVisible();
     expect(screen.getByText("On no wishlists yet")).toBeInTheDocument();
   });
 
