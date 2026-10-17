@@ -17,7 +17,25 @@ function hasValidBotKey(request: Request, expectedApiKey: string) {
   );
 }
 
-const toNumberOrNull = (value: unknown) => (value !== undefined ? Number(value) : null);
+type Count = number | string | null | undefined;
+
+/** One result the bot pushes. */
+interface BotLorewardPayload {
+  date?: string;
+  type?: string;
+  winnerUser?: string | null;
+  winnerPage?: string | null;
+  winnerScore?: Count;
+  winnerBytes?: Count;
+  runnerUpUser?: string | null;
+  runnerUpPage?: string | null;
+  runnerUpScore?: Count;
+  runnerUpBytes?: Count;
+  status?: string;
+  metadata?: string | null;
+}
+
+const toNumberOrNull = (value: Count) => (value !== undefined ? Number(value) : null);
 
 export async function POST(request: Request) {
   const expectedApiKey = process.env.BOT_API_KEY;
@@ -33,14 +51,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const payload = await request.json();
+    const payload: BotLorewardPayload = await request.json();
     const { date, type, winnerUser, runnerUpUser, status = "approved", metadata } = payload;
 
     if (!date || !type) {
       return NextResponse.json({ error: "Missing required fields: date, type" }, { status: 400 });
     }
 
-    const data = {
+    const places = {
       winnerUser: winnerUser ?? null,
       winnerPage: payload.winnerPage ?? null,
       winnerScore: toNumberOrNull(payload.winnerScore),
@@ -49,13 +67,15 @@ export async function POST(request: Request) {
       runnerUpPage: payload.runnerUpPage ?? null,
       runnerUpScore: toNumberOrNull(payload.runnerUpScore),
       runnerUpBytes: toNumberOrNull(payload.runnerUpBytes),
-      status,
-      metadata: metadata ? String(metadata) : null,
     };
+    const rest = { status, metadata: metadata ? String(metadata) : null };
+    const where = { date_type: { date, type } };
+    // An entry an admin override wrote keeps its places (cards refresh §2.4); the bot still updates the rest
+    const stored = await db.lorewardEntry.findUnique({ where, select: { overriddenAt: true } });
     const entry = await db.lorewardEntry.upsert({
-      where: { date_type: { date, type } },
-      create: { date, type, ...data },
-      update: { ...data, syncedAt: new Date() },
+      where,
+      create: { date, type, ...places, ...rest },
+      update: { ...(stored?.overriddenAt ? {} : places), ...rest, syncedAt: new Date() },
     });
 
     if (winnerUser) await recomputeUserStats(winnerUser);

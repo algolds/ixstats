@@ -93,7 +93,7 @@ function listing(rows: Entry[]) {
   mocked.lorewardEntry.findMany.mockResolvedValue(rows);
 }
 const reread = async ({ where }: { where: Parameters<typeof matches>[1] }) =>
-  listed.filter((row) => matches(storedEntry(row), where)).map((row) => ({ id: row.id }));
+  listed.filter((row) => matches(storedEntry(row), where));
 
 /** A fresh transaction client per test, and nothing carried over from an earlier test. */
 function resetTransaction() {
@@ -244,12 +244,35 @@ describe("grantLorewardBonuses", () => {
     // Run B listed [ool, state] and paid under the state entry's key; run A listed only [ool], then waited.
     const [ool] = weeklyTwins("Kir_Republic", "Kir_Republic");
     listing([ool!]);
-    tx.lorewardEntry.findMany.mockResolvedValueOnce([{ id: "w-ool" }, { id: "w-state" }]);
+    tx.lorewardEntry.findMany.mockResolvedValueOnce(weeklyTwins("Kir_Republic", "Kir_Republic"));
     tx.vaultTransaction.findFirst.mockImplementation(
       async ({ where }: { where: { source: { in: string[] } } }) =>
         where.source.in.includes("bonus:loreward:w-state") ? { id: "paid-by-b" } : null
     );
 
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonusTx).not.toHaveBeenCalled();
+  });
+
+  it("pays nobody when an override wrote the place while the run waited for its lock", async () => {
+    // The run listed and resolved Kir_Republic; the transaction's re-read finds the override's holder.
+    tx.lorewardEntry.findMany.mockResolvedValueOnce([daily({ winnerUser: "Cy" })]);
+
+    expect(await grantLorewardBonuses()).toBe(0);
+    expect(grantBonusTx).not.toHaveBeenCalled();
+    expect(tx.lorewardEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { type: "daily", date: "2026-10-16" } })
+    );
+    // The paid check never runs for a holder that is no longer recorded.
+    expect(tx.vaultTransaction.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("pays nobody when the re-read finds the place's page changed, or nobody recorded", async () => {
+    tx.lorewardEntry.findMany
+      .mockResolvedValueOnce([daily({ winnerPage: "Another page" })])
+      .mockResolvedValueOnce([daily({ winnerUser: null })]);
+
+    expect(await grantLorewardBonuses()).toBe(0);
     expect(await grantLorewardBonuses()).toBe(0);
     expect(grantBonusTx).not.toHaveBeenCalled();
   });

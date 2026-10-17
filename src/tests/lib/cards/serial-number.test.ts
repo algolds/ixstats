@@ -1,6 +1,6 @@
 /** Plan 331: per-card advisory lock taken before max(serial) is read; a removed copy's serial is never reissued. */
 
-import { allocateSerialNumberTx } from "~/lib/cards/serial-number";
+import { allocateSerialNumberTx, highestIssuedSerialTx } from "~/lib/cards/serial-number";
 
 function makeTx() {
   return {
@@ -63,5 +63,18 @@ describe("allocateSerialNumberTx", () => {
     tx.cardOwnership.findFirst.mockResolvedValue(null);
 
     await expect(allocateSerialNumberTx(asTx(tx), "card_new")).resolves.toBe(1);
+  });
+});
+
+describe("highestIssuedSerialTx", () => {
+  it("is the card's high-water mark over its copies and its trail, 0 for none, and takes no lock of its own", async () => {
+    const tx = makeTx();
+    tx.cardOwnership.findFirst.mockResolvedValue(null);
+    tx.cardTransferEvent.findFirst.mockResolvedValue({ serialNumber: 1 });
+    await expect(highestIssuedSerialTx(asTx(tx), "trophy")).resolves.toBe(1);
+
+    tx.cardTransferEvent.findFirst.mockResolvedValue(null);
+    await expect(highestIssuedSerialTx(asTx(tx), "fresh")).resolves.toBe(0);
+    expect(tx.$executeRaw).not.toHaveBeenCalled();
   });
 });

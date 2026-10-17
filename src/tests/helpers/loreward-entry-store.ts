@@ -16,9 +16,11 @@ export interface StoredEntry {
   runnerUpUser: string | null;
   runnerUpPage: string | null;
   winnerBytes: number | null;
+  /** Set when an admin override wrote the places: no sync writes them again. */
+  overriddenAt: Date | null;
 }
 
-type Field = string | number | null;
+type Field = string | number | Date | null;
 type Condition = Field | { in?: Field[]; startsWith?: string; not?: null };
 interface Where {
   [field: string]: Condition | Where[] | undefined;
@@ -61,6 +63,7 @@ export const storedEntry = (over: Partial<StoredEntry> & { id: string }): Stored
   runnerUpUser: null,
   runnerUpPage: null,
   winnerBytes: null,
+  overriddenAt: null,
   ...over,
 });
 

@@ -1,9 +1,11 @@
 import type { LorewardEntry } from "@prisma/client";
 import { z } from "zod/v4";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { adminActor } from "~/server/api/routers/cards/admin/_actor";
 import { db } from "~/server/db";
 import * as fs from "fs";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 
 const OVERRIDE_FIELDS = {
   winnerUser: z.string().nullable().optional(),
@@ -177,7 +179,7 @@ export const lorewardsAdminRouter = createTRPCRouter({
       )
     ),
 
-  /** Override past winner or runner-up */
+  /** Override a past winner or runner-up; the place's trophy is reassigned or voided to match. */
   overrideWinner: adminProcedure
     .input(
       z.object({
@@ -186,24 +188,20 @@ export const lorewardsAdminRouter = createTRPCRouter({
         ...OVERRIDE_FIELDS,
       })
     )
-    .mutation(async ({ input }) => {
-      const fields = Object.fromEntries(
-        Object.keys(OVERRIDE_FIELDS).map((key) => [
-          key,
-          input[key as keyof typeof OVERRIDE_FIELDS] || null,
-        ])
-      ) as { [K in keyof typeof OVERRIDE_FIELDS]: NonNullable<(typeof input)[K]> | null };
-      await db.lorewardEntry.upsert({
-        where: { date_type: { date: input.date, type: input.type } },
-        create: { date: input.date, type: input.type, ...fields, status: "approved" },
-        update: fields,
+    .mutation(async ({ ctx, input }) => {
+      const { date, type, ...fields } = input;
+      const { written, ...trophies } = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
+        date,
+        type,
+        fields,
       });
-
-      return postToBot(
+      // The bot is told what the database now holds, not only the fields the admin typed
+      await postToBot(
         "/lorewards/override",
-        input,
+        { date, type, ...written },
         "Failed to sync override with Discord bot",
-        () => ({ success: true })
+        () => undefined
       );
+      return { success: true, trophies };
     }),
 });

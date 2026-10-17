@@ -21,6 +21,7 @@ import {
   grantUnownedTrophyCards,
   isTrophyCard,
   mintTrophyCards,
+  trophyCardText,
   trophyRarity,
 } from "~/lib/lorewards/trophy-cards";
 
@@ -58,6 +59,8 @@ interface OwnershipRow {
 let entries: EntryRow[];
 let cards: CardRow[];
 let ownerships: OwnershipRow[];
+/** The serials each card's transfer events record (they outlive a voided copy). */
+let trail: Array<{ cardId: string; serialNumber: number }>;
 let links: Map<string, string>;
 /** The authorIds of each page's edits under the queried label, by page title, as the place query groups them. */
 let winningEdits: Map<string, Array<string | null>>;
@@ -146,11 +149,16 @@ function buildDb(): PrismaClient {
     },
     card: {
       findMany: jest.fn(
-        async ({ where }: { where: CardWhere & { CardOwnership?: { none: object } } }) =>
+        async ({
+          where,
+        }: {
+          where: CardWhere & { CardOwnership?: { none: object }; isRetired?: boolean };
+        }) =>
           cards.filter(
             (c) =>
               c.lorewardEntryId !== null &&
               inContestPlace(c, where) &&
+              (where.isRetired === undefined || (c.isRetired ?? false) === where.isRetired) &&
               (!where.CardOwnership || !ownerships.some((o) => o.cardId === c.id))
           )
       ),
@@ -201,6 +209,16 @@ function buildDb(): PrismaClient {
               : o.cardId === where.cardId;
           }).length
       ),
+      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
+        const serials = ownersOf(where.cardId).map((o) => o.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
+      }),
+    },
+    cardTransferEvent: {
+      findFirst: jest.fn(async ({ where }: { where: { cardId: string } }) => {
+        const serials = trail.filter((t) => t.cardId === where.cardId).map((t) => t.serialNumber);
+        return serials.length > 0 ? { serialNumber: Math.max(...serials) } : null;
+      }),
     },
     vaultTransaction: { create: credit("vaultTransaction.create") },
     myVault: { update: credit("myVault.update"), upsert: credit("myVault.upsert") },
@@ -215,10 +233,27 @@ function buildDb(): PrismaClient {
 let db: PrismaClient;
 const ownersOf = (cardId: string) => ownerships.filter((o) => o.cardId === cardId);
 
+/**
+ * Runs every transaction on a client distinct from `db`, sharing its cards and copies but with its own entry reads
+ * (and any `delegates` given): they see `inLock`, what an override wrote while the run waited for the lock, while the
+ * run's listing through `db` still sees `entries`. A re-check made on `db` would read the listing and miss the change.
+ */
+function distinctTx(inLock: EntryRow[], delegates: Record<string, object> = {}) {
+  const reread = jest.fn(async ({ where }: { where: Parameters<typeof matches>[1] }) =>
+    inLock.filter((e) => matches(storedEntry(e), where))
+  );
+  const tx = Object.assign({}, db, { lorewardEntry: { findMany: reread } }, delegates);
+  (db as unknown as { $transaction: jest.Mock }).$transaction.mockImplementation(
+    async <T>(fn: (client: typeof tx) => Promise<T>) => fn(tx)
+  );
+  return { reread, listing: db.lorewardEntry.findMany as unknown as jest.Mock };
+}
+
 beforeEach(() => {
   entries = [entry()];
   cards = [];
   ownerships = [];
+  trail = [];
   links = new Map();
   winningEdits = new Map();
   placeQueries = [];
@@ -256,6 +291,21 @@ describe("trophyRarity", () => {
     expect(trophyRarity("weekly", "runner-up")).toBe("RARE");
     expect(trophyRarity("daily", "winner")).toBe("RARE");
     expect(trophyRarity("daily", "runner-up")).toBe("RARE");
+  });
+});
+
+describe("trophyCardText", () => {
+  it("names the card after the page, or the contest when there is none", () => {
+    expect(trophyCardText("weekly", "2026-10-20", "winner", "Amy", "Elm_Republic")).toEqual({
+      title: "Elm_Republic",
+      description: "Weekly Loreward winner, 2026-10-20. Won by Amy with Elm_Republic.",
+      wikiArticleTitle: "Elm Republic",
+    });
+    expect(trophyCardText("daily", "2026-10-20", "runner-up", "Bee", null)).toEqual({
+      title: "Daily Loreward 2026-10-20",
+      description: "Daily Loreward runner-up, 2026-10-20. Won by Bee.",
+      wikiArticleTitle: null,
+    });
   });
 });
 
@@ -480,6 +530,29 @@ describe("grantUnownedTrophyCards", () => {
     await grantUnownedTrophyCards(db);
     expect(creditWrites).toEqual([]);
   });
+
+  it("grants a trophy its place gave up again under its serial, reissued, never a second one", async () => {
+    // An override voided the copy (serial 1 lives on in the trail) and cleared the grant
+    trail.push({ cardId: "c1", serialNumber: 1 });
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(expect.anything(), {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "SERIALISED",
+      source: "TROPHY",
+      serialNumber: 1,
+    });
+  });
+
+  it("grants no retired trophy: a voided place waits for an override to fill it again", async () => {
+    cards[0]!.isRetired = true;
+    links.set("Kir Republic", "u1");
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+  });
 });
 
 /** A weekly stored twice: by its first day (the OOL page) and as `2026-W42` with its range (the state file). */
@@ -545,6 +618,72 @@ describe("trophy cards of a contest stored twice", () => {
     links.set("Nasastan", "u2");
     expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
     expect(ownerships).toEqual([]);
+  });
+});
+
+describe("trophy cards when an override writes the place while a run waits", () => {
+  it("mints nothing for a holder the place no longer records once the lock is held", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 0 });
+    expect(cards).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("mints when the transaction's re-read still records the listed holder", async () => {
+    links.set("Kir Republic", "u1");
+    const { reread, listing } = distinctTx([entry()]);
+
+    expect(await mintTrophyCards(db)).toEqual({ minted: 1 });
+    expect(ownersOf("c1")).toEqual([expect.objectContaining({ ownerId: "u1" })]);
+    expect(reread).toHaveBeenCalledTimes(1);
+    // The root client only listed the contests
+    expect(listing).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing to the listed holder once the place records another", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: "Cy" })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing once the place records nobody", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry({ winnerUser: null, winnerPage: null })]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(reread).toHaveBeenCalledTimes(1);
+  });
+
+  it("grants nothing for a card retired after it was listed", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    // Only the transaction's read sees the card retired
+    const retiredRead = jest.fn(async () => ({ ...cards[0], isRetired: true }));
+    distinctTx([entry()], { card: { ...db.card, findUnique: retiredRead } });
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 0 });
+    expect(ownerships).toEqual([]);
+    expect(retiredRead).toHaveBeenCalledWith({
+      where: { id: "c1" },
+      select: { metadata: true, isRetired: true },
+    });
+  });
+
+  it("grants when the transaction's re-read still records the listed holder", async () => {
+    await mintTrophyCards(db);
+    links.set("Kir Republic", "u1");
+    const { reread } = distinctTx([entry()]);
+
+    expect(await grantUnownedTrophyCards(db)).toEqual({ granted: 1 });
+    expect(reread).toHaveBeenCalledTimes(1);
   });
 });
 

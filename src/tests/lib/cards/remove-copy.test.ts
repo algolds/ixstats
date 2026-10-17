@@ -22,8 +22,11 @@ interface EventRow {
 
 const highest = (serials: number[]) => (serials.length > 0 ? Math.max(...serials) : null);
 
-/** One card's copies and trail, with `ownershipId` set null when its copy goes (the FK is ON DELETE SET NULL). */
-function fakeTx() {
+/**
+ * One card's copies and trail, with `ownershipId` set null when its copy goes (the FK is ON DELETE SET NULL). Cards
+ * are unlimited and unbound unless `cards` says otherwise.
+ */
+function fakeTx(cards: Record<string, { totalSupply: number; isBound: boolean }> = {}) {
   const copies: CopyRow[] = [];
   const events: EventRow[] = [];
   /** The order the removal's statements ran in */
@@ -33,7 +36,10 @@ function fakeTx() {
       log.push(`lock ${values.join(" ")}`);
       return 1;
     },
-    card: { findUnique: async () => ({ totalSupply: 0 }) },
+    card: {
+      findUnique: async ({ where }: { where: { id: string } }) =>
+        cards[where.id] ?? { totalSupply: 0, isBound: false },
+    },
     cardAuction: {
       count: async () => {
         log.push("check auctions");
@@ -42,6 +48,8 @@ function fakeTx() {
     },
     tradeOffer: { count: async () => 0 },
     cardOwnership: {
+      count: async ({ where }: { where: { cardId: string } }) =>
+        copies.filter((c) => c.cardId === where.cardId).length,
       findFirst: async ({ where }: { where: { cardId: string } }) => {
         const top = highest(
           copies.filter((c) => c.cardId === where.cardId).map((c) => c.serialNumber)
@@ -81,6 +89,9 @@ function fakeTx() {
         for (const event of unstamped) Object.assign(event, data);
         return { count: unstamped.length };
       },
+      count: async ({ where }: { where: { cardId: string; serialNumber: number } }) =>
+        events.filter((e) => e.cardId === where.cardId && e.serialNumber === where.serialNumber)
+          .length,
       findFirst: async ({ where }: { where: { cardId: string } }) => {
         const top = highest(
           events
@@ -168,5 +179,36 @@ describe("removeCopyTx", () => {
         action: "VOID",
       },
     ]);
+  });
+
+  it("brings a voided one-of-one trophy back under its serial, reissued, never under a second", async () => {
+    const { tx, copies, events } = fakeTx({ trophy: { totalSupply: 1, isBound: true } });
+    const mint = (ownerId: string, serialNumber?: number) =>
+      mintCopy(tx, {
+        cardId: "trophy",
+        ownerId,
+        finish: "SERIALISED",
+        source: "TROPHY",
+        ...(serialNumber === undefined ? {} : { serialNumber }),
+      });
+    const first = await mint("u1");
+    await removeCopyTx(
+      tx,
+      { id: first.id, cardId: "trophy", serialNumber: 1, ownerId: "u1" },
+      "VOID"
+    );
+
+    // The trail keeps serial 1, so the next serial would pass the one-of-one's run
+    await expect(mint("u2")).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    await expect(mint("u2", 1)).resolves.toMatchObject({ ownerId: "u2", serialNumber: 1 });
+
+    expect(copies.map((c) => [c.ownerId, c.serialNumber])).toEqual([["u2", 1]]);
+    expect(events.map((e) => [e.action, e.serialNumber])).toEqual([
+      ["TROPHY", 1],
+      ["VOID", 1],
+      ["REISSUE", 1],
+    ]);
+    // A reissue needs the copy gone: a second one is refused while it lives
+    await expect(mint("u3", 1)).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
   });
 });

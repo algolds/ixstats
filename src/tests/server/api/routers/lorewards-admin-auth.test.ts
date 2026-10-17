@@ -5,15 +5,45 @@ jest.mock("~/lib/lorewards", () => ({
   fullSync: jest.fn().mockResolvedValue({ ok: true }),
   scoreDailyWikiOS: jest.fn().mockResolvedValue({ winner: null, runnerUp: null, candidates: [] }),
 }));
+jest.mock("~/server/modules/cards/cards.trophies", () => ({
+  overrideLorewardEntry: jest.fn().mockResolvedValue({
+    reassigned: 1,
+    voided: 0,
+    minted: 0,
+    mintDeferred: false,
+    // What the database now holds: the runner-up the admin left out was kept
+    written: {
+      winnerUser: "Cy",
+      winnerPage: "Page",
+      winnerScore: null,
+      winnerBytes: null,
+      runnerUpUser: "Bee",
+      runnerUpPage: "Hive",
+      runnerUpScore: 80,
+      runnerUpBytes: 800,
+    },
+  }),
+}));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { lorewardsAdminRouter } from "~/server/api/routers/lorewards/admin";
 import { fullSync, scoreDailyWikiOS } from "~/lib/lorewards";
+import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 
 const createCaller = createCallerFactory(lorewardsAdminRouter);
+
+function adminCaller(db = createMockDb()) {
+  return createCaller(
+    createMockRouterContext({
+      auth: { userId: "admin_1" },
+      user: { id: "db_admin", clerkUserId: "admin_1", role: { name: "admin", level: 10 } },
+      db,
+    }) as never
+  );
+}
 
 function userCaller() {
   return createCaller(
@@ -29,6 +59,7 @@ describe("WK-9: Lorewards admin procedures", () => {
   beforeEach(() => {
     (fullSync as jest.Mock).mockClear();
     (scoreDailyWikiOS as jest.Mock).mockClear();
+    jest.mocked(overrideLorewardEntry).mockClear();
   });
 
   it("rejects an ordinary user triggering a full sync", async () => {
@@ -71,5 +102,61 @@ describe("WK-9: Lorewards admin procedures", () => {
     await expect(userCaller().getCrossValidationHistory({ limit: 10, offset: 0 })).rejects.toThrow(
       /Admin privileges required/
     );
+  });
+
+  it("rejects an ordinary user overriding a winner", async () => {
+    await expect(
+      userCaller().overrideWinner({ date: "2026-10-20", type: "daily", winnerUser: "Cy" })
+    ).rejects.toThrow(/Admin privileges required/);
+    expect(overrideLorewardEntry).not.toHaveBeenCalled();
+  });
+
+  it("moves an admin's override's trophies with it, then tells the bot what the entry now holds", async () => {
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+    const realFetch = global.fetch;
+    global.fetch = fetchMock as never;
+    const db = createMockDb();
+    try {
+      const input = {
+        date: "2026-10-20",
+        type: "daily" as const,
+        winnerUser: "Cy",
+        winnerPage: "Page",
+      };
+
+      await expect(adminCaller(db).overrideWinner(input)).resolves.toEqual({
+        success: true,
+        trophies: { reassigned: 1, voided: 0, minted: 0, mintDeferred: false },
+      });
+
+      expect(overrideLorewardEntry).toHaveBeenCalledWith(
+        expect.anything(),
+        { dbId: "db_admin", clerkId: "admin_1" },
+        { date: "2026-10-20", type: "daily", fields: { winnerUser: "Cy", winnerPage: "Page" } }
+      );
+      expect(jest.mocked(overrideLorewardEntry).mock.invocationCallOrder[0]).toBeLessThan(
+        fetchMock.mock.invocationCallOrder[0]!
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringMatching(/\/lorewards\/override$/),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            date: "2026-10-20",
+            type: "daily",
+            winnerUser: "Cy",
+            winnerPage: "Page",
+            winnerScore: null,
+            winnerBytes: null,
+            runnerUpUser: "Bee",
+            runnerUpPage: "Hive",
+            runnerUpScore: 80,
+            runnerUpBytes: 800,
+          }),
+        })
+      );
+    } finally {
+      global.fetch = realFetch;
+    }
   });
 });

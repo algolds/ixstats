@@ -26,8 +26,8 @@ import {
   type Contest,
 } from "./contest-identity";
 import {
-  contestEntryIds,
   findContestEntries,
+  holderStillRecordedTx,
   lockContestPlace,
   type StoredContestEntry,
 } from "./contest-store";
@@ -138,23 +138,47 @@ function monthRange(date: string, result: StateFileResult) {
   return { start: `${date}-01`, end: `${date}-${String(lastDay).padStart(2, "0")}` };
 }
 
+/**
+ * The `date|type` keys of the entries an admin override wrote (`overriddenAt`): no sync writes their places again.
+ * Read in pages (`findContestEntries`), so the 1,000-row cap drops none, whatever year the state file reaches back to.
+ */
+async function overriddenKeys(): Promise<ReadonlySet<string>> {
+  const rows = await findContestEntries(db, { overriddenAt: { not: null } });
+  return new Set(rows.map((row) => `${row.date}|${row.type}`));
+}
+
+/** One state-file result: `places` are its winner and runner-up columns, `rest` the others it updates. */
+interface StateEntryWrite {
+  date: string;
+  type: "daily" | "weekly" | "monthly";
+  create: Omit<Prisma.LorewardEntryCreateInput, "date" | "type">;
+  places: Prisma.LorewardEntryUpdateInput;
+  rest?: Prisma.LorewardEntryUpdateInput;
+}
+
+/** Creates the entry, or updates it, writing its places only when no admin override holds them. */
 const upsertEntry = (
-  date: string,
-  type: "daily" | "weekly" | "monthly",
-  create: Record<string, unknown>,
-  update: Record<string, unknown>
+  { date, type, create, places, rest }: StateEntryWrite,
+  overridden: ReadonlySet<string>
 ) =>
   db.lorewardEntry.upsert({
     where: { date_type: { date, type } },
-    create: { date, type, status: "approved", ...create } as any,
-    update: { ...update, syncedAt: new Date() } as any,
+    create: { date, type, status: "approved", ...create },
+    update: {
+      ...rest,
+      ...(overridden.has(`${date}|${type}`) ? {} : places),
+      syncedAt: new Date(),
+    },
   });
 
-async function syncDaily(results: Record<string, StateFileResult> | undefined): Promise<number> {
+async function syncDaily(
+  results: Record<string, StateFileResult> | undefined,
+  overridden: ReadonlySet<string>
+): Promise<number> {
   let synced = 0;
   for (const [date, result] of Object.entries(results ?? {})) {
     if (result.status !== "approved") continue;
-    const fields = {
+    const places = {
       ...winnerOf(result),
       winnerScore: result.winner?.score ?? null,
       winnerBytes: result.winner?.bytesAdded ?? null,
@@ -162,35 +186,14 @@ async function syncDaily(results: Record<string, StateFileResult> | undefined): 
       runnerUpPage: result.runnerUp?.page ?? null,
       runnerUpScore: result.runnerUp?.score ?? null,
       runnerUpBytes: result.runnerUp?.bytesAdded ?? null,
+    };
+    const rest = {
       editCount: result.editCount ?? 0,
       metadata: result.candidates ? JSON.stringify(result.candidates) : null,
     };
-    await upsertEntry(date, "daily", fields, fields);
-    synced++;
-  }
-
-  return synced;
-}
-
-/** Weekly results carry weekStart/weekEnd for date range display. */
-async function syncWeekly(results: Record<string, StateFileResult> | undefined): Promise<number> {
-  let synced = 0;
-  for (const [date, result] of Object.entries(results ?? {})) {
     await upsertEntry(
-      date,
-      "weekly",
-      {
-        dateStart: result.weekStart ?? null,
-        dateEnd: result.weekEnd ?? null,
-        ...winnerOf(result),
-        winnerScore: result.winner?.score ?? null,
-        winnerBytes: result.winner?.bytesAdded ?? null,
-      },
-      {
-        dateStart: result.weekStart ?? undefined,
-        dateEnd: result.weekEnd ?? undefined,
-        ...winnerOf(result),
-      }
+      { date, type: "daily", create: { ...places, ...rest }, places, rest },
+      overridden
     );
     synced++;
   }
@@ -198,20 +201,56 @@ async function syncWeekly(results: Record<string, StateFileResult> | undefined):
   return synced;
 }
 
-async function syncMonthly(results: Record<string, StateFileResult> | undefined): Promise<number> {
+/** Weekly results carry weekStart/weekEnd for date range display. */
+async function syncWeekly(
+  results: Record<string, StateFileResult> | undefined,
+  overridden: ReadonlySet<string>
+): Promise<number> {
+  let synced = 0;
+  for (const [date, result] of Object.entries(results ?? {})) {
+    await upsertEntry(
+      {
+        date,
+        type: "weekly",
+        create: {
+          dateStart: result.weekStart ?? null,
+          dateEnd: result.weekEnd ?? null,
+          ...winnerOf(result),
+          winnerScore: result.winner?.score ?? null,
+          winnerBytes: result.winner?.bytesAdded ?? null,
+        },
+        places: winnerOf(result),
+        rest: { dateStart: result.weekStart ?? undefined, dateEnd: result.weekEnd ?? undefined },
+      },
+      overridden
+    );
+    synced++;
+  }
+
+  return synced;
+}
+
+async function syncMonthly(
+  results: Record<string, StateFileResult> | undefined,
+  overridden: ReadonlySet<string>
+): Promise<number> {
   let synced = 0;
   for (const [date, result] of Object.entries(results ?? {})) {
     const { start, end } = monthRange(date, result);
     await upsertEntry(
-      date,
-      "monthly",
       {
-        dateStart: start,
-        dateEnd: end,
-        ...winnerOf(result),
-        winnerScore: result.winner?.score ?? null,
+        date,
+        type: "monthly",
+        create: {
+          dateStart: start,
+          dateEnd: end,
+          ...winnerOf(result),
+          winnerScore: result.winner?.score ?? null,
+        },
+        places: winnerOf(result),
+        rest: { dateStart: start ?? undefined, dateEnd: end ?? undefined },
       },
-      { dateStart: start ?? undefined, dateEnd: end ?? undefined, ...winnerOf(result) }
+      overridden
     );
     synced++;
   }
@@ -231,10 +270,11 @@ export async function syncFromStateFile(): Promise<number> {
     return 0;
   }
 
+  const overridden = await overriddenKeys();
   return (
-    (await syncDaily(state.dailyResults)) +
-    (await syncWeekly(state.weeklyResults)) +
-    (await syncMonthly(state.monthlyResults))
+    (await syncDaily(state.dailyResults, overridden)) +
+    (await syncWeekly(state.weeklyResults, overridden)) +
+    (await syncMonthly(state.monthlyResults, overridden))
   );
 }
 
@@ -487,6 +527,7 @@ const STORED_PLACES = {
   winnerPage: true,
   runnerUpUser: true,
   runnerUpPage: true,
+  overriddenAt: true,
 } as const;
 
 const isImportName = (name: string | null | undefined): name is string =>
@@ -508,8 +549,18 @@ function oolPlace(
   return { name: stored.name, page: stored.page ?? (sameHolder ? fromPage.page : null) };
 }
 
-/** The place columns the OOL page writes over `stored` (none when the entry is new), under the `wikios>` guard. */
-function oolPlaces(stored: PlaceColumns | undefined, entry: PlaceColumns): PlaceColumns {
+/**
+ * The place columns the OOL page writes over `stored` (none when the entry is new), under the `wikios>` guard. An
+ * entry an admin override wrote (`overriddenAt`) keeps its own.
+ */
+function oolPlaces(
+  stored: (PlaceColumns & { overriddenAt: Date | null }) | undefined,
+  entry: PlaceColumns
+): PlaceColumns {
+  if (stored?.overriddenAt) {
+    const { winnerUser, winnerPage, runnerUpUser, runnerUpPage } = stored;
+    return { winnerUser, winnerPage, runnerUpUser, runnerUpPage };
+  }
   const winner = oolPlace(stored && { name: stored.winnerUser, page: stored.winnerPage }, {
     name: entry.winnerUser,
     page: entry.winnerPage,
@@ -715,7 +766,7 @@ async function payPlace(
   const holder = contestHolder(contest, place);
   if ("conflict" in holder) {
     console.warn(
-      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page); an overrideWinner on one copy is rewritten by the next sync.`
+      `[Lorewards] Not paying ${describeConflict(holder.conflict, place)}: the entries disagree. Settle it at the source (the bot's state file or the OOL page), or with an override, which writes every entry of the contest.`
     );
     return "unpaid";
   }
@@ -739,7 +790,9 @@ async function payPlace(
   try {
     const paid = await db.$transaction(async (tx) => {
       await lockContestPlace(tx, contestPlaceKey(e, place));
-      if (await contestPlacePaid(tx, await contestEntryIds(tx, e), place)) return false;
+      // An override that wrote the place while this run waited leaves the resolved holder unrecorded: pay nobody
+      const entryIds = await holderStillRecordedTx(tx, e, place, recorded);
+      if (!entryIds || (await contestPlacePaid(tx, entryIds, place))) return false;
       return grantBonusTx(tx, userId, lorewardBonusKey(e.id, place), amount, metadata);
     });
     return paid ? "paid" : "unpaid";
