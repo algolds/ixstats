@@ -35,11 +35,7 @@ export function LorewardOverrideCard() {
 
   const overrideWinnerMutation = api.lorewards.overrideWinner.useMutation({
     onSuccess: ({ trophies, botSynced }) => {
-      const toast = overrideToast(
-        botSynced,
-        { title: "Winner overridden", message: "The override is saved and synced." },
-        trophies
-      );
+      const toast = overrideToast(botSynced, trophies);
       notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => {

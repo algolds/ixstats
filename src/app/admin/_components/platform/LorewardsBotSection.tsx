@@ -202,11 +202,7 @@ export function LorewardsBotSection() {
 
   const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
     onSuccess: (result) => {
-      const toast = overrideToast(
-        result.botSynced,
-        { title: "Saved", message: "Saved the winner details as an override and synced the bot." },
-        result
-      );
+      const toast = overrideToast(result.botSynced, result);
       notify[toast.tone](toast.title, toast.message);
     },
     onError: (err) => notify.error("Override error", err.message),
