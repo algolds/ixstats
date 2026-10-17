@@ -144,6 +144,11 @@ function useRealmNames(realms: readonly CardRealmBadge[]): ReadonlyMap<string, s
 export interface RegionSearchOptions {
   /** Whether regions apply at all (the NationStates realm is picked); a search that matches nothing keeps its input. */
   available: boolean;
+  /**
+   * The search box's text. The caller owns it, so it outlives the popover and always matches the `regions` it
+   * fetched for it.
+   */
+  term: string;
   /** Called on each keystroke; the caller debounces it and passes the matches as `regions`. */
   onSearch: (search: string) => void;
 }
@@ -164,7 +169,7 @@ function RegionSearch(props: {
   search: RegionSearchOptions;
   onChange: (region: string | null) => void;
 }) {
-  const [term, setTerm] = useState("");
+  const { term } = props.search;
   return (
     <div className="space-y-2">
       {/* Shown for sight; cmdk names its input with its own label. */}
@@ -180,10 +185,7 @@ function RegionSearch(props: {
           value={term}
           maxLength={SEARCH_MAX}
           placeholder="Search regions"
-          onValueChange={(next) => {
-            setTerm(next);
-            props.search.onSearch(next);
-          }}
+          onValueChange={props.search.onSearch}
         />
         <CommandList className="max-h-48 p-1">
           <RegionOption

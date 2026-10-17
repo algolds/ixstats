@@ -1,10 +1,6 @@
 "use client";
 
-/**
- * ArticleSearch Component
- *
- * Wiki article search with autocomplete for lore card generation
- */
+/** The wiki article search in the suggest-a-card dialog: pick the article a lore card is suggested for. */
 
 import React, { useState, useCallback, useEffect } from "react";
 import { debounce } from "~/lib/utils";
