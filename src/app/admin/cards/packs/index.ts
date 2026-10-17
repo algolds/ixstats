@@ -1,1 +1,1 @@
-export { CardPacksAdmin as PacksTab } from "../CardPacksAdmin";
+export { PacksTab } from "./PacksTab";
