@@ -25,7 +25,7 @@ import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
 import { wikiProcedures } from "~/server/api/routers/countries/wiki";
 import { geoWikiRouter } from "~/server/api/routers/geo/wiki";
 import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
-import { cardsCollectionsRouter } from "~/server/api/routers/cards/collections";
+import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import {
@@ -164,7 +164,7 @@ const READERS: Array<[string, (role: string | null, title: string) => Promise<un
   [
     "cards.getWikiArticleExcerpt",
     (r, t) =>
-      createCallerFactory(cardsCollectionsRouter)(ctxOf(r)).getWikiArticleExcerpt({
+      createCallerFactory(cardsSheetRouter)(ctxOf(r)).getWikiArticleExcerpt({
         articleTitle: t,
         wikiSource: "ixwiki",
       }),
