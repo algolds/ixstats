@@ -16,12 +16,12 @@ const nsCard = {
   flag: "f.png",
 };
 
-it("creates an NS card in the nationstates realm with only its facts", async () => {
+it("creates an NS card in the nationstates realm with only its facts, waiting for review", async () => {
   const db = {
     card: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn().mockResolvedValue({}) },
   };
   await expect(
-    upsertNSCardDefinition(db as never, nsCard, "region:abydos", CARD_VALUATION_DEFAULTS)
+    upsertNSCardDefinition(db as never, nsCard, "region:abydos", CARD_VALUATION_DEFAULTS, "log_1")
   ).resolves.toMatchObject({
     created: true,
     updated: false,
@@ -33,7 +33,9 @@ it("creates an NS card in the nationstates realm with only its facts", async () 
     rarity: "ULTRA_RARE",
     nsCardId: 7,
     nsSeason: 3,
+    reviewState: "PENDING",
   });
+  expect(data.metadata).toMatchObject({ importedFrom: "region:abydos", syncLogId: "log_1" });
   expect(data.metadata.nsData).toEqual({
     id: "7",
     name: "Heku",
@@ -65,7 +67,8 @@ it("refreshes an existing card's value and its region and bank value facts", asy
     db as never,
     { ...nsCard, rarity: "COMMON", market_value: "90" },
     "x",
-    CARD_VALUATION_DEFAULTS
+    CARD_VALUATION_DEFAULTS,
+    null
   );
   expect(db.card.update.mock.calls[0]![0].data.metadata).toEqual({
     importedFrom: "x",
@@ -88,7 +91,8 @@ it("leaves a taken-down card's value and facts alone, and returns it", async () 
       db as never,
       { ...nsCard, market_value: "90" },
       "x",
-      CARD_VALUATION_DEFAULTS
+      CARD_VALUATION_DEFAULTS,
+      null
     )
   ).resolves.toEqual({ card: existing, created: false, updated: false });
   expect(db.card.update).not.toHaveBeenCalled();
@@ -103,7 +107,7 @@ it("returns null for a card without a valid id or a name, and writes nothing", a
     { ...nsCard, name: undefined },
   ]) {
     await expect(
-      upsertNSCardDefinition(db as never, bad, "x", CARD_VALUATION_DEFAULTS)
+      upsertNSCardDefinition(db as never, bad, "x", CARD_VALUATION_DEFAULTS, null)
     ).resolves.toBeNull();
   }
   expect(db.card.findFirst).not.toHaveBeenCalled();
@@ -119,7 +123,13 @@ it("returns the card it created, which has no wiki article title", async () => {
     },
   };
 
-  const result = await upsertNSCardDefinition(db as never, nsCard, "x", CARD_VALUATION_DEFAULTS);
+  const result = await upsertNSCardDefinition(
+    db as never,
+    nsCard,
+    "x",
+    CARD_VALUATION_DEFAULTS,
+    null
+  );
 
   expect(result?.card).toBe(created);
   expect(db.card.create.mock.calls[0]![0].data).not.toHaveProperty("wikiArticleTitle");

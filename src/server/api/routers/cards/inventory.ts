@@ -174,35 +174,36 @@ export const cardsInventoryRouter = createTRPCRouter({
     }),
 
   /**
-   * Get NS Library statistics
+   * Get NS Library statistics: the library players browse, so approved cards only.
    */
   getNSLibraryStats: protectedProcedure.query(async ({ ctx }) => {
+    const library = { cardType: CardType.NS, reviewState: "APPROVED" } as const;
     try {
       const [totalCards, cteCardsCount, retiredCardsCount, cardsByRegion, lastSync] =
         await Promise.all([
           ctx.db.card.count({
             where: {
-              cardType: CardType.NS,
+              ...library,
               isRetired: false,
             },
           }),
           ctx.db.card.count({
             where: {
-              cardType: CardType.NS,
+              ...library,
               isRetired: false,
               metadata: { path: ["isCTE"], equals: true },
             },
           }),
           ctx.db.card.count({
             where: {
-              cardType: CardType.NS,
+              ...library,
               isRetired: true,
             },
           }),
           ctx.db.$queryRaw<Array<{ region: string; count: number }>>`
             SELECT metadata->'nsData'->>'region' AS region, COUNT(*)::int AS count
             FROM cards
-            WHERE "cardType" = 'NS' AND "isRetired" = false
+            WHERE "cardType" = 'NS' AND "reviewState" = 'APPROVED' AND "isRetired" = false
               AND COALESCE(metadata->'nsData'->>'region', '') <> ''
             GROUP BY 1
             ORDER BY count DESC
