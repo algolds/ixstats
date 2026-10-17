@@ -1,0 +1,345 @@
+import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+
+jest.mock("~/components/providers/FacetMotionConfig", () => ({
+  useFacetReducedMotion: jest.fn(() => false),
+}));
+
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
+import { CardFlip, isFlipKey } from "~/components/cards/face/CardFlip";
+import type { TrailEvent } from "~/lib/cards/face/trail";
+import type { CardFaceData, CardFinish } from "~/lib/cards/face/types";
+
+const face = (finish: CardFinish = "FOIL"): CardFaceData => ({
+  cardId: "c1",
+  title: "Caphiria",
+  rarity: "EPIC",
+  cardType: "LORE",
+  realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
+  artwork: null,
+  silhouette: false,
+  number: 9,
+  season: null,
+  isRetired: false,
+  copy: { ownershipId: "o1", finish, serialNumber: 7, level: 4 },
+});
+
+const key = (init: KeyboardEventInit, target: Element = document.body) => {
+  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+  Object.defineProperty(event, "target", { value: target });
+  return event;
+};
+
+/** The element marked `data-target` in `html`, else its first element. */
+const element = (html: string): Element => {
+  const host = document.createElement("div");
+  host.innerHTML = html;
+  const target = host.querySelector("[data-target]") ?? host.firstElementChild;
+  if (!target) throw new Error(`No element in ${html}`);
+  return target;
+};
+
+describe("isFlipKey", () => {
+  it("flips on F anywhere but a field, and on Space only off other controls", () => {
+    const input = document.createElement("input");
+    const button = document.createElement("button");
+    expect(isFlipKey(key({ key: "f" }))).toBe(true);
+    expect(isFlipKey(key({ key: "F" }))).toBe(true);
+    expect(isFlipKey(key({ key: " " }))).toBe(true);
+    expect(isFlipKey(key({ key: " " }, button))).toBe(false);
+    expect(isFlipKey(key({ key: "f" }, button))).toBe(true);
+    expect(isFlipKey(key({ key: "f" }, input))).toBe(false);
+    expect(isFlipKey(key({ key: "f", ctrlKey: true }))).toBe(false);
+    expect(isFlipKey(key({ key: "Enter" }))).toBe(false);
+  });
+
+  it("leaves modified, repeated and already handled keys alone", () => {
+    expect(isFlipKey(key({ key: "f", altKey: true }))).toBe(false);
+    expect(isFlipKey(key({ key: "f", metaKey: true }))).toBe(false);
+    expect(isFlipKey(key({ key: "f", repeat: true }))).toBe(false);
+    const handled = key({ key: "f" });
+    handled.preventDefault();
+    expect(isFlipKey(handled)).toBe(false);
+  });
+
+  it("leaves keys typed into text, typeahead lists and editors to them", () => {
+    for (const html of [
+      "<textarea></textarea>",
+      "<select></select>",
+      '<div contenteditable="true"><p data-target>Draft</p></div>',
+      '<div role="textbox"></div>',
+      '<div role="combobox"></div>',
+      '<div role="listbox"><div role="option" data-target>One</div></div>',
+      '<div role="menu"><div role="menuitem" data-target>Dust</div></div>',
+    ]) {
+      expect([html, isFlipKey(key({ key: "f" }, element(html)))]).toEqual([html, false]);
+      expect([html, isFlipKey(key({ key: " " }, element(html)))]).toEqual([html, false]);
+    }
+    expect(isFlipKey(key({ key: "f" }, element('<div contenteditable="false"></div>')))).toBe(true);
+  });
+
+  it("lets Space press the control it is on", () => {
+    for (const html of [
+      '<a href="/x">Link</a>',
+      "<details><summary data-target>More</summary></details>",
+      '<div role="button"><span data-target>Open</span></div>',
+      '<div role="link"></div>',
+      '<div role="tab"></div>',
+      '<div role="checkbox"></div>',
+      '<div role="radio"></div>',
+      '<div role="switch"></div>',
+    ]) {
+      expect([html, isFlipKey(key({ key: " " }, element(html)))]).toEqual([html, false]);
+    }
+    expect(isFlipKey(key({ key: " " }, element("<a>Not a link</a>")))).toBe(true);
+    expect(isFlipKey(key({ key: " " }, element('<div tabindex="-1">The card</div>')))).toBe(true);
+  });
+});
+
+describe("CardFlip", () => {
+  beforeEach(() => jest.mocked(useFacetReducedMotion).mockReturnValue(false));
+
+  it("flips on F and keeps the hidden side out of reach", () => {
+    const onFlip = jest.fn();
+    const { container } = render(
+      <CardFlip face={face()} back={<a href="/x">Back link</a>} flipped={false} onFlip={onFlip} />
+    );
+    expect(fireEvent.keyDown(window, { key: "f" })).toBe(false);
+    expect(onFlip).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Back link").closest("[inert]")).not.toBeNull();
+    expect(screen.getByRole("img", { name: /Caphiria/ }).closest("[inert]")).toBeNull();
+    expect(container.querySelector(".card-holo")).not.toBeNull();
+  });
+
+  it("puts the front out of reach once it is turned over", () => {
+    render(<CardFlip face={face()} back={<a href="/x">Back link</a>} flipped onFlip={jest.fn()} />);
+    expect(screen.getByText("Back link").closest("[inert]")).toBeNull();
+    expect(screen.getByRole("img", { name: /Caphiria/ }).closest("[inert]")).not.toBeNull();
+  });
+
+  it("ignores other keys and stops listening once it is gone", () => {
+    const onFlip = jest.fn();
+    const { unmount } = render(
+      <CardFlip face={face()} back={null} flipped={false} onFlip={onFlip} />
+    );
+    expect(fireEvent.keyDown(window, { key: "Enter" })).toBe(true);
+    unmount();
+    fireEvent.keyDown(window, { key: "f" });
+    expect(onFlip).not.toHaveBeenCalled();
+  });
+
+  it("shows the holo on Holo and Serialised copies too", () => {
+    for (const finish of ["HOLO", "SERIALISED"] as const) {
+      const { container, unmount } = render(
+        <CardFlip face={face(finish)} back={null} flipped={false} onFlip={jest.fn()} />
+      );
+      expect([finish, container.querySelector(".card-holo")]).not.toEqual([finish, null]);
+      unmount();
+    }
+  });
+
+  it("shows no holo on a Standard copy or a catalogue card", () => {
+    const { container, rerender } = render(
+      <CardFlip face={face("STANDARD")} back={null} flipped={false} onFlip={jest.fn()} />
+    );
+    expect(container.querySelector(".card-holo")).toBeNull();
+    rerender(
+      <CardFlip face={{ ...face(), copy: null }} back={null} flipped={false} onFlip={jest.fn()} />
+    );
+    expect(container.querySelector(".card-holo")).toBeNull();
+  });
+
+  it("moves the holo highlight with the pointer", () => {
+    const { container } = render(
+      <CardFlip face={face()} back={null} flipped={false} onFlip={jest.fn()} />
+    );
+    const stage = container.firstElementChild as HTMLElement;
+    jest.spyOn(stage, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: 50,
+      width: 200,
+      height: 280,
+    } as DOMRect);
+    // jsdom has no PointerEvent, so a MouseEvent of that type carries the coordinates.
+    fireEvent(stage, new MouseEvent("pointermove", { bubbles: true, clientX: 150, clientY: 260 }));
+    const holo = container.querySelector<HTMLElement>(".card-holo");
+    expect(holo?.style.getPropertyValue("--holo-x")).toBe("25%");
+    expect(holo?.style.getPropertyValue("--holo-y")).toBe("75%");
+  });
+
+  it("cross-fades without tilt or holo under Reduce Motion", () => {
+    jest.mocked(useFacetReducedMotion).mockReturnValue(true);
+    const onFlip = jest.fn();
+    const { container, rerender } = render(
+      <CardFlip face={face()} back={<p>The back</p>} flipped={false} onFlip={onFlip} />
+    );
+    expect(container.querySelector(".card-holo")).toBeNull();
+    expect(screen.queryByText("The back")).toBeNull();
+    fireEvent.keyDown(window, { key: " " });
+    expect(onFlip).toHaveBeenCalledTimes(1);
+    rerender(<CardFlip face={face()} back={<p>The back</p>} flipped onFlip={onFlip} />);
+    expect(screen.getByText("The back")).toBeInTheDocument();
+  });
+});
+
+const signedAt = new Date("2026-10-02T12:00:00Z");
+const trailEvent = (id: string, overrides: Partial<TrailEvent> = {}): TrailEvent => ({
+  id,
+  action: "TRADE",
+  fromHandle: "ann",
+  toHandle: "max",
+  price: null,
+  at: new Date("2026-10-01T12:00:00Z"),
+  ...overrides,
+});
+
+describe("CardBackProvenance", () => {
+  it("shows the copy's serial, finish, inscription, level, trail and art credit", () => {
+    const { container } = render(
+      <CardBackProvenance
+        face={face()}
+        copy={{
+          experience: 2400,
+          inscription: { text: "For the archive", signerHandle: "sig", signedAt },
+          trail: [trailEvent("e1")],
+        }}
+        artCredit={{
+          line: "Map by Ann",
+          licence: "CC BY-SA 4.0",
+          sourceUrl: "https://ixwiki.com/wiki/File:Map.png",
+        }}
+        ns={null}
+      />
+    );
+    expect(container.firstElementChild).toHaveAttribute("data-card-rarity", "EPIC");
+    expect(screen.getByText("Ixnay")).toBeInTheDocument();
+    expect(screen.getByText("#7 · Foil")).toBeInTheDocument();
+    expect(screen.getByText("For the archive")).toBeInTheDocument();
+    const longDate = signedAt.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    expect(screen.getByText(`Signed by @sig on ${longDate}`)).toBeInTheDocument();
+    expect(screen.getByText("Level 4 · 2,400 XP")).toBeInTheDocument();
+    expect(screen.getByText("Traded")).toBeInTheDocument();
+    expect(screen.getByText("@ann to @max")).toBeInTheDocument();
+    const at = new Date("2026-10-01T12:00:00Z");
+    expect(screen.getByText(at.toLocaleDateString())).toHaveAttribute("datetime", at.toISOString());
+    const credit = screen.getByRole("link", { name: "Map by Ann" });
+    expect(credit).toHaveAttribute("href", "https://ixwiki.com/wiki/File:Map.png");
+    expect(credit).toHaveAttribute("target", "_blank");
+    expect(credit).toHaveAttribute("rel", "noopener noreferrer");
+    expect(credit.parentElement).toHaveTextContent(/^Map by Ann · CC BY-SA 4\.0$/);
+    expect(screen.queryByRole("link", { name: "View on NationStates" })).toBeNull();
+  });
+
+  it("signs an unknown signer as a collector, and keeps the licence once", () => {
+    render(
+      <CardBackProvenance
+        face={face()}
+        copy={{
+          experience: 0,
+          inscription: { text: "Hello", signerHandle: null, signedAt: null },
+          trail: [],
+        }}
+        artCredit={{
+          line: "Map.png by Ann, CC BY-SA 4.0",
+          licence: "CC BY-SA 4.0",
+          sourceUrl: null,
+        }}
+        ns={null}
+      />
+    );
+    expect(screen.getByText("Signed by a collector")).toBeInTheDocument();
+    expect(screen.getByText("Map.png by Ann, CC BY-SA 4.0")).toBeInTheDocument();
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("lists the four latest moves (the trail comes newest first), and only the parties it knows", () => {
+    render(
+      <CardBackProvenance
+        face={face()}
+        copy={{
+          experience: 10,
+          inscription: null,
+          trail: [
+            trailEvent("e1", { action: "PACK_OPEN", fromHandle: null, toHandle: null }),
+            trailEvent("e2"),
+            trailEvent("e3"),
+            trailEvent("e4"),
+            trailEvent("e5", { action: "AUCTION_END" }),
+          ],
+        }}
+        artCredit={null}
+        ns={null}
+      />
+    );
+    const moves = screen.getAllByRole("listitem");
+    expect(moves).toHaveLength(4);
+    const at = new Date("2026-10-01T12:00:00Z").toLocaleDateString();
+    expect(moves[0]?.textContent).toBe(`Pulled from a pack${at}`);
+    expect(moves[1]?.textContent).toBe(`Traded@ann to @max${at}`);
+    expect(screen.queryByText("Won at auction")).toBeNull();
+    expect(screen.queryByText(/Signed by/)).toBeNull();
+  });
+
+  it("gives an NS card its provenance line and a link to NationStates", () => {
+    render(
+      <CardBackProvenance
+        face={{ ...face(), cardType: "NS", season: 3, copy: null, silhouette: true }}
+        copy={null}
+        artCredit={null}
+        ns={{
+          nation: "Testlandia",
+          season: 3,
+          region: "The Pacific",
+          category: null,
+          cardUrl: "https://www.nationstates.net/page=deck/card=42/season=3",
+          nationUrl: "https://www.nationstates.net/nation=testlandia",
+        }}
+      />
+    );
+    expect(screen.getByText("Testlandia · season 3 · The Pacific")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View on NationStates" })).toHaveAttribute(
+      "href",
+      "https://www.nationstates.net/page=deck/card=42/season=3"
+    );
+    expect(screen.getByText("Not in your collection")).toBeInTheDocument();
+    expect(screen.queryByText(/^Level/)).toBeNull();
+    expect(
+      screen.getByText("Card data from the NationStates API. Not affiliated with NationStates.")
+    ).toBeInTheDocument();
+  });
+
+  it("links an NS card to its nation when the card page is unknown", () => {
+    render(
+      <CardBackProvenance
+        face={{ ...face(), cardType: "NS", season: null, copy: null }}
+        copy={null}
+        artCredit={null}
+        ns={{
+          nation: "Testlandia",
+          season: null,
+          region: null,
+          category: "Common",
+          cardUrl: null,
+          nationUrl: "https://www.nationstates.net/nation=testlandia",
+        }}
+      />
+    );
+    expect(screen.getByText("Testlandia · Common")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View on NationStates" })).toHaveAttribute(
+      "href",
+      "https://www.nationstates.net/nation=testlandia"
+    );
+  });
+
+  it("shows no level for a copy whose sheet facts are missing", () => {
+    render(<CardBackProvenance face={face()} copy={null} artCredit={null} ns={null} />);
+    expect(screen.getByText("#7 · Foil")).toBeInTheDocument();
+    expect(screen.queryByText(/^Level/)).toBeNull();
+  });
+});
