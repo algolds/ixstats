@@ -599,7 +599,6 @@ describe("loadCardSheet", () => {
         new Map([
           ["u-a", { name: "Caphiria", showsVault: true }],
           ["me", { name: "@max", showsVault: true }],
-          ["u-signer", { name: null, showsVault: true }],
         ])
       );
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
