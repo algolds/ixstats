@@ -9,11 +9,12 @@ import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 describe("getUserCards", () => {
-  it("lists every copy the owner holds, retired cards included, newest first", async () => {
+  it("lists every copy the owner holds, retired cards included, newest first, never naming a signer", async () => {
     const db = createMockPrisma();
     await getUserCards(db as never, "db_me");
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { ownerId: "db_me" },
+      omit: { inscribedById: true, inscribedName: true },
       include: { cards: true },
       orderBy: [{ acquiredAt: "desc" }],
     });

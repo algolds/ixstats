@@ -4,6 +4,7 @@
 import { type Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { type CardRarity } from "./enums";
+import { INSCRIPTION_OMIT } from "./inscription";
 import { mintCopy } from "./mint";
 
 /**
@@ -46,6 +47,7 @@ export async function getUserCards(
 
     const ownerships = await db.cardOwnership.findMany({
       where,
+      omit: INSCRIPTION_OMIT,
       include: {
         cards: true,
       },

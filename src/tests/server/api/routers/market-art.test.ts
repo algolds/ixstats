@@ -315,6 +315,7 @@ describe("trade details", () => {
     const result = await trading(db).getTradeById({ tradeId: "t1" });
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["o1"] } },
+      omit: { inscribedById: true, inscribedName: true },
       include: { cards: { select: TRADE_CARD_SELECT } },
     });
     const sideSelect = db.cardOwnership.findMany.mock.calls[0]![0].include.cards.select;

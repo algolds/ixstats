@@ -8,6 +8,7 @@ import { getUserCards } from "~/lib/cards/card-service";
 import { CardRarity } from "@prisma/client";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
 import { blankUnseenArt } from "~/lib/cards/hub/market-faces";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 
 /**
  * Cards Inventory router
@@ -105,6 +106,7 @@ export const cardsInventoryRouter = createTRPCRouter({
             inscription: null,
             cards: { isBound: false, ...(filterRarity && { rarity: filterRarity }) },
           },
+          omit: INSCRIPTION_OMIT,
           include: {
             cards: true,
           },

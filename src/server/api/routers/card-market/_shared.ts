@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 
 /** Throws unless the request carries a signed-in user id; narrows `ctx.auth.userId` to a string. */
 export function assertAuthUserId(ctx: {
@@ -16,7 +17,7 @@ const cardSelect = { id: true, title: true, artwork: true, rarity: true } as con
 
 /** The auctioned card ownership with its card summary. */
 export const AUCTION_CARD_INCLUDE = {
-  CardOwnership: { include: { cards: { select: cardSelect } } },
+  CardOwnership: { omit: INSCRIPTION_OMIT, include: { cards: { select: cardSelect } } },
 } as const;
 
 /** Auction card plus the seller's ids. */

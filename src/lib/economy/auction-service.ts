@@ -20,6 +20,7 @@ import type { CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client"
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { boundCopyError } from "~/lib/cards/bound";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { notifyCards, type CardNotice } from "~/lib/cards/card-notify";
 import { royaltyNotices, type RoyaltyPayout } from "~/lib/cards/market/royalty";
 import { settleCardSaleTx, type CardSale } from "~/lib/cards/market/settle-sale";
@@ -964,7 +965,7 @@ export class AuctionService {
       db.cardAuction.findMany({
         where,
         include: {
-          CardOwnership: { include: { cards: true } },
+          CardOwnership: { omit: INSCRIPTION_OMIT, include: { cards: true } },
           AuctionBid: { orderBy: { createdAt: "desc" }, take: 1 },
         },
         orderBy,

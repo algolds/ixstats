@@ -64,6 +64,7 @@ const SHEET_COPY_SELECT = {
   inscription: true,
   inscribedAt: true,
   inscribedById: true,
+  inscribedName: true,
 } satisfies Prisma.CardOwnershipSelect;
 type SheetCopyRow = Prisma.CardOwnershipGetPayload<{ select: typeof SHEET_COPY_SELECT }>;
 
@@ -72,7 +73,10 @@ export interface SheetCopy {
   experience: number;
   acquiredAt: Date;
   isLocked: boolean;
-  /** The signer's name (`HubPlayer.name`); null names them "a player". */
+  /**
+   * The signer's name frozen at signing (an older signature's: their name now, `HubPlayer.name`); null names them "a
+   * player", as while their passport hides Vault cards.
+   */
   inscription: { text: string; signerName: string | null; signedAt: Date | null } | null;
   trail: TrailEvent[];
 }
@@ -231,15 +235,29 @@ function namedPlayers(
   ].filter((id): id is string => id !== null);
 }
 
-/**
- * A player's name on the sheet: their name by the identity rule, or null ("a player") while their passport hides Vault
- * cards, or when they no longer exist. The viewer always sees their own.
- */
-function namer(players: ReadonlyMap<string, HubPlayer>, viewerId: string | null) {
-  return (id: string): string | null => {
+/** How the sheet names players: whether it may name one at all, and their name by the identity rule if so. */
+interface SheetNamer {
+  /** False while their passport hides Vault cards, or when they no longer exist; the viewer always sees their own. */
+  shows: (id: string) => boolean;
+  /** Their name, or null ("a player") where `shows` is false. */
+  nameOf: (id: string) => string | null;
+}
+
+function namer(players: ReadonlyMap<string, HubPlayer>, viewerId: string | null): SheetNamer {
+  const shown = (id: string) => {
     const player = players.get(id);
-    return player && (player.showsVault || id === viewerId) ? player.name : null;
+    return player && (player.showsVault || id === viewerId) ? player : null;
   };
+  return { shows: (id) => shown(id) !== null, nameOf: (id) => shown(id)?.name ?? null };
+}
+
+/**
+ * The name printed with a signature: the one frozen at signing, else (an older signature) the signer's name now. The
+ * same switch hides it as hides the signer anywhere on the sheet.
+ */
+function signerName(copy: SheetCopyRow, naming: SheetNamer): string | null {
+  const signer = copy.inscribedById;
+  return signer && naming.shows(signer) ? (copy.inscribedName ?? naming.nameOf(signer)) : null;
 }
 
 /** The named players in one read; with nobody to name, no read. */
@@ -266,7 +284,7 @@ function toSheetCopy(
   card: SheetCardRow,
   copy: SheetCopyRow,
   trail: (copyId: string) => TrailEvent[],
-  nameOf: (id: string) => string | null
+  naming: SheetNamer
 ): SheetCopy {
   return {
     face: toCardFace(card, { revealArt: true, copy }),
@@ -276,7 +294,7 @@ function toSheetCopy(
     inscription: copy.inscription
       ? {
           text: copy.inscription,
-          signerName: copy.inscribedById ? nameOf(copy.inscribedById) : null,
+          signerName: signerName(copy, naming),
           signedAt: copy.inscribedAt,
         }
       : null,
@@ -372,16 +390,16 @@ export async function loadCardSheet(
   if (!revealArt && catalogued === 0) return null;
 
   const players = await playersNamed(options.rules, namedPlayers(listings, events, copies));
-  const nameOf = namer(players, viewerId);
+  const naming = namer(players, viewerId);
   const face = toCardFace(card, { revealArt, copy: copies[0] ?? null });
-  const trail = trailOf(events, nameOf);
+  const trail = trailOf(events, naming.nameOf);
   return {
     face,
     signedIn: viewerId !== null,
     card: toSheetCard(card, face.silhouette || card.isRetired, sheetValue(card, values)),
-    copies: copies.map((copy) => toSheetCopy(card, copy, trail, nameOf)),
+    copies: copies.map((copy) => toSheetCopy(card, copy, trail, naming)),
     market: {
-      listings: listings.map((row) => toSheetListing(row, viewerId, nameOf)),
+      listings: listings.map((row) => toSheetListing(row, viewerId, naming.nameOf)),
       recentSales,
       wantedBy,
     },

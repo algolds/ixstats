@@ -260,6 +260,32 @@ describe("cardsActivity", () => {
     });
   });
 
+  it("titles a cleared inscription and names the card it was on", async () => {
+    const db = createMockPrisma();
+    const details = 'Cleared the inscription "gg" from #3 (report r1)';
+    db.auditLog.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        action: "CARD_INSCRIPTION_CLEAR",
+        target: "card_elm",
+        details,
+        userId: null,
+        success: true,
+        timestamp: new Date("2026-11-02T12:00:00Z"),
+      },
+    ]);
+    db.card.findMany.mockResolvedValue([{ id: "card_elm", title: "Elm" }]);
+
+    const [item] = await cardsActivity(db as never, 10);
+
+    expect(item).toMatchObject({
+      kind: "audit",
+      title: "Inscription cleared",
+      subject: "Elm",
+      detail: details,
+    });
+  });
+
   it("names every actor, player and card by name, never by id, in one batch of reads", async () => {
     const PLAYER = "cmuuth78o0001f9jiqi63dw14";
     const ADMIN = "cmadmin000000000000000001";

@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { loadCopyValues } from "~/lib/cards/copy-value";
 import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
 import { tradeView } from "~/lib/cards/hub/market-faces";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import {
   FINISHED_TRADE_STATUSES,
   TRADE_PARTIES_INCLUDE,
@@ -111,11 +112,13 @@ export const tradingQueriesRouter = createTRPCRouter({
       const recipientIds = copyIdsOf(trade.recipientCardIds);
       const initiatorCards = await ctx.db.cardOwnership.findMany({
         where: { id: { in: initiatorIds } },
+        omit: INSCRIPTION_OMIT,
         include: { cards: { select: TRADE_CARD_SELECT } },
       });
 
       const recipientCards = await ctx.db.cardOwnership.findMany({
         where: { id: { in: recipientIds } },
+        omit: INSCRIPTION_OMIT,
         include: { cards: { select: TRADE_CARD_SELECT } },
       });
 

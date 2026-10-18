@@ -21,6 +21,7 @@ import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import { withAuctionFaces } from "~/lib/cards/hub/market-faces";
+import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { assertAuthUserId, AUCTION_WITH_SELLER_INCLUDE } from "./_shared";
 
 /**
@@ -194,6 +195,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
             where,
             include: {
               CardOwnership: {
+                omit: INSCRIPTION_OMIT,
                 include: {
                   cards: {
                     select: {
