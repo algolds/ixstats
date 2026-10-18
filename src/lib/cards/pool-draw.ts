@@ -6,6 +6,7 @@
 import type { Card, CardRarity, Prisma } from "@prisma/client";
 import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
 import { RARITY_ORDER } from "./face/labels";
+import { CATALOGUE_WHERE } from "./hub/catalogue";
 import type { TierCounts } from "./pack-odds";
 
 /** Odds per rarity, in percent. */
@@ -72,12 +73,12 @@ export function createPoolDrawer(
 }
 
 /**
- * The daily card's pool: any realm's approved, live cards (imports waiting in review and taken-down cards stay out),
- * never bound, Special, Trophy or Nation cards, nor restricted-licence art.
+ * The daily card's pool: the catalogue of every published realm (approved and live, so imports waiting in review,
+ * taken-down cards and a draft or generating realm's cards stay out), never bound, Special, Trophy or Nation cards, nor
+ * restricted-licence art.
  */
 export const DAILY_POOL_WHERE = {
-  reviewState: "APPROVED",
-  isRetired: false,
+  ...CATALOGUE_WHERE,
   isBound: false,
   cardType: { notIn: ["SPECIAL", "TROPHY", "NATION"] },
   ...EXCLUDE_RESTRICTED_ART,

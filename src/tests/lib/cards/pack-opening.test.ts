@@ -45,6 +45,8 @@ interface FakeCard {
   lorewardEntryId?: string | null;
   /** The card's art licence record; none when absent. */
   artLicence?: { status: string };
+  /** The card's realm; a published one when absent. */
+  realm?: { status: string };
 }
 
 /** Evaluates the subset of Prisma CardWhereInput the pack pool uses. */
@@ -56,6 +58,7 @@ function matches(card: FakeCard, where: any): boolean {
     if (key === "metadata") return card.metadata?.[cond.path[0]] === cond.equals;
     // A to-one `isNot` keeps a card with no related row
     if (key === "artLicence") return card.artLicence?.status !== cond.isNot.status;
+    if (key === "realm") return !cond.status.notIn.includes(card.realm?.status ?? "active");
     const value = (card as any)[key] ?? null;
     if (cond && typeof cond === "object") {
       if ("not" in cond) return value !== cond.not;
@@ -329,13 +332,43 @@ describe("openPack", () => {
   });
 
   it("refuses, minting nothing, when a drawn rarity's cards go between the count and the draw", async () => {
-    const { db, tx } = makeDb([{ id: "common", rarity: "COMMON", cardType: "NATION" }]);
+    // Uncommon still has a card, but a pack never draws another rarity in place of the rolled one
+    const { db, tx } = makeDb([
+      { id: "common", rarity: "COMMON", cardType: "NATION" },
+      { id: "uncommon", rarity: "UNCOMMON", cardType: "NATION" },
+    ]);
     // The first draw finds its card; the second finds its tier emptied since the count
     tx.card.findFirst.mockResolvedValueOnce({ id: "common" }).mockResolvedValueOnce(null);
     await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
       message:
         "This pack can't be opened right now: it has no Common cards to give. It stays unopened; try again later.",
+    });
+    expect(tx.card.findFirst).toHaveBeenCalledTimes(2);
+    expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
+  });
+
+  it("never pulls a card homed in a draft or generating realm", async () => {
+    const { db } = makeDb([
+      { id: "draft", rarity: "COMMON", cardType: "LORE", realm: { status: "draft" } },
+      { id: "generating", rarity: "COMMON", cardType: "LORE", realm: { status: "generating" } },
+      { id: "ok", rarity: "COMMON", cardType: "LORE", realm: { status: "active" } },
+    ]);
+    const pulled = await openPack(db, USER, USER_PACK_ID);
+    expect(pulled.map((p) => p.card.id)).toEqual(Array(5).fill("ok"));
+  });
+
+  it("refuses to open when a rarity's only cards are in an unpublished realm", async () => {
+    const { db } = makeDb(
+      [
+        { id: "common", rarity: "COMMON", cardType: "LORE" },
+        { id: "draft-legend", rarity: "LEGENDARY", cardType: "LORE", realm: { status: "draft" } },
+      ],
+      { commonOdds: 90, legendaryOdds: 10 }
+    );
+    await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringContaining("it has no Legendary cards to give"),
     });
     expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
   });

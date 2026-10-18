@@ -22,7 +22,11 @@ import { createMockPrisma } from "~/tests/helpers/transactional-mock-db";
 /** The app client and the transaction's own client; only the transaction client can take a lock. */
 function makeDb() {
   const db = createMockPrisma();
-  const tx = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
+  // A tagged template call: the SQL's strings, then the lock's namespace and key
+  const lock = jest
+    .fn<Promise<number>, [TemplateStringsArray, number, string]>()
+    .mockResolvedValue(1);
+  const tx = createMockPrisma({ $executeRaw: lock });
   db.$transaction = jest.fn((cb: (client: typeof tx) => Promise<never>) => cb(tx));
   // Every finish roll lands on Foil
   tx.systemConfig.findMany = jest
@@ -38,7 +42,7 @@ function makeDb() {
   tx.cardOwnership.create = jest
     .fn()
     .mockResolvedValue({ id: "co_1", serialNumber: 5, finish: "FOIL" });
-  return { db, tx };
+  return { db, tx, lock };
 }
 
 beforeEach(() => {
@@ -96,11 +100,11 @@ it("mints a copy with a rolled finish and a DAILY_CLAIM mint row, and grants it 
 });
 
 it("takes the owner's capacity lock before the card's serial lock, both in the claim's transaction", async () => {
-  const { db, tx } = makeDb();
+  const { db, lock } = makeDb();
 
   await claimCombinedDailyClaim("user_1", "CARD", db as never);
 
-  const locks = tx.$executeRaw.mock.calls.map(([, namespace, key]) => [namespace, key]);
+  const locks = lock.mock.calls.map(([, namespace, key]) => [namespace, key]);
   expect(locks).toEqual([
     [7334, "user_1"],
     [7331, "card_1"],
@@ -108,7 +112,7 @@ it("takes the owner's capacity lock before the card's serial lock, both in the c
 });
 
 it("mints nothing when the collection is full", async () => {
-  const { db, tx } = makeDb();
+  const { db, tx, lock } = makeDb();
   tx.cardOwnership.count = jest.fn().mockResolvedValue(150);
 
   const result = await claimCombinedDailyClaim("user_1", "CARD", db as never);
@@ -118,5 +122,5 @@ it("mints nothing when the collection is full", async () => {
     message: expect.stringMatching(/collection is full/),
   });
   expect(tx.cardOwnership.create).not.toHaveBeenCalled();
-  expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+  expect(lock).toHaveBeenCalledTimes(1);
 });

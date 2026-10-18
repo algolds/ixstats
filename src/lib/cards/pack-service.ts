@@ -8,6 +8,7 @@ import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
 import { assertCapacityTx, CapacityError } from "./capacity";
 import { parseCardRarity } from "./enums";
 import { rarityRank } from "./face/labels";
+import { CATALOGUE_WHERE } from "./hub/catalogue";
 import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
 import { rarityList, undeliverableRarities, type PackOdds } from "./pack-odds";
@@ -257,7 +258,8 @@ export function generatePackCards(pack: {
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
  * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
- * only approved cards (imports wait in review), and never restricted-licence art.
+ * only catalogue cards (approved, as imports wait in review, and homed in a published realm,
+ * so a draft or generating realm's cards never drop), and never restricted-licence art.
  */
 export async function packPoolWhere(
   tx: Prisma.TransactionClient,
@@ -277,8 +279,7 @@ export async function packPoolWhere(
   });
 
   const and: Prisma.CardWhereInput[] = [
-    { reviewState: "APPROVED" },
-    { isRetired: false },
+    CATALOGUE_WHERE,
     // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
     { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },
     EXCLUDE_RESTRICTED_ART,

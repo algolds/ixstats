@@ -97,9 +97,15 @@ describe("createPoolDrawer", () => {
     expect(tx.card.findFirst).not.toHaveBeenCalled();
   });
 
-  it("returns null when the tier's cards went between the count and the draw", async () => {
-    const tx = txWith(null);
-    expect(await createPoolDrawer(tx as never, {}, { EPIC: 1 }).draw("EPIC")).toBeNull();
+  it("returns null when the tier's cards went between the count and the draw, never another tier's card", async () => {
+    // The Epic card went since the count; Common still has cards
+    const findFirst = jest.fn(
+      async ({ where }: { where: { AND: [object, { rarity: string }] } }) =>
+        where.AND[1].rarity === "EPIC" ? null : card
+    );
+    const drawer = createPoolDrawer({ card: { findFirst } } as never, {}, { COMMON: 9, EPIC: 1 });
+    expect(await drawer.draw("EPIC")).toBeNull();
+    expect(findFirst).toHaveBeenCalledTimes(1);
   });
 
   it("picks the place with Math.random by default", async () => {
@@ -129,10 +135,11 @@ describe("oddsWithCards", () => {
   });
 });
 
-it("keeps unreviewed, retired, bound, Special, Trophy, Nation and restricted-art cards out of the daily pool", () => {
+it("keeps unreviewed, retired, unpublished-realm, bound, Special, Trophy, Nation and restricted-art cards out of the daily pool", () => {
   expect(DAILY_POOL_WHERE).toEqual({
     reviewState: "APPROVED",
     isRetired: false,
+    realm: { status: { notIn: ["draft", "generating"] } },
     isBound: false,
     cardType: { notIn: ["SPECIAL", "TROPHY", "NATION"] },
     artLicence: { isNot: { status: "RESTRICTED" } },
