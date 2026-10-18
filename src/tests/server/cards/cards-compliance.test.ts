@@ -10,6 +10,7 @@ import {
   hideTakedownArt,
   listLicenceReview,
   listTakedowns,
+  requestTakedown,
   restoreTakedown,
   selfServiceTakedown,
   setCardLicence,
@@ -188,6 +189,123 @@ describe("fileTakedown", () => {
     expect(where).toEqual({ id: "card_1", artwork: ELM, isRetired: false });
     expect(data).toEqual({ artwork: null, isRetired: true, retiredAt: expect.any(Date) });
     expect(data).not.toHaveProperty("reviewState");
+  });
+});
+
+describe("requestTakedown", () => {
+  const DAY_MS = 86_400_000;
+  const request = {
+    cardId: "card_1",
+    requesterId: "db_player",
+    reason: "It shows my house without asking",
+    contact: "me@example.org",
+  };
+  /** A non-NationStates card, no active request for it, and `waiting` open player requests from the requester. */
+  function playerDb(waiting = 0) {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue({ id: "card_1", cardType: "LORE" });
+    db.cardTakedown.count.mockResolvedValue(waiting);
+    db.cardTakedown.create.mockResolvedValue({ id: "td_1" });
+    return db;
+  }
+
+  it("files a player's request under the card's lock, due in 14 days, naming the player for admins only", async () => {
+    const db = playerDb();
+
+    await expect(requestTakedown(db as never, request)).resolves.toEqual({ status: "filed" });
+
+    expect(db.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(db.$executeRaw.mock.calls[0]).toContain("card_1");
+    expect(lockedBefore(db, db.cardTakedown.findFirst)).toBe(true);
+    expect(lockedBefore(db, db.cardTakedown.count)).toBe(true);
+    expect(db.cardTakedown.count).toHaveBeenCalledWith({
+      where: { requestedBy: "db_player", origin: "PLAYER_REQUEST", status: "OPEN" },
+    });
+    const { data } = db.cardTakedown.create.mock.calls[0]![0];
+    expect(data).toMatchObject({
+      cardId: "card_1",
+      origin: "PLAYER_REQUEST",
+      reason: "It shows my house without asking",
+      contact: "me@example.org",
+      requestedBy: "db_player",
+    });
+    expect(data.dueAt.getTime() - data.receivedAt.getTime()).toBe(14 * DAY_MS);
+    // The art stays until staff answer
+    expect(db.cardTakedown.updateMany).not.toHaveBeenCalled();
+    expect(db.card.updateMany).not.toHaveBeenCalled();
+    expect(audits(db)).toEqual([
+      expect.objectContaining({
+        action: "CARD_TAKEDOWN",
+        userId: null,
+        target: "card_1",
+        details: "Filed a takedown (player): It shows my house without asking",
+      }),
+    ]);
+  });
+
+  it("files with no contact when the player gives none", async () => {
+    const db = playerDb();
+    await requestTakedown(db as never, { ...request, contact: undefined });
+    expect(db.cardTakedown.create.mock.calls[0]![0].data).toMatchObject({ contact: null });
+  });
+
+  it("refuses a NationStates card, which keeps its verified takedown, touching nothing", async () => {
+    const db = playerDb();
+    db.card.findUnique.mockResolvedValue({ id: "card_1", cardType: "NS" });
+
+    await expect(requestTakedown(db as never, request)).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: expect.stringMatching(/Verify & request takedown/),
+    });
+    expect(db.card.findUnique).toHaveBeenCalledWith({
+      where: { id: "card_1" },
+      select: { id: true, cardType: true },
+    });
+    expect(db.$executeRaw).not.toHaveBeenCalled();
+    expect(db.cardTakedown.create).not.toHaveBeenCalled();
+  });
+
+  it("answers already when the card has an active request, filing nothing, even at the cap", async () => {
+    const db = playerDb(5);
+    db.cardTakedown.findFirst.mockResolvedValue({ id: "td_0", status: "OPEN" });
+
+    await expect(requestTakedown(db as never, request)).resolves.toEqual({ status: "already" });
+    expect(db.cardTakedown.findFirst).toHaveBeenCalledWith({
+      where: { cardId: "card_1", status: { in: ["OPEN", "HIDDEN"] } },
+      select: { id: true, status: true },
+    });
+    expect(db.cardTakedown.create).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("answers already when the card's art is hidden by a takedown", async () => {
+    const db = playerDb();
+    db.cardTakedown.findFirst.mockResolvedValue({ id: "td_0", status: "HIDDEN" });
+    await expect(requestTakedown(db as never, request)).resolves.toEqual({ status: "already" });
+    expect(db.cardTakedown.create).not.toHaveBeenCalled();
+  });
+
+  it("files a player's fifth waiting request and refuses the sixth", async () => {
+    const fifth = playerDb(4);
+    await expect(requestTakedown(fifth as never, request)).resolves.toEqual({ status: "filed" });
+
+    const sixth = playerDb(5);
+    await expect(requestTakedown(sixth as never, request)).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+      message: "You have 5 requests waiting. Staff will answer those first.",
+    });
+    expect(sixth.cardTakedown.create).not.toHaveBeenCalled();
+    expect(sixth.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a card that does not exist", async () => {
+    const db = playerDb();
+    db.card.findUnique.mockResolvedValue(null);
+    await expect(requestTakedown(db as never, request)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(db.$executeRaw).not.toHaveBeenCalled();
+    expect(db.cardTakedown.create).not.toHaveBeenCalled();
   });
 });
 

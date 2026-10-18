@@ -3,7 +3,7 @@
  * with the reason. Hiding is reversible: the art is kept on the takedown and restore puts it back. A takedown never
  * changes a card's review state. One request is active (OPEN or HIDDEN) per card. Licence review lists art whose
  * licence is unknown or restricted, and restricted art is hidden. NationStates flag owners keep their self-service
- * takedown, which files and hides in one step.
+ * takedown, which files and hides in one step; a player asks for any other card to come down with a request.
  */
 import type { CardLicenceStatus, CardTakedownOrigin, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -167,6 +167,8 @@ export interface FileTakedownInput {
   origin: CardTakedownOrigin;
   reason: string;
   contact?: string;
+  /** The DB user who asked, when it is not the filing admin (a player's request). Only admins read it. */
+  requestedBy?: string;
   /** When the request arrived; one still to come counts as now, so its deadline is never pushed out. */
   receivedAt?: Date;
   hideNow?: boolean;
@@ -186,7 +188,7 @@ async function createTakedownTx(
       origin: input.origin,
       reason: input.reason,
       contact: input.contact || null,
-      requestedBy: actor?.dbId ?? null,
+      requestedBy: input.requestedBy ?? actor?.dbId ?? null,
       receivedAt,
       dueAt: takedownDueAt(receivedAt),
     },
@@ -225,6 +227,51 @@ export async function fileTakedown(
     return createTakedownTx(tx, actor, input);
   });
   return { takedownId };
+}
+
+/** Waiting player requests one player may have (a soft cap against spam; staff answer within 14 days). */
+const PLAYER_REQUEST_CAP = 5;
+
+/**
+ * A player's takedown request for a card that is not from NationStates (those keep the verified self-service
+ * takedown): one active request per card, so a card already in the queue answers "already" and files nothing.
+ */
+export async function requestTakedown(
+  db: PrismaClient,
+  input: { cardId: string; requesterId: string; reason: string; contact?: string }
+): Promise<{ status: "filed" | "already" }> {
+  const card = await db.card.findUnique({
+    where: { id: input.cardId },
+    select: { id: true, cardType: true },
+  });
+  if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
+  if (card.cardType === "NS") {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "NationStates cards use Verify & request takedown.",
+    });
+  }
+  return db.$transaction(async (tx) => {
+    await lockCardTakedownsTx(tx, card.id);
+    if (await activeTakedown(tx, card.id)) return { status: "already" as const };
+    const waiting = await tx.cardTakedown.count({
+      where: { requestedBy: input.requesterId, origin: "PLAYER_REQUEST", status: "OPEN" },
+    });
+    if (waiting >= PLAYER_REQUEST_CAP) {
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: `You have ${PLAYER_REQUEST_CAP} requests waiting. Staff will answer those first.`,
+      });
+    }
+    await createTakedownTx(tx, null, {
+      cardId: card.id,
+      origin: "PLAYER_REQUEST",
+      reason: input.reason,
+      contact: input.contact,
+      requestedBy: input.requesterId,
+    });
+    return { status: "filed" as const };
+  });
 }
 
 export interface LicenceTakedownReport {
@@ -400,6 +447,8 @@ export function listTakedowns(
       status: true,
       reason: true,
       contact: true,
+      // Admin-only: the router names a player's request by it and never returns the id
+      requestedBy: true,
       receivedAt: true,
       dueAt: true,
       resolvedAt: true,

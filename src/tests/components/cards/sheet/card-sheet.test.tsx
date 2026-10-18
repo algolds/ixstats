@@ -11,7 +11,10 @@ import {
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    cards: { getSheet: { useQuery: jest.fn() } },
+    cards: {
+      getSheet: { useQuery: jest.fn() },
+      requestTakedown: { useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })) },
+    },
     loreCards: { getCardAuthorInfo: { useQuery: jest.fn(() => ({ data: undefined })) } },
   },
 }));
@@ -656,13 +659,21 @@ describe("CardSheet about", () => {
     expect(within(about).getByText("Art: Photo by Ann · CC BY 4.0")).toBeInTheDocument();
   });
 
-  it("points a wiki card to the takedown help", () => {
+  it("offers a signed-in player a takedown request for a wiki card, and points a visitor to the help", () => {
     showSheet();
+    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const about = screen.getByRole("region", { name: "About" });
+    expect(within(about).getByRole("button", { name: "Request a takedown" })).toBeInTheDocument();
+    expect(within(about).queryByRole("link", { name: "How to ask for a takedown" })).toBeNull();
+    unmount();
+
+    showSheet(sheet({ signedIn: false, copies: [] }));
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
     expect(screen.getByRole("link", { name: "How to ask for a takedown" })).toHaveAttribute(
       "href",
       "/help/vault/lore-cards#takedowns"
     );
+    expect(screen.queryByRole("button", { name: "Request a takedown" })).toBeNull();
   });
 
   it("keeps the NationStates credit and self-service takedown on an NS card", () => {
