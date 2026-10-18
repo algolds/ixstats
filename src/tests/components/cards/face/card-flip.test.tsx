@@ -184,6 +184,25 @@ describe("CardFlip", () => {
     rerender(<CardFlip face={face()} back={<p>The back</p>} flipped onFlip={onFlip} />);
     expect(screen.getByText("The back")).toBeInTheDocument();
   });
+
+  // jsdom has no layout, so this checks the classes that let a 288 px card shrink into a narrower column at 5:7.
+  it.each([false, true])(
+    "shrinks to a column narrower than the card, keeping 5:7 (Reduce Motion %s)",
+    (reduce) => {
+      jest.mocked(useFacetReducedMotion).mockReturnValue(reduce);
+      const { container } = render(
+        <CardFlip face={face()} back={<p>The back</p>} flipped={false} onFlip={jest.fn()} />
+      );
+      expect(container.firstElementChild).toHaveClass("w-fit", "max-w-full");
+      expect(screen.getByRole("img", { name: /Caphiria/ })).toHaveClass(
+        "w-72",
+        "max-w-full",
+        "aspect-[5/7]"
+      );
+      // The cross-fade stacks both sides in one grid cell, which must not hold the column open at 288 px.
+      if (reduce) expect(container.firstElementChild).toHaveClass("grid-cols-1");
+    }
+  );
 });
 
 describe("CardFlip keys", () => {
@@ -287,6 +306,13 @@ const trailEvent = (id: string, overrides: Partial<TrailEvent> = {}): TrailEvent
 });
 
 describe("CardBackProvenance", () => {
+  it("is the card's size, and shrinks with the front in a narrower column at 5:7", () => {
+    const { container } = render(
+      <CardBackProvenance face={face()} copy={null} artCredit={null} ns={null} />
+    );
+    expect(container.firstElementChild).toHaveClass("w-72", "max-w-full", "aspect-[5/7]");
+  });
+
   it("shows the copy's serial, finish, inscription, level, trail and art credit", () => {
     const { container } = render(
       <CardBackProvenance

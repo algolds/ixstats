@@ -107,7 +107,14 @@ function SheetPlaceholder({
   onRetry: () => void;
 }) {
   if (loading) {
-    return <Skeleton className={cn("rounded-card mx-auto aspect-[5/7]", CARD_FACE_WIDTH.L)} />;
+    return (
+      <Skeleton
+        className={cn(
+          "rounded-card mx-auto mt-8 aspect-[5/7] max-w-full md:mt-0",
+          CARD_FACE_WIDTH.L
+        )}
+      />
+    );
   }
   if (signIn) return <SignInToSee />;
   if (failed) {
@@ -157,13 +164,15 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-[auto_1fr]">
+    // grid-cols-1 lets the phone's one column shrink below the card's 288 px. The bottom sheet's close button sits
+    // over the column's top-right corner, so on a phone the card starts below it (pt-8); beside the details it clears.
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-[auto_1fr]">
       <div
         ref={hero}
         role="group"
         tabIndex={-1}
         aria-label="The card. Press Space or F to turn it over."
-        className="flex flex-col items-center gap-3 outline-none md:sticky md:top-0 md:self-start"
+        className="flex flex-col items-center gap-3 pt-8 outline-none md:sticky md:top-0 md:self-start md:pt-0"
       >
         <CardFlip
           face={face}

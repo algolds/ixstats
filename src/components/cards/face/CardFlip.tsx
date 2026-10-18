@@ -90,16 +90,21 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
   }, [onFlip]);
 
   const showHolo = !reduce && face.copy !== null && face.copy.finish !== "STANDARD";
+  // max-w-full: on a narrow phone the card shrinks into its column, its 5:7 ratio setting the height.
   const front = (
     <span className="relative block">
-      <CardFace face={face} size="L" />
+      <CardFace face={face} size="L" className="max-w-full" />
       {showHolo && <CardHolo holoRef={holo} />}
     </span>
   );
 
   if (reduce) {
     return (
-      <div ref={root} tabIndex={-1} className="mx-auto grid w-fit outline-none">
+      <div
+        ref={root}
+        tabIndex={-1}
+        className="mx-auto grid w-fit max-w-full grid-cols-1 outline-none"
+      >
         <AnimatePresence initial={false}>
           <motion.div
             key={flipped ? "back" : "front"}
@@ -120,7 +125,7 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
     <div
       ref={root}
       tabIndex={-1}
-      className="mx-auto w-fit outline-none perspective-distant"
+      className="mx-auto w-fit max-w-full outline-none perspective-distant"
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >

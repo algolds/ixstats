@@ -408,6 +408,24 @@ describe("CardSheet", () => {
     expect(useSheet()).toHaveBeenLastCalledWith({ cardId: "c1", from: null });
   });
 
+  // jsdom has no layout: these are the classes that keep the card inside a 320 px phone's column and below the
+  // bottom sheet's close button (at top-4 right-4, over the column's top-right corner on a narrow phone).
+  it("lets the card shrink to its column on a narrow phone and starts it below the close button", () => {
+    showSheet();
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const hero = screen.getByRole("group", { name: "The card. Press Space or F to turn it over." });
+    expect(hero.parentElement).toHaveClass("grid", "grid-cols-1", "md:grid-cols-[auto_1fr]");
+    expect(hero).toHaveClass("pt-8", "md:pt-0");
+    expect(screen.getByRole("img", { name: /Caphiria/ })).toHaveClass("max-w-full");
+  });
+
+  it("sizes the loading placeholder like the card, inside its column", () => {
+    useSheet().mockReturnValue({ data: undefined, isLoading: true } as never);
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const placeholder = screen.getByRole("dialog").querySelector(".aspect-\\[5\\/7\\]");
+    expect(placeholder).toHaveClass("w-72", "max-w-full", "mt-8", "md:mt-0");
+  });
+
   it("closes through onClose", () => {
     showSheet();
     const onClose = jest.fn();
