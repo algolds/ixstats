@@ -7,6 +7,13 @@ import { copyValue } from "~/lib/cards/copy-value";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
 
+/** A sheet the test expects, never the signed-out "sign in" answer (that has its own cases). */
+async function sheetFor(...args: Parameters<typeof loadCardSheet>) {
+  const result = await loadCardSheet(...args);
+  if (result && "signIn" in result) throw new Error("expected a sheet, got the sign-in answer");
+  return result;
+}
+
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
 const CARD = {
   id: "c1",
@@ -99,7 +106,7 @@ beforeEach(() => jest.clearAllMocks());
 describe("loadCardSheet", () => {
   it("shows the art to a holder, with each copy's trail and signer by passport handle", async () => {
     const db = setup();
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({
       artwork: "https://art/c1.png",
       silhouette: false,
@@ -192,7 +199,7 @@ describe("loadCardSheet", () => {
 
   it("is a silhouette for a card the viewer does not hold and nobody lists, and asks for no trail", async () => {
     const db = setup({ copies: [] });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({ artwork: null, silhouette: true, copy: null });
     expect(sheet!.copies).toEqual([]);
     expect(db.cardTransferEvent.findMany).not.toHaveBeenCalled();
@@ -202,7 +209,7 @@ describe("loadCardSheet", () => {
   it("shows the art while the card is on a live listing, with each seller by passport handle", async () => {
     const mine = { ...LISTING, id: "a2", sellerId: "me", buyoutPrice: 300 };
     const db = setup({ copies: [], listed: [LISTING, mine] });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face.silhouette).toBe(false);
     expect(sheet!.face.artwork).toBe("https://art/c1.png");
     expect(sheet!.market.listings).toEqual([
@@ -232,7 +239,7 @@ describe("loadCardSheet", () => {
     const db = setup({ copies: [] });
     db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
     db.cardOwnership.count.mockResolvedValue(1);
-    const sheet = await loadCardSheet(db as never, "me", "c1", {
+    const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "offer", id: "t1" },
       rules,
     });
@@ -245,7 +252,7 @@ describe("loadCardSheet", () => {
   it("shows a holder's trophy opened through the passport handle they show", async () => {
     const db = setup({ copies: [] });
     db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
-    const sheet = await loadCardSheet(db as never, "me", "c1", {
+    const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "holder", handle: "Takatta Loa" },
       rules,
     });
@@ -257,7 +264,7 @@ describe("loadCardSheet", () => {
   it("keeps the silhouette when the place it was opened from does not show the card", async () => {
     const db = setup({ copies: [] });
     db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-    const sheet = await loadCardSheet(db as never, "me", "c1", {
+    const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "showcase", id: "s1" },
       rules: hidden,
     });
@@ -278,7 +285,7 @@ describe("loadCardSheet", () => {
       await read;
       return null;
     });
-    const sheet = await loadCardSheet(db as never, "me", "c1", {
+    const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "offer", id: "t1" },
       rules,
     });
@@ -303,7 +310,7 @@ describe("loadCardSheet", () => {
         metadata: { nsData: { name: "Testlandia", region: "The Pacific" } },
       },
     });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card.ns).toMatchObject({
       nation: "Testlandia",
       season: 3,
@@ -332,7 +339,7 @@ describe("loadCardSheet", () => {
         },
       },
     });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card).toMatchObject({
       excerpt: "Older excerpt.",
       author: "Ann (Created)",
@@ -354,13 +361,13 @@ describe("loadCardSheet", () => {
     [["not", "an", "object"], null],
   ])("reads the author from %j as %p", async (metadata, author) => {
     const db = setup({ card: { ...CARD, metadata } });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card.author).toBe(author);
   });
 
   it("counts a blank excerpt column as missing and reads the older excerpt", async () => {
     const db = setup({ card: { ...CARD, wikiExcerpt: "  ", metadata: { fullExcerpt: "Older." } } });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card.excerpt).toBe("Older.");
   });
 
@@ -379,7 +386,7 @@ describe("loadCardSheet", () => {
         metadata: { descriptionUrl: "https://commons.wikimedia.org/wiki/File:Map.png" },
       },
     });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face.silhouette).toBe(true);
     expect(sheet!.card).toMatchObject({
       artCredit: null,
@@ -394,7 +401,7 @@ describe("loadCardSheet", () => {
     "has no excerpt or file page when neither the column nor the metadata %j holds one",
     async (metadata) => {
       const db = setup({ card: { ...CARD, wikiExcerpt: null, metadata } });
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card).toMatchObject({ excerpt: null, descriptionUrl: null });
     }
   );
@@ -415,7 +422,7 @@ describe("loadCardSheet", () => {
         metadata: { descriptionUrl: "https://commons.wikimedia.org/wiki/File:Map.png" },
       },
     });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({ silhouette: false, artwork: null });
     expect(sheet!.card).toMatchObject({
       artCredit: null,
@@ -426,7 +433,7 @@ describe("loadCardSheet", () => {
 
   it("values a retired card at nothing and shows its placeholder face to its holder", async () => {
     const db = setup({ card: { ...CARD, isRetired: true }, catalogued: 0 });
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card).toMatchObject({ isRetired: true, value: 0 });
     expect(sheet!.face).toMatchObject({
       artwork: null,
@@ -468,7 +475,7 @@ describe("loadCardSheet", () => {
         createdAt: new Date("2026-09-03T00:00:00Z"),
       },
     ]);
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(playersOf).toHaveBeenCalledWith(["me", "u-a", "u-gone"]);
     // A player who no longer exists is still a player; a side with nobody stays empty.
     expect(sheet!.copies[0]).toMatchObject({
@@ -503,7 +510,7 @@ describe("loadCardSheet", () => {
         createdAt: new Date("2026-10-01T00:00:00Z"),
       },
     ]);
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(db.cardTransferEvent.findMany.mock.calls[0]![0]).toMatchObject({
       where: { ownershipId: { in: ["o1", "o2"] } },
     });
@@ -517,7 +524,7 @@ describe("loadCardSheet", () => {
   it("leaves a signer it cannot find unnamed, and sales without a price out", async () => {
     const db = setup({ sold: [{ finalPrice: null, endTime: SALE.endTime }, SALE] });
     playersOf.mockResolvedValueOnce(new Map());
-    const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.copies[0]!.inscription).toMatchObject({ signerHandle: null });
     expect(sheet!.market.recentSales).toEqual([{ price: 140, at: SALE.endTime }]);
   });
@@ -529,7 +536,7 @@ describe("loadCardSheet", () => {
       const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
       db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
       db.cardOwnership.count.mockResolvedValue(1);
-      const sheet = await loadCardSheet(db as never, "me", "c1", {
+      const sheet = await sheetFor(db as never, "me", "c1", {
         from: { kind: "offer", id: "t1" },
         rules,
       });
@@ -539,7 +546,7 @@ describe("loadCardSheet", () => {
 
     it("opens with no art while a retired card is on a live listing", async () => {
       const db = setup({ card: RETIRED, copies: [], listed: [LISTING], catalogued: 0 });
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true });
       expect(sheet!.market.listings).toMatchObject([{ auctionId: "a1" }]);
     });
@@ -547,7 +554,7 @@ describe("loadCardSheet", () => {
     it("opens a showcase's placeholder face with no art", async () => {
       const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
       db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-      const sheet = await loadCardSheet(db as never, "me", "c1", {
+      const sheet = await sheetFor(db as never, "me", "c1", {
         from: { kind: "showcase", id: "s1" },
         rules,
       });
@@ -577,7 +584,7 @@ describe("loadCardSheet", () => {
           ["u-signer", { handle: "sig", showsVault: false }],
         ])
       );
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.copies[0]!.trail[0]).toMatchObject({
         from: { handle: null },
         to: { handle: "max" },
@@ -594,7 +601,7 @@ describe("loadCardSheet", () => {
           ["me", { handle: "max", showsVault: false }],
         ])
       );
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.copies[0]!.trail[0]!.to).toEqual({ handle: "max" });
       expect(sheet!.market.listings[0]).toMatchObject({ sellerHandle: "max", isMine: true });
     });
@@ -607,7 +614,7 @@ describe("loadCardSheet", () => {
 
     it("sees a card on a live listing with its art, and no copies of their own", async () => {
       const db = setup({ copies: [], listed: [LISTING] });
-      const sheet = await loadCardSheet(db as never, null, "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, null, "c1", { from: null, rules });
       expect(sheet).toMatchObject({
         face: { artwork: "https://art/c1.png", silhouette: false, copy: null },
         signedIn: false,
@@ -622,7 +629,7 @@ describe("loadCardSheet", () => {
     it("sees a card a holder displays, opened from their passport", async () => {
       const shownCopy = { id: "h1", finish: "STANDARD", serialNumber: 2, level: 1, cards: CARD };
       const db = setup({ copies: [shownCopy] });
-      const sheet = await loadCardSheet(db as never, null, "c1", {
+      const sheet = await sheetFor(db as never, null, "c1", {
         from: { kind: "holder", handle: "Takatta Loa" },
         rules,
       });
@@ -634,7 +641,7 @@ describe("loadCardSheet", () => {
     it("sees a public showcase's copy", async () => {
       const db = setup({ copies: [] });
       db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-      const sheet = await loadCardSheet(db as never, null, "c1", {
+      const sheet = await sheetFor(db as never, null, "c1", {
         from: { kind: "showcase", id: "s1" },
         rules,
       });
@@ -647,7 +654,7 @@ describe("loadCardSheet", () => {
     it("keeps a retired card's placeholder face on a public showcase", async () => {
       const db = setup({ card: { ...CARD, isRetired: true }, copies: [], catalogued: 0 });
       db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-      const sheet = await loadCardSheet(db as never, null, "c1", {
+      const sheet = await sheetFor(db as never, null, "c1", {
         from: { kind: "showcase", id: "s1" },
         rules,
       });
@@ -689,20 +696,20 @@ describe("loadCardSheet", () => {
 
     it("leaves the file links out of a silhouette's excerpt, as the client draws it", async () => {
       const db = setup({ card: WITH_FILES, copies: [] });
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).not.toMatch(/File:|Caphiria\.png/);
       expect(sheet!.card.excerpt).toMatch(/^An empire\. +See the flag\.$/);
     });
 
     it("leaves the file links out of a retired card's excerpt, even for its holder", async () => {
       const db = setup({ card: { ...WITH_FILES, isRetired: true }, catalogued: 0 });
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).not.toMatch(/File:/);
     });
 
     it("keeps a held card's excerpt as stored", async () => {
       const db = setup({ card: WITH_FILES });
-      const sheet = await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).toBe(WITH_FILES.wikiExcerpt);
     });
 
@@ -712,14 +719,12 @@ describe("loadCardSheet", () => {
         wikiSource: "commons",
         wikiArticleTitle: "File:Camilla Tuvalu Banner.png",
       };
-      const silhouette = await loadCardSheet(
-        setup({ card: commons, copies: [] }) as never,
-        "me",
-        "c1",
-        { from: null, rules }
-      );
+      const silhouette = await sheetFor(setup({ card: commons, copies: [] }) as never, "me", "c1", {
+        from: null,
+        rules,
+      });
       expect(silhouette!.card).toMatchObject({ wikiSource: "commons", wikiArticleTitle: null });
-      const held = await loadCardSheet(setup({ card: commons }) as never, "me", "c1", {
+      const held = await sheetFor(setup({ card: commons }) as never, "me", "c1", {
         from: null,
         rules,
       });
