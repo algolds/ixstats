@@ -51,7 +51,7 @@ Each row reports only counted facts:
 | `openNationCount`   | Countries in the realm with no owner (`ownerUserId: null`)                                                                                                                                                |
 | `myNationCount`     | Countries in the realm the signed-in viewer owns (0 when signed out)                                                                                                                                      |
 | `maxNationsPerUser` | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                                      |
-| `board`             | `null` until someone first opens the board. Then `{ recentPosts, lastPostAt }`: board posts in the last `BOARD_ACTIVITY_WINDOW_DAYS` (7) days and the newest post's time, both from real-time `createdAt` |
+| `board`             | Always `{ recentPosts, lastPostAt }`: posts in the realm's forum section in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days and its latest thread activity, both in real time (not IxTime)                 |
 
 | `openNationPageCount` | Nation pages of the realm's lore index that no country has taken yet (claimable, `realms.claimNationPage`; the same rule as the realm page's `nationPages`) |
 
@@ -319,9 +319,8 @@ dimensions and file name, checked the same way, and refuses (`CONFLICT`) a file 
 
 ## 5. Known gaps
 
-- A member who leaves the board stays out until they press Join; their first visit is the only automatic join.
-- Chat participants who lose their last nation are removed on the next time anyone opens the board, not the
-  moment the nation changes hands.
+- Existing board ThinkTanks no longer sync their members with nation ownership: their member rows and chat
+  participants stay as the board's last open left them.
 - The `/dashboard` feed and trending are not realm-scoped. The realm feed is shown only on `/realms` and the board.
 
 ## 6. Map and transport isolation

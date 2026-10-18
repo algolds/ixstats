@@ -181,7 +181,7 @@ Annotations hang off a `StashItem`. When a highlight is made on a page that is n
 
 ## 5. tRPC API Reference
 
-All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (items `thinkpages:thread:<id>`). `forum:thread:<xenforoThreadId>` items from the retired XenForo bridge are left out of the listing (their `/forum` path is a 404): the XenForo import (`--apply`) moves each to its native thread, or deletes it when the thread was never imported (`src/server/modules/thinkpages-forum/import-stash-threads.ts`).
+All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` (items `thinkpages:thread:<id>`). `forum:thread:<xenforoThreadId>` items from the retired XenForo bridge are left out of the listing (their `/forum` path is a 404): the XenForo import (`--apply`) moves each to its native thread, or deletes it when the thread was never imported (`src/server/modules/thinkpages-forum/import-stash-threads.ts`).
 
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |

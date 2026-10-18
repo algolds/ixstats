@@ -23,7 +23,7 @@ Moves the community forum at forum.ixwiki.com (XenForo) into the native ThinkPag
 2. **Back up production.** `bun run db:backup`; note the dump name; copy it off-site (`scp ixwiki:/ixwiki/public/projects/ixstats/backups/<dump> .`). This is the restore point for every later step.
 3. **Export the snapshot** (reads XenForo only).
    - First: the VPS IP (or 127.0.0.1) is in the `/etc/ixwiki-defense.conf` whitelist and in fail2ban `ignoreip` for the `ixwiki-bots` jail. The export runs at 0.9 requests per second with User-Agent `IxStats-ForumExport/1.0`; the defense blocks above 60 requests per minute per IP.
-   - `bun run forum:export-xenforo -- --production --out .forum-import/prod-$(date -u +%Y%m%d)`. It resumes; rerun until it exits 0.
+   - `bun run forum:export-xenforo -- --production --out .forum-import/prod-$(date -u +%Y%m%d)`. It resumes; rerun until it exits 0. Do not pass `--skip-failing` for the production export: a forum whose thread list failed is then recorded empty, so the clean apply would delete the stash items and unwrap the links that point into it (alternatively, export with `--nodes`, which keeps the apply's drop mode off).
    - Go through **Checks at the first export** below. Compare totals with the XenForo Admin CP statistics, and the per-forum listed thread counts the export prints with each forum's discussion count (fewer listed means the key did not see everything).
    - Rollback: delete the directory.
 4. **Dry run on the clone.**

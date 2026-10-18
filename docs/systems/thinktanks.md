@@ -140,7 +140,7 @@ and [the forum](./forum.md)). The board ThinkTanks created before that stay, and
   still use IxTime) because they also appear in the realm feed, which is ordered by real time.
 - **Not group-managed.** A board cannot be deleted, invited to, or have its `type` changed, even by its
   moderators (`BAD_REQUEST`). Boards are left out of the `/thinktanks` Discover list (`getThinktanks`
-  `type: "all"`); the directory at `/realms` lists them.
+  `type: "all"`). The directory at `/realms` lists realms, not boards.
 - **Mutes and bans moved to the forum (phase 3).** The realm's Manage tab no longer mutes or bans nations on
   the board (`restrictBoardNation` and `liftBoardRestriction` are gone). Live board bans were migrated to
   realm-scope forum bans, and the `board` officer power now means **forum moderation**: hide, lock, warn and
