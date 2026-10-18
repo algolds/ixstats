@@ -49,7 +49,7 @@ export const VERSIONS = {
   systems: {
     mycountry: 6, // public-facing executive command UI; v6: dedicated Country Editor architecture with Guided & Power mode toggle, inline click-to-edit fields, live diff indicators, and 10-level undo stack
     builder: 4, // v4: guided wizard stepper, progressive disclosure tiers, and archetype default engine
-    thinkpages: 2, // v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
+    thinkpages: 3, // v3: refined forum (author line with persona chips, prose-scale posts, one unread mark, home pass), Commons leather palette, every legacy URL removed; v2: full component modularization pass (<700 lines/file), domain sub-component suite, and centralized primitives
     achievements: 3, // incl. LoreWards / Wiki Awards; v3: moved into the Vault, nation achievements rebuilt around live MyCountry systems (real-time floors), new Wiki, Community, Cards, Lorewards and cross-platform achievements, Legacy achievements, tiered Loreward payouts with trophy cards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer

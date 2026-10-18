@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-09
 
-**Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 2`)  
+**Parent App Suite:** ThinkPages (`THINKPAGES_VERSION = 3`)  
 **Subsystems:** Sovereign Feed, Account Manager, Collaborative ThinkTanks, ThinkShare Messaging  
 **Primary Action:** `DELIBERATE` | **Domain Accent:** Commons leather (`data-app="thinkpages"`, `#115536` / `#82d2a8`) on ThinkTanks and Messages; the `/dashboard` feed wears Home's iron-gall ink  
 **Routes:** `/dashboard` (feed), `/dashboard/accounts` (personas), `/dashboard/post/[postId]`, `/dashboard/profile/[username]`, `/dashboard/saved`, `/hashtags/[tag]`, `/thinktanks`, `/messages` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md): feed and Blurbs ✅ Live; Accounts, ThinkShare and ThinkTanks 🟡 Partial  
