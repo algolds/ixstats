@@ -25,7 +25,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosUserTalkRouter } from "~/server/api/routers/wikios/user-talk";
-import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { createMockRouterContext, type MockUser } from "~/tests/helpers/router-context";
 import { db } from "~/server/db";
 import { findWikiProfileUser } from "~/lib/wiki-os/storage";
 import {
@@ -34,16 +34,18 @@ import {
   wikiAttributionOff,
 } from "~/tests/helpers/privacy-config-fake";
 
-const NATION = { id: "c1", name: "Eldoria", flag: null };
+/** The nation as the router context's user carries it (MockUser), which findWikiProfileUser's select also fits. */
+const NATION = { id: "c1", name: "Eldoria", slug: "eldoria", flag: null };
 const OWNER = { clerkUserId: "clerk_owner", country: NATION, role: { name: "member", level: 50 } };
 
 function caller(connections: ReturnType<typeof privacyConnections>, signedInAs?: string) {
+  const user: MockUser | null = signedInAs
+    ? { id: "db_owner", clerkUserId: signedInAs, wikiUsername: "Ruler", country: NATION }
+    : null;
   const ctx = createMockRouterContext({
     db: { userConnection: connections },
     auth: signedInAs ? { userId: signedInAs } : null,
-    user: signedInAs
-      ? { id: "db_owner", clerkUserId: signedInAs, wikiUsername: "Ruler", country: NATION }
-      : null,
+    user,
   });
   return createCallerFactory(wikiosUserTalkRouter)(ctx as never);
 }

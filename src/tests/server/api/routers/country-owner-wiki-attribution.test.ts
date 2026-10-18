@@ -13,6 +13,7 @@ jest.mock("~/server/shared/clerk-public-profile", () => ({
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
+import type { Prisma } from "@prisma/client";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { economyProcedures } from "~/server/api/routers/countries/economy";
@@ -22,7 +23,20 @@ import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-co
 
 const countries = createTRPCRouter({ ...economyProcedures });
 
-const OWNER = {
+/** The owner as the procedure selects them (SOVEREIGN_OWNER_SELECT in countries/economy.ts). */
+type OwnerRow = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    clerkUserId: true;
+    handle: true;
+    forumUsername: true;
+    wikiUsername: true;
+    membershipTier: true;
+    role: { select: { displayName: true; name: true } };
+  };
+}>;
+
+const OWNER: OwnerRow = {
   id: "owner_db",
   clerkUserId: "owner_clerk",
   handle: null,
@@ -32,7 +46,7 @@ const OWNER = {
   role: null,
 };
 
-function makeDb(owner: Partial<typeof OWNER> = {}) {
+function makeDb(owner: Partial<OwnerRow> = {}) {
   const db = createMockPrisma();
   db.country.findMany.mockResolvedValue([{ id: "c1", slug: "eldoria" }]);
   db.country.findFirst.mockResolvedValue({
