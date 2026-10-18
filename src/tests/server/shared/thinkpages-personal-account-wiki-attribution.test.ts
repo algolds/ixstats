@@ -13,7 +13,7 @@ const ME = "user_me";
 /** A db with no personal persona yet, whose user row carries `names`. */
 function newPersonaDb(names: { forumUsername: string | null; wikiUsername: string | null }) {
   const db = createMockPrisma();
-  db.$transaction = jest.fn((cb: (tx: typeof db) => unknown) => cb(db));
+  db.$transaction = jest.fn((cb: (tx: typeof db) => Promise<object>) => cb(db));
   db.thinkpagesPersonalAccount.findUnique.mockResolvedValue(null);
   db.thinkpagesAccount.findUnique.mockResolvedValue(null);
   db.thinkpagesAccount.create.mockImplementation(async ({ data }: { data: object }) => ({
