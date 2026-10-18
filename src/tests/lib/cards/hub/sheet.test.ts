@@ -6,6 +6,7 @@ import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { copyValue } from "~/lib/cards/copy-value";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
+import type { HubPlayer } from "~/lib/cards/hub/players";
 
 /** A sheet the test expects, never the signed-out "sign in" answer (that has its own cases). */
 async function sheetFor(...args: Parameters<typeof loadCardSheet>) {
@@ -54,12 +55,16 @@ const SALE = { finalPrice: 140, endTime: new Date("2026-09-01T00:00:00Z") };
 /** The passport chain reversed: "Takatta Loa", a wiki name with no stored handle, names the owner. */
 const holderOf = jest.fn(async (handle: string) => (handle === "Takatta Loa" ? "owner" : null));
 /** Everyone named on the sheet, as the identity rule names them; each shows their Vault cards unless a test says otherwise. */
-const PLAYERS = new Map([
+const PLAYERS = new Map<string, HubPlayer>([
   ["u-a", { name: "@ann", showsVault: true }],
   ["me", { name: "@max", showsVault: true }],
   ["u-signer", { name: "@sig", showsVault: true }],
 ]);
 const playersOf = jest.fn(async (_ids: readonly string[]) => PLAYERS);
+/** Another player's public showcase that holds a copy of the card that is not retired. */
+const SHOWCASE = { userId: "owner", items: [{ id: "i1" }] };
+/** The same showcase when the card is retired: getShowcase lists its copy to the owner only. */
+const RETIRED_SHOWCASE = { userId: "owner", items: [] };
 const rules = { vaultVisible: jest.fn(async () => true), holderOf, playersOf };
 const hidden = { vaultVisible: jest.fn(async () => false), holderOf, playersOf };
 
@@ -263,7 +268,7 @@ describe("loadCardSheet", () => {
 
   it("keeps the silhouette when the place it was opened from does not show the card", async () => {
     const db = setup({ copies: [] });
-    db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+    db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
     const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "showcase", id: "s1" },
       rules: hidden,
@@ -551,10 +556,19 @@ describe("loadCardSheet", () => {
       expect(sheet!.market.listings).toMatchObject([{ auctionId: "a1" }]);
     });
 
-    it("opens a showcase's placeholder face with no art", async () => {
+    it("is null for a retired copy opened from another player's showcase, which lists it to its owner only", async () => {
       const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
-      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-      const sheet = await sheetFor(db as never, "me", "c1", {
+      db.cardCollection.findFirst.mockResolvedValue(RETIRED_SHOWCASE);
+      await expect(
+        loadCardSheet(db as never, "me", "c1", { from: { kind: "showcase", id: "s1" }, rules })
+      ).resolves.toBeNull();
+      expect(rules.vaultVisible).not.toHaveBeenCalled();
+    });
+
+    it("opens a retired copy's placeholder face, with no art, from the viewer's own showcase", async () => {
+      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
+      db.cardCollection.findFirst.mockResolvedValue(RETIRED_SHOWCASE);
+      const sheet = await sheetFor(db as never, "owner", "c1", {
         from: { kind: "showcase", id: "s1" },
         rules,
       });
@@ -563,8 +577,9 @@ describe("loadCardSheet", () => {
     });
 
     it("is null when the place it was opened from does not show it", async () => {
-      const db = setup({ card: RETIRED, copies: [], catalogued: 0 });
-      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+      // A card in review: outside the catalogue without being retired.
+      const db = setup({ copies: [], catalogued: 0 });
+      db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
       await expect(
         loadCardSheet(db as never, "me", "c1", {
           from: { kind: "showcase", id: "s1" },
@@ -599,6 +614,7 @@ describe("loadCardSheet", () => {
         new Map([
           ["u-a", { name: "Caphiria", showsVault: true }],
           ["me", { name: "@max", showsVault: true }],
+          ["u-signer", { name: null, showsVault: true }],
         ])
       );
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
@@ -657,7 +673,7 @@ describe("loadCardSheet", () => {
 
     it("sees a public showcase's copy", async () => {
       const db = setup({ copies: [] });
-      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+      db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
       const sheet = await sheetFor(db as never, null, "c1", {
         from: { kind: "showcase", id: "s1" },
         rules,
@@ -668,14 +684,13 @@ describe("loadCardSheet", () => {
       expect(sheet).toMatchObject({ face: { silhouette: false }, signedIn: false });
     });
 
-    it("keeps a retired card's placeholder face on a public showcase", async () => {
+    it("is asked to sign in for a retired copy on a public showcase, which lists it to its owner only", async () => {
       const db = setup({ card: { ...CARD, isRetired: true }, copies: [], catalogued: 0 });
-      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
-      const sheet = await sheetFor(db as never, null, "c1", {
-        from: { kind: "showcase", id: "s1" },
-        rules,
-      });
-      expect(sheet).toMatchObject({ face: { artwork: null, isRetired: true } });
+      db.cardCollection.findFirst.mockResolvedValue(RETIRED_SHOWCASE);
+      await expect(
+        loadCardSheet(db as never, null, "c1", { from: { kind: "showcase", id: "s1" }, rules })
+      ).resolves.toEqual({ signIn: true });
+      expect(rules.vaultVisible).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -685,7 +700,7 @@ describe("loadCardSheet", () => {
       ["a holder who does not show the card", { kind: "holder" as const, handle: "Nobody" }],
     ])("is asked to sign in for %s", async (_place, from) => {
       const db = setup({ copies: [] });
-      db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+      db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
       db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
       db.cardOwnership.count.mockResolvedValue(1);
       await expect(

@@ -248,7 +248,6 @@ api.admin.bulkSetWikiLinks.useMutation() // { links }
 api.admin.deleteWikiArticleAward.useMutation() // { id }
 api.admin.triggerLorewardScoring.useMutation() // { date }
 api.admin.saveLorewardWinnerOverride.useMutation() // { date, type?, winnerUser, winnerPage, winnerScore?, winnerBytes?, runnerUpUser?, runnerUpPage?, runnerUpScore?, runnerUpBytes?, status? }
-api.admin.pushLorewardToBot.useMutation() // { date, winner, runnerUp?, candidates?, editCount? }
 api.admin.purgeWikiCache.useMutation() // { pageTitle }
 api.admin.purgeAllWikiCache.useMutation()
 api.admin.saveLorewardWeights.useMutation() // { proseWeight, depthMaxBonus, noveltyBonus, importanceMaxBonus, listPenalty, minorOnlyPenalty } (stored as lorewardWeight_<field>)

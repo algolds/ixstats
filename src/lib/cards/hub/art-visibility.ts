@@ -101,17 +101,28 @@ async function offerShowsCard(
   return (await db.cardOwnership.count({ where: { id: { in: ids }, cardId } })) > 0;
 }
 
+/** A retired copy shows there to the showcase's owner only, as `getShowcase` leaves it out for everyone else. */
 async function showcaseShowsCard(
   db: ContextDb,
+  viewerId: string | null,
   cardId: string,
   showcaseId: string,
   rules: ContextRules
 ): Promise<boolean> {
   const showcase = await db.cardCollection.findFirst({
     where: { id: showcaseId, isPublic: true, items: { some: { cardOwnership: { cardId } } } },
-    select: { userId: true },
+    select: {
+      userId: true,
+      items: {
+        where: { cardOwnership: { cardId, cards: { isRetired: false } } },
+        take: 1,
+        select: { id: true },
+      },
+    },
   });
-  return showcase ? rules.vaultVisible(showcase.userId) : false;
+  if (!showcase) return false;
+  if (showcase.items.length === 0 && showcase.userId !== viewerId) return false;
+  return rules.vaultVisible(showcase.userId);
 }
 
 /** A player's trophies and the copies they display are their showcase (spec §2.3 Sets). */
@@ -141,6 +152,6 @@ export async function contextRevealsArt(
   rules: HolderRules
 ): Promise<boolean> {
   if (from.kind === "offer") return offerShowsCard(db, viewerId, cardId, from.id);
-  if (from.kind === "showcase") return showcaseShowsCard(db, cardId, from.id, rules);
+  if (from.kind === "showcase") return showcaseShowsCard(db, viewerId, cardId, from.id, rules);
   return holderShowsCard(db, cardId, from.handle, rules);
 }
