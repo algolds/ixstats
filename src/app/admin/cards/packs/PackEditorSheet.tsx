@@ -1,15 +1,20 @@
 "use client";
-/** Create or edit a pack: basics, odds and pool (PackPoolFields), guarantee, limits and expiry. */
+/**
+ * Create or edit a pack: basics, odds, card type and pool (PackPoolFields), guarantee, limits and expiry. A pool the
+ * preview finds unable to give a rarity the pack shows keeps it off sale.
+ */
 import { useState } from "react";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PackType } from "~/lib/cards/enums";
 import {
   DEFAULT_PACK_ODDS,
+  PACK_CARD_TYPES,
   PACK_MAX_CARDS,
   PACK_MAX_LIMIT,
   PACK_MAX_PRICE,
   PackOddsSchema,
+  rarityList,
 } from "~/lib/cards/pack-odds";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -18,7 +23,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/com
 import { Switch } from "~/components/ui/switch";
 import { ValueSelect } from "~/components/ui/value-select";
 import { RARITIES, RARITY_LABELS, type RarityValue } from "../shared/card-labels";
-import { PackPoolFields } from "./PackPoolFields";
+import { PackPoolFields, usePackPoolPreview } from "./PackPoolFields";
 
 type Pack = RouterOutputs["cards"]["admin"]["packs"]["list"][number];
 type PackInput = RouterInputs["cards"]["admin"]["packs"]["save"];
@@ -43,6 +48,7 @@ const NEW_PACK: PackForm = {
   packType: "BASIC",
   priceCredits: 100,
   cardCount: 5,
+  cardType: null,
   guaranteedRarity: null,
   isActive: false,
   odds: { ...DEFAULT_PACK_ODDS },
@@ -63,6 +69,8 @@ function packFormOf(pack: Pack | null): PackForm {
     packType: PACK_TYPES.find((type) => type === pack.packType) ?? null,
     priceCredits: pack.priceCredits,
     cardCount: pack.cardCount,
+    // Kept as stored, even a type packs never draw: reading it as "any type" would widen the pool
+    cardType: pack.cardType,
     guaranteedRarity: RARITIES.find((rarity) => rarity === pack.guaranteedRarity) ?? null,
     isActive: pack.isActive,
     odds: {
@@ -84,10 +92,15 @@ const isCount = (value: number, max: number) =>
   Number.isInteger(value) && value >= 1 && value <= max;
 const range = (max: number) => `1 to ${max.toLocaleString("en")}`;
 
-/** Why the pack cannot be saved yet, or null. The server checks the same rules; this says which one. */
-function saveBlocker(form: PackForm): string | null {
+/**
+ * Why the pack cannot be saved yet, or null. The server checks the same rules; this says which one. `poolGaps` counts
+ * the rarities the last preview found the pack shows with no card, which the server refuses on sale.
+ */
+function saveBlocker(form: PackForm, poolGaps: number): string | null {
   if (form.name.trim() === "") return "Give the pack a name.";
   if (!form.packType) return "Choose the pack's kind.";
+  if (form.cardType !== null && !PACK_CARD_TYPES.includes(form.cardType))
+    return "Choose a card type the pack can draw.";
   if (!isCount(form.priceCredits, PACK_MAX_PRICE))
     return `Set a whole-number price from ${range(PACK_MAX_PRICE)} IxC.`;
   if (!isCount(form.cardCount, PACK_MAX_CARDS))
@@ -97,6 +110,8 @@ function saveBlocker(form: PackForm): string | null {
     return `Total stock and the per-player limit are blank or a whole number from ${range(PACK_MAX_LIMIT)}.`;
   if (!PackOddsSchema.safeParse(form.odds).success)
     return "Each rarity's odds are 0 to 100%, adding up to 100%.";
+  if (form.isActive && poolGaps > 0)
+    return "Take the pack off sale, or give those rarities cards, to save it.";
   return null;
 }
 
@@ -115,8 +130,19 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
   const notify = useNotify();
   const utils = api.useUtils();
   const [form, setForm] = useState<PackForm>(() => packFormOf(pack));
-  // The pack's own type and season narrow the preview; the editor shows them but never saves them
-  const scope = { cardType: pack?.cardType ?? null, season: pack?.season ?? null };
+  // The pack's own season narrows the preview; the editor shows it but never saves it
+  const season = pack?.season ?? null;
+  const preview = usePackPoolPreview({
+    packId: pack?.id ?? null,
+    cardType: form.cardType,
+    season,
+    pool: form.pool,
+    odds: form.odds,
+    guaranteedRarity: form.guaranteedRarity,
+  });
+  const poolGaps = preview.data?.undeliverable ?? [];
+  // A pool that can't give a rarity the pack shows keeps it off sale; a pack on sale can still come off
+  const keptOffSale = !form.isActive && poolGaps.length > 0;
   const save = api.cards.admin.packs.save.useMutation({
     onSuccess: () => {
       notify.success("Pack saved");
@@ -127,7 +153,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
   });
   const set = <K extends keyof PackForm>(key: K, value: PackForm[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
-  const blocker = saveBlocker(form);
+  const blocker = saveBlocker(form, poolGaps.length);
   const submit = () => {
     if (form.packType && blocker === null) save.mutate({ ...form, packType: form.packType });
   };
@@ -235,9 +261,11 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
             onOddsChange={(odds) => set("odds", odds)}
             pool={form.pool}
             onPoolChange={(pool) => set("pool", pool)}
-            cardType={scope.cardType}
-            season={scope.season}
+            cardType={form.cardType}
+            onCardTypeChange={(cardType) => set("cardType", cardType)}
+            season={season}
             guaranteedRarity={form.guaranteedRarity}
+            preview={preview}
           />
 
           <fieldset className="space-y-3">
@@ -285,10 +313,17 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
               <Switch
                 id="pack-active"
                 checked={form.isActive}
+                disabled={keptOffSale}
+                aria-describedby={keptOffSale ? "pack-active-reason" : undefined}
                 onCheckedChange={(checked) => set("isActive", checked)}
               />
               <Label htmlFor="pack-active">On sale</Label>
             </div>
+            {keptOffSale && (
+              <p id="pack-active-reason" className="text-footnote text-label-secondary">
+                {`This pool has no ${rarityList(poolGaps, RARITY_LABELS)} cards, so the pack stays off sale.`}
+              </p>
+            )}
           </fieldset>
         </div>
         <SheetFooter className="border-separator shrink-0 border-t pt-4 sm:items-center">

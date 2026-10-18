@@ -575,21 +575,88 @@ describe("voidTrade", () => {
 });
 
 describe("awardPack", () => {
-  it("gives an unopened pack and audits it", async () => {
-    const db = createMockPrisma();
-    db.cardPack.findUnique.mockResolvedValue({ id: "pack_1", name: "Founders" });
+  const founders = {
+    id: "pack_1",
+    name: "Founders",
+    cardType: "NS",
+    season: 2,
+    themeFilter: { realmIds: ["iiwiki"] },
+    guaranteedRarity: null,
+    commonOdds: 65,
+    uncommonOdds: 25,
+    rareOdds: 7,
+    ultraRareOdds: 2,
+    epicOdds: 0.9,
+    legendaryOdds: 0.1,
+  };
+  const tiers = (...rarities: string[]) =>
+    rarities.map((rarity) => ({ rarity, _count: { _all: 4 } }));
+  /** A database whose transaction runs on its own client, so a pool read outside it finds nothing. */
+  const inTransaction = () => {
+    const tx = createMockPrisma();
+    const db = createProxy({
+      $executeRaw: jest.fn().mockResolvedValue(1),
+      $transaction: jest.fn(<T>(run: (client: typeof tx) => T) => run(tx)),
+    });
     db.user.findUnique.mockResolvedValue({ id: "user_1", clerkUserId: "clerk_1" });
-    db.userPack.create.mockResolvedValue({ id: "up_1" });
+    db.cardPack.findUnique.mockResolvedValue(founders);
+    return { db, tx };
+  };
+
+  it("gives an unopened pack and audits it", async () => {
+    const { db, tx } = inTransaction();
+    tx.card.groupBy.mockResolvedValue(
+      tiers("COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY")
+    );
+    tx.userPack.create.mockResolvedValue({ id: "up_1" });
 
     await awardPack(db as never, actor, { userId: "user_1", packId: "pack_1" });
 
-    expect(db.userPack.create).toHaveBeenCalledWith({
+    // The whole row, so the check reads the pack's type, season, theme, odds and guarantee
+    expect(db.cardPack.findUnique).toHaveBeenCalledWith({ where: { id: "pack_1" } });
+    expect(tx.userPack.create).toHaveBeenCalledWith({
       data: { userId: "user_1", packId: "pack_1", acquiredMethod: "ADMIN_AWARD" },
     });
-    expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
+    expect(tx.auditLog.create.mock.calls[0]![0].data).toMatchObject({
       action: "CARD_PACK_AWARD",
       target: "user_1",
     });
+    const where = JSON.stringify(tx.card.groupBy.mock.calls[0]![0].where);
+    expect(where).toContain('{"cardType":"NS"}');
+    expect(where).toContain('{"season":2}');
+    expect(where).toContain('{"realmId":{"in":["iiwiki"]}}');
+  });
+
+  it("refuses a pack its pool can't deliver, awarding, auditing and telling no one", async () => {
+    const { db, tx } = inTransaction();
+    tx.card.groupBy.mockResolvedValue(tiers("COMMON", "UNCOMMON", "RARE", "LEGENDARY"));
+    await expect(
+      awardPack(db as never, actor, { userId: "user_1", packId: "pack_1" })
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message:
+        "This pack can't be awarded: it has no Ultra rare and Epic cards to give, so it could never be opened. Set those odds to 0, clear the guarantee or widen the pool.",
+    });
+    expect(tx.userPack.create).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+    expect(notificationAPI.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a pack whose guarantee has no card, even at odds 0", async () => {
+    const { db, tx } = inTransaction();
+    db.cardPack.findUnique.mockResolvedValue({
+      ...founders,
+      commonOdds: 65.9,
+      epicOdds: 0,
+      guaranteedRarity: "EPIC",
+    });
+    tx.card.groupBy.mockResolvedValue(
+      tiers("COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "LEGENDARY")
+    );
+    await expect(
+      awardPack(db as never, actor, { userId: "user_1", packId: "pack_1" })
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(tx.userPack.create).not.toHaveBeenCalled();
   });
 
   it("refuses a pack that does not exist", async () => {

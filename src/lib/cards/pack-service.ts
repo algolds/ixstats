@@ -105,7 +105,7 @@ function unknownValues(value: Prisma.JsonValue | undefined, allowed: readonly st
 export function mergePackTheme(
   existing: Prisma.JsonValue | null,
   pool: { realmIds: readonly string[]; categories: readonly string[]; cardTypes: readonly string[] }
-): Prisma.InputJsonObject {
+): Prisma.JsonObject {
   const stored: Prisma.JsonObject = isJsonObject(existing) ? existing : {};
   return {
     ...stored,
@@ -310,17 +310,24 @@ type PoolPack = Parameters<typeof packPoolWhere>[1] &
   PackOdds & { guaranteedRarity: string | null };
 
 /**
- * The pack's pool and its cards of each rarity, refused (`refusal`) while a rarity the pack gives odds for, or
- * guarantees, has no card. A pack never falls back to another rarity, so it never undercuts its shown odds (Q3).
+ * The pack's pool and its cards of each rarity, read in `tx`, with the rarities it gives odds for or guarantees that
+ * have no card. A pack never falls back to another rarity, so while any are missing it is not sold, put on sale,
+ * awarded or opened: it never undercuts its shown odds.
  */
+export async function missingRarities(tx: Prisma.TransactionClient, pack: PoolPack) {
+  const where = await packPoolWhere(tx, pack);
+  const counts = await tierCounts(tx, where);
+  const missing = undeliverableRarities(pack, parseCardRarity(pack.guaranteedRarity), counts);
+  return { where, counts, missing };
+}
+
+/** The pack's pool and its cards of each rarity, refused (`refusal`) while a rarity it shows has no card (Q3). */
 async function deliverablePool(
   tx: Prisma.TransactionClient,
   pack: PoolPack,
   refusal: (rarities: string) => string
 ) {
-  const where = await packPoolWhere(tx, pack);
-  const counts = await tierCounts(tx, where);
-  const missing = undeliverableRarities(pack, parseCardRarity(pack.guaranteedRarity), counts);
+  const { where, counts, missing } = await missingRarities(tx, pack);
   if (missing.length > 0) throw new PackError("PRECONDITION_FAILED", refusal(rarityList(missing)));
   return { where, counts };
 }
