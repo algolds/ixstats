@@ -19,6 +19,7 @@ jest.mock("~/trpc/react", () => {
       getMyActiveBids: query(),
       getMyAuctionParticipation: query(),
     },
+    crafting: { getDust: query(), getNumbers: query() },
     trading: {
       getActiveTrades: query(),
       getTradeById: query(),
@@ -62,6 +63,7 @@ describe("useCardsRefresh", () => {
       "cardMarket.getMyActiveAuctions",
       "cardMarket.getMyActiveBids",
       "cardMarket.getMyAuctionParticipation",
+      "crafting.getDust",
       "trading.getActiveTrades",
       "trading.getTradeById",
       "trading.getTradeHistory",

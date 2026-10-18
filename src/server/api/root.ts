@@ -45,6 +45,7 @@ import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
 import { cardsRouter } from "./routers/cards";
 import { cardPacksRouter } from "./routers/card-packs";
 import { cardMarketRouter } from "./routers/card-market";
+import { craftingRouter } from "./routers/crafting";
 import { cardImagesRouter } from "./routers/cardImages";
 import { loreCardsRouter } from "./routers/lore-cards";
 import { nsImportRouter } from "./routers/ns-import";
@@ -125,6 +126,7 @@ export const appRouter = createTRPCRouter({
   cards: cardsRouter,
   cardPacks: cardPacksRouter,
   cardMarket: cardMarketRouter,
+  crafting: craftingRouter,
   cardImages: cardImagesRouter,
   loreCards: loreCardsRouter,
   nsImport: nsImportRouter,

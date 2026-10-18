@@ -36,7 +36,6 @@ function hits(pattern: RegExp, allowed: readonly string[] = []): string[] {
 }
 
 const REMOVED = [
-  "src/server/api/routers/crafting",
   "src/lib/cards/crafting-rules.ts",
   "prisma/seeds/crafting-recipes.ts",
   "src/components/cards/ns-import/ImportWizard.tsx",
