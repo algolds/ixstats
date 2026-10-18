@@ -90,6 +90,17 @@ describe("CRON_JOBS", () => {
     expect(["02:30", "03:00", "00:30"].map(firesAt)).toEqual([false, false, false]);
   });
 
+  it("rebuilds market medians and card values every 6 hours under the card-value lease", () => {
+    expect(CRON_JOBS.find((j) => j.name === "card-values")).toMatchObject({
+      defaultSchedule: "0 */6 * * *",
+      scheduleConfigKey: "cronSchedule_cardValue",
+      lockName: "card-value",
+      timeoutMs: 30 * 60_000,
+      modulePath: "~/server/modules/cards/market-values",
+      exportName: "runCardMarketValues",
+    });
+  });
+
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
     "%s points at an existing module and export",
     (_name, job) => {

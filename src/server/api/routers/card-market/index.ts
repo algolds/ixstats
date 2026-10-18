@@ -8,7 +8,7 @@
  *  - auctionManagement: auction create/cancel/buyout + demo seeding (mutations)
  *  - auctionQueries:    active/by-id/history/featured/my-auctions reads
  *  - bids:              place bid, bid history, my active bids, my participation
- *  - analytics:         market trends, value/transfer history, dust, inscribe
+ *  - analytics:         a card's value history
  *  - wishlist:          the player's wishlist
  */
 import { mergeRouters } from "~/server/api/trpc";

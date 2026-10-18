@@ -55,10 +55,21 @@ export function nsFactsFromApi(card: Partial<Record<NsFactKey, string | null>>):
   return facts;
 }
 
-/** The NS bank value NationStates reports for the card, or null when unknown. */
+/**
+ * A bank value as NationStates writes it: a plain decimal, at most 15 digits either side of the point, so it always
+ * fits a float. The card-values cron's SQL reads it with the same pattern (src/lib/cards/ns-bank-sql.ts).
+ */
+export const NS_BANK_VALUE_PATTERN = "^[0-9]{1,15}([.][0-9]{1,15})?$";
+const PLAIN_DECIMAL = new RegExp(NS_BANK_VALUE_PATTERN);
+
+/**
+ * The NS bank value NationStates reports for the card, or null when unknown: the stored string as it is, read only
+ * when it is a plain decimal, exactly as the SQL reads it, so a value written here is not moved by the cron.
+ */
 export function nsBankValue(metadata: JsonInput): number | null {
-  const value = Number.parseFloat(nsFactsOf(metadata).market_value ?? "");
-  return Number.isFinite(value) ? value : null;
+  const nsData = isJsonObject(metadata) ? metadata.nsData : undefined;
+  const value = isJsonObject(nsData) ? nsData.market_value : undefined;
+  return typeof value === "string" && PLAIN_DECIMAL.test(value) ? Number(value) : null;
 }
 
 /** An importing nation as the import ledger and the once-per-nation bonus key it. */

@@ -37,7 +37,6 @@ import {
   clearValuationCache,
   getValuationConfig,
   readValuationConfig,
-  recomputeAllCardValues,
   setValuationConfig,
   type CardValuationConfig,
 } from "~/lib/cards/valuation";
@@ -60,6 +59,7 @@ import {
   setRarityThresholds,
   type DailyImportSetting,
 } from "./cards.config";
+import { recomputeMarketValues, type MarketValuesResult } from "./market-values";
 
 type Tx = Prisma.TransactionClient;
 
@@ -149,26 +149,27 @@ async function checkFloors(
 }
 
 /**
- * Saves the sent card values, then revalues every card. The revalue runs after the commit in its own transaction, as
- * an update of every card is too long for the save's. A failed revalue keeps the saved values and returns a null
- * count, so the admin is told to revalue again rather than that nothing saved.
+ * Saves the sent card values, then revalues every card (the card-values cron's run, with the market medians). The
+ * revalue runs after the commit in its own transaction, as an update of every card is too long for the save's. A
+ * failed revalue keeps the saved values and returns null counts, so the admin is told to revalue again rather than
+ * that nothing saved.
  */
 export async function saveCardValues(
   db: PrismaClient,
   actor: CardAdminActor,
   input: Partial<CardValuationConfig>
-): Promise<{ updated: number | null }> {
+): Promise<{ prices: number | null; updated: number | null }> {
   const saved = await saveFields(db, actor, "Card values", CARD_VALUE_FIELDS, input, {
     write: setValuationConfig,
     clear: clearValuationCache,
     check: checkFloors,
   });
-  if (!saved) return { updated: 0 };
+  if (!saved) return { prices: 0, updated: 0 };
   try {
-    return await recomputeAllCardValues(db);
+    return await recomputeMarketValues(db);
   } catch (error) {
     console.error("[cards.economy] Revalue after a card values save failed:", error);
-    return { updated: null };
+    return { prices: null, updated: null };
   }
 }
 
@@ -176,8 +177,8 @@ export async function saveCardValues(
 export async function recomputeValues(
   db: PrismaClient,
   actor: CardAdminActor
-): Promise<{ updated: number }> {
-  const result = await recomputeAllCardValues(db);
+): Promise<MarketValuesResult> {
+  const result = await recomputeMarketValues(db);
   try {
     await recordCardAudit(db, {
       action: "CARD_ECONOMY_SAVE",

@@ -51,7 +51,18 @@ const COPY = {
   inscribedAt: new Date("2026-10-02T00:00:00Z"),
   inscribedById: "u-signer",
 };
-const SALE = { finalPrice: 140, endTime: new Date("2026-09-01T00:00:00Z") };
+/** A sale in the sales record (`card_transfer_events`, priced). */
+const SALE = { price: 140, finish: "FOIL", createdAt: new Date("2026-09-01T00:00:00Z") };
+/** A move of the viewer's copy. */
+const TRADE = {
+  id: "e1",
+  ownershipId: "o1",
+  action: "TRADE",
+  fromUserId: "u-a",
+  toUserId: "me",
+  price: null,
+  createdAt: new Date("2026-10-01T00:00:00Z"),
+};
 /** The passport chain reversed: "Takatta Loa", a wiki name with no stored handle, names the owner. */
 const holderOf = jest.fn(async (handle: string) => (handle === "Takatta Loa" ? "owner" : null));
 /** Everyone named on the sheet, as the identity rule names them; each shows their Vault cards unless a test says otherwise. */
@@ -73,29 +84,31 @@ function setup({
   copies = [COPY] as object[],
   listed = [] as object[],
   sold = [SALE] as object[],
+  trail = [TRADE] as object[],
   catalogued = 1,
 } = {}) {
   const db = createMockPrisma();
   db.card.findUnique.mockResolvedValue(card);
   db.card.count.mockResolvedValue(catalogued);
   db.cardOwnership.findMany.mockResolvedValue(copies);
-  db.cardAuction.findMany.mockImplementation(async (args: { where: { status: string } }) =>
-    args.where.status === "ACTIVE" ? listed : sold
+  db.cardAuction.findMany.mockResolvedValue(listed);
+  // The copies' trail reads by copy; the sales record by card
+  db.cardTransferEvent.findMany.mockImplementation(
+    async (args: { where: { ownershipId?: object } }) => (args.where.ownershipId ? trail : sold)
   );
-  db.cardTransferEvent.findMany.mockResolvedValue([
-    {
-      id: "e1",
-      ownershipId: "o1",
-      action: "TRADE",
-      fromUserId: "u-a",
-      toUserId: "me",
-      price: null,
-      createdAt: new Date("2026-10-01T00:00:00Z"),
-    },
-  ]);
   db.cardWatchlist.count.mockResolvedValue(12);
   return db;
 }
+
+type EventRead = { where: { ownershipId?: object; cardId?: string } };
+const eventReads = (db: ReturnType<typeof setup>) =>
+  db.cardTransferEvent.findMany.mock.calls.map((c: [EventRead]) => c[0]);
+/** The reads of the viewer's copies' trails. */
+const trailReads = (db: ReturnType<typeof setup>) =>
+  eventReads(db).filter((args: EventRead) => args.where.ownershipId !== undefined);
+/** The reads of the card's sales record. */
+const salesReads = (db: ReturnType<typeof setup>) =>
+  eventReads(db).filter((args: EventRead) => args.where.cardId !== undefined);
 
 const LISTING = {
   id: "a1",
@@ -161,7 +174,7 @@ describe("loadCardSheet", () => {
     expect(copyValue).toHaveBeenCalledWith({ cards: CARD });
     expect(sheet!.market).toEqual({
       listings: [],
-      recentSales: [{ price: 140, at: SALE.endTime }],
+      recentSales: [{ price: 140, finish: "FOIL", at: SALE.createdAt }],
       wantedBy: 12,
     });
   });
@@ -176,8 +189,8 @@ describe("loadCardSheet", () => {
       orderBy: { serialNumber: "asc" },
       take: 50,
     });
-    const [listings, sales] = db.cardAuction.findMany.mock.calls.map((c: [object]) => c[0]);
-    expect(listings).toMatchObject({
+    expect(db.cardAuction.findMany).toHaveBeenCalledTimes(1);
+    expect(db.cardAuction.findMany.mock.calls[0]![0]).toMatchObject({
       where: {
         status: "ACTIVE",
         endTime: { gt: expect.any(Date) },
@@ -186,12 +199,18 @@ describe("loadCardSheet", () => {
       orderBy: [{ endTime: "asc" }, { id: "asc" }],
       take: 10,
     });
-    expect(sales).toMatchObject({
-      where: { status: "COMPLETED", finalPrice: { not: null }, CardOwnership: { cardId: "c1" } },
-      orderBy: [{ endTime: "desc" }, { id: "desc" }],
-      take: 5,
-    });
-    expect(db.cardTransferEvent.findMany.mock.calls[0]![0]).toMatchObject({
+    // The sales record keeps the card's sales, a burned copy's included
+    expect(salesReads(db)).toEqual([
+      expect.objectContaining({
+        where: {
+          cardId: "c1",
+          action: { in: ["AUCTION_END", "AUCTION_BUYOUT", "LISTING_SALE"] },
+          price: { not: null },
+        },
+        take: 5,
+      }),
+    ]);
+    expect(trailReads(db)[0]).toMatchObject({
       where: { ownershipId: { in: ["o1"] } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: 200,
@@ -207,7 +226,7 @@ describe("loadCardSheet", () => {
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({ artwork: null, silhouette: true, copy: null });
     expect(sheet!.copies).toEqual([]);
-    expect(db.cardTransferEvent.findMany).not.toHaveBeenCalled();
+    expect(trailReads(db)).toEqual([]);
     expect(playersOf).not.toHaveBeenCalled();
   });
 
@@ -450,36 +469,38 @@ describe("loadCardSheet", () => {
   });
 
   it("keeps a removed copy's rows and a copy leaving every player out of the handle lookup", async () => {
-    const db = setup({ copies: [{ ...COPY, inscription: null, inscribedById: null }] });
-    db.cardTransferEvent.findMany.mockResolvedValue([
-      {
-        id: "e2",
-        ownershipId: "o1",
-        action: "PACK_OPEN",
-        fromUserId: null,
-        toUserId: "me",
-        price: null,
-        createdAt: new Date("2026-09-01T00:00:00Z"),
-      },
-      {
-        id: "e3",
-        ownershipId: null,
-        action: "REVOKE",
-        fromUserId: "u-a",
-        toUserId: null,
-        price: null,
-        createdAt: new Date("2026-09-02T00:00:00Z"),
-      },
-      {
-        id: "e4",
-        ownershipId: "o1",
-        action: "TRADE",
-        fromUserId: "u-gone",
-        toUserId: null,
-        price: 5,
-        createdAt: new Date("2026-09-03T00:00:00Z"),
-      },
-    ]);
+    const db = setup({
+      copies: [{ ...COPY, inscription: null, inscribedById: null }],
+      trail: [
+        {
+          id: "e2",
+          ownershipId: "o1",
+          action: "PACK_OPEN",
+          fromUserId: null,
+          toUserId: "me",
+          price: null,
+          createdAt: new Date("2026-09-01T00:00:00Z"),
+        },
+        {
+          id: "e3",
+          ownershipId: null,
+          action: "REVOKE",
+          fromUserId: "u-a",
+          toUserId: null,
+          price: null,
+          createdAt: new Date("2026-09-02T00:00:00Z"),
+        },
+        {
+          id: "e4",
+          ownershipId: "o1",
+          action: "TRADE",
+          fromUserId: "u-gone",
+          toUserId: null,
+          price: 5,
+          createdAt: new Date("2026-09-03T00:00:00Z"),
+        },
+      ],
+    });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(playersOf).toHaveBeenCalledWith(["me", "u-a", "u-gone"]);
     // A player who no longer exists is still a player; a side with nobody stays empty.
@@ -494,29 +515,31 @@ describe("loadCardSheet", () => {
 
   it("gives each copy its own trail, and its own face", async () => {
     const second = { ...COPY, id: "o2", serialNumber: 7, finish: "STANDARD", inscription: null };
-    const db = setup({ copies: [COPY, second] });
-    db.cardTransferEvent.findMany.mockResolvedValue([
-      {
-        id: "e5",
-        ownershipId: "o2",
-        action: "DAILY_CLAIM",
-        fromUserId: null,
-        toUserId: "me",
-        price: null,
-        createdAt: new Date("2026-10-03T00:00:00Z"),
-      },
-      {
-        id: "e1",
-        ownershipId: "o1",
-        action: "TRADE",
-        fromUserId: "u-a",
-        toUserId: "me",
-        price: null,
-        createdAt: new Date("2026-10-01T00:00:00Z"),
-      },
-    ]);
+    const db = setup({
+      copies: [COPY, second],
+      trail: [
+        {
+          id: "e5",
+          ownershipId: "o2",
+          action: "DAILY_CLAIM",
+          fromUserId: null,
+          toUserId: "me",
+          price: null,
+          createdAt: new Date("2026-10-03T00:00:00Z"),
+        },
+        {
+          id: "e1",
+          ownershipId: "o1",
+          action: "TRADE",
+          fromUserId: "u-a",
+          toUserId: "me",
+          price: null,
+          createdAt: new Date("2026-10-01T00:00:00Z"),
+        },
+      ],
+    });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(db.cardTransferEvent.findMany.mock.calls[0]![0]).toMatchObject({
+    expect(trailReads(db)[0]).toMatchObject({
       where: { ownershipId: { in: ["o1", "o2"] } },
     });
     expect(sheet!.face.copy).toMatchObject({ ownershipId: "o1" });
@@ -527,11 +550,11 @@ describe("loadCardSheet", () => {
   });
 
   it("leaves a signer it cannot find unnamed, and sales without a price out", async () => {
-    const db = setup({ sold: [{ finalPrice: null, endTime: SALE.endTime }, SALE] });
+    const db = setup({ sold: [{ ...SALE, price: null }, SALE] });
     playersOf.mockResolvedValueOnce(new Map());
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
-    expect(sheet!.market.recentSales).toEqual([{ price: 140, at: SALE.endTime }]);
+    expect(sheet!.market.recentSales).toEqual([{ price: 140, finish: "FOIL", at: SALE.createdAt }]);
   });
 
   describe("a card outside the catalogue", () => {
@@ -655,7 +678,7 @@ describe("loadCardSheet", () => {
         market: { listings: [{ auctionId: "a1", sellerName: "@ann", isMine: false }] },
       });
       expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
-      expect(db.cardTransferEvent.findMany).not.toHaveBeenCalled();
+      expect(trailReads(db)).toEqual([]);
       expect(playersOf).toHaveBeenCalledWith(["u-a"]);
     });
 

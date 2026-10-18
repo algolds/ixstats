@@ -311,26 +311,36 @@ describe("caller-scoped reads", () => {
 });
 
 describe("analytics", () => {
-  it("falls back to completed auction prices when no value history is stored", async () => {
+  it("charts the newest 100 history rows, oldest first, with no fallback to auction prices", async () => {
+    const row = (id: string, day: number) => ({
+      id,
+      cardId: "card_1",
+      value: day,
+      recordedAt: new Date(day),
+    });
+    // The read is newest first, so a card with a long history still shows its latest moves
+    db.cardValueHistory.findMany.mockResolvedValue([row("h3", 3), row("h2", 2), row("h1", 1)]);
+
+    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([
+      row("h1", 1),
+      row("h2", 2),
+      row("h3", 3),
+    ]);
+    expect(db.cardValueHistory.findMany).toHaveBeenCalledWith({
+      where: { cardId: "card_1" },
+      orderBy: { recordedAt: "desc" },
+      take: 100,
+    });
+
+    // A card with no history yet has none, even with a completed auction of one of its copies
     db.cardValueHistory.findMany.mockResolvedValue([]);
     db.cardOwnership.findMany.mockResolvedValue([{ id: "own_1" }]);
     db.cardAuction.findMany.mockResolvedValue([{ finalPrice: 40, endTime: new Date(0) }]);
-
-    const history = await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" });
-
-    expect(history).toEqual([{ cardId: "card_1", value: 40, recordedAt: new Date(0) }]);
+    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([]);
+    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
   });
 
-  it("names transfer parties by their country", async () => {
-    db.cardTransferEvent.findMany.mockResolvedValue([
-      { id: "t1", fromUserId: null, toUserId: "u2" },
-    ]);
-    db.user.findMany.mockResolvedValue([{ id: "u2", country: { name: "Caphiria", flag: null } }]);
-
-    const events = await callerAs("u1", db).getCardTransferHistory({ ownershipId: "own_1" });
-
-    expect(events).toEqual([
-      expect.objectContaining({ id: "t1", fromUserName: null, toUserName: "Caphiria" }),
-    ]);
+  it("has no transfer history of its own: the card sheet's trail is the one trail", () => {
+    expect("getCardTransferHistory" in cardMarketRouter._def.procedures).toBe(false);
   });
 });

@@ -15,7 +15,9 @@ jest.mock("~/lib/cards/valuation", () => ({
   }),
   setValuationConfig: jest.fn(),
   clearValuationCache: jest.fn(),
-  recomputeAllCardValues: jest.fn().mockResolvedValue({ updated: 42 }),
+}));
+jest.mock("~/server/modules/cards/market-values", () => ({
+  recomputeMarketValues: jest.fn().mockResolvedValue({ prices: 0, updated: 42 }),
 }));
 jest.mock("~/lib/cards/general-settings", () => ({
   ...jest.requireActual<typeof import("~/lib/cards/general-settings")>(
@@ -29,11 +31,7 @@ jest.mock("~/lib/vault/vault-bonus", () => ({
 }));
 
 import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
-import {
-  clearValuationCache,
-  recomputeAllCardValues,
-  setValuationConfig,
-} from "~/lib/cards/valuation";
+import { clearValuationCache, setValuationConfig } from "~/lib/cards/valuation";
 import { clearBonusConfigCache } from "~/lib/vault/vault-bonus";
 import {
   economySettings,
@@ -45,6 +43,7 @@ import {
   saveMarket,
   saveRarityThresholds,
 } from "~/server/modules/cards/cards.economy";
+import { recomputeMarketValues } from "~/server/modules/cards/market-values";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
@@ -59,6 +58,7 @@ describe("card values", () => {
   it("saves the sent fields in one transaction with the audit row, then revalues every card", async () => {
     const db = createMockPrisma();
     expect(await saveCardValues(db as never, actor, { floorRare: 120, multNation: 2 })).toEqual({
+      prices: 0,
       updated: 42,
     });
     expect(
@@ -75,8 +75,8 @@ describe("card values", () => {
       }),
     });
     expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(recomputeAllCardValues).toHaveBeenCalledWith(db);
-    expect(jest.mocked(recomputeAllCardValues).mock.invocationCallOrder[0]).toBeGreaterThan(
+    expect(recomputeMarketValues).toHaveBeenCalledWith(db);
+    expect(jest.mocked(recomputeMarketValues).mock.invocationCallOrder[0]).toBeGreaterThan(
       db.auditLog.create.mock.invocationCallOrder[0]!
     );
   });
@@ -94,7 +94,7 @@ describe("card values", () => {
     );
     expect(setValuationConfig).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
-    expect(recomputeAllCardValues).not.toHaveBeenCalled();
+    expect(recomputeMarketValues).not.toHaveBeenCalled();
   });
 
   it("refuses floors that do not rise with rarity, read against the stored floors", async () => {
@@ -105,16 +105,17 @@ describe("card values", () => {
     });
     expect(setValuationConfig).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
-    expect(recomputeAllCardValues).not.toHaveBeenCalled();
+    expect(recomputeMarketValues).not.toHaveBeenCalled();
     await saveCardValues(db as never, actor, { floorEpic: 300, floorLegendary: 300 });
     expect(setValuationConfig).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the saved values when the revalue after them fails, and says so with a null count", async () => {
     const db = createMockPrisma();
-    jest.mocked(recomputeAllCardValues).mockRejectedValueOnce(new Error("statement timeout"));
+    jest.mocked(recomputeMarketValues).mockRejectedValueOnce(new Error("statement timeout"));
     const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
     expect(await saveCardValues(db as never, actor, { floorRare: 120 })).toEqual({
+      prices: null,
       updated: null,
     });
     expect(setValuationConfig).toHaveBeenCalledTimes(1);
@@ -125,14 +126,15 @@ describe("card values", () => {
 
   it("writes, audits and revalues nothing when no field was sent", async () => {
     const db = createMockPrisma();
-    expect(await saveCardValues(db as never, actor, {})).toEqual({ updated: 0 });
+    expect(await saveCardValues(db as never, actor, {})).toEqual({ prices: 0, updated: 0 });
     expect(db.auditLog.create).not.toHaveBeenCalled();
-    expect(recomputeAllCardValues).not.toHaveBeenCalled();
+    expect(recomputeMarketValues).not.toHaveBeenCalled();
   });
 
   it("revalues every card on request and audits the count", async () => {
     const db = createMockPrisma();
-    expect(await recomputeValues(db as never, actor)).toEqual({ updated: 42 });
+    expect(await recomputeValues(db as never, actor)).toEqual({ prices: 0, updated: 42 });
+    expect(recomputeMarketValues).toHaveBeenCalledWith(db);
     expect(db.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         action: "CARD_ECONOMY_SAVE",
@@ -145,7 +147,7 @@ describe("card values", () => {
     const db = createMockPrisma();
     db.auditLog.create.mockRejectedValueOnce(new Error("connection reset"));
     const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    expect(await recomputeValues(db as never, actor)).toEqual({ updated: 42 });
+    expect(await recomputeValues(db as never, actor)).toEqual({ prices: 0, updated: 42 });
     expect(error).toHaveBeenCalled();
     error.mockRestore();
   });

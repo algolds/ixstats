@@ -255,6 +255,18 @@ describe("updateLibraryCard", () => {
     expect(sold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(100);
   });
 
+  it("re-prices from the card's Standard market median when it has sold recently", async () => {
+    const { db, tx, edit } = setUp();
+    tx.cardMarketPrice.findUnique.mockResolvedValue({ median: 2500 });
+    await updateLibraryCard(db as never, actor, { ...edit, rarity: "EPIC", reason: "Featured" });
+    expect(tx.cardMarketPrice.findUnique).toHaveBeenCalledWith({
+      where: { cardId_finish: { cardId: "card_1", finish: "STANDARD" } },
+      select: { median: true },
+    });
+    // The median of 2,500 over the Epic floor of 1,000
+    expect(tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(2500);
+  });
+
   it("writes only what changed, under the art, visibility and rarity it read", async () => {
     const { db, tx, edit } = setUp();
     await updateLibraryCard(db as never, actor, {

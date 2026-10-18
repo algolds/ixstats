@@ -1,8 +1,8 @@
 /**
  * Card Valuation — single source of truth for what a card and each of its copies are worth.
  *
- * Replaces previously-disconnected tables (raw NS passthrough in ns-import and the
- * rarity base table in card-service.getCardMarketValue). One formula, one tunable config
+ * Replaces previously-disconnected tables (raw NS passthrough in ns-import and a
+ * rarity base table in card-service). One formula, one tunable config
  * (SystemConfig-backed, DM-editable — same pattern as exchange-config.ts).
  *
  *   base  = max( rarityFloor[rarity] × typeMult × finishMult ,  market median at the finish ,  NS term )
@@ -14,10 +14,11 @@
  * - NS bank values live in `metadata.nsData.market_value` (src/lib/cards/ns-facts.ts)
  * - a retired card's copies are worth 0 (hidden copies, cards refresh Phase 3)
  *
- * `Card.marketValue` is a Standard copy at level 1 (`referenceValue`); `valueOfCopy` values one copy.
+ * `Card.marketValue` is a Standard copy at level 1 (`referenceValue`); `valueOfCopy` values one copy. The card-values
+ * cron writes it for every card in SQL (src/server/modules/cards/market-values.ts), with the market medians.
  */
 
-import type { CardFinish, CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
+import type { CardFinish, CardRarity, CardType, PrismaClient } from "@prisma/client";
 import { clampLevel } from "./levels";
 
 export interface CardValuationConfig {
@@ -267,62 +268,4 @@ export function medianOf(prices: readonly number[]): number | null {
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 1) return sorted[mid] ?? null;
   return ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
-}
-
-/** Arbitrary constant; identifies the revalue lock in pg_locks. */
-const REVALUE_LOCK_NAMESPACE = 7336;
-/** Six set-based updates over every card take seconds, well past the interactive transaction's default 5 s. */
-const REVALUE_TIMEOUT_MS = 60_000;
-
-/**
- * Recompute marketValue for every card under the current config. Set-based UPDATEs
- * grouped by rarity (handles 56k+ NS cards in 6 statements, not 56k round-trips).
- * NS source value is read from metadata.nsData so re-running is idempotent.
- * One revalue runs at a time, in one transaction under its lock, and reads the config
- * after taking it, past the cache: two interleaved revalues could otherwise leave a
- * rarity valued under the older config. Only cards whose value changes are written.
- */
-export async function recomputeAllCardValues(db: PrismaClient): Promise<{ updated: number }> {
-  return db.$transaction(
-    async (tx) => {
-      // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns.
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REVALUE_LOCK_NAMESPACE}::int, 0)`;
-      return revalueCards(tx, await readValuationConfig(tx));
-    },
-    { timeout: REVALUE_TIMEOUT_MS }
-  );
-}
-
-async function revalueCards(
-  tx: Prisma.TransactionClient,
-  cfg: CardValuationConfig
-): Promise<{ updated: number }> {
-  const rarities: Array<[string, number]> = [
-    ["COMMON", cfg.floorCommon],
-    ["UNCOMMON", cfg.floorUncommon],
-    ["RARE", cfg.floorRare],
-    ["ULTRA_RARE", cfg.floorUltraRare],
-    ["EPIC", cfg.floorEpic],
-    ["LEGENDARY", cfg.floorLegendary],
-  ];
-
-  let updated = 0;
-  for (const [rarity, floor] of rarities) {
-    // All numbers below come from validated numeric config; rarity is from a fixed list. As in referenceValue, an NS
-    // card's bank term lasts until a copy of it first sells here, then it takes the floor.
-    const value = `CASE
-        WHEN "cardType" = 'NS' AND "firstSoldAt" IS NULL
-          THEN GREATEST(${floor}, COALESCE(NULLIF(metadata->'nsData'->>'market_value', '')::numeric, 0) * ${cfg.nsPremium})
-        WHEN "cardType" = 'SPECIAL' THEN ${floor * cfg.multSpecial}
-        WHEN "cardType" = 'NATION'  THEN ${floor * cfg.multNation}
-        WHEN "cardType" = 'TROPHY'  THEN ${floor * cfg.multTrophy}
-        ELSE ${floor}
-      END`;
-    const sql = `
-      UPDATE cards SET "marketValue" = ${value},
-      "updatedAt" = now()
-      WHERE rarity = '${rarity}' AND "marketValue" IS DISTINCT FROM ${value}`;
-    updated += await tx.$executeRawUnsafe(sql);
-  }
-  return { updated };
 }
