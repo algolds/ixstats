@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    cards: { listMine: { useInfiniteQuery: jest.fn() } },
+    cards: { listMine: { useInfiniteQuery: jest.fn(), useQuery: jest.fn() } },
     cardMarket: { createAuction: { useMutation: jest.fn() } },
   },
 }));
@@ -66,12 +66,27 @@ const mine = (pages: Row[][], hasNextPage = false) =>
     fetchNextPage,
   } as never);
 const lastQuery = () => jest.mocked(api.cards.listMine.useInfiniteQuery).mock.calls.at(-1);
+/** The copy a `?sell=` link names, as the picker reads it on its own. */
+const linked = (copy: Row | null) =>
+  jest
+    .mocked(api.cards.listMine.useQuery)
+    .mockReturnValue({ data: copy ? { rows: [copy] } : undefined } as never);
+const linkedQuery = () => jest.mocked(api.cards.listMine.useQuery).mock.calls.at(-1);
+const copies = () =>
+  within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
+/** The rows in order, by the title and serial each button is named by. */
+const expectRows = (...names: RegExp[]) => {
+  const rows = copies();
+  expect(rows).toHaveLength(names.length);
+  names.forEach((name, i) => expect(rows[i]).toHaveAccessibleName(name));
+};
 
 beforeEach(() => {
   refreshCards.mockClear();
   fetchNextPage.mockClear();
   mutate = jest.fn();
   mine([[row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)]]);
+  linked(null);
   jest.mocked(api.cardMarket.createAuction.useMutation).mockImplementation(((options: {
     onSuccess: typeof onSuccess;
   }) => {
@@ -165,7 +180,40 @@ describe("CreateAuctionModal", () => {
     });
   });
 
+  it("reads the copy a link names on its own, and only when a link names one", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(linkedQuery()?.[1]).toMatchObject({ enabled: false });
+    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o77" />);
+    expect(linkedQuery()?.[0]).toEqual({ copyId: "o77", sort: "value", limit: 1 });
+    expect(linkedQuery()?.[1]).toMatchObject({ enabled: true });
+  });
+
+  it("shows the copy a link names at the top, picked, even beyond the loaded pages", () => {
+    mine([[row("o1", 4), row("o2", 9)]], true);
+    linked(row("o77", 77, false, false, "Urcea"));
+    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o77" />);
+    expectRows(/^Urcea\s*#77 · Foil$/, /^Caphiria\s*#4 · Foil$/, /^Caphiria\s*#9 · Foil$/);
+    expect(copies()[0]).toHaveAttribute("aria-pressed", "true");
+    field(/Starting price/, "25");
+    fireEvent.click(list());
+    expect(listing()).toMatchObject({ cardId: "o77" });
+  });
+
+  it("lists the linked copy once when its page is loaded, and lets a search show only what matches", () => {
+    linked(row("o2", 9));
+    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o2" />);
+    expectRows(/^Caphiria\s*#9 · Foil$/, /^Caphiria\s*#4 · Foil$/);
+    mine([[row("o5", 31, false, false, "Urcea")]]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
+      target: { value: "Urc" },
+    });
+    expectRows(/^Urcea\s*#31 · Foil$/);
+  });
+
   it("says a bound copy from the sheet cannot be sold, instead of offering the form", () => {
+    // The linked copy is read on its own, so its page need not be loaded.
+    mine([[row("o1", 4)]], true);
+    linked(row("o4", 20, false, true));
     render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o4" />);
     expect(screen.getByText("Bound cards can't be sold")).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Your cards" })).toBeNull();

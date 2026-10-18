@@ -125,6 +125,22 @@ function useSellableCopies(open: boolean, search: string) {
   return { mine, held, searching: searched !== "" };
 }
 
+/** The copy a `?sell=` link names, read on its own, so it shows (and a bound one is caught) whichever page holds it. */
+function useLinkedCopy(open: boolean, ownershipId: string | null): MineRow | null {
+  const linked = api.cards.listMine.useQuery(
+    { copyId: ownershipId ?? undefined, sort: "value", limit: 1 },
+    { enabled: open && ownershipId !== null }
+  );
+  return linked.data?.rows[0] ?? null;
+}
+
+/** The linked copy leads the pages while nothing is searched, and is not listed twice; a search shows what matches. */
+function withLinkedFirst(held: readonly MineRow[], linked: MineRow | null, searching: boolean) {
+  if (!linked || searching) return held;
+  const id = linked.face.copy?.ownershipId;
+  return [linked, ...held.filter((row) => row.face.copy?.ownershipId !== id)];
+}
+
 /**
  * Lists one copy at auction. It picks copies, not cards: two copies of one card are two rows. A copy already in a
  * listing or a trade is left out, and so is a bound copy (trophies, achievement rewards), which the server refuses
@@ -142,11 +158,12 @@ export function CreateAuctionModal({
   const [search, setSearch] = useState("");
   const refreshCards = useCardsRefresh();
   const { mine, held, searching } = useSellableCopies(open, search);
-  const rows = held.filter((row) => !row.isLocked && !row.isBound);
-  // The sheet never offers a bound copy for sale, but an old or hand-made `?sell=` link can name one.
-  const sentBound = held.some(
-    (row) => row.isBound && row.face.copy?.ownershipId === initialOwnershipId
+  const linked = useLinkedCopy(open, initialOwnershipId);
+  const rows = withLinkedFirst(held, linked, searching).filter(
+    (row) => !row.isLocked && !row.isBound
   );
+  // The sheet never offers a bound copy for sale, but an old or hand-made `?sell=` link can name one.
+  const sentBound = linked?.isBound === true;
   // Counts closes, so a listing that lands after the player closed the form does not close it again.
   const closes = useRef(0);
   // The form starts over each time it opens.
