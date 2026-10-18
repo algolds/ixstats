@@ -19,7 +19,7 @@ import { createMockDb } from "~/tests/helpers/transactional-mock-db";
 
 const createCaller = createCallerFactory(vaultBalanceCreditsRouter);
 
-function setup(held: number, deck: { total: number; exTrophy: number; copies: number }) {
+function setup(held: number, deck: { total: number; exTrophy: number }) {
   const db = createMockDb();
   (db.cardOwnership.count as jest.Mock).mockResolvedValue(held);
   jest.mocked(deckValueOf).mockClear().mockResolvedValue(deck);
@@ -33,7 +33,7 @@ function setup(held: number, deck: { total: number; exTrophy: number; copies: nu
 
 describe("vault.getUserStats", () => {
   it("shows trophy cards in the deck value and leaves them out of the economy's figure", async () => {
-    const { db, caller } = setup(3, { total: 800, exTrophy: 200, copies: 3 });
+    const { db, caller } = setup(3, { total: 800, exTrophy: 200 });
 
     const stats = await caller.getUserStats();
 
@@ -43,7 +43,7 @@ describe("vault.getUserStats", () => {
 
   it("counts a hidden card's copies, as the inventory lists them, but does not value them", async () => {
     // Two of the three copies are of retired cards, which the shared copy value leaves out.
-    const { db, caller } = setup(3, { total: 100, exTrophy: 100, copies: 1 });
+    const { db, caller } = setup(3, { total: 100, exTrophy: 100 });
 
     const stats = await caller.getUserStats();
 

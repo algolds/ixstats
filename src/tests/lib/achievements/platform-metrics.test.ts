@@ -5,7 +5,7 @@
  * through the link, and the Renaissance week (wiki edit, post and card activity in one ISO week).
  */
 jest.mock("~/lib/cards/copy-value", () => ({
-  deckValueOf: jest.fn(async () => ({ total: 0, exTrophy: 0, copies: 0 })),
+  deckValueOf: jest.fn(async () => ({ total: 0, exTrophy: 0 })),
 }));
 
 import type { MetricContext } from "~/lib/achievements/metrics/registry";
@@ -75,8 +75,18 @@ describe("registry shape", () => {
     expect(keys).not.toContain("mapEditsApproved");
   });
 
-  it("each loader returns exactly its declared keys, in at most 3 queries and no row lists", async () => {
+  /**
+   * The one loader allowed reads past the 3-query budget, and why (the header of metrics/platform.ts). Its deck value
+   * is the shared per-copy value, mocked in this file, so its reads are not counted here: no other loader may reach it.
+   */
+  const BUDGET_EXEMPT: Record<string, string> = {
+    "platform-cards-deck":
+      "deckValueOf (src/lib/cards/copy-value.ts): batched reads of the player's live copies, bounded by card capacity",
+  };
+
+  it("each loader returns exactly its declared keys, in at most 3 queries and no row lists, bar the named exemption", async () => {
     for (const loader of PLATFORM_LOADERS) {
+      jest.mocked(deckValueOf).mockClear();
       const db = rawDb(RAW_ROWS[loader.id] ?? []);
       linked(db);
       for (const model of [
@@ -106,6 +116,11 @@ describe("registry shape", () => {
       );
       const calls = queries.reduce((n, fn) => n + (fn.mock?.calls.length ?? 0), 0);
       expect(calls).toBeLessThanOrEqual(3);
+      // Only the exempt loader reads through the mocked (uncounted) deck value.
+      expect([loader.id, jest.mocked(deckValueOf).mock.calls.length > 0]).toEqual([
+        loader.id,
+        loader.id in BUDGET_EXEMPT,
+      ]);
       for (const model of ["wikiRevision", "thinkpagesPost"]) {
         expect(db[model]?.findMany?.mock.calls.length ?? 0).toBe(0);
         expect(db[model]?.groupBy?.mock.calls.length ?? 0).toBe(0);
@@ -305,7 +320,7 @@ describe("cards deck loader", () => {
     const db = rawDb();
     db.cardOwnership.count.mockResolvedValue(1);
     db.myVault.findUnique.mockResolvedValue({ loginStreak: 7, lastLoginDate: day(14, 2) });
-    jest.mocked(deckValueOf).mockResolvedValue({ total: exTrophy + 500, exTrophy, copies: 3 });
+    jest.mocked(deckValueOf).mockResolvedValue({ total: exTrophy + 500, exTrophy });
     return db;
   }
 

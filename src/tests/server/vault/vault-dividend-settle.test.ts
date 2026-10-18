@@ -202,21 +202,22 @@ type Holding = Partial<World["cards"][number]> & { finish?: string; level?: numb
 /** One copy of a new card, valued by the shared copy value: `rarity` x `cardType` x `finish`, at its `level`. */
 const hold = (ownerId: string, holding: Holding = {}) => {
   const { finish = "STANDARD", level = 1, ...card } = holding;
-  const n = world.cards.length;
+  const cardId = `card${world.cards.length}`;
   world.cards.push({
-    id: `card${n}`,
+    id: cardId,
     rarity: "COMMON",
     cardType: "LORE",
     firstSoldAt: null,
     isRetired: false,
     ...card,
   });
-  world.copies.push({ id: `copy${n}`, ownerId, cardId: `card${n}`, finish, level });
+  world.copies.push({ id: `copy${world.copies.length}`, ownerId, cardId, finish, level });
+  return cardId;
 };
 /** A copy worth `value`: a Common card whose Standard copies sell at that median. */
 const deck = (ownerId: string, value: number, cardType = "LORE") => {
-  hold(ownerId, { cardType });
-  world.prices.push({ cardId: `card${world.cards.length - 1}`, finish: "STANDARD", median: value });
+  const cardId = hold(ownerId, { cardType });
+  world.prices.push({ cardId, finish: "STANDARD", median: value });
 };
 
 describe("settleDividendDay", () => {
@@ -267,7 +268,9 @@ describe("settleDividendDay", () => {
     vault("u1");
     hold("u1", { rarity: "EPIC" }); // floor 1000
     hold("u1", { rarity: "RARE", finish: "HOLO" }); // 100 x 9 = 900
-    hold("u1", { rarity: "RARE", finish: "FOIL", level: 6 }); // 100 x 3 = 300, +10% = 330
+    const foil = hold("u1", { rarity: "RARE", finish: "FOIL", level: 6 }); // 100 x 3 = 300, +10% = 330
+    // Its Standard copies sell at 400, a median the Foil copy never reads (it would make the copy 440).
+    world.prices.push({ cardId: foil, finish: "STANDARD", median: 400 });
     hold("u1", { cardType: "NS", bank: 40 }); // unsold: 40 x 1.5 = 60 beats the floor 10
     hold("u1", { rarity: "EPIC", cardType: "TROPHY", finish: "SERIALISED" }); // 250, never paid on
     hold("u1", { rarity: "LEGENDARY", finish: "HOLO", level: 10, isRetired: true }); // hidden: 0

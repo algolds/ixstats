@@ -228,7 +228,7 @@ describe("listMine", () => {
   });
   beforeEach(() => jest.mocked(loadCopyValues).mockReset());
 
-  it("reads the owner's copies once and values them all with the shared per-copy value", async () => {
+  it("reads the rows once and values every copy in one shared copy-value load, matched by copy id", async () => {
     const db = createMockPrisma();
     const one = entry({ title: "Alpha" });
     const two = entry({ title: "Beta" });

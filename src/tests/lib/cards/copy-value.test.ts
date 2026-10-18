@@ -72,11 +72,12 @@ describe("copy values", () => {
   it("values each copy by finish, level, its finish's median and the NS term", async () => {
     const db = makeDb([copy("a", "rare", "FOIL", 6), copy("b", "rare"), copy("c", "ns")], {
       banks: [{ id: "ns", bank: 40 }],
-      medians: [{ cardId: "rare", finish: "STANDARD", median: 130 }],
+      medians: [{ cardId: "rare", finish: "STANDARD", median: 400 }],
     });
     const values = await loadCopyValues(db as never, { ownerIds: ["u1"] });
-    // a: Rare floor 100 x Foil 3 = 300 (the Standard median is not its finish's), +10% at level 6 = 330.
-    // b: the Standard median 130 beats the floor 100. c: the NS term 40 x 1.5 = 60 beats the Common floor 10.
+    // a: Rare floor 100 x Foil 3 = 300, +10% at level 6 = 330. The Standard median (400) is not its finish's, so it
+    // would wrongly give 440. b: the Standard median 400 beats the floor 100. c: the NS term 40 x 1.5 = 60 beats the
+    // Common floor 10.
     expect(values).toEqual([
       {
         ownershipId: "a",
@@ -92,7 +93,7 @@ describe("copy values", () => {
         cardId: "rare",
         cardType: "LORE",
         finish: "STANDARD",
-        value: 130,
+        value: 400,
       },
       {
         ownershipId: "c",
@@ -203,7 +204,18 @@ describe("deck values", () => {
   it("totals a deck with and without trophies", async () => {
     const db = makeDb([copy("a", "rare"), copy("t", "trophy", "SERIALISED")]);
     // The trophy: Epic floor 1000 x trophy 0.25 = 250.
-    expect(await deckValueOf(db as never, "u1")).toEqual({ total: 350, exTrophy: 100, copies: 2 });
+    expect(await deckValueOf(db as never, "u1")).toEqual({ total: 350, exTrophy: 100 });
+  });
+
+  it("rounds a deck's sums to the cent", async () => {
+    const db = makeDb([copy("a", "rare"), copy("b", "ns"), copy("t", "trophy", "SERIALISED")], {
+      medians: [
+        { cardId: "rare", finish: "STANDARD", median: 100.1 },
+        { cardId: "ns", finish: "STANDARD", median: 200.2 },
+      ],
+    });
+    // 100.1 + 200.2 is 300.29999999999995 in floating point; with the trophy's 250, 550.3.
+    expect(await deckValueOf(db as never, "u1")).toEqual({ total: 550.3, exTrophy: 300.3 });
   });
 
   it("sums each owner's copies to the cent", async () => {
@@ -216,15 +228,17 @@ describe("deck values", () => {
       {
         medians: [
           { cardId: "rare", finish: "STANDARD", median: 100.1 },
-          { cardId: "ns", finish: "STANDARD", median: 10.2 },
+          { cardId: "ns", finish: "STANDARD", median: 200.2 },
+          { cardId: "rare", finish: "FOIL", median: 450.25 },
         ],
       }
     );
     const totals = await deckValuesByOwner(db as never, { excludeTypes: ["TROPHY"] });
-    // 100.1 + 10.2 is 110.29999999999998 in floating point.
+    // u1: 100.1 + 200.2 is 300.29999999999995 in floating point. u2: the Foil copy reads the Foil median (450.25
+    // beats 100 x 3 = 300), never the Standard one.
     expect([...totals]).toEqual([
-      ["u1", 110.3],
-      ["u2", 300],
+      ["u1", 300.3],
+      ["u2", 450.25],
     ]);
   });
 });

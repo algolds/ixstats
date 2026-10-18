@@ -6,7 +6,7 @@
  */
 import { Prisma, type CardFinish, type CardType, type PrismaClient } from "@prisma/client";
 import { nsBankValueSql } from "./ns-bank-sql";
-import { getValuationConfig, valueOfCopy, type ValueCard } from "./valuation";
+import { getValuationConfig, toCents, valueOfCopy, type ValueCard } from "./valuation";
 
 export type ValueDb = Pick<
   PrismaClient,
@@ -30,7 +30,6 @@ export interface CopyValueFilter {
 
 /** Ids per `IN` list, well under Postgres' bind limit. */
 const CHUNK = 5000;
-const toCents = (n: number) => Math.round(n * 100) / 100;
 const priceKey = (cardId: string, finish: CardFinish) => `${cardId}:${finish}`;
 
 function inChunks<T>(items: T[]): T[][] {
@@ -134,23 +133,22 @@ export async function deckValuesByOwner(
   return totals;
 }
 
-/** One owner's deck: the display total (trophies included), the figure without trophies, and the copy count. */
+/** One owner's deck: the display total (trophies included) and the figure without trophies. */
 export async function deckValueOf(
   db: ValueDb,
   ownerId: string
-): Promise<{ total: number; exTrophy: number; copies: number }> {
+): Promise<{ total: number; exTrophy: number }> {
   const copies = await loadCopyValues(db, { ownerIds: [ownerId] });
   const sum = (list: CopyValue[]) => toCents(list.reduce((acc, c) => acc + c.value, 0));
-  return {
-    total: sum(copies),
-    exTrophy: sum(copies.filter((c) => c.cardType !== "TROPHY")),
-    copies: copies.length,
-  };
+  return { total: sum(copies), exTrophy: sum(copies.filter((c) => c.cardType !== "TROPHY")) };
 }
 
-/** The better of two copies of one card: the higher value, then the lower copy id, so the pick never depends on order. */
+/** The one order for ids on a value tie: by code unit, so it never depends on the locale or the read order. */
+const compareIds = (a: string, b: string) => Number(a > b) - Number(a < b);
+
+/** The better of two copies of one card: the higher value, then the lower copy id. */
 const beats = (a: CopyValue, b: CopyValue) =>
-  a.value > b.value || (a.value === b.value && a.ownershipId < b.ownershipId);
+  a.value > b.value || (a.value === b.value && compareIds(a.ownershipId, b.ownershipId) < 0);
 
 /** An owner's most valuable copies, the best copy of each card, best first. */
 export async function topCopiesByValue(
@@ -164,6 +162,6 @@ export async function topCopiesByValue(
     if (!current || beats(copy, current)) best.set(copy.cardId, copy);
   }
   return [...best.values()]
-    .sort((a, b) => b.value - a.value || a.cardId.localeCompare(b.cardId))
+    .sort((a, b) => b.value - a.value || compareIds(a.cardId, b.cardId))
     .slice(0, limit);
 }

@@ -92,7 +92,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(db.myVault.findUnique).mockResolvedValue(null);
   jest.mocked(db.cardCollection.findFirst).mockResolvedValue(null);
-  jest.mocked(deckValueOf).mockResolvedValue({ total: 40, exTrophy: 40, copies: 1 });
+  // Different figures, so showing the trophy-free figure instead of the display total fails.
+  jest.mocked(deckValueOf).mockResolvedValue({ total: 290, exTrophy: 40 });
   jest.mocked(topCopiesByValue).mockResolvedValue(ranked(2, 1));
   ownerships([copyRow(1), copyRow(2)]);
 });
@@ -123,7 +124,7 @@ describe("resolvePassportVault topCards", () => {
 
   it("values the deck by the shared copy value and counts the live copies", async () => {
     const vault = await resolvePassportVault("u1");
-    expect(vault).toMatchObject({ totalCards: 1, deckValue: 40, xpPerLevel: 500 });
+    expect(vault).toMatchObject({ totalCards: 1, deckValue: 290, xpPerLevel: 500 });
     expect(jest.mocked(deckValueOf).mock.calls).toEqual([[db, "u1"]]);
     const liveRead = jest
       .mocked(db.cardOwnership.findMany)
