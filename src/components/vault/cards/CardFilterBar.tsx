@@ -29,7 +29,7 @@ import {
   TYPE_LABEL,
   TYPE_ORDER,
 } from "~/lib/cards/face/labels";
-import type { CardRealmBadge } from "~/lib/cards/face/types";
+import type { CardRealmBadge, CardType } from "~/lib/cards/face/types";
 
 export type FilterDimension =
   "realm" | "rarity" | "finish" | "type" | "category" | "duplicates" | "owned" | "region";
@@ -251,6 +251,7 @@ function FilterFields(props: {
   filters: CardFilters;
   set: SetFilter;
   has: (dimension: FilterDimension) => boolean;
+  types: readonly CardType[];
   realms: readonly CardRealmBadge[];
   realmNames: ReadonlyMap<string, string>;
   regions: readonly string[];
@@ -298,7 +299,7 @@ function FilterFields(props: {
       {has("type") && (
         <Toggles
           label="Type"
-          values={TYPE_ORDER}
+          values={props.types}
           labels={TYPE_LABEL}
           picked={filters.types}
           onChange={(types) => set("types", types)}
@@ -332,6 +333,8 @@ interface CardFilterBarProps<S extends string> {
   filters: CardFilters;
   onChange: (next: CardFilters) => void;
   dimensions: readonly FilterDimension[];
+  /** The type filter's choices; every type unless the tab holds fewer. */
+  types?: readonly CardType[];
   realms: readonly CardRealmBadge[];
   regions?: readonly string[];
   /** Makes the region filter a search over the server's regions; without it, a select over `regions`. */
@@ -376,6 +379,7 @@ export function CardFilterBar<S extends string>(props: CardFilterBarProps<S>) {
             filters={filters}
             set={set}
             has={(dimension) => props.dimensions.includes(dimension)}
+            types={props.types ?? TYPE_ORDER}
             realms={props.realms}
             realmNames={realmNames}
             regions={props.regions ?? []}

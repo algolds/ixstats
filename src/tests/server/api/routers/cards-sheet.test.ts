@@ -1,14 +1,27 @@
 /** @jest-environment node */
 /**
- * cards.getSheet: parses `from`, ignores a malformed one, checks showcases against the passport switch, and finds a
- * holder by the passport handle they show (`holderOf`, the real handle chain over a mocked database).
+ * cards.getSheet: open to signed-out visitors on the read-only rate limit, parses `from`, ignores a malformed one,
+ * checks showcases against the passport switch, finds a holder by the passport handle they show (`holderOf`, the real
+ * handle chain over a mocked database), and names players by passport handle in one batch (`playersOf`).
  */
+const mockCheck = jest.fn();
+jest.mock("~/lib/cache", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/cache"),
+  rateLimiter: { isEnabled: () => true, check: (...args: unknown[]) => mockCheck(...args) },
+}));
 jest.mock("~/server/db", () => ({
-  db: { user: { findUnique: jest.fn(), findFirst: jest.fn() } },
+  db: { user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() } },
 }));
 jest.mock("~/lib/cards/hub/sheet", () => ({ loadCardSheet: jest.fn(async () => null) }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({
   loadPassportSettings: jest.fn(async () => ({ visibility: { vaultCards: false } })),
+  loadVaultCardsShown: jest.fn(async () => new Set(["u-shows"])),
+}));
+jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
+  loadPassportHandle: jest.fn(async (user: { handle: string | null; clerkUserId: string }) =>
+    user.handle ? user.handle : `wiki-${user.clerkUserId}`
+  ),
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
   getArticleWikitext: jest.fn(async () => null),
@@ -17,18 +30,34 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
-import { holderOf, vaultVisible } from "~/server/api/routers/cards/_passport";
+import { holderOf, playersOf, vaultVisible } from "~/server/api/routers/cards/_passport";
 import { db as serverDb } from "~/server/db";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
-import { loadPassportSettings } from "~/server/modules/identity/identity.privacy";
+import {
+  loadPassportSettings,
+  loadVaultCardsShown,
+} from "~/server/modules/identity/identity.privacy";
+import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
 import { getArticleIntro, getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const createCaller = createCallerFactory(cardsSheetRouter);
-const signedOut = () => createCaller(createMockRouterContext({ auth: null, user: null }) as never);
+const signedOut = (db = createMockPrisma()) =>
+  createCaller(
+    createMockRouterContext({
+      db,
+      auth: null,
+      user: null,
+      rateLimitIdentifier: "ip:203.0.113.7",
+    }) as never
+  );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  mockCheck.mockResolvedValue({ success: true, remaining: 119, resetAt: new Date() });
+});
 
 describe("cards.getSheet", () => {
   it("passes the viewer, the card and where the sheet was opened from", async () => {
@@ -46,6 +75,7 @@ describe("cards.getSheet", () => {
     expect([viewer, card, options.from]).toEqual(["db_me", "c1", { kind: "showcase", id: "s1" }]);
     expect(options.rules.vaultVisible).toBe(vaultVisible);
     expect(options.rules.holderOf).toBe(holderOf);
+    expect(options.rules.playersOf).toBe(playersOf);
     await expect(options.rules.vaultVisible("owner")).resolves.toBe(false);
     expect(loadPassportSettings).toHaveBeenCalledWith("owner");
   });
@@ -67,10 +97,43 @@ describe("cards.getSheet", () => {
     expect(jest.mocked(loadCardSheet).mock.calls.map((call) => call[3].from)).toEqual([null, null]);
   });
 
-  it("refuses a signed-out caller and an oversized input", async () => {
-    await expect(signedOut().getSheet({ cardId: "c1" })).rejects.toMatchObject({
-      cause: { code: "UNAUTHORIZED" },
-    });
+  it("opens to a signed-out visitor as nobody, and hands back the sheet's answer", async () => {
+    const db = createMockPrisma();
+    jest.mocked(loadCardSheet).mockResolvedValueOnce({ signIn: true });
+    await expect(
+      signedOut(db).getSheet({ cardId: "c1", from: "holder.Takatta Loa" })
+    ).resolves.toEqual({ signIn: true });
+    const [passedDb, viewer, card, options] = jest.mocked(loadCardSheet).mock.calls[0]!;
+    expect([passedDb, viewer, card, options.from]).toEqual([
+      db,
+      null,
+      "c1",
+      { kind: "holder", handle: "Takatta Loa" },
+    ]);
+  });
+
+  it("counts every read against the read-only bucket, signed in by user and signed out by IP", async () => {
+    await createCaller(
+      createMockRouterContext({
+        db: createMockPrisma(),
+        rateLimitIdentifier: "user:clerk_me",
+      }) as never
+    ).getSheet({ cardId: "c1" });
+    await signedOut().getSheet({ cardId: "c1" });
+    const bucket = { maxRequests: 120, windowMs: 60_000 };
+    expect(mockCheck.mock.calls).toEqual([
+      ["user:clerk_me", "queries", bucket],
+      ["ip:203.0.113.7", "queries", bucket],
+    ]);
+  });
+
+  it("refuses a caller over the limit before reading the card", async () => {
+    mockCheck.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
+    await expect(signedOut().getSheet({ cardId: "c1" })).rejects.toThrow(/Too many requests/);
+    expect(loadCardSheet).not.toHaveBeenCalled();
+  });
+
+  it("refuses an oversized input", async () => {
     const caller = createCaller(createMockRouterContext({ db: createMockPrisma() }) as never);
     await expect(caller.getSheet({ cardId: "x".repeat(65) })).rejects.toMatchObject({
       code: "BAD_REQUEST",
@@ -90,6 +153,39 @@ describe("vaultVisible", () => {
     } as never);
     await expect(vaultVisible("u1")).resolves.toBe(true);
     expect(loadPassportSettings).toHaveBeenCalledWith("u1");
+  });
+});
+
+describe("playersOf", () => {
+  const users = jest.mocked(serverDb.user);
+  const row = (id: string, handle: string | null) => ({
+    id,
+    clerkUserId: `clerk-${id}`,
+    handle,
+    forumUsername: null,
+  });
+
+  it("names everyone by passport handle from one user read and one passport read", async () => {
+    users.findMany.mockResolvedValue([row("u-shows", "ann"), row("u-hides", null)] as never);
+    const players = await playersOf(["u-shows", "u-hides", "u-shows", "u-gone"]);
+    expect(users.findMany).toHaveBeenCalledTimes(1);
+    expect(users.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["u-shows", "u-hides", "u-gone"] } },
+      select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
+    });
+    expect(loadVaultCardsShown).toHaveBeenCalledTimes(1);
+    expect(loadVaultCardsShown).toHaveBeenCalledWith(["u-shows", "u-hides", "u-gone"]);
+    expect(loadPassportHandle).toHaveBeenCalledTimes(2);
+    expect([...players]).toEqual([
+      ["u-shows", { handle: "ann", showsVault: true }],
+      ["u-hides", { handle: "wiki-clerk-u-hides", showsVault: false }],
+    ]);
+  });
+
+  it("reads nothing when nobody is named", async () => {
+    await expect(playersOf([])).resolves.toEqual(new Map());
+    expect(users.findMany).not.toHaveBeenCalled();
+    expect(loadVaultCardsShown).not.toHaveBeenCalled();
   });
 });
 

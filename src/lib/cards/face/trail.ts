@@ -1,12 +1,20 @@
 // src/lib/cards/face/trail.ts
 import type { MintSource } from "~/lib/cards/mint";
 
-/** One move in a copy's ownership trail, with handles (never internal ids). */
+/** A player on one side of a move: their passport handle, or null while their Passport hides Vault cards. */
+export interface TrailParty {
+  handle: string | null;
+}
+
+/**
+ * One move in a copy's ownership trail, by handle (never internal ids). A side with no player (a mint's sender, a copy
+ * leaving every player) is null.
+ */
 export interface TrailEvent {
   id: string;
   action: string;
-  fromHandle: string | null;
-  toHandle: string | null;
+  from: TrailParty | null;
+  to: TrailParty | null;
   price: number | null;
   at: Date;
 }
@@ -41,10 +49,15 @@ export function trailLabel(action: string): string {
   return isTrailAction(action) ? TRAIL_LABEL[action] : "Moved";
 }
 
-/** "@a to @b", "to @b", "from @a", or null when neither side is a player. */
-export function trailParties(event: Pick<TrailEvent, "fromHandle" | "toHandle">): string | null {
-  const from = event.fromHandle ? `@${event.fromHandle}` : null;
-  const to = event.toHandle ? `@${event.toHandle}` : null;
+const partyName = (party: TrailParty | null) => {
+  if (!party) return null;
+  return party.handle ? `@${party.handle}` : "a player";
+};
+
+/** "@a to @b", "to @b", "from @a" (a hidden player is "a player"), or null when neither side is a player. */
+export function trailParties(event: Pick<TrailEvent, "from" | "to">): string | null {
+  const from = partyName(event.from);
+  const to = partyName(event.to);
   if (from && to) return `${from} to ${to}`;
   if (to) return `to ${to}`;
   return from ? `from ${from}` : null;

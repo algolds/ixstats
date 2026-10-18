@@ -7,7 +7,7 @@ import {
 } from "~/components/vault/cards/CardFilterBar";
 import { EMPTY_CARD_FILTERS, type CardFilters } from "~/lib/cards/face/filters";
 import { EXPLORE_SORT_OPTIONS, type ExploreSort } from "~/lib/cards/face/explore-options";
-import type { CardRealmBadge } from "~/lib/cards/face/types";
+import type { CardRealmBadge, CardType } from "~/lib/cards/face/types";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
 beforeAll(() => {
@@ -35,6 +35,7 @@ function setUp(
     withRealms?: boolean;
     realmList?: readonly CardRealmBadge[];
     regionSearch?: RegionSearchOptions;
+    types?: readonly CardType[];
   } = {}
 ) {
   const onChange = jest.fn<void, [CardFilters]>();
@@ -56,6 +57,7 @@ function setUp(
           "region",
         ]
       }
+      types={next.types}
       realms={next.realmList ?? (next.withRealms === false ? [] : realms)}
       regions={next.regions}
       regionSearch={next.regionSearch}
@@ -124,6 +126,18 @@ describe("CardFilterBar", () => {
     expect(lastChange(onChange).finishes).toEqual(["HOLO"]);
     fireEvent.click(screen.getByRole("button", { name: "NationStates" }));
     expect(lastChange(onChange).types).toEqual(["NS"]);
+  });
+
+  it("offers every card type, or only the ones the tab names", () => {
+    const { rerender } = setUp();
+    openFilters();
+    const types = () =>
+      ["Lore", "Nation", "NationStates", "Special", "Trophy"].filter((name) =>
+        screen.queryByRole("button", { name })
+      );
+    expect(types()).toEqual(["Lore", "Nation", "NationStates", "Special", "Trophy"]);
+    rerender({ types: ["LORE", "NS"] });
+    expect(types()).toEqual(["Lore", "NationStates"]);
   });
 
   it("switches between collected and missing cards", () => {

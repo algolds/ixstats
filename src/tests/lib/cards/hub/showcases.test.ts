@@ -39,8 +39,12 @@ const item = (id: string, isRetired = false) => ({
   id: `item-${id}`,
   cardOwnership: copy(id, isRetired),
 });
-const visible = { vaultVisible: jest.fn(async () => true) };
-const hidden = { vaultVisible: jest.fn(async () => false) };
+/** The owner by passport handle (a wiki name; they have no stored handle), showing or hiding their Vault cards. */
+const ownerShowing = (showsVault: boolean) => ({
+  playersOf: jest.fn(async () => new Map([["owner", { handle: "Takatta Loa", showsVault }]])),
+});
+const visible = ownerShowing(true);
+const hidden = ownerShowing(false);
 const owned = (isPublic: boolean, items = 1) => ({ id: "s1", isPublic, _count: { items } });
 
 describe("ShowcaseFieldsSchema", () => {
@@ -125,6 +129,8 @@ describe("listMyShowcases", () => {
 });
 
 describe("getShowcase", () => {
+  beforeEach(() => jest.clearAllMocks());
+
   const row = {
     id: "s1",
     name: "A",
@@ -132,24 +138,20 @@ describe("getShowcase", () => {
     isPublic: true,
     pinnedAt: null,
     userId: "owner",
-    User: { handle: "ann" },
     items: [item("c1"), item("c2", true)],
   };
 
-  it("shows a public showcase's art to anyone while its owner shows Vault cards, and a retired card's placeholder", async () => {
+  it("shows a public showcase's art to anyone while its owner shows Vault cards, by their passport handle", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue(row);
     const view = await getShowcase(db as never, "me", "s1", visible);
     expect(view).toMatchObject({
-      ownerHandle: "ann",
+      ownerHandle: "Takatta Loa",
       isOwner: false,
       pinned: false,
-      items: [
-        { itemId: "item-c1", face: { artwork: "https://art/c1.png", silhouette: false } },
-        { itemId: "item-c2", face: { artwork: null, isRetired: true } },
-      ],
+      items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", silhouette: false } }],
     });
-    expect(visible.vaultVisible).toHaveBeenCalledWith("owner");
+    expect(visible.playersOf).toHaveBeenCalledWith(["owner"]);
     expect(db.cardCollection.findUnique).toHaveBeenCalledWith({
       where: { id: "s1" },
       select: expect.objectContaining({
@@ -161,17 +163,38 @@ describe("getShowcase", () => {
     });
   });
 
+  it("leaves another player's retired copies out, and shows its owner their placeholder faces", async () => {
+    const db = createMockPrisma();
+    db.cardCollection.findUnique.mockResolvedValue(row);
+    const theirs = await getShowcase(db as never, "me", "s1", visible);
+    expect(theirs!.items.map((i) => i.itemId)).toEqual(["item-c1"]);
+    const mine = await getShowcase(db as never, "owner", "s1", hidden);
+    expect(mine!.items).toMatchObject([
+      { itemId: "item-c1", face: { artwork: "https://art/c1.png" } },
+      { itemId: "item-c2", face: { artwork: null, isRetired: true } },
+    ]);
+  });
+
   it("hides a private showcase, and every showcase of an owner who hides Vault cards, from others", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue({ ...row, isPublic: false });
     await expect(getShowcase(db as never, "me", "s1", visible)).resolves.toBeNull();
+    expect(visible.playersOf).not.toHaveBeenCalled();
     db.cardCollection.findUnique.mockResolvedValue(row);
     await expect(getShowcase(db as never, "me", "s1", hidden)).resolves.toBeNull();
     await expect(getShowcase(db as never, "owner", "s1", hidden)).resolves.toMatchObject({
       isOwner: true,
+      ownerHandle: null,
     });
     db.cardCollection.findUnique.mockResolvedValue(null);
     await expect(getShowcase(db as never, "me", "s9", visible)).resolves.toBeNull();
+  });
+
+  it("hides a showcase whose owner is gone", async () => {
+    const db = createMockPrisma();
+    db.cardCollection.findUnique.mockResolvedValue(row);
+    const gone = { playersOf: jest.fn(async () => new Map()) };
+    await expect(getShowcase(db as never, "me", "s1", gone)).resolves.toBeNull();
   });
 
   it("never calls a private showcase pinned", async () => {

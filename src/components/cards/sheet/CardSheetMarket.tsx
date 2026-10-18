@@ -14,6 +14,8 @@ interface CardSheetMarketProps {
   cardId: string;
   value: number;
   market: CardSheetData["market"];
+  /** The price history is for players; a signed-out visitor does not ask for it. */
+  signedIn: boolean;
 }
 
 const credits = (amount: number) => (
@@ -25,11 +27,12 @@ const credits = (amount: number) => (
 
 const seller = (listing: SheetListing) => {
   if (listing.isMine) return "Your listing";
-  return listing.sellerHandle ? `@${listing.sellerHandle}` : "A collector";
+  // A seller whose passport hides Vault cards is not named.
+  return listing.sellerHandle ? `@${listing.sellerHandle}` : "A player";
 };
 
 /** "Market": what a copy is worth, how many want it, live listings, price history and recent sales. */
-export function CardSheetMarket({ cardId, value, market }: CardSheetMarketProps) {
+export function CardSheetMarket({ cardId, value, market, signedIn }: CardSheetMarketProps) {
   const marketHref = `${CARD_HUB_PATHS.market}?for=${encodeURIComponent(cardId)}`;
   return (
     <section aria-labelledby="sheet-market" className="space-y-3">
@@ -66,7 +69,7 @@ export function CardSheetMarket({ cardId, value, market }: CardSheetMarketProps)
           {market.listings.length > 0 ? "Bid in the market" : "Look for it in the market"}
         </Link>
       </p>
-      <CardPriceHistoryChart cardId={cardId} />
+      {signedIn && <CardPriceHistoryChart cardId={cardId} />}
       {market.recentSales.length > 0 && (
         <ul aria-label="Recent sales" className="text-footnote text-label-secondary space-y-1">
           {market.recentSales.map((sale, index) => (

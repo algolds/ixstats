@@ -18,7 +18,7 @@ import {
   ShowcaseFieldsSchema,
   updateShowcase,
 } from "~/lib/cards/hub/showcases";
-import { vaultVisible } from "./_passport";
+import { playersOf } from "./_passport";
 
 const Id = z.string().min(1).max(64);
 const Target = z.object({ showcaseId: Id });
@@ -27,9 +27,7 @@ export const cardsShowcasesRouter = createTRPCRouter({
   listMyShowcases: protectedProcedure.query(({ ctx }) => listMyShowcases(ctx.db, ctx.user.id)),
   getShowcase: protectedProcedure
     .input(Target)
-    .query(({ ctx, input }) =>
-      getShowcase(ctx.db, ctx.user.id, input.showcaseId, { vaultVisible })
-    ),
+    .query(({ ctx, input }) => getShowcase(ctx.db, ctx.user.id, input.showcaseId, { playersOf })),
   getMyDisplay: protectedProcedure.query(({ ctx }) => myDisplay(ctx.db, ctx.user.id)),
   createShowcase: rateLimitedMutationProcedure
     .input(ShowcaseFieldsSchema)

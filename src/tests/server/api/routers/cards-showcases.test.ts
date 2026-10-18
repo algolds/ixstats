@@ -19,7 +19,7 @@ jest.mock("~/lib/cards/hub/showcases", () => {
   };
 });
 jest.mock("~/server/api/routers/cards/_passport", () => ({
-  vaultVisible: jest.fn(async () => true),
+  playersOf: jest.fn(async () => new Map()),
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
@@ -35,7 +35,7 @@ import {
   removeFromShowcase,
   updateShowcase,
 } from "~/lib/cards/hub/showcases";
-import { vaultVisible } from "~/server/api/routers/cards/_passport";
+import { playersOf } from "~/server/api/routers/cards/_passport";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -52,10 +52,10 @@ const callerFor = (db = createMockPrisma()) =>
 beforeEach(() => jest.clearAllMocks());
 
 describe("cards showcases router", () => {
-  it("reads a showcase with the passport switch", async () => {
+  it("reads a showcase with its owner's passport handle and switch", async () => {
     const db = createMockPrisma();
     await callerFor(db).getShowcase({ showcaseId: "s1" });
-    expect(getShowcase).toHaveBeenCalledWith(db, "db_me", "s1", { vaultVisible });
+    expect(getShowcase).toHaveBeenCalledWith(db, "db_me", "s1", { playersOf });
   });
 
   it("adds copies as the caller, and refuses an empty pick", async () => {

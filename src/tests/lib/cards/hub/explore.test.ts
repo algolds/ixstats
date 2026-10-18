@@ -36,6 +36,7 @@ const card = (id: string, realmId = "default", cardType: "LORE" | "TROPHY" = "LO
 const query = (overrides: z.input<typeof ExploreQuerySchema> = {}) =>
   ExploreQuerySchema.parse(overrides);
 const PUBLISHED = { status: { notIn: ["draft", "generating"] } };
+const NO_TROPHIES = { cardType: { not: "TROPHY" } };
 
 describe("CATALOGUE_WHERE", () => {
   it("holds approved, unhidden cards whose home realm is published", () => {
@@ -48,8 +49,8 @@ describe("CATALOGUE_WHERE", () => {
 });
 
 describe("exploreWhere", () => {
-  it("starts from the approved catalogue and adds each filter", () => {
-    expect(exploreWhere(query(), "me")).toEqual({ ...CATALOGUE_WHERE });
+  it("starts from the approved catalogue without trophy cards, and adds each filter", () => {
+    expect(exploreWhere(query(), "me")).toEqual({ ...CATALOGUE_WHERE, ...NO_TROPHIES });
     expect(
       exploreWhere(
         query({
@@ -67,11 +68,23 @@ describe("exploreWhere", () => {
       ...CATALOGUE_WHERE,
       realmId: "r1",
       rarity: { in: ["EPIC"] },
-      cardType: { in: ["NS"] },
+      cardType: { not: "TROPHY", in: ["NS"] },
       category: { in: ["HISTORY"] },
       season: 3,
       metadata: { path: ["nsData", "region"], equals: "The Pacific" },
       title: { contains: "caph", mode: "insensitive" },
+    });
+  });
+
+  it("never lists a trophy card, even when the type filter asks for one", () => {
+    expect(exploreWhere(query({ types: ["TROPHY", "LORE"] }), "me")).toMatchObject({
+      cardType: { not: "TROPHY", in: ["TROPHY", "LORE"] },
+    });
+  });
+
+  it("matches %, _ and \\ in a title search literally", () => {
+    expect(exploreWhere(query({ search: "100%_a\\b" }), "me")).toMatchObject({
+      title: { contains: "100\\%\\_a\\\\b", mode: "insensitive" },
     });
   });
 
@@ -143,16 +156,14 @@ describe("exploreGrid", () => {
     expect(page).toEqual({ faces: [], total: 5, nextCursor: null });
   });
 
-  it("leaves out draft and generating realms, and keeps trophy cards", async () => {
+  it("leaves out draft and generating realms and trophy cards, from the page and its count", async () => {
     const db = createMockPrisma();
-    db.card.count.mockResolvedValue(1);
-    db.card.findMany.mockResolvedValue([card("trophy", "default", "TROPHY")]);
-    const page = await exploreGrid(db as never, "me", query());
+    db.card.count.mockResolvedValue(0);
+    db.card.findMany.mockResolvedValue([]);
+    await exploreGrid(db as never, "me", query());
     const where = db.card.findMany.mock.calls[0]![0].where;
-    expect(where).toMatchObject({ realm: PUBLISHED });
-    expect(where).not.toHaveProperty("cardType");
+    expect(where).toMatchObject({ realm: PUBLISHED, ...NO_TROPHIES });
     expect(db.card.count.mock.calls[0]![0]).toEqual({ where });
-    expect(page.faces.map((f) => f.cardType)).toEqual(["TROPHY"]);
   });
 });
 
@@ -172,7 +183,7 @@ describe("exploreShelves", () => {
     db.card.findMany.mockImplementation(async (args: { where: { watchlist?: object } }) =>
       args.where.watchlist ? [card("wanted")] : [card("new")]
     );
-    const shelves = await exploreShelves(db as never, "me");
+    const { shelves } = await exploreShelves(db as never, "me");
     expect(shelves.map((s) => s.realm.name)).toEqual(["Ixnay", "Big", "Small"]);
     expect(shelves[1]).toMatchObject({ cardCount: 50, bannerUrl: "https://art/banner.png" });
     expect(shelves[0]!.newest[0]!.face).toMatchObject({
@@ -194,11 +205,12 @@ describe("exploreShelves", () => {
       ["b", "a", "default"].map((id) => ({ ...realm(id, id), bannerUrl: null }))
     );
     db.card.findMany.mockResolvedValue([card("new")]);
-    const shelves = await exploreShelves(db as never, "me");
+    const { shelves, realms } = await exploreShelves(db as never, "me");
     expect(shelves.map((s) => s.realm.id)).toEqual(["default", "a", "b"]);
+    expect(realms.map((r) => r.id)).toEqual(["default", "a", "b"]);
   });
 
-  it("keeps at most twelve shelves, dropping the realms with the fewest cards", async () => {
+  it("keeps at most twelve shelves, and lists every realm with cards for the realm filters", async () => {
     const db = createMockPrisma();
     const ids = Array.from({ length: 13 }, (_, i) => `r${String(i).padStart(2, "0")}`);
     db.card.groupBy.mockResolvedValue(
@@ -206,31 +218,46 @@ describe("exploreShelves", () => {
     );
     db.realm.findMany.mockResolvedValue(ids.map((id) => ({ ...realm(id, id), bannerUrl: null })));
     db.card.findMany.mockResolvedValue([card("new")]);
-    const shelves = await exploreShelves(db as never, "me");
+    const { shelves, realms } = await exploreShelves(db as never, "me");
     expect(shelves.map((s) => s.realm.id)).toEqual(ids.slice(0, 12));
-    expect(db.realm.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { id: { in: ids.slice(0, 12) } },
-    });
+    expect(realms).toEqual(
+      ids.map((id) => ({ id, slug: id, name: id, crestUrl: null, isSystem: false }))
+    );
+    expect(db.realm.findMany.mock.calls[0]![0]).toMatchObject({ where: { id: { in: ids } } });
     expect(db.card.findMany).toHaveBeenCalledTimes(24);
   });
 
-  it("leaves out a realm with only trophy cards, and keeps the grid's total as the count", async () => {
+  it("lists a realm whose strip came back empty in the filters, but gives it no shelf", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([
       { realmId: "default", _count: { _all: 4 } },
-      { realmId: "trophies", _count: { _all: 2 } },
+      { realmId: "emptied", _count: { _all: 2 } },
     ]);
     db.realm.findMany.mockResolvedValue([
       { ...realm("default", "Ixnay"), bannerUrl: null },
-      { ...realm("trophies", "Trophies"), bannerUrl: null },
+      { ...realm("emptied", "Emptied"), bannerUrl: null },
     ]);
     db.card.findMany.mockImplementation(async (args: { where: { realmId: string } }) =>
-      args.where.realmId === "trophies" ? [] : [card("new")]
+      args.where.realmId === "emptied" ? [] : [card("new")]
     );
-    const shelves = await exploreShelves(db as never, "me");
+    const { shelves, realms } = await exploreShelves(db as never, "me");
     expect(shelves.map((s) => [s.realm.id, s.cardCount, s.newest.length])).toEqual([
       ["default", 4, 1],
     ]);
+    expect(realms.map((r) => r.id)).toEqual(["default", "emptied"]);
+  });
+
+  it("leaves out a realm it cannot read, from the shelves and the filters", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { realmId: "default", _count: { _all: 4 } },
+      { realmId: "gone", _count: { _all: 9 } },
+    ]);
+    db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
+    db.card.findMany.mockResolvedValue([card("new")]);
+    const { shelves, realms } = await exploreShelves(db as never, "me");
+    expect(shelves.map((s) => s.realm.id)).toEqual(["default"]);
+    expect(realms.map((r) => r.id)).toEqual(["default"]);
   });
 
   it("shows art on the shelves for cards the viewer holds", async () => {
@@ -239,14 +266,16 @@ describe("exploreShelves", () => {
     db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
     db.card.findMany.mockResolvedValue([card("mine")]);
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "mine" }]);
-    const [shelf] = await exploreShelves(db as never, "me");
+    const {
+      shelves: [shelf],
+    } = await exploreShelves(db as never, "me");
     expect(shelf!.newest[0]!.face).toMatchObject({
       silhouette: false,
       artwork: "https://art/mine.png",
     });
   });
 
-  it("builds shelves only for public, published realms", async () => {
+  it("counts and lists only public, published realms' cards, never trophy cards", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([]);
     await exploreShelves(db as never, "me");
@@ -256,11 +285,12 @@ describe("exploreShelves", () => {
         reviewState: "APPROVED",
         isRetired: false,
         realm: { ...PUBLISHED, visibility: "public" },
+        ...NO_TROPHIES,
       },
     });
   });
 
-  it("leaves trophy cards out of the strips but in the realm's card count", async () => {
+  it("leaves trophy cards out of the strips", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 4 } }]);
     db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
@@ -268,13 +298,8 @@ describe("exploreShelves", () => {
     const strips = db.card.findMany.mock.calls.map((call) => call[0]);
     expect(strips).toHaveLength(2);
     for (const args of strips) {
-      expect(args.where).toMatchObject({
-        ...CATALOGUE_WHERE,
-        realmId: "default",
-        cardType: { not: "TROPHY" },
-      });
+      expect(args.where).toMatchObject({ ...CATALOGUE_WHERE, realmId: "default", ...NO_TROPHIES });
     }
-    expect(db.card.groupBy.mock.calls[0]![0].where).not.toHaveProperty("cardType");
   });
 
   it("takes the six newest and the six most wanted, each with a stable order", async () => {
@@ -295,10 +320,10 @@ describe("exploreShelves", () => {
     expect(wanted.select).toEqual(select);
   });
 
-  it("has no shelves when nothing is in the catalogue", async () => {
+  it("has no shelves and no realms when nothing is in the catalogue", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([]);
-    await expect(exploreShelves(db as never, "me")).resolves.toEqual([]);
+    await expect(exploreShelves(db as never, "me")).resolves.toEqual({ shelves: [], realms: [] });
     expect(db.realm.findMany).not.toHaveBeenCalled();
   });
 });

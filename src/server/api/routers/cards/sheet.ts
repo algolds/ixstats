@@ -3,17 +3,21 @@ import { z } from "zod";
 import { cardArticleSourceSchema } from "~/lib/cards/card-sources";
 import { parseSheetFrom } from "~/lib/cards/face/sheet-link";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
-import { holderOf, vaultVisible } from "./_passport";
+import { createTRPCRouter, publicProcedure, publicReadOnlyProcedure } from "~/server/api/trpc";
+import { holderOf, playersOf, vaultVisible } from "./_passport";
 
 export const cardsSheetRouter = createTRPCRouter({
-  getSheet: protectedProcedure
+  /**
+   * Signed out too (owner decision): a visitor sees a card only where a player shows it publicly, and is asked to sign
+   * in everywhere else (`loadCardSheet`). Signed in or out, on the read-only rate limit.
+   */
+  getSheet: publicReadOnlyProcedure
     // `from` is a kind, a dot and its value: a passport handle runs to 255 characters (`holder.` plus 255).
     .input(z.object({ cardId: z.string().min(1).max(64), from: z.string().max(262).nullish() }))
     .query(({ ctx, input }) =>
-      loadCardSheet(ctx.db, ctx.user.id, input.cardId, {
+      loadCardSheet(ctx.db, ctx.user?.id ?? null, input.cardId, {
         from: parseSheetFrom(input.from),
-        rules: { vaultVisible, holderOf },
+        rules: { vaultVisible, holderOf, playersOf },
       })
     ),
 

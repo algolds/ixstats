@@ -58,7 +58,7 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
           <blockquote className="text-body">{copy.inscription.text}</blockquote>
           <figcaption className="text-label-secondary mt-1">
             Signed by{" "}
-            {copy.inscription.signerHandle ? `@${copy.inscription.signerHandle}` : "a collector"}
+            {copy.inscription.signerHandle ? `@${copy.inscription.signerHandle}` : "a player"}
             {copy.inscription.signedAt ? ` on ${longDate(copy.inscription.signedAt)}` : ""}
           </figcaption>
         </figure>
