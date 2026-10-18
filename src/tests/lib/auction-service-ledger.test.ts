@@ -14,16 +14,20 @@ jest.mock("~/lib/cards/xp-utils", () => ({
   grantCardXp: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/lib/cards/card-notify", () => ({
+  notifyCard: jest.fn().mockResolvedValue(undefined),
   notifyCards: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("~/lib/websocket/market-websocket-server", () => ({
   getMarketWebSocketServer: () => null,
 }));
+jest.mock("~/server/market-broadcast-bridge", () => ({ publishMarketEvent: jest.fn() }));
 
 import { TRPCError } from "@trpc/server";
 import { AuctionService, refundListingFeeTx } from "~/lib/economy/auction-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { notifyCards } from "~/lib/cards/card-notify";
+import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
+import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
+import { publishMarketEvent } from "~/server/market-broadcast-bridge";
 import { vaultService } from "~/lib/vault/vault-service";
 import { VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 
@@ -100,9 +104,21 @@ function makeHarness(
       }),
     },
     $queryRaw: jest.fn().mockResolvedValue([]),
-    cardAuction: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    cardAuction: {
+      // A claim that names an end matches only while the auction's end is still ahead of it
+      updateMany: jest.fn().mockImplementation(async ({ where }: { where: ClaimWhere }) => ({
+        count: endsAfter(auction.endTime, where.endTime) ? 1 : 0,
+      })),
+      create: jest.fn().mockImplementation(async ({ data }: { data: object }) => data),
+    },
     auctionBid: { create: jest.fn().mockResolvedValue({ id: "bid" }) },
     cardOwnership: {
+      findFirst: jest.fn().mockResolvedValue({
+        id: "c1",
+        cardId: "card1",
+        serialNumber: 7,
+        cards: { isBound: false },
+      }),
       update: jest.fn().mockResolvedValue({}),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
@@ -114,10 +130,24 @@ function makeHarness(
   const db: any = {
     systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
     cardAuction: { findUnique: jest.fn().mockResolvedValue(auction) },
+    auctionBid: { findMany: jest.fn().mockResolvedValue([]) },
     user: { findUnique: jest.fn().mockResolvedValue({ clerkUserId: "b" }) },
     $transaction: jest.fn().mockImplementation(async (cb: any) => cb(tx)),
   };
   return { balances, rows, tx, db };
+}
+
+/** The part of an auction claim's `where` the harness honours. */
+interface ClaimWhere {
+  endTime?: { gt?: Date; gte?: Date };
+}
+
+/** Whether `end` passes a claim's `endTime` filter (no filter passes). */
+function endsAfter(end: Date, filter: ClaimWhere["endTime"]): boolean {
+  if (!filter) return true;
+  return (
+    (filter.gt === undefined || end > filter.gt) && (filter.gte === undefined || end >= filter.gte)
+  );
 }
 
 const rowsFor = (h: Harness, userId: string) =>
@@ -130,6 +160,9 @@ function makeAuction(overrides: Record<string, unknown> = {}) {
   return {
     id: "a1",
     cardInstanceId: "c1",
+    cardId: "card1",
+    serialNumber: 7,
+    card: { title: "Test Card" },
     sellerId: "s",
     startingPrice: 100,
     currentBid: 100,
@@ -140,6 +173,7 @@ function makeAuction(overrides: Record<string, unknown> = {}) {
     bidCount: 1,
     status: "ACTIVE",
     isFeatured: false,
+    listingFee: 5,
     endTime: inTenMinutes(),
     CardOwnership: {
       id: "c1",
@@ -156,6 +190,22 @@ function makeAuction(overrides: Record<string, unknown> = {}) {
 // A listed copy is locked, so nothing burns it; the auction row outlives a copy only once the auction has ended
 const goneCopy = { cardInstanceId: null, CardOwnership: null, cardId: "card1", serialNumber: 7 };
 
+const XP = {
+  prevLevel: 1,
+  newLevel: 2,
+  prevXP: 900,
+  newXP: 1100,
+  leveledUp: true,
+  xpGained: 200,
+};
+
+/** Economy tab rows, as `systemConfig.findMany` returns them. */
+const economyRows = (values: Record<string, number>) =>
+  Object.entries(values).map(([key, value]) => ({
+    key: `card_economy_${key}`,
+    value: String(value),
+  }));
+
 const nationCopy = {
   id: "c1",
   cardId: "card1",
@@ -163,6 +213,8 @@ const nationCopy = {
   finish: "STANDARD",
   cards: { id: "card1", title: "Aurelia", cardType: "NATION", countryId: "country_1" },
 };
+/** An auction of the nation copy: its stored card is the copy's card. */
+const ofNation = { CardOwnership: nationCopy, card: { title: "Aurelia" } };
 
 /** Every card notice sent, across calls. */
 const noticesSent = () => jest.mocked(notifyCards).mock.calls.flatMap(([, notices]) => notices);
@@ -194,7 +246,10 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     jest.spyOn(console, "warn").mockImplementation(() => {});
     jest.spyOn(vaultService, "getBalance").mockResolvedValue(BALANCE);
     jest.mocked(notifyCards).mockReset().mockResolvedValue(undefined);
-    jest.mocked(grantCardXp).mockClear();
+    jest.mocked(notifyCard).mockClear();
+    jest.mocked(grantCardXp).mockReset().mockResolvedValue(XP);
+    jest.mocked(publishMarketEvent).mockReset();
+    clearEconomyConfigCache();
   });
 
   afterEach(() => {
@@ -260,6 +315,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     expect(err).toBeInstanceOf(TRPCError);
     expect(err.code).toBe("CONFLICT");
+    expect(err.message).toBe("This auction changed. Reload and try again.");
     expect(h.tx.myVault.updateMany).not.toHaveBeenCalled();
     expect(h.tx.vaultTransaction.create).not.toHaveBeenCalled();
     expect(h.tx.auctionBid.create).not.toHaveBeenCalled();
@@ -326,6 +382,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
       success: true,
+      xp: XP,
     });
 
     expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledWith({
@@ -411,10 +468,11 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
   });
 
   it("executeBuyout pays a third party's nation royalty out of the fee and tells them after the commit", async () => {
-    const h = makeHarness(
-      makeAuction({ buyoutPrice: 1000, currentBidderId: null, CardOwnership: nationCopy }),
-      { b: 1000, s: 0, o: 0 }
-    );
+    const h = makeHarness(makeAuction({ buyoutPrice: 1000, currentBidderId: null, ...ofNation }), {
+      b: 1000,
+      s: 0,
+      o: 0,
+    });
     h.tx.country.findMany.mockResolvedValue([{ id: "country_1", ownerUserId: "o" }]);
     const sends = committedAtEachNotice(h);
 
@@ -425,9 +483,12 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     expect(rowsFor(h, "o")).toEqual([
       expect.objectContaining({ credits: 20, type: "EARN_CARDS", source: "nation_card_royalty" }),
     ]);
-    expect(notifyCards).toHaveBeenCalledWith(h.db, [
-      expect.objectContaining({ userId: "o", cardId: "card1", title: "Royalty paid" }),
-    ]);
+    expect(notifyCards).toHaveBeenCalledWith(
+      h.db,
+      expect.arrayContaining([
+        expect.objectContaining({ userId: "o", cardId: "card1", title: "Royalty paid" }),
+      ])
+    );
     expect(sends).toEqual([true]);
   });
 
@@ -466,7 +527,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
   it("completeAuction: a nation card sold by its own nation's owner pays no royalty and mints nothing", async () => {
     const h = makeHarness(
-      makeAuction({ currentBid: 1000, endTime: tenMinutesAgo(), CardOwnership: nationCopy }),
+      makeAuction({ currentBid: 1000, endTime: tenMinutesAgo(), ...ofNation }),
       { s: 0, p: 0 }
     );
     h.tx.country.findMany.mockResolvedValue([{ id: "country_1", ownerUserId: "s" }]);
@@ -479,7 +540,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
   it("completeAuction pays a third party's nation royalty out of the fee and tells them after the commit", async () => {
     const h = makeHarness(
-      makeAuction({ currentBid: 1000, endTime: tenMinutesAgo(), CardOwnership: nationCopy }),
+      makeAuction({ currentBid: 1000, endTime: tenMinutesAgo(), ...ofNation }),
       { s: 0, p: 0, o: 0 }
     );
     h.tx.country.findMany.mockResolvedValue([{ id: "country_1", ownerUserId: "o" }]);
@@ -489,16 +550,19 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     // The winner's 1,000 was reserved at bid time: 900 to the seller and 20 to the owner come out of it
     expect(h.balances).toEqual({ s: 900, p: 0, o: 20 });
-    expect(notifyCards).toHaveBeenCalledWith(h.db, [
-      {
-        userId: "o",
-        cardId: "card1",
-        title: "Royalty paid",
-        message: "A copy of your nation's card, Aurelia, changed hands. You received 20 IxC.",
-        type: "success",
-        priority: "low",
-      },
-    ]);
+    expect(notifyCards).toHaveBeenCalledWith(
+      h.db,
+      expect.arrayContaining([
+        {
+          userId: "o",
+          cardId: "card1",
+          title: "Royalty paid",
+          message: "A copy of your nation's card, Aurelia, changed hands. You received 20 IxC.",
+          type: "success",
+          priority: "low",
+        },
+      ])
+    );
     expect(sends).toEqual([true]);
   });
 
@@ -525,6 +589,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     await service.completeAuction("a1", h.db);
 
     expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(h.balances.s).toBe(2.5);
   });
 
@@ -535,17 +600,19 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     await expect(service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)).resolves.toEqual({
       success: true,
+      refund: 2.5,
     });
 
     expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(h.balances.s).toBe(2.5);
   });
 
-  it("refundListingFeeTx gives the seller half the listing fee: 5 IxC of a featured listing's 10", async () => {
+  it("refundListingFeeTx gives the seller half the fee the auction stored: 5 IxC of 10", async () => {
     const h = makeHarness(makeAuction(), { s: 0 });
 
     await expect(
-      refundListingFeeTx(h.tx, { id: "a1", sellerId: "s", isFeatured: true }, "admin_cancel")
+      refundListingFeeTx(h.tx, { id: "a1", sellerId: "s", listingFee: 10 }, "admin_cancel")
     ).resolves.toBe(5);
 
     expect(rowsFor(h, "s")).toEqual([
@@ -566,6 +633,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     await expect(service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)).resolves.toEqual({
       success: true,
+      refund: 2.5,
     });
 
     expect(h.tx.cardAuction.updateMany).toHaveBeenCalledWith({
@@ -580,8 +648,462 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     });
     expect(h.balances.s).toBe(2.5);
     expect(h.tx.$queryRaw).not.toHaveBeenCalled();
-    expect(h.tx.cardOwnership.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { isLocked: false } })
+    // The seller's own copy, and no throw if it went in the meantime
+    expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledWith({
+      where: { id: "c1", ownerId: "s" },
+      data: { isLocked: false },
+    });
+  });
+  it("cancelAuction refunds the Economy tab's share of the fee it stored", async () => {
+    const h = makeHarness(
+      makeAuction({ currentBidderId: null, bidCount: 0, isFeatured: true, listingFee: 10 }),
+      { s: 0 }
     );
+    h.tx.systemConfig.findMany.mockResolvedValue(economyRows({ listing_refund_pct: 30 }));
+
+    await expect(service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)).resolves.toEqual({
+      success: true,
+      refund: 3,
+    });
+    expect(h.balances.s).toBe(3);
+  });
+
+  it("refundListingFeeTx pays nothing and writes no row for a free listing", async () => {
+    const h = makeHarness(makeAuction(), { s: 0 });
+
+    await expect(
+      refundListingFeeTx(h.tx, { id: "a1", sellerId: "s", listingFee: 0 }, "cancelled")
+    ).resolves.toBe(0);
+    expect(h.rows).toEqual([]);
+  });
+
+  it("placeBid tells the outbid bidder after the commit, through the card's mute", async () => {
+    const h = makeHarness(makeAuction(), { b: 1000, p: 0 });
+    let committed = false;
+    h.db.$transaction.mockImplementation(async (cb: (client: Harness["tx"]) => Promise<void>) => {
+      await cb(h.tx);
+      committed = true;
+    });
+    const sends: boolean[] = [];
+    jest.mocked(notifyCard).mockImplementation(async () => {
+      sends.push(committed);
+    });
+
+    await service.placeBid({ userId: "b", auctionId: "a1", amount: 200 }, h.db);
+
+    expect(notifyCard).toHaveBeenCalledWith(h.db, {
+      userId: "p",
+      cardId: "card1",
+      title: "You've been outbid",
+      message: "Someone placed a higher bid of 200 IxC on Test Card.",
+      type: "warning",
+      priority: "high",
+      metadata: { auctionId: "a1", newBid: 200 },
+    });
+    expect(sends).toEqual([true]);
+  });
+
+  it("placeBid tells no one when nobody was outbid", async () => {
+    const h = makeHarness(makeAuction({ currentBidderId: null, bidCount: 0 }), { b: 1000 });
+
+    await service.placeBid({ userId: "b", auctionId: "a1", amount: 200 }, h.db);
+
+    expect(notifyCard).not.toHaveBeenCalled();
+  });
+
+  describe("createAuction", () => {
+    const listing = { userId: "s", cardId: "c1", startingPrice: 50 };
+
+    it("charges the listing fee inside the listing transaction, stores it and ends at the chosen duration", async () => {
+      const h = makeHarness(makeAuction(), { s: 100 });
+      const before = Date.now();
+
+      const auction = await service.createAuction(
+        { ...listing, duration: "3d", isFeatured: true },
+        h.db
+      );
+
+      expect(h.balances.s).toBe(90);
+      expect(rowsFor(h, "s")).toEqual([
+        expect.objectContaining({
+          credits: -10,
+          type: "SPEND_MARKET",
+          source: "auction_listing_fee",
+        }),
+      ]);
+      expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledWith({
+        where: { id: "c1", ownerId: "s", isLocked: false },
+        data: { isLocked: true },
+      });
+      expect(auction).toMatchObject({
+        cardInstanceId: "c1",
+        cardId: "card1",
+        serialNumber: 7,
+        sellerId: "s",
+        startingPrice: 50,
+        currentBid: 50,
+        listingFee: 10,
+        isFeatured: true,
+        status: "ACTIVE",
+      });
+      const lasts = auction.endTime.getTime() - before;
+      expect(lasts).toBeGreaterThanOrEqual(72 * 60 * 60 * 1000);
+      expect(lasts).toBeLessThan(72 * 60 * 60 * 1000 + 60_000);
+    });
+
+    it.each([
+      [false, 7],
+      [true, 12],
+    ])(
+      "charges and stores the Economy tab's fee (featured %s: %i IxC)",
+      async (isFeatured, fee) => {
+        const h = makeHarness(makeAuction(), { s: 100 });
+        h.db.systemConfig.findMany.mockResolvedValue(
+          economyRows({ listing_fee: 7, listing_fee_featured: 12 })
+        );
+
+        const auction = await service.createAuction(
+          { ...listing, duration: "24h", isFeatured },
+          h.db
+        );
+
+        expect(auction).toMatchObject({ listingFee: fee, isFeatured });
+        expect(h.balances.s).toBe(100 - fee);
+      }
+    );
+
+    it("lists for free when the Economy tab's fee is 0, writing no ledger row", async () => {
+      const h = makeHarness(makeAuction(), { s: 100 });
+      h.db.systemConfig.findMany.mockResolvedValue(economyRows({ listing_fee: 0 }));
+
+      const auction = await service.createAuction({ ...listing, duration: "7d" }, h.db);
+
+      expect(auction).toMatchObject({ listingFee: 0, isFeatured: false });
+      expect(h.rows).toEqual([]);
+    });
+
+    it("charges nothing when the copy is already locked", async () => {
+      const h = makeHarness(makeAuction(), { s: 100 });
+      h.tx.cardOwnership.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.createAuction({ ...listing, duration: "24h" }, h.db)
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(h.balances.s).toBe(100);
+      expect(h.rows).toEqual([]);
+      expect(h.tx.cardAuction.create).not.toHaveBeenCalled();
+    });
+
+    it("refuses a copy the seller does not hold, charging nothing", async () => {
+      const h = makeHarness(makeAuction(), { s: 100 });
+      h.tx.cardOwnership.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.createAuction({ ...listing, duration: "24h" }, h.db)
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(h.tx.cardOwnership.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: "c1", ownerId: "s" } })
+      );
+      expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+      expect(h.rows).toEqual([]);
+    });
+
+    it("refuses a fee the seller cannot pay, listing nothing", async () => {
+      const h = makeHarness(makeAuction(), { s: 3 });
+
+      await expect(
+        service.createAuction({ ...listing, duration: "24h" }, h.db)
+      ).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: expect.stringMatching(/^Insufficient/),
+      });
+      await expect(h.db.$transaction.mock.results[0].value).rejects.toBeDefined();
+      expect(h.tx.cardAuction.create).not.toHaveBeenCalled();
+    });
+
+    it.each([50, 40])(
+      "refuses a buy-now price of %i IxC, at or under the start, before anything moves",
+      async (buyoutPrice) => {
+        const h = makeHarness(makeAuction(), { s: 100 });
+
+        await expect(
+          service.createAuction({ ...listing, buyoutPrice, duration: "24h" }, h.db)
+        ).rejects.toMatchObject({
+          code: "BAD_REQUEST",
+          message: "Buyout price must be higher than starting price",
+        });
+        expect(h.db.$transaction).not.toHaveBeenCalled();
+      }
+    );
+
+    it("refuses a starting price that is not a whole IxC", async () => {
+      const h = makeHarness(makeAuction(), { s: 100 });
+
+      await expect(
+        service.createAuction({ ...listing, startingPrice: 1.5, duration: "24h" }, h.db)
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(h.db.$transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("completeAuction", () => {
+    const unsold = (overrides: Parameters<typeof makeAuction>[0] = {}) =>
+      makeAuction({ currentBidderId: null, endTime: tenMinutesAgo(), ...overrides });
+    const sold = () =>
+      makeAuction({ currentBid: 500, currentBidderId: "p", endTime: tenMinutesAgo() });
+
+    it("an auction with no bids refunds half of the fee it stored and unlocks the seller's copy", async () => {
+      const h = makeHarness(unsold({ listingFee: 10 }), { s: 0 });
+
+      await service.completeAuction("a1", h.db);
+
+      expect(h.tx.cardAuction.updateMany).toHaveBeenCalledWith({
+        where: { id: "a1", status: "ACTIVE", currentBidderId: null, currentBid: 100 },
+        data: { status: "CANCELLED" },
+      });
+      expect(rowsFor(h, "s")).toEqual([
+        expect.objectContaining({ credits: 5, type: "REFUND", source: "auction_fee_refund" }),
+      ]);
+      expect(JSON.parse(rowsFor(h, "s")[0].metadata)).toEqual({
+        auctionId: "a1",
+        reason: "no_bids",
+      });
+      expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledWith({
+        where: { id: "c1", ownerId: "s" },
+        data: { isLocked: false },
+      });
+    });
+
+    it("an unsold auction whose claim is lost writes no row, unlocks nothing and tells no one", async () => {
+      const h = makeHarness(unsold({ listingFee: 10 }), { s: 0 });
+      // A player cancel or another cron run settled it first
+      h.tx.cardAuction.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.completeAuction("a1", h.db)).resolves.toBeUndefined();
+
+      expect(h.rows).toEqual([]);
+      expect(h.balances.s).toBe(0);
+      expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+      expect(notifyCards).not.toHaveBeenCalled();
+    });
+
+    it("a broadcast failure after the commit neither fails the sale nor skips its notices", async () => {
+      const h = makeHarness(sold(), { s: 0 });
+      jest.mocked(publishMarketEvent).mockImplementation(() => {
+        throw new Error("socket closed");
+      });
+
+      await expect(service.completeAuction("a1", h.db)).resolves.toBeUndefined();
+
+      expect(h.balances.s).toBe(450);
+      expect(noticesSent().map((n) => n.userId)).toEqual(["p", "s"]);
+    });
+
+    it("refunds the Economy tab's share of the stored fee", async () => {
+      const h = makeHarness(unsold({ listingFee: 10 }), { s: 0 });
+      h.tx.systemConfig.findMany.mockResolvedValue(economyRows({ listing_refund_pct: 25 }));
+
+      await service.completeAuction("a1", h.db);
+
+      expect(h.balances.s).toBe(2.5);
+    });
+
+    it("tells the seller of an unsold auction after the commit, and reads no bidders", async () => {
+      const h = makeHarness(unsold(), { s: 0 });
+      const sends = committedAtEachNotice(h);
+
+      await service.completeAuction("a1", h.db);
+
+      expect(noticesSent()).toEqual([
+        {
+          userId: "s",
+          cardId: "card1",
+          metadata: { auctionId: "a1" },
+          title: "Your auction ended with no bids",
+          message: "Test Card is back in your collection. We refunded 2.5 IxC of the listing fee.",
+          priority: "low",
+        },
+      ]);
+      expect(sends).toEqual([true]);
+      expect(h.db.auctionBid.findMany).not.toHaveBeenCalled();
+    });
+
+    it("refunds nothing for a free listing, and the notice names no refund", async () => {
+      const h = makeHarness(unsold({ listingFee: 0 }), { s: 0 });
+
+      await service.completeAuction("a1", h.db);
+
+      expect(h.rows).toEqual([]);
+      expect(noticesSent()).toEqual([
+        expect.objectContaining({ userId: "s", message: "Test Card is back in your collection." }),
+      ]);
+    });
+
+    it("grants the winner's XP inside the transaction and tells every bidder after the commit", async () => {
+      const h = makeHarness(sold(), { s: 0 });
+      h.db.auctionBid.findMany.mockResolvedValue([{ bidderId: "p" }, { bidderId: "q" }]);
+      const sends = committedAtEachNotice(h);
+
+      await service.completeAuction("a1", h.db);
+
+      expect(grantCardXp).toHaveBeenCalledWith(
+        h.tx,
+        "c1",
+        "AUCTION_WIN",
+        JSON.stringify({ auctionId: "a1" })
+      );
+      expect(h.db.auctionBid.findMany).toHaveBeenCalledWith({
+        where: { auctionId: "a1" },
+        select: { bidderId: true },
+        distinct: ["bidderId"],
+      });
+      expect(noticesSent().map((n) => [n.userId, n.title, n.message])).toEqual([
+        ["p", "You won an auction", "Test Card is yours for 500 IxC."],
+        [
+          "s",
+          "Your auction sold",
+          "Test Card sold for 500 IxC. You received 450 IxC after the market fee.",
+        ],
+        ["q", "An auction you bid on ended", "Test Card went for 500 IxC. Your bid was refunded."],
+      ]);
+      expect(sends).toEqual([true]);
+    });
+
+    it.each([
+      ["sending the notices", (h: Harness) => h.db.auctionBid.findMany.mockResolvedValue([])],
+      [
+        "reading the bidders",
+        (h: Harness) => h.db.auctionBid.findMany.mockRejectedValue(new Error("db blip")),
+      ],
+    ])("a failure %s after the commit never fails the sale", async (_step, arrange) => {
+      const h = makeHarness(sold(), { s: 0 });
+      arrange(h);
+      jest.mocked(notifyCards).mockRejectedValue(new Error("tray down"));
+
+      await expect(service.completeAuction("a1", h.db)).resolves.toBeUndefined();
+      expect(h.balances.s).toBe(450);
+    });
+  });
+
+  describe("executeBuyout", () => {
+    const withBid = (overrides: Parameters<typeof makeAuction>[0] = {}) =>
+      makeAuction({ buyoutPrice: 800, currentBid: 300, currentBidderId: "p", ...overrides });
+
+    it("refuses an auction that has ended though the cron has not settled it, moving no money", async () => {
+      const h = makeHarness(withBid({ endTime: new Date(Date.now() - 30_000) }), {
+        b: 1000,
+        p: 0,
+        s: 0,
+      });
+
+      await expect(
+        service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+      expect(h.tx.cardAuction.updateMany.mock.calls[0][0].where).toEqual({
+        id: "a1",
+        status: "ACTIVE",
+        currentBid: 300,
+        currentBidderId: "p",
+        endTime: { gt: expect.any(Date) },
+      });
+      expect(h.rows).toEqual([]);
+      expect(h.balances).toEqual({ b: 1000, p: 0, s: 0 });
+      expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses a buyout at the very moment the auction ends", async () => {
+      const end = new Date("2026-10-18T12:00:00.000Z");
+      jest.useFakeTimers({ now: end, doNotFake: ["nextTick", "queueMicrotask", "setImmediate"] });
+      try {
+        const h = makeHarness(withBid({ endTime: end }), { b: 1000, p: 0, s: 0 });
+
+        await expect(
+          service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)
+        ).rejects.toMatchObject({ code: "CONFLICT" });
+        expect(h.rows).toEqual([]);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("grants the buyer's XP inside the buyout's transaction and returns it", async () => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+
+      await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
+        success: true,
+        xp: XP,
+      });
+      expect(grantCardXp).toHaveBeenCalledWith(
+        h.tx,
+        "c1",
+        "AUCTION_WIN",
+        JSON.stringify({ auctionId: "a1" })
+      );
+    });
+
+    it("a broadcast failure after the commit neither fails the buyout nor skips its notices", async () => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+      jest.mocked(publishMarketEvent).mockImplementation(() => {
+        throw new Error("socket closed");
+      });
+
+      await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
+        success: true,
+        xp: XP,
+      });
+      expect(h.balances).toEqual({ b: 200, p: 300, s: 720 });
+      expect(noticesSent().map((n) => n.userId)).toEqual(["b", "s"]);
+    });
+
+    it("rolls the whole buyout back when the XP grant fails", async () => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+      jest.mocked(grantCardXp).mockRejectedValue(new Error("deadlock"));
+
+      await expect(
+        service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)
+      ).rejects.toMatchObject({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to execute buyout",
+      });
+      await expect(h.db.$transaction.mock.results[0].value).rejects.toThrow("deadlock");
+      expect(noticesSent()).toEqual([]);
+    });
+
+    it("tells the buyer, the seller and the outbid bidder after the commit", async () => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+      h.db.auctionBid.findMany.mockResolvedValue([{ bidderId: "p" }, { bidderId: "b" }]);
+      const sends = committedAtEachNotice(h);
+
+      await service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db);
+
+      expect(noticesSent().map((n) => [n.userId, n.title, n.message])).toEqual([
+        ["b", "You won an auction", "Test Card is yours for 800 IxC."],
+        [
+          "s",
+          "Your auction was bought out",
+          "Test Card sold for 800 IxC. You received 720 IxC after the market fee.",
+        ],
+        ["p", "An auction you bid on ended", "Test Card went for 800 IxC. Your bid was refunded."],
+      ]);
+      expect(sends).toEqual([true]);
+    });
+
+    it.each([
+      ["sending the notices", (h: Harness) => h.db.auctionBid.findMany.mockResolvedValue([])],
+      [
+        "reading the bidders",
+        (h: Harness) => h.db.auctionBid.findMany.mockRejectedValue(new Error("db blip")),
+      ],
+    ])("a failure %s after the commit never fails the buyout", async (_step, arrange) => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+      arrange(h);
+      jest.mocked(notifyCards).mockRejectedValue(new Error("tray down"));
+
+      await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
+        success: true,
+        xp: XP,
+      });
+      expect(h.balances).toEqual({ b: 200, p: 300, s: 720 });
+    });
   });
 });

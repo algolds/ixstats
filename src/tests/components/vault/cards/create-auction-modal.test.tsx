@@ -162,22 +162,49 @@ describe("CreateAuctionModal", () => {
       cardId: "o2",
       startingPrice: 40,
       buyoutPrice: 90,
-      duration: "60",
+      duration: "24h",
     });
+  });
+
+  it("runs for 24 hours, 3 days or 7 days, 24 hours unless another is picked", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} />);
+    const durations = within(screen.getByRole("radiogroup", { name: "Duration" })).getAllByRole(
+      "radio"
+    );
+    expect(durations.map((option) => option.textContent)).toEqual(["24 hours", "3 days", "7 days"]);
+    expect(screen.getByRole("radio", { name: "24 hours" })).toBeChecked();
+  });
+
+  it("says what listing costs without naming a fee the Economy tab may have changed", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(
+      screen.getByText(
+        "There is a small listing fee, and half comes back if the card does not sell."
+      )
+    ).toBeInTheDocument();
   });
 
   it("starts on the copy the sheet sent, and leaves the buy-now price out when it is empty", () => {
     render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o1" />);
     expect(screen.getByRole("button", { name: /#4/ })).toHaveAttribute("aria-pressed", "true");
     field(/Starting price/, "25");
-    fireEvent.click(screen.getByRole("radio", { name: "30 minutes" }));
+    fireEvent.click(screen.getByRole("radio", { name: "3 days" }));
     fireEvent.click(list());
     expect(listing()).toEqual({
       cardId: "o1",
       startingPrice: 25,
       buyoutPrice: undefined,
-      duration: "30",
+      duration: "3d",
     });
+  });
+
+  it("starts over at 24 hours when it is closed", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o1" />);
+    fireEvent.click(screen.getByRole("radio", { name: "7 days" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    field(/Starting price/, "25");
+    fireEvent.click(list());
+    expect(listing()).toMatchObject({ duration: "24h" });
   });
 
   it("reads the copy a link names on its own, and only when a link names one", () => {

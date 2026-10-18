@@ -4,7 +4,7 @@ jest.mock("~/lib/vault/vault-service", () => ({
   getVaultConfig: jest
     .fn()
     .mockResolvedValue({ isMaintenanceMode: false, isAuctionsEnabled: true }),
-  vaultService: { getBalance: jest.fn(), spendCredits: jest.fn(), earnCredits: jest.fn() },
+  vaultService: { spendCreditsTx: jest.fn() },
   LedgerError: class LedgerError extends Error {},
 }));
 jest.mock("~/lib/websocket/market-websocket-server", () => ({
@@ -56,20 +56,24 @@ describe("bound copies never move", () => {
 
   it("refuses to list a bound copy at auction, charging no fee", async () => {
     const db = createMockPrisma();
-    db.cardOwnership.findFirst.mockResolvedValue({
+    const tx = createMockPrisma();
+    db.$transaction = jest.fn((cb: (client: typeof tx) => Promise<object>) => cb(tx));
+    // The listing transaction reads the copy
+    tx.cardOwnership.findFirst.mockResolvedValue({
       id: "o1",
-      ownerId: "u1",
-      isLocked: false,
+      cardId: "card_1",
+      serialNumber: 1,
       cards: { isBound: true },
     });
     await expect(
       new AuctionService().createAuction(
-        { userId: "u1", cardId: "o1", startingPrice: 10, duration: 60 },
+        { userId: "u1", cardId: "o1", startingPrice: 10, duration: "24h" },
         db as never
       )
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
-    expect(vaultService.spendCredits).not.toHaveBeenCalled();
-    expect(db.cardAuction.create).not.toHaveBeenCalled();
+    expect(vaultService.spendCreditsTx).not.toHaveBeenCalled();
+    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(tx.cardAuction.create).not.toHaveBeenCalled();
   });
 });
 

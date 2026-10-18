@@ -14,7 +14,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
-import { grantCardXp } from "~/lib/cards/xp-utils";
+import { AUCTION_DURATIONS, AUCTION_DURATION_LABEL } from "~/lib/cards/market/auction-timing";
 import { globalCache } from "~/lib/cache";
 import { assertAuthUserId } from "./_shared";
 
@@ -31,9 +31,9 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     .input(
       z.object({
         cardId: z.string().min(1, "Card ID is required"),
-        startingPrice: z.number().min(1, "Starting price must be at least 1 IxCredit"),
-        buyoutPrice: z.number().min(1).optional(),
-        duration: z.union([z.literal("30"), z.literal("60")]),
+        startingPrice: z.number().int().min(1, "Starting price must be at least 1 IxCredit"),
+        buyoutPrice: z.number().int().min(1).optional(),
+        duration: z.enum(AUCTION_DURATIONS),
         isFeatured: z.boolean().optional().default(false),
       })
     )
@@ -41,32 +41,26 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
       try {
         assertAuthUserId(ctx);
 
-        // Validate buyout price if provided
-        if (input.buyoutPrice && input.buyoutPrice <= input.startingPrice) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Buyout price must be higher than starting price",
-          });
-        }
-
+        // The service owns the price rules (a buy-now price above the start)
         const auction = await auctionService.createAuction(
           {
             userId: ctx.user.id,
             cardId: input.cardId,
             startingPrice: input.startingPrice,
             buyoutPrice: input.buyoutPrice,
-            duration: parseInt(input.duration) as 30 | 60,
+            duration: input.duration,
             isFeatured: input.isFeatured,
           },
           ctx.db
         );
+        const message = `Auction created. It ends in ${AUCTION_DURATION_LABEL[input.duration]}.`;
 
         // Notification: auction listed (fire-and-forget)
         try {
           await notificationAPI.create({
             userId: ctx.auth.userId,
-            title: "Auction Listed",
-            message: `Your card is now up for auction. Ends in ${input.duration} minutes.`,
+            title: "Auction listed",
+            message,
             type: "info",
             category: "economic",
             priority: "low",
@@ -88,11 +82,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
             : []),
         ]);
 
-        return {
-          success: true,
-          auction,
-          message: `Auction created successfully! Ends in ${input.duration} minutes.`,
-        };
+        return { success: true, auction, message };
       } catch (error) {
         console.error("[Card Market Router] Error creating auction:", error);
         if (error instanceof TRPCError) {
@@ -129,51 +119,14 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
           },
         });
 
-        await auctionService.executeBuyout(
+        // The service grants the copy's XP inside the buyout and tells the seller and bidders after it
+        const { xp } = await auctionService.executeBuyout(
           {
             userId: ctx.user.id,
             auctionId: input.auctionId,
           },
           ctx.db
         );
-
-        // Notification: notify seller about buyout (fire-and-forget)
-        let auctionXpResult: Awaited<ReturnType<typeof grantCardXp>> | null = null;
-        try {
-          const auction = await ctx.db.cardAuction.findUnique({
-            where: { id: input.auctionId },
-            select: {
-              sellerId: true,
-              buyoutPrice: true,
-              cardInstanceId: true,
-              User: {
-                select: { clerkUserId: true },
-              },
-            },
-          });
-          if (auction && auction.User?.clerkUserId !== ctx.auth.userId) {
-            await notificationAPI.create({
-              userId: auction.User.clerkUserId,
-              title: "Card Sold!",
-              message: `Your card was purchased via buyout for ${auction.buyoutPrice} IxCredits`,
-              type: "info",
-              category: "economic",
-              priority: "high",
-              metadata: { auctionId: input.auctionId },
-            });
-          }
-
-          // Card XP for the bought copy, as for an auction win
-          if (auction?.cardInstanceId) {
-            auctionXpResult = await grantCardXp(ctx.db, auction.cardInstanceId, "AUCTION_WIN");
-          }
-        } catch (err) {
-          console.warn(
-            "[Card Market Router] Buyout notification/XP grant failed for auction",
-            input.auctionId,
-            err
-          );
-        }
 
         if (auctionInfo) {
           await Promise.all([
@@ -194,10 +147,10 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: "Card purchased successfully!",
-          leveledUp: auctionXpResult?.leveledUp ?? false,
-          newLevel: auctionXpResult?.newLevel,
-          xpGained: auctionXpResult?.xpGained,
+          message: "Card purchased.",
+          leveledUp: xp.leveledUp,
+          newLevel: xp.newLevel,
+          xpGained: xp.xpGained,
         };
       } catch (error) {
         console.error("[Card Market Router] Error executing buyout:", error);
@@ -225,58 +178,14 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
       try {
         assertAuthUserId(ctx);
 
-        // Get bidder before cancellation (fire-and-forget notification)
-        let currentBidderClerkId: string | null = null;
-        let currentBidderId: string | null = null;
-        try {
-          const auction = await ctx.db.cardAuction.findUnique({
-            where: { id: input.auctionId },
-            select: { currentBidderId: true },
-          });
-          currentBidderId = auction?.currentBidderId ?? null;
-          if (currentBidderId) {
-            const bidder = await ctx.db.user.findUnique({
-              where: { id: currentBidderId },
-              select: { clerkUserId: true },
-            });
-            currentBidderClerkId = bidder?.clerkUserId ?? null;
-          }
-        } catch (err) {
-          console.warn(
-            "[Card Market Router] Bidder lookup failed for auction",
-            input.auctionId,
-            err
-          );
-        }
-
-        await auctionService.cancelAuction(
+        // An auction with a bid cannot be cancelled, so there is never a bidder to tell or refund
+        const { refund } = await auctionService.cancelAuction(
           {
             userId: ctx.user.id,
             auctionId: input.auctionId,
           },
           ctx.db
         );
-
-        // Notification: notify current bidder about cancellation
-        try {
-          if (currentBidderClerkId && currentBidderClerkId !== ctx.auth.userId) {
-            await notificationAPI.create({
-              userId: currentBidderClerkId,
-              title: "Auction Cancelled",
-              message: "An auction you bid on has been cancelled",
-              type: "info",
-              category: "economic",
-              priority: "medium",
-              metadata: { auctionId: input.auctionId },
-            });
-          }
-        } catch (err) {
-          console.warn(
-            "[Card Market Router] Cancellation notification failed for auction",
-            input.auctionId,
-            err
-          );
-        }
 
         await Promise.all([
           // Invalidate seller
@@ -285,16 +194,14 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
           ...(ctx.auth?.userId
             ? [globalCache.delete(`user_vault_balance:${ctx.auth.userId}`)]
             : []),
-          // Invalidate current bidder if refunded
-          ...(currentBidderId ? [globalCache.delete(`user_vault_balance:${currentBidderId}`)] : []),
-          ...(currentBidderClerkId
-            ? [globalCache.delete(`user_vault_balance:${currentBidderClerkId}`)]
-            : []),
         ]);
 
         return {
           success: true,
-          message: "Auction cancelled successfully. 50% of listing fee has been refunded.",
+          message:
+            refund > 0
+              ? `Auction cancelled. We refunded ${refund} IxC of the listing fee.`
+              : "Auction cancelled.",
         };
       } catch (error) {
         console.error("[Card Market Router] Error cancelling auction:", error);

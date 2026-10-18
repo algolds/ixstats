@@ -23,18 +23,12 @@ jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn().mockResolvedValue(undefined) },
 }));
 
-jest.mock("~/lib/cards/xp-utils", () => ({
-  __esModule: true,
-  grantCardXp: jest.fn().mockResolvedValue({ leveledUp: true, newLevel: 2, xpGained: 50 }),
-}));
-
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { TRPCError } from "@trpc/server";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
 import { auctionService } from "~/lib/economy/auction-service";
 import { notificationAPI } from "~/lib/notifications/api";
-import { grantCardXp } from "~/lib/cards/xp-utils";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -59,8 +53,11 @@ beforeEach(() => {
   jest.clearAllMocks();
   db = createMockPrisma();
   service.createAuction!.mockResolvedValue({ id: "auction_1" });
-  service.executeBuyout!.mockResolvedValue(undefined);
-  service.cancelAuction!.mockResolvedValue(undefined);
+  service.executeBuyout!.mockResolvedValue({
+    success: true,
+    xp: { prevLevel: 1, newLevel: 2, prevXP: 950, newXP: 1000, leveledUp: true, xpGained: 50 },
+  });
+  service.cancelAuction!.mockResolvedValue({ success: true, refund: 2.5 });
   service.placeBid!.mockResolvedValue(undefined);
   service.getActiveAuctions!.mockResolvedValue({ auctions: [], total: 0 });
 });
@@ -69,7 +66,7 @@ describe("authentication", () => {
   it("rejects signed-out callers on every kind of procedure", async () => {
     const anon = callerAs(null, db);
     await expect(
-      anon.createAuction({ cardId: "own_1", startingPrice: 10, duration: "30" })
+      anon.createAuction({ cardId: "own_1", startingPrice: 10, duration: "24h" })
     ).rejects.toThrow(/Authentication required/);
     await expect(anon.placeBid({ auctionId: "a1", amount: 5 })).rejects.toThrow(
       /Authentication required/
@@ -82,12 +79,12 @@ describe("authentication", () => {
 });
 
 describe("createAuction", () => {
-  it("lists the card as the caller and notifies them", async () => {
+  it("lists the card as the caller for the duration picked, and notifies them", async () => {
     const result = await callerAs("seller", db).createAuction({
       cardId: "own_1",
       startingPrice: 10,
       buyoutPrice: 50,
-      duration: "60",
+      duration: "3d",
     });
 
     expect(service.createAuction).toHaveBeenCalledWith(
@@ -96,36 +93,75 @@ describe("createAuction", () => {
         cardId: "own_1",
         startingPrice: 10,
         buyoutPrice: 50,
-        duration: 60,
+        duration: "3d",
         isFeatured: false,
       },
       db
     );
-    expect(result).toMatchObject({ success: true, auction: { id: "auction_1" } });
+    expect(result).toMatchObject({
+      success: true,
+      auction: { id: "auction_1" },
+      message: "Auction created. It ends in 3 days.",
+    });
     expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "clerk_seller", title: "Auction Listed" })
+      expect.objectContaining({
+        userId: "clerk_seller",
+        title: "Auction listed",
+        message: "Auction created. It ends in 3 days.",
+      })
     );
   });
 
-  it("rejects a buyout at or below the starting price", async () => {
+  it("refuses prices that are not whole IxC before reaching the service", async () => {
+    const seller = callerAs("seller", db);
     await expect(
-      callerAs("seller", db).createAuction({
+      seller.createAuction({ cardId: "own_1", startingPrice: 10.5, duration: "24h" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      seller.createAuction({
         cardId: "own_1",
-        startingPrice: 50,
-        buyoutPrice: 50,
-        duration: "30",
+        startingPrice: 10,
+        buyoutPrice: 20.5,
+        duration: "24h",
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(service.createAuction).not.toHaveBeenCalled();
   });
 
+  it("leaves the buy-now rule to the service, whose refusal passes through", async () => {
+    service.createAuction!.mockRejectedValue(
+      new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Buyout price must be higher than starting price",
+      })
+    );
+    await expect(
+      callerAs("seller", db).createAuction({
+        cardId: "own_1",
+        startingPrice: 50,
+        buyoutPrice: 50,
+        duration: "24h",
+      })
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Buyout price must be higher than starting price",
+    });
+    expect(service.createAuction).toHaveBeenCalledWith(
+      expect.objectContaining({ startingPrice: 50, buyoutPrice: 50 }),
+      db
+    );
+  });
+
   it("validates the duration and starting price", async () => {
     const seller = callerAs("seller", db);
+    // The old 30 and 60 minute auctions are gone
+    for (const duration of ["30", "60", "1d"]) {
+      await expect(
+        seller.createAuction({ cardId: "own_1", startingPrice: 10, duration: duration as never })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    }
     await expect(
-      seller.createAuction({ cardId: "own_1", startingPrice: 10, duration: "45" as never })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    await expect(
-      seller.createAuction({ cardId: "own_1", startingPrice: 0, duration: "30" })
+      seller.createAuction({ cardId: "own_1", startingPrice: 0, duration: "24h" })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(service.createAuction).not.toHaveBeenCalled();
   });
@@ -135,14 +171,14 @@ describe("createAuction", () => {
       new TRPCError({ code: "FORBIDDEN", message: "You do not own this card" })
     );
     await expect(
-      callerAs("thief", db).createAuction({ cardId: "own_1", startingPrice: 10, duration: "30" })
+      callerAs("thief", db).createAuction({ cardId: "own_1", startingPrice: 10, duration: "7d" })
     ).rejects.toMatchObject({ code: "FORBIDDEN", message: "You do not own this card" });
   });
 
   it("hides unexpected failures behind a generic error", async () => {
     service.createAuction!.mockRejectedValue(new Error("connection reset"));
     await expect(
-      callerAs("seller", db).createAuction({ cardId: "own_1", startingPrice: 10, duration: "30" })
+      callerAs("seller", db).createAuction({ cardId: "own_1", startingPrice: 10, duration: "7d" })
     ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create auction" });
   });
 });
@@ -183,36 +219,48 @@ describe("placeBid", () => {
 });
 
 describe("executeBuyout", () => {
-  it("buys as the caller, notifies the seller and grants card XP", async () => {
+  it("buys as the caller and reports the XP the service granted in its transaction", async () => {
     db.cardAuction.findUnique.mockResolvedValue({
       sellerId: "seller",
-      buyoutPrice: 90,
-      cardInstanceId: "own_1",
       User: { clerkUserId: "clerk_seller" },
     });
 
     const result = await callerAs("buyer", db).executeBuyout({ auctionId: "a1" });
 
     expect(service.executeBuyout).toHaveBeenCalledWith({ userId: "buyer", auctionId: "a1" }, db);
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "clerk_seller", title: "Card Sold!" })
-    );
-    expect(grantCardXp).toHaveBeenCalledWith(db as never, "own_1", "AUCTION_WIN");
-    expect(result).toMatchObject({ success: true, leveledUp: true, newLevel: 2 });
+    // The service tells the seller after its commit; the router sends nothing of its own
+    expect(notify).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      success: true,
+      message: "Card purchased.",
+      leveledUp: true,
+      newLevel: 2,
+      xpGained: 50,
+    });
   });
 });
 
 describe("cancelAuction", () => {
-  it("cancels as the caller and tells the outbid bidder", async () => {
-    db.cardAuction.findUnique.mockResolvedValue({ currentBidderId: "bidder" });
-    db.user.findUnique.mockResolvedValue({ clerkUserId: "clerk_bidder" });
-
-    await callerAs("seller", db).cancelAuction({ auctionId: "a1" });
+  it("cancels as the caller and says what came back, telling no bidder (an auction with a bid cannot be cancelled)", async () => {
+    const result = await callerAs("seller", db).cancelAuction({ auctionId: "a1" });
 
     expect(service.cancelAuction).toHaveBeenCalledWith({ userId: "seller", auctionId: "a1" }, db);
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: "clerk_bidder", title: "Auction Cancelled" })
-    );
+    expect(result).toEqual({
+      success: true,
+      message: "Auction cancelled. We refunded 2.5 IxC of the listing fee.",
+    });
+    expect(db.cardAuction.findUnique).not.toHaveBeenCalled();
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it("names no refund when the listing was free", async () => {
+    service.cancelAuction!.mockResolvedValue({ success: true, refund: 0 });
+
+    await expect(callerAs("seller", db).cancelAuction({ auctionId: "a1" })).resolves.toEqual({
+      success: true,
+      message: "Auction cancelled.",
+    });
   });
 
   it("passes the service's refusal for someone else's auction", async () => {

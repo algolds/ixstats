@@ -408,7 +408,7 @@ describe("adminCancelAuction", () => {
     cardInstanceId: "own_1",
     currentBid: 120,
     currentBidderId: "bidder",
-    isFeatured: false,
+    listingFee: 5,
     endTime: new Date(Date.now() + 3_600_000),
   };
 
@@ -419,6 +419,11 @@ describe("adminCancelAuction", () => {
 
     await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
 
+    // The refund is a share of the fee the auction stored, so the fee is read with it
+    expect(db.cardAuction.findUnique).toHaveBeenCalledWith({
+      where: { id: "auc_1" },
+      select: expect.objectContaining({ listingFee: true }),
+    });
     // Still running: the swap itself requires the end to be ahead, so it cannot race the end passing
     expect(db.cardAuction.updateMany).toHaveBeenCalledWith({
       where: {
@@ -443,12 +448,13 @@ describe("adminCancelAuction", () => {
         source: "auction_bid_refund",
       })
     );
-    // The seller's own cancel path: half the listing fee back through the ledger
+    // The seller's own cancel path: the refund share of the stored fee back through the ledger
     expect(refundListingFeeTx).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ id: "auc_1", sellerId: "seller", isFeatured: false }),
+      expect.objectContaining({ id: "auc_1", sellerId: "seller", listingFee: 5 }),
       "admin_cancel"
     );
+    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
     expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
       action: "CARD_AUCTION_CANCEL",
       target: "auc_1",
