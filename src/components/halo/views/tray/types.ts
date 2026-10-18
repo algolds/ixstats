@@ -11,6 +11,8 @@ import {
   Globe,
   Group as Users,
   City as Building2,
+  MultiplePages,
+  Package,
 } from "iconoir-react";
 
 export type NotificationTab = "alerts" | "messages";
@@ -47,6 +49,9 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   opportunity: TrendingUp,
   military: AlertTriangle,
   wiki: BookOpen,
+  // Card and pack notices (`CardNoticeCategory`), with the icons the Vault shows for cards and packs.
+  cards: MultiplePages,
+  packs: Package,
   info: Info,
   warning: AlertTriangle,
   success: CheckCircle,

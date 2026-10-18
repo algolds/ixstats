@@ -7,7 +7,7 @@ import { focusRing } from "~/components/ui/button";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import type { CardSheetData, SheetCopy } from "~/lib/cards/hub/sheet";
-import { CopyActions } from "./CopyActions";
+import { COPIES_HEADING_ID, CopyActions } from "./CopyActions";
 
 interface CardSheetCopiesProps {
   card: CardSheetData["card"];
@@ -24,8 +24,9 @@ export function CardSheetCopies({
   onAddToShowcase,
 }: CardSheetCopiesProps) {
   return (
-    <section aria-labelledby="sheet-copies" className="space-y-3">
-      <h3 id="sheet-copies" className="text-headline">
+    <section aria-labelledby={COPIES_HEADING_ID} className="space-y-3">
+      {/* Focusable from script only: focus lands here once a break down or fusion takes a copy's row away. */}
+      <h3 id={COPIES_HEADING_ID} tabIndex={-1} className="text-headline">
         Your copies
       </h3>
       {card.isBound && copies.length > 0 && (

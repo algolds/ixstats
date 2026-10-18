@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { CardFace } from "~/components/cards/face/CardFace";
+import { useEconomyNumbers } from "~/hooks/cards/useSheetEconomy";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { useDebounce } from "~/hooks/useDebounce";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
@@ -28,6 +29,7 @@ import {
   AUCTION_DURATION_LABEL,
   type AuctionDuration,
 } from "~/lib/cards/market/auction-timing";
+import { listingFeeNote } from "~/lib/cards/market/fees";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 /** Mine's largest page. */
@@ -160,6 +162,7 @@ export function CreateAuctionModal({
   const [duration, setDuration] = useState<AuctionDuration>("24h");
   const [search, setSearch] = useState("");
   const refreshCards = useCardsRefresh();
+  const { data: numbers } = useEconomyNumbers();
   const { mine, held, searching } = useSellableCopies(open, search);
   const linked = useLinkedCopy(open, initialOwnershipId);
   const rows = withLinkedFirst(held, linked, searching).filter(
@@ -214,9 +217,11 @@ export function CreateAuctionModal({
       <DialogContent className="max-h-[85dvh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Sell at auction</DialogTitle>
-          {/* The fee comes from the Economy tab, so no amount is named here. */}
+          {/* The fee and the refund share come from the Economy tab; until they arrive no amount is named. */}
           <DialogDescription>
-            There is a small listing fee, and half comes back if the card does not sell.
+            {numbers
+              ? listingFeeNote(numbers.economy.listingFee, numbers.economy.listingRefundPct)
+              : "There is a small listing fee."}
           </DialogDescription>
         </DialogHeader>
         {sentBound ? (

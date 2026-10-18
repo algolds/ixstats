@@ -53,6 +53,9 @@ jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
 jest.mock("~/components/cards/reveal/reveal-feedback", () => ({ playRevealFeedback: jest.fn() }));
+jest.mock("~/hooks/cards/useSheetEconomy", () => ({
+  useSheetEconomy: jest.fn(() => ({ data: undefined })),
+}));
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({

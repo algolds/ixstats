@@ -3,7 +3,7 @@ import { z } from "zod";
 import { INSCRIPTION_MAX } from "~/lib/cards/inscription";
 import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { inscribeCopy, reportInscription } from "~/server/modules/cards/inscriptions";
-import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
+import { displayNameOf } from "./_passport";
 
 const ownershipId = z.string().min(1).max(64);
 
@@ -14,15 +14,14 @@ export const cardsInscriptionsRouter = createTRPCRouter({
    */
   inscribe: rateLimitedMutationProcedure
     .input(z.object({ ownershipId, text: z.string().max(INSCRIPTION_MAX * 4) }))
-    .mutation(async ({ ctx, input }) => {
-      const names = await loadPlayerNames([ctx.user.id]);
-      return inscribeCopy(ctx.db, {
+    .mutation(async ({ ctx, input }) =>
+      inscribeCopy(ctx.db, {
         userId: ctx.user.id,
         ...input,
         now: new Date(),
-        signerName: names.get(ctx.user.id)?.displayName ?? null,
-      });
-    }),
+        signerName: await displayNameOf(ctx.user.id),
+      })
+    ),
 
   /** The module trims the reason and holds it to 500. */
   reportInscription: rateLimitedMutationProcedure
