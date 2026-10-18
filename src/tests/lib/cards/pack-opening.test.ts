@@ -92,8 +92,6 @@ function makeDb(cards: FakeCard[], pack: Record<string, unknown> = {}, userPack:
     ...userPack,
   };
   const db: any = {
-    // The capacity lock
-    $executeRaw: jest.fn().mockResolvedValue(1),
     systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
     userPack: {
       updateMany: jest.fn(async ({ where }: any) => {
@@ -125,8 +123,10 @@ function makeDb(cards: FakeCard[], pack: Record<string, unknown> = {}, userPack:
       findMany: jest.fn().mockResolvedValue([]),
     },
   };
-  db.$transaction = jest.fn((cb: (tx: any) => Promise<unknown>) => cb(db));
-  return { db };
+  // The capacity lock exists only on the transaction client, so a lock taken on db (an autocommit statement) fails
+  const tx = { ...db, $executeRaw: jest.fn().mockResolvedValue(1) };
+  db.$transaction = jest.fn((cb: (tx: any) => Promise<unknown>) => cb(tx));
+  return { db, tx };
 }
 
 beforeEach(() => {
@@ -306,7 +306,7 @@ describe("openPack", () => {
   });
 
   it("mints every pulled card through mintCopy, its finish rolled, from the pack's transaction", async () => {
-    const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
+    const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
     jest.mocked(grantCardXp).mockClear();
     const result = await openPack(db, USER, USER_PACK_ID);
     expect(result.map((r) => r.ownershipId)).toEqual([
@@ -316,14 +316,14 @@ describe("openPack", () => {
       "copy_4",
       "copy_5",
     ]);
-    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(db, {
+    expect(jest.mocked(mintCopy)).toHaveBeenCalledWith(tx, {
       cardId: "ok",
       ownerId: USER,
       source: "PACK_OPEN",
     });
     expect(jest.mocked(grantCardXp)).toHaveBeenCalledTimes(5);
     expect(jest.mocked(grantCardXp)).toHaveBeenCalledWith(
-      db,
+      tx,
       "copy_1",
       "PACK_OPEN",
       JSON.stringify({ packId: "p1", packName: "Test Pack" })
@@ -370,7 +370,7 @@ describe("openPack", () => {
   });
 
   it("refuses a pack that would overflow the collection, inside its transaction, before minting", async () => {
-    const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
+    const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
     db.cardOwnership.count.mockResolvedValue(149); // a capacity of 150, so room for 1
 
     await expect(openPack(db, USER, USER_PACK_ID)).rejects.toMatchObject({
@@ -385,16 +385,16 @@ describe("openPack", () => {
     expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
     expect(db.card.count).not.toHaveBeenCalled();
     // The owner's capacity lock comes before the count it guards
-    const [, namespace, owner] = db.$executeRaw.mock.calls[0];
+    const [, namespace, owner] = tx.$executeRaw.mock.calls[0];
     expect([namespace, owner]).toEqual([7334, USER]);
-    expect(db.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
       db.cardOwnership.count.mock.invocationCallOrder[0]
     );
   });
 
   it("passes any other failure of the capacity check through, minting nothing", async () => {
-    const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
-    db.$executeRaw.mockRejectedValueOnce(new Error("connection reset"));
+    const { db, tx } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }], { cardCount: 3 });
+    tx.$executeRaw.mockRejectedValueOnce(new Error("connection reset"));
     await expect(openPack(db, USER, USER_PACK_ID)).rejects.toThrow("connection reset");
     expect(jest.mocked(mintCopy)).not.toHaveBeenCalled();
   });
