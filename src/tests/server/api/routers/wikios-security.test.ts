@@ -111,6 +111,7 @@ import {
   renderTemplateWithRedisCache,
 } from "~/lib/wiki-os/templates/preview-service.server";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
+import { privacyConnections } from "~/tests/helpers/privacy-config-fake";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { db } from "~/server/db";
 
@@ -293,8 +294,11 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
     { id: "role_caller" }
   );
 
+  // Profile owners keep wiki attribution on (no stored config): the switch itself is covered in
+  // wikios-author-profile-wiki-attribution.test.ts.
   const signedInCtx = () =>
     createMockRouterContext({
+      db: { userConnection: privacyConnections() },
       auth: { userId: "user_1" },
       user: {
         id: "db1",
@@ -305,7 +309,12 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
         role: CALLER_ROLE,
       },
     });
-  const anonymousCtx = () => createMockRouterContext({ auth: null, user: null });
+  const anonymousCtx = () =>
+    createMockRouterContext({
+      db: { userConnection: privacyConnections() },
+      auth: null,
+      user: null,
+    });
 
   const profile = (ctx: unknown, input?: { username?: string }) =>
     createCallerFactory(wikiosUserTalkRouter)(asCtx(ctx)).getAuthorProfile(input);
@@ -335,7 +344,7 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
 
   it("prefers the owner of a verified ixwiki link, by the MediaWiki-normalised name", async () => {
     mockDb.wikiAccountLink.findFirst.mockResolvedValue({
-      user: { country: OTHER_COUNTRY, role: { name: "member", level: 50 } },
+      user: { clerkUserId: "user_2", country: OTHER_COUNTRY, role: { name: "member", level: 50 } },
     });
 
     const result = await profile(anonymousCtx(), { username: "somebody_else" });
@@ -351,6 +360,7 @@ describe("S6: getAuthorProfile resolves the requested name only", () => {
 
   it("returns role name and level only, never a role or user id", async () => {
     mockDb.user.findFirst.mockResolvedValue({
+      clerkUserId: "user_2",
       country: OTHER_COUNTRY,
       role: { name: "member", level: 50 },
     });

@@ -12,6 +12,8 @@ import {
 import { db } from "~/server/db";
 import { LinkGraphService } from "~/lib/wiki-os/core";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
+import { switchIsOn } from "~/server/shared/privacy-permissions";
+import type { PrismaClient } from "@prisma/client";
 
 const NO_LORE_STATS = {
   totalScore: 0,
@@ -21,6 +23,23 @@ const NO_LORE_STATS = {
   weeklyWins: 0,
   monthlyWins: 0,
 };
+
+/**
+ * The player whose wiki account `wikiName` is, while they tie it to their nation and role (wiki attribution,
+ * `showWikiAttribution`, as users.resolveWikiAuthor); null when they turned it off, for every caller, or when the
+ * switch cannot be read.
+ */
+async function attributedProfileUser(
+  privacyDb: Pick<PrismaClient, "userConnection">,
+  wikiName: string
+) {
+  const owner = await findWikiProfileUser(wikiName);
+  if (!owner) return null;
+  const shown = await switchIsOn(privacyDb, owner.clerkUserId, "showWikiAttribution").catch(
+    () => false
+  );
+  return shown ? owner : null;
+}
 
 export const wikiosUserTalkRouter = createTRPCRouter({
   /**
@@ -37,8 +56,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       const requestedName = input?.username?.trim() || null;
-      const wikiName =
-        requestedName ?? (ctx.auth?.userId ? getWikiAuth(ctx).wikiUsername : null);
+      const wikiName = requestedName ?? (ctx.auth?.userId ? getWikiAuth(ctx).wikiUsername : null);
 
       if (!wikiName) {
         return null;
@@ -46,7 +64,7 @@ export const wikiosUserTalkRouter = createTRPCRouter({
 
       // A named profile is resolved by that name only. Without a name the profile is the caller's own.
       const userPromise = requestedName
-        ? findWikiProfileUser(requestedName)
+        ? attributedProfileUser(ctx.db, requestedName)
         : Promise.resolve(ctx.user ?? null);
 
       // Parallel fetch User + Action API user info + Loreward stats
@@ -77,7 +95,9 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         totalWins: lore.dailyWins + lore.weeklyWins + lore.monthlyWins,
         rank,
         country: profileUser?.country ?? null,
-        role: profileUser?.role ? { name: profileUser.role.name, level: profileUser.role.level } : null,
+        role: profileUser?.role
+          ? { name: profileUser.role.name, level: profileUser.role.level }
+          : null,
       };
     }),
 

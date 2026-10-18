@@ -6,6 +6,7 @@ import {
   rateLimitedPublicProcedure,
 } from "~/server/api/trpc";
 import { achievementService } from "~/lib/achievements/service";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 /** How many of the newest unlocks the summary carries. */
 const RECENT_UNLOCKS = 3;
@@ -113,6 +114,22 @@ async function resolveTargetUserId(
     if (owner) return owner.clerkUserId;
   }
   return viewerClerkId || undefined;
+}
+
+/**
+ * The wiki name whose Lorewards medals and wiki awards the target's list shows: the viewer's own always; another
+ * player's only while they show wiki attribution (`showWikiAttribution`, as the Passport, identity.link-privacy.ts;
+ * a read error counts as off). Null leaves the medals as for a player with no wiki account and lists no award.
+ */
+async function lorewardsWikiName(
+  db: Pick<PrismaClient, "userConnection">,
+  target: { clerkUserId: string; wikiUsername: string | null } | null,
+  viewerClerkId: string | undefined
+): Promise<string | null> {
+  if (!target?.wikiUsername) return null;
+  if (target.clerkUserId === viewerClerkId) return target.wikiUsername;
+  const [shown] = await withoutHiddenWikiNames(db, [target]);
+  return shown?.wikiUsername ?? null;
 }
 
 async function loadMasterAchievements(db: PrismaClient) {
@@ -440,10 +457,10 @@ export const achievementsProgressRouter = createTRPCRouter({
         const userRecord = targetUserId
           ? await ctx.db.user.findUnique({
               where: { clerkUserId: targetUserId },
-              select: { wikiUsername: true },
+              select: { clerkUserId: true, wikiUsername: true },
             })
           : null;
-        const wikiUsername = userRecord?.wikiUsername;
+        const wikiUsername = await lorewardsWikiName(ctx.db, userRecord, ctx.user?.clerkUserId);
 
         const totalUsers = (await ctx.db.user.count()) || 1;
         const standard = await standardAchievements(ctx.db, targetUserId, totalUsers);

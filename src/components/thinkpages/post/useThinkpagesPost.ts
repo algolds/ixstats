@@ -100,7 +100,7 @@ function usePostPermissions(post: any, currentUserAccountId: string) {
     }
   );
 
-  const targetUserRoleLevel = targetUserQuery.data?.user?.role?.level ?? 100;
+  const targetUserRoleLevel = targetUserQuery.data?.roleLevel ?? 100;
 
   const canModify =
     isOwnPost ||

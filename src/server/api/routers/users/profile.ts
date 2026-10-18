@@ -236,15 +236,21 @@ export const usersProfileRouter = createTRPCRouter({
     }
   }),
 
-  // Get user by Clerk ID with role (for admin use)
+  // A user's role level by Clerk ID (ThinkPages staff moderation compares a post author's with their own). Public,
+  // so it returns the level only, never the user row: no name or id reaches the caller. Null for an unknown user,
+  // one without a role, or a read error.
   getUserWithRole: publicProcedure
     .input(z.object({ clerkUserId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        return { user: await findUserWithRole(ctx.db, input.clerkUserId) };
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.clerkUserId },
+          select: { role: { select: { level: true } } },
+        });
+        return { roleLevel: user?.role?.level ?? null };
       } catch (error) {
-        console.error("Error fetching user with role:", error);
-        return { user: null };
+        console.error("Error fetching user role level:", error);
+        return { roleLevel: null };
       }
     }),
 });
