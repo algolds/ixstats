@@ -4,6 +4,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { UserManagementService } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
 import { pointActiveNation } from "~/server/modules/realms";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 function hydrateProfileDates(profile: any) {
   if (!profile) return profile;
@@ -236,12 +237,16 @@ export const usersProfileRouter = createTRPCRouter({
     }
   }),
 
-  // Get user by Clerk ID with role (for admin use)
+  // Get user by Clerk ID with role (for admin use). Another user's wiki name is left out while they hide wiki
+  // attribution (`showWikiAttribution`; a read error counts as off); a caller asking for themself gets their own.
   getUserWithRole: publicProcedure
     .input(z.object({ clerkUserId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        return { user: await findUserWithRole(ctx.db, input.clerkUserId) };
+        const user = await findUserWithRole(ctx.db, input.clerkUserId);
+        if (!user || user.clerkUserId === ctx.auth?.userId) return { user };
+        const [shown] = await withoutHiddenWikiNames(ctx.db, [user]);
+        return { user: shown ?? null };
       } catch (error) {
         console.error("Error fetching user with role:", error);
         return { user: null };
