@@ -159,7 +159,7 @@ describe("CardFace", () => {
 });
 
 describe("RealmCrest", () => {
-  const realm = (overrides: Partial<CardRealmBadge>): CardRealmBadge => ({
+  const realm = (overrides: Partial<CardRealmBadge> = {}): CardRealmBadge => ({
     ...IXNAY,
     ...overrides,
   });
