@@ -143,6 +143,14 @@
   .card-face-tint {
     background-color: color-mix(in oklab, var(--card-rarity) 24%, var(--color-surface-secondary));
   }
+  /* The realm initial's disc, under its white letter: black at 0.55 reaches 4.5:1 even over white, for the light
+     theme's light faces (card-face.test.tsx); the dark theme's faces are dark, so it keeps 0.4. */
+  .card-face-initial {
+    background-color: rgb(0 0 0 / 0.55);
+    @variant dark {
+      background-color: rgb(0 0 0 / 0.4);
+    }
+  }
   .card-face-gem,
   .card-rarity-gem {
     clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);

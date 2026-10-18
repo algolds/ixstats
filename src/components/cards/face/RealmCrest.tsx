@@ -56,11 +56,12 @@ export function RealmCrest({ realm, size = "sm", muted = false, className }: Rea
       />
     );
   }
+  // card-face-initial: the disc darkens in the light theme, so the white letter reads at 4.5:1 (card-art.css).
   return (
     <span
       aria-hidden="true"
       className={box(
-        "grid place-items-center rounded-full bg-black/40 font-semibold text-white",
+        "card-face-initial grid place-items-center rounded-full font-semibold text-white",
         INITIAL_TEXT[size]
       )}
     >

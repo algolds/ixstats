@@ -8,7 +8,8 @@ export default function VaultLayout({ children }: { children: React.ReactNode })
   return (
     <div data-app="vault" className="contents">
       <PortalTintSync />
-      <AuthenticationGuard redirectPath="/vault">
+      {/* No fixed path: signing in returns to the Vault address the visitor opened, a card's ?card= included. */}
+      <AuthenticationGuard>
         <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:py-6 md:py-8">
           {children}
         </div>

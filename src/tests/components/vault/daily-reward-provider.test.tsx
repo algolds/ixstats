@@ -314,6 +314,30 @@ describe("DailyRewardProvider", () => {
     expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
   });
 
+  it("says today's reward is claimed when it opens after the claim, and offers no second one", async () => {
+    balance = { canClaimDailyBonus: false, loginStreak: 4, claimStreak: 4 };
+    const Opener = () => {
+      const { open } = useDailyReward();
+      return <button onClick={open}>Open reward</button>;
+    };
+    render(
+      <DailyRewardProvider>
+        <Opener />
+      </DailyRewardProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open reward" }));
+    expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
+    expect(within(dialog()).getByText("You claimed today's reward.")).toBeInTheDocument();
+    expect(within(dialog()).queryByRole("button", { name: /IxCredits/ })).toBeNull();
+    expect(within(dialog()).queryByRole("button", { name: /Card pull/ })).toBeNull();
+    expect(within(dialog()).getByText("4 days")).toBeInTheDocument();
+    expect(within(dialog()).getByText("Next reward")).toBeInTheDocument();
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Done" }));
+    await act(async () => {});
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
   it("skips the auto-open when autoOpen is off, but useDailyReward().open() still opens it", () => {
     const Opener = () => {
       const { open } = useDailyReward();

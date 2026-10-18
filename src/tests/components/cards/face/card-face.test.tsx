@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
@@ -189,6 +191,25 @@ describe("RealmCrest", () => {
   it("falls back to the realm's initial, greyed when muted", () => {
     render(<RealmCrest realm={realm({ name: "althistory" })} size="md" muted />);
     expect(screen.getByText("A")).toHaveClass("size-10", "grayscale");
+  });
+
+  /** White on black at `alpha`, over the lightest face behind it (white), by WCAG's contrast formula. */
+  const whiteOnBlackOverWhite = (alpha: number) => {
+    const grey = 1 - alpha;
+    const luminance = grey <= 0.04045 ? grey / 12.92 : ((grey + 0.055) / 1.055) ** 2.4;
+    return 1.05 / (luminance + 0.05);
+  };
+
+  it("darkens the initial's disc in the light theme to 4.5:1 for its white letter on any face, keeping the dark one", () => {
+    render(<RealmCrest realm={realm()} size="md" />);
+    expect(screen.getByText("I")).toHaveClass("card-face-initial", "text-white");
+    const css = fs.readFileSync(path.resolve(__dirname, "../../../../styles/card-art.css"), "utf8");
+    const disc =
+      /\.card-face-initial \{\s*background-color: rgb\(0 0 0 \/ ([\d.]+)\);\s*@variant dark \{\s*background-color: rgb\(0 0 0 \/ ([\d.]+)\);/.exec(
+        css
+      );
+    expect(whiteOnBlackOverWhite(Number(disc?.[1]))).toBeGreaterThanOrEqual(4.5);
+    expect(Number(disc?.[2])).toBe(0.4);
   });
 
   it("falls back to the initial when the emblem fails to load", () => {

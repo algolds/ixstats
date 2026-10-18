@@ -38,7 +38,7 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
     <div
       data-card-rarity={face.rarity}
       className={cn(
-        "card-face-edge rounded-card text-footnote text-label flex aspect-[5/7] flex-col gap-3 overflow-y-auto p-4",
+        "card-face-edge rounded-card text-footnote text-label flex aspect-[5/7] max-w-full flex-col gap-3 overflow-y-auto p-4",
         CARD_FACE_WIDTH.L
       )}
     >

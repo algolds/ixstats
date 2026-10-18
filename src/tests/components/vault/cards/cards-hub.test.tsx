@@ -66,6 +66,13 @@ describe("CardsHub", () => {
     expect(panel).toHaveTextContent("Mine pane");
   });
 
+  // The hub has no header toolbar, so its first row pads by Halo's floating band (3.5rem), as the Wallet does.
+  it("starts its tabs below the shell's floating header, so the header never takes their taps", () => {
+    at("/vault/cards/mine");
+    render(<CardsHub initialTab="mine" />);
+    expect(screen.getByRole("tablist", { name: "Cards" }).closest(".pt-14")).not.toBeNull();
+  });
+
   it("switches tabs in place, showing only that tab's pane", () => {
     at("/vault/cards/mine");
     render(<CardsHub initialTab="mine" />);

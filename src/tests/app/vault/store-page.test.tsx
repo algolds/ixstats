@@ -23,6 +23,12 @@ describe("/vault/store", () => {
     expect(screen.getByText("Shop on my-packs")).toBeInTheDocument();
   });
 
+  // The shop's first row is its tabs, under Halo's floating band without a header toolbar: it pads by the band.
+  it("starts the shop below the shell's floating header", async () => {
+    render(await VaultStorePage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByText("Shop on its default view").closest(".pt-14")).not.toBeNull();
+  });
+
   it("takes the first view when a link repeats it, and the default view without one", async () => {
     render(
       await VaultStorePage({ searchParams: Promise.resolve({ view: ["cosmetics", "upgrades"] }) })

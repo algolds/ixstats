@@ -1,14 +1,15 @@
 /** @jest-environment node */
 /**
  * `loadPassportHandleById`: the passport handle of a user found by id, through the one chain every surface uses
- * (stored handle, verified wiki name, forum name, Clerk id), so a card surface can name a holder with no stored
- * handle.
+ * (stored handle, verified wiki name while the user shows wiki attribution, forum name, Clerk id), so a card surface
+ * can name a holder with no stored handle.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: {
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    userConnection: { findMany: jest.fn() },
   },
 }));
 jest.mock("~/server/modules/identity/identity.resolve", () => ({ resolveHandleUser: jest.fn() }));
@@ -23,6 +24,7 @@ const USER = { id: "u1", clerkUserId: "user_2abc", handle: null, forumUsername: 
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(db.wikiAccountLink.findFirst).mockResolvedValue(null);
+  jest.mocked(db.userConnection.findMany).mockResolvedValue([]);
   jest.mocked(resolveHandleUser).mockResolvedValue(null);
 });
 
@@ -45,6 +47,21 @@ describe("loadPassportHandleById", () => {
     jest.mocked(resolveHandleUser).mockResolvedValue({ id: "u1" } as never);
     await expect(loadPassportHandleById("u1")).resolves.toBe("Takatta Loa");
     expect(resolveHandleUser).toHaveBeenCalledWith("Takatta Loa");
+  });
+
+  it("skips the verified wiki name while the user's wiki attribution switch is off", async () => {
+    jest.mocked(db.user.findUnique).mockResolvedValue(USER as never);
+    jest
+      .mocked(db.wikiAccountLink.findFirst)
+      .mockResolvedValue({ username: "Takatta Loa" } as never);
+    jest
+      .mocked(db.userConnection.findMany)
+      .mockResolvedValue([
+        { userId: USER.clerkUserId, status: JSON.stringify({ showWikiAttribution: false }) },
+      ] as never);
+    jest.mocked(resolveHandleUser).mockResolvedValue({ id: "u1" } as never);
+    await expect(loadPassportHandleById("u1")).resolves.toBe("Helvianir");
+    expect(resolveHandleUser).not.toHaveBeenCalledWith("Takatta Loa");
   });
 
   it("falls back to the forum name, then the Clerk id", async () => {
