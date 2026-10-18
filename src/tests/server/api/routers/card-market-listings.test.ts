@@ -147,26 +147,34 @@ describe("cardMarket listing procedures", () => {
     expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1"]);
   });
 
-  it("buy as the signed-in player, drop both sides' cached balances and return no settlement", async () => {
+  it("buy as the signed-in player, drop the cached balance of everyone paid or charged, and return the copy's XP", async () => {
     jest.mocked(buyListing).mockResolvedValue({
       listingId: "l1",
       ownershipId: "own_1",
       cardId: "card_1",
       sellerId: "seller",
       price: 500,
-      settlement: { fee: 50, sellerNet: 450, royalties: [] },
+      settlement: {
+        fee: 50,
+        sellerNet: 440,
+        royalties: [{ recipientId: "owner", amount: 10, cardId: "card_1" }],
+      },
+      xp: { prevLevel: 1, newLevel: 2, prevXP: 90, newXP: 140, leveledUp: true, xpGained: 50 },
     });
     expect(await caller.buyListing({ listingId: "l1" })).toEqual({
       ownershipId: "own_1",
       cardId: "card_1",
       price: 500,
+      leveledUp: true,
+      newLevel: 2,
+      xpGained: 50,
     });
     expect(buyListing).toHaveBeenCalledWith(db, {
       buyerId: "u1",
       listingId: "l1",
       now: expect.any(Date),
     });
-    expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1", "seller"]);
+    expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1", "seller", "owner"]);
   });
 
   it("read the player's own listings", async () => {

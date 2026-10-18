@@ -22,8 +22,10 @@ jest.mock("~/lib/websocket/market-websocket-server", () => ({
 }));
 jest.mock("~/server/market-broadcast-bridge", () => ({ publishMarketEvent: jest.fn() }));
 
+import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { AuctionService, refundListingFeeTx } from "~/lib/economy/auction-service";
+import { VAULTS_BUSY_MESSAGE } from "~/lib/vault/vault-locks";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
@@ -1104,6 +1106,75 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         xp: XP,
       });
       expect(h.balances).toEqual({ b: 200, p: 300, s: 720 });
+    });
+  });
+
+  describe("vault locks", () => {
+    /** Each vault-row lock the transaction took, as the user ids it locked. */
+    const vaultLocks = (h: Harness): string[][] =>
+      h.tx.$queryRaw.mock.calls
+        .filter(([query]: [Prisma.Sql]) => query.sql.includes('FROM "my_vault"'))
+        .map(([query]: [Prisma.Sql]) => query.values);
+    /** The order of the claim, the lock and the first credit write. */
+    const order = (h: Harness, write: jest.Mock) => [
+      h.tx.cardAuction.updateMany.mock.invocationCallOrder[0],
+      h.tx.$queryRaw.mock.invocationCallOrder[0],
+      write.mock.invocationCallOrder[0],
+    ];
+    const ascending = (values: number[]) => [...values].sort((a, b) => a - b);
+    const deadlock = () =>
+      new Prisma.PrismaClientKnownRequestError("Transaction failed due to a deadlock", {
+        code: "P2034",
+        clientVersion: "6",
+      });
+
+    it("placeBid locks the bidder's and the outbid bidder's vaults in user-id order, after the claim", async () => {
+      const h = makeHarness(makeAuction({ currentBidderId: "a_prev" }), { b: 1000, a_prev: 0 });
+      await service.placeBid({ userId: "b", auctionId: "a1", amount: 200 }, h.db);
+      expect(vaultLocks(h)).toEqual([["a_prev", "b"]]);
+      const seen = order(h, h.tx.myVault.updateMany);
+      expect(ascending(seen)).toEqual(seen);
+    });
+
+    it("executeBuyout locks the buyer's, the seller's, the refunded bidder's and the nation owner's vaults", async () => {
+      const h = makeHarness(
+        makeAuction({ buyoutPrice: 1000, currentBid: 300, currentBidderId: "p", ...ofNation }),
+        { b: 2000, p: 0, s: 0, o: 0 }
+      );
+      h.tx.country.findMany.mockResolvedValue([{ id: "country_1", ownerUserId: "o" }]);
+      await service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db);
+      expect(vaultLocks(h)).toEqual([["b", "o", "p", "s"]]);
+      // The claim, then the locks, then the bidder's refund
+      const seen = order(h, h.tx.myVault.update);
+      expect(ascending(seen)).toEqual(seen);
+    });
+
+    it("completeAuction locks the seller's and the winner's vaults after its claim", async () => {
+      const h = makeHarness(
+        makeAuction({ currentBid: 500, currentBidderId: "p", endTime: tenMinutesAgo() }),
+        { s: 0 }
+      );
+      await service.completeAuction("a1", h.db);
+      expect(vaultLocks(h)).toEqual([["p", "s"]]);
+      const seen = order(h, h.tx.myVault.update);
+      expect(ascending(seen)).toEqual(seen);
+    });
+
+    it("answers a bid or a buyout that lost a deadlock as a CONFLICT to retry", async () => {
+      const bid = makeHarness(makeAuction(), { b: 1000, p: 0 });
+      bid.tx.auctionBid.create.mockRejectedValueOnce(deadlock());
+      await expect(
+        service.placeBid({ userId: "b", auctionId: "a1", amount: 200 }, bid.db)
+      ).rejects.toMatchObject({ code: "CONFLICT", message: VAULTS_BUSY_MESSAGE });
+
+      const buyout = makeHarness(makeAuction({ buyoutPrice: 800 }), { b: 1000, p: 0, s: 0 });
+      buyout.tx.cardTransferEvent.create.mockRejectedValueOnce(deadlock());
+      await expect(
+        service.executeBuyout({ userId: "b", auctionId: "a1" }, buyout.db)
+      ).rejects.toMatchObject({ code: "CONFLICT", message: VAULTS_BUSY_MESSAGE });
+      expect(noticesSent()).toEqual([]);
+      // A lost deadlock is a retry, not a server error to log
+      expect(console.error).not.toHaveBeenCalled();
     });
   });
 });

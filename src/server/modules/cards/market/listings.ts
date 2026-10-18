@@ -3,7 +3,8 @@
  * (more when featured), charged after the copy's lock and stored on the listing; cancel and expiry refund a share of
  * what was stored. The copy is locked while listed. A sale settles like an auction: the seller gets the price less the
  * market fee, the royalty comes out of that fee, and the sale is recorded with the serial and finish the listing
- * stored. Notices are built in the transaction and sent after the commit.
+ * stored. The bought copy earns card XP inside the same transaction. Notices are built in the transaction and sent after
+ * the commit.
  */
 import type { CardFinish, CardListing, Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -12,10 +13,17 @@ import { notifyCards, type CardNotice } from "~/lib/cards/card-notify";
 import { getEconomyConfig } from "~/lib/cards/economy-config";
 import { marketTabHref } from "~/lib/cards/hub-routes";
 import { listingRefund, MAX_LISTING_PRICE } from "~/lib/cards/market/fees";
+import { assertMarketOpen } from "~/lib/cards/market/market-open";
 import { royaltyNotices } from "~/lib/cards/market/royalty";
-import { settleCardSaleTx, type SaleSettlement } from "~/lib/cards/market/settle-sale";
+import {
+  lockSaleVaultsTx,
+  settleCardSaleTx,
+  type CardSale,
+  type SaleSettlement,
+} from "~/lib/cards/market/settle-sale";
+import { grantCardXp, type GrantXpResult } from "~/lib/cards/xp-utils";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
-import { getVaultConfig } from "~/lib/vault/vault-perks";
+import { vaultsBusyError } from "~/lib/vault/vault-locks";
 
 const DAY_MS = 86_400_000;
 const HISTORY_DAYS = 30;
@@ -25,22 +33,17 @@ const SELLING_HREF = marketTabHref("selling");
 type Code = "BAD_REQUEST" | "NOT_FOUND" | "CONFLICT";
 const fail = (code: Code, message: string) => new TRPCError({ code, message });
 
-/** Listings run under the auctions' market switch, and close in maintenance. */
-async function assertMarketOpen(db: PrismaClient): Promise<void> {
-  const config = await getVaultConfig(db);
-  if (config.isMaintenanceMode) {
-    throw fail("BAD_REQUEST", "Vault economy is currently in maintenance mode.");
-  }
-  if (!config.isAuctionsEnabled) throw fail("BAD_REQUEST", "The card market is closed right now.");
-}
-
-/** A ledger refusal (not enough credits, a switch off) is a BAD_REQUEST the player can act on. */
+/**
+ * A ledger refusal (not enough credits, a switch off) is a BAD_REQUEST the player can act on, and a lost deadlock a
+ * CONFLICT to retry.
+ */
 async function ledgerSafe<T>(work: () => Promise<T>): Promise<T> {
   try {
     return await work();
   } catch (error) {
     if (error instanceof LedgerError) throw fail("BAD_REQUEST", error.message);
-    throw error;
+    const busy = error instanceof Error ? vaultsBusyError(error) : null;
+    throw busy ?? error;
   }
 }
 
@@ -190,6 +193,8 @@ export interface ListingPurchase {
   sellerId: string;
   price: number;
   settlement: SaleSettlement;
+  /** The bought copy's card XP. */
+  xp: GrantXpResult;
 }
 
 /** The seller's "sold" notice and the royalty notices, built inside the sale's transaction and sent after it. */
@@ -233,14 +238,33 @@ export async function buyListing(
   const ownershipId = listing.ownershipId;
   if (ownershipId === null) throw fail("CONFLICT", "This listing's card no longer exists.");
 
-  const { settlement, notices } = await ledgerSafe(() =>
+  const sale: CardSale = {
+    ownershipId,
+    cardId: listing.cardId,
+    // The serial and finish the listing stored
+    serialNumber: listing.serialNumber,
+    finish: listing.finish,
+    cardType: listing.card.cardType,
+    countryId: listing.card.countryId,
+    sellerId: listing.sellerId,
+    buyerId: input.buyerId,
+    price: listing.price,
+    action: "LISTING_SALE",
+    sellerSource: "card_sale_listing",
+    context: { listingId: listing.id },
+    now: input.now,
+  };
+  const { settlement, xp, notices } = await ledgerSafe(() =>
     db.$transaction(async (tx) => {
-      // The claim: a second buyer, a cancel or the expiry that got there first leaves nothing to pay
+      // The claim first, as a cancel and the expiry take it before the seller's vault: a second buyer, a cancel or the
+      // expiry that got there first leaves nothing to pay
       const claimed = await tx.cardListing.updateMany({
         where: { id: listing.id, status: "ACTIVE", expiresAt: { gt: input.now } },
         data: { status: "SOLD", buyerId: input.buyerId, soldAt: input.now },
       });
       if (claimed.count !== 1) throw fail("CONFLICT", "This listing was just sold or withdrawn.");
+      // Then every vault the sale writes, in user-id order, before any credit or copy moves
+      await lockSaleVaultsTx(tx, sale);
       await spendCreditsTx(tx, {
         userId: input.buyerId,
         amount: listing.price,
@@ -248,24 +272,18 @@ export async function buyListing(
         source: "card_purchase_listing",
         metadata: { listingId: listing.id, ownershipId },
       });
-      const settled = await settleCardSaleTx(tx, {
+      const settled = await settleCardSaleTx(tx, sale);
+      // The bought copy's XP: a failure fails the purchase, as for a buyout
+      const granted = await grantCardXp(
+        tx,
         ownershipId,
-        cardId: listing.cardId,
-        // The serial and finish the listing stored
-        serialNumber: listing.serialNumber,
-        finish: listing.finish,
-        cardType: listing.card.cardType,
-        countryId: listing.card.countryId,
-        sellerId: listing.sellerId,
-        buyerId: input.buyerId,
-        price: listing.price,
-        action: "LISTING_SALE",
-        sellerSource: "card_sale_listing",
-        context: { listingId: listing.id },
-        now: input.now,
-      });
+        "LISTING_PURCHASE",
+        JSON.stringify({ listingId: listing.id }),
+        input.now
+      );
       return {
         settlement: settled,
+        xp: granted,
         notices: soldNotices({ ...listing, title: listing.card.title }, settled),
       };
     })
@@ -279,6 +297,7 @@ export async function buyListing(
     sellerId: listing.sellerId,
     price: listing.price,
     settlement,
+    xp,
   };
 }
 

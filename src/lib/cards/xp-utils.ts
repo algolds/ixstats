@@ -4,13 +4,16 @@ import { utcDay } from "~/lib/vault/vault-dividend";
 import { cappedXpGrant, levelForXp } from "./levels";
 
 /** Where card XP comes from; the amounts are Economy tab numbers. The holding tick is `holding-xp.ts`. */
-export type CardXpSource = "PACK_OPEN" | "DAILY_CLAIM" | "TRADE" | "AUCTION_WIN";
+export type CardXpSource =
+  "PACK_OPEN" | "DAILY_CLAIM" | "TRADE" | "AUCTION_WIN" | "LISTING_PURCHASE";
 
 const AMOUNT: Record<CardXpSource, keyof CardEconomyConfig> = {
   PACK_OPEN: "xpPack",
   DAILY_CLAIM: "xpDaily",
   TRADE: "xpTradePerCard",
   AUCTION_WIN: "xpAuctionWin",
+  // A fixed-price purchase earns what an auction win (or a buyout) does
+  LISTING_PURCHASE: "xpAuctionWin",
 };
 
 export interface GrantXpResult {

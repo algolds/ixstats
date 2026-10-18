@@ -3,15 +3,19 @@ jest.mock("~/lib/vault/vault-ledger", () => {
   class LedgerError extends Error {}
   return { earnCreditsTx: jest.fn(), LedgerError };
 });
-jest.mock("~/lib/cards/market/royalty", () => ({ payNationRoyaltiesTx: jest.fn() }));
+jest.mock("~/lib/cards/market/royalty", () => ({
+  payNationRoyaltiesTx: jest.fn(),
+  royaltyRecipientsTx: jest.fn(),
+}));
 jest.mock("~/lib/cards/transfer-events", () => ({ recordSaleTx: jest.fn() }));
 
 import { earnCreditsTx, LedgerError } from "~/lib/vault/vault-ledger";
-import { payNationRoyaltiesTx } from "~/lib/cards/market/royalty";
+import type { Prisma } from "@prisma/client";
+import { payNationRoyaltiesTx, royaltyRecipientsTx } from "~/lib/cards/market/royalty";
 import { recordSaleTx } from "~/lib/cards/transfer-events";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
-import { settleCardSaleTx, type CardSale } from "~/lib/cards/market/settle-sale";
+import { lockSaleVaultsTx, settleCardSaleTx, type CardSale } from "~/lib/cards/market/settle-sale";
 
 const NOW = new Date("2026-11-02T12:00:00Z");
 const sale: CardSale = {
@@ -133,5 +137,20 @@ describe("settleCardSaleTx", () => {
 
     await expect(settleCardSaleTx(makeTx(1) as never, sale)).rejects.toThrow("database gone");
     expect(recordSaleTx).not.toHaveBeenCalled();
+  });
+});
+
+describe("lockSaleVaultsTx", () => {
+  it("locks the buyer's, the seller's, each royalty recipient's and any other party's vault, in user-id order", async () => {
+    jest.mocked(royaltyRecipientsTx).mockResolvedValue(["owner"]);
+    const tx = { $queryRaw: jest.fn(async (_query: Prisma.Sql) => []) };
+    await lockSaleVaultsTx(tx as never, sale, ["bidder", null]);
+    expect(royaltyRecipientsTx).toHaveBeenCalledWith(
+      tx,
+      [{ cardId: "card_1", cardType: "NATION", countryId: "country_1" }],
+      ["seller", "buyer"]
+    );
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(tx.$queryRaw.mock.calls[0]![0].values).toEqual(["bidder", "buyer", "owner", "seller"]);
   });
 });

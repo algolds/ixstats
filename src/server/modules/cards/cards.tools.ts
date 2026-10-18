@@ -26,6 +26,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
+import { lockVaultsTx } from "~/lib/vault/vault-locks";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 import { endListingTx } from "./market/listings";
@@ -357,6 +358,8 @@ async function cancelAuctionTx(
         })
       : new TRPCError({ code: "CONFLICT", message: "This auction changed. Reload and try again." });
   }
+  // The bidder's and the seller's vaults, in user-id order, before either refund
+  await lockVaultsTx(tx, [auction.currentBidderId, auction.sellerId]);
   // A running auction's copy is locked, so it is there; if it is gone, there is nothing to unlock
   if (auction.cardInstanceId !== null) {
     await tx.cardOwnership.updateMany({

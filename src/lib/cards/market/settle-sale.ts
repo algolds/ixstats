@@ -6,9 +6,10 @@
 import type { CardFinish, CardType, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
+import { lockVaultsTx } from "~/lib/vault/vault-locks";
 import { marketplaceFee } from "../general-settings";
 import { recordSaleTx, type SaleAction } from "../transfer-events";
-import { payNationRoyaltiesTx, type RoyaltyPayout } from "./royalty";
+import { payNationRoyaltiesTx, royaltyRecipientsTx, type RoyaltyPayout } from "./royalty";
 
 export interface CardSale {
   ownershipId: string;
@@ -31,6 +32,20 @@ export interface SaleSettlement {
   fee: number;
   sellerNet: number;
   royalties: RoyaltyPayout[];
+}
+
+/**
+ * Locks, in user-id order, every vault a sale writes: the buyer's, the seller's, each royalty recipient's, and `others`
+ * (a buyout's refunded bidder). Call it right after the sale's claim, before any credit or copy moves.
+ */
+export async function lockSaleVaultsTx(
+  tx: Prisma.TransactionClient,
+  sale: Pick<CardSale, "cardId" | "cardType" | "countryId" | "sellerId" | "buyerId">,
+  others: ReadonlyArray<string | null> = []
+): Promise<void> {
+  const card = { cardId: sale.cardId, cardType: sale.cardType, countryId: sale.countryId };
+  const recipients = await royaltyRecipientsTx(tx, [card], [sale.sellerId, sale.buyerId]);
+  await lockVaultsTx(tx, [sale.buyerId, sale.sellerId, ...recipients, ...others]);
 }
 
 /**

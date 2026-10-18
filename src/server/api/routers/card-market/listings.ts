@@ -95,8 +95,17 @@ export const cardMarketListingsRouter = createTRPCRouter({
       listingId: input.listingId,
       now: new Date(),
     });
-    await clearVaultCachesFor(ctx.db, [ctx.user.id, purchase.sellerId]);
-    return { ownershipId: purchase.ownershipId, cardId: purchase.cardId, price: purchase.price };
+    // The buyer paid, and the seller and any nation owner were paid
+    const paid = purchase.settlement.royalties.map((royalty) => royalty.recipientId);
+    await clearVaultCachesFor(ctx.db, [ctx.user.id, purchase.sellerId, ...paid]);
+    return {
+      ownershipId: purchase.ownershipId,
+      cardId: purchase.cardId,
+      price: purchase.price,
+      leveledUp: purchase.xp.leveledUp,
+      newLevel: purchase.xp.newLevel,
+      xpGained: purchase.xp.xpGained,
+    };
   }),
 
   getMyListings: protectedProcedure.query(({ ctx }) => listMyListings(ctx.db, ctx.user.id)),

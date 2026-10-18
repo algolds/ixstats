@@ -48,8 +48,12 @@ import {
 import { createMockPrisma as createProxy } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
-/** The proxy, plus the raw call the serial lock makes. */
-const createMockPrisma = () => createProxy({ $executeRaw: jest.fn().mockResolvedValue(1) });
+/** The proxy, plus the raw calls the serial lock and the vault-row locks make. */
+const createMockPrisma = () =>
+  createProxy({
+    $executeRaw: jest.fn().mockResolvedValue(1),
+    $queryRaw: jest.fn().mockResolvedValue([]),
+  });
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -467,6 +471,15 @@ describe("adminCancelAuction", () => {
       where: { id: "own_1" },
       data: { isLocked: false },
     });
+    // The bidder's and the seller's vaults, in user-id order, after the claim and before either refund
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(db.$queryRaw.mock.calls[0]![0].values).toEqual(["bidder", "seller"]);
+    expect(db.cardAuction.updateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      db.$queryRaw.mock.invocationCallOrder[0]
+    );
+    expect(db.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(earnCreditsTx).mock.invocationCallOrder[0]!
+    );
     expect(earnCreditsTx).toHaveBeenCalledWith(
       db,
       expect.objectContaining({
