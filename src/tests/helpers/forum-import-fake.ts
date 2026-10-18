@@ -16,7 +16,6 @@ export interface ImportTables {
   threads: Row[];
   posts: Row[];
   links: Row[];
-  configs: Row[];
   assets: Row[];
   stashItems: Row[];
   notifications: Row[];
@@ -42,7 +41,6 @@ const TABLES: readonly TableName[] = [
   "threads",
   "posts",
   "links",
-  "configs",
   "assets",
   "stashItems",
   "notifications",
@@ -56,7 +54,6 @@ const UNIQUE: Record<TableName, string[][]> = {
   threads: [["id"], ["xenforoThreadId"], ["sourceRef"]],
   posts: [["id"], ["xenforoPostId"], ["sourceRef"]],
   links: [["id"], ["postSource", "postRef", "activityId"]],
-  configs: [["id"], ["key"]],
   assets: [["id"], ["source", "sourceRef"]],
   stashItems: [["id"], ["stashId", "contentType", "pageTitle"]],
   notifications: [["id"]],
@@ -98,7 +95,6 @@ const DEFAULTS: Record<TableName, Row> = {
     sourceRef: null,
   },
   links: { storylineId: null, chainOrder: null },
-  configs: { description: null },
   assets: {},
   stashItems: { contentType: "wiki", contentId: null, note: null },
   notifications: { href: null },
@@ -122,7 +118,6 @@ const cloneTables = (tables: Partial<ImportTables>): ImportTables => {
     threads: [],
     posts: [],
     links: [],
-    configs: [],
     assets: [],
     stashItems: [],
     notifications: [],
@@ -275,7 +270,6 @@ export function importStore(
     forumThread: table("threads"),
     forumPost: table("posts"),
     postActionLink: table("links"),
-    systemConfig: table("configs"),
     uploadedAsset: table("assets"),
     stashItem: table("stashItems"),
     notification: table("notifications"),

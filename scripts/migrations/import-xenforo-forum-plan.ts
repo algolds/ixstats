@@ -211,6 +211,7 @@ export function rollbackLines(totals: RollbackTotals): string[] {
   return [
     `Rolled back: ${totals.threads} threads, ${totals.posts} posts (${totals.nativeReplies} native replies on imported threads)`,
     `  action links: ${totals.linksRestored} returned to their XenForo post, ${totals.linksDeleted} deleted`,
+    `  stash items: ${totals.stashItems} returned to the old forum thread (a re-apply moves them back)`,
     `  archive categories ${totals.categories}, media assets ${totals.assets}, files ${totals.files}`,
   ];
 }
@@ -220,6 +221,7 @@ export function rollbackPreviewLines(preview: RollbackPreview): string[] {
   return [
     `Rollback preview (nothing deleted): ${preview.threads} imported threads, ${preview.posts} posts (${preview.nativeReplies} native replies on imported threads)`,
     `  action links on those posts: ${preview.links} (returned to their XenForo post, or deleted with a native reply)`,
+    `  stash items on those threads: ${preview.stashItems} (returned to the old forum thread, so a re-apply moves them back)`,
     `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, forum media assets ${preview.assets}, copied files ${preview.files}`,
     "Pass --yes to delete these.",
   ];

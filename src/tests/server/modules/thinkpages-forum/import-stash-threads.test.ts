@@ -108,6 +108,23 @@ describe("remapStashedThreads", () => {
     ]);
   });
 
+  it("deletes the bridge-era item when its owner stashes the native thread between the twin check and the move", async () => {
+    const store = stashStore([legacy("i-old", "s-1", 100)]);
+    const twinCheck = store.db.stashItem.findFirst.getMockImplementation()!;
+    store.db.stashItem.findFirst.mockImplementationOnce(async (args) => {
+      const found = await twinCheck(args);
+      store
+        .tables()
+        .stashItems.push({ ...native("i-native", "s-1", "t-open"), createdAt: new Date(0) });
+      return found;
+    });
+
+    const totals = await remapStashedThreads(store.db as never, { dropUnresolved: true });
+
+    expect(totals).toEqual({ moved: 0, twins: 1, deleted: 0 });
+    expect(itemsOf(store)).toEqual([native("i-native", "s-1", "t-open")]);
+  });
+
   it("keeps an item whose thread was never imported while threads failed, and deletes it on a clean run", async () => {
     const store = stashStore([
       legacy("i-never", "s-1", 999),

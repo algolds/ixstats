@@ -16,7 +16,6 @@ const seed = (): Partial<ImportTables> => ({
   links: [
     { id: "l-1", postSource: "xenforo", postRef: "1000", activityId: "act1", countryId: "c" },
   ],
-  configs: [],
 });
 
 /** The snapshot with some posts' message_state changed (a later export). */
@@ -110,7 +109,6 @@ describe("the XenForo import applied to the small snapshot", () => {
     expect(store.tables().categories.find((c) => c.key === "xf-13")?.visibility).toBe("staff");
     const remapped = store.tables().links[0]!;
     expect(store.tables().posts.find((p) => p.id === remapped.postRef)?.xenforoPostId).toBe(1000);
-    expect(store.tables().configs).toEqual([]); // the run writes no SystemConfig row
     expect(store.db.forumThread.create).toHaveBeenCalledTimes(3);
   });
 
@@ -159,7 +157,6 @@ describe("the XenForo import applied to the small snapshot", () => {
         .sort()
     ).toEqual([100, 103]);
     expect(store.tables().posts.some((p) => p.xenforoPostId === 1010)).toBe(false);
-    expect(store.tables().configs).toEqual([]); // the run writes no SystemConfig row
   });
 
   it("points quotes at the native post, and drops the id of a quoted post that was not imported", async () => {
@@ -233,16 +230,7 @@ describe("the XenForo import applied to the small snapshot", () => {
   });
 
   it("keeps an unmapped quote id while a thread failed, and maps it on the rerun", async () => {
-    let armed = true;
-    const store = importStore(seed(), {
-      failWhen: (table, method, args) => {
-        if (!armed || table !== "threads" || method !== "update") return false;
-        const row = store.tables().threads.find((t) => t.id === args.where?.id);
-        if (row?.xenforoThreadId !== 101) return false;
-        armed = false;
-        return true;
-      },
-    });
+    const store = failingThread101(seed());
     const quoting = withMessages(snapshot, {
       1031: '[QUOTE="Writer, post: 1010, member: 9"]end[/QUOTE]',
     });
@@ -358,16 +346,7 @@ describe("the XenForo import applied to the small snapshot", () => {
     await runImport(clean.db as never, snapshot);
 
     // Thread 101's recount fails after its posts were inserted: the transaction rolls the thread back whole.
-    let armed = true;
-    const store = importStore(seed(), {
-      failWhen: (table, method, args) => {
-        if (!armed || table !== "threads" || method !== "update") return false;
-        const row = store.tables().threads.find((t) => t.id === args.where?.id);
-        if (row?.xenforoThreadId !== 101) return false;
-        armed = false;
-        return true;
-      },
-    });
+    const store = failingThread101(seed());
     const first = await runImport(store.db as never, snapshot);
     expect(first.totals.failedThreads.map((f) => f.xenforoThreadId)).toEqual([101]);
     expect(store.tables().threads.map((t) => t.xenforoThreadId)).toEqual([100, 103]);

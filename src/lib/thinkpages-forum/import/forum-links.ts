@@ -78,12 +78,12 @@ const XENFORO_SEGMENTS = ["threads", "posts", "forums", "categories", "members",
 
 /**
  * Text that a stored row holding an old forum link contains, matched in any case: the import's passes read only
- * those rows. `/forum` covers the bridge's paths (and `//forum.ixwiki.com`).
+ * those rows. `/forum` covers the bridge's paths (and `//forum.ixwiki.com` and XenForo's `/forums/`).
  */
 export const FORUM_LINK_MARKERS: readonly string[] = [
   "forum.ixwiki.com",
   "/forum",
-  ...XENFORO_SEGMENTS.map((segment) => `/${segment}/`),
+  ...XENFORO_SEGMENTS.filter((segment) => segment !== "forums").map((segment) => `/${segment}/`),
 ];
 
 /** XenForo ids are positive and the native columns are Int: anything past int4 cannot match a row. */
@@ -132,20 +132,23 @@ type Route = [RegExp, (match: RegExpExecArray, url: UrlParts) => ForumRef[]];
 /** A XenForo id, bare (`100`) or after its slug (`welcome.100`). */
 const SLUG_ID = String.raw`(?:[^/]*\.)?(\d+)`;
 
-/** XenForo's routes; a thread's `post-P` (or `#post-P`) is tried before the thread. */
+/**
+ * XenForo's routes, in any case (as the host is: an upper-case old link is read, not unwrapped); a thread's `post-P`
+ * (or `#post-P`) is tried before the thread.
+ */
 const XENFORO_ROUTES: readonly Route[] = [
-  [/^(?:\/?|\/forums\/?|\/index\.php)$/, home],
+  [/^(?:\/?|\/forums\/?|\/index\.php)$/i, home],
   [
-    new RegExp(String.raw`^/threads/${SLUG_ID}(?:/(?:page-\d+|unread|latest|post-(\d+)))?/?$`),
+    new RegExp(String.raw`^/threads/${SLUG_ID}(?:/(?:page-\d+|unread|latest|post-(\d+)))?/?$`, "i"),
     (m, url) => refsOf([m[2] ?? postFragment(url.fragment), post], [m[1], thread]),
   ],
-  [/^\/posts\/(\d+)\/?$/, (m) => refsOf([m[1], post])],
-  [/^\/goto\/post\/?$/, (_, url) => refsOf([queryId(url.query), post])],
+  [/^\/posts\/(\d+)\/?$/i, (m) => refsOf([m[1], post])],
+  [/^\/goto\/post\/?$/i, (_, url) => refsOf([queryId(url.query), post])],
   [
-    new RegExp(String.raw`^/(?:forums|categories)/${SLUG_ID}(?:/page-\d+)?/?$`),
+    new RegExp(String.raw`^/(?:forums|categories)/${SLUG_ID}(?:/page-\d+)?/?$`, "i"),
     (m) => refsOf([m[1], node]),
   ],
-  [new RegExp(String.raw`^/members/${SLUG_ID}/?$`), (m) => refsOf([m[1], member])],
+  [new RegExp(String.raw`^/members/${SLUG_ID}/?$`, "i"), (m) => refsOf([m[1], member])],
 ];
 
 /** The retired bridge's routes: its home, `/forum/<nodeId>`, `/forum/thread/<id>[#post-<id>]`, posts, members. */

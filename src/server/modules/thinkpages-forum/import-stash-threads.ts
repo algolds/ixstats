@@ -4,17 +4,22 @@
  * content type `forum_thread`, no `contentId`), once every thread is written. The thread is found by its XenForo id
  * whatever its visibility: the stash listing's own filter (I5, `withReadableThreads`) decides what its owner may read.
  * When that stash already holds the native thread (StashItem is unique on stash, content type and title), the
- * bridge-era item is deleted instead. One whose thread was never imported is deleted on a clean run and kept while
- * threads failed (or the snapshot left forums out), for the rerun. An item removed or changed between its read and
- * the move is left alone. Keyset-paged and idempotent (a moved item is no longer a bridge-era one).
+ * bridge-era item is deleted instead, also when its owner stashes the native thread between that check and the move.
+ * One whose thread was never imported is deleted on a clean run and kept while threads failed (or the snapshot left
+ * forums out), for the rerun. An item removed or changed between its read and the move is left alone. Keyset-paged
+ * and idempotent (a moved item is no longer a bridge-era one).
  */
+import { isUniqueViolation } from "~/lib/prisma-error";
 import { xenforoId } from "~/lib/thinkpages-forum/import/forum-links";
 import { threadHref } from "~/lib/thinkpages-forum/links";
-import { LEGACY_THREAD_PREFIX, NATIVE_THREAD_PREFIX } from "~/lib/wiki-os/stash-content-type";
+import {
+  FORUM_THREAD_CONTENT_TYPE,
+  LEGACY_THREAD_PREFIX,
+  NATIVE_THREAD_PREFIX,
+} from "~/lib/wiki-os/stash-content-type";
 import type { ImportDb } from "./import-db";
 
 const PAGE = 500;
-const CONTENT_TYPE = "forum_thread";
 
 export type StashThreadsDb = Pick<ImportDb, "forumThread" | "stashItem">;
 
@@ -53,8 +58,8 @@ async function nativeThreads(
 }
 
 /**
- * Moves the item to its native thread: "twin" when its stash already holds that thread, "changed" when the item was
- * removed or retitled since it was read (nothing is written).
+ * Moves the item to its native thread: "twin" when its stash already holds that thread (or gains it before the move
+ * is written), "changed" when the item was removed or retitled since it was read (nothing is written).
  */
 async function moveItem(
   db: StashThreadsDb,
@@ -62,16 +67,22 @@ async function moveItem(
   threadId: string
 ): Promise<"moved" | "twin" | "changed"> {
   const pageTitle = `${NATIVE_THREAD_PREFIX}${threadId}`;
+  const contentType = FORUM_THREAD_CONTENT_TYPE;
   const twin = await db.stashItem.findFirst({
-    where: { stashId: item.stashId, contentType: CONTENT_TYPE, pageTitle },
+    where: { stashId: item.stashId, contentType, pageTitle },
     select: { id: true },
   });
   if (twin) return "twin";
-  const { count } = await db.stashItem.updateMany({
-    where: { id: item.id, pageTitle: item.pageTitle },
-    data: { pageTitle, pageSlug: threadHref(threadId), contentType: CONTENT_TYPE, contentId: null },
-  });
-  return count ? "moved" : "changed";
+  try {
+    const { count } = await db.stashItem.updateMany({
+      where: { id: item.id, pageTitle: item.pageTitle },
+      data: { pageTitle, pageSlug: threadHref(threadId), contentType, contentId: null },
+    });
+    return count ? "moved" : "changed";
+  } catch (error) {
+    if (isUniqueViolation(error)) return "twin";
+    throw error;
+  }
 }
 
 export async function remapStashedThreads(

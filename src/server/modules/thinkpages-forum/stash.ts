@@ -11,7 +11,11 @@
  * was never imported (import-stash-threads.ts); nothing else here touches them.
  */
 import type { PrismaClient } from "@prisma/client";
-import { LEGACY_THREAD_PREFIX, NATIVE_THREAD_PREFIX } from "~/lib/wiki-os/stash-content-type";
+import {
+  FORUM_THREAD_CONTENT_TYPE,
+  LEGACY_THREAD_PREFIX,
+  NATIVE_THREAD_PREFIX,
+} from "~/lib/wiki-os/stash-content-type";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 import { canSeeThread, type ForumViewer } from "./access";
@@ -28,8 +32,6 @@ export interface StashOwner {
   primaryId: string;
   ids: readonly string[];
 }
-
-const CONTENT_TYPE = "forum_thread";
 
 const titleOf = (threadId: string): string => `${NATIVE_THREAD_PREFIX}${threadId}`;
 const stashNotFound = (): ForumError => new ForumError("NOT_FOUND", "Stash not found.");
@@ -68,12 +70,14 @@ export async function stashThread(
   const stashId = await targetStash(db, owner, input.stashId);
   const pageTitle = titleOf(thread.id);
   await db.stashItem.upsert({
-    where: { stashId_contentType_pageTitle: { stashId, contentType: CONTENT_TYPE, pageTitle } },
+    where: {
+      stashId_contentType_pageTitle: { stashId, contentType: FORUM_THREAD_CONTENT_TYPE, pageTitle },
+    },
     create: {
       stashId,
       pageTitle,
       pageSlug: threadHref(thread.id),
-      contentType: CONTENT_TYPE,
+      contentType: FORUM_THREAD_CONTENT_TYPE,
       contentId: null,
       note: thread.title,
     },
@@ -96,7 +100,7 @@ export async function unstashThread(
     where: {
       stashId: { in: stashIds },
       pageTitle: titleOf(input.threadId),
-      contentType: CONTENT_TYPE,
+      contentType: FORUM_THREAD_CONTENT_TYPE,
     },
   });
   return { success: true };
@@ -116,7 +120,7 @@ export async function isThreadStashed(
     where: {
       stashId: { in: stashes.map((s) => s.id) },
       pageTitle: titleOf(input.threadId),
-      contentType: CONTENT_TYPE,
+      contentType: FORUM_THREAD_CONTENT_TYPE,
     },
     select: { stashId: true },
   });

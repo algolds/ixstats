@@ -175,6 +175,21 @@ const XENFORO_LINKS: Array<[string, ForumRef[]]> = [
   [`${XF}/index.php?`, [HOME]],
 ];
 
+/** Old links written in upper case: their routes are read in any case, like the host, so none is unwrapped. */
+const UPPER_CASE_LINKS: Array<[string, ForumRef[]]> = [
+  [`${XF}/Threads/Welcome.100/`, [thread(100)]],
+  ["HTTPS://FORUM.IXWIKI.COM/THREADS/X.12/POST-55", [post(55), thread(12)]],
+  [`${XF}/threads/x.12/Page-2`, [thread(12)]],
+  [`${XF}/POSTS/123/`, [post(123)]],
+  [`${XF}/Goto/Post?id=77`, [post(77)]],
+  [`${XF}/Forums/General.12/`, [node(12)]],
+  [`${XF}/CATEGORIES/1/`, [node(1)]],
+  [`${XF}/Members/Jane.7/`, [member(7)]],
+  [`${XF}/FORUMS/`, [HOME]],
+  [`${XF}/Index.php`, [HOME]],
+  [`${XF}/index.php?Threads/x.12/`, [thread(12)]],
+];
+
 const BRIDGE_LINKS: Array<[string, ForumRef[]]> = [
   ["/forum/thread/12", [thread(12)]],
   ["/forum/thread/12/", [thread(12)]],
@@ -231,6 +246,10 @@ describe("classifyForumHref", () => {
     expect(classifyForumHref(href)).toEqual(refs);
   });
 
+  it.each(UPPER_CASE_LINKS)("reads the upper-case XenForo link %s", (href, refs) => {
+    expect(classifyForumHref(href)).toEqual(refs);
+  });
+
   it.each(BRIDGE_LINKS)("reads the IxStates bridge link %s", (href, refs) => {
     expect(classifyForumHref(href)).toEqual(refs);
   });
@@ -278,7 +297,9 @@ describe("classifyForumHref", () => {
 
 describe("FORUM_LINK_MARKERS", () => {
   it.each([
-    ...[...XENFORO_LINKS, ...BRIDGE_LINKS, ...ROOT_RELATIVE_LINKS].map(([href]) => href),
+    ...[...XENFORO_LINKS, ...UPPER_CASE_LINKS, ...BRIDGE_LINKS, ...ROOT_RELATIVE_LINKS].map(
+      ([href]) => href
+    ),
     ...DEAD_LINKS,
   ])("finds %s, so the passes scan every row holding an old link (any case)", (href) => {
     const text = href.toLowerCase();
