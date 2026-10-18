@@ -43,7 +43,8 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
   const panelId = useId();
 
   return (
-    <div className="space-y-4">
+    // pt-14: the tabs are the first row and the hub has no header toolbar, so it clears Halo's floating band itself.
+    <div className="space-y-4 pt-14">
       <h1 className="sr-only">Cards</h1>
       <SegmentedControl
         asTabs
