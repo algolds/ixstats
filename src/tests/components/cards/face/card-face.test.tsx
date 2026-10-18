@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
@@ -200,10 +202,14 @@ describe("RealmCrest", () => {
 
   it("darkens the initial's disc in the light theme to 4.5:1 for its white letter on any face, keeping the dark one", () => {
     render(<RealmCrest realm={realm()} size="md" />);
-    const disc = screen.getByText("I");
-    const light = /(?:^|\s)bg-black\/(\d+)(?:\s|$)/.exec(disc.className);
-    expect(whiteOnBlackOverWhite(Number(light?.[1]) / 100)).toBeGreaterThanOrEqual(4.5);
-    expect(disc).toHaveClass("dark:bg-black/40");
+    expect(screen.getByText("I")).toHaveClass("card-face-initial", "text-white");
+    const css = fs.readFileSync(path.resolve(__dirname, "../../../../styles/card-art.css"), "utf8");
+    const disc =
+      /\.card-face-initial \{\s*background-color: rgb\(0 0 0 \/ ([\d.]+)\);\s*@variant dark \{\s*background-color: rgb\(0 0 0 \/ ([\d.]+)\);/.exec(
+        css
+      );
+    expect(whiteOnBlackOverWhite(Number(disc?.[1]))).toBeGreaterThanOrEqual(4.5);
+    expect(Number(disc?.[2])).toBe(0.4);
   });
 
   it("falls back to the initial when the emblem fails to load", () => {

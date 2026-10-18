@@ -56,12 +56,12 @@ export function RealmCrest({ realm, size = "sm", muted = false, className }: Rea
       />
     );
   }
-  // Light faces need the darker disc: white on black/55 is 4.5:1 even over white; dark faces keep black/40.
+  // card-face-initial: the disc darkens in the light theme, so the white letter reads at 4.5:1 (card-art.css).
   return (
     <span
       aria-hidden="true"
       className={box(
-        "grid place-items-center rounded-full bg-black/55 font-semibold text-white dark:bg-black/40",
+        "card-face-initial grid place-items-center rounded-full font-semibold text-white",
         INITIAL_TEXT[size]
       )}
     >
