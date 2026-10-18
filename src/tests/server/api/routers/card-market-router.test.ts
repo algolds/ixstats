@@ -311,26 +311,26 @@ describe("caller-scoped reads", () => {
 });
 
 describe("analytics", () => {
-  it("falls back to completed auction prices when no value history is stored", async () => {
+  it("returns the stored value history oldest first, with no fallback to auction prices", async () => {
+    const rows = [{ id: "h1", cardId: "card_1", value: 40, recordedAt: new Date(0) }];
+    db.cardValueHistory.findMany.mockResolvedValue(rows);
+
+    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual(rows);
+    expect(db.cardValueHistory.findMany).toHaveBeenCalledWith({
+      where: { cardId: "card_1" },
+      orderBy: { recordedAt: "asc" },
+      take: 100,
+    });
+
+    // A card with no history yet has none, even with a completed auction of one of its copies
     db.cardValueHistory.findMany.mockResolvedValue([]);
     db.cardOwnership.findMany.mockResolvedValue([{ id: "own_1" }]);
     db.cardAuction.findMany.mockResolvedValue([{ finalPrice: 40, endTime: new Date(0) }]);
-
-    const history = await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" });
-
-    expect(history).toEqual([{ cardId: "card_1", value: 40, recordedAt: new Date(0) }]);
+    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([]);
+    expect(db.cardAuction.findMany).not.toHaveBeenCalled();
   });
 
-  it("names transfer parties by their country", async () => {
-    db.cardTransferEvent.findMany.mockResolvedValue([
-      { id: "t1", fromUserId: null, toUserId: "u2" },
-    ]);
-    db.user.findMany.mockResolvedValue([{ id: "u2", country: { name: "Caphiria", flag: null } }]);
-
-    const events = await callerAs("u1", db).getCardTransferHistory({ ownershipId: "own_1" });
-
-    expect(events).toEqual([
-      expect.objectContaining({ id: "t1", fromUserName: null, toUserName: "Caphiria" }),
-    ]);
+  it("has no transfer history of its own: the card sheet's trail is the one trail", () => {
+    expect("getCardTransferHistory" in cardMarketRouter._def.procedures).toBe(false);
   });
 });

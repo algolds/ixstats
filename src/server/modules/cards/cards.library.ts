@@ -219,6 +219,30 @@ function wordsAndArt(card: EditedCard, input: LibraryEdit) {
 }
 
 /**
+ * A rarity override's new reference value, with the Standard median the card-values cron stored, so its next run
+ * does not move the value back.
+ */
+async function valueAtRarity(
+  tx: Prisma.TransactionClient,
+  db: PrismaClient,
+  card: EditedCard,
+  rarity: LibraryEdit["rarity"]
+): Promise<number> {
+  const price = await tx.cardMarketPrice.findUnique({
+    where: { cardId_finish: { cardId: card.id, finish: "STANDARD" } },
+    select: { median: true },
+  });
+  const value = {
+    rarity,
+    cardType: card.cardType,
+    firstSoldAt: card.firstSoldAt,
+    nsBankValue: nsBankValue(card.metadata),
+    isRetired: card.isRetired,
+  };
+  return referenceValue(value, price?.median ?? null, await getValuationConfig(db));
+}
+
+/**
  * Edit one card: its words, art, rarity (with a reason, re-priced and audited) and whether it is hidden. It runs
  * under the card's takedown lock, which every hide takes, so the hold it reads stands until it commits; the write
  * holds only over the art, visibility and rarity it read, which a bulk hide or a sync may change meanwhile.
@@ -237,15 +261,8 @@ export async function updateLibraryCard(
     const rarityChanged = input.rarity !== card.rarity;
     const retiredChanged = input.retired !== card.isRetired;
     if (rarityChanged) {
-      const value = {
-        rarity: input.rarity,
-        cardType: card.cardType,
-        firstSoldAt: card.firstSoldAt,
-        nsBankValue: nsBankValue(card.metadata),
-        isRetired: card.isRetired,
-      };
       data.rarity = input.rarity;
-      data.marketValue = referenceValue(value, null, await getValuationConfig(db));
+      data.marketValue = await valueAtRarity(tx, db, card, input.rarity);
     }
     if (retiredChanged) {
       data.isRetired = input.retired;

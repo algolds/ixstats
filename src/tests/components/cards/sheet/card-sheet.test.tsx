@@ -469,7 +469,7 @@ describe("CardSheet market", () => {
             // The server names a seller with no handle by their nation, and the sheet adds nothing.
             listing({ auctionId: "a3", sellerName: "Caphiria" }),
           ],
-          recentSales: [{ price: 800, at: new Date("2026-10-10T00:00:00Z") }],
+          recentSales: [{ price: 800, finish: "STANDARD", at: new Date("2026-10-10T00:00:00Z") }],
           wantedBy: 0,
         },
       })

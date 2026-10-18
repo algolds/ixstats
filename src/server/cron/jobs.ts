@@ -58,14 +58,15 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/server/cron/vault-dividend-cron")).runVaultDividend,
   },
   {
+    // Every 6 h: market medians per card and finish, then each card's reference value.
     name: "card-values",
     defaultSchedule: "0 */6 * * *",
     scheduleConfigKey: "cronSchedule_cardValue",
     lockName: "card-value",
     timeoutMs: 30 * MINUTE,
-    modulePath: "~/lib/lorewards/card-value-cron",
-    exportName: "updateCardValues",
-    load: async () => (await import("~/lib/lorewards/card-value-cron")).updateCardValues,
+    modulePath: "~/server/modules/cards/market-values",
+    exportName: "runCardMarketValues",
+    load: async () => (await import("~/server/modules/cards/market-values")).runCardMarketValues,
   },
   {
     // Queues the daily lore import per switched-on wiki; the card-import-jobs run works the items.

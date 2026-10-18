@@ -5,8 +5,6 @@ import { type Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { CardFinish, type CardRarity } from "./enums";
 import { mintCopy } from "./mint";
-import { nsBankValue } from "./ns-facts";
-import { getValuationConfig, referenceValue } from "./valuation";
 
 /**
  * Get user's card inventory via CardOwnership. Retired cards stay in it (cards refresh §3): a takedown or a Library
@@ -63,57 +61,6 @@ export async function getUserCards(
     throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "Failed to fetch user cards",
-    });
-  }
-}
-
-/**
- * Calculate card market value based on supply/demand
- * @param db - Prisma client instance
- * @param cardId - Card ID
- * @returns Market value
- */
-export async function getCardMarketValue(db: PrismaClient, cardId: string): Promise<number> {
-  try {
-    if (!cardId || cardId.trim().length === 0) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Card ID is required",
-      });
-    }
-
-    const card = await db.card.findUnique({
-      where: { id: cardId },
-    });
-
-    if (!card) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Card not found",
-      });
-    }
-
-    // One valuation (a Standard copy at level 1); the NS bank value lives in metadata.nsData
-    const cfg = await getValuationConfig(db);
-    return referenceValue(
-      {
-        rarity: card.rarity,
-        cardType: card.cardType,
-        firstSoldAt: card.firstSoldAt,
-        nsBankValue: nsBankValue(card.metadata),
-        isRetired: card.isRetired,
-      },
-      null,
-      cfg
-    );
-  } catch (error) {
-    if (error instanceof TRPCError) {
-      throw error;
-    }
-    console.error("[CARD_SERVICE] Error calculating market value:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to calculate market value",
     });
   }
 }

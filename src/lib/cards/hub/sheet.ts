@@ -5,8 +5,9 @@ import { artCreditOf, type ArtCredit } from "~/lib/cards/face/art-credit";
 import { nsProvenanceOf, type NsProvenance } from "~/lib/cards/face/ns-provenance";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import type { TrailEvent } from "~/lib/cards/face/trail";
-import type { CardFaceData, CardRarity, CardType } from "~/lib/cards/face/types";
+import type { CardFaceData, CardFinish, CardRarity, CardType } from "~/lib/cards/face/types";
 import { isJsonObject } from "~/lib/cards/ns-facts";
+import { listCardSales } from "~/lib/cards/transfer-events";
 import { renderFileLinks } from "~/lib/wiki-os/transformers/wikitext-files";
 import { contextRevealsArt, type HolderRules } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
@@ -113,7 +114,8 @@ export interface CardSheetData {
   copies: SheetCopy[];
   market: {
     listings: SheetListing[];
-    recentSales: Array<{ price: number; at: Date }>;
+    /** The card's last sales here, from the sales record (a burned copy's included). */
+    recentSales: Array<{ price: number; finish: CardFinish | null; at: Date }>;
     wantedBy: number;
   };
 }
@@ -187,18 +189,6 @@ function toSheetListing(
     sellerName: nameOf(row.sellerId),
     isMine: row.sellerId === viewerId,
   };
-}
-
-async function loadSales(db: SheetDb, cardId: string): Promise<Array<{ price: number; at: Date }>> {
-  const rows = await db.cardAuction.findMany({
-    where: { status: "COMPLETED", finalPrice: { not: null }, CardOwnership: { cardId } },
-    orderBy: [{ endTime: "desc" }, { id: "desc" }],
-    take: RECENT_SALES,
-    select: { finalPrice: true, endTime: true },
-  });
-  return rows.flatMap((r) =>
-    r.finalPrice === null ? [] : [{ price: r.finalPrice, at: r.endTime }]
-  );
 }
 
 /** Every move of the viewer's copies, newest first. */
@@ -361,7 +351,7 @@ export async function loadCardSheet(
       ? contextRevealsArt(db, viewerId, cardId, options.from, options.rules)
       : false,
     loadTrailEvents(db, copies),
-    loadSales(db, cardId),
+    listCardSales(db, cardId, RECENT_SALES),
     db.cardWatchlist.count({ where: { cardId } }),
   ]);
   const revealArt = shown || shownThere;
