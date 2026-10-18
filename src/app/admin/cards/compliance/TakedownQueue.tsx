@@ -32,11 +32,12 @@ const VIEW_OPTIONS: ReadonlyArray<{ value: View; label: string }> = [
   { value: "ANSWERED", label: "Declined or restored" },
 ];
 
-const ORIGIN_LABELS: Readonly<Record<string, string>> = {
+const ORIGIN_LABELS: Readonly<Record<Takedown["origin"], string>> = {
   NS_SELF_SERVICE: "NationStates flag owner",
   AUTHOR_REQUEST: "Author",
   LICENCE_REVIEW: "Licence review",
   ADMIN: "Admin",
+  PLAYER_REQUEST: "Player",
 };
 
 /** Where a card comes from: its wiki (a Lore card with none is IxWiki's), else its type (NationStates, Special). */

@@ -111,6 +111,14 @@ describe("ComplianceTab takedowns", () => {
     expect(mutations.hide).toHaveBeenCalledWith({ takedownId: "td_1" });
   });
 
+  it("names a player's request as the player's, with the contact they gave", () => {
+    serve({ takedowns: [takedown({ origin: "PLAYER_REQUEST", contact: "me@example.org" })] });
+    render(<ComplianceTab />);
+
+    expect(screen.getByText("Player")).toBeInTheDocument();
+    expect(screen.getByText("me@example.org")).toBeInTheDocument();
+  });
+
   it("declines a request with the reason the admin gives", () => {
     serve({ takedowns: [takedown()] });
     render(<ComplianceTab />);

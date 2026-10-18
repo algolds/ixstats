@@ -12,6 +12,7 @@
  *  - sheet:       the card sheet and the wiki excerpt
  *  - showcases:   free-form showcases by copy, and the player's display
  *  - mute:        the per-card notice mute
+ *  - takedowns:   a player's takedown request for a card not from NationStates
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -22,6 +23,7 @@ import { cardsExploreRouter } from "./explore";
 import { cardsSheetRouter } from "./sheet";
 import { cardsShowcasesRouter } from "./showcases";
 import { cardsMuteRouter } from "./mute";
+import { cardsTakedownsRouter } from "./takedowns";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -32,5 +34,6 @@ export const cardsRouter = mergeRouters(
   cardsSheetRouter,
   cardsShowcasesRouter,
   cardsMuteRouter,
+  cardsTakedownsRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );

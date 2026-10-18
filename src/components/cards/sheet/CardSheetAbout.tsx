@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ShieldAlert } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
-import { focusRing } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { cardWikiHref } from "~/components/cards/display/card-wiki-href";
 import { LoreWikiExcerpt } from "~/components/cards/display/LoreWikiExcerpt";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
@@ -13,6 +14,7 @@ import { ArtCreditLine } from "~/components/cards/face/ArtCreditLine";
 import { parseCardArticleSource } from "~/lib/cards/card-sources";
 import { cleanWikiUsername } from "~/lib/cards/lore-card-author-info";
 import type { CardSheetData } from "~/lib/cards/hub/sheet";
+import { RequestTakedownDialog } from "./RequestTakedownDialog";
 
 const AUTHOR_STALE_MS = 60 * 60 * 1000;
 
@@ -40,9 +42,27 @@ function useArticleAuthor(card: CardSheetData["card"], isLore: boolean): string 
   return stored ?? cleanAuthor(live.data?.authorInfo?.displayAuthor);
 }
 
-/** NS cards keep NationStates' own credit and self-service takedown; every other card points to the help. */
-function Takedown({ card }: { card: CardSheetData["card"] }) {
+/**
+ * NS cards keep NationStates' own credit and self-service takedown. A signed-in player asks for any other card to come
+ * down from here; a visitor is pointed to the help.
+ */
+function Takedown({ card, signedIn }: { card: CardSheetData["card"]; signedIn: boolean }) {
   const [open, setOpen] = useState(false);
+  if (!card.ns && signedIn) {
+    return (
+      <RequestTakedownDialog
+        open={open}
+        onOpenChange={setOpen}
+        cardId={card.id}
+        cardTitle={card.title}
+      >
+        <Button variant="link" size="sm" className="h-auto px-0">
+          <ShieldAlert />
+          Request a takedown
+        </Button>
+      </RequestTakedownDialog>
+    );
+  }
   if (!card.ns) {
     return (
       <p className="text-footnote">
@@ -74,10 +94,12 @@ interface CardSheetAboutProps {
   card: CardSheetData["card"];
   /** The viewer may not see the card's art (a silhouette or a retired card): nothing here may show or link it. */
   artHidden: boolean;
+  /** Only a signed-in player can request a takedown here. */
+  signedIn: boolean;
 }
 
-/** "About": the lore excerpt and wiki link, the author and art credit, and the takedown link. */
-export function CardSheetAbout({ card, artHidden }: CardSheetAboutProps) {
+/** "About": the lore excerpt and wiki link, the author and art credit, and the takedown action. */
+export function CardSheetAbout({ card, artHidden, signedIn }: CardSheetAboutProps) {
   // A legacy Commons card has no title but still links to its file page.
   const isLore =
     card.cardType === "LORE" && (Boolean(card.wikiArticleTitle) || card.wikiSource === "commons");
@@ -102,7 +124,7 @@ export function CardSheetAbout({ card, artHidden }: CardSheetAboutProps) {
       {card.artCredit && (
         <ArtCreditLine credit={card.artCredit} label="Art:" className="text-footnote" />
       )}
-      <Takedown card={card} />
+      <Takedown card={card} signedIn={signedIn} />
     </section>
   );
 }
