@@ -196,7 +196,7 @@ describe("card values", () => {
 describe("caches", () => {
   /** A client whose transaction records when it commits. */
   const committing = (order: string[]) => {
-    const tx = createMockPrisma();
+    const tx = createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
     return createMockPrisma({
       $transaction: jest.fn(async (write: (client: typeof tx) => Promise<void>) => {
         await write(tx);
@@ -438,9 +438,11 @@ describe("rarity tables and daily imports", () => {
 describe("card economy numbers", () => {
   const written = () =>
     jest.mocked(setEconomyConfig).mock.calls.map(([, field, value]) => [field, value]);
+  /** A client whose `$executeRaw` (the save's lock) resolves, as Postgres's does. */
+  const economyDb = () => createMockPrisma({ $executeRaw: jest.fn().mockResolvedValue(1) });
 
   it("saves the sent numbers through the transaction, with one audit row", async () => {
-    const tx = createMockPrisma();
+    const tx = economyDb();
     const db = createMockPrisma({
       $transaction: jest.fn((write: (client: typeof tx) => Promise<void>) => write(tx)),
     });
@@ -462,6 +464,23 @@ describe("card economy numbers", () => {
     });
   });
 
+  it("serialises the saves on one lock, taken before the stored numbers are read", async () => {
+    const tx = economyDb();
+    const db = createMockPrisma({
+      $transaction: jest.fn((write: (client: typeof tx) => Promise<void>) => write(tx)),
+    });
+    await saveEconomy(db as never, actor, { xpPack: 12 });
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+    const [strings, namespace] = tx.$executeRaw.mock.calls[0]!;
+    expect([(strings as string[]).join("?"), namespace]).toEqual([
+      "SELECT pg_advisory_xact_lock(?::int, 0)",
+      7339,
+    ]);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(readEconomyConfig).mock.invocationCallOrder[0]!
+    );
+  });
+
   it("refuses a number out of bounds or finer than a hundredth with its sentence, and writes nothing", async () => {
     const db = createMockPrisma();
     await expect(saveEconomy(db as never, actor, { listingDays: 61 })).rejects.toMatchObject({
@@ -479,7 +498,7 @@ describe("card economy numbers", () => {
   });
 
   it("refuses the section rules read against the stored numbers, before any write", async () => {
-    const db = createMockPrisma();
+    const db = economyDb();
     await expect(saveEconomy(db as never, actor, { dailyRarePct: 8 })).rejects.toMatchObject({
       code: "BAD_REQUEST",
       message: "The daily odds add up to 101%. Make them 100%.",

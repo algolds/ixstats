@@ -74,6 +74,13 @@ import { recomputeMarketValues, type MarketValuesResult } from "./market-values"
 
 type Tx = Prisma.TransactionClient;
 
+/**
+ * Arbitrary constant; identifies the economy save lock in pg_locks. One save at a time checks the section rules, so
+ * two sections saved at once (Dust and Crafting share the dust loop) cannot both pass against the old numbers. Not
+ * 7336, which the revalue cron holds for up to a minute.
+ */
+const ECONOMY_SAVE_LOCK_NAMESPACE = 7339;
+
 export async function economySettings(db: PrismaClient) {
   const [values, market, bonuses, lorewardPayouts, rarityThresholds, dailyImports, economy] =
     await Promise.all([
@@ -216,12 +223,15 @@ export async function saveMarket(
 
 /**
  * Refuses card economy numbers that break a section rule (the finish odds, the daily odds, the dust loop) once the
- * sent ones replace the stored ones, which are read past the cache.
+ * sent ones replace the stored ones, which are read past the cache. It runs first in the save's transaction and takes
+ * the save lock before that read.
  */
 async function checkEconomy(
   tx: Tx,
   sent: ReadonlyArray<[keyof CardEconomyConfig, number]>
 ): Promise<void> {
+  // $executeRaw, not $queryRaw: Prisma cannot deserialize the void pg_advisory_xact_lock returns
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ECONOMY_SAVE_LOCK_NAMESPACE}::int, 0)`;
   const problem = economyProblem({ ...(await readEconomyConfig(tx)), ...Object.fromEntries(sent) });
   if (problem) refuse(problem);
 }
