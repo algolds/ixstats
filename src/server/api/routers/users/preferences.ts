@@ -9,9 +9,9 @@ import {
   rateLimitedMutationProcedure,
   createRateLimitMiddleware,
 } from "~/server/api/trpc";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { switchIsOn } from "~/server/shared/privacy-permissions";
+import { hiddenLinkedNames, switchIsOn } from "~/server/shared/privacy-permissions";
 import { recordHeartbeat } from "~/server/shared/presence";
 import { clearOwnHistory } from "~/server/shared/clear-history";
 
@@ -34,6 +34,46 @@ async function findTypedCountry(
       select: { id: true },
     }))
   );
+}
+
+const LISTED_USER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  wikiUsername: true,
+  discordUsername: true,
+  country: { select: { name: true, slug: true, flag: true } },
+} satisfies Prisma.UserSelect;
+type ListedUser = Prisma.UserGetPayload<{ select: typeof LISTED_USER_SELECT }>;
+
+/**
+ * The users the block and mute lists name (a row stores a platform or a Clerk id), keyed by both ids: one query,
+ * then one batch read of the linked-name switches for the users with a wiki or Discord name (hiddenLinkedNames).
+ * The wiki name is blanked for each user with `showWikiAttribution` off and the Discord name for each with
+ * `showDiscordTag` off; a read error blanks every one.
+ */
+async function listedUsers(
+  db: Pick<PrismaClient, "user" | "userConnection">,
+  targetIds: string[]
+): Promise<Map<string, ListedUser>> {
+  const byId = new Map<string, ListedUser>();
+  const ids = [...new Set(targetIds)];
+  if (ids.length === 0) return byId;
+  const rows = await db.user.findMany({
+    where: { OR: [{ id: { in: ids } }, { clerkUserId: { in: ids } }] },
+    select: LISTED_USER_SELECT,
+  });
+  const named = rows.filter((u) => u.wikiUsername || u.discordUsername).map((u) => u.clerkUserId);
+  const hidden = await hiddenLinkedNames(db, named);
+  for (const row of rows) {
+    const user = {
+      ...row,
+      wikiUsername: hidden.wiki.has(row.clerkUserId) ? null : row.wikiUsername,
+      discordUsername: hidden.discord.has(row.clerkUserId) ? null : row.discordUsername,
+    };
+    byId.set(user.id, user);
+    byId.set(user.clerkUserId, user);
+  }
+  return byId;
 }
 
 export interface PrivacyConfig {
@@ -171,6 +211,20 @@ export const usersPreferencesRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
 
+    // 3. Fetch muted connections
+    const mutedConnections = await ctx.db.userConnection.findMany({
+      where: {
+        userId,
+        connectionType: "muted",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const listed = await listedUsers(
+      ctx.db,
+      [...blockedConnections, ...mutedConnections].flatMap((c) => c.targetUserId ?? [])
+    );
+
     const blockedItems = await Promise.all(
       blockedConnections.map(async (c) => {
         let label = "Unknown Account";
@@ -178,12 +232,7 @@ export const usersPreferencesRouter = createTRPCRouter({
         let avatarUrl: string | null = null;
 
         if (c.targetUserId) {
-          const u = await ctx.db.user.findFirst({
-            where: {
-              OR: [{ id: c.targetUserId }, { clerkUserId: c.targetUserId }],
-            },
-            include: { country: true },
-          });
+          const u = listed.get(c.targetUserId);
           if (u) {
             label = u.country?.name || u.wikiUsername || u.discordUsername || "User";
             subtitle = u.country?.slug ? `@${u.country.slug}` : "IxnayID User";
@@ -212,42 +261,24 @@ export const usersPreferencesRouter = createTRPCRouter({
       })
     );
 
-    // 3. Fetch muted connections
-    const mutedConnections = await ctx.db.userConnection.findMany({
-      where: {
-        userId,
-        connectionType: "muted",
-      },
-      orderBy: { createdAt: "desc" },
+    const mutedItems = mutedConnections.map((c) => {
+      let label = "Unknown Account";
+      let subtitle = "Muted Account";
+
+      const u = c.targetUserId ? listed.get(c.targetUserId) : undefined;
+      if (u) {
+        label = u.country?.name || u.wikiUsername || "User";
+        subtitle = u.country?.slug ? `@${u.country.slug}` : "Muted User";
+      }
+
+      return {
+        id: c.id,
+        targetUserId: c.targetUserId,
+        label,
+        subtitle,
+        createdAt: c.createdAt,
+      };
     });
-
-    const mutedItems = await Promise.all(
-      mutedConnections.map(async (c) => {
-        let label = "Unknown Account";
-        let subtitle = "Muted Account";
-
-        if (c.targetUserId) {
-          const u = await ctx.db.user.findFirst({
-            where: {
-              OR: [{ id: c.targetUserId }, { clerkUserId: c.targetUserId }],
-            },
-            include: { country: true },
-          });
-          if (u) {
-            label = u.country?.name || u.wikiUsername || "User";
-            subtitle = u.country?.slug ? `@${u.country.slug}` : "Muted User";
-          }
-        }
-
-        return {
-          id: c.id,
-          targetUserId: c.targetUserId,
-          label,
-          subtitle,
-          createdAt: c.createdAt,
-        };
-      })
-    );
 
     // 4. Fetch muted keywords
     const keywordConnections = await ctx.db.userConnection.findMany({

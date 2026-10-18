@@ -8,8 +8,9 @@
  * The handle is the same for every viewer, the owner included: share and invite links carry it, so
  * with wiki attribution off it never names the holder by their wiki name, even in the owner's own
  * copy. The owner still sees their wiki name where only they see it (the passport's wiki block,
- * identity.link-privacy.ts, and Settings). A switch that cannot be read counts as off. Old links
- * that carry the wiki name still resolve (identity.resolve.ts); only the emitted handle changes.
+ * identity.link-privacy.ts, and Settings). A switch that cannot be read counts as off. A link that
+ * carries the wiki name (an old one) resolves to the holder only while the switch is on
+ * (identity.resolve.ts).
  */
 import { db } from "~/server/db";
 import { switchIsOn, withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";

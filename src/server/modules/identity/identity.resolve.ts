@@ -3,6 +3,12 @@
  * Order: the stored IxStates Passport handle, then the viewer's own linked names, then users by
  * forum name, wiki name, Clerk id or id, then external wiki/forum names. A country name, slug or id
  * does not resolve a person (country-name passport URLs are dropped).
+ *
+ * A legacy wiki name resolves to its player only while they show wiki attribution
+ * (`showWikiAttribution`): the switch is read in one batch for the users holding the name, and a
+ * read error counts as off. With it off, a link carrying the wiki name (an old one) does not open
+ * their passport; it falls through to the external wiki name, if any. The viewer's own names
+ * (findViewerMatch) still resolve to themself.
  */
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
@@ -16,6 +22,7 @@ import {
 } from "./identity.selects";
 import type { IdentityForumGateway, ResolvedIdentity } from "./identity.types";
 import { likeLiteral } from "~/lib/utils/like-literal";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 /** A case-insensitive exact match: Prisma compiles it to ILIKE, so the value's wildcards are escaped. */
 const insensitive = (value: string) => ({
@@ -40,27 +47,56 @@ async function findViewerMatch(viewerClerkId: string | null, names: string[]) {
   return linked.some((name) => (name ? names.includes(name.toLowerCase()) : false)) ? viewer : null;
 }
 
-/** Legacy names a passport segment may carry: Clerk id, forum name, wiki name, user id, and `me`. */
-function legacyNameWhere(
+const WIKI_NAME_HOLDER_SELECT = {
+  id: true,
+  clerkUserId: true,
+  wikiUsername: true,
+} satisfies Prisma.UserSelect;
+type WikiNameHolder = Prisma.UserGetPayload<{ select: typeof WIKI_NAME_HOLDER_SELECT }>;
+
+/** The users holding one of `names` as their legacy `User.wikiUsername`; none when the read fails. */
+async function wikiNameHolders(names: string[]): Promise<WikiNameHolder[]> {
+  try {
+    return await db.user.findMany({
+      where: { OR: names.map((name) => ({ wikiUsername: insensitive(name) })) },
+      select: WIKI_NAME_HOLDER_SELECT,
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The legacy wiki-name match for `names`: the users holding one of them who show wiki attribution, by id. One
+ * query for the holders and one batch switch read (withoutHiddenWikiNames); a read error matches nobody.
+ */
+async function attributedWikiNameMatch(names: string[]): Promise<Prisma.UserWhereInput[]> {
+  const holders = await wikiNameHolders(names);
+  if (holders.length === 0) return [];
+  const shown = (await withoutHiddenWikiNames(db, holders)).filter((u) => u.wikiUsername);
+  return shown.length > 0 ? [{ id: { in: shown.map((u) => u.id) } }] : [];
+}
+
+/**
+ * Legacy names a passport segment may carry: Clerk id, forum name, wiki name (only while its owner shows wiki
+ * attribution), user id, and `me`.
+ */
+async function legacyNameWhere(
   handle: string,
   stripped: string,
   viewerClerkId: string | null
-): Prisma.UserWhereInput {
+): Promise<Prisma.UserWhereInput> {
   const isSelf = handle === "me" || handle === viewerClerkId;
   return {
     OR: [
       ...(isSelf && viewerClerkId ? [{ clerkUserId: viewerClerkId }] : []),
       { clerkUserId: handle },
       { forumUsername: insensitive(handle) },
-      { wikiUsername: insensitive(handle) },
       { id: handle },
       ...(stripped !== handle
-        ? [
-            { forumUsername: insensitive(stripped) },
-            { wikiUsername: insensitive(stripped) },
-            { clerkUserId: stripped },
-          ]
+        ? [{ forumUsername: insensitive(stripped) }, { clerkUserId: stripped }]
         : []),
+      ...(await attributedWikiNameMatch([...new Set([handle, stripped])])),
     ],
   };
 }
@@ -70,9 +106,9 @@ const NEWEST_FIRST: Prisma.UserOrderByWithRelationInput[] = [
   { createdAt: "desc" },
 ];
 
-function findUserByHandle(handle: string, stripped: string, viewerClerkId: string | null) {
+async function findUserByHandle(handle: string, stripped: string, viewerClerkId: string | null) {
   return db.user.findFirst({
-    where: legacyNameWhere(handle, stripped, viewerClerkId),
+    where: await legacyNameWhere(handle, stripped, viewerClerkId),
     orderBy: NEWEST_FIRST,
   });
 }
@@ -212,13 +248,15 @@ export async function resolveCanonicalHandle(segment: string): Promise<{ handle:
   const user =
     (lookup.stored
       ? await db.user.findUnique({ where: { handle: lookup.stored }, select })
-      : null) ?? (await db.user.findFirst({ where: lookup.legacy, orderBy: NEWEST_FIRST, select }));
+      : null) ??
+    (await db.user.findFirst({ where: await lookup.legacy(), orderBy: NEWEST_FIRST, select }));
   return user?.handle ? { handle: user.handle } : null;
 }
 
 /**
  * How a segment names a user without a viewer, in findPerson's order: the stored handle it can be (null when
- * it cannot be one), then the legacy-name filter. Null for an empty segment or `me`.
+ * it cannot be one), then the legacy-name filter (built only when the stored handle names nobody). Null for an
+ * empty segment or `me`.
  */
 function segmentLookup(segment: string) {
   const handle = segment.replace(/^@/, "").trim();
@@ -226,7 +264,7 @@ function segmentLookup(segment: string) {
   const valid = validateHandle(handle);
   return {
     stored: valid.ok ? valid.handle : null,
-    legacy: legacyNameWhere(handle, handle.replace(/_$/, ""), null),
+    legacy: () => legacyNameWhere(handle, handle.replace(/_$/, ""), null),
   };
 }
 
@@ -250,7 +288,8 @@ export async function resolveHandleUser(segment: string): Promise<HandleUser | n
   return (
     (lookup.stored
       ? await db.user.findUnique({ where: { handle: lookup.stored }, select })
-      : null) ?? (await db.user.findFirst({ where: lookup.legacy, orderBy: NEWEST_FIRST, select }))
+      : null) ??
+    (await db.user.findFirst({ where: await lookup.legacy(), orderBy: NEWEST_FIRST, select }))
   );
 }
 

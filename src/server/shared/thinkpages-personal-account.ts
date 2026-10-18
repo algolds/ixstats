@@ -4,9 +4,14 @@
  * A personal persona has `accountType: "personal"` and no `countryId`. Uniqueness per user is
  * enforced by the `ThinkpagesPersonalAccount` row (primary key = Clerk user id), so two concurrent
  * "post as yourself" calls cannot create two personas.
+ *
+ * A new persona is never seeded from the wiki name of a user who turned wiki attribution off
+ * (`showWikiAttribution`; a read error counts as off): it takes the forum name, else the generic
+ * fallback. An existing persona keeps the name it has.
  */
 import type { PrismaClient, ThinkpagesAccount } from "@prisma/client";
 import { isUniqueViolation } from "~/lib/prisma-error";
+import { withoutHiddenWikiNames } from "./privacy-permissions";
 
 export const PERSONAL_ACCOUNT_TYPE = "personal";
 
@@ -17,7 +22,7 @@ const MAX_CREATE_ATTEMPTS = 6;
 
 type PersonalDb = Pick<
   PrismaClient,
-  "thinkpagesAccount" | "thinkpagesPersonalAccount" | "user" | "$transaction"
+  "thinkpagesAccount" | "thinkpagesPersonalAccount" | "user" | "userConnection" | "$transaction"
 >;
 
 interface PersonalAccountPreferences {
@@ -58,7 +63,7 @@ export async function findPersonalAccount(
   return account;
 }
 
-/** Username stem and display name for a new personal persona: explicit prefs, then the user's forum/wiki names. */
+/** Username stem and display name for a new personal persona: explicit prefs, then the user's forum/shown wiki names. */
 function initialNames(
   prefs: PersonalAccountPreferences,
   user: { forumUsername: string | null; wikiUsername: string | null } | null
@@ -99,7 +104,8 @@ export async function ensurePersonalAccount(
     where: { clerkUserId },
     select: { forumUsername: true, wikiUsername: true },
   });
-  const { base, displayName } = initialNames(prefs, user);
+  const [shown] = user ? await withoutHiddenWikiNames(db, [{ ...user, clerkUserId }]) : [];
+  const { base, displayName } = initialNames(prefs, shown ?? null);
 
   // The fallback stem is generic, so skip straight to a suffixed name for it.
   const firstAttempt = base === FALLBACK_USERNAME_BASE ? 2 : 0;

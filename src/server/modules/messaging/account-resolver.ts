@@ -3,18 +3,34 @@
  *
  * Efficiently batch-resolves clerkUserIds, countryIds, forum keys, and wiki usernames
  * in a single round-trip without N+1 queries.
+ *
+ * A player who turned wiki attribution off (`showWikiAttribution`) is never named by their wiki
+ * name: the switch is read in one batch (`withoutHiddenWikiNames`; a read error hides every wiki
+ * name) and the name falls through to the next one, as display-names.ts does. The name is the same
+ * for every viewer, the player included. `wiki:` ids are wiki talk-page authors (wiki-talk-bridge),
+ * named on the wiki itself, not players.
  */
 
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { UserAccount } from "./contracts";
 import {
   pickDisplayName,
   resolveDisplayNames,
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 
 type AccountMap = Map<string, UserAccount>;
 
-const COUNTRY_INCLUDE = { country: { select: { slug: true, name: true, flag: true } } };
+/** The delegates the resolver reads; accepts the Prisma client or a transaction client. */
+export type MessagingAccountsDb = Pick<
+  PrismaClient,
+  "user" | "country" | "thinkpagesAccount" | "userConnection"
+>;
+
+const COUNTRY_INCLUDE = {
+  country: { select: { slug: true, name: true, flag: true } },
+} satisfies Prisma.UserInclude;
 
 function account(
   id: string,
@@ -25,12 +41,14 @@ function account(
   return { id, username, displayName, profileImageUrl, accountType: "country" };
 }
 
-async function resolveClerkAccounts(realIds: string[], db: any, map: AccountMap) {
-  const users =
-    (await db.user.findMany({
+async function resolveClerkAccounts(realIds: string[], db: MessagingAccountsDb, map: AccountMap) {
+  const users = await withoutHiddenWikiNames(
+    db,
+    await db.user.findMany({
       where: { clerkUserId: { in: realIds } },
       include: COUNTRY_INCLUDE,
-    })) ?? [];
+    })
+  );
   for (const u of users) {
     map.set(
       u.clerkUserId,
@@ -45,12 +63,11 @@ async function resolveClerkAccounts(realIds: string[], db: any, map: AccountMap)
 
   const unresolvedReal = realIds.filter((id) => !map.has(id));
   if (unresolvedReal.length > 0) {
-    const countries =
-      (await db.country.findMany({
-        where: { id: { in: unresolvedReal } },
-        select: { id: true, slug: true, name: true, flag: true },
-      })) ?? [];
-    for (const c of countries) map.set(c.id, account(c.id, c.slug, c.name, c.flag));
+    const countries = await db.country.findMany({
+      where: { id: { in: unresolvedReal } },
+      select: { id: true, slug: true, name: true, flag: true },
+    });
+    for (const c of countries) map.set(c.id, account(c.id, c.slug ?? c.id, c.name, c.flag));
   }
 
   // Users with no linked name, or with only a ThinkPages account: resolve through identity.
@@ -70,16 +87,15 @@ async function resolveClerkAccounts(realIds: string[], db: any, map: AccountMap)
 
 async function resolveForumAccounts(
   forumKeys: { key: string; raw: string }[],
-  db: any,
+  db: MessagingAccountsDb,
   map: AccountMap
 ) {
   const numericIds = forumKeys.map((f) => parseInt(f.raw, 10)).filter((n) => !isNaN(n));
   if (numericIds.length > 0) {
-    const forumUsers =
-      (await db.user.findMany({
-        where: { forumUserId: { in: numericIds } },
-        include: COUNTRY_INCLUDE,
-      })) ?? [];
+    const forumUsers = await db.user.findMany({
+      where: { forumUserId: { in: numericIds } },
+      include: COUNTRY_INCLUDE,
+    });
     for (const u of forumUsers) {
       const key = `forum:${u.forumUserId}`;
       map.set(
@@ -101,7 +117,7 @@ async function resolveForumAccounts(
 
 export async function batchResolveMessagingAccounts(
   userIds: string[],
-  db: any
+  db: MessagingAccountsDb
 ): Promise<AccountMap> {
   const map: AccountMap = new Map();
   if (userIds.length === 0) return map;

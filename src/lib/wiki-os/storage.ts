@@ -70,8 +70,12 @@ export async function getVerifiedWikiLink(
   };
 }
 
-/** What a wiki profile may show about the account's owner: no user, role or Clerk ids. */
+/**
+ * What a wiki profile may show about the account's owner: no user or role ids. The Clerk id is only for the caller's
+ * wiki attribution check (`showWikiAttribution`) and is never sent.
+ */
 const PROFILE_USER_SELECT = {
+  clerkUserId: true,
   country: { select: { id: true, name: true, flag: true } },
   role: { select: { name: true, level: true } },
 } as const;
@@ -83,7 +87,11 @@ const PROFILE_USER_SELECT = {
  */
 export async function findWikiProfileUser(wikiName: string) {
   const link = await db.wikiAccountLink.findFirst({
-    where: { source: "ixwiki", username: normalizeWikiUsername(wikiName), verifiedAt: { not: null } },
+    where: {
+      source: "ixwiki",
+      username: normalizeWikiUsername(wikiName),
+      verifiedAt: { not: null },
+    },
     select: { user: { select: PROFILE_USER_SELECT } },
   });
   if (link) return link.user;
