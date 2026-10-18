@@ -93,7 +93,7 @@ function wikiEventDescription(item: WikiActivityItem): string {
 
 interface HistorySources {
   identityId: string;
-  /** The passport handle (`passportHandleOf`), never the URL segment: the join event links to it. */
+  /** The passport handle (`loadPassportHandle`), never the URL segment: the join event links to it. */
   handle: string;
   feed: WikiActivityItem[];
   directives: DirectiveRow[];

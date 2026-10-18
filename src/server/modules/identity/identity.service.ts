@@ -31,11 +31,7 @@ import {
 import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
-import {
-  loadPassportHandle,
-  loadVerifiedWikiName,
-  passportHandleOf,
-} from "./identity.passport-handle";
+import { loadPassportHandle, loadVerifiedWikiName } from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import { loadLinkPrivacy, passportOnline } from "./identity.link-privacy";
 import type {
@@ -236,7 +232,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
   const [loreRank, online, handle] = await Promise.all([
     loreStats ? loadLoreRank(loreStats.totalScore) : null,
     passportOnline(identity),
-    user ? passportHandleOf(user, verifiedWikiName) : identity.handle,
+    user ? loadPassportHandle(user, { verifiedWikiName }) : identity.handle,
   ]);
 
   const forumStats = toForumStats(forumActivity);
@@ -257,7 +253,8 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     /** Players who joined a realm by the holder's invite (approved invited claims). */
     recruitedCount,
     /**
-     * The passport handle (`passportHandleOf`); share links use this, never the URL segment. An
+     * The passport handle (`loadPassportHandle`); share links use this, never the URL segment. It
+     * is the same for every viewer and carries no wiki name while wiki attribution is off. An
      * identity with no user (an external wiki or forum name) keeps its segment.
      */
     handle,
