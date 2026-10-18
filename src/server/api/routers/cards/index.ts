@@ -13,6 +13,7 @@
  *  - mute:        the per-card notice mute
  *  - takedowns:   a player's takedown request for a card not from NationStates
  *  - inscriptions: signing a copy and reporting an inscription
+ *  - sheet-economy: your copies' values and actions on the sheet
  *  - admin:       every card admin procedure, one sub-router per admin tab
  */
 import { createTRPCRouter, mergeRouters } from "~/server/api/trpc";
@@ -24,6 +25,7 @@ import { cardsShowcasesRouter } from "./showcases";
 import { cardsMuteRouter } from "./mute";
 import { cardsTakedownsRouter } from "./takedowns";
 import { cardsInscriptionsRouter } from "./inscriptions";
+import { cardsSheetEconomyRouter } from "./sheet-economy";
 import { cardsAdminRouter } from "./admin";
 
 export const cardsRouter = mergeRouters(
@@ -35,5 +37,6 @@ export const cardsRouter = mergeRouters(
   cardsMuteRouter,
   cardsTakedownsRouter,
   cardsInscriptionsRouter,
+  cardsSheetEconomyRouter,
   createTRPCRouter({ admin: cardsAdminRouter })
 );

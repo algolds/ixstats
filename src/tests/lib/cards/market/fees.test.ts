@@ -1,5 +1,11 @@
 /** @jest-environment node */
-import { listingRefund, MAX_LISTING_PRICE, royaltyFromFee, saleFee } from "~/lib/cards/market/fees";
+import {
+  listingFeeNote,
+  listingRefund,
+  MAX_LISTING_PRICE,
+  royaltyFromFee,
+  saleFee,
+} from "~/lib/cards/market/fees";
 
 const rule = { ratePct: 10, threshold: 100 };
 
@@ -63,5 +69,21 @@ describe("market fees", () => {
     expect(listingRefund(5, -10)).toBe(0);
     expect(listingRefund(5, 33.33)).toBe(1.66);
     expect(listingRefund(7, 29)).toBe(2.03);
+  });
+});
+
+describe("listingFeeNote", () => {
+  it("names the fee and the configured refund share", () => {
+    expect(listingFeeNote(5, 50)).toBe(
+      "Listing costs 5 IxC, and 2.5 IxC comes back if the card does not sell."
+    );
+    expect(listingFeeNote(10, 20)).toBe(
+      "Listing costs 10 IxC, and 2 IxC comes back if the card does not sell."
+    );
+  });
+
+  it("names no refund when none is configured, and no fee when listing is free", () => {
+    expect(listingFeeNote(5, 0)).toBe("Listing costs 5 IxC.");
+    expect(listingFeeNote(0, 50)).toBe("Listing is free.");
   });
 });
