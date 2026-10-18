@@ -55,12 +55,14 @@ export async function mintCopy(
       finish: input.finish,
     },
   });
-  // The card and serial ride on the row so the trail, and the serial's high-water mark, outlive the copy
+  // The card, serial and finish ride on the row, so the trail, the serial's high-water mark and the market median
+  // outlive the copy
   await tx.cardTransferEvent.create({
     data: {
       ownershipId: copy.id,
       cardId: input.cardId,
       serialNumber,
+      finish: input.finish,
       toUserId: input.ownerId,
       action: input.serialNumber === undefined ? input.source : "REISSUE",
     },

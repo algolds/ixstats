@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import type { CardAuctionStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
@@ -179,7 +180,7 @@ export const cardMarketBidsRouter = createTRPCRouter({
         const userId = ctx.user.id;
 
         const where = {
-          status: { in: ["COMPLETED", "CANCELLED"] as string[] },
+          status: { in: ["COMPLETED", "CANCELLED"] satisfies CardAuctionStatus[] },
           OR: [
             { sellerId: userId },
             { winnerId: userId },

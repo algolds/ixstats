@@ -97,16 +97,17 @@ describe("mintCopy", () => {
     expect(copy.id).toBe("cuid_1");
   });
 
-  it("writes the mint row of the provenance trail with its source, card and serial", async () => {
+  it("writes the mint row of the provenance trail with its source, card, serial and finish", async () => {
     const db = fakeDatabase();
     await db.transaction((tx) =>
-      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "NS_DECK_IMPORT" })
+      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "FOIL", source: "NS_DECK_IMPORT" })
     );
     expect(db.events).toEqual([
       {
         ownershipId: "cuid_1",
         cardId: "c1",
         serialNumber: 1,
+        finish: "FOIL",
         toUserId: "u1",
         action: "NS_DECK_IMPORT",
       },
@@ -190,6 +191,7 @@ describe("mintCopy reissuing a serial", () => {
         ownershipId: "own_new",
         cardId: "trophy",
         serialNumber: 1,
+        finish: "SERIALISED",
         toUserId: "u2",
         action: "REISSUE",
       },

@@ -54,6 +54,7 @@ it("mints a standard copy with a DAILY_CLAIM mint row and grants it XP", async (
       ownershipId: "co_1",
       cardId: "card_1",
       serialNumber: 5,
+      finish: "STANDARD",
       toUserId: "user_1",
       action: "DAILY_CLAIM",
     },

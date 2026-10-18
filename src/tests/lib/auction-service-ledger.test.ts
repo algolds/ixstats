@@ -136,6 +136,7 @@ function makeAuction(overrides: Record<string, unknown> = {}) {
       id: "c1",
       cardId: "card1",
       serialNumber: 7,
+      finish: "FOIL",
       cards: { id: "card1", title: "Test Card", cardType: "LORE", countryId: null },
     },
     AuctionBid: [],
@@ -252,6 +253,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         ownershipId: "c1",
         cardId: "card1",
         serialNumber: 7,
+        finish: "FOIL",
         fromUserId: "s",
         toUserId: "p",
         action: "AUCTION_END",
@@ -279,6 +281,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         ownershipId: "c1",
         cardId: "card1",
         serialNumber: 7,
+        finish: "FOIL",
         fromUserId: "s",
         toUserId: "b",
         action: "AUCTION_BUYOUT",
@@ -300,6 +303,47 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     expect(h.tx.myVault.update).not.toHaveBeenCalled();
     expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
     expect(h.balances).toEqual({ s: 0 });
+  });
+
+  // A listed copy is locked, so nothing burns it; the auction row outlives a copy only once the auction has ended
+  const goneCopy = { cardInstanceId: null, CardOwnership: null, cardId: "card1", serialNumber: 7 };
+
+  it("completeAuction refuses to sell a copy that is gone, paying the seller nothing", async () => {
+    const h = makeHarness(
+      makeAuction({ ...goneCopy, currentBid: 500, currentBidderId: "p", endTime: tenMinutesAgo() }),
+      { s: 0 }
+    );
+
+    await expect(service.completeAuction("a1", h.db)).rejects.toMatchObject({ code: "CONFLICT" });
+
+    expect(rowsFor(h, "s")).toEqual([]);
+    expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(h.tx.cardTransferEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("completeAuction with no bids unlocks no copy when it is gone, still refunding half the fee", async () => {
+    const h = makeHarness(
+      makeAuction({ ...goneCopy, currentBidderId: null, endTime: tenMinutesAgo() }),
+      { s: 0 }
+    );
+
+    await service.completeAuction("a1", h.db);
+
+    expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(h.balances.s).toBe(2.5);
+  });
+
+  it("cancelAuction unlocks no copy when it is gone, still refunding half the fee", async () => {
+    const h = makeHarness(makeAuction({ ...goneCopy, currentBidderId: null, bidCount: 0 }), {
+      s: 0,
+    });
+
+    await expect(service.cancelAuction({ userId: "s", auctionId: "a1" }, h.db)).resolves.toEqual({
+      success: true,
+    });
+
+    expect(h.tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(h.balances.s).toBe(2.5);
   });
 
   it("refundListingFeeTx gives the seller half the listing fee: 5 IxC of a featured listing's 10", async () => {

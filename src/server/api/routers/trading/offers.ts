@@ -10,7 +10,6 @@ import {
   claimPendingTradeTx,
   lockCardsTx,
   recordTradeTransfersTx,
-  TradeStatus,
   transferCardsTx,
   transferCreditsTx,
   unlockCardsTx,
@@ -149,6 +148,7 @@ export const tradingOffersRouter = createTRPCRouter({
           data: {
             initiatorId: initiatorDbId,
             recipientId: recipientDbId,
+            proposerId: initiatorDbId,
             initiatorCardIds: input.initiatorCardIds,
             recipientCardIds: input.recipientCardIds,
             initiatorCredits: input.initiatorCredits,
@@ -222,7 +222,7 @@ export const tradingOffersRouter = createTRPCRouter({
       }
 
       // Check if trade is still valid
-      if (trade.status !== TradeStatus.PENDING) {
+      if (trade.status !== "PENDING") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Trade is no longer pending",
@@ -233,8 +233,8 @@ export const tradingOffersRouter = createTRPCRouter({
         // Auto-expire the trade (only if still PENDING) and release the initiator's cards
         await ctx.db.$transaction(async (tx) => {
           await tx.tradeOffer.updateMany({
-            where: { id: input.tradeId, status: TradeStatus.PENDING },
-            data: { status: TradeStatus.EXPIRED },
+            where: { id: input.tradeId, status: "PENDING" },
+            data: { status: "EXPIRED" },
           });
           await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
         });
@@ -248,7 +248,7 @@ export const tradingOffersRouter = createTRPCRouter({
       // Handle different actions
       if (input.action === "REJECT") {
         const result = await ctx.db.$transaction(async (tx) => {
-          await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
+          await claimPendingTradeTx(tx, input.tradeId, "REJECTED", new Date());
           await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
 
           return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });
@@ -321,7 +321,7 @@ export const tradingOffersRouter = createTRPCRouter({
 
         // Atomically unlock original offer's cards, lock counter-offer's cards, and create counter
         const result = await ctx.db.$transaction(async (tx) => {
-          await claimPendingTradeTx(tx, input.tradeId, TradeStatus.REJECTED, new Date());
+          await claimPendingTradeTx(tx, input.tradeId, "REJECTED", new Date());
           await unlockCardsTx(tx, trade.initiatorCardIds as string[], trade.initiatorId);
           await lockCardsTx(tx, newInitiatorCardIds, userId);
 
@@ -329,6 +329,7 @@ export const tradingOffersRouter = createTRPCRouter({
             data: {
               initiatorId: userId,
               recipientId: trade.initiatorId,
+              proposerId: userId,
               initiatorCardIds: newInitiatorCardIds,
               recipientCardIds: newRecipientCardIds,
               initiatorCredits: newInitiatorCredits,
@@ -336,7 +337,6 @@ export const tradingOffersRouter = createTRPCRouter({
               message: input.counterMessage,
               status: "PENDING",
               expiresAt,
-              counterOfferFromId: input.tradeId,
             },
           });
         });
@@ -353,7 +353,7 @@ export const tradingOffersRouter = createTRPCRouter({
         const recipientCardIds = trade.recipientCardIds as string[];
         const now = new Date();
 
-        await claimPendingTradeTx(tx, input.tradeId, TradeStatus.ACCEPTED, now);
+        await claimPendingTradeTx(tx, input.tradeId, "ACCEPTED", now);
 
         // Initiator cards were locked at offer time; recipient cards were not and must still be free
         await transferCardsTx(tx, {
@@ -469,7 +469,7 @@ export const tradingOffersRouter = createTRPCRouter({
         });
       }
 
-      if (trade.status !== TradeStatus.PENDING) {
+      if (trade.status !== "PENDING") {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Trade is no longer pending",
@@ -477,7 +477,7 @@ export const tradingOffersRouter = createTRPCRouter({
       }
 
       const result = await ctx.db.$transaction(async (tx) => {
-        await claimPendingTradeTx(tx, input.tradeId, TradeStatus.CANCELLED, new Date());
+        await claimPendingTradeTx(tx, input.tradeId, "CANCELLED", new Date());
         await unlockCardsTx(tx, trade.initiatorCardIds as string[], userId);
 
         return await tx.tradeOffer.findUniqueOrThrow({ where: { id: input.tradeId } });

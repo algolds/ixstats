@@ -132,7 +132,10 @@ async function payNationRoyalty(
   }
 }
 
-/** Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, and records the sale. */
+/**
+ * Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, and records the sale; returns
+ * the copy sold. A running auction's copy is locked, so nothing burns it: a copy gone is refused before anything moves.
+ */
 async function settleSale(
   tx: Prisma.TransactionClient,
   auction: AuctionWithCard,
@@ -142,7 +145,10 @@ async function settleSale(
     sellerSource: string;
     action: "AUCTION_BUYOUT" | "AUCTION_END";
   }
-) {
+): Promise<string> {
+  const copy = auction.CardOwnership;
+  if (!copy)
+    throw new TRPCError({ code: "CONFLICT", message: "This auction's card no longer exists" });
   const { buyerId, price } = sale;
   const fee = await marketplaceFee(tx, price);
   await vaultService.earnCreditsTx(tx, {
@@ -160,27 +166,24 @@ async function settleSale(
   await payNationRoyalty(tx, auction, buyerId, price);
 
   await tx.cardOwnership.update({
-    where: { id: auction.cardInstanceId },
+    where: { id: copy.id },
     data: { ownerId: buyerId, isLocked: false },
   });
-  // The sale's row in the copy's provenance trail, with its price, card and serial (cards refresh §3)
+  // The sale's row in the copy's provenance trail, with its price, card, serial and finish (cards refresh §3)
   await tx.cardTransferEvent.create({
     data: {
-      ownershipId: auction.cardInstanceId,
-      cardId: auction.CardOwnership.cardId,
-      serialNumber: auction.CardOwnership.serialNumber,
+      ownershipId: copy.id,
+      cardId: copy.cardId,
+      serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: auction.sellerId,
       toUserId: buyerId,
       action: sale.action,
       price,
     },
   });
-  if (auction.CardOwnership?.cards) {
-    await tx.card.update({
-      where: { id: auction.CardOwnership.cards.id },
-      data: { marketValue: price },
-    });
-  }
+  await tx.card.update({ where: { id: copy.cardId }, data: { marketValue: price } });
+  return copy.id;
 }
 
 /**
@@ -330,12 +333,15 @@ export class AuctionService {
           data: {
             id: `auction_${Date.now()}_${crypto.randomUUID()}`,
             cardInstanceId: ownership.id,
+            cardId: ownership.cardId,
+            serialNumber: ownership.serialNumber,
             sellerId: params.userId,
             startingPrice: params.startingPrice,
             currentBid: params.startingPrice,
             buyoutPrice: params.buyoutPrice,
             endTime: new Date(endTime),
             isFeatured: params.isFeatured ?? false,
+            listingFee,
             status: "ACTIVE",
           },
         });
@@ -348,43 +354,6 @@ export class AuctionService {
       );
 
       await broadcastMarket({ type: "auction_created", data: auction });
-
-      // Trigger watchlist price alerts (fire-and-forget)
-      try {
-        const watchlists = await db.cardWatchlist.findMany({
-          where: {
-            cardId: params.cardId,
-            userId: { not: params.userId }, // Don't notify the seller
-            OR: [
-              { targetPrice: null },
-              { targetPrice: { gte: params.startingPrice } },
-              params.buyoutPrice ? { targetPrice: { gte: params.buyoutPrice } } : {},
-            ],
-          },
-          include: {
-            user: {
-              select: { clerkUserId: true },
-            },
-          },
-        });
-
-        const cardTitle = ownership.cards.title;
-        for (const watch of watchlists) {
-          if (watch.user?.clerkUserId) {
-            await notificationAPI.create({
-              userId: watch.user.clerkUserId,
-              title: "Watchlist Card Listed!",
-              message: `A card on your watchlist (${cardTitle}) has been listed for auction starting at ${params.startingPrice} IxC!`,
-              type: "info",
-              category: "cards",
-              priority: "medium",
-              metadata: { auctionId: auction.id, cardId: params.cardId },
-            });
-          }
-        }
-      } catch (e) {
-        console.error("[Auction Service] Failed to trigger watchlist alerts:", e);
-      }
 
       return auction;
     } catch (error) {
@@ -842,7 +811,7 @@ export class AuctionService {
 
         if (auction.currentBidderId) {
           // Credits were reserved from the bidder at bid time; pay the seller and hand over the card
-          await settleSale(tx, auction, {
+          const copyId = await settleSale(tx, auction, {
             buyerId: auction.currentBidderId,
             price: finalPrice,
             sellerSource: "card_sale_auction",
@@ -850,13 +819,7 @@ export class AuctionService {
           });
 
           // Grant 50 XP to the winner's card instance
-          await grantCardXp(
-            tx as any,
-            auction.cardInstanceId,
-            50,
-            "AUCTION_COMPLETE",
-            JSON.stringify({ auctionId })
-          );
+          await grantCardXp(tx, copyId, 50, "AUCTION_COMPLETE", JSON.stringify({ auctionId }));
 
           console.log(
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
@@ -884,13 +847,13 @@ export class AuctionService {
             metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
           });
         } else {
-          // No bids - return card to seller, refund 50% of listing fee
-          await tx.cardOwnership.update({
-            where: {
-              id: auction.cardInstanceId,
-            },
-            data: { isLocked: false },
-          });
+          // No bids - return card to seller (unless it is gone), refund 50% of listing fee
+          if (auction.cardInstanceId !== null) {
+            await tx.cardOwnership.update({
+              where: { id: auction.cardInstanceId },
+              data: { isLocked: false },
+            });
+          }
 
           const refund = await refundListingFeeTx(tx, auction, "no_bids");
 
@@ -992,13 +955,13 @@ export class AuctionService {
           throw new TRPCError({ code: "CONFLICT", message: "Auction can no longer be cancelled" });
         }
 
-        // Unlock card
-        await tx.cardOwnership.update({
-          where: {
-            id: auction.cardInstanceId,
-          },
-          data: { isLocked: false },
-        });
+        // Unlock card (unless it is gone)
+        if (auction.cardInstanceId !== null) {
+          await tx.cardOwnership.update({
+            where: { id: auction.cardInstanceId },
+            data: { isLocked: false },
+          });
+        }
 
         // The seller check above makes auction.sellerId the caller
         await refundListingFeeTx(tx, auction, "cancelled");

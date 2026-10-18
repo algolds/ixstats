@@ -8,35 +8,25 @@
  * balance.
  */
 
-import { type Prisma } from "@prisma/client";
+import { type Prisma, type TradeOfferStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "./vault-ledger";
 
 type Tx = Prisma.TransactionClient;
 
-/** A trade offer's status (`TradeOffer.status` stays a string until Phase 4 reworks trades). */
-export const TradeStatus = {
-  PENDING: "PENDING",
-  ACCEPTED: "ACCEPTED",
-  REJECTED: "REJECTED",
-  CANCELLED: "CANCELLED",
-  EXPIRED: "EXPIRED",
-} as const;
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
-
 /** Move a PENDING trade to `next` iff it is still PENDING (and, for ACCEPTED, not expired). */
 export async function claimPendingTradeTx(
   tx: Tx,
   tradeId: string,
-  next: TradeStatus,
+  next: Exclude<TradeOfferStatus, "PENDING">,
   now: Date
 ): Promise<void> {
   const res = await tx.tradeOffer.updateMany({
     where: {
       id: tradeId,
-      status: TradeStatus.PENDING,
-      ...(next === TradeStatus.ACCEPTED ? { expiresAt: { gt: now } } : {}),
+      status: "PENDING",
+      ...(next === "ACCEPTED" ? { expiresAt: { gt: now } } : {}),
     },
     data: { status: next, respondedAt: now },
   });
@@ -84,8 +74,8 @@ export async function transferCardsTx(
 }
 
 /**
- * The trade's row in each moved copy's provenance trail, stamped with the card and serial so the row outlives the
- * copy. Call after `transferCardsTx` has moved the copies.
+ * The trade's row in each moved copy's provenance trail, stamped with the card, serial and finish so the row outlives
+ * the copy. Call after `transferCardsTx` has moved the copies.
  */
 export async function recordTradeTransfersTx(
   tx: Tx,
@@ -94,13 +84,14 @@ export async function recordTradeTransfersTx(
   if (args.ids.length === 0) return;
   const copies = await tx.cardOwnership.findMany({
     where: { id: { in: args.ids } },
-    select: { id: true, cardId: true, serialNumber: true },
+    select: { id: true, cardId: true, serialNumber: true, finish: true },
   });
   await tx.cardTransferEvent.createMany({
     data: copies.map((copy) => ({
       ownershipId: copy.id,
       cardId: copy.cardId,
       serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: args.fromId,
       toUserId: args.toId,
       action: "TRADE",

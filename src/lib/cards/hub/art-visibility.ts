@@ -24,16 +24,14 @@ export async function cardsWithVisibleArt(
           distinct: ["cardId"],
         })
       : Promise.resolve([]),
+    // The auction's own card, which it keeps when an ended auction outlives its copy
     db.cardAuction.findMany({
-      where: {
-        status: "ACTIVE",
-        endTime: { gt: new Date() },
-        CardOwnership: { cardId: { in: ids } },
-      },
-      select: { CardOwnership: { select: { cardId: true } } },
+      where: { status: "ACTIVE", endTime: { gt: new Date() }, cardId: { in: ids } },
+      select: { cardId: true },
+      distinct: ["cardId"],
     }),
   ]);
-  return new Set([...owned.map((o) => o.cardId), ...listed.map((a) => a.CardOwnership.cardId)]);
+  return new Set([...owned.map((o) => o.cardId), ...listed.map((a) => a.cardId)]);
 }
 
 export interface FaceSource {

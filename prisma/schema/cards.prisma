@@ -62,6 +62,8 @@ model Card {
   season           Int             @default(1)
   cardType         CardType
   marketValue      Float           @default(0.0)
+  /// The first sale of any copy here; until then an NS card's value keeps its NS bank term.
+  firstSoldAt      DateTime?
   totalSupply      Int?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @default(now()) @updatedAt
@@ -95,6 +97,10 @@ model Card {
   CardOwnership    CardOwnership[]
   valueHistory     CardValueHistory[]
   watchlist        CardWatchlist[]
+  auctions          CardAuction[]
+  listings          CardListing[]
+  marketPrices      CardMarketPrice[]
+  notificationMutes CardNotificationMute[]
 
   @@unique([nsCardId, nsSeason])
   @@unique([lorewardEntryId, lorewardEdition])
@@ -144,8 +150,13 @@ model AuctionBid {
 }
 
 model CardAuction {
-  id              String        @id
-  cardInstanceId  String
+  id              String            @id
+  /// The auctioned copy; null once it is gone (broken down or fused after the auction), so the auction stays.
+  /// A running auction always has it: the copy is locked. Admin revoke still refuses a copy with any auction.
+  cardInstanceId  String?
+  /// The copy's card and serial, stored so the auction (and the seller's sales) outlive the copy.
+  cardId          String
+  serialNumber    Int
   sellerId        String
   startingPrice   Int
   currentBid      Int
@@ -153,20 +164,24 @@ model CardAuction {
   currentBidderId String?
   winnerId        String?
   finalPrice      Int?
-  bidCount        Int           @default(0)
-  status          String        @default("ACTIVE")
-  isFeatured      Boolean       @default(false)
+  bidCount        Int               @default(0)
+  status          CardAuctionStatus @default(ACTIVE)
+  isFeatured      Boolean           @default(false)
+  /// What the seller paid to list; an unsold end refunds a share of it.
+  listingFee      Int               @default(0)
   endTime         DateTime
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @default(now())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
   AuctionBid      AuctionBid[]
-  CardOwnership   CardOwnership @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
-  User            User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  CardOwnership   CardOwnership?    @relation(fields: [cardInstanceId], references: [id], onDelete: SetNull)
+  card            Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User            User              @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([endTime])
   @@index([sellerId])
   @@index([status])
   @@index([cardInstanceId])
+  @@index([cardId, status])
 }
 
 model CardCollection {
@@ -214,12 +229,22 @@ model CardOwnership {
   inscription   String?       @db.VarChar(60)
   inscribedById String?
   inscribedAt   DateTime?
-  CardAuction      CardAuction[]
-  collectionItems  CardCollectionItem[]
-  cards            Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  User             User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  transferEvents   CardTransferEvent[]
-  experienceEvents CardExperienceEvent[]
+  /// The signer's display name at signing, frozen (shown while their Passport shows Vault cards). Null on the older
+  /// inscriptions, which show the signer's current name.
+  inscribedName    String?
+  /// An imported NS copy (or a copy fused from one): it breaks down for the import share of the dust.
+  importDiscounted Boolean   @default(false)
+  /// The UTC day `xpToday` counts for; the daily XP cap per copy resets when it changes.
+  xpDay            DateTime? @db.Date
+  xpToday          Int       @default(0)
+  CardAuction        CardAuction[]
+  collectionItems    CardCollectionItem[]
+  cards              Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  User               User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  transferEvents     CardTransferEvent[]
+  experienceEvents   CardExperienceEvent[]
+  listings           CardListing[]
+  inscriptionReports CardInscriptionReport[]
 
   @@unique([cardId, serialNumber])
   @@index([cardId])
@@ -359,9 +384,14 @@ model TradeOffer {
   recipientCardIds   Json      // Array of CardOwnership IDs
   initiatorCredits   Int       @default(0)
   recipientCredits   Int       @default(0)
-  status             String    // "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "COUNTERED"
+  status             TradeOfferStatus
   message            String?
-  counterOfferFromId String?   // Previous offer ID if this is a counter
+  /// The party who wrote the current table; their give-side cards are the locked ones. The other party responds.
+  proposerId         String
+  /// Bumped by every counter-offer; accept and counter name the revision they saw.
+  revision           Int              @default(0)
+  /// Stored at accept (spec §2.2 cross-realm rule); Phase 5's dividend and XP bonus read it.
+  isCrossRealm       Boolean          @default(false)
   expiresAt          DateTime
   respondedAt        DateTime?
   createdAt          DateTime  @default(now())
@@ -412,9 +442,8 @@ model CardWatchlist {
   id          String   @id @default(cuid())
   userId      String
   cardId      String
-  targetPrice Int?
   createdAt   DateTime @default(now())
-  
+
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
   
@@ -426,21 +455,24 @@ model CardWatchlist {
 
 model CardTransferEvent {
   id           String         @id @default(cuid())
-  /// Null once the copy is gone (revoked or voided); `cardId` and `serialNumber` keep the trail.
+  /// Null once the copy is gone (revoked, voided, broken down or fused); `cardId` and `serialNumber` keep the trail.
   ownershipId  String?
   cardId       String?
   serialNumber Int?
+  /// The copy's finish when the event happened (the market median is per finish).
+  finish       CardFinish?
   fromUserId   String?
-  /// Null when the copy leaves every player (REVOKE, VOID).
+  /// Null when the copy leaves every player (REVOKE, VOID, BREAKDOWN, a fusion's spent copies).
   toUserId     String?
-  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "REVOKE" | "REASSIGN" | "VOID" | "REISSUE"
+  action       String   // a mint source (src/lib/cards/mint.ts MINT_SOURCES: "PACK_OPEN" | "DAILY_CLAIM" | "NS_DECK_IMPORT" | "ACHIEVEMENT" | "TROPHY" | "SPORTS" | "ADMIN") | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "LISTING_SALE" | "REVOKE" | "REASSIGN" | "VOID" | "REISSUE" | "BREAKDOWN" | "FUSE" | "CRAFT"
   price        Int?
   createdAt    DateTime @default(now())
 
   ownership    CardOwnership? @relation(fields: [ownershipId], references: [id], onDelete: SetNull)
 
   @@index([ownershipId])
-  @@index([cardId])
+  // The sales record reads by card, action and date; the prefix serves the lookups by card
+  @@index([cardId, action, createdAt])
   @@map("card_transfer_events")
 }
 
@@ -559,4 +591,109 @@ model CardTakedown {
   @@index([status, dueAt])
   @@index([cardId])
   @@map("card_takedowns")
+}
+
+/// A fixed-price listing of one copy. The copy is locked while the listing is ACTIVE.
+model CardListing {
+  id           String            @id @default(cuid())
+  /// The listed copy; null once it is gone (broken down or fused after the sale), so the listing stays.
+  ownershipId  String?
+  cardId       String
+  /// The copy's serial and finish, stored so a finished listing outlives its copy.
+  serialNumber Int
+  finish       CardFinish
+  sellerId     String
+  price        Int
+  isFeatured   Boolean           @default(false)
+  /// What the seller paid to list; cancel and expiry refund a share of it.
+  listingFee   Int
+  status       CardListingStatus @default(ACTIVE)
+  buyerId      String?
+  soldAt       DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  ownership    CardOwnership?    @relation(fields: [ownershipId], references: [id], onDelete: SetNull)
+  card         Card              @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  seller       User              @relation("CardListingSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([status, isFeatured, createdAt])
+  @@index([status, expiresAt])
+  @@index([sellerId, status])
+  @@index([cardId, status])
+  @@index([ownershipId])
+  @@map("card_listings")
+}
+
+/// Dust of one realm, held by one account. Account-bound: it never moves between players.
+model CardDustBalance {
+  userId    String
+  realmId   String
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  realm     Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+
+  @@id([userId, realmId])
+  @@index([realmId])
+  @@map("card_dust_balances")
+}
+
+/// The dust ledger: one row per copy broken down and per craft.
+model CardDustEvent {
+  id           String   @id @default(cuid())
+  userId       String
+  realmId      String
+  delta        Int
+  balanceAfter Int
+  source       String // "BREAKDOWN" | "CRAFT"
+  cardId       String?
+  ownershipId  String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("card_dust_events")
+}
+
+/// The market median per card and finish (the last sales in the window), rebuilt by the card-values cron.
+model CardMarketPrice {
+  cardId     String
+  finish     CardFinish
+  median     Float
+  sales      Int
+  computedAt DateTime   @default(now())
+  card       Card       @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, finish])
+  @@map("card_market_prices")
+}
+
+/// A player's per-card mute: no card notices about this card.
+model CardNotificationMute {
+  userId    String
+  cardId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, cardId])
+  @@map("card_notification_mutes")
+}
+
+/// A report of a copy's inscription, for the admin queue.
+model CardInscriptionReport {
+  id          String        @id @default(cuid())
+  ownershipId String
+  reporterId  String // User.id
+  text        String        @db.VarChar(60)
+  reason      String        @db.VarChar(500)
+  status      String        @default("open") // "open" | "cleared" | "dismissed"
+  handledBy   String?
+  handledAt   DateTime?
+  createdAt   DateTime      @default(now())
+  ownership   CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)
+
+  @@unique([ownershipId, reporterId])
+  @@index([status, createdAt])
+  @@map("card_inscription_reports")
 }

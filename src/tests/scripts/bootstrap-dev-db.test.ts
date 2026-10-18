@@ -8,6 +8,7 @@ import {
   CARDS_ADMIN_SQL,
   CARDS_BACKFILL_SCRIPT,
   CARDS_CONSTRAINTS_SQL,
+  CARDS_ECONOMY_SQL,
   CARDS_FACE_HUB_SQL,
   CARDS_FOUNDATIONS_SQL,
   DB_SETUP_SQL_FILES,
@@ -116,6 +117,18 @@ describe("the SQL a fresh database needs besides db push", () => {
     expect(admin).toBeGreaterThan(0);
     expect(faceHub).toBeGreaterThan(admin);
     expect(seed).toBeGreaterThan(faceHub);
+  });
+
+  it("runs the cards economy SQL after the face-hub SQL, before the seed", () => {
+    const source = readFileSync("scripts/setup/bootstrap-dev-db.ts", "utf8");
+    // Prettier wraps these calls one argument per line, so match across the line break.
+    const faceHub = source.search(/"--file",\s*CARDS_FACE_HUB_SQL/);
+    const economy = source.search(/"--file",\s*CARDS_ECONOMY_SQL/);
+    const seed = source.indexOf("scripts/setup/seed-db.ts");
+    expect(CARDS_ECONOMY_SQL).toContain("_cards_economy/migration.sql");
+    expect(DB_SETUP_SQL_FILES).not.toContain(CARDS_ECONOMY_SQL);
+    expect(economy).toBeGreaterThan(faceHub);
+    expect(seed).toBeGreaterThan(economy);
   });
 
   it("the cards admin SQL is idempotent and creates the import, licence and takedown tables", () => {

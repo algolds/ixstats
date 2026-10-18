@@ -20,7 +20,7 @@ import { mintCopy } from "~/lib/cards/mint";
 import { removeCopyTx } from "~/lib/cards/remove-copy";
 import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
 import { notificationAPI } from "~/lib/notifications/api";
-import { TradeStatus, claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
+import { claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
@@ -103,8 +103,8 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
         finish: true,
         isLocked: true,
         acquiredAt: true,
-        // A copy with any auction row cannot be revoked (removeCopyTx), so the sheet offers no revoke for it
-        _count: { select: { CardAuction: true } },
+        // A copy with any auction or listing row cannot be revoked (removeCopyTx), so the sheet offers no revoke for it
+        _count: { select: { CardAuction: true, listings: true } },
         cards: {
           select: { id: true, title: true, rarity: true, cardType: true, isBound: true },
         },
@@ -131,12 +131,14 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
         currentBidderId: true,
         bidCount: true,
         endTime: true,
-        CardOwnership: { select: { serialNumber: true, cards: { select: { title: true } } } },
+        // The row's own card and serial, which outlive the copy
+        serialNumber: true,
+        card: { select: { title: true } },
       },
     }),
     db.tradeOffer.findMany({
       where: {
-        status: TradeStatus.PENDING,
+        status: "PENDING",
         OR: [{ initiatorId: userId }, { recipientId: userId }],
       },
       orderBy: { createdAt: "desc" },
@@ -153,7 +155,11 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
     copyRoom(db, { id: user.id, roleLevel: user.role?.level }),
   ]);
   return {
-    copies: copies.map(({ _count, ...copy }) => ({ ...copy, auctioned: _count.CardAuction > 0 })),
+    copies: copies.map(({ _count, ...copy }) => ({
+      ...copy,
+      auctioned: _count.CardAuction > 0,
+      listed: _count.listings > 0,
+    })),
     copyCount,
     /** Copies the player can still receive; null when staff are exempt from the limit (JSON has no Infinity). */
     room: Number.isFinite(room) ? room : null,
@@ -165,7 +171,7 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
     })),
     auctions: auctions.map((auction) => ({
       id: auction.id,
-      title: `${auction.CardOwnership.cards.title} #${auction.CardOwnership.serialNumber}`,
+      title: `${auction.card.title} #${auction.serialNumber}`,
       selling: auction.sellerId === userId,
       /** A bid is held, so a cancel refunds a bidder too */
       hasBid: auction.currentBidderId !== null,
@@ -237,7 +243,7 @@ export async function grantCard(
   return { ownershipId: copy.id, serialNumber: copy.serialNumber };
 }
 
-/** Locked, auctioned and pending-trade copies are refused by `removeCopyTx`, inside the transaction. */
+/** Locked, auctioned, listed and pending-trade copies are refused by `removeCopyTx`, inside the transaction. */
 export async function revokeCopy(
   db: PrismaClient,
   actor: CardAdminActor,
@@ -249,6 +255,7 @@ export async function revokeCopy(
       id: true,
       ownerId: true,
       serialNumber: true,
+      finish: true,
       cards: { select: { id: true, title: true, cardType: true } },
     },
   });
@@ -265,6 +272,7 @@ export async function revokeCopy(
         cardId: copy.cards.id,
         serialNumber: copy.serialNumber,
         ownerId: copy.ownerId,
+        finish: copy.finish,
       },
       "REVOKE"
     );
@@ -286,7 +294,7 @@ export async function revokeCopy(
 interface CancellableAuction {
   id: string;
   sellerId: string;
-  cardInstanceId: string;
+  cardInstanceId: string | null;
   currentBid: number;
   currentBidderId: string | null;
   isFeatured: boolean;
@@ -323,10 +331,13 @@ async function cancelAuctionTx(
         })
       : new TRPCError({ code: "CONFLICT", message: "This auction changed. Reload and try again." });
   }
-  await tx.cardOwnership.updateMany({
-    where: { id: auction.cardInstanceId },
-    data: { isLocked: false },
-  });
+  // A running auction's copy is locked, so it is there; if it is gone, there is nothing to unlock
+  if (auction.cardInstanceId !== null) {
+    await tx.cardOwnership.updateMany({
+      where: { id: auction.cardInstanceId },
+      data: { isLocked: false },
+    });
+  }
   if (auction.currentBidderId) {
     await earnCreditsTx(tx, {
       userId: auction.currentBidderId,
@@ -392,7 +403,7 @@ export async function voidTrade(
   });
   if (!trade) throw new TRPCError({ code: "NOT_FOUND", message: "Trade not found" });
   await db.$transaction(async (tx) => {
-    await claimPendingTradeTx(tx, trade.id, TradeStatus.CANCELLED, new Date());
+    await claimPendingTradeTx(tx, trade.id, "CANCELLED", new Date());
     await unlockCardsTx(tx, ownershipIds.parse(trade.initiatorCardIds), trade.initiatorId);
     await recordCardAudit(tx, {
       action: "CARD_TRADE_VOID",

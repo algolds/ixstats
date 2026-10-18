@@ -58,6 +58,12 @@ export const CARDS_ADMIN_SQL = "prisma/migrations/20261028120000_cards_admin/mig
  */
 export const CARDS_FACE_HUB_SQL = "prisma/migrations/20261031120000_cards_face_hub/migration.sql";
 
+/**
+ * Cards refresh Phase 4: listings, dust, market prices, mutes, inscription reports and the status enums; idempotent.
+ * On a fresh database it runs after `db push`, where every statement is a no-op.
+ */
+export const CARDS_ECONOMY_SQL = "prisma/migrations/20261101120000_cards_economy/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -172,6 +178,15 @@ async function main(): Promise<void> {
     "prisma/schema",
     "--file",
     CARDS_FACE_HUB_SQL,
+  ]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    CARDS_ECONOMY_SQL,
   ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 

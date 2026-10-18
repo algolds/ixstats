@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { scoredEditsAccount } from "~/lib/lorewards/resolve-user";
 import { scoreDailyWikiOS } from "~/lib/lorewards/scoring";
 import { copyValue } from "~/lib/cards/copy-value";
@@ -95,7 +95,7 @@ async function loadPacksOpened(db: PrismaClient, range: DayRange): Promise<Count
 /** An accepted trade counts for both sides. */
 async function loadTradesCompleted(db: PrismaClient, range: DayRange): Promise<Counts> {
   const counts: Counts = new Map();
-  const where = { status: "ACCEPTED", respondedAt: range };
+  const where: Prisma.TradeOfferWhereInput = { status: "ACCEPTED", respondedAt: range };
   const asInitiator = await db.tradeOffer.groupBy({
     by: ["initiatorId"],
     where,

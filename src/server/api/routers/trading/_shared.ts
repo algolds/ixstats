@@ -1,5 +1,5 @@
+import type { TradeOfferStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "~/lib/vault/trade-settlement";
 import type { getVaultConfig } from "~/lib/vault/vault-service";
 import { loadPlayerNames, type PlayerName } from "~/server/modules/identity/identity.player-names";
 
@@ -57,11 +57,11 @@ export async function withPartyName<T extends Parties>(trade: T) {
   return nameParties(trade, await namesOf([trade]));
 }
 
-export const FINISHED_TRADE_STATUSES = [
-  TradeStatus.ACCEPTED,
-  TradeStatus.REJECTED,
-  TradeStatus.CANCELLED,
-  TradeStatus.EXPIRED,
+export const FINISHED_TRADE_STATUSES: TradeOfferStatus[] = [
+  "ACCEPTED",
+  "REJECTED",
+  "CANCELLED",
+  "EXPIRED",
 ];
 
 /** Trading is closed while the vault is in maintenance or P2P trading is switched off. */

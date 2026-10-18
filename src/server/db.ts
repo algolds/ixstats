@@ -19,7 +19,9 @@ const WRITABLE_MODELS_IN_READONLY = new Set(
     `Card CardOwnership CardPack UserPack MyVault VaultTransaction
     NSVerification NSImportLedger TradeOffer CardAuction CardCollection
     CardCollectionItem VaultStoreItem VaultStorePriceHistory CardWatchlist
-    CardTransferEvent CardArtLicence CardImportJob CardImportItem CardTakedown LoreCardRequest`,
+    CardTransferEvent CardArtLicence CardImportJob CardImportItem CardTakedown LoreCardRequest
+    CardListing CardDustBalance CardDustEvent CardMarketPrice CardNotificationMute CardInscriptionReport
+    CardExperienceEvent CardValueHistory`,
     // NS sync management
     `SyncLog`,
     // Country stats & economic calculations

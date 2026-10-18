@@ -46,7 +46,8 @@ const DIALOG = {
 /** Why a copy cannot be revoked here, or null when it can. */
 function lockNote(copy: Copy): string | null {
   if (copy.isLocked) return "In a trade or auction";
-  return copy.auctioned ? "Auctioned" : null;
+  if (copy.auctioned) return "Auctioned";
+  return copy.listed ? "Listed" : null;
 }
 
 function CopyRow({ copy, onRevoke }: { copy: Copy; onRevoke: (pending: Pending) => void }) {

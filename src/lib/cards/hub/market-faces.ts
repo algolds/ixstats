@@ -41,7 +41,8 @@ export async function copyFaces(
 /** A raw card as the market's includes read it; auction history reads no art at all. */
 type RawCard = { id: string; artwork?: string | null; artworkCredit?: string | null };
 type RawCopyRow = { id: string; cards: RawCard };
-type AuctionRow = { cardInstanceId: string; CardOwnership: { cards: RawCard } };
+/** The copy is null once it is gone: an ended auction outlives a copy broken down or fused. */
+type AuctionRow = { cardInstanceId: string | null; CardOwnership: { cards: RawCard } | null };
 
 /** The raw card without the fields that show or name its art. */
 function withoutArt<C extends RawCard>(cards: C): C {
@@ -58,20 +59,18 @@ export async function withAuctionFaces<T extends AuctionRow>(
   auctions: readonly T[],
   live: boolean
 ): Promise<Array<T & { face: CardFaceData | null }>> {
+  const rows: readonly AuctionRow[] = auctions;
   const faces = await copyFaces(
     db,
     viewerId,
-    auctions.map((a) => a.cardInstanceId),
+    rows.flatMap((a) => (a.cardInstanceId === null ? [] : [a.cardInstanceId])),
     live
   );
   return auctions.map((a) => {
-    const face = faces.get(a.cardInstanceId) ?? null;
-    if (face?.artwork) return { ...a, face };
-    return {
-      ...a,
-      face,
-      CardOwnership: { ...a.CardOwnership, cards: withoutArt(a.CardOwnership.cards) },
-    };
+    const { cardInstanceId, CardOwnership: copy }: AuctionRow = a;
+    const face = cardInstanceId === null ? null : (faces.get(cardInstanceId) ?? null);
+    if (face?.artwork || copy === null) return { ...a, face };
+    return { ...a, face, CardOwnership: { ...copy, cards: withoutArt(copy.cards) } };
   });
 }
 

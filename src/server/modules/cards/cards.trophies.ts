@@ -212,7 +212,7 @@ async function liveCopiesTx(tx: Tx, cardId: string): Promise<RemovableCopy[]> {
   await lockCardSerialsTx(tx, cardId);
   return tx.cardOwnership.findMany({
     where: { cardId },
-    select: { id: true, cardId: true, ownerId: true, serialNumber: true },
+    select: { id: true, cardId: true, ownerId: true, serialNumber: true, finish: true },
   });
 }
 
@@ -233,6 +233,7 @@ async function transferCopyTx(tx: Tx, copy: RemovableCopy, toUserId: string): Pr
       ownershipId: copy.id,
       cardId: copy.cardId,
       serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: copy.ownerId,
       toUserId,
       action: "REASSIGN",

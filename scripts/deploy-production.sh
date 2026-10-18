@@ -181,6 +181,9 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202610281
 # Cards refresh Phase 3 (docs/specs/2026-10-15-cards-refresh-design.md §2.3): collector numbers, the showcase pin and its
 # detach trigger, and the drop of collection likes and comments (BEFORE the push, which cannot drop them). Idempotent.
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261031120000_cards_face_hub/migration.sql || exit 1
+# Cards refresh Phase 4 (docs/specs/2026-10-15-cards-refresh-design.md §2.2): listings, dust, market prices, mutes,
+# inscription reports, and the trade and auction status enums converted in place (BEFORE the push). Idempotent.
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261101120000_cards_economy/migration.sql || exit 1
 
 # Sync production database with schema
 echo "🔄 Syncing production database schema..."
