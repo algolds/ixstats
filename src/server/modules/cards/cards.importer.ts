@@ -33,7 +33,7 @@ import { stoppedWikiMessage } from "~/lib/cards/lore-card-mediawiki";
 import { wikiLoreCardGenerator } from "~/lib/cards/lore-card-generator";
 import { rarityForScore, type RarityThresholds } from "~/lib/cards/rarity-engine";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
-import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { captureArtLicence, wikiQueryFor, type CapturedLicence } from "./cards.art-licence";
 import { getRarityThresholds } from "./cards.config";
@@ -230,7 +230,11 @@ async function readArticle(
 }
 
 async function cardValue(db: PrismaClient, rarity: CardRarity): Promise<number> {
-  return computeCardValue({ rarity, cardType: "LORE" }, await getValuationConfig(db));
+  return referenceValue(
+    { rarity, cardType: "LORE", firstSoldAt: null, nsBankValue: null, isRetired: false },
+    null,
+    await getValuationConfig(db)
+  );
 }
 
 export async function stageArticleCard(

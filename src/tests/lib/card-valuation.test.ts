@@ -1,12 +1,18 @@
+import type { CardRarity, CardType } from "@prisma/client";
+import { getCardMarketValue } from "~/lib/cards/card-service";
 import {
   CARD_VALUATION_DEFAULTS as C,
   clearValuationCache,
-  computeCardValue,
   getValuationConfig,
   rarityFloor,
   recomputeAllCardValues,
+  referenceValue,
   setValuationConfig,
 } from "~/lib/cards/valuation";
+
+/** A card's reference value before any copy of it has sold here. */
+const unsold = (rarity: CardRarity, cardType: CardType, nsBankValue: number | null = null) =>
+  referenceValue({ rarity, cardType, firstSoldAt: null, nsBankValue, isRetired: false }, null, C);
 
 /** A client whose revalue transaction records the order of its lock, config read and updates. */
 function revalueDb(rows: Array<{ key: string; value: string }> = []) {
@@ -41,27 +47,45 @@ const updateSql = (tx: ReturnType<typeof revalueDb>["tx"]) =>
 
 describe("card-valuation", () => {
   test("A Common NS card is lifted to the rarity floor, not stuck at NS bank value 1", () => {
-    expect(computeCardValue({ rarity: "COMMON", cardType: "NS", nsMarketValue: 1 }, C)).toBe(10);
+    expect(unsold("COMMON", "NS", 1)).toBe(10);
   });
 
   test("valuable NS legendary floats above the floor via the premium", () => {
     // 5381 * 1.5 = 8071.5, well above the 3000 legendary floor
-    expect(computeCardValue({ rarity: "LEGENDARY", cardType: "NS", nsMarketValue: 5381 }, C)).toBe(
-      8071.5
-    );
+    expect(unsold("LEGENDARY", "NS", 5381)).toBe(8071.5);
   });
 
-  test("NS value is never lost (premium >= 1 means result >= raw NS value)", () => {
+  test("NS value is never lost before a first sale (premium >= 1 means result >= raw NS value)", () => {
     const ns = 250;
-    expect(
-      computeCardValue({ rarity: "RARE", cardType: "NS", nsMarketValue: ns }, C)
-    ).toBeGreaterThanOrEqual(ns);
+    expect(unsold("RARE", "NS", ns)).toBeGreaterThanOrEqual(ns);
   });
 
   test("native cards ride the floor curve with type multipliers", () => {
-    expect(computeCardValue({ rarity: "RARE", cardType: "LORE" }, C)).toBe(rarityFloor(C, "RARE"));
-    expect(computeCardValue({ rarity: "RARE", cardType: "SPECIAL" }, C)).toBe(100 * C.multSpecial);
-    expect(computeCardValue({ rarity: "RARE", cardType: "NATION" }, C)).toBe(100 * C.multNation);
+    expect(unsold("RARE", "LORE")).toBe(rarityFloor(C, "RARE"));
+    expect(unsold("RARE", "SPECIAL")).toBe(100 * C.multSpecial);
+    expect(unsold("RARE", "NATION")).toBe(100 * C.multNation);
+  });
+
+  test("a card's market value drops the NS bank term once a copy of it has sold here", async () => {
+    clearValuationCache();
+    const card = {
+      rarity: "COMMON",
+      cardType: "NS",
+      firstSoldAt: null,
+      isRetired: false,
+      metadata: { nsData: { market_value: "40" } },
+    };
+    const db = {
+      systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
+      card: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValueOnce(card)
+          .mockResolvedValueOnce({ ...card, firstSoldAt: new Date("2026-11-01") }),
+      },
+    };
+    await expect(getCardMarketValue(db as never, "card_1")).resolves.toBe(60);
+    await expect(getCardMarketValue(db as never, "card_1")).resolves.toBe(10);
   });
 
   test("the recompute reads the NS bank value from metadata.nsData, for NS cards", async () => {

@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { CardFinish, type CardRarity } from "./enums";
 import { mintCopy } from "./mint";
 import { nsBankValue } from "./ns-facts";
-import { computeCardValue, getValuationConfig } from "./valuation";
+import { getValuationConfig, referenceValue } from "./valuation";
 
 /**
  * Get user's card inventory via CardOwnership. Retired cards stay in it (cards refresh §3): a takedown or a Library
@@ -93,10 +93,17 @@ export async function getCardMarketValue(db: PrismaClient, cardId: string): Prom
       });
     }
 
-    // One valuation: max(rarityFloor × typeMult, NS bank value × premium); the bank value lives in metadata.nsData
+    // One valuation (a Standard copy at level 1); the NS bank value lives in metadata.nsData
     const cfg = await getValuationConfig(db);
-    return computeCardValue(
-      { rarity: card.rarity, cardType: card.cardType, nsMarketValue: nsBankValue(card.metadata) },
+    return referenceValue(
+      {
+        rarity: card.rarity,
+        cardType: card.cardType,
+        firstSoldAt: card.firstSoldAt,
+        nsBankValue: nsBankValue(card.metadata),
+        isRetired: card.isRetired,
+      },
+      null,
       cfg
     );
   } catch (error) {

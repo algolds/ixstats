@@ -13,7 +13,7 @@ import { CardRarity } from "~/lib/cards/enums";
 import { getCurrentIxCardSeason } from "~/lib/cards/season";
 import { lockCardSerialsTx } from "~/lib/cards/serial-number";
 import { awaitsSpecialCardImport } from "~/lib/cards/special-card-import";
-import { computeCardValue, readValuationConfig } from "~/lib/cards/valuation";
+import { readValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
@@ -154,7 +154,11 @@ function assertRewardAchievement(key: string | null, storedKey: string | null) {
  * config as this transaction reads it.
  */
 async function specialCardValueTx(tx: Prisma.TransactionClient, rarity: CardRarity) {
-  return computeCardValue({ rarity, cardType: "SPECIAL" }, await readValuationConfig(tx));
+  return referenceValue(
+    { rarity, cardType: "SPECIAL", firstSoldAt: null, nsBankValue: null, isRetired: false },
+    null,
+    await readValuationConfig(tx)
+  );
 }
 
 /**

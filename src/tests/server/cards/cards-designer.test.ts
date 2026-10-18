@@ -7,7 +7,7 @@ import {
   rewardAchievementOptions,
   saveSpecialCard,
 } from "~/server/modules/cards/cards.designer";
-import { CARD_VALUATION_DEFAULTS, computeCardValue } from "~/lib/cards/valuation";
+import { CARD_VALUATION_DEFAULTS, referenceValue } from "~/lib/cards/valuation";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const actor = { dbId: "db_admin", clerkId: "clerk_admin" };
@@ -346,7 +346,17 @@ describe("saveSpecialCard's card value", () => {
       marketValue: 2000,
     });
     expect(tx.card.create.mock.calls[0]![0].data.marketValue).toBe(
-      computeCardValue({ rarity: "RARE", cardType: "SPECIAL" }, CARD_VALUATION_DEFAULTS)
+      referenceValue(
+        {
+          rarity: "RARE",
+          cardType: "SPECIAL",
+          firstSoldAt: null,
+          nsBankValue: null,
+          isRetired: false,
+        },
+        null,
+        CARD_VALUATION_DEFAULTS
+      )
     );
   });
 

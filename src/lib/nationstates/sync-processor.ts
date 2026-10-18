@@ -13,10 +13,11 @@
 
 import type { Card, Prisma, PrismaClient } from "@prisma/client";
 import { nsApiClient, type NSCard } from "./api-client";
-import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import { CardRarity, CardType, parseCardRarity } from "~/lib/cards/enums";
 import {
   isJsonObject,
+  nsBankValue,
   nsFactsFromApi,
   nsFactsOf,
   pickNsFacts,
@@ -72,9 +73,9 @@ export function nsCardDefinitionData(
 
 /**
  * The one NS card definition upsert (the region sync, which passes its SyncLog id, and the deck import, which passes
- * null): finds the card, refreshing its value and NS facts, or creates it waiting for review. A taken-down (retired)
- * card is returned untouched. Null for a card without a valid id or a name, which writes nothing. `db` may be a
- * transaction client.
+ * null): finds the card, refreshing its region and NS bank value facts, or creates it waiting for review and valued by
+ * the formula. An existing card's value is the card-values cron's to write. A taken-down (retired) card is returned
+ * untouched. Null for a card without a valid id or a name, which writes nothing. `db` may be a transaction client.
  */
 export async function upsertNSCardDefinition(
   db: Pick<Prisma.TransactionClient, "card">,
@@ -92,37 +93,41 @@ export async function upsertNSCardDefinition(
     where: { nsCardId, nsSeason },
   });
 
-  const rarity = parseCardRarity(nsCard.rarity) ?? existing?.rarity ?? CardRarity.COMMON;
-  const recomputedMarketValue = computeCardValue(
-    { rarity, cardType: CardType.NS, nsMarketValue: parseFloat(nsCard.market_value || "0") },
-    valCfg
-  );
-
   if (existing) {
     // A card hidden via takedown (flag-owner opt-out) must not have its
-    // artwork or value silently restored by a re-sync.
+    // artwork or facts silently restored by a re-sync.
     if (existing.isRetired) return { card: existing, created: false, updated: false };
-    if (Math.abs(existing.marketValue - recomputedMarketValue) > 0.01) {
-      const fresh = nsFactsFromApi({ region: nsCard.region, market_value: nsCard.market_value });
-      const card = await db.card.update({
-        where: { id: existing.id },
-        data: {
-          marketValue: recomputedMarketValue,
-          metadata: withNsFacts(
-            existing.metadata,
-            pickNsFacts(fresh, nsFactsOf(existing.metadata))
-          ),
-        },
-      });
-      return { card, created: false, updated: true };
+    const stored = nsFactsOf(existing.metadata);
+    const facts = pickNsFacts(
+      nsFactsFromApi({ region: nsCard.region, market_value: nsCard.market_value }),
+      stored
+    );
+    if (facts.region === stored.region && facts.market_value === stored.market_value) {
+      return { card: existing, created: false, updated: false };
     }
-    return { card: existing, created: false, updated: false };
+    const card = await db.card.update({
+      where: { id: existing.id },
+      data: { metadata: withNsFacts(existing.metadata, facts) },
+    });
+    return { card, created: false, updated: true };
   }
 
+  const rarity = parseCardRarity(nsCard.rarity) ?? CardRarity.COMMON;
+  const marketValue = referenceValue(
+    {
+      rarity,
+      cardType: CardType.NS,
+      firstSoldAt: null,
+      nsBankValue: nsBankValue({ nsData: nsFactsFromApi(nsCard) }),
+      isRetired: false,
+    },
+    null,
+    valCfg
+  );
   const card = await db.card.create({
     data: nsCardDefinitionData(
       { ...nsCard, name: nsCard.name },
-      { importedFrom, rarity, marketValue: recomputedMarketValue, syncLogId }
+      { importedFrom, rarity, marketValue, syncLogId }
     ),
   });
   return { card, created: true, updated: false };
