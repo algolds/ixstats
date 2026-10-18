@@ -3,6 +3,7 @@
 import { packThemePool, themeFilterWhere } from "~/lib/cards/pack-service";
 import {
   PackEditorSchema,
+  PackPreviewSchema,
   listPacks,
   previewPackPool,
   savePack,
@@ -273,7 +274,7 @@ describe("savePack on sale", () => {
     tx.cardPack.findUnique.mockResolvedValue(stored);
     tx.card.groupBy.mockResolvedValue(tiers("COMMON", "UNCOMMON", "RARE"));
     await expect(savePack(db as never, actor, input())).rejects.toMatchObject({
-      message: cannotSell("Ultra Rare, Epic and Legendary"),
+      message: cannotSell("Ultra rare, Epic and Legendary"),
     });
   });
 
@@ -497,9 +498,10 @@ describe("previewPackPool", () => {
       empty: false,
     });
     expect(preview.undeliverable).not.toContain("LEGENDARY");
-    // A new pack has no bought copies to count
+    // A new pack has no stored theme to merge and no bought copies to count
     expect(preview.unopened).toBe(0);
     expect(db.userPack.count).not.toHaveBeenCalled();
+    expect(db.cardPack.findUnique).not.toHaveBeenCalled();
     const where = JSON.stringify(db.card.groupBy.mock.calls[0]![0].where);
     expect(where).toContain('{"cardType":"NS"}');
     expect(where).toContain('{"season":2}');
@@ -519,5 +521,46 @@ describe("previewPackPool", () => {
     });
     expect(preview.byRarity.find((row) => row.rarity === "LEGENDARY")?.empty).toBe(true);
     expect(preview.undeliverable).toEqual(["LEGENDARY"]);
+  });
+
+  it("previews the stored theme merged with the editor's pool, the pool a save checks", async () => {
+    const db = createMockPrisma();
+    db.cardPack.findUnique.mockResolvedValue({
+      themeFilter: { subcategories: ["Treaties"], realmIds: ["old"] },
+    });
+    db.card.groupBy.mockResolvedValue(tiers(...RARITIES));
+    await previewPackPool(db as never, {
+      packId: "pack_1",
+      cardType: null,
+      season: null,
+      pool: input().pool,
+      odds,
+      guaranteedRarity: null,
+    });
+    expect(db.cardPack.findUnique).toHaveBeenCalledWith({
+      where: { id: "pack_1" },
+      select: { themeFilter: true },
+    });
+    const where = JSON.stringify(db.card.groupBy.mock.calls[0]![0].where);
+    expect(where).toContain('{"subcategory":{"in":["Treaties"]}}');
+    expect(where).toContain('{"realmId":{"in":["iiwiki"]}}');
+    expect(where).not.toContain('"old"');
+  });
+});
+
+describe("PackPreviewSchema", () => {
+  it("bounds the pack id like any other id", () => {
+    const preview = {
+      packId: "p".repeat(64),
+      cardType: null,
+      season: null,
+      pool: input().pool,
+      odds,
+      guaranteedRarity: "EPIC",
+    };
+    expect(PackPreviewSchema.safeParse(preview).success).toBe(true);
+    expect(PackPreviewSchema.safeParse({ ...preview, packId: null }).success).toBe(true);
+    expect(PackPreviewSchema.safeParse({ ...preview, packId: "p".repeat(65) }).success).toBe(false);
+    expect(PackPreviewSchema.safeParse({ ...preview, packId: "" }).success).toBe(false);
   });
 });

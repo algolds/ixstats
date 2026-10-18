@@ -15,8 +15,11 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
 import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
+import { ADMIN_RARITY_LABEL } from "~/lib/cards/face/labels";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
+import { rarityList } from "~/lib/cards/pack-odds";
+import { missingRarities } from "~/lib/cards/pack-service";
 import { removeCopyTx } from "~/lib/cards/remove-copy";
 import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -419,18 +422,28 @@ export async function voidTrade(
   await refreshAndNotify(db, trade.recipientId, "A trade offered to you was voided", message);
 }
 
-/** Any pack, including one the store does not sell (an event pack): opening does not check `isActive`. */
+/**
+ * Any pack, including one the store does not sell (an event pack): opening does not check `isActive`. One whose pool
+ * can't give a rarity it shows or guarantees is refused, as it could never be opened.
+ */
 export async function awardPack(
   db: PrismaClient,
   actor: CardAdminActor,
   input: { userId: string; packId: string }
 ): Promise<void> {
   const [pack] = await Promise.all([
-    db.cardPack.findUnique({ where: { id: input.packId }, select: { id: true, name: true } }),
+    db.cardPack.findUnique({ where: { id: input.packId } }),
     playerOrThrow(db, input.userId),
   ]);
   if (!pack) throw new TRPCError({ code: "NOT_FOUND", message: "Pack not found" });
   await db.$transaction(async (tx) => {
+    const { missing } = await missingRarities(tx, pack);
+    if (missing.length > 0) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: `This pack can't be awarded: it has no ${rarityList(missing, ADMIN_RARITY_LABEL)} cards to give, so it could never be opened. Set those odds to 0, clear the guarantee or widen the pool.`,
+      });
+    }
     await tx.userPack.create({
       data: { userId: input.userId, packId: pack.id, acquiredMethod: "ADMIN_AWARD" },
     });

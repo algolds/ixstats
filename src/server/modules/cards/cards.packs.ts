@@ -8,7 +8,7 @@ import { CardRarity, CardType, PackType, type Prisma, type PrismaClient } from "
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { LoreCategory } from "~/lib/cards/category-enums";
-import { parseCardRarity } from "~/lib/cards/enums";
+import { ADMIN_RARITY_LABEL } from "~/lib/cards/face/labels";
 import {
   PACK_CARD_TYPES,
   PACK_MAX_CARDS,
@@ -17,23 +17,19 @@ import {
   PACK_ODDS_FIELDS,
   PackOddsSchema,
   rarityList,
-  undeliverableRarities,
-  type PackOdds,
 } from "~/lib/cards/pack-odds";
-import { mergePackTheme, packPoolWhere, packThemePool } from "~/lib/cards/pack-service";
-import { tierCounts } from "~/lib/cards/pool-draw";
+import { mergePackTheme, missingRarities, packThemePool } from "~/lib/cards/pack-service";
 import { MAX_CARD_SEASON } from "~/lib/cards/season";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 
-export const PackPoolSchema = z.object({
+const PackPoolSchema = z.object({
   realmIds: z.array(z.string().min(1).max(64)).max(50),
   categories: z.array(z.nativeEnum(LoreCategory)).max(20),
   cardTypes: z.array(z.nativeEnum(CardType)).max(5),
 });
-export type PackPool = z.infer<typeof PackPoolSchema>;
 
-export const PackSeasonSchema = z.number().int().min(1).max(MAX_CARD_SEASON).nullable();
+const PackSeasonSchema = z.number().int().min(1).max(MAX_CARD_SEASON).nullable();
 
 /** A whole number from 1 to `max`; every failure carries `message` (the editor checks the same bounds first). */
 const wholeNumber = (max: number, message: string) =>
@@ -94,16 +90,13 @@ const packGone = () => new TRPCError({ code: "NOT_FOUND", message: "That pack no
  */
 async function assertDeliverable(
   tx: Prisma.TransactionClient,
-  pool: Parameters<typeof packPoolWhere>[1],
-  odds: PackOdds,
-  guaranteed: CardRarity | null
+  pack: Parameters<typeof missingRarities>[1]
 ): Promise<void> {
-  const counts = await tierCounts(tx, await packPoolWhere(tx, pool));
-  const missing = undeliverableRarities(odds, guaranteed, counts);
+  const { missing } = await missingRarities(tx, pack);
   if (missing.length > 0) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: `This pack can't go on sale: it has no ${rarityList(missing)} cards to give. Set those odds to 0, clear the guarantee or widen the pool.`,
+      message: `This pack can't go on sale: it has no ${rarityList(missing, ADMIN_RARITY_LABEL)} cards to give. Set those odds to 0, clear the guarantee or widen the pool.`,
     });
   }
 }
@@ -142,12 +135,13 @@ export async function savePack(
     };
     // Checked against the pool as it will be stored; saving off sale is always allowed
     if (input.isActive) {
-      const pool = {
+      await assertDeliverable(tx, {
         cardType: input.cardType,
         season: existing?.season ?? null,
         themeFilter: data.themeFilter,
-      };
-      await assertDeliverable(tx, pool, input.odds, input.guaranteedRarity);
+        ...input.odds,
+        guaranteedRarity: input.guaranteedRarity,
+      });
     }
     const pack = existing
       ? await tx.cardPack.update({ where: { id: existing.id }, data })
@@ -175,9 +169,7 @@ export async function setPackActive(
     const pack = await tx.cardPack.findUnique({ where: { id: input.packId } });
     if (!pack) throw packGone();
     if (pack.isActive === input.isActive) return;
-    if (input.isActive) {
-      await assertDeliverable(tx, pack, pack, parseCardRarity(pack.guaranteedRarity));
-    }
+    if (input.isActive) await assertDeliverable(tx, pack);
     await tx.cardPack.update({
       where: { id: pack.id },
       data: { isActive: input.isActive, updatedAt: new Date() },
@@ -193,29 +185,38 @@ export async function setPackActive(
   });
 }
 
-interface PackPreviewInput {
-  /** The pack being edited, whose bought copies still unopened are counted; null for a new pack. */
-  packId: string | null;
-  cardType: CardType | null;
-  season: number | null;
-  pool: PackPool;
-  odds: PackOdds;
-  guaranteedRarity: CardRarity | null;
-}
+export const PackPreviewSchema = z.object({
+  // The pack being edited, whose stored theme is merged in and whose unopened copies are counted; null for a new pack
+  packId: z.string().min(1).max(64).nullable(),
+  cardType: z.nativeEnum(CardType).nullable(),
+  season: PackSeasonSchema,
+  pool: PackPoolSchema,
+  odds: PackOddsSchema,
+  guaranteedRarity: z.nativeEnum(CardRarity).nullable(),
+});
 
 /**
  * How many approved cards of each rarity the pack would draw from, and some of them; the rarities it shows or
- * guarantees with no card, which keep it off sale; and how many bought copies wait unopened. The sample is unordered,
+ * guarantees with no card, which keep it off sale; and how many unopened copies players hold. A stored pack previews
+ * the theme its save would write, so the preview and the save's check count the same pool. The sample is unordered,
  * so the read stops after 12 index rows instead of sorting the whole pool.
  */
-export async function previewPackPool(db: PrismaClient, input: PackPreviewInput) {
-  const where = await packPoolWhere(db, {
+export async function previewPackPool(db: PrismaClient, input: z.infer<typeof PackPreviewSchema>) {
+  const stored = input.packId
+    ? await db.cardPack.findUnique({ where: { id: input.packId }, select: { themeFilter: true } })
+    : null;
+  const {
+    where,
+    counts,
+    missing: undeliverable,
+  } = await missingRarities(db, {
     cardType: input.cardType,
     season: input.season,
-    themeFilter: input.pool,
+    themeFilter: mergePackTheme(stored?.themeFilter ?? null, input.pool),
+    ...input.odds,
+    guaranteedRarity: input.guaranteedRarity,
   });
-  const [counts, samples, unopened] = await Promise.all([
-    tierCounts(db, where),
+  const [samples, unopened] = await Promise.all([
     db.card.findMany({
       where,
       take: 12,
@@ -223,12 +224,11 @@ export async function previewPackPool(db: PrismaClient, input: PackPreviewInput)
     }),
     input.packId ? db.userPack.count({ where: { packId: input.packId, isOpened: false } }) : 0,
   ]);
-  const undeliverable = undeliverableRarities(input.odds, input.guaranteedRarity, counts);
   const byRarity = PACK_ODDS_FIELDS.map(([rarity, field]) => ({
     rarity,
     count: counts[rarity] ?? 0,
     odds: input.odds[field],
-    // Shown or guaranteed with no card: the pack can't go on sale, and a bought one can't be opened
+    // Shown or guaranteed with no card: the pack can't go on sale, and an unopened one can't be opened
     empty: undeliverable.includes(rarity),
   }));
   return {

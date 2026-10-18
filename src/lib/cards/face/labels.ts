@@ -1,7 +1,8 @@
 // src/lib/cards/face/labels.ts
 /**
- * What player surfaces call each rarity, finish and type, in the schema's order. The orders come from the client-safe
- * enum mirrors in `~/lib/cards/enums`, so a new enum value lists here as soon as it is added there.
+ * What player surfaces call each rarity, finish and type, in the schema's order, and the cards admin's rarity names.
+ * The orders come from the client-safe enum mirrors in `~/lib/cards/enums`, so a new enum value lists here as soon as
+ * it is added there.
  */
 import { CardFinish, CardRarity, CardType } from "~/lib/cards/enums";
 
@@ -16,6 +17,12 @@ export const RARITY_LABEL: Readonly<Record<CardRarity, string>> = {
   ULTRA_RARE: "Ultra Rare",
   EPIC: "Epic",
   LEGENDARY: "Legendary",
+};
+
+/** The cards admin's rarity labels, in sentence case: "Ultra rare". Its server refusals use them too. */
+export const ADMIN_RARITY_LABEL: Readonly<Record<CardRarity, string>> = {
+  ...RARITY_LABEL,
+  ULTRA_RARE: "Ultra rare",
 };
 
 export const FINISH_ORDER: readonly CardFinish[] = Object.values(CardFinish);
