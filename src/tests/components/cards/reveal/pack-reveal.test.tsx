@@ -281,6 +281,20 @@ describe("PackReveal", () => {
     ).toBeNull();
   });
 
+  it("says a pack whose cards could not be shown is open, with its cards in Mine", () => {
+    // The open committed but its faces could not be read; a pack always holds cards, so none means that.
+    const { props } = setup({}, { pulled: [] });
+    openPack();
+    expect(screen.getByRole("heading", { name: "Your pack is open" })).toHaveFocus();
+    expect(screen.getByText("Its cards are in Mine.")).toBeInTheDocument();
+    expect(screen.queryByText("This pack had no cards")).toBeNull();
+    expect(screen.queryByRole("list", { name: "Cards pulled" })).toBeNull();
+    const mine = screen.getByRole("link", { name: "Go to Mine" });
+    expect(mine).toHaveAttribute("href", "/vault/cards/mine");
+    fireEvent.click(mine);
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
   it("skips straight to the summary, with no next pack to offer", () => {
     setup();
     openPack();

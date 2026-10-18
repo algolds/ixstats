@@ -143,7 +143,7 @@ describe("contextRevealsArt", () => {
 
   it("reveals a card in another player's public showcase, unless they hide their Vault cards", async () => {
     const db = createMockPrisma();
-    db.cardCollection.findFirst.mockResolvedValue({ userId: "owner" });
+    db.cardCollection.findFirst.mockResolvedValue({ userId: "owner", items: [{ id: "i1" }] });
     await expect(
       contextRevealsArt(db as never, "me", "c1", { kind: "showcase", id: "s1" }, visible)
     ).resolves.toBe(true);
@@ -160,6 +160,22 @@ describe("contextRevealsArt", () => {
     await expect(
       contextRevealsArt(db as never, "me", "c1", { kind: "showcase", id: "s2" }, visible)
     ).resolves.toBe(false);
+  });
+
+  it("reveals a retired copy in a showcase to its owner only, as the showcase lists it", async () => {
+    const db = createMockPrisma();
+    // The showcase holds the card, but no copy of it that is not retired.
+    db.cardCollection.findFirst.mockResolvedValue({ userId: "owner", items: [] });
+    const from = { kind: "showcase" as const, id: "s1" };
+    await expect(contextRevealsArt(db as never, "me", "c1", from, visible)).resolves.toBe(false);
+    await expect(contextRevealsArt(db as never, null, "c1", from, visible)).resolves.toBe(false);
+    expect(visible.vaultVisible).not.toHaveBeenCalled();
+    await expect(contextRevealsArt(db as never, "owner", "c1", from, visible)).resolves.toBe(true);
+    expect(db.cardCollection.findFirst.mock.calls[0]![0].select.items).toEqual({
+      where: { cardOwnership: { cardId: "c1", cards: { isRetired: false } } },
+      take: 1,
+      select: { id: true },
+    });
   });
 
   it("reveals a holder's trophy, or a card they display, when they show their Vault cards", async () => {

@@ -38,18 +38,23 @@ export function RevealSummary({
   return (
     <div className="flex flex-col items-center gap-6">
       <h3 ref={heading} tabIndex={-1} className="text-title-3 outline-none">
-        {best ? `Best pull: ${RARITY_LABEL[best.rarity]}` : "This pack had no cards"}
+        {best ? `Best pull: ${RARITY_LABEL[best.rarity]}` : "Your pack is open"}
       </h3>
-      <ul aria-label="Cards pulled" className="flex flex-wrap justify-center gap-3">
-        {faces.map((face) => {
-          const card = <CardFace face={face} size="S" onOpen={() => onOpenCard(face.cardId)} />;
-          return (
-            <li key={face.copy?.ownershipId ?? face.cardId}>
-              {revealShines(face.rarity) ? <CardTilt>{card}</CardTilt> : card}
-            </li>
-          );
-        })}
-      </ul>
+      {best ? (
+        <ul aria-label="Cards pulled" className="flex flex-wrap justify-center gap-3">
+          {faces.map((face) => {
+            const card = <CardFace face={face} size="S" onOpen={() => onOpenCard(face.cardId)} />;
+            return (
+              <li key={face.copy?.ownershipId ?? face.cardId}>
+                {revealShines(face.rarity) ? <CardTilt>{card}</CardTilt> : card}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        // A pack always holds cards, so an open with none to show committed but could not read them back.
+        <p className="text-callout text-center">Its cards are in Mine.</p>
+      )}
       <div className="flex flex-wrap justify-center gap-2">
         <Button asChild variant="secondary">
           <Link href={CARD_HUB_PATHS.mine} onClick={onClose}>
