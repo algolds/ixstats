@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
+import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { marketTabOf, type MarketTab } from "~/lib/cards/hub-routes";
 import { MarketBrowse } from "./MarketBrowse";
@@ -28,6 +30,9 @@ const TAB_IN_SCROLLER = "focus-visible:-outline-offset-2";
 export function MarketPane(props: MarketPaneProps) {
   // One set of live subscriptions for every tab: Browse and Selling both show running auctions.
   useAuctionWebSocket();
+  // The row scrolls on a narrow phone: the selected or focused tab is kept in view, as in a SegmentedControl.
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useKeepSelectedInView(tabsRef, { enabled: true, selected: props.tab });
   return (
     <Tabs
       value={props.tab}
@@ -35,7 +40,11 @@ export function MarketPane(props: MarketPaneProps) {
       className="space-y-4"
     >
       {/* The four tabs are wider than a 320px phone: the row scrolls in its own track, not the page. */}
-      <TabsList aria-label="Market" className="hide-scrollbar overflow-x-auto overscroll-x-contain">
+      <TabsList
+        ref={tabsRef}
+        aria-label="Market"
+        className="hide-scrollbar overflow-x-auto overscroll-x-contain"
+      >
         <TabsTrigger value="browse" className={TAB_IN_SCROLLER}>
           Browse
         </TabsTrigger>
