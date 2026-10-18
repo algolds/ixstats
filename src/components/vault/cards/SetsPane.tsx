@@ -27,16 +27,17 @@ interface SetsPaneProps {
 
 /**
  * Moves focus to the heading of what the pane shows once that changes (the list, or a showcase), since the control
- * that changed it is gone: a tile, Back, Delete, or a new showcase's Create. The first screen takes no focus.
+ * that changed it is gone: a tile, Back, Delete, or a new showcase's Create. The first screen takes no focus, so a
+ * hub tab that mounts the pane keeps it, and neither does the same screen again (Strict Mode runs the mount twice).
  * `screen` is null while a showcase loads.
  */
 function useHeadingFocus(screen: string | null) {
   const heading = useRef<HTMLHeadingElement>(null);
-  const shownBefore = useRef(false);
+  const lastShown = useRef<string | null>(null);
   useEffect(() => {
     if (screen === null) return;
-    if (shownBefore.current) heading.current?.focus();
-    shownBefore.current = true;
+    if (lastShown.current !== null && lastShown.current !== screen) heading.current?.focus();
+    lastShown.current = screen;
   }, [screen]);
   return heading;
 }
@@ -84,11 +85,8 @@ function ShowcaseTile({ showcase, onOpen }: { showcase: ShowcaseSummary; onOpen:
       onClick={onOpen}
       className="flex items-center gap-3"
     >
-      {showcase.cover ? (
-        <CardFace face={showcase.cover} size="S" className="w-16" />
-      ) : (
-        <CardFaceDown size="S" className="w-16" />
-      )}
+      {/* Size S at its own width: narrower, the face has no room for its title. */}
+      {showcase.cover ? <CardFace face={showcase.cover} size="S" /> : <CardFaceDown size="S" />}
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-headline truncate">{showcase.name}</p>
         <p className="text-footnote text-label-secondary tabular-nums">

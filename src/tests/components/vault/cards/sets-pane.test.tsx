@@ -156,6 +156,18 @@ describe("SetsPane, the list", () => {
     expect(screen.getByText("0 cards")).toBeInTheDocument();
     const empty = screen.getByRole("button", { name: "Open Best of Ixnay, 0 cards, private" });
     expect(empty.querySelector(".card-face-down")).not.toBeNull();
+    expect(empty.querySelector(".card-face-down")).toHaveClass("w-32");
+  });
+
+  // At 64 px the face had room for one letter of its title; size S's own width is the smallest Facet face.
+  it("covers a tile with a size S face at its own width, wide enough for the card's title", () => {
+    listed([summary()]);
+    renderPane();
+    const cover = within(screen.getByRole("button", { name: tile })).getByRole("img", {
+      name: /Caphiria/,
+    });
+    expect(cover).toHaveClass("w-32");
+    expect(cover).not.toHaveClass("w-16");
   });
 
   it("says what to do when there are no showcases yet", () => {
@@ -380,6 +392,22 @@ describe("SetsPane, one showcase", () => {
     showPane("s9");
     expect(screen.getByRole("heading", { name: "Shiny" })).toHaveFocus();
   });
+
+  // The hub mounts the pane when its Sets tab is chosen, and focus stays on that tab; Strict Mode runs the mount's
+  // effects twice, which is no navigation either.
+  it.each([null, "s1"])(
+    "takes no focus when the hub's tab first mounts it, even with its effects run twice (showcase %s)",
+    (showcaseId) => {
+      listed([summary()]);
+      shown(view());
+      render(
+        <React.StrictMode>
+          <SetsPane onOpenCard={jest.fn()} showcaseId={showcaseId} onShowcaseChange={jest.fn()} />
+        </React.StrictMode>
+      );
+      expect(document.body).toHaveFocus();
+    }
+  );
 
   it("gives an opened showcase's heading no focus on the first screen", () => {
     shown(view());
