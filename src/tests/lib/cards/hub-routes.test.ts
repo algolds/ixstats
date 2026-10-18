@@ -59,6 +59,15 @@ describe("market links", () => {
     expect(tradeBuilderHref({})).toBe("/vault/cards/market?tab=trades&trade=new");
     expect(tradeBuilderHref({ tradeId: "t1" })).toBe("/vault/cards/market?tab=trades&trade=t1");
   });
+
+  it("reads an empty value as absent", () => {
+    expect(tradeBuilderHref({ tradeId: "", partner: "" })).toBe(
+      "/vault/cards/market?tab=trades&trade=new"
+    );
+    expect(tradeBuilderHref({ give: "", get: "" })).toBe(
+      "/vault/cards/market?tab=trades&trade=new"
+    );
+  });
 });
 
 describe("hub tabs under a base path", () => {

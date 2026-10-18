@@ -50,15 +50,23 @@ export function marketTabHref(tab: MarketTab): string {
   return withQuery(CARD_HUB_PATHS.market, { tab });
 }
 
-/** The trade builder on the Market Trades tab: an open trade, or a new one seeded with a partner and cards. */
+/**
+ * The trade builder on the Market Trades tab: an open trade, or a new one seeded with a partner and cards. An empty
+ * value is left out, so the reader never sees a present but empty partner or trade.
+ */
 export function tradeBuilderHref(args: {
   tradeId?: string;
   partner?: string;
   give?: string;
   get?: string;
 }): string {
-  const { tradeId = "new", partner, give, get } = args;
-  return withQuery(CARD_HUB_PATHS.market, { tab: "trades", trade: tradeId, partner, give, get });
+  return withQuery(CARD_HUB_PATHS.market, {
+    tab: "trades",
+    trade: args.tradeId || "new",
+    partner: args.partner || undefined,
+    give: args.give || undefined,
+    get: args.get || undefined,
+  });
 }
 
 /** Old card addresses; every one redirects permanently. */
