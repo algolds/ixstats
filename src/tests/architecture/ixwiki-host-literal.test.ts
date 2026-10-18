@@ -2,8 +2,9 @@
 /**
  * Plan 415 (v1 decision D14): no hard-coded `ixwiki.com`. The wiki's host is spelled once, in
  * `src/lib/wiki-os/config.ts`; every other file asks the config (`mediaWikiOrigin`, `publicArticleUrl`,
- * `mediaWikiApiUrl`, ...). Left alone, and not counted: comments, `User-Agent` contact strings, and the hosts
- * under ixwiki.com that are not MediaWiki (forum, maps, accounts, clerk, archives).
+ * `mediaWikiApiUrl`, ...), except the files in `ALLOWED`, each with its reason. Left alone, and not counted:
+ * comments, `User-Agent` contact strings, and the hosts under ixwiki.com that are not MediaWiki (forum, maps,
+ * accounts, clerk, archives).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -11,7 +12,11 @@ import path from "node:path";
 const ROOT = process.cwd();
 const OTHER_HOSTS = /(?:forum|maps|accounts|clerk|archives)\\?\.ixwiki\\?\.com/g;
 const HOST = /ixwiki\\?\.com/;
-const ALLOWED = new Set(["src/lib/wiki-os/config.ts"]);
+const ALLOWED = new Set([
+  "src/lib/wiki-os/config.ts",
+  // Matches links already stored with the historical host (the retired bridge's), not the configured one.
+  "src/lib/thinkpages-forum/import/forum-links.ts",
+]);
 
 function sourceFiles(dir: string, found: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -35,7 +40,8 @@ describe("the wiki's host", () => {
           const code = line.replace(OTHER_HOSTS, "");
           const isComment = /^\s*(?:\/\/|\*|\/\*)/.test(line);
           const isContact = /IxStats\/[\d.]+ \(|contact/i.test(line);
-          if (HOST.test(code) && !isComment && !isContact) offenders.push(`${relative}:${index + 1}: ${line.trim()}`);
+          if (HOST.test(code) && !isComment && !isContact)
+            offenders.push(`${relative}:${index + 1}: ${line.trim()}`);
         });
     }
 

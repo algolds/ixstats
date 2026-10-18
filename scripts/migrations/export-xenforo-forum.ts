@@ -15,8 +15,9 @@
  * Permissions: with a super-user key every read adds `api_bypass_permissions=1` (default; read-only, never
  * `XF-Api-User` impersonation), so private forums, moderated content and every attachment are exported instead of
  * a guest's view. --no-bypass-permissions turns it off; --bypass-permissions forces it on for a key whose type
- * /index does not report. meta.json records the key type, the bypass setting and the client version, and the
- * summary prints each forum's listed thread count next to XenForo's own count.
+ * /index does not report. meta.json records the key type, the bypass setting, the client version and whether any
+ * run used --skip-failing (the importer then keeps what it cannot map), and the summary prints each forum's listed
+ * thread count next to XenForo's own count.
  * Rate: 0.9 requests/s by default with a descriptive User-Agent; the server's bot defense blocks above 60
  * requests a minute per IP (see scripts/README.md before raising --rps).
  * Ctrl-C stops after the current item. Exits 1 with the ids still missing when the snapshot is incomplete.

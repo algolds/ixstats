@@ -11,7 +11,7 @@
  */
 import {
   classifyForumHref,
-  FORUM_LINK_MARKERS,
+  mayHoldOldLink,
   rewriteNotificationHref,
 } from "~/lib/thinkpages-forum/import/forum-links";
 import type { NodeMapFile } from "~/lib/thinkpages-forum/import/node-map";
@@ -20,14 +20,10 @@ import { forumTargets, type ForumLinksDb } from "./import-forum-links";
 
 const PAGE = 500;
 
-export type NotificationLinksDb = ForumLinksDb & Pick<ImportDb, "notification">;
+type NotificationLinksDb = ForumLinksDb & Pick<ImportDb, "notification">;
 
 /** Notifications that may hold an old forum link, in any case. */
-const MAY_HOLD_OLD_LINK = {
-  OR: FORUM_LINK_MARKERS.map((marker) => ({
-    href: { contains: marker, mode: "insensitive" as const },
-  })),
-};
+const MAY_HOLD_OLD_LINK = mayHoldOldLink((href) => ({ href }));
 
 export interface NotificationLinkRewrite {
   /** Old forum links pointed at their native page. */
@@ -40,8 +36,7 @@ export async function rewriteNotificationLinks(
   db: NotificationLinksDb,
   opts: { nodeMap: NodeMapFile; dropUnresolved: boolean }
 ): Promise<NotificationLinkRewrite> {
-  const targets = forumTargets(db, opts.nodeMap);
-  const unresolved = opts.dropUnresolved ? "drop" : "keep";
+  const targets = forumTargets(db, opts);
   const out: NotificationLinkRewrite = { mapped: 0, unresolved: 0 };
   let after = "";
   for (;;) {
@@ -56,7 +51,7 @@ export async function rewriteNotificationLinks(
     for (const row of rows) {
       const href = row.href ?? "";
       await targets.load(classifyForumHref(href) ?? []);
-      const rewrite = rewriteNotificationHref(href, targets.targetOf, unresolved);
+      const rewrite = rewriteNotificationHref(href, targets.targetOf, targets.unresolved);
       if (!rewrite) continue;
       const { count } = await db.notification.updateMany({
         where: { id: row.id, href: row.href },

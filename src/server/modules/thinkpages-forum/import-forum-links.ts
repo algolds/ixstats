@@ -12,9 +12,9 @@
  */
 import { categoryVisibilityWhere } from "~/lib/thinkpages-forum/categories";
 import {
-  FORUM_LINK_MARKERS,
   forumHrefRefs,
   forumRefTarget,
+  mayHoldOldLink,
   nodeLandings,
   rewriteForumHrefs,
   type ForumLookups,
@@ -135,18 +135,26 @@ export async function resolveForumRef(
   return forumRefTarget(ref, await lookup(db, ref, landings));
 }
 
-/** A pass's targets: `load` looks each distinct ref up once for the whole pass, `targetOf` reads what it found. */
-export interface ForumTargets {
+/**
+ * A pass's targets: `load` looks each distinct ref up once for the whole pass, `targetOf` reads what it found, and
+ * `unresolved` is what the pass does with a link nothing resolves (dropped on a clean run, else kept for the rerun).
+ */
+interface ForumTargets {
   load: (refs: readonly ForumRef[]) => Promise<void>;
   targetOf: (ref: ForumRef) => string | null;
+  unresolved: "drop" | "keep";
 }
 
 /** The memo a pass resolves old forum links through, over the run's node map; a failed lookup throws. */
-export function forumTargets(db: ForumLinksDb, nodeMap: NodeMapFile): ForumTargets {
-  const landings = nodeLandings(nodeMap);
+export function forumTargets(
+  db: ForumLinksDb,
+  opts: { nodeMap: NodeMapFile; dropUnresolved: boolean }
+): ForumTargets {
+  const landings = nodeLandings(opts.nodeMap);
   const targets = new Map<string, string | null>();
   const keyOf = (ref: ForumRef) => JSON.stringify(ref);
   return {
+    unresolved: opts.dropUnresolved ? "drop" : "keep",
     load: async (refs) => {
       for (const ref of refs) {
         const key = keyOf(ref);
@@ -166,9 +174,7 @@ const PAGE = 500;
 const MAY_HOLD_OLD_LINKS = {
   xenforoPostId: { not: null },
   contentWikitext: null,
-  OR: FORUM_LINK_MARKERS.map((marker) => ({
-    contentHtml: { contains: marker, mode: "insensitive" as const },
-  })),
+  ...mayHoldOldLink((contentHtml) => ({ contentHtml })),
 };
 
 export interface ForumLinkRewrite {
@@ -189,8 +195,7 @@ export async function rewriteImportedForumLinks(
   db: ForumLinksDb,
   opts: { nodeMap: NodeMapFile; dropUnresolved: boolean }
 ): Promise<ForumLinkRewrite> {
-  const targets = forumTargets(db, opts.nodeMap);
-  const unresolved = opts.dropUnresolved ? "drop" : "keep";
+  const targets = forumTargets(db, opts);
   const out: ForumLinkRewrite = { mapped: 0, unwrapped: 0 };
   let after = "";
   for (;;) {
@@ -204,7 +209,7 @@ export async function rewriteImportedForumLinks(
     after = posts[posts.length - 1]!.id;
     for (const post of posts) {
       await targets.load(forumHrefRefs(post.contentHtml));
-      const rewrite = rewriteForumHrefs(post.contentHtml, targets.targetOf, unresolved);
+      const rewrite = rewriteForumHrefs(post.contentHtml, targets.targetOf, targets.unresolved);
       if (rewrite.html === post.contentHtml) continue;
       const { count } = await db.forumPost.updateMany({
         where: { id: post.id, contentHtml: post.contentHtml },

@@ -2,6 +2,7 @@ import {
   isStashedArticle,
   isStashedForumThread,
   nativeThreadIdOf,
+  nativeThreadTitle,
   stashContentTypeForTitle,
 } from "~/lib/wiki-os/stash-content-type";
 
@@ -17,6 +18,11 @@ describe("forum threads in the stash", () => {
     expect(nativeThreadIdOf("thinkpages:thread:t1")).toBe("t1");
     expect(nativeThreadIdOf("thinkpages:thread:")).toBeNull();
     expect(nativeThreadIdOf("forum:thread:7")).toBeNull();
+  });
+
+  it("writes a native thread's title, which reads back to its id", () => {
+    expect(nativeThreadTitle("t1")).toBe("thinkpages:thread:t1");
+    expect(nativeThreadIdOf(nativeThreadTitle("t1"))).toBe("t1");
   });
 
   it("keeps a native thread out of the articles and in the threads", () => {

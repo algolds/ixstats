@@ -230,7 +230,8 @@ configuration object, never from a literal:
 - **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
   forum phase 4b; the app neither previews nor redirects links to it): only the XenForo import reads its links, pointing those in
   imported posts at native pages (`src/lib/thinkpages-forum/import/forum-links.ts`, which also matches the retired bridge's `/forum/...`
-  paths on the wiki's host through `mediaWikiHostPattern`, and `src/server/modules/thinkpages-forum/import-forum-links.ts`); the
+  paths on `ixwiki.com`, spelled there because it is the host those stored links carry, whatever host the wiki is configured with,
+  and `src/server/modules/thinkpages-forum/import-forum-links.ts`); the
   export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
@@ -242,9 +243,11 @@ configuration object, never from a literal:
 
 `grep -rn "ixwiki.com" src` (tests excluded) names the wiki's host as a functional address in **one** line, and
 `src/tests/architecture/ixwiki-host-literal.test.ts` keeps it so. Every other hit is a comment, a `User-Agent` contact string,
-or a subdomain that is not MediaWiki (above).
+or a subdomain that is not MediaWiki (above). The test also allows the second file below, which spells the host escaped.
 
 - `src/lib/wiki-os/config.ts`: the one default of `NEXT_PUBLIC_MEDIAWIKI_URL`, spelled once.
+- `src/lib/thinkpages-forum/import/forum-links.ts`: `ixwiki\.com` in the regular expression for the retired bridge's links,
+  which are stored with that host whatever host the wiki is configured with (a fact about stored rows, not configuration).
 
 The mirror (`csrf-cache.ts`, `write-service.ts`) reads `wikiosConfig.mediawiki.writeApiUrl` (`WIKIOS_MEDIAWIKI_API`, else the
 internal URL, else the public one) and `wikiosConfig.mediawiki.botUser`; the bot password stays an environment variable

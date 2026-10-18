@@ -26,7 +26,7 @@ const FIXTURES = path.join(process.cwd(), "src/tests/fixtures/xenforo");
 export const readSmallSnapshot = (): Promise<Snapshot> =>
   readSnapshot(snapshotDiskFs, path.join(FIXTURES, "snapshot-small"));
 
-export const SMALL_NODE_MAP: NodeMapFile = nodeMapSchema.parse(
+const SMALL_NODE_MAP: NodeMapFile = nodeMapSchema.parse(
   JSON.parse(readFileSync(path.join(FIXTURES, "node-map-small.json"), "utf8"))
 );
 
@@ -50,7 +50,7 @@ export async function runImport(
   const resolved = resolveNodeTargets(snapshot.nodes, nodeMap);
   const totals = await applyImport(db, plan, {
     nodeMap: appliedNodeMap(resolved),
-    nodeFilter: snapshot.meta.nodeFilter,
+    meta: snapshot.meta,
   });
   return { plan, totals };
 }

@@ -375,6 +375,17 @@ describe("runExport", () => {
       expect(isComplete(snapshot)).toMatchObject({ complete: true, threadsGone: [101, 103] });
     });
 
+    it("records --skip-failing in the meta, kept by a later run without it: the snapshot may be partial", async () => {
+      await run(brokenThread());
+      expect((await readSnapshot(fs, DIR)).meta.skippedFailing).toBe(false);
+
+      await run(brokenThread(), { skipFailing: true });
+      expect((await readSnapshot(fs, DIR)).meta.skippedFailing).toBe(true);
+
+      await run(fakeClient());
+      expect((await readSnapshot(fs, DIR)).meta.skippedFailing).toBe(true);
+    });
+
     it("a forum whose thread list fails, 403 and 404 included, does not stop the later forums", async () => {
       const client = fakeClient();
       const forbidden: FakeClient = {

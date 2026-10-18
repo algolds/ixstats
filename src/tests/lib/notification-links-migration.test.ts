@@ -4,6 +4,7 @@
  * PostgreSQL regexp_replace per statement; this test runs those statements, in order, on example links in JS.
  */
 import { readdirSync, readFileSync } from "node:fs";
+import { classifyForumHref } from "~/lib/thinkpages-forum/import/forum-links";
 
 const DIR = "20261028120000_rewrite_legacy_notification_links";
 const lines = readFileSync(`prisma/migrations/${DIR}/migration.sql`, "utf8").split("\n");
@@ -165,6 +166,15 @@ describe("rewrite legacy notification links migration", () => {
   it.each(ALL_KEPT)("leaves %s alone", (href) => {
     expect(migrate(href)).toBe(href);
   });
+
+  // Deploy step 5e runs this file before the import's --apply: what it writes must not be an old forum link, or the
+  // import's notification pass would rewrite it again.
+  it.each(ALL_MOVED)(
+    "sends %s to a link the XenForo import does not read as an old forum link",
+    (legacy) => {
+      expect(classifyForumHref(migrate(legacy))).toBeNull();
+    }
+  );
 
   it("changes nothing on a second run", () => {
     for (const [, current] of ALL_MOVED) expect(migrate(current)).toBe(current);

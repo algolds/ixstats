@@ -293,53 +293,59 @@ describe("the XenForo import applied to the small snapshot", () => {
     ]);
   });
 
-  it("keeps what nothing maps while the snapshot covers only some forums, and drops it on a run over every forum", async () => {
-    const store = importStore({
-      ...seed(),
-      stashItems: [
-        {
-          id: "i-999",
-          stashId: "s-1",
-          pageTitle: "forum:thread:999",
-          contentType: "forum_thread",
-          contentId: 999,
-        },
-      ],
-      notifications: [{ id: "n-999", href: "/forum/thread/999" }],
-    });
-    const whole = withMessages(snapshot, {
-      1031: '[url=https://forum.ixwiki.com/threads/x.999/]gone[/url] [QUOTE="Ann, post: 9999, member: 0"]q[/QUOTE]',
-    });
-    const filtered: Snapshot = { ...whole, meta: { ...whole.meta, nodeFilter: [12, 13] } };
-    const html = () =>
-      store.tables().posts.find((p) => p.xenforoPostId === 1031)!.contentHtml as string;
+  it.each([
+    ["covers only some forums (--nodes)", { nodeFilter: [12, 13] }],
+    ["was exported with --skip-failing", { skippedFailing: true }],
+  ])(
+    "keeps what nothing maps while the snapshot %s, and drops it on a complete one",
+    async (_, partial) => {
+      const store = importStore({
+        ...seed(),
+        stashItems: [
+          {
+            id: "i-999",
+            stashId: "s-1",
+            pageTitle: "forum:thread:999",
+            contentType: "forum_thread",
+            contentId: 999,
+          },
+        ],
+        notifications: [{ id: "n-999", href: "/forum/thread/999" }],
+      });
+      const whole = withMessages(snapshot, {
+        1031: '[url=https://forum.ixwiki.com/threads/x.999/]gone[/url] [QUOTE="Ann, post: 9999, member: 0"]q[/QUOTE]',
+      });
+      const part: Snapshot = { ...whole, meta: { ...whole.meta, ...partial } };
+      const html = () =>
+        store.tables().posts.find((p) => p.xenforoPostId === 1031)!.contentHtml as string;
 
-    const first = await runImport(store.db as never, filtered);
-    expect(first.totals).toMatchObject({
-      failedThreads: [],
-      quoteIds: { remapped: 0, dropped: 0 },
-      // Post 1001's link to thread 100 maps; nothing is unwrapped, dropped or deleted.
-      forumLinks: { mapped: 1, unwrapped: 0 },
-      stashedThreads: { moved: 0, twins: 0, deleted: 0 },
-      notificationLinks: { mapped: 0, unresolved: 0 },
-    });
-    expect(html()).toContain('href="https://forum.ixwiki.com/threads/x.999/"');
-    expect(html()).toContain('data-post="9999"');
-    expect(store.tables().stashItems.map((i) => i.id)).toEqual(["i-999"]);
-    expect(store.tables().notifications.map((n) => n.href)).toEqual(["/forum/thread/999"]);
+      const first = await runImport(store.db as never, part);
+      expect(first.totals).toMatchObject({
+        failedThreads: [],
+        quoteIds: { remapped: 0, dropped: 0 },
+        // Post 1001's link to thread 100 maps; nothing is unwrapped, dropped or deleted.
+        forumLinks: { mapped: 1, unwrapped: 0 },
+        stashedThreads: { moved: 0, twins: 0, deleted: 0 },
+        notificationLinks: { mapped: 0, unresolved: 0 },
+      });
+      expect(html()).toContain('href="https://forum.ixwiki.com/threads/x.999/"');
+      expect(html()).toContain('data-post="9999"');
+      expect(store.tables().stashItems.map((i) => i.id)).toEqual(["i-999"]);
+      expect(store.tables().notifications.map((n) => n.href)).toEqual(["/forum/thread/999"]);
 
-    const again = await runImport(store.db as never, whole);
-    expect(again.totals).toMatchObject({
-      quoteIds: { remapped: 0, dropped: 1 },
-      forumLinks: { mapped: 0, unwrapped: 1 },
-      stashedThreads: { moved: 0, twins: 0, deleted: 1 },
-      notificationLinks: { mapped: 0, unresolved: 1 },
-    });
-    expect(html()).not.toContain("forum.ixwiki.com");
-    expect(html()).not.toContain("data-post=");
-    expect(store.tables().stashItems).toEqual([]);
-    expect(store.tables().notifications.map((n) => n.href)).toEqual(["/thinkpages"]);
-  });
+      const again = await runImport(store.db as never, whole);
+      expect(again.totals).toMatchObject({
+        quoteIds: { remapped: 0, dropped: 1 },
+        forumLinks: { mapped: 0, unwrapped: 1 },
+        stashedThreads: { moved: 0, twins: 0, deleted: 1 },
+        notificationLinks: { mapped: 0, unresolved: 1 },
+      });
+      expect(html()).not.toContain("forum.ixwiki.com");
+      expect(html()).not.toContain("data-post=");
+      expect(store.tables().stashItems).toEqual([]);
+      expect(store.tables().notifications.map((n) => n.href)).toEqual(["/thinkpages"]);
+    }
+  );
 
   it("finishes a thread interrupted mid-write on the rerun, ending as one clean run would", async () => {
     const clean = importStore(seed());

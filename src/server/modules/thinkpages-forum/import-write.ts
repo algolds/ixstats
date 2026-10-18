@@ -18,6 +18,7 @@ import type {
   PlannedPost,
   PlannedThread,
 } from "~/lib/thinkpages-forum/import/plan";
+import type { SnapshotMeta } from "~/lib/thinkpages-forum/import/snapshot";
 import { isUniqueViolation } from "./errors";
 import { assertImportLock, type ImportDb } from "./import-db";
 import { rewriteImportedForumLinks, type ForumLinkRewrite } from "./import-forum-links";
@@ -309,13 +310,18 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
  * pass (through the run's node map), the bridge-era stash item and notification link passes, the relink pass.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
- * `nodeFilter` is the snapshot's (`meta.nodeFilter`): a snapshot of some forums only leaves threads out, so the passes
- * keep what nothing maps, as after a failed thread, and only a run over every forum drops it.
+ * `meta` is the snapshot's: a snapshot of some forums only (`nodeFilter`), or one exported with `--skip-failing`
+ * (`skippedFailing`, which may have recorded a failing forum's threads as none), leaves threads out, so the passes
+ * keep what nothing maps, as after a failed thread; only a complete snapshot drops it.
  */
 export async function applyImport(
   db: ImportDb,
   plan: Pick<ImportPlan, "categories" | "threads" | "rehide">,
-  opts: { nodeMap: NodeMapFile; nodeFilter: number[] | null; log?: (line: string) => void }
+  opts: {
+    nodeMap: NodeMapFile;
+    meta: Pick<SnapshotMeta, "nodeFilter" | "skippedFailing">;
+    log?: (line: string) => void;
+  }
 ): Promise<ApplyTotals> {
   const log = opts.log ?? (() => {});
   const { ids, created } = await ensureArchiveCategories(db, plan.categories);
@@ -353,9 +359,10 @@ export async function applyImport(
   await assertImportLock(db);
   totals.rehidden = await rehideImported(db, plan.rehide, { failures: totals.failedThreads, log });
   totals.bridgeLinks = await remapBridgeLinks(db);
-  // A failed thread, or a forum the snapshot left out, may hold a quoted, linked or stashed post: keep what nothing
-  // maps yet, so a later run can map it.
-  const complete = totals.failedThreads.length === 0 && opts.nodeFilter === null;
+  // A failed thread, or a forum the snapshot left out or skipped, may hold a quoted, linked or stashed post: keep what
+  // nothing maps yet, so a later run can map it.
+  const complete =
+    totals.failedThreads.length === 0 && opts.meta.nodeFilter === null && !opts.meta.skippedFailing;
   totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: complete });
   const links = { nodeMap: opts.nodeMap, dropUnresolved: complete };
   totals.forumLinks = await rewriteImportedForumLinks(db, links);

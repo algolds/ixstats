@@ -4,6 +4,7 @@ import {
   FORUM_LINK_MARKERS,
   forumHrefRefs,
   forumRefTarget,
+  mayHoldOldLink,
   nodeLandings,
   rewriteForumHrefs,
   rewriteNotificationHref,
@@ -205,6 +206,9 @@ const BRIDGE_LINKS: Array<[string, ForumRef[]]> = [
   ["https://ixwiki.com/projects/ixstats/forum/thread/12#post-5", [post(5), thread(12)]],
   ["https://www.ixwiki.com/projects/ixstates/forum/post/5", [post(5)]],
   ["http://ixwiki.com/forum/members/7", [member(7)]],
+  // The host as stored, whatever the wiki's configured host: in any case, and protocol-relative too.
+  ["https://IxWiki.com/projects/ixstates/forum/thread/12", [thread(12)]],
+  ["//ixwiki.com/projects/ixstates/forum/thread/12", [thread(12)]],
 ];
 
 /** XenForo paths written without the host (relative to forum.ixwiki.com); no IxStates route starts with them. */
@@ -269,6 +273,8 @@ describe("classifyForumHref", () => {
     "https://notforum.ixwiki.com/threads/1/",
     "https://evil.example/forum/thread/12",
     "https://ixwiki.com.evil/forum/thread/12",
+    "//ixwiki.com.evil/forum/thread/12",
+    "https://IxWiki.com/Forum/thread/12",
     "https://evil.example/?u=https://forum.ixwiki.com/threads/1/",
     "/thinkpages/forum",
     "/projects/ixstates/thinkpages/forum",
@@ -304,6 +310,12 @@ describe("FORUM_LINK_MARKERS", () => {
   ])("finds %s, so the passes scan every row holding an old link (any case)", (href) => {
     const text = href.toLowerCase();
     expect(FORUM_LINK_MARKERS.some((marker) => text.includes(marker.toLowerCase()))).toBe(true);
+  });
+
+  it("make the passes' where clause: any marker, in any case, on the column given", () => {
+    expect(mayHoldOldLink((href) => ({ href }))).toEqual({
+      OR: FORUM_LINK_MARKERS.map((marker) => ({ href: { contains: marker, mode: "insensitive" } })),
+    });
   });
 });
 

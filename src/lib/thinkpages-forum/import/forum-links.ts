@@ -4,12 +4,12 @@
  * Every target is built from links.ts helpers (or a handle, encoded), so it is always an app path on this site.
  *
  * An old link is a forum.ixwiki.com URL (XenForo's friendly or `index.php?` form, or a root-relative XenForo path such
- * as `/threads/x.12/`), or a path of the retired IxStates bridge (`/forum/...`, on ixwiki.com or root-relative, with
- * or without the app's base path). In post HTML only an anchor's href is read and rewritten; text, images and every
- * other attribute stay as written. A stored notification link is rewritten whole (`rewriteNotificationHref`).
+ * as `/threads/x.12/`), or a path of the retired IxStates bridge (`/forum/...`, root-relative or on ixwiki.com, the
+ * host its links were stored with, whatever host the wiki is configured with; with or without the app's base path).
+ * In post HTML only an anchor's href is read and rewritten; text, images and every other attribute stay as written.
+ * A stored notification link is rewritten whole (`rewriteNotificationHref`).
  */
 import { mapHtmlRuns } from "~/lib/action-links";
-import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 import { categoryHref, FORUM_HOME, postHref, threadHref } from "../links";
 import { escapeHtml, unescapeHtml } from "./html-text";
 import type { NodeMapFile, NodeTarget } from "./node-map";
@@ -85,6 +85,17 @@ export const FORUM_LINK_MARKERS: readonly string[] = [
   "/forum",
   ...XENFORO_SEGMENTS.filter((segment) => segment !== "forums").map((segment) => `/${segment}/`),
 ];
+
+/** A text column holding a marker, in any case (Prisma's `contains` with `mode: "insensitive"`, an ILIKE). */
+interface MarkerFilter {
+  contains: string;
+  mode: "insensitive";
+}
+
+/** The where clause for the rows whose column may hold an old forum link: `on` puts each marker's filter on it. */
+export function mayHoldOldLink<Where>(on: (filter: MarkerFilter) => Where): { OR: Where[] } {
+  return { OR: FORUM_LINK_MARKERS.map((marker) => on({ contains: marker, mode: "insensitive" })) };
+}
 
 /** XenForo ids are positive and the native columns are Int: anything past int4 cannot match a row. */
 const MAX_ID = 2_147_483_647;
@@ -168,10 +179,13 @@ const XENFORO_ORIGIN = /^(?:https?:)?\/\/(?:www\.)?forum\.ixwiki\.com(?::\d{1,5}
 const XENFORO_ROOT_PATH = new RegExp(`^(?=/(?:${XENFORO_SEGMENTS.join("|")})/)`);
 /** XenForo's unfriendly form: `/index.php?threads/x.12/&page=2` is the route `/threads/x.12/`, query `page=2`. */
 const XENFORO_INDEX_ROUTE = /^\/index\.php\?([^&#]*)&?/i;
-/** Where the bridge's paths start: the wiki's host or root-relative, with or without the app's base path. */
-const BRIDGE_ORIGIN = new RegExp(
-  String.raw`^(?:https?://${mediaWikiHostPattern()})?(?:/projects/ixstate?s)?(?=/forum(?:[/?#]|$))`
-);
+/**
+ * The host the bridge's links were stored with, in any case and protocol-relative too (as `XENFORO_ORIGIN`). A fact
+ * about stored rows, not configuration: the wiki's configured host may differ (a local or staging run).
+ */
+const BRIDGE_HOST = /^(?:https?:)?\/\/(?:www\.)?ixwiki\.com/i;
+/** Where the bridge's paths start once the host is cut (or root-relative): with or without the app's base path. */
+const BRIDGE_BASE_PATH = /^(?:\/projects\/ixstate?s)?(?=\/forum(?:[/?#]|$))/;
 
 function routeRefs(routes: readonly Route[], url: UrlParts): ForumRef[] {
   for (const [pattern, refs] of routes) {
@@ -191,8 +205,9 @@ export function classifyForumHref(href: string): ForumRef[] | null {
     const rest = href.slice(xenforo[0].length).replace(XENFORO_INDEX_ROUTE, "/$1?");
     return routeRefs(XENFORO_ROUTES, urlParts(rest));
   }
-  const bridge = BRIDGE_ORIGIN.exec(href);
-  return bridge ? routeRefs(BRIDGE_ROUTES, urlParts(href.slice(bridge[0].length))) : null;
+  const path = href.replace(BRIDGE_HOST, "");
+  const bridge = BRIDGE_BASE_PATH.exec(path);
+  return bridge ? routeRefs(BRIDGE_ROUTES, urlParts(path.slice(bridge[0].length))) : null;
 }
 
 /** An anchor start tag up to its href value, and the value (the sanitizer double-quotes every attribute). */
@@ -228,7 +243,7 @@ export function forumHrefRefs(html: string): ForumRef[] {
   return refs;
 }
 
-export interface ForumHrefRewrite {
+interface ForumHrefRewrite {
   html: string;
   /** Links pointed at their native page. */
   mapped: number;
@@ -286,7 +301,7 @@ export function rewriteForumHrefs(
 /** The app's base path, which a stored notification link may carry; the old one (`/projects/ixstats`) goes. */
 const APP_BASE_PATH = "/projects/ixstates";
 
-export interface NotificationHrefRewrite {
+interface NotificationHrefRewrite {
   href: string;
   /** Whether it points at its native page (else at the forum home: nothing public is there). */
   mapped: boolean;

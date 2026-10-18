@@ -23,6 +23,11 @@ export function nativeThreadIdOf(pageTitle: string): string | null {
   return id === "" ? null : id;
 }
 
+/** A native thread's stash title (`nativeThreadIdOf` reads the id back). */
+export function nativeThreadTitle(threadId: string): string {
+  return `${NATIVE_THREAD_PREFIX}${threadId}`;
+}
+
 /** Whether a stash title names a forum thread, native or legacy. */
 export function isForumThreadTitle(pageTitle: string): boolean {
   return pageTitle.startsWith(NATIVE_THREAD_PREFIX) || pageTitle.startsWith(LEGACY_THREAD_PREFIX);

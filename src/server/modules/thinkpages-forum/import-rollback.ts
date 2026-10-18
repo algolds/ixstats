@@ -16,7 +16,7 @@ import { ARCHIVE_KEY_PREFIX } from "~/lib/thinkpages-forum/import/node-map";
 import {
   FORUM_THREAD_CONTENT_TYPE,
   LEGACY_THREAD_PREFIX,
-  NATIVE_THREAD_PREFIX,
+  nativeThreadTitle,
 } from "~/lib/wiki-os/stash-content-type";
 import { assertImportLock, type ImportDb } from "./import-db";
 import { TRANSACTION_TIMEOUT_MS } from "./import-write";
@@ -87,7 +87,6 @@ async function undoLink(
   return "deleted";
 }
 
-const nativeTitle = (threadId: string) => `${NATIVE_THREAD_PREFIX}${threadId}`;
 /** Native stash items (stashThread's, or ones the apply moved) with one of the titles. */
 const stashedAs = (titles: readonly string[]) => ({
   contentType: FORUM_THREAD_CONTENT_TYPE,
@@ -110,7 +109,7 @@ async function restoreStashItems(
 ): Promise<number> {
   const xenforoIdOf = new Map<string, number>();
   for (const { id, xenforoThreadId } of threads) {
-    if (xenforoThreadId !== null) xenforoIdOf.set(nativeTitle(id), xenforoThreadId);
+    if (xenforoThreadId !== null) xenforoIdOf.set(nativeThreadTitle(id), xenforoThreadId);
   }
   const items = await tx.stashItem.findMany({
     where: stashedAs([...xenforoIdOf.keys()]),
@@ -236,7 +235,7 @@ async function stashItemsOnImported(
   let items = 0;
   for (let i = 0; i < threads.length; i += ID_CHUNK) {
     const ids = threads.slice(i, i + ID_CHUNK).map((t) => t.id);
-    items += await db.stashItem.count({ where: stashedAs(ids.map(nativeTitle)) });
+    items += await db.stashItem.count({ where: stashedAs(ids.map(nativeThreadTitle)) });
   }
   return items;
 }

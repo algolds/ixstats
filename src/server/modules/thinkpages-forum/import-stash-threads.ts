@@ -15,13 +15,13 @@ import { threadHref } from "~/lib/thinkpages-forum/links";
 import {
   FORUM_THREAD_CONTENT_TYPE,
   LEGACY_THREAD_PREFIX,
-  NATIVE_THREAD_PREFIX,
+  nativeThreadTitle,
 } from "~/lib/wiki-os/stash-content-type";
 import type { ImportDb } from "./import-db";
 
 const PAGE = 500;
 
-export type StashThreadsDb = Pick<ImportDb, "forumThread" | "stashItem">;
+type StashThreadsDb = Pick<ImportDb, "forumThread" | "stashItem">;
 
 export interface StashThreadRemap {
   /** Bridge-era items moved to their native thread. */
@@ -66,7 +66,7 @@ async function moveItem(
   item: LegacyItem,
   threadId: string
 ): Promise<"moved" | "twin" | "changed"> {
-  const pageTitle = `${NATIVE_THREAD_PREFIX}${threadId}`;
+  const pageTitle = nativeThreadTitle(threadId);
   const contentType = FORUM_THREAD_CONTENT_TYPE;
   const twin = await db.stashItem.findFirst({
     where: { stashId: item.stashId, contentType, pageTitle },

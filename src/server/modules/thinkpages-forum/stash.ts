@@ -15,6 +15,7 @@ import {
   FORUM_THREAD_CONTENT_TYPE,
   LEGACY_THREAD_PREFIX,
   NATIVE_THREAD_PREFIX,
+  nativeThreadTitle,
 } from "~/lib/wiki-os/stash-content-type";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
@@ -33,7 +34,6 @@ export interface StashOwner {
   ids: readonly string[];
 }
 
-const titleOf = (threadId: string): string => `${NATIVE_THREAD_PREFIX}${threadId}`;
 const stashNotFound = (): ForumError => new ForumError("NOT_FOUND", "Stash not found.");
 
 /** A stash of the caller's, else NOT_FOUND. */
@@ -68,7 +68,7 @@ export async function stashThread(
 ): Promise<{ success: true; stashId: string }> {
   const { thread } = await loadVisibleThread(db, viewer, input.threadId);
   const stashId = await targetStash(db, owner, input.stashId);
-  const pageTitle = titleOf(thread.id);
+  const pageTitle = nativeThreadTitle(thread.id);
   await db.stashItem.upsert({
     where: {
       stashId_contentType_pageTitle: { stashId, contentType: FORUM_THREAD_CONTENT_TYPE, pageTitle },
@@ -99,7 +99,7 @@ export async function unstashThread(
   await db.stashItem.deleteMany({
     where: {
       stashId: { in: stashIds },
-      pageTitle: titleOf(input.threadId),
+      pageTitle: nativeThreadTitle(input.threadId),
       contentType: FORUM_THREAD_CONTENT_TYPE,
     },
   });
@@ -119,7 +119,7 @@ export async function isThreadStashed(
   const items = await db.stashItem.findMany({
     where: {
       stashId: { in: stashes.map((s) => s.id) },
-      pageTitle: titleOf(input.threadId),
+      pageTitle: nativeThreadTitle(input.threadId),
       contentType: FORUM_THREAD_CONTENT_TYPE,
     },
     select: { stashId: true },
