@@ -31,14 +31,16 @@ export async function lockVaultsTx(
 const DEADLOCK_TEXT = /deadlock|40P01/i;
 
 /**
- * A transaction Postgres aborted in a deadlock or a write conflict (Prisma P2034, a raw query's 40P01, or the
- * InternalError ~/server/db wraps a model operation's failure into) as a CONFLICT the player can retry; null for any
+ * A transaction Postgres aborted in a deadlock or a write conflict (Prisma P2034, a raw query's 40P01, a model
+ * write's unknown-request 40P01, or the InternalError ~/server/db wraps a model operation's failure into) as a CONFLICT the player can retry; null for any
  * other failure. Nothing moved: the transaction rolled back whole.
  */
 export function vaultsBusyError(error: Error): TRPCError | null {
   const busy =
     error instanceof Prisma.PrismaClientKnownRequestError
       ? error.code === "P2034" || (error.code === "P2010" && DEADLOCK_TEXT.test(error.message))
-      : error instanceof InternalError && DEADLOCK_TEXT.test(error.message);
+      : (error instanceof InternalError ||
+          error instanceof Prisma.PrismaClientUnknownRequestError) &&
+        DEADLOCK_TEXT.test(error.message);
   return busy ? new TRPCError({ code: "CONFLICT", message: VAULTS_BUSY_MESSAGE }) : null;
 }

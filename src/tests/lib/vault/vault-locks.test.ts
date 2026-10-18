@@ -47,6 +47,13 @@ describe("vaultsBusyError", () => {
       known("P2010", "Raw query failed. Code: `40P01`. Message: `deadlock detected`"),
       // ~/server/db wraps a failed model operation, keeping Prisma's text
       new InternalError("Transaction failed due to a write conflict or a deadlock. Please retry"),
+      // A model write (an updateMany or a create) that lost a deadlock
+      new Prisma.PrismaClientUnknownRequestError(
+        "Error occurred during query execution: deadlock detected (40P01)",
+        {
+          clientVersion: "6",
+        }
+      ),
     ]) {
       const busy = vaultsBusyError(error);
       expect(busy).toBeInstanceOf(TRPCError);
@@ -61,6 +68,12 @@ describe("vaultsBusyError", () => {
       known("P2010", "Raw query failed. Code: `42601`. Message: `syntax error`"),
       new InternalError("Failed to access vault"),
       new Error("deadlock detected"),
+      new Prisma.PrismaClientUnknownRequestError(
+        "Error occurred during query execution: connection reset",
+        {
+          clientVersion: "6",
+        }
+      ),
       new TRPCError({ code: "CONFLICT", message: "This listing was just sold or withdrawn." }),
     ]) {
       expect(vaultsBusyError(error)).toBeNull();
