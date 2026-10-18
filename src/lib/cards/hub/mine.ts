@@ -2,7 +2,7 @@
 import { CardFinish, CardRarity, CardType, LoreCategory } from "@prisma/client";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
-import { copyValue } from "~/lib/cards/copy-value";
+import { loadCopyValues, type ValueDb } from "~/lib/cards/copy-value";
 import { rarityRank } from "~/lib/cards/face/labels";
 import { MINE_SORTS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
@@ -32,7 +32,7 @@ const MINE_COPY_SELECT = {
   cardId: true,
   acquiredAt: true,
   isLocked: true,
-  cards: { select: { ...CARD_FACE_SELECT, category: true, marketValue: true, isBound: true } },
+  cards: { select: { ...CARD_FACE_SELECT, category: true, isBound: true } },
 } satisfies Prisma.CardOwnershipSelect;
 type MineCopyRow = Prisma.CardOwnershipGetPayload<{ select: typeof MINE_COPY_SELECT }>;
 
@@ -137,20 +137,24 @@ const MAX_MINE_COPIES = 5000;
 
 /** Mine: every copy the player holds, retired cards included (spec §3), valued by the shared per-copy value. */
 export async function listMine(
-  db: Pick<PrismaClient, "cardOwnership">,
+  db: Pick<PrismaClient, "cardOwnership"> & ValueDb,
   ownerId: string,
   query: MineQuery
 ): Promise<MinePage> {
-  const rows = await db.cardOwnership.findMany({
-    where: { ownerId },
-    select: MINE_COPY_SELECT,
-    // The id breaks timestamp ties, and the sorts are stable, so offset paging is deterministic for every sort.
-    orderBy: [{ acquiredAt: "desc" }, { id: "asc" }],
-    take: MAX_MINE_COPIES,
-  });
-  // A hidden (retired) copy is worth nothing, as in the Wallet's figures and the dividend.
+  const [rows, values] = await Promise.all([
+    db.cardOwnership.findMany({
+      where: { ownerId },
+      select: MINE_COPY_SELECT,
+      // The id breaks timestamp ties, and the sorts are stable, so offset paging is deterministic for every sort.
+      orderBy: [{ acquiredAt: "desc" }, { id: "asc" }],
+      take: MAX_MINE_COPIES,
+    }),
+    loadCopyValues(db, { ownerIds: [ownerId] }),
+  ]);
+  // A hidden (retired) copy has no value there, so it is worth nothing, as in the Wallet's figures and the dividend.
+  const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
   return selectMine(
-    rows.map((row) => ({ row, value: row.cards.isRetired ? 0 : copyValue(row) })),
+    rows.map((row) => ({ row, value: valueOf.get(row.id) ?? 0 })),
     query
   );
 }

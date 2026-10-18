@@ -126,7 +126,9 @@ export async function readValuationConfig(
 }
 
 /** Read the merged valuation config (defaults overlaid with any SystemConfig rows, clamped). */
-export async function getValuationConfig(db: PrismaClient): Promise<CardValuationConfig> {
+export async function getValuationConfig(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<CardValuationConfig> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
   const merged = await readValuationConfig(db);
@@ -206,7 +208,8 @@ export function nsTerm(card: ValueCard, cfg: CardValuationConfig): number {
   return Math.max(0, card.nsBankValue ?? 0) * cfg.nsPremium;
 }
 
-const toCents = (n: number) => Math.round(n * 100) / 100;
+/** Rounds to the cent, as every value is stored and shown. */
+export const toCents = (n: number) => Math.round(n * 100) / 100;
 
 /**
  * A card's value at a finish, before a copy's level: the highest of floor × type × finish, that finish's market

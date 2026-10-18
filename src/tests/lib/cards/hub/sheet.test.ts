@@ -1,9 +1,12 @@
 /** @jest-environment node */
 /** The one card sheet (spec §2.3): the card, the viewer's copies with their trails, the market and the provenance. */
-jest.mock("~/lib/cards/copy-value", () => ({ copyValue: jest.fn(() => 120) }));
+jest.mock("~/lib/cards/copy-value", () => ({
+  loadCopyValues: jest.fn(),
+  topCopiesByValue: jest.fn(),
+}));
 
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { copyValue } from "~/lib/cards/copy-value";
+import { loadCopyValues, topCopiesByValue, type CopyValueFilter } from "~/lib/cards/copy-value";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
 import { loadCardSheet } from "~/lib/cards/hub/sheet";
 import type { HubPlayer } from "~/lib/cards/hub/players";
@@ -119,7 +122,25 @@ const LISTING = {
   sellerId: "u-a",
 };
 
-beforeEach(() => jest.clearAllMocks());
+/** The shared copy value: each copy asked for is worth `worth[id]`, else 120. */
+function copyValues(worth: Record<string, number> = {}) {
+  jest.mocked(loadCopyValues).mockImplementation(async (_db, filter: CopyValueFilter) =>
+    (filter.ownershipIds ?? []).map((ownershipId) => ({
+      ownershipId,
+      ownerId: "me",
+      cardId: "c1",
+      cardType: "LORE" as const,
+      finish: "FOIL" as const,
+      value: worth[ownershipId] ?? 120,
+    }))
+  );
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  copyValues();
+  jest.mocked(topCopiesByValue).mockResolvedValue([]);
+});
 
 describe("loadCardSheet", () => {
   it("shows the art to a holder, with each copy's trail and signer by passport handle", async () => {
@@ -171,7 +192,7 @@ describe("loadCardSheet", () => {
       ns: null,
       value: 120,
     });
-    expect(copyValue).toHaveBeenCalledWith({ cards: CARD });
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledWith(db, { ownershipIds: ["o1"] });
     expect(sheet!.market).toEqual({
       listings: [],
       recentSales: [{ price: 140, finish: "FOIL", at: SALE.createdAt }],
@@ -465,7 +486,21 @@ describe("loadCardSheet", () => {
       copy: { ownershipId: "o1" },
     });
     expect(sheet!.copies[0]!.face.artwork).toBeNull();
-    expect(copyValue).not.toHaveBeenCalled();
+  });
+
+  it("values the card at the viewer's best copy", async () => {
+    copyValues({ o1: 120, o2: 300 });
+    const db = setup({ copies: [COPY, { ...COPY, id: "o2", finish: "HOLO", serialNumber: 4 }] });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.card.value).toBe(300);
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledWith(db, { ownershipIds: ["o1", "o2"] });
+  });
+
+  it("values a card the viewer holds no copy of at its own value", async () => {
+    const db = setup({ copies: [], listed: [LISTING] });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.card.value).toBe(100);
   });
 
   it("keeps a removed copy's rows and a copy leaving every player out of the handle lookup", async () => {
@@ -685,6 +720,16 @@ describe("loadCardSheet", () => {
     it("sees a card a holder displays, opened from their passport", async () => {
       const shownCopy = { id: "h1", finish: "STANDARD", serialNumber: 2, level: 1, cards: CARD };
       const db = setup({ copies: [shownCopy] });
+      jest.mocked(topCopiesByValue).mockResolvedValue([
+        {
+          ownershipId: "h1",
+          ownerId: "owner",
+          cardId: "c1",
+          cardType: "LORE",
+          finish: "STANDARD",
+          value: 100,
+        },
+      ]);
       const sheet = await sheetFor(db as never, null, "c1", {
         from: { kind: "holder", handle: "Takatta Loa" },
         rules,

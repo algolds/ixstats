@@ -1,8 +1,7 @@
 /** @jest-environment node */
-/** Cards refresh §2.1 (bound), §3 (one copy value, capacity counts copies), §5.3 (home realm of new cards). */
+/** Cards refresh §2.1 (bound), §3 (capacity counts copies), §5.3 (home realm of new cards). */
 import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { copyRoom } from "~/lib/cards/capacity";
-import { copyValue, COPY_VALUE_SQL, deckValue } from "~/lib/cards/copy-value";
 import { articleHomePage, articleHomeRealm } from "~/lib/cards/home-realm";
 import { invalidateVaultConfigCache, clearUserPerksCache } from "~/lib/vault/vault-perks";
 
@@ -31,20 +30,6 @@ describe("assertNoBoundCopies", () => {
     ).resolves.toBeUndefined();
     await assertNoBoundCopies({ cardOwnership: { count } } as never, []);
     expect(count).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("copy value", () => {
-  it("is the card's value per copy, and a deck is the sum of its copies", () => {
-    expect(copyValue({ cards: { marketValue: 30 } })).toBe(30);
-    expect(
-      deckValue([
-        { cards: { marketValue: 30 } },
-        { cards: { marketValue: 30 } },
-        { cards: { marketValue: 5 } },
-      ])
-    ).toBe(65);
-    expect(COPY_VALUE_SQL).toBe('c."marketValue"');
   });
 });
 

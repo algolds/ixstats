@@ -39,10 +39,17 @@ interface World {
   packs: { userId: string; openedAt: Date }[];
   trades: { initiatorId: string; recipientId: string; respondedAt: Date }[];
   sales: { vault: { userId: string }; createdAt: Date }[];
-  ownerships: {
-    ownerId: string;
-    cards: { marketValue: number; cardType: string };
+  /** What the shared copy value reads: the copies, their cards and the market medians. */
+  copies: { id: string; ownerId: string; cardId: string; finish: string; level: number }[];
+  cards: {
+    id: string;
+    rarity: string;
+    cardType: string;
+    firstSoldAt: Date | null;
+    isRetired: boolean;
+    bank?: number;
   }[];
+  prices: { cardId: string; finish: string; median: number }[];
 }
 
 const at = (iso: string) => new Date(`${iso}Z`);
@@ -105,8 +112,11 @@ function buildDb(): PrismaClient {
       ),
     },
     systemConfig: {
-      findMany: jest.fn(async ({ where }: { where: { key: { in: string[] } } }) =>
-        where.key.in.filter((k) => config.has(k)).map((key) => ({ key, value: config.get(key) }))
+      findMany: jest.fn(
+        async ({ where }: { where: { key: { in?: string[]; startsWith?: string } } }) =>
+          [...config]
+            .filter(([k]) => where.key.in?.includes(k) ?? k.startsWith(where.key.startsWith ?? ""))
+            .map(([key, value]) => ({ key, value }))
       ),
       upsert: jest.fn(
         async ({ where, create }: { where: { key: string }; create: { value: string } }) => {
@@ -116,12 +126,35 @@ function buildDb(): PrismaClient {
     },
     $transaction: jest.fn(async (ops: Promise<void>[]) => Promise.all(ops)),
     cardOwnership: {
-      findMany: jest.fn(async ({ where }: { where: { cards: { cardType?: { not: string } } } }) =>
-        world.ownerships.filter(
-          (o) => where.cards.cardType?.not !== "TROPHY" || o.cards.cardType !== "TROPHY"
-        )
+      findMany: jest.fn(
+        async ({
+          where,
+        }: {
+          where: { cards: { isRetired?: boolean; cardType?: { notIn: string[] } } };
+        }) =>
+          world.copies.filter((copy) => {
+            const card = world.cards.find((c) => c.id === copy.cardId);
+            return (
+              !!card &&
+              (where.cards.isRetired === undefined || card.isRetired === where.cards.isRetired) &&
+              !where.cards.cardType?.notIn.includes(card.cardType)
+            );
+          })
       ),
     },
+    card: {
+      findMany: jest.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
+        world.cards.filter((c) => where.id.in.includes(c.id))
+      ),
+    },
+    cardMarketPrice: {
+      findMany: jest.fn(async ({ where }: { where: { cardId: { in: string[] } } }) =>
+        world.prices.filter((p) => where.cardId.in.includes(p.cardId))
+      ),
+    },
+    $queryRaw: jest.fn(async () =>
+      world.cards.flatMap((c) => (c.bank === undefined ? [] : [{ id: c.id, bank: c.bank }]))
+    ),
   };
   return fake as unknown as PrismaClient;
 }
@@ -138,7 +171,9 @@ beforeEach(() => {
     packs: [],
     trades: [],
     sales: [],
-    ownerships: [],
+    copies: [],
+    cards: [],
+    prices: [],
   };
   ledger = new Set();
   config = new Map();
@@ -163,8 +198,27 @@ beforeEach(() => {
 
 const vault = (userId: string, loginStreak = 0, lastLoginDate: Date | null = null) =>
   world.vaults.push({ userId, loginStreak, lastLoginDate });
-const deck = (ownerId: string, marketValue: number, cardType = "LORE") =>
-  world.ownerships.push({ ownerId, cards: { marketValue, cardType } });
+type Holding = Partial<World["cards"][number]> & { finish?: string; level?: number };
+/** One copy of a new card, valued by the shared copy value: `rarity` x `cardType` x `finish`, at its `level`. */
+const hold = (ownerId: string, holding: Holding = {}) => {
+  const { finish = "STANDARD", level = 1, ...card } = holding;
+  const cardId = `card${world.cards.length}`;
+  world.cards.push({
+    id: cardId,
+    rarity: "COMMON",
+    cardType: "LORE",
+    firstSoldAt: null,
+    isRetired: false,
+    ...card,
+  });
+  world.copies.push({ id: `copy${world.copies.length}`, ownerId, cardId, finish, level });
+  return cardId;
+};
+/** A copy worth `value`: a Common card whose Standard copies sell at that median. */
+const deck = (ownerId: string, value: number, cardType = "LORE") => {
+  const cardId = hold(ownerId, { cardType });
+  world.prices.push({ cardId, finish: "STANDARD", median: value });
+};
 
 describe("settleDividendDay", () => {
   it("pays a user with only interest", async () => {
@@ -208,6 +262,37 @@ describe("settleDividendDay", () => {
 
     const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
     expect(meta?.inputs).toMatchObject({ deckValue: 2000 });
+  });
+
+  it("values the deck copy by copy, as worked by hand", async () => {
+    vault("u1");
+    hold("u1", { rarity: "EPIC" }); // floor 1000
+    hold("u1", { rarity: "RARE", finish: "HOLO" }); // 100 x 9 = 900
+    const foil = hold("u1", { rarity: "RARE", finish: "FOIL", level: 6 }); // 100 x 3 = 300, +10% = 330
+    // Its Standard copies sell at 400, a median the Foil copy never reads (it would make the copy 440).
+    world.prices.push({ cardId: foil, finish: "STANDARD", median: 400 });
+    hold("u1", { cardType: "NS", bank: 40 }); // unsold: 40 x 1.5 = 60 beats the floor 10
+    hold("u1", { rarity: "EPIC", cardType: "TROPHY", finish: "SERIALISED" }); // 250, never paid on
+    hold("u1", { rarity: "LEGENDARY", finish: "HOLO", level: 10, isRetired: true }); // hidden: 0
+
+    await settleDividendDay(db, D);
+
+    // 1000 + 900 + 330 + 60 = 2290; interest 2290 x 0.25% = 5.725, rounded to 6.
+    const meta = parseDividendMetadata(JSON.stringify(rowsFor("u1")[0]?.metadata));
+    expect(meta?.inputs).toMatchObject({ deckValue: 2290 });
+    expect(rowsFor("u1")).toMatchObject([{ amount: 6 }]);
+  });
+
+  it("pays nothing on a retired card's copy", async () => {
+    vault("u1");
+    // A Legendary Holo at level 10 would be worth 3000 x 9 x 1.18 = 31,860.
+    hold("u1", { rarity: "LEGENDARY", finish: "HOLO", level: 10, isRetired: true });
+
+    expect(await settleDividendDay(db, D)).toEqual({ paid: 0, skipped: 0 });
+    expect(rows).toEqual([]);
+    expect(jest.mocked(db.cardOwnership.findMany).mock.calls[0]?.[0]).toMatchObject({
+      where: { cards: { isRetired: false, cardType: { notIn: ["TROPHY"] } } },
+    });
   });
 
   it("pays nothing to a user whose whole deck is trophy cards", async () => {

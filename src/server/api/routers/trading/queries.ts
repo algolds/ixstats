@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { deckValue } from "~/lib/cards/copy-value";
+import { loadCopyValues } from "~/lib/cards/copy-value";
 import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
 import { tradeView } from "~/lib/cards/hub/market-faces";
 import {
@@ -22,11 +22,6 @@ const TRADE_CARD_SELECT = {
   marketValue: true,
   isRetired: true,
 } satisfies Prisma.CardSelect;
-
-/** One side's card value: a hidden (retired) copy is worth 0, as in Mine and the card sheet. */
-function sideValue(copies: ReadonlyArray<{ cards: { marketValue: number; isRetired: boolean } }>) {
-  return deckValue(copies.filter((c) => !c.cards.isRetired));
-}
 
 export const tradingQueriesRouter = createTRPCRouter({
   /**
@@ -112,18 +107,28 @@ export const tradingQueriesRouter = createTRPCRouter({
       }
 
       // Fetch card details for both sides
+      const initiatorIds = copyIdsOf(trade.initiatorCardIds);
+      const recipientIds = copyIdsOf(trade.recipientCardIds);
       const initiatorCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: copyIdsOf(trade.initiatorCardIds) } },
+        where: { id: { in: initiatorIds } },
         include: { cards: { select: TRADE_CARD_SELECT } },
       });
 
       const recipientCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: copyIdsOf(trade.recipientCardIds) } },
+        where: { id: { in: recipientIds } },
         include: { cards: { select: TRADE_CARD_SELECT } },
       });
 
-      const initiatorValue = sideValue(initiatorCards) + trade.initiatorCredits;
-      const recipientValue = sideValue(recipientCards) + trade.recipientCredits;
+      // Each side's copies by the shared per-copy value; a hidden (retired) copy is left out, so it is worth 0, as in
+      // Mine and the card sheet.
+      const values = await loadCopyValues(ctx.db, {
+        ownershipIds: [...initiatorIds, ...recipientIds],
+      });
+      const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
+      const sideValue = (ids: string[]) =>
+        [...new Set(ids)].reduce((sum, id) => sum + (valueOf.get(id) ?? 0), 0);
+      const initiatorValue = sideValue(initiatorIds) + trade.initiatorCredits;
+      const recipientValue = sideValue(recipientIds) + trade.recipientCredits;
 
       const [named, view] = await Promise.all([
         withPartyName(trade),

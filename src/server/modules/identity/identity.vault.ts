@@ -6,7 +6,7 @@
 import { db } from "~/server/db";
 import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
-import { deckValue } from "~/lib/cards/copy-value";
+import { deckValueOf } from "~/lib/cards/copy-value";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { displayedCopies } from "~/lib/cards/hub/displayed";
 import { toCardFace } from "~/lib/cards/hub/faces";
@@ -79,15 +79,16 @@ export async function resolvePassportVault(
 
   const live = { ownerId: userId, cards: { isRetired: false } };
   try {
-    const [vault, liveOwnerships, displayed] = await Promise.all([
+    const [vault, liveOwnerships, deck, displayed] = await Promise.all([
       db.myVault.findUnique({
         where: { userId },
         select: { credits: true, vaultLevel: true, vaultXp: true },
       }),
       db.cardOwnership.findMany({
         where: live,
-        select: { cards: { select: { marketValue: true, category: true } } },
+        select: { cards: { select: { category: true } } },
       }),
+      deckValueOf(db, userId),
       displayedCopies(db, userId),
     ]);
 
@@ -97,7 +98,7 @@ export async function resolvePassportVault(
       summary.collectorXp = vault.vaultXp;
     }
     summary.totalCards = liveOwnerships.length;
-    summary.deckValue = deckValue(liveOwnerships);
+    summary.deckValue = deck.total;
     summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
     summary.topCards = displayed.copies.map(({ card, copy }) =>
       toCardFace(card, { revealArt: true, copy })

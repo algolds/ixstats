@@ -1,6 +1,6 @@
 // src/lib/cards/hub/sheet.ts
 import type { LoreCategory, Prisma, PrismaClient } from "@prisma/client";
-import { copyValue } from "~/lib/cards/copy-value";
+import { loadCopyValues, type CopyValue } from "~/lib/cards/copy-value";
 import { artCreditOf, type ArtCredit } from "~/lib/cards/face/art-credit";
 import { nsProvenanceOf, type NsProvenance } from "~/lib/cards/face/ns-provenance";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
@@ -23,6 +23,9 @@ type SheetDb = Pick<
   | "cardWatchlist"
   | "cardCollection"
   | "tradeOffer"
+  | "cardMarketPrice"
+  | "systemConfig"
+  | "$queryRaw"
 >;
 
 /** The router's rules: the places that show a card's art, and the players the sheet names. */
@@ -281,6 +284,16 @@ function toSheetCopy(
   };
 }
 
+/**
+ * The viewer's best copy's value (the shared per-copy value), else the card's own (`Card.marketValue`, a Standard copy
+ * at level 1). A hidden (retired) card is worth nothing, as in Mine, the Wallet's figures and the dividend.
+ */
+function sheetValue(card: SheetCardRow, values: readonly CopyValue[]): number {
+  if (card.isRetired) return 0;
+  if (values.length === 0) return card.marketValue;
+  return values.reduce((best, v) => Math.max(best, v.value), 0);
+}
+
 /** The excerpt as the client draws it for hidden art (`images: false`): no file links, links to file pages as words. */
 const withoutFileLinks = (excerpt: string) => renderFileLinks(excerpt, "ixwiki", false);
 
@@ -290,7 +303,7 @@ const withoutFileLinks = (excerpt: string) => renderFileLinks(excerpt, "ixwiki",
  * image: the art credit and the file page go, the excerpt loses its file links, and a Commons card loses its title (the
  * file's). The article link stays.
  */
-function toSheetCard(card: SheetCardRow, artHidden: boolean): CardSheetData["card"] {
+function toSheetCard(card: SheetCardRow, artHidden: boolean, value: number): CardSheetData["card"] {
   const excerpt = storedExcerpt(card);
   return {
     id: card.id,
@@ -308,8 +321,7 @@ function toSheetCard(card: SheetCardRow, artHidden: boolean): CardSheetData["car
     descriptionUrl: artHidden ? null : storedDescriptionUrl(card.metadata),
     artCredit: artHidden ? null : artCreditOf(card),
     ns: card.cardType === "NS" ? nsProvenanceOf(card) : null,
-    // A hidden (retired) card is worth nothing, as in Mine, the Wallet's figures and the dividend.
-    value: card.isRetired ? 0 : copyValue({ cards: card }),
+    value,
   };
 }
 
@@ -346,13 +358,14 @@ export async function loadCardSheet(
 
   // Held or listed already shows the art, so the opening place is asked only otherwise.
   const shown = copies.length > 0 || listings.length > 0;
-  const [shownThere, events, recentSales, wantedBy] = await Promise.all([
+  const [shownThere, events, recentSales, wantedBy, values] = await Promise.all([
     !shown && options.from !== null
       ? contextRevealsArt(db, viewerId, cardId, options.from, options.rules)
       : false,
     loadTrailEvents(db, copies),
     listCardSales(db, cardId, RECENT_SALES),
     db.cardWatchlist.count({ where: { cardId } }),
+    loadCopyValues(db, { ownershipIds: copies.map((c) => c.id) }),
   ]);
   const revealArt = shown || shownThere;
   if (!revealArt && !viewerId) return SIGN_IN;
@@ -365,7 +378,7 @@ export async function loadCardSheet(
   return {
     face,
     signedIn: viewerId !== null,
-    card: toSheetCard(card, face.silhouette || card.isRetired),
+    card: toSheetCard(card, face.silhouette || card.isRetired, sheetValue(card, values)),
     copies: copies.map((copy) => toSheetCopy(card, copy, trail, nameOf)),
     market: {
       listings: listings.map((row) => toSheetListing(row, viewerId, nameOf)),

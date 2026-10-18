@@ -4,6 +4,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/server/modules/identity/identity.player-names", () => ({
   loadPlayerNames: jest.fn(),
 }));
+jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn() }));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
@@ -12,6 +13,7 @@ import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
+import { loadCopyValues } from "~/lib/cards/copy-value";
 
 type MockDb = ReturnType<typeof createMockPrisma>;
 const contextFor = (db: MockDb, signedIn = true) =>
@@ -288,6 +290,22 @@ describe("trade details", () => {
   };
   const sides = [rawCopy("o1", "c1", 30), rawCopy("o2", "c2", 12)];
   const faces = [faceRow("o1", "c1"), faceRow("o2", "c2")];
+  /** The shared copy value of the live copies asked for (a retired card's copy is left out). */
+  const worth: Record<string, number> = { o1: 30, o2: 12 };
+  beforeEach(() => {
+    jest.mocked(loadCopyValues).mockImplementation(async (_db, filter) =>
+      (filter.ownershipIds ?? [])
+        .filter((id) => id in worth)
+        .map((ownershipId) => ({
+          ownershipId,
+          ownerId: "x",
+          cardId: "c",
+          cardType: "LORE" as const,
+          finish: "STANDARD" as const,
+          value: worth[ownershipId]!,
+        }))
+    );
+  });
 
   it("shows a live offer made to the viewer in full, valued by the shared copy value", async () => {
     const db = createMockPrisma();
@@ -309,6 +327,9 @@ describe("trade details", () => {
     expect(result.recipientFaces).toEqual([
       expect.objectContaining({ cardId: "c2", silhouette: false }),
     ]);
+    // Both sides valued in one read of the shared copy value.
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledWith(db, { ownershipIds: ["o1", "o2"] });
     expect(result).toMatchObject({
       initiatorValue: 35,
       recipientValue: 12,

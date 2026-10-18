@@ -1,5 +1,8 @@
 /** @jest-environment node */
 /** Who sees a card's art: holders, anyone looking at a live listing, and the showcase and offer contexts. */
+jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
+
+import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   cardsWithVisibleArt,
@@ -35,8 +38,21 @@ const holderOf = jest.fn(async (handle: string) =>
 );
 const visible = { vaultVisible: jest.fn(async () => true), holderOf };
 const hidden = { vaultVisible: jest.fn(async () => false), holderOf };
+/** The shared copy value's ranking of a player's copies, best first. */
+const ranked = (...ids: string[]) =>
+  ids.map((id, i) => ({
+    ownershipId: `o-${id}`,
+    ownerId: "u1",
+    cardId: id,
+    cardType: "LORE" as const,
+    finish: "STANDARD" as const,
+    value: 100 - i,
+  }));
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.mocked(topCopiesByValue).mockResolvedValue([]);
+});
 
 describe("cardsWithVisibleArt", () => {
   it("joins the viewer's copies with the cards on a live auction", async () => {
@@ -197,6 +213,7 @@ describe("contextRevealsArt", () => {
 
     db.cardOwnership.findFirst.mockResolvedValue(null);
     db.cardCollection.findFirst.mockResolvedValue(null);
+    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c9"));
     db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c9"), cards: card("c9") }]);
     await expect(
       contextRevealsArt(db as never, "me", "c9", { kind: "holder", handle: "ann" }, visible)
@@ -260,27 +277,47 @@ describe("displayedCopies", () => {
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 
-  it("falls back to the most valuable live copies, one per card, when nothing is pinned or the pin is empty", async () => {
+  it("falls back to the most valuable live copies by copy value, one per card, best first", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue({ id: "s1", name: "Empty", items: [] });
-    db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c2"), cards: card("c2") }]);
+    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c3", "c2"));
+    db.cardOwnership.findMany.mockResolvedValue([
+      { ...copyOf("c2"), cards: card("c2") },
+      { ...copyOf("c3"), cards: card("c3") },
+    ]);
     const shown = await displayedCopies(db as never, "u1", 4);
-    expect(shown).toEqual({ showcase: null, copies: [{ card: card("c2"), copy: copyOf("c2") }] });
+    expect(shown).toEqual({
+      showcase: null,
+      copies: [
+        { card: card("c3"), copy: copyOf("c3") },
+        { card: card("c2"), copy: copyOf("c2") },
+      ],
+    });
     expect(db.cardCollection.findFirst.mock.calls[0]![0]).toMatchObject({
       select: { items: { take: 4 } },
     });
+    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(db, "u1", 4);
     expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { ownerId: "u1", cards: { isRetired: false } },
-      orderBy: [{ cards: { marketValue: "desc" } }, { cardId: "asc" }, { id: "asc" }],
-      distinct: ["cardId"],
-      take: 4,
+      where: { id: { in: ["o-c3", "o-c2"] }, ownerId: "u1", cards: { isRetired: false } },
     });
+  });
 
+  it("leaves out a ranked copy that moved or was retired before its face was read", async () => {
+    const db = createMockPrisma();
+    db.cardCollection.findFirst.mockResolvedValue(null);
+    jest.mocked(topCopiesByValue).mockResolvedValue(ranked("c3", "c2"));
+    db.cardOwnership.findMany.mockResolvedValue([{ ...copyOf("c2"), cards: card("c2") }]);
+    const shown = await displayedCopies(db as never, "u1");
+    expect(shown.copies).toEqual([{ card: card("c2"), copy: copyOf("c2") }]);
+  });
+
+  it("reads no faces when the player holds no live copy", async () => {
     const unpinned = createMockPrisma();
     await expect(displayedCopies(unpinned as never, "u1")).resolves.toEqual({
       showcase: null,
       copies: [],
     });
-    expect(unpinned.cardOwnership.findMany).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(unpinned, "u1", 6);
+    expect(unpinned.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 });
