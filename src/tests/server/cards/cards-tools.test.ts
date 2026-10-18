@@ -4,7 +4,15 @@
  * listing fee, void trades releasing the held cards, award packs. Each clears the touched players' vault caches.
  */
 jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
-jest.mock("~/lib/cards/capacity", () => ({ copyRoom: jest.fn() }));
+jest.mock("~/lib/cards/capacity", () => {
+  class CapacityError extends Error {
+    readonly code = "PRECONDITION_FAILED" as const;
+    constructor(readonly room: number) {
+      super("Your collection is full.");
+    }
+  }
+  return { copyRoom: jest.fn(), assertCapacityTx: jest.fn(), CapacityError };
+});
 jest.mock("~/lib/lorewards/trophy-cards", () => ({
   isTrophyCard: (card: { cardType: string }) => card.cardType === "TROPHY",
 }));
@@ -21,7 +29,7 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
   LedgerError: class LedgerError extends Error {},
 }));
 
-import { copyRoom } from "~/lib/cards/capacity";
+import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -166,7 +174,9 @@ describe("grantCard", () => {
       clerkUserId: "clerk_1",
       role: { level: 100 },
     });
-    jest.mocked(copyRoom).mockResolvedValue(room);
+    jest.mocked(assertCapacityTx).mockImplementation(async (_tx, _ownerId, adding) => {
+      if (adding > room) throw new CapacityError(room);
+    });
     jest.mocked(mintCopy).mockResolvedValue({ id: "own_9", serialNumber: 9 } as never);
     return db;
   }
@@ -229,9 +239,34 @@ describe("grantCard", () => {
     await expect(
       grantCard(setup({ cardType: "TROPHY" }, 5) as never, actor, input)
     ).rejects.toThrow(/reassigning the Loreward/);
-    await expect(grantCard(setup({ cardType: "LORE" }, 0) as never, actor, input)).rejects.toThrow(
-      /inventory is full/
+    const full = setup({ cardType: "LORE" }, 0);
+    await expect(grantCard(full as never, actor, input)).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "This player's inventory is full",
+    });
+    expect(mintCopy).not.toHaveBeenCalled();
+    expect(full.auditLog.create).not.toHaveBeenCalled();
+    expect(notificationAPI.create).not.toHaveBeenCalled();
+  });
+
+  it("checks capacity for one copy inside the grant's transaction, under the owner's lock, before the mint", async () => {
+    const db = setup({ cardType: "LORE" }, 1);
+    const tx = new Proxy(db, {}); // the transaction client: same models, a different object
+    db.$transaction = jest.fn(async (run: (t: typeof tx) => Promise<unknown>) => run(tx));
+
+    await grantCard(db as never, actor, input);
+
+    expect(assertCapacityTx).toHaveBeenCalledWith(tx, "user_1", 1);
+    expect(jest.mocked(assertCapacityTx).mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(mintCopy).mock.invocationCallOrder[0]!
     );
+    expect(copyRoom).not.toHaveBeenCalled();
+  });
+
+  it("passes any other failure of the capacity check through", async () => {
+    const db = setup({ cardType: "LORE" }, 5);
+    jest.mocked(assertCapacityTx).mockRejectedValueOnce(new Error("connection reset"));
+    await expect(grantCard(db as never, actor, input)).rejects.toThrow("connection reset");
     expect(mintCopy).not.toHaveBeenCalled();
   });
 

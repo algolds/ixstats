@@ -1,6 +1,8 @@
 // src/lib/cards/mint.ts
 import type { CardFinish, CardOwnership, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { getEconomyConfig } from "./economy-config";
+import { rollFinish } from "./finish";
 import { allocateSerialNumberTx, lockCardSerialsTx } from "./serial-number";
 
 /**
@@ -16,13 +18,18 @@ export const MINT_SOURCES = [
   "TROPHY",
   "SPORTS",
   "ADMIN",
+  "CRAFT",
 ] as const;
 export type MintSource = (typeof MINT_SOURCES)[number];
 
 export interface MintCopyInput {
   cardId: string;
   ownerId: string;
-  finish: CardFinish;
+  /**
+   * Omitted: rolled from the Economy tab's finish odds. Named by trophies and sports (Serialised), crafting
+   * (Standard) and admin grants (the admin's choice).
+   */
+  finish?: CardFinish;
   source: MintSource;
   /**
    * Reissue this serial instead of taking the next: only for a bound one-of-one (`totalSupply` 1) with no live copy
@@ -33,26 +40,30 @@ export interface MintCopyInput {
 }
 
 /**
- * The one way to create a copy (§5.4). Inside the caller's transaction it allocates the next serial (or reissues a
- * one-of-one's, `serialNumber`) under the per-card advisory lock, creates the copy (the id is the database's), and
- * writes the mint row of the copy's provenance trail with its source. A Serialised copy of a card with a run size
- * (`totalSupply`) is refused once the run is minted out (§3: `totalSupply` binds Serialised runs only).
+ * The one way to create a copy (§5.4). Inside the caller's transaction it rolls the finish unless the caller names
+ * one, allocates the next serial (or reissues a one-of-one's, `serialNumber`) under the per-card advisory lock,
+ * creates the copy (the id is the database's; an imported copy is marked for the import share of dust), and writes
+ * the mint row of the copy's provenance trail with its source. A Serialised copy of a card with a run size
+ * (`totalSupply`) is refused once the run is minted out (§3: `totalSupply` binds Serialised runs only). A new-copy
+ * source checks capacity before this, under the owner's lock (`assertCapacityTx`); trophies and rewards never do.
  */
 export async function mintCopy(
   tx: Prisma.TransactionClient,
   input: MintCopyInput
 ): Promise<CardOwnership> {
+  const finish = input.finish ?? rollFinish(await getEconomyConfig(tx));
   const serialNumber =
     input.serialNumber === undefined
       ? await allocateSerialNumberTx(tx, input.cardId)
       : await reissuedSerialTx(tx, input.cardId, input.serialNumber);
-  if (input.finish === "SERIALISED") await assertRunOpen(tx, input.cardId, serialNumber);
+  if (finish === "SERIALISED") await assertRunOpen(tx, input.cardId, serialNumber);
   const copy = await tx.cardOwnership.create({
     data: {
       cardId: input.cardId,
       ownerId: input.ownerId,
       serialNumber,
-      finish: input.finish,
+      finish,
+      importDiscounted: input.source === "NS_DECK_IMPORT",
     },
   });
   // The card, serial and finish ride on the row, so the trail, the serial's high-water mark and the market median
@@ -62,7 +73,7 @@ export async function mintCopy(
       ownershipId: copy.id,
       cardId: input.cardId,
       serialNumber,
-      finish: input.finish,
+      finish,
       toUserId: input.ownerId,
       action: input.serialNumber === undefined ? input.source : "REISSUE",
     },

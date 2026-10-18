@@ -101,6 +101,7 @@ describe("trail", () => {
     expect(trailLabel("REISSUE")).toBe("Granted again");
     expect(trailLabel("REASSIGN")).toBe("Reassigned by staff");
     expect(trailLabel("ADMIN")).toBe("Granted by staff");
+    expect(trailLabel("CRAFT")).toBe("Crafted");
     for (const source of MINT_SOURCES) expect(trailLabel(source)).not.toBe("Moved");
   });
 

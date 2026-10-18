@@ -3,7 +3,7 @@
 
 import { type Prisma, type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { CardFinish, type CardRarity } from "./enums";
+import { type CardRarity } from "./enums";
 import { mintCopy } from "./mint";
 import { nsBankValue } from "./ns-facts";
 import { getValuationConfig, referenceValue } from "./valuation";
@@ -120,7 +120,8 @@ export async function getCardMarketValue(db: PrismaClient, cardId: string): Prom
 
 /**
  * Mints an achievement's reward card for its new holder: one bound copy per award (cards refresh §2.1), through
- * `mintCopy` (source ACHIEVEMENT). `userId` may be a database or a Clerk id.
+ * `mintCopy` (source ACHIEVEMENT), its finish rolled. A reward never checks capacity (§3). `userId` may be a database
+ * or a Clerk id.
  */
 export async function awardAchievementCard(
   db: PrismaClient,
@@ -143,7 +144,7 @@ export async function awardAchievementCard(
     if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
 
     const ownership = await db.$transaction((tx) =>
-      mintCopy(tx, { cardId, ownerId: user.id, finish: CardFinish.STANDARD, source: "ACHIEVEMENT" })
+      mintCopy(tx, { cardId, ownerId: user.id, source: "ACHIEVEMENT" })
     );
     console.log(
       `[CARD_SERVICE] Awarded ${card.title} #${ownership.serialNumber} to user ${user.id} (${achievementId}: ${achievementTitle})`
