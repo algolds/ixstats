@@ -1,3 +1,4 @@
+import type { PrismaClient } from "@prisma/client";
 import { globalCache } from "~/lib/cache";
 
 /** Drop the cached vault stats and balances (keyed by both DB and Clerk id) of the given users. */
@@ -11,4 +12,16 @@ export async function clearVaultCaches(
       ...(user.clerkUserId ? [globalCache.delete(`user_vault_balance:${user.clerkUserId}`)] : []),
     ])
   );
+}
+
+/** `clearVaultCaches` for `User.id`s, reading their Clerk ids. */
+export async function clearVaultCachesFor(
+  db: Pick<PrismaClient, "user">,
+  userIds: readonly string[]
+): Promise<void> {
+  const users = await db.user.findMany({
+    where: { id: { in: [...new Set(userIds)] } },
+    select: { id: true, clerkUserId: true },
+  });
+  await clearVaultCaches(...users);
 }

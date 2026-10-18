@@ -6,12 +6,10 @@ import { normalizeArtwork } from "~/lib/cards/face/artwork";
 import { EXPLORE_SORTS, OWNED_FILTERS, type ExploreSort } from "~/lib/cards/face/explore-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { cardsWithVisibleArt, facesFor } from "./art-visibility";
+import { cardsWithVisibleArt, facesFor, type ArtDb } from "./art-visibility";
 import { CATALOGUE_WHERE } from "./catalogue";
 import { CARD_FACE_SELECT, toCardFace, toRealmBadge } from "./faces";
 import { likeLiteral } from "~/lib/utils/like-literal";
-
-type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
 
 /** Explore's grid filters (spec §2.3: realm, rarity, type, category; region and season for NS cards). */
 export const ExploreQuerySchema = z.object({

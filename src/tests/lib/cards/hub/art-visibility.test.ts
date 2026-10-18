@@ -86,6 +86,38 @@ describe("cardsWithVisibleArt", () => {
     const empty = createMockPrisma();
     await expect(cardsWithVisibleArt(empty as never, "me", [])).resolves.toEqual(new Set());
     expect(empty.cardAuction.findMany).not.toHaveBeenCalled();
+    expect(empty.cardListing.findMany).not.toHaveBeenCalled();
+  });
+
+  it("shows the art of a card on a live fixed-price listing to someone who owns none", async () => {
+    const db = createMockPrisma();
+    db.cardListing.findMany.mockResolvedValue([{ cardId: "c2" }]);
+    expect(await cardsWithVisibleArt(db as never, "viewer", ["c1", "c2"])).toEqual(new Set(["c2"]));
+    // The listing's own card, which it keeps when a finished listing outlives its copy
+    expect(db.cardListing.findMany).toHaveBeenCalledWith({
+      where: {
+        status: "ACTIVE",
+        expiresAt: { gt: expect.any(Date) },
+        cardId: { in: ["c1", "c2"] },
+      },
+      select: { cardId: true },
+      distinct: ["cardId"],
+    });
+    const signedOut = createMockPrisma();
+    signedOut.cardListing.findMany.mockResolvedValue([{ cardId: "c1" }]);
+    await expect(cardsWithVisibleArt(signedOut as never, null, ["c1"])).resolves.toEqual(
+      new Set(["c1"])
+    );
+  });
+
+  it("reads the listings and auctions that are live now", async () => {
+    const now = new Date("2026-11-02T12:00:00Z");
+    jest.useFakeTimers({ now });
+    const db = createMockPrisma();
+    await cardsWithVisibleArt(db as never, "viewer", ["c1"]);
+    jest.useRealTimers();
+    expect(db.cardListing.findMany.mock.calls[0]![0].where.expiresAt).toEqual({ gt: now });
+    expect(db.cardAuction.findMany.mock.calls[0]![0].where.endTime).toEqual({ gt: now });
   });
 });
 

@@ -102,6 +102,7 @@ describe("trail", () => {
     expect(trailLabel("REASSIGN")).toBe("Reassigned by staff");
     expect(trailLabel("ADMIN")).toBe("Granted by staff");
     expect(trailLabel("CRAFT")).toBe("Crafted");
+    expect(trailLabel("LISTING_SALE")).toBe("Bought from a listing");
     for (const source of MINT_SOURCES) expect(trailLabel(source)).not.toBe("Moved");
   });
 

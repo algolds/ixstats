@@ -99,6 +99,7 @@ const AUDIT_TITLES: Record<CardAuditAction, string> = {
   CARD_GRANT: "Card granted",
   CARD_REVOKE: "Card revoked",
   CARD_AUCTION_CANCEL: "Auction cancelled",
+  CARD_LISTING_CANCEL: "Listing cancelled",
   CARD_TRADE_VOID: "Trade voided",
   CARD_PACK_SAVE: "Pack saved",
   CARD_PACK_AWARD: "Pack awarded",

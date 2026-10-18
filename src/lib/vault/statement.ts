@@ -184,6 +184,10 @@ const EXACT_ICON: Record<string, RowIconKey> = {
   card_sale_buyout: "market",
   card_purchase_buyout: "market",
   auction_bid_reserve: "market",
+  card_sale_listing: "market",
+  card_purchase_listing: "market",
+  listing_fee: "market",
+  nation_card_royalty: "market",
 };
 
 const PREFIX_ICON: [prefix: string, key: RowIconKey][] = [

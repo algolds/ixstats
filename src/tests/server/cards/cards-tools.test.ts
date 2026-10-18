@@ -35,8 +35,10 @@ import { mintCopy } from "~/lib/cards/mint";
 import { notificationAPI } from "~/lib/notifications/api";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
+import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import {
   adminCancelAuction,
+  adminCancelListing,
   awardPack,
   grantCard,
   playerCardInventory,
@@ -101,6 +103,16 @@ describe("playerCardInventory", () => {
         expiresAt: new Date(0),
       },
     ]);
+    db.cardListing.findMany.mockResolvedValue([
+      {
+        id: "l_1",
+        price: 140,
+        isFeatured: true,
+        expiresAt: new Date(0),
+        serialNumber: 4,
+        card: { title: "Elm" },
+      },
+    ]);
     jest.mocked(copyRoom).mockResolvedValue(Number.POSITIVE_INFINITY);
 
     const inventory = await playerCardInventory(db as never, "user_1");
@@ -139,6 +151,22 @@ describe("playerCardInventory", () => {
       copiesOffered: 2,
       copiesAsked: 0,
     });
+    // The player's live fixed-price listings, named from the row's own card and serial
+    expect(db.cardListing.findMany).toHaveBeenCalledWith({
+      where: { sellerId: "user_1", status: "ACTIVE" },
+      orderBy: { expiresAt: "asc" },
+      select: {
+        id: true,
+        price: true,
+        isFeatured: true,
+        expiresAt: true,
+        serialNumber: true,
+        card: { select: { title: true } },
+      },
+    });
+    expect(inventory.listings).toEqual([
+      { id: "l_1", title: "Elm #4", price: 140, isFeatured: true, expiresAt: new Date(0) },
+    ]);
   });
 
   it("refuses a player who does not exist", async () => {
@@ -531,6 +559,102 @@ describe("adminCancelAuction", () => {
       adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.cardAuction.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("adminCancelListing", () => {
+  const listing = {
+    id: "l_1",
+    status: "ACTIVE",
+    sellerId: "seller",
+    ownershipId: "own_1",
+    listingFee: 10,
+    serialNumber: 4,
+    card: { title: "Elm" },
+  };
+  /** Writes reach only `tx`; the refund share is the default 50% of the stored fee. */
+  function setup(read: object | null = listing, claimed = 1) {
+    clearEconomyConfigCache();
+    const tx = createProxy();
+    tx.cardListing.updateMany.mockResolvedValue({ count: claimed });
+    const db = createProxy({
+      $transaction: jest.fn(<T>(run: (client: typeof tx) => T) => run(tx)),
+    });
+    db.cardListing.findUnique.mockResolvedValue(read);
+    db.user.findUnique.mockResolvedValue({ clerkUserId: "clerk_seller" });
+    return { db, tx };
+  }
+  const cancel = (db: object) =>
+    adminCancelListing(db as never, actor, { listingId: "l_1", reason: "Seller asked" });
+
+  it("ends the listing, unlocks the copy, refunds a share of its stored fee, audits it and tells the seller", async () => {
+    const { db, tx } = setup();
+    await cancel(db);
+
+    expect(db.cardListing.findUnique).toHaveBeenCalledWith({
+      where: { id: "l_1" },
+      select: {
+        id: true,
+        status: true,
+        sellerId: true,
+        ownershipId: true,
+        listingFee: true,
+        serialNumber: true,
+        card: { select: { title: true } },
+      },
+    });
+    expect(tx.cardListing.updateMany).toHaveBeenCalledWith({
+      where: { id: "l_1", status: "ACTIVE" },
+      data: { status: "CANCELLED" },
+    });
+    expect(tx.cardOwnership.updateMany).toHaveBeenCalledWith({
+      where: { id: "own_1", ownerId: "seller" },
+      data: { isLocked: false },
+    });
+    expect(earnCreditsTx).toHaveBeenCalledTimes(1);
+    expect(earnCreditsTx).toHaveBeenCalledWith(tx, {
+      userId: "seller",
+      amount: 5,
+      type: "REFUND",
+      source: "listing_fee_refund",
+      metadata: { listingId: "l_1", reason: "admin_cancel" },
+    });
+    expect(tx.auditLog.create.mock.calls[0]![0].data).toMatchObject({
+      userId: "clerk_admin",
+      action: "CARD_LISTING_CANCEL",
+      target: "l_1",
+      details:
+        "Cancelled the listing of Elm #4 by seller seller: refunded 5 IxC of the listing fee to the seller. Reason: Seller asked",
+    });
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(clearVaultCaches).toHaveBeenCalledWith({ id: "seller", clerkUserId: "clerk_seller" });
+    expect(notificationAPI.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "clerk_seller",
+        title: "Your listing was cancelled",
+        message: "An admin cancelled a listing: Seller asked",
+      })
+    );
+  });
+
+  it("refuses a missing listing and one that has ended, changing nothing", async () => {
+    const missing = setup(null);
+    await expect(cancel(missing.db)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const ended = setup({ ...listing, status: "SOLD" });
+    await expect(cancel(ended.db)).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(ended.tx.cardListing.updateMany).not.toHaveBeenCalled();
+    expect(earnCreditsTx).not.toHaveBeenCalled();
+    expect(notificationAPI.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a listing that sold or ended after the admin loaded it, refunding and auditing nothing", async () => {
+    const { db, tx } = setup(listing, 0);
+    await expect(cancel(db)).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(earnCreditsTx).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+    expect(clearVaultCaches).not.toHaveBeenCalled();
+    expect(notificationAPI.create).not.toHaveBeenCalled();
   });
 });
 

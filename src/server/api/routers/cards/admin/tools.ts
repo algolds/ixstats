@@ -3,6 +3,7 @@ import { CardFinish } from "~/lib/cards/enums";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import {
   adminCancelAuction,
+  adminCancelListing,
   awardPack,
   grantCard,
   playerCardInventory,
@@ -33,6 +34,9 @@ export const cardsAdminToolsRouter = createTRPCRouter({
   cancelAuction: adminProcedure
     .input(z.object({ auctionId: z.string().min(1), reason }))
     .mutation(({ ctx, input }) => adminCancelAuction(ctx.db, adminActor(ctx), input)),
+  cancelListing: adminProcedure
+    .input(z.object({ listingId: z.string().min(1), reason }))
+    .mutation(({ ctx, input }) => adminCancelListing(ctx.db, adminActor(ctx), input)),
   voidTrade: adminProcedure
     .input(z.object({ tradeId: z.string().min(1), reason }))
     .mutation(({ ctx, input }) => voidTrade(ctx.db, adminActor(ctx), input)),

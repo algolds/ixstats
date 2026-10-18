@@ -1,8 +1,8 @@
 /**
- * Player card tools: an admin's view of one player's copies, unopened packs, auctions and pending trades, and the
- * actions on them. Grant and revoke take a reason; cancelling an auction refunds the bid it holds; voiding a trade
- * releases the initiator's locked cards. Every action writes an audit row, drops the cached vault figures of each
- * player it touched and tells them.
+ * Player card tools: an admin's view of one player's copies, unopened packs, auctions, listings and pending trades, and
+ * the actions on them. Grant and revoke take a reason; cancelling an auction refunds the bid it holds; cancelling a
+ * listing unlocks its copy and refunds the seller's share of the fee; voiding a trade releases the initiator's locked
+ * cards. Every action writes an audit row, drops the cached vault figures of each player it touched and tells them.
  */
 import type {
   CardFinish,
@@ -28,6 +28,7 @@ import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
+import { endListingTx } from "./market/listings";
 
 const MAX_COPIES_SHOWN = 500;
 const ownershipIds = z.array(z.string()).catch([]);
@@ -95,7 +96,7 @@ async function playerOrThrow(db: PrismaClient, userId: string) {
 
 export async function playerCardInventory(db: PrismaClient, userId: string) {
   const user = await playerOrThrow(db, userId);
-  const [copies, copyCount, packs, auctions, trades, room] = await Promise.all([
+  const [copies, copyCount, packs, auctions, listings, trades, room] = await Promise.all([
     db.cardOwnership.findMany({
       where: { ownerId: userId },
       orderBy: { acquiredAt: "desc" },
@@ -135,6 +136,19 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
         bidCount: true,
         endTime: true,
         // The row's own card and serial, which outlive the copy
+        serialNumber: true,
+        card: { select: { title: true } },
+      },
+    }),
+    db.cardListing.findMany({
+      where: { sellerId: userId, status: "ACTIVE" },
+      orderBy: { expiresAt: "asc" },
+      // The row's own card and serial, as the listing stored them
+      select: {
+        id: true,
+        price: true,
+        isFeatured: true,
+        expiresAt: true,
         serialNumber: true,
         card: { select: { title: true } },
       },
@@ -181,6 +195,13 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
       currentBid: auction.currentBid,
       bidCount: auction.bidCount,
       endTime: auction.endTime,
+    })),
+    listings: listings.map((listing) => ({
+      id: listing.id,
+      title: `${listing.card.title} #${listing.serialNumber}`,
+      price: listing.price,
+      isFeatured: listing.isFeatured,
+      expiresAt: listing.expiresAt,
     })),
     trades: trades.map((trade) => ({
       id: trade.id,
@@ -395,6 +416,51 @@ export async function adminCancelAuction(
   if (auction.currentBidderId) {
     await refreshAndNotify(db, auction.currentBidderId, "Your bid was refunded", message);
   }
+}
+
+/**
+ * Cancels a live listing as the seller's own cancel does: the copy unlocks and the seller gets the same share of the
+ * fee the listing stored. A listing that sells or ends after the admin loaded it is refused, refunding nothing.
+ */
+export async function adminCancelListing(
+  db: PrismaClient,
+  actor: CardAdminActor,
+  input: { listingId: string; reason: string }
+): Promise<void> {
+  const listing = await db.cardListing.findUnique({
+    where: { id: input.listingId },
+    select: {
+      id: true,
+      status: true,
+      sellerId: true,
+      ownershipId: true,
+      listingFee: true,
+      serialNumber: true,
+      card: { select: { title: true } },
+    },
+  });
+  if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Listing not found" });
+  if (listing.status !== "ACTIVE") {
+    throw new TRPCError({ code: "CONFLICT", message: "This listing has ended" });
+  }
+  await db.$transaction(async (tx) => {
+    const refund = await endListingTx(tx, listing, "admin_cancel", new Date());
+    if (refund === null) {
+      throw new TRPCError({ code: "CONFLICT", message: "This listing sold or ended meanwhile." });
+    }
+    await recordCardAudit(tx, {
+      action: "CARD_LISTING_CANCEL",
+      actor: actor.clerkId,
+      target: listing.id,
+      details: `Cancelled the listing of ${listing.card.title} #${listing.serialNumber} by seller ${listing.sellerId}: refunded ${refund} IxC of the listing fee to the seller. Reason: ${input.reason}`,
+    });
+  });
+  await refreshAndNotify(
+    db,
+    listing.sellerId,
+    "Your listing was cancelled",
+    `An admin cancelled a listing: ${input.reason}`
+  );
 }
 
 export async function voidTrade(

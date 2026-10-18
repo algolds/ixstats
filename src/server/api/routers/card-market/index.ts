@@ -10,6 +10,7 @@
  *  - bids:              place bid, bid history, my active bids, my participation
  *  - analytics:         a card's value history
  *  - wishlist:          the player's wishlist
+ *  - listings:          fixed-price listings and the merged Browse
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { cardMarketAuctionManagementRouter } from "./auctionManagement";
@@ -17,11 +18,13 @@ import { cardMarketAuctionQueriesRouter } from "./auctionQueries";
 import { cardMarketBidsRouter } from "./bids";
 import { cardMarketAnalyticsRouter } from "./analytics";
 import { cardMarketWishlistRouter } from "./wishlist";
+import { cardMarketListingsRouter } from "./listings";
 
 export const cardMarketRouter = mergeRouters(
   cardMarketAuctionManagementRouter,
   cardMarketAuctionQueriesRouter,
   cardMarketBidsRouter,
   cardMarketAnalyticsRouter,
-  cardMarketWishlistRouter
+  cardMarketWishlistRouter,
+  cardMarketListingsRouter
 );

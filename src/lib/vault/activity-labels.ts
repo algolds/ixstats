@@ -27,6 +27,8 @@ const LABELS: Record<string, string> = {
   card_sale_buyout: "Card sold by buyout",
   card_purchase_buyout: "Card bought by buyout",
   auction_bid_reserve: "Auction bid reserved",
+  card_sale_listing: "Card sold by listing",
+  card_purchase_listing: "Card bought from a listing",
   forum_action: "Action posted in the forum",
 };
 
