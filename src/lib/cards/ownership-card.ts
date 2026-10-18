@@ -1,9 +1,13 @@
 import type { Card, Prisma } from "@prisma/client";
 import type { CardInstance } from "~/types/cards-display";
 import { CARD_ARTWORK_PLACEHOLDER } from "./display-utils";
+import type { INSCRIPTION_OMIT } from "./inscription";
 
 /** An ownership row with its card, as `cards.getMyCards` returns it. */
-export type OwnedCard = Prisma.CardOwnershipGetPayload<{ include: { cards: true } }>;
+export type OwnedCard = Prisma.CardOwnershipGetPayload<{
+  include: { cards: true };
+  omit: typeof INSCRIPTION_OMIT;
+}>;
 
 /** The card display shape of a card's own fields, before a copy's are laid over them. */
 function cardToInstance(card: Card): CardInstance {
