@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidateMyPacks = jest.fn();
@@ -35,6 +35,7 @@ jest.mock("next/link", () => ({
 }));
 
 import { api } from "~/trpc/react";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { PackReveal } from "~/components/cards/reveal/PackReveal";
@@ -100,6 +101,7 @@ const press = (key: string) => fireEvent.keyDown(screen.getByRole("dialog"), { k
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(useFacetReducedMotion).mockReturnValue(true);
   jest.useFakeTimers();
 });
 afterEach(() => jest.useRealTimers());
@@ -247,6 +249,36 @@ describe("PackReveal", () => {
     }
     opener.remove();
     fallback.remove();
+  });
+
+  it("lets Rare and better pulls tilt and catch the light in the summary", () => {
+    jest.mocked(useFacetReducedMotion).mockReturnValue(false);
+    setup();
+    openPack();
+    press("Escape");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    const pulled = within(screen.getByRole("list", { name: "Cards pulled" }));
+    const holo = (title: string) =>
+      pulled
+        .getByRole("button", { name: new RegExp(`^${title},`) })
+        .closest("li")
+        ?.querySelector(".card-holo") ?? null;
+    expect(holo("Card 1")).toBeNull();
+    expect(holo("Card 2")).not.toBeNull();
+    expect(holo("Card 3")).not.toBeNull();
+    // The holo never takes a tap meant for the card.
+    fireEvent.click(pulled.getByRole("button", { name: /^Card 3,/ }));
+    expect(screen.queryByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("keeps every pull still under Reduce Motion", () => {
+    setup();
+    openPack();
+    press("Escape");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(
+      screen.getByRole("list", { name: "Cards pulled" }).querySelector(".card-holo")
+    ).toBeNull();
   });
 
   it("skips straight to the summary, with no next pack to offer", () => {

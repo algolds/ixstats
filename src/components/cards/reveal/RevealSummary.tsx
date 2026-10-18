@@ -4,8 +4,9 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { CardFace } from "~/components/cards/face/CardFace";
+import { CardTilt } from "~/components/cards/face/CardTilt";
 import { RARITY_LABEL } from "~/lib/cards/face/labels";
-import { rarestFace } from "~/lib/cards/face/reveal";
+import { rarestFace, revealShines } from "~/lib/cards/face/reveal";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 
@@ -17,7 +18,10 @@ interface RevealSummaryProps {
   onClose: () => void;
 }
 
-/** The end of a reveal: every card pulled, the best one named, and what to do next. */
+/**
+ * The end of a reveal: every card pulled, the best one named, and what to do next. Rare and better pulls lean toward
+ * the pointer and catch the light, as on the card sheet; under Reduce Motion they stay still.
+ */
 export function RevealSummary({
   faces,
   nextPack,
@@ -37,11 +41,14 @@ export function RevealSummary({
         {best ? `Best pull: ${RARITY_LABEL[best.rarity]}` : "This pack had no cards"}
       </h3>
       <ul aria-label="Cards pulled" className="flex flex-wrap justify-center gap-3">
-        {faces.map((face) => (
-          <li key={face.copy?.ownershipId ?? face.cardId}>
-            <CardFace face={face} size="S" onOpen={() => onOpenCard(face.cardId)} />
-          </li>
-        ))}
+        {faces.map((face) => {
+          const card = <CardFace face={face} size="S" onOpen={() => onOpenCard(face.cardId)} />;
+          return (
+            <li key={face.copy?.ownershipId ?? face.cardId}>
+              {revealShines(face.rarity) ? <CardTilt>{card}</CardTilt> : card}
+            </li>
+          );
+        })}
       </ul>
       <div className="flex flex-wrap justify-center gap-2">
         <Button asChild variant="secondary">

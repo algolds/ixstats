@@ -1,5 +1,11 @@
 /** @jest-environment node */
-import { nextFaceDown, rarestFace, revealBeatMs, revealFeedbackFor } from "~/lib/cards/face/reveal";
+import {
+  nextFaceDown,
+  rarestFace,
+  revealBeatMs,
+  revealFeedbackFor,
+  revealShines,
+} from "~/lib/cards/face/reveal";
 
 describe("reveal pacing", () => {
   it("gives rarer cards a longer beat", () => {
@@ -15,6 +21,14 @@ describe("reveal pacing", () => {
     expect(revealFeedbackFor("ULTRA_RARE")).toEqual({ sound: true, haptic: false });
     expect(revealFeedbackFor("EPIC")).toEqual({ sound: true, haptic: true });
     expect(revealFeedbackFor("LEGENDARY")).toEqual({ sound: true, haptic: true });
+  });
+
+  it("lets Rare and rarer pulls tilt and shine in the summary", () => {
+    expect(revealShines("COMMON")).toBe(false);
+    expect(revealShines("UNCOMMON")).toBe(false);
+    for (const rarity of ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"] as const) {
+      expect([rarity, revealShines(rarity)]).toEqual([rarity, true]);
+    }
   });
 
   it("finds the next card still face down, wrapping, or -1", () => {
