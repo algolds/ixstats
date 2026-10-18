@@ -259,6 +259,27 @@ describe("CardSheet", () => {
     expect(screen.queryByText("Bound to your account")).toBeNull();
   });
 
+  it("never says a tradeable Special card comes in packs, which never draw one", () => {
+    showSheet(
+      sheet({
+        copies: [],
+        card: { ...card, cardType: "SPECIAL" },
+        face: { ...face, cardType: "SPECIAL", copy: null },
+      })
+    );
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(
+      screen.getByText(
+        /^You do not have this card yet\. It is given out at events, and is on the market and in trades\./
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/packs/)).toBeNull();
+    expect(screen.getByRole("link", { name: "See it in the market" })).toHaveAttribute(
+      "href",
+      "/vault/cards/market?for=c1"
+    );
+  });
+
   it("says nothing of where a retired card comes from", () => {
     showSheet(
       sheet({

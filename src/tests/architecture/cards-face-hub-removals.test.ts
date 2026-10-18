@@ -34,6 +34,10 @@ const GONE = [
   "src/lib/cards/pack-opening-service.ts",
   "src/server/api/routers/vault/collections.ts",
   "src/server/api/routers/cards/collections.ts",
+  // The service worker and manifest no page registered or linked, and the offline page only the worker read.
+  "public/sw.js",
+  "public/manifest.json",
+  "public/offline.html",
 ];
 
 /** Names of the old palettes, renderers and their badges; none may come back under another file. */

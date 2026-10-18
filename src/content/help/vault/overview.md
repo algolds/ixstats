@@ -34,9 +34,9 @@ The claim prompt opens by itself at most once a day. If you close it, claim late
 - **[Mine](/vault/cards/mine):** the cards you own. Filter by realm, rarity, finish, type, category and duplicates, search, sort, and switch between a grid and a list with each card's value. Choose **Select** to pick several cards and add them to a showcase.
 - **[Sets](/vault/cards/sets):** your showcases, sets of your cards you put together and name. A showcase can be public or private, and you can pin one public showcase: it is what your wallet and your passport show. Without a pinned showcase they show your most valuable cards.
 - **[Market](/vault/cards/market):** auctions and trades. See [Auctions & Trading](/help/vault/trading).
-- **[Explore](/vault/cards/explore):** every realm's cards, realm by realm, then a grid you can filter. A card you haven't collected shows as a silhouette (its title, realm, rarity and number, but not its art). You can also suggest a new lore card here; see [Lore Cards](/help/vault/lore-cards).
+- **[Explore](/vault/cards/explore):** every realm's cards, realm by realm, then a grid you can filter by any realm with cards. Trophy cards aren't in Explore: yours are on the Lorewards tab of [Achievements](/vault/achievements?tab=lorewards), and a player's are on their passport. A card you haven't collected shows as a silhouette (its title, realm, rarity and number, but not its art). You can also suggest a new lore card here; see [Lore Cards](/help/vault/lore-cards).
 
-Select a card to open its sheet: the card itself (turn it over with Space or F to see its back), your copies of it, its market, and what it is about. **Copy link** copies a link that opens the same card. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
+Select a card to open its sheet: the card itself (turn it over with Space or F to see its back), your copies of it, its market, and what it is about. **Copy link** copies a link that opens the same card. Without signing in, anyone can open the cards a passport or a public showcase shows, and cards on a live auction; any other card asks you to sign in. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
 
 ## Card types and rarities
 

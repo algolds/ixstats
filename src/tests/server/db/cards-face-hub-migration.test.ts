@@ -4,10 +4,12 @@
  * creates must be exactly what the Prisma schema declares.
  */
 import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const DIR = "20261031120000_cards_face_hub";
 const sql = readFileSync(`prisma/migrations/${DIR}/migration.sql`, "utf8");
 const cardsSchema = readFileSync("prisma/schema/cards.prisma", "utf8");
+const coreSchema = readFileSync("prisma/schema/core.prisma", "utf8");
 const statements = sql
   .replace(/--[^\n]*/g, "")
   .replace(/\s+/g, " ")
@@ -88,6 +90,18 @@ describe("cards face-hub migration", () => {
     expect(statements).toContain(
       'CREATE TRIGGER "card_showcase_detach_on_transfer" AFTER UPDATE OF "ownerId" ON "CardOwnership" FOR EACH ROW WHEN (OLD."ownerId" IS DISTINCT FROM NEW."ownerId")'
     );
+  });
+
+  it("deletes the streak bonus setting the Vault config no longer has, before the commit", () => {
+    expect(coreSchema).toMatch(/model SystemConfig \{[^}]*\n\s+key\s+String\s+@unique/);
+    const remove = `DELETE FROM "SystemConfig" WHERE "key" = 'vault_maxStreakBonus';`;
+    expect(statements).toContain(remove);
+    expect(statements.indexOf(remove)).toBeLessThan(statements.lastIndexOf("COMMIT;"));
+    // Nothing reads the setting any more, so deleting its row changes nothing but the table.
+    const readers = readdirSync("src", { recursive: true, encoding: "utf8" })
+      .filter((file) => /\.tsx?$/.test(file) && !file.startsWith(`tests`))
+      .filter((file) => readFileSync(join("src", file), "utf8").includes("maxStreakBonus"));
+    expect(readers).toEqual([]);
   });
 
   it("drops the like and comment tables, and is safe to re-run", () => {

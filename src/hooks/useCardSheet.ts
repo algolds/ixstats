@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { encodeSheetFrom, parseSheetFrom, type SheetFrom } from "~/lib/cards/face/sheet-link";
+import { addressWith } from "~/lib/utils/address";
 import { focusedElement, refocus } from "~/lib/utils/focus";
 
 /** Marks the history entry that `open` pushed, so `close` can step back over it. */
@@ -35,15 +36,11 @@ export function returnFocusToSheetOpener(): void {
 }
 
 /** The current address with its query changed, keeping the path, the page's own query and the hash. */
-function addressWith(change: (query: URLSearchParams) => void): string {
-  const url = new URL(window.location.href);
-  change(url.searchParams);
-  const search = url.searchParams.toString();
-  return `${url.pathname}${search ? `?${search}` : ""}${url.hash}`;
-}
+const shownAddressWith = (change: (query: URLSearchParams) => void) =>
+  addressWith(window.location.href, change);
 
 /** The address the browser shows now, as a path. */
-const currentAddress = () => addressWith(() => undefined);
+const currentAddress = () => shownAddressWith(() => undefined);
 
 /**
  * The card sheet lives in the address (`?card=<id>`, with `?from=` for where it was opened), so a copied link opens
@@ -92,7 +89,7 @@ export function useCardSheet(): {
     // Already open there: another entry would only make close step back onto the same address.
     if (shown.get("card") === id && shown.get("from") === fromValue) return;
     sheetOpener = focusedElement();
-    const address = addressWith((query) => {
+    const address = shownAddressWith((query) => {
       query.set("card", id);
       if (fromValue) query.set("from", fromValue);
       else query.delete("from");
@@ -107,7 +104,7 @@ export function useCardSheet(): {
       window.history.back();
       return;
     }
-    const address = addressWith((query) => {
+    const address = shownAddressWith((query) => {
       query.delete("card");
       query.delete("from");
     });

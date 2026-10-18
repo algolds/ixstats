@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
  * Every old card address redirects permanently into the hub or the Store, keeping its query, and `/vault/cards` opens
- * Mine. `src/proxy.ts` answers them: a redirect thrown by a page would stream as a 200 under the Vault's loading
- * boundary, so the old pages are gone.
+ * Mine; a page that moved out of the Vault (the Exchange) redirects permanently too. `src/proxy.ts` answers them: a
+ * redirect thrown by a page would stream as a 200 under the Vault's loading boundary, so the old pages are gone.
  */
 import { existsSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, jest } from "@jest/globals";
@@ -82,6 +82,40 @@ describe("proxy: old card addresses", () => {
   });
 });
 
+describe("proxy: pages that moved", () => {
+  it("sends the Vault's old Exchange address to Labs with a 308, keeping the query", async () => {
+    const res = await run("/vault/exchange?tab=contracts");
+    expect(res.status).toBe(308);
+    expect(locationOf(res)).toBe("http://localhost/labs/exchange?tab=contracts");
+  });
+
+  it("keeps the base path", async () => {
+    const res = await run("/vault/exchange", { basePath: BASE_PATH });
+    expect(res.status).toBe(308);
+    expect(locationOf(res)).toBe(`http://localhost${BASE_PATH}/labs/exchange`);
+  });
+
+  it("takes the address with a trailing slash", async () => {
+    // NextURL keeps the request's trailing slash on the new path; Next's own redirect drops it.
+    const res = await run("/vault/exchange/");
+    expect(res.status).toBe(308);
+    expect(locationOf(res)).toMatch(/^http:\/\/localhost\/labs\/exchange\/?$/);
+  });
+
+  it("keeps a question mark inside a query value", async () => {
+    const res = await run("/vault/exchange?q=a?b&q=c");
+    expect(locationOf(res)).toBe("http://localhost/labs/exchange?q=a%3Fb&q=c");
+  });
+
+  it.each(["/labs/exchange", "/vault/exchange-rates", "/vault/exchange/companies"])(
+    "lets %s through",
+    async (path) => {
+      const res = await run(path);
+      expect(locationOf(res)).toBeNull();
+    }
+  );
+});
+
 describe("proxy: the bare hub address", () => {
   it("opens Mine with a 307, keeping the query", async () => {
     const res = await run("/vault/cards?card=c1");
@@ -127,6 +161,7 @@ describe("old card pages", () => {
     "market",
     "marketplace",
     "trading",
+    "exchange",
   ])("src/app/vault/%s is gone: the proxy answers it", (route) => {
     expect(existsSync(`src/app/vault/${route}`)).toBe(false);
   });

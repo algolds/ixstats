@@ -18,7 +18,7 @@ Packs are sold in the Store: [Vault → Store → Packs](/vault/store?view=packs
 2. Buy it. The IxCredits are taken straight away and the pack is yours. (If you don't have enough IxCredits, you can't buy it.)
 3. Open it straight away, or later from **My packs**: choose **Open pack** and the pack tears open.
 4. The cards fan out face down. Tap a card, swipe, or press the Right or Down arrow key to turn the next one; rarer cards stay in the spotlight a little longer, and from Rare up a card plays the reveal sound (with sound on). **Reveal all** or the Escape key turns the rest, and **Skip** goes straight to the summary.
-5. The summary lists what you pulled. Every card is already in your collection: choose a card to open it, **Go to Mine** to see your cards, or open your next pack.
+5. The summary lists what you pulled, and its Rare and rarer cards lean toward your pointer and shimmer (not with Reduce Motion on). Every card is already in your collection: choose a card to open it, **Go to Mine** to see your cards, or open your next pack.
 
 ## Odds
 

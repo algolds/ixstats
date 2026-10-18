@@ -272,7 +272,7 @@ async function runBenchmarks() {
   // 4. Static Asset Loading
   // -------------------------------------------------------------------------
   log("▸ Testing Static Asset Loading...", "blue");
-  const staticAssets = [`${baseUrl}/favicon.ico`, `${baseUrl}/manifest.json`];
+  const staticAssets = [`${baseUrl}/favicon.ico`];
 
   for (const asset of staticAssets) {
     const assetName = asset.split("/").pop() || "unknown";

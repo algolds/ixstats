@@ -52,7 +52,13 @@ describe("the Vault Lorewards tab", () => {
     expect(screen.getByTestId("view")).toHaveAttribute("data-highlight", "");
   });
 
-  it("marks the trophy card an article badge linked to", () => {
+  it("marks the trophy card ?trophy= names, leaving ?card= to the card sheet", () => {
+    mockQuery = "tab=lorewards&trophy=card2&card=card9";
+    render(<VaultLorewardsPanel />);
+    expect(screen.getByTestId("view")).toHaveAttribute("data-highlight", "card2");
+  });
+
+  it("still marks the trophy card of an older ?card= link", () => {
     mockQuery = "tab=lorewards&card=card2";
     render(<VaultLorewardsPanel />);
     expect(screen.getByTestId("view")).toHaveAttribute("data-highlight", "card2");

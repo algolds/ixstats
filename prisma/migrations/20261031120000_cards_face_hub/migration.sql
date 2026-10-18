@@ -70,4 +70,7 @@ CREATE TRIGGER "card_showcase_detach_on_transfer" AFTER UPDATE OF "ownerId" ON "
 DROP TABLE IF EXISTS "CollectionLike";
 DROP TABLE IF EXISTS "CollectionComment";
 
+-- 4. The Vault config's streak bonus cap went with the second daily claim; nothing reads its setting.
+DELETE FROM "SystemConfig" WHERE "key" = 'vault_maxStreakBonus';
+
 COMMIT;
