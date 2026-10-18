@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -18,11 +20,17 @@ import {
 } from "~/components/ui/dialog";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { useDebounce } from "~/hooks/useDebounce";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import type { MineRow } from "~/lib/cards/hub/mine";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 type Duration = "30" | "60";
+
+/** Mine's largest page. */
+const PAGE = 120;
+/** The longest search Mine's query takes. */
+const SEARCH_MAX = 100;
 
 const DURATIONS: ReadonlyArray<{ value: Duration; label: string }> = [
   { value: "30", label: "30 minutes" },
@@ -45,22 +53,27 @@ const credits = (text: string) => {
 interface CopyPickerProps {
   rows: readonly MineRow[];
   loading: boolean;
+  searching: boolean;
   picked: string | null;
   onPick: (ownershipId: string) => void;
 }
 
+/** Why no copy is offered: none matches the search, or none can be listed. */
+function NoCopies({ searching }: { searching: boolean }) {
+  if (searching) return <EmptyState compact title="No cards match this search" />;
+  return (
+    <EmptyState
+      compact
+      title="No cards to sell"
+      message="Cards already listed or in a trade, and bound cards, cannot be listed."
+    />
+  );
+}
+
 /** The copies the player can list, one row per copy. */
-function CopyPicker({ rows, loading, picked, onPick }: CopyPickerProps) {
+function CopyPicker({ rows, loading, searching, picked, onPick }: CopyPickerProps) {
   if (loading) return <Skeleton className="rounded-row h-40" />;
-  if (rows.length === 0) {
-    return (
-      <EmptyState
-        compact
-        title="No cards to sell"
-        message="Cards already listed or in a trade, and bound cards, cannot be listed."
-      />
-    );
-  }
+  if (rows.length === 0) return <NoCopies searching={searching} />;
   return (
     <ul aria-label="Your cards" className="max-h-64 space-y-1 overflow-y-auto">
       {rows.map(({ face }) => {
@@ -94,6 +107,25 @@ function CopyPicker({ rows, loading, picked, onPick }: CopyPickerProps) {
 }
 
 /**
+ * The player's copies, most valuable first, searched by title and read a page at a time, so any copy can be listed
+ * however many the player holds.
+ */
+function useSellableCopies(open: boolean, search: string) {
+  const searched = useDebounce(search.trim(), 300);
+  const mine = api.cards.listMine.useInfiniteQuery(
+    { search: searched || undefined, sort: "value", limit: PAGE },
+    {
+      enabled: open,
+      getNextPageParam: (last) => last.nextCursor ?? undefined,
+      // A new search keeps the copies on screen until its page arrives.
+      placeholderData: keepPreviousData,
+    }
+  );
+  const held = mine.data?.pages.flatMap((page) => page.rows) ?? [];
+  return { mine, held, searching: searched !== "" };
+}
+
+/**
  * Lists one copy at auction. It picks copies, not cards: two copies of one card are two rows. A copy already in a
  * listing or a trade is left out, and so is a bound copy (trophies, achievement rewards), which the server refuses
  * anyway. Phase 4 adds longer durations.
@@ -107,9 +139,9 @@ export function CreateAuctionModal({
   const [startingPrice, setStartingPrice] = useState("");
   const [buyoutPrice, setBuyoutPrice] = useState("");
   const [duration, setDuration] = useState<Duration>("60");
+  const [search, setSearch] = useState("");
   const refreshCards = useCardsRefresh();
-  const mine = api.cards.listMine.useQuery({ sort: "value", limit: 120 }, { enabled: open });
-  const held = mine.data?.rows ?? [];
+  const { mine, held, searching } = useSellableCopies(open, search);
   const rows = held.filter((row) => !row.isLocked && !row.isBound);
   // The sheet never offers a bound copy for sale, but an old or hand-made `?sell=` link can name one.
   const sentBound = held.some(
@@ -124,6 +156,7 @@ export function CreateAuctionModal({
     setStartingPrice("");
     setBuyoutPrice("");
     setDuration("60");
+    setSearch("");
     onClose();
   };
   const create = api.cardMarket.createAuction.useMutation({
@@ -173,7 +206,33 @@ export function CreateAuctionModal({
           />
         ) : (
           <>
-            <CopyPicker rows={rows} loading={mine.isLoading} picked={picked} onPick={setPicked} />
+            <SearchField
+              aria-label="Search your cards"
+              maxLength={SEARCH_MAX}
+              placeholder="Search your cards"
+              value={search}
+              onValueChange={setSearch}
+            />
+            {/* A page may hold only copies that cannot be listed, so the next page is offered either way. */}
+            {(rows.length > 0 || !mine.hasNextPage) && (
+              <CopyPicker
+                rows={rows}
+                loading={mine.isLoading}
+                searching={searching}
+                picked={picked}
+                onPick={setPicked}
+              />
+            )}
+            {mine.hasNextPage && (
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={mine.isFetchingNextPage}
+                onClick={() => void mine.fetchNextPage()}
+              >
+                Show more
+              </Button>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="auction-start">Starting price (IxC)</Label>
