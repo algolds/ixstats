@@ -4,7 +4,8 @@
  * `OR`, `AND`, `NOT`, nested relation objects), relations are joined on read (thread → category, post → thread →
  * category, link → storyline), selects are ignored. `$transaction` hands the callback `tx`, the only client whose
  * `forumModLog.create` records a row (both clients read the log), and rolls every store change and log row back
- * when the callback throws, so "refused → nothing written" is behaviour.
+ * when the callback throws, so "refused → nothing written" is behaviour. Privacy configs are `userConnections` rows
+ * (`privacyConfigRow`, privacy-config-fake.ts).
  */
 export type Value =
   string | number | boolean | Date | null | undefined | Value[] | { [key: string]: Value };
@@ -24,6 +25,7 @@ export interface StoreState {
   categoryModerators: Row[];
   officers: Row[];
   postTemplates: Row[];
+  userConnections: Row[];
 }
 
 const OPERATORS = ["in", "notIn", "not", "gt", "gte", "lt", "has", "startsWith", "contains"];
@@ -113,6 +115,7 @@ const cloneState = (state: Partial<StoreState>): StoreState => ({
   categoryModerators: cloneRows(state.categoryModerators),
   officers: cloneRows(state.officers),
   postTemplates: cloneRows(state.postTemplates),
+  userConnections: cloneRows(state.userConnections),
 });
 
 interface Args {
@@ -252,6 +255,7 @@ export function forumStore(seed: Partial<StoreState> & { logs?: Row[] }) {
     ),
     forumCategoryModerator: delegate(() => state.categoryModerators),
     realmOfficer: delegate(() => state.officers),
+    userConnection: delegate(() => state.userConnections),
   };
   const readLog = jest.fn(async ({ where }: Args = {}) =>
     logs.filter((r) => matches(r, where)).map(cloneRow)

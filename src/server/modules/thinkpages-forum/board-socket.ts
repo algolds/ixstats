@@ -11,7 +11,7 @@ import type { ScopeDb } from "./mod-scope";
 import { authorsOf } from "./reads";
 import { canSeeRealm, loadForumRealm } from "./realm-access";
 
-type SocketDb = Pick<PrismaClient, "realm" | "user" | "thinkpagesAccount">;
+type SocketDb = Pick<PrismaClient, "realm" | "user" | "thinkpagesAccount" | "userConnection">;
 type TypingRightsDb = SocketDb & ScopeDb & BoardReadsDb & BoardAccessDb;
 
 const VIEWER_SELECT = {

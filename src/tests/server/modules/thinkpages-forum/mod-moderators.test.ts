@@ -16,6 +16,7 @@ import {
   USER_ROLE,
 } from "~/tests/helpers/forum-mod-fixtures";
 import { detailOf, forumStore, type Row } from "~/tests/helpers/forum-store-fake";
+import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 const people: Row[] = [
   { id: "u_a", clerkUserId: "admin", role: { name: "admin", level: 10 }, handle: "boss" },
@@ -36,7 +37,8 @@ const categoryModerators: Row[] = [
   { id: "cm2", categoryId: "cat_general", userId: "u_m", grantedBy: "u_a", createdAt: at(2) },
   { id: "cm3", categoryId: "r_eurth_hub", userId: "u_w", grantedBy: "u_a", createdAt: at(3) },
 ];
-const storeWith = () => forumStore({ categories, realms, users: people, categoryModerators });
+const storeWith = (userConnections: Row[] = []) =>
+  forumStore({ categories, realms, users: people, categoryModerators, userConnections });
 type Store = ReturnType<typeof storeWith>;
 const rowsOf = (store: Store, categoryId: string) =>
   store.state.categoryModerators.filter((r) => r.categoryId === categoryId).map((r) => r.userId);
@@ -61,9 +63,42 @@ describe("resolveMember", () => {
       ...store.db.user.findMany.mock.calls,
     ]) {
       expect(call[0]).toMatchObject({ select: { id: true } });
-      expect(call[0]!.select).not.toHaveProperty("clerkUserId");
       expect(call[0]!.select).not.toHaveProperty("email");
     }
+    // Only the wiki lookup reads the Clerk id, to check wiki attribution; it never reaches the result.
+    for (const call of store.db.user.findUnique.mock.calls) {
+      expect(call[0]!.select).not.toHaveProperty("clerkUserId");
+    }
+  });
+
+  it("finds a member by wiki username while they show wiki attribution", async () => {
+    const store = storeWith([privacyConfigRow("wiki", { showWikiAttribution: true })]);
+    expect(await resolveMember(store.db as never, generalMod, { handle: "Bob_Smith" })).toEqual({
+      id: "u_w",
+      name: "Bob_Smith",
+    });
+  });
+
+  it("neither matches nor shows the wiki username of a member with wiki attribution off", async () => {
+    const store = storeWith(wikiAttributionOff("wiki", "member"));
+    expect(await resolveMember(store.db as never, generalMod, { handle: "Bob_Smith" })).toBeNull();
+    expect(
+      await resolveMember(store.db as never, generalMod, { handle: "Alice of Eurth" })
+    ).toBeNull();
+    expect(await resolveMember(store.db as never, generalMod, { handle: "alice" })).toEqual({
+      id: "u_m",
+      name: "alice",
+    });
+  });
+
+  it("fails closed: a switch it cannot read matches no wiki username, while a handle still resolves", async () => {
+    const store = storeWith();
+    store.db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+    expect(await resolveMember(store.db as never, generalMod, { handle: "Bob_Smith" })).toBeNull();
+    expect(await resolveMember(store.db as never, generalMod, { handle: "alice" })).toEqual({
+      id: "u_m",
+      name: "alice",
+    });
   });
 
   it.each([
@@ -105,6 +140,13 @@ describe("listCategoryModerators", () => {
     expect(
       await listCategoryModerators(store.db as never, eurthMod, { key: "hub", realm: "eurth" })
     ).toEqual([{ userId: "u_w", name: "Bob_Smith", grantedBy: "u_a", createdAt: at(3) }]);
+  });
+
+  it("names a moderator with wiki attribution off without their wiki name", async () => {
+    const store = storeWith(wikiAttributionOff("wiki"));
+    expect(
+      await listCategoryModerators(store.db as never, eurthMod, { key: "hub", realm: "eurth" })
+    ).toEqual([{ userId: "u_w", name: "Member", grantedBy: "u_a", createdAt: at(3) }]);
   });
 
   it.each([

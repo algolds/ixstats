@@ -3,9 +3,10 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import type { PreviewAuthor } from "~/lib/thinkpages-forum/preview";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import { personalAvatars } from "./personal-avatars";
 
-export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
+export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount" | "userConnection">;
 
 export interface ForumUserAuthor {
   name: string;
@@ -20,8 +21,10 @@ export interface ForumPersonaAuthor {
 }
 
 /**
- * Display data for a page of authors in one query per kind. A user is shown by Passport handle, else wiki name,
- * else Discord name, else "Member": never the forum name (it can be a legacy account name) and never a Clerk id.
+ * Display data for a page of authors in one query per kind. A user is shown by Passport handle, else wiki name (only
+ * while they show wiki attribution, `showWikiAttribution`, read in one batch; a read error counts as off), else
+ * country name, else "Member": never the forum name (it can be a legacy account name) and never a Clerk id. The name
+ * is the same for every viewer, the member included, as the Passport handle is (identity.passport-handle.ts).
  * Null ids (imported content whose XenForo author has no IxStats account, phase 4) are skipped.
  */
 export async function authorsOf(
@@ -34,7 +37,7 @@ export async function authorsOf(
   ];
   const uniqueUsers = present(userIds);
   const uniquePersonas = present(personaIds);
-  const [users, personas] = await Promise.all([
+  const [rows, personas] = await Promise.all([
     uniqueUsers.length
       ? db.user.findMany({
           where: { id: { in: uniqueUsers } },
@@ -54,10 +57,13 @@ export async function authorsOf(
         })
       : [],
   ]);
-  const avatars = await personalAvatars(
-    db,
-    users.map((u) => u.clerkUserId)
-  );
+  const [users, avatars] = await Promise.all([
+    withoutHiddenWikiNames(db, rows),
+    personalAvatars(
+      db,
+      rows.map((u) => u.clerkUserId)
+    ),
+  ]);
   return {
     users: new Map<string, ForumUserAuthor>(
       // Public names only: never the Discord name, which a linked account would otherwise publish.
