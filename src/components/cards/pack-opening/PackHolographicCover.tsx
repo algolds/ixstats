@@ -407,7 +407,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               )}
               <p
                 className={cn(
-                  "text-center font-semibold tracking-wider text-white/40 uppercase",
+                  "text-center font-semibold text-white/40",
                   size === "sm" ? "text-[7px]" : "text-footnote"
                 )}
               >
