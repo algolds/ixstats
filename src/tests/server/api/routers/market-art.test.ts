@@ -1,6 +1,9 @@
 /** @jest-environment node */
 /** A partner's tradeable cards, a trade's sides and past auctions never carry art the viewer may not see. */
 jest.mock("~/server/db", () => ({ db: {} }));
+jest.mock("~/server/modules/identity/identity.passport-handles", () => ({
+  loadPassportHandlesById: jest.fn(),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
@@ -8,6 +11,7 @@ import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
 import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { loadPassportHandlesById } from "~/server/modules/identity/identity.passport-handles";
 
 type MockDb = ReturnType<typeof createMockPrisma>;
 const contextFor = (db: MockDb, signedIn = true) =>
@@ -122,17 +126,25 @@ describe("auctions", () => {
     expect(db.cardAuction.findMany).toHaveBeenCalledTimes(1);
   });
 
-  it("lists only bids on auctions still running, with their faces", async () => {
+  it("lists every running auction the viewer bid on, winning or outbid, with their faces", async () => {
     const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValue([listing("a", "o1", "c1")]);
-    ownership(db, [], [faceRow("o1", "c1")]);
+    db.cardAuction.findMany.mockResolvedValue([
+      { ...listing("a", "o1", "c1"), currentBidderId: "me" },
+      { ...listing("b", "o2", "c2"), currentBidderId: "them" },
+    ]);
+    ownership(db, [], [faceRow("o1", "c1"), faceRow("o2", "c2")]);
     const result = await market(db).getMyActiveBids();
+    // Still running only: an ended auction awaits settlement, and the live rule shows every running listing's art.
     expect(db.cardAuction.findMany.mock.calls[0]![0].where).toEqual({
-      currentBidderId: "me",
+      AuctionBid: { some: { bidderId: "me" } },
       status: "ACTIVE",
       endTime: { gt: expect.any(Date) },
     });
-    expect(result.auctions[0]!.face).toMatchObject({ cardId: "c1", silhouette: false });
+    expect(result.auctions.map((a) => [a.id, a.winning])).toEqual([
+      ["a", true],
+      ["b", false],
+    ]);
+    expect(result.auctions[1]!.face).toMatchObject({ cardId: "c2", silhouette: false });
   });
 
   it("gives the seller their listings' faces under the rule, since an ended listing may await settlement", async () => {
@@ -144,6 +156,24 @@ describe("auctions", () => {
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { ownerId: "me", cardId: { in: ["c1"] } } })
     );
+  });
+});
+
+describe("the player's own copies, for the trade builder", () => {
+  it("draw a hidden (retired) card's placeholder face, never the art a Library hide keeps", async () => {
+    const db = createMockPrisma();
+    const hidden = faceRow("o2", "c2");
+    ownership(
+      db,
+      ["c1", "c2"],
+      [faceRow("o1", "c1"), { ...hidden, cards: { ...hidden.cards, isRetired: true } }],
+      [rawCopy("o1", "c1"), rawCopy("o2", "c2", 50, true)]
+    );
+    const rows = await inventory(db).getMyCards({});
+    expect(rows.map((r) => [r.id, r.cards.artwork, r.cards.artworkCredit])).toEqual([
+      ["o1", "https://art/c1.png", "c1.png, via Commons"],
+      ["o2", null, null],
+    ]);
   });
 });
 
@@ -174,6 +204,59 @@ describe("a partner's tradeable copies", () => {
   });
 });
 
+beforeEach(() => {
+  jest
+    .mocked(loadPassportHandlesById)
+    .mockClear()
+    .mockResolvedValue(
+      new Map([
+        ["them", "ann"],
+        ["me", "max"],
+      ])
+    );
+});
+
+describe("trade parties", () => {
+  const party = (id: string) => ({ id, clerkUserId: `clerk_${id}`, country: null });
+  const offer = (id: string, initiatorId: string, recipientId: string) => ({
+    id,
+    initiator: party(initiatorId),
+    recipient: party(recipientId),
+  });
+
+  it("names both sides of every open and finished trade by passport handle, one batched read a list", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findMany.mockResolvedValue([
+      offer("t1", "them", "me"),
+      offer("t2", "me", "them"),
+    ]);
+    db.tradeOffer.count.mockResolvedValue(2);
+
+    const open = await trading(db).getActiveTrades();
+    expect(open.map((t) => [t.initiator.passportHandle, t.recipient.passportHandle])).toEqual([
+      ["ann", "max"],
+      ["max", "ann"],
+    ]);
+    expect(loadPassportHandlesById).toHaveBeenCalledTimes(1);
+    expect(loadPassportHandlesById).toHaveBeenCalledWith(["them", "me", "me", "them"]);
+
+    const history = await trading(db).getTradeHistory({});
+    expect(history.trades.map((t) => t.recipient.passportHandle)).toEqual(["max", "ann"]);
+    expect(loadPassportHandlesById).toHaveBeenCalledTimes(2);
+    // The stored handle is only the first link of the chain, so it is not read for a trade.
+    expect(db.tradeOffer.findMany.mock.calls[0]![0].include.initiator.select).not.toHaveProperty(
+      "handle"
+    );
+  });
+
+  it("names a player the chain could not read by their Clerk id, the chain's last link", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findMany.mockResolvedValue([offer("t1", "gone", "me")]);
+    const [trade] = await trading(db).getActiveTrades();
+    expect(trade!.initiator.passportHandle).toBe("clerk_gone");
+  });
+});
+
 describe("trade details", () => {
   const pendingOffer = {
     id: "t1",
@@ -185,8 +268,8 @@ describe("trade details", () => {
     recipientCredits: 0,
     status: "PENDING",
     expiresAt: new Date(Date.now() + 60_000),
-    initiator: { id: "them", clerkUserId: "clerk_them", handle: "ann", country: null },
-    recipient: { id: "me", clerkUserId: "clerk_me", handle: "max", country: null },
+    initiator: { id: "them", clerkUserId: "clerk_them", country: null },
+    recipient: { id: "me", clerkUserId: "clerk_me", country: null },
   };
   const trade = (overrides: Partial<typeof pendingOffer> = {}) => ({
     ...pendingOffer,
@@ -210,9 +293,6 @@ describe("trade details", () => {
     db.tradeOffer.count.mockResolvedValue(1);
     ownership(db, ["c2"], faces, sides);
     const result = await trading(db).getTradeById({ tradeId: "t1" });
-    expect(db.tradeOffer.findUnique.mock.calls[0]![0].include.initiator.select).toMatchObject({
-      handle: true,
-    });
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["o1"] } },
       include: { cards: { select: TRADE_CARD_SELECT } },
@@ -230,7 +310,8 @@ describe("trade details", () => {
     expect(result).toMatchObject({
       initiatorValue: 35,
       recipientValue: 12,
-      initiator: { handle: "ann" },
+      initiator: { passportHandle: "ann" },
+      recipient: { passportHandle: "max" },
     });
   });
 

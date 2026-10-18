@@ -13,9 +13,16 @@ jest.mock("~/trpc/react", () => ({
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { tradeCompleted: jest.fn(), error: jest.fn() },
 }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { TradeNegotiation } from "~/components/cards/trading/TradeNegotiation";
+
+const refreshCards = jest.mocked(useCardsRefresh());
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = (cardId: string, title: string, ownershipId: string) => ({
@@ -40,8 +47,8 @@ function trade(overrides: Record<string, string | number | Date | object | null>
     status: "PENDING",
     message: null,
     expiresAt: new Date(Date.now() + 24 * HOUR),
-    initiator: { clerkUserId: "clerk_ann", handle: "ann" },
-    recipient: { clerkUserId: "clerk_max", handle: "max" },
+    initiator: { clerkUserId: "clerk_ann", passportHandle: "ann" },
+    recipient: { clerkUserId: "clerk_max", passportHandle: "max" },
     initiatorFaces: [face("c1", "Caphiria", "o1")],
     recipientFaces: [face("c2", "Urcea", "o2")],
     initiatorCredits: 25,
@@ -94,18 +101,39 @@ describe("TradeNegotiation", () => {
     expect(screen.getByRole("button", { name: "Cancel trade" })).toBeInTheDocument();
   });
 
-  it("opens a partner's copies by their Clerk id, their passport handle, when they have no stored handle", () => {
+  it("names a partner with no stored handle by their passport handle, and opens their copies by it", () => {
     const onOpenCard = show(
-      trade({ status: "ACCEPTED", initiator: { clerkUserId: "clerk_ann", handle: null } }),
+      trade({
+        status: "ACCEPTED",
+        initiator: { clerkUserId: "clerk_ann", passportHandle: "Helvianir" },
+      }),
       true
     );
-    expect(screen.getByRole("heading", { name: "Trade with a player" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Trade with @Helvianir" })).toBeInTheDocument();
     // The offer has ended, so its cards open as the partner's; the player's own need no context.
     fireEvent.click(cardButton("Caphiria"));
-    expect(onOpenCard).toHaveBeenLastCalledWith("c1", { kind: "holder", handle: "clerk_ann" });
+    expect(onOpenCard).toHaveBeenLastCalledWith("c1", { kind: "holder", handle: "Helvianir" });
     fireEvent.click(cardButton("Urcea"));
     expect(onOpenCard).toHaveBeenLastCalledWith("c2", null);
     expect(screen.queryByRole("button", { name: "Accept trade" })).toBeNull();
+  });
+
+  it("reads the cards, the trades and the balance again once an answer or a cancel lands", () => {
+    const options: Array<{ onSuccess: (data: object, variables: { action?: string }) => void }> =
+      [];
+    for (const mutation of [api.trading.respondToTrade, api.trading.cancelTrade]) {
+      jest.mocked(mutation.useMutation).mockImplementation(((opts: (typeof options)[number]) => {
+        options.push(opts);
+        return { mutate: jest.fn(), isPending: false };
+      }) as never);
+    }
+    show(trade(), true);
+    refreshCards.mockClear();
+    const [respond, cancel] = options.slice(-2);
+    respond!.onSuccess({}, { action: "ACCEPT" });
+    expect(refreshCards).toHaveBeenCalledTimes(1);
+    cancel!.onSuccess({}, {});
+    expect(refreshCards).toHaveBeenCalledTimes(2);
   });
 
   it("says when an offer has expired and offers no actions", () => {

@@ -45,7 +45,8 @@ export const cardsInventoryRouter = createTRPCRouter({
         }
 
         const ownerships = await getUserCards(ctx.db, ctx.user.id, input.sortBy, filterRarity);
-        return ownerships;
+        // The raw card follows its face: a hidden (retired) card keeps its artwork in a Library hide, but shows none
+        return blankUnseenArt(ctx.db, ctx.user.id, ownerships);
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in getMyCards:", error);
         if (error instanceof TRPCError) {

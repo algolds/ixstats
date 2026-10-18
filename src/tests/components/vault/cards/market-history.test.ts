@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { mergeMarketHistory } from "~/components/vault/cards/market/market-history";
 
-const party = (clerkUserId: string, handle: string | null) => ({ clerkUserId, handle });
+const party = (clerkUserId: string, passportHandle: string) => ({ clerkUserId, passportHandle });
 
 describe("mergeMarketHistory", () => {
   it("puts trades and auctions in one list, newest first, from the viewer's side", () => {
@@ -58,14 +58,15 @@ describe("mergeMarketHistory", () => {
           updatedAt: new Date(),
           initiatorCardIds: ["o1"],
           recipientCardIds: [],
-          initiator: party("clerk_ann", "ann"),
+          initiator: party("clerk_ann", "Helvianir"),
           recipient: party("clerk_me", "max"),
         },
       ],
       [],
       "clerk_me"
     );
-    expect(entry).toMatchObject({ partnerHandle: "ann", gave: 0, got: 1, label: "Declined" });
+    // A partner with no stored handle is named by the rest of the passport chain.
+    expect(entry).toMatchObject({ partnerHandle: "Helvianir", gave: 0, got: 1, label: "Declined" });
   });
 
   it("names every finished status, and every part in an auction", () => {
@@ -76,7 +77,7 @@ describe("mergeMarketHistory", () => {
       updatedAt: at,
       initiatorCardIds: null,
       recipientCardIds: { not: "a list" },
-      initiator: party("clerk_me", null),
+      initiator: party("clerk_me", "max"),
       recipient: null,
     });
     const auction = (id: string, participation: "sold" | "bid") => ({

@@ -34,11 +34,10 @@ interface OfferListProps {
   tradeIds: readonly string[];
   /** Offers made to the player, rather than ones they sent. */
   incoming: boolean;
-  onRefresh: () => void;
   onOpenCard: OpenCard;
 }
 
-function OfferList({ tradeIds, incoming, onRefresh, onOpenCard }: OfferListProps) {
+function OfferList({ tradeIds, incoming, onOpenCard }: OfferListProps) {
   if (tradeIds.length === 0) {
     return (
       <EmptyState
@@ -51,13 +50,7 @@ function OfferList({ tradeIds, incoming, onRefresh, onOpenCard }: OfferListProps
   return (
     <div className="space-y-4">
       {tradeIds.map((id) => (
-        <TradeNegotiation
-          key={id}
-          tradeId={id}
-          isRecipient={incoming}
-          onRefresh={onRefresh}
-          onOpenCard={onOpenCard}
-        />
+        <TradeNegotiation key={id} tradeId={id} isRecipient={incoming} onOpenCard={onOpenCard} />
       ))}
     </div>
   );
@@ -72,7 +65,6 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
   const trades = active.data ?? [];
   const incoming = trades.filter((t) => t.recipient.clerkUserId === userId).map((t) => t.id);
   const sent = trades.filter((t) => t.initiator.clerkUserId === userId).map((t) => t.id);
-  const refresh = () => void active.refetch();
   const panelPrefix = useId();
   const panelId = (tab: TradesView) => `${panelPrefix}-trades-${tab}`;
 
@@ -103,18 +95,12 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
           <OfferList
             tradeIds={view === "incoming" ? incoming : sent}
             incoming={view === "incoming"}
-            onRefresh={refresh}
             onOpenCard={onOpenCard}
           />
         )}
       </div>
-      <TradeOfferModal
-        open={creating}
-        onClose={() => {
-          setCreating(false);
-          refresh();
-        }}
-      />
+      {/* A sent offer reads the trades again itself (useCardsRefresh). */}
+      <TradeOfferModal open={creating} onClose={() => setCreating(false)} />
     </div>
   );
 }

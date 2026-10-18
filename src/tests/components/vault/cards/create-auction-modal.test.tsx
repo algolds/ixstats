@@ -3,22 +3,20 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({
-      cardMarket: {
-        getActiveAuctions: { invalidate: jest.fn() },
-        getMyActiveAuctions: { invalidate: jest.fn() },
-      },
-      cards: { listMine: { invalidate: jest.fn() } },
-    }),
     cards: { listMine: { useQuery: jest.fn() } },
     cardMarket: { createAuction: { useMutation: jest.fn() } },
   },
 }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
 
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CreateAuctionModal } from "~/components/vault/cards/market/CreateAuctionModal";
 
@@ -44,11 +42,13 @@ const row = (ownershipId: string, serialNumber: number, isLocked = false, isBoun
   isBound,
 });
 
+const refreshCards = jest.mocked(useCardsRefresh());
 type Listed = (result: { message: string }) => void;
 let mutate: jest.Mock;
 let onSuccess: Listed = () => undefined;
 
 beforeEach(() => {
+  refreshCards.mockClear();
   mutate = jest.fn();
   jest.mocked(api.cards.listMine.useQuery).mockReturnValue({
     data: { rows: [row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)] },
@@ -139,13 +139,15 @@ describe("CreateAuctionModal", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it("closes once the copy is listed", () => {
+  it("closes once the copy is listed, and reads the listed copy's places again", () => {
     const onClose = jest.fn();
     render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
     field(/Starting price/, "25");
     fireEvent.click(list());
+    expect(refreshCards).not.toHaveBeenCalled();
     landed("Auction created");
     expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
+    expect(refreshCards).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

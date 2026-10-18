@@ -18,6 +18,7 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { formatDistanceToNow } from "date-fns";
 import { CardFace } from "~/components/cards/face/CardFace";
@@ -32,8 +33,6 @@ interface TradeNegotiationProps {
   tradeId: string;
   /** Is current user the recipient? */
   isRecipient: boolean;
-  /** Refresh callback after action */
-  onRefresh?: () => void;
   /** Opens a card's sheet, with the place that shows its art. */
   onOpenCard?: (cardId: string, from?: SheetFrom | null) => void;
 }
@@ -70,8 +69,8 @@ function sidesOf(trade: TradeTotals, isRecipient: boolean): { give: SideFacts; g
 
 /**
  * Where each side's cards open their sheet. A live offer shows all its art to its recipient (the offer context);
- * otherwise the partner's copies open as theirs (the holder context, by any handle that resolves to them), and the player's
- * own need no context.
+ * otherwise the partner's copies open as theirs (the holder context, by their passport handle), and the player's own
+ * need no context.
  */
 function sheetContexts(
   tradeId: string,
@@ -146,18 +145,15 @@ function TradeSide({
  *
  * @example
  * ```tsx
- * <TradeNegotiation
- *   tradeId="trade_123"
- *   isRecipient={true}
- *   onRefresh={() => refetch()}
- *   onOpenCard={sheet.open}
- * />
+ * <TradeNegotiation tradeId="trade_123" isRecipient={true} onOpenCard={sheet.open} />
  * ```
  */
 export const TradeNegotiation = React.memo<TradeNegotiationProps>(
-  ({ tradeId, isRecipient, onRefresh, onOpenCard }) => {
+  ({ tradeId, isRecipient, onOpenCard }) => {
     // Fetch trade details
     const { data: trade, isLoading } = api.trading.getTradeById.useQuery({ tradeId });
+    // An answer or a cancel moves or frees copies and credits.
+    const refreshCards = useCardsRefresh();
 
     // Respond to trade mutation
     const respondToTrade = api.trading.respondToTrade.useMutation({
@@ -169,7 +165,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
         } else {
           vaultNotify.tradeCompleted("Counter-offer sent");
         }
-        onRefresh?.();
+        refreshCards();
       },
       onError: (error) => {
         vaultNotify.error(error.message || "Failed to respond to trade");
@@ -180,7 +176,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const cancelTrade = api.trading.cancelTrade.useMutation({
       onSuccess: () => {
         vaultNotify.tradeCompleted("Trade cancelled.");
-        onRefresh?.();
+        refreshCards();
       },
       onError: (error) => {
         vaultNotify.error(error.message || "Failed to cancel trade");
@@ -224,12 +220,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     const partner = isRecipient ? trade.initiator : trade.recipient;
     const live = trade.status === "PENDING" && !isExpired;
     const sides = sidesOf(trade, isRecipient);
-    // A partner with no stored handle is named by their Clerk id, which the holder context resolves to them too.
-    const contexts = sheetContexts(
-      tradeId,
-      isRecipient && live,
-      partner.handle ?? partner.clerkUserId
-    );
+    const contexts = sheetContexts(tradeId, isRecipient && live, partner.passportHandle);
     const open = (from: SheetFrom | null) => (face: CardFaceData) =>
       onOpenCard?.(face.cardId, from);
 
@@ -240,7 +231,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             <div>
               <h3 className="text-title-3 text-label flex items-center gap-2 font-semibold">
                 <ArrowRightLeft aria-hidden className="text-blue h-5 w-5" />
-                Trade with {partner.handle ? `@${partner.handle}` : "a player"}
+                Trade with @{partner.passportHandle}
               </h3>
               {trade.message && (
                 <div className="text-body text-label-secondary mt-2 flex items-start gap-2">

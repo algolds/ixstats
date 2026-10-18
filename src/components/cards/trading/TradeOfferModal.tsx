@@ -24,6 +24,8 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { copyValue } from "~/lib/cards/copy-value";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -41,9 +43,16 @@ interface TradeOfferModalProps {
   initialYourCards?: CardInstance[];
 }
 
-/** A tradable copy as the CardInstance the card picker renders (keyed by the ownership id). */
+/**
+ * A tradable copy as the CardInstance the card picker renders (keyed by the ownership id). A hidden (retired) copy is
+ * worth 0, as in the trade's own view and Mine; its art is left out by the server, so it draws the placeholder.
+ */
 export function toCardInstance(ownership: OwnedCard): CardInstance {
-  const card = { ...ownedCardToInstance(ownership), id: ownership.id };
+  const card = {
+    ...ownedCardToInstance(ownership),
+    id: ownership.id,
+    marketValue: ownership.cards.isRetired ? 0 : copyValue(ownership),
+  };
   return { ...card, wikiUrl: cardWikiHref(card) };
 }
 
@@ -110,12 +119,15 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       [theirCardsData]
     );
 
+    // An offer locks the copies it gives, and lists itself under Sent.
+    const refreshCards = useCardsRefresh();
     const createTrade = api.trading.createtradeOffer.useMutation({
       onSuccess: () => {
         vaultNotify.tradeCompleted("Trade offer sent");
+        refreshCards();
         onClose();
       },
-      onError: (error: any) => {
+      onError: (error) => {
         vaultNotify.error(error.message || "Failed to create trade offer");
       },
     });

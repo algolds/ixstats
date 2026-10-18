@@ -2,14 +2,23 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { CardFace } from "~/components/cards/face/CardFace";
+import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { timeLeftPhrase } from "~/lib/cards/face/time-left";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { bidCountLabel, type AuctionRowData } from "./AuctionRow";
+import {
+  BidForm,
+  bidCountLabel,
+  type AuctionRowData,
+  type BidActions,
+  type BidTarget,
+} from "./AuctionRow";
 import { CreateAuctionModal } from "./CreateAuctionModal";
 
 interface MarketSellingProps {
@@ -83,17 +92,42 @@ function OwnListing({
   );
 }
 
-/** Selling: the player's own listings and the auctions they lead. */
+type BidData = BidTarget & Pick<AuctionRowData, "endTime" | "face"> & { winning: boolean };
+
+/** A running auction the player bid on: winning, or outbid, with the form to raise their bid. */
+function BidRow({
+  auction,
+  onOpenCard,
+  ...bidding
+}: BidActions & { auction: BidData; onOpenCard: (cardId: string) => void }) {
+  return (
+    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+      <ListingCard face={auction.face} onOpenCard={onOpenCard} />
+      <div className="space-y-1">
+        <Badge variant={auction.winning ? "success" : "warning"}>
+          {auction.winning ? "Winning" : "Outbid"}
+        </Badge>
+        <p className="text-footnote text-label-secondary tabular-nums">
+          {auction.currentBid.toLocaleString()} IxC · {timeLeftPhrase(auction.endTime)}
+        </p>
+      </div>
+      {!auction.winning && <BidForm auction={auction} verb="Raise bid to" {...bidding} />}
+    </li>
+  );
+}
+
+/** Selling: the player's own listings and the auctions they bid on. */
 export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: MarketSellingProps) {
   const [selling, setSelling] = useState(false);
-  const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const listings = api.cardMarket.getMyActiveAuctions.useQuery();
   const bids = api.cardMarket.getMyActiveBids.useQuery();
+  const { placeBid, executeBuyout, isBidding, isBuyingOut } = useAuctionBid();
   const cancel = api.cardMarket.cancelAuction.useMutation({
     onSuccess: (result) => {
       vaultNotify.success(result.message);
-      void utils.cardMarket.getMyActiveAuctions.invalidate();
-      void utils.cardMarket.getActiveAuctions.invalidate();
+      // The copy leaves the listing, so it is free to sell, trade or show again.
+      refreshCards();
     },
     onError: (error) => vaultNotify.error(error.message),
   });
@@ -140,19 +174,21 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
         {bidding.length === 0 ? (
           <EmptyState
             compact
-            title="No winning bids"
-            message="Auctions where yours is the top bid appear here until they end."
+            title="No bids running"
+            message="Auctions you bid on appear here until they end."
           />
         ) : (
           <Card content="data">
             <ul className="divide-separator divide-y">
               {bidding.map((auction) => (
-                <li key={auction.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <ListingCard face={auction.face} onOpenCard={onOpenCard} />
-                  <p className="text-footnote text-label-secondary tabular-nums">
-                    {auction.currentBid.toLocaleString()} IxC · {timeLeftPhrase(auction.endTime)}
-                  </p>
-                </li>
+                <BidRow
+                  key={auction.id}
+                  auction={auction}
+                  onOpenCard={onOpenCard}
+                  onBid={placeBid}
+                  onBuyout={executeBuyout}
+                  busy={isBidding || isBuyingOut}
+                />
               ))}
             </ul>
           </Card>

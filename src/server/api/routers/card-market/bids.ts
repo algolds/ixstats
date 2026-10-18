@@ -127,17 +127,16 @@ export const cardMarketBidsRouter = createTRPCRouter({
     }),
 
   /**
-   * Get user's active bids
-   * Admin-only endpoint
+   * Every running auction the player has bid on, each marked winning (theirs is the top bid) or outbid
    */
   getMyActiveBids: protectedProcedure.query(async ({ ctx }) => {
     try {
       assertAuthUserId(ctx);
 
-      // Running auctions where the user is the current bidder; an ended one awaits settlement, then shows in history
+      // Running only: an ended one awaits settlement, then shows in history. The live faces below rely on it.
       const auctions = await ctx.db.cardAuction.findMany({
         where: {
-          currentBidderId: ctx.user.id,
+          AuctionBid: { some: { bidderId: ctx.user.id } },
           status: "ACTIVE",
           endTime: { gt: new Date() },
         },
@@ -145,7 +144,13 @@ export const cardMarketBidsRouter = createTRPCRouter({
         orderBy: { endTime: "asc" },
       });
 
-      return { auctions: await withAuctionFaces(ctx.db, ctx.user.id, auctions, true) };
+      const withFaces = await withAuctionFaces(ctx.db, ctx.user.id, auctions, true);
+      return {
+        auctions: withFaces.map((auction) => ({
+          ...auction,
+          winning: auction.currentBidderId === ctx.user.id,
+        })),
+      };
     } catch (error) {
       console.error("[Card Market Router] Error getting user bids:", error);
       if (error instanceof TRPCError) {

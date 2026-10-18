@@ -238,7 +238,11 @@ describe("caller-scoped reads", () => {
     expect(db.cardAuction.findMany).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        where: { currentBidderId: "u1", status: "ACTIVE", endTime: { gt: expect.any(Date) } },
+        where: {
+          AuctionBid: { some: { bidderId: "u1" } },
+          status: "ACTIVE",
+          endTime: { gt: expect.any(Date) },
+        },
       })
     );
   });

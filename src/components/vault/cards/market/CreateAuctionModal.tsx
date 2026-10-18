@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { CardFace } from "~/components/cards/face/CardFace";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import type { MineRow } from "~/lib/cards/hub/mine";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
@@ -106,7 +107,7 @@ export function CreateAuctionModal({
   const [startingPrice, setStartingPrice] = useState("");
   const [buyoutPrice, setBuyoutPrice] = useState("");
   const [duration, setDuration] = useState<Duration>("60");
-  const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const mine = api.cards.listMine.useQuery({ sort: "value", limit: 120 }, { enabled: open });
   const held = mine.data?.rows ?? [];
   const rows = held.filter((row) => !row.isLocked && !row.isBound);
@@ -128,9 +129,8 @@ export function CreateAuctionModal({
   const create = api.cardMarket.createAuction.useMutation({
     onSuccess: (result) => {
       vaultNotify.success(result.message);
-      void utils.cardMarket.getActiveAuctions.invalidate();
-      void utils.cardMarket.getMyActiveAuctions.invalidate();
-      void utils.cards.listMine.invalidate();
+      // The listed copy is locked: Mine, the sheet and the Market show it listed.
+      refreshCards();
     },
     onError: (error) => vaultNotify.error(error.message),
   });
