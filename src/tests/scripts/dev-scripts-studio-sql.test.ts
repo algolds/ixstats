@@ -5,6 +5,8 @@ const SQL = "prisma/migrations/20261023120000_atlas_studio/migration.sql";
 const RUN = `bunx prisma db execute --schema prisma/schema --file ${SQL}`;
 const VAULT_SQL = "prisma/migrations/20261024120000_vault_hub/migration.sql";
 const VAULT_RUN = `bunx prisma db execute --schema prisma/schema --file ${VAULT_SQL}`;
+const DROP_READERS_SQL = "prisma/migrations/20261027120000_drop_forum_readers/migration.sql";
+const DROP_READERS_RUN = `bunx prisma db execute --schema prisma/schema --file ${DROP_READERS_SQL}`;
 
 describe.each([
   ["start-development.sh", "start-development.sh"],
@@ -27,11 +29,20 @@ describe.each([
     expect(push).toBeGreaterThan(vault);
   });
 
+  it("drops forum_readers right after the Vault hub SQL, before the push", () => {
+    const vault = script.indexOf(VAULT_RUN);
+    const drop = script.indexOf(DROP_READERS_RUN);
+    const push = script.indexOf("bun run db:push:force");
+    expect(drop).toBeGreaterThan(vault);
+    expect(push).toBeGreaterThan(drop);
+  });
+
   it("does not go on to the push if the SQL fails", () => {
     const line = script.split("\n").find((l) => l.includes(RUN)) ?? "";
     // Either the script stops on any failure, or the push is chained behind the SQL
     expect(
-      /^set -e/m.test(script) || line.includes(`${SQL} && ${VAULT_RUN} && bun run db:push:force`)
+      /^set -e/m.test(script) ||
+        line.includes(`${SQL} && ${VAULT_RUN} && ${DROP_READERS_RUN} && bun run db:push:force`)
     ).toBe(true);
   });
 });

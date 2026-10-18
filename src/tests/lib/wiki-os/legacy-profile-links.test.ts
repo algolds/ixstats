@@ -43,8 +43,26 @@ describe("currentProfileHref", () => {
   });
 
   it.each([
+    ["/projects/ixstats/thinkpages/profile/jane", "/projects/ixstates/dashboard/profile/jane"],
+    ["/projects/ixstats/thinkpages/u/jane?x=1", "/projects/ixstates/dashboard/profile/jane?x=1"],
+    ["/projects/ixstats/id/@jane/work", "/projects/ixstates/@jane?tab=work"],
+    ["/projects/ixstats/@jane/work#top", "/projects/ixstates/@jane?tab=work#top"],
+    ["/projects/ixstats/@jane", "/projects/ixstates/@jane"],
+    ["/projects/ixstats/@jane?tab=work", "/projects/ixstates/@jane?tab=work"],
+    [
+      "https://ixwiki.com/projects/ixstats/thinkpages/profile/jane",
+      "https://ixwiki.com/projects/ixstates/dashboard/profile/jane",
+    ],
+  ])("moves the old base path: %s to %s", (old, current) => {
+    expect(currentProfileHref(old)).toBe(current);
+  });
+
+  it.each([
     "/@jane",
     "/@jane?tab=work",
+    "/projects/ixstates/@jane",
+    "/projects/ixstats/wiki/Foo",
+    "/projects/ixstatsx/@jane/work",
     "/dashboard/profile/jane",
     "/id/jane",
     "/id/@",

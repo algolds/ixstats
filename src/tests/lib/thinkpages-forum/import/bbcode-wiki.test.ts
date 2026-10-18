@@ -3,10 +3,8 @@ import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { MAX_BBCODE_LENGTH, transformBBCode } from "~/lib/thinkpages-forum/import/bbcode";
 import { importedPostBody } from "~/lib/thinkpages-forum/import/post-html";
 
-/** The importer's options (post-html.ts). */
-const imported = (bbcode: string) =>
-  transformBBCode(bbcode, { forumLinks: "keep", mentions: "text", actionTokens: "keep" })
-    .contentHtml;
+/** The importer's BBCode step (post-html.ts), before it degrades and sanitizes. */
+const imported = (bbcode: string) => transformBBCode(bbcode).contentHtml;
 const stored = (message: string) =>
   importedPostBody({ message, attachments: [], attachmentFor: () => null });
 

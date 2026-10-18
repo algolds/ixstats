@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { factbookSectionHref } from "~/lib/country/factbook-routes";
 import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
 import { IntentDetail } from "./IntentDetail";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
@@ -98,7 +99,11 @@ function DrillSheetsComponent({
             {domainKind && (
               <Button asChild variant="outline" size="sm" className="shrink-0">
                 <Link
-                  href={`/countries/${encodeURIComponent(countryId)}#${domainKind}`}
+                  href={
+                    domainKind === "economy"
+                      ? factbookSectionHref("economy", countryId)
+                      : `/countries/${encodeURIComponent(countryId)}`
+                  }
                   target="_blank"
                 >
                   Open page

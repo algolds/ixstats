@@ -1,51 +1,29 @@
 /** @jest-environment node */
 import { MAX_BBCODE_LENGTH, transformBBCode } from "~/lib/thinkpages-forum/import/bbcode";
 
-const html = (bbcode: string, options?: Parameters<typeof transformBBCode>[1]) =>
-  transformBBCode(bbcode, options).contentHtml;
+const html = (bbcode: string) => transformBBCode(bbcode).contentHtml;
 
 describe("transformBBCode (moved to the import lib)", () => {
-  it("rewrites forum.ixwiki.com links to bridge routes by default, as before", () => {
+  it("keeps forum.ixwiki.com links absolute, as written", () => {
     expect(html("[url=https://forum.ixwiki.com/threads/x.12/]t[/url]")).toBe(
-      '<a href="/forum/thread/12" class="forum-link" rel="noopener">t</a>'
+      '<a href="https://forum.ixwiki.com/threads/x.12/" class="forum-link" rel="noopener">t</a>'
     );
-    expect(html("[url]https://forum.ixwiki.com/forums/f.3/[/url]")).toContain('href="/forum/3"');
-  });
-
-  it("rewrites a XenForo post link to the post route, not a thread (/posts/<id>/ is a post id)", () => {
-    expect(html("[url=https://forum.ixwiki.com/posts/123/]p[/url]")).toBe(
-      '<a href="/forum/post/123" class="forum-link" rel="noopener">p</a>'
-    );
-    expect(html("[url]https://forum.ixwiki.com/posts/123[/url]")).toContain(
-      'href="/forum/post/123"'
-    );
-    expect(
-      html("[url=http://old.forum/posts/9/]p[/url]", { forumBaseUrl: "http://old.forum" })
-    ).toContain('href="/forum/post/9"');
-    expect(html("[url=https://forum.ixwiki.com/threads/x.123/]t[/url]")).toContain(
-      'href="/forum/thread/123"'
+    expect(html("[url]https://forum.ixwiki.com/posts/123/[/url]")).toContain(
+      'href="https://forum.ixwiki.com/posts/123/"'
     );
   });
 
-  it("keeps forum.ixwiki.com links absolute with forumLinks: keep", () => {
-    const out = html("[url=https://forum.ixwiki.com/threads/x.12/]t[/url]", { forumLinks: "keep" });
-    expect(out).toContain('href="https://forum.ixwiki.com/threads/x.12/"');
+  it("renders mentions as plain @name text (XenForo's stored @ is not doubled) and collects them", () => {
+    expect(html("hi [user=7]Name[/user]")).toBe("hi @Name");
+    expect(html("[USER=7]@Name[/USER]")).toBe("@Name");
+    expect(transformBBCode("[user=7]Name[/user] [user=8]Name[/user]").mentionedUsers).toEqual([
+      "Name",
+    ]);
   });
 
-  it("links mentions to the bridge member page by default, as before", () => {
-    expect(html("[user=7]Name[/user]")).toBe(
-      '<a href="/forum/members/7" class="forum-mention">@Name</a>'
-    );
-  });
-
-  it("renders mentions as plain @name text with mentions: text (XenForo's stored @ is not doubled)", () => {
-    expect(html("hi [user=7]Name[/user]", { mentions: "text" })).toBe("hi @Name");
-    expect(html("[USER=7]@Name[/USER]", { mentions: "text" })).toBe("@Name");
-  });
-
-  it("strips [ixaction] tokens by default and keeps them with actionTokens: keep", () => {
-    expect(html("a [ixaction=act1] b")).toBe("a  b");
-    expect(html("a [ixaction=act1] b", { actionTokens: "keep" })).toBe("a [ixaction=act1] b");
+  it("keeps [ixaction] tokens while it strips the other unknown tags", () => {
+    expect(html("a [ixaction=act1] b")).toBe("a [ixaction=act1] b");
+    expect(html("a [zz=act1] b")).toBe("a  b");
   });
 
   it('keeps the attachment placeholder for [attach], [attach=full] and XenForo 2.2\'s [ATTACH type="full"]', () => {

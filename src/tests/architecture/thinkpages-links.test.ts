@@ -39,7 +39,6 @@ const BRIDGE_FILES = [
   "lib/thinkpages-forum/html-urls.ts", // rebases stored root-relative links, old /forum/ ones included
   "app/_components/SetupRedirect.tsx", // lets the legacy redirects through without a nation
   "components/wiki-os/stashes/StashThreadsList.tsx", // legacy forum:thread: stash items open their old path (Q15)
-  "lib/thinkpages-forum/import/bbcode.ts", // the importer's link rewriting for old in-forum links
   "server/modules/thinkpages-forum/import-db.ts", // the importer's lookups
 ];
 /** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
