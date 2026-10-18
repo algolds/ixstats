@@ -9,16 +9,19 @@
  *  - auctionQueries:    active/by-id/history/featured/my-auctions reads
  *  - bids:              place bid, bid history, my active bids, my participation
  *  - analytics:         market trends, value/transfer history, dust, inscribe
+ *  - wishlist:          the player's wishlist
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { cardMarketAuctionManagementRouter } from "./auctionManagement";
 import { cardMarketAuctionQueriesRouter } from "./auctionQueries";
 import { cardMarketBidsRouter } from "./bids";
 import { cardMarketAnalyticsRouter } from "./analytics";
+import { cardMarketWishlistRouter } from "./wishlist";
 
 export const cardMarketRouter = mergeRouters(
   cardMarketAuctionManagementRouter,
   cardMarketAuctionQueriesRouter,
   cardMarketBidsRouter,
-  cardMarketAnalyticsRouter
+  cardMarketAnalyticsRouter,
+  cardMarketWishlistRouter
 );
