@@ -1,28 +1,12 @@
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { TRPCError } from "@trpc/server";
-import { loadCopyValues } from "~/lib/cards/copy-value";
-import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
-import { tradeView } from "~/lib/cards/hub/market-faces";
-import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
+import { getTradeDetails } from "~/server/modules/cards/trading/trade-queries";
 import {
   FINISHED_TRADE_STATUSES,
   TRADE_PARTIES_INCLUDE,
   withPartyName,
   withPartyNames,
 } from "./_shared";
-
-/** What the trade view reads of each card; never the metadata or art credit, which name a hidden card's art. */
-const TRADE_CARD_SELECT = {
-  id: true,
-  title: true,
-  rarity: true,
-  cardType: true,
-  artwork: true,
-  marketValue: true,
-  isRetired: true,
-} satisfies Prisma.CardSelect;
 
 export const tradingQueriesRouter = createTRPCRouter({
   /**
@@ -80,63 +64,12 @@ export const tradingQueriesRouter = createTRPCRouter({
     }),
 
   /**
-   * Get trade details by ID
+   * One trade for one of its parties: both sides' faces, values and inscriptions, the fee preview, whose turn it is,
+   * and both parties named by the identity rule.
    */
   getTradeById: protectedProcedure
     .input(z.object({ tradeId: z.string().min(1) }))
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
-
-      const trade = await ctx.db.tradeOffer.findUnique({
-        where: { id: input.tradeId },
-        include: TRADE_PARTIES_INCLUDE,
-      });
-
-      if (!trade) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Trade not found",
-        });
-      }
-
-      // Verify user is involved in trade
-      if (trade.initiatorId !== userId && trade.recipientId !== userId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized to view this trade",
-        });
-      }
-
-      // Fetch card details for both sides
-      const initiatorIds = copyIdsOf(trade.initiatorCardIds);
-      const recipientIds = copyIdsOf(trade.recipientCardIds);
-      const initiatorCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: initiatorIds } },
-        omit: INSCRIPTION_OMIT,
-        include: { cards: { select: TRADE_CARD_SELECT } },
-      });
-
-      const recipientCards = await ctx.db.cardOwnership.findMany({
-        where: { id: { in: recipientIds } },
-        omit: INSCRIPTION_OMIT,
-        include: { cards: { select: TRADE_CARD_SELECT } },
-      });
-
-      // Each side's copies by the shared per-copy value; a hidden (retired) copy is left out, so it is worth 0, as in
-      // Mine and the card sheet.
-      const values = await loadCopyValues(ctx.db, {
-        ownershipIds: [...initiatorIds, ...recipientIds],
-      });
-      const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
-      const sideValue = (ids: string[]) =>
-        [...new Set(ids)].reduce((sum, id) => sum + (valueOf.get(id) ?? 0), 0);
-      const initiatorValue = sideValue(initiatorIds) + trade.initiatorCredits;
-      const recipientValue = sideValue(recipientIds) + trade.recipientCredits;
-
-      const [named, view] = await Promise.all([
-        withPartyName(trade),
-        tradeView(ctx.db, userId, trade, initiatorCards, recipientCards),
-      ]);
-      return { ...named, ...view, initiatorValue, recipientValue };
-    }),
+    .query(async ({ ctx, input }) =>
+      withPartyName(await getTradeDetails(ctx.db, ctx.user.id, input.tradeId))
+    ),
 });

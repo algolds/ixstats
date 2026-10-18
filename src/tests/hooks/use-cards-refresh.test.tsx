@@ -5,7 +5,6 @@ jest.mock("~/trpc/react", () => {
   const utils = {
     cards: {
       listMine: query(),
-      getMyCards: query(),
       getMyDisplay: query(),
       listMyShowcases: query(),
       getSheet: query(),
@@ -53,7 +52,6 @@ describe("useCardsRefresh", () => {
     result.current();
     expect(refetched()).toEqual([
       "cards.listMine",
-      "cards.getMyCards",
       "cards.getMyDisplay",
       "cards.listMyShowcases",
       "cards.getSheet",

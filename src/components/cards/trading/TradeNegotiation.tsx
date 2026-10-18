@@ -1,7 +1,7 @@
 "use client";
 /**
  * TradeNegotiation Component
- * Active trade negotiation view with accept/decline/counter options
+ * Active trade negotiation view with accept/decline options (counter-offers are the trade builder's)
  * Phase 3: P2P Trading System
  */
 
@@ -44,8 +44,8 @@ interface SideFacts {
 }
 
 interface TradeTotals {
-  initiatorFaces: readonly CardFaceData[];
-  recipientFaces: readonly CardFaceData[];
+  initiatorCopies: ReadonlyArray<{ face: CardFaceData }>;
+  recipientCopies: ReadonlyArray<{ face: CardFaceData }>;
   initiatorCredits: number;
   recipientCredits: number;
   initiatorValue: number;
@@ -55,12 +55,12 @@ interface TradeTotals {
 /** The trade from the player's side: what they give and what they get. */
 function sidesOf(trade: TradeTotals, isRecipient: boolean): { give: SideFacts; get: SideFacts } {
   const initiator = {
-    faces: trade.initiatorFaces,
+    faces: trade.initiatorCopies.map((c) => c.face),
     credits: trade.initiatorCredits,
     value: trade.initiatorValue,
   };
   const recipient = {
-    faces: trade.recipientFaces,
+    faces: trade.recipientCopies.map((c) => c.face),
     credits: trade.recipientCredits,
     value: trade.recipientValue,
   };
@@ -139,7 +139,7 @@ function TradeSide({
  * - Card faces for both sides, each opening its sheet
  * - Credits display
  * - Trade status and expiration
- * - Accept/Decline/Counter buttons
+ * - Accept/Decline buttons
  * - Trade message display
  * - Glass styling
  *
@@ -158,13 +158,9 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
     // Respond to trade mutation
     const respondToTrade = api.trading.respondToTrade.useMutation({
       onSuccess: (data, variables) => {
-        if (variables.action === "ACCEPT") {
-          vaultNotify.tradeCompleted("Trade accepted. Cards exchanged.");
-        } else if (variables.action === "REJECT") {
-          vaultNotify.tradeCompleted("Trade declined.");
-        } else {
-          vaultNotify.tradeCompleted("Counter-offer sent");
-        }
+        vaultNotify.tradeCompleted(
+          variables.action === "ACCEPT" ? "Trade accepted. Cards exchanged." : "Trade declined."
+        );
         refreshCards();
       },
       onError: (error) => {
@@ -262,10 +258,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
               <div className="flex flex-wrap justify-end gap-3">
                 <Button
                   onClick={() =>
-                    respondToTrade.mutate({
-                      tradeId,
-                      action: "REJECT",
-                    })
+                    respondToTrade.mutate({ tradeId, action: "REJECT", revision: trade.revision })
                   }
                   disabled={respondToTrade.isPending}
                   variant="outline"
@@ -276,24 +269,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
                 </Button>
                 <Button
                   onClick={() =>
-                    respondToTrade.mutate({
-                      tradeId,
-                      action: "COUNTER",
-                      // Could add counter-offer logic here
-                    })
-                  }
-                  disabled={respondToTrade.isPending}
-                  variant="outline"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Counter offer
-                </Button>
-                <Button
-                  onClick={() =>
-                    respondToTrade.mutate({
-                      tradeId,
-                      action: "ACCEPT",
-                    })
+                    respondToTrade.mutate({ tradeId, action: "ACCEPT", revision: trade.revision })
                   }
                   disabled={respondToTrade.isPending}
                   className="bg-green/20 hover:bg-green/30"

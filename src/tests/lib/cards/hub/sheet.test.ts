@@ -282,7 +282,7 @@ describe("loadCardSheet", () => {
     expect(playersOf).toHaveBeenCalledWith(["u-a", "me"]);
   });
 
-  it("shows the art inside an offer made to the viewer", async () => {
+  it("shows the art inside an offer waiting on the viewer", async () => {
     const db = setup({ copies: [] });
     db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
     db.cardOwnership.count.mockResolvedValue(1);
@@ -292,7 +292,12 @@ describe("loadCardSheet", () => {
     });
     expect(sheet!.face.silhouette).toBe(false);
     expect(db.tradeOffer.findFirst.mock.calls[0]![0]).toMatchObject({
-      where: { id: "t1", recipientId: "me", status: "PENDING" },
+      where: {
+        id: "t1",
+        status: "PENDING",
+        proposerId: { not: "me" },
+        OR: [{ initiatorId: "me" }, { recipientId: "me" }],
+      },
     });
   });
 

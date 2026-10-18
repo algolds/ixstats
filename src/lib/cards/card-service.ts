@@ -1,71 +1,9 @@
 // src/lib/card-service.ts
 // Card service layer for IxCards Phase 1
 
-import { type Prisma, type PrismaClient } from "@prisma/client";
+import { type PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { type CardRarity } from "./enums";
-import { INSCRIPTION_OMIT } from "./inscription";
 import { mintCopy } from "./mint";
-
-/**
- * Get user's card inventory via CardOwnership. Retired cards stay in it (cards refresh §3): a takedown or a Library
- * hide retires the card, never the owner's copies, which show the placeholder face.
- * @param db - Prisma client instance
- * @param userId - User ID
- * @param sortBy - Sort option
- * @param filterRarity - Optional rarity filter
- * @returns User's cards
- */
-export async function getUserCards(
-  db: PrismaClient,
-  userId: string,
-  sortBy?: "rarity" | "acquired" | "value",
-  filterRarity?: CardRarity
-) {
-  try {
-    if (!userId || userId.trim().length === 0) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "User ID is required",
-      });
-    }
-
-    const where: Prisma.CardOwnershipWhereInput = {
-      ownerId: userId,
-      ...(filterRarity && { cards: { rarity: filterRarity } }),
-    };
-
-    let orderBy: Prisma.CardOwnershipOrderByWithRelationInput[] = [];
-    if (sortBy === "rarity") {
-      orderBy = [{ cards: { rarity: "desc" } }, { cards: { marketValue: "desc" } }];
-    } else if (sortBy === "value") {
-      orderBy = [{ cards: { marketValue: "desc" } }];
-    } else {
-      // Default to acquired date
-      orderBy = [{ acquiredAt: "desc" }];
-    }
-
-    const ownerships = await db.cardOwnership.findMany({
-      where,
-      omit: INSCRIPTION_OMIT,
-      include: {
-        cards: true,
-      },
-      orderBy,
-    });
-
-    return ownerships;
-  } catch (error) {
-    if (error instanceof TRPCError) {
-      throw error;
-    }
-    console.error("[CARD_SERVICE] Error fetching user cards:", error);
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Failed to fetch user cards",
-    });
-  }
-}
 
 /**
  * Mints an achievement's reward card for its new holder: one bound copy per award (cards refresh §2.1), through

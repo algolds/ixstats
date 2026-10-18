@@ -26,7 +26,7 @@ import { notificationAPI } from "~/lib/notifications/api";
 import { claimPendingTradeTx, unlockCardsTx } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { earnCreditsTx } from "~/lib/vault/vault-ledger";
-import { lockVaultsTx } from "~/lib/vault/vault-locks";
+import { lockVaultsTx, vaultsBusyError } from "~/lib/vault/vault-locks";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 import { endListingTx } from "./market/listings";
@@ -473,19 +473,47 @@ export async function voidTrade(
 ): Promise<void> {
   const trade = await db.tradeOffer.findUnique({
     where: { id: input.tradeId },
-    select: { id: true, initiatorId: true, recipientId: true, initiatorCardIds: true },
+    select: {
+      id: true,
+      initiatorId: true,
+      recipientId: true,
+      proposerId: true,
+      revision: true,
+      initiatorCardIds: true,
+      recipientCardIds: true,
+    },
   });
   if (!trade) throw new TRPCError({ code: "NOT_FOUND", message: "Trade not found" });
-  await db.$transaction(async (tx) => {
-    await claimPendingTradeTx(tx, trade.id, "CANCELLED", new Date());
-    await unlockCardsTx(tx, ownershipIds.parse(trade.initiatorCardIds), trade.initiatorId);
-    await recordCardAudit(tx, {
-      action: "CARD_TRADE_VOID",
-      actor: actor.clerkId,
-      target: trade.id,
-      details: `Voided the trade from ${trade.initiatorId} to ${trade.recipientId}. Reason: ${input.reason}`,
+  // The proposer's give side is the locked one; the revision read keeps a counter-offer meanwhile from moving it
+  const locked = ownershipIds.parse(
+    trade.proposerId === trade.initiatorId ? trade.initiatorCardIds : trade.recipientCardIds
+  );
+  await db
+    .$transaction(async (tx) => {
+      await claimPendingTradeTx(tx, {
+        tradeId: trade.id,
+        next: "CANCELLED",
+        now: new Date(),
+        revision: trade.revision,
+      });
+      await unlockCardsTx(tx, locked, trade.proposerId);
+      await recordCardAudit(tx, {
+        action: "CARD_TRADE_VOID",
+        actor: actor.clerkId,
+        target: trade.id,
+        details: `Voided the trade from ${trade.initiatorId} to ${trade.recipientId}. Reason: ${input.reason}`,
+      });
+    })
+    .catch((error: Error) => {
+      // A lost deadlock or write conflict rolled the void back whole, as on every trade path
+      if (vaultsBusyError(error)) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This trade changed at the same moment. Try again.",
+        });
+      }
+      throw error;
     });
-  });
   const message = `An admin voided a trade: ${input.reason}`;
   await refreshAndNotify(db, trade.initiatorId, "Your trade was voided", message);
   await refreshAndNotify(db, trade.recipientId, "A trade offered to you was voided", message);

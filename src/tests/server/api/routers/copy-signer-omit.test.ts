@@ -9,11 +9,12 @@ jest.mock("~/server/modules/identity/identity.player-names", () => ({
   loadPlayerNames: jest.fn(async () => new Map()),
 }));
 jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn(async () => []) }));
+jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
 
 import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
-import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
+import { tradingOffersRouter } from "~/server/api/routers/trading/offers";
 import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -61,12 +62,57 @@ const SIGNED_COPY = {
   inscribedName: "@signer",
 };
 
+/** A pending trade the other player wrote, holding the signed copy, written after it was signed. */
+const TRADE = {
+  id: "t1",
+  initiatorId: "them",
+  recipientId: "me",
+  proposerId: "them",
+  revision: 0,
+  initiatorCardIds: ["o1"],
+  recipientCardIds: ["o1"],
+  initiatorCredits: 0,
+  recipientCredits: 0,
+  status: "PENDING",
+  isCrossRealm: false,
+  expiresAt: new Date(Date.now() + 60_000),
+  updatedAt: new Date("2026-11-02T00:00:00Z"),
+  initiator: { id: "them", clerkUserId: "clerk_them", country: null },
+  recipient: { id: "me", clerkUserId: "clerk_me", country: null },
+};
+
 /** Drops what an `omit` names, as Prisma does. */
 function without<T extends object>(row: T, omit: Omitted | undefined): Partial<T> {
   return Object.fromEntries(Object.entries(row).filter(([key]) => !omit?.[key])) as Partial<T>;
 }
 
-type CopyRead = { select?: object; omit?: Omitted; where?: object };
+/** A `select`: columns named `true`, relations by their own `select`. */
+type Select = Partial<Record<string, boolean | object>>;
+
+/** Keeps only the columns a `select` names, as Prisma does. */
+function picked<T extends object>(row: T, select: Select): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => select[key] === true)
+  ) as Partial<T>;
+}
+
+type CopyRead = { select?: Select; omit?: Omitted; where?: object };
+
+/** Every copy read either selects columns that name no signer, or omits both signer columns. */
+function readsNoSigner(db: MockDb): boolean {
+  return db.cardOwnership.findMany.mock.calls.every(([args]: [CopyRead]) =>
+    args.select
+      ? !("inscribedById" in args.select) && !("inscribedName" in args.select)
+      : args.omit?.inscribedById === true && args.omit.inscribedName === true
+  );
+}
+
+/** Copy reads over one copy row: whole rows come back omitted, `select`s with the columns asked for. */
+function copyReads(db: MockDb, row: typeof SIGNED_COPY) {
+  db.cardOwnership.findMany.mockImplementation(async (args: CopyRead) => [
+    { ...(args.select ? picked(row, args.select) : without(row, args.omit)), cards: CARD },
+  ]);
+}
 /** How a read asks for a related copy: the whole row, an `omit`, or a `select` of some columns. */
 type CopyArg = true | { omit?: Omitted; select?: Partial<Record<string, boolean>> };
 type AuctionRead = {
@@ -84,14 +130,10 @@ function copyAs(arg: CopyArg): Partial<typeof SIGNED_COPY> & { cards: typeof CAR
   return { ...picked, cards: CARD };
 }
 
-/** One database: the signed copy, on an auction, in a trade. Face reads `select`; whole-row reads come back omitted. */
+/** One database: the signed copy, on an auction, in a trade. */
 function signedCopyDb() {
   const db = createMockPrisma();
-  db.cardOwnership.findMany.mockImplementation(async (args: CopyRead) =>
-    args.select
-      ? [{ id: "o1", cardId: "c1", finish: "STANDARD", serialNumber: 3, level: 1, cards: CARD }]
-      : [{ ...without(SIGNED_COPY, args.omit), cards: CARD }]
-  );
+  copyReads(db, SIGNED_COPY);
   db.cardAuction.count.mockResolvedValue(1);
   db.cardAuction.findMany.mockImplementation(async (args: AuctionRead) => {
     const copy = args.include?.CardOwnership ?? args.select?.CardOwnership;
@@ -141,19 +183,7 @@ function signedCopyDb() {
     ];
   });
   db.user.findUnique.mockResolvedValue({ id: "them", clerkUserId: "clerk_them" });
-  db.tradeOffer.findUnique.mockResolvedValue({
-    id: "t1",
-    initiatorId: "them",
-    recipientId: "me",
-    initiatorCardIds: ["o1"],
-    recipientCardIds: ["o1"],
-    initiatorCredits: 0,
-    recipientCredits: 0,
-    status: "PENDING",
-    expiresAt: new Date(Date.now() + 60_000),
-    initiator: { id: "them", clerkUserId: "clerk_them", country: null },
-    recipient: { id: "me", clerkUserId: "clerk_me", country: null },
-  });
+  db.tradeOffer.findUnique.mockResolvedValue(TRADE);
   return db;
 }
 
@@ -187,15 +217,6 @@ describe("whole copy rows a player reads", () => {
         createCallerFactory(cardMarketRouter)(context(db)).getMyAuctionParticipation({ limit: 5 }),
     ],
     [
-      "the player's own copies",
-      (db: MockDb) => createCallerFactory(cardsInventoryRouter)(context(db)).getMyCards({}),
-    ],
-    [
-      "a partner's tradeable copies",
-      (db: MockDb) =>
-        createCallerFactory(cardsInventoryRouter)(context(db)).getUserCards({ userId: "them" }),
-    ],
-    [
       "both sides of a trade",
       (db: MockDb) =>
         createCallerFactory(tradingQueriesRouter)(context(db)).getTradeById({ tradeId: "t1" }),
@@ -204,6 +225,7 @@ describe("whole copy rows a player reads", () => {
     const db = signedCopyDb();
     const result = await read(db);
     expect(namesTheSigner(result)).toBe(false);
+    expect(readsNoSigner(db)).toBe(true);
     // The text travels with the copy: only who signed it is held back
     expect(JSON.stringify(result)).toContain('"inscription":"gg"');
   });
@@ -230,5 +252,36 @@ describe("whole copy rows a player reads", () => {
     expect(namesTheSigner(listings)).toBe(false);
     expect(JSON.stringify(listings)).not.toContain("inscri");
     expect(db.cardListing.findMany.mock.calls[0]![0].select.ownership).toBeUndefined();
+  });
+
+  it("a trade offer, a counter-offer and an accept, which read copies by the columns they check", async () => {
+    const offers = (db: MockDb) => createCallerFactory(tradingOffersRouter)(context(db));
+    // The player's own copy, signed by someone else and free to trade
+    const tradeable = () => {
+      const db = signedCopyDb();
+      copyReads(db, { ...SIGNED_COPY, isLocked: false });
+      db.cardOwnership.updateMany.mockResolvedValue({ count: 1 });
+      db.tradeOffer.create.mockImplementation(async ({ data }: { data: object }) => ({
+        id: "t2",
+        ...data,
+      }));
+      db.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
+      db.tradeOffer.findUniqueOrThrow.mockResolvedValue(TRADE);
+      db.tradeOffer.update.mockResolvedValue({ ...TRADE, status: "ACCEPTED" });
+      return db;
+    };
+    const table = { initiatorCardIds: [], recipientCardIds: ["o1"] };
+    const runs: Array<(db: MockDb) => Promise<object>> = [
+      (db) => offers(db).createtradeOffer({ partnerId: "them", initiatorCardIds: ["o1"] }),
+      (db) => offers(db).counterTrade({ tradeId: "t1", revision: 0, ...table }),
+      (db) => offers(db).respondToTrade({ tradeId: "t1", action: "ACCEPT", revision: 0 }),
+    ];
+    for (const run of runs) {
+      const db = tradeable();
+      const result = await run(db);
+      expect(namesTheSigner(result)).toBe(false);
+      expect(db.cardOwnership.findMany).toHaveBeenCalled();
+      expect(readsNoSigner(db)).toBe(true);
+    }
   });
 });

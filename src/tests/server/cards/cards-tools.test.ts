@@ -29,6 +29,7 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
   LedgerError: class LedgerError extends Error {},
 }));
 
+import { Prisma } from "@prisma/client";
 import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
@@ -672,20 +673,38 @@ describe("adminCancelListing", () => {
 });
 
 describe("voidTrade", () => {
-  it("cancels a pending trade, releases the initiator's locked cards and audits it", async () => {
+  /** A pending trade the initiator wrote: their give side is the locked one. */
+  const pending = {
+    id: "tr_1",
+    initiatorId: "user_1",
+    recipientId: "user_2",
+    proposerId: "user_1",
+    revision: 0,
+    initiatorCardIds: ["own_1", "own_2"],
+    recipientCardIds: ["own_9"],
+  };
+
+  it("cancels a pending trade at the revision read, releases the proposer's locked cards and audits it", async () => {
     const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue({
-      id: "tr_1",
-      initiatorId: "user_1",
-      recipientId: "user_2",
-      initiatorCardIds: ["own_1", "own_2"],
-    });
+    db.tradeOffer.findUnique.mockResolvedValue(pending);
     db.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
 
     await voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" });
 
+    expect(db.tradeOffer.findUnique).toHaveBeenCalledWith({
+      where: { id: "tr_1" },
+      select: {
+        id: true,
+        initiatorId: true,
+        recipientId: true,
+        proposerId: true,
+        revision: true,
+        initiatorCardIds: true,
+        recipientCardIds: true,
+      },
+    });
     expect(db.tradeOffer.updateMany.mock.calls[0]![0]).toMatchObject({
-      where: { id: "tr_1", status: "PENDING" },
+      where: { id: "tr_1", status: "PENDING", revision: 0 },
       data: { status: "CANCELLED" },
     });
     expect(db.cardOwnership.updateMany).toHaveBeenCalledWith({
@@ -700,20 +719,51 @@ describe("voidTrade", () => {
     expect(clearVaultCaches).toHaveBeenCalledWith(expect.objectContaining({ id: "user_2" }));
   });
 
-  it("refuses a trade that is no longer pending, releasing nothing", async () => {
+  it("releases the counterer's cards once a counter-offer made them the proposer", async () => {
     const db = createMockPrisma();
-    db.tradeOffer.findUnique.mockResolvedValue({
-      id: "tr_1",
-      initiatorId: "user_1",
-      recipientId: "user_2",
-      initiatorCardIds: ["own_1"],
+    db.tradeOffer.findUnique.mockResolvedValue({ ...pending, proposerId: "user_2", revision: 3 });
+    db.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
+
+    await voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" });
+
+    expect(db.tradeOffer.updateMany.mock.calls[0]![0].where).toMatchObject({ revision: 3 });
+    expect(db.cardOwnership.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["own_9"] }, ownerId: "user_2" },
+      data: { isLocked: false },
     });
+  });
+
+  it("refuses a trade that is no longer pending, or was countered after it was read, releasing nothing", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findUnique.mockResolvedValue(pending);
     db.tradeOffer.updateMany.mockResolvedValue({ count: 0 });
 
     await expect(
       voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("answers a lost deadlock with a CONFLICT to try again, and passes any other failure through", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findUnique.mockResolvedValue(pending);
+    const deadlock = new Prisma.PrismaClientKnownRequestError("deadlock detected", {
+      code: "P2034",
+      clientVersion: "6",
+    });
+    db.$transaction.mockRejectedValueOnce(deadlock);
+    await expect(
+      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This trade changed at the same moment. Try again.",
+    });
+    const boom = new Error("connection reset");
+    db.$transaction.mockRejectedValueOnce(boom);
+    await expect(
+      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
+    ).rejects.toBe(boom);
+    expect(notificationAPI.create).not.toHaveBeenCalled();
   });
 });
 

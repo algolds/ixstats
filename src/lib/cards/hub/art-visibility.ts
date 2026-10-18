@@ -85,12 +85,16 @@ export function copyIdsOf(value: Prisma.JsonValue): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
-/** An offer shows its cards' art only to its recipient, while it is pending and unexpired (spec §2.3 Discovery). */
+/**
+ * An offer shows its cards' art to the party it waits on (the one who did not write the current table, so either side
+ * after a counter-offer), while it is pending and unexpired (spec §2.3 Discovery).
+ */
 export function liveOfferTo(viewerId: string) {
   return {
-    recipientId: viewerId,
     status: "PENDING",
     expiresAt: { gt: new Date() },
+    proposerId: { not: viewerId },
+    OR: [{ initiatorId: viewerId }, { recipientId: viewerId }],
   } satisfies Prisma.TradeOfferWhereInput;
 }
 

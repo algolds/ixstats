@@ -1,6 +1,4 @@
 import type { TradeOfferStatus } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
-import type { getVaultConfig } from "~/lib/vault/vault-service";
 import { loadPlayerNames, type PlayerName } from "~/server/modules/identity/identity.player-names";
 
 const PARTY_SELECT = {
@@ -63,19 +61,3 @@ export const FINISHED_TRADE_STATUSES: TradeOfferStatus[] = [
   "CANCELLED",
   "EXPIRED",
 ];
-
-/** Trading is closed while the vault is in maintenance or P2P trading is switched off. */
-export function assertTradingOpen(config: Awaited<ReturnType<typeof getVaultConfig>>) {
-  if (config.isMaintenanceMode) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Vault economy is currently in maintenance mode.",
-    });
-  }
-  if (!config.isTradingEnabled) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "P2P card trading is currently disabled globally.",
-    });
-  }
-}
