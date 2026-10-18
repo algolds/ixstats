@@ -98,8 +98,8 @@ async function importedStore() {
     countryId: "c",
   });
   tables.stashItems.push(
-    stashed("i-100", "s-1", thread.id),
-    stashed("i-103", "s-2", importedThread(tables, 103).id),
+    stashed("i-100", "s-1", String(thread.id)),
+    stashed("i-103", "s-2", String(importedThread(tables, 103).id)),
     stashed("i-native", "s-1", "t-native")
   );
   return store;

@@ -18,6 +18,7 @@ function preview(over: Partial<ForumFeedPreview> = {}): ForumFeedPreview {
       avatarUrl: null,
       flagUrl: "https://flags.example/eurth.png",
       persona: false,
+      personaType: null,
     },
     board: { name: "General", href: "/thinkpages/c/general" },
     realm: null,
@@ -87,7 +88,13 @@ describe("ForumFeedCard", () => {
 
   it("shows a persona by name and initials, with no flag", () => {
     const { container } = card({
-      author: { name: "Eurth Daily", avatarUrl: null, flagUrl: null, persona: true },
+      author: {
+        name: "Eurth Daily",
+        avatarUrl: null,
+        flagUrl: null,
+        persona: true,
+        personaType: "media",
+      },
     });
     expect(screen.getByText("Eurth Daily")).toBeInTheDocument();
     expect(screen.getByText("ED")).toBeInTheDocument();

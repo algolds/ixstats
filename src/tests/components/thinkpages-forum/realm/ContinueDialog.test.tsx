@@ -61,7 +61,14 @@ const persona = boardMessage({
   id: "p7",
   authorUserId: null,
   authorPersonaId: "ps1",
-  author: { name: "Aria Vell", handle: "aria", avatarUrl: null, flagUrl: null, persona: true },
+  author: {
+    name: "Aria Vell",
+    handle: "aria",
+    avatarUrl: null,
+    flagUrl: null,
+    persona: true,
+    personaType: "citizen",
+  },
 });
 
 function open(message = boardMessage()) {

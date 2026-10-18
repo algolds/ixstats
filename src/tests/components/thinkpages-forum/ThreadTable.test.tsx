@@ -23,7 +23,12 @@ const authors = {
     u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: "/flags/hidden.png" },
   },
   personas: {
-    pa: { displayName: "Aria Vance", username: "aria", avatarUrl: "/avatars/aria.png" },
+    pa: {
+      displayName: "Aria Vance",
+      username: "aria",
+      avatarUrl: "/avatars/aria.png",
+      personaType: "citizen",
+    },
   },
 } as ForumAuthors;
 

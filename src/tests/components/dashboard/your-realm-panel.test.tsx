@@ -67,6 +67,7 @@ const message = (
     avatarUrl: null,
     flagUrl: persona ? null : "https://flags.example/e.png",
     persona,
+    personaType: persona ? "media" : null,
   },
   excerpt,
   createdAt: new Date(Date.now() - 60_000),

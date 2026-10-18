@@ -191,7 +191,14 @@ describe("advert rows on the board", () => {
       users: {
         u1: { name: "Kir", handle: "kir", avatarUrl: "/kir.png", flagUrl: "/flags/kir.png" },
       },
-      personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: "/aria.png" } },
+      personas: {
+        pa: {
+          displayName: "Aria Vance",
+          username: "aria",
+          avatarUrl: "/aria.png",
+          personaType: "citizen",
+        },
+      },
     } as ForumAuthors;
     render(
       <ThreadTable

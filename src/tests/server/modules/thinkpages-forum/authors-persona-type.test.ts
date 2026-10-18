@@ -26,9 +26,9 @@ describe("authorsOf persona types", () => {
       { id: "p", accountType: "personal" },
     ]);
     const out = await authorsOf(store as never, [], ["g", "p"]);
-    const select = (store.thinkpagesAccount.findMany.mock.calls[0] as [{ select: object }])[0]
-      .select;
-    expect(select).toMatchObject({ accountType: true });
+    expect(store.thinkpagesAccount.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ select: expect.objectContaining({ accountType: true }) })
+    );
     expect(out.personas.get("g")?.personaType).toBe("government");
     expect(out.personas.get("p")?.personaType).toBeNull();
   });

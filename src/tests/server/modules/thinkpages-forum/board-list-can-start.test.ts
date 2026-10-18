@@ -1,13 +1,6 @@
 /** @jest-environment node */
-import { forumStore } from "~/tests/helpers/forum-store-fake";
-import {
-  admin,
-  categories,
-  member,
-  seed,
-  site,
-  type Row,
-} from "~/tests/helpers/forum-mod-fixtures";
+import { forumStore, type Row } from "~/tests/helpers/forum-store-fake";
+import { admin, categories, member, seed, site } from "~/tests/helpers/forum-mod-fixtures";
 import { listBoards } from "~/server/modules/thinkpages-forum/board-list";
 
 /** The fake store has no `groupBy`; the counts are not under test, so every board reports none. */

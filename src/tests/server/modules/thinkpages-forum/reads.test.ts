@@ -92,6 +92,7 @@ interface AuthorAccountRow {
   displayName?: string;
   username?: string;
   profileImageUrl?: string | null;
+  accountType?: string;
 }
 
 function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
