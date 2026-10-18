@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 jest.mock("next/navigation", () => ({ useSearchParams: jest.fn() }));
 
 import { useSearchParams } from "next/navigation";
-import { useCardSheet } from "~/hooks/useCardSheet";
+import { useCardSheet, useCardSheetOpen } from "~/hooks/useCardSheet";
 
 const withParams = (query: string) =>
   jest.mocked(useSearchParams).mockReturnValue(new URLSearchParams(query) as never);
@@ -198,5 +198,16 @@ describe("useCardSheet", () => {
     const { result } = renderHook(() => useCardSheet());
     act(() => result.current.close());
     expect(pushState).toHaveBeenLastCalledWith(null, "", "/vault/cards/explore");
+  });
+});
+
+describe("useCardSheetOpen", () => {
+  it.each([
+    ["card=c1&from=offer.t1", true],
+    ["realm=r1", false],
+    ["card=", false],
+  ])("for ?%s is %s", (query, open) => {
+    withParams(query);
+    expect(renderHook(() => useCardSheetOpen()).result.current).toBe(open);
   });
 });

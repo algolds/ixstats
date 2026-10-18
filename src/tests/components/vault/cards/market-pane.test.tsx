@@ -138,6 +138,17 @@ describe("MarketPane", () => {
     expect(screen.queryByText(/Success rate/i)).toBeNull();
   });
 
+  // At 320px the four tabs are wider than the page: the row scrolls inside itself, so the page never pans sideways.
+  it("scrolls its tab row in its own track, drawing each focus ring inside the clip", () => {
+    renderPane("browse");
+    const list = screen.getByRole("tablist", { name: "Market" });
+    expect(list).toHaveClass("overflow-x-auto", "hide-scrollbar");
+    for (const tab of within(list).getAllByRole("tab")) {
+      expect(tab).toHaveClass("focus-visible:-outline-offset-2");
+      expect(tab).not.toHaveClass("focus-visible:outline-offset-2");
+    }
+  });
+
   it("browses live auctions as faces, ending soon first, and bids", () => {
     const placeBid = jest.fn();
     jest.mocked(useAuctionBid).mockReturnValue({

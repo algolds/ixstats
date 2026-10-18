@@ -113,3 +113,8 @@ export function useCardSheet(): {
 
   return { cardId, from, open, close };
 }
+
+/** Whether the address holds an open card sheet (`?card=`), for anything that should wait rather than cover it. */
+export function useCardSheetOpen(): boolean {
+  return Boolean(useSearchParams()?.get("card"));
+}

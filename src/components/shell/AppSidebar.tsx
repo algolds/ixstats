@@ -312,7 +312,9 @@ export function AppSidebar({
         className
       )}
     >
-      <FacetMaterial data-slot="app-sidebar-panel" className="flex min-h-0 flex-1 flex-col">
+      {/* min-w-0: the panel keeps to its column, so a row wider than it (the claimable daily reward with its
+          streak) truncates instead of widening the panel over the page's left edge. */}
+      <FacetMaterial data-slot="app-sidebar-panel" className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="sidebar-collapsed:hidden min-h-0 flex-1 overflow-y-auto px-2 pt-2 pb-2">
           <SourceList {...list} variant="sidebar" />
         </div>
