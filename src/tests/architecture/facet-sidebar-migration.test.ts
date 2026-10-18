@@ -27,7 +27,6 @@ describe("per-app sidebars are migrated to the source list", () => {
     }
     for (const p of [
       "src/app/vault/layout.tsx",
-      "src/app/achievements/page.tsx",
       "src/app/leaderboards/page.tsx",
       "src/app/thinktanks/layout.tsx",
     ]) {

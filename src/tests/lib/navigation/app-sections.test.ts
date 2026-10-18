@@ -256,20 +256,13 @@ describe("Vault app", () => {
       "/vault/ns-deck",
       "/vault/import",
     ]);
-    expect(matches.store).toEqual([
-      "/vault/marketplace",
-      "/vault/market",
-      "/vault/packs",
-      "/vault/trading",
-    ]);
+    expect(matches.store).toBeUndefined();
   });
 
   it.each([
     ["/vault/collections", "cards"],
     ["/vault/import", "cards"],
-    ["/vault/marketplace", "store"],
-    ["/vault/market", "store"],
-    ["/vault/packs", "store"],
+    ["/vault/store", "store"],
     ["/vault/achievements", "achievements"],
     ["/vault/achievements/anything", "achievements"],
     ["/leaderboards", "leaderboards"],
@@ -341,9 +334,7 @@ describe("app section map resolvers", () => {
     const mycountry = getApp("mycountry");
     expect(getActiveSectionId(mycountry, "/mycountry", null)).toBe("overview");
     expect(getActiveSectionId(mycountry, "/mycountry/economy", null)).toBe("economy");
-    expect(getActiveSectionId(mycountry, "/mycountry/builder", null)).toBeUndefined();
     const vault = getApp("vault");
-    expect(getActiveSectionId(vault, "/vault/trading", null)).toBe("store");
     expect(getActiveSectionId(vault, "/vault/inventory", null)).toBe("cards");
   });
 

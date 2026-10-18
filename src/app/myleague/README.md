@@ -16,7 +16,6 @@ The route tree is wrapped in `AuthenticationGuard` (`layout.tsx`), so a signed-i
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `/myleague`                        | Lobby — featured league hero, sport/status filters, search, "Create League" wizard                                                  |
 | `/myleague/[id]`                   | League workspace — tabbed SPA (overview, standings, schedule, bracket/races, draft, teams, history) with inline simulation controls |
-| `/myleague/[id]/season/[seasonId]` | Season detail — final standings, schedule, bracket/races for one historical season                                                  |
 
 The workspace is a single page; tabs sync to a `?tab=` query param via `pushState` + a `popstate`
 listener (no Next.js route transitions). Sub-route segments for standings/bracket/etc. do **not**
@@ -55,7 +54,7 @@ Boxing (`bracket`) exposes a **Bracket** tab; F1 (`circuit`) exposes a **Race Re
 - **Bracket / Race Results** — weight-class brackets for boxing, driver/race grids for F1.
 - **Teams directory** — all teams with Managed/Unclaimed filters; clicking a team opens it in the
   Sports Focus panel (`useSportsFocus().focusOrganization`, URL `?focus=organization:<id>`).
-- **History** — league archive (`LeagueArchiveTab`) with champions and all-time records, linking to the season-detail route.
+- **History** — league archive (`LeagueArchiveTab`) with champions and all-time records.
 - **Match detail** — `MatchDetailModal` / `MatchCenter` open from any result for box-score, commentary, and analysis.
 - **Settings** — `LeagueSettingsModal` with Branding, Competition (incl. promotion/relegation counts), and Advanced tabs.
 

@@ -202,7 +202,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 | Selection capsule | Context menu on text selection with Highlight, Discuss, and Stash actions |
 | Gutter pins | Margin indicators showing discussions and annotations next to headings and paragraphs |
 | Hold-to-resolve | Hold action button to resolve discussions or record consensus |
-| Legacy route bridge | Navigating to `/wiki/<title>/talk` redirects to the talk page `/wiki/Talk:<title>` (unless a page named `<title>/talk` exists); `/wiki/<title>?margin=threads` still opens Margin on the subject page |
+| Margin deep link | `/wiki/<title>?margin=threads` opens Margin on the subject page; the talk page is `/wiki/Talk:<title>` |
 
 ### Stash (Collections)
 

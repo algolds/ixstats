@@ -14,9 +14,8 @@ standalone `/leaderboards` page, the Vault sidebar's Leaderboards row. See `docs
 | `/vault/achievements`          | Standing card + tabs (`AchievementsTabs`)                                                  |
 | `/vault/achievements?tab=<id>` | `all` (default, bare path), `lorewards`, `showcase`, `leaderboard`                         |
 | `/vault/achievements?a=<key>`  | Opens that achievement in All: its series card shows the tier and scrolls into view        |
-| `/achievements`                | Redirect to `/vault/achievements`, query kept                                              |
 | `/leaderboards`                | Nation boards (`CountryLeaderboards`)                                                      |
-| `/util/lorewards`              | Lorewards in WikiOS: today's race, standings, recent winners (`/wiki/lorewards` redirects) |
+| `/util/lorewards`              | Lorewards in WikiOS: today's race, standings, recent winners                               |
 
 ## Tabs
 

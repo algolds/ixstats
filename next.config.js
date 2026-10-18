@@ -233,7 +233,7 @@ const config = {
             // Map root-level slugs to countries/[slug] for standalone mode
             // Exclude all top-level app routes so existing pages are not intercepted
             source:
-              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|images|leaderboards|maps|messages|myclub|mycountry|myleague|placeholder|profile|settings|setup|sign-in|sign-up|sounds|stashes|studio|thinkpages|vault|w|wiki|_next).*)",
+              "/:slug((?!admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|images|leaderboards|maps|messages|myclub|mycountry|myleague|placeholder|settings|setup|sign-in|sign-up|sounds|stashes|studio|thinkpages|vault|w|wiki|_next).*)",
             destination: "/countries/:slug",
           },
         ],

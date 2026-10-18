@@ -607,25 +607,6 @@ export const helpSections: HelpSection[] = [
   },
 ];
 
-/**
- * Articles that were removed or merged, and where their readers go now. The article route
- * redirects these paths so old links keep working.
- */
-export const retiredHelpArticles: Record<string, string> = {
-  "diplomacy/missions": "/help/diplomacy/embassies",
-  "defense/overview": "/help/mycountry/defense",
-  "defense/units": "/help/mycountry/defense",
-  "defense/customization": "/help/mycountry/defense",
-  "defense/crisis-events": "/help/gameplay/world-events",
-  "intelligence/alerts": "/help/mycountry/intelligence",
-  "intelligence/dashboard": "/help/mycountry/intelligence",
-  "intelligence/executive-operations": "/help/mycountry/intelligence",
-  "intelligence/forecasting": "/help/mycountry/intelligence",
-  "intelligence/metrics": "/help/mycountry/intelligence",
-  "intelligence/strategic-intelligence": "/help/mycountry/intelligence",
-  "intelligence/unified-overview": "/help/mycountry/intelligence",
-};
-
 /** Case-insensitive match on title, description, tags and section title. */
 export function filterHelpSections(
   sections: HelpSection[],

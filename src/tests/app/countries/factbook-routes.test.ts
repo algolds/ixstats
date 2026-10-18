@@ -4,7 +4,6 @@ import {
   isFactbookSection,
   sectionFromPathname,
   factbookSectionHref,
-  hashToFactbookRoute,
 } from "~/lib/country/factbook-routes";
 
 describe("Factbook Routing Utilities", () => {
@@ -38,13 +37,5 @@ describe("Factbook Routing Utilities", () => {
     expect(factbookSectionHref("overview", "acme")).toBe("/countries/acme");
     expect(factbookSectionHref("economy", "acme")).toBe("/countries/acme/factbook/economy");
     expect(factbookSectionHref("labor", "acme")).toBe("/countries/acme/factbook/labor");
-  });
-
-  it("maps legacy hash fragments to nested routes", () => {
-    expect(hashToFactbookRoute("#overview")).toBe("");
-    expect(hashToFactbookRoute("#economy")).toBe("/factbook/economy");
-    expect(hashToFactbookRoute("#dossier")).toBe("/dossier");
-    expect(hashToFactbookRoute("#activity")).toBe("/activity");
-    expect(hashToFactbookRoute("#unknown")).toBe("");
   });
 });

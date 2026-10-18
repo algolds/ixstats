@@ -9,9 +9,9 @@ import { sectionFromPathname } from "~/lib/country/factbook-routes";
 
 /**
  * FactbookLayout: persistent shell for the Factbook's section routes (`/factbook/economy`,
- * `/factbook/labor`, ...). The Factbook overview is the country's own URL (`/countries/[slug]`);
- * `/factbook` itself redirects there. Wraps the section page in `FactbookMetricsProvider` (state
- * persists across navigations), renders the inner section pills (Tier 2) and the shared modals.
+ * `/factbook/labor`, ...). The Factbook overview is the country's own URL (`/countries/[slug]`).
+ * Wraps the section page in `FactbookMetricsProvider` (state persists across navigations),
+ * renders the inner section pills (Tier 2) and the shared modals.
  */
 export default function FactbookLayout({
   children,

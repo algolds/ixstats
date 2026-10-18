@@ -6,7 +6,7 @@
  * user; country achievements evaluate against the user's active country when they have one.
  *
  * Evaluation runs:
- *   - on `/achievements` visits (`achievements.syncMyCollectorAchievements`),
+ *   - on `/vault/achievements` visits (`achievements.syncMyCollectorAchievements`),
  *   - in the background, from `queueAchievementCheck()` calls at event sites and the
  *     event bus, drained by the worker below (`queue.ts`),
  *   - from the `achievements-evaluate` cron job for recently active users.

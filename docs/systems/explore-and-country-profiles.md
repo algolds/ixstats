@@ -1,38 +1,29 @@
 # Explore and Country Profiles
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-17
 **Status:** Live and public: signed-out visitors can browse every directory and profile.
-**Routes:** `/countries` · `/explore` · `/explore/collections` · `/countries/[slug]` and its `factbook/**`, `dossier`,
+**Routes:** `/countries` · `/explore/collections` · `/countries/[slug]` and its `factbook/**`, `dossier`,
 `activity` and `modeling` sub-routes
 **Code:** `src/app/countries/`, `src/app/explore/`, `src/components/country-profile/`,
 `src/server/api/routers/countries/` (`list.ts`, `economy.ts`, `public-record.ts`), `src/lib/country/public-record.ts`
 **Detailed route and component map:** [`src/app/countries/README.md`](../../src/app/countries/README.md)
 
-Players find other nations in two country directories and read them on the country profile. This page covers what
-each directory does, where profile data comes from, and what the server hides from visitors.
+Players find other nations in their realm's directory and read them on the country profile. This page covers the
+directory, where profile data comes from, and what the server hides from visitors.
 
 ---
 
 ## 1. Directories
 
-Both directories call `countries.getAll` (`cachedPublicProcedure`, realm-aware cache) with `limit: 1000` and filter in
-the browser. `getAll` always excludes `isDemo` countries and is scoped to one realm (`realmWhere`):
+The nation directory is each realm's **Nations** tab (`/r/<realm>/nations`, `src/app/r/[realm]/(region)/nations/`).
+`/countries` redirects there (`src/app/countries/page.tsx`): `?realm=<slug>` to that realm's, otherwise to the viewer's
+active nation's realm, or Ixnay when signed out or without a nation. The Nations tab calls `countries.getAll`
+(`cachedPublicProcedure`, realm-aware cache) and filters in the browser. `getAll` always excludes `isDemo` countries
+and is scoped to one realm (`realmWhere`):
 
 - `?realm=<slug>` lists that realm;
 - with no `realm`, it uses the realm of the viewer's active nation, or Ixnay when signed out;
 - `realm: "*"` (`ALL_REALMS`) returns every realm for site admins; anyone else gets their own realm.
-
-| | `/countries` | `/explore` |
-| :--- | :--- | :--- |
-| Page | `src/app/countries/page.tsx` → `CountriesPageModular` | `src/app/explore/page.tsx` |
-| Sidebar entry | Realms → Countries | Realms → Explore |
-| Realm | Reads `?realm=` and passes it on | Never passes `realm` (viewer's realm only) |
-| Search | Name, tier, continent, region | Name, continent, region |
-| Filters | Continent, economic tier | Economic tier, continent, region (once a continent is chosen), population range |
-| Order | Shuffled with a per-visit seed | Sort by name, population, GDP per capita, total GDP, economic tier, continent, region, land area or population density, ascending or descending |
-| Paging | All results | 9 per page |
-| Compare | No | **Compare** opens `CountryComparisonModal` (up to 8 countries, `countries.getByIdAtTime`) |
-| Header | Directory header | "Explore countries" with filtered population and combined GDP |
 
 `/explore/collections` is a different thing: the public Vault card collection gallery (`CollectionGallery`,
 `vault.getPublicCollections` and `vault.getCollectionLeaderboard`). It has search, sorting by newest, most valuable,
@@ -42,11 +33,10 @@ most cards or top rated, and a leaderboard.
 
 `/countries/[slug]` is the **Factbook** tab, which opens on its overview: the hero, key facts and domain tiles of the
 Command view (`CommandProfileView`). The former Profile tab was merged into the Factbook; the other Factbook sections
-(Economy, Labor, Government, Geography) follow as section pills at `/countries/[slug]/factbook/<section>`, and
-`/countries/[slug]/factbook` redirects to `/countries/[slug]`. The `(profile)/layout.tsx` shell loads the country
-through `CountryDataProvider` and shows the breadcrumb and the **Country Actions** menu on every profile route, inside
-the app's standard page column (`max-w-6xl`, `p-4 md:p-8`). Tabs: Factbook (Overview, Economy, Labor, Government,
-Geography), Dossier and Activity. `/countries/[slug]/modeling` is the economic modeling engine.
+(Economy, Labor, Government, Geography) follow as section pills at `/countries/[slug]/factbook/<section>`. The
+`(profile)/layout.tsx` shell loads the country through `CountryDataProvider` and shows the breadcrumb and the
+**Country Actions** menu on every profile route, inside the app's standard page column (`max-w-6xl`, `p-4 md:p-8`).
+Tabs: Factbook (Overview, Economy, Labor, Government, Geography), Dossier and Activity. `/countries/[slug]/modeling` is the economic modeling engine.
 
 The README linked above lists every tile and its data source. In summary:
 
@@ -107,8 +97,6 @@ None. Profiles read live data; country figures change through the economy jobs d
 
 ## 6. Known gaps
 
-- Two directories do overlapping work with different features. `/explore` cannot show another realm, and
-  `/countries` cannot sort or compare.
 - Native canvas lore lives in one browser only. It is not synced, other viewers never see it, and anyone can add
   documents to any country's dossier in their own browser. The Public / Alliance / Private clearance on a document is
   saved but not enforced: the profile always passes `viewerClearanceLevel="PUBLIC"`, and native documents are not

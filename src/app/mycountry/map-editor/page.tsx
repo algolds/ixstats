@@ -34,11 +34,7 @@ export default function MyCountryMapEditorPage() {
   const countryId = userProfile?.countryId ?? undefined;
 
   const redirectTo =
-    isLoaded && !user
-      ? "/sign-in"
-      : isLoaded && !profileLoading && !countryId
-        ? "/mycountry/builder"
-        : null;
+    isLoaded && !user ? "/sign-in" : isLoaded && !profileLoading && !countryId ? "/builder" : null;
 
   useEffect(() => {
     if (redirectTo) router.replace(redirectTo);

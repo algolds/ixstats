@@ -10,7 +10,7 @@ nextLabel: How the World Moves
 
 ## What Explore is
 
-The sidebar's **Explore** opens the [realm directory](/realms), where you find, search and join realms. A realm's nations are on its **Nations** tab; **My realm** opens yours. The old `/explore` and `/countries` addresses open it too. See [Exploring Countries](/help/world/countries) for the card grid, its search and filters, and claiming a nation.
+The sidebar's **Explore** opens the [realm directory](/realms), where you find, search and join realms. A realm's nations are on its **Nations** tab; **My realm** opens yours. The old `/countries` address opens it too. See [Exploring Countries](/help/world/countries) for the card grid, its search and filters, and claiming a nation.
 
 ## Comparing nations
 

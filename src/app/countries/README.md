@@ -9,8 +9,7 @@ Public, read-only nation profiles. Anyone (signed in or not) can open a country'
 | Route | File | Purpose |
 | --- | --- | --- |
 | `/countries` | `page.tsx` | Redirect only: the nation list is the realm's Nations tab (`/r/<realm>/nations`); `?realm=` names the realm, else the viewer's |
-| `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The Factbook tab, opening on its overview (`CommandProfileView`); legacy hash links (`#economy`, `#dossier`, …) move to their routes |
-| `/countries/[slug]/factbook` | `[slug]/(profile)/factbook/page.tsx` | Redirects to `/countries/[slug]` (the old Factbook index; the overview now lives at the country's URL) |
+| `/countries/[slug]` | `[slug]/(profile)/page.tsx` | The Factbook tab, opening on its overview (`CommandProfileView`) |
 | `/countries/[slug]/factbook/economy` | `[slug]/(profile)/factbook/economy/page.tsx` | Factbook economy indicators & charts |
 | `/countries/[slug]/factbook/labor` | `[slug]/(profile)/factbook/labor/page.tsx` | Factbook labor force & employment statistics |
 | `/countries/[slug]/factbook/government` | `[slug]/(profile)/factbook/government/page.tsx` | Factbook governance structure & macro spending (allocations are owner-only) |
@@ -26,15 +25,13 @@ Public, read-only nation profiles. Anyone (signed in or not) can open a country'
 The profile shell (`(profile)/layout.tsx`) loads the country (`CountryDataProvider`), shows the breadcrumb and the Country Actions button on every route, and shares the country, flag, ownership and cover banner with the routes below through `ProfileShellProvider` (`_components/ProfileShellContext.tsx`). It reads the active child segment (`useSelectedLayoutSegment`):
 
 - **Factbook overview** (`/countries/[slug]`, segment `null`): the page renders `CommandProfileView`, which brings its own hero and tabs. It has no section pills: the dock navigates the page and the tiles link to the sections.
-- **Deep-dives** (`/factbook/<section>`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook sections keep the section pills (`factbook/layout.tsx`) and run full width. `/factbook` itself redirects to `/countries/[slug]`.
+- **Deep-dives** (`/factbook/<section>`, `/dossier`, `/activity`): the layout renders `CountryHeader` (the same `CountryHero`, from the country record) and `CountryTabs`, then the route's own page. The Factbook sections keep the section pills (`factbook/layout.tsx`) and run full width.
 
 Every state of the shell (loading, error, loaded) sits in the app's standard page column, `mx-auto w-full max-w-6xl p-4 md:p-8` (`PAGE_CONTAINER` in `(profile)/layout.tsx`), so the page's left edge lines up with the rest of the app at every breakpoint and sidebar state.
 
 Navigation has two tiers:
 1. **Tier 1 (`CountryTabs.tsx`, `COUNTRY_TABS`):** `Factbook` (`/countries/[slug]`, also current on every `/factbook/<section>`), `Dossier` (`/dossier`), `Activity` (`/activity`): real links styled as a Facet segmented control.
 2. **Tier 2 (Factbook sections, `FactbookSectionNav.tsx` over `MyCountryTabsList.tsx`):** `Overview` (`/countries/[slug]`), `Economy`, `Labor`, `Government`, `Geography` (`/factbook/<section>`).
-
-Legacy hash links on the bare country URL (`#economy`, `#labor`, `#dossier`, `#activity`, …) are redirected by `legacyHashRoute` (`src/lib/country/factbook-routes.ts`); `#overview`, an empty or an unknown hash stays on the Factbook overview, so its own anchors (`#command-economy`) work.
 
 ### The Command view
 
@@ -91,10 +88,9 @@ countries/
 └── [slug]/
     ├── (profile)/
     │   ├── layout.tsx                # Country shell (CountryDataProvider, breadcrumb, actions; CountryHeader + CountryTabs on deep-dives)
-    │   ├── page.tsx                  # The Factbook overview: CommandProfileView (+ legacy hash redirects)
+    │   ├── page.tsx                  # The Factbook overview: CommandProfileView
     │   ├── factbook/
     │   │   ├── layout.tsx            # Factbook section shell (section pills, FactbookMetricsProvider)
-    │   │   ├── page.tsx              # Redirects to /countries/[slug]
     │   │   ├── economy/page.tsx      # Economy section
     │   │   ├── labor/page.tsx        # Labor section
     │   │   ├── government/page.tsx   # Government section

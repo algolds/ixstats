@@ -177,8 +177,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       }
       const rawTitle = canon.title;
 
-      // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
-      // other, and the old slugs redirect to their tool in the route, not in this query.
+      // A title is always a page here: a former WikiOS tool slug ("search") is an article title
+      // like any other.
       const self = { title: rawTitle, fragment: null };
       const followed = input.redirect === "no" ? self : ((await followRedirects(rawTitle)) ?? self);
 

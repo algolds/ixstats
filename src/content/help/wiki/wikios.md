@@ -20,7 +20,7 @@ nextLabel: Lorewards
 
 ## Editing an article
 
-1. Open the article and choose edit (or go to `/wiki/<Title>/edit`).
+1. Open the article and choose edit (or add `?action=edit` to its address).
 2. Edit in the **visual** editor (blocks, tables, infoboxes, a slash menu for inserting things, and forms for templates) or switch to **source** mode for wikitext.
 3. Save with a short summary. Your draft is kept in your browser while you work.
 
@@ -30,7 +30,7 @@ To start a new article, search for its title and choose **Create this page** on 
 
 ## Discussing articles
 
-- **Talk pages** at `/wiki/<Title>/talk`.
+- **Talk pages** at `/wiki/Talk:<Title>`.
 - **Margin**: comment threads pinned to parts of an article's text. Open them from the margin notes row on the article.
 
 ## Images

@@ -31,7 +31,6 @@ const AREAS = [
   "components/dashboard",
   "app/dashboard",
   "components/achievements",
-  "app/achievements",
   "components/passport",
   "components/thinkpages",
   "components/thinktanks",

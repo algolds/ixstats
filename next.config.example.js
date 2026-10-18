@@ -150,7 +150,7 @@ const config = {
           {
             // Map root-level slugs to countries/[slug] in standalone mode, leaving app routes alone
             source:
-              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|id|images|leaderboards|maps|messages|mycountry|placeholder|profile|r|realms|settings|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next|@).*)",
+              "/:slug((?!admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|id|images|leaderboards|maps|messages|mycountry|placeholder|r|realms|settings|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next|@).*)",
             destination: "/countries/:slug",
           },
         ],

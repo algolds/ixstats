@@ -42,8 +42,7 @@ const SEGMENT_LABEL: Record<string, string> = {
  * - `/countries/[slug]` (this layout's own page) is the Factbook tab's overview, which brings its
  *   hero, tabs and section pills itself (`CommandProfileView`).
  * - `/factbook/<section>`, `/dossier` and `/activity` are the deep-dives: they get the country
- *   header and the tabs here, then render their own route pages. `/factbook` itself redirects
- *   to `/countries/[slug]`.
+ *   header and the tabs here, then render their own route pages.
  *
  * Every state shares `PAGE_COLUMN`: the page has no Inspector, so it gives the shell's reserved
  * Inspector gutter back and runs from the sidebar to the right edge, capped at 1600px.

@@ -1,8 +1,8 @@
 // src/app/(wiki-os)/wiki/[...slug]/page.tsx
-// Server entry for every /wiki/<path> URL: articles (subpages included), MediaWiki's URL forms
-// (?action=, ?oldid=, ?diff=, ?redirect=no, Special:<Name>) and the old WikiOS tool slugs. The
-// title is decoded and canonicalised here, the article is read here (so it is in the first HTML,
-// and a missing page is a 404), and the client reader takes over from the hydrated cache.
+// Server entry for every /wiki/<path> URL: articles (subpages included) and MediaWiki's URL forms
+// (?action=, ?oldid=, ?diff=, ?redirect=no, Special:<Name>). The title is decoded and canonicalised
+// here, the article is read here (so it is in the first HTML, and a missing page is a 404), and the
+// client reader takes over from the hydrated cache.
 
 import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
@@ -11,13 +11,11 @@ import {
   pageAdminHref,
   resolveWikiPath,
   type ArticleTarget,
-  type LegacyTarget,
   type SearchParamsLike,
   type TitleTarget,
 } from "~/lib/wiki-os/wiki-path";
 import ArticlePageClient from "./ArticlePageClient";
 import { articleTargetMetadata } from "./_lib/metadata";
-import { redirectUnlessArticle } from "./_views/legacy-view";
 import { diffView, historyView, infoView, revisionView } from "./_views/meta-views";
 import { editView, readView } from "./_views/read-views";
 import { specialView } from "./_views/special-views";
@@ -98,31 +96,9 @@ function titleOf(target: TitleTarget, segments: readonly string[], query: Search
   }
 }
 
-/**
- * An old tool slug or `/edit` / `/talk` path: redirect, unless a page of that title exists. Then it
- * is that page, in whatever view the query string asks (`?action=raw`, `?oldid=`, ...): the rules for
- * old URLs apply only where no article would be shadowed.
- */
-async function legacyOf(
-  target: LegacyTarget,
-  segments: readonly string[],
-  query: SearchParamsLike
-) {
-  await redirectUnlessArticle(target);
-  return titleOf(target.ifArticle, segments, query);
-}
-
 export default async function WikiPage({ params, searchParams }: RouteProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const target = resolveWikiPath(slug, query);
 
-  switch (target.kind) {
-    case "special":
-      return specialView(target);
-    case "tool-redirect":
-    case "legacy-redirect":
-      return legacyOf(target, slug, query);
-    default:
-      return titleOf(target, slug, query);
-  }
+  return target.kind === "special" ? specialView(target) : titleOf(target, slug, query);
 }

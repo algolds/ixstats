@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Background achievement evaluation: the queue fed by one-line hooks at event sites, the
- * worker that drains it, the `achievements-evaluate` cron job, and the `/achievements`
+ * worker that drains it, the `achievements-evaluate` cron job, and the `/vault/achievements`
  * sync for a user with no country.
  */
 

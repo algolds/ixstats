@@ -338,104 +338,16 @@ describe("resolveWikiPath: the rights-model special pages (plan 409)", () => {
   });
 });
 
-describe("resolveWikiPath: old WikiOS URLs", () => {
-  it("a lower-case tool slug is a redirect to its tool, unless an article has that title", () => {
-    const target = resolveWikiPath(["recent-changes"]);
-    expect(target).toMatchObject({
-      kind: "tool-redirect",
-      href: "/util/recent-changes",
-      canon: { title: "Recent-changes" },
-    });
-    expect(resolveWikiPath(["recent_changes"])).toMatchObject({
-      kind: "tool-redirect",
-      canon: { title: "Recent changes" },
-    });
-    expect(resolveWikiPath(["search"], { q: "eurth" })).toMatchObject({
-      kind: "tool-redirect",
-      href: "/util/search?q=eurth",
-    });
+describe("resolveWikiPath: the old WikiOS tool and /edit, /talk paths are titles", () => {
+  it("a former tool slug is an ordinary article title", () => {
+    expect(article(resolveWikiPath(["recent-changes"])).canon.title).toBe("Recent-changes");
+    expect(article(resolveWikiPath(["search"], { q: "eurth" })).canon.title).toBe("Search");
+    expect(article(resolveWikiPath(["history", "Foo"])).canon.title).toBe("History/Foo");
   });
 
-  it("a capitalised tool name is an ordinary article title", () => {
-    expect(resolveWikiPath(["Recent-changes"]).kind).toBe("article");
-    expect(resolveWikiPath(["Search"]).kind).toBe("article");
-    expect(resolveWikiPath(["Categories"]).kind).toBe("article");
-  });
-
-  it("the tool routes that took an argument keep it", () => {
-    expect(resolveWikiPath(["categories", "Countries"])).toMatchObject({
-      href: "/util/categories/Countries",
-    });
-    expect(resolveWikiPath(["contributions", "Jane_Doe"])).toMatchObject({
-      href: "/util/contributions/Jane_Doe",
-    });
-    expect(resolveWikiPath(["history", "Foo", "bar"])).toMatchObject({
-      href: "/util/history/Foo%2Fbar",
-    });
-    expect(resolveWikiPath(["whatlinkshere", "Foo"])).toMatchObject({
-      href: "/util/whatlinkshere/Foo",
-    });
-    expect(resolveWikiPath(["user", "jane_doe"])).toMatchObject({ href: "/wiki/User:Jane_doe" });
-  });
-
-  it("an unrelated lower-case title is an article, even with a tool's name inside", () => {
-    expect(resolveWikiPath(["searching"]).kind).toBe("article");
-    expect(resolveWikiPath(["random", "thoughts"]).kind).toBe("article");
-  });
-
-  it("/<title>/edit goes to ?action=edit, unless the page <title>/edit exists", () => {
-    const target = resolveWikiPath(["foo_bar", "edit"], { section: "Geography" });
-    expect(target).toMatchObject({
-      kind: "legacy-redirect",
-      href: "/wiki/Foo_bar?section=Geography&action=edit",
-      canon: { title: "Foo bar/edit" },
-    });
-    expect(resolveWikiPath(["A%2FB", "edit"])).toMatchObject({ href: "/wiki/A/B?action=edit" });
-  });
-
-  it("/<title>/talk goes to the talk page, unless the page <title>/talk exists", () => {
-    expect(resolveWikiPath(["Foo", "talk"])).toMatchObject({
-      kind: "legacy-redirect",
-      href: "/wiki/Talk:Foo",
-      canon: { title: "Foo/talk" },
-    });
-    expect(resolveWikiPath(["User:Jane", "talk"])).toMatchObject({ href: "/wiki/User_talk:Jane" });
-    // A talk page has no talk page: "Talk:Foo/talk" is a subpage.
-    expect(resolveWikiPath(["Talk:Foo", "talk"]).kind).toBe("article");
-    expect(resolveWikiPath(["Special:Random", "talk"]).kind).toBe("special");
-  });
-
-  it("what the query string asks of an article is kept for when the article exists (plan 412 review)", () => {
-    expect(resolveWikiPath(["Foo", "talk"], { action: "raw" })).toMatchObject({
-      kind: "legacy-redirect",
-      href: "/wiki/Talk:Foo",
-      canon: { title: "Foo/talk" },
-      ifArticle: { kind: "raw", canon: { title: "Foo/talk" }, ref: null },
-    });
-    expect(resolveWikiPath(["search"], { action: "raw", oldid: "7" })).toMatchObject({
-      kind: "tool-redirect",
-      ifArticle: { kind: "raw", canon: { title: "Search" }, ref: "7" },
-    });
-    expect(resolveWikiPath(["Foo", "edit"], { action: "history" })).toMatchObject({
-      kind: "legacy-redirect",
-      ifArticle: { kind: "article", view: { type: "history" } },
-    });
-    expect(resolveWikiPath(["search"], { oldid: "5" })).toMatchObject({
-      ifArticle: { kind: "article", view: { type: "revision", ref: "5" } },
-    });
-    expect(resolveWikiPath(["search"], { diff: "prev", oldid: "5" })).toMatchObject({
-      ifArticle: { kind: "article", view: { type: "diff", oldid: "5", diff: "prev" } },
-    });
-    expect(resolveWikiPath(["search"], { action: "info" })).toMatchObject({
-      ifArticle: { kind: "article", view: { type: "info" } },
-    });
-    // A plain visit is a plain read; a bad revision reference is invalid for the article too.
-    expect(resolveWikiPath(["search"])).toMatchObject({
-      ifArticle: { kind: "article", view: { type: "read" } },
-    });
-    expect(resolveWikiPath(["search"], { oldid: "a b" })).toMatchObject({
-      ifArticle: { kind: "invalid" },
-    });
+  it("/<title>/edit and /<title>/talk are subpages", () => {
+    expect(article(resolveWikiPath(["foo_bar", "edit"])).canon.title).toBe("Foo bar/edit");
+    expect(article(resolveWikiPath(["Foo", "talk"])).canon.title).toBe("Foo/talk");
   });
 
   it("Talk:X is an ordinary page", () => {

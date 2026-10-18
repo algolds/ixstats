@@ -1,5 +1,5 @@
 /**
- * Tests for economic-tier-filter.ts - tier options used by /countries and /explore
+ * Tests for economic-tier-filter.ts - tier options used by a realm's Nations tab
  */
 
 import {

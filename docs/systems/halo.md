@@ -99,7 +99,7 @@ The registry provides comprehensive coverage across eight platform domains:
 - **Statecraft**: Executive Command (`/mycountry`), Directives (`/mycountry/executive`), Policy Studio (`/mycountry/editor`), Diplomacy (`/mycountry/diplomacy`), Defense (`/mycountry/defense`), Intelligence (`/mycountry/intelligence`), Fiscal Policy (`/mycountry/economy`), Politics (`/mycountry/politics`), and Map Editor (`/mycountry/map-editor`).
 - **Vault**: Trading Cards (`/vault/cards`), Pack Openings (`/vault/store?tab=store`), Marketplace and auctions (`/vault/store`), Lore Gallery (`/vault/lore-gallery`), and NS Decks (`/vault/ns-deck`).
 - **Geography**: Interactive Map (`/maps`), Country Directory (`/countries`), Leaderboards (`/leaderboards`), and Nation Builder (`/builder`).
-- **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/wiki/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
+- **Knowledge**: Wiki Main Page (`/wiki/Main_Page`), Recent Changes (`/util/recent-changes`), Random Wiki (`#random-wiki`), Create Article (`/wiki/new`), and Lore Stashes (`/stashes`).
 - **Community**: Messages (`/messages`), ThinkPages, the forum (`/thinkpages`), Home, the feed (`/dashboard`), Accounts (`/dashboard/accounts`), Saved posts (`/dashboard/saved`), ThinkTanks (`/thinktanks`), Forum (the forum home), New Thread (`/thinkpages/c/general/new`), and Achievements (`/vault/achievements`).
 - **Sports**: MyLeague Standings (`/myleague`) and MyClub Squad Roster (`/myclub`).
 - **Labs**: Onoma Linguistics (`/labs/onoma`) and Vexel Heraldry (`/labs/vexel`).

@@ -53,7 +53,7 @@ export function useWikiPrefetch() {
       try {
         const url = new URL(target.href, window.location.origin);
         // Any /wiki/<path>, subpages included: the route's own parser says whether it is an article's
-        // read view (not a tool, a Special: page, ?action=edit or another view) and under which title.
+        // read view (not a Special: page, ?action=edit or another view) and under which title.
         const path = stripBasePath(url.pathname).match(/^\/wiki\/(.+)$/)?.[1];
         const page = path ? resolveWikiPath(path.split("/"), url.searchParams) : null;
         if (page?.kind === "article" && page.view.type === "read") {

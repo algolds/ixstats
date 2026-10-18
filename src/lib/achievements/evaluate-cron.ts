@@ -1,6 +1,6 @@
 /**
  * `achievements-evaluate` cron job: evaluates achievements for recently active users, so
- * unlocks (and their ledger rewards) land without anyone visiting `/achievements`. It is
+ * unlocks (and their ledger rewards) land without anyone visiting `/vault/achievements`. It is
  * the backstop for the in-process queue fed by `queueAchievementCheck()`.
  *
  * Users with and without a country are both evaluated (account-level achievements need

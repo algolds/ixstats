@@ -13,7 +13,6 @@ const ACTIVE: ClockContext = { kind: "realm", active: true };
  * to that country's page. Kept equal to the rewrite by a test.
  */
 export const STANDALONE_APP_ROUTES = [
-  "achievements",
   "admin",
   "api",
   "blurbs",
@@ -39,7 +38,6 @@ export const STANDALONE_APP_ROUTES = [
   "mycountry",
   "myleague",
   "placeholder",
-  "profile",
   "settings",
   "setup",
   "sign-in",

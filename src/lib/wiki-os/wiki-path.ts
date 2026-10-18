@@ -3,14 +3,12 @@
  *
  * WikiOS owns the existing `ixwiki.com/wiki/*` URLs, so every MediaWiki URL form has to land
  * somewhere sensible: subpages (`/wiki/A/B`), `?action=edit|history|info|raw`, `?oldid=`,
- * `?diff=`, `?redirect=no`, `Special:<Name>/<arg>` and the old WikiOS tool slugs
- * (`/wiki/recent-changes`, `/wiki/A/edit`, `/wiki/A/talk`). `resolveWikiPath` is pure: it parses the
+ * `?diff=`, `?redirect=no` and `Special:<Name>/<arg>`. `resolveWikiPath` is pure: it parses the
  * URL into a `WikiPathTarget` and leaves everything that needs the database (does an article with
  * that title exist? which revision is "next"?) to the route.
  */
 
 import { parseWikiSource, type WikiSource } from "./config";
-import { talkPageOf } from "./core/talk";
 import { canonicalizeTitle, decodeTitleParam, type CanonicalTitle } from "./core/title";
 import { parseWikiTitle } from "./namespace-policy";
 
@@ -57,24 +55,7 @@ export type TitleTarget =
   | { kind: "article"; source: WikiSource; canon: CanonicalTitle; view: ArticleView }
   | { kind: "raw"; canon: CanonicalTitle; ref: string | null };
 
-export type WikiPathTarget =
-  | TitleTarget
-  | { kind: "special"; name: string; action: SpecialAction }
-  /**
-   * An old WikiOS tool slug: go to `href` unless an article titled `canon.title` exists, in which
-   * case the page is `ifArticle`: whatever the query string asks of that article (`?action=raw`,
-   * `?oldid=`, ...) is honoured on the article before any tool redirect applies.
-   */
-  | { kind: "tool-redirect"; canon: CanonicalTitle; href: string; ifArticle: TitleTarget }
-  /** An old `/<title>/edit` or `/<title>/talk` path: as `tool-redirect`, `href` unless an article titled `canon.title` exists. */
-  | { kind: "legacy-redirect"; canon: CanonicalTitle; href: string; ifArticle: TitleTarget };
-
-/** A redirect rule for an old URL, before the article it yields to is known. */
-type LegacyRule = {
-  kind: "tool-redirect" | "legacy-redirect";
-  canon: CanonicalTitle;
-  href: string;
-};
+export type WikiPathTarget = TitleTarget | { kind: "special"; name: string; action: SpecialAction };
 
 const SPECIAL_PATH = /^special:([^/]*)(?:\/(.*))?$/i;
 /** Revision references are MediaWiki rev_ids or WikiOS row ids (cuids): letters, digits, "_" and "-". */
@@ -145,92 +126,6 @@ function resolveView(query: SearchParamsLike): ArticleView | null {
     return { type: "admin", action };
   }
   return readView(query);
-}
-
-// ---------------------------------------------------------------------------
-// Old WikiOS URLs
-// ---------------------------------------------------------------------------
-
-/** Lower-case WikiOS tool slugs that used to be routes of their own (`/wiki/recent-changes`). */
-const TOOL_PAGES: Readonly<Record<string, string>> = {
-  categories: "/util/categories",
-  "category-index": "/util/categories",
-  "categories-index": "/util/categories",
-  contributions: "/util/contributions",
-  utilities: "/util",
-  templates: "/util/templates",
-  "template-palette": "/util/templates",
-  diff: "/util/diff",
-  "diff-viewer": "/util/diff",
-  watchlist: "/util/watchlist",
-  random: "/util/random",
-  randompage: "/util/random",
-  search: "/util/search",
-  "recent-changes": "/util/recent-changes",
-  recentchanges: "/util/recent-changes",
-  repository: "/util/repository",
-  whatlinkshere: "/util/whatlinkshere",
-  "what-links-here": "/util/whatlinkshere",
-  lorewards: "/util/lorewards",
-  specialpages: "/util",
-  "special-pages": "/util",
-};
-
-/** Tool slugs that took an argument: `/wiki/history/<title>` and friends. */
-function toolArgumentHref(tool: string, rest: readonly string[]): string | null {
-  const argument = rest.join("/");
-  switch (tool) {
-    case "categories":
-      return `/util/categories/${rest.map(encodeURIComponent).join("/")}`;
-    case "contributions":
-      return `/util/contributions/${encodeURIComponent(argument)}`;
-    case "history":
-      return `/util/history/${encodeURIComponent(argument)}`;
-    case "whatlinkshere":
-      return `/util/whatlinkshere/${encodeURIComponent(argument)}`;
-    case "user": {
-      const user = canonicalizeTitle(`User:${argument}`);
-      return user && `/wiki/${user.urlPath}`;
-    }
-    default:
-      return null;
-  }
-}
-
-function resolveToolRedirect(
-  parts: readonly string[],
-  canon: CanonicalTitle,
-  query: SearchParamsLike
-): LegacyRule | null {
-  const first = parts[0] ?? "";
-  const tool = first.replace(/[\s_]+/g, "-");
-  if (tool !== tool.toLowerCase()) return null;
-
-  const href =
-    parts.length === 1 && Object.hasOwn(TOOL_PAGES, tool)
-      ? TOOL_PAGES[tool]
-      : parts.length > 1
-        ? toolArgumentHref(tool, parts.slice(1))
-        : null;
-  return href ? { kind: "tool-redirect", canon, href: withQuery(href, paramsOf(query)) } : null;
-}
-
-/** `/wiki/<title>/edit` and `/wiki/<title>/talk`, which WikiOS used to serve as routes of their own. */
-function resolveLegacySuffix(
-  text: string,
-  canon: CanonicalTitle,
-  query: SearchParamsLike
-): LegacyRule | null {
-  const match = /^(.+)\/(edit|talk)$/.exec(text);
-  const base = match && canonicalizeTitle(match[1] ?? "");
-  if (!match || !base) return null;
-
-  if (match[2] === "edit") {
-    const href = withQuery(`/wiki/${base.urlPath}`, { ...paramsOf(query), action: "edit" });
-    return { kind: "legacy-redirect", canon, href };
-  }
-  const talk = talkPageOf(base);
-  return talk ? { kind: "legacy-redirect", canon, href: `/wiki/${talk.urlPath}` } : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -417,11 +312,7 @@ function titleTarget(text: string, canon: CanonicalTitle, query: SearchParamsLik
   return view ? { kind: "article", source: "ixwiki", canon, view } : { kind: "invalid", raw: text };
 }
 
-function resolveIxWikiPath(
-  text: string,
-  parts: readonly string[],
-  query: SearchParamsLike
-): WikiPathTarget {
+function resolveIxWikiPath(text: string, query: SearchParamsLike): WikiPathTarget {
   const special = SPECIAL_PATH.exec(text);
   if (special) {
     const name = special[1] ?? "";
@@ -433,12 +324,7 @@ function resolveIxWikiPath(
   }
 
   const canon = canonicalizeTitle(text);
-  if (!canon) return { kind: "invalid", raw: text };
-
-  const target = titleTarget(text, canon, query);
-  const legacy =
-    resolveLegacySuffix(text, canon, query) ?? resolveToolRedirect(parts, canon, query);
-  return legacy ? { ...legacy, ifArticle: target } : target;
+  return canon ? titleTarget(text, canon, query) : { kind: "invalid", raw: text };
 }
 
 /**
@@ -451,8 +337,7 @@ export function resolveWikiPath(
   segments: readonly string[],
   query: SearchParamsLike = {}
 ): WikiPathTarget {
-  const parts = segments.map(decodeTitleParam);
-  const text = parts.join("/");
+  const text = segments.map(decodeTitleParam).join("/");
   const source = parseWikiSource(queryParam(query, "source"));
 
   if (source !== "ixwiki") {
@@ -460,7 +345,7 @@ export function resolveWikiPath(
     const view: ArticleView = { type: "read", followRedirect: true, redirectedFrom: null };
     return canon ? { kind: "article", source, canon, view } : { kind: "invalid", raw: text };
   }
-  return resolveIxWikiPath(text, parts, query);
+  return resolveIxWikiPath(text, query);
 }
 
 /** `/wiki/<title>` for `canon`, with `query` (empty values left out) and the section fragment, if any. */
@@ -511,5 +396,4 @@ export function canonicalPathRedirect(
 /** The targets of each kind, for the route's per-kind renderers. */
 export type ArticleTarget = Extract<WikiPathTarget, { kind: "article" }>;
 export type SpecialTarget = Extract<WikiPathTarget, { kind: "special" }>;
-export type LegacyTarget = Extract<WikiPathTarget, { kind: "tool-redirect" | "legacy-redirect" }>;
 export type ReadView = Extract<ArticleView, { type: "read" }>;

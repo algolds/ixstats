@@ -43,7 +43,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.BASE_PATH = "/projects/ixstates";
 
     expect(getBasePath()).toBe("");
-    expect(withBasePath("/vault/marketplace")).toBe("/vault/marketplace");
+    expect(withBasePath("/vault/store")).toBe("/vault/store");
   });
 
   test("should resolve to default production base path on server-side when NEXT_PUBLIC_IXWORLD_STANDALONE is not set", () => {
@@ -52,7 +52,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.BASE_PATH = "/projects/ixstates";
 
     expect(getBasePath()).toBe("/projects/ixstates");
-    expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstates/vault/marketplace");
+    expect(withBasePath("/vault/store")).toBe("/projects/ixstates/vault/store");
   });
 
   test("should dynamically respect other configured base paths (e.g. projects/ixstats) on server-side", () => {
@@ -61,7 +61,7 @@ describe("Dynamic Base Path Resolution", () => {
     process.env.BASE_PATH = "/projects/ixstats";
 
     expect(getBasePath()).toBe("/projects/ixstats");
-    expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstats/vault/marketplace");
+    expect(withBasePath("/vault/store")).toBe("/projects/ixstats/vault/store");
   });
 
   test("should resolve with base path on client-side when browser is on the subpath", () => {
@@ -72,13 +72,13 @@ describe("Dynamic Base Path Resolution", () => {
     // Mock global window object with browser properties
     (global as any).window = {
       location: {
-        pathname: "/projects/ixstates/vault/marketplace",
+        pathname: "/projects/ixstates/vault/store",
         hostname: "localhost",
       },
     };
 
     expect(getBasePath()).toBe("/projects/ixstates");
-    expect(withBasePath("/vault/marketplace")).toBe("/projects/ixstates/vault/marketplace");
+    expect(withBasePath("/vault/store")).toBe("/projects/ixstates/vault/store");
   });
 
   test("should not prepend base path on client-side when browser is at root (e.g. dev mode)", () => {
@@ -89,12 +89,12 @@ describe("Dynamic Base Path Resolution", () => {
     // Mock global window object with root pathname
     (global as any).window = {
       location: {
-        pathname: "/vault/marketplace",
+        pathname: "/vault/store",
         hostname: "localhost",
       },
     };
 
     expect(getBasePath()).toBe("/projects/ixstates");
-    expect(withBasePath("/vault/marketplace")).toBe("/vault/marketplace");
+    expect(withBasePath("/vault/store")).toBe("/vault/store");
   });
 });
