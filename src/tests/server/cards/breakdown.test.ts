@@ -155,6 +155,17 @@ describe("breakDownCopies", () => {
     expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
 
+  it("takes the serial locks in code-unit order, the order a pack open mints in, where a locale would differ", async () => {
+    const fake = makeWorkshopDb({
+      copies: [
+        copyOf("a", { cardId: "card_ns_108642_s4", serialNumber: 1 }),
+        copyOf("b", { cardId: "card_ns_1086420_s4", serialNumber: 2 }),
+      ],
+    });
+    await breakDown(fake, ["a", "b"]);
+    expect(fake.world.locks).toEqual(["7331:card_ns_1086420_s4", "7331:card_ns_108642_s4"]);
+  });
+
   it("burns in one statement that holds only while each copy is still the player's, unlocked, unsigned and as read", async () => {
     const fake = makeWorkshopDb({ copies: threeRealms() });
     await breakDown(fake, ["a", "b", "c"]);
@@ -311,6 +322,20 @@ describe("breakDownCopies", () => {
     expect(passes.world.copies.map((c) => c.id)).toEqual(["a", "b", "c"]);
     expect(passes.world.balances).toEqual({ "u1:default": MAX_DUST_BALANCE - 49 });
     expect(passes.world.events).toEqual([]);
+  });
+
+  it("writes no balance row for a realm whose copies yield nothing", async () => {
+    const fake = makeWorkshopDb({
+      copies: threeRealms(),
+      config: [{ key: "card_economy_dust_rare", value: "0" }],
+    });
+    expect(await breakDown(fake, ["a"])).toEqual({
+      broken: 1,
+      dust: [{ realmId: "default", amount: 0 }],
+    });
+    expect(fake.world.balances).toEqual({});
+    expect(fake.world.dustEvents).toEqual([]);
+    expect(fake.world.copies.map((c) => c.id)).toEqual(["b", "c"]);
   });
 
   it("uses the Economy tab's dust numbers", async () => {

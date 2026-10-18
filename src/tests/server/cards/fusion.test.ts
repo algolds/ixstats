@@ -6,6 +6,12 @@
  * offered copies are refused. The burn and the upgrade each hold only while their copies are as read, and a lost race
  * rolls the whole fusion back. The fake honours every `where` (`~/tests/helpers/fake-workshop-db`).
  */
+jest.mock("~/lib/cards/dust", () => {
+  const actual = jest.requireActual<typeof import("~/lib/cards/dust")>("~/lib/cards/dust");
+  return { ...actual, fusionBlocker: jest.fn(actual.fusionBlocker) };
+});
+
+import { fusionBlocker } from "~/lib/cards/dust";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import { fuseCopies } from "~/server/modules/cards/workshop/fusion";
 import {
@@ -181,6 +187,19 @@ describe("fuseCopies", () => {
     });
     expect(fake.world.copies).toEqual(trio(over));
     expect(fake.world.events).toEqual([]);
+  });
+
+  it("refuses a set with no next finish even if the fusion rule stops refusing it, and changes nothing", async () => {
+    const holo = { finish: "HOLO" } as const;
+    const fake = makeWorkshopDb({ copies: trio({ low: holo, mid: holo, high: holo }) });
+    jest.mocked(fusionBlocker).mockReturnValueOnce(null);
+    await expect(fuse(fake, ["high", "low", "mid"])).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "These copies can't be fused any further.",
+    });
+    expect(fake.world.copies).toEqual(trio({ low: holo, mid: holo, high: holo }));
+    expect(fake.world.events).toEqual([]);
+    expect(fake.world.locks).toEqual([]);
   });
 
   it.each([

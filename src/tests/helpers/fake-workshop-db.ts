@@ -237,6 +237,15 @@ export function makeWorkshopDb(over: Partial<WorkshopWorld> = {}) {
         return data;
       }),
     },
+    cardDustBalance: {
+      findUnique: jest.fn(
+        async ({ where }: { where: { userId_realmId: { userId: string; realmId: string } } }) => {
+          const { userId, realmId } = where.userId_realmId;
+          const held = world.balances[`${userId}:${realmId}`];
+          return held === undefined ? null : { balance: held };
+        }
+      ),
+    },
     cardDustEvent: {
       createMany: jest.fn(async ({ data }: { data: FakeDustEvent[] }) => {
         world.dustEvents.push(...data.map((e) => ({ ...e })));

@@ -81,6 +81,22 @@ describe("creditDustTx", () => {
     ]);
   });
 
+  it.each([
+    ["with a balance", { "u1:default": 7 }, 7],
+    ["with none yet", {}, 0],
+  ])("writes nothing for a credit of nothing %s", async (_label, balances, held) => {
+    const { tx, world } = makeWorkshopDb({ balances: { ...balances } });
+    expect(await credit(tx, [{ amount: 0, cardId: "c1", ownershipId: "o1" }])).toBe(held);
+    expect(await credit(tx, [])).toBe(held);
+    expect(tx.cardDustBalance.findUnique).toHaveBeenCalledWith({
+      where: { userId_realmId: { userId: "u1", realmId: "default" } },
+      select: { balance: true },
+    });
+    expect(tx.$queryRaw).not.toHaveBeenCalled();
+    expect(tx.cardDustEvent.createMany).not.toHaveBeenCalled();
+    expect(world.balances).toEqual(balances);
+  });
+
   it("creates or adds in one statement whose update holds only while the sum fits the column", async () => {
     const { tx } = makeWorkshopDb();
     await credit(tx, [{ amount: 20, cardId: "c1", ownershipId: "o1" }]);

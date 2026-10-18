@@ -32,8 +32,9 @@ export async function fuseCopies(
     const blocked = fusionBlocker(await judgedCopiesTx(tx, rows), cfg);
     if (blocked) throw precondition(blocked);
     const [kept, ...spent] = rows;
-    // fusionBlocker has refused any set without a next finish (Holo, Serialised), and any set smaller than two
-    const finish = nextFinish(kept.finish) as CardFinish;
+    // fusionBlocker refuses a set with no next finish (Holo, Serialised) first; this holds if that rule ever changes
+    const finish = nextFinish(kept.finish);
+    if (!finish) throw precondition("These copies can't be fused any further.");
 
     await burnCopiesTx(tx, input.userId, spent, "FUSE");
     const upgraded = await tx.cardOwnership.updateMany({

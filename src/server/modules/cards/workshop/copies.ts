@@ -5,7 +5,7 @@
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import type { WorkshopCopy } from "~/lib/cards/dust";
-import { lockCardSerialsTx } from "~/lib/cards/serial-number";
+import { lockCardSerialsTx, serialLockOrder } from "~/lib/cards/serial-number";
 
 /** The columns the workshop judges a copy by; the signer's id and frozen name are never read. */
 export const WORKSHOP_COPY_SELECT = {
@@ -82,12 +82,12 @@ export const changedError = (action: keyof typeof CHANGED) =>
   new TRPCError({ code: "CONFLICT", message: CHANGED[action] });
 
 /**
- * Burns copies without losing their trail. Under each card's serial lock (taken once per card, in card-id order, as
- * the pack draw takes them), each copy's older events are stamped with its card and serial, and a burn event records
- * the serial and finish leaving the player. Then one DELETE holds only while every copy is still the player's,
- * unlocked, unsigned and as read (its finish and import discount), so a copy listed, traded, signed or fused meanwhile
- * is never burned: CONFLICT, and the caller's transaction rolls back. A signed copy is refused before this, so an
- * inscription never goes with a burn.
+ * Burns copies without losing their trail. Under each card's serial lock (taken once per card, in `serialLockOrder`,
+ * the order a pack open and a deck import mint in), each copy's older events are stamped with its card and serial,
+ * and a burn event records the serial and finish leaving the player. Then one DELETE holds only while every copy is
+ * still the player's, unlocked, unsigned and as read (its finish and import discount), so a copy listed, traded,
+ * signed or fused meanwhile is never burned: CONFLICT, and the caller's transaction rolls back. A signed copy is
+ * refused before this, so an inscription never goes with a burn.
  */
 export async function burnCopiesTx(
   tx: Prisma.TransactionClient,
@@ -95,7 +95,7 @@ export async function burnCopiesTx(
   rows: WorkshopRow[],
   action: keyof typeof CHANGED
 ): Promise<void> {
-  for (const cardId of [...new Set(rows.map((r) => r.cardId))].sort()) {
+  for (const cardId of serialLockOrder(rows.map((r) => r.cardId))) {
     await lockCardSerialsTx(tx, cardId);
   }
   for (const row of rows) {

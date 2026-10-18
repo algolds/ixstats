@@ -20,18 +20,32 @@ export const MAX_DUST_BALANCE = 2_147_483_647;
 
 const AT_LIMIT = `Your dust in this realm can't go past ${MAX_DUST_BALANCE.toLocaleString("en")}.`;
 
+/** A player's dust of one realm as it stands (0 for none), for a credit or spend of nothing, which writes nothing. */
+async function balanceOf(
+  tx: Pick<Prisma.TransactionClient, "cardDustBalance">,
+  userId: string,
+  realmId: string
+): Promise<number> {
+  const held = await tx.cardDustBalance.findUnique({
+    where: { userId_realmId: { userId, realmId } },
+    select: { balance: true },
+  });
+  return held?.balance ?? 0;
+}
+
 /**
  * Adds the entries' dust to one realm balance and logs one event per entry, with the balance after it. Returns the new
  * balance. One statement creates the balance or adds to it, and the add holds only while the sum stays inside the
  * column (its WHERE leaves the row as it was and returns nothing), so a credit past the limit is refused, never an
- * overflow. Entries that yield nothing get no event.
+ * overflow. Entries that yield nothing get no event, and a credit of nothing writes nothing (no empty balance row).
  */
 export async function creditDustTx(
-  tx: Pick<Prisma.TransactionClient, "$queryRaw" | "cardDustEvent">,
+  tx: Pick<Prisma.TransactionClient, "$queryRaw" | "cardDustBalance" | "cardDustEvent">,
   args: { userId: string; realmId: string; source: DustSource; entries: DustEntry[] }
 ): Promise<number> {
   const entries = args.entries.filter((e) => e.amount > 0);
   const total = entries.reduce((sum, e) => sum + e.amount, 0);
+  if (total === 0) return balanceOf(tx, args.userId, args.realmId);
   if (total > MAX_DUST_BALANCE) throw new DustError(AT_LIMIT);
   const [row] = await tx.$queryRaw<Array<{ balance: number }>>`
     INSERT INTO card_dust_balances ("userId", "realmId", balance, "updatedAt")
@@ -67,11 +81,7 @@ export async function spendDustTx(
   tx: Pick<Prisma.TransactionClient, "cardDustBalance" | "cardDustEvent">,
   args: { userId: string; realmId: string; amount: number; source: DustSource; cardId?: string }
 ): Promise<number> {
-  const key = { userId_realmId: { userId: args.userId, realmId: args.realmId } };
-  if (args.amount === 0) {
-    const held = await tx.cardDustBalance.findUnique({ where: key, select: { balance: true } });
-    return held?.balance ?? 0;
-  }
+  if (args.amount === 0) return balanceOf(tx, args.userId, args.realmId);
   const spent = await tx.cardDustBalance.updateMany({
     where: { userId: args.userId, realmId: args.realmId, balance: { gte: args.amount } },
     data: { balance: { decrement: args.amount } },
@@ -79,7 +89,7 @@ export async function spendDustTx(
   if (spent.count !== 1)
     throw new DustError(`You need ${args.amount} dust from this card's realm.`);
   const row = await tx.cardDustBalance.findUniqueOrThrow({
-    where: key,
+    where: { userId_realmId: { userId: args.userId, realmId: args.realmId } },
     select: { balance: true },
   });
   await tx.cardDustEvent.create({
