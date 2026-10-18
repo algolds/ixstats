@@ -211,6 +211,7 @@ describe("rowIconKey", () => {
     ["card_purchase_listing", "market"],
     ["listing_fee", "market"],
     ["nation_card_royalty", "market"],
+    ["card_craft", "market"],
     ["listing_fee_refund", "other"],
     ["P2P_TRADE", "trade"],
     ["retired_item_refund:frame", "other"],

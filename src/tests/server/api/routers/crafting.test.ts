@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * The crafting router (the card workshop): the public numbers, the signed-in player's dust, and breaking down and
- * fusing their own copies, with the workshop's refusals mapped for the player and their cached balance dropped after a
- * burn. Inputs are bounded.
+ * The crafting router (the card workshop): the public numbers, the signed-in player's dust, breaking down and fusing
+ * their own copies, and crafting a card, with the workshop's refusals mapped for the player and their cached balance
+ * dropped after a burn or a craft. Inputs are bounded.
  */
 jest.mock("~/server/db", () => ({ db: {} }));
 jest.mock("~/lib/cache", () => ({
@@ -12,12 +12,14 @@ jest.mock("~/lib/cache", () => ({
 }));
 jest.mock("~/lib/vault/vault-cache", () => ({ clearVaultCachesFor: jest.fn() }));
 jest.mock("~/server/modules/cards/workshop/breakdown", () => ({ breakDownCopies: jest.fn() }));
+jest.mock("~/server/modules/cards/workshop/craft", () => ({ craftCard: jest.fn() }));
 jest.mock("~/server/modules/cards/workshop/fusion", () => ({ fuseCopies: jest.fn() }));
 jest.mock("~/server/modules/cards/workshop/dust-ledger", () => ({ getDustBalances: jest.fn() }));
 jest.mock("~/server/modules/cards/workshop/numbers", () => ({
   getPublicEconomyNumbers: jest.fn(),
 }));
 
+import { TRPCError } from "@trpc/server";
 import { rateLimiter } from "~/lib/cache";
 import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import { CARD_VALUATION_DEFAULTS } from "~/lib/cards/valuation";
@@ -25,6 +27,7 @@ import { clearVaultCachesFor } from "~/lib/vault/vault-cache";
 import { craftingRouter } from "~/server/api/routers/crafting";
 import { createCallerFactory } from "~/server/api/trpc";
 import { breakDownCopies } from "~/server/modules/cards/workshop/breakdown";
+import { craftCard } from "~/server/modules/cards/workshop/craft";
 import { getDustBalances } from "~/server/modules/cards/workshop/dust-ledger";
 import { DustError } from "~/server/modules/cards/workshop/errors";
 import { fuseCopies } from "~/server/modules/cards/workshop/fusion";
@@ -95,6 +98,42 @@ describe("crafting router", () => {
     expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1"]);
   });
 
+  it("crafts a card for the player and drops their cached balance", async () => {
+    const result = { ownershipId: "own_new", dust: 4000, credits: 1000 };
+    jest.mocked(craftCard).mockResolvedValue(result);
+    expect(await signedIn.craft({ cardId: "c1" })).toEqual(result);
+    expect(craftCard).toHaveBeenCalledWith(db, { userId: "u1", cardId: "c1" });
+    expect(clearVaultCachesFor).toHaveBeenCalledWith(db, ["u1"]);
+  });
+
+  it("keeps the cached balance when a craft is refused", async () => {
+    jest
+      .mocked(craftCard)
+      .mockRejectedValue(new TRPCError({ code: "PRECONDITION_FAILED", message: "No." }));
+    await expect(signedIn.craft({ cardId: "c1" })).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+    });
+    expect(clearVaultCachesFor).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["an empty card id", ""],
+    ["a card id past 64 characters", "x".repeat(65)],
+  ])("refuses to craft %s", async (_label, cardId) => {
+    await expect(signedIn.craft({ cardId })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(craftCard).not.toHaveBeenCalled();
+  });
+
+  it("crafts a 64-character card id on its own mutation limit", async () => {
+    jest.mocked(craftCard).mockResolvedValue({ ownershipId: "o", dust: 40, credits: 10 });
+    await signedIn.craft({ cardId: "x".repeat(64) });
+    expect(craftCard).toHaveBeenCalledWith(db, { userId: "u1", cardId: "x".repeat(64) });
+    expect(check).toHaveBeenCalledWith("user:u1", "mutation:craft", {
+      maxRequests: 60,
+      windowMs: 60_000,
+    });
+  });
+
   it("turns a dust refusal into one the player reads, and keeps the cache when nothing burned", async () => {
     jest
       .mocked(breakDownCopies)
@@ -139,6 +178,8 @@ describe("crafting router", () => {
     await expect(signedOut.fuse({ ownershipIds: ["a", "b", "c"] })).rejects.toMatchObject(
       unauthorized
     );
+    await expect(signedOut.craft({ cardId: "c1" })).rejects.toMatchObject(unauthorized);
+    expect(craftCard).not.toHaveBeenCalled();
     expect(getDustBalances).not.toHaveBeenCalled();
     expect(breakDownCopies).not.toHaveBeenCalled();
     expect(fuseCopies).not.toHaveBeenCalled();
