@@ -20,8 +20,9 @@ import type { CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client"
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { boundCopyError } from "~/lib/cards/bound";
-import { marketplaceFee } from "~/lib/cards/general-settings";
-import { SYSTEM_OWNER_IDS } from "~/lib/auth";
+import { notifyCards, type CardNotice } from "~/lib/cards/card-notify";
+import { royaltyNotices, type RoyaltyPayout } from "~/lib/cards/market/royalty";
+import { settleCardSaleTx, type CardSale } from "~/lib/cards/market/settle-sale";
 import {
   publishMarketEvent,
   type MarketBroadcastMessage,
@@ -67,124 +68,49 @@ async function notifyQuietly(
   }
 }
 
-/**
- * Nation-card royalty: 2% of the sale to the nation's owner, else the earliest human puller of
- * the card (never the seller, the buyer or a system account). Optional: must not block the sale.
- */
-async function payNationRoyalty(
-  tx: Prisma.TransactionClient,
-  auction: AuctionWithCard,
-  buyerId: string,
-  price: number
-) {
-  const card = auction.CardOwnership?.cards;
-  if (card?.cardType !== "NATION" || !card.countryId) return;
+/** An auction whose copy is still there. */
+type LiveAuction = AuctionWithCard & {
+  CardOwnership: NonNullable<AuctionWithCard["CardOwnership"]>;
+};
 
-  const royaltyAmount = Math.round(price * 0.02 * 100) / 100;
-  const isParty = (clerkId: string | null | undefined) =>
-    clerkId === auction.sellerId || clerkId === buyerId;
-
-  const nationOwner = await tx.user.findFirst({
-    where: { ownedCountries: { some: { id: card.countryId } } },
-  });
-  let recipient: string | null = null;
-  if (nationOwner && !isParty(nationOwner.clerkUserId)) {
-    recipient = nationOwner.clerkUserId;
-  } else {
-    const earliestOwnerships = await tx.cardOwnership.findMany({
-      where: { cardId: card.id },
-      orderBy: { createdAt: "asc" },
-      include: { User: true },
-    });
-    const firstHuman = earliestOwnerships.find((o) => {
-      const clerkId = o.User.clerkUserId;
-      return (
-        clerkId &&
-        clerkId.startsWith("user_") &&
-        !SYSTEM_OWNER_IDS.includes(clerkId) &&
-        !isParty(clerkId)
-      );
-    });
-    recipient = firstHuman?.User.clerkUserId ?? null;
-  }
-  if (!recipient) return;
-
-  try {
-    await vaultService.earnCreditsTx(tx, {
-      userId: recipient,
-      amount: royaltyAmount,
-      type: "EARN_PASSIVE",
-      source: "nation_card_royalty",
-      metadata: {
-        auctionId: auction.id,
-        cardId: card.id,
-        countryId: card.countryId,
-        salePrice: price,
-        royaltyRate: 0.02,
-      },
-    });
-    console.log(
-      `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${recipient} for nation card sale`
-    );
-  } catch (e) {
-    if (!(e instanceof LedgerError)) throw e;
-    console.warn("[Auction Service] Royalty skipped:", e.message);
-  }
-}
-
-/**
- * Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, and records the sale; returns
- * the copy sold. A running auction's copy is locked, so nothing burns it: a copy gone is refused before anything moves.
- */
-async function settleSale(
-  tx: Prisma.TransactionClient,
-  auction: AuctionWithCard,
-  sale: {
-    buyerId: string;
-    price: number;
-    sellerSource: string;
-    action: "AUCTION_BUYOUT" | "AUCTION_END";
-  }
-): Promise<string> {
-  const copy = auction.CardOwnership;
-  if (!copy)
+/** A running auction's copy is locked, so nothing burns it: a copy gone is refused before anything moves. */
+function assertCopyOnSale(auction: AuctionWithCard): asserts auction is LiveAuction {
+  if (auction.CardOwnership === null) {
     throw new TRPCError({ code: "CONFLICT", message: "This auction's card no longer exists" });
-  const { buyerId, price } = sale;
-  const fee = await marketplaceFee(tx, price);
-  await vaultService.earnCreditsTx(tx, {
-    userId: auction.sellerId,
-    amount: price - fee,
-    type: "EARN_CARDS",
-    source: sale.sellerSource,
-    metadata: {
-      auctionId: auction.id,
-      cardInstanceId: auction.cardInstanceId,
-      marketplaceFee: fee,
-      grossSale: price,
-    },
-  });
-  await payNationRoyalty(tx, auction, buyerId, price);
-
-  await tx.cardOwnership.update({
-    where: { id: copy.id },
-    data: { ownerId: buyerId, isLocked: false },
-  });
-  // The sale's row in the copy's provenance trail, with its price, card, serial and finish (cards refresh §3)
-  await tx.cardTransferEvent.create({
-    data: {
-      ownershipId: copy.id,
-      cardId: copy.cardId,
-      serialNumber: copy.serialNumber,
-      finish: copy.finish,
-      fromUserId: auction.sellerId,
-      toUserId: buyerId,
-      action: sale.action,
-      price,
-    },
-  });
-  await tx.card.update({ where: { id: copy.cardId }, data: { marketValue: price } });
-  return copy.id;
+  }
 }
+
+/** The sale of an auction's copy to `buyerId` at `price`. */
+function auctionSale(
+  auction: LiveAuction,
+  buyerId: string,
+  price: number,
+  kind: "AUCTION_END" | "AUCTION_BUYOUT"
+): CardSale {
+  const copy = auction.CardOwnership;
+  return {
+    ownershipId: copy.id,
+    cardId: copy.cards.id,
+    serialNumber: copy.serialNumber,
+    finish: copy.finish,
+    cardType: copy.cards.cardType,
+    countryId: copy.cards.countryId,
+    sellerId: auction.sellerId,
+    buyerId,
+    price,
+    action: kind,
+    sellerSource: kind === "AUCTION_END" ? "card_sale_auction" : "card_sale_buyout",
+    context: { auctionId: auction.id },
+    now: new Date(),
+  };
+}
+
+/** "Royalty paid" notices for an auction's sale; they go out after the commit. */
+const auctionRoyaltyNotices = (auction: LiveAuction, royalties: RoyaltyPayout[]): CardNotice[] =>
+  royaltyNotices(
+    royalties,
+    new Map([[auction.CardOwnership.cards.id, auction.CardOwnership.cards.title]])
+  );
 
 /**
  * Half the listing fee back to the seller when an auction ends unsold: the seller or an admin cancels it, or it
@@ -667,6 +593,7 @@ export class AuctionService {
       });
     }
 
+    assertCopyOnSale(auction);
     // Extract buyoutPrice for use throughout function
     const buyoutPrice = auction.buyoutPrice;
 
@@ -681,7 +608,7 @@ export class AuctionService {
 
     // Execute buyout transaction
     try {
-      await db.$transaction(async (tx) => {
+      const settlement = await db.$transaction(async (tx) => {
         // 1. Settle the auction (compare-and-swap on the state read above). If a bid,
         // another buyout or the expiry cron got there first, nothing below runs.
         const claimed = await tx.cardAuction.updateMany({
@@ -715,24 +642,18 @@ export class AuctionService {
           });
         }
 
-        // 3. Buyer pays the full price (LedgerError rolls the transaction back); seller, royalty, card follow
+        // 3. Buyer pays the full price (LedgerError rolls the transaction back); the copy, seller and royalty follow
         await vaultService.spendCreditsTx(tx, {
           userId: params.userId,
           amount: buyoutPrice,
           type: "SPEND_MARKET",
           source: "card_purchase_buyout",
-          metadata: {
-            auctionId: params.auctionId,
-            cardInstanceId: auction.cardInstanceId,
-            marketplaceFee: await marketplaceFee(tx, buyoutPrice),
-          },
+          metadata: { auctionId: params.auctionId, cardInstanceId: auction.cardInstanceId },
         });
-        await settleSale(tx, auction, {
-          buyerId: params.userId,
-          price: buyoutPrice,
-          sellerSource: "card_sale_buyout",
-          action: "AUCTION_BUYOUT",
-        });
+        return settleCardSaleTx(
+          tx,
+          auctionSale(auction, params.userId, buyoutPrice, "AUCTION_BUYOUT")
+        );
       });
 
       console.log(
@@ -740,6 +661,7 @@ export class AuctionService {
       );
 
       await broadcastComplete(params.auctionId, params.userId, buyoutPrice);
+      await notifyCards(db, auctionRoyaltyNotices(auction, settlement.royalties));
 
       return { success: true };
     } catch (error) {
@@ -791,7 +713,7 @@ export class AuctionService {
     const finalPrice = auction.currentBid ?? auction.startingPrice;
 
     try {
-      await db.$transaction(async (tx) => {
+      const notices = await db.$transaction(async (tx): Promise<CardNotice[]> => {
         // Settle the auction first (compare-and-swap on the state read above). A buyout,
         // a cancel or another cron run that got there first leaves nothing to do.
         const claimed = await tx.cardAuction.updateMany({
@@ -806,20 +728,17 @@ export class AuctionService {
             : { status: "CANCELLED" },
         });
         if (claimed.count !== 1) {
-          return;
+          return [];
         }
 
         if (auction.currentBidderId) {
           // Credits were reserved from the bidder at bid time; pay the seller and hand over the card
-          const copyId = await settleSale(tx, auction, {
-            buyerId: auction.currentBidderId,
-            price: finalPrice,
-            sellerSource: "card_sale_auction",
-            action: "AUCTION_END",
-          });
+          assertCopyOnSale(auction);
+          const sale = auctionSale(auction, auction.currentBidderId, finalPrice, "AUCTION_END");
+          const settlement = await settleCardSaleTx(tx, sale);
 
           // Card XP for the winner's copy (the Economy tab's auction-win amount)
-          await grantCardXp(tx, copyId, "AUCTION_WIN", JSON.stringify({ auctionId }));
+          await grantCardXp(tx, sale.ownershipId, "AUCTION_WIN", JSON.stringify({ auctionId }));
 
           console.log(
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`
@@ -827,7 +746,7 @@ export class AuctionService {
 
           await broadcastComplete(auctionId, auction.currentBidderId, finalPrice);
 
-          const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+          const cardTitle = auction.CardOwnership.cards.title;
           await notifyQuietly("Winner", auctionId, {
             userId: auction.currentBidderId,
             title: "You Won an Auction!",
@@ -846,6 +765,7 @@ export class AuctionService {
             priority: "high",
             metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
           });
+          return auctionRoyaltyNotices(auction, settlement.royalties);
         } else {
           // No bids - return card to seller (unless it is gone), refund 50% of listing fee
           if (auction.cardInstanceId !== null) {
@@ -873,8 +793,10 @@ export class AuctionService {
             priority: "low",
             metadata: { auctionId },
           });
+          return [];
         }
       });
+      await notifyCards(db, notices);
     } catch (error) {
       console.error(`[Auction Service] Failed to complete auction ${auctionId}:`, error);
       throw error;
