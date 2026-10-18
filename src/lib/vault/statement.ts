@@ -188,6 +188,7 @@ const EXACT_ICON: Record<string, RowIconKey> = {
   card_purchase_listing: "market",
   listing_fee: "market",
   nation_card_royalty: "market",
+  card_craft: "market",
 };
 
 const PREFIX_ICON: [prefix: string, key: RowIconKey][] = [
