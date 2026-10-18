@@ -1,15 +1,20 @@
 "use client";
-/** The pack editor's odds and pool: odds per rarity with their total, the pool filter, and the pool preview. */
+/**
+ * The pack editor's odds and pool: odds per rarity with their total, the card type and pool filter, and the pool
+ * preview, which says what keeps the pack off sale.
+ */
 import { useId, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import {
+  PACK_CARD_TYPES,
   PACK_ODDS_FIELDS,
   PackOddsSchema,
   oddsAddUp,
   packOddsTotal,
+  rarityList,
   type PackOdds,
 } from "~/lib/cards/pack-odds";
 import { Badge } from "~/components/ui/badge";
@@ -17,8 +22,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { ValueSelect } from "~/components/ui/value-select";
 import {
-  CARD_TYPES,
   CARD_TYPE_LABELS,
   RARITY_LABELS,
   type CardTypeValue,
@@ -26,15 +31,18 @@ import {
 } from "../shared/card-labels";
 
 type Pool = RouterInputs["cards"]["admin"]["packs"]["save"]["pool"];
+type PreviewInput = RouterInputs["cards"]["admin"]["packs"]["preview"];
 type Preview = RouterOutputs["cards"]["admin"]["packs"]["preview"];
 
 const CATEGORY_OPTIONS = Object.values(LoreCategory).map(
   (category) => [category, getCategoryLabel(category)] as const
 );
 /** Special and Trophy cards never drop from packs, so the pool offers only the types that do. */
-const TYPE_OPTIONS = CARD_TYPES.filter((type) => type !== "SPECIAL" && type !== "TROPHY").map(
-  (type) => [type, CARD_TYPE_LABELS[type]] as const
-);
+const TYPE_OPTIONS = PACK_CARD_TYPES.map((type) => [type, CARD_TYPE_LABELS[type]] as const);
+const CARD_TYPE_OPTIONS: readonly (readonly [CardTypeValue | "any", string])[] = [
+  ["any", "Any type"],
+  ...TYPE_OPTIONS,
+];
 
 interface PoolTogglesProps<T extends string> {
   label: string;
@@ -89,11 +97,38 @@ function PoolToggles<T extends string>({
   );
 }
 
-/** What the pack's own type and season add to the pool, or null when it has neither. */
-function packScopeNote(cardType: CardTypeValue | null, season: number | null): string | null {
-  if (!cardType && !season) return null;
-  const cards = cardType ? `${CARD_TYPE_LABELS[cardType]} cards` : "cards";
-  return `This pack draws only ${cards}${season ? ` from season ${season}` : ""}.`;
+/**
+ * The pool preview: off until asked for, then it follows the edits, waiting while the odds are not valid. `data` is
+ * the preview shown, so a result cached from an earlier visit stays hidden until asked for.
+ */
+export function usePackPoolPreview(input: PreviewInput) {
+  const [previewing, setPreviewing] = useState(false);
+  const oddsValid = PackOddsSchema.safeParse(input.odds).success;
+  const query = api.cards.admin.packs.preview.useQuery(input, {
+    enabled: previewing && oddsValid,
+    placeholderData: keepPreviousData,
+  });
+  return {
+    previewing,
+    start: () => setPreviewing(true),
+    oddsValid,
+    data: previewing ? query.data : undefined,
+    isError: query.isError,
+    isFetching: query.isFetching,
+  };
+}
+type PackPoolPreview = ReturnType<typeof usePackPoolPreview>;
+
+/** "Epic has odds but no cards…", for the rarities the pack gives odds for with nothing to draw. */
+function oddsGapNote(rarities: readonly RarityValue[]): string {
+  const one = rarities.length === 1;
+  return `${rarityList(rarities, RARITY_LABELS)} ${one ? "has" : "have"} odds but no cards, so this pack can't go on sale. Set ${one ? "its" : "their"} odds to 0 or widen the pool.`;
+}
+
+/** Bought packs wait unopened while their pool can't give a rarity they show. */
+function unopenedNote(unopened: number, rarities: number): string {
+  const packs = `${unopened.toLocaleString()} bought ${unopened === 1 ? "pack" : "packs"}`;
+  return `${packs} can't be opened until ${rarities === 1 ? "that rarity has" : "those rarities have"} cards.`;
 }
 
 function PoolPreview({
@@ -103,11 +138,10 @@ function PoolPreview({
   preview: Preview;
   guaranteedRarity: RarityValue | null;
 }) {
-  const fallsBack = preview.byRarity.some((row) => row.fallsBack);
-  // The guaranteed slot draws from its own tier, so a tier with no cards cannot honour it
-  const guaranteeEmpty = preview.byRarity.some(
-    (row) => row.rarity === guaranteedRarity && row.count === 0
-  );
+  // Each rarity keeping the pack off sale is named once: the guarantee on its own line, the others by their odds
+  const oddsGaps = preview.undeliverable.filter((rarity) => rarity !== guaranteedRarity);
+  const guaranteeGap =
+    guaranteedRarity && preview.undeliverable.includes(guaranteedRarity) ? guaranteedRarity : null;
   return (
     <div className="space-y-2">
       <p className="text-footnote text-label-secondary">
@@ -116,21 +150,23 @@ function PoolPreview({
       <ul className="flex flex-wrap gap-2">
         {preview.byRarity.map((row) => (
           <li key={row.rarity}>
-            <Badge variant={row.fallsBack ? "warning" : "default"}>
-              {`${RARITY_LABELS[row.rarity]}: ${row.count.toLocaleString()}${row.fallsBack ? ", none to draw" : ""}`}
+            <Badge variant={row.empty ? "warning" : "default"}>
+              {`${RARITY_LABELS[row.rarity]}: ${row.count.toLocaleString()}${row.empty ? ", none to draw" : ""}`}
             </Badge>
           </li>
         ))}
       </ul>
-      {fallsBack && (
-        <p className="text-footnote text-label-secondary">
-          A rarity with odds but no cards draws from the next rarity down that has cards, or up when
-          none below do.
+      {oddsGaps.length > 0 && (
+        <p className="text-footnote text-warning-ink">{oddsGapNote(oddsGaps)}</p>
+      )}
+      {guaranteeGap && (
+        <p className="text-footnote text-warning-ink">
+          {`No ${RARITY_LABELS[guaranteeGap]} cards are in this pool, so the guarantee can't be met.`}
         </p>
       )}
-      {guaranteeEmpty && guaranteedRarity && (
+      {preview.undeliverable.length > 0 && preview.unopened > 0 && (
         <p className="text-footnote text-warning-ink">
-          {`No ${RARITY_LABELS[guaranteedRarity]} cards are in this pool, so the guaranteed card draws another rarity.`}
+          {unopenedNote(preview.unopened, preview.undeliverable.length)}
         </p>
       )}
       {preview.samples.length === 0 ? (
@@ -156,10 +192,13 @@ interface PackPoolFieldsProps {
   onOddsChange: (odds: PackOdds) => void;
   pool: Pool;
   onPoolChange: (pool: Pool) => void;
-  /** The pack's own type and season: read-only here, they narrow the preview. */
+  /** The one type the pack draws, or null for any. */
   cardType: CardTypeValue | null;
+  onCardTypeChange: (cardType: CardTypeValue | null) => void;
+  /** The pack's own season: read-only here, it narrows the pool. */
   season: number | null;
   guaranteedRarity: RarityValue | null;
+  preview: PackPoolPreview;
 }
 
 export function PackPoolFields({
@@ -168,19 +207,13 @@ export function PackPoolFields({
   pool,
   onPoolChange,
   cardType,
+  onCardTypeChange,
   season,
   guaranteedRarity,
+  preview,
 }: PackPoolFieldsProps) {
-  const [previewing, setPreviewing] = useState(false);
   const realms = api.cards.admin.overview.realms.useQuery();
-  const oddsValid = PackOddsSchema.safeParse(odds).success;
-  // Once asked for, the preview follows the edits; it waits while the odds are not valid.
-  const preview = api.cards.admin.packs.preview.useQuery(
-    { cardType, season, pool, odds },
-    { enabled: previewing && oddsValid, placeholderData: keepPreviousData }
-  );
   const balanced = oddsAddUp(odds);
-  const scopeNote = packScopeNote(cardType, season);
 
   return (
     <div className="space-y-6">
@@ -217,7 +250,20 @@ export function PackPoolFields({
 
       <fieldset className="space-y-4">
         <legend className="text-headline text-label">Pool</legend>
-        {scopeNote && <p className="text-footnote text-label-secondary">{scopeNote}</p>}
+        <div className="space-y-1">
+          <Label htmlFor="pack-card-type">Card type</Label>
+          <ValueSelect<CardTypeValue | "any">
+            id="pack-card-type"
+            value={cardType ?? "any"}
+            onValueChange={(value) => onCardTypeChange(value === "any" ? null : value)}
+            options={CARD_TYPE_OPTIONS}
+          />
+        </div>
+        {season ? (
+          <p className="text-footnote text-label-secondary">
+            {`This pack draws only cards from season ${season}.`}
+          </p>
+        ) : null}
         {realms.data ? (
           <PoolToggles
             label="Realms"
@@ -250,22 +296,20 @@ export function PackPoolFields({
       </fieldset>
 
       <div className="space-y-3">
-        {!previewing && (
-          <Button variant="secondary" disabled={!oddsValid} onClick={() => setPreviewing(true)}>
+        {!preview.previewing && (
+          <Button variant="secondary" disabled={!preview.oddsValid} onClick={preview.start}>
             Preview the pool
           </Button>
         )}
-        {previewing && preview.isError && (
+        {preview.previewing && preview.isError && (
           <p role="alert" className="text-footnote text-destructive">
             The pool preview did not load. Edit the pool or reopen the pack to try again.
           </p>
         )}
-        {previewing && !preview.data && preview.isFetching && (
+        {preview.previewing && !preview.data && preview.isFetching && (
           <p className="text-footnote text-label-secondary">Counting the pool</p>
         )}
-        {previewing && preview.data && (
-          <PoolPreview preview={preview.data} guaranteedRarity={guaranteedRarity} />
-        )}
+        {preview.data && <PoolPreview preview={preview.data} guaranteedRarity={guaranteedRarity} />}
       </div>
     </div>
   );

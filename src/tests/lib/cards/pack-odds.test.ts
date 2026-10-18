@@ -9,6 +9,7 @@ import {
   rarityList,
   undeliverableRarities,
 } from "~/lib/cards/pack-odds";
+import { RARITY_LABEL } from "~/lib/cards/face/labels";
 
 const seeded = {
   commonOdds: 65,
@@ -93,4 +94,9 @@ it("lists rarities by name for a refusal", () => {
   expect(rarityList(["EPIC", "LEGENDARY"])).toBe("Epic and Legendary");
   expect(rarityList(["RARE", "ULTRA_RARE", "LEGENDARY"])).toBe("Rare, Ultra Rare and Legendary");
   expect(rarityList([])).toBe("");
+});
+
+it("lists rarities with the caller's labels, so the admin keeps its sentence case", () => {
+  const admin = { ...RARITY_LABEL, ULTRA_RARE: "Ultra rare" };
+  expect(rarityList(["RARE", "ULTRA_RARE"], admin)).toBe("Rare and Ultra rare");
 });

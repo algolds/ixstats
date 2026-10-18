@@ -2,7 +2,7 @@
  * A pack's odds per rarity, as stored on CardPack (percent per card), and the bounds the pack editor and the server
  * share. Odds are shown in the store, so they add up to 100. Client-safe.
  */
-import type { CardRarity } from "@prisma/client";
+import type { CardRarity, CardType } from "@prisma/client";
 import { z } from "zod";
 import { RARITY_LABEL } from "~/lib/cards/face/labels";
 
@@ -33,6 +33,8 @@ export const PACK_MAX_PRICE = 1_000_000;
 export const PACK_MAX_CARDS = 20;
 /** The most a pack's total stock or per-player limit can be (well inside the int4 columns). */
 export const PACK_MAX_LIMIT = 1_000_000;
+/** The card types a pack can draw: Special and Trophy cards never drop from packs. */
+export const PACK_CARD_TYPES: readonly CardType[] = ["LORE", "NATION", "NS"];
 
 export function packOddsTotal(odds: PackOdds): number {
   return PACK_ODDS_FIELDS.reduce((sum, [, field]) => sum + odds[field], 0);
@@ -87,9 +89,12 @@ export function undeliverableRarities(
   );
 }
 
-/** "Epic and Legendary", for the refusals. */
-export function rarityList(rarities: readonly CardRarity[]): string {
-  const names = rarities.map((rarity) => RARITY_LABEL[rarity]);
+/** "Epic and Legendary", for the refusals; the admin passes its own sentence-case labels. */
+export function rarityList(
+  rarities: readonly CardRarity[],
+  labels: Readonly<Record<CardRarity, string>> = RARITY_LABEL
+): string {
+  const names = rarities.map((rarity) => labels[rarity]);
   return names.length > 1
     ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
     : (names[0] ?? "");

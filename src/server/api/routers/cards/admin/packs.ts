@@ -1,4 +1,4 @@
-import { CardType } from "@prisma/client";
+import { CardRarity, CardType } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { PackOddsSchema } from "~/lib/cards/pack-odds";
@@ -24,10 +24,12 @@ export const cardsAdminPacksRouter = createTRPCRouter({
   preview: adminProcedure
     .input(
       z.object({
+        packId: z.string().min(1).nullable(),
         cardType: z.nativeEnum(CardType).nullable(),
         season: PackSeasonSchema,
         pool: PackPoolSchema,
         odds: PackOddsSchema,
+        guaranteedRarity: z.nativeEnum(CardRarity).nullable(),
       })
     )
     .query(({ ctx, input }) => previewPackPool(ctx.db, input)),

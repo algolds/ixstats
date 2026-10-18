@@ -105,7 +105,7 @@ function unknownValues(value: Prisma.JsonValue | undefined, allowed: readonly st
 export function mergePackTheme(
   existing: Prisma.JsonValue | null,
   pool: { realmIds: readonly string[]; categories: readonly string[]; cardTypes: readonly string[] }
-): Prisma.InputJsonObject {
+): Prisma.JsonObject {
   const stored: Prisma.JsonObject = isJsonObject(existing) ? existing : {};
   return {
     ...stored,
