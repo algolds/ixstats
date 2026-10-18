@@ -1,5 +1,6 @@
 // The reader's view bundle (split out of render-service.ts): its shape and renderer version, building one from
-// MediaWiki's HTML, loading a stored one (re-sanitizing an outdated one) and the in-process fallback view.
+// MediaWiki's HTML, loading a stored one (re-sanitizing an outdated one, with its profile links made current) and the
+// in-process fallback view.
 
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
@@ -8,6 +9,7 @@ import {
   sanitizeWikiArticleHtml,
   wikiArticleSanitizerFingerprint,
 } from "~/lib/utils/sanitize-html";
+import { currentProfileLinks } from "../legacy-profile-links";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
 import { leavesAlone } from "../transformers/dom-depth";
@@ -92,7 +94,14 @@ export interface LoadedViewBundle {
 }
 
 /**
- * `bundle` with every HTML part (body, infobox, notices; the TOC is plain text) sanitized by the current rules.
+ * One HTML part of an outdated bundle as a render would leave it now: old profile and passport links pointed at the
+ * current pages (`currentProfileLinks`, with its early-out, as the link transform does), then sanitized by the current
+ * rules, which have the last word.
+ */
+const resanitizePart = (html: string) => sanitizeWikiArticleHtml(currentProfileLinks(html));
+
+/**
+ * `bundle` with every HTML part (body, infobox, notices; the TOC is plain text) brought current by `resanitizePart`.
  * Null for a bundle with a part over the DOM ceilings of inert-dom.ts (too long, or nested too deep): sanitizing is a
  * DOM pass, and an anonymous reader's request would pay for it; the page is rendered again instead, as one with no
  * bundle is.
@@ -102,16 +111,17 @@ function resanitizeViewBundle(bundle: ViewBundle): ViewBundle | null {
   if (parts.some((html) => html !== null && leavesAlone(html))) return null;
   return {
     ...bundle,
-    bodyHtml: sanitizeWikiArticleHtml(bundle.bodyHtml),
-    infoboxHtml: bundle.infoboxHtml === null ? null : sanitizeWikiArticleHtml(bundle.infoboxHtml),
-    noticesHtml: bundle.noticesHtml === null ? null : sanitizeWikiArticleHtml(bundle.noticesHtml),
+    bodyHtml: resanitizePart(bundle.bodyHtml),
+    infoboxHtml: bundle.infoboxHtml === null ? null : resanitizePart(bundle.infoboxHtml),
+    noticesHtml: bundle.noticesHtml === null ? null : resanitizePart(bundle.noticesHtml),
   };
 }
 
 /**
  * The bundle and freshness of an article. A bundle of this renderer version is returned as it is. One
  * that only differs in its renderer version (an older transform or sanitizer built it) is returned
- * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule.
+ * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule, and with
+ * its old profile links already pointing at the current pages while the page waits to be rendered again.
  * Null when the article has no bundle, or one whose shape is not a bundle's at all, or one the sanitizer
  * throws on, or one too big or too deep to sanitize on a read (resanitizeViewBundle).
  */
