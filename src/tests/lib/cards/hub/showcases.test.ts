@@ -39,9 +39,9 @@ const item = (id: string, isRetired = false) => ({
   id: `item-${id}`,
   cardOwnership: copy(id, isRetired),
 });
-/** The owner by passport handle (a wiki name; they have no stored handle), showing or hiding their Vault cards. */
+/** The owner as the identity rule names them (here their nation: they have no handle), showing or hiding their Vault cards. */
 const ownerShowing = (showsVault: boolean) => ({
-  playersOf: jest.fn(async () => new Map([["owner", { handle: "Takatta Loa", showsVault }]])),
+  playersOf: jest.fn(async () => new Map([["owner", { name: "Caphiria", showsVault }]])),
 });
 const visible = ownerShowing(true);
 const hidden = ownerShowing(false);
@@ -141,12 +141,12 @@ describe("getShowcase", () => {
     items: [item("c1"), item("c2", true)],
   };
 
-  it("shows a public showcase's art to anyone while its owner shows Vault cards, by their passport handle", async () => {
+  it("shows a public showcase's art to anyone while its owner shows Vault cards, with the owner's name", async () => {
     const db = createMockPrisma();
     db.cardCollection.findUnique.mockResolvedValue(row);
     const view = await getShowcase(db as never, "me", "s1", visible);
     expect(view).toMatchObject({
-      ownerHandle: "Takatta Loa",
+      ownerName: "Caphiria",
       isOwner: false,
       pinned: false,
       items: [{ itemId: "item-c1", face: { artwork: "https://art/c1.png", silhouette: false } }],
@@ -184,7 +184,7 @@ describe("getShowcase", () => {
     await expect(getShowcase(db as never, "me", "s1", hidden)).resolves.toBeNull();
     await expect(getShowcase(db as never, "owner", "s1", hidden)).resolves.toMatchObject({
       isOwner: true,
-      ownerHandle: null,
+      ownerName: null,
     });
     db.cardCollection.findUnique.mockResolvedValue(null);
     await expect(getShowcase(db as never, "me", "s9", visible)).resolves.toBeNull();

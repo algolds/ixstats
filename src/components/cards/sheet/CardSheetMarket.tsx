@@ -27,8 +27,8 @@ const credits = (amount: number) => (
 
 const seller = (listing: SheetListing) => {
   if (listing.isMine) return "Your listing";
-  // A seller whose passport hides Vault cards is not named.
-  return listing.sellerHandle ? `@${listing.sellerHandle}` : "A player";
+  // A seller whose passport hides Vault cards, or who has no name to show, is not named.
+  return listing.sellerName ?? "A player";
 };
 
 /** "Market": what a copy is worth, how many want it, live listings, price history and recent sales. */

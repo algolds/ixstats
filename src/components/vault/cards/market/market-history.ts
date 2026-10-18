@@ -2,8 +2,8 @@
 import type { Prisma } from "@prisma/client";
 import type { CardFaceData } from "~/lib/cards/face/types";
 
-/** A trade's side, named by passport handle (`trading.getTradeHistory`). */
-type Party = { clerkUserId: string; passportHandle: string } | null;
+/** A trade's side, named by the identity rule (`trading.getTradeHistory`; null reads "a player"). */
+type Party = { clerkUserId: string; displayName: string | null } | null;
 
 /** A finished trade as `trading.getTradeHistory` lists it. */
 export interface TradeLike {
@@ -32,7 +32,7 @@ export type HistoryEntry =
       id: string;
       at: Date;
       label: string;
-      partnerHandle: string | null;
+      partnerName: string | null;
       gave: number;
       got: number;
     }
@@ -75,7 +75,7 @@ export function mergeMarketHistory(
       id: trade.id,
       at: trade.updatedAt,
       label: TRADE_LABEL[trade.status] ?? "Ended",
-      partnerHandle: (sent ? trade.recipient : trade.initiator)?.passportHandle ?? null,
+      partnerName: (sent ? trade.recipient : trade.initiator)?.displayName ?? null,
       gave: count(sent ? trade.initiatorCardIds : trade.recipientCardIds),
       got: count(sent ? trade.recipientCardIds : trade.initiatorCardIds),
     };

@@ -663,7 +663,7 @@ follows the silhouette rules ([cards.md](../systems/cards.md#silhouettes)).
 
 ```typescript
 // Queries (12)
-api.cards.listMine.useQuery({ realmId?, rarities?, finishes?, types?, categories?, duplicates?, search?, sort?, cursor?, limit? }) // Mine
+api.cards.listMine.useQuery({ copyId?, realmId?, rarities?, finishes?, types?, categories?, duplicates?, search?, sort?, cursor?, limit? }) // Mine
 api.cards.exploreShelves.useQuery() // Explore's realm shelves (top 12) and realms: every public realm with cards other than trophies, for the realm filters
 api.cards.exploreGrid.useQuery({ realmId?, rarities?, types?, categories?, region?, season?, owned?, search?, sort?, cursor?, limit? })
 api.cards.exploreRegions.useQuery({ search? }) // NationStates regions with cards, at most 60

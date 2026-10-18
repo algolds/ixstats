@@ -2,7 +2,7 @@
 /**
  * cards.getSheet: open to signed-out visitors on the read-only rate limit, parses `from`, ignores a malformed one,
  * checks showcases against the passport switch, finds a holder by the passport handle they show (`holderOf`, the real
- * handle chain over a mocked database), and names players by passport handle in one batch (`playersOf`).
+ * handle chain over a mocked database), and names players by the identity rule in one batch (`playersOf`).
  */
 const mockCheck = jest.fn();
 jest.mock("~/lib/cache", () => ({
@@ -18,9 +18,13 @@ jest.mock("~/server/modules/identity/identity.privacy", () => ({
   loadPassportSettings: jest.fn(async () => ({ visibility: { vaultCards: false } })),
   loadVaultCardsShown: jest.fn(async () => new Set(["u-shows"])),
 }));
-jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
-  loadPassportHandle: jest.fn(async (user: { handle: string | null; clerkUserId: string }) =>
-    user.handle ? user.handle : `wiki-${user.clerkUserId}`
+jest.mock("~/server/modules/identity/identity.player-names", () => ({
+  loadPlayerNames: jest.fn(
+    async () =>
+      new Map([
+        ["u-shows", { handle: "ann", displayName: "@ann" }],
+        ["u-hides", { handle: "clerk-u-hides", displayName: "Caphiria" }],
+      ])
   ),
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
@@ -37,7 +41,7 @@ import {
   loadPassportSettings,
   loadVaultCardsShown,
 } from "~/server/modules/identity/identity.privacy";
-import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
+import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import { getArticleIntro, getArticleWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -157,35 +161,18 @@ describe("vaultVisible", () => {
 });
 
 describe("playersOf", () => {
-  const users = jest.mocked(serverDb.user);
-  const row = (id: string, handle: string | null) => ({
-    id,
-    clerkUserId: `clerk-${id}`,
-    handle,
-    forumUsername: null,
-  });
-
-  it("names everyone by passport handle from one user read and one passport read", async () => {
-    users.findMany.mockResolvedValue([row("u-shows", "ann"), row("u-hides", null)] as never);
-    const players = await playersOf(["u-shows", "u-hides", "u-shows", "u-gone"]);
-    expect(users.findMany).toHaveBeenCalledTimes(1);
-    expect(users.findMany).toHaveBeenCalledWith({
-      where: { id: { in: ["u-shows", "u-hides", "u-gone"] } },
-      select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
-    });
+  it("names everyone by the identity rule, with one batched name read and one passport read", async () => {
+    const ids = ["u-shows", "u-hides", "u-shows", "u-gone"];
+    const players = await playersOf(ids);
+    expect(loadPlayerNames).toHaveBeenCalledTimes(1);
+    expect(loadPlayerNames).toHaveBeenCalledWith(ids);
     expect(loadVaultCardsShown).toHaveBeenCalledTimes(1);
-    expect(loadVaultCardsShown).toHaveBeenCalledWith(["u-shows", "u-hides", "u-gone"]);
-    expect(loadPassportHandle).toHaveBeenCalledTimes(2);
+    expect(loadVaultCardsShown).toHaveBeenCalledWith(ids);
+    // A player who no longer exists is left out.
     expect([...players]).toEqual([
-      ["u-shows", { handle: "ann", showsVault: true }],
-      ["u-hides", { handle: "wiki-clerk-u-hides", showsVault: false }],
+      ["u-shows", { name: "@ann", showsVault: true }],
+      ["u-hides", { name: "Caphiria", showsVault: false }],
     ]);
-  });
-
-  it("reads nothing when nobody is named", async () => {
-    await expect(playersOf([])).resolves.toEqual(new Map());
-    expect(users.findMany).not.toHaveBeenCalled();
-    expect(loadVaultCardsShown).not.toHaveBeenCalled();
   });
 });
 

@@ -115,6 +115,15 @@ describe("selectMine", () => {
     ]);
   });
 
+  it("finds one copy by its id, for the Sell picker's linked copy, and still counts the rest", () => {
+    const second = all[1]!.row.id;
+    const page = selectMine(all, query({ copyId: second }));
+    expect(page.rows.map((r) => r.face.copy!.ownershipId)).toEqual([second]);
+    expect(page.rows[0]!.copies).toBe(2);
+    expect(page).toMatchObject({ total: 1, totalCopies: 4 });
+    expect(selectMine(all, query({ copyId: "o-elsewhere" })).rows).toEqual([]);
+  });
+
   it("treats an empty filter list, a false duplicates flag and a blank search as no filter", () => {
     const open = query({
       rarities: [],
@@ -204,6 +213,8 @@ describe("MineQuerySchema", () => {
     expect(MineQuerySchema.safeParse({ cursor: -1 }).success).toBe(false);
     expect(MineQuerySchema.safeParse({ cursor: null }).success).toBe(true);
     expect(MineQuerySchema.safeParse({ rarities: ["MYTHIC"] }).success).toBe(false);
+    expect(MineQuerySchema.safeParse({ copyId: "" }).success).toBe(false);
+    expect(MineQuerySchema.safeParse({ copyId: "o".repeat(65) }).success).toBe(false);
   });
 });
 

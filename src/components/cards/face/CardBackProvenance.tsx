@@ -17,7 +17,7 @@ interface CardBackProvenanceProps {
   face: CardFaceData;
   copy: {
     experience: number;
-    inscription: { text: string; signerHandle: string | null; signedAt: Date | null } | null;
+    inscription: { text: string; signerName: string | null; signedAt: Date | null } | null;
     /** Newest first. */
     trail: TrailEvent[];
   } | null;
@@ -29,8 +29,8 @@ const longDate = (date: Date) =>
   date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
 
 /**
- * The card back: realm crest, serial and finish, the inscription with the signer's handle, level and XP, the ownership
- * trail by handle, the art credit and licence, and for NS cards the NationStates provenance line. Its edge uses the
+ * The card back: realm crest, serial and finish, the inscription with the signer's name, level and XP, the ownership
+ * trail by name, the art credit and licence, and for NS cards the NationStates provenance line. Its edge uses the
  * same rarity colour as the face.
  */
 export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProvenanceProps) {
@@ -57,8 +57,7 @@ export function CardBackProvenance({ face, copy, artCredit, ns }: CardBackProven
         <figure className="facet-well rounded-row p-3">
           <blockquote className="text-body">{copy.inscription.text}</blockquote>
           <figcaption className="text-label-secondary mt-1">
-            Signed by{" "}
-            {copy.inscription.signerHandle ? `@${copy.inscription.signerHandle}` : "a player"}
+            Signed by {copy.inscription.signerName ?? "a player"}
             {copy.inscription.signedAt ? ` on ${longDate(copy.inscription.signedAt)}` : ""}
           </figcaption>
         </figure>

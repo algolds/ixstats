@@ -1,13 +1,16 @@
 // src/lib/cards/face/trail.ts
 import type { MintSource } from "~/lib/cards/mint";
 
-/** A player on one side of a move: their passport handle, or null while their Passport hides Vault cards. */
+/**
+ * A player on one side of a move: their name as the server gives it ("@handle", or their nation), or null ("a player")
+ * while their Passport hides Vault cards or they have neither.
+ */
 export interface TrailParty {
-  handle: string | null;
+  name: string | null;
 }
 
 /**
- * One move in a copy's ownership trail, by handle (never internal ids). A side with no player (a mint's sender, a copy
+ * One move in a copy's ownership trail, by name (never internal ids). A side with no player (a mint's sender, a copy
  * leaving every player) is null.
  */
 export interface TrailEvent {
@@ -49,12 +52,9 @@ export function trailLabel(action: string): string {
   return isTrailAction(action) ? TRAIL_LABEL[action] : "Moved";
 }
 
-const partyName = (party: TrailParty | null) => {
-  if (!party) return null;
-  return party.handle ? `@${party.handle}` : "a player";
-};
+const partyName = (party: TrailParty | null) => (party ? (party.name ?? "a player") : null);
 
-/** "@a to @b", "to @b", "from @a" (a hidden player is "a player"), or null when neither side is a player. */
+/** "@a to @b", "to @b", "from @a" (a player with no name is "a player"), or null when neither side is a player. */
 export function trailParties(event: Pick<TrailEvent, "from" | "to">): string | null {
   const from = partyName(event.from);
   const to = partyName(event.to);

@@ -8,8 +8,12 @@ import { MINE_SORTS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace, toRealmBadge } from "./faces";
 
-/** Mine's filters, search, sort and page (spec §2.3 Mine). `cursor` is an offset. */
+/**
+ * Mine's filters, search, sort and page (spec §2.3 Mine). `cursor` is an offset. `copyId` finds one copy, as the Sell
+ * picker does for the copy a `?sell=` link names, wherever it falls in the pages.
+ */
 export const MineQuerySchema = z.object({
+  copyId: z.string().min(1).max(64).optional(),
   realmId: z.string().min(1).max(64).optional(),
   rarities: z.array(z.enum(CardRarity)).max(6).optional(),
   finishes: z.array(z.enum(CardFinish)).max(4).optional(),
@@ -81,6 +85,7 @@ function matches(
   copies: ReadonlyMap<string, number>
 ): boolean {
   return (
+    (!query.copyId || entry.row.id === query.copyId) &&
     matchesFacets(entry, query) &&
     (!query.duplicates || (copies.get(entry.row.cardId) ?? 0) > 1) &&
     (!search || entry.row.cards.title.toLowerCase().includes(search))
