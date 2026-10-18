@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /** The Library: realm-scoped filters, an audited edit with a rarity override, and bulk hide. */
 import { MAX_FILTER_REVIEW } from "~/lib/cards/curation-limits";
-import { CARD_VALUATION_DEFAULTS, computeCardValue } from "~/lib/cards/valuation";
+import { CARD_VALUATION_DEFAULTS, referenceValue } from "~/lib/cards/valuation";
 import {
   LibraryFilterSchema,
   bulkSetRetired,
@@ -128,6 +128,7 @@ describe("updateLibraryCard", () => {
     cardType: string;
     wikiSource: string | null;
     isRetired: boolean;
+    firstSoldAt: Date | null;
     metadata: object | null;
     artLicence: { status: string } | null;
     _count: { takedowns: number };
@@ -141,6 +142,7 @@ describe("updateLibraryCard", () => {
     cardType: "LORE",
     wikiSource: "iiwiki",
     isRetired: false,
+    firstSoldAt: null,
     metadata: null,
     artLicence: null,
     _count: { takedowns: 0 },
@@ -212,7 +214,17 @@ describe("updateLibraryCard", () => {
     const write = tx.card.updateMany.mock.calls[0]![0];
     expect(write.data).toEqual({
       rarity: "EPIC",
-      marketValue: computeCardValue({ rarity: "EPIC", cardType: "LORE" }, CARD_VALUATION_DEFAULTS),
+      marketValue: referenceValue(
+        {
+          rarity: "EPIC",
+          cardType: "LORE",
+          firstSoldAt: null,
+          nsBankValue: null,
+          isRetired: false,
+        },
+        null,
+        CARD_VALUATION_DEFAULTS
+      ),
     });
     expect(actions(tx)).toEqual(["CARD_RARITY_OVERRIDE"]);
     expect(tx.auditLog.create.mock.calls[0]![0].data).toMatchObject({
@@ -223,17 +235,24 @@ describe("updateLibraryCard", () => {
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
 
-  it("re-prices an NS card from its NationStates bank value", async () => {
-    const { db, tx, edit } = setUp(
-      stored({ cardType: "NS", metadata: { nsData: { market_value: "1000" } } })
-    );
-    await updateLibraryCard(db as never, actor, { ...edit, rarity: "RARE", reason: "Season fix" });
-    expect(tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(
-      computeCardValue(
-        { rarity: "RARE", cardType: "NS", nsMarketValue: 1000 },
-        CARD_VALUATION_DEFAULTS
-      )
-    );
+  it("re-prices an NS card from its NationStates bank value until a copy of it sells here", async () => {
+    const ns = { cardType: "NS", metadata: { nsData: { market_value: "1000" } } };
+    const unsold = setUp(stored(ns));
+    await updateLibraryCard(unsold.db as never, actor, {
+      ...unsold.edit,
+      rarity: "RARE",
+      reason: "Season fix",
+    });
+    // 1,000 × the 1.5 premium, over the Rare floor of 100
+    expect(unsold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(1500);
+
+    const sold = setUp(stored({ ...ns, firstSoldAt: new Date("2026-11-01") }));
+    await updateLibraryCard(sold.db as never, actor, {
+      ...sold.edit,
+      rarity: "RARE",
+      reason: "Season fix",
+    });
+    expect(sold.tx.card.updateMany.mock.calls[0]![0].data.marketValue).toBe(100);
   });
 
   it("writes only what changed, under the art, visibility and rarity it read", async () => {

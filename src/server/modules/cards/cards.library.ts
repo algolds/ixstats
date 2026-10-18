@@ -12,7 +12,7 @@ import { cardWikiSourceSchema } from "~/lib/cards/card-sources";
 import { cardCount, lacksRarityReason } from "~/lib/cards/curation-limits";
 import { CardRarity, CardType } from "~/lib/cards/enums";
 import { nsBankValue } from "~/lib/cards/ns-facts";
-import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
+import { getValuationConfig, referenceValue } from "~/lib/cards/valuation";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 import { assertBulkRead, assertBulkRecountTx } from "./cards.bulk";
@@ -165,6 +165,7 @@ function editedCard(tx: Prisma.TransactionClient, id: string) {
       cardType: true,
       wikiSource: true,
       isRetired: true,
+      firstSoldAt: true,
       metadata: true,
       artLicence: { select: { status: true } },
       _count: { select: { takedowns: HIDDEN_TAKEDOWNS } },
@@ -239,10 +240,12 @@ export async function updateLibraryCard(
       const value = {
         rarity: input.rarity,
         cardType: card.cardType,
-        nsMarketValue: nsBankValue(card.metadata),
+        firstSoldAt: card.firstSoldAt,
+        nsBankValue: nsBankValue(card.metadata),
+        isRetired: card.isRetired,
       };
       data.rarity = input.rarity;
-      data.marketValue = computeCardValue(value, await getValuationConfig(db));
+      data.marketValue = referenceValue(value, null, await getValuationConfig(db));
     }
     if (retiredChanged) {
       data.isRetired = input.retired;

@@ -1,23 +1,24 @@
 /**
- * Card Valuation — single source of truth for what a card is worth.
+ * Card Valuation — single source of truth for what a card and each of its copies are worth.
  *
  * Replaces previously-disconnected tables (raw NS passthrough in ns-import and the
  * rarity base table in card-service.getCardMarketValue). One formula, one tunable config
  * (SystemConfig-backed, DM-editable — same pattern as exchange-config.ts).
  *
- *   value = max( rarityFloor[rarity] × typeMult ,  nsMarketValue × nsPremium )
+ *   base  = max( rarityFloor[rarity] × typeMult × finishMult ,  market median at the finish ,  NS term )
+ *   value = base × (1 + levelBonus)
  *
  * - rarity floor lifts the ~99% of NS cards stuck at NS bank value 1 onto a real curve
- * - nsPremium rewards importers; on genuinely-valuable NS cards it floats them above floor
- * - native cards (LORE/NATION/SPECIAL) ride the same curve, so everything is comparable
+ * - the NS term (bank value × nsPremium) rewards importers until a copy of the card first sells here
+ * - native cards (LORE/NATION/SPECIAL/TROPHY) ride the same curve, so everything is comparable
  * - NS bank values live in `metadata.nsData.market_value` (src/lib/cards/ns-facts.ts)
+ * - a retired card's copies are worth 0 (hidden copies, cards refresh Phase 3)
  *
- * ponytail: no supply/demand multiplier baked into the stored value — base value is
- * predictable and admin-tunable; let auctions/trades discover live prices. Add a demand
- * coefficient here only if catalog value needs to move with float.
+ * `Card.marketValue` is a Standard copy at level 1 (`referenceValue`); `valueOfCopy` values one copy.
  */
 
-import { type Prisma, type PrismaClient } from "@prisma/client";
+import type { CardFinish, CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
+import { clampLevel } from "./levels";
 
 export interface CardValuationConfig {
   floorCommon: number;
@@ -26,11 +27,22 @@ export interface CardValuationConfig {
   floorUltraRare: number;
   floorEpic: number;
   floorLegendary: number;
-  /** Multiplier applied to a card's NS bank value (retain + premium). */
+  /** NS bank value multiple, the third term of an NS card's value until it first sells here. */
   nsPremium: number;
-  /** Type multipliers on the rarity floor (LORE/NS/TROPHY = 1.0). */
+  /** Type multiples on the rarity floor (LORE and NS are 1). */
   multSpecial: number;
   multNation: number;
+  /** Display value of trophies; they stay out of the dividend. */
+  multTrophy: number;
+  /** Value multiples of Foil and Holo copies (Serialised is 1). */
+  finishFoil: number;
+  finishHolo: number;
+  /** +levelBonusPerLevel per level above 1, at most levelBonusCap. */
+  levelBonusPerLevel: number;
+  levelBonusCap: number;
+  /** The market median is over the last `medianSales` sales within `medianDays`. */
+  medianSales: number;
+  medianDays: number;
 }
 
 export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
@@ -43,6 +55,13 @@ export const CARD_VALUATION_DEFAULTS: CardValuationConfig = {
   nsPremium: 1.5,
   multSpecial: 2.0,
   multNation: 1.5,
+  multTrophy: 0.25,
+  finishFoil: 3,
+  finishHolo: 9,
+  levelBonusPerLevel: 0.02,
+  levelBonusCap: 0.2,
+  medianSales: 5,
+  medianDays: 30,
 };
 
 const KEY = {
@@ -55,6 +74,13 @@ const KEY = {
   nsPremium: "card_valuation_ns_premium",
   multSpecial: "card_valuation_mult_special",
   multNation: "card_valuation_mult_nation",
+  multTrophy: "card_valuation_mult_trophy",
+  finishFoil: "card_valuation_finish_foil",
+  finishHolo: "card_valuation_finish_holo",
+  levelBonusPerLevel: "card_valuation_level_bonus_per_level",
+  levelBonusCap: "card_valuation_level_bonus_cap",
+  medianSales: "card_valuation_median_sales",
+  medianDays: "card_valuation_median_days",
 } as const satisfies Record<keyof CardValuationConfig, string>;
 
 let cache: { value: CardValuationConfig; expires: number } | null = null;
@@ -65,7 +91,19 @@ export function clearValuationCache(): void {
   cache = null;
 }
 
-/** The stored config, defaults overlaid with any SystemConfig rows, read past the cache. */
+/** Keeps stored numbers in range: nothing negative, whole sale counts and days, the level bonus at most 100%. */
+export function clampValuationConfig(raw: CardValuationConfig): CardValuationConfig {
+  const cfg = { ...raw };
+  for (const key of Object.keys(cfg) as (keyof CardValuationConfig)[]) {
+    cfg[key] = Math.max(0, cfg[key]);
+  }
+  cfg.medianSales = Math.min(50, Math.max(1, Math.round(cfg.medianSales)));
+  cfg.medianDays = Math.min(365, Math.max(1, Math.round(cfg.medianDays)));
+  cfg.levelBonusCap = Math.min(1, cfg.levelBonusCap);
+  return cfg;
+}
+
+/** The stored config, defaults overlaid with any SystemConfig rows and clamped, read past the cache. */
 export async function readValuationConfig(
   db: Pick<PrismaClient, "systemConfig">
 ): Promise<CardValuationConfig> {
@@ -80,13 +118,13 @@ export async function readValuationConfig(
     const raw = byKey.get(KEY[field]);
     if (raw != null) {
       const parsed = Number(raw);
-      if (!Number.isNaN(parsed)) merged[field] = parsed;
+      if (Number.isFinite(parsed)) merged[field] = parsed;
     }
   }
-  return merged;
+  return clampValuationConfig(merged);
 }
 
-/** Read the merged valuation config (defaults overlaid with any SystemConfig rows). */
+/** Read the merged valuation config (defaults overlaid with any SystemConfig rows, clamped). */
 export async function getValuationConfig(db: PrismaClient): Promise<CardValuationConfig> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
@@ -130,24 +168,105 @@ export function rarityFloor(cfg: CardValuationConfig, rarity: string): number {
   }
 }
 
+/** What the value formula needs to know about a card. */
+export interface ValueCard {
+  rarity: CardRarity;
+  cardType: CardType;
+  /** The first sale of any copy here; it ends an NS card's bank-value term. */
+  firstSoldAt: Date | null;
+  /** The NS bank value (NS cards only). */
+  nsBankValue: number | null;
+  /** A retired card's copies are worth 0; its own value (`referenceValue`) is kept for a restore. */
+  isRetired: boolean;
+}
+
+export function typeMultiplier(cardType: CardType, cfg: CardValuationConfig): number {
+  switch (cardType) {
+    case "SPECIAL":
+      return cfg.multSpecial;
+    case "NATION":
+      return cfg.multNation;
+    case "TROPHY":
+      return cfg.multTrophy;
+    default:
+      return 1;
+  }
+}
+
+export function finishMultiplier(finish: CardFinish, cfg: CardValuationConfig): number {
+  if (finish === "FOIL") return cfg.finishFoil;
+  if (finish === "HOLO") return cfg.finishHolo;
+  return 1;
+}
+
+/** An NS card's bank value × the premium, until any copy first sells here; 0 for every other card. */
+export function nsTerm(card: ValueCard, cfg: CardValuationConfig): number {
+  if (card.cardType !== "NS" || card.firstSoldAt !== null) return 0;
+  return Math.max(0, card.nsBankValue ?? 0) * cfg.nsPremium;
+}
+
+const toCents = (n: number) => Math.round(n * 100) / 100;
+
 /**
- * The canonical value of a card. `nsMarketValue` is the NS bank value
- * (`metadata.nsData.market_value`); null or 0 for other cards.
+ * A card's value at a finish, before a copy's level: the highest of floor × type × finish, that finish's market
+ * median and the NS term. It ignores retirement, which only `valueOfCopy` applies.
  */
-export function computeCardValue(
-  input: { rarity: string; cardType: string; nsMarketValue?: number | null },
+export function baseValue(
+  card: ValueCard,
+  finish: CardFinish,
+  median: number | null,
   cfg: CardValuationConfig
 ): number {
-  const floor = rarityFloor(cfg, input.rarity);
-  const typeMult =
-    input.cardType === "SPECIAL"
-      ? cfg.multSpecial
-      : input.cardType === "NATION"
-        ? cfg.multNation
-        : 1;
-  const base = floor * typeMult;
-  const ns = Math.max(0, input.nsMarketValue ?? 0) * cfg.nsPremium;
-  return Math.round(Math.max(base, ns) * 100) / 100;
+  const formula =
+    rarityFloor(cfg, card.rarity) *
+    typeMultiplier(card.cardType, cfg) *
+    finishMultiplier(finish, cfg);
+  return toCents(Math.max(formula, median ?? 0, nsTerm(card, cfg)));
+}
+
+/** +levelBonusPerLevel per level above 1, at most levelBonusCap. */
+export function levelBonus(level: number, cfg: CardValuationConfig): number {
+  return Math.min(cfg.levelBonusCap, cfg.levelBonusPerLevel * (clampLevel(level) - 1));
+}
+
+export interface CopyValueInput {
+  card: ValueCard;
+  finish: CardFinish;
+  level: number;
+  /** The market median for this card at this copy's finish, if it sold recently. */
+  median: number | null;
+}
+
+/**
+ * One copy's value: the base value plus the level bonus, and 0 for a retired card's copy. The dividend, wallet,
+ * Passport and achievements use it.
+ */
+export function valueOfCopy(input: CopyValueInput, cfg: CardValuationConfig): number {
+  if (input.card.isRetired) return 0;
+  return toCents(
+    baseValue(input.card, input.finish, input.median, cfg) * (1 + levelBonus(input.level, cfg))
+  );
+}
+
+/**
+ * `Card.marketValue`: the value of a Standard copy at level 1. A retired card keeps it, so a restore needs no
+ * revalue.
+ */
+export function referenceValue(
+  card: ValueCard,
+  standardMedian: number | null,
+  cfg: CardValuationConfig
+): number {
+  return baseValue(card, "STANDARD", standardMedian, cfg);
+}
+
+/** The median price (the mean of the middle two for an even count); null when there are none. */
+export function medianOf(prices: readonly number[]): number | null {
+  if (prices.length === 0) return null;
+  const sorted = [...prices].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) return sorted[mid] ?? null;
+  return ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
 
 /** Arbitrary constant; identifies the revalue lock in pg_locks. */
@@ -189,12 +308,14 @@ async function revalueCards(
 
   let updated = 0;
   for (const [rarity, floor] of rarities) {
-    // All numbers below come from validated numeric config; rarity is from a fixed list.
+    // All numbers below come from validated numeric config; rarity is from a fixed list. As in referenceValue, an NS
+    // card's bank term lasts until a copy of it first sells here, then it takes the floor.
     const value = `CASE
-        WHEN "cardType" = 'NS'
+        WHEN "cardType" = 'NS' AND "firstSoldAt" IS NULL
           THEN GREATEST(${floor}, COALESCE(NULLIF(metadata->'nsData'->>'market_value', '')::numeric, 0) * ${cfg.nsPremium})
         WHEN "cardType" = 'SPECIAL' THEN ${floor * cfg.multSpecial}
         WHEN "cardType" = 'NATION'  THEN ${floor * cfg.multNation}
+        WHEN "cardType" = 'TROPHY'  THEN ${floor * cfg.multTrophy}
         ELSE ${floor}
       END`;
     const sql = `
