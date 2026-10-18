@@ -15,9 +15,12 @@ jest.mock("~/hooks/useCardsRefresh", () => {
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
+jest.mock("~/hooks/cards/useSheetEconomy", () => ({ useEconomyNumbers: jest.fn() }));
 
 import { api } from "~/trpc/react";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { useEconomyNumbers } from "~/hooks/cards/useSheetEconomy";
+import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CreateAuctionModal } from "~/components/vault/cards/market/CreateAuctionModal";
 
@@ -85,6 +88,7 @@ beforeEach(() => {
   refreshCards.mockClear();
   fetchNextPage.mockClear();
   mutate = jest.fn();
+  jest.mocked(useEconomyNumbers).mockReturnValue({ data: undefined } as never);
   mine([[row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)]]);
   linked(null);
   jest.mocked(api.cardMarket.createAuction.useMutation).mockImplementation(((options: {
@@ -175,13 +179,19 @@ describe("CreateAuctionModal", () => {
     expect(screen.getByRole("radio", { name: "24 hours" })).toBeChecked();
   });
 
-  it("says what listing costs without naming a fee the Economy tab may have changed", () => {
+  it("says what listing costs and what comes back, from the Economy tab's numbers", () => {
+    jest.mocked(useEconomyNumbers).mockReturnValue({
+      data: { economy: { ...CARD_ECONOMY_DEFAULTS, listingFee: 8, listingRefundPct: 25 } },
+    } as never);
     render(<CreateAuctionModal open onClose={jest.fn()} />);
     expect(
-      screen.getByText(
-        "There is a small listing fee, and half comes back if the card does not sell."
-      )
+      screen.getByText("Listing costs 8 IxC, and 2 IxC comes back if the card does not sell.")
     ).toBeInTheDocument();
+  });
+
+  it("names no amount until the numbers arrive", () => {
+    render(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(screen.getByText("There is a small listing fee.")).toBeInTheDocument();
   });
 
   it("starts on the copy the sheet sent, and leaves the buy-now price out when it is empty", () => {

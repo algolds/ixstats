@@ -43,3 +43,11 @@ export function royaltyFromFee(amount: number, fee: number, royaltyPct: number):
 export function listingRefund(fee: number, refundPct: number): number {
   return centsOf(fee, refundPct);
 }
+
+/** What listing costs and the share that comes back when the copy does not sell, as the listing forms say it. */
+export function listingFeeNote(fee: number, refundPct: number): string {
+  if (fee <= 0) return "Listing is free.";
+  const refund = listingRefund(fee, refundPct);
+  if (refund <= 0) return `Listing costs ${fee} IxC.`;
+  return `Listing costs ${fee} IxC, and ${refund} IxC comes back if the card does not sell.`;
+}

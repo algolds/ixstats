@@ -40,3 +40,11 @@ export async function playersOf(userIds: readonly string[]): Promise<Map<string,
     ])
   );
 }
+
+/**
+ * The name other players read for one player (`PlayerName.displayName`: "@handle", else the nation), the name a
+ * signature freezes; null when they have none. The sign dialog shows it and `cards.inscribe` saves it, from this one read.
+ */
+export async function displayNameOf(userId: string): Promise<string | null> {
+  return (await loadPlayerNames([userId])).get(userId)?.displayName ?? null;
+}
