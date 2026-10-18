@@ -59,17 +59,17 @@ const NO_ACCESS: RealmBoardAccess = {
   restriction: null,
 };
 
-/** Board mutes and bans in force on any of `countryIds`, or on any nation of the realm when omitted. */
-export async function activeBoardRestrictions(
+/** Board mutes and bans in force on any of `countryIds` (none when it is empty). */
+async function activeBoardRestrictions(
   db: Pick<PrismaClient, "realmBoardBan">,
   realmId: string,
-  countryIds?: string[]
+  countryIds: string[]
 ) {
-  if (countryIds?.length === 0) return [];
+  if (countryIds.length === 0) return [];
   return db.realmBoardBan.findMany({
     where: {
       realmId,
-      ...(countryIds && { countryId: { in: countryIds } }),
+      countryId: { in: countryIds },
       OR: [{ until: null }, { until: { gt: new Date() } }],
     },
     select: { countryId: true, kind: true, until: true, reason: true, createdAt: true },
@@ -136,7 +136,7 @@ export function restrictionHolders(
  * The strongest board restriction binding `userId` in the realm: on a nation they own, or on one they held
  * (by an approved claim) when it was restricted.
  */
-export async function userBoardRestriction(
+async function userBoardRestriction(
   db: Pick<PrismaClient, "realmBoardBan" | "realmClaim">,
   realmId: string,
   userId: string,
@@ -158,7 +158,7 @@ export async function userBoardRestriction(
 }
 
 /** The strongest of `rows`: any ban over a mute, then the one that lasts longest. */
-export function strongestRestriction(
+function strongestRestriction(
   rows: Array<{ kind: string; until: Date | null; reason: string | null }>
 ): RealmBoardRestriction | null {
   const rank = (r: { kind: string; until: Date | null }) =>
@@ -209,7 +209,7 @@ export async function getRealmBoardAccess(
 }
 
 /** A message for a restricted caller ("…until 12 Oct"), or null when they may post. */
-export function boardRestrictionMessage(restriction: RealmBoardRestriction | null): string | null {
+function boardRestrictionMessage(restriction: RealmBoardRestriction | null): string | null {
   if (!restriction) return null;
   const until = restriction.until
     ? ` until ${restriction.until.toISOString().slice(0, 10)}`
@@ -294,7 +294,7 @@ export async function realmBoardPersona(
 }
 
 /** The realms `realmId` has an active embassy with, by id. */
-export interface EmbassyPartner {
+interface EmbassyPartner {
   id: string;
   name: string;
   slug: string;
@@ -318,7 +318,7 @@ export async function embassyPartners(
 }
 
 /** The partner realm whose embassy tag a post carries, if any. */
-export function embassySource(
+function embassySource(
   hashtags: string | null,
   partners: Map<string, EmbassyPartner>
 ): EmbassyPartner | null {

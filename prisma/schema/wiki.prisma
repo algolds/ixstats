@@ -466,7 +466,7 @@ model StashItem {
   articleId   String?
   article     WikiArticle?      @relation("ArticleStashItems", fields: [articleId], references: [id], onDelete: SetNull)
   contentType String            @default("wiki") // StashContentType ("wiki" | "image" | "forum_thread") or a caller's own ("name")
-  contentId   Int?                               // XenForo thread id of a bridge-era item: read by the forum import only, written by nothing
+  contentId   Int?                               // XenForo thread id of a bridge-era item: the forum import reads it and writes null (as stashThread does); its rollback writes it back
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())
