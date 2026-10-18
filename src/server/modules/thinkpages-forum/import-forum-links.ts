@@ -159,11 +159,16 @@ export function forumTargets(db: ForumLinksDb, nodeMap: NodeMapFile): ForumTarge
 
 const PAGE = 500;
 
-/** Imported posts that may hold an old forum link; Canvas-sourced posts are rendered from their wikitext. */
+/**
+ * Imported posts that may hold an old forum link (any case: ILIKE); Canvas-sourced posts are rendered from their
+ * wikitext.
+ */
 const MAY_HOLD_OLD_LINKS = {
   xenforoPostId: { not: null },
   contentWikitext: null,
-  OR: FORUM_LINK_MARKERS.map((marker) => ({ contentHtml: { contains: marker } })),
+  OR: FORUM_LINK_MARKERS.map((marker) => ({
+    contentHtml: { contains: marker, mode: "insensitive" as const },
+  })),
 };
 
 export interface ForumLinkRewrite {
@@ -175,9 +180,10 @@ export interface ForumLinkRewrite {
 
 /**
  * Every imported post's old forum links (any run's), pointed at the native pages; an unresolved one is unwrapped, or
- * kept for the rerun while `dropUnresolved` is false (a thread failed, so its link may resolve later). Keyset-paged
- * and idempotent (a native path is never an old link); each distinct ref is looked up once. `plainText` is left
- * alone: it never held an href.
+ * kept for the rerun while `dropUnresolved` is false (a thread failed, or the snapshot left forums out, so its link
+ * may resolve later). Keyset-paged and idempotent (a native path is never an old link); each distinct ref is looked
+ * up once. A post is written only if its HTML is still what was read: one edited meanwhile is left to the next apply.
+ * `plainText` is left alone: it never held an href.
  */
 export async function rewriteImportedForumLinks(
   db: ForumLinksDb,
@@ -200,7 +206,11 @@ export async function rewriteImportedForumLinks(
       await targets.load(forumHrefRefs(post.contentHtml));
       const rewrite = rewriteForumHrefs(post.contentHtml, targets.targetOf, unresolved);
       if (rewrite.html === post.contentHtml) continue;
-      await db.forumPost.update({ where: { id: post.id }, data: { contentHtml: rewrite.html } });
+      const { count } = await db.forumPost.updateMany({
+        where: { id: post.id, contentHtml: post.contentHtml },
+        data: { contentHtml: rewrite.html },
+      });
+      if (!count) continue;
       out.mapped += rewrite.mapped;
       out.unwrapped += rewrite.unwrapped;
     }

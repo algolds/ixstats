@@ -186,6 +186,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   print(attachmentResultLines(copied));
   const totals = await applyImport(db, plan, {
     nodeMap: appliedNodeMap(resolved),
+    nodeFilter: snapshot.meta.nodeFilter,
     log: console.log,
   });
   print(applyTotalLines(totals));

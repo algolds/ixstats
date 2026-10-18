@@ -48,6 +48,9 @@ export async function runImport(
   const state = await loadImportDbState(db, mappedRealmSlugs(nodeMap));
   const plan = planImport(snapshot, { ...state, attachmentFor: () => "omitted" }, nodeMap);
   const resolved = resolveNodeTargets(snapshot.nodes, nodeMap);
-  const totals = await applyImport(db, plan, { nodeMap: appliedNodeMap(resolved) });
+  const totals = await applyImport(db, plan, {
+    nodeMap: appliedNodeMap(resolved),
+    nodeFilter: snapshot.meta.nodeFilter,
+  });
   return { plan, totals };
 }

@@ -1,10 +1,11 @@
 /**
  * An in-memory forum store for the moderation suites (mod-content, mod-reports, mod-appeals, mod-standing,
- * mod-moderators). Rows live in arrays; where clauses are interpreted (equality, `in`, `notIn`, `not`, `gt`, `has`, `startsWith`, `contains`,
- * `OR`, `AND`, `NOT`, nested relation objects), relations are joined on read (thread → category, post → thread →
- * category, link → storyline), selects are ignored. `$transaction` hands the callback `tx`, the only client whose
- * `forumModLog.create` records a row (both clients read the log), and rolls every store change and log row back
- * when the callback throws, so "refused → nothing written" is behaviour.
+ * mod-moderators). Rows live in arrays; where clauses are interpreted (equality, `in`, `notIn`, `not`, `gt`, `has`,
+ * `startsWith` and `contains` with their `mode: "insensitive"`, `OR`, `AND`, `NOT`, nested relation objects),
+ * relations are joined on read (thread → category, post → thread → category, link → storyline), selects are ignored.
+ * `$transaction` hands the callback `tx`, the only client whose `forumModLog.create` records a row (both clients read
+ * the log), and rolls every store change and log row back when the callback throws, so "refused → nothing written" is
+ * behaviour.
  */
 export type Value =
   string | number | boolean | Date | null | undefined | Value[] | { [key: string]: Value };
@@ -26,7 +27,18 @@ export interface StoreState {
   postTemplates: Row[];
 }
 
-const OPERATORS = ["in", "notIn", "not", "gt", "gte", "lt", "has", "startsWith", "contains"];
+const OPERATORS = [
+  "in",
+  "notIn",
+  "not",
+  "gt",
+  "gte",
+  "lt",
+  "has",
+  "startsWith",
+  "contains",
+  "mode",
+];
 
 const isRow = (value: Value): value is Row =>
   value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date);
@@ -36,6 +48,15 @@ const isOperator = (cond: Row): boolean =>
 
 const same = (a: Value, b: Value): boolean =>
   a instanceof Date && b instanceof Date ? a.getTime() === b.getTime() : a === b;
+
+/** `startsWith` and `contains`, case-folded under `mode: "insensitive"` (Postgres ILIKE). */
+function matchText(actual: Value, cond: Row): boolean {
+  const fold = (text: string) => (cond.mode === "insensitive" ? text.toLowerCase() : text);
+  const text = fold(String(actual ?? ""));
+  if (typeof cond.startsWith === "string" && !text.startsWith(fold(cond.startsWith))) return false;
+  if (typeof cond.contains === "string" && !text.includes(fold(cond.contains))) return false;
+  return true;
+}
 
 function matchOperator(actual: Value, cond: Row): boolean {
   if (Array.isArray(cond.in) && !cond.in.some((v) => same(actual, v))) return false;
@@ -50,11 +71,7 @@ function matchOperator(actual: Value, cond: Row): boolean {
     return false;
   if ("has" in cond && !(Array.isArray(actual) && actual.some((v) => same(v, cond.has))))
     return false;
-  if (typeof cond.startsWith === "string" && !String(actual ?? "").startsWith(cond.startsWith))
-    return false;
-  if (typeof cond.contains === "string" && !String(actual ?? "").includes(cond.contains))
-    return false;
-  return true;
+  return matchText(actual, cond);
 }
 
 function matchValue(actual: Value, cond: Value): boolean {

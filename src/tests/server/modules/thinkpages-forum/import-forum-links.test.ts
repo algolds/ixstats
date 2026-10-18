@@ -433,13 +433,52 @@ describe("rewriteImportedForumLinks", () => {
     const opts = { nodeMap: NODE_MAP, dropUnresolved: true };
     await rewriteImportedForumLinks(store.db as never, opts);
     const before = JSON.stringify(store.tables().posts);
-    store.db.forumPost.update.mockClear();
+    store.db.forumPost.updateMany.mockClear();
     expect(await rewriteImportedForumLinks(store.db as never, opts)).toEqual({
       mapped: 0,
       unwrapped: 0,
     });
-    expect(store.db.forumPost.update).not.toHaveBeenCalled();
+    expect(store.db.forumPost.updateMany).not.toHaveBeenCalled();
     expect(JSON.stringify(store.tables().posts)).toBe(before);
+  });
+
+  it("scans and maps a post whose only old link is in upper case, a bridge path or a root-relative XenForo path", async () => {
+    const store = linkStore([
+      importedPost("p-upper", 1, body(link("HTTPS://FORUM.IXWIKI.COM/"))),
+      importedPost("p-bridge", 2, body(link("/projects/ixstates/forum/thread/100"))),
+      importedPost("p-root", 3, body(link("/threads/welcome.100/"))),
+    ]);
+    const result = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: true,
+    });
+    expect(result).toEqual({ mapped: 3, unwrapped: 0 });
+    expect(htmlOf(store, "p-upper")).toBe(body(link("/thinkpages")));
+    expect(htmlOf(store, "p-bridge")).toBe(body(link("/thinkpages/t/t-open")));
+    expect(htmlOf(store, "p-root")).toBe(body(link("/thinkpages/t/t-open")));
+  });
+
+  it("leaves a post edited between its read and the write to the next pass", async () => {
+    const store = linkStore([importedPost("p-1", 1, body(link(`${XF}/threads/x.100/`)))]);
+    const edited = body(link(`${XF}/threads/x.100/`, "edited"));
+    const read = store.db.forumPost.findMany.getMockImplementation()!;
+    store.db.forumPost.findMany.mockImplementationOnce(async (args) => {
+      const rows = await read(args);
+      store.tables().posts.find((p) => p.id === "p-1")!.contentHtml = edited;
+      return rows;
+    });
+    const opts = { nodeMap: NODE_MAP, dropUnresolved: true };
+
+    expect(await rewriteImportedForumLinks(store.db as never, opts)).toEqual({
+      mapped: 0,
+      unwrapped: 0,
+    });
+    expect(htmlOf(store, "p-1")).toBe(edited);
+    expect(await rewriteImportedForumLinks(store.db as never, opts)).toEqual({
+      mapped: 1,
+      unwrapped: 0,
+    });
+    expect(htmlOf(store, "p-1")).toBe(body(link("/thinkpages/t/t-open", "edited")));
   });
 
   it("looks each distinct ref up once, across posts and pages", async () => {

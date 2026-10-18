@@ -186,8 +186,27 @@ describe("remapStashedThreads", () => {
       deleted: 0,
     });
     expect(itemsOf(store)).toEqual(before);
-    expect(store.db.stashItem.update).not.toHaveBeenCalled();
+    expect(store.db.stashItem.updateMany).not.toHaveBeenCalled();
     expect(store.db.stashItem.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("leaves an item removed or changed between its read and the write alone", async () => {
+    const store = stashStore([legacy("i-gone", "s-1", 100), legacy("i-moved", "s-2", 100)]);
+    const read = store.db.stashItem.findMany.getMockImplementation()!;
+    store.db.stashItem.findMany.mockImplementationOnce(async (args) => {
+      const rows = await read(args);
+      const tables = store.tables();
+      tables.stashItems = tables.stashItems.filter((i) => i.id !== "i-gone");
+      tables.stashItems.find((i) => i.id === "i-moved")!.pageTitle = "Main_Page";
+      return rows;
+    });
+
+    expect(await remapStashedThreads(store.db as never, { dropUnresolved: true })).toEqual({
+      moved: 0,
+      twins: 0,
+      deleted: 0,
+    });
+    expect(itemsOf(store)).toEqual([{ ...legacy("i-moved", "s-2", 100), pageTitle: "Main_Page" }]);
   });
 
   it("is idempotent, and pages through every bridge-era item with one thread query per page", async () => {
@@ -203,14 +222,14 @@ describe("remapStashedThreads", () => {
     });
     expect(store.db.forumThread.findMany).toHaveBeenCalledTimes(2);
     const after = JSON.stringify(store.tables().stashItems);
-    store.db.stashItem.update.mockClear();
+    store.db.stashItem.updateMany.mockClear();
 
     expect(await remapStashedThreads(store.db as never, { dropUnresolved: true })).toEqual({
       moved: 0,
       twins: 0,
       deleted: 0,
     });
-    expect(store.db.stashItem.update).not.toHaveBeenCalled();
+    expect(store.db.stashItem.updateMany).not.toHaveBeenCalled();
     expect(JSON.stringify(store.tables().stashItems)).toBe(after);
   });
 });

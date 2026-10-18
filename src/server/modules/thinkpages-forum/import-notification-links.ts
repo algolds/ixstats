@@ -4,9 +4,10 @@
  * `/projects/ixstats`), which are 404s now. Once every thread is written, each is pointed at its native page through
  * the import's public-only resolver (`forumTargets`, as the post link pass does): a post's link at the post, else at
  * its thread (a hidden post falls back to its thread). One with nothing public to point at goes to the forum home on
- * a clean run, and is kept while threads failed, for the rerun. The current base path is kept and the old one dropped
- * (`rewriteNotificationHref`). Only `href` changes. Keyset-paged and idempotent (a native path is never an old link);
- * each distinct ref is looked up once.
+ * a clean run, and is kept while threads failed (or the snapshot left forums out), for the rerun. The current base
+ * path is kept and the old one dropped (`rewriteNotificationHref`). Only `href` changes, and only while it is still
+ * what was read (one changed meanwhile is left to the next apply). Keyset-paged and idempotent (a native path is never
+ * an old link); each distinct ref is looked up once.
  */
 import {
   classifyForumHref,
@@ -21,9 +22,11 @@ const PAGE = 500;
 
 export type NotificationLinksDb = ForumLinksDb & Pick<ImportDb, "notification">;
 
-/** Notifications that may hold an old forum link. */
+/** Notifications that may hold an old forum link, in any case. */
 const MAY_HOLD_OLD_LINK = {
-  OR: FORUM_LINK_MARKERS.map((marker) => ({ href: { contains: marker } })),
+  OR: FORUM_LINK_MARKERS.map((marker) => ({
+    href: { contains: marker, mode: "insensitive" as const },
+  })),
 };
 
 export interface NotificationLinkRewrite {
@@ -55,7 +58,11 @@ export async function rewriteNotificationLinks(
       await targets.load(classifyForumHref(href) ?? []);
       const rewrite = rewriteNotificationHref(href, targets.targetOf, unresolved);
       if (!rewrite) continue;
-      await db.notification.update({ where: { id: row.id }, data: { href: rewrite.href } });
+      const { count } = await db.notification.updateMany({
+        where: { id: row.id, href: row.href },
+        data: { href: rewrite.href },
+      });
+      if (!count) continue;
       if (rewrite.mapped) out.mapped += 1;
       else out.unresolved += 1;
     }

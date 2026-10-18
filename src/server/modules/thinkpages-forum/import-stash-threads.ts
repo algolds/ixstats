@@ -5,7 +5,8 @@
  * whatever its visibility: the stash listing's own filter (I5, `withReadableThreads`) decides what its owner may read.
  * When that stash already holds the native thread (StashItem is unique on stash, content type and title), the
  * bridge-era item is deleted instead. One whose thread was never imported is deleted on a clean run and kept while
- * threads failed, for the rerun. Keyset-paged and idempotent (a moved item is no longer a bridge-era one).
+ * threads failed (or the snapshot left forums out), for the rerun. An item removed or changed between its read and
+ * the move is left alone. Keyset-paged and idempotent (a moved item is no longer a bridge-era one).
  */
 import { xenforoId } from "~/lib/thinkpages-forum/import/forum-links";
 import { threadHref } from "~/lib/thinkpages-forum/links";
@@ -51,19 +52,26 @@ async function nativeThreads(
   );
 }
 
-/** Moves the item to its native thread; false when its stash already holds that thread (the item is a twin). */
-async function moveItem(db: StashThreadsDb, item: LegacyItem, threadId: string): Promise<boolean> {
+/**
+ * Moves the item to its native thread: "twin" when its stash already holds that thread, "changed" when the item was
+ * removed or retitled since it was read (nothing is written).
+ */
+async function moveItem(
+  db: StashThreadsDb,
+  item: LegacyItem,
+  threadId: string
+): Promise<"moved" | "twin" | "changed"> {
   const pageTitle = `${NATIVE_THREAD_PREFIX}${threadId}`;
   const twin = await db.stashItem.findFirst({
     where: { stashId: item.stashId, contentType: CONTENT_TYPE, pageTitle },
     select: { id: true },
   });
-  if (twin) return false;
-  await db.stashItem.update({
-    where: { id: item.id },
+  if (twin) return "twin";
+  const { count } = await db.stashItem.updateMany({
+    where: { id: item.id, pageTitle: item.pageTitle },
     data: { pageTitle, pageSlug: threadHref(threadId), contentType: CONTENT_TYPE, contentId: null },
   });
-  return true;
+  return count ? "moved" : "changed";
 }
 
 export async function remapStashedThreads(
@@ -87,9 +95,10 @@ export async function remapStashedThreads(
     for (const item of items) {
       const xf = xenforoThreadOf(item);
       const threadId = xf === null ? undefined : nativeOf.get(xf);
-      if (threadId === undefined) unresolved.push(item.id);
-      else if (await moveItem(db, item, threadId)) out.moved += 1;
-      else twins.push(item.id);
+      const move = threadId === undefined ? null : await moveItem(db, item, threadId);
+      if (move === null) unresolved.push(item.id);
+      else if (move === "moved") out.moved += 1;
+      else if (move === "twin") twins.push(item.id);
     }
     const gone = opts.dropUnresolved ? [...twins, ...unresolved] : twins;
     if (gone.length) await db.stashItem.deleteMany({ where: { id: { in: gone } } });

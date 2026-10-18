@@ -3,10 +3,10 @@
  * (`src/server/modules/thinkpages-forum/import-forum-links.ts`) looks the ids up and passes what it found.
  * Every target is built from links.ts helpers (or a handle, encoded), so it is always an app path on this site.
  *
- * An old link is a forum.ixwiki.com URL (XenForo's friendly or `index.php?` form) or a path of the retired IxStates
- * bridge (`/forum/...`, on ixwiki.com or root-relative, with or without the app's base path). In post HTML only an
- * anchor's href is read and rewritten; text, images and every other attribute stay as written. A stored
- * notification link is rewritten whole (`rewriteNotificationHref`).
+ * An old link is a forum.ixwiki.com URL (XenForo's friendly or `index.php?` form, or a root-relative XenForo path such
+ * as `/threads/x.12/`), or a path of the retired IxStates bridge (`/forum/...`, on ixwiki.com or root-relative, with
+ * or without the app's base path). In post HTML only an anchor's href is read and rewritten; text, images and every
+ * other attribute stay as written. A stored notification link is rewritten whole (`rewriteNotificationHref`).
  */
 import { mapHtmlRuns } from "~/lib/action-links";
 import { categoryHref, FORUM_HOME, postHref, threadHref } from "../links";
@@ -69,15 +69,29 @@ export function nodeLandings(nodeMap: NodeMapFile): ReadonlyMap<number, NodeLand
   return landings;
 }
 
-/** Text that stored HTML holding an old forum link contains: the import's link pass reads only those posts. */
-export const FORUM_LINK_MARKERS = ["forum.ixwiki.com", "/forum/"] as const;
+/**
+ * XenForo's route segments. A root-relative path starting with one (`/threads/x.12/`, written on the old forum
+ * without its host) is a XenForo path: no IxStates route or rewrite starts with any of them.
+ */
+const XENFORO_SEGMENTS = ["threads", "posts", "forums", "categories", "members", "goto"] as const;
+
+/**
+ * Text that a stored row holding an old forum link contains, matched in any case: the import's passes read only
+ * those rows. `/forum` covers the bridge's paths (and `//forum.ixwiki.com`).
+ */
+export const FORUM_LINK_MARKERS: readonly string[] = [
+  "forum.ixwiki.com",
+  "/forum",
+  ...XENFORO_SEGMENTS.map((segment) => `/${segment}/`),
+];
 
 /** XenForo ids are positive and the native columns are Int: anything past int4 cannot match a row. */
 const MAX_ID = 2_147_483_647;
 
 /** A XenForo id from its digits (a link's, or a bridge-era stash title's), or null when it cannot name a row. */
 export function xenforoId(digits: string | undefined): number | null {
-  if (!digits || !/^\d{1,10}$/.test(digits)) return null;
+  // Digits only: Number() would also read "1e3", "0x10", " 7" or "+4". The range bounds the length.
+  if (!digits || !/^\d+$/.test(digits)) return null;
   const id = Number(digits);
   return id >= 1 && id <= MAX_ID ? id : null;
 }
@@ -146,6 +160,8 @@ const BRIDGE_ROUTES: readonly Route[] = [
 ];
 
 const XENFORO_ORIGIN = /^(?:https?:)?\/\/(?:www\.)?forum\.ixwiki\.com(?::\d{1,5})?(?=[/?#]|$)/i;
+/** A root-relative XenForo path: nothing to cut, its route starts right away. */
+const XENFORO_ROOT_PATH = new RegExp(`^(?=/(?:${XENFORO_SEGMENTS.join("|")})/)`);
 /** XenForo's unfriendly form: `/index.php?threads/x.12/&page=2` is the route `/threads/x.12/`, query `page=2`. */
 const XENFORO_INDEX_ROUTE = /^\/index\.php\?([^&#]*)&?/i;
 /** Where the bridge's paths start: ixwiki.com or root-relative, with or without the app's base path. */
@@ -165,7 +181,7 @@ function routeRefs(routes: readonly Route[], url: UrlParts): ForumRef[] {
  * none for a dead link (an old forum page with no native counterpart). Null when it is not an old forum link.
  */
 export function classifyForumHref(href: string): ForumRef[] | null {
-  const xenforo = XENFORO_ORIGIN.exec(href);
+  const xenforo = XENFORO_ORIGIN.exec(href) ?? XENFORO_ROOT_PATH.exec(href);
   if (xenforo) {
     const rest = href.slice(xenforo[0].length).replace(XENFORO_INDEX_ROUTE, "/$1?");
     return routeRefs(XENFORO_ROUTES, urlParts(rest));
@@ -175,8 +191,9 @@ export function classifyForumHref(href: string): ForumRef[] | null {
 }
 
 /** An anchor start tag up to its href value, and the value (the sanitizer double-quotes every attribute). */
-const ANCHOR_HREF = /^(<a\b(?:"[^"]*"|'[^']*'|[^>"'])*?\shref=")([^"]*)(?=")/i;
-const ANCHOR_START = /^<a\b/i;
+const ANCHOR_HREF = /^(<a(?=[\s>/])(?:"[^"]*"|'[^']*'|[^>"'])*?\shref=")([^"]*)(?=")/i;
+/** `<a` itself, not a custom element such as `<a-x>`. */
+const ANCHOR_START = /^<a(?=[\s>/])/i;
 const ANCHOR_END = /^<\/a\s*>$/i;
 
 /** An anchor start tag holding an old forum link: the tag before and after its href value, and the link's refs. */

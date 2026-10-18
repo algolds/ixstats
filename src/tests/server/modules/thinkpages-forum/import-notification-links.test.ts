@@ -113,7 +113,38 @@ describe("rewriteNotificationLinks", () => {
       await rewriteNotificationLinks(store.db as never, { nodeMap: NODE_MAP, dropUnresolved: true })
     ).toEqual({ mapped: 0, unresolved: 0 });
     expect(hrefsOf(store)).toEqual(others);
-    expect(store.db.notification.update).not.toHaveBeenCalled();
+    expect(store.db.notification.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("scans a forum.ixwiki.com link in any case", async () => {
+    const store = notificationStore([note("n-1", "HTTPS://Forum.IxWiki.com/")]);
+
+    expect(
+      await rewriteNotificationLinks(store.db as never, { nodeMap: NODE_MAP, dropUnresolved: true })
+    ).toEqual({ mapped: 1, unresolved: 0 });
+    expect(hrefsOf(store)).toEqual({ "n-1": "/thinkpages" });
+  });
+
+  it("leaves a notification whose link changed between its read and the write to the next pass", async () => {
+    const store = notificationStore([note("n-1", "/forum/thread/100")]);
+    const read = store.db.notification.findMany.getMockImplementation()!;
+    store.db.notification.findMany.mockImplementationOnce(async (args) => {
+      const rows = await read(args);
+      store.tables().notifications.find((n) => n.id === "n-1")!.href = "/forum/members/7";
+      return rows;
+    });
+    const opts = { nodeMap: NODE_MAP, dropUnresolved: true };
+
+    expect(await rewriteNotificationLinks(store.db as never, opts)).toEqual({
+      mapped: 0,
+      unresolved: 0,
+    });
+    expect(hrefsOf(store)).toEqual({ "n-1": "/forum/members/7" });
+    expect(await rewriteNotificationLinks(store.db as never, opts)).toEqual({
+      mapped: 1,
+      unresolved: 0,
+    });
+    expect(hrefsOf(store)).toEqual({ "n-1": "/@jane" });
   });
 
   it("is idempotent", async () => {
@@ -124,13 +155,13 @@ describe("rewriteNotificationLinks", () => {
     const opts = { nodeMap: NODE_MAP, dropUnresolved: true };
     await rewriteNotificationLinks(store.db as never, opts);
     const before = JSON.stringify(store.tables().notifications);
-    store.db.notification.update.mockClear();
+    store.db.notification.updateMany.mockClear();
 
     expect(await rewriteNotificationLinks(store.db as never, opts)).toEqual({
       mapped: 0,
       unresolved: 0,
     });
-    expect(store.db.notification.update).not.toHaveBeenCalled();
+    expect(store.db.notification.updateMany).not.toHaveBeenCalled();
     expect(JSON.stringify(store.tables().notifications)).toBe(before);
   });
 

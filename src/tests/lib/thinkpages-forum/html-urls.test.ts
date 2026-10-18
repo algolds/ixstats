@@ -40,6 +40,9 @@ describe("rebaseRootRelativeUrls", () => {
   it.each([
     "/images/uploads/a.png",
     "/thinkpages/t/abc",
+    "/thinkpages",
+    "/thinkpages?sort=new",
+    "/thinkpages#latest",
     "/api/download/external-image?x=1",
     "/@aria",
     "/r/urcea",
@@ -68,6 +71,8 @@ describe("rebaseRootRelativeUrls", () => {
     "/countries/x",
     "/dashboard/feed",
     "/forum/members/7",
+    "/thinkpagesx",
+    "/thinkpages-old/x",
     "/",
     "/imagesx/a.png",
     "/\\evil.com/x",

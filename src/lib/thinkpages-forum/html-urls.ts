@@ -5,6 +5,7 @@
  * withBasePath refuses a double prefix anyway), so rebasing is idempotent.
  */
 import { mapHtmlRuns } from "~/lib/action-links";
+import { FORUM_HOME } from "./links";
 
 // One attribute of a tag, its quoted value consumed whole so a match never starts inside another value.
 const ATTRIBUTE = /(\s+)([^\s"'>/=]+)(?:(\s*=\s*)("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
@@ -24,6 +25,8 @@ export const APP_PATH_PREFIXES = [
   "/id/",
   "/dashboard/profile/",
 ] as const;
+/** The forum home itself (`/thinkpages`, also with a query or fragment); the prefixes cover the pages under it. */
+const FORUM_HOME_PATH = new RegExp(`^${FORUM_HOME}(?=[?#]|$)`);
 // An `<img>` tag's double-quoted `src` (the sanitizer and the editor both write double quotes).
 const IMAGE_SRC = /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="([^"]*)"/gi;
 const HTTP_URL = /^https?:\/\/[^\s/]/i;
@@ -40,7 +43,9 @@ function rebaseAttribute(
 ): string {
   const url = value?.startsWith('"') ? value.slice(1, -1) : null;
   if (url === null || !URL_ATTRIBUTES.has(name.toLowerCase())) return match;
-  if (!APP_PATH_PREFIXES.some((prefix) => url.startsWith(prefix))) return match;
+  const appPath =
+    APP_PATH_PREFIXES.some((prefix) => url.startsWith(prefix)) || FORUM_HOME_PATH.test(url);
+  if (!appPath) return match;
   return `${space}${name}${equals}"${base(url)}"`;
 }
 

@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import {
   classifyForumHref,
+  FORUM_LINK_MARKERS,
   forumHrefRefs,
   forumRefTarget,
   nodeLandings,
@@ -136,82 +137,109 @@ const node = (nodeId: number): ForumRef => ({ kind: "forum", nodeId });
 const member = (userId: number): ForumRef => ({ kind: "member", userId });
 const XF = "https://forum.ixwiki.com";
 
+const XENFORO_LINKS: Array<[string, ForumRef[]]> = [
+  [`${XF}/threads/welcome.100/`, [thread(100)]],
+  [`${XF}/threads/12/`, [thread(12)]],
+  [`${XF}/threads/v1.5-notes.12`, [thread(12)]],
+  ["http://forum.ixwiki.com/threads/x.12/", [thread(12)]],
+  ["//forum.ixwiki.com/threads/x.12/", [thread(12)]],
+  ["https://www.forum.ixwiki.com/threads/x.12/", [thread(12)]],
+  ["HTTPS://Forum.IxWiki.com/threads/x.12/", [thread(12)]],
+  ["https://forum.ixwiki.com:443/threads/x.12/", [thread(12)]],
+  [`${XF}/threads/x.12/page-3`, [thread(12)]],
+  [`${XF}/threads/x.12/unread`, [thread(12)]],
+  [`${XF}/threads/x.12/latest/`, [thread(12)]],
+  [`${XF}/threads/x.12/?order=new#replies`, [thread(12)]],
+  [`${XF}/threads/x.12/post-55`, [post(55), thread(12)]],
+  [`${XF}/threads/x.12/page-2#post-55`, [post(55), thread(12)]],
+  [`${XF}/threads/x.12/post-2147483648`, [thread(12)]],
+  [`${XF}/threads/x.2147483647/`, [thread(2_147_483_647)]],
+  [`${XF}/posts/123/`, [post(123)]],
+  [`${XF}/posts/123#post-123`, [post(123)]],
+  [`${XF}/goto/post?id=77`, [post(77)]],
+  [`${XF}/goto/post?x=1&id=77#post-77`, [post(77)]],
+  [`${XF}/forums/general-discussion.12/`, [node(12)]],
+  [`${XF}/forums/12/page-2`, [node(12)]],
+  [`${XF}/categories/community.1/`, [node(1)]],
+  [`${XF}/members/jane.7/`, [member(7)]],
+  [`${XF}/members/7/#about`, [member(7)]],
+  [XF, [HOME]],
+  [`${XF}/`, [HOME]],
+  [`${XF}/forums/`, [HOME]],
+  [`${XF}/index.php`, [HOME]],
+  [`${XF}/?tab=new`, [HOME]],
+  [`${XF}/index.php?threads/welcome.100/`, [thread(100)]],
+  [`${XF}/index.php?threads/x.12/&page=2#post-5`, [post(5), thread(12)]],
+  [`${XF}/index.php?goto/post&id=9`, [post(9)]],
+  [`${XF}/index.php?members/jane.7/`, [member(7)]],
+  [`${XF}/index.php?`, [HOME]],
+];
+
+const BRIDGE_LINKS: Array<[string, ForumRef[]]> = [
+  ["/forum/thread/12", [thread(12)]],
+  ["/forum/thread/12/", [thread(12)]],
+  ["/forum/thread/12#post-55", [post(55), thread(12)]],
+  ["/forum/post/55", [post(55)]],
+  ["/forum/post/2147483647", [post(2_147_483_647)]],
+  ["/forum/members/7", [member(7)]],
+  ["/forum/12", [node(12)]],
+  ["/forum", [HOME]],
+  ["/forum/", [HOME]],
+  ["/projects/ixstates/forum/thread/12", [thread(12)]],
+  ["/projects/ixstats/forum/12", [node(12)]],
+  ["https://ixwiki.com/projects/ixstats/forum/thread/12#post-5", [post(5), thread(12)]],
+  ["https://www.ixwiki.com/projects/ixstates/forum/post/5", [post(5)]],
+  ["http://ixwiki.com/forum/members/7", [member(7)]],
+];
+
+/** XenForo paths written without the host (relative to forum.ixwiki.com); no IxStates route starts with them. */
+const ROOT_RELATIVE_LINKS: Array<[string, ForumRef[]]> = [
+  ["/threads/x.12/", [thread(12)]],
+  ["/threads/12/post-55", [post(55), thread(12)]],
+  ["/posts/5/", [post(5)]],
+  ["/goto/post?id=9", [post(9)]],
+  ["/forums/general.12/", [node(12)]],
+  ["/forums/", [HOME]],
+  ["/categories/community.1/", [node(1)]],
+  ["/members/jane.7/", [member(7)]],
+];
+
+const DEAD_LINKS = [
+  `${XF}/whats-new/`,
+  `${XF}/threads/x.12/reply`,
+  `${XF}/threads/welcome/`,
+  `${XF}/members/jane/`,
+  `${XF}/posts/0/`,
+  `${XF}/posts/-3/`,
+  `${XF}/threads/x.2147483648/`,
+  `${XF}/posts/99999999999/`,
+  `${XF}/goto/post?id=2147483648`,
+  `${XF}/goto/post`,
+  `${XF}/forums/2147483648/`,
+  "/forum/thread/2147483648",
+  "/forum/members/99999999999",
+  "/forum/thread/abc",
+  "/forum/conversations",
+  "/projects/ixstates/forum/search?q=x",
+  "/threads/x.12/reply",
+  "/members/jane/",
+  "/goto/post?id=2147483648",
+];
+
 describe("classifyForumHref", () => {
-  it.each<[string, ForumRef[]]>([
-    [`${XF}/threads/welcome.100/`, [thread(100)]],
-    [`${XF}/threads/12/`, [thread(12)]],
-    [`${XF}/threads/v1.5-notes.12`, [thread(12)]],
-    ["http://forum.ixwiki.com/threads/x.12/", [thread(12)]],
-    ["//forum.ixwiki.com/threads/x.12/", [thread(12)]],
-    ["https://www.forum.ixwiki.com/threads/x.12/", [thread(12)]],
-    ["HTTPS://Forum.IxWiki.com/threads/x.12/", [thread(12)]],
-    ["https://forum.ixwiki.com:443/threads/x.12/", [thread(12)]],
-    [`${XF}/threads/x.12/page-3`, [thread(12)]],
-    [`${XF}/threads/x.12/unread`, [thread(12)]],
-    [`${XF}/threads/x.12/latest/`, [thread(12)]],
-    [`${XF}/threads/x.12/?order=new#replies`, [thread(12)]],
-    [`${XF}/threads/x.12/post-55`, [post(55), thread(12)]],
-    [`${XF}/threads/x.12/page-2#post-55`, [post(55), thread(12)]],
-    [`${XF}/threads/x.12/post-2147483648`, [thread(12)]],
-    [`${XF}/posts/123/`, [post(123)]],
-    [`${XF}/posts/123#post-123`, [post(123)]],
-    [`${XF}/goto/post?id=77`, [post(77)]],
-    [`${XF}/goto/post?x=1&id=77#post-77`, [post(77)]],
-    [`${XF}/forums/general-discussion.12/`, [node(12)]],
-    [`${XF}/forums/12/page-2`, [node(12)]],
-    [`${XF}/categories/community.1/`, [node(1)]],
-    [`${XF}/members/jane.7/`, [member(7)]],
-    [`${XF}/members/7/#about`, [member(7)]],
-    [XF, [HOME]],
-    [`${XF}/`, [HOME]],
-    [`${XF}/forums/`, [HOME]],
-    [`${XF}/index.php`, [HOME]],
-    [`${XF}/?tab=new`, [HOME]],
-    [`${XF}/index.php?threads/welcome.100/`, [thread(100)]],
-    [`${XF}/index.php?threads/x.12/&page=2#post-5`, [post(5), thread(12)]],
-    [`${XF}/index.php?goto/post&id=9`, [post(9)]],
-    [`${XF}/index.php?members/jane.7/`, [member(7)]],
-    [`${XF}/index.php?`, [HOME]],
-  ])("reads the XenForo link %s", (href, refs) => {
+  it.each(XENFORO_LINKS)("reads the XenForo link %s", (href, refs) => {
     expect(classifyForumHref(href)).toEqual(refs);
   });
 
-  it.each<[string, ForumRef[]]>([
-    ["/forum/thread/12", [thread(12)]],
-    ["/forum/thread/12/", [thread(12)]],
-    ["/forum/thread/12#post-55", [post(55), thread(12)]],
-    ["/forum/post/55", [post(55)]],
-    ["/forum/members/7", [member(7)]],
-    ["/forum/12", [node(12)]],
-    ["/forum", [HOME]],
-    ["/forum/", [HOME]],
-    ["/projects/ixstates/forum/thread/12", [thread(12)]],
-    ["/projects/ixstats/forum/12", [node(12)]],
-    ["https://ixwiki.com/projects/ixstats/forum/thread/12#post-5", [post(5), thread(12)]],
-    ["https://www.ixwiki.com/projects/ixstates/forum/post/5", [post(5)]],
-    ["http://ixwiki.com/forum/members/7", [member(7)]],
-  ])("reads the IxStates bridge link %s", (href, refs) => {
+  it.each(BRIDGE_LINKS)("reads the IxStates bridge link %s", (href, refs) => {
     expect(classifyForumHref(href)).toEqual(refs);
   });
 
-  it.each([
-    `${XF}/whats-new/`,
-    `${XF}/threads/x.12/reply`,
-    `${XF}/threads/welcome/`,
-    `${XF}/members/jane/`,
-    `${XF}/posts/0/`,
-    `${XF}/posts/-3/`,
-    `${XF}/threads/x.2147483648/`,
-    `${XF}/posts/99999999999/`,
-    `${XF}/goto/post?id=2147483648`,
-    `${XF}/goto/post`,
-    `${XF}/forums/2147483648/`,
-    "/forum/thread/2147483648",
-    "/forum/members/99999999999",
-    "/forum/thread/abc",
-    "/forum/conversations",
-    "/projects/ixstates/forum/search?q=x",
-  ])("is a dead link (no native counterpart) for %s", (href) => {
+  it.each(ROOT_RELATIVE_LINKS)("reads the root-relative XenForo path %s", (href, refs) => {
+    expect(classifyForumHref(href)).toEqual(refs);
+  });
+
+  it.each(DEAD_LINKS)("is a dead link (no native counterpart) for %s", (href) => {
     expect(classifyForumHref(href)).toEqual([]);
   });
 
@@ -232,12 +260,29 @@ describe("classifyForumHref", () => {
     "https://ixwiki.com/wiki/Forum",
     "https://ixwiki.com/projects/ixstates/thinkpages/t/abc",
     "/thinkpages/t/abc",
-    "/threads/x.12/",
+    "/thinkpages/c/members",
+    "/projects/ixstates/threads/x.12/",
+    "/images/threads/1.png",
+    "/wiki/Threads/1",
+    "/threadsx/12/",
+    "/members",
+    "/index.php?title=Main_Page",
+    "https://example.com/threads/x.12/",
     "#post-5",
     "mailto:admin@ixwiki.com",
     "",
   ])("is not an old forum link: %s", (href) => {
     expect(classifyForumHref(href)).toBeNull();
+  });
+});
+
+describe("FORUM_LINK_MARKERS", () => {
+  it.each([
+    ...[...XENFORO_LINKS, ...BRIDGE_LINKS, ...ROOT_RELATIVE_LINKS].map(([href]) => href),
+    ...DEAD_LINKS,
+  ])("finds %s, so the passes scan every row holding an old link (any case)", (href) => {
+    const text = href.toLowerCase();
+    expect(FORUM_LINK_MARKERS.some((marker) => text.includes(marker.toLowerCase()))).toBe(true);
   });
 });
 
@@ -321,6 +366,12 @@ describe("rewriteForumHrefs", () => {
     expect(rewriteForumHrefs(html, targetOf, "drop").html).toBe(a("/thinkpages/post/p55"));
   });
 
+  it("reads only <a> itself, never a custom element whose name starts with a-", () => {
+    const html = `<a-x href="${XF}/threads/x.100/">c</a-x><a-x href="${XF}/threads/x.404/">d</a-x>`;
+    expect(forumHrefRefs(html)).toEqual([]);
+    expect(rewriteForumHrefs(html, targetOf, "drop")).toEqual({ html, mapped: 0, unwrapped: 0 });
+  });
+
   it("rewrites only an anchor's href: text, other attributes, images and other links stay", () => {
     const html = [
       `<p>${XF}/threads/x.100/ and /forum/thread/100</p>`,
@@ -402,10 +453,21 @@ describe("xenforoId", () => {
     expect(xenforoId("2147483647")).toBe(2_147_483_647);
   });
 
-  it.each([undefined, "", "0", "abc", "7a", "-3", "2147483648", "99999999999"])(
-    "is null for %p",
-    (digits) => {
-      expect(xenforoId(digits)).toBeNull();
-    }
-  );
+  it.each([
+    undefined,
+    "",
+    "0",
+    "abc",
+    "7a",
+    "-3",
+    "2147483648",
+    "99999999999",
+    "1e3",
+    "0x10",
+    " 7",
+    "+4",
+    "1.0",
+  ])("is null for %p", (digits) => {
+    expect(xenforoId(digits)).toBeNull();
+  });
 });

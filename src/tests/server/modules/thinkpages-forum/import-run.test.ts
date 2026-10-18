@@ -41,6 +41,30 @@ function withMessages(base: Snapshot, messages: Record<number, string>): Snapsho
   return { ...base, postsByThread };
 }
 
+/** The snapshot with some threads' discussion_state changed. */
+function withThreadStates(base: Snapshot, states: Record<number, string>): Snapshot {
+  const threads = base.threads.map((t) => ({
+    ...t,
+    discussion_state: states[t.thread_id] ?? t.discussion_state,
+  }));
+  return { ...base, threads };
+}
+
+/** Thread 101's write fails once (its recount), so the first run lists it as failed and the rerun writes it. */
+function failingThread101(rows: Partial<ImportTables>) {
+  let armed = true;
+  const store = importStore(rows, {
+    failWhen: (table, method, args) => {
+      if (!armed || table !== "threads" || method !== "update") return false;
+      const row = store.tables().threads.find((t) => t.id === args.where?.id);
+      if (row?.xenforoThreadId !== 101) return false;
+      armed = false;
+      return true;
+    },
+  });
+  return store;
+}
+
 /** The imported rows by XenForo id, without generated ids, for comparing two runs. */
 function imported(tables: ImportTables) {
   const keyOf = new Map(tables.categories.map((c) => [c.id, c.key]));
@@ -232,6 +256,101 @@ describe("the XenForo import applied to the small snapshot", () => {
     const native = store.tables().posts.find((p) => p.xenforoPostId === 1010)!;
     expect(rerun.totals.quoteIds).toEqual({ remapped: 1, dropped: 0 });
     expect(html()).toContain(`data-post="${native.id}"`);
+  });
+
+  it("keeps old forum links, stashed threads and notification links while a thread failed, and maps them on the rerun", async () => {
+    const store = failingThread101({
+      ...seed(),
+      stashItems: [
+        {
+          id: "i-101",
+          stashId: "s-1",
+          pageTitle: "forum:thread:101",
+          contentType: "forum_thread",
+          contentId: 101,
+        },
+      ],
+      notifications: [{ id: "n-101", href: "/forum/thread/101" }],
+    });
+    // Thread 101 is visible in this export, so once written its native thread is public.
+    const linking = withThreadStates(
+      withMessages(snapshot, { 1031: "[url=https://forum.ixwiki.com/threads/x.101/]x[/url]" }),
+      { 101: "visible" }
+    );
+    const html = () =>
+      store.tables().posts.find((p) => p.xenforoPostId === 1031)!.contentHtml as string;
+
+    const first = await runImport(store.db as never, linking);
+    expect(first.totals.failedThreads.map((f) => f.xenforoThreadId)).toEqual([101]);
+    expect(html()).toContain('href="https://forum.ixwiki.com/threads/x.101/"');
+    // Post 1001's link to thread 100 maps; 1031's link to the failed thread is kept, not unwrapped.
+    expect(first.totals.forumLinks).toEqual({ mapped: 1, unwrapped: 0 });
+    expect(first.totals.stashedThreads).toEqual({ moved: 0, twins: 0, deleted: 0 });
+    expect(first.totals.notificationLinks).toEqual({ mapped: 0, unresolved: 0 });
+    expect(store.tables().stashItems.map((i) => i.pageTitle)).toEqual(["forum:thread:101"]);
+    expect(store.tables().notifications.map((n) => n.href)).toEqual(["/forum/thread/101"]);
+
+    const rerun = await runImport(store.db as never, linking);
+    const thread101 = store.tables().threads.find((t) => t.xenforoThreadId === 101)!;
+    expect(rerun.totals.failedThreads).toEqual([]);
+    expect(html()).toContain(`href="/thinkpages/t/${thread101.id}"`);
+    expect(rerun.totals.forumLinks).toEqual({ mapped: 1, unwrapped: 0 });
+    expect(rerun.totals.stashedThreads).toEqual({ moved: 1, twins: 0, deleted: 0 });
+    expect(rerun.totals.notificationLinks).toEqual({ mapped: 1, unresolved: 0 });
+    expect(store.tables().stashItems.map((i) => i.pageTitle)).toEqual([
+      `thinkpages:thread:${thread101.id}`,
+    ]);
+    expect(store.tables().notifications.map((n) => n.href)).toEqual([
+      `/thinkpages/t/${thread101.id}`,
+    ]);
+  });
+
+  it("keeps what nothing maps while the snapshot covers only some forums, and drops it on a run over every forum", async () => {
+    const store = importStore({
+      ...seed(),
+      stashItems: [
+        {
+          id: "i-999",
+          stashId: "s-1",
+          pageTitle: "forum:thread:999",
+          contentType: "forum_thread",
+          contentId: 999,
+        },
+      ],
+      notifications: [{ id: "n-999", href: "/forum/thread/999" }],
+    });
+    const whole = withMessages(snapshot, {
+      1031: '[url=https://forum.ixwiki.com/threads/x.999/]gone[/url] [QUOTE="Ann, post: 9999, member: 0"]q[/QUOTE]',
+    });
+    const filtered: Snapshot = { ...whole, meta: { ...whole.meta, nodeFilter: [12, 13] } };
+    const html = () =>
+      store.tables().posts.find((p) => p.xenforoPostId === 1031)!.contentHtml as string;
+
+    const first = await runImport(store.db as never, filtered);
+    expect(first.totals).toMatchObject({
+      failedThreads: [],
+      quoteIds: { remapped: 0, dropped: 0 },
+      // Post 1001's link to thread 100 maps; nothing is unwrapped, dropped or deleted.
+      forumLinks: { mapped: 1, unwrapped: 0 },
+      stashedThreads: { moved: 0, twins: 0, deleted: 0 },
+      notificationLinks: { mapped: 0, unresolved: 0 },
+    });
+    expect(html()).toContain('href="https://forum.ixwiki.com/threads/x.999/"');
+    expect(html()).toContain('data-post="9999"');
+    expect(store.tables().stashItems.map((i) => i.id)).toEqual(["i-999"]);
+    expect(store.tables().notifications.map((n) => n.href)).toEqual(["/forum/thread/999"]);
+
+    const again = await runImport(store.db as never, whole);
+    expect(again.totals).toMatchObject({
+      quoteIds: { remapped: 0, dropped: 1 },
+      forumLinks: { mapped: 0, unwrapped: 1 },
+      stashedThreads: { moved: 0, twins: 0, deleted: 1 },
+      notificationLinks: { mapped: 0, unresolved: 1 },
+    });
+    expect(html()).not.toContain("forum.ixwiki.com");
+    expect(html()).not.toContain("data-post=");
+    expect(store.tables().stashItems).toEqual([]);
+    expect(store.tables().notifications.map((n) => n.href)).toEqual(["/thinkpages"]);
   });
 
   it("finishes a thread interrupted mid-write on the rerun, ending as one clean run would", async () => {
