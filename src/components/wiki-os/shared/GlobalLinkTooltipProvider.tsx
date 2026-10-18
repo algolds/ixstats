@@ -6,11 +6,9 @@
  * Uses document-level event delegation to detect any <a> pointing to:
  * - ixwiki.com/wiki/*       → Wiki article preview tooltip (the article opens in WikiOS)
  * - iiwiki.com/wiki/*       → IIWiki article preview tooltip (the article opens in WikiOS)
- * - forum.ixwiki.com/threads/* → Forum thread preview tooltip
- * - maps.ixwiki.com/*       → Map link indicator
  *
  * Mount once in the root layout as a sibling (it wraps nothing) — every link gets
- * tooltips automatically, no per-component wrapping needed. Future wiki/forum links
+ * tooltips automatically, no per-component wrapping needed. Future wiki links
  * added anywhere in the app will automatically get tooltip coverage.
  */
 
@@ -20,23 +18,21 @@ import { Badge } from "~/components/ui/badge";
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
-import {
-  OpenBook as BookOpen,
-  OpenNewWindow as ExternalLink,
-  ChatBubble as MessageSquare,
-  Group as Users,
-} from "iconoir-react";
+import { OpenBook as BookOpen } from "iconoir-react";
 import { WIKI_SOURCES, mediaWikiHostPattern, wikiReaderPath } from "~/lib/wiki-os/config";
 
-type DetectedLink =
-  { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
+/** A hovered link's wiki article. */
+interface DetectedLink {
+  title: string;
+  wiki: "ixwiki" | "iiwiki";
+}
 
 /** Namespaces and special pages that have no useful preview. */
 const NO_PREVIEW_TITLE = /^(?:(?:special|file|category)[:/]|(?:template|help|user|talk|wiki):)/i;
 
 function wikiLink(match: RegExpMatchArray, wiki: "ixwiki" | "iiwiki"): DetectedLink | null {
   const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
-  return NO_PREVIEW_TITLE.test(title) ? null : { kind: "wiki", title, wiki };
+  return NO_PREVIEW_TITLE.test(title) ? null : { title, wiki };
 }
 /** An absolute link to an article of the wiki, by the configured public host. */
 const ABSOLUTE_WIKI_LINK = new RegExp(
@@ -53,12 +49,7 @@ function detectLink(href: string): DetectedLink | null {
   if (ixMatch) return wikiLink(ixMatch, "ixwiki");
 
   const iiMatch = href.match(/(?:https?:\/\/)?iiwiki\.(?:com|us)\/wiki\/([^#?]+)/);
-  if (iiMatch) return wikiLink(iiMatch, "iiwiki");
-
-  // Forum thread links: forum.ixwiki.com/threads/title.123/ or /threads/123/
-  const forumMatch = href.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-  const threadId = forumMatch ? parseInt(forumMatch[1]!, 10) : 0;
-  return threadId > 0 ? { kind: "forum", threadId } : null;
+  return iiMatch ? wikiLink(iiMatch, "iiwiki") : null;
 }
 
 export function GlobalLinkTooltips() {
@@ -159,11 +150,7 @@ export function GlobalLinkTooltips() {
         activeElementRef.current = null;
       }}
     >
-      {active?.link.kind === "wiki" ? (
-        <WikiTooltipBody title={active.link.title} wiki={active.link.wiki} />
-      ) : active?.link.kind === "forum" ? (
-        <ForumTooltipBody threadId={active.link.threadId} />
-      ) : null}
+      {active ? <WikiTooltipBody title={active.link.title} wiki={active.link.wiki} /> : null}
     </VirtualAnchorHoverCard>
   );
 }
@@ -193,58 +180,6 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
         className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
         Read full article
-      </Link>
-    </div>
-  );
-}
-
-function ForumTooltipBody({ threadId }: { threadId: number }) {
-  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
-    { threadId },
-    { staleTime: 10 * 60_000 }
-  );
-
-  if (!thread) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <MessageSquare data-app="thinkpages" className="text-tint h-3.5 w-3.5 shrink-0" />
-          <span className="text-headline text-label">Loading thread...</span>
-        </div>
-        <Skeleton className="rounded-control-sm h-10 w-full" />
-      </div>
-    );
-  }
-
-  // The forum is ThinkPages, so the thread card wears ThinkPages' tint inside any app.
-  return (
-    <div data-app="thinkpages" className="space-y-2">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="text-tint h-3.5 w-3.5 shrink-0" />
-        <span className="text-label text-headline truncate">{thread.title}</span>
-      </div>
-      {thread.forumName && <Badge variant="secondary">{thread.forumName}</Badge>}
-      {thread.excerpt && (
-        <p className="text-label-secondary text-footnote line-clamp-3 leading-relaxed">
-          {thread.excerpt.substring(0, 250)}
-          {thread.excerpt.length > 250 ? "…" : ""}
-        </p>
-      )}
-      <div className="text-label-secondary text-footnote flex items-center gap-3">
-        <span className="flex items-center gap-0.5">
-          <Users className="size-3" />
-          {thread.author}
-        </span>
-        <span className="flex items-center gap-0.5">
-          <MessageSquare className="size-3" />
-          {thread.replyCount} replies
-        </span>
-      </div>
-      <Link
-        href={thread.href}
-        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
-      >
-        Open thread <ExternalLink className="size-3" />
       </Link>
     </div>
   );

@@ -228,13 +228,13 @@ configuration object, never from a literal:
 - **`User-Agent` strings** sent to other services: `src/lib/demo-seed/sports/sports-helpers.ts`, `src/lib/discord/ixtwitter-sync.ts`,
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
-  forum phase 4b; links to it are parsed to preview or redirect the imported thread): `src/lib/thinkpages-forum/import/bbcode.ts`,
-  `src/components/thinkpages/post/PostInlineLinkPreview.tsx`,
-  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`; the export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
+  forum phase 4b; the app neither previews nor redirects links to it): only the XenForo import reads its links, pointing those in
+  imported posts at native pages (`src/lib/thinkpages-forum/import/forum-links.ts`, which also matches the retired bridge's `/forum/...`
+  paths on the wiki's host through `mediaWikiHostPattern`, and `src/server/modules/thinkpages-forum/import-forum-links.ts`); the
+  export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
-  `src/lib/time/clock-context.ts` (the maps host's top-level routes, so a root-level country page greets by its realm's clock),
-  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`.
+  `src/lib/time/clock-context.ts` (the maps host's top-level routes, so a root-level country page greets by its realm's clock).
   An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
 

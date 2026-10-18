@@ -1,8 +1,7 @@
 /**
- * Native threads anyone may read, for surfaces outside the forum (phase 4b, Q10): the global activity feed, Trending
- * and the old-forum link previews read these instead of the retired XenForo bridge. A thread is public when it is
- * not hidden, its category is public (`categoryVisibilityWhere` for an anonymous viewer) and it sits in the site
- * section or a published realm.
+ * Native threads anyone may read, for surfaces outside the forum (phase 4b, Q10): the global activity feed and
+ * Trending read these instead of the retired XenForo bridge. A thread is public when it is not hidden, its category is
+ * public (`categoryVisibilityWhere` for an anonymous viewer) and it sits in the site section or a published realm.
  */
 import type { PrismaClient } from "@prisma/client";
 import { categoryVisibilityWhere, notBoardCategory } from "~/lib/thinkpages-forum/categories";
@@ -35,8 +34,6 @@ export interface PublicThreadPlacement {
   realmId: string | null;
   style: string;
 }
-
-const EXCERPT_LENGTH = 200;
 
 const THREAD_SELECT = {
   id: true,
@@ -202,24 +199,4 @@ export async function latestPublicThreads(
     })),
     realms,
   };
-}
-
-/** An imported thread by its old XenForo id, when anyone may read it; its first post's text is the excerpt. */
-export async function publicThreadByXenforoId(
-  db: PublicThreadsDb,
-  xenforoThreadId: number
-): Promise<(PublicForumThread & { excerpt: string | null }) | null> {
-  const row = await db.forumThread.findFirst({
-    where: { xenforoThreadId, ...(await publicThreadWhere(db)) },
-    select: THREAD_SELECT,
-  });
-  if (!row) return null;
-  const [authored] = await withAuthors(db, [row]);
-  const first = await db.forumPost.findFirst({
-    where: { threadId: row.id, hidden: false },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { plainText: true },
-  });
-  const excerpt = first?.plainText.replace(/\s+/g, " ").trim().slice(0, EXCERPT_LENGTH) ?? "";
-  return { ...authored!.thread, excerpt: excerpt || null };
 }

@@ -2,7 +2,7 @@
 
 Moves the community forum at forum.ixwiki.com (XenForo) into the native ThinkPages forum: export a snapshot, import it, make the old forum read-only, then import what was posted meanwhile. Scripts (see `scripts/README.md`): `bun run forum:export-xenforo` (`scripts/migrations/export-xenforo-forum.ts`), `bun run db:import-xenforo-forum` (`scripts/migrations/import-xenforo-forum.ts`). Design: `docs/systems/forum.md`.
 
-**Phase 4b ships with the production import** (owner ruling, 2026-10-09): the deploy that this runbook starts from already has the XenForo bridge deleted, and phase 5 deleted its `/forum/*` redirects too (owner ruling, 2026-10-17: every old URL goes), so from that deploy on `/forum/*` answers a 404 and the app no longer shows forum.ixwiki.com content anywhere (feed, Trending, passport counters and link previews read the native forum). Run steps 2 to 9 close together after the deploy.
+**Phase 4b ships with the production import** (owner ruling, 2026-10-09): the deploy that this runbook starts from already has the XenForo bridge deleted, and phase 5 deleted its `/forum/*` redirects too (owner ruling, 2026-10-17: every old URL goes), so from that deploy on `/forum/*` answers a 404 and the app no longer shows forum.ixwiki.com content anywhere (feed, Trending and passport counters read the native forum, and links to the old forum get no preview). Run steps 2 to 9 close together after the deploy.
 
 ## Ground rules
 
@@ -47,9 +47,24 @@ Moves the community forum at forum.ixwiki.com (XenForo) into the native ThinkPag
    - Content that was hidden or deleted on XenForo after the first export is hidden again here; the report counts it ("re-hidden"). Nothing is ever un-hidden or deleted by a delta.
    - Limits to tell the owner: edits to already-imported XenForo posts, and title, lock or pin changes to already-imported threads, are not carried over; a post hard-deleted on XenForo (gone from the export rather than marked deleted) stays imported and must be hidden by hand.
 10. **Verify that `/forum/*` is gone** (read-only). `curl -sI https://ixwiki.com/projects/ixstates/forum/thread/<xfId>` returns 404, as does every other `/forum/*` path. There is nothing to roll back here.
-11. **Leave forum.ixwiki.com read-only; add no redirects to `/forum/*`.** An earlier version of this step replaced the forum's nginx server block with 301s into `/forum/thread/<id>`, `/forum/post/<id>` and `/forum/<nodeId>`; those paths are 404s now, so do not apply it. XenForo keeps serving its read-only pages until it is decommissioned (step 13); forum.ixwiki.com itself is not redirected to native pages (owner ruling, 2026-10-17: step 13 decides what the host serves once XenForo is gone). Its links in imported posts already point at native pages (step 6); links to it elsewhere (wiki pages, native posts) stay as written. Check that no nginx or Cloudflare rule still sends anything to `/forum` (`grep -rn "/forum" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/`, and the Cloudflare redirect rules). XenForo stays installed; its database and `internal_data` are the archive of record.
-12. **After phase 4b** (deployed before step 2): if a `forum_legacy_redirect` row was ever written (a pre-4b test), it is inert; delete it with the owner's yes (`DELETE FROM "SystemConfig" WHERE key='forum_legacy_redirect'`). Keep `XENFORO_*` in `.env.production.local` until XenForo is decommissioned: only the export script (import tooling) reads them, the app no longer does. Members who claim old posts later are linked by staff in the admin users panel (**Old forum**), which attributes their imported posts at once; there is no self-service linking any more.
-13. **Later, out of scope:** decommission XenForo (stop its PHP-FPM pool, archive its database dump and attachments off-site, replace the nginx block with a DNS-level redirect). The owner schedules it.
+11. **Leave forum.ixwiki.com read-only; add no redirects to `/forum/*`.** An earlier version of this step replaced the forum's nginx server block with 301s into `/forum/thread/<id>`, `/forum/post/<id>` and `/forum/<nodeId>`; those paths are 404s now, so do not apply it. XenForo keeps serving its read-only pages until it is decommissioned. Then step 13 sends the host's front page to `/thinkpages` with a 301 and answers 410 Gone for every other path (owner ruling, 2026-10-17); no old XenForo URL is ever mapped to its native page by nginx. Its links in imported posts already point at native pages (step 6); links to it elsewhere (wiki pages, native posts) stay as written. Check that no nginx or Cloudflare rule still sends anything to `/forum` (`grep -rn "/forum" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/`, and the Cloudflare redirect rules). XenForo stays installed; its database and `internal_data` are the archive of record.
+12. **After phase 4b** (deployed before step 2): if a `forum_legacy_redirect` row was ever written (a pre-4b test), it is inert; delete it with the owner's yes (`DELETE FROM "SystemConfig" WHERE key='forum_legacy_redirect'`). The clone (`ixstats_wv1`) and the dev database, imported before phase 5, may hold a `forum_import_node_map` row; nothing reads it any more, so it can be deleted there (`DELETE FROM "SystemConfig" WHERE key='forum_import_node_map'`). Production never had one. Keep `XENFORO_*` in `.env.production.local` until XenForo is decommissioned: only the export script (import tooling) reads them, the app no longer does. Members who claim old posts later are linked by staff in the admin users panel (**Old forum**), which attributes their imported posts at once; there is no self-service linking any more.
+13. **Decommission XenForo** (later; the owner schedules it and applies the nginx change). Stop its PHP-FPM pool and archive its database dump and `internal_data` attachments off-site. Then forum.ixwiki.com answers by the owner's rule (2026-10-17): the front page redirects (301) to `https://ixwiki.com/projects/ixstates/thinkpages`, and every other path returns 410 Gone.
+   - Back up the forum's server block (step 1 found its file) outside the directories nginx includes: `cp /etc/nginx/sites-enabled/<forum>.conf /root/forum.conf.bak-$(date -u +%Y%m%d)`.
+   - In that block keep the `listen`, `server_name` and `ssl_*` lines, and replace everything else (`root`, `index`, the PHP `location`s and `fastcgi_pass`) with:
+
+     ```nginx
+     location = / {
+         return 301 https://ixwiki.com/projects/ixstates/thinkpages;
+     }
+     location / {
+         return 410;
+     }
+     ```
+
+   - `nginx -t`; then `systemctl reload nginx`. Check: `curl -sI https://forum.ixwiki.com/` returns 301 with that `Location`; `curl -sI https://forum.ixwiki.com/threads/x.12/` and `curl -sI https://forum.ixwiki.com/index.php` return 410. If Cloudflare caches the host, purge its cache for forum.ixwiki.com.
+   - Rollback: copy the backup over the block, `nginx -t`, `systemctl reload nginx`.
+   - Afterwards the owner may remove `XENFORO_*` from `.env.production.local` (step 12) and the snapshot directories (ground rules).
 
 ## Known limitations
 

@@ -33,21 +33,6 @@ export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPr
   return <>{children}</>;
 }
 
-interface ForumLinkPreviewProps {
-  threadId: number;
-  children: React.ReactNode;
-}
-
-export function ForumLinkPreview({ threadId, children }: ForumLinkPreviewProps) {
-  // Prefetch thread data for instant tooltip via global provider
-  const utils = api.useUtils();
-  useEffect(() => {
-    if (threadId > 0) void utils.wikios.getForumThreadPreview.prefetch({ threadId });
-  }, [threadId, utils]);
-
-  return <>{children}</>;
-}
-
 interface WikiHtmlContentProps {
   html: string;
   className?: string;

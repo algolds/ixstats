@@ -3,8 +3,7 @@
 //
 // Plan 416 item 6: public WikiOS endpoints must not hand out internals. The deleted-pages list is for
 // those who may browse deleted pages; the audit log names actors by name, never by internal user id;
-// `downloadFile` fetches only allowlisted hosts and at most 10 MB; the old-forum thread preview is
-// rate-limited and shows only imported threads anyone may read (phase 4b: native, no XenForo call).
+// `downloadFile` fetches only allowlisted hosts and at most 10 MB.
 jest.mock("~/server/db", () => ({
   __esModule: true,
   db: jest.requireActual("~/tests/helpers/fake-wiki-db").fakeWikiDb.db,
@@ -48,10 +47,6 @@ jest.mock("~/lib/wiki-os/services/media-download", () => ({
   __esModule: true,
   downloadMedia: jest.fn(),
 }));
-jest.mock("~/server/modules/thinkpages-forum", () => ({
-  __esModule: true,
-  publicThreadByXenforoId: jest.fn(),
-}));
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
@@ -62,7 +57,6 @@ import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
 import { MediaAssetService } from "~/lib/wiki-os/core";
 import { getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { downloadMedia } from "~/lib/wiki-os/services/media-download";
-import { publicThreadByXenforoId } from "~/server/modules/thinkpages-forum";
 import { rateLimiter } from "~/lib/cache";
 
 const { tables } = fakeWikiDb;
@@ -224,71 +218,5 @@ describe("downloadFile", () => {
     await expect(content(null).downloadFile({ filename: "Flag.png" })).resolves.toBeNull();
 
     error.mockRestore();
-  });
-});
-
-describe("getForumThreadPreview", () => {
-  const AT = new Date("2026-10-01T00:00:00Z");
-  const native = {
-    id: "t_native",
-    title: "Senate agenda",
-    author: "Marcus",
-    categoryName: "Senate",
-    replyCount: 7,
-    createdAt: AT,
-    lastPostAt: AT,
-    href: "/thinkpages/t/t_native",
-    excerpt: "Agenda for today",
-  };
-  const realFetch = globalThis.fetch;
-  const fetchMock = jest.fn();
-
-  beforeEach(() => {
-    fetchMock.mockReset();
-    globalThis.fetch = fetchMock as never;
-    jest.mocked(publicThreadByXenforoId).mockReset().mockResolvedValue(native);
-  });
-  afterEach(() => {
-    globalThis.fetch = realFetch;
-    jest.restoreAllMocks();
-  });
-
-  it("previews the imported thread for an anonymous reader, without asking XenForo", async () => {
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toEqual({
-      threadId: 42,
-      title: "Senate agenda",
-      author: "Marcus",
-      replyCount: 7,
-      forumName: "Senate",
-      excerpt: "Agenda for today",
-      href: "/thinkpages/t/t_native",
-    });
-    expect(jest.mocked(publicThreadByXenforoId).mock.calls[0]![1]).toBe(42);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("shows nothing for an id with no thread anyone may read", async () => {
-    jest.mocked(publicThreadByXenforoId).mockResolvedValue(null);
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-  });
-
-  it("shows nothing when the lookup fails", async () => {
-    jest.mocked(publicThreadByXenforoId).mockRejectedValue(new Error("db down"));
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).resolves.toBeNull();
-  });
-
-  it("is rate-limited for anonymous callers and stops before the lookup", async () => {
-    jest.spyOn(rateLimiter, "isEnabled").mockReturnValue(true);
-    jest.spyOn(rateLimiter, "check").mockResolvedValue({
-      success: false,
-      remaining: 0,
-      resetAt: new Date(Date.now() + 60_000),
-    } as never);
-    jest.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    await expect(content(null).getForumThreadPreview({ threadId: 42 })).rejects.toThrow(
-      /Too many requests/
-    );
-    expect(publicThreadByXenforoId).not.toHaveBeenCalled();
   });
 });

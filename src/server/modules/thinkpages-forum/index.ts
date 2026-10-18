@@ -201,7 +201,6 @@ export {
 } from "./mod-warnings";
 export {
   latestPublicThreads,
-  publicThreadByXenforoId,
   type PublicForumThread,
   type PublicThreadsDb,
 } from "./public-threads";

@@ -241,7 +241,7 @@ WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style ta
 ### WikiOS router (`src/server/api/routers/wikios/`)
 
 **Page content** (`page-content.ts`):
-`getArticleHtml`, `getWikitext`, `getIntro`, `getInfobox`, `getSectionContent`, `getPageImages`, `getArticleThumbnails`, `getArticleAuthors`, `checkPageExists`, `getMissingPages`, `resolveWikiPlaceholders`, `getForumThreadPreview`, `downloadFile`
+`getArticleHtml`, `getWikitext`, `getIntro`, `getInfobox`, `getSectionContent`, `getPageImages`, `getArticleThumbnails`, `getArticleAuthors`, `checkPageExists`, `getMissingPages`, `resolveWikiPlaceholders`, `downloadFile`
 
 **History** (`history-diff.ts`):
 `getHistory`, `getDiff`, `getRevisionContent`

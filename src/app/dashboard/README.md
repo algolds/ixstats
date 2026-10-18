@@ -101,8 +101,7 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
   `activities.getUnifiedTrending`, `activities.followCountry`,
   `thinkpages.getMyAccounts`, `blurbs.*`
 - **Feedback**: `userLogging.submitFeedback`
-- **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`,
-  `wikios.getForumThreadPreview`, `wikios.getPageImages`,
+- **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`, `wikios.getPageImages`,
   `wikios.getArticleMarginData`, `wikios.createThread`, `wikios.*Stash*`,
   `users.resolveWikiAuthor`
 

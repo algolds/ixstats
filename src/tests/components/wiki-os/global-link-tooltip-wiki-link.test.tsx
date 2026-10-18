@@ -2,10 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    wikios: {
-      getIntro: { useQuery: () => ({ data: { text: "An intro." } }) },
-      getForumThreadPreview: { useQuery: () => ({ data: undefined }) },
-    },
+    wikios: { getIntro: { useQuery: () => ({ data: { text: "An intro." } }) } },
   },
 }));
 

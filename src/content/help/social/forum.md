@@ -90,7 +90,7 @@ Linking an old forum account to your IxStats account is managed by staff. Ask in
 
 ### Old links
 
-IxStats' old forum pages (`/forum/...`) are gone, so links to them open nothing; a copied thread sits in the category described under **Where they live** above. Links to the old forum's own site (forum.ixwiki.com) open its read-only pages until that site is switched off. Inside copied posts, links to either old forum open the copied thread, post, category or member profile instead; a link to something that was not copied, or that only some members can see, shows as plain text.
+IxStats' old forum pages (`/forum/...`) are gone, so links to them open nothing; a copied thread sits in the category described under **Where they live** above. Links to the old forum's own site (forum.ixwiki.com) open its read-only pages until that site is switched off; after that, its front page opens the forum here and its other pages are gone. Inside copied posts, links to either old forum open the copied thread, post, category or member profile instead; a link to something that was not copied, or that only some members can see, shows as plain text.
 
 ## Good to know
 

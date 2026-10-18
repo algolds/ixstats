@@ -8,7 +8,6 @@ import { render, screen } from "@testing-library/react";
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiHtmlContent: ({ html }: { html: string }) => <span>{html}</span>,
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  ForumLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 import { FeedItemHeader } from "~/components/dashboard/sections/feed/FeedItemHeader";

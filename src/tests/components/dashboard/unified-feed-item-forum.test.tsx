@@ -4,7 +4,6 @@ import { render, screen } from "@testing-library/react";
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiHtmlContent: ({ html }: { html: string }) => <span>{html}</span>,
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  ForumLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 jest.mock("~/components/shared/polls/FeedPollWidget", () => ({ FeedPollWidget: () => null }));
 jest.mock("~/components/thinkpages/SportsBulletinCard", () => ({ SportsBulletinCard: () => null }));

@@ -9,6 +9,7 @@
  * other attribute stay as written. A stored notification link is rewritten whole (`rewriteNotificationHref`).
  */
 import { mapHtmlRuns } from "~/lib/action-links";
+import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 import { categoryHref, FORUM_HOME, postHref, threadHref } from "../links";
 import { escapeHtml, unescapeHtml } from "./html-text";
 import type { NodeMapFile, NodeTarget } from "./node-map";
@@ -164,9 +165,10 @@ const XENFORO_ORIGIN = /^(?:https?:)?\/\/(?:www\.)?forum\.ixwiki\.com(?::\d{1,5}
 const XENFORO_ROOT_PATH = new RegExp(`^(?=/(?:${XENFORO_SEGMENTS.join("|")})/)`);
 /** XenForo's unfriendly form: `/index.php?threads/x.12/&page=2` is the route `/threads/x.12/`, query `page=2`. */
 const XENFORO_INDEX_ROUTE = /^\/index\.php\?([^&#]*)&?/i;
-/** Where the bridge's paths start: ixwiki.com or root-relative, with or without the app's base path. */
-const BRIDGE_ORIGIN =
-  /^(?:https?:\/\/(?:www\.)?ixwiki\.com)?(?:\/projects\/ixstate?s)?(?=\/forum(?:[/?#]|$))/;
+/** Where the bridge's paths start: the wiki's host or root-relative, with or without the app's base path. */
+const BRIDGE_ORIGIN = new RegExp(
+  String.raw`^(?:https?://${mediaWikiHostPattern()})?(?:/projects/ixstate?s)?(?=/forum(?:[/?#]|$))`
+);
 
 function routeRefs(routes: readonly Route[], url: UrlParts): ForumRef[] {
   for (const [pattern, refs] of routes) {

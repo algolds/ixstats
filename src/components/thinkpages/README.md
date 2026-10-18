@@ -26,7 +26,7 @@ All components are organized into specialized domain sub-directories:
 - `ThreadReplies.tsx` (106 lines) — Collapsible thread replies container and recursive post mapper.
 - `PostBody.tsx` (97 lines) — Post body content renderer, blurb tags, and sports bulletin card dispatcher.
 - `PostMediaGrid.tsx` (72 lines) — Flexible media attachment grid with lightbox triggers.
-- `PostInlineLinkPreview.tsx` (166 lines) — Smart inline link previews for Wiki, Forum, League, and Club links.
+- `PostInlineLinkPreview.tsx` (117 lines) — Smart inline link previews for Wiki, League, and Club links.
 - `PostModals.tsx` (215 lines) — Delete confirmation, flag/report dialog, reactions dialog, and image lightbox modal.
 - `PostComposers.tsx` (442 lines) — In-line edit composer and reply composer with auto-focus.
 - `useThinkpagesPost.ts` (466 lines) — Custom React hook encapsulating state, tRPC mutations, and handlers.
