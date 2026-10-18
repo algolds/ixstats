@@ -8,8 +8,10 @@ import {
   cardHubTabOf,
   legacyCardRedirect,
   legacyCardRedirectFor,
+  marketTabHref,
   marketTabOf,
   storeTabRedirect,
+  tradeBuilderHref,
   type LegacyCardRoute,
 } from "~/lib/cards/hub-routes";
 
@@ -38,6 +40,24 @@ describe("hub tabs", () => {
     expect(marketTabOf(null)).toBe("browse");
     expect(marketTabOf(undefined)).toBe("browse");
     expect(marketTabOf("auctions")).toBe("browse");
+  });
+});
+
+describe("market links", () => {
+  it("opens a Market sub-tab", () => {
+    expect(marketTabHref("selling")).toBe("/vault/cards/market?tab=selling");
+    expect(marketTabHref("browse")).toBe("/vault/cards/market?tab=browse");
+  });
+
+  it("opens the trade builder on an open trade, or a new one seeded with a partner and cards", () => {
+    expect(tradeBuilderHref({ partner: "bob", get: "o9" })).toBe(
+      "/vault/cards/market?tab=trades&trade=new&partner=bob&get=o9"
+    );
+    expect(tradeBuilderHref({ partner: "@a b", give: "o1", get: "o2" })).toBe(
+      "/vault/cards/market?tab=trades&trade=new&partner=%40a+b&give=o1&get=o2"
+    );
+    expect(tradeBuilderHref({})).toBe("/vault/cards/market?tab=trades&trade=new");
+    expect(tradeBuilderHref({ tradeId: "t1" })).toBe("/vault/cards/market?tab=trades&trade=t1");
   });
 });
 

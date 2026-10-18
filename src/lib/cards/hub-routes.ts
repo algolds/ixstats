@@ -45,6 +45,22 @@ export function marketTabOf(value: string | null | undefined): MarketTab {
   return MARKET_TABS.find((tab) => tab === value) ?? "browse";
 }
 
+/** A Market sub-tab, as a plain path (`<Link>` and notification hrefs add the base path). */
+export function marketTabHref(tab: MarketTab): string {
+  return withQuery(CARD_HUB_PATHS.market, { tab });
+}
+
+/** The trade builder on the Market Trades tab: an open trade, or a new one seeded with a partner and cards. */
+export function tradeBuilderHref(args: {
+  tradeId?: string;
+  partner?: string;
+  give?: string;
+  get?: string;
+}): string {
+  const { tradeId = "new", partner, give, get } = args;
+  return withQuery(CARD_HUB_PATHS.market, { tab: "trades", trade: tradeId, partner, give, get });
+}
+
 /** Old card addresses; every one redirects permanently. */
 export type LegacyCardRoute =
   | "inventory"

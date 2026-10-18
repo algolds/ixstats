@@ -11,6 +11,7 @@ import { db } from "~/server/db";
 const CATEGORY_TOGGLE = {
   economic: "economicAlerts",
   cards: "economicAlerts",
+  packs: "economicAlerts",
   crisis: "crisisAlerts",
   security: "crisisAlerts",
   military: "crisisAlerts",
