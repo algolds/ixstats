@@ -739,7 +739,7 @@ mysql ixwiki -e "SELECT page_title FROM page WHERE page_namespace = 0 AND (page_
 lower-case paths' articles). Root-level short URLs such as `ixwiki.com/Foo` keep serving classic MediaWiki.
 
 Other links WikiOS pages render to IxStates-only routes (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`,
-`/achievements`, `/settings`, `/messages`) are root-relative in the standalone build and are **not** forwarded: on
+`/vault/achievements`, `/settings`, `/messages`) are root-relative in the standalone build and are **not** forwarded: on
 ixwiki.com they reach MediaWiki until they are prefixed with the IxStates URL in the app or forwarded in nginx.
 
 **Rollback:** not needed (nothing changed).

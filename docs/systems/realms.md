@@ -1,7 +1,7 @@
 # Realms — Places
 
 **Last updated:** 2026-10-07
-**Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/thinkpages/r/[realm]` · `/r/[realm]/nations` ·
+**Routes:** `/realms` (landing page and directory) · `/r/[realm]` (realm page: Overview) · `/thinkpages/r/[realm]` (live forum board) · `/r/[realm]/nations` ·
 `/r/[realm]/manage` · `/r/[realm]/happenings` · `/admin/realms`
 **Code:** `src/server/api/routers/realms/` (`index.ts`, `places.ts`, `region.ts`, `source-sync.ts`, `wiki.ts`, `map.ts`), `src/server/modules/realms/`
 (`realms.region.ts`, `realms.region-actions.ts`, `realms.transfer.ts`, `realms.source-sync.ts`, `realms.source-apply.ts`, `realms.wiki.ts`, `realms.map.ts`, `realms.map-access.ts`), `src/lib/realms/sources/`, `src/lib/realms/realm-wiki-settings.ts`, `src/app/realms/`, `src/app/r/[realm]/(region)/`, `src/lib/realms/realm-region.ts`,
@@ -103,47 +103,39 @@ With it, the feed shows (`realmFeedWhere`):
 
 It composes with the `countryId`, `hashtag` and `filter` inputs and is cached per realm (the cache key includes the realm id).
 
-Where it is used: the `/realms` feed panel and the **Realm feed** tab of `/thinkpages/r/[realm]`. The
-`/dashboard` feed (`activities.getGlobalFeed`) is not realm-scoped yet.
+Where it is used: the `/realms` feed panel (`RealmFeedPanel`). `/thinkpages/r/[realm]` has no feed tab: it is the
+realm's forum board (§3). The `/dashboard` feed (`activities.getGlobalFeed`) is not realm-scoped yet.
 
 ## 3. Realm board (`/thinkpages/r/[realm]`)
 
-Each realm has one board: a ThinkTank of type `realm_board`, mapped by the `RealmBoard` model
-(`prisma/schema/realm-boards.prisma`). It is created the first time anyone opens it (`realms.getBoard`); there
-is no bulk migration. The full rules are in [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board). In short:
+`/thinkpages/r/[realm]` is the realm's landing page in the forum (`RealmLanding`): the realm's **live board**, with
+the realm's forum categories (Hub, Character Threads, Current Events) beside it. The board is a forum board: its
+messages are the posts of the realm's one board thread, read newest first through `thinkpagesForum.getBoard` and
+pushed live to the realm's socket room. Code: `src/server/modules/thinkpages-forum/` (`board.ts`, `board-access.ts`,
+`board-writes.ts`) and `src/server/api/routers/thinkpagesForum/board.ts`. Design:
+`docs/superpowers/specs/2026-10-10-thinkpages-realm-board-design.md`. The rest of the forum: [forum.md](./forum.md).
 
-| Who                                                       | Can                                                                                                                                  |
-| :-------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| Anyone (signed out included)                              | Read the board feed and the realm feed                                                                                               |
-| Owners of a nation in the realm                           | Post as a persona of one of their nations there, chat, join or leave                                                                 |
-| Site admins, the founder, officers with the `board` power | Everything members can, plus remove posts (`removeGroupPost`). The `board` power also moderates the realm's forum section (below)    |
+| Who                                                         | Can                                                                                                                |
+| :---------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------- |
+| Anyone who can see the realm (signed out included)          | Read the board                                                                                                     |
+| Owners of a nation in the realm, and the realm's moderators | Post (as themselves or a persona), reply, edit their own message within 15 minutes, continue a message in a thread |
+| Signed-in visitors (no nation in the realm)                 | Post on the board only, while the realm allows visitors                                                            |
+| Site admins, the founder, officers with the `board` power   | Moderate the board and the realm's forum section, and set the board's visitor and slow-mode settings               |
 
-`realms.getBoard({ slug })` returns:
+Bans and archived realms bind on the board as in the rest of the realm's forum section (`realmPostingAccess`).
 
-- `groupId`;
-- `realm`;
-- `canPost`, `canModerate`;
-- `ownedCountryIds`: the caller's nations in the realm, which the composer offers as personas.
+The `board` power means **Forum moderation**: hide, lock, warn and ban in the realm's forum section, from the
+moderation console at `/thinkpages/mod` (the realm's Manage page links to it). Nobody can remove a nation from the
+realm.
 
-Each call also syncs membership. It joins the caller on their first visit (a member row and a chat
-participant), drops members who no longer own a nation there, and recounts `memberCount`.
+### The older ThinkTank board
 
-The page has three tabs:
-
-- **Board**: the ThinkTank feed, with a composer for members and a read-only notice for everyone else.
-- **Chat**: the board's ThinkShare conversation, for members only.
-- **Realm feed**: the realm-filtered ThinkPages feed.
-
-The board is the **Board** tab of the realm page. Moderators remove posts from it (`removeGroupPost`), but they no
-longer mute or ban nations on it. Since forum phase 3, mutes and bans live in the forum:
-
-- the `board` power means **Forum moderation**: hide, lock, warn and ban in the realm's forum section, from the
-  moderation console at `/thinkpages/mod` (the realm's Manage page links to it);
-- live board mutes and bans were migrated to realm-scope forum bans, which bind the player on the forum;
-- the `RealmBoardBan` rows are frozen history. Nothing writes to them any more. Rows that are still live keep
-  binding on the board and its chat (`getRealmBoardAccess`, `realmBoardChatRestriction`, see
-  [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board)) until they expire or the realm is deleted;
-- nobody can remove a nation from the realm.
+Before the forum board, a realm's board was a ThinkTank of type `realm_board`, mapped by the `RealmBoard` model
+(`prisma/schema/realm-boards.prisma`) and created the first time anyone called `realms.getBoard`. Nothing in the UI
+calls `realms.getBoard` any more. Boards created earlier stay ThinkTanks: their members still see them among their
+groups at `/thinktanks`, the realm feed filter still includes their posts (§2), and live board mutes and bans were
+migrated to realm-scope forum bans in forum phase 3 (the frozen `RealmBoardBan` rows still bind on the ThinkTank and
+its chat). Its rules are in [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board).
 
 **Embassy posts:** a member can tick "Also show at our embassies". The post gets the pseudo-tag
 `embassy:<realmId>`, and `getGroupFeed` on a partner realm's board includes it (labelled "From <realm>") while

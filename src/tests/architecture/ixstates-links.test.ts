@@ -17,7 +17,7 @@ const WIKI_DIRS = [
 
 /** The first segments of IxStates routes the wiki links to (none is in WIKIOS_ALLOWED_PREFIXES). */
 const IXSTATES_ROUTES =
-  "blurbs|mycountry|myleague|myclub|dashboard|countries|settings|messages|maps|vault|thinkpages|hashtags|admin|terms|privacy|forum|builder|leaderboard|profile";
+  "blurbs|mycountry|myleague|myclub|dashboard|countries|settings|messages|maps|vault|thinkpages|hashtags|admin|terms|privacy|forum|builder|leaderboard";
 
 /** A path literal used as a link target: `href="/x"`, `href={\`/x`, `withBasePath("/x"`, `navigateWithBasePath("/x"`. */
 const LITERAL_LINK = new RegExp(

@@ -81,7 +81,7 @@ Notifications are keyed by Clerk user id. The recipient is always the **owning u
 ThinkTanks are dedicated research and policy drafting rooms for alliances, international coalitions, and co-authors:
 - **Group Feed**: Asynchronous notes, lore drafts, and critique requests with quick intent tags.
 - **Role-Based Membership**: Group ownership, admin/member roles, invitations, and member roster management.
-- **Realm Boards**: every realm has a board ThinkTank, shown on the realm's landing page at `/thinkpages/r/<realm>`. Anyone can read it, owners of a nation in the realm post there, and its posts also appear in the realm-filtered feed (`thinkpages.getFeed({ realmId })`). See [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board) and [Realms](./realms.md).
+- **Realm Boards**: a realm's board at `/thinkpages/r/<realm>` is the forum's live board (`thinkpagesForum.getBoard`), not a ThinkTank: anyone who can see the realm reads it, and owners of a nation in the realm (and, when the realm allows them, signed-in visitors) post there. See [Realms §3](./realms.md#3-realm-board-thinkpagesrrealm) and [the forum](./forum.md). The older board ThinkTanks (`type: "realm_board"`) stay for the realms that have one; see [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board).
 - **Joint Working Papers and group chat**: the workspace mounts a Docs tab (`ThinktankPapersTab`, `CollaborativeDoc` CRUD) and a Chat tab on the group's linked ThinkShare conversation (see [ThinkTanks](./thinktanks.md#pillars-34-chat-and-docs)).
 
 ---

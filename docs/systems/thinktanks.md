@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05  
 **Status:** 🟡 Partial — ThinkTanks v2 (Feed, Members, Docs and Chat tabs live; invite inbox and join-by-code since 2026-10-05); see [SYSTEM_STATUS.md](SYSTEM_STATUS.md)  
-**Route:** `/thinktanks` · `/thinktanks/[groupId]` · realm boards at `/thinkpages/r/[realm]`  
+**Route:** `/thinktanks` · `/thinktanks/[groupId]` (a realm's board at `/thinkpages/r/[realm]` is the forum's, not a ThinkTank: §4a)  
 **Design System:** Facet Glass Physics (see [Facet Design System](../reference/facet-design-system.md); there is no `/apple-design` route)  
 
 ThinkTanks is IxStates' dedicated group collaboration and worldbuilding environment. It bridges real-time messaging, asynchronous discussion, collaborative document authoring, and institutional roleplay into a cohesive workspace that acts as a sister interface to the [ThinkShare Unified Messaging](./social.md#4-thinkshare-real-time-messaging-messages) platform.
@@ -108,15 +108,18 @@ To preserve group privacy and encourage participation while providing a rich bro
 
 ## 4a. Realm Boards (`type: "realm_board"`)
 
-Every realm has a board, the NationStates regional message board, built on this group primitive
-(`src/server/api/routers/thinkpages/thinktanks/realm-board.ts`; see [Realms](./realms.md)).
+A realm's board, the NationStates regional message board, used to be built on this group primitive
+(`src/server/api/routers/thinkpages/thinktanks/realm-board.ts`). The realm's page, `/thinkpages/r/[realm]`, now
+renders the forum's live board instead (`thinkpagesForum.getBoard`; see [Realms §3](./realms.md#3-realm-board-thinkpagesrrealm)
+and [the forum](./forum.md)). The board ThinkTanks created before that stay, and the rules below still hold for them.
 
 - **Storage.** A `ThinktankGroup` with `type: "realm_board"`, mapped to its realm by `RealmBoard`
   (`prisma/schema/realm-boards.prisma`: `realmId` and `groupId`, both unique). It has the usual linked
   ThinkShare conversation (the Chat tab) and settings `{ allowPersonaPosting: true }`.
 - **Created on demand.** `realms.getBoard` creates the board, its chat and its `RealmBoard` row in one
-  transaction the first time anyone opens `/thinkpages/r/[realm]`. When two first opens race, the unique
-  `realmId` lets one win and the other returns the winner's board. There is no bulk migration.
+  transaction the first time it is called. When two first calls race, the unique `realmId` lets one win and the
+  other returns the winner's board. There is no bulk migration. Nothing in the UI calls `realms.getBoard` any more,
+  so no new board ThinkTank is created.
 - **Access follows nation ownership, not member rows.** `getGroupAccess` hands realm boards to
   `getRealmBoardAccess`:
   - **Read:** anyone, signed out included (`REALM_BOARD_PUBLIC_READ = true`; realms are never private).

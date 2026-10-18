@@ -55,7 +55,7 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
     .input(z.object({ threadId: id }))
     .mutation(({ ctx, input }) => unwatchThread(ctx.db, memberOf(ctx.user).id, input.threadId)),
 
-  /** The sidebar's badges, polled every 60 seconds: unread watched threads and new board messages. */
+  /** The sidebar's badge, polled every 60 seconds: new messages on the caller's realm board. */
   navCounts: readOnlyProcedure.query(async ({ ctx }) =>
     forumNavCounts(ctx.db, await actorOf(ctx.db, ctx.user))
   ),

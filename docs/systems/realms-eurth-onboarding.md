@@ -648,7 +648,7 @@ Eurth's map is fully isolated from Ixnay's — features are keyed per-realm
   raising their own realm's nation cap (today only site admins can, in `/admin/realms`), and realm-scoped
   dashboard feed and trending. Handing the realm over (5.1) and the Claims officer power (5.2) shipped on
   2026-10-07. Shipped since: a realm filter on the ThinkPages
-  feed and the realm board at `/thinkpages/r/eurth`, and a nation switcher in the nav and on the passport (alongside
+  feed and the realm's live forum board at `/thinkpages/r/eurth`, and a nation switcher in the nav and on the passport (alongside
   **Play as** on the realm page), and the region page's links, rules and in-world date (§5), and the source sync (§4).
 
 ---

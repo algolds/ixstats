@@ -224,7 +224,7 @@ describe("thinkpagesForum watch, lists and counts", () => {
     });
   });
 
-  it("answers navCounts with two numbers", async () => {
+  it("answers navCounts with the realm board count", async () => {
     const c = caller(member, engagementDb());
     await expect(c.navCounts()).resolves.toEqual({ realmBoardNew: 0 });
   });

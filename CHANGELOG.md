@@ -1462,7 +1462,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Eliminated `as any` Type Assertions**:
     - [`src/server/api/routers/elections/legislature.ts`](src/server/api/routers/elections/legislature.ts) (strongly typed `ElectoralSystem`).
     - [`src/server/api/routers/thinkpages/feed.ts`](src/server/api/routers/thinkpages/feed.ts) (strongly-typed `hydratePostDates<T>` and purged dead comment stubs).
-    - [`src/app/achievements/page.tsx`](src/app/achievements/page.tsx) (safe property narrowing).
+    - `src/app/achievements/page.tsx` (since removed; safe property narrowing).
   - **Branded Types & Spatial Mesh Assist**:
     - Added `VertexKey = string & { readonly __brand: "VertexKey" }` and `snapToNearestVertex` GeoJSON helper in [`src/lib/maps/topology-engine.ts`](src/lib/maps/topology-engine.ts) and unified `TopologyRef` in [`src/lib/maps/shared-vertex-builder.ts`](src/lib/maps/shared-vertex-builder.ts).
   - **Simulation & Engine Robustness**:
@@ -1852,7 +1852,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
 
 - **Achievements Header Streamlining (`/achievements`)**:
-  - **Visual Hierarchy Refinement**: Simplified [page.tsx](src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Visual Hierarchy Refinement**: Simplified the `src/app/achievements/page.tsx` header (since removed) by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
   - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](src/components/achievements/FloatingRibbonRack.tsx) and `ForumRibbonRack.tsx` for displaying achievement ribbons across user profiles and forum embeds.
   - **Documentation**: Updated [src/app/vault/achievements/README.md](src/app/vault/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
 
@@ -2149,7 +2149,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
   - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
 - **Achievements Auto-Resync (Achievements System v2)**:
-  - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
+  - **On-Mount Collector Resync**: Modified the achievements page (`src/app/achievements/page.tsx`, since removed) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
 - **Editor Economy Styling Polish**:
   - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators (PopulationSection.tsx) and geographic region rows (GeographicSection.tsx) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
 
@@ -3724,7 +3724,7 @@ We successfully implemented conversation options, groups navigation back-button,
 #### Phase 11: Sidebar Discovery Routing, Group Creation & UI Text Wrapping Fixes
 
 - **Sidebar & Routing Updates**:
-  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page [page.tsx](src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
+  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page `src/app/thinkpages/thinktanks/page.tsx` (since removed) to `/messages/groups?tab=discover`.
   - Configured [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
   - Implemented query parameter parsing for `tab` inside `MessagesGroupsPanel.tsx` to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
 - **Group Creation Integration**:

@@ -212,18 +212,10 @@ const config = {
         source: "/api/ixwiki-proxy/:path*",
         destination: "https://ixwiki.com/:path*",
       },
+      // In development (basePath is empty), rewrite production base path routes to root
+      // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
+      ...(basePath ? [] : [{ source: "/projects/ixstates/:path*", destination: "/:path*" }]),
     ];
-
-    // In development (basePath is empty), rewrite production base path routes to root
-    // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
-    if (!basePath) {
-      baseRewrites.push(
-        {
-          source: "/projects/ixstates/:path*",
-          destination: "/:path*",
-        }
-      );
-    }
 
     if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
       return {

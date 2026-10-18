@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * Plan 412: a page's editor is `/wiki/<title>?action=edit` (MediaWiki's URL). The old
- * `/wiki/<title>/edit` path only redirects there; nothing may build it any more (it is a server hop
- * and, for a subpage, ambiguous). Builders go through `pageEditHref` / `articleHref`.
+ * Plan 412: a page's editor is `/wiki/<title>?action=edit` (MediaWiki's URL). `/wiki/<title>/edit` is
+ * no editor route: it reads as the subpage titled `<title>/edit`, so nothing may build it as an edit
+ * link. Builders go through `pageEditHref` / `articleHref`.
  */
 import fs from "node:fs";
 import path from "node:path";

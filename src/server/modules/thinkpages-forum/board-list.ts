@@ -6,7 +6,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { isAdvertCategory } from "~/lib/thinkpages-forum/adverts";
 import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
-import { bannedBoardIds } from "./mod-bans";
 import { canSeeCategory, canSeeThread, canStartThread, type ForumViewer } from "./access";
 import {
   latestPerCategory,
@@ -14,6 +13,7 @@ import {
   railThreadWhere,
   type LatestPost,
 } from "./board-reads";
+import { bannedBoardIds } from "./mod-bans";
 import { authorsOf, summarizeCategories, type AuthorsDb } from "./reads";
 
 export type BoardsDb = Pick<PrismaClient, "forumCategory" | "forumThread" | "forumPost"> &

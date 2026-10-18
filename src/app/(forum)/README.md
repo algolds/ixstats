@@ -5,7 +5,10 @@
 The old XenForo bridge ("IxForum") was retired in ThinkPages forum phase 4b. Its forum was imported into the native
 ThinkPages forum (`/thinkpages`, `src/app/thinkpages/`), and this route group now holds only redirects, so every
 old forum thread, post, forum and member link, bookmark, stash item and nginx-forwarded `forum.ixwiki.com` URL keeps
-working. The bridge's own pages (`/forum`, search, new thread, bookmarks, conversations) are deleted.
+working. The bridge's own pages are deleted. `/forum/search`, `/forum/new-thread`, `/forum/bookmarks` and
+`/forum/conversations` still answer a 308 to `/thinkpages`, through `/forum/[forumId]`'s fallback for a non-numeric
+id (`legacyRefFor` in `src/lib/thinkpages-forum/legacy-forum.ts`). Only bare `/forum` and
+`/forum/conversations/<id>` are 404s.
 
 ## Routes
 

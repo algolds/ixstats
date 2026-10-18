@@ -19,11 +19,6 @@ import path from "node:path";
 const SRC = path.join(process.cwd(), "src");
 const SKIP_DIRS = new Set(["tests", "node_modules", "generated"]);
 
-/** The retired /thinkpages pages are deleted: only the files that recognize their old paths may still name them. */
-const LEGACY_PAGES = [
-  // Resolves the old persona profile path in existing wiki pages to the current one; it builds no link.
-  "lib/wiki-os/legacy-profile-links.ts",
-];
 /**
  * Where `/thinkpages/post/<id>` is built: the resolver page, the wiki action-link builder, and the forum link
  * module (`postHref`, which is also the target of phase 4's `/forum/post/<xf>` redirect).
@@ -44,7 +39,7 @@ const BRIDGE_FILES = [
 /** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
 const BRIDGE_PATH = /(?<![\w./(-])\/forum(?=[/"'`?#]|$)/;
 const LEGACY_PATH =
-  /(?<!\w)\/thinkpages\/(?:feed|forum|profile|saved|thinkshare|thinktanks)(?![\w-])/;
+  /(?<!\w)\/thinkpages\/(?:feed|forum|profile|saved|stashed|thinkshare|thinktanks)(?![\w-])/;
 const POST_PATH = /(?<!\w)\/thinkpages\/post(?![\w-])/;
 const HUB_REDIRECT_PATH = /redirectPath=["']\/thinkpages/;
 
@@ -93,6 +88,7 @@ describe("the patterns catch the old links (and only links)", () => {
     "`${origin}/thinkpages/forum?realm=x`",
     'href="/thinkpages/thinkshare"',
     'href="/thinkpages/thinktanks"',
+    'href="/thinkpages/stashed"',
   ])("LEGACY_PATH matches %s", (line) => {
     expect(LEGACY_PATH.test(line)).toBe(true);
   });
@@ -155,7 +151,7 @@ describe("nothing links to the retired XenForo bridge (phase 4b)", () => {
 
 describe("nothing links to a retired ThinkPages feed page", () => {
   it("links nothing to the retired /thinkpages pages", () => {
-    expect(offenders(LEGACY_PATH, LEGACY_PAGES)).toEqual([]);
+    expect(offenders(LEGACY_PATH)).toEqual([]);
   });
 
   it("builds /thinkpages/post/<id> only as the forum permalink", () => {
