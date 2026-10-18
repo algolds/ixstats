@@ -150,12 +150,12 @@ describe("transferCardsTx", () => {
 });
 
 describe("recordTradeTransfersTx", () => {
-  it("writes one TRADE row per moved copy, stamped with its card and serial", async () => {
+  it("writes one TRADE row per moved copy, stamped with its card, serial and finish", async () => {
     const tx = {
       cardOwnership: {
         findMany: jest.fn().mockResolvedValue([
-          { id: "c1", cardId: "card_a", serialNumber: 4 },
-          { id: "c2", cardId: "card_b", serialNumber: 9 },
+          { id: "c1", cardId: "card_a", serialNumber: 4, finish: "HOLO" },
+          { id: "c2", cardId: "card_b", serialNumber: 9, finish: "STANDARD" },
         ]),
       },
       cardTransferEvent: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
@@ -169,7 +169,7 @@ describe("recordTradeTransfersTx", () => {
 
     expect(tx.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["c1", "c2"] } },
-      select: { id: true, cardId: true, serialNumber: true },
+      select: { id: true, cardId: true, serialNumber: true, finish: true },
     });
     expect(tx.cardTransferEvent.createMany).toHaveBeenCalledWith({
       data: [
@@ -177,6 +177,7 @@ describe("recordTradeTransfersTx", () => {
           ownershipId: "c1",
           cardId: "card_a",
           serialNumber: 4,
+          finish: "HOLO",
           fromUserId: "from_1",
           toUserId: "to_1",
           action: "TRADE",
@@ -185,6 +186,7 @@ describe("recordTradeTransfersTx", () => {
           ownershipId: "c2",
           cardId: "card_b",
           serialNumber: 9,
+          finish: "STANDARD",
           fromUserId: "from_1",
           toUserId: "to_1",
           action: "TRADE",

@@ -44,11 +44,22 @@ const createMockPrisma = () => createProxy({ $executeRaw: jest.fn().mockResolved
 beforeEach(() => jest.clearAllMocks());
 
 describe("playerCardInventory", () => {
-  it("flags auctioned copies, summarises auctions and trades, and reports no limit for exempt staff", async () => {
+  it("flags auctioned and listed copies, summarises auctions and trades, and reports no limit for exempt staff", async () => {
     const db = createMockPrisma();
     db.user.findUnique.mockResolvedValue({ id: "user_1", role: { level: 10 } });
     db.cardOwnership.findMany.mockResolvedValue([
-      { id: "own_1", serialNumber: 3, _count: { CardAuction: 2 }, cards: { title: "Elm" } },
+      {
+        id: "own_1",
+        serialNumber: 3,
+        _count: { CardAuction: 2, listings: 0 },
+        cards: { title: "Elm" },
+      },
+      {
+        id: "own_2",
+        serialNumber: 4,
+        _count: { CardAuction: 0, listings: 1 },
+        cards: { title: "Elm" },
+      },
     ]);
     db.cardOwnership.count.mockResolvedValue(1);
     db.userPack.findMany.mockResolvedValue([
@@ -88,8 +99,17 @@ describe("playerCardInventory", () => {
 
     expect(copyRoom).toHaveBeenCalledWith(db, { id: "user_1", roleLevel: 10 });
     expect(inventory.room).toBeNull();
+    // Market history of either kind means no revoke (removeCopyTx), so the sheet offers none
+    expect(db.cardOwnership.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({
+          _count: { select: { CardAuction: true, listings: true } },
+        }),
+      })
+    );
     expect(inventory.copies).toEqual([
-      { id: "own_1", serialNumber: 3, auctioned: true, cards: { title: "Elm" } },
+      { id: "own_1", serialNumber: 3, auctioned: true, listed: false, cards: { title: "Elm" } },
+      { id: "own_2", serialNumber: 4, auctioned: false, listed: true, cards: { title: "Elm" } },
     ]);
     expect(inventory.packs).toEqual([
       { id: "up_1", name: "Founders", acquiredMethod: "ADMIN_AWARD", acquiredDate: new Date(0) },
@@ -227,12 +247,13 @@ describe("revokeCopy", () => {
     id: "own_1",
     ownerId: "user_1",
     serialNumber: 3,
+    finish: "HOLO",
     cards: { id: "card_1", title: "Elm", cardType },
   });
   const revoke = (db: ReturnType<typeof createMockPrisma>) =>
     revokeCopy(db as never, actor, { ownershipId: "own_1", reason: "Duplicate grant" });
 
-  it("keeps the copy's trail, records the revoke before deleting the copy, and audits it", async () => {
+  it("keeps the copy's trail, records the revoke (with its finish) before deleting the copy, and audits it", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findUnique.mockResolvedValue(copy());
     db.cardAuction.count.mockResolvedValue(0);
@@ -251,6 +272,7 @@ describe("revokeCopy", () => {
         ownershipId: "own_1",
         cardId: "card_1",
         serialNumber: 3,
+        finish: "HOLO",
         fromUserId: "user_1",
         toUserId: null,
         action: "REVOKE",
@@ -284,19 +306,29 @@ describe("revokeCopy", () => {
     );
   });
 
-  it("refuses a copy with any auction history (the owner's rule, kept though its auctions would now stay)", async () => {
-    const db = createMockPrisma();
-    db.cardOwnership.findUnique.mockResolvedValue(copy());
-    db.cardAuction.count.mockResolvedValue(1);
+  // The owner's rule, kept though a removed copy's auctions and listings would now stay
+  it.each([
+    ["an auction", "cardAuction", []],
+    ["a listing", "cardListing", [[{ where: { ownershipId: "own_1" } }]]],
+  ] as const)(
+    "refuses a copy with %s in its history, of any status",
+    async (_, model, listingChecks) => {
+      const db = createMockPrisma();
+      db.cardOwnership.findUnique.mockResolvedValue(copy());
+      db.cardAuction.count.mockResolvedValue(0);
+      db.cardListing.count.mockResolvedValue(0);
+      db[model].count.mockResolvedValue(1);
 
-    await expect(revoke(db)).rejects.toMatchObject({
-      code: "PRECONDITION_FAILED",
-      message: "This copy has been auctioned, so it can't be removed.",
-    });
-    expect(db.cardAuction.count).toHaveBeenCalledWith({ where: { cardInstanceId: "own_1" } });
-    expect(db.cardTransferEvent.create).not.toHaveBeenCalled();
-    expect(db.cardOwnership.deleteMany).not.toHaveBeenCalled();
-  });
+      await expect(revoke(db)).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+        message: "This copy has been on the market, so it can't be removed.",
+      });
+      expect(db.cardAuction.count).toHaveBeenCalledWith({ where: { cardInstanceId: "own_1" } });
+      expect(db.cardListing.count.mock.calls).toEqual(listingChecks);
+      expect(db.cardTransferEvent.create).not.toHaveBeenCalled();
+      expect(db.cardOwnership.deleteMany).not.toHaveBeenCalled();
+    }
+  );
 
   it("refuses a copy named in a pending trade offer, on either side", async () => {
     const db = createMockPrisma();

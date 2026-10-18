@@ -42,11 +42,7 @@ describe("cardsWithVisibleArt", () => {
   it("joins the viewer's copies with the cards on a live auction", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
-    // A live auction's copy is locked, so it is there; the link is nullable only for ended auctions
-    db.cardAuction.findMany.mockResolvedValue([
-      { CardOwnership: { cardId: "b" } },
-      { CardOwnership: null },
-    ]);
+    db.cardAuction.findMany.mockResolvedValue([{ cardId: "b" }]);
     const set = await cardsWithVisibleArt(db as never, "me", ["a", "b", "c", "a"]);
     expect([...set].sort()).toEqual(["a", "b"]);
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
@@ -54,18 +50,21 @@ describe("cardsWithVisibleArt", () => {
       select: { cardId: true },
       distinct: ["cardId"],
     });
-    expect(db.cardAuction.findMany.mock.calls[0]![0]).toMatchObject({
+    // The auction's own card, not its copy's (an ended auction can outlive its copy)
+    expect(db.cardAuction.findMany).toHaveBeenCalledWith({
       where: {
         status: "ACTIVE",
         endTime: { gt: expect.any(Date) },
-        CardOwnership: { cardId: { in: ["a", "b", "c"] } },
+        cardId: { in: ["a", "b", "c"] },
       },
+      select: { cardId: true },
+      distinct: ["cardId"],
     });
   });
 
   it("reveals only listed art to a signed-out viewer, and asks nothing for no cards", async () => {
     const db = createMockPrisma();
-    db.cardAuction.findMany.mockResolvedValue([{ CardOwnership: { cardId: "a" } }]);
+    db.cardAuction.findMany.mockResolvedValue([{ cardId: "a" }]);
     await expect(cardsWithVisibleArt(db as never, null, ["a"])).resolves.toEqual(new Set(["a"]));
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
     const empty = createMockPrisma();

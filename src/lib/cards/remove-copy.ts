@@ -3,10 +3,11 @@
  * events are stamped with the card and serial (they outlive the copy, and `ownershipId` becomes null when it goes),
  * and one more event records the removal before the copy is deleted.
  *
- * Refused when the copy has ever been auctioned (the owner's rule: its auctions would stay, with their card and serial,
- * but a copy with auction history is never removed), sits in a pending trade offer, or moved or was locked meanwhile.
+ * Refused when the copy has ever been on the market, auctioned or listed, whatever became of it (the owner's rule: its
+ * auctions and listings would stay, with their card and serial, but such a copy is never removed), sits in a pending
+ * trade offer, or moved or was locked meanwhile.
  */
-import type { Prisma } from "@prisma/client";
+import type { CardFinish, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { lockCardSerialsTx } from "./serial-number";
 
@@ -15,17 +16,20 @@ export interface RemovableCopy {
   cardId: string;
   serialNumber: number;
   ownerId: string;
+  finish: CardFinish;
 }
+
+const MARKET_HISTORY = "This copy has been on the market, so it can't be removed.";
 
 async function assertNoMarketHistoryTx(
   tx: Prisma.TransactionClient,
   copyId: string
 ): Promise<void> {
-  if ((await tx.cardAuction.count({ where: { cardInstanceId: copyId } })) > 0) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "This copy has been auctioned, so it can't be removed.",
-    });
+  if (
+    (await tx.cardAuction.count({ where: { cardInstanceId: copyId } })) > 0 ||
+    (await tx.cardListing.count({ where: { ownershipId: copyId } })) > 0
+  ) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: MARKET_HISTORY });
   }
   // A recipient's copies are not locked by an offer, so the offer itself is the only record
   const offers = await tx.tradeOffer.count({
@@ -64,6 +68,7 @@ export async function removeCopyTx(
       ownershipId: copy.id,
       cardId: copy.cardId,
       serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: copy.ownerId,
       toUserId: null,
       action,

@@ -51,6 +51,7 @@ interface Copy {
   cardId: string;
   ownerId: string;
   serialNumber: number;
+  finish: "SERIALISED";
 }
 /** A trophy card's metadata: names, ids and dates, and its provenance notes. */
 type Meta = Record<string, string | null | Array<Record<string, string | null>>>;
@@ -94,8 +95,20 @@ const weeklyTwins = (oolWinner: string, stateWinner: string): Entry[] => [
 ];
 const WEEKLY = { date: "2026-10-19", type: "weekly" as const };
 
-const AMY_COPY: Copy = { id: "own_1", cardId: "trophy_1", ownerId: "user_amy", serialNumber: 1 };
-const BEE_COPY: Copy = { id: "own_2", cardId: "trophy_2", ownerId: "user_bee", serialNumber: 1 };
+const AMY_COPY: Copy = {
+  id: "own_1",
+  cardId: "trophy_1",
+  ownerId: "user_amy",
+  serialNumber: 1,
+  finish: "SERIALISED",
+};
+const BEE_COPY: Copy = {
+  id: "own_2",
+  cardId: "trophy_2",
+  ownerId: "user_bee",
+  serialNumber: 1,
+  finish: "SERIALISED",
+};
 const AMY_GRANTED_AT = "2026-10-01T00:00:00.000Z";
 
 /** The winner's trophy as the mint left it: Amy's, titled after her page, its copy hers. */
@@ -219,7 +232,7 @@ describe("reassigning a trophy", () => {
 
     expect(h.tx.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { cardId: "trophy_1" },
-      select: { id: true, cardId: true, ownerId: true, serialNumber: true },
+      select: { id: true, cardId: true, ownerId: true, serialNumber: true, finish: true },
     });
     expect(h.tx.cardOwnership.updateMany).toHaveBeenCalledWith({
       where: { id: "own_1", ownerId: "user_amy", isLocked: false },
@@ -230,6 +243,7 @@ describe("reassigning a trophy", () => {
         ownershipId: "own_1",
         cardId: "trophy_1",
         serialNumber: 1,
+        finish: "SERIALISED",
         fromUserId: "user_amy",
         toUserId: "user_cy",
         action: "REASSIGN",
@@ -931,7 +945,7 @@ describe("a contest stored twice", () => {
 
   it("keeps the place's trophy on the card whose copy the new holder already owns, and voids the other copy", async () => {
     accounts({ Cy: "user_cy" });
-    const cyCopy = { id: "own_c", cardId: "trophy_b", ownerId: "user_cy", serialNumber: 1 };
+    const cyCopy: Copy = { ...AMY_COPY, id: "own_c", cardId: "trophy_b", ownerId: "user_cy" };
     const amyCopy = { ...AMY_COPY, cardId: "trophy_a" };
     const h = setup({
       contest: weeklyTwins("Amy", "Amy"),

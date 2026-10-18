@@ -93,13 +93,16 @@ describe("the cards economy SQL", () => {
     expect(model("CardOwnership")).toMatch(/xpDay\s+DateTime\?\s+@db\.Date/);
   });
 
-  it("records each event's finish, filled in for old rows, and stamps old rows with their card and serial", () => {
-    expect(statements).toContain(
+  it("records each event's finish, filled in once for old rows, and stamps old rows with their card and serial", () => {
+    // Once, when the column is new: a later re-run would label old events with a finish a fusion upgraded since
+    const once = guarded(`table_name = 'card_transfer_events' AND column_name = 'finish') THEN`);
+    expect(once).toContain(
       `ALTER TABLE "card_transfer_events" ADD COLUMN IF NOT EXISTS "finish" "CardFinish";`
     );
-    expect(statements).toContain(
-      `UPDATE "card_transfer_events" e SET "finish" = o."finish" FROM "CardOwnership" o WHERE e."ownershipId" = o.id AND e."finish" IS NULL;`
+    expect(once).toContain(
+      `UPDATE "card_transfer_events" e SET "finish" = o."finish" FROM "CardOwnership" o WHERE e."ownershipId" = o.id;`
     );
+    expect(statements.match(/SET "finish"/g)).toHaveLength(1);
     // A burned copy's serial stays issued: the high-water mark reads the events (serial-number.ts)
     expect(statements).toContain(
       `UPDATE "card_transfer_events" e SET "cardId" = o."cardId", "serialNumber" = o."serialNumber" FROM "CardOwnership" o WHERE e."ownershipId" = o.id AND (e."cardId" IS NULL OR e."serialNumber" IS NULL);`

@@ -57,6 +57,7 @@ const copy: Inventory["copies"][number] = {
   finish: "STANDARD",
   isLocked: false,
   auctioned: false,
+  listed: false,
   acquiredAt: new Date(0),
   cards: { id: "card_1", title: "Elm", rarity: "RARE", cardType: "LORE", isBound: false },
 };

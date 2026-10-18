@@ -103,8 +103,8 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
         finish: true,
         isLocked: true,
         acquiredAt: true,
-        // A copy with any auction row cannot be revoked (removeCopyTx), so the sheet offers no revoke for it
-        _count: { select: { CardAuction: true } },
+        // A copy with any auction or listing row cannot be revoked (removeCopyTx), so the sheet offers no revoke for it
+        _count: { select: { CardAuction: true, listings: true } },
         cards: {
           select: { id: true, title: true, rarity: true, cardType: true, isBound: true },
         },
@@ -155,7 +155,11 @@ export async function playerCardInventory(db: PrismaClient, userId: string) {
     copyRoom(db, { id: user.id, roleLevel: user.role?.level }),
   ]);
   return {
-    copies: copies.map(({ _count, ...copy }) => ({ ...copy, auctioned: _count.CardAuction > 0 })),
+    copies: copies.map(({ _count, ...copy }) => ({
+      ...copy,
+      auctioned: _count.CardAuction > 0,
+      listed: _count.listings > 0,
+    })),
     copyCount,
     /** Copies the player can still receive; null when staff are exempt from the limit (JSON has no Infinity). */
     room: Number.isFinite(room) ? room : null,
@@ -239,7 +243,7 @@ export async function grantCard(
   return { ownershipId: copy.id, serialNumber: copy.serialNumber };
 }
 
-/** Locked, auctioned and pending-trade copies are refused by `removeCopyTx`, inside the transaction. */
+/** Locked, auctioned, listed and pending-trade copies are refused by `removeCopyTx`, inside the transaction. */
 export async function revokeCopy(
   db: PrismaClient,
   actor: CardAdminActor,
@@ -251,6 +255,7 @@ export async function revokeCopy(
       id: true,
       ownerId: true,
       serialNumber: true,
+      finish: true,
       cards: { select: { id: true, title: true, cardType: true } },
     },
   });
@@ -267,6 +272,7 @@ export async function revokeCopy(
         cardId: copy.cards.id,
         serialNumber: copy.serialNumber,
         ownerId: copy.ownerId,
+        finish: copy.finish,
       },
       "REVOKE"
     );

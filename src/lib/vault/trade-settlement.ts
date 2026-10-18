@@ -74,8 +74,8 @@ export async function transferCardsTx(
 }
 
 /**
- * The trade's row in each moved copy's provenance trail, stamped with the card and serial so the row outlives the
- * copy. Call after `transferCardsTx` has moved the copies.
+ * The trade's row in each moved copy's provenance trail, stamped with the card, serial and finish so the row outlives
+ * the copy. Call after `transferCardsTx` has moved the copies.
  */
 export async function recordTradeTransfersTx(
   tx: Tx,
@@ -84,13 +84,14 @@ export async function recordTradeTransfersTx(
   if (args.ids.length === 0) return;
   const copies = await tx.cardOwnership.findMany({
     where: { id: { in: args.ids } },
-    select: { id: true, cardId: true, serialNumber: true },
+    select: { id: true, cardId: true, serialNumber: true, finish: true },
   });
   await tx.cardTransferEvent.createMany({
     data: copies.map((copy) => ({
       ownershipId: copy.id,
       cardId: copy.cardId,
       serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: args.fromId,
       toUserId: args.toId,
       action: "TRADE",

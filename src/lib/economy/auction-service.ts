@@ -169,12 +169,13 @@ async function settleSale(
     where: { id: copy.id },
     data: { ownerId: buyerId, isLocked: false },
   });
-  // The sale's row in the copy's provenance trail, with its price, card and serial (cards refresh §3)
+  // The sale's row in the copy's provenance trail, with its price, card, serial and finish (cards refresh §3)
   await tx.cardTransferEvent.create({
     data: {
       ownershipId: copy.id,
       cardId: copy.cardId,
       serialNumber: copy.serialNumber,
+      finish: copy.finish,
       fromUserId: auction.sellerId,
       toUserId: buyerId,
       action: sale.action,
@@ -340,6 +341,7 @@ export class AuctionService {
             buyoutPrice: params.buyoutPrice,
             endTime: new Date(endTime),
             isFeatured: params.isFeatured ?? false,
+            listingFee,
             status: "ACTIVE",
           },
         });

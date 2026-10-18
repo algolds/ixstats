@@ -108,7 +108,7 @@ describe("copyFaces and withAuctionFaces", () => {
   it("shows a past auction's art to a viewer who holds the card, or while it is listed again", async () => {
     const db = createMockPrisma();
     ownership(db, ["c1"], [copyRow("o1", "c1"), copyRow("o2", "c2")]);
-    db.cardAuction.findMany.mockResolvedValue([{ CardOwnership: { cardId: "c2" } }]);
+    db.cardAuction.findMany.mockResolvedValue([{ cardId: "c2" }]);
     const faces = await copyFaces(db as never, "me", ["o1", "o2"], false);
     expect(faces.get("o1")).toMatchObject({ artwork: "https://art/c1.png", silhouette: false });
     expect(faces.get("o2")).toMatchObject({ artwork: "https://art/c2.png", silhouette: false });
@@ -155,7 +155,7 @@ describe("blankUnseenArt", () => {
         copyRow("o5", "hidden", { isRetired: true }),
       ]
     );
-    db.cardAuction.findMany.mockResolvedValue([{ CardOwnership: { cardId: "listed" } }]);
+    db.cardAuction.findMany.mockResolvedValue([{ cardId: "listed" }]);
     const rows = [
       rawRow("o1", "shared"),
       rawRow("o2", "secret"),

@@ -46,12 +46,17 @@ BEGIN
   END IF;
   ALTER TABLE "CardOwnership" ADD COLUMN IF NOT EXISTS "xpToday" INTEGER NOT NULL DEFAULT 0;
 
-  -- 4. Transfer events. The copy's finish on every row (the market median is per finish), filled in for the rows
-  -- written before. The card and serial on the rows written before Phase 2, so a copy broken down or fused keeps its
-  -- trail and the serial high-water mark still sees its serial (serial-number.ts).
-  ALTER TABLE "card_transfer_events" ADD COLUMN IF NOT EXISTS "finish" "CardFinish";
-  UPDATE "card_transfer_events" e SET "finish" = o."finish"
-    FROM "CardOwnership" o WHERE e."ownershipId" = o.id AND e."finish" IS NULL;
+  -- 4. Transfer events. The copy's finish on every row (the market median is per finish): every writer stamps it from
+  -- now on, and the rows written before take their copy's finish once, when the column is new, so a later re-run never
+  -- labels old events with a finish a fusion upgraded since. The card and serial on the rows written before Phase 2,
+  -- so a copy broken down or fused keeps its trail and the serial high-water mark still sees its serial
+  -- (serial-number.ts).
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = current_schema()
+                   AND table_name = 'card_transfer_events' AND column_name = 'finish') THEN
+    ALTER TABLE "card_transfer_events" ADD COLUMN IF NOT EXISTS "finish" "CardFinish";
+    UPDATE "card_transfer_events" e SET "finish" = o."finish" FROM "CardOwnership" o WHERE e."ownershipId" = o.id;
+  END IF;
   UPDATE "card_transfer_events" e SET "cardId" = o."cardId", "serialNumber" = o."serialNumber"
     FROM "CardOwnership" o WHERE e."ownershipId" = o.id AND (e."cardId" IS NULL OR e."serialNumber" IS NULL);
   -- The sales record reads by card, action and date; the composite also serves the lookups by card.

@@ -50,6 +50,7 @@ const copy = (over: Partial<Copy> = {}): Copy => ({
   finish: "STANDARD",
   isLocked: false,
   auctioned: false,
+  listed: false,
   acquiredAt: new Date(0),
   cards: { id: "card_1", title: "Elm", rarity: "RARE", cardType: "LORE", isBound: false },
   ...over,
@@ -127,13 +128,14 @@ it("lists a player's copies and revokes one with a reason", () => {
   expect(mutations.revoke).toHaveBeenCalledWith({ ownershipId: "own_1", reason: "Granted twice" });
 });
 
-it("offers no revoke for a locked, an auctioned or a trophy copy", () => {
+it("offers no revoke for a locked, an auctioned, a listed or a trophy copy", () => {
   setup({
-    copyCount: 3,
+    copyCount: 4,
     room: null,
     copies: [
       copy({ isLocked: true }),
       copy({ id: "own_2", serialNumber: 4, auctioned: true }),
+      copy({ id: "own_4", serialNumber: 5, listed: true }),
       copy({
         id: "own_3",
         serialNumber: 1,
@@ -141,9 +143,11 @@ it("offers no revoke for a locked, an auctioned or a trophy copy", () => {
       }),
     ],
   });
-  expect(screen.getByText("3 copies · no limit")).toBeInTheDocument();
+  expect(screen.getByText("4 copies · no limit")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Revoke Elm #3" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Revoke Elm #4" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Revoke Elm #5" })).toBeDisabled();
+  expect(screen.getByText("Listed")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Revoke Cup #1" })).not.toBeInTheDocument();
 });
 
