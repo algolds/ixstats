@@ -10,12 +10,12 @@ nextLabel: Lore Cards
 
 ## Where it happens
 
-Both live in [Cards → Market](/vault/cards/market), which has four tabs: **Browse** (every live auction), **Trades** (direct trades with a specific player), **Wishlist** (coming later) and **Selling** (your auctions and the ones you're winning). A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold or traded twice. Bound cards (trophies and achievement cards) can't be traded or auctioned.
+Both live in [Cards → Market](/vault/cards/market), which has four tabs: **Browse** (every live auction), **Trades** (direct trades with a specific player), **Wishlist** (coming later) and **Selling** (your auctions, and every running auction you've bid on, marked **Winning** or **Outbid**). A card you've listed at auction or offered in a trade is locked until the auction or trade ends, so it can't be sold or traded twice. Bound cards (trophies and achievement cards) can't be traded or auctioned.
 
 ## Selling at auction
 
 1. Open a card you own and choose **Sell at auction**, or open **Selling** and choose **Sell a card**.
-2. Pick the copy, set a **starting price** and, optionally, a **buyout price** (it must be higher than the starting price).
+2. Pick the copy (search for it, or page through your cards), set a **starting price** and, optionally, a **buyout price** (it must be higher than the starting price).
 3. Choose a duration: **30 minutes (Express)** or **60 minutes (Standard)**.
 4. Pay the listing fee: 5 IxC, or 10 IxC for a featured listing.
 
@@ -24,7 +24,7 @@ If nobody bids, the card comes back to you and half the listing fee is refunded.
 ## Buying at auction
 
 - In **Browse**, filter by realm and rarity, and sort by ending soon, newest or price. A card's sheet also links to its own listings.
-- **Bid** more than the current highest bid. You're notified if you're outbid.
+- **Bid** at least 5% more than the current highest bid (or the starting price, before anyone has bid), rounded up to a whole IxC; the bid box starts at that amount. You're notified if you're outbid, and the auction shows as **Outbid** in **Selling**, with **Raise bid**.
 - **Buy out** at the buyout price to end the auction at once.
 - A bid in the last 5 minutes extends the auction by 1 minute, so there's time to respond.
 
