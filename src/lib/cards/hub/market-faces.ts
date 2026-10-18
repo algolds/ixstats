@@ -1,11 +1,11 @@
 // src/lib/cards/hub/market-faces.ts
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import { cardsWithVisibleArt, copyIdsOf, liveOfferTo } from "./art-visibility";
+import { cardsWithVisibleArt, copyIdsOf, liveOfferTo, type ArtDb } from "./art-visibility";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 
-type FaceDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
-type TradeDb = Pick<PrismaClient, "cardOwnership" | "cardAuction" | "tradeOffer">;
+type FaceDb = ArtDb;
+type TradeDb = ArtDb & Pick<PrismaClient, "tradeOffer">;
 
 /**
  * Faces for copies on a market screen, by copy id. `revealAll`: the place shows every copy's art (live listings, an

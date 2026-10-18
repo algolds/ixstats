@@ -15,7 +15,8 @@
  * - Notices after the commit
  */
 
-import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
+import { vaultService, LedgerError } from "~/lib/vault/vault-service";
+import { lockVaultsTx, vaultsBusyError } from "~/lib/vault/vault-locks";
 import { TRPCError } from "@trpc/server";
 import type { CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
 import { grantCardXp } from "~/lib/cards/xp-utils";
@@ -25,8 +26,10 @@ import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
 import { getEconomyConfig } from "~/lib/cards/economy-config";
 import { AUCTION_DURATION_MS, type AuctionDuration } from "~/lib/cards/market/auction-timing";
 import { listingRefund } from "~/lib/cards/market/fees";
+import { assertMarketOpen } from "~/lib/cards/market/market-open";
 import { royaltyNotices } from "~/lib/cards/market/royalty";
 import {
+  lockSaleVaultsTx,
   settleCardSaleTx,
   type CardSale,
   type SaleSettlement,
@@ -110,23 +113,9 @@ function auctionSale(
   };
 }
 
-/** Auctions are closed during maintenance or while the market switch is off. */
-async function assertAuctionsOpen(db: PrismaClient): Promise<void> {
-  const config = await getVaultConfig(db);
-  if (config.isMaintenanceMode) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "Vault economy is currently in maintenance mode.",
-    });
-  }
-  if (!config.isAuctionsEnabled) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "The card market is closed right now." });
-  }
-}
-
 /**
- * Runs an auction call: a ledger refusal is the player's to fix (BAD_REQUEST), a TRPCError passes through, anything
- * else is logged and becomes a 500 with `fallback` as its message.
+ * Runs an auction call: a ledger refusal is the player's to fix (BAD_REQUEST), a lost deadlock a CONFLICT to retry, a
+ * TRPCError passes through, and anything else is logged and becomes a 500 with `fallback` as its message.
  */
 async function auctionCall<T>(fallback: string, work: () => Promise<T>): Promise<T> {
   try {
@@ -136,6 +125,8 @@ async function auctionCall<T>(fallback: string, work: () => Promise<T>): Promise
       throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
     }
     if (error instanceof TRPCError) throw error;
+    const busy = error instanceof Error ? vaultsBusyError(error) : null;
+    if (busy) throw busy;
     console.error(`[Auction Service] ${fallback}:`, error);
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: fallback });
   }
@@ -227,7 +218,7 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    await assertAuctionsOpen(db);
+    await assertMarketOpen(db);
     if (!Number.isInteger(params.startingPrice) || params.startingPrice < 1) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -325,7 +316,7 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    await assertAuctionsOpen(db);
+    await assertMarketOpen(db);
 
     // 1. Fetch auction with current bid info
     const auction = await db.cardAuction.findUnique({
@@ -423,6 +414,8 @@ export class AuctionService {
             message: "This auction changed. Reload and try again.",
           });
         }
+        // The new and the outbid bidder's vaults, in user-id order, before either moves
+        await lockVaultsTx(tx, [params.userId, auction.currentBidderId]);
 
         // 5. Reserve from new bidder (LedgerError rolls the transaction back)
         await vaultService.spendCreditsTx(tx, {
@@ -519,7 +512,7 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    await assertAuctionsOpen(db);
+    await assertMarketOpen(db);
 
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
@@ -582,6 +575,9 @@ export class AuctionService {
         if (claimed.count !== 1) {
           throw new TRPCError({ code: "CONFLICT", message: "Auction is no longer available" });
         }
+        const sale = auctionSale(auction, params.userId, buyoutPrice, "AUCTION_BUYOUT");
+        // Every vault the buyout writes, in user-id order, before any credit or copy moves
+        await lockSaleVaultsTx(tx, sale, [auction.currentBidderId]);
 
         // 2. Refund current bidder (if any) — REFUND is never capped
         if (auction.currentBidderId) {
@@ -605,7 +601,6 @@ export class AuctionService {
           source: "card_purchase_buyout",
           metadata: { auctionId: params.auctionId, cardInstanceId: auction.cardInstanceId },
         });
-        const sale = auctionSale(auction, params.userId, buyoutPrice, "AUCTION_BUYOUT");
         const settled = await settleCardSaleTx(tx, sale);
         // 4. Card XP for the bought copy, as for an auction win
         const granted = await grantCardXp(
@@ -683,6 +678,7 @@ export class AuctionService {
           // Credits were reserved from the bidder at bid time; pay the seller and hand over the card
           assertCopyOnSale(auction);
           const sale = auctionSale(auction, winnerId, finalPrice, "AUCTION_END");
+          await lockSaleVaultsTx(tx, sale);
           const settlement = await settleCardSaleTx(tx, sale);
           // Card XP for the winner's copy (the Economy tab's auction-win amount)
           await grantCardXp(tx, sale.ownershipId, "AUCTION_WIN", JSON.stringify({ auctionId }));
@@ -734,7 +730,7 @@ export class AuctionService {
     },
     db: PrismaClient
   ) {
-    await assertAuctionsOpen(db);
+    await assertMarketOpen(db);
 
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },

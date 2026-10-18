@@ -27,7 +27,14 @@ export interface TrailEvent {
  * older rows. REVOKE and VOID never show: their rows lose the copy when it goes.
  */
 type TrailAction =
-  MintSource | "REISSUE" | "TRADE" | "GIFT" | "AUCTION_BUYOUT" | "AUCTION_END" | "REASSIGN";
+  | MintSource
+  | "REISSUE"
+  | "TRADE"
+  | "GIFT"
+  | "AUCTION_BUYOUT"
+  | "AUCTION_END"
+  | "LISTING_SALE"
+  | "REASSIGN";
 
 const TRAIL_LABEL: Readonly<Record<TrailAction, string>> = {
   PACK_OPEN: "Pulled from a pack",
@@ -43,6 +50,7 @@ const TRAIL_LABEL: Readonly<Record<TrailAction, string>> = {
   GIFT: "Gifted",
   AUCTION_BUYOUT: "Bought at auction",
   AUCTION_END: "Won at auction",
+  LISTING_SALE: "Bought from a listing",
   REASSIGN: "Reassigned by staff",
 };
 

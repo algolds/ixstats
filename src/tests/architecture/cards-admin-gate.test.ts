@@ -74,7 +74,15 @@ const CARDS_ADMIN_PROCEDURES = {
     "resolveInscriptionReport",
   ],
   designer: ["list", "save", "achievements"],
-  tools: ["playerCards", "grant", "revoke", "cancelAuction", "voidTrade", "awardPack"],
+  tools: [
+    "playerCards",
+    "grant",
+    "revoke",
+    "cancelAuction",
+    "cancelListing",
+    "voidTrade",
+    "awardPack",
+  ],
 } as const;
 
 const CARD_ROUTER_DIRS = ["cards", "lore-cards", "card-packs", "ns-import"].map((dir) =>

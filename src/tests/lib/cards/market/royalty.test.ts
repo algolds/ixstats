@@ -6,7 +6,12 @@ jest.mock("~/lib/vault/vault-ledger", () => {
 
 import { earnCreditsTx, LedgerError } from "~/lib/vault/vault-ledger";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
-import { payNationRoyaltiesTx, royaltyNotices, type RoyaltyCard } from "~/lib/cards/market/royalty";
+import {
+  payNationRoyaltiesTx,
+  royaltyNotices,
+  royaltyRecipientsTx,
+  type RoyaltyCard,
+} from "~/lib/cards/market/royalty";
 
 const earn = jest.mocked(earnCreditsTx);
 const nation: RoyaltyCard = { cardId: "card_n", cardType: "NATION", countryId: "country_1" };
@@ -178,6 +183,28 @@ describe("nation royalty", () => {
   it("lets any other failure through, so the caller's transaction rolls back", async () => {
     earn.mockRejectedValueOnce(new Error("database gone"));
     await expect(pay(makeTx("owner"))).rejects.toThrow("database gone");
+  });
+
+  it("names who a royalty would pay, so a sale can lock their vaults first", async () => {
+    const nations = [
+      { id: "country_1", ownerUserId: "owner_1" },
+      { id: "country_2", ownerUserId: "seller" },
+    ];
+    const cards: RoyaltyCard[] = [
+      nation,
+      { cardId: "card_m", cardType: "NATION", countryId: "country_2" },
+      { cardId: "card_l", cardType: "LORE", countryId: "country_1" },
+    ];
+    // A party is never paid, and an owner is named once
+    expect(await royaltyRecipientsTx(makeTx(nations) as never, cards, ["seller", "buyer"])).toEqual(
+      ["owner_1"]
+    );
+    const none = makeTx(nations);
+    expect(
+      await royaltyRecipientsTx(none as never, [{ ...nation, cardType: "LORE" }], ["seller"])
+    ).toEqual([]);
+    expect(none.country.findMany).not.toHaveBeenCalled();
+    expect(earn).not.toHaveBeenCalled();
   });
 
   it("writes a notice per payout, naming the card", () => {

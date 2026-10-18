@@ -6,11 +6,15 @@ import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { toCardFace, type CardFaceRow, type CopyFaceRow } from "./faces";
 import { displayedCopies } from "./displayed";
 
-type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
+/** What the art rule reads: the viewer's copies, live auctions and live fixed-price listings. */
+export type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction" | "cardListing">;
 /** The holder context reads their display, which ranks their copies by the shared copy value. */
 type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer"> & ValueDb;
 
-/** Cards whose art this viewer may see in any list: those they hold a copy of, and those on a live listing. */
+/**
+ * Cards whose art this viewer may see in any list: those they hold a copy of, and those on a live auction or
+ * fixed-price listing.
+ */
 export async function cardsWithVisibleArt(
   db: ArtDb,
   viewerId: string | null,
@@ -18,7 +22,8 @@ export async function cardsWithVisibleArt(
 ): Promise<Set<string>> {
   const ids = [...new Set(cardIds)];
   if (ids.length === 0) return new Set();
-  const [owned, listed] = await Promise.all([
+  const now = new Date();
+  const [owned, auctioned, listed] = await Promise.all([
     viewerId
       ? db.cardOwnership.findMany({
           where: { ownerId: viewerId, cardId: { in: ids } },
@@ -26,14 +31,19 @@ export async function cardsWithVisibleArt(
           distinct: ["cardId"],
         })
       : Promise.resolve([]),
-    // The auction's own card, which it keeps when an ended auction outlives its copy
+    // The auction's and the listing's own card, which each keeps when it outlives its copy
     db.cardAuction.findMany({
-      where: { status: "ACTIVE", endTime: { gt: new Date() }, cardId: { in: ids } },
+      where: { status: "ACTIVE", endTime: { gt: now }, cardId: { in: ids } },
+      select: { cardId: true },
+      distinct: ["cardId"],
+    }),
+    db.cardListing.findMany({
+      where: { status: "ACTIVE", expiresAt: { gt: now }, cardId: { in: ids } },
       select: { cardId: true },
       distinct: ["cardId"],
     }),
   ]);
-  return new Set([...owned.map((o) => o.cardId), ...listed.map((a) => a.cardId)]);
+  return new Set([...owned, ...auctioned, ...listed].map((row) => row.cardId));
 }
 
 export interface FaceSource {

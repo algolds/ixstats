@@ -90,6 +90,16 @@ describe("CRON_JOBS", () => {
     expect(["02:30", "03:00", "00:30"].map(firesAt)).toEqual([false, false, false]);
   });
 
+  it("expires listings every 10 minutes under its own lease", () => {
+    expect(CRON_JOBS.find((j) => j.name === "listing-expiry")).toMatchObject({
+      defaultSchedule: "*/10 * * * *",
+      lockName: "listing-expiry",
+      timeoutMs: 5 * 60_000,
+      modulePath: "~/server/modules/cards/market/listing-expiry-cron",
+      exportName: "processExpiredListings",
+    });
+  });
+
   it("rebuilds market medians and card values every 6 hours under the card-value lease", () => {
     expect(CRON_JOBS.find((j) => j.name === "card-values")).toMatchObject({
       defaultSchedule: "0 */6 * * *",

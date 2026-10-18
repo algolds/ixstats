@@ -67,7 +67,22 @@ function without<T extends object>(row: T, omit: Omitted | undefined): Partial<T
 }
 
 type CopyRead = { select?: object; omit?: Omitted; where?: object };
-type AuctionRead = { include?: { CardOwnership?: { omit?: Omitted } } };
+/** How a read asks for a related copy: the whole row, an `omit`, or a `select` of some columns. */
+type CopyArg = true | { omit?: Omitted; select?: Partial<Record<string, boolean>> };
+type AuctionRead = {
+  include?: { CardOwnership?: CopyArg };
+  select?: { CardOwnership?: CopyArg };
+};
+type ListingRead = { include?: { ownership?: CopyArg }; select?: { ownership?: CopyArg } };
+
+/** The signed copy as a read asks for it, as Prisma returns it. */
+function copyAs(arg: CopyArg): Partial<typeof SIGNED_COPY> & { cards: typeof CARD } {
+  if (arg === true) return { ...SIGNED_COPY, cards: CARD };
+  const picked = arg.select
+    ? Object.fromEntries(Object.entries(SIGNED_COPY).filter(([key]) => arg.select?.[key]))
+    : without(SIGNED_COPY, arg.omit);
+  return { ...picked, cards: CARD };
+}
 
 /** One database: the signed copy, on an auction, in a trade. Face reads `select`; whole-row reads come back omitted. */
 function signedCopyDb() {
@@ -79,7 +94,7 @@ function signedCopyDb() {
   );
   db.cardAuction.count.mockResolvedValue(1);
   db.cardAuction.findMany.mockImplementation(async (args: AuctionRead) => {
-    const copy = args.include?.CardOwnership;
+    const copy = args.include?.CardOwnership ?? args.select?.CardOwnership;
     if (!copy) return [];
     return [
       {
@@ -88,11 +103,40 @@ function signedCopyDb() {
         sellerId: "me",
         winnerId: null,
         currentBidderId: "me",
+        currentBid: 80,
+        buyoutPrice: null,
+        bidCount: 1,
+        isFeatured: false,
+        createdAt: new Date(),
         endTime: new Date(Date.now() + 60_000),
         cardInstanceId: "o1",
-        CardOwnership: { ...without(SIGNED_COPY, copy.omit), cards: CARD },
+        card: CARD,
+        CardOwnership: copyAs(copy),
         AuctionBid: [],
         User: { id: "me", clerkUserId: "clerk_me" },
+      },
+    ];
+  });
+  // A fixed-price listing of the signed copy; the listing stores its own serial and finish
+  db.cardListing.findMany.mockImplementation(async (args: ListingRead) => {
+    const copy = args.include?.ownership ?? args.select?.ownership;
+    return [
+      {
+        id: "l1",
+        status: "ACTIVE",
+        sellerId: "me",
+        price: 120,
+        isFeatured: false,
+        listingFee: 5,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 60_000),
+        soldAt: null,
+        ownershipId: "o1",
+        cardId: "c1",
+        serialNumber: 3,
+        finish: "STANDARD",
+        card: CARD,
+        ...(copy ? { ownership: copyAs(copy) } : {}),
       },
     ];
   });
@@ -162,5 +206,29 @@ describe("whole copy rows a player reads", () => {
     expect(namesTheSigner(result)).toBe(false);
     // The text travels with the copy: only who signed it is held back
     expect(JSON.stringify(result)).toContain('"inscription":"gg"');
+  });
+
+  it("Browse, which reads only the copy columns a face shows", async () => {
+    const db = signedCopyDb();
+    const page = await createCallerFactory(cardMarketRouter)(context(db)).browse({});
+    expect(page.items.map((i) => i.kind).sort()).toEqual(["auction", "listing"]);
+    expect(namesTheSigner(page)).toBe(false);
+    // A face carries no inscription, and neither source reads a whole copy row
+    expect(JSON.stringify(page)).not.toContain("inscri");
+    expect(db.cardListing.findMany.mock.calls[0]![0].select.ownership).toEqual({
+      select: { id: true, finish: true, serialNumber: true, level: true },
+    });
+    expect(db.cardAuction.findMany.mock.calls[0]![0].select.CardOwnership).toEqual({
+      select: { id: true, finish: true, serialNumber: true, level: true },
+    });
+  });
+
+  it("the seller's fixed-price listings, which read no copy at all", async () => {
+    const db = signedCopyDb();
+    const listings = await createCallerFactory(cardMarketRouter)(context(db)).getMyListings();
+    expect(listings).toHaveLength(1);
+    expect(namesTheSigner(listings)).toBe(false);
+    expect(JSON.stringify(listings)).not.toContain("inscri");
+    expect(db.cardListing.findMany.mock.calls[0]![0].select.ownership).toBeUndefined();
   });
 });

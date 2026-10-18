@@ -59,6 +59,8 @@ describe("grantCardXp", () => {
     ["DAILY_CLAIM", 12],
     ["TRADE", 13],
     ["AUCTION_WIN", 14],
+    // A fixed-price purchase earns what an auction win does
+    ["LISTING_PURCHASE", 14],
   ])("reads %s's amount from its own Economy tab number", async (source, amount) => {
     const stored = [
       { key: "card_economy_xp_pack", value: "11" },

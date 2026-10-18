@@ -50,6 +50,17 @@ async function eligibleOwners(
   return [...owners].map(([recipientId, cardId]) => ({ recipientId, cardId }));
 }
 
+/** The players a royalty on these cards would pay (each eligible nation owner), so a sale can lock their vaults first. */
+export async function royaltyRecipientsTx(
+  tx: Prisma.TransactionClient,
+  cards: RoyaltyCard[],
+  partyIds: readonly string[]
+): Promise<string[]> {
+  const nationCards = cards.filter(showsNation);
+  if (nationCards.length === 0) return [];
+  return (await eligibleOwners(tx, nationCards, partyIds)).map((owner) => owner.recipientId);
+}
+
 /**
  * Pays the royalty on `amount` out of its `fee`, split evenly between the eligible nation owners in whole cents,
  * rounded down. A ledger refusal on one payout happens before any write, so that share stays with the house and the

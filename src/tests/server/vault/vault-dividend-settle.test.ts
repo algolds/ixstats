@@ -342,7 +342,7 @@ describe("settleDividendDay", () => {
     );
   });
 
-  it("pays card activity: packs opened, trades for both sides, listings sold", async () => {
+  it("pays card activity: packs opened, trades for both sides, listings sold (auctions, buyouts and fixed prices)", async () => {
     vault("u1");
     vault("u2");
     world.packs.push({ userId: "u1", openedAt: at("2026-10-20T12:00:00") });
@@ -359,7 +359,7 @@ describe("settleDividendDay", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           type: "EARN_CARDS",
-          source: { in: ["card_sale_auction", "card_sale_buyout"] },
+          source: { in: ["card_sale_auction", "card_sale_buyout", "card_sale_listing"] },
         }),
       })
     );

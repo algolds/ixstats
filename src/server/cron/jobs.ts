@@ -47,6 +47,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
       (await import("~/lib/economy/auction-completion-cron")).processExpiredAuctions,
   },
   {
+    // Every 10 minutes: due listings end, their copies unlock and a share of the listing fee comes back.
+    name: "listing-expiry",
+    defaultSchedule: "*/10 * * * *",
+    lockName: "listing-expiry",
+    timeoutMs: 5 * MINUTE,
+    modulePath: "~/server/modules/cards/market/listing-expiry-cron",
+    exportName: "processExpiredListings",
+    load: async () =>
+      (await import("~/server/modules/cards/market/listing-expiry-cron")).processExpiredListings,
+  },
+  {
     // Midnight UTC: the Vault dividend for the day just ended, plus any of the last 7 days still unsettled.
     name: "vault-dividend",
     defaultSchedule: "0 0 * * *",

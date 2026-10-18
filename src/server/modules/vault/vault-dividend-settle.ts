@@ -18,7 +18,7 @@ import { readConfigKeys, writeConfigKeys } from "~/server/shared/config-kv";
 type Counts = Map<string, number>;
 type DayRange = { gte: Date; lt: Date };
 
-const CARD_SALE_SOURCES = ["card_sale_auction", "card_sale_buyout"];
+const CARD_SALE_SOURCES = ["card_sale_auction", "card_sale_buyout", "card_sale_listing"];
 const DIVIDEND_SOURCE = "VAULT_DIVIDEND";
 /** SystemConfig key holding the first day the dividend settled (`yyyy-mm-dd`); no earlier day is ever settled. */
 const DIVIDEND_START_KEY = "vault_dividend_started_on";
