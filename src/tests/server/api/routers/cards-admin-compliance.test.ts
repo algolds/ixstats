@@ -106,6 +106,7 @@ describe("cards.admin.compliance inscription reports", () => {
   it("resolves a report as the signed-in admin", async () => {
     const db = createMockPrisma();
     db.cardInscriptionReport.updateMany.mockResolvedValue({ count: 1 });
+    db.cardOwnership.updateMany.mockResolvedValue({ count: 1 });
     db.cardInscriptionReport.findUniqueOrThrow.mockResolvedValue({
       id: "r1",
       ownershipId: "own_1",

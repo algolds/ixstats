@@ -55,12 +55,13 @@ describe("inscribeCopy", () => {
     });
   });
 
-  it("refuses a copy already signed (or cleared), locked, or not the signer's", async () => {
+  it("refuses a copy already signed (or cleared), locked, or not the signer's, saying what the lock covers", async () => {
     const db = createMockPrisma();
     db.cardOwnership.updateMany.mockResolvedValue({ count: 0 });
     await expect(sign(db)).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "This copy is already signed, is listed or in a trade, or is no longer yours.",
+      message:
+        "This copy is already signed, is on sale or at auction, is in a trade you offered, or is no longer yours.",
     });
   });
 
@@ -80,9 +81,9 @@ describe("inscribeCopy", () => {
     const db = createMockPrisma();
     await expect(sign(db, { text: "<script>" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
-      message: "Angle brackets aren't allowed.",
+      message: "HTML tags aren't allowed.",
     });
-    await expect(sign(db, { text: "​" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(sign(db, { text: "\u200b" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
   });
 });
@@ -125,6 +126,23 @@ describe("reportInscription", () => {
     const db = signedCopy();
     await expect(report(db, reason)).rejects.toMatchObject({ code: "BAD_REQUEST", message });
     expect(db.cardOwnership.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("files up to 5 waiting reports per player, and refuses a sixth before filing", async () => {
+    const fifth = signedCopy();
+    fifth.cardInscriptionReport.count.mockResolvedValue(4);
+    await expect(report(fifth)).resolves.toEqual({ reportId: "r1" });
+    expect(fifth.cardInscriptionReport.count).toHaveBeenCalledWith({
+      where: { reporterId: "u2", status: "open" },
+    });
+
+    const sixth = signedCopy();
+    sixth.cardInscriptionReport.count.mockResolvedValue(5);
+    await expect(report(sixth)).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+      message: "You have 5 reports waiting. Staff will answer those first.",
+    });
+    expect(sixth.cardInscriptionReport.create).not.toHaveBeenCalled();
   });
 
   it("refuses a copy with no inscription, or none at all", async () => {
@@ -267,6 +285,7 @@ describe("resolveInscriptionReport", () => {
       text: "gg",
       ownership: { cardId: "card_1", serialNumber: 3 },
     });
+    tx.cardOwnership.updateMany.mockResolvedValue({ count: 1 });
     return { db, tx };
   }
 
@@ -287,9 +306,9 @@ describe("resolveInscriptionReport", () => {
         ownership: { select: { cardId: true, serialNumber: true } },
       },
     });
-    // inscribedAt stays, so the copy can never be signed again
-    expect(tx.cardOwnership.update).toHaveBeenCalledWith({
-      where: { id: "own_1" },
+    // Only a copy that still has its text; inscribedAt stays, so the copy can never be signed again
+    expect(tx.cardOwnership.updateMany).toHaveBeenCalledWith({
+      where: { id: "own_1", inscription: { not: null } },
       data: { inscription: null, inscribedById: null, inscribedName: null },
     });
     expect(tx.cardInscriptionReport.updateMany).toHaveBeenNthCalledWith(2, {
@@ -307,7 +326,7 @@ describe("resolveInscriptionReport", () => {
       },
     });
     // Every write is in the one transaction
-    expect(db.cardOwnership.update).not.toHaveBeenCalled();
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(db.cardInscriptionReport.updateMany).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
   });
@@ -320,8 +339,50 @@ describe("resolveInscriptionReport", () => {
       message: "This report is already handled.",
     });
     expect(tx.cardInscriptionReport.updateMany).toHaveBeenCalledTimes(1);
-    expect(tx.cardOwnership.update).not.toHaveBeenCalled();
+    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("closes a report on a copy cleared already, with no second audit row", async () => {
+    const { db, tx } = openReport();
+    tx.cardOwnership.updateMany.mockResolvedValue({ count: 0 });
+    await expect(resolve(db, "clear")).resolves.toEqual({ status: "cleared" });
+    expect(tx.cardInscriptionReport.updateMany).toHaveBeenNthCalledWith(2, {
+      where: { ownershipId: "own_1", status: "open" },
+      data: { status: "cleared", ...HANDLED },
+    });
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("audits once when two admins clear two reports on one copy at the same time", async () => {
+    const db = createMockPrisma();
+    db.cardInscriptionReport.updateMany.mockResolvedValue({ count: 1 });
+    db.cardInscriptionReport.findUniqueOrThrow.mockImplementation(
+      async ({ where }: { where: { id: string } }) => ({
+        id: where.id,
+        ownershipId: "own_1",
+        text: "gg",
+        ownership: { cardId: "card_1", serialNumber: 3 },
+      })
+    );
+    // The copy's text, as the database holds it: the conditional write clears it once
+    let inscription: string | null = "gg";
+    db.cardOwnership.updateMany.mockImplementation(
+      async ({ where }: { where: { inscription?: { not: null } } }) => {
+        if (where.inscription && inscription === null) return { count: 0 };
+        inscription = null;
+        return { count: 1 };
+      }
+    );
+    const clear = (reportId: string) =>
+      resolveInscriptionReport(db as never, { actor: ADMIN, reportId, action: "clear", now: NOW });
+
+    await expect(Promise.all([clear("r1"), clear("r2")])).resolves.toEqual([
+      { status: "cleared" },
+      { status: "cleared" },
+    ]);
+    expect(db.cardOwnership.updateMany).toHaveBeenCalledTimes(2);
+    expect(db.auditLog.create).toHaveBeenCalledTimes(1);
   });
 
   it("dismissing closes only that report, if it is still open", async () => {
@@ -333,8 +394,8 @@ describe("resolveInscriptionReport", () => {
       data: { status: "dismissed", ...HANDLED },
     });
     expect(db.$transaction).not.toHaveBeenCalled();
-    expect(tx.cardOwnership.update).not.toHaveBeenCalled();
-    expect(db.cardOwnership.update).not.toHaveBeenCalled();
+    expect(tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(db.auditLog.create).not.toHaveBeenCalled();
 
     db.cardInscriptionReport.updateMany.mockResolvedValue({ count: 0 });

@@ -14,13 +14,15 @@ import { recordCardAudit } from "./cards.audit";
 const REASON_MIN = 3;
 const REASON_MAX = 500;
 const QUEUE_SIZE = 100;
+/** Open reports one player may have waiting (as for takedown requests). */
+const WAITING_CAP = 5;
 const NO_INSCRIPTION = "This copy has no inscription.";
 const HANDLED = "This report is already handled.";
 
 /**
  * Signs the copy for its owner, with `signerName` (the name other players read, `PlayerName.displayName`) frozen beside
- * it. A player with no such name cannot sign; nor can anyone sign a copy that is signed, was cleared, or is locked by
- * a listing or a trade.
+ * it. A player with no such name cannot sign; nor can anyone sign a copy that is signed, was cleared, or is locked: on
+ * sale, at auction, or offered by its holder in a trade (a copy only asked for in an offer stays unlocked).
  */
 export async function inscribeCopy(
   db: PrismaClient,
@@ -47,13 +49,14 @@ export async function inscribeCopy(
   if (signed.count !== 1) {
     throw new TRPCError({
       code: "CONFLICT",
-      message: "This copy is already signed, is listed or in a trade, or is no longer yours.",
+      message:
+        "This copy is already signed, is on sale or at auction, is in a trade you offered, or is no longer yours.",
     });
   }
   return { inscription: check.text, name: signerName };
 }
 
-/** One report per player and copy, keeping the text as it read when reported. */
+/** One report per player and copy, and at most 5 waiting per player, keeping the text as it read when reported. */
 export async function reportInscription(
   db: PrismaClient,
   input: { reporterId: string; ownershipId: string; reason: string }
@@ -71,6 +74,15 @@ export async function reportInscription(
     select: { inscription: true },
   });
   if (!copy?.inscription) throw new TRPCError({ code: "NOT_FOUND", message: NO_INSCRIPTION });
+  const waiting = await db.cardInscriptionReport.count({
+    where: { reporterId: input.reporterId, status: "open" },
+  });
+  if (waiting >= WAITING_CAP) {
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: `You have ${WAITING_CAP} reports waiting. Staff will answer those first.`,
+    });
+  }
   try {
     const report = await db.cardInscriptionReport.create({
       data: {
@@ -170,7 +182,8 @@ async function claimReport(
 
 /**
  * Dismissing closes that report. Clearing removes the text and the signer, closes every open report on the copy, and
- * writes a `CARD_INSCRIPTION_CLEAR` audit row, in one transaction.
+ * writes a `CARD_INSCRIPTION_CLEAR` audit row, in one transaction. A copy another admin cleared first (through another
+ * report on it) is cleared once: the report closes, and no second audit row is written.
  */
 export async function resolveInscriptionReport(
   db: PrismaClient,
@@ -192,14 +205,15 @@ export async function resolveInscriptionReport(
         ownership: { select: { cardId: true, serialNumber: true } },
       },
     });
-    await tx.cardOwnership.update({
-      where: { id: report.ownershipId },
+    const cleared = await tx.cardOwnership.updateMany({
+      where: { id: report.ownershipId, inscription: { not: null } },
       data: { inscription: null, inscribedById: null, inscribedName: null },
     });
     await tx.cardInscriptionReport.updateMany({
       where: { ownershipId: report.ownershipId, status: "open" },
       data: { status: "cleared", ...handled },
     });
+    if (cleared.count !== 1) return;
     await recordCardAudit(tx, {
       action: "CARD_INSCRIPTION_CLEAR",
       actor: input.actor.clerkId,
