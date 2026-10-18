@@ -114,18 +114,24 @@ describe("admin.saveLorewardWinnerOverride", () => {
     expect(input.type).toBe("weekly");
   });
 
-  it("tells the bot what the entry now holds, after the override is saved", async () => {
+  it("tells the bot what the entry now holds, with announce on, after the override is saved", async () => {
     await caller("admin").saveLorewardWinnerOverride({
       date: "2026-10-16",
       winnerUser: "Cy",
       winnerPage: "Page",
     });
 
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/lorewards\/override$/),
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ date: "2026-10-16", type: "daily", ...RESULT.written }),
+        body: JSON.stringify({
+          date: "2026-10-16",
+          type: "daily",
+          ...RESULT.written,
+          announce: true,
+        }),
       })
     );
     expect(jest.mocked(overrideLorewardEntry).mock.invocationCallOrder[0]).toBeLessThan(
@@ -160,6 +166,10 @@ describe("admin.saveLorewardWinnerOverride", () => {
     }
     expect(overrideLorewardEntry).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("has no separate announce: saving announces", () => {
+    expect("pushLorewardToBot" in adminWikiRouter._def.procedures).toBe(false);
   });
 
   it("refuses an ordinary user", async () => {

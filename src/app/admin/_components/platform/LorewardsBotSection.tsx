@@ -195,11 +195,6 @@ export function LorewardsBotSection() {
     onError: (err) => notify.error("Scoring error", err.message),
   });
 
-  const pushToBotMutation = api.admin.pushLorewardToBot.useMutation({
-    onSuccess: () => notify.success("Announced", "Broadcasted winner embed to Discord channel"),
-    onError: (err) => notify.error("Broadcast error", err.message),
-  });
-
   const saveOverrideMutation = api.admin.saveLorewardWinnerOverride.useMutation({
     onSuccess: (result) => {
       const toast = overrideToast(result.botSynced, result);
@@ -210,29 +205,6 @@ export function LorewardsBotSection() {
 
   const handleTriggerScoring = () => {
     triggerScoringMutation.mutate({ date: runDate });
-  };
-
-  const handlePushToBot = () => {
-    if (!scoringResult || !scoringResult.winner) return;
-    pushToBotMutation.mutate({
-      date: runDate,
-      winner: {
-        user: scoringResult.winner.user,
-        page: scoringResult.winner.page,
-        score: scoringResult.winner.score ?? scoringResult.winner.finalScore ?? 0,
-        bytesAdded: scoringResult.winner.bytesAdded ?? 0,
-      },
-      runnerUp: scoringResult.runnerUp
-        ? {
-            user: scoringResult.runnerUp.user,
-            page: scoringResult.runnerUp.page,
-            score: scoringResult.runnerUp.score ?? scoringResult.runnerUp.finalScore ?? 0,
-            bytesAdded: scoringResult.runnerUp.bytesAdded ?? 0,
-          }
-        : null,
-      candidates: scoringResult.candidates || [],
-      editCount: scoringResult.editCount || 0,
-    });
   };
 
   const handleSaveOverride = () => {
@@ -508,22 +480,14 @@ export function LorewardsBotSection() {
               )}
 
               <div className="flex items-center gap-3 pt-2">
+                {/* Saving tells the bot with announce on, so there is no separate Announce. */}
                 <Button
                   onClick={handleSaveOverride}
                   disabled={saveOverrideMutation.isPending}
-                  variant="outline"
                   className="gap-2"
                 >
                   {saveOverrideMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Save winner override to DB
-                </Button>
-                <Button
-                  onClick={handlePushToBot}
-                  disabled={pushToBotMutation.isPending}
-                  className="gap-2"
-                >
-                  {pushToBotMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Announce and sync to Discord bot
+                  Save and announce winner
                 </Button>
               </div>
             </div>

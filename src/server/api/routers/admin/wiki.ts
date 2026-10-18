@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { invalidateConfigCache } from "~/lib/config-service";
 import { generateSlug } from "~/lib/utils";
@@ -144,7 +143,8 @@ export const adminWikiRouter = createTRPCRouter({
       })
     )
     // The scored result is an override like any other: its places' trophies follow, no sync writes over it, and the
-    // bot is told as `lorewards.overrideWinner` tells it (`botSynced` false when it could not be; the override stands)
+    // bot is told, to announce it, as `lorewards.overrideWinner` tells it (`botSynced` false when it could not be;
+    // the override stands)
     .mutation(async ({ ctx, input }) => {
       const { date, type, status, ...fields } = input;
       const result = await overrideLorewardEntry(ctx.db, adminActor(ctx), {
@@ -156,62 +156,6 @@ export const adminWikiRouter = createTRPCRouter({
       await invalidateCache(["lorewards."]);
       const botSynced = await tellBotOfOverride({ date: result.day, type, ...result.written });
       return { ...result, botSynced };
-    }),
-
-  pushLorewardToBot: adminProcedure
-    .input(
-      z.object({
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        winner: z.object({
-          user: z.string(),
-          page: z.string(),
-          score: z.number(),
-          bytesAdded: z.number(),
-        }),
-        runnerUp: z
-          .object({
-            user: z.string(),
-            page: z.string(),
-            score: z.number(),
-            bytesAdded: z.number(),
-          })
-          .optional()
-          .nullable(),
-        candidates: z
-          .array(
-            z.object({
-              user: z.string(),
-              page: z.string(),
-              score: z.number(),
-              bytesAdded: z.number(),
-            })
-          )
-          .optional(),
-        editCount: z.number().optional(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
-      try {
-        const response = await fetch(`${botUrl}/bot/lorewards/announce`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(input),
-        });
-        if (!response.ok) {
-          throw new Error(`Bot API returned HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        return { success: true, data };
-      } catch (error) {
-        console.error("Failed to push loreward to bot:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Failed to notify bot: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      }
     }),
 
   purgeWikiCache: adminProcedure

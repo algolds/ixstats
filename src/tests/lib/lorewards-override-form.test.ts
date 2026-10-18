@@ -81,24 +81,24 @@ describe("overrideToast", () => {
   const moved = { reassigned: 1, voided: 0, mintDeferred: false };
   const nothing = { reassigned: 0, voided: 0, mintDeferred: false };
 
-  it("says saved and synced when the bot was told, with the trophy note", () => {
+  it("says saved and announced when the bot was told, with the trophy note", () => {
     expect(overrideToast(true, moved)).toEqual({
       tone: "success",
       title: "Winner overridden",
-      message: "The override is saved and synced. 1 trophy moved",
+      message: "The override is saved and announced. 1 trophy moved",
     });
-    expect(overrideToast(true, nothing).message).toBe("The override is saved and synced.");
+    expect(overrideToast(true, nothing).message).toBe("The override is saved and announced.");
   });
 
-  it("says the override is saved and the bot catches up when the bot was not told", () => {
+  it("says the override is saved but nothing was announced when the bot was not told", () => {
     expect(overrideToast(false, moved)).toEqual({
       tone: "warning",
       title: "Saved",
       message:
-        "The Discord bot was not told; it picks the change up on its next sync. 1 trophy moved",
+        "The Discord bot was not told, so nothing was announced. It picks the change up on its next sync. 1 trophy moved",
     });
     expect(overrideToast(false, { ...nothing, mintDeferred: true }).message).toBe(
-      "The Discord bot was not told; it picks the change up on its next sync. New trophies are minted on the next sync."
+      "The Discord bot was not told, so nothing was announced. It picks the change up on its next sync. New trophies are minted on the next sync."
     );
   });
 });

@@ -78,10 +78,10 @@ export function LorewardOverrideCard() {
           Manual winner override tool
         </CardTitle>
         <CardDescription>
-          Manually rewrite the winning details of past daily, weekly, or monthly entries and push
-          announcement updates to the Discord bot. A blank field keeps its stored value, except a
-          new holder starts with no page or score. The place's trophy moves with the override. Any
-          day of a weekly or monthly contest finds it.
+          Manually rewrite the winning details of past daily, weekly, or monthly entries. Saving
+          announces the change on Discord. A blank field keeps its stored value, except a new holder
+          starts with no page or score. The place's trophy moves with the override. Any day of a
+          weekly or monthly contest finds it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -229,7 +229,7 @@ export function LorewardOverrideCard() {
           ) : (
             <Save className="h-4 w-4" />
           )}
-          Save and sync winner override
+          Save and announce winner override
         </Button>
       </CardContent>
     </Card>
