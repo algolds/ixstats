@@ -4,7 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 jest.mock("~/trpc/react", () => ({
   api: {
     cards: {
-      exploreShelves: { useQuery: jest.fn(() => ({ data: [] })) },
+      exploreShelves: { useQuery: jest.fn(() => ({ data: { realms: [] } })) },
       listMine: { useQuery: jest.fn(() => ({ data: undefined, isLoading: true })) },
     },
     cardMarket: {
@@ -194,6 +194,21 @@ describe("MarketPane", () => {
     expect(screen.queryByRole("button", { name: /Buy now/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "See it in Selling" }));
     expect(props.onTabChange).toHaveBeenCalledWith("selling");
+  });
+
+  it("filters by every public realm with cards, not only the realms Explore shelves", () => {
+    jest.mocked(api.cards.exploreShelves.useQuery).mockReturnValue({
+      data: { realms: [realm, { ...realm, id: "r13", slug: "eurth", name: "Eurth" }] },
+    } as never);
+    renderPane("browse");
+    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Every realm",
+      "Ixnay",
+      "Eurth",
+    ]);
+    fireEvent.click(screen.getByRole("option", { name: "Eurth" }));
+    expect(lastAuctionQuery()).toMatchObject({ realmId: "r13" });
   });
 
   it("narrows Browse to one card from the sheet's link, and lets the player see everything again", () => {
