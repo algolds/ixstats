@@ -6,6 +6,8 @@
  */
 
 import { type PrismaClient } from "@prisma/client";
+import { getEconomyConfig } from "./economy-config";
+import { saleFee } from "./market/fees";
 
 export interface CardGeneralSettings {
   /** Marketplace transaction / auction rake percentage (0-50%). */
@@ -75,17 +77,18 @@ export async function setGeneralCardSetting(
 }
 
 /**
- * Marketplace fee on card sales over 100 IxC, at the admin "house rake" rate
- * (10% unless configured, clamped to 0-50%).
+ * The market fee on a card sale or a trade's credit leg: the admin house rake (10% unless configured, clamped to
+ * 0-50%) on amounts over the Economy tab's threshold (100 IxC by default).
  */
 export async function marketplaceFee(
   db: Pick<PrismaClient, "systemConfig">,
   price: number
 ): Promise<number> {
-  if (price <= 100) return 0;
-  const { auctionHouseRakePct } = await getGeneralCardSettings(db);
-  const rate = Math.min(Math.max(auctionHouseRakePct, 0), 50) / 100;
-  return Math.floor(price * rate);
+  const [{ auctionHouseRakePct }, { saleFeeThreshold }] = await Promise.all([
+    getGeneralCardSettings(db),
+    getEconomyConfig(db),
+  ]);
+  return saleFee(price, { ratePct: auctionHouseRakePct, threshold: saleFeeThreshold });
 }
 
 /** Cards a player may hold before any Vault capacity upgrades. */
