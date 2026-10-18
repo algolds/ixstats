@@ -11,7 +11,7 @@ import {
 } from "~/server/api/trpc";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { viewerRealmId } from "~/server/api/trpc/realm-scope";
-import { switchIsOn, withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
+import { hiddenLinkedNames, switchIsOn } from "~/server/shared/privacy-permissions";
 import { recordHeartbeat } from "~/server/shared/presence";
 import { clearOwnHistory } from "~/server/shared/clear-history";
 
@@ -47,8 +47,9 @@ type ListedUser = Prisma.UserGetPayload<{ select: typeof LISTED_USER_SELECT }>;
 
 /**
  * The users the block and mute lists name (a row stores a platform or a Clerk id), keyed by both ids: one query,
- * then one batch read of wiki attribution (`showWikiAttribution`), whose wiki name is blanked for each user who
- * turned it off (a read error blanks every one).
+ * then one batch read of the linked-name switches for the users with a wiki or Discord name (hiddenLinkedNames).
+ * The wiki name is blanked for each user with `showWikiAttribution` off and the Discord name for each with
+ * `showDiscordTag` off; a read error blanks every one.
  */
 async function listedUsers(
   db: Pick<PrismaClient, "user" | "userConnection">,
@@ -61,7 +62,14 @@ async function listedUsers(
     where: { OR: [{ id: { in: ids } }, { clerkUserId: { in: ids } }] },
     select: LISTED_USER_SELECT,
   });
-  for (const user of await withoutHiddenWikiNames(db, rows)) {
+  const named = rows.filter((u) => u.wikiUsername || u.discordUsername).map((u) => u.clerkUserId);
+  const hidden = await hiddenLinkedNames(db, named);
+  for (const row of rows) {
+    const user = {
+      ...row,
+      wikiUsername: hidden.wiki.has(row.clerkUserId) ? null : row.wikiUsername,
+      discordUsername: hidden.discord.has(row.clerkUserId) ? null : row.discordUsername,
+    };
     byId.set(user.id, user);
     byId.set(user.clerkUserId, user);
   }
