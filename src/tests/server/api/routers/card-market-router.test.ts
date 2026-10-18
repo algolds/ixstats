@@ -112,7 +112,29 @@ describe("createAuction", () => {
     );
   });
 
-  it("rejects a buyout at or below the starting price", async () => {
+  it("refuses prices that are not whole IxC before reaching the service", async () => {
+    const seller = callerAs("seller", db);
+    await expect(
+      seller.createAuction({ cardId: "own_1", startingPrice: 10.5, duration: "24h" })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      seller.createAuction({
+        cardId: "own_1",
+        startingPrice: 10,
+        buyoutPrice: 20.5,
+        duration: "24h",
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(service.createAuction).not.toHaveBeenCalled();
+  });
+
+  it("leaves the buy-now rule to the service, whose refusal passes through", async () => {
+    service.createAuction!.mockRejectedValue(
+      new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Buyout price must be higher than starting price",
+      })
+    );
     await expect(
       callerAs("seller", db).createAuction({
         cardId: "own_1",
@@ -120,8 +142,14 @@ describe("createAuction", () => {
         buyoutPrice: 50,
         duration: "24h",
       })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(service.createAuction).not.toHaveBeenCalled();
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Buyout price must be higher than starting price",
+    });
+    expect(service.createAuction).toHaveBeenCalledWith(
+      expect.objectContaining({ startingPrice: 50, buyoutPrice: 50 }),
+      db
+    );
   });
 
   it("validates the duration and starting price", async () => {

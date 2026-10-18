@@ -31,8 +31,8 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
     .input(
       z.object({
         cardId: z.string().min(1, "Card ID is required"),
-        startingPrice: z.number().min(1, "Starting price must be at least 1 IxCredit"),
-        buyoutPrice: z.number().min(1).optional(),
+        startingPrice: z.number().int().min(1, "Starting price must be at least 1 IxCredit"),
+        buyoutPrice: z.number().int().min(1).optional(),
         duration: z.enum(AUCTION_DURATIONS),
         isFeatured: z.boolean().optional().default(false),
       })
@@ -41,14 +41,7 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
       try {
         assertAuthUserId(ctx);
 
-        // Validate buyout price if provided
-        if (input.buyoutPrice && input.buyoutPrice <= input.startingPrice) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Buyout price must be higher than starting price",
-          });
-        }
-
+        // The service owns the price rules (a buy-now price above the start)
         const auction = await auctionService.createAuction(
           {
             userId: ctx.user.id,

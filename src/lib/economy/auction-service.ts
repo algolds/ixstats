@@ -52,8 +52,13 @@ async function getMarketWs(): Promise<MarketBroadcastTarget | null> {
   return _marketWs?.getMarketWebSocketServer() ?? null;
 }
 
+/** Every broadcast follows a commit, so a failure is logged and never fails the call or skips its notices. */
 async function broadcastMarket(message: MarketBroadcastMessage): Promise<void> {
-  publishMarketEvent(message, await getMarketWs());
+  try {
+    publishMarketEvent(message, await getMarketWs());
+  } catch (error) {
+    console.warn(`[Auction Service] The ${message.type} broadcast failed:`, error);
+  }
 }
 
 const broadcastComplete = (auctionId: string, winnerId: string | null, finalPrice: number) =>
@@ -252,7 +257,7 @@ export class AuctionService {
           },
         });
         if (!copy) throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this card" });
-        // Bound cards (trophies, achievement rewards) can't be listed (cards refresh §2.1)
+        // Bound cards (trophies, achievement rewards) can't be listed
         if (copy.cards.isBound) throw boundCopyError();
         // Two listings of one copy both pass the read above; only one wins the lock, and only it pays
         const locked = await tx.cardOwnership.updateMany({
@@ -414,7 +419,7 @@ export class AuctionService {
         if (claimed.count !== 1) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: "Auction changed while you were bidding — refresh and try again",
+            message: "This auction changed. Reload and try again.",
           });
         }
 

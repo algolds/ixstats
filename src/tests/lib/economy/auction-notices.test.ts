@@ -69,6 +69,11 @@ describe("auction end notices", () => {
     expect(notices.map((n) => n.message)).toEqual(["Aurelia is back in your collection."]);
   });
 
+  it("names no market fee when the sale paid none", () => {
+    const notices = auctionEndNotices({ ...base, price: 90, sellerNet: 90 });
+    expect(notices[1]!.message).toBe("Aurelia sold for 90 IxC. You received 90 IxC.");
+  });
+
   it("names a buyout", () => {
     expect(auctionEndNotices({ ...base, byBuyout: true })[1]!.title).toBe(
       "Your auction was bought out"

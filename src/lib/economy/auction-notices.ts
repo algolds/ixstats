@@ -31,6 +31,8 @@ export function auctionEndNotices(end: AuctionEnd): CardNotice[] {
     ];
   }
   const winnerId = end.winnerId;
+  // Sales at or under the fee threshold pay no market fee
+  const feeTaken = end.sellerNet < end.price ? " after the market fee" : "";
   const losers = [...new Set(end.bidderIds)].filter((id) => id !== winnerId && id !== end.sellerId);
   return [
     {
@@ -45,7 +47,7 @@ export function auctionEndNotices(end: AuctionEnd): CardNotice[] {
       ...about,
       userId: end.sellerId,
       title: end.byBuyout ? "Your auction was bought out" : "Your auction sold",
-      message: `${end.cardTitle} sold for ${end.price} IxC. You received ${end.sellerNet} IxC after the market fee.`,
+      message: `${end.cardTitle} sold for ${end.price} IxC. You received ${end.sellerNet} IxC${feeTaken}.`,
       type: "success",
       priority: "high",
     },

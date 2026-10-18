@@ -454,6 +454,7 @@ describe("adminCancelAuction", () => {
       expect.objectContaining({ id: "auc_1", sellerId: "seller", listingFee: 5 }),
       "admin_cancel"
     );
+    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
     expect(db.auditLog.create.mock.calls[0]![0].data).toMatchObject({
       action: "CARD_AUCTION_CANCEL",
       target: "auc_1",

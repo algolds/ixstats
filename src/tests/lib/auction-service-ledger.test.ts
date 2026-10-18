@@ -20,12 +20,14 @@ jest.mock("~/lib/cards/card-notify", () => ({
 jest.mock("~/lib/websocket/market-websocket-server", () => ({
   getMarketWebSocketServer: () => null,
 }));
+jest.mock("~/server/market-broadcast-bridge", () => ({ publishMarketEvent: jest.fn() }));
 
 import { TRPCError } from "@trpc/server";
 import { AuctionService, refundListingFeeTx } from "~/lib/economy/auction-service";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
+import { publishMarketEvent } from "~/server/market-broadcast-bridge";
 import { vaultService } from "~/lib/vault/vault-service";
 import { VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 
@@ -246,6 +248,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
     jest.mocked(notifyCards).mockReset().mockResolvedValue(undefined);
     jest.mocked(notifyCard).mockClear();
     jest.mocked(grantCardXp).mockReset().mockResolvedValue(XP);
+    jest.mocked(publishMarketEvent).mockReset();
     clearEconomyConfigCache();
   });
 
@@ -312,6 +315,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
 
     expect(err).toBeInstanceOf(TRPCError);
     expect(err.code).toBe("CONFLICT");
+    expect(err.message).toBe("This auction changed. Reload and try again.");
     expect(h.tx.myVault.updateMany).not.toHaveBeenCalled();
     expect(h.tx.vaultTransaction.create).not.toHaveBeenCalled();
     expect(h.tx.auctionBid.create).not.toHaveBeenCalled();
@@ -817,6 +821,21 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
       expect(h.tx.cardAuction.create).not.toHaveBeenCalled();
     });
 
+    it.each([50, 40])(
+      "refuses a buy-now price of %i IxC, at or under the start, before anything moves",
+      async (buyoutPrice) => {
+        const h = makeHarness(makeAuction(), { s: 100 });
+
+        await expect(
+          service.createAuction({ ...listing, buyoutPrice, duration: "24h" }, h.db)
+        ).rejects.toMatchObject({
+          code: "BAD_REQUEST",
+          message: "Buyout price must be higher than starting price",
+        });
+        expect(h.db.$transaction).not.toHaveBeenCalled();
+      }
+    );
+
     it("refuses a starting price that is not a whole IxC", async () => {
       const h = makeHarness(makeAuction(), { s: 100 });
 
@@ -853,6 +872,31 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         where: { id: "c1", ownerId: "s" },
         data: { isLocked: false },
       });
+    });
+
+    it("an unsold auction whose claim is lost writes no row, unlocks nothing and tells no one", async () => {
+      const h = makeHarness(unsold({ listingFee: 10 }), { s: 0 });
+      // A player cancel or another cron run settled it first
+      h.tx.cardAuction.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.completeAuction("a1", h.db)).resolves.toBeUndefined();
+
+      expect(h.rows).toEqual([]);
+      expect(h.balances.s).toBe(0);
+      expect(h.tx.cardOwnership.updateMany).not.toHaveBeenCalled();
+      expect(notifyCards).not.toHaveBeenCalled();
+    });
+
+    it("a broadcast failure after the commit neither fails the sale nor skips its notices", async () => {
+      const h = makeHarness(sold(), { s: 0 });
+      jest.mocked(publishMarketEvent).mockImplementation(() => {
+        throw new Error("socket closed");
+      });
+
+      await expect(service.completeAuction("a1", h.db)).resolves.toBeUndefined();
+
+      expect(h.balances.s).toBe(450);
+      expect(noticesSent().map((n) => n.userId)).toEqual(["p", "s"]);
     });
 
     it("refunds the Economy tab's share of the stored fee", async () => {
@@ -995,6 +1039,20 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         "AUCTION_WIN",
         JSON.stringify({ auctionId: "a1" })
       );
+    });
+
+    it("a broadcast failure after the commit neither fails the buyout nor skips its notices", async () => {
+      const h = makeHarness(withBid(), { b: 1000, p: 0, s: 0 });
+      jest.mocked(publishMarketEvent).mockImplementation(() => {
+        throw new Error("socket closed");
+      });
+
+      await expect(service.executeBuyout({ userId: "b", auctionId: "a1" }, h.db)).resolves.toEqual({
+        success: true,
+        xp: XP,
+      });
+      expect(h.balances).toEqual({ b: 200, p: 300, s: 720 });
+      expect(noticesSent().map((n) => n.userId)).toEqual(["b", "s"]);
     });
 
     it("rolls the whole buyout back when the XP grant fails", async () => {
