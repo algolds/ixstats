@@ -7,10 +7,13 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { lookupWikiUser } from "~/lib/wiki-os/adapters/ixstates/user-sync";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
 import { validateHandle } from "./identity.handle";
-import { IDENTITY_COUNTRY_SELECT, type IdentityCountry } from "./identity.selects";
+import {
+  IDENTITY_COUNTRY_SELECT,
+  LISTED_NATION_WHERE,
+  NATIONS_LARGEST_FIRST,
+  type IdentityCountry,
+} from "./identity.selects";
 import type { IdentityForumGateway, ResolvedIdentity } from "./identity.types";
 import { likeLiteral } from "~/lib/utils/like-literal";
 
@@ -262,12 +265,8 @@ export async function resolveIdentityNations(
   const { user } = identity;
   if (!user) return [];
   return db.country.findMany({
-    where: {
-      ownerUserId: user.id,
-      // Ixnay nations count even when Ixnay has no realm row (the relation filter needs one).
-      OR: [{ realmId: DEFAULT_REALM_ID }, { realm: DIRECTORY_REALM_WHERE }],
-    },
+    where: { ownerUserId: user.id, ...LISTED_NATION_WHERE },
     select: IDENTITY_COUNTRY_SELECT,
-    orderBy: { currentTotalGdp: "desc" },
+    orderBy: NATIONS_LARGEST_FIRST,
   });
 }

@@ -126,7 +126,7 @@ const listing = (overrides: Partial<SheetListing> = {}): SheetListing => ({
   buyoutPrice: null,
   endTime: new Date(Date.now() + 3 * 3_600_000 + 12 * 60_000 + 30_000),
   bidCount: 2,
-  sellerHandle: "ann",
+  sellerName: "@ann",
   isMine: false,
   ...overrides,
 });
@@ -447,7 +447,9 @@ describe("CardSheet market", () => {
         market: {
           listings: [
             listing(),
-            listing({ auctionId: "a2", sellerHandle: null, isMine: true, currentBid: 1500 }),
+            listing({ auctionId: "a2", sellerName: null, isMine: true, currentBid: 1500 }),
+            // The server names a seller with no handle by their nation, and the sheet adds nothing.
+            listing({ auctionId: "a3", sellerName: "Caphiria" }),
           ],
           recentSales: [{ price: 800, at: new Date("2026-10-10T00:00:00Z") }],
           wantedBy: 0,
@@ -462,6 +464,7 @@ describe("CardSheet market", () => {
     expect(listings[0]).toHaveTextContent("900");
     expect(listings[1]).toHaveTextContent("Your listing");
     expect(listings[1]).toHaveTextContent("1,500");
+    expect(listings[2]).toHaveTextContent(/^Caphiria · /);
     expect(screen.getByRole("link", { name: "Bid in the market" })).toHaveAttribute(
       "href",
       "/vault/cards/market?for=c1"
@@ -477,7 +480,7 @@ describe("CardSheet market", () => {
   it("calls a seller whose Passport hides Vault cards a player, and points to the market when nothing is listed", () => {
     showSheet(
       sheet({
-        market: { listings: [listing({ sellerHandle: null })], recentSales: [], wantedBy: 1 },
+        market: { listings: [listing({ sellerName: null })], recentSales: [], wantedBy: 1 },
       })
     );
     const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);

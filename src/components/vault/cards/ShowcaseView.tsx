@@ -148,8 +148,8 @@ export function ShowcaseView({ showcase, headingRef, onBack, onOpenCard }: Showc
         >
           {showcase.name}
         </h2>
-        {!showcase.isOwner && showcase.ownerHandle && (
-          <p className="text-callout text-label-secondary">{`By @${showcase.ownerHandle}`}</p>
+        {!showcase.isOwner && (
+          <p className="text-callout text-label-secondary">{`By ${showcase.ownerName ?? "a player"}`}</p>
         )}
         {showcase.description && (
           <p className="text-callout text-label-secondary">{showcase.description}</p>

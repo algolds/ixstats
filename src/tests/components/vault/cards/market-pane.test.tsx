@@ -373,7 +373,7 @@ describe("MarketPane", () => {
     expect(screen.getByText("No trades or auctions yet")).toBeInTheDocument();
   });
 
-  it("names a past trade's partner by passport handle in History", () => {
+  it("names a past trade's partner as the server names them in History, else a player", () => {
     const history = jest.mocked(api.trading.getTradeHistory.useQuery);
     history.mockReturnValue({
       data: {
@@ -384,15 +384,25 @@ describe("MarketPane", () => {
             updatedAt: new Date("2026-10-03T00:00:00Z"),
             initiatorCardIds: ["o1"],
             recipientCardIds: [],
-            initiator: { clerkUserId: "clerk_ann", passportHandle: "Helvianir" },
-            recipient: { clerkUserId: "clerk_me", passportHandle: "max" },
+            initiator: { clerkUserId: "clerk_ann", displayName: "Caphiria" },
+            recipient: { clerkUserId: "clerk_me", displayName: "@max" },
+          },
+          {
+            id: "t8",
+            status: "ACCEPTED",
+            updatedAt: new Date("2026-10-02T00:00:00Z"),
+            initiatorCardIds: [],
+            recipientCardIds: ["o2"],
+            initiator: { clerkUserId: "clerk_me", displayName: "@max" },
+            recipient: { clerkUserId: "clerk_kir", displayName: null },
           },
         ],
       },
     } as never);
     renderPane("trades");
     fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
-    expect(screen.getByText("Trade with @Helvianir · gave 0, got 1")).toBeInTheDocument();
+    expect(screen.getByText("Trade with Caphiria · gave 0, got 1")).toBeInTheDocument();
+    expect(screen.getByText("Trade with a player · gave 0, got 1")).toBeInTheDocument();
     history.mockReturnValue({ data: { trades: [] } } as never);
   });
 

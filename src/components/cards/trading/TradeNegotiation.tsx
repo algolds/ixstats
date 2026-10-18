@@ -231,7 +231,7 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
             <div>
               <h3 className="text-title-3 text-label flex items-center gap-2 font-semibold">
                 <ArrowRightLeft aria-hidden className="text-blue h-5 w-5" />
-                Trade with @{partner.passportHandle}
+                Trade with {partner.displayName ?? "a player"}
               </h3>
               {trade.message && (
                 <div className="text-body text-label-secondary mt-2 flex items-start gap-2">

@@ -53,11 +53,11 @@ const COPY = {
 const SALE = { finalPrice: 140, endTime: new Date("2026-09-01T00:00:00Z") };
 /** The passport chain reversed: "Takatta Loa", a wiki name with no stored handle, names the owner. */
 const holderOf = jest.fn(async (handle: string) => (handle === "Takatta Loa" ? "owner" : null));
-/** Everyone named on the sheet, by passport handle; each shows their Vault cards unless a test says otherwise. */
+/** Everyone named on the sheet, as the identity rule names them; each shows their Vault cards unless a test says otherwise. */
 const PLAYERS = new Map([
-  ["u-a", { handle: "ann", showsVault: true }],
-  ["me", { handle: "max", showsVault: true }],
-  ["u-signer", { handle: "sig", showsVault: true }],
+  ["u-a", { name: "@ann", showsVault: true }],
+  ["me", { name: "@max", showsVault: true }],
+  ["u-signer", { name: "@sig", showsVault: true }],
 ]);
 const playersOf = jest.fn(async (_ids: readonly string[]) => PLAYERS);
 const rules = { vaultVisible: jest.fn(async () => true), holderOf, playersOf };
@@ -121,13 +121,13 @@ describe("loadCardSheet", () => {
         experience: 2400,
         acquiredAt: COPY.acquiredAt,
         isLocked: false,
-        inscription: { text: "For the archive", signerHandle: "sig", signedAt: COPY.inscribedAt },
+        inscription: { text: "For the archive", signerName: "@sig", signedAt: COPY.inscribedAt },
         trail: [
           {
             id: "e1",
             action: "TRADE",
-            from: { handle: "ann" },
-            to: { handle: "max" },
+            from: { name: "@ann" },
+            to: { name: "@max" },
             price: null,
             at: new Date("2026-10-01T00:00:00Z"),
           },
@@ -219,7 +219,7 @@ describe("loadCardSheet", () => {
         buyoutPrice: null,
         endTime: LISTING.endTime,
         bidCount: 2,
-        sellerHandle: "ann",
+        sellerName: "@ann",
         isMine: false,
       },
       {
@@ -228,7 +228,7 @@ describe("loadCardSheet", () => {
         buyoutPrice: 300,
         endTime: LISTING.endTime,
         bidCount: 2,
-        sellerHandle: "max",
+        sellerName: "@max",
         isMine: true,
       },
     ]);
@@ -481,8 +481,8 @@ describe("loadCardSheet", () => {
     expect(sheet!.copies[0]).toMatchObject({
       inscription: null,
       trail: [
-        { id: "e2", from: null, to: { handle: "max" } },
-        { id: "e4", from: { handle: null }, to: null, price: 5 },
+        { id: "e2", from: null, to: { name: "@max" } },
+        { id: "e4", from: { name: null }, to: null, price: 5 },
       ],
     });
   });
@@ -525,7 +525,7 @@ describe("loadCardSheet", () => {
     const db = setup({ sold: [{ finalPrice: null, endTime: SALE.endTime }, SALE] });
     playersOf.mockResolvedValueOnce(new Map());
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.copies[0]!.inscription).toMatchObject({ signerHandle: null });
+    expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
     expect(sheet!.market.recentSales).toEqual([{ price: 140, at: SALE.endTime }]);
   });
 
@@ -579,31 +579,49 @@ describe("loadCardSheet", () => {
       const db = setup({ listed: [LISTING] });
       playersOf.mockResolvedValueOnce(
         new Map([
-          ["u-a", { handle: "ann", showsVault: false }],
-          ["me", { handle: "max", showsVault: true }],
-          ["u-signer", { handle: "sig", showsVault: false }],
+          ["u-a", { name: "@ann", showsVault: false }],
+          ["me", { name: "@max", showsVault: true }],
+          ["u-signer", { name: "@sig", showsVault: false }],
         ])
       );
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.copies[0]!.trail[0]).toMatchObject({
-        from: { handle: null },
-        to: { handle: "max" },
+        from: { name: null },
+        to: { name: "@max" },
       });
-      expect(sheet!.copies[0]!.inscription).toMatchObject({ signerHandle: null });
-      expect(sheet!.market.listings[0]).toMatchObject({ sellerHandle: null, isMine: false });
+      expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
+      expect(sheet!.market.listings[0]).toMatchObject({ sellerName: null, isMine: false });
+    });
+
+    it("names each player as the identity rule does: a nation for a player with no handle, or nobody", async () => {
+      const db = setup({ listed: [LISTING] });
+      playersOf.mockResolvedValueOnce(
+        new Map([
+          ["u-a", { name: "Caphiria", showsVault: true }],
+          ["me", { name: "@max", showsVault: true }],
+          ["u-signer", { name: null, showsVault: true }],
+        ])
+      );
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+      expect(sheet!.copies[0]!.trail[0]).toMatchObject({
+        from: { name: "Caphiria" },
+        to: { name: "@max" },
+      });
+      expect(sheet!.copies[0]!.inscription).toMatchObject({ signerName: null });
+      expect(sheet!.market.listings[0]).toMatchObject({ sellerName: "Caphiria" });
     });
 
     it("always names the viewer to themselves", async () => {
       const db = setup({ listed: [{ ...LISTING, sellerId: "me" }] });
       playersOf.mockResolvedValueOnce(
         new Map([
-          ["u-a", { handle: "ann", showsVault: true }],
-          ["me", { handle: "max", showsVault: false }],
+          ["u-a", { name: "@ann", showsVault: true }],
+          ["me", { name: "@max", showsVault: false }],
         ])
       );
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-      expect(sheet!.copies[0]!.trail[0]!.to).toEqual({ handle: "max" });
-      expect(sheet!.market.listings[0]).toMatchObject({ sellerHandle: "max", isMine: true });
+      expect(sheet!.copies[0]!.trail[0]!.to).toEqual({ name: "@max" });
+      expect(sheet!.market.listings[0]).toMatchObject({ sellerName: "@max", isMine: true });
     });
   });
 
@@ -619,7 +637,7 @@ describe("loadCardSheet", () => {
         face: { artwork: "https://art/c1.png", silhouette: false, copy: null },
         signedIn: false,
         copies: [],
-        market: { listings: [{ auctionId: "a1", sellerHandle: "ann", isMine: false }] },
+        market: { listings: [{ auctionId: "a1", sellerName: "@ann", isMine: false }] },
       });
       expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
       expect(db.cardTransferEvent.findMany).not.toHaveBeenCalled();

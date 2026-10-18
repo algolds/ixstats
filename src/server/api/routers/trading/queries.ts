@@ -9,8 +9,8 @@ import { tradeView } from "~/lib/cards/hub/market-faces";
 import {
   FINISHED_TRADE_STATUSES,
   TRADE_PARTIES_INCLUDE,
-  withPartyHandle,
-  withPartyHandles,
+  withPartyName,
+  withPartyNames,
 } from "./_shared";
 
 /** What the trade view reads of each card; never the metadata or art credit, which name a hidden card's art. */
@@ -46,7 +46,7 @@ export const tradingQueriesRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
 
-    return withPartyHandles(trades);
+    return withPartyNames(trades);
   }),
 
   /**
@@ -78,7 +78,7 @@ export const tradingQueriesRouter = createTRPCRouter({
       const total = await ctx.db.tradeOffer.count({ where });
 
       return {
-        trades: await withPartyHandles(trades),
+        trades: await withPartyNames(trades),
         total,
         hasMore: input.offset + input.limit < total,
       };
@@ -127,7 +127,7 @@ export const tradingQueriesRouter = createTRPCRouter({
       const recipientValue = sideValue(recipientCards) + trade.recipientCredits;
 
       const [named, view] = await Promise.all([
-        withPartyHandle(trade),
+        withPartyName(trade),
         tradeView(ctx.db, userId, trade, initiatorCards, recipientCards),
       ]);
       return { ...named, ...view, initiatorValue, recipientValue };

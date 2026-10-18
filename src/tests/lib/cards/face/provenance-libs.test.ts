@@ -109,19 +109,19 @@ describe("trail", () => {
     expect(trailLabel("toString")).toBe("Moved");
   });
 
-  it("names the handles on each side", () => {
-    const a = { handle: "a" };
-    const b = { handle: "b" };
-    expect(trailParties({ from: a, to: b })).toBe("@a to @b");
-    expect(trailParties({ from: null, to: b })).toBe("to @b");
+  it("names each side as the server names them: a handle, or a nation", () => {
+    const a = { name: "@a" };
+    const b = { name: "Caphiria" };
+    expect(trailParties({ from: a, to: b })).toBe("@a to Caphiria");
+    expect(trailParties({ from: null, to: b })).toBe("to Caphiria");
     expect(trailParties({ from: a, to: null })).toBe("from @a");
     expect(trailParties({ from: null, to: null })).toBeNull();
   });
 
-  it("calls a player whose Passport hides Vault cards a player", () => {
-    const hidden = { handle: null };
-    expect(trailParties({ from: hidden, to: { handle: "b" } })).toBe("a player to @b");
-    expect(trailParties({ from: { handle: "a" }, to: hidden })).toBe("@a to a player");
+  it("calls a player with no name (hidden, or with neither a handle nor a nation) a player", () => {
+    const hidden = { name: null };
+    expect(trailParties({ from: hidden, to: { name: "@b" } })).toBe("a player to @b");
+    expect(trailParties({ from: { name: "@a" }, to: hidden })).toBe("@a to a player");
     expect(trailParties({ from: null, to: hidden })).toBe("to a player");
     expect(trailParties({ from: hidden, to: null })).toBe("from a player");
   });

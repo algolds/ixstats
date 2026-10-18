@@ -47,8 +47,8 @@ function trade(overrides: Record<string, string | number | Date | object | null>
     status: "PENDING",
     message: null,
     expiresAt: new Date(Date.now() + 24 * HOUR),
-    initiator: { clerkUserId: "clerk_ann", passportHandle: "ann" },
-    recipient: { clerkUserId: "clerk_max", passportHandle: "max" },
+    initiator: { clerkUserId: "clerk_ann", passportHandle: "ann", displayName: "@ann" },
+    recipient: { clerkUserId: "clerk_max", passportHandle: "max", displayName: "@max" },
     initiatorFaces: [face("c1", "Caphiria", "o1")],
     recipientFaces: [face("c2", "Urcea", "o2")],
     initiatorCredits: 25,
@@ -101,21 +101,31 @@ describe("TradeNegotiation", () => {
     expect(screen.getByRole("button", { name: "Cancel trade" })).toBeInTheDocument();
   });
 
-  it("names a partner with no stored handle by their passport handle, and opens their copies by it", () => {
+  it("names a partner with no handle by their nation, and opens their copies by their passport handle", () => {
     const onOpenCard = show(
       trade({
         status: "ACCEPTED",
-        initiator: { clerkUserId: "clerk_ann", passportHandle: "Helvianir" },
+        initiator: { clerkUserId: "clerk_ann", passportHandle: "clerk_ann", displayName: "Urcea" },
       }),
       true
     );
-    expect(screen.getByRole("heading", { name: "Trade with @Helvianir" })).toBeInTheDocument();
-    // The offer has ended, so its cards open as the partner's; the player's own need no context.
+    expect(screen.getByRole("heading", { name: "Trade with Urcea" })).toBeInTheDocument();
+    // The offer has ended, so its cards open as the partner's (the Clerk id resolves); the player's own need no context.
     fireEvent.click(cardButton("Caphiria"));
-    expect(onOpenCard).toHaveBeenLastCalledWith("c1", { kind: "holder", handle: "Helvianir" });
+    expect(onOpenCard).toHaveBeenLastCalledWith("c1", { kind: "holder", handle: "clerk_ann" });
     fireEvent.click(cardButton("Urcea"));
     expect(onOpenCard).toHaveBeenLastCalledWith("c2", null);
     expect(screen.queryByRole("button", { name: "Accept trade" })).toBeNull();
+  });
+
+  it("calls a partner with neither a handle nor a nation a player", () => {
+    show(
+      trade({
+        initiator: { clerkUserId: "clerk_ann", passportHandle: "clerk_ann", displayName: null },
+      }),
+      true
+    );
+    expect(screen.getByRole("heading", { name: "Trade with a player" })).toBeInTheDocument();
   });
 
   it("reads the cards, the trades and the balance again once an answer or a cancel lands", () => {

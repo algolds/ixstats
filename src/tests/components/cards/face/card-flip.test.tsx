@@ -279,8 +279,8 @@ const signedAt = new Date("2026-10-02T12:00:00Z");
 const trailEvent = (id: string, overrides: Partial<TrailEvent> = {}): TrailEvent => ({
   id,
   action: "TRADE",
-  from: { handle: "ann" },
-  to: { handle: "max" },
+  from: { name: "@ann" },
+  to: { name: "@max" },
   price: null,
   at: new Date("2026-10-01T12:00:00Z"),
   ...overrides,
@@ -293,7 +293,7 @@ describe("CardBackProvenance", () => {
         face={face()}
         copy={{
           experience: 2400,
-          inscription: { text: "For the archive", signerHandle: "sig", signedAt },
+          inscription: { text: "For the archive", signerName: "Urcea", signedAt },
           trail: [trailEvent("e1")],
         }}
         artCredit={{
@@ -313,7 +313,8 @@ describe("CardBackProvenance", () => {
       month: "long",
       year: "numeric",
     });
-    expect(screen.getByText(`Signed by @sig on ${longDate}`)).toBeInTheDocument();
+    // The server names the signer (a handle, or the nation of a player with none); the back adds nothing.
+    expect(screen.getByText(`Signed by Urcea on ${longDate}`)).toBeInTheDocument();
     expect(screen.getByText("Level 4 · 2,400 XP")).toBeInTheDocument();
     expect(screen.getByText("Traded")).toBeInTheDocument();
     expect(screen.getByText("@ann to @max")).toBeInTheDocument();
@@ -336,7 +337,7 @@ describe("CardBackProvenance", () => {
         face={face()}
         copy={{
           experience: 0,
-          inscription: { text: "Hello", signerHandle: null, signedAt: null },
+          inscription: { text: "Hello", signerName: null, signedAt: null },
           trail: [],
         }}
         artCredit={{

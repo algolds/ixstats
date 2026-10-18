@@ -1,6 +1,5 @@
 import type { HubPlayer } from "~/lib/cards/hub/players";
-import { db } from "~/server/db";
-import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
+import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import {
   loadPassportSettings,
   loadVaultCardsShown,
@@ -26,25 +25,18 @@ export async function holderOf(handle: string): Promise<string | null> {
 }
 
 /**
- * The players a card surface names, in one batch: one user read and one passport read for all of them, then each
- * passport handle (`loadPassportHandle`, which reads nothing more for a stored handle). A user who no longer exists is
- * left out.
+ * The players a card surface names, in one batch: their names by the identity rule (`loadPlayerNames`) and one passport
+ * read for all of them. A user who no longer exists is left out.
  */
 export async function playersOf(userIds: readonly string[]): Promise<Map<string, HubPlayer>> {
-  const ids = [...new Set(userIds)];
-  if (ids.length === 0) return new Map();
-  const [users, shown] = await Promise.all([
-    db.user.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, clerkUserId: true, handle: true, forumUsername: true },
-    }),
-    loadVaultCardsShown(ids),
+  const [names, shown] = await Promise.all([
+    loadPlayerNames(userIds),
+    loadVaultCardsShown(userIds),
   ]);
-  const named = await Promise.all(
-    users.map(async (user): Promise<[string, HubPlayer]> => [
-      user.id,
-      { handle: await loadPassportHandle(user), showsVault: shown.has(user.id) },
+  return new Map(
+    [...names].map(([id, name]): [string, HubPlayer] => [
+      id,
+      { name: name.displayName, showsVault: shown.has(id) },
     ])
   );
-  return new Map(named);
 }

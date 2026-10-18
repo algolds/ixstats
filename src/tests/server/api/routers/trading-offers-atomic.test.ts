@@ -23,8 +23,8 @@ jest.mock("~/lib/cache", () => ({
 jest.mock("~/lib/cards/xp-utils", () => ({
   grantCardXp: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("~/server/modules/identity/identity.passport-handle", () => ({
-  loadPassportHandle: jest.fn(),
+jest.mock("~/server/modules/identity/identity.player-names", () => ({
+  loadPlayerNames: jest.fn(),
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
@@ -32,7 +32,7 @@ import { tradingOffersRouter } from "~/server/api/routers/trading/offers";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
-import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
+import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
 
@@ -279,19 +279,33 @@ describe("createtradeOffer", () => {
     recipientCardIds: ["cr_1"],
   };
 
-  it("tells the recipient who sent the offer by passport handle, and links to the Market's trades", async () => {
-    // A sender with no stored handle is named by the rest of the chain (here a forum name), never "A player".
-    jest.mocked(loadPassportHandle).mockResolvedValue("Helvianir");
+  it("tells the recipient who sent the offer by the identity rule, and links to the Market's trades", async () => {
+    // A sender whose handle is only their Clerk id is named by their nation.
+    jest
+      .mocked(loadPlayerNames)
+      .mockResolvedValue(
+        new Map([[RECIPIENT, { handle: "test_user_clerk_id", displayName: "Caphiria" }]])
+      );
     await offerCaller().createtradeOffer(offer);
-    expect(loadPassportHandle).toHaveBeenCalledWith(
-      expect.objectContaining({ id: RECIPIENT, clerkUserId: "test_user_clerk_id" })
-    );
+    expect(loadPlayerNames).toHaveBeenCalledWith([RECIPIENT]);
     expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "clerk_recip",
-        message: "@Helvianir sent you a trade offer with 1 card(s)",
+        message: "Caphiria sent you a trade offer with 1 card(s)",
         href: "/vault/cards/market?tab=trades",
       })
+    );
+  });
+
+  it("tells the recipient a player sent the offer when the sender has no name to show", async () => {
+    jest
+      .mocked(loadPlayerNames)
+      .mockResolvedValue(
+        new Map([[RECIPIENT, { handle: "test_user_clerk_id", displayName: null }]])
+      );
+    await offerCaller().createtradeOffer(offer);
+    expect(jest.mocked(notificationAPI.create)).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "A player sent you a trade offer with 1 card(s)" })
     );
   });
 

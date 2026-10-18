@@ -12,8 +12,7 @@ const HISTORY_LIMIT = 50;
 
 function entryTitle(entry: HistoryEntry): string {
   if (entry.kind === "auction") return `Auction · ${entry.face?.title ?? "a card"}`;
-  const partner = entry.partnerHandle ? `@${entry.partnerHandle}` : "a player";
-  return `Trade with ${partner} · gave ${entry.gave}, got ${entry.got}`;
+  return `Trade with ${entry.partnerName ?? "a player"} · gave ${entry.gave}, got ${entry.got}`;
 }
 
 function entryDetails(entry: HistoryEntry): string {

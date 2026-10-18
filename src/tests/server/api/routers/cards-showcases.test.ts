@@ -52,7 +52,7 @@ const callerFor = (db = createMockPrisma()) =>
 beforeEach(() => jest.clearAllMocks());
 
 describe("cards showcases router", () => {
-  it("reads a showcase with its owner's passport handle and switch", async () => {
+  it("reads a showcase with its owner's name and switch", async () => {
     const db = createMockPrisma();
     await callerFor(db).getShowcase({ showcaseId: "s1" });
     expect(getShowcase).toHaveBeenCalledWith(db, "db_me", "s1", { playersOf });

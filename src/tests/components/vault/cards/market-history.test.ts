@@ -1,7 +1,7 @@
 /** @jest-environment node */
 import { mergeMarketHistory } from "~/components/vault/cards/market/market-history";
 
-const party = (clerkUserId: string, passportHandle: string) => ({ clerkUserId, passportHandle });
+const party = (clerkUserId: string, displayName: string | null) => ({ clerkUserId, displayName });
 
 describe("mergeMarketHistory", () => {
   it("puts trades and auctions in one list, newest first, from the viewer's side", () => {
@@ -13,8 +13,8 @@ describe("mergeMarketHistory", () => {
           updatedAt: new Date("2026-10-03T00:00:00Z"),
           initiatorCardIds: ["o1", "o2"],
           recipientCardIds: ["o3"],
-          initiator: party("clerk_me", "max"),
-          recipient: party("clerk_ann", "ann"),
+          initiator: party("clerk_me", "@max"),
+          recipient: party("clerk_ann", "@ann"),
         },
       ],
       [
@@ -40,7 +40,7 @@ describe("mergeMarketHistory", () => {
     expect(entries.map((e) => e.id)).toEqual(["a1", "t1", "a2"]);
     expect(entries[1]).toMatchObject({
       kind: "trade",
-      partnerHandle: "ann",
+      partnerName: "@ann",
       gave: 2,
       got: 1,
       label: "Completed",
@@ -58,15 +58,15 @@ describe("mergeMarketHistory", () => {
           updatedAt: new Date(),
           initiatorCardIds: ["o1"],
           recipientCardIds: [],
-          initiator: party("clerk_ann", "Helvianir"),
-          recipient: party("clerk_me", "max"),
+          initiator: party("clerk_ann", "Caphiria"),
+          recipient: party("clerk_me", "@max"),
         },
       ],
       [],
       "clerk_me"
     );
-    // A partner with no stored handle is named by the rest of the passport chain.
-    expect(entry).toMatchObject({ partnerHandle: "Helvianir", gave: 0, got: 1, label: "Declined" });
+    // The server names the partner (here by nation: they have no handle), and the history keeps it.
+    expect(entry).toMatchObject({ partnerName: "Caphiria", gave: 0, got: 1, label: "Declined" });
   });
 
   it("names every finished status, and every part in an auction", () => {
@@ -77,7 +77,7 @@ describe("mergeMarketHistory", () => {
       updatedAt: at,
       initiatorCardIds: null,
       recipientCardIds: { not: "a list" },
-      initiator: party("clerk_me", "max"),
+      initiator: party("clerk_me", "@max"),
       recipient: null,
     });
     const auction = (id: string, participation: "sold" | "bid") => ({
@@ -100,7 +100,7 @@ describe("mergeMarketHistory", () => {
       "Sold",
       "Outbid",
     ]);
-    expect(entries[0]).toMatchObject({ partnerHandle: null, gave: 0, got: 0 });
+    expect(entries[0]).toMatchObject({ partnerName: null, gave: 0, got: 0 });
     // Without a final price, an auction stands at its last bid.
     expect(entries[3]).toMatchObject({ price: 75 });
   });

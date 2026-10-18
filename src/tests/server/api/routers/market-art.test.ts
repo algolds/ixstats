@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /** A partner's tradeable cards, a trade's sides and past auctions never carry art the viewer may not see. */
 jest.mock("~/server/db", () => ({ db: {} }));
-jest.mock("~/server/modules/identity/identity.passport-handles", () => ({
-  loadPassportHandlesById: jest.fn(),
+jest.mock("~/server/modules/identity/identity.player-names", () => ({
+  loadPlayerNames: jest.fn(),
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
@@ -11,7 +11,7 @@ import { cardsInventoryRouter } from "~/server/api/routers/cards/inventory";
 import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
-import { loadPassportHandlesById } from "~/server/modules/identity/identity.passport-handles";
+import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 
 type MockDb = ReturnType<typeof createMockPrisma>;
 const contextFor = (db: MockDb, signedIn = true) =>
@@ -206,12 +206,12 @@ describe("a partner's tradeable copies", () => {
 
 beforeEach(() => {
   jest
-    .mocked(loadPassportHandlesById)
+    .mocked(loadPlayerNames)
     .mockClear()
     .mockResolvedValue(
       new Map([
-        ["them", "ann"],
-        ["me", "max"],
+        ["them", { handle: "clerk_them", displayName: "Caphiria" }],
+        ["me", { handle: "max", displayName: "@max" }],
       ])
     );
 });
@@ -224,7 +224,7 @@ describe("trade parties", () => {
     recipient: party(recipientId),
   });
 
-  it("names both sides of every open and finished trade by passport handle, one batched read a list", async () => {
+  it("names both sides of every open and finished trade by the identity rule, one batched read a list", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findMany.mockResolvedValue([
       offer("t1", "them", "me"),
@@ -233,27 +233,29 @@ describe("trade parties", () => {
     db.tradeOffer.count.mockResolvedValue(2);
 
     const open = await trading(db).getActiveTrades();
-    expect(open.map((t) => [t.initiator.passportHandle, t.recipient.passportHandle])).toEqual([
-      ["ann", "max"],
-      ["max", "ann"],
+    expect(open.map((t) => [t.initiator.displayName, t.recipient.displayName])).toEqual([
+      ["Caphiria", "@max"],
+      ["@max", "Caphiria"],
     ]);
-    expect(loadPassportHandlesById).toHaveBeenCalledTimes(1);
-    expect(loadPassportHandlesById).toHaveBeenCalledWith(["them", "me", "me", "them"]);
+    // The passport handle stays for the holder link, even a Clerk id, which resolves.
+    expect(open.map((t) => t.initiator.passportHandle)).toEqual(["clerk_them", "max"]);
+    expect(loadPlayerNames).toHaveBeenCalledTimes(1);
+    expect(loadPlayerNames).toHaveBeenCalledWith(["them", "me", "me", "them"]);
 
     const history = await trading(db).getTradeHistory({});
-    expect(history.trades.map((t) => t.recipient.passportHandle)).toEqual(["max", "ann"]);
-    expect(loadPassportHandlesById).toHaveBeenCalledTimes(2);
+    expect(history.trades.map((t) => t.recipient.displayName)).toEqual(["@max", "Caphiria"]);
+    expect(loadPlayerNames).toHaveBeenCalledTimes(2);
     // The stored handle is only the first link of the chain, so it is not read for a trade.
     expect(db.tradeOffer.findMany.mock.calls[0]![0].include.initiator.select).not.toHaveProperty(
       "handle"
     );
   });
 
-  it("names a player the chain could not read by their Clerk id, the chain's last link", async () => {
+  it("links a player the names could not read by their Clerk id, and calls them a player", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findMany.mockResolvedValue([offer("t1", "gone", "me")]);
     const [trade] = await trading(db).getActiveTrades();
-    expect(trade!.initiator.passportHandle).toBe("clerk_gone");
+    expect(trade!.initiator).toMatchObject({ passportHandle: "clerk_gone", displayName: null });
   });
 });
 
@@ -310,8 +312,8 @@ describe("trade details", () => {
     expect(result).toMatchObject({
       initiatorValue: 35,
       recipientValue: 12,
-      initiator: { passportHandle: "ann" },
-      recipient: { passportHandle: "max" },
+      initiator: { passportHandle: "clerk_them", displayName: "Caphiria" },
+      recipient: { passportHandle: "max", displayName: "@max" },
     });
   });
 

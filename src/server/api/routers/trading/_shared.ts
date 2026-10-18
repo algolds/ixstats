@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { TradeStatus } from "~/lib/vault/trade-settlement";
 import type { getVaultConfig } from "~/lib/vault/vault-service";
-import { loadPassportHandlesById } from "~/server/modules/identity/identity.passport-handles";
+import { loadPlayerNames, type PlayerName } from "~/server/modules/identity/identity.player-names";
 
 const PARTY_SELECT = {
   select: {
@@ -11,7 +11,7 @@ const PARTY_SELECT = {
   },
 } as const;
 
-/** Both sides of a trade; `withPartyHandles` names them. */
+/** Both sides of a trade; `withPartyNames` names them. */
 export const TRADE_PARTIES_INCLUDE = { initiator: PARTY_SELECT, recipient: PARTY_SELECT } as const;
 
 interface Party {
@@ -20,32 +20,41 @@ interface Party {
 }
 type Parties = { initiator: Party; recipient: Party };
 
-/** The passport handle of every player in these trades, in one batched read. */
-const handlesOf = (trades: readonly Parties[]) =>
-  loadPassportHandlesById(trades.flatMap((trade) => [trade.initiator.id, trade.recipient.id]));
+/** The name of every player in these trades, in one batched read. */
+const namesOf = (trades: readonly Parties[]) =>
+  loadPlayerNames(trades.flatMap((trade) => [trade.initiator.id, trade.recipient.id]));
 
-/** A party named by passport handle; the Clerk id is the chain's last link. */
-function named<P extends Party>(party: P, handles: ReadonlyMap<string, string>) {
-  return { ...party, passportHandle: handles.get(party.id) ?? party.clerkUserId };
-}
-
-function nameParties<T extends Parties>(trade: T, handles: ReadonlyMap<string, string>) {
+/**
+ * A party with their passport handle, for the holder link (the Clerk id, the chain's last link, when it is all they
+ * have), and their name by the identity rule (null reads "a player"). A trade is direct, so the vaultCards switch does
+ * not hide a partner.
+ */
+function named<P extends Party>(party: P, names: ReadonlyMap<string, PlayerName>) {
+  const name = names.get(party.id);
   return {
-    ...trade,
-    initiator: named(trade.initiator, handles),
-    recipient: named(trade.recipient, handles),
+    ...party,
+    passportHandle: name?.handle ?? party.clerkUserId,
+    displayName: name?.displayName ?? null,
   };
 }
 
-/** Trades with both sides named by passport handle: a trade is direct, so a partner is always named. */
-export async function withPartyHandles<T extends Parties>(trades: readonly T[]) {
-  const handles = await handlesOf(trades);
-  return trades.map((trade) => nameParties(trade, handles));
+function nameParties<T extends Parties>(trade: T, names: ReadonlyMap<string, PlayerName>) {
+  return {
+    ...trade,
+    initiator: named(trade.initiator, names),
+    recipient: named(trade.recipient, names),
+  };
 }
 
-/** One trade with both sides named by passport handle. */
-export async function withPartyHandle<T extends Parties>(trade: T) {
-  return nameParties(trade, await handlesOf([trade]));
+/** Trades with both sides named. */
+export async function withPartyNames<T extends Parties>(trades: readonly T[]) {
+  const names = await namesOf(trades);
+  return trades.map((trade) => nameParties(trade, names));
+}
+
+/** One trade with both sides named. */
+export async function withPartyName<T extends Parties>(trade: T) {
+  return nameParties(trade, await namesOf([trade]));
 }
 
 export const FINISHED_TRADE_STATUSES = [

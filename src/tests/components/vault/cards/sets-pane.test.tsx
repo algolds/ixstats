@@ -72,7 +72,7 @@ const view = (overrides: Partial<ShowcaseView> = {}): ShowcaseView => ({
   description: null,
   isPublic: true,
   pinned: false,
-  ownerHandle: "me",
+  ownerName: "@me",
   isOwner: true,
   items: [{ itemId: "i1", face: face(1) }],
   ...overrides,
@@ -276,10 +276,11 @@ describe("SetsPane, one showcase", () => {
 
   it("opens another player's showcase cards with their art, read only", () => {
     shown(
-      view({ id: "s2", name: "Ann's", description: "Mine", ownerHandle: "ann", isOwner: false })
+      view({ id: "s2", name: "Ann's", description: "Mine", ownerName: "Caphiria", isOwner: false })
     );
     const { onOpenCard } = renderPane("s2");
-    expect(screen.getByText("By @ann")).toBeInTheDocument();
+    // The server names the owner (a handle, or the nation of a player with none); the view adds nothing.
+    expect(screen.getByText("By Caphiria")).toBeInTheDocument();
     expect(screen.getByText("Mine")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remove/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Pin/ })).toBeNull();
@@ -287,6 +288,12 @@ describe("SetsPane, one showcase", () => {
     expect(screen.queryByText("Public")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay" }));
     expect(onOpenCard).toHaveBeenCalledWith("c1", { kind: "showcase", id: "s2" });
+  });
+
+  it("calls another player's showcase owner a player when the server has no name for them", () => {
+    shown(view({ id: "s2", ownerName: null, isOwner: false }));
+    renderPane("s2");
+    expect(screen.getByText("By a player")).toBeInTheDocument();
   });
 
   it("draws a retired copy with the placeholder face", () => {

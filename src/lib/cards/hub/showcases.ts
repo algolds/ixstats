@@ -44,8 +44,8 @@ export interface ShowcaseView {
   description: string | null;
   isPublic: boolean;
   pinned: boolean;
-  /** Another player's showcase names its owner by passport handle; null on the viewer's own. */
-  ownerHandle: string | null;
+  /** Another player's showcase names its owner (`HubPlayer.name`; null reads "a player"); null on the viewer's own. */
+  ownerName: string | null;
   isOwner: boolean;
   items: ShowcaseItem[];
 }
@@ -134,7 +134,7 @@ export async function getShowcase(
     description: row.description,
     isPublic: row.isPublic,
     pinned: pinTime(row) > 0,
-    ownerHandle: owner?.handle ?? null,
+    ownerName: owner?.name ?? null,
     isOwner,
     items: items.map((item) => ({ itemId: item.id, face: itemFace(item) })),
   };

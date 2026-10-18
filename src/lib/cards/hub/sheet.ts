@@ -68,8 +68,8 @@ export interface SheetCopy {
   experience: number;
   acquiredAt: Date;
   isLocked: boolean;
-  /** The signer by passport handle; null names them "a player". */
-  inscription: { text: string; signerHandle: string | null; signedAt: Date | null } | null;
+  /** The signer's name (`HubPlayer.name`); null names them "a player". */
+  inscription: { text: string; signerName: string | null; signedAt: Date | null } | null;
   trail: TrailEvent[];
 }
 
@@ -79,8 +79,8 @@ export interface SheetListing {
   buyoutPrice: number | null;
   endTime: Date;
   bidCount: number;
-  /** The seller's passport handle, or null ("A player") while their passport hides Vault cards. */
-  sellerHandle: string | null;
+  /** The seller's name (`HubPlayer.name`); null ("A player") while their passport hides Vault cards, or with no name. */
+  sellerName: string | null;
   isMine: boolean;
 }
 
@@ -184,7 +184,7 @@ function toSheetListing(
     buyoutPrice: row.buyoutPrice,
     endTime: row.endTime,
     bidCount: row.bidCount,
-    sellerHandle: nameOf(row.sellerId),
+    sellerName: nameOf(row.sellerId),
     isMine: row.sellerId === viewerId,
   };
 }
@@ -239,13 +239,13 @@ function namedPlayers(
 }
 
 /**
- * A player's name on the sheet: their passport handle, or null ("a player") while their passport hides Vault cards, or
- * when they no longer exist. The viewer always sees their own.
+ * A player's name on the sheet: their name by the identity rule, or null ("a player") while their passport hides Vault
+ * cards, or when they no longer exist. The viewer always sees their own.
  */
 function namer(players: ReadonlyMap<string, HubPlayer>, viewerId: string | null) {
   return (id: string): string | null => {
     const player = players.get(id);
-    return player && (player.showsVault || id === viewerId) ? player.handle : null;
+    return player && (player.showsVault || id === viewerId) ? player.name : null;
   };
 }
 
@@ -255,7 +255,7 @@ function playersNamed(rules: PlayerRules, ids: string[]): Promise<ReadonlyMap<st
 }
 
 function trailOf(events: readonly TrailRow[], nameOf: (id: string) => string | null) {
-  const party = (id: string | null) => (id === null ? null : { handle: nameOf(id) });
+  const party = (id: string | null) => (id === null ? null : { name: nameOf(id) });
   return (copyId: string): TrailEvent[] =>
     events
       .filter((e) => e.ownershipId === copyId)
@@ -283,7 +283,7 @@ function toSheetCopy(
     inscription: copy.inscription
       ? {
           text: copy.inscription,
-          signerHandle: copy.inscribedById ? nameOf(copy.inscribedById) : null,
+          signerName: copy.inscribedById ? nameOf(copy.inscribedById) : null,
           signedAt: copy.inscribedAt,
         }
       : null,
