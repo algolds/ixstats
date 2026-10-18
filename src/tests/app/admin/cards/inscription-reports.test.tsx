@@ -19,6 +19,7 @@ jest.mock("~/trpc/react", () => ({
 
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { INSCRIPTION_QUEUE_SIZE } from "~/lib/cards/inscription";
 import { InscriptionReports } from "~/app/admin/cards/compliance/InscriptionReports";
 
 type Report = RouterOutputs["cards"]["admin"]["compliance"]["inscriptionReports"][number];
@@ -38,6 +39,7 @@ const report = (fields: Partial<Report> = {}): Report => ({
   ownershipId: "o1",
   cardId: "c1",
   cardTitle: "Aurelia",
+  serialNumber: 12,
   text: "bad words",
   signerName: "@troll",
   reporterName: "@ixnay",
@@ -46,26 +48,32 @@ const report = (fields: Partial<Report> = {}): Report => ({
   ...fields,
 });
 
-function serve(
-  query: { data?: Report[]; isLoading?: boolean; isError?: boolean },
-  { pending = false } = {}
-) {
-  jest.mocked(useNotify).mockReturnValue(notify as never);
-  jest.mocked(api.useUtils).mockReturnValue({
-    cards: { admin: { compliance: { inscriptionReports: { invalidate } } } },
-  } as never);
+/** What the queue's query returns, as after a refresh. */
+function queue(query: { data?: Report[]; isLoading?: boolean; isError?: boolean }) {
   jest.mocked(compliance.inscriptionReports.useQuery).mockReturnValue({
     isLoading: false,
     isError: false,
     ...query,
   } as never);
+}
+
+function serve(
+  query: { data?: Report[]; isLoading?: boolean; isError?: boolean },
+  { pending = false } = {},
+  ui: React.ReactElement = <InscriptionReports />
+) {
+  jest.mocked(useNotify).mockReturnValue(notify as never);
+  jest.mocked(api.useUtils).mockReturnValue({
+    cards: { admin: { compliance: { inscriptionReports: { invalidate } } } },
+  } as never);
+  queue(query);
   jest.mocked(compliance.resolveInscriptionReport.useMutation).mockImplementation(((
     options: ResolveOptions
   ) => {
     resolveOptions = options;
     return { mutate, isPending: pending };
   }) as never);
-  return render(<InscriptionReports />);
+  return render(ui);
 }
 
 const reported = new Date("2026-11-02T12:00:00Z").toLocaleDateString();
@@ -78,14 +86,14 @@ beforeEach(() => {
 it("lists an open report with its inscription, card, both players and the reason", () => {
   serve({ data: [report()] });
   expect(screen.getByText("“bad words”")).toBeInTheDocument();
-  expect(screen.getByText("Aurelia · signed by @troll")).toBeInTheDocument();
+  expect(screen.getByText("Aurelia #12 · signed by @troll")).toBeInTheDocument();
   expect(screen.getByText("slur")).toBeInTheDocument();
   expect(screen.getByText(`Reported by @ixnay · ${reported}`)).toBeInTheDocument();
 });
 
 it("reads a player the queue cannot name as a player", () => {
   serve({ data: [report({ signerName: null, reporterName: null })] });
-  expect(screen.getByText("Aurelia · signed by a player")).toBeInTheDocument();
+  expect(screen.getByText("Aurelia #12 · signed by a player")).toBeInTheDocument();
   expect(screen.getByText(`Reported by a player · ${reported}`)).toBeInTheDocument();
 });
 
@@ -103,7 +111,7 @@ it("shows the inscription, the reason and the names as plain text, never as mark
   expect(screen.getByText("“<b>loud</b>”")).toBeInTheDocument();
   expect(screen.getByText("<img src=x onerror=alert(1)>")).toBeInTheDocument();
   expect(
-    screen.getByText('Aurelia · signed by <a href="https://example.org">me</a>')
+    screen.getByText('Aurelia #12 · signed by <a href="https://example.org">me</a>')
   ).toBeInTheDocument();
   expect(screen.getByText(`Reported by **bold** · ${reported}`)).toBeInTheDocument();
   expect(container.querySelector("b, img, a, strong")).toBeNull();
@@ -111,10 +119,10 @@ it("shows the inscription, the reason and the names as plain text, never as mark
 
 it("clears an inscription only once the admin confirms", () => {
   serve({ data: [report()] });
-  fireEvent.click(screen.getByRole("button", { name: "Clear inscription on Aurelia" }));
+  fireEvent.click(screen.getByRole("button", { name: "Clear inscription on Aurelia #12" }));
   const dialog = screen.getByRole("alertdialog", { name: "Clear this inscription?" });
   expect(dialog).toHaveTextContent(
-    "The text and the signer's name come off this copy of Aurelia, and it can't be signed again. Every open report on it closes."
+    "The text and the signer's name come off Aurelia #12, and it can't be signed again. Every open report on it closes."
   );
   expect(mutate).not.toHaveBeenCalled();
   fireEvent.click(within(dialog).getByRole("button", { name: "Clear inscription" }));
@@ -123,7 +131,7 @@ it("clears an inscription only once the admin confirms", () => {
 
 it("clears nothing when the confirmation is cancelled, and gives focus back to its button", async () => {
   serve({ data: [report()] });
-  const clear = screen.getByRole("button", { name: "Clear inscription on Aurelia" });
+  const clear = screen.getByRole("button", { name: "Clear inscription on Aurelia #12" });
   fireEvent.click(clear);
   fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
   await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
@@ -132,10 +140,11 @@ it("clears nothing when the confirmation is cancelled, and gives focus back to i
 });
 
 it("dismisses a report at once, each row acting on its own report", () => {
-  serve({ data: [report(), report({ id: "r2", cardTitle: "Borealis" })] });
-  fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Borealis" }));
+  // Two copies of one card: the serial tells their rows apart
+  serve({ data: [report(), report({ id: "r2", ownershipId: "o2", serialNumber: 13 })] });
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Aurelia #13" }));
   expect(mutate).toHaveBeenCalledWith({ reportId: "r2", action: "dismiss" });
-  fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Aurelia" }));
+  fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Aurelia #12" }));
   expect(mutate).toHaveBeenLastCalledWith({ reportId: "r1", action: "dismiss" });
 });
 
@@ -161,8 +170,8 @@ it("says so when another admin handled the report first, and refreshes the queue
 
 it("keeps every action off while one is on its way", () => {
   serve({ data: [report()] }, { pending: true });
-  expect(screen.getByRole("button", { name: "Clear inscription on Aurelia" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Dismiss report on Aurelia" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Clear inscription on Aurelia #12" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Dismiss report on Aurelia #12" })).toBeDisabled();
 });
 
 it("says when no report is open", () => {
@@ -182,3 +191,112 @@ it("announces loading, and says when the reports did not load", () => {
   );
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
+
+it("says when the queue shows only the oldest reports it can hold", () => {
+  const full = Array.from({ length: INSCRIPTION_QUEUE_SIZE }, (_, i) =>
+    report({ id: `r${i}`, serialNumber: i + 1 })
+  );
+  const note = "The queue shows the oldest 100 open reports at a time.";
+  const { unmount } = serve({ data: full });
+  expect(screen.getByText(note)).toBeInTheDocument();
+  unmount();
+  serve({ data: full.slice(1) });
+  expect(screen.queryByText(note)).not.toBeInTheDocument();
+});
+
+describe("focus once a report leaves the queue", () => {
+  const second = () => report({ id: "r2", ownershipId: "o2", serialNumber: 13 });
+
+  it("moves to the next row's action after a dismiss, and to the heading after the last row", () => {
+    const view = serve({ data: [report(), second()] });
+    const dismiss = screen.getByRole("button", { name: "Dismiss report on Aurelia #12" });
+    dismiss.focus();
+    fireEvent.click(dismiss);
+    queue({ data: [second()] });
+    view.rerender(<InscriptionReports />);
+    expect(screen.getByRole("button", { name: "Clear inscription on Aurelia #13" })).toHaveFocus();
+
+    const last = screen.getByRole("button", { name: "Dismiss report on Aurelia #13" });
+    last.focus();
+    fireEvent.click(last);
+    queue({ data: [] });
+    view.rerender(<InscriptionReports />);
+    expect(screen.getByText("Reported inscriptions")).toHaveFocus();
+  });
+
+  it("moves to the heading after a confirmed clear of the bottom row", async () => {
+    const view = serve({ data: [second(), report()] });
+    const clear = screen.getByRole("button", { name: "Clear inscription on Aurelia #12" });
+    clear.focus();
+    fireEvent.click(clear);
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Clear inscription" })
+    );
+    await waitFor(() => expect(clear).toHaveFocus());
+    queue({ data: [second()] });
+    view.rerender(<InscriptionReports />);
+    expect(screen.getByText("Reported inscriptions")).toHaveFocus();
+  });
+
+  it("leaves focus where the admin moved it, and moves nothing for a row still there", () => {
+    const view = serve({ data: [report(), second()] });
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Aurelia #12" }));
+    const elsewhere = screen.getByRole("button", { name: "Dismiss report on Aurelia #13" });
+    elsewhere.focus();
+    queue({ data: [second()] });
+    view.rerender(<InscriptionReports />);
+    expect(elsewhere).toHaveFocus();
+
+    const kept = screen.getByRole("button", { name: "Dismiss report on Aurelia #13" });
+    kept.focus();
+    fireEvent.click(kept);
+    kept.blur();
+    view.rerender(<InscriptionReports />);
+    expect(document.body).toHaveFocus();
+  });
+
+  it("moves focus once, not again on a later render after the admin leaves it", () => {
+    const view = serve({ data: [report(), second()] });
+    const dismiss = screen.getByRole("button", { name: "Dismiss report on Aurelia #12" });
+    dismiss.focus();
+    fireEvent.click(dismiss);
+    queue({ data: [second()] });
+    view.rerender(<InscriptionReports />);
+    const next = screen.getByRole("button", { name: "Clear inscription on Aurelia #13" });
+    expect(next).toHaveFocus();
+    next.blur();
+    view.rerender(<InscriptionReports />);
+    expect(document.body).toHaveFocus();
+  });
+
+  it("moves focus before an enclosing focus trap can catch it", () => {
+    const view = serve({ data: [report(), second()] }, {}, <WithTrap trapping={false} />);
+    const dismiss = screen.getByRole("button", { name: "Dismiss report on Aurelia #12" });
+    dismiss.focus();
+    fireEvent.click(dismiss);
+    queue({ data: [second()] });
+    view.rerender(<WithTrap trapping />);
+    expect(screen.getByRole("button", { name: "Clear inscription on Aurelia #13" })).toHaveFocus();
+  });
+});
+
+/**
+ * The queue beside a stand-in for an enclosing sheet's focus trap, which takes focus lost to the page as soon as the
+ * DOM changes: a sibling's layout effect, which runs after the queue's and before any passive effect.
+ */
+function WithTrap({ trapping }: { trapping: boolean }) {
+  return (
+    <>
+      <InscriptionReports />
+      {trapping && <FocusTrap />}
+    </>
+  );
+}
+
+function FocusTrap() {
+  const trap = React.useRef<HTMLButtonElement>(null);
+  React.useLayoutEffect(() => {
+    if (document.activeElement === document.body) trap.current?.focus();
+  });
+  return <button ref={trap}>Sheet</button>;
+}

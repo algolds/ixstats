@@ -1,6 +1,6 @@
 /** The player cards sheet: a player's copies, packs, auctions, listings and trades, and the admin tools on them. */
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -92,18 +92,7 @@ function setup(inventory: Partial<Inventory> = {}, pending?: keyof typeof mutati
       { id: "pack_2", name: "Jubilee", cardCount: 3, isActive: false },
     ],
   } as never);
-  jest.mocked(tools.playerCards.useQuery).mockReturnValue({
-    data: {
-      copyCount: 1,
-      room: 99,
-      copies: [copy()],
-      packs: [],
-      auctions: [],
-      listings: [],
-      trades: [],
-      ...inventory,
-    },
-  } as never);
+  serveInventory(inventory);
   // Each mutation succeeds at once, as the server would, so its dialog closes; a pending one is still on its way
   for (const [name, mutate] of Object.entries(mutations)) {
     jest.mocked(tools[name as keyof typeof mutations].useMutation).mockImplementation(((options: {
@@ -116,9 +105,27 @@ function setup(inventory: Partial<Inventory> = {}, pending?: keyof typeof mutati
       isPending: name === pending,
     })) as never);
   }
-  render(
-    <PlayerCardsSheet player={{ id: "user_1", displayName: "Elmland" }} onOpenChange={jest.fn()} />
-  );
+  return render(sheet());
+}
+
+const sheet = () => (
+  <PlayerCardsSheet player={{ id: "user_1", displayName: "Elmland" }} onOpenChange={jest.fn()} />
+);
+
+/** What the inventory query returns, as after a refresh. */
+function serveInventory(inventory: Partial<Inventory>) {
+  jest.mocked(tools.playerCards.useQuery).mockReturnValue({
+    data: {
+      copyCount: 1,
+      room: 99,
+      copies: [copy()],
+      packs: [],
+      auctions: [],
+      listings: [],
+      trades: [],
+      ...inventory,
+    },
+  } as never);
 }
 
 const openTab = (name: RegExp) =>
@@ -304,4 +311,27 @@ it("says when a player has nothing live on the market", () => {
   expect(screen.getByRole("tab", { name: "Market and trades" })).toBeInTheDocument();
   openTab(/Market and trades/);
   expect(screen.getByText("No live auctions, listings or pending trades")).toBeInTheDocument();
+});
+
+it("moves focus to the next row's cancel once a cancelled listing leaves, and to the list after the last", async () => {
+  const oak = listing({ id: "lst_2", title: "Oak #1" });
+  const view = setup({ listings: [listing(), oak] });
+  openTab(/Market and trades/);
+  const cancelElm = screen.getByRole("button", { name: "Cancel listing of Elm #4" });
+  cancelElm.focus();
+  fireEvent.click(cancelElm);
+  confirmWithReason("Cancel the listing of Elm #4", "Wrong price", "Cancel listing");
+  await waitFor(() => expect(cancelElm).toHaveFocus());
+  serveInventory({ listings: [oak] });
+  view.rerender(sheet());
+  const cancelOak = screen.getByRole("button", { name: "Cancel listing of Oak #1" });
+  expect(cancelOak).toHaveFocus();
+
+  fireEvent.click(cancelOak);
+  confirmWithReason("Cancel the listing of Oak #1", "Wrong price", "Cancel listing");
+  await waitFor(() => expect(cancelOak).toHaveFocus());
+  serveInventory({});
+  view.rerender(sheet());
+  const empty = screen.getByText("No live auctions, listings or pending trades");
+  expect(empty.closest("[tabindex='-1']")).toHaveFocus();
 });

@@ -3,9 +3,12 @@
  * Reported inscriptions, oldest first: clear one (its copy can't be signed again) or dismiss the report. Players type
  * the inscription and the reason, so everything here renders as plain text.
  */
+import { useRef } from "react";
 import { ChatBubbleWarning } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useRowFocusRescue } from "~/hooks/admin/useRowFocusRescue";
 import { useNotify } from "~/hooks/useNotify";
+import { INSCRIPTION_QUEUE_SIZE } from "~/lib/cards/inscription";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +39,8 @@ type Resolve = (report: Report, action: "clear" | "dismiss") => void;
 /** A player the queue has no name for (gone, or never named) reads "a player". */
 const named = (name: string | null) => name ?? "a player";
 const day = (date: Date) => new Date(date).toLocaleDateString();
+/** The reported copy, by card and serial ("Aurelia #12"). */
+const copyName = (report: Report) => `${report.cardTitle} #${report.serialNumber}`;
 
 /** Clearing can't be undone, so it asks first; the dialog's trigger gets focus back when it closes. */
 function ClearInscription({
@@ -54,7 +59,8 @@ function ClearInscription({
           size="xs"
           variant="destructive"
           disabled={busy}
-          aria-label={`Clear inscription on ${report.cardTitle}`}
+          aria-label={`Clear inscription on ${copyName(report)}`}
+          data-row-action=""
         >
           Clear inscription
         </Button>
@@ -63,7 +69,7 @@ function ClearInscription({
         <AlertDialogHeader>
           <AlertDialogTitle>Clear this inscription?</AlertDialogTitle>
           <AlertDialogDescription>
-            {`The text and the signer's name come off this copy of ${report.cardTitle}, and it can't be signed again. Every open report on it closes.`}
+            {`The text and the signer's name come off ${copyName(report)}, and it can't be signed again. Every open report on it closes.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -91,7 +97,7 @@ function ReportRow({
       <TableCell className="max-w-64 whitespace-normal">
         <p className="break-words">{`“${report.text}”`}</p>
         <p className="text-footnote text-label-secondary">
-          {`${report.cardTitle} · signed by ${named(report.signerName)}`}
+          {`${copyName(report)} · signed by ${named(report.signerName)}`}
         </p>
       </TableCell>
       <TableCell className="max-w-64 whitespace-normal">
@@ -106,7 +112,7 @@ function ReportRow({
           size="xs"
           variant="ghost"
           disabled={busy}
-          aria-label={`Dismiss report on ${report.cardTitle}`}
+          aria-label={`Dismiss report on ${copyName(report)}`}
           onClick={() => onResolve(report, "dismiss")}
         >
           Dismiss
@@ -120,6 +126,14 @@ export function InscriptionReports() {
   const notify = useNotify();
   const utils = api.useUtils();
   const reports = api.cards.admin.compliance.inscriptionReports.useQuery();
+  const rows = reports.data ?? [];
+  const list = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLDivElement>(null);
+  const acted = useRowFocusRescue(
+    rows.map((report) => report.id),
+    list,
+    heading
+  );
   const refresh = () => void utils.cards.admin.compliance.inscriptionReports.invalidate();
   const resolve = api.cards.admin.compliance.resolveInscriptionReport.useMutation({
     onSuccess: ({ status }) => {
@@ -132,15 +146,20 @@ export function InscriptionReports() {
       refresh();
     },
   });
-  const onResolve: Resolve = (report, action) => resolve.mutate({ reportId: report.id, action });
-  const rows = reports.data ?? [];
+  const onResolve: Resolve = (report, action) => {
+    acted(report.id);
+    resolve.mutate({ reportId: report.id, action });
+  };
 
   return (
     <Card content="data">
       <CardHeader className="pt-5">
-        <CardTitle icon={<ChatBubbleWarning />}>Reported inscriptions</CardTitle>
+        {/* Where focus goes when the last report it was on leaves */}
+        <CardTitle ref={heading} tabIndex={-1} icon={<ChatBubbleWarning />}>
+          Reported inscriptions
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 pb-5" aria-busy={reports.isLoading}>
+      <CardContent ref={list} className="space-y-4 pb-5" aria-busy={reports.isLoading}>
         {reports.isLoading && (
           <div role="status">
             <span className="sr-only">Loading reports</span>
@@ -158,6 +177,11 @@ export function InscriptionReports() {
             title="No open reports"
             message="Inscriptions players report appear here, oldest first."
           />
+        )}
+        {rows.length >= INSCRIPTION_QUEUE_SIZE && (
+          <p className="text-footnote text-label-secondary">
+            {`The queue shows the oldest ${INSCRIPTION_QUEUE_SIZE} open reports at a time.`}
+          </p>
         )}
         {rows.length > 0 && (
           <Table>

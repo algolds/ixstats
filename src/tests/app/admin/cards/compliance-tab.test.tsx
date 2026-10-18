@@ -104,6 +104,7 @@ function serve(options: {
         ownershipId: "own_1",
         cardId: "card_1",
         cardTitle: "Union Assembly",
+        serialNumber: 4,
         text: "first!",
         signerName: "@ann",
         reporterName: null,
@@ -301,7 +302,7 @@ describe("ComplianceTab inscriptions", () => {
     );
     expect(screen.getByText("“first!”")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "File a takedown" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Union Assembly" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Union Assembly #4" }));
     expect(mutations.resolveInscriptionReport).toHaveBeenCalledWith({
       reportId: "rep_1",
       action: "dismiss",

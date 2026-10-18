@@ -3,6 +3,7 @@
  * A player's live auctions, fixed-price listings and pending trades: cancel an auction (its held bid is refunded) or a
  * listing, or void a trade, each with a reason.
  */
+import { useRef } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { ReasonDialog } from "~/app/admin/cards/shared/ReasonDialog";
@@ -10,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { useDialogTarget } from "~/hooks/admin/useDialogTarget";
+import { useRowFocusRescue } from "~/hooks/admin/useRowFocusRescue";
 
 type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
 type Pending =
@@ -82,6 +84,13 @@ export function MarketSection({
   const utils = api.useUtils();
   const dialogTarget = useDialogTarget<Pending>();
   const pending = dialogTarget.target;
+  // The rows in the order they show; focus falls back to the list itself once the last one goes
+  const region = useRef<HTMLDivElement>(null);
+  const acted = useRowFocusRescue(
+    [...auctions, ...listings, ...trades].map((row) => row.id),
+    region,
+    region
+  );
   const done = (title: string) => {
     notify.success(title);
     dialogTarget.close();
@@ -101,6 +110,7 @@ export function MarketSection({
     onError,
   });
   const confirm = (reason: string) => {
+    if (pending) acted(pending.id);
     if (pending?.kind === "auction") cancel.mutate({ auctionId: pending.id, reason });
     if (pending?.kind === "listing") cancelListing.mutate({ listingId: pending.id, reason });
     if (pending?.kind === "trade") voidTrade.mutate({ tradeId: pending.id, reason });
@@ -108,85 +118,89 @@ export function MarketSection({
   // The copy follows the target last opened, which stays put while the dialog closes
   const dialog = dialogCopy(dialogTarget.shown);
 
-  if (auctions.length === 0 && listings.length === 0 && trades.length === 0) {
-    return <EmptyState compact title="No live auctions, listings or pending trades" />;
-  }
+  const empty = auctions.length === 0 && listings.length === 0 && trades.length === 0;
   return (
-    <div className="space-y-4">
-      <FacetList>
-        {auctions.length > 0 && (
-          <FacetListSection header="Live auctions">
-            {auctions.map((auction) => (
-              <FacetRow
-                key={auction.id}
-                title={auction.title}
-                subtitle={auctionLine(auction)}
-                trailing={
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    aria-label={`Cancel auction of ${auction.title}`}
-                    onClick={() =>
-                      dialogTarget.open({
-                        kind: "auction",
-                        id: auction.id,
-                        title: auction.title,
-                        hasBid: auction.hasBid,
-                      })
-                    }
-                  >
-                    Cancel auction
-                  </Button>
-                }
-              />
-            ))}
-          </FacetListSection>
-        )}
-        {listings.length > 0 && (
-          <FacetListSection header="Live listings">
-            {listings.map((listing) => (
-              <FacetRow
-                key={listing.id}
-                title={listing.title}
-                subtitle={listingLine(listing)}
-                trailing={
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    aria-label={`Cancel listing of ${listing.title}`}
-                    onClick={() =>
-                      dialogTarget.open({ kind: "listing", id: listing.id, title: listing.title })
-                    }
-                  >
-                    Cancel listing
-                  </Button>
-                }
-              />
-            ))}
-          </FacetListSection>
-        )}
-        {trades.length > 0 && (
-          <FacetListSection header="Pending trades">
-            {trades.map((trade) => (
-              <FacetRow
-                key={trade.id}
-                title={trade.initiating ? "Offered by this player" : "Offered to this player"}
-                subtitle={tradeLine(trade)}
-                trailing={
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    aria-label={`Void trade ${trade.initiating ? "offered by" : "offered to"} this player`}
-                    onClick={() => dialogTarget.open({ kind: "trade", id: trade.id })}
-                  >
-                    Void trade
-                  </Button>
-                }
-              />
-            ))}
-          </FacetListSection>
-        )}
-      </FacetList>
+    <div ref={region} tabIndex={-1} className="space-y-4 outline-none">
+      {empty && <EmptyState compact title="No live auctions, listings or pending trades" />}
+      {!empty && (
+        <FacetList>
+          {auctions.length > 0 && (
+            <FacetListSection header="Live auctions">
+              {auctions.map((auction) => (
+                <FacetRow
+                  key={auction.id}
+                  title={auction.title}
+                  subtitle={auctionLine(auction)}
+                  trailing={
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      aria-label={`Cancel auction of ${auction.title}`}
+                      data-row-action=""
+                      onClick={() =>
+                        dialogTarget.open({
+                          kind: "auction",
+                          id: auction.id,
+                          title: auction.title,
+                          hasBid: auction.hasBid,
+                        })
+                      }
+                    >
+                      Cancel auction
+                    </Button>
+                  }
+                />
+              ))}
+            </FacetListSection>
+          )}
+          {listings.length > 0 && (
+            <FacetListSection header="Live listings">
+              {listings.map((listing) => (
+                <FacetRow
+                  key={listing.id}
+                  title={listing.title}
+                  subtitle={listingLine(listing)}
+                  trailing={
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      aria-label={`Cancel listing of ${listing.title}`}
+                      data-row-action=""
+                      onClick={() =>
+                        dialogTarget.open({ kind: "listing", id: listing.id, title: listing.title })
+                      }
+                    >
+                      Cancel listing
+                    </Button>
+                  }
+                />
+              ))}
+            </FacetListSection>
+          )}
+          {trades.length > 0 && (
+            <FacetListSection header="Pending trades">
+              {trades.map((trade) => (
+                <FacetRow
+                  key={trade.id}
+                  title={trade.initiating ? "Offered by this player" : "Offered to this player"}
+                  subtitle={tradeLine(trade)}
+                  trailing={
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      aria-label={`Void trade ${trade.initiating ? "offered by" : "offered to"} this player`}
+                      data-row-action=""
+                      onClick={() => dialogTarget.open({ kind: "trade", id: trade.id })}
+                    >
+                      Void trade
+                    </Button>
+                  }
+                />
+              ))}
+            </FacetListSection>
+          )}
+        </FacetList>
+      )}
       <ReasonDialog
         open={pending !== null}
         onOpenChange={(open) => !open && dialogTarget.close()}
