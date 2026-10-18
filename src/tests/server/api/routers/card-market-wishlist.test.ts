@@ -110,14 +110,18 @@ describe("cardMarket wishlist procedures", () => {
     expect(check).toHaveBeenCalledWith("user:u1", "mutation:removeFromWishlist", limit);
     jest.clearAllMocks();
 
-    jest.spyOn(console, "warn").mockImplementation(() => undefined);
-    check.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
-    await expect(caller.addToWishlist({ cardId: "card_1" })).rejects.toThrow(/Too many requests/);
-    await expect(caller.removeFromWishlist({ cardId: "card_1" })).rejects.toThrow(
-      /Too many requests/
-    );
-    expect(addToWishlist).not.toHaveBeenCalled();
-    expect(removeFromWishlist).not.toHaveBeenCalled();
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      check.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
+      await expect(caller.addToWishlist({ cardId: "card_1" })).rejects.toThrow(/Too many requests/);
+      await expect(caller.removeFromWishlist({ cardId: "card_1" })).rejects.toThrow(
+        /Too many requests/
+      );
+      expect(addToWishlist).not.toHaveBeenCalled();
+      expect(removeFromWishlist).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("pass the wishlist's refusals through unchanged", async () => {
