@@ -197,6 +197,7 @@ describe("getBoard", () => {
       avatarUrl: null,
       flagUrl: "https://flags.example/u_member.png",
       persona: false,
+      personaType: null,
     });
     expect(byId.p4!.author).toMatchObject({ name: "OldHand", persona: false, flagUrl: null });
     // A persona's message names the persona only: no player id, flag, avatar of the player, role or visitor label.
@@ -209,6 +210,7 @@ describe("getBoard", () => {
         avatarUrl: "https://img.example/daily.png",
         flagUrl: null,
         persona: true,
+        personaType: "media",
       },
       role: null,
       isVisitor: false,

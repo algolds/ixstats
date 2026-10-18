@@ -19,6 +19,7 @@ const maps: AuthorMaps = {
         displayName: "Eurth Daily",
         username: "eurthdaily",
         avatarUrl: "https://img.example/p.png",
+        personaType: "media",
       },
     ],
   ]),
@@ -36,6 +37,23 @@ describe("previewAuthorOf", () => {
       avatarUrl: "https://img.example/p.png",
       flagUrl: null,
       persona: true,
+      personaType: "media",
+    });
+    expect(JSON.stringify(author)).not.toMatch(/jane|eurth\.png/);
+  });
+
+  it("shows a persona whose account is gone as a bare persona, never its player", () => {
+    const author = previewAuthorOf(
+      { authorUserId: "u1", authorPersonaId: "p_gone", importedAuthorName: null },
+      maps,
+      "Member"
+    );
+    expect(author).toEqual({
+      name: "Persona",
+      avatarUrl: null,
+      flagUrl: null,
+      persona: true,
+      personaType: null,
     });
     expect(JSON.stringify(author)).not.toMatch(/jane|eurth\.png/);
   });
@@ -52,6 +70,7 @@ describe("previewAuthorOf", () => {
       avatarUrl: "https://img.example/jane.png",
       flagUrl: "https://flags.example/eurth.png",
       persona: false,
+      personaType: null,
     });
   });
 

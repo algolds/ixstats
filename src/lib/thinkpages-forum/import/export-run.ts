@@ -9,7 +9,8 @@
  * `retryMismatch` (I2: a file that keeps arriving short is not downloaded on every rerun).
  * One item that keeps failing (a forum's thread list, a thread's posts, a user, an attachment) never stops the export
  * either (I3): it is logged, listed in `failed` and left for a rerun, or with `skipFailing` recorded as unavailable
- * (forum listed empty, thread gone, user unavailable, attachment missing) so the snapshot can complete. Five
+ * (forum listed empty, thread gone, user unavailable, attachment missing) so the snapshot can complete; the meta
+ * then records `skippedFailing`, which later runs keep (the import treats such a snapshot as partial). Five
  * failures in a row stop it (the forum is likely down), as does any other error (a refused key, rate limiting).
  */
 import { attachmentMime } from "./attachment-mime";
@@ -101,6 +102,7 @@ async function writeMeta(o: ExportRunOptions): Promise<void> {
     bypassPermissions,
     clientVersion: XENFORO_EXPORT_CLIENT_VERSION,
     nodeFilter,
+    skippedFailing: Boolean(o.skipFailing || o.writer.meta?.skippedFailing),
     version: SNAPSHOT_VERSION,
   });
 }

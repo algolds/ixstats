@@ -157,7 +157,13 @@ function previewOf(
     excerpt: post ? previewExcerpt(post.plainText, FEED_EXCERPT_MAX) : "",
     author: post
       ? previewAuthorOf(post, authors, thread.author)
-      : { name: thread.author, avatarUrl: null, flagUrl: null, persona: thread.persona },
+      : {
+          name: thread.author,
+          avatarUrl: null,
+          flagUrl: null,
+          persona: thread.persona,
+          personaType: thread.personaType,
+        },
     board,
     realm,
     style: placement.style === "ic" ? "ic" : "ooc",
@@ -182,11 +188,16 @@ export async function withThreadPreviews(
     shown.map((p) => p.authorPersonaId)
   );
   const realms = realmsById(published);
-  return threads.map(({ placement, persona, starter, ...thread }) => {
+  return threads.map(({ placement, persona, personaType, starter, ...thread }) => {
     const post = posts.get(thread.id);
     return {
       ...thread,
-      preview: previewOf({ ...thread, placement, persona, starter }, post, authors, realms),
+      preview: previewOf(
+        { ...thread, placement, persona, personaType, starter },
+        post,
+        authors,
+        realms
+      ),
       postedAt: post?.createdAt ?? null,
     };
   });

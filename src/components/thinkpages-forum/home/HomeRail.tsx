@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { Clock, GraphUp, LightBulbOn, NavArrowRight, Search } from "iconoir-react";
+import { GraphUp, LightBulbOn, NavArrowRight, Search } from "iconoir-react";
 import { timeAgo } from "~/lib/format/compact";
 import { categoryHref, postHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
 import type { RouterOutputs } from "~/trpc/react";
+import { Badge } from "~/components/ui/badge";
 import { AdvertMark } from "../advert";
 import { AuthorFlag } from "../AuthorMark";
 import { ForumAvatar } from "../ForumAvatar";
+import { PersonaTypeChip } from "../PersonaTypeChip";
 import { RailPanel } from "../shell";
 
 type Trending = RouterOutputs["thinkpagesForum"]["trending"];
@@ -30,16 +32,7 @@ function SeeAll({ href, label }: { href: string; label: string }) {
   );
 }
 
-/** The newest posts across the boards, joined by a line down their avatars. */
-export function LatestActivityPanel({ items }: { items: Readonly<Activity> }) {
-  return (
-    <RailPanel title="Latest activity" icon={<Clock />}>
-      <LatestActivityList items={items} />
-    </RailPanel>
-  );
-}
-
-/** The rows of Latest activity, for a surface that supplies its own frame (the front page). */
+/** The newest posts across the boards, joined by a line down their avatars, for a surface that supplies its own frame (the forum home and the front page). */
 export function LatestActivityList({
   items,
   className,
@@ -62,11 +55,17 @@ export function LatestActivityList({
               <span className="min-w-0 flex-1">
                 <span className="text-callout text-label-secondary line-clamp-2">
                   <span className="text-label font-medium">{name}</span>
+                  {item.author?.personaType ? (
+                    <span className="mx-2 inline-flex align-middle">
+                      <PersonaTypeChip type={item.author.personaType} />
+                    </span>
+                  ) : null}
                   {item.isFirstPost ? " started " : " replied in "}
                   <span className="text-label">{item.threadTitle}</span>
                 </span>
-                <span className="text-footnote text-label-secondary block truncate tabular-nums">
-                  {`${item.categoryName} · ${timeAgo(item.at)}`}
+                <span className="text-footnote text-label-secondary flex items-center gap-2 tabular-nums">
+                  <span className="truncate">{`${item.categoryName} · ${timeAgo(item.at)}`}</span>
+                  {item.inCharacter ? <Badge variant="secondary">In character</Badge> : null}
                 </span>
               </span>
             </Link>

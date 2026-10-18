@@ -4,13 +4,13 @@ import { memo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Reply as ReplyIcon, Quote } from "iconoir-react";
 import type { ActionCardData } from "~/components/action-links";
-import { PersonaAuthorCard } from "~/components/thinkpages/PersonaAuthorCard";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { countedPostId } from "~/lib/discussed-in";
 import { timeAgo } from "~/lib/format/compact";
 import { realmBoardHref, threadHref } from "~/lib/thinkpages-forum/links";
 import { cn } from "~/lib/utils/cn";
+import { AuthorLine } from "../AuthorMark";
 import { ForumAvatar } from "../ForumAvatar";
 import type { ModeratorTools } from "../ModeratorMenu";
 import { ReactionBar } from "../reactions";
@@ -50,28 +50,15 @@ const ROLE_LABEL = { staff: "Staff", officer: "Officer" } as const;
 
 const repliesOf = (count: number) => (count === 1 ? "1 reply" : `${count} replies`);
 
-function AuthorLine({ message }: { message: BoardMessageData }) {
+function MessageAuthor({ message }: { message: BoardMessageData }) {
   const { author, role, isVisitor, visitorRealm, createdAt, editedAt } = message;
-  const name = <span className="text-headline text-label min-w-0 truncate">{author.name}</span>;
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-      {author.persona && author.handle ? (
-        <PersonaAuthorCard username={author.handle}>{name}</PersonaAuthorCard>
-      ) : (
-        name
-      )}
-      {author.persona && author.handle ? (
-        <span className="text-footnote text-label-secondary">@{author.handle}</span>
-      ) : null}
-      {author.flagUrl ? (
-        <img
-          src={author.flagUrl}
-          alt=""
-          width={18}
-          height={12}
-          className="rounded-control-sm h-3 w-[18px] shrink-0 object-cover"
-        />
-      ) : null}
+    <AuthorLine
+      name={author.name}
+      personaUsername={author.persona ? author.handle : null}
+      personaType={author.personaType ?? null}
+      flagUrl={author.flagUrl}
+    >
       {role === "staff" || role === "officer" ? (
         <Badge variant="secondary">{ROLE_LABEL[role]}</Badge>
       ) : null}
@@ -88,7 +75,7 @@ function AuthorLine({ message }: { message: BoardMessageData }) {
         {timeAgo(createdAt, { suffix: false })}
       </time>
       {editedAt ? <span className="text-footnote text-label-secondary">edited</span> : null}
-    </div>
+    </AuthorLine>
   );
 }
 
@@ -163,7 +150,7 @@ export const BoardMessage = memo(function BoardMessage({
         />
       ) : (
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <AuthorLine message={message} />
+          <MessageAuthor message={message} />
           {replyTo ? (
             <Link
               href={realmBoardHref(realm.slug, replyTo.postId)}

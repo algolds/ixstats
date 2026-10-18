@@ -121,6 +121,7 @@ const PERSONA = {
   displayName: "Herald",
   username: "herald",
   profileImageUrl: "https://img.example/herald.png",
+  accountType: "government",
 };
 const EURTH = {
   id: "r_eurth",
@@ -230,6 +231,7 @@ describe("latestPublicThreadPreviews", () => {
         avatarUrl: null,
         flagUrl: "https://flags.example/eurth.png",
         persona: false,
+        personaType: null,
       },
       board: { name: "General", href: "/thinkpages/c/general" },
       realm: null,
@@ -329,6 +331,7 @@ describe("latestPublicThreadPreviews", () => {
       avatarUrl: "https://img.example/herald.png",
       flagUrl: null,
       persona: true,
+      personaType: "government",
     });
     const text = JSON.stringify(out);
     for (const secret of ["u_secret", "secretplayer", "secret.png", "clerk_secret", "Hidden"]) {
@@ -366,7 +369,7 @@ describe("latestPublicThreadPreviews", () => {
     expect(out!.preview).toMatchObject({
       excerpt: "",
       postHref: "/thinkpages/t/t3",
-      author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false },
+      author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false, personaType: null },
       reactionTotal: 0,
     });
     expect(out!.postedAt).toBeNull();
@@ -383,6 +386,7 @@ describe("latestPublicThreadPreviews", () => {
       avatarUrl: null,
       flagUrl: null,
       persona: true,
+      personaType: "government",
     });
     expect(out!.author).toBe("Herald");
     const text = JSON.stringify(out);

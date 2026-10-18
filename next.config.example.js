@@ -150,7 +150,7 @@ const config = {
           {
             // Map root-level slugs to countries/[slug] in standalone mode, leaving app routes alone
             source:
-              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|id|images|leaderboards|maps|messages|mycountry|placeholder|profile|r|realms|settings|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next|@).*)",
+              "/:slug((?!admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|hashtags|health|help|id|images|leaderboards|maps|messages|mycountry|placeholder|r|realms|settings|setup|sign-in|sign-up|sounds|studio|thinkpages|vault|w|wiki|_next|@).*)",
             destination: "/countries/:slug",
           },
         ],
@@ -161,22 +161,8 @@ const config = {
     return baseRewrites;
   },
 
-  async redirects() {
-    return [
-      { source: "/profile", destination: "/settings", permanent: true },
-      { source: "/profile/:path*", destination: "/settings/:path*", permanent: true },
-    ];
-  },
-
   async headers() {
     return [
-      {
-        source: "/manifest.json",
-        headers: [
-          { key: "Content-Type", value: "application/manifest+json" },
-          { key: "Cache-Control", value: "public, max-age=86400" },
-        ],
-      },
       {
         // React Query controls caching; an HTTP cache served stale map data for up to an hour
         source: "/api/trpc/geo.:path*",
@@ -191,14 +177,6 @@ const config = {
             value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
-        ],
-      },
-      {
-        source: "/sw.js",
-        headers: [
-          { key: "Content-Type", value: "application/javascript" },
-          { key: "Service-Worker-Allowed", value: "/" },
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
         ],
       },
     ];

@@ -20,7 +20,7 @@ nextLabel: Lorewards
 
 ## Editing an article
 
-1. Open the article and choose edit (or go to `/wiki/<Title>/edit`).
+1. Open the article and choose edit (or add `?action=edit` to its address).
 2. Edit in the **visual** editor (blocks, tables, infoboxes, a slash menu for inserting things, and forms for templates) or switch to **source** mode for wikitext.
 3. Save with a short summary. Your draft is kept in your browser while you work.
 
@@ -30,7 +30,7 @@ To start a new article, search for its title and choose **Create this page** on 
 
 ## Discussing articles
 
-- **Talk pages** at `/wiki/<Title>/talk`.
+- **Talk pages** at `/wiki/Talk:<Title>`.
 - **Margin**: comment threads pinned to parts of an article's text. Open them from the margin notes row on the article.
 
 ## Images
@@ -39,7 +39,7 @@ Images come from the wiki's media library; browse it in the [Repository](/util/r
 
 ## Your wiki profile
 
-A player's wiki user profile now opens their [IxnayID passport](/help/getting-started/ixnayid) on the **Work** tab (`/id/@username?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
+A player's wiki user profile now opens their [IxnayID passport](/help/getting-started/ixnayid) on the **Work** tab (`/@username?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
 
 ## Lorewards
 

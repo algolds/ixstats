@@ -37,7 +37,7 @@ const preview = (messages: NonNullable<Preview>["messages"], slug = "eurth"): Pr
 });
 const message = (id: string, excerpt: string, slug = "eurth") => ({
   id,
-  author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false },
+  author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false, personaType: null },
   excerpt,
   createdAt: new Date(Date.now() - 120_000),
   href: `/thinkpages/r/${slug}#post-${id}`,

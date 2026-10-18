@@ -3,8 +3,10 @@ import { render, screen, within } from "@testing-library/react";
 
 // Radix Avatar renders an image only once the browser has loaded it; show it at once.
 jest.mock("~/components/ui/avatar", () => ({
-  Avatar: ({ children }: { children: React.ReactNode }) => (
-    <span data-slot="avatar">{children}</span>
+  Avatar: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <span data-slot="avatar" className={className}>
+      {children}
+    </span>
   ),
   AvatarImage: ({ src }: { src: string }) => <img src={src} alt="" />,
   AvatarFallback: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -21,7 +23,12 @@ const authors = {
     u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: "/flags/hidden.png" },
   },
   personas: {
-    pa: { displayName: "Aria Vance", username: "aria", avatarUrl: "/avatars/aria.png" },
+    pa: {
+      displayName: "Aria Vance",
+      username: "aria",
+      avatarUrl: "/avatars/aria.png",
+      personaType: "citizen",
+    },
   },
 } as ForumAuthors;
 
@@ -111,9 +118,13 @@ describe("ThreadTable rows", () => {
     expect(cell.firstElementChild).toHaveAttribute("data-slot", "avatar");
   });
 
-  it("sets the title at the platform's list-title size", () => {
+  it("draws rows at data density: 28px avatars, headline titles, py-2 rows", () => {
     renderTable([thread("t1")]);
-    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("text-title-3");
+    const title = screen.getByRole("link", { name: /Thread t1/i });
+    expect(title).toHaveClass("text-headline");
+    const row = title.closest('[role="row"]')!;
+    expect(row).toHaveClass("py-2", "pointer-coarse:min-h-11");
+    expect(row.querySelector(".size-7")).not.toBeNull();
   });
 
   describe("last post", () => {
@@ -252,21 +263,24 @@ describe("ThreadTable page shortcuts", () => {
   });
 });
 
-describe("ThreadTable unread rows and the list pages' options", () => {
-  it("shows an unread thread in bold with a dot, and links it to the first unread post", () => {
+describe("ThreadTable unread rows", () => {
+  it("shows an unread thread in semibold with a dot, and links it to the first unread post", () => {
     renderTable([thread("t1", { unread: true }), thread("t2", { unread: false })]);
     const unread = within(rowOf(/Thread t1/));
     expect(unread.getByText("Unread")).toBeInTheDocument();
     const title = unread.getByRole("link", { name: "Thread t1" });
     expect(title).toHaveAttribute("href", "/thinkpages/t/t1/unread");
-    expect(title).toHaveClass("font-bold");
+    expect(title).toHaveClass("font-semibold");
+    const dot = unread.getByText("Unread").previousElementSibling as HTMLElement;
+    expect(dot).toHaveClass("bg-tint", "rounded-full");
+    expect(title.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
     const read = within(rowOf(/Thread t2/));
     expect(read.queryByText("Unread")).toBeNull();
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveAttribute(
       "href",
       "/thinkpages/t/t2"
     );
-    expect(read.getByRole("link", { name: "Thread t2" })).not.toHaveClass("font-bold");
+    expect(read.getByRole("link", { name: "Thread t2" })).not.toHaveClass("font-semibold");
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveClass("font-medium");
   });
 
@@ -276,35 +290,5 @@ describe("ThreadTable unread rows and the list pages' options", () => {
     expect(row.getByText("Unread")).toBeInTheDocument();
     expect(row.getByText("Aria Vance")).toBeInTheDocument();
     expect(row.queryByText("Hidden Player")).toBeNull();
-  });
-
-  it("has plain column headers, not sort links, without a base path", () => {
-    render(<ThreadTable threads={[thread("t1")] as never} authors={authors} />);
-    expect(screen.getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Thread",
-      "Replies",
-      "Last post",
-    ]);
-    expect(
-      screen.queryAllByRole("columnheader").flatMap((h) => within(h).queryAllByRole("link"))
-    ).toEqual([]);
-  });
-
-  it("names the board (and the realm) of a listed thread, and renders a row action", () => {
-    render(
-      <ThreadTable
-        threads={
-          [
-            thread("t1", { board: { name: "Hub", realm: { name: "Eurth" } } }),
-            thread("t2", { board: { name: "General", realm: null } }),
-          ] as never
-        }
-        authors={authors}
-        renderAction={(row) => <button type="button">{`Act on ${row.title}`}</button>}
-      />
-    );
-    expect(within(rowOf(/Thread t1/)).getByText("Eurth · Hub")).toBeInTheDocument();
-    expect(within(rowOf(/Thread t2/)).getByText("General")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Act on Thread t1" })).toBeInTheDocument();
   });
 });

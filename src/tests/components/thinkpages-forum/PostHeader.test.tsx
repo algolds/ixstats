@@ -24,6 +24,7 @@ const base: Props = {
   number: 4,
   postId: "p4",
   imported: false,
+  personaType: null,
 };
 
 const show = (over: Partial<Props> = {}) => render(<PostHeader {...base} {...over} />);
@@ -36,7 +37,9 @@ describe("PostHeader", () => {
   ] as const)("shows the %s role as exactly one pill reading %s", (role, text) => {
     show({ role });
     expect(screen.getByText(text)).toBeInTheDocument();
-    const pills = ["Staff", "Officer", "Thread starter"].filter((label) => screen.queryByText(label));
+    const pills = ["Staff", "Officer", "Thread starter"].filter((label) =>
+      screen.queryByText(label)
+    );
     expect(pills).toEqual([text]);
   });
 
@@ -85,15 +88,38 @@ describe("PostHeader", () => {
     expect(screen.queryByText("Old forum")).toBeNull();
   });
 
-  it("shows the handle and the full date, plus edited when it was", () => {
+  it("shows the member's handle and the relative time, plus edited when it was", () => {
     const { container, rerender } = show();
     const time = container.querySelector("time");
     expect(time).toHaveAttribute("datetime", "2026-03-12T18:40:00.000Z");
-    expect(time?.textContent).toMatch(/2026/);
     expect(screen.getByText(/@fiannria/)).toBeInTheDocument();
     expect(screen.queryByText(/edited/)).toBeNull();
     rerender(<PostHeader {...base} editedAt={new Date("2026-03-13T09:02:00Z")} />);
     expect(screen.getByText(/edited/)).toBeInTheDocument();
+  });
+
+  it("has no Well band: the header is the author line and the permalink", () => {
+    const { container } = show();
+    expect(container.querySelector("header")).not.toHaveClass("facet-well");
+    expect(screen.getByText("Fiannria")).toHaveClass("text-headline");
+  });
+
+  it("shows a persona's voice chip and never a flag", () => {
+    const { container } = show({
+      personaUsername: "caphnews",
+      name: "Caphiria News",
+      personaType: "media",
+      flagUrl: null,
+    });
+    expect(screen.getByText("Media")).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("shows the time relative, with the absolute date and the IxTime date in its title", () => {
+    show({ createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) });
+    const time = screen.getByText("2h");
+    expect(time.tagName).toBe("TIME");
+    expect(time.getAttribute("title")).toMatch(/IxTime/);
   });
 
   it("badges a hidden post", () => {

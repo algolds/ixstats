@@ -1,5 +1,6 @@
 /**
- * Economic tier filter options shared by the /countries and /explore pages.
+ * Economic tier filter options, used by a realm's Nations tab (`NationsBrowser`) and diplomacy's
+ * relative development.
  *
  * Derived from ECONOMIC_TIER_INFO so the selectable tiers can't drift from the
  * tiers countries are actually assigned.

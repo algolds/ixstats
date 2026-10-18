@@ -48,6 +48,7 @@ export function boardMessagePayload(message: BoardMessage): BoardLiveChange {
       avatarUrl: message.author.avatarUrl,
       flagUrl: message.author.flagUrl,
       persona: message.author.persona,
+      personaType: message.author.personaType,
     },
     role: message.role,
     isVisitor: message.isVisitor,

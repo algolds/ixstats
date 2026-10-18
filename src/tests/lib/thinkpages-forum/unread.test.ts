@@ -13,16 +13,9 @@ const NOW = new Date("2026-10-15T12:00:00Z");
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);
 
 describe("unreadFloor", () => {
-  it("is thirty days back when nothing was marked read", () => {
-    expect(unreadFloor(NOW, null).getTime()).toBe(NOW.getTime() - UNREAD_WINDOW_MS);
-  });
-
-  it("is the mark-all-read time when that is later than the window", () => {
-    expect(unreadFloor(NOW, daysAgo(2))).toEqual(daysAgo(2));
-  });
-
-  it("ignores a mark-all-read older than the window", () => {
-    expect(unreadFloor(NOW, daysAgo(90)).getTime()).toBe(NOW.getTime() - UNREAD_WINDOW_MS);
+  it("is thirty days back", () => {
+    expect(unreadFloor(NOW).getTime()).toBe(NOW.getTime() - UNREAD_WINDOW_MS);
+    expect(unreadFloor(NOW)).toEqual(daysAgo(30));
   });
 });
 
@@ -41,7 +34,7 @@ describe("seenSince", () => {
 });
 
 describe("isUnread", () => {
-  const floor = unreadFloor(NOW, null);
+  const floor = unreadFloor(NOW);
 
   it("never counts a thread whose last post is older than the window", () => {
     expect(isUnread(daysAgo(31), null, floor)).toBe(false);
@@ -61,10 +54,10 @@ describe("isUnread", () => {
     expect(isUnread(daysAgo(10), daysAgo(40), floor)).toBe(true);
   });
 
-  it("hides what a mark-all-read covers and shows what came after it", () => {
-    const marked = unreadFloor(NOW, daysAgo(3));
-    expect(isUnread(daysAgo(4), null, marked)).toBe(false);
-    expect(isUnread(daysAgo(2), null, marked)).toBe(true);
+  it("hides what a later floor covers and shows what came after it", () => {
+    const later = daysAgo(3);
+    expect(isUnread(daysAgo(4), null, later)).toBe(false);
+    expect(isUnread(daysAgo(2), null, later)).toBe(true);
   });
 });
 

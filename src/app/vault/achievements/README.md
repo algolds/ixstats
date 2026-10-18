@@ -3,8 +3,7 @@
 **Last updated:** October 2026
 
 This directory holds the React view for `/vault/achievements`, the achievements home inside the
-Vault: four tabs under a visually hidden `h1` (the sidebar row names the page on screen). `/achievements` redirects
-here, keeping its query string, so old links and saved notifications still open. The nation boards live on the
+Vault: four tabs under a visually hidden `h1` (the sidebar row names the page on screen). The nation boards live on the
 standalone `/leaderboards` page, the Vault sidebar's Leaderboards row. See `docs/systems/achievements.md` for the full guide.
 
 ## Routes
@@ -14,9 +13,8 @@ standalone `/leaderboards` page, the Vault sidebar's Leaderboards row. See `docs
 | `/vault/achievements`          | Standing card + tabs (`AchievementsTabs`)                                                  |
 | `/vault/achievements?tab=<id>` | `all` (default, bare path), `lorewards`, `showcase`, `leaderboard`                         |
 | `/vault/achievements?a=<key>`  | Opens that achievement in All: its series card shows the tier and scrolls into view        |
-| `/achievements`                | Redirect to `/vault/achievements`, query kept                                              |
 | `/leaderboards`                | Nation boards (`CountryLeaderboards`)                                                      |
-| `/util/lorewards`              | Lorewards in WikiOS: today's race, standings, recent winners (`/wiki/lorewards` redirects) |
+| `/util/lorewards`              | Lorewards in WikiOS: today's race, standings, recent winners                               |
 
 ## Tabs
 

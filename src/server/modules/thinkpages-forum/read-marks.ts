@@ -1,11 +1,12 @@
 /**
- * The four ways a member marks things read: a thread (opened by its page), a board ("Mark board read"), everything
- * ("Mark all read"), and the realm board on the realm landing. Every mark is idempotent and only moves a read time
+ * The ways a member marks things read: a thread (opened by its page), a board ("Mark board read"), and the realm
+ * board on the realm landing. Every mark is idempotent and only moves a read time
  * forward. The thread mark reads the newest visible post of the page the member is shown from the database, never from
  * the client, and never past the thread's last post.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
+import { unreadFloor } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
 import { advertGate } from "./advert-access";
 import { boardThreadOf } from "./board-thread";
@@ -19,7 +20,7 @@ import {
   type CategoryLocator,
   type ReadsDb,
 } from "./reads";
-import { readerFloor, unreadIdsOf, type UnreadDb } from "./unread";
+import { unreadIdsOf, type UnreadDb } from "./unread";
 
 export type ReadMarksDb = ReadsDb &
   UnreadDb &
@@ -82,7 +83,7 @@ export async function markCategoryRead(
   where: CategoryLocator
 ): Promise<{ marked: number }> {
   const { category } = await loadCategory(db, viewer, where);
-  const floor = await readerFloor(db, viewer.id);
+  const floor = unreadFloor(new Date());
   let marked = 0;
   let cursor: { id: string; lastPostAt: Date } | undefined;
   for (let scanned = 0; scanned < MARK_CATEGORY_MAX; scanned += MARK_CATEGORY_CHUNK) {
@@ -138,19 +139,6 @@ async function markUnreadOf(
     ON CONFLICT ("userId", "threadId") DO UPDATE SET "readAt" = EXCLUDED."readAt"
     WHERE forum_thread_reads."readAt" < EXCLUDED."readAt"`);
   return rows.length;
-}
-
-export async function markAllRead(
-  db: Pick<PrismaClient, "forumReader">,
-  userId: string,
-  now: Date = new Date()
-): Promise<{ allReadAt: Date }> {
-  await db.forumReader.upsert({
-    where: { userId },
-    create: { userId, allReadAt: now },
-    update: { allReadAt: now },
-  });
-  return { allReadAt: now };
 }
 
 /** The realm landing was opened at the top: the realm board is read up to its last message. */

@@ -183,15 +183,14 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
   ```js
   const passportRewrites = [{ source: "/@:username", destination: "/id/:username" }];
   ```
-- **In `redirects()`:** replace the two `/@:username…` entries (`permanent: false`) with these:
-  ```js
-  { source: "/@:username/:tab", destination: "/@:username?tab=:tab", permanent: true },
-  { source: "/id/@:username", destination: "/@:username", permanent: true },
-  { source: "/id/@:username/:tab", destination: "/@:username?tab=:tab", permanent: true },
-  ```
+- **In `redirects()`:** delete the `/@:username…` entries (`permanent: false`) and every other legacy entry (the
+  repository's `next.config.js` has no `redirects()` any more). Wiki
+  pages that still link `/id/@user`, `/@user/<tab>` or `/thinkpages/profile/<user>` are resolved to the new pages
+  when they render.
 - **Check it parses:** run `node --check next.config.js`.
-- **If you skip this step,** the new `/@user` links still work, because the old config redirects them to `/id/@user`.
-  Do not apply only half of it, or you will create a redirect loop.
+- **If you skip this step,** the server's old `/@:username` redirects stay, and `/@user` links bounce to
+  `/id/@user`. There are no config redirects left in the repository: old profile links in wiki pages are rewritten
+  when the page renders, not by the config.
 
 ## 4. Database steps that must happen before the deploy
 
@@ -229,6 +228,17 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
   < prisma/migrations/20261007150000_map_import_jobs/migration.sql
 ```
 
+The ThinkPages forum follow-ups add two hand-written, idempotent files, in this order:
+
+1. `prisma/migrations/20261027120000_drop_forum_readers/migration.sql` **drops `forum_readers`** ("Mark all read" is
+   gone, and nothing reads or writes the table). It runs **before** the push: the schema no longer has the table, and
+   `db push` stops on a non-empty one. Step 5a runs it after the Vault hub SQL, and `./scripts/deploy-production.sh`
+   runs it again before its own push (so do `start-development.sh` and `scripts/refresh-local-db.sh`).
+2. `prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql` rewrites the stored notification
+   links (`"Notification"."href"`) that point at legacy URLs whose redirects this release deletes. It runs **after**
+   the new code is live, in step 5e. It leaves the bridge's XenForo thread, post, node and member links
+   (`/forum/thread/<id>` and the rest) to the forum import, which points them at native pages (runbook step 6).
+
 ## 5. Deploy
 
 First promote the release on GitHub: merge `rose-garden` into `development`, then `development` into `master`
@@ -248,7 +258,8 @@ git checkout -B master master/master     # the deploy script deploys the checkou
 Atlas and World Studio SQL goes **before** that push, for the same reason: it creates `world_presets` and
 `world_preset_versions` and **drops `procedural_worlds`, `world_templates` and `realms."templateId"`** (the schema no
 longer has them, and `db push` stops on the non-empty `procedural_worlds`). The Vault hub SQL follows it, also before the
-push: it **drops `national_issues."ixCreditsAwarded"`**. The step 1 backup covers the dropped rows:
+push: it **drops `national_issues."ixCreditsAwarded"`**. The forum readers SQL comes last, also before the push: it
+**drops `forum_readers`** (step 4). The step 1 backup covers the dropped rows:
 
 ```bash
 bun install --frozen-lockfile && bun run db:generate        # new dependency: potrace (since removed: the dependency and the code that used it are gone)
@@ -265,6 +276,10 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
 docker exec ixstats-postgres psql -U postgres -d ixstats -tAc \
   "SELECT (SELECT count(*) FROM information_schema.columns WHERE (table_name, column_name) IN (('Country','ownedSince'),('cards','lorewardEntryId'),('cards','lorewardEdition'))), NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'national_issues' AND column_name = 'ixCreditsAwarded'), NOT EXISTS (SELECT 1 FROM \"SystemConfig\" WHERE key = 'showCardsTab');"
 #   expect: 3|t|t
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261027120000_drop_forum_readers/migration.sql  # forum readers: BEFORE db:push:force; idempotent
+docker exec ixstats-postgres psql -U postgres -d ixstats -tAc "SELECT to_regclass('forum_readers') IS NULL;"
+#   expect: t
 bun run db:push:force        # answer yes: the world_configs drop, the two Realms unique constraints and WikiOS v1's five are expected
 bun scripts/realms/backfill-foundation.ts                  # dry run
 ```
@@ -455,12 +470,35 @@ Do these in this order. The hub's SQL (step 5a) and the cron swap (before the de
 entries keep what they paid. If the deploy lands after that date, the first sync pays the new table, runner-ups
 included, for the days since.
 
+### 5e. Stored notification links (after the deploy script)
+
+Old notifications store links to pages whose redirects this release deletes (`/thinkpages/forum`,
+`/thinkpages/profile/<user>`, `/achievements`, `/vault/market`, `/profile`, the old basePath `/projects/ixstats`,
+and others). Once the new code is live, rewrite them to the current pages. The file only updates
+`"Notification"."href"`, one statement per legacy form, and a second run changes nothing:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql
+#   expect: 34 lines of UPDATE <n>
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+  < prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql
+#   expect: UPDATE 0 on all 34 lines
+```
+
+The file does not touch the bridge's XenForo links (`/forum/thread/<id>[#post-<id>]`, `/forum/post/<id>`,
+`/forum/<nodeId>`, `/forum/members/<id>`): those need the imported threads, so the forum import's `--apply`
+(`docs/operations/forum-xenforo-import-runbook.md` step 6) points them at the native post or thread, or at
+`/thinkpages`. The same `--apply` moves the bridge's stashed threads (`forum:thread:<id>` items) to native items.
+Until step 6 runs, those notification links are 404s and those stash items are left out of `/stashes`, so run it soon
+after the deploy.
+
 ## 6. Smoke checks (browser)
 
 - `/`, `/dashboard`, `/mycountry`, `/maps` load, and the console shows no errors.
 - Sign in: the page does not remount, and the title badge appears.
-- `/@<your handle>` shows your passport on the Overview tab, `/id/@<handle>` redirects to it (after step 3), and the
-  tabs switch.
+- `/@<your handle>` shows your passport on the Overview tab, and the tabs switch. `/id/<handle>` renders the same
+  passport in place; only an old name or a user id (`/id/<old name>`) redirects to `/@<handle>`.
 - **Messages:** send a message in one browser and see it arrive in another. This proves the Redis bridge works.
   The folder badge shows your unread count.
 - **Wiki:** open an article with 3+ revisions, open the history, and scrub; the diff changes. The Watch button
@@ -468,10 +506,10 @@ included, for the days since.
 - **Country editor** (`/mycountry/editor`): change a slider, and an amber dot plus "1 change" appear. Undo reverts it.
 - **Vault:** place a bid on a test auction; the balance moves, and cancelling refunds it.
 - **Vault hub:** the sidebar shows Vault with five rows (Wallet, Daily reward, Achievements, Cards, Store) for a signed-in
-  player with no nation; `/vault` is the statement page; `/vault/achievements` has its four tabs and `/achievements`
-  redirects to it; `/util/lorewards` shows today's race. **Exchange is behind the Labs gate:** `/labs/exchange` gives a
+  player with no nation; `/vault` is the statement page; `/vault/achievements` has its four tabs;
+  `/util/lorewards` shows today's race. **Exchange is behind the Labs gate:** `/labs/exchange` gives a
   user without Labs access a 404 (Labs is open to every signed-in user while the `showLabsTab` setting is on, its default;
-  with it off, only admins and `labs.access` holders get in), and so does every Exchange notification link; `/vault/exchange` redirects to it. The day after step 7, `/vault` shows a
+  with it off, only admins and `labs.access` holders get in), and so does every Exchange notification link. The day after step 7, `/vault` shows a
   "Vault dividend" row for players with activity or a card collection.
 - **Map editor:** click two points on one river, and the edge follows the river.
 - **Atlas:** `/admin/maps` opens the realm overview under the health strip, and `/admin/maps/studio` opens World Studio

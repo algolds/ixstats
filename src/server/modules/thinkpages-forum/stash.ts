@@ -6,11 +6,17 @@
  * may read can be stashed: anything else is NOT_FOUND, so a staff or Reports thread's existence never leaks. Removing
  * a stashed thread needs no visibility: it only deletes the caller's own rows. Listing does (I5): a stashed thread is
  * shown with its current title, and one the caller can no longer read (hidden, staff-only, gone) is left out, so the
- * note written at stash time never shows a title after the thread was hidden. Legacy `forum:thread:` items belong to
- * the XenForo bridge and are never touched here.
+ * note written at stash time never shows a title after the thread was hidden. Bridge-era `forum:thread:` items are
+ * left out of the listing too: the XenForo import moves them to their native thread, or deletes them when the thread
+ * was never imported (import-stash-threads.ts); nothing else here touches them.
  */
 import type { PrismaClient } from "@prisma/client";
-import { NATIVE_THREAD_PREFIX } from "~/lib/wiki-os/stash-content-type";
+import {
+  FORUM_THREAD_CONTENT_TYPE,
+  LEGACY_THREAD_PREFIX,
+  NATIVE_THREAD_PREFIX,
+  nativeThreadTitle,
+} from "~/lib/wiki-os/stash-content-type";
 import { threadHref } from "~/lib/thinkpages-forum/links";
 import { getOrCreateDefaultStash } from "~/server/shared/default-stash";
 import { canSeeThread, type ForumViewer } from "./access";
@@ -28,9 +34,6 @@ export interface StashOwner {
   ids: readonly string[];
 }
 
-const CONTENT_TYPE = "forum_thread";
-
-const titleOf = (threadId: string): string => `${NATIVE_THREAD_PREFIX}${threadId}`;
 const stashNotFound = (): ForumError => new ForumError("NOT_FOUND", "Stash not found.");
 
 /** A stash of the caller's, else NOT_FOUND. */
@@ -65,14 +68,16 @@ export async function stashThread(
 ): Promise<{ success: true; stashId: string }> {
   const { thread } = await loadVisibleThread(db, viewer, input.threadId);
   const stashId = await targetStash(db, owner, input.stashId);
-  const pageTitle = titleOf(thread.id);
+  const pageTitle = nativeThreadTitle(thread.id);
   await db.stashItem.upsert({
-    where: { stashId_contentType_pageTitle: { stashId, contentType: CONTENT_TYPE, pageTitle } },
+    where: {
+      stashId_contentType_pageTitle: { stashId, contentType: FORUM_THREAD_CONTENT_TYPE, pageTitle },
+    },
     create: {
       stashId,
       pageTitle,
       pageSlug: threadHref(thread.id),
-      contentType: CONTENT_TYPE,
+      contentType: FORUM_THREAD_CONTENT_TYPE,
       contentId: null,
       note: thread.title,
     },
@@ -94,8 +99,8 @@ export async function unstashThread(
   await db.stashItem.deleteMany({
     where: {
       stashId: { in: stashIds },
-      pageTitle: titleOf(input.threadId),
-      contentType: CONTENT_TYPE,
+      pageTitle: nativeThreadTitle(input.threadId),
+      contentType: FORUM_THREAD_CONTENT_TYPE,
     },
   });
   return { success: true };
@@ -114,8 +119,8 @@ export async function isThreadStashed(
   const items = await db.stashItem.findMany({
     where: {
       stashId: { in: stashes.map((s) => s.id) },
-      pageTitle: titleOf(input.threadId),
-      contentType: CONTENT_TYPE,
+      pageTitle: nativeThreadTitle(input.threadId),
+      contentType: FORUM_THREAD_CONTENT_TYPE,
     },
     select: { stashId: true },
   });
@@ -163,8 +168,9 @@ export async function readableThreadTitles(
 
 /**
  * I5 for the general stash listing (/stashes): its native forum thread items carry the thread's current title as
- * their note, and those the user can no longer read are left out; every other item passes unchanged. The user's
- * forum viewer (with what they moderate) is built only when the page holds such an item.
+ * their note, and those the user can no longer read are left out, as are bridge-era `forum:thread:` items (their
+ * `/forum` path is gone; the XenForo import moves them); every other item passes unchanged. The user's forum viewer
+ * (with what they moderate) is built only when the page holds a native thread item.
  */
 export async function withReadableThreads<T extends { pageTitle: string; note: string | null }>(
   db: ReadsDb & ScopeDb,
@@ -175,10 +181,11 @@ export async function withReadableThreads<T extends { pageTitle: string; note: s
     item.pageTitle.startsWith(NATIVE_THREAD_PREFIX)
       ? item.pageTitle.slice(NATIVE_THREAD_PREFIX.length)
       : null;
-  const threadIds = items.flatMap((item) => threadIdOf(item) ?? []);
-  if (threadIds.length === 0) return [...items];
+  const current = items.filter((item) => !item.pageTitle.startsWith(LEGACY_THREAD_PREFIX));
+  const threadIds = current.flatMap((item) => threadIdOf(item) ?? []);
+  if (threadIds.length === 0) return current;
   const titles = await readableThreadTitles(db, await forumActorOf(db, user), threadIds);
-  return items.flatMap((item) => {
+  return current.flatMap((item) => {
     const threadId = threadIdOf(item);
     if (threadId === null) return [item];
     const title = titles.get(threadId);

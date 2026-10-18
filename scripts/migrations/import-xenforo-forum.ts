@@ -4,8 +4,7 @@
  *   bun run db:import-xenforo-forum -- --snapshot DIR [--node-map FILE] [--apply] [--accept-unmapped]
  *     [--production] [--report FILE]
  *   bun run db:import-xenforo-forum -- --snapshot DIR --rollback [--yes] [--production]
- * --rollback without --yes prints what would be deleted and exits 0; with --yes it refuses while the legacy redirect
- * switch is on.
+ * --rollback without --yes prints what would be deleted and exits 0; with --yes it deletes those rows and files.
  * --production loads `.env.production.local` first (scripts/lib/load-runner-env.ts); the upload directory and the
  * masked database are printed first and again right before any write.
  * Refuses the production database ("ixstats") unless --production is passed, and runs one at a time (a Postgres
@@ -14,8 +13,9 @@
  * --apply also refuses on BLOCKING lines (unknown states, staff-like titles placed public by title or default), and
  * on any Forum node without an explicit node map entry (--accept-unmapped, alias --accept-defaults, accepts those).
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
- * idempotent by XenForo ids), the author relink and the applied node map (`forum_import_node_map`). A thread that
- * fails is rolled back alone and listed, and the run goes on.
+ * idempotent by XenForo ids), then the passes over every imported post (quote ids, and old forum links pointed at
+ * native pages), the bridge's stash items and notification links moved to native threads, and the author relink. A
+ * thread that fails is rolled back alone and listed, and the run goes on.
  * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed); 2 done, but some
  * media asset registrations failed non-retryably (their attachment ids are listed; pending ones are retried by a
  * rerun and do not change the code).
@@ -186,6 +186,7 @@ async function run(db: PrismaClient, args: ImportArgs): Promise<number> {
   print(attachmentResultLines(copied));
   const totals = await applyImport(db, plan, {
     nodeMap: appliedNodeMap(resolved),
+    meta: snapshot.meta,
     log: console.log,
   });
   print(applyTotalLines(totals));

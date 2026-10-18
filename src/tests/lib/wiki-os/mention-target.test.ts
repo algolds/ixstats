@@ -19,7 +19,7 @@ describe("mentionQueries", () => {
     expect(mentionQueries(true, "/countries/Caphiria")).toMatchObject({ country: true });
   });
 
-  it.each(["/dashboard/profile/@jane", "/thinkpages/profile/%20jane", "/countries/"])(
+  it.each(["/dashboard/profile/@jane", "/dashboard/profile/%20jane", "/countries/"])(
     "queries nothing for %s, whose id is empty",
     (href) => {
       expect(mentionQueries(true, href)).toEqual({

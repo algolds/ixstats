@@ -95,19 +95,19 @@ This section inventories the primary code areas for auditing coverage, mapping d
 
 **IxVault (Integrated Product):** `/vault` — cards, collections, trading, marketplace, packs, lore cards, NS import.
 
-**MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`, `/mycountry/builder`.
+**MyCountry (Core System):** `/mycountry` (executive command suite), `/mycountry/executive`, `/mycountry/economy`, `/mycountry/diplomacy`, `/mycountry/intelligence`, `/mycountry/defense`, `/mycountry/politics`, `/mycountry/map-editor`, `/mycountry/editor`.
 
 **ThinkPages (Core System):** `/thinkpages` — the community forum (sitewide and realm boards, moderation). The persona feed and Accounts are on the Dashboard (`/dashboard`, `/dashboard/accounts`); ThinkShare messaging is `/messages`, ThinkTanks `/thinktanks`, and the IxTwitter sync mirrors the feed to Discord.
 
-**Achievements & Awards (Core System):** `/vault/achievements` — achievement explorer, Lorewards, showcase and leaderboard, inside the Vault (`/achievements` redirects).
+**Achievements & Awards (Core System):** `/vault/achievements` — achievement explorer, Lorewards, showcase and leaderboard, inside the Vault.
 
 **MyCountry Builder (Core System):** `/builder` — nation creation and editor flows.
 
 **Admin CMS (Core System):** `/admin` — administrative dashboards and tooling; `/admin/maps` — Atlas, the admin home for every realm's map; `/admin/maps/studio` — World Studio for designing worlds.
 
-**Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/explore`, `/countries`, `/feed`, `/leaderboards`.
+**Navigation Hubs:** `/` (auth-aware landing), `/dashboard` (signed-in overview), `/countries`, `/feed`, `/leaderboards`.
 
-**Other routes:** `/(forum)/forum` (IxForum), `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/admin/realms` (Realms admin).
+**Other routes:** `/(wiki-os)/wiki` (WikiOS), `/blurbs`, `/messages`, `/myclub` + `/myleague` (sports), `/labs/onoma`, `/labs/vexel`, `/admin/realms` (Realms admin).
 
 **IxWorld (Integrated Product):** `/maps` — world map viewer (standalone at maps.ixwiki.com).
 

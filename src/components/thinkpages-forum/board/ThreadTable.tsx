@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { ArrowDown, Lock, Pin } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
@@ -15,8 +14,9 @@ import { AuthorFlag, resolveAuthor } from "../AuthorMark";
 import { AuthorName, type ForumAuthors } from "../AuthorName";
 import { ForumAvatar } from "../ForumAvatar";
 import { pageHref } from "../Pagination";
+import { UnreadMark } from "../UnreadMark";
 
-/** What a row needs of a thread: a board's read, and the New posts and Watched lists, share it. */
+/** What a row needs of a thread, as a board's read returns it. */
 export interface ThreadRowData {
   id: string;
   title: string;
@@ -37,8 +37,6 @@ export interface ThreadRowData {
   } | null;
   /** Signed-in viewers: the thread has posts the member has not read. */
   unread?: boolean;
-  /** The list pages name each thread's board (and its realm). */
-  board?: { name: string; realm: { name: string } | null };
   /** Find a Realm: the realm this thread advertises, else null. */
   advert?: {
     realmSlug: string;
@@ -65,19 +63,19 @@ const SORT_COLUMNS: ReadonlyArray<{ label: string; sort: ThreadSort; align?: "ri
   { label: "Last post", sort: "latest" },
 ];
 
-/** Sort links when the table belongs to a board (`basePath`); plain headings on the list pages, which have no sort. */
-function SortHeaders({ basePath, sort }: { basePath?: string; sort?: ThreadSort }) {
+/** The column headings: each a link that sorts the board (`basePath`), the current sort marked. */
+function SortHeaders({ basePath, sort }: { basePath: string; sort: ThreadSort }) {
   return (
     <div
       role="row"
       className={cn(
         GRID,
-        // The column headings sit on a Well band, as each post starts on one.
+        // The column headings sit on a Well band to set them apart from the thread rows.
         "facet-well text-footnote text-label-secondary border-separator items-center gap-x-4 border-b px-4 py-2 max-md:sr-only max-md:focus-within:not-sr-only sm:px-5"
       )}
     >
       {SORT_COLUMNS.map((column) => {
-        const active = basePath !== undefined && column.sort === sort;
+        const active = column.sort === sort;
         return (
           <div
             key={column.label}
@@ -85,20 +83,16 @@ function SortHeaders({ basePath, sort }: { basePath?: string; sort?: ThreadSort 
             aria-sort={active ? "descending" : undefined}
             className={column.align === "right" ? "text-right" : undefined}
           >
-            {basePath === undefined ? (
-              column.label
-            ) : (
-              <Link
-                href={sortHref(basePath, column.sort)}
-                className={cn(
-                  "hover:text-label focus-visible:outline-tint inline-flex items-center gap-1 focus-visible:outline-2 pointer-coarse:min-h-11",
-                  active && "text-label"
-                )}
-              >
-                {column.label}
-                {active ? <ArrowDown aria-hidden className="size-3" /> : null}
-              </Link>
-            )}
+            <Link
+              href={sortHref(basePath, column.sort)}
+              className={cn(
+                "hover:text-label focus-visible:outline-tint inline-flex items-center gap-1 focus-visible:outline-2 pointer-coarse:min-h-11",
+                active && "text-label"
+              )}
+            >
+              {column.label}
+              {active ? <ArrowDown aria-hidden className="size-3" /> : null}
+            </Link>
           </div>
         );
       })}
@@ -147,11 +141,11 @@ function LastPost({ thread, authors }: { thread: Thread; authors: ForumAuthors }
       <ForumAvatar
         name={poster.name}
         avatarUrl={poster.avatarUrl}
-        size="sm"
+        size="xs"
         className="hidden md:flex"
       />
       <span className="flex min-w-0 items-baseline gap-1.5 md:flex-col md:items-start md:gap-0">
-        <span className="text-footnote text-label md:text-callout max-w-40 truncate md:max-w-48">
+        <span className="text-footnote text-label max-w-40 truncate md:max-w-48">
           {poster.name}
         </span>
         <span aria-hidden className="text-footnote text-label-secondary md:hidden">
@@ -174,7 +168,7 @@ function RowAvatar({
   return thread.advert ? (
     <AdvertMark advert={thread.advert} />
   ) : (
-    <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="md" />
+    <ForumAvatar name={author.name} avatarUrl={author.avatarUrl} size="sm" />
   );
 }
 
@@ -195,10 +189,9 @@ function RowBadges({ thread }: { thread: Thread }) {
 interface ThreadRowProps {
   thread: Thread;
   authors: ForumAuthors;
-  renderAction?: (thread: Thread) => React.ReactNode;
 }
 
-function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
+function ThreadRow({ thread, authors }: ThreadRowProps) {
   const replies = Math.max(0, thread.postCount - 1);
   const last = pageCount(thread.postCount, POSTS_PER_PAGE);
   const author = resolveAuthor({
@@ -208,27 +201,19 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
     importedName: thread.importedAuthorName,
   });
   const unread = thread.unread === true;
-  const action = renderAction?.(thread);
   return (
     <div
       role="row"
       className={cn(
         GRID,
-        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-2 px-4 py-4 sm:px-5 pointer-coarse:min-h-11",
-        // An unread thread carries a wash of the tint, so new activity reads down the list at a glance.
-        unread && "bg-tint-fill/50"
+        "hover:bg-fill-4 relative items-center gap-x-4 gap-y-1 px-4 py-2 sm:px-5 pointer-coarse:min-h-11"
       )}
     >
-      <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3.5 md:col-span-1">
+      <div role="cell" className="col-span-2 flex min-w-0 items-center gap-3 md:col-span-1">
         <RowAvatar thread={thread} author={author} />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            {unread ? (
-              <>
-                <span aria-hidden className="bg-tint size-2 shrink-0 rounded-full" />
-                <span className="sr-only">Unread</span>
-              </>
-            ) : null}
+            {unread ? <UnreadMark /> : null}
             {thread.pinned ? (
               <Pin aria-label="Pinned" role="img" className="text-tint size-4 shrink-0" />
             ) : null}
@@ -238,25 +223,22 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
             <Link
               href={unread ? unreadHref(thread.id) : threadHref(thread.id)}
               className={cn(
-                "text-title-3 text-label focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
-                unread ? "font-bold" : "font-medium"
+                "text-headline text-label focus-visible:outline-tint min-w-0 truncate after:absolute after:inset-0 focus-visible:outline-2",
+                unread ? "font-semibold" : "font-medium"
               )}
             >
               {thread.title}
             </Link>
             <RowBadges thread={thread} />
-            {last > 1 || action ? (
+            {last > 1 ? (
               <span className="ml-auto flex shrink-0 items-center gap-2">
-                {last > 1 ? (
-                  <Link
-                    href={pageHref(threadHref(thread.id), last)}
-                    aria-label={`Last page of ${thread.title}`}
-                    className="text-footnote text-tint relative z-10 shrink-0 hover:underline md:hidden pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:max-md:inline-flex"
-                  >
-                    Last page
-                  </Link>
-                ) : null}
-                {action ? <span className="relative z-10 shrink-0">{action}</span> : null}
+                <Link
+                  href={pageHref(threadHref(thread.id), last)}
+                  aria-label={`Last page of ${thread.title}`}
+                  className="text-footnote text-tint relative z-10 shrink-0 hover:underline md:hidden pointer-coarse:min-h-11 pointer-coarse:items-center pointer-coarse:max-md:inline-flex"
+                >
+                  Last page
+                </Link>
               </span>
             ) : null}
           </div>
@@ -268,16 +250,6 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
               personaId={thread.authorPersonaId}
               importedName={thread.importedAuthorName}
             />
-            {thread.board ? (
-              <>
-                <span aria-hidden>·</span>
-                <span className="min-w-0 truncate">
-                  {thread.board.realm
-                    ? `${thread.board.realm.name} · ${thread.board.name}`
-                    : thread.board.name}
-                </span>
-              </>
-            ) : null}
             {last > 1 ? <PageShortcuts thread={thread} last={last} /> : null}
           </div>
         </div>
@@ -286,7 +258,7 @@ function ThreadRow({ thread, authors, renderAction }: ThreadRowProps) {
         role="cell"
         className="text-footnote text-label-secondary col-start-1 tabular-nums md:col-start-2 md:row-start-1 md:text-right"
       >
-        <span className="md:text-title-3 md:text-label md:block">{replies}</span>
+        <span className="md:text-callout md:text-label md:block">{replies}</span>
         <span className="md:text-footnote md:block">{` ${replies === 1 ? "reply" : "replies"}`}</span>
       </div>
       <div
@@ -303,12 +275,10 @@ function Group({
   label,
   threads,
   authors,
-  renderAction,
 }: {
   label: string | null;
   threads: readonly Thread[];
   authors: ForumAuthors;
-  renderAction?: (thread: Thread) => React.ReactNode;
 }) {
   return (
     <div role="rowgroup" className={cn("divide-separator divide-y", SPAN)}>
@@ -324,7 +294,7 @@ function Group({
         </div>
       ) : null}
       {threads.map((thread) => (
-        <ThreadRow key={thread.id} thread={thread} authors={authors} renderAction={renderAction} />
+        <ThreadRow key={thread.id} thread={thread} authors={authors} />
       ))}
     </div>
   );
@@ -333,15 +303,13 @@ function Group({
 interface ThreadTableProps {
   threads: readonly Thread[];
   authors: ForumAuthors;
-  /** The board's path, without `?sort=` or `?page=`; absent on the list pages, whose headings are not sort links. */
-  basePath?: string;
-  sort?: ThreadSort;
-  /** A control at the end of each row's title line (the Watched page's Unwatch). */
-  renderAction?: (thread: Thread) => React.ReactNode;
+  /** The board's path, without `?sort=` or `?page=`. */
+  basePath: string;
+  sort: ThreadSort;
 }
 
 /** A board's threads: Thread / Replies / Last post with sortable headers, pinned threads grouped first. */
-export function ThreadTable({ threads, authors, basePath, sort, renderAction }: ThreadTableProps) {
+export function ThreadTable({ threads, authors, basePath, sort }: ThreadTableProps) {
   const pinned = threads.filter((t) => t.pinned);
   const others = threads.filter((t) => !t.pinned);
   return (
@@ -351,13 +319,11 @@ export function ThreadTable({ threads, authors, basePath, sort, renderAction }: 
       </div>
       {pinned.length > 0 ? (
         <>
-          <Group label="Pinned" threads={pinned} authors={authors} renderAction={renderAction} />
-          {others.length > 0 ? (
-            <Group label="Threads" threads={others} authors={authors} renderAction={renderAction} />
-          ) : null}
+          <Group label="Pinned" threads={pinned} authors={authors} />
+          {others.length > 0 ? <Group label="Threads" threads={others} authors={authors} /> : null}
         </>
       ) : (
-        <Group label={null} threads={others} authors={authors} renderAction={renderAction} />
+        <Group label={null} threads={others} authors={authors} />
       )}
     </div>
   );

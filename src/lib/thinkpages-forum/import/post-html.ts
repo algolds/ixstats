@@ -222,11 +222,7 @@ export const UNSAFE_BODY_NOTE = "<p>[post omitted: its body could not be importe
 export function importedPostBody(input: PostHtmlInput): PostHtmlResult {
   const features = noFeatures();
   const attachments: AttachmentCounts = { inline: 0, appended: 0, omitted: 0 };
-  const transformed = transformBBCode(input.message, {
-    forumLinks: "keep",
-    mentions: "text",
-    actionTokens: "keep",
-  });
+  const transformed = transformBBCode(input.message);
   features.tooLong = transformed.tooLong;
   const degraded = degradeForSanitizer(transformed.contentHtml, features);
   const assembled = breakTemplateSyntax(withAttachments(degraded, input, attachments), features);

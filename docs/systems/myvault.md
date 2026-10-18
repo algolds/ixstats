@@ -21,9 +21,7 @@ There is no client-side `VaultRouter`: `/vault` uses normal Next.js routes wrapp
 | Daily reward | the daily reward dialog (action, with a badge) |                                                                                                                         |
 | Achievements | `/vault/achievements`                          |                                                                                                                         |
 | Cards        | `/vault/cards`                                 | `/vault/inventory`, `/vault/collections`, `/vault/lore-gallery`, `/vault/ns-library`, `/vault/ns-deck`, `/vault/import` |
-| Store        | `/vault/store`                                 | `/vault/marketplace`, `/vault/market`, `/vault/packs`, `/vault/trading`                                                 |
-
-Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?tab=store|auctions|trading` values carry over), `/vault/market` → `/vault/store?tab=auctions`, `/vault/packs` → `/vault/store?tab=store`, `/vault/trading` → `/vault/store?tab=trading`, `/vault/exchange` → `/labs/exchange` ([Exchange](./exchange.md) is a Labs section now), `/achievements` → `/vault/achievements` (query kept).
+| Store        | `/vault/store`                                 |                                                                                                                         |
 
 - `src/components/vault/vault-sections.ts` – `getSubTabFromPathname` only (the Cards sub-tab for a path); the navigation itself is the Vault entry of the source list
 - **Sections** (`src/components/vault/sections/`):
@@ -33,7 +31,7 @@ Redirects: `/vault/marketplace` → `/vault/store` (query string kept, so the `?
   - `Import` (`VaultImportSection.tsx`, `/vault/import`): NationStates deck verification and import wizard
   - `Lorewards` (`VaultLorewardsPanel.tsx`): the Lorewards tab of the Achievements page, a wrapper around the shared `LorewardsView` (`focus="you"`)
 - Achievements (`src/app/vault/achievements/`, `src/components/achievements/`) has four tabs: All, Lorewards, Showcase and Leaderboard; see [achievements.md](./achievements.md)
-- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#crafting-retired-for-now-2026-10-05)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`, `/vault/admin`
+- Standalone routes: `/vault/crafting` (a "Crafting is retired for now" empty state; see [cards.md](./cards.md#crafting-retired-for-now-2026-10-05)), `/vault/lore-generator`, `/vault/ns-deck/[nation]`, `/vault/collections/[slug]`
 
 ### The Wallet page
 

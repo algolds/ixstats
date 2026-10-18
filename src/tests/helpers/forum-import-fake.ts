@@ -1,9 +1,10 @@
 /**
- * An in-memory database for the XenForo importer suites (import-db, import-rollback): the tables the importer
- * touches, where clauses interpreted by forum-store-fake's `matches` (post → thread → category joined on read),
- * unique keys enforced (`create` throws P2002, `createMany({ skipDuplicates })` skips), thread deletes cascading to
- * posts, and `$transaction` rolling every table back when its callback throws. `failWhen` makes a call throw, to
- * interrupt a run part way. Seeded rows take the column defaults. Selects are ignored; findMany honours `take` and an id order, findFirst returns the earliest createdAt.
+ * An in-memory database for the XenForo importer suites (import-db, import-rollback, the passes): the tables the
+ * importer touches, where clauses interpreted by forum-store-fake's `matches` (post → thread → category joined on
+ * read), unique keys enforced (`create` throws P2002, `createMany({ skipDuplicates })` skips), thread deletes
+ * cascading to posts, and `$transaction` rolling every table back when its callback throws. `failWhen` makes a call
+ * throw, to interrupt a run part way. Seeded rows take the column defaults. Selects are ignored; findMany honours
+ * `take` and an id order, findFirst returns the earliest createdAt.
  */
 import { Prisma } from "@prisma/client";
 import { matches, type Row, type Value } from "./forum-store-fake";
@@ -15,8 +16,9 @@ export interface ImportTables {
   threads: Row[];
   posts: Row[];
   links: Row[];
-  configs: Row[];
   assets: Row[];
+  stashItems: Row[];
+  notifications: Row[];
 }
 
 type TableName = keyof ImportTables;
@@ -39,8 +41,9 @@ const TABLES: readonly TableName[] = [
   "threads",
   "posts",
   "links",
-  "configs",
   "assets",
+  "stashItems",
+  "notifications",
 ];
 
 /** Column sets that must be unique, per table: a null never collides, except in a column marked "?" (the site partial index). */
@@ -51,8 +54,9 @@ const UNIQUE: Record<TableName, string[][]> = {
   threads: [["id"], ["xenforoThreadId"], ["sourceRef"]],
   posts: [["id"], ["xenforoPostId"], ["sourceRef"]],
   links: [["id"], ["postSource", "postRef", "activityId"]],
-  configs: [["id"], ["key"]],
   assets: [["id"], ["source", "sourceRef"]],
+  stashItems: [["id"], ["stashId", "contentType", "pageTitle"]],
+  notifications: [["id"]],
 };
 
 const DEFAULTS: Record<TableName, Row> = {
@@ -91,8 +95,9 @@ const DEFAULTS: Record<TableName, Row> = {
     sourceRef: null,
   },
   links: { storylineId: null, chainOrder: null },
-  configs: { description: null },
   assets: {},
+  stashItems: { contentType: "wiki", contentId: null, note: null },
+  notifications: { href: null },
 };
 
 const cloneValue = (value: Value): Value =>
@@ -113,8 +118,9 @@ const cloneTables = (tables: Partial<ImportTables>): ImportTables => {
     threads: [],
     posts: [],
     links: [],
-    configs: [],
     assets: [],
+    stashItems: [],
+    notifications: [],
   };
   for (const t of TABLES) out[t] = (tables[t] ?? []).map(cloneRow);
   return out;
@@ -264,8 +270,9 @@ export function importStore(
     forumThread: table("threads"),
     forumPost: table("posts"),
     postActionLink: table("links"),
-    systemConfig: table("configs"),
     uploadedAsset: table("assets"),
+    stashItem: table("stashItems"),
+    notification: table("notifications"),
     $executeRaw: jest.fn(async (_sql: TemplateStringsArray, ..._values: Value[]) => 1),
     $queryRaw: jest.fn(async (_sql: TemplateStringsArray, ..._values: Value[]) => [
       { locked: !opts.lockHeld },

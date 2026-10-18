@@ -1,7 +1,7 @@
 /**
  * The country tabs after the Profile tab merged into the Factbook: the Factbook is the country's
- * own URL (it opens on the overview the Profile used to show), every `/factbook/<section>` keeps
- * the Factbook tab current, and the old `/factbook` index redirects to the country's URL.
+ * own URL (it opens on the overview the Profile used to show), and every `/factbook/<section>` keeps
+ * the Factbook tab current.
  */
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { render, screen, within } from "@testing-library/react";
@@ -10,21 +10,15 @@ import {
   CountryTabs,
   activeCountryTab,
 } from "~/app/countries/[slug]/_components/CountryTabs";
-import FactbookIndexRedirect from "~/app/countries/[slug]/(profile)/factbook/page";
 
-const mockRedirect = jest.fn((url: string) => {
-  throw new Error(`NEXT_REDIRECT ${url}`);
-});
 let mockPathname = "/countries/testland";
 
 jest.mock("next/navigation", () => ({
-  redirect: (url: string) => mockRedirect(url),
   usePathname: () => mockPathname,
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
 beforeEach(() => {
-  mockRedirect.mockClear();
   mockPathname = "/countries/testland";
 });
 
@@ -70,14 +64,5 @@ describe("CountryTabs", () => {
     expect(links[0]!.getAttribute("href")).toMatch(/\/countries\/testland$/);
     const current = links.filter((l) => l.getAttribute("aria-current") === "page");
     expect(current.map((l) => l.textContent)).toEqual([label]);
-  });
-});
-
-describe("/countries/[slug]/factbook", () => {
-  it("redirects to the country's own URL, where the Factbook now opens", async () => {
-    await expect(
-      FactbookIndexRedirect({ params: Promise.resolve({ slug: "testland" }) })
-    ).rejects.toThrow("NEXT_REDIRECT");
-    expect(mockRedirect).toHaveBeenCalledWith("/countries/testland");
   });
 });

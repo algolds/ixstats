@@ -2,6 +2,7 @@
  * Author display data for a page of rows (reads.ts re-exports it, so call sites do not change).
  */
 import type { PrismaClient } from "@prisma/client";
+import { personaTypeOf, type PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import type { PreviewAuthor } from "~/lib/thinkpages-forum/preview";
 import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import { personalAvatars } from "./personal-avatars";
@@ -18,6 +19,8 @@ export interface ForumPersonaAuthor {
   displayName: string;
   username: string;
   avatarUrl: string | null;
+  /** The persona's voice (government, media, citizen); null for a personal account. Never its nation. */
+  personaType: PersonaType | null;
 }
 
 /**
@@ -53,7 +56,13 @@ export async function authorsOf(
     uniquePersonas.length
       ? db.thinkpagesAccount.findMany({
           where: { id: { in: uniquePersonas } },
-          select: { id: true, displayName: true, username: true, profileImageUrl: true },
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+            profileImageUrl: true,
+            accountType: true,
+          },
         })
       : [],
   ]);
@@ -80,7 +89,12 @@ export async function authorsOf(
     personas: new Map<string, ForumPersonaAuthor>(
       personas.map((p) => [
         p.id,
-        { displayName: p.displayName, username: p.username, avatarUrl: p.profileImageUrl },
+        {
+          displayName: p.displayName,
+          username: p.username,
+          avatarUrl: p.profileImageUrl,
+          personaType: personaTypeOf(p.accountType),
+        },
       ])
     ),
   };
@@ -110,16 +124,24 @@ export function previewAuthorOf(
       avatarUrl: persona?.avatarUrl ?? null,
       flagUrl: null,
       persona: true,
+      personaType: persona?.personaType ?? null,
     };
   }
   const user = row.authorUserId ? maps.users.get(row.authorUserId) : undefined;
   if (user) {
-    return { name: user.name, avatarUrl: user.avatarUrl, flagUrl: user.flagUrl, persona: false };
+    return {
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      flagUrl: user.flagUrl,
+      persona: false,
+      personaType: null,
+    };
   }
   return {
     name: row.importedAuthorName ?? fallback,
     avatarUrl: null,
     flagUrl: null,
     persona: false,
+    personaType: null,
   };
 }

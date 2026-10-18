@@ -8,7 +8,7 @@ import {
   type StashDb,
   type StashOwner,
 } from "~/server/modules/thinkpages-forum";
-import { readableThreadTitles } from "~/server/modules/thinkpages-forum/stash";
+import { readableThreadTitles, withReadableThreads } from "~/server/modules/thinkpages-forum/stash";
 
 const categories = SITE_CATEGORIES.map((c, i) => ({
   id: `cat_${c.key}`,
@@ -401,5 +401,50 @@ describe("isThreadStashed and readableThreadTitles", () => {
     const titles = await readableThreadTitles(db, member, ["t1", "t_hidden", "t_staff", "t_gone"]);
 
     expect([...titles]).toEqual([["t1", "Hello there"]]);
+  });
+});
+
+describe("withReadableThreads (the /stashes listing)", () => {
+  const listed = (pageTitle: string, note: string | null) => ({
+    id: `i_${pageTitle}`,
+    pageTitle,
+    note,
+  });
+  /** The stash fake, plus what building the member's forum viewer reads (they moderate nothing). */
+  const listingDb = (threads?: Record<string, object>) => {
+    const { db, raw } = fake({ threads });
+    const scope = {
+      realm: { ...raw.realm, findMany: jest.fn(async () => []) },
+      realmOfficer: { findMany: jest.fn(async () => []) },
+      forumCategoryModerator: { findMany: jest.fn(async () => []) },
+    };
+    return { db: { ...db, ...scope } as never, raw };
+  };
+
+  it("leaves out a bridge-era forum:thread: item: the XenForo import moves it to its native thread", async () => {
+    const { db } = listingDb();
+
+    const items = await withReadableThreads(db, member as never, [
+      listed("Main_Page", "a wiki note"),
+      listed("thinkpages:thread:t1", "Old title"),
+      listed("forum:thread:7", "An old thread"),
+    ]);
+
+    expect(items.map((i) => [i.pageTitle, i.note])).toEqual([
+      ["Main_Page", "a wiki note"],
+      ["thinkpages:thread:t1", "Hello there"],
+    ]);
+  });
+
+  it("asks nothing of the forum for a page whose only threads are bridge-era ones", async () => {
+    const { db, raw } = listingDb();
+
+    const items = await withReadableThreads(db, member as never, [
+      listed("Main_Page", null),
+      listed("forum:thread:7", "An old thread"),
+    ]);
+
+    expect(items.map((i) => i.pageTitle)).toEqual(["Main_Page"]);
+    expect(raw.forumThread.findMany).not.toHaveBeenCalled();
   });
 });

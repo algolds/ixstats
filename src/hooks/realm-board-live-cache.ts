@@ -39,6 +39,8 @@ export function toCachedMessage(
 ): CachedMessage {
   return {
     ...live,
+    // A payload from an older server carries no persona type.
+    author: { ...live.author, personaType: live.author.personaType ?? null },
     authorUserId: live.authorUserId ?? existing?.authorUserId ?? null,
     continued: existing?.continued ?? live.continued,
     createdAt: new Date(live.createdAt),

@@ -11,9 +11,9 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 ## Architecture & Routing
 
 - `src/app/help/page.tsx` – Help center page (header + quick-links footer); renders the client `HelpExplorer`
-- `src/app/help/_lib/help-sections.ts` – The registry: `helpSections` (sections → articles: id, title, description, `path`, tags), `retiredHelpArticles` (old paths → replacement), and `filterHelpSections` (search + section filter)
+- `src/app/help/_lib/help-sections.ts` – The registry: `helpSections` (sections → articles: id, title, description, `path`, tags) and `filterHelpSections` (search + section filter)
 - `src/app/help/_components/HelpExplorer.tsx` – Client hub: search box (title, description, tags, section title), one filter chip per section, result count, section cards
-- `src/app/help/[category]/[slug]/page.tsx` – Serves `src/content/help/<category>/<slug>.md` through `DocumentPage` (404 when missing), sets the page title from the frontmatter, and permanently redirects retired paths
+- `src/app/help/[category]/[slug]/page.tsx` – Serves `src/content/help/<category>/<slug>.md` through `DocumentPage` (404 when missing) and sets the page title from the frontmatter
 - `src/components/documents/DocumentPage.tsx` / `DocumentLayout.tsx` – Shared markdown layout (breadcrumb, table of contents, prev/next) also used by `/terms` and `/privacy`
 - `src/lib/markdown-document.ts` – Frontmatter, heading ids (`{#id}` or a slug of the text), callouts (`> [!WARNING]` → warning, other blockquotes → note)
 - There is no `help` tRPC router; content is static markdown.
@@ -38,17 +38,6 @@ The in-app help center at `/help` holds plain, task-oriented player guides. Arti
 | **Labs** | labs/{overview, myleague-myclub, onoma, vexel} | [myleague.md](./myleague.md), [onoma-roadmap.md](./onoma-roadmap.md), [vexel.md](./vexel.md) |
 | **For Admins** | admin/{cms-overview, reference-data} | [admin-cms.md](./admin-cms.md) |
 
-### Retired articles
-
-These were removed because they described features that don't exist, or were merged into another article. The article route permanently redirects each old path (`retiredHelpArticles`):
-
-| Old path | Now | Reason |
-| :--- | :--- | :--- |
-| `diplomacy/missions` | `diplomacy/embassies` | Embassy missions were deleted (plan 312); nothing to play |
-| `defense/overview`, `defense/units`, `defense/customization` | `mycountry/defense` | Merged into one Defense guide |
-| `defense/crisis-events` | `gameplay/world-events` | The crisis response engine isn't built; rewritten around what exists (urgent issues, admin world events) |
-| `intelligence/{alerts, dashboard, executive-operations, forecasting, metrics, strategic-intelligence, unified-overview}` | `mycountry/intelligence` | The intelligence dashboard, alert rules and forecasting were deleted (plans 312/341) |
-
 ---
 
 ## Authoring Workflow
@@ -61,11 +50,11 @@ These were removed because they described features that don't exist, or were mer
 3. **Register it** in `helpSections` (`src/app/help/_lib/help-sections.ts`), with the same title as the frontmatter.
 4. **Run the tests** (`bunx jest src/tests/content`).
 
-To retire an article, delete the file, remove its registry entry, add the old path to `retiredHelpArticles`, and fix any links to it.
+To retire an article, delete the file, remove its registry entry, and fix any links to it.
 
 ### Tests
 
-- `src/tests/content/help-center.test.ts` – every file is registered exactly once and every registry entry has a file; registry titles match frontmatter; retired paths are gone and redirect to real articles; every in-article link and prev/next link resolves to an app route or an existing article (and heading anchor); search/filter behaviour.
+- `src/tests/content/help-center.test.ts` – every file is registered exactly once and every registry entry has a file; registry titles match frontmatter; every in-article link and prev/next link resolves to an app route or an existing article (and heading anchor); search/filter behaviour.
 - `src/tests/content/markdown-documents.test.ts` – every help and legal document renders with the expected heading ids, has a title/description/badge, and renders callouts correctly.
 
 ---
@@ -74,7 +63,7 @@ To retire an article, delete the file, remove its registry entry, add the old pa
 
 - Articles are not versioned against the code; the tests catch broken links and missing files, not stale facts.
 - A few articles document known product gaps so players aren't misled (trade tab settings not saved, crisis counts empty). The crafting article was removed when crafting was retired (2026-10-05). Remove those notes when the gaps close.
-- `/util/lorewards` (and `/wiki/lorewards`) is a real page now (today's race, standings, recent winners); the player's own trophies are the Lorewards tab of `/vault/achievements`, and the Lorewards article describes both.
+- `/util/lorewards` is a real page now (today's race, standings, recent winners); the player's own trophies are the Lorewards tab of `/vault/achievements`, and the Lorewards article describes both.
 
 ---
 

@@ -20,6 +20,7 @@ import {
   diskRefusal,
   failedThreadLines,
   omittedByReason,
+  rollbackLines,
   rollbackPreviewLines,
   snapshotGapLines,
   targetLines,
@@ -204,23 +205,44 @@ describe("rollback lines (I2)", () => {
         posts: 7,
         nativeReplies: 1,
         links: 2,
+        stashItems: 6,
         categories: ["xf-12", "xf-13"],
-        nodeMap: 1,
         assets: 4,
         files: 5,
       })
     ).toEqual([
       "Rollback preview (nothing deleted): 3 imported threads, 7 posts (1 native replies on imported threads)",
       "  action links on those posts: 2 (returned to their XenForo post, or deleted with a native reply)",
-      "  archive categories 2 (xf-12, xf-13), node map rows 1, forum media assets 4, copied files 5",
+      "  stash items on those threads: 6 (returned to the old forum thread, so a re-apply moves them back)",
+      "  archive categories 2 (xf-12, xf-13), forum media assets 4, copied files 5",
       "Pass --yes to delete these.",
     ]);
   });
 
+  it("prints what the rollback did", () => {
+    expect(
+      rollbackLines({
+        threads: 3,
+        posts: 7,
+        nativeReplies: 1,
+        linksRestored: 1,
+        linksDeleted: 1,
+        stashItems: 6,
+        categories: 2,
+        assets: 4,
+        files: 5,
+      })
+    ).toEqual([
+      "Rolled back: 3 threads, 7 posts (1 native replies on imported threads)",
+      "  action links: 1 returned to their XenForo post, 1 deleted",
+      "  stash items: 6 returned to the old forum thread (a re-apply moves them back)",
+      "  archive categories 2, media assets 4, files 5",
+    ]);
+  });
 });
 
 describe("applyTotalLines", () => {
-  it("prints the re-hidden rows (I7) and the failed threads (M19)", () => {
+  it("prints the re-hidden rows (I7), the old forum links, the bridge-era rows and the failed threads (M19)", () => {
     const lines = applyTotalLines({
       categoriesCreated: 0,
       threadsCreated: 1,
@@ -230,12 +252,24 @@ describe("applyTotalLines", () => {
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
       quoteIds: { remapped: 0, dropped: 0 },
+      forumLinks: { mapped: 4, unwrapped: 5 },
+      stashedThreads: { moved: 6, twins: 7, deleted: 8 },
+      notificationLinks: { mapped: 10, unresolved: 11 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 1, posts: 2, assets: 3 },
       failedThreads: [{ xenforoThreadId: 9, error: "boom" }],
     });
     expect(lines).toContain(
       "  re-hidden (moderated or deleted on XenForo since imported): 1 threads, 2 posts, 3 media assets made restricted"
+    );
+    expect(lines).toContain(
+      "  old forum links: 4 pointed at the native page, 5 unwrapped to their text (no public page to point at)"
+    );
+    expect(lines).toContain(
+      "  stashed old forum threads: 6 moved to the native thread, 7 removed (already stashed natively), 8 removed (never imported)"
+    );
+    expect(lines).toContain(
+      "  old forum notification links: 10 pointed at the native page, 11 sent to the forum home (no public page to point at)"
     );
     expect(lines.slice(-2)).toEqual([
       "FAILED: 1 threads were rolled back and not imported; XenForo thread ids: 9",

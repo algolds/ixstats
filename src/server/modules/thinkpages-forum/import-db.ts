@@ -1,18 +1,13 @@
 /**
  * What the XenForo importer (phase 4, scripts/migrations/import-xenforo-forum.ts) reads from the database before it
- * plans, the run's single-flight lock, and the applied node map the `/forum/<nodeId>` redirect reads back. The
- * writes are import-write.ts, the rollback import-rollback.ts.
+ * plans, the run's single-flight lock, and the node map the run applied. The writes are import-write.ts, the
+ * rollback import-rollback.ts.
  */
 import type { PrismaClient } from "@prisma/client";
 import { categoryVisibilityWhere, SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
-import {
-  nodeMapSchema,
-  type NodeMapFile,
-  type ResolvedNode,
-} from "~/lib/thinkpages-forum/import/node-map";
+import type { NodeMapFile, ResolvedNode } from "~/lib/thinkpages-forum/import/node-map";
 import type { ImportDbState } from "~/lib/thinkpages-forum/import/plan";
 import { isRealmPublished } from "~/server/modules/realms";
-import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
 import { publishedRealmIds } from "./public-threads";
 import { loadForumRealm } from "./realm-access";
 
@@ -29,8 +24,9 @@ export type ImportDb = Pick<
   | "forumThread"
   | "forumPost"
   | "postActionLink"
-  | "systemConfig"
   | "uploadedAsset"
+  | "stashItem"
+  | "notification"
   | "$transaction"
   | "$executeRaw"
   | "$queryRaw"
@@ -189,41 +185,9 @@ export async function assertImportLock(db: Pick<PrismaClient, "$queryRaw">): Pro
 
 /**
  * The node map the run applied, as each node's resolved target (map, heuristic or default) in the node map file's
- * shape, so the redirect's parser reads it and it can be passed back as `--node-map`. Realms stay slugs.
+ * shape, so `nodeLandings` (import/forum-links.ts) reads it and it can be passed back as `--node-map`. Realms stay
+ * slugs.
  */
 export function appliedNodeMap(resolved: readonly ResolvedNode[]): NodeMapFile {
   return { nodes: Object.fromEntries(resolved.map((r) => [String(r.node.node_id), r.target])) };
-}
-
-/** The stored node map's entries; an absent or unreadable row has none (and is replaced). */
-function storedNodes(value: string | null): NodeMapFile["nodes"] {
-  if (!value) return {};
-  try {
-    const parsed = nodeMapSchema.safeParse(JSON.parse(value));
-    return parsed.success ? parsed.data.nodes : {};
-  } catch {
-    return {};
-  }
-}
-
-/** Merges this run's node targets into the stored map (this run's entries win), so earlier nodes keep landing. */
-export async function storeNodeMap(
-  db: Pick<PrismaClient, "systemConfig">,
-  map: NodeMapFile
-): Promise<void> {
-  const row = await db.systemConfig.findUnique({
-    where: { key: FORUM_IMPORT_NODE_MAP_KEY },
-    select: { value: true },
-  });
-  const value = JSON.stringify({ nodes: { ...storedNodes(row?.value ?? null), ...map.nodes } });
-  await db.systemConfig.upsert({
-    where: { key: FORUM_IMPORT_NODE_MAP_KEY },
-    create: {
-      key: FORUM_IMPORT_NODE_MAP_KEY,
-      value,
-      description:
-        "XenForo node id → forum target applied by the phase 4 import (read by /forum/<nodeId>).",
-    },
-    update: { value },
-  });
 }

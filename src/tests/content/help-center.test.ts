@@ -1,10 +1,6 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import {
-  filterHelpSections,
-  helpSections,
-  retiredHelpArticles,
-} from "~/app/help/_lib/help-sections";
+import { filterHelpSections, helpSections } from "~/app/help/_lib/help-sections";
 import { parseMarkdownDocument } from "~/lib/markdown-document";
 
 const ROOT = path.resolve(__dirname, "../../..");
@@ -83,13 +79,6 @@ describe("help center registry", () => {
       });
     }
   });
-
-  it("redirects retired articles to articles that exist", () => {
-    for (const [retired, target] of Object.entries(retiredHelpArticles)) {
-      expect(existsSync(path.join(HELP, `${retired}.md`))).toBe(false);
-      expect(articleFiles).toContain(target.replace(/^\/help\//, ""));
-    }
-  });
 });
 
 describe("help article links", () => {
@@ -99,7 +88,6 @@ describe("help article links", () => {
       const route = pathPart.split("?")[0] ?? "";
       if (route.startsWith("/help/")) {
         const target = route.replace(/^\/help\//, "");
-        expect({ link, retired: target in retiredHelpArticles }).toEqual({ link, retired: false });
         expect({ link, exists: articleFiles.includes(target) }).toEqual({ link, exists: true });
         if (hash) {
           const ids = parseMarkdownDocument(source(target)).headings.map((h) => h.id);

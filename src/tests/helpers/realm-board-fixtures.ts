@@ -21,6 +21,7 @@ export function boardMessage(overrides: Partial<FixtureMessage> = {}): FixtureMe
       avatarUrl: null,
       flagUrl: "/flags/kir.png",
       persona: false,
+      personaType: null,
     },
     role: null,
     isVisitor: false,

@@ -6,7 +6,7 @@
 **Subsystem:** Stash (`STASH_VERSION = 1`)  
 **Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  
 **Route:** `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
-*(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` lists only `wiki | forum_thread | forum_post`.)*  
+*(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` names the `StashContentType` values `wiki | image | forum_thread`, or a caller's own such as `name`.)*  
 *(Note: Prisma models are `Stash` / `StashItem` / `StashAnnotation`; the tables keep the legacy `lore_stash*` names)*  
 
 ---
@@ -137,11 +137,11 @@ model Stash {
 model StashItem {
   id          String            @id @default(cuid())
   stashId     String
-  pageTitle   String            // "commons:" prefix = image, "forum:thread:" prefix = thread
+  pageTitle   String            // "commons:" prefix = image, "thinkpages:thread:" prefix = thread
   pageSlug    String
   articleId   String?           // optional link to WikiArticle
-  contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?              // XenForo thread_id of a legacy forum item (null for native threads)
+  contentType String            @default("wiki") // StashContentType ("wiki" | "image" | "forum_thread") or a caller's own ("name")
+  contentId   Int?              // XenForo thread id of a bridge-era item: the forum import reads it and writes null (as stashThread does); its rollback writes it back
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())
@@ -181,7 +181,7 @@ Annotations hang off a `StashItem`. When a highlight is made on a page that is n
 
 ## 5. tRPC API Reference
 
-All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (items `thinkpages:thread:<id>`); legacy `forum:thread:<id>` items from the retired XenForo bridge stay listed and open their old `/forum/thread/<id>` path, which redirects.
+All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` (items `thinkpages:thread:<id>`). `forum:thread:<xenforoThreadId>` items from the retired XenForo bridge are left out of the listing (their `/forum` path is a 404): the XenForo import (`--apply`) moves each to its native thread, or deletes it when the thread was never imported (`src/server/modules/thinkpages-forum/import-stash-threads.ts`).
 
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |
@@ -190,7 +190,7 @@ All operations are grouped under `api.wikios.*`: collection and item procedures 
 | `createStash` | Mutation | `{ name: string, color: string, icon?: string }` | Creates a new collection (max 25 per user). |
 | `updateStash` | Mutation | `{ id: string, name?, color?, icon? }` | Renames collection or updates color/icon. |
 | `deleteStash` | Mutation | `{ id: string }` | Deletes a non-default collection and cascades to its items. |
-| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string, contentId?: number, … }` | Saves an article, image, or thread (default stash if none given). |
+| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string }` | Saves an article, image, or thread (default stash if none given). |
 | `unstashPage` | Mutation | `{ pageTitle: string, stashId?: string }` | Removes item from collection. |
 | `isStashed` | Query | `{ pageTitle: string }` | Checks whether active user has stashed this page. |
 | `getAnnotations` | Query | `{ pageTitle: string }` | Fetches clipped quotes and Margin highlights for a page. |

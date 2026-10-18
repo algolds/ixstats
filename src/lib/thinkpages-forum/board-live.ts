@@ -7,6 +7,7 @@
  * carries no player id. A hidden message is never sent; a hide is a `removed` change.
  */
 import { z } from "zod";
+import { PERSONA_TYPES } from "./persona-type";
 import { isReactionType } from "./reactions";
 
 export const BOARD_ROOM_PREFIX = "realm-board:";
@@ -31,6 +32,8 @@ const authorSchema = z.object({
   avatarUrl: z.string().nullable(),
   flagUrl: z.string().nullable(),
   persona: z.boolean(),
+  /** Optional so a payload from an older server still parses. */
+  personaType: z.enum(PERSONA_TYPES).nullable().optional(),
 });
 
 const realmRefSchema = z.object({ slug: z.string(), name: z.string() });

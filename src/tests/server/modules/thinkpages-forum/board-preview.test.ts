@@ -82,6 +82,7 @@ describe("realmBoardPreview", () => {
       avatarUrl: "https://img.example/daily.png",
       flagUrl: null,
       persona: true,
+      personaType: "media",
     });
     expect(Object.keys(persona).sort()).toEqual(["author", "createdAt", "excerpt", "href", "id"]);
     // The player also wrote p6 and p7 as themselves: only the persona's own message is held to the rule.
@@ -105,6 +106,7 @@ describe("realmBoardPreview", () => {
       avatarUrl: "https://img.example/daily.png",
       flagUrl: null,
       persona: true,
+      personaType: "media",
     });
     expect(JSON.stringify(persona)).not.toContain("u_member");
   });
@@ -117,6 +119,7 @@ describe("realmBoardPreview", () => {
       avatarUrl: null,
       flagUrl: "https://flags.example/u_member.png",
       persona: false,
+      personaType: null,
     });
   });
 

@@ -13,9 +13,9 @@ const statements = sql
   .replace(/\s+/g, " ")
   .trim();
 
+/** The tables the schema still models. `forum_readers` was created here too but is dropped by 20261027120000. */
 const TABLES: ReadonlyArray<readonly [model: string, table: string]> = [
   ["ForumThreadRead", "forum_thread_reads"],
-  ["ForumReader", "forum_readers"],
   ["ForumThreadWatch", "forum_thread_watches"],
   ["ForumPostMention", "forum_post_mentions"],
 ];
@@ -32,7 +32,7 @@ describe("forum engagement migration", () => {
   });
 
   it("creates the four tables and their indexes only when they are missing", () => {
-    for (const [, table] of TABLES) {
+    for (const table of [...TABLES.map(([, name]) => name), "forum_readers"]) {
       expect(statements).toContain(`CREATE TABLE IF NOT EXISTS "${table}"`);
     }
     expect(statements.match(/CREATE TABLE/g)).toHaveLength(4);
@@ -51,7 +51,8 @@ describe("forum engagement migration", () => {
     expect(statements).not.toMatch(/\b(?:DROP|TRUNCATE|INSERT)\b|(?<!ON )\b(?:UPDATE|DELETE)\b/);
   });
 
-  it("has a Prisma model for every table, mapped to its name", () => {
+  it("has a Prisma model for every table still in use, and none for forum_readers (dropped by 20261027120000)", () => {
+    expect(schema).not.toContain("forum_readers");
     for (const [model, table] of TABLES) {
       const body = schema.match(new RegExp(`model ${model} \\{([^}]*)\\}`))?.[1] ?? "";
       expect(body).toContain(`@@map("${table}")`);

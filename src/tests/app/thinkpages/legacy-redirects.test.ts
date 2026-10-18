@@ -1,13 +1,11 @@
 /** @jest-environment node */
 /**
- * The feed's old ThinkPages pages answer with redirects (phase 5). `/thinkpages/post/<id>` stays the forum post
- * permalink (ruling P5): a forum post the viewer may see goes to its thread and anchor, anything else to the feed
- * post under /dashboard. Both hops are temporary (307), since the answer depends on the viewer and on moderation
- * (ruling R-e). The page reads the Clerk session and asks as that viewer (P1), so a member's own report thread and
- * a moderator's hidden post resolve on the server, on the page the viewer's own thread view shows (P2). An id over
- * the input bound is not a forum post; other lookup failures surface. The other old pages moved for good (308), the
- * forum home's old address among them: the forum home is /thinkpages itself. The feed's moved pages keep the query
- * string they came with, re-encoded. Every destination is a fixed prefix plus an encoded id or realm.
+ * `/thinkpages/post/<id>` is the forum post permalink (ruling P5): a forum post the viewer may see goes to its thread
+ * and anchor, anything else to the feed post under /dashboard. Both hops are temporary (307), since the answer depends
+ * on the viewer and on moderation (ruling R-e). The page reads the Clerk session and asks as that viewer (P1), so a
+ * member's own report thread and a moderator's hidden post resolve on the server, on the page the viewer's own thread
+ * view shows (P2). An id over the input bound is not a forum post; other lookup failures surface. Every destination is
+ * a fixed prefix plus an encoded id. `/thinkpages` itself is the forum home.
  */
 jest.mock("next/navigation", () => ({
   redirect: jest.fn((url: string) => {
@@ -35,12 +33,6 @@ import { auth } from "@clerk/nextjs/server";
 import { permanentRedirect, redirect, unstable_rethrow } from "next/navigation";
 import { db } from "~/server/db";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
-import LegacyProfilePage from "~/app/thinkpages/profile/[username]/page";
-import LegacySavedPage from "~/app/thinkpages/saved/page";
-import LegacyFeedPage from "~/app/thinkpages/feed/page";
-import LegacyThinkSharePage from "~/app/thinkpages/thinkshare/page";
-import LegacyThinkTanksPage from "~/app/thinkpages/thinktanks/page";
-import LegacyForumHomePage from "~/app/thinkpages/forum/page";
 import ThinkPagesHomePage, { metadata as homeMetadata } from "~/app/thinkpages/page";
 import { ForumHome } from "~/components/thinkpages-forum/home";
 
@@ -207,78 +199,13 @@ describe("/thinkpages/post/<id>", () => {
   });
 });
 
-type Query = Record<string, string | string[] | undefined>;
-const query = (q: Query) => ({ searchParams: Promise.resolve(q) });
-const openProfile = (username: string, q: Query = {}) =>
-  LegacyProfilePage({ params: Promise.resolve({ username }), ...query(q) });
-
-describe("the feed's other old pages (308)", () => {
-  it("a persona profile moves under /dashboard, encoded", async () => {
-    await expect(openProfile("jane doe")).rejects.toThrow(
-      "permanent:/dashboard/profile/jane%20doe"
-    );
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
-  it.each<[string, (q: Query) => Promise<void>, string]>([
-    ["profile/jane", (q) => openProfile("jane", q), "/dashboard/profile/jane"],
-    ["saved", (q) => LegacySavedPage(query(q)), "/dashboard/saved"],
-    ["feed", (q) => LegacyFeedPage(query(q)), "/dashboard"],
-  ])("/thinkpages/%s keeps the query string it came with", async (_name, open, target) => {
-    await expect(open({})).rejects.toThrow(new Error(`permanent:${target}`));
-    await expect(open({ tab: "trending" })).rejects.toThrow(
-      new Error(`permanent:${target}?tab=trending`)
-    );
-    await expect(open({ tag: ["a", "b"], empty: undefined })).rejects.toThrow(
-      new Error(`permanent:${target}?tag=a&tag=b`)
-    );
-    // A value cannot add a parameter or a fragment of its own.
-    await expect(open({ q: "x&admin=1#y" })).rejects.toThrow(
-      new Error(`permanent:${target}?q=x%26admin%3D1%23y`)
-    );
-  });
-
-  it.each([
-    ["thinkshare", LegacyThinkSharePage, "/messages"],
-    ["thinktanks", LegacyThinkTanksPage, "/thinktanks"],
-  ])("/thinkpages/%s goes to its new home", (_name, Page, target) => {
-    expect(() => Page()).toThrow(`permanent:${target}`);
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-});
-
-type RealmParam = string | string[] | undefined;
-const realmParams = (realm: RealmParam) => ({ searchParams: Promise.resolve({ realm }) });
-
 describe("/thinkpages is the forum home", () => {
-  it.each<[RealmParam]>([[""], [undefined]])("shows the home for ?realm=%j", async (realm) => {
-    const page = await ThinkPagesHomePage(realmParams(realm));
-    expect(page.type).toBe(ForumHome);
+  it("shows the home", () => {
+    expect(ThinkPagesHomePage().type).toBe(ForumHome);
     expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
-  it.each<[RealmParam, string]>([
-    ["eurth", "/thinkpages/r/eurth/hub"],
-    [["x", "y"], "/thinkpages/r/x/hub"],
-    ["a&b=c", "/thinkpages/r/a%26b%3Dc/hub"],
-  ])("opens that realm's Hub from ?realm=%j", async (realm, target) => {
-    await expect(ThinkPagesHomePage(realmParams(realm))).rejects.toThrow(`redirect:${target}`);
   });
 
   it("is titled ThinkPages", () => {
     expect(homeMetadata.title).toBe("ThinkPages - IxStates");
-  });
-});
-
-describe("/thinkpages/forum moves to /thinkpages (308)", () => {
-  it.each<[RealmParam, string]>([
-    [undefined, "/thinkpages"],
-    ["", "/thinkpages"],
-    ["eurth", "/thinkpages?realm=eurth"],
-    [["x", "y"], "/thinkpages?realm=x"],
-    ["a&b=c", "/thinkpages?realm=a%26b%3Dc"],
-  ])("?realm=%j goes to %s", async (realm, target) => {
-    await expect(LegacyForumHomePage(realmParams(realm))).rejects.toThrow(`permanent:${target}`);
-    expect(mockRedirect).not.toHaveBeenCalled();
   });
 });

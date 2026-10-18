@@ -26,7 +26,6 @@ const mockArticlePrefetch = jest.fn();
 const mockMainPagePrefetch = jest.fn();
 const mockRevisionPrefetch = jest.fn();
 const mockPrefetchedState = jest.fn();
-const mockMissingPages = jest.fn();
 const mockRandomPage = jest.fn();
 const mockFileInfo = jest.fn();
 const mockFileDetails = jest.fn();
@@ -55,7 +54,6 @@ jest.mock("~/trpc/server", () => ({
       getArticleHtml: { prefetch: (...args: unknown[]) => mockArticlePrefetch(...args) },
       getMainPage: { prefetch: (...args: unknown[]) => mockMainPagePrefetch(...args) },
       getRevisionHtml: { prefetch: (...args: unknown[]) => mockRevisionPrefetch(...args) },
-      getMissingPages: (...args: unknown[]) => mockMissingPages(...args),
       getRandomPage: (...args: unknown[]) => mockRandomPage(...args),
       getFileInfo: (...args: unknown[]) => mockFileInfo(...args),
       getFileDetails: (...args: unknown[]) => mockFileDetails(...args),
@@ -157,7 +155,6 @@ const fails = (code: ConstructorParameters<typeof TRPCError>[0]["code"]) =>
 beforeEach(() => {
   jest.clearAllMocks();
   succeeds(article());
-  mockMissingPages.mockResolvedValue([]);
   mockCategoryPage.mockResolvedValue({ members: [], total: 0, next: null });
   mockFileInfo.mockResolvedValue(null);
   mockFileDetails.mockResolvedValue(null);
@@ -357,82 +354,6 @@ describe("an article is read on the server (plan 412 step 2)", () => {
   });
 });
 
-describe("old WikiOS URLs (plan 412 step 1)", () => {
-  it("a tool slug redirects to its tool when no article has that title", async () => {
-    mockMissingPages.mockResolvedValue(["Recent-changes"]);
-    const { signal } = await outcome(["recent-changes"]);
-
-    expect(mockMissingPages).toHaveBeenCalledWith({ titles: ["Recent-changes"] });
-    expect(signal).toBe("redirect:/util/recent-changes");
-  });
-
-  it("a tool slug is the article when one has that title: a tool never hijacks a title", async () => {
-    mockMissingPages.mockResolvedValue([]);
-    succeeds(article({ title: "Random" }));
-    const { signal } = await outcome(["random"]);
-
-    // The article "Random" exists: the URL moves to its canonical spelling and is read there.
-    expect(signal).toBe("permanent:/wiki/Random");
-    const read = await outcome(["Random"]);
-    expect(read.signal).toBeNull();
-    expect(mockMissingPages).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps a tool's arguments: the query and the page it was asked about", async () => {
-    mockMissingPages.mockResolvedValue(["Search"]);
-    expect((await outcome(["search"], { q: "eurth" })).signal).toBe(
-      "redirect:/util/search?q=eurth"
-    );
-
-    mockMissingPages.mockResolvedValue(["History/Foo_bar"]);
-    expect((await outcome(["history", "Foo_bar"])).signal).toBe("redirect:/util/history/Foo_bar");
-  });
-
-  it("an action asked of an article that exists is honoured before the old-URL redirects (plan 412 review)", async () => {
-    // "Foo/talk" exists as a page: ?action=raw is its raw text, not a redirect to Talk:Foo.
-    mockMissingPages.mockResolvedValue([]);
-    expect((await outcome(["Foo", "talk"], { action: "raw" })).signal).toBe(
-      "redirect:/api/wiki/raw?path=Foo%2Ftalk&action=raw"
-    );
-    // So is the tool slug's article: "Search" exists, ?action=raw reads it, no /util/search.
-    expect((await outcome(["search"], { action: "raw", oldid: "7" })).signal).toBe(
-      "redirect:/api/wiki/raw?path=Search&action=raw&oldid=7"
-    );
-    expect((await outcome(["Foo", "edit"], { action: "history" })).tree).not.toBeNull();
-    expect(
-      propsOf((await outcome(["Foo", "edit"], { action: "history" })).tree, "PageHistoryView")
-    ).toMatchObject({
-      title: "Foo/edit",
-    });
-    expect((await outcome(["search"], { oldid: "a b" })).signal).toBe("not-found");
-
-    // With no such article the old URL does what it always did, whatever the query says.
-    mockMissingPages.mockResolvedValue(["Foo/talk"]);
-    expect((await outcome(["Foo", "talk"], { action: "raw" })).signal).toBe(
-      "redirect:/wiki/Talk:Foo"
-    );
-    mockMissingPages.mockResolvedValue(["Search"]);
-    expect((await outcome(["search"], { action: "raw" })).signal).toBe(
-      "redirect:/util/search?action=raw"
-    );
-  });
-
-  it("/<title>/edit goes to ?action=edit, /<title>/talk to the talk page", async () => {
-    mockMissingPages.mockResolvedValue(["Foo bar/edit"]);
-    expect((await outcome(["foo_bar", "edit"])).signal).toBe("redirect:/wiki/Foo_bar?action=edit");
-
-    mockMissingPages.mockResolvedValue(["Foo bar/talk"]);
-    expect((await outcome(["foo_bar", "talk"])).signal).toBe("redirect:/wiki/Talk:Foo_bar");
-  });
-
-  it("/<title>/edit is a subpage when a page with that title exists", async () => {
-    mockMissingPages.mockResolvedValue([]);
-    const { signal } = await outcome(["Foo", "edit"]);
-    expect(signal).toBeNull();
-    expect(mockArticlePrefetch).toHaveBeenCalledWith({ title: "Foo/edit" }, { retry: false });
-  });
-});
-
 describe("Special: pages (plan 412 step 3)", () => {
   it("maps the tools WikiOS has, keeping their arguments", async () => {
     expect((await outcome(["Special:RecentChanges"])).signal).toBe("redirect:/util/recent-changes");
@@ -577,8 +498,6 @@ describe("Special: pages (plan 412 step 3)", () => {
     );
     mockFileInfo.mockRejectedValue(refused);
     expect((await outcome(["Special:FilePath", "x".repeat(300)])).signal).toBe("not-found");
-    mockMissingPages.mockRejectedValue(refused);
-    expect((await outcome(["recent-changes"])).signal).toBe("not-found");
   });
 
   it("an unknown special page is a 404, not a redirect to the utilities", async () => {
@@ -789,11 +708,6 @@ describe("deleted pages through the route (plan 409)", () => {
 
     fails("NOT_FOUND");
     expect((await outcome(["Deleted_page"], { oldid: "5" })).signal).toBe("not-found");
-  });
-
-  it("an old tool slug is a redirect when the article of that name is deleted (it is a red link)", async () => {
-    mockMissingPages.mockResolvedValue(["Search"]); // findMissingTitles counts an ARCHIVED page as missing
-    expect((await outcome(["search"])).signal).toBe("redirect:/util/search");
   });
 });
 

@@ -595,7 +595,7 @@ describe("loadViewBundle", () => {
   });
 
   it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
-    expect(RENDERER_VERSION).toBe(`3:${wikiArticleSanitizerFingerprint()}`);
+    expect(RENDERER_VERSION).toBe(`4:${wikiArticleSanitizerFingerprint()}`);
     const bundle = { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" };
     mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
 
@@ -632,6 +632,25 @@ describe("loadViewBundle", () => {
       }
       expect(bundle.infoboxHtml).toContain("Box");
       expect(bundle.noticesHtml).toContain("Note");
+    });
+
+    it("serves the current profile links in body, infobox and notices before the page is rendered again", async () => {
+      const linkTo = (href: string) => `<p><a href="${href}">x</a></p>`;
+      mockFindUnique.mockResolvedValue({
+        renderedView: {
+          ...hostile,
+          bodyHtml: linkTo("/thinkpages/profile/x"),
+          infoboxHtml: linkTo("/projects/ixstates/thinkpages/u/x"),
+          noticesHtml: linkTo("/id/@x"),
+        },
+        htmlSyncedAt: syncedAt,
+      });
+
+      const { bundle } = (await loadViewBundle("a"))!;
+
+      expect(bundle.bodyHtml).toBe(linkTo("/dashboard/profile/x"));
+      expect(bundle.infoboxHtml).toBe(linkTo("/projects/ixstates/dashboard/profile/x"));
+      expect(bundle.noticesHtml).toBe(linkTo("/@x"));
     });
 
     it("keeps an absent infobox and notices absent", async () => {

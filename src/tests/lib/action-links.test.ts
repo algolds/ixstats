@@ -15,7 +15,6 @@ import {
   directiveActivityId,
   mapHtmlRuns,
   parseActionTokens,
-  postPermalinkPath,
   splitActionTokens,
   withoutActionTokens,
   withoutTokensInTags,
@@ -45,16 +44,6 @@ describe("parseActionTokens", () => {
       (_, i) => `[ixaction=a${i}]`
     ).join(" ");
     expect(parseActionTokens(body)).toHaveLength(MAX_ACTIONS_PER_POST + 1);
-  });
-});
-
-describe("postPermalinkPath", () => {
-  it("points native posts at the ThinkPages permalink", () => {
-    expect(postPermalinkPath("native", "p1")).toBe("/thinkpages/post/p1");
-  });
-
-  it("points a XenForo post at its legacy path, which redirects through the import id map (phase 4b)", () => {
-    expect(postPermalinkPath("xenforo", "42")).toBe("/forum/post/42");
   });
 });
 

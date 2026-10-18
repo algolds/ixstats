@@ -5,7 +5,7 @@
 **Parent App Suite:** Vault (`IXVAULT_VERSION = 3`, dev codename `IxVault`)  
 **Subsystems:** 3D Card Engine, Booster Pack Gacha, Recycling, NS Import Bridge (crafting is retired for now)  
 **Primary Action:** `COLLECT` | **Domain Accent:** Raspberry (`APP_TINTS.vault`)  
-**Route:** `/vault/cards`, `/vault/store?tab=store` (`/vault/packs` and `/vault/marketplace` redirect here) | **Status:** Release Candidate (platform 1.5.0) — see [Known Gaps](#known-gaps)  
+**Route:** `/vault/cards`, `/vault/store?tab=store` | **Status:** Release Candidate (platform 1.5.0) — see [Known Gaps](#known-gaps)  
 
 The Vault Cards system provides 3D holographic collectibles integrating sovereign states, MediaWiki historical lore, NationStates imports, and milestone editions with wiki-signal rarity suggestions and a cinematic pack-opening sequence.
 

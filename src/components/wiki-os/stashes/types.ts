@@ -60,5 +60,4 @@ export interface StashedThreadItem {
   pageSlug: string;
   savedAt: string | Date;
   note?: string | null;
-  threadId?: number;
 }

@@ -82,7 +82,7 @@ export const PostBody = memo(function PostBody({
         "forum-post break-words select-text",
         style === "ic"
           ? "forum-post--ic"
-          : "forum-post--ooc text-callout text-label [&_a]:text-tint [&_a]:underline [&_p]:my-2",
+          : "forum-post--ooc text-body text-label [&_a]:text-tint [&_a]:underline [&_p]:my-2",
         POST_IMAGE_CLASSES
       )}
     >

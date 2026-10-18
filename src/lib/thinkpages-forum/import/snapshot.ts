@@ -2,7 +2,7 @@
  * The on-disk XenForo export snapshot (phase 4). Pure over an injected `fs`: the export writes it, the importer
  * reads only it. Layout of `<dir>`:
  *   meta.json         { exportedAt, apiUrl, scopes, superUser, keyType, bypassPermissions, clientVersion,
- *                       nodeFilter, version: 1 } (never the API key)
+ *                       nodeFilter, skippedFailing, version: 1 } (never the API key)
  *   nodes.json        XfNode[]
  *   threads.jsonl     one XfThread per line
  *   posts.jsonl       one XfPost per line (Attachments inline)
@@ -44,6 +44,11 @@ export interface SnapshotMeta {
   clientVersion?: string;
   /** The forum node ids the export was limited to (`--nodes`), or null for every forum. Fixed by the first run. */
   nodeFilter: number[] | null;
+  /**
+   * Whether any run used `--skip-failing`, so a forum, thread, user or attachment that kept failing may be recorded
+   * as unavailable: the snapshot may be partial. Kept by later runs; absent (older snapshots) reads as false.
+   */
+  skippedFailing?: boolean;
   version: typeof SNAPSHOT_VERSION;
 }
 

@@ -38,7 +38,7 @@ import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache, invalidateCache } from "~/lib/cache";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import { listRealmDirectory, openRealmBoard, searchDirectoryNations } from "./places";
+import { listRealmDirectory, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
 import { realmMapRouter } from "./map";
@@ -350,9 +350,4 @@ export const realmsRouter = createTRPCRouter({
   searchNations: rateLimitedPublicProcedure
     .input(z.object({ query: z.string().trim().min(2).max(100) }))
     .query(({ ctx, input }) => searchDirectoryNations(ctx.db, input.query)),
-
-  /** Open a realm's board (created on first open) and sync the caller's membership from their nations. */
-  getBoard: publicProcedure
-    .input(z.object({ slug: z.string().min(1).max(100) }))
-    .query(({ ctx, input }) => openRealmBoard(ctx.db, input.slug, ctx.user ?? null)),
 });

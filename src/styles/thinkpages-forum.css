@@ -23,8 +23,8 @@
   [data-app="thinkpages"] .forum-post--ic {
     max-width: 820px;
     font-family: var(--wikios-font-reading, var(--font-sans));
-    font-size: 15.5px;
-    line-height: 1.65;
+    font-size: calc(1.0625rem * var(--text-scale, 1));
+    line-height: 1.6;
     color: var(--wikios-text, var(--color-label));
   }
 
@@ -34,8 +34,8 @@
 
   [data-app="thinkpages"] .forum-post--ic h2 {
     font-family: var(--wikios-font-reading, var(--font-sans));
-    font-size: 24px;
-    font-weight: 500;
+    font-size: calc(1.25rem * var(--text-scale, 1));
+    font-weight: 600;
     letter-spacing: -0.01em;
     margin: 38px 0 16px;
     padding-bottom: 6px;
@@ -45,7 +45,7 @@
 
   [data-app="thinkpages"] .forum-post--ic h3 {
     font-family: var(--wikios-font-reading, var(--font-sans));
-    font-size: 19px;
+    font-size: calc(1.0625rem * var(--text-scale, 1));
     font-weight: 600;
     letter-spacing: -0.01em;
     margin: 28px 0 12px;
@@ -54,10 +54,10 @@
 
   [data-app="thinkpages"] .forum-post--ic h4 {
     font-family: var(--wikios-font-reading, var(--font-sans));
-    font-size: 16px;
+    font-size: calc(1.0625rem * var(--text-scale, 1));
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin: 24px 0 10px;
+    margin: 20px 0 8px;
     color: var(--wikios-text, var(--color-label));
   }
 
@@ -95,7 +95,7 @@
     border: 1px solid var(--color-separator);
     border-radius: var(--radius-row);
     background: var(--color-surface);
-    font-size: 13px;
+    font-size: calc(0.8125rem * var(--text-scale, 1));
     line-height: 1.4;
   }
 
@@ -144,7 +144,7 @@
 
   [data-app="thinkpages"] .forum-post .forum-quote-author {
     margin-bottom: 4px;
-    font-size: 13px;
+    font-size: calc(0.8125rem * var(--text-scale, 1));
     font-weight: 500;
     line-height: 1.4;
     color: var(--tint);

@@ -1,12 +1,12 @@
 /**
- * Native threads anyone may read, for surfaces outside the forum (phase 4b, Q10): the global activity feed, Trending
- * and the old-forum link previews read these instead of the retired XenForo bridge. A thread is public when it is
- * not hidden, its category is public (`categoryVisibilityWhere` for an anonymous viewer) and it sits in the site
- * section or a published realm.
+ * Native threads anyone may read, for surfaces outside the forum (phase 4b, Q10): the global activity feed and
+ * Trending read these instead of the retired XenForo bridge. A thread is public when it is not hidden, its category is
+ * public (`categoryVisibilityWhere` for an anonymous viewer) and it sits in the site section or a published realm.
  */
 import type { PrismaClient } from "@prisma/client";
 import { categoryVisibilityWhere, notBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { threadHref } from "~/lib/thinkpages-forum/links";
+import type { PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { isRealmPublished } from "~/server/modules/realms";
 import { advertGate } from "./advert-access";
@@ -34,8 +34,6 @@ export interface PublicThreadPlacement {
   realmId: string | null;
   style: string;
 }
-
-const EXCERPT_LENGTH = 200;
 
 const THREAD_SELECT = {
   id: true,
@@ -116,7 +114,13 @@ export async function publicThreadWhere(db: Pick<PrismaClient, "realm">) {
   return publicThreadWhereIn(await publishedRealmIds(db));
 }
 
-async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<PublicForumThread[]> {
+/** A listed thread with its persona's type (null unless a typed persona wrote it), which a preview needs and a listing does not show. */
+interface AuthoredThread {
+  thread: PublicForumThread;
+  personaType: PersonaType | null;
+}
+
+async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<AuthoredThread[]> {
   const authors = await authorsOf(
     db,
     // A persona thread never looks up its player.
@@ -130,14 +134,19 @@ async function withAuthors(db: PublicThreadsDb, rows: ThreadRow[]): Promise<Publ
       : ((row.authorUserId ? authors.users.get(row.authorUserId)?.name : undefined) ??
         row.importedAuthorName);
     return {
-      id: row.id,
-      title: row.title,
-      author: author ?? "Member",
-      categoryName: row.category.name,
-      replyCount: Math.max(0, row.postCount - 1),
-      createdAt: row.createdAt,
-      lastPostAt: row.lastPostAt,
-      href: threadHref(row.id),
+      thread: {
+        id: row.id,
+        title: row.title,
+        author: author ?? "Member",
+        categoryName: row.category.name,
+        replyCount: Math.max(0, row.postCount - 1),
+        createdAt: row.createdAt,
+        lastPostAt: row.lastPostAt,
+        href: threadHref(row.id),
+      },
+      personaType: row.authorPersonaId
+        ? (authors.personas.get(row.authorPersonaId)?.personaType ?? null)
+        : null,
     };
   });
 }
@@ -159,6 +168,8 @@ export function authorRef(row: {
 export type PlacedThread = PublicForumThread & {
   placement: PublicThreadPlacement;
   persona: boolean;
+  /** The persona's voice, for the preview's author line; null for a member or an imported author. */
+  personaType: PersonaType | null;
   starter: string;
 };
 
@@ -179,32 +190,13 @@ export async function latestPublicThreads(
   });
   const threads = await withAuthors(db, rows);
   return {
-    threads: threads.map((thread, index) => ({
+    threads: threads.map(({ thread, personaType }, index) => ({
       ...thread,
       placement: rows[index]!.category,
       persona: Boolean(rows[index]!.authorPersonaId),
+      personaType,
       starter: authorRef(rows[index]!),
     })),
     realms,
   };
-}
-
-/** An imported thread by its old XenForo id, when anyone may read it; its first post's text is the excerpt. */
-export async function publicThreadByXenforoId(
-  db: PublicThreadsDb,
-  xenforoThreadId: number
-): Promise<(PublicForumThread & { excerpt: string | null }) | null> {
-  const row = await db.forumThread.findFirst({
-    where: { xenforoThreadId, ...(await publicThreadWhere(db)) },
-    select: THREAD_SELECT,
-  });
-  if (!row) return null;
-  const [thread] = await withAuthors(db, [row]);
-  const first = await db.forumPost.findFirst({
-    where: { threadId: row.id, hidden: false },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { plainText: true },
-  });
-  const excerpt = first?.plainText.replace(/\s+/g, " ").trim().slice(0, EXCERPT_LENGTH) ?? "";
-  return { ...thread!, excerpt: excerpt || null };
 }

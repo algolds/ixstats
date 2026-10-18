@@ -93,10 +93,9 @@ describe("useWikiPrefetch", () => {
     expect(mockArticlePrefetch).toHaveBeenCalledWith({ title: "100% Prefetch" }, expect.anything());
   });
 
-  it("warms nothing for a tool slug, a Special: page, another view of a page or a title that is none", async () => {
+  it("warms nothing for a tool, a Special: page, another view of a page or a title that is none", async () => {
     renderHook(() => useWikiPrefetch());
     for (const href of [
-      "/wiki/recent-changes",
       "/wiki/Special:Random",
       "/wiki/Prefetch_Edited?action=edit",
       "/wiki/Prefetch_Edited?action=history",

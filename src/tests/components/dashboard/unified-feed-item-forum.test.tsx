@@ -4,7 +4,6 @@ import { render, screen } from "@testing-library/react";
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiHtmlContent: ({ html }: { html: string }) => <span>{html}</span>,
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  ForumLinkPreview: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 jest.mock("~/components/shared/polls/FeedPollWidget", () => ({ FeedPollWidget: () => null }));
 jest.mock("~/components/thinkpages/SportsBulletinCard", () => ({ SportsBulletinCard: () => null }));
@@ -39,7 +38,13 @@ describe("UnifiedFeedItem forum items", () => {
             postHref: "/thinkpages/post/p1",
             kind: "thread",
             excerpt: "an excerpt",
-            author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false },
+            author: {
+              name: "jane",
+              avatarUrl: null,
+              flagUrl: null,
+              persona: false,
+              personaType: null,
+            },
             board: { name: "General", href: "/thinkpages/c/general" },
             realm: null,
             style: "ooc",

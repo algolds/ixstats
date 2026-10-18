@@ -10,9 +10,78 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased] — `rose-garden` (1.5)
 
-Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (realm nations, 2026-10-15) is listed first,
-then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
+Work merged after the 1.4.0 RC-1 cut (2026-08-20). The newest block (the ThinkPages forum refresh, 2026-10-17) is
+listed first, then realm nations (2026-10-15), then the Vault collectathon hub (2026-10-14), then the work back to 2026-09-30 → 2026-10-05, then 2026-09-22 → 2026-09-29, then the 2026-08-21 → 2026-09-22
 work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault collectathon hub below); the next release candidate is not cut yet.
+
+### 💬 ThinkPages Forum Refresh, Material Palette and Old URLs Removed (2026-10-15 → 10-17) — ThinkPages v3
+
+- **Security:** a signed-out `loreCards.searchLoreArchive` call with `source: "stash"` returned every user's stash
+  items, notes and annotations, and `fetchLoreMetadata` read any stash item by id. Both now return only the caller's
+  own items, and a signed-out caller reads none.
+- **Material app palette** (2026-10-15, on `rose-garden` itself, before the forum pull requests): every app's tint
+  is a named material, not a colour picked off a wheel. MyCountry is State gold, Wiki is IxWiki navy, Labs is Uranium
+  glass, ThinkPages is Commons leather (`#115536`), Maps is Chart shallows, Realms is Banner purpure, and Vault is
+  Jewel-case velvet. The default (Home, Help, Settings, Admin) is iron-gall ink (`APP_TINTS`, regenerated tint
+  blocks). Labs pages now carry `data-app="labs"`, and about 40 hard-coded app colours now read the tint.
+- **One author line** (`AuthorLine`) on thread posts, realm board messages, the home feed and the rails.
+  - A member shows their flag and role chip.
+  - A persona shows a neutral Government, Media or Citizen chip, and never a flag or a nation.
+  - An imported post shows its old forum name and an "Old forum" chip.
+  - Times are relative IxTime, and they keep the year once it is a past one.
+- **Thread posts:**
+  - The header is the author line and the `#N` permalink; the shaded band is gone.
+  - The body indents to the name column.
+  - In-character posts are set at 17px with 1.6 leading on the Facet prose scale, and out-of-character posts use
+    body type.
+- **Board pages and unread:**
+  - Board rows are denser.
+  - One sort control: column headers from `md` up, a menu below that.
+  - The board description appears once.
+  - Unread has a single look everywhere (`UnreadMark`): a tint dot before a semibold title.
+- **Home:**
+  - A plain page header with a **New thread** menu that lists only the boards you may start a thread in, leaving out
+    boards a site or category ban closes to you.
+  - Your realm in the main column.
+  - Boards show their last post as an inline column.
+  - **New across ThinkPages** is a feed of new threads with an "In character" chip.
+- **Removed pages:** New posts and Watched (`/thinkpages/new`, `/thinkpages/watched`) and their procedures. The
+  `forum_readers` table and its "mark all read" floor are dropped too.
+- **Old URLs removed.** Every legacy redirect is deleted, and the URLs below now 404:
+  - the old `/thinkpages/*` pages, `/@user/<tab>`, `/id/@user/<tab>` and `/profile`
+  - `/achievements` and `/vault/exchange|marketplace|market|packs|trading|admin`
+  - `/builder/import`, `/mycountry/builder` and `/explore`
+  - `/countries/<slug>/factbook` and its `#section` hashes
+  - the old season, help-article and WikiOS tool URLs
+  - every `/forum/*` path, XenForo thread, post, forum and member links included
+
+  `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
+  deleted.
+- **Old links still inside IxStates are rewritten** to the current pages:
+  - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
+    of an article is read
+  - saved notifications, by a migration
+  - the XenForo import:
+    - Links in imported posts point at the native page. A link whose target an anonymous reader may not see becomes
+      plain text.
+    - Bridge-era notification links point at the native post or thread, or at `/thinkpages` when nothing public is
+      there.
+    - Bridge-era stash items move to their native thread, whatever its visibility. They are deleted only when the
+      thread was never imported (or when the stash already holds the native thread).
+- **Smaller fixes:**
+  - XenForo `/posts/<id>/` links map to the post.
+  - "Jump to unread" answers a real redirect.
+  - The economy drill's Open page goes to the factbook's economy section.
+  - The unused ThinkTank realm board (`realms.getBoard`) and the old forum link previews are deleted.
+- **Owner deploy steps:**
+  - Run `20261027120000_drop_forum_readers` before `db:push:force`; the deploy scripts now do this.
+  - Run `20261028120000_rewrite_legacy_notification_links` once the code is live (deploy step 5e). It must run before
+    the import's `--apply`.
+  - Run the import runbook's steps 2 to 9 soon after the deploy. Until step 6, bridge-era stash items are hidden and
+    `/forum` notification links answer 404.
+  - Delete the redirect blocks in the hand-edited production `next.config.js`.
+  - After XenForo is decommissioned, forum.ixwiki.com answers a 301 home on `/` and a 410 everywhere else (import
+    runbook step 13).
 
 ### 🏰 Realm Nations (2026-10-15)
 
@@ -1462,7 +1531,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Eliminated `as any` Type Assertions**:
     - [`src/server/api/routers/elections/legislature.ts`](src/server/api/routers/elections/legislature.ts) (strongly typed `ElectoralSystem`).
     - [`src/server/api/routers/thinkpages/feed.ts`](src/server/api/routers/thinkpages/feed.ts) (strongly-typed `hydratePostDates<T>` and purged dead comment stubs).
-    - [`src/app/achievements/page.tsx`](src/app/achievements/page.tsx) (safe property narrowing).
+    - `src/app/achievements/page.tsx` (since removed; safe property narrowing).
   - **Branded Types & Spatial Mesh Assist**:
     - Added `VertexKey = string & { readonly __brand: "VertexKey" }` and `snapToNearestVertex` GeoJSON helper in [`src/lib/maps/topology-engine.ts`](src/lib/maps/topology-engine.ts) and unified `TopologyRef` in [`src/lib/maps/shared-vertex-builder.ts`](src/lib/maps/shared-vertex-builder.ts).
   - **Simulation & Engine Robustness**:
@@ -1852,7 +1921,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### Refactored (Achievements Page Header Streamlining & Ribbon Racks)
 
 - **Achievements Header Streamlining (`/achievements`)**:
-  - **Visual Hierarchy Refinement**: Simplified [page.tsx](src/app/achievements/page.tsx) header by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
+  - **Visual Hierarchy Refinement**: Simplified the `src/app/achievements/page.tsx` header (since removed) by removing the secondary Lore Score summary card and legendary badges grid, focusing visual hierarchy on core achievement statistics (Unlocked, Achievement Points, Global Rank).
   - **Ribbon Rack Components**: Built [FloatingRibbonRack.tsx](src/components/achievements/FloatingRibbonRack.tsx) and `ForumRibbonRack.tsx` for displaying achievement ribbons across user profiles and forum embeds.
   - **Documentation**: Updated [src/app/vault/achievements/README.md](src/app/vault/achievements/README.md) to reflect header streamlining and consolidated standalone `/leaderboards` route capabilities.
 
@@ -2149,7 +2218,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Named Feature Toolbar & Shortcuts**: Integrated Peaks (shortcut `K`, icon `Mountain`), Rivers (shortcut `Y`, icon `Waves`), and Lakes (shortcut `J`, icon `Droplet`) toolbar items via their respective editor plugins ([PointPlacementPlugin.ts](src/components/maps/editor/plugins/PointPlacementPlugin.ts), [RouteEditPlugin.ts](src/components/maps/editor/plugins/RouteEditPlugin.ts), [SubdivisionDrawPlugin.ts](src/components/maps/editor/plugins/SubdivisionDrawPlugin.ts)).
   - **Drawing & Placement Canvas Integration**: Updated [EditorMap.tsx](src/components/maps/editor/EditorMap.tsx), [useSubdivisionDraw.ts](src/components/maps/editor/hooks/useSubdivisionDraw.ts), and [useMapEditor.ts](src/hooks/useMapEditor.ts) to support polygon drawing for Lakes, click placement coordinates for Peaks, and route waypoints path construction for Rivers.
 - **Achievements Auto-Resync (Achievements System v2)**:
-  - **On-Mount Collector Resync**: Modified the achievements page ([page.tsx](src/app/achievements/page.tsx)) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
+  - **On-Mount Collector Resync**: Modified the achievements page (`src/app/achievements/page.tsx`, since removed) to automatically trigger the `syncMyCollectorAchievements` mutation on mount, evaluating live percentiles against the country distribution and immediately unlocking earned achievements.
 - **Editor Economy Styling Polish**:
   - **Glassmorphic Transparency**: Polished solid backgrounds in builder demographics indicators (PopulationSection.tsx) and geographic region rows (GeographicSection.tsx) to match Policy card styling using transparent overlays (`border-white/10 bg-white/[0.02]`).
 
@@ -3724,7 +3793,7 @@ We successfully implemented conversation options, groups navigation back-button,
 #### Phase 11: Sidebar Discovery Routing, Group Creation & UI Text Wrapping Fixes
 
 - **Sidebar & Routing Updates**:
-  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page [page.tsx](src/app/thinkpages/thinktanks/page.tsx) to `/messages/groups?tab=discover`.
+  - Pointed the "Groups" links in the sidebar quick links `DashboardQuickLinks.tsx`, primary navigation config `src/lib/navigation-config.ts`, and redirection page `src/app/thinkpages/thinktanks/page.tsx` (since removed) to `/messages/groups?tab=discover`.
   - Configured [MessagesRouter.tsx](src/components/messages/MessagesRouter.tsx) to automatically default to opening the groups directory (`groups_directory`) when the Groups folder is loaded without a specific active conversation.
   - Implemented query parameter parsing for `tab` inside `MessagesGroupsPanel.tsx` to automatically highlight the corresponding tab (`discover`, `joined`, or `created`) on mount, and integrated history updates (`pushState`/`replaceState`) when tabs are switched.
 - **Group Creation Integration**:

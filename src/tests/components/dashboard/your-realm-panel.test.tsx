@@ -12,7 +12,7 @@ interface PanelOptions {
 
 const state: {
   panel: BoardPreview | null | undefined;
-  counts: { watchedUnread: number; realmBoardNew: number } | undefined;
+  counts: { realmBoardNew: number } | undefined;
   loading: boolean;
   panelOptions: PanelOptions | undefined;
   countsOptions: PanelOptions | undefined;
@@ -67,6 +67,7 @@ const message = (
     avatarUrl: null,
     flagUrl: persona ? null : "https://flags.example/e.png",
     persona,
+    personaType: persona ? "media" : null,
   },
   excerpt,
   createdAt: new Date(Date.now() - 60_000),
@@ -106,7 +107,7 @@ describe("YourRealmPanel", () => {
       message("p2", "Eurth Daily", "Second", true),
       message("p1", "bob", "First"),
     ]);
-    state.counts = { watchedUnread: 0, realmBoardNew: 4 };
+    state.counts = { realmBoardNew: 4 };
     render(<YourRealmPanel />);
     const region = screen.getByRole("region", { name: "Your realm, Eurth" });
     expect(region).toHaveAttribute("data-content", "entity");
@@ -148,14 +149,14 @@ describe("YourRealmPanel", () => {
 
   it("caps the count label at 99+", () => {
     state.panel = panel([message("p1", "jane", "Hi")]);
-    state.counts = { watchedUnread: 0, realmBoardNew: 100 };
+    state.counts = { realmBoardNew: 100 };
     render(<YourRealmPanel />);
     expect(screen.getByText("99+ new on the board")).toBeInTheDocument();
   });
 
   it("says the member is up to date when the count is zero", () => {
     state.panel = panel([message("p1", "jane", "Hi")]);
-    state.counts = { watchedUnread: 0, realmBoardNew: 0 };
+    state.counts = { realmBoardNew: 0 };
     render(<YourRealmPanel />);
     expect(screen.getByText("Up to date on the board")).toBeInTheDocument();
   });

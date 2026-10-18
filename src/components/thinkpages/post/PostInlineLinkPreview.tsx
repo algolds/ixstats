@@ -1,11 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChatBubble, NavArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Card } from "~/components/ui/card";
-import { IconTile } from "~/components/thinkpages-forum/shell";
-import { ForumLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { InlineWikiArticlePreview } from "~/components/dashboard/sections/feed/InlineWikiArticlePreview";
 import { mediaWikiHostPattern } from "~/lib/wiki-os/config";
 
@@ -81,54 +77,6 @@ function MyClubInlinePreview({ teamId }: { teamId: string }) {
   );
 }
 
-/**
- * A link to an old-forum thread as the forum's thread card: one pressable Well (opening the thread in a new tab) with
- * the forum's tint tile, the title, its board and replies, and an arrow that nudges on hover.
- */
-function InlineForumThreadPreview({ threadId, url }: { threadId: number; url: string }) {
-  const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
-    { threadId },
-    { enabled: threadId > 0 }
-  );
-  const replies = thread?.replyCount ?? 0;
-
-  return (
-    <ForumLinkPreview threadId={threadId}>
-      <Card
-        variant="well"
-        padding="none"
-        interactive
-        className="has-[:focus-visible]:outline-tint mt-2 overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2"
-      >
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group/thread flex min-w-0 items-center gap-3 px-3 py-3 focus-visible:outline-none"
-        >
-          <IconTile>
-            <ChatBubble />
-          </IconTile>
-          <span className="min-w-0 flex-1">
-            <span className="text-headline text-label block truncate">
-              {thread?.title ?? "Forum thread"}
-            </span>
-            {thread ? (
-              <span className="text-footnote text-label-secondary block truncate tabular-nums">
-                {`${thread.forumName ? `${thread.forumName} · ` : ""}${replies} ${replies === 1 ? "reply" : "replies"}`}
-              </span>
-            ) : null}
-          </span>
-          <NavArrowRight
-            aria-hidden
-            className="text-label-tertiary duration-fast ease-out-facet size-4 shrink-0 transition-transform motion-safe:group-hover/thread:translate-x-0.5"
-          />
-        </a>
-      </Card>
-    </ForumLinkPreview>
-  );
-}
-
 export function getInlinePreviewLink(content: string | null | undefined): string | null {
   if (!content) return null;
 
@@ -141,11 +89,6 @@ export function getInlinePreviewLink(content: string | null | undefined): string
   const wikiMatch = content.match(WIKI_ARTICLE_LINK);
   if (wikiMatch) return wikiMatch[0];
 
-  const forumMatch = content.match(
-    /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
-  );
-  if (forumMatch) return forumMatch[0];
-
   return null;
 }
 
@@ -153,9 +96,6 @@ export function PostInlineLinkPreview({ url }: { url: string }) {
   const myLeagueMatch = url.match(MY_LEAGUE_LINK);
   const myClubMatch = url.match(MY_CLUB_LINK);
   const wikiMatch = url.match(WIKI_ARTICLE_LINK);
-  const forumMatch = url.match(
-    /(?:https?:\/\/)?(?:www\.)?forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/i
-  );
 
   if (myLeagueMatch) {
     const leagueId = myLeagueMatch[1]!;
@@ -171,11 +111,6 @@ export function PostInlineLinkPreview({ url }: { url: string }) {
     const articleTitle = decodeURIComponent(wikiMatch[2]!).replace(/_/g, " ");
     const wikiSource = wikiMatch[1]?.includes("iiwiki") ? "iiwiki" : "ixwiki";
     return <InlineWikiArticlePreview title={articleTitle} wiki={wikiSource} />;
-  }
-
-  if (forumMatch) {
-    const threadId = parseInt(forumMatch[1]!, 10);
-    return <InlineForumThreadPreview threadId={threadId} url={url} />;
   }
 
   return null;

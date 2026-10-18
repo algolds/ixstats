@@ -8,8 +8,7 @@ generates them, and the player tunes them later in their MyCountry consoles.
 
 ## Founding (`/builder`)
 
-`page.tsx` renders `_founding/FoundingFlow.tsx` behind sign-in. `/builder/import` redirects to `/builder?import=1`,
-which opens the wiki import sheet.
+`page.tsx` renders `_founding/FoundingFlow.tsx` behind sign-in. `/builder?import=1` opens the wiki import sheet.
 
 | Step | Component | What it asks |
 | --- | --- | --- |

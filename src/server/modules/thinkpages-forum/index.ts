@@ -91,29 +91,15 @@ export { mentionAnchorNames } from "./mention-html";
 export { mentionSuggestions, type MentionSuggestion } from "./mention-suggest";
 export { firstUnreadPost } from "./first-unread";
 export {
-  markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
   type ReadMarksDb,
 } from "./read-marks";
-export { readerFloor, readTimes, unreadIdsOf, type UnreadDb } from "./unread";
+export { readTimes, unreadIdsOf, type UnreadDb } from "./unread";
 export { forumNavCounts, type NavCounts, type NavCountsDb } from "./nav-counts";
-export {
-  listNewPosts,
-  listWatched,
-  unreadWatchedCount,
-  type ListedThread,
-  type ListingDb,
-  type ThreadListing,
-} from "./thread-listing";
 export { autoWatch, isWatching, unwatchThread, watchThread, type WatchDb } from "./watch";
 export { markUnreadThreads, withUnreadCounts, type UnreadAttachDb } from "./unread-attach";
-export {
-  FORUM_IMPORT_NODE_MAP_KEY,
-  legacyForumRedirectFor,
-  type LegacyDb,
-} from "./legacy-redirect";
 export { forumActivityOf, importedAuthorByName, type MemberActivityDb } from "./member-activity";
 export {
   linkOldForumAccount,
@@ -136,6 +122,7 @@ export { liftBan, type LiftBanDb, type LiftedBan } from "./mod-ban-lift";
 export {
   activeBansFor,
   assertNotBanned,
+  bannedBoardIds,
   issueBan,
   postingBan,
   type ActiveBan,
@@ -214,7 +201,6 @@ export {
 } from "./mod-warnings";
 export {
   latestPublicThreads,
-  publicThreadByXenforoId,
   type PublicForumThread,
   type PublicThreadsDb,
 } from "./public-threads";

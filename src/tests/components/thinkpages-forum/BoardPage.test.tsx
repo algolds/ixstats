@@ -39,8 +39,6 @@ jest.mock("~/trpc/react", () => {
     api: {
       useUtils: () => ({
         thinkpagesForum: {
-          newPosts: invalidator("newPosts"),
-          watchedThreads: invalidator("watchedThreads"),
           navCounts: invalidator("navCounts"),
           category: invalidator("category"),
           categories: invalidator("categories"),
@@ -207,8 +205,8 @@ describe("BoardPage", () => {
   it("shows the In character pill in the header only for an IC board", () => {
     set("category", { data: board({ category: { style: "ic" } }) });
     const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    // In the header and in About this board.
-    expect(screen.getAllByText("In character")).toHaveLength(2);
+    // Once, in the header: the rail does not repeat the board's style.
+    expect(screen.getAllByText("In character")).toHaveLength(1);
     unmount();
 
     set("category", { data: board() });
@@ -253,6 +251,20 @@ describe("BoardPage", () => {
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Latest activity" }));
     expect(router.push).toHaveBeenLastCalledWith("/thinkpages/c/general");
   });
+
+  it("keeps the Sort control hidden from md up, where the column headers sort", () => {
+    set("category", { data: board() });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getByRole("button", { name: "Sort" })).toHaveClass("md:hidden");
+  });
+
+  it("states the board description once, in the header, not again in the rail", () => {
+    set("category", {
+      data: board({ category: { description: "Out-of-character talk about anything." } }),
+    });
+    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
+    expect(screen.getAllByText("Out-of-character talk about anything.")).toHaveLength(1);
+  });
 });
 
 describe("BoardPage realm boards", () => {
@@ -276,17 +288,12 @@ describe("BoardPage realm boards", () => {
 });
 
 describe("BoardPage rail", () => {
-  it("describes the board: description, In character pill and the posting rule", () => {
-    set("category", {
-      data: board({
-        category: { style: "ic", postRole: "staff", description: "News from the team." },
-      }),
-    });
+  it("says who may post, under Posting here", () => {
+    set("category", { data: board({ category: { postRole: "staff" } }) });
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    const about = screen.getByText("About this board").closest('[data-slot="card"]') as HTMLElement;
-    expect(within(about).getByText("News from the team.")).toBeInTheDocument();
-    expect(within(about).getByText("In character")).toBeInTheDocument();
-    expect(within(about).getByText("Only staff can start threads here.")).toBeInTheDocument();
+    const posting = screen.getByText("Posting here").closest('[data-slot="card"]') as HTMLElement;
+    expect(within(posting).getByText("Only staff can start threads here.")).toBeInTheDocument();
+    expect(screen.queryByText("About this board")).toBeNull();
   });
 
   it("says any member can start threads on an open board", () => {
@@ -327,12 +334,12 @@ describe("BoardPage read state", () => {
     auth.isSignedIn = false;
   });
 
-  it("shows an unread thread in bold and offers Mark board read, which marks the board and refreshes", async () => {
+  it("shows an unread thread in semibold and offers Mark board read, which marks the board and refreshes", async () => {
     set("category", {
       data: board({ threads: [{ ...thread("t1"), unread: true }, thread("t2")] }),
     });
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("font-bold");
+    expect(screen.getByRole("link", { name: "Thread t1" })).toHaveClass("font-semibold");
     fireEvent.click(screen.getByRole("button", { name: "Mark board read" }));
     await waitFor(() =>
       expect(mutations.markCategoryRead).toHaveBeenCalledWith({ key: "general", realm: undefined })

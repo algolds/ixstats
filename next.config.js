@@ -212,22 +212,10 @@ const config = {
         source: "/api/ixwiki-proxy/:path*",
         destination: "https://ixwiki.com/:path*",
       },
+      // In development (basePath is empty), rewrite production base path routes to root
+      // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
+      ...(basePath ? [] : [{ source: "/projects/ixstates/:path*", destination: "/:path*" }]),
     ];
-
-    // In development (basePath is empty), rewrite production base path routes to root
-    // so that dynamic assets (e.g. Discord images, uploads) load correctly in dev.
-    if (!basePath) {
-      baseRewrites.push(
-        {
-          source: "/projects/ixstates/:path*",
-          destination: "/:path*",
-        },
-        {
-          source: "/projects/ixstats/:path*",
-          destination: "/:path*",
-        }
-      );
-    }
 
     if (process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true") {
       return {
@@ -237,7 +225,7 @@ const config = {
             // Map root-level slugs to countries/[slug] for standalone mode
             // Exclude all top-level app routes so existing pages are not intercepted
             source:
-              "/:slug((?!achievements|admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|forum|hashtags|health|help|images|leaderboards|maps|messages|myclub|mycountry|myleague|placeholder|profile|settings|setup|sign-in|sign-up|sounds|stashes|studio|thinkpages|vault|w|wiki|_next).*)",
+              "/:slug((?!admin|api|blurbs|builder|countries|dashboard|data|dm-dashboard|explore|favicon\\.ico|feed|flags|fonts|hashtags|health|help|images|leaderboards|maps|messages|myclub|mycountry|myleague|placeholder|settings|setup|sign-in|sign-up|sounds|stashes|studio|thinkpages|vault|w|wiki|_next).*)",
             destination: "/countries/:slug",
           },
         ],
@@ -248,55 +236,8 @@ const config = {
     return baseRewrites;
   },
 
-  async redirects() {
-    return [
-      // The tenant-0 realm's former slug: IxWorld is now Ixnay.
-      { source: "/r/ixworld/:path*", destination: "/r/ixnay/:path*", permanent: true },
-      { source: "/thinkpages/r/ixworld/:path*", destination: "/thinkpages/r/ixnay/:path*", permanent: true },
-      // Passport: /@username is canonical. The page reads its tab from ?tab=, so tab paths redirect to the query form.
-      {
-        source: "/@:username/:tab",
-        destination: "/@:username?tab=:tab",
-        permanent: true,
-      },
-      {
-        source: "/id/@:username",
-        destination: "/@:username",
-        permanent: true,
-      },
-      {
-        source: "/id/@:username/:tab",
-        destination: "/@:username?tab=:tab",
-        permanent: true,
-      },
-      {
-        source: "/profile",
-        destination: "/settings",
-        permanent: true,
-      },
-      {
-        source: "/profile/:path*",
-        destination: "/settings/:path*",
-        permanent: true,
-      },
-    ];
-  },
-
   async headers() {
     return [
-      {
-        source: "/manifest.json",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "application/manifest+json",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=86400", // Cache for 1 day
-          },
-        ],
-      },
       {
         source: "/api/trpc/geo.:path*",
         headers: [
@@ -313,23 +254,6 @@ const config = {
             value: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
-        ],
-      },
-      {
-        source: "/sw.js",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "application/javascript",
-          },
-          {
-            key: "Service-Worker-Allowed",
-            value: "/",
-          },
-          {
-            key: "Cache-Control",
-            value: "no-cache, no-store, must-revalidate",
-          },
         ],
       },
     ];

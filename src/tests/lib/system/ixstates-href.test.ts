@@ -42,7 +42,9 @@ describe("ixstatesHref", () => {
     expect(ixstatesHref("/blurbs")).toBe(`${IXSTATES}/blurbs`);
     expect(ixstatesHref("/blurbs/some-prompt")).toBe(`${IXSTATES}/blurbs/some-prompt`);
     expect(ixstatesHref("mycountry/diplomacy")).toBe(`${IXSTATES}/mycountry/diplomacy`);
-    expect(ixstatesHref("/achievements?tab=wiki-lore")).toBe(`${IXSTATES}/achievements?tab=wiki-lore`);
+    expect(ixstatesHref("/vault/achievements?tab=lorewards")).toBe(
+      `${IXSTATES}/vault/achievements?tab=lorewards`
+    );
   });
 
   it("leaves an absolute URL alone, and does not repeat the IxStates URL's own path", () => {
@@ -57,7 +59,7 @@ describe("ixstatesHref", () => {
     expect(ixstatesHref("/projects/ixstatesx/y")).toBe(`${IXSTATES}/projects/ixstatesx/y`);
   });
 
-  it.each(["/blurbs", "/mycountry", "/dashboard", "/countries", "/achievements", "/settings", "/messages", "/maps"])(
+  it.each(["/blurbs", "/mycountry", "/dashboard", "/countries", "/vault", "/settings", "/messages", "/maps"])(
     "sends %s to IxStates in standalone mode: the wiki does not serve it",
     (path) => {
       process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";

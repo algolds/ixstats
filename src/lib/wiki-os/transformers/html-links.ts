@@ -5,6 +5,7 @@ import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { getWikiBaseUrl, mediaWikiOrigin, type WikiSource } from "~/lib/wiki-os/config";
 import { forwardFinder } from "../wikitext/forward-finder";
 import { isWordCode } from "../wikitext/line-patterns";
+import { currentProfileLinks } from "../legacy-profile-links";
 
 const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
 const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
@@ -81,7 +82,8 @@ function transformIxWikiLinks(html: string, basePath: string): string {
   // 4. Add wikios-redlink class to links with class="new"
   result = result.replace(CLASS_NEW_REGEX, 'class="new wikios-redlink"');
 
-  return result;
+  // 5. Old profile and passport links open the current pages
+  return currentProfileLinks(result);
 }
 
 /**

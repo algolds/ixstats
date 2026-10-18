@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
+import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import {
@@ -29,21 +30,6 @@ export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPr
   }, [title, wiki, utils]);
 
   // Just render children — global provider handles the tooltip
-  return <>{children}</>;
-}
-
-interface ForumLinkPreviewProps {
-  threadId: number;
-  children: React.ReactNode;
-}
-
-export function ForumLinkPreview({ threadId, children }: ForumLinkPreviewProps) {
-  // Prefetch thread data for instant tooltip via global provider
-  const utils = api.useUtils();
-  useEffect(() => {
-    if (threadId > 0) void utils.wikios.getForumThreadPreview.prefetch({ threadId });
-  }, [threadId, utils]);
-
   return <>{children}</>;
 }
 
@@ -261,7 +247,10 @@ function domNodeToReact(
 
   const element = node as HTMLElement;
   const tagName = element.tagName.toLowerCase();
-  const href = element.getAttribute("href") || "";
+  const oldHref = element.getAttribute("href") || "";
+  // Old profile and passport links open the current pages, whichever branch below renders the link.
+  const href = tagName === "a" ? currentProfileHref(oldHref) : oldHref;
+  if (href !== oldHref) element.setAttribute("href", href);
 
   if (tagName === "div" && element.getAttribute("data-wikiembed") === "true") {
     return renderWikiEmbed(element, index);

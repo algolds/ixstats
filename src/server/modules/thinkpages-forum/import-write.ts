@@ -1,10 +1,12 @@
 /**
  * The XenForo importer's writes (phase 4): archive categories, then one transaction per thread (the thread when new,
  * its posts in chunks with `skipDuplicates`, the action-link remap, the recount under the thread lock), then the
- * author relink and the applied node map. Idempotent: a rerun plans only what is missing, and a thread interrupted
- * mid-write rolled back whole, so it is written again in full. A thread that fails is recorded and the run goes on
- * (M19): its transaction rolled it back, and the bridge pass, the relink and the node map still run. Then the I7
- * re-hide (import-rehide.ts). No activity feed, notification or mod-log rows.
+ * author relink. Idempotent: a rerun plans only what is missing, and a thread interrupted mid-write rolled back
+ * whole, so it is written again in full. A thread that fails is recorded and the run goes on (M19): its transaction
+ * rolled it back, and the bridge pass and the relink still run. Then the I7 re-hide (import-rehide.ts), the passes
+ * over every imported post: quote ids (import-quote-ids.ts) and old forum links (import-forum-links.ts), and the
+ * bridge-era rows moved to native threads: stash items (import-stash-threads.ts) and notification links
+ * (import-notification-links.ts). It creates no activity feed, notification or mod-log rows.
  */
 import type { Prisma } from "@prisma/client";
 import { countActionTokens } from "~/lib/action-links";
@@ -16,10 +18,17 @@ import type {
   PlannedPost,
   PlannedThread,
 } from "~/lib/thinkpages-forum/import/plan";
+import type { SnapshotMeta } from "~/lib/thinkpages-forum/import/snapshot";
 import { isUniqueViolation } from "./errors";
-import { assertImportLock, storeNodeMap, type ImportDb } from "./import-db";
+import { assertImportLock, type ImportDb } from "./import-db";
+import { rewriteImportedForumLinks, type ForumLinkRewrite } from "./import-forum-links";
+import {
+  rewriteNotificationLinks,
+  type NotificationLinkRewrite,
+} from "./import-notification-links";
 import { remapQuoteIds, type QuoteRemap } from "./import-quote-ids";
 import { rehideImported, type RehideTotals } from "./import-rehide";
+import { remapStashedThreads, type StashThreadRemap } from "./import-stash-threads";
 import { lockThread, recountThread } from "./thread-counts";
 
 /** Posts per `createMany`; lower it (one constant) if 500-row inserts are slow on the VPS. */
@@ -276,6 +285,12 @@ export interface ApplyTotals {
   bridgeLinks: BridgeRemap;
   /** Quote ids pointed at the native post, and dropped when their post is not imported. */
   quoteIds: QuoteRemap;
+  /** Old forum links pointed at the native page, and unwrapped when nothing public is there. */
+  forumLinks: ForumLinkRewrite;
+  /** Bridge-era stash items moved to the native thread, or deleted (a twin, or never imported). */
+  stashedThreads: StashThreadRemap;
+  /** Bridge-era notification links pointed at the native page, or at the forum home when nothing public is there. */
+  notificationLinks: NotificationLinkRewrite;
   relinked: { threads: number; posts: number };
   /** I7: imported rows hidden because XenForo has since moderated or deleted them. */
   rehidden: RehideTotals;
@@ -291,14 +306,22 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
 }
 
 /**
- * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the relink pass, the applied node map.
+ * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the forum link
+ * pass (through the run's node map), the bridge-era stash item and notification link passes, the relink pass.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
+ * `meta` is the snapshot's: a snapshot of some forums only (`nodeFilter`), or one exported with `--skip-failing`
+ * (`skippedFailing`, which may have recorded a failing forum's threads as none), leaves threads out, so the passes
+ * keep what nothing maps, as after a failed thread; only a complete snapshot drops it.
  */
 export async function applyImport(
   db: ImportDb,
   plan: Pick<ImportPlan, "categories" | "threads" | "rehide">,
-  opts: { nodeMap: NodeMapFile; log?: (line: string) => void }
+  opts: {
+    nodeMap: NodeMapFile;
+    meta: Pick<SnapshotMeta, "nodeFilter" | "skippedFailing">;
+    log?: (line: string) => void;
+  }
 ): Promise<ApplyTotals> {
   const log = opts.log ?? (() => {});
   const { ids, created } = await ensureArchiveCategories(db, plan.categories);
@@ -311,6 +334,9 @@ export async function applyImport(
     linksRemapped: 0,
     bridgeLinks: { remapped: 0, twins: 0 },
     quoteIds: { remapped: 0, dropped: 0 },
+    forumLinks: { mapped: 0, unwrapped: 0 },
+    stashedThreads: { moved: 0, twins: 0, deleted: 0 },
+    notificationLinks: { mapped: 0, unresolved: 0 },
     relinked: { threads: 0, posts: 0 },
     rehidden: { threads: 0, posts: 0, assets: 0 },
     failedThreads: [],
@@ -333,9 +359,15 @@ export async function applyImport(
   await assertImportLock(db);
   totals.rehidden = await rehideImported(db, plan.rehide, { failures: totals.failedThreads, log });
   totals.bridgeLinks = await remapBridgeLinks(db);
-  // A failed thread may hold a quoted post: keep the ids nothing maps yet, so the rerun can map them.
-  totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: totals.failedThreads.length === 0 });
+  // A failed thread, or a forum the snapshot left out or skipped, may hold a quoted, linked or stashed post: keep what
+  // nothing maps yet, so a later run can map it.
+  const complete =
+    totals.failedThreads.length === 0 && opts.meta.nodeFilter === null && !opts.meta.skippedFailing;
+  totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: complete });
+  const links = { nodeMap: opts.nodeMap, dropUnresolved: complete };
+  totals.forumLinks = await rewriteImportedForumLinks(db, links);
+  totals.stashedThreads = await remapStashedThreads(db, { dropUnresolved: complete });
+  totals.notificationLinks = await rewriteNotificationLinks(db, links);
   totals.relinked = await relinkImportedAuthors(db);
-  await storeNodeMap(db, opts.nodeMap);
   return totals;
 }

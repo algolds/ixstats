@@ -25,8 +25,7 @@ function wikiPathTitle(cleanPath: string): CanonicalTitle | null {
 /**
  * A path that is NOT an editable wiki page: the Special: namespace, and anything not under
  * /wiki/<title> (util, library and other routes). Every other /wiki/<title> is a page (a title that
- * used to be a tool route, such as "Search", is an article now: the old lower-case slugs redirect
- * before a page renders), so the page tools render for it.
+ * used to be a tool route, such as "Search", is an article now), so the page tools render for it.
  */
 export function isNonArticlePath(cleanPath: string): boolean {
   const wikiSlug = /^\/wiki\/([^/]+)/.exec(cleanPath)?.[1];

@@ -45,8 +45,6 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate: () => Promise.resolve() },
           realmSection: { invalidate: () => Promise.resolve() },
           myStanding: { invalidate: () => Promise.resolve() },
-          newPosts: { invalidate: () => Promise.resolve() },
-          watchedThreads: { invalidate: () => Promise.resolve() },
           navCounts: { invalidate: () => Promise.resolve() },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 3 }) },
         },
@@ -161,7 +159,7 @@ jest.mock("~/hooks/useNotify", () => ({
 }));
 
 import { STUB_WIKITEXT } from "~/tests/helpers/forum-composer-stub";
-import { AuthorName } from "~/components/thinkpages-forum/AuthorName";
+import { AuthorName, type ForumAuthors } from "~/components/thinkpages-forum/AuthorName";
 import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
@@ -173,12 +171,14 @@ const { router, redirect } = jest.requireMock<{
   redirect: jest.Mock;
 }>("next/navigation");
 
-const authors = {
+const authors: ForumAuthors = {
   users: {
     u1: { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: null },
     u2: { name: "Hidden Player", handle: null, avatarUrl: null, flagUrl: null },
   },
-  personas: { pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null } },
+  personas: {
+    pa: { displayName: "Aria Vance", username: "aria", avatarUrl: null, personaType: "citizen" },
+  },
 };
 
 const EURTH = { slug: "eurth", name: "Eurth" };
@@ -304,21 +304,10 @@ beforeEach(() => {
 });
 
 describe("forum home", () => {
-  it("renders the forum home without a realm", async () => {
+  it("renders the forum home", () => {
     set("categories", { data: [] });
-    render(await ForumHomePage({ searchParams: Promise.resolve({}) }));
+    render(<ForumHomePage />);
     expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
-    expect(redirect).not.toHaveBeenCalled();
-  });
-
-  it("opens an old ?realm= link on that realm's Hub", async () => {
-    await ForumHomePage({ searchParams: Promise.resolve({ realm: "eurth" }) });
-    expect(redirect).toHaveBeenCalledWith("/thinkpages/r/eurth/hub");
-  });
-
-  it("treats an empty ?realm= as none", async () => {
-    set("categories", { data: [] });
-    render(await ForumHomePage({ searchParams: Promise.resolve({ realm: "" }) }));
     expect(redirect).not.toHaveBeenCalled();
   });
 });

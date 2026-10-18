@@ -102,7 +102,7 @@ const ORIGIN = /^[a-z][a-z0-9+.-]*:\/\/[^/]+/i;
 
 /**
  * The `href` of a route that belongs to IxStates, not to the wiki (`/blurbs`, `/mycountry`, `/dashboard`,
- * `/countries`, `/achievements`, `/messages`, `/maps`, ...): `withBasePath(path)` inside IxStates, where the
+ * `/countries`, `/vault`, `/messages`, `/maps`, ...): `withBasePath(path)` inside IxStates, where the
  * route is served on the same host, and the absolute IxStates URL in the standalone WikiOS build, which
  * serves none of them (a relative link would only bounce through the guard's redirect). An absolute URL
  * stays as it is, and so does a path that already starts with the IxStates URL's own path

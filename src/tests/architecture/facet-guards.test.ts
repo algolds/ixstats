@@ -65,7 +65,6 @@ const FACET_CONVERTED = [
   "components/dashboard/",
   "app/dashboard/",
   "components/achievements/",
-  "app/achievements/",
   "components/passport/",
   "app/settings/_components/panels/AccountIdentityPanel.tsx",
   // Phase 4 apps: ThinkPages (+ ThinkTanks, blurbs components), Messages, Halo views.

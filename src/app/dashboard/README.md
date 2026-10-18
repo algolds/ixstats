@@ -21,8 +21,7 @@ their own (below). ThinkPages itself is the forum, at `/thinkpages`
 | `/dashboard/saved` | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only) |
 
 Feed posts and persona profiles are public, as they were under `/thinkpages`; Accounts and
-Saved posts need a sign-in. The old `/thinkpages/profile/<username>` and `/thinkpages/saved`
-paths redirect (308) to `/dashboard/profile/<username>` and `/dashboard/saved`.
+Saved posts need a sign-in.
 `/thinkpages/post/<id>` is the forum's post permalink: a forum post the viewer may see
 redirects (307) to its thread, and any other id redirects (307) to `/dashboard/post/<id>`.
 The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
@@ -102,8 +101,7 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
   `activities.getUnifiedTrending`, `activities.followCountry`,
   `thinkpages.getMyAccounts`, `blurbs.*`
 - **Feedback**: `userLogging.submitFeedback`
-- **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`,
-  `wikios.getForumThreadPreview`, `wikios.getPageImages`,
+- **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`, `wikios.getPageImages`,
   `wikios.getArticleMarginData`, `wikios.createThread`, `wikios.*Stash*`,
   `users.resolveWikiAuthor`
 

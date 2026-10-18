@@ -76,6 +76,21 @@ describe("getStashItems and stashed forum threads (I5)", () => {
     ]);
   });
 
+  it("leaves out bridge-era forum:thread: items and returns no contentId", async () => {
+    jest.mocked(db.forumThread.findMany).mockResolvedValue([thread("t_ok")] as never);
+    jest
+      .mocked(db.stashItem.findMany)
+      .mockResolvedValue([
+        item("thinkpages:thread:t_ok", "Old title"),
+        { ...item("forum:thread:7", "An old thread"), contentId: 7 },
+      ] as never);
+
+    const { items } = await caller().getStashItems({ stashId: "s1" });
+
+    expect(items.map((i) => i.pageTitle)).toEqual(["thinkpages:thread:t_ok"]);
+    expect(items[0]).not.toHaveProperty("contentId");
+  });
+
   it("asks nothing of the forum when the page holds no native thread", async () => {
     jest.mocked(db.forumThread.findMany).mockClear();
     jest.mocked(db.stashItem.findMany).mockResolvedValue([item("Main_Page", null)] as never);

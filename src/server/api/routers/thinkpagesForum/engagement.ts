@@ -1,6 +1,6 @@
 /**
  * The engagement procedures (docs/superpowers/specs/2026-10-10-thinkpages-forum-unread-notifications-design.md),
- * merged into `thinkpagesForum`: read marks here, watch, lists, nav counts and mention suggestions as later tasks add
+ * merged into `thinkpagesForum`: read marks here, watch, nav counts and mention suggestions as later tasks add
  * them. Thin, as the rest of the forum router: validates, maps the signed-in user to the module's viewer and calls
  * ~/server/modules/thinkpages-forum.
  */
@@ -13,25 +13,14 @@ import {
 } from "~/server/api/trpc";
 import {
   forumNavCounts,
-  listNewPosts,
-  listWatched,
-  markAllRead,
   markCategoryRead,
   markRealmBoardRead,
   markThreadRead,
   mentionSuggestions,
   unwatchThread,
   watchThread,
-  type AuthorsDb,
-  type ThreadListing,
 } from "~/server/modules/thinkpages-forum";
-import { actorOf, authorMaps, categoryKey, id, mapError, memberOf, page, realm } from "./viewer";
-
-/** A list page with the display data of its authors and last posters (a persona by name, never its player). */
-async function withAuthors(db: AuthorsDb, listing: ThreadListing) {
-  const posters = listing.threads.flatMap((thread) => thread.lastPoster ?? []);
-  return { ...listing, authors: await authorMaps(db, [...listing.threads, ...posters]) };
-}
+import { actorOf, categoryKey, id, mapError, memberOf, page, realm } from "./viewer";
 
 export const thinkpagesForumEngagementRouter = createTRPCRouter({
   /** The thread page was shown: the member has read up to its newest post on `page`. */
@@ -47,11 +36,6 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) =>
       markCategoryRead(ctx.db, await actorOf(ctx.db, ctx.user), input).catch(mapError)
     ),
-
-  /** "Mark all read" on New posts: nothing before now is unread. */
-  markAllRead: rateLimitedMutationProcedure.mutation(({ ctx }) =>
-    markAllRead(ctx.db, memberOf(ctx.user).id)
-  ),
 
   /** The realm landing was opened at the top: the realm board is read to its last message. */
   markRealmBoardRead: rateLimitedMutationProcedure
@@ -71,21 +55,7 @@ export const thinkpagesForumEngagementRouter = createTRPCRouter({
     .input(z.object({ threadId: id }))
     .mutation(({ ctx, input }) => unwatchThread(ctx.db, memberOf(ctx.user).id, input.threadId)),
 
-  /** New posts: unread threads of the last 30 days across the boards the caller can see, newest first. */
-  newPosts: readOnlyProcedure
-    .input(z.object({ page }))
-    .query(async ({ ctx, input }) =>
-      withAuthors(ctx.db, await listNewPosts(ctx.db, await actorOf(ctx.db, ctx.user), input.page))
-    ),
-
-  /** Watched: the caller's watched threads, unread first, then by last post. */
-  watchedThreads: readOnlyProcedure
-    .input(z.object({ page }))
-    .query(async ({ ctx, input }) =>
-      withAuthors(ctx.db, await listWatched(ctx.db, await actorOf(ctx.db, ctx.user), input.page))
-    ),
-
-  /** The sidebar's badges, polled every 60 seconds: unread watched threads and new board messages. */
+  /** The sidebar's badge, polled every 60 seconds: new messages on the caller's realm board. */
   navCounts: readOnlyProcedure.query(async ({ ctx }) =>
     forumNavCounts(ctx.db, await actorOf(ctx.db, ctx.user))
   ),

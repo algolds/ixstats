@@ -2,16 +2,15 @@
 /**
  * Phase 5 of the ThinkPages forum: /thinkpages is the forum. The persona hub is /dashboard/accounts, feed posts
  * /dashboard/post/<id>, persona profiles /dashboard/profile/<username>, saved posts /dashboard/saved. The old
- * /thinkpages pages only redirect, so nothing links to them; /thinkpages/post/<id> is the forum post permalink
- * (ruling P5, written into wiki story chains) and only the resolver page and the link-builder modules spell it.
+ * /thinkpages pages are deleted, so nothing links to them; /thinkpages/post/<id> is the forum post permalink
+ * (ruling P5, written into wiki story chains) and only the resolver page and the forum link module spell it.
  *
  * Scope: ts/tsx under src/ (markdown is out of scope). Comment lines are skipped. The patterns need a
  * non-word character before `/thinkpages`, so import specifiers such as `~/components/thinkpages/post/...`
  * and `~/lib/thinkpages/post-views` are not link literals and do not trip them.
  *
- * Phase 4b retired the XenForo bridge: `/forum/*` only redirects (permanently, through the import's id map), so
- * nothing links to it either. Only the files that recognize old links or build a XenForo post's legacy permalink
- * may spell it (`BRIDGE_FILES`).
+ * Phase 4b retired the XenForo bridge, and phase 5 deleted its `/forum/*` redirects: those paths are 404s, so nothing
+ * links to them either. Only the files that still recognize an old stored link may spell one (`BRIDGE_FILES`).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,39 +18,19 @@ import path from "node:path";
 const SRC = path.join(process.cwd(), "src");
 const SKIP_DIRS = new Set(["tests", "node_modules", "generated"]);
 
-/** The retired pages: they only redirect, and are the one place their old paths may be named. */
-const LEGACY_PAGES = [
-  "app/thinkpages/feed/page.tsx",
-  "app/thinkpages/forum/page.tsx",
-  "app/thinkpages/profile/[username]/page.tsx",
-  "app/thinkpages/saved/page.tsx",
-  "app/thinkpages/thinkshare/page.tsx",
-  "app/thinkpages/thinktanks/page.tsx",
-  // Recognizes the old persona profile path in existing wiki pages (hover card); it builds no link.
-  "lib/wiki-os/mention-target.ts",
-];
 /**
- * Where `/thinkpages/post/<id>` is built: the resolver page, the wiki action-link builder, and the forum link
- * module (`postHref`, which is also the target of phase 4's `/forum/post/<xf>` redirect).
+ * Where `/thinkpages/post/<id>` is built: the resolver page and the forum link module (`postHref`, which the wiki
+ * story chain sync also uses).
  */
-const PERMALINK_FILES = [
-  "app/thinkpages/post/[postId]/page.tsx",
-  "lib/action-links.ts",
-  "lib/thinkpages-forum/links.ts",
-];
-/** Files that may spell `/forum`: they recognize stored old links, or point an old XenForo post at its redirect. */
+const PERMALINK_FILES = ["app/thinkpages/post/[postId]/page.tsx", "lib/thinkpages-forum/links.ts"];
+/** Files that may spell `/forum`: they recognize stored old links. */
 const BRIDGE_FILES = [
-  "lib/action-links.ts", // postPermalinkPath("xenforo", …) → /forum/post/<id>, which 308s to the import
-  "lib/thinkpages-forum/html-urls.ts", // rebases stored root-relative links, old /forum/ ones included
-  "app/_components/SetupRedirect.tsx", // lets the legacy redirects through without a nation
-  "components/wiki-os/stashes/StashThreadsList.tsx", // legacy forum:thread: stash items open their old path (Q15)
-  "lib/thinkpages-forum/import/bbcode.ts", // the importer's link rewriting for old in-forum links
-  "server/modules/thinkpages-forum/import-db.ts", // the importer's lookups
+  "lib/thinkpages-forum/import/forum-links.ts", // the import points old post and notification links at native pages
 ];
 /** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
 const BRIDGE_PATH = /(?<![\w./(-])\/forum(?=[/"'`?#]|$)/;
 const LEGACY_PATH =
-  /(?<!\w)\/thinkpages\/(?:feed|forum|profile|saved|thinkshare|thinktanks)(?![\w-])/;
+  /(?<!\w)\/thinkpages\/(?:feed|forum|profile|saved|stashed|thinkshare|thinktanks)(?![\w-])/;
 const POST_PATH = /(?<!\w)\/thinkpages\/post(?![\w-])/;
 const HUB_REDIRECT_PATH = /redirectPath=["']\/thinkpages/;
 
@@ -100,6 +79,7 @@ describe("the patterns catch the old links (and only links)", () => {
     "`${origin}/thinkpages/forum?realm=x`",
     'href="/thinkpages/thinkshare"',
     'href="/thinkpages/thinktanks"',
+    'href="/thinkpages/stashed"',
   ])("LEGACY_PATH matches %s", (line) => {
     expect(LEGACY_PATH.test(line)).toBe(true);
   });
@@ -119,12 +99,14 @@ describe("the patterns catch the old links (and only links)", () => {
     expect(LEGACY_PATH.test(line) || POST_PATH.test(line)).toBe(false);
   });
 
-  it.each(['href="/forum"', 'router.push("/forum/thread/12")', "`/forum?sort=new`", "path: '/forum/new-thread',"])(
-    "BRIDGE_PATH matches %s",
-    (line) => {
-      expect(BRIDGE_PATH.test(line)).toBe(true);
-    }
-  );
+  it.each([
+    'href="/forum"',
+    'router.push("/forum/thread/12")',
+    "`/forum?sort=new`",
+    "path: '/forum/new-thread',",
+  ])("BRIDGE_PATH matches %s", (line) => {
+    expect(BRIDGE_PATH.test(line)).toBe(true);
+  });
 
   it.each([
     'href="/thinkpages/forum"',
@@ -143,20 +125,29 @@ describe("the patterns catch the old links (and only links)", () => {
   });
 
   it("HUB_REDIRECT_PATH matches a guarded page redirecting into /thinkpages", () => {
-    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/thinkpages/saved">')).toBe(true);
-    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/dashboard/saved">')).toBe(false);
+    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/thinkpages/saved">')).toBe(
+      true
+    );
+    expect(HUB_REDIRECT_PATH.test('<AuthenticationGuard redirectPath="/dashboard/saved">')).toBe(
+      false
+    );
   });
 });
 
 describe("nothing links to the retired XenForo bridge (phase 4b)", () => {
-  it("spells /forum only where old links are recognized or redirected", () => {
+  it("spells /forum only where old links are recognized", () => {
     expect(offenders(BRIDGE_PATH, BRIDGE_FILES)).toEqual([]);
+  });
+
+  it("serves no /forum route any more (phase 5 deleted the redirects)", () => {
+    expect(fs.existsSync(path.join(SRC, "app/(forum)"))).toBe(false);
+    expect(fs.existsSync(path.join(SRC, "app/forum"))).toBe(false);
   });
 });
 
 describe("nothing links to a retired ThinkPages feed page", () => {
   it("links nothing to the retired /thinkpages pages", () => {
-    expect(offenders(LEGACY_PATH, LEGACY_PAGES)).toEqual([]);
+    expect(offenders(LEGACY_PATH)).toEqual([]);
   });
 
   it("builds /thinkpages/post/<id> only as the forum permalink", () => {
@@ -169,7 +160,9 @@ describe("nothing links to a retired ThinkPages feed page", () => {
   });
 
   it("the account hub is the Dashboard's Accounts section", () => {
-    expect(fs.existsSync(path.join(SRC, "components/thinkpages/ThinkPagesAccountHub.tsx"))).toBe(false);
+    expect(fs.existsSync(path.join(SRC, "components/thinkpages/ThinkPagesAccountHub.tsx"))).toBe(
+      false
+    );
     expect(offenders(/ThinkPagesAccountHub/)).toEqual([]);
   });
 

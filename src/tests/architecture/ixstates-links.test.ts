@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Plan 415 (5b, found by plan 417): the standalone WikiOS process serves none of IxStates' routes, so a link
- * from a WikiOS page to one (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`, `/achievements`,
+ * from a WikiOS page to one (`/blurbs`, `/mycountry`, `/dashboard`, `/countries`, `/vault`,
  * `/messages`, `/maps`, ...) must be the absolute IxStates URL there. `ixstatesHref(path)` makes it so;
  * a literal `href="/blurbs"` or `withBasePath("/countries/...")` in a WikiOS component does not.
  */
@@ -17,7 +17,7 @@ const WIKI_DIRS = [
 
 /** The first segments of IxStates routes the wiki links to (none is in WIKIOS_ALLOWED_PREFIXES). */
 const IXSTATES_ROUTES =
-  "blurbs|mycountry|myleague|myclub|dashboard|countries|achievements|settings|messages|maps|vault|thinkpages|hashtags|admin|terms|privacy|forum|builder|leaderboard|profile";
+  "blurbs|mycountry|myleague|myclub|dashboard|countries|settings|messages|maps|vault|thinkpages|hashtags|admin|terms|privacy|forum|builder|leaderboard";
 
 /** A path literal used as a link target: `href="/x"`, `href={\`/x`, `withBasePath("/x"`, `navigateWithBasePath("/x"`. */
 const LITERAL_LINK = new RegExp(

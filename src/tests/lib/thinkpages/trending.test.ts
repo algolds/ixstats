@@ -415,6 +415,7 @@ describe("activities.getUnifiedTrending forum source (phase 4b)", () => {
             style: "ooc",
           },
           persona: false,
+          personaType: null,
           starter: "user:u1",
         },
       ],

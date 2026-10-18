@@ -1,24 +1,16 @@
 /**
- * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section
- * (the board page redirects to the live board in the forum).
+ * Realms as places: the realm directory (/realms), whose activity counts each realm's forum section and its live
+ * board, and the directory's nation search.
  */
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
 import { notBoardCategory, onlyBoardCategory } from "~/lib/thinkpages-forum/categories";
 import { realmSettings } from "~/server/modules/realms/realms.settings";
-import { isRealmHiddenFrom, type RealmActor } from "~/server/modules/realms/realms.access";
 import {
   openNationCounts,
   unclaimedNationPages,
 } from "~/server/modules/realms/realms.open-nations";
 import { PREVIEWED_BOARD_MESSAGES } from "~/server/modules/thinkpages-forum";
 import { DIRECTORY_REALM_WHERE } from "~/server/shared/realm-directory";
-import {
-  ensureRealmBoard,
-  getRealmBoardAccess,
-  syncRealmBoardMembers,
-} from "~/server/shared/realm-board";
-import { realmSlugWhere } from "~/lib/realms/realm-ids";
 
 /** How far back "forum activity" in the directory looks. */
 const FORUM_ACTIVITY_WINDOW_DAYS = 7;
@@ -240,52 +232,4 @@ export async function searchDirectoryNations(db: PrismaClient, query: string) {
     }),
   ];
   return results.sort((a, b) => a.name.localeCompare(b.name)).slice(0, NATION_SEARCH_LIMIT);
-}
-
-/**
- * Open a realm's board: create it on first use, bring the caller's membership in line with the nations
- * they own there (and drop members who no longer own one), and say what the caller may do. A draft or
- * generating realm's board opens for its staff only (AT-6).
- */
-export async function openRealmBoard(db: PrismaClient, slug: string, viewer: RealmActor | null) {
-  const clerkUserId = viewer?.clerkUserId ?? null;
-  const realm = await db.realm.findUnique({
-    where: realmSlugWhere(slug),
-    select: { id: true, slug: true, name: true, ownerId: true, status: true },
-  });
-  if (!realm || isRealmHiddenFrom(viewer, realm))
-    throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-
-  const { groupId } = await ensureRealmBoard(db, realm);
-  const group = await db.thinktankGroup.findUnique({
-    where: { id: groupId },
-    select: { id: true, conversationId: true },
-  });
-  if (!group) throw new TRPCError({ code: "NOT_FOUND", message: "Realm board not found" });
-
-  const access = await getRealmBoardAccess(db, groupId, clerkUserId);
-  try {
-    await syncRealmBoardMembers(
-      db,
-      {
-        groupId,
-        realmId: realm.id,
-        conversationId: group.conversationId,
-        realmOwnerId: realm.ownerId,
-      },
-      clerkUserId ? { clerkUserId, access } : null
-    );
-  } catch (error) {
-    // Reading the board never fails on a membership sync; the next open retries it.
-    console.error("[realms] board membership sync failed:", error);
-  }
-
-  return {
-    groupId,
-    realm: { id: realm.id, slug: realm.slug, name: realm.name },
-    canPost: access.isMember,
-    canModerate: access.isManager,
-    /** The caller's nations in this realm: the personas the board composer offers. */
-    ownedCountryIds: access.ownedCountryIds,
-  };
 }

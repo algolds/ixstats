@@ -5,7 +5,13 @@ import type { BoardPreviewMessage } from "~/lib/thinkpages-forum/preview";
 
 const message = (over: Partial<BoardPreviewMessage> = {}): BoardPreviewMessage => ({
   id: "p1",
-  author: { name: "jane", avatarUrl: null, flagUrl: "https://flags.example/e.png", persona: false },
+  author: {
+    name: "jane",
+    avatarUrl: null,
+    flagUrl: "https://flags.example/e.png",
+    persona: false,
+    personaType: null,
+  },
   excerpt: "Trade talks resume on Monday.",
   createdAt: new Date(Date.now() - 5 * 60_000),
   href: "/thinkpages/r/eurth#post-p1",
@@ -44,7 +50,13 @@ describe("BoardPreviewList", () => {
           message(),
           message({
             id: "p2",
-            author: { name: "Eurth Daily", avatarUrl: null, flagUrl: null, persona: true },
+            author: {
+              name: "Eurth Daily",
+              avatarUrl: null,
+              flagUrl: null,
+              persona: true,
+              personaType: "media",
+            },
           }),
         ]}
       />

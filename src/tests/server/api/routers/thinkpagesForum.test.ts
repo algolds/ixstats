@@ -223,7 +223,7 @@ const founder = { ...member, id: "u_f", clerkUserId: "founder" };
 const noMod = { siteAdmin: false, realmIds: [], categoryIds: [] };
 
 const ALLOWED_USER_FIELDS = ["name", "handle", "avatarUrl", "flagUrl"];
-const ALLOWED_PERSONA_FIELDS = ["displayName", "username", "avatarUrl"];
+const ALLOWED_PERSONA_FIELDS = ["displayName", "username", "avatarUrl", "personaType"];
 
 describe("thinkpagesForum router", () => {
   it("lets an anonymous visitor read the public categories only", async () => {

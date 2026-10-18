@@ -11,7 +11,7 @@ The editor stack provides a Plate-based visual editor (WikiAST ↔ wikitext), a 
 
 ## 1. Routes (`(wiki-os)` group → `/wiki/*` and `/util/*`)
 
-Utility pages live under `/util/*`. Every `/wiki/<path>` URL is served by one catch-all route, `wiki/[...slug]`, which is also where the old `/wiki/<tool>` URLs land: a lower-case tool slug (`/wiki/recent-changes`, `/wiki/categories/Countries`, `/wiki/history/Foo`, ...) redirects to its `/util/*` route unless a page with exactly that title exists, so no title is hijacked by a tool.
+Utility pages live under `/util/*`. Every `/wiki/<path>` URL is served by one catch-all route, `wiki/[...slug]`. A path is always a title: the old WikiOS tool slugs (`/wiki/recent-changes`, `/wiki/history/Foo`, ...) and `/wiki/<title>/edit`, `/wiki/<title>/talk` are ordinary (sub)page titles now.
 
 The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/wiki-path.ts`) parses the URL, the article is read on the server and primed into the query cache (`HydrateClient`), so the first HTML holds the article; a page that does not exist is a 404 (`not-found.tsx`), a redirect page is a 308 to its target with `?rdfrom=`, a non-canonical spelling is a 308 to the canonical one. `generateMetadata` gives the article its own title, description, canonical URL (WikiOS is the canonical host) and link card.
 
@@ -19,12 +19,12 @@ The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/
 |-------|------|---------|
 | `/wiki` | `wiki/page.tsx` | WikiOS main page (`WikiOSMainPage`) |
 | `/wiki/<title>` (any depth: `/wiki/A/B`) | `wiki/[...slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor (`&section=new` is "Add topic"), `?action=history` / `?action=info` / `?oldid=` / `?diff=` show those views in place, `?redirect=no` shows a redirect page, `?action=raw` is answered by `/api/wiki/raw`, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
-| `/wiki/Talk:<title>` and every `<ns> talk:` page | same | Ordinary wikitext pages; the page tabs (Read / Edit / History / Talk, plus Add topic on a talk page) link the pair. `/wiki/<title>/talk` redirects here, `/wiki/<title>/edit` to `?action=edit` (unless a page with that name exists) |
+| `/wiki/Talk:<title>` and every `<ns> talk:` page | same | Ordinary wikitext pages; the page tabs (Read / Edit / History / Talk, plus Add topic on a talk page) link the pair |
 | `/wiki/User:<name>`, `/wiki/Category:<name>`, `/wiki/File:<name>` | same | The page's wikitext, plus a profile card / the members of the category (200 to a page, `?from=`) / the file |
 | `/wiki/Special:<Name>[/<arg>]` | same | `Special:RecentChanges`, `Watchlist`, `Categories`, `Search`, `Diff/<a>/<b>`, `Contributions/<user>`, `WhatLinksHere/<title>`, `Export`, `Import` and the rights-model pages (`Log[/type]`, `Move`/`MovePage`, `Delete`, `Undelete`, `Protect` with a title, `Block`, `UserRights` with a user, `BlockList`) redirect to the matching `/util/*` tool (`?action=delete|protect|unprotect` on a page go to the same screens); `Random` and `FilePath/<file>` redirect to a page / the file; `AllPages` and `PrefixIndex/<prefix>` list pages in place; any other special page is a 404 |
 | `/wiki-sitemap`, `/wiki-sitemap/<n>`, `/robots.txt` | `src/app/wiki-sitemap/**`, `src/app/robots.txt/route.ts` | Sitemap index and files (50,000 published main-namespace pages each), robots.txt |
 | `/api/wiki/raw` | `src/app/api/wiki/raw/route.ts` | `text/x-wiki` wikitext of a page or revision; `src/proxy.ts` rewrites `/wiki/<title>?action=raw` here |
-| `/util` | `util/page.tsx` | Special directory & utilities deck (`/wiki/utilities` and `Special:SpecialPages` redirect here) |
+| `/util` | `util/page.tsx` | Special directory & utilities deck (`Special:SpecialPages` redirects here) |
 | `/util/search` | `util/search/page.tsx` | Prefix & full-text search |
 | `/util/recent-changes` | `util/recent-changes/page.tsx` | Global append-only edit ledger feed |
 | `/util/history/[slug]` | `util/history/[slug]/page.tsx` | Revision history (scrubbable timeline) |
@@ -33,7 +33,7 @@ The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/
 | `/util/categories`, `/util/categories/[...slug]` | `util/categories/…` | Category index and recursive category browser |
 | `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
 | `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
-| `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards: today's race, the all-time standings and recent winners (`LorewardsView focus="contest"`). `?user=<wiki name>` (and `&card=<id>`) opens that winner's trophies above the race, which is where an article's Loreward badge links; `/wiki/lorewards` redirects here |
+| `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards: today's race, the all-time standings and recent winners (`LorewardsView focus="contest"`). `?user=<wiki name>` (and `&card=<id>`) opens that winner's trophies above the race, which is where an article's Loreward badge links |
 | `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`), with an Upload button |
 | `/util/upload` | `util/upload/page.tsx` | Special:Upload: upload a file (`POST /api/wiki/upload`, plan 411) |
 | `/util/templates` | `util/templates/page.tsx` | Template browser |

@@ -202,7 +202,13 @@ describe("realm Overview forum section", () => {
       messages: [
         {
           id: "p2",
-          author: { name: "jane", avatarUrl: null, flagUrl: null, persona: false },
+          author: {
+            name: "jane",
+            avatarUrl: null,
+            flagUrl: null,
+            persona: false,
+            personaType: null,
+          },
           excerpt: "Trade talks resume",
           createdAt: new Date(Date.now() - 5 * 60_000),
           href: "/thinkpages/r/eurth#post-p2",

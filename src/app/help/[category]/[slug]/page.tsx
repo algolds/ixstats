@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { type Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { DocumentPage } from "~/components/documents/DocumentPage";
 import { parseMarkdownDocument } from "~/lib/markdown-document";
-import { retiredHelpArticles } from "../../_lib/help-sections";
 
 const SEGMENT = /^[a-z0-9-]+$/;
 
@@ -31,8 +30,6 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function HelpArticlePage({ params }: { params: Params }) {
   const { category, slug } = await params;
   if (!SEGMENT.test(category) || !SEGMENT.test(slug)) notFound();
-  const replacement = retiredHelpArticles[`${category}/${slug}`];
-  if (replacement) permanentRedirect(replacement);
   return (
     <DocumentPage
       file={`help/${category}/${slug}.md`}

@@ -16,7 +16,7 @@ A realm is a world that nations live in, a bit like a NationStates region. **Ixn
 
 The [realm directory](/realms) lists every public, active realm (Ixnay always), with how many nations it has, how many are unclaimed, how many you own, the realm's nation limit, and recent board activity. Unlisted realms can still be opened by link.
 
-Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/r/<realm>/board`. The **Community** panel links to the realm's forum, Discord, wiki or map, and the header shows the realm's **in-world date** if its founder set one.
+Each realm has a page at `/r/<realm>` with its nations and a claim list, and a **board** at `/thinkpages/r/<realm>`. The **Community** panel links to the realm's forum, Discord, wiki or map, and the header shows the realm's **in-world date** if its founder set one.
 
 ## Claiming a nation
 

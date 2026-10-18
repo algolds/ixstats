@@ -346,24 +346,16 @@ describe("the stash key in the schema and the migration", () => {
   });
 });
 
-describe("stashPage validates contentId as a positive 32-bit integer", () => {
-  it.each([1.5, 0, -3, 2_147_483_648])(
-    "rejects %p before touching the database",
-    async (contentId) => {
-      const stash = createCallerFactory(wikiosStashRouter)(ctx());
-
-      await expect(stash.stashPage({ pageTitle: "Rome", contentId })).rejects.toMatchObject({
-        code: "BAD_REQUEST",
-      });
-      expect(fakeStashItem.upsert).not.toHaveBeenCalled();
-    }
-  );
-
-  it("accepts the largest Int4 id", async () => {
+describe("stashPage takes no contentId", () => {
+  it("never writes one: the column only holds bridge-era XenForo ids, which the forum import reads", async () => {
     const stash = createCallerFactory(wikiosStashRouter)(ctx());
 
-    await stash.stashPage({ pageTitle: "Rome", contentId: 2_147_483_647 });
+    await stash.stashPage({ pageTitle: "Rome", contentId: 7 } as never);
+    await stash.stashPage({ pageTitle: "Rome", contentId: 8 } as never);
 
-    expect(fakeStashItem.upsert).toHaveBeenCalledTimes(1);
+    const [first, second] = fakeStashItem.upsert.mock.calls.map(([args]) => args);
+    expect(first?.create).not.toHaveProperty("contentId");
+    expect(second?.update).toEqual({});
+    expect(store.map((i) => i.contentId)).toEqual([null]);
   });
 });

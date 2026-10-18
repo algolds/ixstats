@@ -177,8 +177,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       }
       const rawTitle = canon.title;
 
-      // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
-      // other, and the old slugs redirect to their tool in the route, not in this query.
+      // A title is always a page here: a former WikiOS tool slug ("search") is an article title
+      // like any other.
       const self = { title: rawTitle, fragment: null };
       const followed = input.redirect === "no" ? self : ((await followRedirects(rawTitle)) ?? self);
 
@@ -422,32 +422,6 @@ export const wikiosPageContentRouter = createTRPCRouter({
         result[title.replace(/_/g, " ")] = url;
       }
       return result;
-    }),
-
-  /**
-   * Preview of an old forum thread by its XenForo id (`forum.ixwiki.com/threads/<slug>.<id>` links in wiki pages,
-   * posts and the feed), read from the imported native thread (phase 4b).
-   *
-   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require sign-in. It is
-   * rate-limited like the other public reads, and only a thread anyone may read resolves (not hidden, public
-   * category, site section or published realm: `publicThreadByXenforoId`); anything else yields nothing.
-   */
-  getForumThreadPreview: rateLimitedPublicProcedure
-    .input(z.object({ threadId: z.number().int().positive() }))
-    .query(async ({ ctx, input }) => {
-      // Loaded on demand: the forum module is a large graph the other WikiOS reads never need.
-      const { publicThreadByXenforoId } = await import("~/server/modules/thinkpages-forum");
-      const thread = await publicThreadByXenforoId(ctx.db, input.threadId).catch(() => null);
-      if (!thread) return null;
-      return {
-        threadId: input.threadId,
-        title: thread.title,
-        author: thread.author,
-        replyCount: thread.replyCount,
-        forumName: thread.categoryName,
-        excerpt: thread.excerpt,
-        href: thread.href,
-      };
     }),
 
   /**

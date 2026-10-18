@@ -70,6 +70,28 @@ describe("appendChainToWiki", () => {
     expect(wikitext).not.toContain("/thinkpages/post/p2");
   });
 
+  it("leaves out a link still on a XenForo post, which has no page to point at", async () => {
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
+    const xenforo = {
+      postSource: "xenforo",
+      postRef: "42",
+      activity: {
+        title: "Old treaty",
+        type: "diplomatic",
+        createdAt: new Date(0),
+        visibility: "public",
+      },
+    };
+    await appendChainToWiki(
+      db({ ...CHAIN, actionLinks: [...CHAIN.actionLinks, xenforo] }) as never,
+      "s1"
+    );
+    const { wikitext } = jest.mocked(commitWikitextSave).mock.calls[0]![1];
+    expect(wikitext).toContain("/thinkpages/post/p1 Signed]");
+    expect(wikitext).not.toContain("Old treaty");
+    expect(wikitext).not.toContain("/forum/");
+  });
+
   it("writes no section when every action of the chain is withdrawn, and marks it synced", async () => {
     const withdrawn = {
       postSource: "native",

@@ -27,12 +27,12 @@ Signed-out visitors see a sign-in prompt instead of the manager.
 
 | Piece | Location | Role |
 |-------|----------|------|
-| Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `forum:thread:` = thread, else wiki page); the Quotes tab flattens each article's annotations. Sections live in `src/components/wiki-os/stashes/` (`StashSidebar`, `StashPagesList`, `StashQuotesList`, `StashImagesGrid` with `StashedImageModal`, `StashThreadsList`, `StashSettingsMenu`, `CreateStashPopover`) |
+| Page | `src/app/stashes/page.tsx` | Manager UI; tabs filter items by `pageTitle` prefix (`commons:` = image, `thinkpages:thread:` = thread, else wiki page); the Quotes tab flattens each article's annotations. Sections live in `src/components/wiki-os/stashes/` (`StashSidebar`, `StashPagesList`, `StashQuotesList`, `StashImagesGrid` with `StashedImageModal`, `StashThreadsList`, `StashSettingsMenu`, `CreateStashPopover`) |
 | Welcome modal | `src/components/wiki-os/shared/StashWelcomeModal.tsx` | First-run help (localStorage `wikios-stashes-welcome-seen`) |
 | Other entry points | `src/components/wiki-os/media-search/MyStashTab.tsx`, `src/components/messages/MessagesStashAttachmentModal.tsx` | Stash access from media search and messaging |
 | Styles | `src/styles/wiki-os/components.css` (aggregated by `src/styles/wiki-os.css`) | `wikios-stash-*` classes |
 
-Models live in `prisma/schema/wiki.prisma`: `Stash`, `StashItem` (`contentType` = `wiki` | `forum_thread` | `forum_post`, optional `contentId`), `StashAnnotation`.
+Models live in `prisma/schema/wiki.prisma`: `Stash`, `StashItem` (`contentType` = `wiki` | `image` | `forum_thread`; `contentId` holds a bridge-era item's XenForo thread id, which only the forum import reads), `StashAnnotation`.
 
 ## Data Sources
 
@@ -58,6 +58,6 @@ The image tab resolves Commons thumbnails via `api.commons.getImageInfoByTitles`
 |---------|-----------------|-----------|
 | Wiki pages | `pageTitle` as-is, slug `/wiki/<slug>` | `wikios.stashPage` / `unstashPage` |
 | Media-repository images | `pageTitle` prefixed `commons:` | `wikios.stashPage` (re-resolved via `commons.getImageInfoByTitles`) |
-| Forum threads | `pageTitle` prefixed `thinkpages:thread:` (legacy bridge items: `forum:thread:`, kept and redirected), `contentType` = `forum_thread` | `thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (`src/server/modules/thinkpages-forum/stash.ts`) |
+| Forum threads | `pageTitle` prefixed `thinkpages:thread:`, `contentType` = `forum_thread` (bridge-era `forum:thread:` items are left out of the listing; the XenForo import moves them to native items) | `thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` (`src/server/modules/thinkpages-forum/stash.ts`) |
 
 All three content types share the same underlying `Stash` / `StashItem` tables; the `/stashes` page disambiguates them by `pageTitle` prefix at render time.

@@ -26,24 +26,6 @@ export function categoryLocator(category: CategoryPlace): { key: string; realm?:
   return category.realm ? { key: category.key, realm: category.realm.slug } : { key: category.key };
 }
 
-/** A query string as a Next page receives it. */
-export type PageQuery = Readonly<Record<string, string | string[] | undefined>>;
-
-/** `path` with the query a request came with, re-encoded so a value cannot add a parameter or a fragment. */
-export function withQuery(path: string, query: PageQuery): string {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(query)) {
-    for (const item of [value ?? []].flat()) params.append(key, item);
-  }
-  const search = params.toString();
-  return search ? `${path}?${search}` : path;
-}
-
-/** The forum home, opened on `realm`'s section when given. */
-export function forumHomeHref(realm?: string | null): string {
-  return realm ? `${FORUM_HOME}?realm=${seg(realm)}` : FORUM_HOME;
-}
-
 export function categoryHref(category: CategoryPlace): string {
   const { key, realm } = category;
   return realm ? `/thinkpages/r/${seg(realm.slug)}/${seg(key)}` : `/thinkpages/c/${seg(key)}`;
@@ -99,10 +81,6 @@ export function postHref(postId: string): string {
   return `/thinkpages/post/${seg(postId)}`;
 }
 
-/** The member's New posts and Watched pages (signed-in only). */
-export const NEW_POSTS_HREF = "/thinkpages/new";
-export const WATCHED_HREF = "/thinkpages/watched";
-
 /** A thread opened at its first unread post (a server redirect; a signed-out visitor gets the thread itself). */
 export function unreadHref(threadId: string): string {
   return `${threadHref(threadId)}/unread`;
@@ -113,7 +91,7 @@ export function handleProfileHref(handle: string): string {
   return `/id/${seg(handle)}`;
 }
 
-/** A persona's profile (the dashboard owns the feed; `/thinkpages/profile/*` only redirects there). */
+/** A persona's profile (the dashboard owns the feed). */
 export function personaProfileHref(username: string): string {
   return `/dashboard/profile/${seg(username)}`;
 }

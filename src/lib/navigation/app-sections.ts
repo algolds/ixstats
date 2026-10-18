@@ -311,7 +311,6 @@ export const APPS: readonly AppDefinition[] = [
         label: "Store",
         href: "/vault/store",
         icon: Cart,
-        match: ["/vault/marketplace", "/vault/market", "/vault/packs", "/vault/trading"],
       },
     ],
   },
@@ -323,10 +322,9 @@ export const APPS: readonly AppDefinition[] = [
     tint: "wiki",
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
-    // WikiOS utilities live under /util; the /wiki/<tool> routes are redirect stubs. WikiOS has no rail
-    // of its own: search is a section here, and page creation and page tools live in the page header. The rest of
-    // the tools (Random, Contributions, Watchlist, ...) open from the Utilities hub; /stashes and /blurbs stay in
-    // the app without a row (Stash is in the account menu).
+    // WikiOS utilities live under /util. WikiOS has no rail of its own: search is a section here, and page creation
+    // and page tools live in the page header. The rest of the tools (Random, Contributions, Watchlist, ...) open from
+    // the Utilities hub; /stashes and /blurbs stay in the app without a row (Stash is in the account menu).
     sections: [
       {
         id: "main",
@@ -341,7 +339,6 @@ export const APPS: readonly AppDefinition[] = [
         label: "Search",
         href: "/util/search",
         icon: Search,
-        match: ["/wiki/search"],
       },
       {
         id: "recent-changes",
@@ -354,14 +351,12 @@ export const APPS: readonly AppDefinition[] = [
         label: "Categories",
         href: "/util/categories",
         icon: BookStack,
-        match: ["/wiki/categories"],
       },
       {
         id: "repository",
         label: "Repository",
         href: "/util/repository",
         icon: MediaImage,
-        match: ["/wiki/repository"],
       },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],

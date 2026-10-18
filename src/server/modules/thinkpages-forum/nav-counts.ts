@@ -1,21 +1,22 @@
 /**
- * What the sidebar counts for a signed-in member (spec section 3), in one poll: unread watched threads (Watched) and
- * new messages on their realm's board since they last read it (Your realm). Each is clamped for the "99+" badge. The
- * realm board's own read mark is the only place its read-state is used.
+ * What the sidebar counts for a signed-in member (spec section 3), in one poll: new messages on their realm's board
+ * since they last read it (Your realm), clamped for the "99+" badge.
  */
 import type { PrismaClient } from "@prisma/client";
-import { capCount, seenSince } from "~/lib/thinkpages-forum/unread";
+import { capCount, seenSince, unreadFloor } from "~/lib/thinkpages-forum/unread";
 import type { ForumViewer } from "./access";
 import { boardThreadOf, PREVIEWED_BOARD_MESSAGES } from "./board-thread";
 import { canSeeRealm, loadForumRealm, type RealmDb } from "./realm-access";
 import { primaryRealmIdOf } from "./realm-reads";
-import { unreadWatchedCount, type ListingDb } from "./thread-listing";
-import { readerFloor } from "./unread";
+import type { ReadsDb } from "./reads";
+import type { UnreadDb } from "./unread";
 
-export type NavCountsDb = ListingDb & RealmDb & Pick<PrismaClient, "country" | "forumPost">;
+export type NavCountsDb = ReadsDb &
+  UnreadDb &
+  RealmDb &
+  Pick<PrismaClient, "country" | "forumPost">;
 
 export interface NavCounts {
-  watchedUnread: number;
   realmBoardNew: number;
 }
 
@@ -53,10 +54,5 @@ export async function forumNavCounts(
   db: NavCountsDb,
   viewer: NonNullable<ForumViewer>
 ): Promise<NavCounts> {
-  const floor = await readerFloor(db, viewer.id);
-  const [watched, board] = await Promise.all([
-    unreadWatchedCount(db, viewer, floor),
-    realmBoardNew(db, viewer, floor),
-  ]);
-  return { watchedUnread: capCount(watched), realmBoardNew: capCount(board) };
+  return { realmBoardNew: capCount(await realmBoardNew(db, viewer, unreadFloor(new Date()))) };
 }

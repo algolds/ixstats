@@ -16,7 +16,6 @@ MyLeague and MyClub provide full-season sports simulation across seven sport pre
 ```
 /myleague                              League lobby (carousel of active leagues)
   /myleague/[id]                       League workspace (tabbed SPA: ?tab=overview|standings|schedule|bracket|races|draft|teams|history)
-  /myleague/[id]/season/[seasonId]     Historical season detail
 
 /myclub                                Club lobby (carousel of owned franchises)
   /myclub/[teamId]                     Team management dashboard (section router: overview|roster|tactics|transfers|management|history)

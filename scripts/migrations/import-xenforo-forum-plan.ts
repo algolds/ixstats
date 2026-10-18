@@ -189,6 +189,9 @@ export function applyTotalLines(totals: ApplyTotals): string[] {
     `  posts: ${totals.postsCreated} created, ${totals.postsPresent} already present`,
     `  action links remapped: ${totals.linksRemapped} with their posts, ${totals.bridgeLinks.remapped} made by the bridge since (${totals.bridgeLinks.twins} already on the native post)`,
     `  quote ids: ${totals.quoteIds.remapped} pointed at the native post, ${totals.quoteIds.dropped} dropped (the quoted post is not imported)`,
+    `  old forum links: ${totals.forumLinks.mapped} pointed at the native page, ${totals.forumLinks.unwrapped} unwrapped to their text (no public page to point at)`,
+    `  stashed old forum threads: ${totals.stashedThreads.moved} moved to the native thread, ${totals.stashedThreads.twins} removed (already stashed natively), ${totals.stashedThreads.deleted} removed (never imported)`,
+    `  old forum notification links: ${totals.notificationLinks.mapped} pointed at the native page, ${totals.notificationLinks.unresolved} sent to the forum home (no public page to point at)`,
     `  authors relinked: ${totals.relinked.threads} threads, ${totals.relinked.posts} posts`,
     `  re-hidden (moderated or deleted on XenForo since imported): ${totals.rehidden.threads} threads, ${totals.rehidden.posts} posts, ${totals.rehidden.assets} media assets made restricted`,
     ...failedThreadLines(totals.failedThreads),
@@ -208,7 +211,8 @@ export function rollbackLines(totals: RollbackTotals): string[] {
   return [
     `Rolled back: ${totals.threads} threads, ${totals.posts} posts (${totals.nativeReplies} native replies on imported threads)`,
     `  action links: ${totals.linksRestored} returned to their XenForo post, ${totals.linksDeleted} deleted`,
-    `  archive categories ${totals.categories}, node map rows ${totals.nodeMap}, media assets ${totals.assets}, files ${totals.files}`,
+    `  stash items: ${totals.stashItems} returned to the old forum thread (a re-apply moves them back)`,
+    `  archive categories ${totals.categories}, media assets ${totals.assets}, files ${totals.files}`,
   ];
 }
 
@@ -217,7 +221,8 @@ export function rollbackPreviewLines(preview: RollbackPreview): string[] {
   return [
     `Rollback preview (nothing deleted): ${preview.threads} imported threads, ${preview.posts} posts (${preview.nativeReplies} native replies on imported threads)`,
     `  action links on those posts: ${preview.links} (returned to their XenForo post, or deleted with a native reply)`,
-    `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, node map rows ${preview.nodeMap}, forum media assets ${preview.assets}, copied files ${preview.files}`,
+    `  stash items on those threads: ${preview.stashItems} (returned to the old forum thread, so a re-apply moves them back)`,
+    `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, forum media assets ${preview.assets}, copied files ${preview.files}`,
     "Pass --yes to delete these.",
   ];
 }

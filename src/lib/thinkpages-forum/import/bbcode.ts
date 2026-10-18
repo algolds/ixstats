@@ -1,7 +1,7 @@
 /**
- * Transforms XenForo BBCode into HTML. Used by the XenForo bridge (`~/server/modules/forum`, its defaults) and by the
- * phase 4 import (`post-html.ts`: forum links kept absolute, mentions as text, action tokens kept, then degraded and
- * sanitized there). The output is NOT sanitized: every caller that stores or renders it sanitizes it.
+ * Transforms XenForo BBCode into HTML for the phase 4 import (`post-html.ts`, which degrades and sanitizes it): forum
+ * links stay as written, mentions become plain `@Name` text, and `[ixaction=…]` tokens are kept. The output is NOT
+ * sanitized: every caller that stores or renders it sanitizes it.
  */
 import { mapHtmlRuns } from "~/lib/action-links";
 import { replacePairs, type PairSpec } from "./bbcode-pairs";
@@ -86,16 +86,6 @@ interface AttachmentRef {
   inline: boolean;
 }
 
-export interface BBCodeOptions {
-  forumBaseUrl?: string;
-  /** "rewrite" (default): forum thread/forum/member URLs become bridge routes. "keep": left as written. */
-  forumLinks?: "rewrite" | "keep";
-  /** "link" (default): `[user=7]Name[/user]` links the bridge member page. "text": plain `@Name`. */
-  mentions?: "link" | "text";
-  /** "strip" (default): `[ixaction=…]` goes with the other unknown tags. "keep": left in the text. */
-  actionTokens?: "strip" | "keep";
-}
-
 /** A tag option as written, without the quotes XenForo 2.2 puts around it (`[QUOTE="Name, post: 1"]`). */
 const optionValue = (raw: string): string =>
   raw.trim().replace(/^(?:&quot;|&#039;)([\s\S]*)(?:&quot;|&#039;)$/, "$1");
@@ -103,7 +93,7 @@ const optionValue = (raw: string): string =>
 /** Text taken from the escaped body, escaped once for the page (never twice). */
 const asText = (escaped: string): string => escapeHtml(unescapeHtml(escaped));
 
-// Unknown or unclosed tags are dropped, except an action token when the caller keeps them.
+// Unknown or unclosed tags are dropped, except an action token, which the import keeps.
 const UNKNOWN_TAG = /\[\/?[a-z][a-z0-9]*(?:=[^\]]*)?]/gi;
 const isActionToken = (tag: string): boolean => /^\[ixaction=[A-Za-z0-9_-]{1,64}\]$/.test(tag);
 
@@ -111,11 +101,11 @@ const isActionToken = (tag: string): boolean => /^\[ixaction=[A-Za-z0-9_-]{1,64}
  * Unknown tags out of one text run. Every tag ends with `]`, so the run after its last `]` is left alone (which
  * keeps an opener with no `]` after it from scanning to the end of the run, once per opener).
  */
-function stripUnknownTags(text: string, keepTokens: boolean): string {
+function stripUnknownTags(text: string): string {
   const end = text.lastIndexOf("]") + 1;
   const stripped = text
     .slice(0, end)
-    .replace(UNKNOWN_TAG, (tag) => (keepTokens && isActionToken(tag) ? tag : ""));
+    .replace(UNKNOWN_TAG, (tag) => (isActionToken(tag) ? tag : ""));
   return stripped + text.slice(end);
 }
 
@@ -130,14 +120,11 @@ const tooLongPost = (bbcode: string): TransformedPost => ({
 });
 
 /**
- * Transform XenForo BBCode into HTML for the bridge, or for the import to degrade and sanitize.
+ * Transform XenForo BBCode into HTML for the import to degrade and sanitize.
  * Raw text is escaped first; the tags it knows become fixed markup.
  */
-export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): TransformedPost {
+export function transformBBCode(bbcode: string): TransformedPost {
   if (bbcode.length > MAX_BBCODE_LENGTH) return tooLongPost(bbcode);
-  const { forumBaseUrl = "https://forum.ixwiki.com" } = options;
-  const linkOf = (url: string): string =>
-    options.forumLinks === "keep" ? url : rewriteForumUrl(url, forumBaseUrl);
 
   const quotedUsers: string[] = [];
   const mentionedUsers: string[] = [];
@@ -169,12 +156,12 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
 
   // 5. URLs
   html = pairs("url", /=([^\]]+)\]/y, ([, url], text) => {
-    const href = linkOf(unescapeHtml(optionValue(url!)));
+    const href = unescapeHtml(optionValue(url!));
     return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${text}</a>`;
   })(html);
   // XenForo 2.2 writes pasted links as [URL unfurl="true"]…[/URL]
   html = pairs("url", /(?:\s[^\]]*)?\]/y, (_o, url) => {
-    const href = linkOf(unescapeHtml(url));
+    const href = unescapeHtml(url);
     return `<a href="${urlAttr(href)}" class="forum-link" rel="noopener">${escapeHtml(href)}</a>`;
   })(html);
 
@@ -214,11 +201,10 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
   })(html);
 
   // 12. User mentions
-  html = pairs("user", /=(\d+)\]/y, ([, userId], username) => {
+  html = pairs("user", /=\d+\]/y, (_o, username) => {
     mentionedUsers.push(username);
     // XenForo 2.2 stores the name with its "@"
-    if (options.mentions === "text") return `@${username.replace(/^@/, "")}`;
-    return `<a href="/forum/members/${userId}" class="forum-mention">@${username}</a>`;
+    return `@${username.replace(/^@/, "")}`;
   })(html);
 
   // 13. Attachments
@@ -257,7 +243,7 @@ export function transformBBCode(bbcode: string, options: BBCodeOptions = {}): Tr
 
   // 20. Strip any remaining unclosed/unknown BBCode tags, in text only (never inside a generated tag)
   html = mapHtmlRuns(html, {
-    text: (text) => stripUnknownTags(text, options.actionTokens === "keep"),
+    text: stripUnknownTags,
   });
 
   return {
@@ -371,29 +357,4 @@ function sanitizeUrl(url: string): string | null {
   } catch {
     return null;
   }
-}
-
-/** Rewrite forum.ixwiki.com URLs to /forum/ internal routes */
-function rewriteForumUrl(url: string, forumBaseUrl: string): string {
-  if (!url.startsWith(forumBaseUrl)) return url;
-
-  const relative = url.slice(forumBaseUrl.length);
-
-  // Thread URLs: /threads/thread-title.123/ → /forum/thread/123
-  const threadMatch = relative.match(/\/threads\/[^/]*?\.?(\d+)\/?$/);
-  if (threadMatch) return `/forum/thread/${threadMatch[1]}`;
-
-  // Forum URLs: /forums/forum-name.123/ → /forum/123
-  const forumMatch = relative.match(/\/forums\/[^/]*?\.?(\d+)\/?$/);
-  if (forumMatch) return `/forum/${forumMatch[1]}`;
-
-  // Member URLs: /members/username.123/ → /forum/members/123
-  const memberMatch = relative.match(/\/members\/[^/]*?\.?(\d+)\/?$/);
-  if (memberMatch) return `/forum/members/${memberMatch[1]}`;
-
-  // Post URLs: /posts/123/ → /forum/thread/... (keep as-is, will need post resolution)
-  const postMatch = relative.match(/\/posts\/(\d+)\/?$/);
-  if (postMatch) return `/forum/thread/${postMatch[1]}`;
-
-  return url;
 }

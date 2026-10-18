@@ -1,11 +1,10 @@
 // Plan 415 step 2: the link detectors of a ThinkPages post are built from the configured public host (no literal),
 // and keep matching what they matched: a MyLeague/MyClub page on that host, a subdomain of it or localhost, with or
-// without the app's base path, and an IxWiki or IIWiki article.
+// without the app's base path, and an IxWiki or IIWiki article. An old forum.ixwiki.com thread link has no preview.
 // The previews it renders pull in the whole editor stack; only the detector is under test.
 jest.mock("~/components/dashboard/sections/feed/InlineWikiArticlePreview", () => ({
   InlineWikiArticlePreview: () => null,
 }));
-jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({ ForumLinkPreview: () => null }));
 
 import { getInlinePreviewLink } from "~/components/thinkpages/post/PostInlineLinkPreview";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
@@ -31,8 +30,8 @@ describe("getInlinePreviewLink", () => {
     expect(getInlinePreviewLink(content)).toBe(link);
   });
 
-  it("finds a forum thread, and nothing in text without a link", () => {
-    expect(getInlinePreviewLink("https://forum.ixwiki.com/threads/topic.123/")).toBe("https://forum.ixwiki.com/threads/topic.123");
+  it("finds nothing for an old forum thread link, or in text without a link", () => {
+    expect(getInlinePreviewLink("https://forum.ixwiki.com/threads/topic.123/")).toBeNull();
     expect(getInlinePreviewLink("no links here, just myleague talk")).toBeNull();
     expect(getInlinePreviewLink(null)).toBeNull();
   });
