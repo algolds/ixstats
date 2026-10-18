@@ -212,6 +212,22 @@ function ClaimFacts({ streak }: { streak: number }) {
   );
 }
 
+/** Today's reward, already taken (here or on another device): the streak and when the next opens, and no claim. */
+function ClaimedToday({ streak, onDone }: { streak: number; onDone: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-5 px-6 pt-8 pb-6 text-center">
+      <DialogTitle className="text-title-3 text-label">Daily reward</DialogTitle>
+      <DialogDescription className="text-body text-label-secondary">
+        You claimed today&apos;s reward.
+      </DialogDescription>
+      <ClaimFacts streak={streak} />
+      <Button className="w-full" onClick={onDone}>
+        Done
+      </Button>
+    </div>
+  );
+}
+
 interface DailyRewardContextValue {
   open: () => void;
   isOpen: boolean;
@@ -251,6 +267,8 @@ function DailyRewardDialog({
   const { data: balanceData } = api.vault.getBalance.useQuery(undefined);
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
+  // Known to be taken, not merely loading: reopened after a claim, the dialog offers no second one.
+  const claimedToday = balanceData !== undefined && !canClaim;
   const streak = balanceData?.loginStreak ?? 0;
   const claimStreak = balanceData?.claimStreak ?? streak;
   const levelBoost = levelMultiplier(balanceData?.vaultLevel ?? 1);
@@ -332,7 +350,12 @@ function DailyRewardDialog({
           />
         )}
         <AnimatePresence mode="wait" initial={false}>
-          {!claimResult ? (
+          {!claimResult && claimedToday && (
+            <motion.div key="claimed" {...fade} transition={springSmooth}>
+              <ClaimedToday streak={claimStreak} onDone={() => handleOpenChange(false)} />
+            </motion.div>
+          )}
+          {!claimResult && !claimedToday && (
             <motion.div key="choice" {...fade} transition={springSmooth} className="space-y-4 p-6">
               <div className="flex items-center gap-3 pr-8">
                 <span
@@ -368,7 +391,8 @@ function DailyRewardDialog({
               </div>
               <StreakBoostWell claimStreak={claimStreak} />
             </motion.div>
-          ) : (
+          )}
+          {claimResult && (
             <motion.div
               key="reveal"
               data-content="reveal"
