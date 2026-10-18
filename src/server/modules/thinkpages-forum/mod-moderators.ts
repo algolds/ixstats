@@ -5,6 +5,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { isSiteAdmin } from "~/server/modules/realms";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import type { ForumViewer } from "./access";
 import { ForumError, isUniqueViolation } from "./errors";
 import { logModAction } from "./mod-log";
@@ -33,10 +34,11 @@ export interface ResolvedMember {
 
 /**
  * A member by Passport handle (unique, stored lowercase; a leading @ is ignored), else by wiki username, exactly. A
- * wiki username two accounts share resolves to nobody rather than to either. Moderators only.
+ * wiki username two accounts share resolves to nobody rather than to either. A member with wiki attribution off
+ * (`showWikiAttribution`; a read error counts as off) is neither found nor named by it. Moderators only.
  */
 export async function resolveMember(
-  db: Pick<PrismaClient, "user">,
+  db: Pick<PrismaClient, "user" | "userConnection">,
   viewer: ForumViewer,
   input: { handle: string }
 ): Promise<ResolvedMember | null> {
@@ -49,11 +51,14 @@ export async function resolveMember(
     select: { id: true, handle: true },
   });
   if (byHandle?.handle) return { id: byHandle.id, name: byHandle.handle };
-  const byWiki = await db.user.findMany({
-    where: { wikiUsername: query },
-    select: { id: true, wikiUsername: true },
-    take: 2,
-  });
+  const byWiki = await withoutHiddenWikiNames(
+    db,
+    await db.user.findMany({
+      where: { wikiUsername: query },
+      select: { id: true, clerkUserId: true, wikiUsername: true },
+      take: 2,
+    })
+  );
   const only = byWiki.length === 1 ? byWiki[0] : undefined;
   return only?.wikiUsername ? { id: only.id, name: only.wikiUsername } : null;
 }

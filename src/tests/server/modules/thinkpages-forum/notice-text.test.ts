@@ -1,5 +1,15 @@
 /** @jest-environment node */
-import { clip, noticeFor, type NoticeSubject } from "~/server/modules/thinkpages-forum/notice-text";
+import {
+  clip,
+  memberName,
+  noticeFor,
+  type NoticeSubject,
+} from "~/server/modules/thinkpages-forum/notice-text";
+import {
+  privacyConfigRow,
+  privacyConnections,
+  wikiAttributionOff,
+} from "~/tests/helpers/privacy-config-fake";
 
 const subject = (over: Partial<NoticeSubject> = {}): NoticeSubject => ({
   postId: "p1",
@@ -62,5 +72,46 @@ describe("noticeFor", () => {
     expect(noticeFor("watch", subject({ threadTitle: "y".repeat(500) }), "c").title).toHaveLength(
       200
     );
+  });
+});
+
+type MemberRow = { handle: string | null; wikiUsername: string | null; clerkUserId: string };
+
+function memberDb(row: MemberRow | null, connections = privacyConnections()) {
+  return {
+    user: { findUnique: jest.fn(async (_args: object): Promise<MemberRow | null> => row) },
+    userConnection: connections,
+  };
+}
+
+describe("memberName", () => {
+  const wikiOnly: MemberRow = { handle: null, wikiUsername: "Wiki Name", clerkUserId: "c1" };
+
+  it("names a member by their wiki name while they show wiki attribution", async () => {
+    const on = privacyConnections([privacyConfigRow("c1", { showWikiAttribution: true })]);
+    expect(await memberName(memberDb(wikiOnly, on) as never, "u1", "Member")).toBe("Wiki Name");
+    expect(await memberName(memberDb(wikiOnly) as never, "u1", "Member")).toBe("Wiki Name");
+  });
+
+  it("gives the fallback instead of the wiki name with wiki attribution off", async () => {
+    const off = privacyConnections(wikiAttributionOff("c1"));
+    expect(await memberName(memberDb(wikiOnly, off) as never, "u1", "Member")).toBe("Member");
+  });
+
+  it("fails closed: a switch it cannot read gives the fallback", async () => {
+    const broken = privacyConnections();
+    broken.findMany.mockRejectedValue(new Error("db down"));
+    expect(await memberName(memberDb(wikiOnly, broken) as never, "u1", "Member")).toBe("Member");
+  });
+
+  it("names a member by their handle without reading the switch", async () => {
+    const off = privacyConnections(wikiAttributionOff("c1"));
+    const db = memberDb({ ...wikiOnly, handle: "wikihandle" }, off);
+    expect(await memberName(db as never, "u1", "Member")).toBe("wikihandle");
+    expect(off.findMany).not.toHaveBeenCalled();
+  });
+
+  it("gives the fallback for a member it cannot find", async () => {
+    expect(await memberName(memberDb(null) as never, "u9", "Member")).toBe("Member");
   });
 });

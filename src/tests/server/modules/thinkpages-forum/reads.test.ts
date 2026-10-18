@@ -14,6 +14,11 @@ import {
 } from "~/server/modules/thinkpages-forum";
 import { advertGate, ADVERT_REALM_SELECT } from "~/server/modules/thinkpages-forum/advert-access";
 import { summarizeCategories } from "~/server/modules/thinkpages-forum/reads";
+import {
+  privacyConfigRow,
+  privacyConnections,
+  wikiAttributionOff,
+} from "~/tests/helpers/privacy-config-fake";
 
 const admin = {
   id: "u_a",
@@ -134,6 +139,7 @@ function readDb(opts: { thread?: object | null; post?: object | null } = {}) {
     thinkpagesAccount: {
       findMany: jest.fn(async (_args?: object): Promise<AuthorAccountRow[]> => []),
     },
+    userConnection: privacyConnections(),
   };
 }
 
@@ -669,6 +675,52 @@ describe("authorsOf", () => {
       accountType: "personal",
       isActive: true,
     });
+  });
+
+  it("skips the wiki name of a member with wiki attribution off, the same for every viewer", async () => {
+    const db = readDb();
+    db.user.findMany.mockResolvedValue([
+      { id: "u1", clerkUserId: "c1", handle: "heku", wikiUsername: "Heku", country: null },
+      {
+        id: "u2",
+        clerkUserId: "c2",
+        handle: null,
+        wikiUsername: "WikiName",
+        country: { name: "Caphiria" },
+      },
+      { id: "u3", clerkUserId: "c3", handle: null, wikiUsername: "Plain", country: null },
+      { id: "u4", clerkUserId: "c4", handle: null, wikiUsername: "Shown", country: null },
+    ]);
+    db.userConnection.findMany.mockResolvedValue([
+      ...wikiAttributionOff("c1", "c2", "c3"),
+      privacyConfigRow("c4", { showWikiAttribution: true }),
+    ]);
+    const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4"], []);
+    expect([...out.users.values()].map((u) => u.name)).toEqual([
+      "heku",
+      "Caphiria",
+      "Member",
+      "Shown",
+    ]);
+    expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed: a switch it cannot read hides every wiki name", async () => {
+    const db = readDb();
+    db.user.findMany.mockResolvedValue([
+      {
+        id: "u1",
+        clerkUserId: "c1",
+        handle: null,
+        wikiUsername: "WikiName",
+        country: { name: "Caphiria" },
+      },
+      { id: "u2", clerkUserId: "c2", handle: null, wikiUsername: "Other", country: null },
+      { id: "u3", clerkUserId: "c3", handle: "heku", wikiUsername: "Heku", country: null },
+    ]);
+    db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+    const out = await authorsOf(db as never, ["u1", "u2", "u3"], []);
+    expect([...out.users.values()].map((u) => u.name)).toEqual(["Caphiria", "Member", "heku"]);
   });
 
   it("skips queries for empty id lists and ignores null persona ids", async () => {

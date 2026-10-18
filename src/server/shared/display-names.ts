@@ -3,8 +3,11 @@
  *
  * Order: nation name, forum username, wiki username, then the user's first active ThinkPages
  * account. Never an ID fragment: anyone with no linked name reads as UNKNOWN_DISPLAY_NAME.
+ * resolveDisplayNames skips the wiki username of a user with wiki attribution off
+ * (`showWikiAttribution`; a read error counts as off).
  */
 import type { PrismaClient } from "@prisma/client";
+import { withoutHiddenWikiNames } from "./privacy-permissions";
 
 /** Shown when a user has no linked name anywhere. */
 export const UNKNOWN_DISPLAY_NAME = "Unknown user";
@@ -27,12 +30,13 @@ export function pickDisplayName(sources: DisplayNameSources): string | null {
   );
 }
 
-/** The two delegates the resolver reads; accepts the Prisma client or a transaction client. */
-type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
+/** The delegates the resolver reads; accepts the Prisma client or a transaction client. */
+type DisplayNameDb = Pick<PrismaClient, "user" | "thinkpagesAccount" | "userConnection">;
 
 /**
- * Batch-resolve display names for Clerk user IDs: one users query, plus one ThinkPages query
- * only for IDs that still have no name. Every requested ID is in the returned map.
+ * Batch-resolve display names for Clerk user IDs: one users query, one privacy read for those with
+ * a wiki name, plus one ThinkPages query only for IDs that still have no name. Every requested ID
+ * is in the returned map.
  */
 export async function resolveDisplayNames(
   db: DisplayNameDb,
@@ -42,15 +46,18 @@ export async function resolveDisplayNames(
   const names = new Map<string, string>();
   if (ids.length === 0) return names;
 
-  const users = await db.user.findMany({
-    where: { clerkUserId: { in: ids } },
-    select: {
-      clerkUserId: true,
-      forumUsername: true,
-      wikiUsername: true,
-      country: { select: { name: true } },
-    },
-  });
+  const users = await withoutHiddenWikiNames(
+    db,
+    await db.user.findMany({
+      where: { clerkUserId: { in: ids } },
+      select: {
+        clerkUserId: true,
+        forumUsername: true,
+        wikiUsername: true,
+        country: { select: { name: true } },
+      },
+    })
+  );
   for (const user of users) {
     const name = pickDisplayName(user);
     if (name) names.set(user.clerkUserId, name);

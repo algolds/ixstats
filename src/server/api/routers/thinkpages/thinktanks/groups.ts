@@ -21,6 +21,7 @@ import {
   resolveDisplayName,
   UNKNOWN_DISPLAY_NAME,
 } from "~/server/shared/display-names";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import {
   canReadGroupType,
   requireGroupManager,
@@ -60,7 +61,7 @@ import { ensurePersonalAccount } from "../personal-account";
 
 type GroupDb = Pick<
   PrismaClient,
-  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount"
+  "thinkshareConversation" | "thinktankGroup" | "user" | "thinkpagesAccount" | "userConnection"
 >;
 
 /** Auto-heal a missing ThinkShare conversation for the group (mutates `group` to match). */
@@ -105,6 +106,21 @@ async function healGroupConversation(
   }
 }
 
+/** Players' user rows for display, minus wiki names hidden by `showWikiAttribution`. */
+async function displayUsers(db: GroupDb, clerkUserIds: string[]) {
+  const users = await db.user.findMany({
+    where: { clerkUserId: { in: clerkUserIds } },
+    select: {
+      id: true,
+      clerkUserId: true,
+      forumUsername: true,
+      wikiUsername: true,
+      country: { select: { id: true, name: true, flag: true } },
+    },
+  });
+  return withoutHiddenWikiNames(db, users);
+}
+
 /** Members joined to their user record (or first active persona) for display. */
 async function enrichGroupMembers<M extends GroupMemberRow>(
   db: GroupDb,
@@ -112,16 +128,7 @@ async function enrichGroupMembers<M extends GroupMemberRow>(
 ): Promise<Array<M & { user: any }>> {
   const memberUserIds = members.map((m) => m.userId);
   const [users, userAccounts] = await Promise.all([
-    db.user.findMany({
-      where: { clerkUserId: { in: memberUserIds } },
-      select: {
-        id: true,
-        clerkUserId: true,
-        forumUsername: true,
-        wikiUsername: true,
-        country: { select: { id: true, name: true, flag: true } },
-      },
-    }),
+    displayUsers(db, memberUserIds),
     db.thinkpagesAccount.findMany({
       where: { clerkUserId: { in: memberUserIds }, isActive: true },
       select: { clerkUserId: true, profileImageUrl: true, displayName: true, username: true },
@@ -596,16 +603,7 @@ export const thinkpagesThinktanksGroupsRouter = createTRPCRouter({
       });
 
       const clerkUserIds = posts.map((p) => p.account?.clerkUserId).filter(Boolean);
-      const users = await db.user.findMany({
-        where: { clerkUserId: { in: clerkUserIds } },
-        select: {
-          id: true,
-          clerkUserId: true,
-          forumUsername: true,
-          wikiUsername: true,
-          country: { select: { id: true, name: true, flag: true } },
-        },
-      });
+      const users = await displayUsers(db, clerkUserIds);
       const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
 
       let nextCursor: string | undefined = undefined;

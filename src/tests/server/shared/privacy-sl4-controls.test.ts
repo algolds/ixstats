@@ -15,7 +15,13 @@ import {
   hiddenLinkedNames,
   splitDirectMessageRefusals,
   usersWithSwitchOff,
+  withoutHiddenWikiNames,
 } from "~/server/shared/privacy-permissions";
+import {
+  privacyConfigRow,
+  privacyConnections,
+  wikiAttributionOff,
+} from "~/tests/helpers/privacy-config-fake";
 import {
   ONLINE_WINDOW_MS,
   recordHeartbeat,
@@ -59,6 +65,55 @@ describe("privacy switches", () => {
     db.userConnection.findMany.mockRejectedValue(new Error("down"));
     const hidden = await hiddenLinkedNames(db as never, ["a"]);
     expect([...hidden.discord, ...hidden.wiki]).toEqual(["a", "a"]);
+  });
+});
+
+describe("withoutHiddenWikiNames (wiki attribution off)", () => {
+  const people = [
+    { id: "u_off", clerkUserId: "off", wikiUsername: "Hidden Name", handle: null },
+    { id: "u_on", clerkUserId: "on", wikiUsername: "Shown Name", handle: null },
+    { id: "u_default", clerkUserId: "default", wikiUsername: "Default Name", handle: null },
+    { id: "u_none", clerkUserId: "none", wikiUsername: null, handle: "nowiki" },
+  ];
+
+  it("blanks the wiki name of a user with the switch off and keeps the rest of every row", async () => {
+    const connections = privacyConnections([
+      ...wikiAttributionOff("off"),
+      privacyConfigRow("on", { showWikiAttribution: true }),
+    ]);
+    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
+    expect(out).toEqual([
+      { id: "u_off", clerkUserId: "off", wikiUsername: null, handle: null },
+      people[1],
+      people[2],
+      people[3],
+    ]);
+  });
+
+  it("reads the switch once, for the users that have a wiki name", async () => {
+    const connections = privacyConnections();
+    await withoutHiddenWikiNames({ userConnection: connections } as never, people);
+    expect(connections.findMany).toHaveBeenCalledTimes(1);
+    expect(connections.findMany.mock.calls[0]![0]).toMatchObject({
+      where: { userId: { in: ["off", "on", "default"] }, connectionType: "privacy_config" },
+    });
+  });
+
+  it("fails closed: a read error blanks every wiki name", async () => {
+    const connections = privacyConnections();
+    connections.findMany.mockRejectedValue(new Error("db down"));
+    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
+    expect(out.map((u) => u.wikiUsername)).toEqual([null, null, null, null]);
+    expect(out.map((u) => u.handle)).toEqual([null, null, null, "nowiki"]);
+  });
+
+  it("reads nothing when no user has a wiki name", async () => {
+    const connections = privacyConnections();
+    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, [
+      people[3]!,
+    ]);
+    expect(out).toEqual([people[3]]);
+    expect(connections.findMany).not.toHaveBeenCalled();
   });
 });
 

@@ -1,9 +1,10 @@
 import { describe, it, expect } from "@jest/globals";
 import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
+import { privacyConfigRow, wikiAttributionOff } from "~/tests/helpers/privacy-config-fake";
 
 describe("resolveDisplayNames (SL-12)", () => {
-  it("resolves nation, forum, wiki and ThinkPages names in at most two queries", async () => {
+  it("resolves nation, forum, wiki and ThinkPages names, one users and one ThinkPages query", async () => {
     const db = createMockPrisma();
     db.user.findMany.mockResolvedValue([
       {
@@ -54,5 +55,37 @@ describe("resolveDisplayNames (SL-12)", () => {
 
     expect(names.get("u1")).toBe("One");
     expect(db.thinkpagesAccount.findMany).not.toHaveBeenCalled();
+  });
+
+  describe("wiki attribution (showWikiAttribution)", () => {
+    const wikiNamed = () => {
+      const db = createMockPrisma();
+      db.user.findMany.mockResolvedValue([
+        { clerkUserId: "u_off", forumUsername: null, wikiUsername: "Hidden", country: null },
+        { clerkUserId: "u_on", forumUsername: null, wikiUsername: "Shown", country: null },
+      ]);
+      db.thinkpagesAccount.findMany.mockResolvedValue([
+        { clerkUserId: "u_off", displayName: "Persona", username: "persona" },
+      ]);
+      return db;
+    };
+
+    it("skips the wiki name of a user with the switch off and keeps it for one with it on", async () => {
+      const db = wikiNamed();
+      db.userConnection.findMany.mockResolvedValue([
+        ...wikiAttributionOff("u_off"),
+        privacyConfigRow("u_on", { showWikiAttribution: true }),
+      ]);
+      const names = await resolveDisplayNames(db as never, ["u_off", "u_on"]);
+      expect(Object.fromEntries(names)).toEqual({ u_off: "Persona", u_on: "Shown" });
+      expect(db.userConnection.findMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("fails closed: a switch it cannot read hides every wiki name", async () => {
+      const db = wikiNamed();
+      db.userConnection.findMany.mockRejectedValue(new Error("db down"));
+      const names = await resolveDisplayNames(db as never, ["u_off", "u_on"]);
+      expect(Object.fromEntries(names)).toEqual({ u_off: "Persona", u_on: UNKNOWN_DISPLAY_NAME });
+    });
   });
 });
