@@ -73,6 +73,19 @@ describe("CardsHub", () => {
     expect(screen.getByRole("tablist", { name: "Cards" }).closest(".pt-14")).not.toBeNull();
   });
 
+  // At 320px the labels and icons do not fit: below 24rem the tabs drop their icons, and any width that still
+  // overflows (a larger text size) scrolls the track. No tab is ever narrower than its label.
+  it("fits its tabs on a narrow phone: labels only below 24rem, and a scrolling track beyond that", () => {
+    at("/vault/cards/mine");
+    render(<CardsHub initialTab="mine" />);
+    const list = screen.getByRole("tablist", { name: "Cards" });
+    expect(list).toHaveClass("w-full", "overflow-x-auto");
+    for (const tab of screen.getAllByRole("tab")) {
+      expect(tab).toHaveClass("flex-1", "min-w-max", "max-[24rem]:[&_svg]:hidden");
+      expect(tab).not.toHaveClass("min-w-0");
+    }
+  });
+
   it("switches tabs in place, showing only that tab's pane", () => {
     at("/vault/cards/mine");
     render(<CardsHub initialTab="mine" />);

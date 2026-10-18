@@ -51,6 +51,10 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
         // Each tab is its own address: an arrow key moves focus only, so passing a tab never pushes a history entry.
         activationMode="manual"
         fullWidth
+        // No tab narrower than its label: below 24rem (a 320px phone) the icons go so the four labels fit, and a
+        // larger text size that still overflows scrolls the track rather than the page.
+        scrollable
+        itemClassName="min-w-max max-[24rem]:[&_svg]:hidden"
         aria-label="Cards"
         value={tab}
         onValueChange={navigate}

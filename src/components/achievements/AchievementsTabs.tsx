@@ -72,8 +72,10 @@ export function AchievementsTabs({
 
   return (
     <div className="space-y-4">
+      {/* Scrollable: the four tabs are wider than a 320px phone, so the track scrolls rather than the page. */}
       <SegmentedControl
         asTabs
+        scrollable
         aria-label="Achievements sections"
         options={options}
         value={active}

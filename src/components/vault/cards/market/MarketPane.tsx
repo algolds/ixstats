@@ -21,6 +21,9 @@ interface MarketPaneProps {
   onOpenCard: (cardId: string, from?: SheetFrom | null) => void;
 }
 
+/** The tab row's track clips its overflow, so each tab draws its focus ring inside itself. */
+const TAB_IN_SCROLLER = "focus-visible:-outline-offset-2";
+
 /** The cards hub's Market: Browse, Trades, Wishlist and Selling, each a `?tab=`. */
 export function MarketPane(props: MarketPaneProps) {
   // One set of live subscriptions for every tab: Browse and Selling both show running auctions.
@@ -31,11 +34,20 @@ export function MarketPane(props: MarketPaneProps) {
       onValueChange={(value) => props.onTabChange(marketTabOf(value))}
       className="space-y-4"
     >
-      <TabsList aria-label="Market">
-        <TabsTrigger value="browse">Browse</TabsTrigger>
-        <TabsTrigger value="trades">Trades</TabsTrigger>
-        <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
-        <TabsTrigger value="selling">Selling</TabsTrigger>
+      {/* The four tabs are wider than a 320px phone: the row scrolls in its own track, not the page. */}
+      <TabsList aria-label="Market" className="hide-scrollbar overflow-x-auto overscroll-x-contain">
+        <TabsTrigger value="browse" className={TAB_IN_SCROLLER}>
+          Browse
+        </TabsTrigger>
+        <TabsTrigger value="trades" className={TAB_IN_SCROLLER}>
+          Trades
+        </TabsTrigger>
+        <TabsTrigger value="wishlist" className={TAB_IN_SCROLLER}>
+          Wishlist
+        </TabsTrigger>
+        <TabsTrigger value="selling" className={TAB_IN_SCROLLER}>
+          Selling
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="browse">
         <MarketBrowse
