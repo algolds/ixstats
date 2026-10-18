@@ -1,9 +1,9 @@
 /** @jest-environment node */
 /** Mine (spec §2.3): every copy the player holds, retired ones too, with filters, search, sort and pages. */
-jest.mock("~/lib/cards/copy-value", () => ({ copyValue: jest.fn() }));
+jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn() }));
 
 import type { z } from "zod";
-import { copyValue } from "~/lib/cards/copy-value";
+import { loadCopyValues } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { listMine, MineQuerySchema, selectMine, type MineEntry } from "~/lib/cards/hub/mine";
 
@@ -47,7 +47,6 @@ function entry(
         nsSeason: null,
         realm: IXNAY,
         category: "HISTORY",
-        marketValue: 10,
         ...card,
       },
     },
@@ -219,31 +218,47 @@ describe("MineQuerySchema", () => {
 });
 
 describe("listMine", () => {
-  beforeEach(() => jest.mocked(copyValue).mockReset());
+  const valued = (ownershipId: string, value: number) => ({
+    ownershipId,
+    ownerId: "u1",
+    cardId: "c",
+    cardType: "LORE" as const,
+    finish: "STANDARD" as const,
+    value,
+  });
+  beforeEach(() => jest.mocked(loadCopyValues).mockReset());
 
-  it("reads the owner's copies once and values each with the shared per-copy value", async () => {
+  it("reads the owner's copies once and values them all with the shared per-copy value", async () => {
     const db = createMockPrisma();
     const one = entry({ title: "Alpha" });
-    db.cardOwnership.findMany.mockResolvedValue([one.row]);
-    jest.mocked(copyValue).mockReturnValue(77);
-    const page = await listMine(db as never, "u1", query());
+    const two = entry({ title: "Beta" });
+    db.cardOwnership.findMany.mockResolvedValue([one.row, two.row]);
+    jest.mocked(loadCopyValues).mockResolvedValue([valued(two.row.id, 12), valued(one.row.id, 77)]);
+    const page = await listMine(db as never, "u1", query({ sort: "title" }));
     expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
     expect(db.cardOwnership.findMany.mock.calls[0]![0]).toMatchObject({
       where: { ownerId: "u1" },
       orderBy: [{ acquiredAt: "desc" }, { id: "asc" }],
       take: 5000,
     });
-    expect(copyValue).toHaveBeenCalledWith(one.row);
-    expect(page.rows[0]!.value).toBe(77);
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].select.cards.select).not.toHaveProperty(
+      "marketValue"
+    );
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(loadCopyValues)).toHaveBeenCalledWith(db, { ownerIds: ["u1"] });
+    expect(page.rows.map((r) => [r.face.title, r.value])).toEqual([
+      ["Alpha", 77],
+      ["Beta", 12],
+    ]);
   });
 
   it("values a hidden (retired) copy at 0 but still lists it", async () => {
     const db = createMockPrisma();
-    const hidden = entry({ title: "Hidden", isRetired: true, marketValue: 400 });
+    const hidden = entry({ title: "Hidden", isRetired: true });
     db.cardOwnership.findMany.mockResolvedValue([hidden.row]);
-    jest.mocked(copyValue).mockReturnValue(400);
+    // The shared copy value leaves retired cards out.
+    jest.mocked(loadCopyValues).mockResolvedValue([]);
     const page = await listMine(db as never, "u1", query());
-    expect(copyValue).not.toHaveBeenCalled();
     expect(page.rows.map((r) => [r.face.title, r.value])).toEqual([["Hidden", 0]]);
   });
 });

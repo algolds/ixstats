@@ -2,6 +2,7 @@
 import { TRPCError } from "@trpc/server";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import type { ValueDb } from "~/lib/cards/copy-value";
 import { DISPLAY_SIZE, SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { displayedCopies } from "./displayed";
@@ -265,7 +266,7 @@ export async function pinShowcase(
 
 /** The wallet's showcase: the pinned one, else the player's most valuable copies (spec §2.3 Sets). */
 export async function myDisplay(
-  db: Pick<PrismaClient, "cardCollection" | "cardOwnership">,
+  db: Pick<PrismaClient, "cardCollection"> & ValueDb,
   userId: string
 ): Promise<{ showcase: { id: string; name: string } | null; faces: CardFaceData[] }> {
   const shown = await displayedCopies(db, userId, DISPLAY_SIZE);

@@ -1,5 +1,8 @@
 /** @jest-environment node */
 /** Free-form showcases (spec §2.2 Collections, §2.3 Sets): by copy, owner-only edits, public only by the owner's leave. */
+jest.mock("~/lib/cards/copy-value", () => ({ topCopiesByValue: jest.fn() }));
+
+import { topCopiesByValue } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
   addToShowcase,
@@ -470,13 +473,24 @@ describe("myDisplay", () => {
     });
   });
 
-  it("falls back to the player's top copies when nothing is pinned", async () => {
+  it("falls back to the player's top copies by copy value when nothing is pinned", async () => {
     const db = createMockPrisma();
     db.cardCollection.findFirst.mockResolvedValue(null);
+    jest.mocked(topCopiesByValue).mockResolvedValue([
+      {
+        ownershipId: "o-c3",
+        ownerId: "u1",
+        cardId: "c3",
+        cardType: "LORE",
+        finish: "STANDARD",
+        value: 9,
+      },
+    ]);
     db.cardOwnership.findMany.mockResolvedValue([copy("c3")]);
     await expect(myDisplay(db as never, "u1")).resolves.toMatchObject({
       showcase: null,
       faces: [{ cardId: "c3", silhouette: false }],
     });
+    expect(jest.mocked(topCopiesByValue)).toHaveBeenCalledWith(db, "u1", 6);
   });
 });

@@ -25,7 +25,6 @@ import { Textarea } from "~/components/ui/textarea";
 import type { CardInstance } from "~/types/cards-display";
 import { api } from "~/trpc/react";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
-import { copyValue } from "~/lib/cards/copy-value";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -51,7 +50,7 @@ export function toCardInstance(ownership: OwnedCard): CardInstance {
   const card = {
     ...ownedCardToInstance(ownership),
     id: ownership.id,
-    marketValue: ownership.cards.isRetired ? 0 : copyValue(ownership),
+    marketValue: ownership.cards.isRetired ? 0 : ownership.cards.marketValue,
   };
   return { ...card, wikiUrl: cardWikiHref(card) };
 }

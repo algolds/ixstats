@@ -1,12 +1,14 @@
 // src/lib/cards/hub/art-visibility.ts
 import type { Prisma, PrismaClient } from "@prisma/client";
+import type { ValueDb } from "~/lib/cards/copy-value";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { toCardFace, type CardFaceRow, type CopyFaceRow } from "./faces";
 import { displayedCopies } from "./displayed";
 
 type ArtDb = Pick<PrismaClient, "cardOwnership" | "cardAuction">;
-type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer">;
+/** The holder context reads their display, which ranks their copies by the shared copy value. */
+type ContextDb = Pick<PrismaClient, "cardOwnership" | "cardCollection" | "tradeOffer"> & ValueDb;
 
 /** Cards whose art this viewer may see in any list: those they hold a copy of, and those on a live listing. */
 export async function cardsWithVisibleArt(

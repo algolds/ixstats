@@ -14,8 +14,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
-import { deckValue } from "~/lib/cards/copy-value";
-import { isTrophyCard } from "~/lib/lorewards/trophy-cards";
+import { deckValueOf } from "~/lib/cards/copy-value";
 import { globalCache } from "~/lib/cache";
 import { sentenceCase } from "~/lib/format/sentence-case";
 
@@ -117,9 +116,9 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
   }),
 
   /**
-   * The caller's card figures: copies held and their value, with and without trophy cards (cached 30 s). Every copy
-   * counts, a hidden (retired) card's too, as the inventory lists them; a retired card is not valued, as in the
-   * dividend.
+   * The caller's card figures: copies held and their value (the shared per-copy value), with and without trophy cards
+   * (cached 30 s). Every copy counts, a hidden (retired) card's too, as the inventory lists them; a retired card is
+   * not valued, as in the dividend.
    */
   getUserStats: protectedProcedure.query(async ({ ctx }) => {
     try {
@@ -127,16 +126,15 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       const cached = await globalCache.get<VaultUserStats>(cacheKey);
       if (cached) return cached;
 
-      const copies = await ctx.db.cardOwnership.findMany({
-        where: { ownerId: ctx.user.id },
-        select: { cards: { select: { marketValue: true, cardType: true, isRetired: true } } },
-      });
-      const valued = copies.filter((copy) => !copy.cards.isRetired);
+      const [held, deck] = await Promise.all([
+        ctx.db.cardOwnership.count({ where: { ownerId: ctx.user.id } }),
+        deckValueOf(ctx.db, ctx.user.id),
+      ]);
       const stats: VaultUserStats = {
-        totalCards: copies.length,
-        deckValue: deckValue(valued),
+        totalCards: held,
+        deckValue: deck.total,
         // The figure the economy and the deck-value achievements read: trophy cards do not count.
-        deckValueExTrophy: deckValue(valued.filter((copy) => !isTrophyCard(copy.cards))),
+        deckValueExTrophy: deck.exTrophy,
       };
       await globalCache.set(cacheKey, stats, { ttl: 30 });
       return stats;

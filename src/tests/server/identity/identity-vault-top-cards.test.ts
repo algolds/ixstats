@@ -15,9 +15,14 @@ jest.mock("~/lib/vault/vault-perks", () => ({
   VAULT_CONFIG_DEFAULTS: { xpPerLevel: 1000 },
   getVaultConfig: jest.fn(async () => ({ xpPerLevel: 500 })),
 }));
+jest.mock("~/lib/cards/copy-value", () => ({
+  deckValueOf: jest.fn(),
+  topCopiesByValue: jest.fn(),
+}));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
+import { deckValueOf, topCopiesByValue } from "~/lib/cards/copy-value";
 import { resolvePassportVault } from "~/server/modules/identity/identity.vault";
 
 const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
@@ -56,18 +61,39 @@ const faceOf = (n: number) => ({
   copy: { ownershipId: `own-${n}`, finish: "FOIL", serialNumber: n, level: 2 },
 });
 
-/** The deck-value read (every live copy) and the display's top-copies read (one per card). */
+/** The top copies by value, best first, as the shared copy value ranks them. */
+const ranked = (...ns: number[]) =>
+  ns.map((n) => ({
+    ownershipId: `own-${n}`,
+    ownerId: "u1",
+    cardId: `c${n}`,
+    cardType: "LORE" as const,
+    finish: "FOIL" as const,
+    value: 100 - n,
+  }));
+
+/** The live-copy read (count and categories) and the display's read of the top copies' faces, in any order. */
 function ownerships(top: ReturnType<typeof copyRow>[]) {
   jest
     .mocked(db.cardOwnership.findMany)
-    .mockImplementation((async (args: { distinct?: string[] }) =>
-      args.distinct ? top : [{ cards: { marketValue: 40, category: "MILITARY" } }]) as never);
+    .mockImplementation((async (args: { where: { id?: { in: string[] } } }) =>
+      args.where.id
+        ? top.filter((row) => args.where.id?.in.includes(row.id))
+        : [{ cards: { category: "MILITARY" } }]) as never);
 }
+
+const faceRead = () =>
+  jest
+    .mocked(db.cardOwnership.findMany)
+    .mock.calls.map(([args]) => args)
+    .find((args) => args?.where?.id);
 
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(db.myVault.findUnique).mockResolvedValue(null);
   jest.mocked(db.cardCollection.findFirst).mockResolvedValue(null);
+  jest.mocked(deckValueOf).mockResolvedValue({ total: 40, exTrophy: 40, copies: 1 });
+  jest.mocked(topCopiesByValue).mockResolvedValue(ranked(2, 1));
   ownerships([copyRow(1), copyRow(2)]);
 });
 
@@ -86,23 +112,38 @@ describe("resolvePassportVault topCards", () => {
     });
   });
 
-  it("falls back to the six most valuable live copies, one per card", async () => {
+  it("falls back to the six most valuable live copies by copy value, one per card, best first", async () => {
     const vault = await resolvePassportVault("u1");
-    expect(vault.topCards).toEqual([faceOf(1), faceOf(2)]);
-    const topRead = jest
+    expect(vault.topCards).toEqual([faceOf(2), faceOf(1)]);
+    expect(jest.mocked(topCopiesByValue).mock.calls).toEqual([[db, "u1", 6]]);
+    expect(faceRead()).toMatchObject({
+      where: { id: { in: ["own-2", "own-1"] }, ownerId: "u1", cards: { isRetired: false } },
+    });
+  });
+
+  it("values the deck by the shared copy value and counts the live copies", async () => {
+    const vault = await resolvePassportVault("u1");
+    expect(vault).toMatchObject({ totalCards: 1, deckValue: 40, xpPerLevel: 500 });
+    expect(jest.mocked(deckValueOf).mock.calls).toEqual([[db, "u1"]]);
+    const liveRead = jest
       .mocked(db.cardOwnership.findMany)
       .mock.calls.map(([args]) => args)
-      .find((args) => args?.distinct);
-    expect(topRead).toMatchObject({
+      .find((args) => !args?.where?.id);
+    expect(liveRead).toEqual({
       where: { ownerId: "u1", cards: { isRetired: false } },
-      distinct: ["cardId"],
-      take: 6,
+      select: { cards: { select: { category: true } } },
     });
-    expect(vault).toMatchObject({ totalCards: 1, deckValue: 40, xpPerLevel: 500 });
+  });
+
+  it("leaves out a top copy that is gone by the time its face is read", async () => {
+    jest.mocked(topCopiesByValue).mockResolvedValue(ranked(3, 1));
+    const vault = await resolvePassportVault("u1");
+    expect(vault.topCards).toEqual([faceOf(1)]);
   });
 
   it("has no highlight without an account", async () => {
     expect((await resolvePassportVault(null)).topCards).toEqual([]);
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+    expect(deckValueOf).not.toHaveBeenCalled();
   });
 });

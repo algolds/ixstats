@@ -126,7 +126,9 @@ export async function readValuationConfig(
 }
 
 /** Read the merged valuation config (defaults overlaid with any SystemConfig rows, clamped). */
-export async function getValuationConfig(db: PrismaClient): Promise<CardValuationConfig> {
+export async function getValuationConfig(
+  db: Pick<PrismaClient, "systemConfig">
+): Promise<CardValuationConfig> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
   const merged = await readValuationConfig(db);
