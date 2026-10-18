@@ -21,7 +21,7 @@ import { LedgerError } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
-import { ownedFaces } from "~/lib/cards/hub/faces";
+import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 
 /**
  * Card Packs Router
@@ -183,9 +183,10 @@ export const cardPacksUserRouter = createTRPCRouter({
         await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
         // Read after the side effects above: the pack is open whether or not this read succeeds.
-        const faces = await ownedFaces(
+        const faces = await facesAfterCommit(
           ctx.db,
-          results.map((r) => r.ownershipId)
+          results.map((r) => r.ownershipId),
+          "A pack open"
         );
         return {
           success: true,
