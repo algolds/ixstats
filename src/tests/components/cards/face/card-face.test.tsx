@@ -191,6 +191,21 @@ describe("RealmCrest", () => {
     expect(screen.getByText("A")).toHaveClass("size-10", "grayscale");
   });
 
+  /** White on black at `alpha`, over the lightest face behind it (white), by WCAG's contrast formula. */
+  const whiteOnBlackOverWhite = (alpha: number) => {
+    const grey = 1 - alpha;
+    const luminance = grey <= 0.04045 ? grey / 12.92 : ((grey + 0.055) / 1.055) ** 2.4;
+    return 1.05 / (luminance + 0.05);
+  };
+
+  it("darkens the initial's disc in the light theme to 4.5:1 for its white letter on any face, keeping the dark one", () => {
+    render(<RealmCrest realm={realm()} size="md" />);
+    const disc = screen.getByText("I");
+    const light = /(?:^|\s)bg-black\/(\d+)(?:\s|$)/.exec(disc.className);
+    expect(whiteOnBlackOverWhite(Number(light?.[1]) / 100)).toBeGreaterThanOrEqual(4.5);
+    expect(disc).toHaveClass("dark:bg-black/40");
+  });
+
   it("falls back to the initial when the emblem fails to load", () => {
     const { container } = render(
       <RealmCrest realm={realm({ crestUrl: "/images/realms/broken.png" })} />

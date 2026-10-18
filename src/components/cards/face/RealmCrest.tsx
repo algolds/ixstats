@@ -56,11 +56,12 @@ export function RealmCrest({ realm, size = "sm", muted = false, className }: Rea
       />
     );
   }
+  // Light faces need the darker disc: white on black/55 is 4.5:1 even over white; dark faces keep black/40.
   return (
     <span
       aria-hidden="true"
       className={box(
-        "grid place-items-center rounded-full bg-black/40 font-semibold text-white",
+        "grid place-items-center rounded-full bg-black/55 font-semibold text-white dark:bg-black/40",
         INITIAL_TEXT[size]
       )}
     >
