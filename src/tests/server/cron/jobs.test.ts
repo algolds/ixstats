@@ -76,6 +76,15 @@ describe("CRON_JOBS", () => {
     });
   });
 
+  it("ticks card holding XP daily under its own lease", () => {
+    expect(CRON_JOBS.find((j) => j.name === "card-holding-xp")).toMatchObject({
+      defaultSchedule: "30 3 * * *",
+      lockName: "card-holding-xp",
+      modulePath: "~/server/modules/cards/holding-xp",
+      exportName: "runHoldingXpTick",
+    });
+  });
+
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(
     "%s points at an existing module and export",
     (_name, job) => {

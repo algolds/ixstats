@@ -68,6 +68,22 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/lorewards/card-value-cron")).updateCardValues,
   },
   {
+    // Once per UTC day: the holding XP tick for every copy held a day or more (no event rows).
+    name: "card-holding-xp",
+    defaultSchedule: "30 3 * * *",
+    lockName: "card-holding-xp",
+    timeoutMs: 10 * MINUTE,
+    modulePath: "~/server/modules/cards/holding-xp",
+    exportName: "runHoldingXpTick",
+    load: async () => {
+      const [{ runHoldingXpTick }, { db }] = await Promise.all([
+        import("~/server/modules/cards/holding-xp"),
+        import("~/server/db"),
+      ]);
+      return () => runHoldingXpTick(db);
+    },
+  },
+  {
     // Queues the daily lore import per switched-on wiki; the card-import-jobs run works the items.
     name: "lore-card-generation",
     defaultSchedule: "0 2 * * *",

@@ -163,9 +163,9 @@ export const cardMarketAuctionManagementRouter = createTRPCRouter({
             });
           }
 
-          // Grant XP to the purchased card (50 XP for winning via buyout)
+          // Card XP for the bought copy, as for an auction win
           if (auction?.cardInstanceId) {
-            auctionXpResult = await grantCardXp(ctx.db, auction.cardInstanceId, 50, "BUYOUT");
+            auctionXpResult = await grantCardXp(ctx.db, auction.cardInstanceId, "AUCTION_WIN");
           }
         } catch (err) {
           console.warn(

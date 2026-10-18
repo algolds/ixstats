@@ -212,7 +212,7 @@ export async function claimCombinedDailyClaim(
         source: "DAILY_CLAIM",
       });
 
-      await grantCardXp(tx, ownership.id, 10, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }));
+      await grantCardXp(tx, ownership.id, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }));
 
       await tx.vaultTransaction.create({
         data: {

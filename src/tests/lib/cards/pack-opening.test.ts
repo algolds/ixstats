@@ -12,6 +12,7 @@ jest.mock("~/lib/cards/xp-utils", () => ({ grantCardXp: jest.fn() }));
 jest.mock("~/lib/cards/mint", () => ({ mintCopy: jest.fn() }));
 
 import { mintCopy } from "~/lib/cards/mint";
+import { grantCardXp } from "~/lib/cards/xp-utils";
 import { notificationAPI } from "~/lib/notifications/api";
 import {
   bestPulledRarity,
@@ -304,6 +305,7 @@ describe("openPack", () => {
 
   it("mints every pulled card through mintCopy, Standard, from the pack's transaction", async () => {
     const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
+    jest.mocked(grantCardXp).mockClear();
     const result = await openPack(db, USER, USER_PACK_ID);
     expect(result.map((r) => r.ownershipId)).toEqual([
       "copy_1",
@@ -318,6 +320,13 @@ describe("openPack", () => {
       finish: "STANDARD",
       source: "PACK_OPEN",
     });
+    expect(jest.mocked(grantCardXp)).toHaveBeenCalledTimes(5);
+    expect(jest.mocked(grantCardXp)).toHaveBeenCalledWith(
+      db,
+      "copy_1",
+      "PACK_OPEN",
+      JSON.stringify({ packId: "p1", packName: "Test Pack" })
+    );
   });
 
   it("mints in cardId order, so concurrent opens take the serial locks in one order", async () => {

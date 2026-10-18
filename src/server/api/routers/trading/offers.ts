@@ -371,15 +371,9 @@ export const tradingOffersRouter = createTRPCRouter({
           now,
         });
 
-        // Grant 25 XP per card traded to recipient and log transfer
+        // Card XP for each card traded to the recipient (the Economy tab's trade amount), and log the transfer
         for (const ownershipId of initiatorCardIds) {
-          await grantCardXp(
-            tx,
-            ownershipId,
-            25,
-            "TRADE",
-            JSON.stringify({ tradeId: input.tradeId })
-          );
+          await grantCardXp(tx, ownershipId, "TRADE", JSON.stringify({ tradeId: input.tradeId }));
         }
         await recordTradeTransfersTx(tx, {
           ids: initiatorCardIds,
@@ -387,15 +381,9 @@ export const tradingOffersRouter = createTRPCRouter({
           toId: trade.recipientId,
         });
 
-        // Grant 25 XP per card traded to initiator and log transfer
+        // The same for each card traded to the initiator
         for (const ownershipId of recipientCardIds) {
-          await grantCardXp(
-            tx,
-            ownershipId,
-            25,
-            "TRADE",
-            JSON.stringify({ tradeId: input.tradeId })
-          );
+          await grantCardXp(tx, ownershipId, "TRADE", JSON.stringify({ tradeId: input.tradeId }));
         }
         await recordTradeTransfersTx(tx, {
           ids: recipientCardIds,

@@ -1,80 +1,91 @@
 import type { Prisma } from "@prisma/client";
+import { getEconomyConfig, type CardEconomyConfig } from "./economy-config";
+import { utcDay } from "~/lib/vault/vault-dividend";
+import { cappedXpGrant, levelForXp } from "./levels";
 
-const XP_PER_LEVEL = 1000;
+/** Where card XP comes from; the amounts are Economy tab numbers. The holding tick is `holding-xp.ts`. */
+export type CardXpSource = "PACK_OPEN" | "DAILY_CLAIM" | "TRADE" | "AUCTION_WIN";
 
-interface GrantXpResult {
+const AMOUNT: Record<CardXpSource, keyof CardEconomyConfig> = {
+  PACK_OPEN: "xpPack",
+  DAILY_CLAIM: "xpDaily",
+  TRADE: "xpTradePerCard",
+  AUCTION_WIN: "xpAuctionWin",
+};
+
+export interface GrantXpResult {
   prevLevel: number;
   newLevel: number;
   prevXP: number;
   newXP: number;
   leveledUp: boolean;
   xpGained: number;
-  nextLevelThreshold: number;
 }
 
-/** What XP needs: a client or a transaction client (no cast at call sites). */
-type XpDb = Pick<Prisma.TransactionClient, "cardOwnership" | "cardExperienceEvent">;
+const NOTHING: GrantXpResult = {
+  prevLevel: 0,
+  newLevel: 0,
+  prevXP: 0,
+  newXP: 0,
+  leveledUp: false,
+  xpGained: 0,
+};
+const ATTEMPTS = 3;
+
+const unchanged = (row: { level: number; experience: number }): GrantXpResult => ({
+  prevLevel: row.level,
+  newLevel: row.level,
+  prevXP: row.experience,
+  newXP: row.experience,
+  leveledUp: false,
+  xpGained: 0,
+});
 
 /**
- * Grant experience to a card ownership.
- * Safe to call from both tRPC mutations and server-side services (cron, auction completion).
- * Creates a CardExperienceEvent record for audit/history.
+ * Grants a source's XP to one copy inside the caller's transaction, within the copy's daily cap. The write is a
+ * compare-and-swap on the XP read, retried, so two grants racing on one copy never skip the cap. Each grant that
+ * lands logs a CardExperienceEvent.
  */
 export async function grantCardXp(
-  db: XpDb,
+  tx: Prisma.TransactionClient,
   ownershipId: string,
-  amount: number,
-  source?: string,
-  metadata?: string
+  source: CardXpSource,
+  metadata?: string,
+  now: Date = new Date()
 ): Promise<GrantXpResult> {
-  const ownership = await db.cardOwnership.findUnique({
-    where: { id: ownershipId },
-    select: { level: true, experience: true },
-  });
+  const cfg = await getEconomyConfig(tx);
+  const xpDay = new Date(`${utcDay(now)}T00:00:00.000Z`);
+  let last = NOTHING;
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const row = await tx.cardOwnership.findUnique({
+      where: { id: ownershipId },
+      select: { level: true, experience: true, xpDay: true, xpToday: true },
+    });
+    if (!row) return NOTHING;
+    last = unchanged(row);
+    const { grant, xpToday } = cappedXpGrant(row, cfg[AMOUNT[source]], cfg.xpDailyCapPerCopy, now);
+    if (grant <= 0) return last;
 
-  if (!ownership) {
-    return {
-      prevLevel: 0,
-      newLevel: 0,
-      prevXP: 0,
-      newXP: 0,
-      leveledUp: false,
-      xpGained: 0,
-      nextLevelThreshold: 0,
-    };
-  }
+    const newXP = row.experience + grant;
+    const newLevel = levelForXp(newXP);
+    const moved = await tx.cardOwnership.updateMany({
+      where: { id: ownershipId, experience: row.experience, xpToday: row.xpToday },
+      data: { experience: newXP, level: newLevel, xpToday, xpDay },
+    });
+    if (moved.count !== 1) continue;
 
-  const prevLevel = ownership.level;
-  const prevXP = ownership.experience;
-  const newXP = prevXP + amount;
-  const newLevel = Math.floor(newXP / XP_PER_LEVEL) + 1;
-  const leveledUp = newLevel > prevLevel;
-
-  await db.cardOwnership.update({
-    where: { id: ownershipId },
-    data: { experience: newXP, level: newLevel },
-  });
-
-  if (source) {
-    await db.cardExperienceEvent.create({
+    await tx.cardExperienceEvent.create({
       data: {
         ownershipId,
-        amount,
+        amount: grant,
         resultLevel: newLevel,
         resultXP: newXP,
         source,
         metadata: metadata ?? null,
       },
     });
+    return { ...last, newLevel, newXP, leveledUp: newLevel > row.level, xpGained: grant };
   }
-
-  return {
-    prevLevel,
-    newLevel,
-    prevXP,
-    newXP,
-    leveledUp,
-    xpGained: amount,
-    nextLevelThreshold: newLevel * XP_PER_LEVEL,
-  };
+  console.warn(`[CardXP] gave up on ${ownershipId} after ${ATTEMPTS} conflicting grants`);
+  return last;
 }
