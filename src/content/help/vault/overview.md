@@ -36,17 +36,17 @@ The claim prompt opens by itself at most once a day. If you close it, claim late
 - **[Market](/vault/cards/market):** auctions and trades. See [Auctions & Trading](/help/vault/trading).
 - **[Explore](/vault/cards/explore):** every realm's cards, realm by realm, then a grid you can filter by any realm with cards. Trophy cards aren't in Explore: yours are on the Lorewards tab of [Achievements](/vault/achievements?tab=lorewards), and a player's are on their passport. A card you haven't collected shows as a silhouette (its title, realm, rarity and number, but not its art). You can also suggest a new lore card here; see [Lore Cards](/help/vault/lore-cards).
 
-Select a card to open its sheet: the card itself (turn it over with Space or F to see its back), your copies of it, its market, and what it is about. **Copy link** copies a link that opens the same card. Without signing in, anyone can open the cards a passport or a public showcase shows, and cards on a live auction; any other card asks you to sign in. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
+Select a card to open its sheet: the card itself (turn it over with Space or F to see its back), your copies of it, its market, and what it is about. **Copy link** copies a link that opens the same card. Without signing in, anyone can open the cards a passport shows; everything in the Vault needs you to sign in. Importing a NationStates deck is also part of Cards; see [Importing NationStates Cards](/help/vault/ns-import).
 
 ## Card types and rarities
 
-| Type | What it is |
-| --- | --- |
-| Nation | A country card |
-| Lore | Made from a wiki article. See [Lore Cards](/help/vault/lore-cards) |
+| Type         | What it is                                                                            |
+| ------------ | ------------------------------------------------------------------------------------- |
+| Nation       | A country card                                                                        |
+| Lore         | Made from a wiki article. See [Lore Cards](/help/vault/lore-cards)                    |
 | NationStates | Imported from NationStates. See [Importing NationStates Cards](/help/vault/ns-import) |
-| Special | Commemorative, event and achievement cards |
-| Trophy | Loreward and sports trophy cards. See [Lorewards](/help/wiki/lorewards#trophy-cards) |
+| Special      | Commemorative, event and achievement cards                                            |
+| Trophy       | Loreward and sports trophy cards. See [Lorewards](/help/wiki/lorewards#trophy-cards)  |
 
 Bound cards (trophies and achievement cards) stay with the account that earned them: they can't be traded or auctioned.
 
