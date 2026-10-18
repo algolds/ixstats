@@ -191,9 +191,11 @@ async function recentArticleTitles(wikiSrc: WikiSource): Promise<string[]> {
   });
 }
 
-async function stashItemExcerpt(db: PrismaClient, stashItemId: string) {
-  const item = await db.stashItem.findUnique({
-    where: { id: stashItemId },
+/** A stash item of the caller's (in a stash owned by any of `ownerIds`); null when it is missing or anyone else's. */
+async function stashItemExcerpt(db: PrismaClient, stashItemId: string, ownerIds: string[]) {
+  if (ownerIds.length === 0) return null;
+  const item = await db.stashItem.findFirst({
+    where: { id: stashItemId, stash: { userId: { in: ownerIds } } },
     include: { stash: true, annotations: true },
   });
   if (!item) return null;
@@ -234,11 +236,13 @@ async function buildLoreMetadata(
     stashItemId?: string;
   },
   /** False when the reader may not see the page (a deleted one): no wiki metadata, the live wiki's copy included. */
-  canSeeWikiPage: boolean
+  canSeeWikiPage: boolean,
+  /** The caller's linked ids (`requireWikiUserIds`); empty when signed out, so no stash item is read. */
+  stashOwnerIds: string[]
 ) {
   const stash =
     input.source === "stash" && input.stashItemId
-      ? await stashItemExcerpt(db, input.stashItemId)
+      ? await stashItemExcerpt(db, input.stashItemId, stashOwnerIds)
       : null;
   const wiki =
     (input.source === "ixwiki" || input.source === "iiwiki") && canSeeWikiPage
@@ -534,7 +538,8 @@ export const loreCardsWikiRouter = createTRPCRouter({
         const canSeeWikiPage =
           (input.source === "ixwiki" || input.source === "iiwiki") &&
           (await canSeeTitle(ctx, input.pageTitle, input.source));
-        return await buildLoreMetadata(ctx.db, input, canSeeWikiPage);
+        const stashOwnerIds = ctx.auth?.userId ? requireWikiUserIds(ctx) : [];
+        return await buildLoreMetadata(ctx.db, input, canSeeWikiPage, stashOwnerIds);
       } catch (error) {
         console.error("[Lore Cards] Error in fetchLoreMetadata:", error);
         return {

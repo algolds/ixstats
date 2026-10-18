@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
- * searchLoreArchive's stash source: a signed-out caller gets nothing, a signed-in one only their own stashes (with
- * forum threads they can no longer read left out, I5), and a lookup error falls back to an empty result.
+ * The Lore Archive's stash source. searchLoreArchive: a signed-out caller gets nothing, a signed-in one only their own
+ * stashes (with forum threads they can no longer read left out, I5), and a lookup error falls back to an empty result.
+ * fetchLoreMetadata: only the caller's own stash item is read; anyone else's, or any while signed out, is not found.
  */
 jest.mock("~/server/db", () => ({ db: {}, isDatabaseReadOnly: false }));
 
@@ -118,5 +119,65 @@ describe("loreCards.searchLoreArchive stash source", () => {
       ["Main_Page", "a wiki note"],
       ["thinkpages:thread:t1", "Current title"],
     ]);
+  });
+});
+
+describe("loreCards.fetchLoreMetadata stash source", () => {
+  const items = [
+    { id: "item-mine", note: "My note", stash: { name: "Mine", userId: "u1" }, annotations: [] },
+    {
+      id: "item-theirs",
+      note: "Their private note",
+      stash: { name: "Theirs", userId: "u2" },
+      annotations: [],
+    },
+  ];
+  type Where = { id: string; stash?: { userId: { in: string[] } } };
+  /** Honours the id and, when given, the owner filter, whichever lookup the procedure uses. */
+  const stashItemDb = () => {
+    const lookup = jest.fn(
+      async ({ where }: { where: Where }) =>
+        items.find(
+          (i) =>
+            i.id === where.id && (!where.stash || where.stash.userId.in.includes(i.stash.userId))
+        ) ?? null
+    );
+    return { stashItem: { findUnique: lookup, findFirst: lookup }, lookup };
+  };
+
+  const metadata = (db: object, signedIn: boolean, stashItemId: string) =>
+    loreCardsWikiRouter
+      .createCaller(
+        createMockRouterContext({
+          db,
+          auth: signedIn ? { userId: "clerk_1" } : null,
+          user: signedIn ? member : null,
+        }) as never
+      )
+      .fetchLoreMetadata({ source: "stash", pageTitle: "Rome", stashItemId });
+
+  it("reads the caller's own stash item", async () => {
+    const result = await metadata(stashItemDb(), true, "item-mine");
+
+    expect(result).toMatchObject({ excerpt: "My note", subcategory: "Mine" });
+  });
+
+  it("answers another user's item as not found", async () => {
+    const notFound = await metadata(stashItemDb(), true, "item-missing");
+
+    const result = await metadata(stashItemDb(), true, "item-theirs");
+
+    expect(result).toEqual(notFound);
+    expect(result.excerpt).not.toContain("Their private note");
+  });
+
+  it("answers a signed-out caller as not found, without reading the item", async () => {
+    const notFound = await metadata(stashItemDb(), true, "item-missing");
+    const db = stashItemDb();
+
+    const result = await metadata(db, false, "item-mine");
+
+    expect(result).toEqual(notFound);
+    expect(db.lookup).not.toHaveBeenCalled();
   });
 });
