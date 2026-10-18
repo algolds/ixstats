@@ -15,6 +15,7 @@ describe("activitySourceLabel", () => {
     ["card_purchase_listing", "Card bought from a listing"],
     ["listing_fee", "Listing fee"],
     ["listing_fee_refund", "Listing fee refund"],
+    ["card_craft", "Card crafted"],
     ["nation_card_royalty", "Nation card royalty"],
     ["forum_action", "Action posted in the forum"],
     ["exploit_correction:repeat_one_time_bonus", "Balance correction"],
