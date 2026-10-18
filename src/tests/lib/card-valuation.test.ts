@@ -98,6 +98,18 @@ describe("card-valuation", () => {
     expect(tx.$executeRawUnsafe).toHaveBeenCalledTimes(6);
   });
 
+  test("the recompute values trophies, and NS cards after a first sale, as referenceValue does", async () => {
+    const { db, tx } = revalueDb();
+    await recomputeAllCardValues(db as never);
+    const rare = updateSql(tx).find((sql) => sql.includes("'RARE'"))!;
+    // The Rare floor of 100 × the 0.25 trophy multiplier
+    expect(unsold("RARE", "TROPHY")).toBe(25);
+    expect(rare).toMatch(/WHEN "cardType" = 'TROPHY'\s+THEN 25\s/);
+    // A sold NS card loses its bank term and falls through to the floor
+    expect(rare).toContain(`WHEN "cardType" = 'NS' AND "firstSoldAt" IS NULL`);
+    expect(rare).toMatch(/ELSE 100\s+END/);
+  });
+
   test("the recompute reads the stored config, not this process's cached copy", async () => {
     await getValuationConfig({
       systemConfig: { findMany: jest.fn().mockResolvedValue([]) },

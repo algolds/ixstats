@@ -118,7 +118,7 @@ export async function readValuationConfig(
     const raw = byKey.get(KEY[field]);
     if (raw != null) {
       const parsed = Number(raw);
-      if (!Number.isNaN(parsed)) merged[field] = parsed;
+      if (Number.isFinite(parsed)) merged[field] = parsed;
     }
   }
   return clampValuationConfig(merged);
@@ -308,12 +308,14 @@ async function revalueCards(
 
   let updated = 0;
   for (const [rarity, floor] of rarities) {
-    // All numbers below come from validated numeric config; rarity is from a fixed list.
+    // All numbers below come from validated numeric config; rarity is from a fixed list. As in referenceValue, an NS
+    // card's bank term lasts until a copy of it first sells here, then it takes the floor.
     const value = `CASE
-        WHEN "cardType" = 'NS'
+        WHEN "cardType" = 'NS' AND "firstSoldAt" IS NULL
           THEN GREATEST(${floor}, COALESCE(NULLIF(metadata->'nsData'->>'market_value', '')::numeric, 0) * ${cfg.nsPremium})
         WHEN "cardType" = 'SPECIAL' THEN ${floor * cfg.multSpecial}
         WHEN "cardType" = 'NATION'  THEN ${floor * cfg.multNation}
+        WHEN "cardType" = 'TROPHY'  THEN ${floor * cfg.multTrophy}
         ELSE ${floor}
       END`;
     const sql = `

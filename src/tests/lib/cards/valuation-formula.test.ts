@@ -99,6 +99,22 @@ describe("the value formula", () => {
     expect(clampValuationConfig(cfg)).toEqual(cfg);
   });
 
+  it("falls back to the default for a stored number that is not finite", async () => {
+    const rows = [
+      { key: "card_valuation_floor_rare", value: "Infinity" },
+      { key: "card_valuation_finish_holo", value: "1e999" },
+      { key: "card_valuation_mult_trophy", value: "-Infinity" },
+      { key: "card_valuation_median_days", value: "soon" },
+    ];
+    const db = { systemConfig: { findMany: jest.fn().mockResolvedValue(rows) } };
+    await expect(readValuationConfig(db as never)).resolves.toMatchObject({
+      floorRare: 100,
+      finishHolo: 9,
+      multTrophy: 0.25,
+      medianDays: 30,
+    });
+  });
+
   it("reads the new numbers from their keys, clamped", async () => {
     const rows = [
       { key: "card_valuation_mult_trophy", value: "0.5" },
