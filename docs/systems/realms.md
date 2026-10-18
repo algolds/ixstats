@@ -37,7 +37,7 @@ one realm.
 - The builder's realm picker also offers an active unlisted realm to the player who founded it or holds a nation
   there (their own realm, not a listing).
 - Draft and generating realms are hidden by `isRealmHiddenFrom` / `isRealmPublished` (`realms.access.ts`): the realm
-  page and header (`getBySlug`, `region.overview`, happenings, Manage), its board (`realms.getBoard`), the
+  page and header (`getBySlug`, `region.overview`, happenings, Manage), its board (`thinkpagesForum.getBoard`), the
   `?realm=<slug>` scope of the countries directory, leaderboards and maps (`resolveViewerRealmId`, which falls back
   to Ixnay as for an unknown slug), and other realms' embassy panels.
 - Claims (filing, and approving a pending one) need an active realm or Ixnay (`isRealmOpen`).
@@ -131,8 +131,8 @@ realm.
 ### The older ThinkTank board
 
 Before the forum board, a realm's board was a ThinkTank of type `realm_board`, mapped by the `RealmBoard` model
-(`prisma/schema/realm-boards.prisma`) and created the first time anyone called `realms.getBoard`. Nothing in the UI
-calls `realms.getBoard` any more. Boards created earlier stay ThinkTanks: their members still see them among their
+(`prisma/schema/realm-boards.prisma`) and created the first time anyone called `realms.getBoard`, a procedure since
+deleted. Boards created earlier stay ThinkTanks: their members still see them among their
 groups at `/thinktanks`, the realm feed filter still includes their posts (§2), and live board mutes and bans were
 migrated to realm-scope forum bans in forum phase 3 (the frozen `RealmBoardBan` rows still bind on the ThinkTank and
 its chat). Its rules are in [ThinkTanks §4a](./thinktanks.md#4a-realm-boards-type-realm_board).

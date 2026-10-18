@@ -116,10 +116,9 @@ and [the forum](./forum.md)). The board ThinkTanks created before that stay, and
 - **Storage.** A `ThinktankGroup` with `type: "realm_board"`, mapped to its realm by `RealmBoard`
   (`prisma/schema/realm-boards.prisma`: `realmId` and `groupId`, both unique). It has the usual linked
   ThinkShare conversation (the Chat tab) and settings `{ allowPersonaPosting: true }`.
-- **Created on demand.** `realms.getBoard` creates the board, its chat and its `RealmBoard` row in one
-  transaction the first time it is called. When two first calls race, the unique `realmId` lets one win and the
-  other returns the winner's board. There is no bulk migration. Nothing in the UI calls `realms.getBoard` any more,
-  so no new board ThinkTank is created.
+- **No new boards.** A board, its chat and its `RealmBoard` row were created together the first time anyone
+  opened the realm's board through `realms.getBoard`. That procedure is deleted, so no new board ThinkTank is
+  created; the existing ones and their rows stay.
 - **Access follows nation ownership, not member rows.** `getGroupAccess` hands realm boards to
   `getRealmBoardAccess`:
   - **Read:** anyone, signed out included (`REALM_BOARD_PUBLIC_READ = true`; realms are never private).
@@ -132,11 +131,9 @@ and [the forum](./forum.md)). The board ThinkTanks created before that stay, and
   - **Manager (moderate):** site admins, the realm's founder and officers with the `board` power
     (`hasRealmPower`). See [realms §4](./realms.md#4-realm-page-rrealm).
   - A leftover `ThinktankMember` row never lets someone post after they lose their last nation there.
-- **Membership sync.** Each `realms.getBoard` call joins the caller on their first visit (a member row
-  plus a chat participant; a later Leave is respected until they press Join). It also deactivates the
-  rows and chat participants of anyone who no longer owns a nation in the realm, or whose every nation there
-  is banned from the board (the founder is kept),
-  and recounts `memberCount`. `joinThinktank` on a board needs nation ownership, not an invite.
+- **No membership sync.** Opening the board through `realms.getBoard` used to bring its member rows and chat
+  participants in line with nation ownership. With that procedure deleted, they stay as the board's last open
+  left them. `joinThinktank` on a board needs nation ownership, not an invite.
 - **Personas.** A persona posting to a board must belong to a nation of the realm (`requireRealmPersona`).
   "Post as yourself" uses the caller's oldest persona of one of their nations there, or creates a
   citizen persona of their first nation there. Board posts are stamped in real time (other group posts

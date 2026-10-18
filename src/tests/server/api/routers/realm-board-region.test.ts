@@ -12,12 +12,7 @@ jest.mock("~/lib/notifications/hooks", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesThinktanksRouter } from "~/server/api/routers/thinkpages/thinktanks";
-import {
-  getRealmBoardAccess,
-  ownHashtags,
-  storedPseudoTags,
-  syncRealmBoardMembers,
-} from "~/server/shared/realm-board";
+import { getRealmBoardAccess, ownHashtags, storedPseudoTags } from "~/server/shared/realm-board";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -138,7 +133,7 @@ describe("a board restriction follows the player who held the nation", () => {
       )
     );
     db.realmBoardBan.findMany.mockImplementation(async ({ where }: any) =>
-      !where.countryId || where.countryId.in.includes("c_eurth")
+      where.countryId.in.includes("c_eurth")
         ? [{ countryId: "c_eurth", kind: "ban", until: null, reason: "Spam", createdAt: BANNED_AT }]
         : []
     );
@@ -155,27 +150,6 @@ describe("a board restriction follows the player who held the nation", () => {
   it("never passes the restriction to the nation's next claimant", async () => {
     const access = await getRealmBoardAccess(abandonedDb() as never, "board1", NEXT);
     expect(access).toMatchObject({ isMember: true, restriction: null });
-  });
-
-  it("drops the banned player from the board on sync, and keeps the next claimant", async () => {
-    const db = abandonedDb();
-    db.thinktankMember.findMany.mockResolvedValue([
-      { id: "m1", userId: OWNER, isActive: true },
-      { id: "m2", userId: NEXT, isActive: true },
-    ]);
-    db.country.findMany.mockResolvedValue([
-      { id: "c_other", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
-      { id: "c_eurth", ownerUserId: `db_${NEXT}`, owner: { clerkUserId: NEXT } },
-    ]);
-    await syncRealmBoardMembers(
-      db as never,
-      { groupId: "board1", realmId: "eurth", conversationId: "conv1", realmOwnerId: FOUNDER },
-      null
-    );
-    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
-      where: { groupId: "board1", userId: { in: [OWNER] } },
-      data: { isActive: false },
-    });
   });
 });
 
@@ -261,31 +235,5 @@ describe("pseudo-tags", () => {
       "embassy:eurth",
     ]);
     expect(storedPseudoTags("not json")).toEqual([]);
-  });
-});
-
-describe("board membership sync", () => {
-  it("drops a player banned on one nation even when they own another there", async () => {
-    const db = makeDb();
-    db.thinktankMember.findMany.mockResolvedValue([{ id: "m1", userId: OWNER, isActive: true }]);
-    db.country.findMany.mockResolvedValue([
-      { id: "c_x", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
-      { id: "c_y", ownerUserId: `db_${OWNER}`, owner: { clerkUserId: OWNER } },
-    ]);
-    db.realmBoardBan.findMany.mockResolvedValue([
-      { countryId: "c_x", kind: "ban", until: null, reason: null },
-    ]);
-    await syncRealmBoardMembers(
-      db as never,
-      { groupId: "board1", realmId: "eurth", conversationId: "conv1", realmOwnerId: FOUNDER },
-      null
-    );
-    expect(db.thinktankMember.updateMany).toHaveBeenCalledWith({
-      where: { groupId: "board1", userId: { in: [OWNER] } },
-      data: { isActive: false },
-    });
-    expect(db.conversationParticipant.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { conversationId: "conv1", userId: { in: [OWNER] } } })
-    );
   });
 });

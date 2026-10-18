@@ -1,21 +1,21 @@
 /**
  * Realm boards — the NationStates regional message board, built on the ThinkTank primitive.
  *
- * Each realm gets one ThinktankGroup of type `realm_board` (mapped by `RealmBoard`), created the first
- * time someone opens it. Access follows nation ownership, not invites:
+ * A realm's board is now the forum's live board (`thinkpagesForum.getBoard`), and no new board ThinkTank is created.
+ * A realm whose board was opened before that has one ThinktankGroup of type `realm_board` (mapped by `RealmBoard`).
+ * Access follows nation ownership, not invites:
  *  - anyone may read the board feed (realms are never private — decision 19), see REALM_BOARD_PUBLIC_READ;
  *  - owners of a nation in the realm are members: they post, chat and write docs;
  *  - realm moderators (site admins, the realm's founder and officers with the `board` power) manage it;
  *  - a nation muted on the board cannot post; a banned nation's owner is not a member (no posts, no chat).
  *    A restriction is stored on a nation but binds the player who held it (`restrictionHolders`): it follows them
  *    when they abandon the nation and never passes to its next claimant.
- * ThinktankMember rows are kept in step with ownership when the board is opened (`openRealmBoard`) so
- * the group chat (a ThinkShare conversation) and the roster work unchanged.
+ * Its ThinktankMember rows and chat participants are no longer synced with nation ownership: they stay as the
+ * board's last open left them.
  */
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
 import { hasRealmPower } from "~/server/modules/realms/realms.access";
-import { parsePrismaError } from "~/lib/prisma-error";
 import { embassyPostTag } from "~/lib/realms/realm-region";
 
 export const REALM_BOARD_TYPE = "realm_board";
@@ -233,176 +233,6 @@ export async function realmBoardChatRestriction(
   return boardRestrictionMessage(access.restriction);
 }
 
-type EnsureDb = Pick<
-  PrismaClient,
-  "realmBoard" | "thinktankGroup" | "thinkshareConversation" | "$transaction"
->;
-
-/** The realm's board group, created (with its chat conversation) on first use. Safe under races. */
-export async function ensureRealmBoard(
-  db: EnsureDb,
-  realm: { id: string; name: string; ownerId: string }
-): Promise<{ groupId: string; created: boolean }> {
-  const existing = await db.realmBoard.findUnique({
-    where: { realmId: realm.id },
-    select: { groupId: true },
-  });
-  if (existing) return { groupId: existing.groupId, created: false };
-
-  try {
-    const groupId = await db.$transaction(async (tx) => {
-      const name = `${realm.name} Board`;
-      const conversation = await tx.thinkshareConversation.create({
-        data: { type: "group", name, source: "thinktank" },
-      });
-      const group = await tx.thinktankGroup.create({
-        data: {
-          name,
-          description: `The regional board of ${realm.name}: open to every nation of the realm.`,
-          type: REALM_BOARD_TYPE,
-          createdBy: realm.ownerId,
-          memberCount: 0,
-          conversationId: conversation.id,
-          // Nations post as their personas; the persona's country must be in the realm.
-          settings: JSON.stringify({ allowPersonaPosting: true }),
-        },
-      });
-      await tx.thinkshareConversation.update({
-        where: { id: conversation.id },
-        data: { sourceId: group.id },
-      });
-      await tx.realmBoard.create({ data: { realmId: realm.id, groupId: group.id } });
-      return group.id;
-    });
-    return { groupId, created: true };
-  } catch (error) {
-    // Someone else opened the board first: their transaction won, ours rolled back.
-    if (parsePrismaError(error)?.type !== "unique_constraint") throw error;
-    const winner = await db.realmBoard.findUnique({
-      where: { realmId: realm.id },
-      select: { groupId: true },
-    });
-    if (!winner) throw error;
-    return { groupId: winner.groupId, created: false };
-  }
-}
-
-type SyncDb = Pick<
-  PrismaClient,
-  | "thinktankMember"
-  | "thinktankGroup"
-  | "conversationParticipant"
-  | "country"
-  | "realmBoardBan"
-  | "realmClaim"
->;
-
-/** The Clerk ids of nation owners in the realm whom a board ban binds (`restrictionHolders`). */
-async function bannedOwners(
-  db: Pick<PrismaClient, "realmBoardBan" | "realmClaim">,
-  realmId: string,
-  owners: Array<{ id: string; ownerUserId: string | null; owner: { clerkUserId: string } | null }>
-): Promise<Set<string>> {
-  const bans = (await activeBoardRestrictions(db, realmId)).filter((r) => r.kind === "ban");
-  if (bans.length === 0) return new Set();
-  const claims = await approvedClaims(db, realmId, {
-    countryIds: [...new Set(bans.map((r) => r.countryId))],
-  });
-  const ownerOf = new Map(owners.map((c) => [c.id, c.ownerUserId]));
-  const banned = new Set(
-    bans.flatMap((r) => restrictionHolders(r, claims, ownerOf.get(r.countryId) ?? null))
-  );
-  return new Set(
-    owners.flatMap((c) =>
-      c.ownerUserId && banned.has(c.ownerUserId) && c.owner ? [c.owner.clerkUserId] : []
-    )
-  );
-}
-
-/**
- * Keep ThinktankMember rows (and the chat's participants) in step with nation ownership:
- *  - the caller joins on first open when they are a member (a later "Leave" is respected);
- *  - members who no longer own a nation in the realm (or whom a board ban binds), and are not its founder, are
- *    deactivated.
- */
-export async function syncRealmBoardMembers(
-  db: SyncDb,
-  board: { groupId: string; realmId: string; conversationId: string | null; realmOwnerId: string },
-  caller: { clerkUserId: string; access: RealmBoardAccess } | null
-): Promise<void> {
-  const [members, owners] = await Promise.all([
-    db.thinktankMember.findMany({
-      where: { groupId: board.groupId },
-      select: { id: true, userId: true, isActive: true },
-    }),
-    db.country.findMany({
-      where: { realmId: board.realmId, ownerUserId: { not: null } },
-      select: { id: true, ownerUserId: true, owner: { select: { clerkUserId: true } } },
-    }),
-  ]);
-  // A ban binding a player takes them off the board, whichever nations they own (as getRealmBoardAccess decides).
-  const banned = await bannedOwners(db, board.realmId, owners);
-  const ownerIds = new Set(
-    owners.map((c) => c.owner?.clerkUserId).filter((id) => id && !banned.has(id))
-  );
-
-  const keep = (userId: string) =>
-    ownerIds.has(userId) ||
-    userId === board.realmOwnerId ||
-    (caller?.clerkUserId === userId && caller.access.isMember);
-  const stale = members.filter((m) => m.isActive && !keep(m.userId)).map((m) => m.userId);
-
-  if (stale.length > 0) {
-    await db.thinktankMember.updateMany({
-      where: { groupId: board.groupId, userId: { in: stale } },
-      data: { isActive: false },
-    });
-    if (board.conversationId) {
-      await db.conversationParticipant.updateMany({
-        where: { conversationId: board.conversationId, userId: { in: stale } },
-        data: { isActive: false, leftAt: new Date() },
-      });
-    }
-  }
-
-  let joined = false;
-  const callerRow = caller && members.find((m) => m.userId === caller.clerkUserId);
-  if (caller?.access.isMember && !callerRow) {
-    await db.thinktankMember.create({
-      data: {
-        groupId: board.groupId,
-        userId: caller.clerkUserId,
-        role: caller.access.isManager ? "admin" : "member",
-      },
-    });
-    if (board.conversationId) {
-      await db.conversationParticipant.upsert({
-        where: {
-          conversationId_userId: {
-            conversationId: board.conversationId,
-            userId: caller.clerkUserId,
-          },
-        },
-        create: {
-          conversationId: board.conversationId,
-          userId: caller.clerkUserId,
-          role: caller.access.isManager ? "admin" : "participant",
-        },
-        update: { isActive: true, leftAt: null },
-      });
-    }
-    joined = true;
-  }
-
-  if (stale.length > 0 || joined) {
-    const memberCount = members.filter((m) => m.isActive && !stale.includes(m.userId)).length;
-    await db.thinktankGroup.update({
-      where: { id: board.groupId },
-      data: { memberCount: memberCount + (joined ? 1 : 0) },
-    });
-  }
-}
-
 /**
  * A persona posting to a realm board must speak for a nation of that realm. Throws FORBIDDEN otherwise.
  */
@@ -581,41 +411,5 @@ export function storedPseudoTags(hashtags: string | null): string[] {
       : [];
   } catch {
     return [];
-  }
-}
-
-/**
- * Take a player off a realm's board at once (a ban): their member row and chat participant are deactivated,
- * rather than waiting for the next board open to sync them.
- */
-export async function removeFromRealmBoard(
-  db: Pick<
-    PrismaClient,
-    "realmBoard" | "thinktankGroup" | "thinktankMember" | "conversationParticipant"
-  >,
-  realmId: string,
-  clerkUserId: string
-): Promise<void> {
-  const board = await db.realmBoard.findUnique({ where: { realmId }, select: { groupId: true } });
-  if (!board) return;
-  const group = await db.thinktankGroup.findUnique({
-    where: { id: board.groupId },
-    select: { conversationId: true },
-  });
-  const { count } = await db.thinktankMember.updateMany({
-    where: { groupId: board.groupId, userId: clerkUserId, isActive: true },
-    data: { isActive: false },
-  });
-  if (group?.conversationId) {
-    await db.conversationParticipant.updateMany({
-      where: { conversationId: group.conversationId, userId: clerkUserId, isActive: true },
-      data: { isActive: false, leftAt: new Date() },
-    });
-  }
-  if (count > 0) {
-    await db.thinktankGroup.update({
-      where: { id: board.groupId },
-      data: { memberCount: { decrement: count } },
-    });
   }
 }
