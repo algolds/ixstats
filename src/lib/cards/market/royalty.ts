@@ -52,8 +52,9 @@ async function eligibleOwners(
 
 /**
  * Pays the royalty on `amount` out of its `fee`, split evenly between the eligible nation owners in whole cents,
- * rounded down. A ledger refusal (earning switched off) happens before any write, so the share simply stays with the
- * house and the deal goes on.
+ * rounded down. A ledger refusal on one payout happens before any write, so that share stays with the house and the
+ * deal goes on. Earning switched off is not that case on a sale: the seller's EARN_CARDS payment comes first and
+ * fails the whole sale.
  */
 export async function payNationRoyaltiesTx(
   tx: Prisma.TransactionClient,
@@ -66,14 +67,14 @@ export async function payNationRoyaltiesTx(
   }
 ): Promise<RoyaltyPayout[]> {
   const nationCards = args.cards.filter(showsNation);
-  if (nationCards.length === 0) return [];
+  // No nation card, or no fee to carve the royalty from: nothing to look up
+  if (nationCards.length === 0 || args.fee <= 0) return [];
+  const owners = await eligibleOwners(tx, nationCards, args.partyIds);
+  if (owners.length === 0) return [];
   const { royaltyPct } = await getEconomyConfig(tx);
   // The royalty is whole cents of a whole-IxC fee, so the split is integer arithmetic (a float floor of 0.58 × 100,
   // which is 57.99..., would pay 0.57)
   const royaltyCents = Math.round(royaltyFromFee(args.amount, args.fee, royaltyPct) * 100);
-  if (royaltyCents <= 0) return [];
-  const owners = await eligibleOwners(tx, nationCards, args.partyIds);
-  // With no eligible owner the loop below pays nobody
   const share = Math.floor(royaltyCents / owners.length) / 100;
   if (share <= 0) return [];
 
@@ -100,12 +101,15 @@ export function royaltyNotices(
   payouts: RoyaltyPayout[],
   titles: ReadonlyMap<string, string>
 ): CardNotice[] {
-  return payouts.map((p) => ({
-    userId: p.recipientId,
-    cardId: p.cardId,
-    title: "Royalty paid",
-    message: `${titles.get(p.cardId) ?? "A card of your nation"} changed hands. You received ${p.amount} IxC as its nation's owner.`,
-    type: "success",
-    priority: "low",
-  }));
+  return payouts.map((p) => {
+    const title = titles.get(p.cardId);
+    return {
+      userId: p.recipientId,
+      cardId: p.cardId,
+      title: "Royalty paid",
+      message: `A copy of your nation's card${title ? `, ${title},` : ""} changed hands. You received ${p.amount} IxC.`,
+      type: "success",
+      priority: "low",
+    };
+  });
 }

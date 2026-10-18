@@ -72,9 +72,12 @@ describe("nation royalty", () => {
     ["the owner is the seller", "seller", 1000, 100],
     ["the owner is the buyer", "buyer", 1000, 100],
     ["the nation is unowned", null, 1000, 100],
-  ])("pays nothing when %s", async (_label, owner, amount, fee) => {
-    expect(await pay(makeTx(owner), { amount, fee })).toEqual([]);
+  ])("pays nothing, and reads no rate, when %s", async (_label, owner, amount, fee) => {
+    const tx = makeTx(owner);
+    expect(await pay(tx, { amount, fee })).toEqual([]);
     expect(earn).not.toHaveBeenCalled();
+    // No eligible owner stops before the economy config is read
+    expect(tx.systemConfig.findMany).not.toHaveBeenCalled();
   });
 
   it("pays nothing, and looks up no nation, when there is no fee (100 IxC or less)", async () => {
@@ -165,8 +168,10 @@ describe("nation royalty", () => {
     });
   });
 
-  it("keeps the share with the house when the ledger refuses (earning switched off)", async () => {
-    earn.mockRejectedValueOnce(new LedgerError("off"));
+  it("keeps a payout's share with the house when the ledger refuses that payout", async () => {
+    // On a sale this needs the config to flip after the seller was paid: with earning off, the seller's EARN_CARDS
+    // payment comes first and fails the whole sale (settle-sale.test.ts pins that)
+    earn.mockRejectedValueOnce(new LedgerError("EARNING_DISABLED", "Earning credits is off."));
     expect(await pay(makeTx("owner"), { partyIds: [] })).toEqual([]);
   });
 
@@ -189,7 +194,7 @@ describe("nation royalty", () => {
         userId: "owner",
         cardId: "card_n",
         title: "Royalty paid",
-        message: "Aurelia changed hands. You received 20 IxC as its nation's owner.",
+        message: "A copy of your nation's card, Aurelia, changed hands. You received 20 IxC.",
         type: "success",
         priority: "low",
       },
@@ -197,8 +202,7 @@ describe("nation royalty", () => {
         userId: "other",
         cardId: "card_m",
         title: "Royalty paid",
-        message:
-          "A card of your nation changed hands. You received 0.29 IxC as its nation's owner.",
+        message: "A copy of your nation's card changed hands. You received 0.29 IxC.",
         type: "success",
         priority: "low",
       },

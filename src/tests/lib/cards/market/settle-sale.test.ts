@@ -117,10 +117,14 @@ describe("settleCardSaleTx", () => {
     expect(recordSaleTx).not.toHaveBeenCalled();
   });
 
-  it("fails the whole sale when the ledger refuses the seller, so the caller rolls the move back", async () => {
-    jest.mocked(earnCreditsTx).mockRejectedValueOnce(new LedgerError("off"));
+  it("fails the whole sale when earning is switched off, so the caller rolls the move back", async () => {
+    // EARN_CARDS is kill-switched, so the seller's payment is refused before any royalty is reached
+    jest
+      .mocked(earnCreditsTx)
+      .mockRejectedValueOnce(new LedgerError("EARNING_DISABLED", "Earning credits is off."));
 
     await expect(settleCardSaleTx(makeTx(1) as never, sale)).rejects.toBeInstanceOf(LedgerError);
+    expect(payNationRoyaltiesTx).not.toHaveBeenCalled();
     expect(recordSaleTx).not.toHaveBeenCalled();
   });
 
