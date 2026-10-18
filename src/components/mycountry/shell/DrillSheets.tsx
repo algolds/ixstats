@@ -101,7 +101,7 @@ function DrillSheetsComponent({
                 <Link
                   href={
                     domainKind === "economy"
-                      ? factbookSectionHref("economy", countryId)
+                      ? factbookSectionHref("economy", encodeURIComponent(countryId))
                       : `/countries/${encodeURIComponent(countryId)}`
                   }
                   target="_blank"

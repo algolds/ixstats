@@ -14,10 +14,11 @@
  * so the `(forum)` group has no `loading.tsx` and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
  * instead of the redirect (seen on the clone in phase 4).
  *
- * The forum post permalink resolver (`/thinkpages/post/<id>`) and "Your realm" (`/thinkpages/r/mine`) need the real
- * 307 too, so no `loading.tsx` sits above them, and `thinkpages` has no loading UI of its own. `/thinkpages` and the
- * realm landing page only render (they no longer redirect), so they are not pinned; the forum's category, thread and
- * moderation pages keep the loading UI in their own segments.
+ * The forum post permalink resolver (`/thinkpages/post/<id>`), "Your realm" (`/thinkpages/r/mine`) and "jump to
+ * unread" (`/thinkpages/t/<id>/unread`) need the real 307 too, so no `loading.tsx` sits above them. Of the forum's
+ * loaders only `thinkpages/loading.tsx` itself is absent: `c/`, `mod/` and `r/[realm]/[key]/` have their own, and the
+ * thread page's sits in the `t/[threadId]/(thread)/` route group, so it does not wrap the unread redirect beside it.
+ * `/thinkpages` and the realm landing page only render (they no longer redirect), so they are not pinned.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -35,7 +36,7 @@ const NOT_LOADING_SEGMENTS = new Set([
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
 /**
- * Top-level segments with no loading.tsx of their own: redirect pages need the real 308, and `r` keeps its
+ * Top-level segments with no loading.tsx of their own: redirect pages need the real 307 or 308, and `r` keeps its
  * loading UI in the realm's `(region)` group.
  */
 const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages"]);

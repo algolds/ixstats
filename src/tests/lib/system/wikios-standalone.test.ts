@@ -104,8 +104,8 @@ describe("wikiStandaloneRedirect", () => {
     ["/images/uploads_backup/Flag.png", ""],
     ["/images/a/ab/Flag.png", ""],
     ["/images/thumb/a/ab/Flag.png/330px-Flag.png", ""],
-    ["/sw.js", ""],
-    ["/manifest.json", ""],
+    ["/push-sw.js", ""],
+    ["/thinkpages-logo.svg", ""],
     ["/sounds/cards/card-flip.mp3", ""],
     ["/admin", ""],
   ])("redirects %s to IxStates", (pathname, search) => {
