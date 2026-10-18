@@ -1,16 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  lightMutationProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, lightMutationProcedure, protectedProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import {
-  HandleClaimError,
-  setUserHandle,
-} from "~/server/modules/identity/identity.handle-claim";
-import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
+import { HandleClaimError, setUserHandle } from "~/server/modules/identity/identity.handle-claim";
+import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
 import { isSiteAdmin, type RealmActor } from "~/server/modules/realms/realms.access";
 
 const COUNTRY_SELECT = { id: true, name: true, slug: true } as const;
@@ -119,8 +112,13 @@ export const ixnayidCoreRouter = createTRPCRouter({
       : null;
 
     return {
-      /** The passport handle (`passportHandleOf`): the one every share and invite link carries. */
-      passportHandle: user ? await passportHandleOf(user, verifiedWikiLink?.username ?? null) : null,
+      /**
+       * The passport handle (`loadPassportHandle`): the one every share and invite link carries, so
+       * it skips the wiki name while wiki attribution is off, though `wiki` below still shows it.
+       */
+      passportHandle: user
+        ? await loadPassportHandle(user, { verifiedWikiName: verifiedWikiLink?.username ?? null })
+        : null,
       /** The stored IxStates Passport handle, null until one is claimed. */
       handle: user?.handle ?? null,
       /** The single self-service change is still available (admins may always change it). */

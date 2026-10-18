@@ -1,8 +1,8 @@
 /** @jest-environment node */
 /**
- * The passport payload carries the passport handle (`data.handle`, `passportHandleOf`), never the URL
- * segment: stored handle, verified wiki name, forum name, Clerk id. A computed name is used only when
- * it resolves back to the holder.
+ * The passport payload carries the passport handle (`data.handle`, `loadPassportHandle`), never the
+ * URL segment: stored handle, verified wiki name (while wiki attribution is on), forum name, Clerk id.
+ * A computed name is used only when it resolves back to the holder.
  */
 jest.mock("~/server/db", () => {
   const db = {

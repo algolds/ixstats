@@ -1,7 +1,8 @@
 /**
  * SL-4 on the passport: "Wiki attribution" hides the linked wiki name from other viewers (never
- * from the owner), "Online status" decides the online flag, and "Search engine indexing" decides the
- * page's robots metadata. A read error hides (fails closed). The passport carries no Discord tag.
+ * from the owner) and keeps it out of the passport handle for everyone, "Online status" decides the
+ * online flag, and "Search engine indexing" decides the page's robots metadata. A read error hides
+ * (fails closed). The passport carries no Discord tag.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -51,6 +52,7 @@ import { db } from "~/server/db";
 import { getHistory, getPassport, getWork } from "~/server/modules/identity/identity.service";
 import {
   resolveHandleOwnerClerkId,
+  resolveHandleUser,
   resolveIdentity,
 } from "~/server/modules/identity/identity.resolve";
 import {
@@ -112,6 +114,7 @@ beforeEach(() => {
   resetPresenceForTests();
   findConfigs.mockResolvedValue([]);
   (loadNativeRevisions as jest.Mock).mockResolvedValue([]);
+  (resolveHandleUser as jest.Mock).mockResolvedValue(null);
 });
 
 describe("linked names on the passport", () => {
@@ -175,6 +178,43 @@ describe("linked names on the passport", () => {
     withConfig({ showWikiAttribution: false });
     const page = await getHistory({ ...asViewer("clerk_1"), limit: 50 });
     expect(page.items.some((item) => item.system === "wikios")).toBe(true);
+  });
+});
+
+describe("the passport handle and wiki attribution", () => {
+  beforeEach(() => {
+    // The holder stores no handle, and their wiki name resolves back to them.
+    (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
+  });
+
+  it("is the verified wiki name while wiki attribution is on", async () => {
+    expect((await getPassport(asViewer("visitor"), forum))?.handle).toBe("Alex");
+  });
+
+  it("never names the holder by their wiki name when switched off", async () => {
+    withConfig({ showWikiAttribution: false });
+    const passport = await getPassport(asViewer("visitor"), forum);
+    expect(passport?.handle).toBe("clerk_1");
+    expect(JSON.stringify(passport)).not.toContain("Alex");
+  });
+
+  it("is the same for the owner, who still sees their wiki name in the wiki block", async () => {
+    withConfig({ showWikiAttribution: false });
+    const passport = await getPassport(asViewer("clerk_1"), forum);
+    expect(passport?.handle).toBe("clerk_1");
+    expect(passport?.wiki.username).toBe("Alex");
+  });
+
+  it("leaves the wiki name out when the setting cannot be read", async () => {
+    findConfigs.mockRejectedValue(new Error("db down"));
+    expect((await getPassport(asViewer("visitor"), forum))?.handle).toBe("clerk_1");
+  });
+
+  it("links the History join event to the passport handle, not the wiki name", async () => {
+    withConfig({ showWikiAttribution: false });
+    const page = await getHistory({ ...asViewer("visitor"), limit: 50 });
+    expect(page.items.find((item) => item.type === "realm.joined")?.objectUrl).toBe("/@clerk_1");
+    expect(JSON.stringify(page)).not.toContain("Alex");
   });
 });
 

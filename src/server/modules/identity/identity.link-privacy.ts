@@ -3,7 +3,8 @@
  * SL-4), on top of the passport's own section toggles (identity.privacy.ts):
  *
  * - `showWikiAttribution` off: other viewers see no wiki name, Lorewards or award
- *   history, and the Work tab lists no wiki articles or wiki activity.
+ *   history, and the Work tab lists no wiki articles or wiki activity. The passport handle skips
+ *   the wiki name for every viewer, the owner included (identity.passport-handle.ts).
  * - `showOnlineStatus`: whether the passport shows the holder as online (presence.ts).
  * - `searchEngineIndexing` off: the passport page sets `robots: noindex, nofollow`
  *   (`src/app/id/[username]/layout.tsx`; `/@handle` rewrites there).

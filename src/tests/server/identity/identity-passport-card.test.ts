@@ -226,6 +226,24 @@ describe("getPassportCard", () => {
     expect(card).toMatchObject({ handle: "Alex_Wiki" });
   });
 
+  it("leaves the wiki name out of the chain, for every viewer, when wiki attribution is off", async () => {
+    const handleless = { ...holder, handle: null, forumUsername: null };
+    resolvesTo(handleless);
+    (loadPersonalPersona as jest.Mock).mockResolvedValue(null);
+    (resolveHandleUser as jest.Mock).mockResolvedValue({ id: holder.id });
+    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Alex_Wiki" });
+    mocked.userConnection.findMany.mockResolvedValue([
+      { userId: "clerk_1", status: JSON.stringify({ showWikiAttribution: false }) },
+    ]);
+    const visitor = await getPassportCard({ handle: "Alex_Wiki", viewerClerkId: null });
+    expect(visitor).toMatchObject({ handle: "clerk_1", displayName: "clerk_1" });
+    expect(JSON.stringify(visitor)).not.toContain("Alex_Wiki");
+
+    resolvesTo(handleless, "clerk_1");
+    const owner = await getPassportCard({ handle: "Alex_Wiki", viewerClerkId: "clerk_1" });
+    expect(owner).toMatchObject({ handle: "clerk_1" });
+  });
+
   it("has no primary nation, and zero counts, when the holder holds no nation", async () => {
     (resolveIdentityNations as jest.Mock).mockResolvedValue([]);
     (loadRealmRoles as jest.Mock).mockResolvedValue(new Map());
