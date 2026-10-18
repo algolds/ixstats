@@ -13,7 +13,6 @@ export function useCardsRefresh(): () => void {
   const utils = api.useUtils();
   return useCallback(() => {
     void utils.cards.listMine.invalidate();
-    void utils.cards.getMyCards.invalidate();
     void utils.cards.getMyDisplay.invalidate();
     void utils.cards.listMyShowcases.invalidate();
     void utils.cards.getSheet.invalidate();

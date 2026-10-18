@@ -1,21 +1,13 @@
 "use client";
 
 import { useId, useState } from "react";
-import dynamic from "next/dynamic";
 import { useAuth } from "@clerk/nextjs";
-import { Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { TradeNegotiation } from "~/components/cards/trading/TradeNegotiation";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { MarketHistory } from "./MarketHistory";
-
-const TradeOfferModal = dynamic(
-  () => import("~/components/cards/trading/TradeOfferModal").then((m) => m.TradeOfferModal),
-  { ssr: false }
-);
 
 type TradesView = "incoming" | "sent" | "history";
 type OpenCard = (cardId: string, from?: SheetFrom | null) => void;
@@ -43,7 +35,6 @@ function OfferList({ tradeIds, incoming, onOpenCard }: OfferListProps) {
       <EmptyState
         compact
         title={incoming ? "No offers waiting for you" : "You have no offers out"}
-        message="Start one with New trade."
       />
     );
   }
@@ -60,7 +51,6 @@ function OfferList({ tradeIds, incoming, onOpenCard }: OfferListProps) {
 export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
   const { userId } = useAuth();
   const [view, setView] = useState<TradesView>("incoming");
-  const [creating, setCreating] = useState(false);
   const active = api.trading.getActiveTrades.useQuery();
   const trades = active.data ?? [];
   const incoming = trades.filter((t) => t.recipient.clerkUserId === userId).map((t) => t.id);
@@ -83,10 +73,6 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
             { value: "history", label: VIEW_LABEL.history },
           ]}
         />
-        <Button size="sm" onClick={() => setCreating(true)}>
-          <Plus aria-hidden />
-          New trade
-        </Button>
       </div>
       <div role="tabpanel" id={panelId(view)} aria-label={VIEW_LABEL[view]}>
         {view === "history" ? (
@@ -99,8 +85,6 @@ export function MarketTrades({ onOpenCard }: { onOpenCard: OpenCard }) {
           />
         )}
       </div>
-      {/* A sent offer reads the trades again itself (useCardsRefresh). */}
-      <TradeOfferModal open={creating} onClose={() => setCreating(false)} />
     </div>
   );
 }

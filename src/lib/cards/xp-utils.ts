@@ -5,16 +5,20 @@ import { cappedXpGrant, levelForXp } from "./levels";
 
 /** Where card XP comes from; the amounts are Economy tab numbers. The holding tick is `holding-xp.ts`. */
 export type CardXpSource =
-  "PACK_OPEN" | "DAILY_CLAIM" | "TRADE" | "AUCTION_WIN" | "LISTING_PURCHASE";
+  "PACK_OPEN" | "DAILY_CLAIM" | "TRADE" | "CROSS_REALM_TRADE" | "AUCTION_WIN" | "LISTING_PURCHASE";
 
 const AMOUNT: Record<CardXpSource, keyof CardEconomyConfig> = {
   PACK_OPEN: "xpPack",
   DAILY_CLAIM: "xpDaily",
   TRADE: "xpTradePerCard",
+  CROSS_REALM_TRADE: "xpTradePerCard",
   AUCTION_WIN: "xpAuctionWin",
   // A fixed-price purchase earns what an auction win (or a buyout) does
   LISTING_PURCHASE: "xpAuctionWin",
 };
+
+/** A cross-realm trade gives double the trade amount (spec §2.2 Cross-realm trade bonus). */
+const TIMES: Partial<Record<CardXpSource, number>> = { CROSS_REALM_TRADE: 2 };
 
 export interface GrantXpResult {
   prevLevel: number;
@@ -66,7 +70,8 @@ export async function grantCardXp(
     });
     if (!row) return NOTHING;
     last = unchanged(row);
-    const { grant, xpToday } = cappedXpGrant(row, cfg[AMOUNT[source]], cfg.xpDailyCapPerCopy, now);
+    const amount = cfg[AMOUNT[source]] * (TIMES[source] ?? 1);
+    const { grant, xpToday } = cappedXpGrant(row, amount, cfg.xpDailyCapPerCopy, now);
     if (grant <= 0) return last;
 
     const newXP = row.experience + grant;

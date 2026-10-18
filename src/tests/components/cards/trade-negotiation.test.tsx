@@ -20,6 +20,7 @@ jest.mock("~/hooks/useCardsRefresh", () => {
 
 import { api } from "~/trpc/react";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { TradeNegotiation } from "~/components/cards/trading/TradeNegotiation";
 
 const refreshCards = jest.mocked(useCardsRefresh());
@@ -38,6 +39,13 @@ const face = (cardId: string, title: string, ownershipId: string) => ({
   isRetired: false,
   copy: { ownershipId, finish: "STANDARD" as const, serialNumber: 1, level: 1 },
 });
+/** One side's copy as getTradeById returns it: its face, inscription and value. */
+const tradeCopy = (cardId: string, title: string, ownershipId: string) => ({
+  ownershipId,
+  face: face(cardId, title, ownershipId),
+  inscription: null,
+  value: 0,
+});
 const HOUR = 3_600_000;
 
 /** Ann offered Caphiria and 25 IxC for Max's Urcea. */
@@ -45,12 +53,13 @@ function trade(overrides: Record<string, string | number | Date | object | null>
   return {
     id: "t1",
     status: "PENDING",
+    revision: 2,
     message: null,
     expiresAt: new Date(Date.now() + 24 * HOUR),
     initiator: { clerkUserId: "clerk_ann", passportHandle: "ann", displayName: "@ann" },
     recipient: { clerkUserId: "clerk_max", passportHandle: "max", displayName: "@max" },
-    initiatorFaces: [face("c1", "Caphiria", "o1")],
-    recipientFaces: [face("c2", "Urcea", "o2")],
+    initiatorCopies: [tradeCopy("c1", "Caphiria", "o1")],
+    recipientCopies: [tradeCopy("c2", "Urcea", "o2")],
     initiatorCredits: 25,
     recipientCredits: 0,
     initiatorValue: 125,
@@ -87,6 +96,20 @@ describe("TradeNegotiation", () => {
     fireEvent.click(cardButton("Urcea"));
     expect(onOpenCard).toHaveBeenLastCalledWith("c2", { kind: "offer", id: "t1" });
     expect(screen.getByRole("button", { name: "Accept trade" })).toBeInTheDocument();
+    // A counter-offer edits the table in the trade builder, not here
+    expect(screen.queryByRole("button", { name: /counter/i })).toBeNull();
+  });
+
+  it("answers the revision the player is looking at", () => {
+    const mutate = jest.fn();
+    jest
+      .mocked(api.trading.respondToTrade.useMutation)
+      .mockReturnValue({ mutate, isPending: false } as never);
+    show(trade(), true);
+    fireEvent.click(screen.getByRole("button", { name: "Accept trade" }));
+    expect(mutate).toHaveBeenLastCalledWith({ tradeId: "t1", action: "ACCEPT", revision: 2 });
+    fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+    expect(mutate).toHaveBeenLastCalledWith({ tradeId: "t1", action: "REJECT", revision: 2 });
   });
 
   it("shows a sent offer from the sender's side, opening the partner's copies as theirs", () => {
@@ -142,8 +165,11 @@ describe("TradeNegotiation", () => {
     const [respond, cancel] = options.slice(-2);
     respond!.onSuccess({}, { action: "ACCEPT" });
     expect(refreshCards).toHaveBeenCalledTimes(1);
+    expect(vaultNotify.tradeCompleted).toHaveBeenLastCalledWith("Trade accepted. Cards exchanged.");
+    respond!.onSuccess({}, { action: "REJECT" });
+    expect(vaultNotify.tradeCompleted).toHaveBeenLastCalledWith("Trade declined.");
     cancel!.onSuccess({}, {});
-    expect(refreshCards).toHaveBeenCalledTimes(2);
+    expect(refreshCards).toHaveBeenCalledTimes(3);
   });
 
   it("says when an offer has expired and offers no actions", () => {

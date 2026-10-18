@@ -61,6 +61,8 @@ describe("grantCardXp", () => {
     ["AUCTION_WIN", 14],
     // A fixed-price purchase earns what an auction win does
     ["LISTING_PURCHASE", 14],
+    // A cross-realm trade earns double the trade amount (spec §2.2)
+    ["CROSS_REALM_TRADE", 26],
   ])("reads %s's amount from its own Economy tab number", async (source, amount) => {
     const stored = [
       { key: "card_economy_xp_pack", value: "11" },

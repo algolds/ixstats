@@ -473,12 +473,29 @@ export async function voidTrade(
 ): Promise<void> {
   const trade = await db.tradeOffer.findUnique({
     where: { id: input.tradeId },
-    select: { id: true, initiatorId: true, recipientId: true, initiatorCardIds: true },
+    select: {
+      id: true,
+      initiatorId: true,
+      recipientId: true,
+      proposerId: true,
+      revision: true,
+      initiatorCardIds: true,
+      recipientCardIds: true,
+    },
   });
   if (!trade) throw new TRPCError({ code: "NOT_FOUND", message: "Trade not found" });
+  // The proposer's give side is the locked one; the revision read keeps a counter-offer meanwhile from moving it
+  const locked = ownershipIds.parse(
+    trade.proposerId === trade.initiatorId ? trade.initiatorCardIds : trade.recipientCardIds
+  );
   await db.$transaction(async (tx) => {
-    await claimPendingTradeTx(tx, trade.id, "CANCELLED", new Date());
-    await unlockCardsTx(tx, ownershipIds.parse(trade.initiatorCardIds), trade.initiatorId);
+    await claimPendingTradeTx(tx, {
+      tradeId: trade.id,
+      next: "CANCELLED",
+      now: new Date(),
+      revision: trade.revision,
+    });
+    await unlockCardsTx(tx, locked, trade.proposerId);
     await recordCardAudit(tx, {
       action: "CARD_TRADE_VOID",
       actor: actor.clerkId,

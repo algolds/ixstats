@@ -39,7 +39,6 @@ jest.mock("~/hooks/useCardsRefresh", () => {
   return { useCardsRefresh: () => refreshCards };
 });
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "clerk_me" }) }));
-jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
 jest.mock("~/components/cards/trading/TradeNegotiation", () => ({
   TradeNegotiation: ({ tradeId, isRecipient }: { tradeId: string; isRecipient: boolean }) => (
     <p>

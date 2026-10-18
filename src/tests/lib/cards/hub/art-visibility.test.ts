@@ -147,8 +147,71 @@ describe("copyIdsOf", () => {
   });
 });
 
+/** A stored trade, for a findFirst that applies the offer rule's `where` as the database would. */
+interface OfferRow {
+  id: string;
+  initiatorId: string;
+  recipientId: string;
+  proposerId: string;
+  status: string;
+  expiresAt: Date;
+  initiatorCardIds: string[];
+  recipientCardIds: string[];
+}
+interface OfferWhere {
+  id: string;
+  status: string;
+  expiresAt: { gt: Date };
+  proposerId: { not: string };
+  OR: Array<{ initiatorId?: string; recipientId?: string }>;
+}
+const matches = (row: OfferRow, where: OfferWhere) =>
+  row.id === where.id &&
+  row.status === where.status &&
+  row.expiresAt > where.expiresAt.gt &&
+  row.proposerId !== where.proposerId.not &&
+  where.OR.some((or) => row.initiatorId === or.initiatorId || row.recipientId === or.recipientId);
+function offersIn(db: ReturnType<typeof createMockPrisma>, rows: OfferRow[]) {
+  db.tradeOffer.findFirst.mockImplementation(
+    async ({ where }: { where: OfferWhere }) => rows.find((row) => matches(row, where)) ?? null
+  );
+}
+const offerRow = (over: Partial<OfferRow> = {}): OfferRow => ({
+  id: "t1",
+  initiatorId: "them",
+  recipientId: "me",
+  proposerId: "them",
+  status: "PENDING",
+  expiresAt: new Date(Date.now() + 60_000),
+  initiatorCardIds: ["o1"],
+  recipientCardIds: [],
+  ...over,
+});
+
 describe("contextRevealsArt", () => {
-  it("reveals the cards of a pending, unexpired offer made to the viewer, and nothing for anyone else", async () => {
+  it("reveals an offer's cards to the party it waits on, whichever side they are, while it is live", async () => {
+    const db = createMockPrisma();
+    db.cardOwnership.count.mockResolvedValue(1);
+    const reveals = (viewer: string) =>
+      contextRevealsArt(db as never, viewer, "c1", { kind: "offer", id: "t1" }, visible);
+
+    offersIn(db, [offerRow()]);
+    await expect(reveals("me")).resolves.toBe(true);
+    // The proposer sees their own table by the silhouette rule
+    await expect(reveals("them")).resolves.toBe(false);
+    // A counter-offer from the recipient waits on the initiator
+    offersIn(db, [offerRow({ proposerId: "me" })]);
+    await expect(reveals("them")).resolves.toBe(true);
+    await expect(reveals("me")).resolves.toBe(false);
+    // Nobody outside the trade, and nothing once it ended or expired
+    await expect(reveals("carol")).resolves.toBe(false);
+    offersIn(db, [offerRow({ status: "ACCEPTED" })]);
+    await expect(reveals("me")).resolves.toBe(false);
+    offersIn(db, [offerRow({ expiresAt: new Date(Date.now() - 1) })]);
+    await expect(reveals("me")).resolves.toBe(false);
+  });
+
+  it("reveals only the offer's own cards, and nothing for an unknown offer or a signed-out viewer", async () => {
     const db = createMockPrisma();
     db.tradeOffer.findFirst.mockResolvedValue({
       initiatorCardIds: ["o1", 5],
@@ -160,9 +223,10 @@ describe("contextRevealsArt", () => {
     ).resolves.toBe(true);
     expect(db.tradeOffer.findFirst.mock.calls[0]![0].where).toEqual({
       id: "t1",
-      recipientId: "me",
       status: "PENDING",
       expiresAt: { gt: expect.any(Date) },
+      proposerId: { not: "me" },
+      OR: [{ initiatorId: "me" }, { recipientId: "me" }],
     });
     expect(db.cardOwnership.count).toHaveBeenCalledWith({
       where: { id: { in: ["o1"] }, cardId: "c1" },

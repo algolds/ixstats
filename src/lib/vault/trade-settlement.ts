@@ -4,34 +4,43 @@
  * Every state transition here is a conditional `updateMany` whose `where`
  * carries the precondition, verified through `count`. Callers run them inside
  * one `$transaction`, so a failed precondition rolls back everything written
- * before it: no double-accept, no card taken from its new owner, no negative
- * balance.
+ * before it: no double-accept, no card taken from its new owner. A trade's
+ * credits move through its credit legs (`~/lib/cards/market/credit-leg`).
  */
 
-import { type Prisma, type TradeOfferStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { assertNoBoundCopies } from "~/lib/cards/bound";
-import { earnCreditsTx, LedgerError, spendCreditsTx } from "./vault-ledger";
 
 type Tx = Prisma.TransactionClient;
 
-/** Move a PENDING trade to `next` iff it is still PENDING (and, for ACCEPTED, not expired). */
+/**
+ * Moves a PENDING trade to `next` iff it is still PENDING (and, for ACCEPTED, unexpired; with a revision, unchanged:
+ * no counter-offer has rewritten the table since it was read).
+ */
 export async function claimPendingTradeTx(
   tx: Tx,
-  tradeId: string,
-  next: Exclude<TradeOfferStatus, "PENDING">,
-  now: Date
+  args: {
+    tradeId: string;
+    next: "ACCEPTED" | "REJECTED" | "CANCELLED";
+    now: Date;
+    revision?: number;
+  }
 ): Promise<void> {
   const res = await tx.tradeOffer.updateMany({
     where: {
-      id: tradeId,
+      id: args.tradeId,
       status: "PENDING",
-      ...(next === "ACCEPTED" ? { expiresAt: { gt: now } } : {}),
+      ...(args.revision !== undefined ? { revision: args.revision } : {}),
+      ...(args.next === "ACCEPTED" ? { expiresAt: { gt: args.now } } : {}),
     },
-    data: { status: next, respondedAt: now },
+    data: { status: args.next, respondedAt: args.now },
   });
   if (res.count !== 1) {
-    throw new TRPCError({ code: "CONFLICT", message: "Trade is no longer pending" });
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "This trade changed. Review the latest table.",
+    });
   }
 }
 
@@ -75,11 +84,11 @@ export async function transferCardsTx(
 
 /**
  * The trade's row in each moved copy's provenance trail, stamped with the card, serial and finish so the row outlives
- * the copy. Call after `transferCardsTx` has moved the copies.
+ * the copy, and logged as a GIFT when one side gave nothing. Call after `transferCardsTx` has moved the copies.
  */
 export async function recordTradeTransfersTx(
   tx: Tx,
-  args: { ids: string[]; fromId: string; toId: string }
+  args: { ids: string[]; fromId: string; toId: string; action: "TRADE" | "GIFT" }
 ): Promise<void> {
   if (args.ids.length === 0) return;
   const copies = await tx.cardOwnership.findMany({
@@ -94,42 +103,7 @@ export async function recordTradeTransfersTx(
       finish: copy.finish,
       fromUserId: args.fromId,
       toUserId: args.toId,
-      action: "TRADE",
+      action: args.action,
     })),
   });
-}
-
-/**
- * Guarded credit transfer + ledger rows for both sides. No-op when `amount <= 0`.
- * The debit is compare-and-swap guarded by the ledger; a ledger failure becomes a
- * BAD_REQUEST so the surrounding transaction rolls back with a client-safe error.
- */
-export async function transferCreditsTx(
-  tx: Tx,
-  args: { fromUserId: string; toUserId: string; amount: number; tradeId: string }
-): Promise<void> {
-  const { fromUserId, toUserId, amount, tradeId } = args;
-  if (amount <= 0) return;
-
-  try {
-    await spendCreditsTx(tx, {
-      userId: fromUserId,
-      amount,
-      type: "SPEND_MARKET",
-      source: "P2P_TRADE",
-      metadata: { tradeId },
-    });
-    await earnCreditsTx(tx, {
-      userId: toUserId,
-      amount,
-      type: "EARN_CARDS",
-      source: "P2P_TRADE",
-      metadata: { tradeId },
-    });
-  } catch (error) {
-    if (error instanceof LedgerError) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: error.message, cause: error });
-    }
-    throw error;
-  }
 }
