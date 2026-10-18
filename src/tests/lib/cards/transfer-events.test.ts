@@ -1,11 +1,6 @@
 /** @jest-environment node */
 /** The ownership trail and the sales record: every row names the card, the serial and the finish at the time. */
-import {
-  SALE_ACTIONS,
-  listCardSales,
-  recordSaleTx,
-  recordTransferTx,
-} from "~/lib/cards/transfer-events";
+import { listCardSales, recordSaleTx, recordTransferTx } from "~/lib/cards/transfer-events";
 
 const NOW = new Date("2026-11-02T12:00:00Z");
 
@@ -72,10 +67,6 @@ describe("transfer events", () => {
       where: { id: "card_1", firstSoldAt: null },
       data: { firstSoldAt: NOW },
     });
-  });
-
-  it("counts auctions and listings as sales, and nothing else", () => {
-    expect(SALE_ACTIONS).toEqual(["AUCTION_END", "AUCTION_BUYOUT", "LISTING_SALE"]);
   });
 
   it("lists a card's priced sales newest first, leaving out a sale with no price", async () => {

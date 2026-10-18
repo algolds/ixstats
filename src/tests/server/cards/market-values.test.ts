@@ -7,6 +7,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { Prisma } from "@prisma/client";
 import { db as appDb } from "~/server/db";
+import { nsBankValueSql } from "~/lib/cards/ns-bank-sql";
 import { CARD_VALUATION_DEFAULTS, getValuationConfig } from "~/lib/cards/valuation";
 import {
   mediansBySale,
@@ -92,11 +93,9 @@ describe("recomputeMarketValues", () => {
     expect(await recomputeMarketValues(db as never, NOW)).toEqual({ prices: 1, updated: 1 });
 
     const sales = inlined(salesSql(db));
-    expect(sales).toContain(
-      `row_number() OVER (PARTITION BY "cardId", "finish" ORDER BY "createdAt" DESC)`
-    );
-    expect(sales).toContain("price IS NOT NULL");
-    expect(sales).toContain("action IN (AUCTION_END,AUCTION_BUYOUT,LISTING_SALE)");
+    expect(sales).toContain('row_number() OVER (PARTITION BY e."cardId", e.finish');
+    expect(sales).toContain("e.price IS NOT NULL AND e.finish IS NOT NULL");
+    expect(sales).toContain("e.action IN (AUCTION_END,AUCTION_BUYOUT,LISTING_SALE)");
     expect(sales).toContain(`WHERE rn <= ${CARD_VALUATION_DEFAULTS.medianSales}::int`);
     // The 30-day window
     expect(salesSql(db)).toContainEqual(new Date("2026-10-03T00:00:00Z"));
@@ -114,6 +113,20 @@ describe("recomputeMarketValues", () => {
     expect(db.cardValueHistory.createMany).toHaveBeenCalledWith({
       data: [{ cardId: "card_1", value: 210, recordedAt: NOW }],
     });
+  });
+
+  it("breaks a tie between sales at the same moment by id, so a run takes the same last N every time", async () => {
+    const { db } = makeDb([]);
+    await recomputeMarketValues(db as never, NOW);
+    expect(inlined(salesSql(db))).toContain(`ORDER BY e."createdAt" DESC, e.id DESC) AS rn`);
+  });
+
+  it("reads only sales of cards that still exist, so one orphan sale can never fail the price rebuild", async () => {
+    // card_transfer_events.cardId has no foreign key; card_market_prices.cardId has one
+    const { db } = makeDb([]);
+    await recomputeMarketValues(db as never, NOW);
+    const sales = inlined(salesSql(db)).replace(/\s+/g, " ");
+    expect(sales).toContain(`FROM card_transfer_events e JOIN cards c ON c.id = e."cardId" WHERE`);
   });
 
   it("runs one at a time: it takes the revalue lock, reads the stored config, then writes, in one transaction", async () => {
@@ -172,8 +185,7 @@ describe("recomputeMarketValues", () => {
     expect(sql).toContain("COALESCE(p.median, 0)");
     expect(sql).toContain(
       `CASE WHEN c2."cardType"::text = 'NS' AND c2."firstSoldAt" IS NULL ` +
-        `THEN COALESCE((CASE WHEN (c2.metadata->'nsData'->>'market_value') ~ '^[0-9]+([.][0-9]+)?$' ` +
-        `THEN (c2.metadata->'nsData'->>'market_value')::float8 END), 0) * 1.7::float8 ELSE 0 END`
+        `THEN COALESCE(${nsBankValueSql("c2").sql}, 0) * 1.7::float8 ELSE 0 END`
     );
   });
 

@@ -311,14 +311,24 @@ describe("caller-scoped reads", () => {
 });
 
 describe("analytics", () => {
-  it("returns the stored value history oldest first, with no fallback to auction prices", async () => {
-    const rows = [{ id: "h1", cardId: "card_1", value: 40, recordedAt: new Date(0) }];
-    db.cardValueHistory.findMany.mockResolvedValue(rows);
+  it("charts the newest 100 history rows, oldest first, with no fallback to auction prices", async () => {
+    const row = (id: string, day: number) => ({
+      id,
+      cardId: "card_1",
+      value: day,
+      recordedAt: new Date(day),
+    });
+    // The read is newest first, so a card with a long history still shows its latest moves
+    db.cardValueHistory.findMany.mockResolvedValue([row("h3", 3), row("h2", 2), row("h1", 1)]);
 
-    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual(rows);
+    expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([
+      row("h1", 1),
+      row("h2", 2),
+      row("h3", 3),
+    ]);
     expect(db.cardValueHistory.findMany).toHaveBeenCalledWith({
       where: { cardId: "card_1" },
-      orderBy: { recordedAt: "asc" },
+      orderBy: { recordedAt: "desc" },
       take: 100,
     });
 

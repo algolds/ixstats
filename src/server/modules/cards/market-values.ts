@@ -30,17 +30,22 @@ export interface MarketValuesResult {
   updated: number;
 }
 
-/** The last `medianSales` priced sales of each card and finish within `medianDays`. */
+/**
+ * The last `medianSales` priced sales of each card and finish within `medianDays`; the id breaks a tie between sales
+ * at the same moment, so every run takes the same ones. Only cards that still exist: an event's `cardId` has no
+ * foreign key, and a median for a gone card would fail the price rebuild on every run.
+ */
 function recentSales(tx: Tx, cfg: CardValuationConfig, now: Date): Promise<SaleRow[]> {
   const since = new Date(now.getTime() - cfg.medianDays * DAY_MS);
   return tx.$queryRaw<SaleRow[]>`
     SELECT "cardId", "finish", "price" FROM (
-      SELECT "cardId", "finish", "price",
-        row_number() OVER (PARTITION BY "cardId", "finish" ORDER BY "createdAt" DESC) AS rn
-      FROM card_transfer_events
-      WHERE action IN (${Prisma.join([...SALE_ACTIONS])})
-        AND price IS NOT NULL AND "cardId" IS NOT NULL AND finish IS NOT NULL
-        AND "createdAt" >= ${since}
+      SELECT e."cardId", e.finish, e.price,
+        row_number() OVER (PARTITION BY e."cardId", e.finish ORDER BY e."createdAt" DESC, e.id DESC) AS rn
+      FROM card_transfer_events e
+      JOIN cards c ON c.id = e."cardId"
+      WHERE e.action IN (${Prisma.join([...SALE_ACTIONS])})
+        AND e.price IS NOT NULL AND e.finish IS NOT NULL
+        AND e."createdAt" >= ${since}
     ) s
     WHERE rn <= ${cfg.medianSales}::int`;
 }
