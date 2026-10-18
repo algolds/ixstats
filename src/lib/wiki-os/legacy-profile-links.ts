@@ -6,9 +6,11 @@
  * touched.
  */
 
+import { mediaWikiHostPattern } from "./config";
+
 const BASE_PATH = "/projects/ixstates";
 const OLD_BASE_PATH = "/projects/ixstats";
-const SITE = String.raw`((?:https?:\/\/(?:www\.)?ixwiki\.com)?)(\/projects\/(?:ixstates|ixstats))?`;
+const SITE = String.raw`((?:https?:\/\/${mediaWikiHostPattern()})?)(\/projects\/(?:ixstates|ixstats))?`;
 const PERSONA = new RegExp(
   String.raw`^${SITE}\/thinkpages\/(?:profile|u)\/([^/?#]+)\/?([?#].*)?$`,
   "u"
