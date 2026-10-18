@@ -3,7 +3,8 @@
  * its posts in chunks with `skipDuplicates`, the action-link remap, the recount under the thread lock), then the
  * author relink. Idempotent: a rerun plans only what is missing, and a thread interrupted mid-write rolled back
  * whole, so it is written again in full. A thread that fails is recorded and the run goes on (M19): its transaction
- * rolled it back, and the bridge pass and the relink still run. Then the I7 re-hide (import-rehide.ts). No activity
+ * rolled it back, and the bridge pass and the relink still run. Then the I7 re-hide (import-rehide.ts), and the passes
+ * over every imported post: quote ids (import-quote-ids.ts) and old forum links (import-forum-links.ts). No activity
  * feed, notification or mod-log rows.
  */
 import type { Prisma } from "@prisma/client";
@@ -18,6 +19,7 @@ import type {
 } from "~/lib/thinkpages-forum/import/plan";
 import { isUniqueViolation } from "./errors";
 import { assertImportLock, type ImportDb } from "./import-db";
+import { rewriteImportedForumLinks, type ForumLinkRewrite } from "./import-forum-links";
 import { remapQuoteIds, type QuoteRemap } from "./import-quote-ids";
 import { rehideImported, type RehideTotals } from "./import-rehide";
 import { lockThread, recountThread } from "./thread-counts";
@@ -276,6 +278,8 @@ export interface ApplyTotals {
   bridgeLinks: BridgeRemap;
   /** Quote ids pointed at the native post, and dropped when their post is not imported. */
   quoteIds: QuoteRemap;
+  /** Old forum links pointed at the native page, and unwrapped when nothing public is there. */
+  forumLinks: ForumLinkRewrite;
   relinked: { threads: number; posts: number };
   /** I7: imported rows hidden because XenForo has since moderated or deleted them. */
   rehidden: RehideTotals;
@@ -291,7 +295,8 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
 }
 
 /**
- * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the relink pass.
+ * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the forum link
+ * pass (through the run's node map), the relink pass.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
  */
@@ -311,6 +316,7 @@ export async function applyImport(
     linksRemapped: 0,
     bridgeLinks: { remapped: 0, twins: 0 },
     quoteIds: { remapped: 0, dropped: 0 },
+    forumLinks: { mapped: 0, unwrapped: 0 },
     relinked: { threads: 0, posts: 0 },
     rehidden: { threads: 0, posts: 0, assets: 0 },
     failedThreads: [],
@@ -333,8 +339,13 @@ export async function applyImport(
   await assertImportLock(db);
   totals.rehidden = await rehideImported(db, plan.rehide, { failures: totals.failedThreads, log });
   totals.bridgeLinks = await remapBridgeLinks(db);
-  // A failed thread may hold a quoted post: keep the ids nothing maps yet, so the rerun can map them.
-  totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: totals.failedThreads.length === 0 });
+  // A failed thread may hold a quoted or linked post: keep what nothing maps yet, so the rerun can map it.
+  const complete = totals.failedThreads.length === 0;
+  totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: complete });
+  totals.forumLinks = await rewriteImportedForumLinks(db, {
+    nodeMap: opts.nodeMap,
+    dropUnresolved: complete,
+  });
   totals.relinked = await relinkImportedAuthors(db);
   return totals;
 }

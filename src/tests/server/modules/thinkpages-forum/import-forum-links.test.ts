@@ -1,10 +1,13 @@
 /** @jest-environment node */
 import { nodeLandings } from "~/lib/thinkpages-forum/import/forum-links";
 import type { NodeMapFile } from "~/lib/thinkpages-forum/import/node-map";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import {
   resolveForumRef,
+  rewriteImportedForumLinks,
   type ForumLinksDb,
 } from "~/server/modules/thinkpages-forum/import-forum-links";
+import { importStore } from "~/tests/helpers/forum-import-fake";
 
 const thread = jest.fn();
 const post = jest.fn();
@@ -262,10 +265,209 @@ describe("resolveForumRef", () => {
     await expect(resolveForumRef(db, { kind: "forum", nodeId: 15 }, landings)).resolves.toBeNull();
   });
 
+  it("sends the old front page to the forum home without a lookup", async () => {
+    await expect(resolveForumRef(db, { kind: "home" }, NO_LANDINGS)).resolves.toBe("/thinkpages");
+    for (const fn of [thread, post, category, realm, user]) expect(fn).not.toHaveBeenCalled();
+  });
+
   it("lets a failed lookup throw instead of resolving to a fallback", async () => {
     thread.mockRejectedValueOnce(new Error("db down"));
     await expect(
       resolveForumRef(db, { kind: "thread", threadId: 123 }, NO_LANDINGS)
     ).rejects.toThrow("db down");
+  });
+});
+
+const XF = "https://forum.ixwiki.com";
+const link = (href: string, text = "go") =>
+  `<a href="${href}" class="forum-link" rel="noopener">${text}</a>`;
+const body = (...links: string[]) => `<p>See ${links.join(" and ")}.</p>`;
+
+/** An imported post (XenForo id `xf`) whose stored plain text is its HTML's, as the converter writes it. */
+const importedPost = (id: string, xf: number, contentHtml: string, extra: object = {}) => ({
+  id,
+  threadId: "t-open",
+  xenforoPostId: xf,
+  contentHtml,
+  plainText: stripHtml(contentHtml),
+  ...extra,
+});
+
+/** Threads 100 (public), 101 (hidden), 103 (staff archive) imported; 999 never was. Member 7 is linked as jane. */
+function linkStore(posts: object[]) {
+  return importStore({
+    users: [{ id: "u-jane", forumUserId: 7, handle: "jane" }],
+    categories: [
+      { id: "c-general", key: "general", visibility: "public" },
+      { id: "c-xf12", key: "xf-12", visibility: "public" },
+      { id: "c-xf13", key: "xf-13", visibility: "staff" },
+    ],
+    threads: [
+      { id: "t-open", categoryId: "c-xf12", xenforoThreadId: 100 },
+      { id: "t-hidden", categoryId: "c-xf12", xenforoThreadId: 101, hidden: true },
+      { id: "t-staff", categoryId: "c-xf13", xenforoThreadId: 103 },
+    ],
+    posts: posts as never,
+  });
+}
+
+const NODE_MAP: NodeMapFile = { nodes: { "12": { scope: "site", key: "general" } } };
+const htmlOf = (store: ReturnType<typeof linkStore>, id: string) =>
+  store.tables().posts.find((p) => p.id === id)!.contentHtml as string;
+
+describe("rewriteImportedForumLinks", () => {
+  it("points an imported post's old forum links at the native pages, through the run's node map", async () => {
+    const store = linkStore([
+      importedPost(
+        "p-1",
+        1,
+        body(
+          link(`${XF}/threads/welcome.100/`),
+          link(`${XF}/forums/general-discussion.12/`),
+          link(`${XF}/members/jane.7/`),
+          link("/projects/ixstates/forum/thread/100#post-1"),
+          link(`${XF}/`)
+        )
+      ),
+    ]);
+    const result = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: true,
+    });
+    expect(result).toEqual({ mapped: 5, unwrapped: 0 });
+    expect(htmlOf(store, "p-1")).toBe(
+      body(
+        link("/thinkpages/t/t-open"),
+        link("/thinkpages/c/general"),
+        link("/@jane"),
+        link("/thinkpages/post/p-1"),
+        link("/thinkpages")
+      )
+    );
+  });
+
+  it("touches only imported posts: native posts and posts with Canvas source keep their links", async () => {
+    const old = body(link(`${XF}/threads/welcome.100/`));
+    const store = linkStore([
+      { ...importedPost("p-native", 0, old), xenforoPostId: null },
+      importedPost("p-wiki", 2, old, { contentWikitext: "See [[x]]." }),
+      importedPost("p-xf", 3, old),
+    ]);
+    await rewriteImportedForumLinks(store.db as never, { nodeMap: NODE_MAP, dropUnresolved: true });
+    expect(htmlOf(store, "p-native")).toBe(old);
+    expect(htmlOf(store, "p-wiki")).toBe(old);
+    expect(htmlOf(store, "p-xf")).toBe(body(link("/thinkpages/t/t-open")));
+  });
+
+  it("unwraps links to hidden, staff-only and never-imported threads alike", async () => {
+    const store = linkStore([
+      importedPost("p-hidden", 1, body(link(`${XF}/threads/x.101/`))),
+      importedPost("p-staff", 2, body(link(`${XF}/threads/x.103/`))),
+      importedPost("p-never", 3, body(link(`${XF}/threads/x.999/`))),
+      importedPost("p-dead", 4, body(link(`${XF}/whats-new/`))),
+    ]);
+    const result = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: true,
+    });
+    expect(result).toEqual({ mapped: 0, unwrapped: 4 });
+    for (const id of ["p-hidden", "p-staff", "p-never", "p-dead"]) {
+      expect(htmlOf(store, id)).toBe("<p>See go.</p>");
+    }
+  });
+
+  it("keeps the stored plain text: the rewritten HTML strips to it", async () => {
+    const store = linkStore([
+      importedPost(
+        "p-1",
+        1,
+        body(
+          link(`${XF}/threads/x.100/`, "the <b>welcome</b>"),
+          link(`${XF}/threads/x.103/`, "notes")
+        )
+      ),
+    ]);
+    await rewriteImportedForumLinks(store.db as never, { nodeMap: NODE_MAP, dropUnresolved: true });
+    const row = store.tables().posts.find((p) => p.id === "p-1")!;
+    expect(row.contentHtml).toBe(body(link("/thinkpages/t/t-open", "the <b>welcome</b>"), "notes"));
+    expect(stripHtml(row.contentHtml as string)).toBe(row.plainText);
+  });
+
+  it("keeps unresolved links while the run is incomplete, and maps them on the rerun", async () => {
+    const store = linkStore([
+      importedPost("p-1", 1, body(link(`${XF}/threads/x.100/`), link(`${XF}/threads/x.102/`))),
+      importedPost("p-2", 2, body(link(`${XF}/threads/x.103/`))),
+    ]);
+    const first = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: false,
+    });
+    expect(first).toEqual({ mapped: 1, unwrapped: 0 });
+    expect(htmlOf(store, "p-1")).toBe(
+      body(link("/thinkpages/t/t-open"), link(`${XF}/threads/x.102/`))
+    );
+    expect(htmlOf(store, "p-2")).toBe(body(link(`${XF}/threads/x.103/`)));
+    // The rerun wrote the thread that failed (102); the staff thread still resolves to nothing.
+    store.tables().threads.push({
+      id: "t-late",
+      categoryId: "c-xf12",
+      xenforoThreadId: 102,
+      hidden: false,
+      createdAt: new Date(0),
+    });
+    const rerun = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: true,
+    });
+    expect(rerun).toEqual({ mapped: 1, unwrapped: 1 });
+    expect(htmlOf(store, "p-1")).toBe(
+      body(link("/thinkpages/t/t-open"), link("/thinkpages/t/t-late"))
+    );
+    expect(htmlOf(store, "p-2")).toBe("<p>See go.</p>");
+  });
+
+  it("is idempotent", async () => {
+    const store = linkStore([
+      importedPost("p-1", 1, body(link(`${XF}/threads/x.100/`), link(`${XF}/threads/x.999/`))),
+    ]);
+    const opts = { nodeMap: NODE_MAP, dropUnresolved: true };
+    await rewriteImportedForumLinks(store.db as never, opts);
+    const before = JSON.stringify(store.tables().posts);
+    store.db.forumPost.update.mockClear();
+    expect(await rewriteImportedForumLinks(store.db as never, opts)).toEqual({
+      mapped: 0,
+      unwrapped: 0,
+    });
+    expect(store.db.forumPost.update).not.toHaveBeenCalled();
+    expect(JSON.stringify(store.tables().posts)).toBe(before);
+  });
+
+  it("looks each distinct ref up once, across posts and pages", async () => {
+    const posts = Array.from({ length: 501 }, (_, i) =>
+      importedPost(
+        `p-${String(i).padStart(3, "0")}`,
+        i + 1,
+        body(link(`${XF}/threads/x.100/`), link(`/forum/thread/100`), link(`${XF}/members/7/`))
+      )
+    );
+    const store = linkStore(posts);
+    const result = await rewriteImportedForumLinks(store.db as never, {
+      nodeMap: NODE_MAP,
+      dropUnresolved: true,
+    });
+    expect(result).toEqual({ mapped: 1503, unwrapped: 0 });
+    expect(store.db.forumThread.findFirst).toHaveBeenCalledTimes(1);
+    expect(store.db.user.findFirst).toHaveBeenCalledTimes(1);
+    expect(store.db.forumPost.findMany).toHaveBeenCalledTimes(3);
+  });
+
+  it("lets a failed lookup stop the pass, writing nothing for that post", async () => {
+    const old = body(link(`${XF}/threads/x.100/`));
+    const store = linkStore([importedPost("p-1", 1, old)]);
+    store.db.forumThread.findFirst.mockRejectedValueOnce(new Error("db down"));
+    await expect(
+      rewriteImportedForumLinks(store.db as never, { nodeMap: NODE_MAP, dropUnresolved: true })
+    ).rejects.toThrow("db down");
+    expect(htmlOf(store, "p-1")).toBe(old);
   });
 });

@@ -10,7 +10,7 @@
  * and `~/lib/thinkpages/post-views` are not link literals and do not trip them.
  *
  * Phase 4b retired the XenForo bridge, and phase 5 deleted its `/forum/*` redirects: those paths are 404s, so nothing
- * links to them either. Only the file that still recognizes an old stored link may spell one (`BRIDGE_FILES`).
+ * links to them either. Only the files that still recognize an old stored link may spell one (`BRIDGE_FILES`).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -26,6 +26,7 @@ const PERMALINK_FILES = ["app/thinkpages/post/[postId]/page.tsx", "lib/thinkpage
 /** Files that may spell `/forum`: they recognize stored old links. */
 const BRIDGE_FILES = [
   "components/wiki-os/stashes/StashThreadsList.tsx", // legacy forum:thread: stash items open their old path (Q15)
+  "lib/thinkpages-forum/import/forum-links.ts", // the import points old links in imported posts at native pages
 ];
 /** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
 const BRIDGE_PATH = /(?<![\w./(-])\/forum(?=[/"'`?#]|$)/;

@@ -1,10 +1,14 @@
 /** @jest-environment node */
 import {
+  classifyForumHref,
+  forumHrefRefs,
   forumRefTarget,
   nodeLandings,
+  rewriteForumHrefs,
   type ForumLookups,
   type ForumRef,
 } from "~/lib/thinkpages-forum/import/forum-links";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 
 const NONE: ForumLookups = { threadId: null, postId: null, category: null, handle: null };
 
@@ -29,6 +33,10 @@ describe("forumRefTarget", () => {
     expect(forumRefTarget({ kind: "member", userId: 7 }, { ...NONE, handle: "jane_doe" })).toBe(
       "/@jane_doe"
     );
+  });
+
+  it("sends the old forum's front page to the forum home", () => {
+    expect(forumRefTarget({ kind: "home" }, NONE)).toBe("/thinkpages");
   });
 
   it("is null when nothing was found", () => {
@@ -116,5 +124,224 @@ describe("nodeLandings", () => {
 
   it("is empty for a map with no nodes", () => {
     expect(nodeLandings({ nodes: {} }).size).toBe(0);
+  });
+});
+
+const HOME: ForumRef = { kind: "home" };
+const thread = (threadId: number): ForumRef => ({ kind: "thread", threadId });
+const post = (postId: number): ForumRef => ({ kind: "post", postId });
+const node = (nodeId: number): ForumRef => ({ kind: "forum", nodeId });
+const member = (userId: number): ForumRef => ({ kind: "member", userId });
+const XF = "https://forum.ixwiki.com";
+
+describe("classifyForumHref", () => {
+  it.each<[string, ForumRef[]]>([
+    [`${XF}/threads/welcome.100/`, [thread(100)]],
+    [`${XF}/threads/12/`, [thread(12)]],
+    [`${XF}/threads/v1.5-notes.12`, [thread(12)]],
+    ["http://forum.ixwiki.com/threads/x.12/", [thread(12)]],
+    ["//forum.ixwiki.com/threads/x.12/", [thread(12)]],
+    ["https://www.forum.ixwiki.com/threads/x.12/", [thread(12)]],
+    ["HTTPS://Forum.IxWiki.com/threads/x.12/", [thread(12)]],
+    ["https://forum.ixwiki.com:443/threads/x.12/", [thread(12)]],
+    [`${XF}/threads/x.12/page-3`, [thread(12)]],
+    [`${XF}/threads/x.12/unread`, [thread(12)]],
+    [`${XF}/threads/x.12/latest/`, [thread(12)]],
+    [`${XF}/threads/x.12/?order=new#replies`, [thread(12)]],
+    [`${XF}/threads/x.12/post-55`, [post(55), thread(12)]],
+    [`${XF}/threads/x.12/page-2#post-55`, [post(55), thread(12)]],
+    [`${XF}/threads/x.12/post-2147483648`, [thread(12)]],
+    [`${XF}/posts/123/`, [post(123)]],
+    [`${XF}/posts/123#post-123`, [post(123)]],
+    [`${XF}/goto/post?id=77`, [post(77)]],
+    [`${XF}/goto/post?x=1&id=77#post-77`, [post(77)]],
+    [`${XF}/forums/general-discussion.12/`, [node(12)]],
+    [`${XF}/forums/12/page-2`, [node(12)]],
+    [`${XF}/categories/community.1/`, [node(1)]],
+    [`${XF}/members/jane.7/`, [member(7)]],
+    [`${XF}/members/7/#about`, [member(7)]],
+    [XF, [HOME]],
+    [`${XF}/`, [HOME]],
+    [`${XF}/forums/`, [HOME]],
+    [`${XF}/index.php`, [HOME]],
+    [`${XF}/?tab=new`, [HOME]],
+    [`${XF}/index.php?threads/welcome.100/`, [thread(100)]],
+    [`${XF}/index.php?threads/x.12/&page=2#post-5`, [post(5), thread(12)]],
+    [`${XF}/index.php?goto/post&id=9`, [post(9)]],
+    [`${XF}/index.php?members/jane.7/`, [member(7)]],
+    [`${XF}/index.php?`, [HOME]],
+  ])("reads the XenForo link %s", (href, refs) => {
+    expect(classifyForumHref(href)).toEqual(refs);
+  });
+
+  it.each<[string, ForumRef[]]>([
+    ["/forum/thread/12", [thread(12)]],
+    ["/forum/thread/12/", [thread(12)]],
+    ["/forum/thread/12#post-55", [post(55), thread(12)]],
+    ["/forum/post/55", [post(55)]],
+    ["/forum/members/7", [member(7)]],
+    ["/forum/12", [node(12)]],
+    ["/forum", [HOME]],
+    ["/forum/", [HOME]],
+    ["/projects/ixstates/forum/thread/12", [thread(12)]],
+    ["/projects/ixstats/forum/12", [node(12)]],
+    ["https://ixwiki.com/projects/ixstats/forum/thread/12#post-5", [post(5), thread(12)]],
+    ["https://www.ixwiki.com/projects/ixstates/forum/post/5", [post(5)]],
+    ["http://ixwiki.com/forum/members/7", [member(7)]],
+  ])("reads the IxStates bridge link %s", (href, refs) => {
+    expect(classifyForumHref(href)).toEqual(refs);
+  });
+
+  it.each([
+    `${XF}/whats-new/`,
+    `${XF}/threads/x.12/reply`,
+    `${XF}/threads/welcome/`,
+    `${XF}/members/jane/`,
+    `${XF}/posts/0/`,
+    `${XF}/posts/-3/`,
+    `${XF}/threads/x.2147483648/`,
+    `${XF}/posts/99999999999/`,
+    `${XF}/goto/post?id=2147483648`,
+    `${XF}/goto/post`,
+    `${XF}/forums/2147483648/`,
+    "/forum/thread/2147483648",
+    "/forum/members/99999999999",
+    "/forum/thread/abc",
+    "/forum/conversations",
+    "/projects/ixstates/forum/search?q=x",
+  ])("is a dead link (no native counterpart) for %s", (href) => {
+    expect(classifyForumHref(href)).toEqual([]);
+  });
+
+  it.each([
+    "https://forum.ixwiki.com.evil/threads/x.12/",
+    "https://forum.ixwiki.com.evil.example/",
+    "https://forum.ixwiki.com@evil.example/threads/1/",
+    "https://notforum.ixwiki.com/threads/1/",
+    "https://evil.example/forum/thread/12",
+    "https://ixwiki.com.evil/forum/thread/12",
+    "https://evil.example/?u=https://forum.ixwiki.com/threads/1/",
+    "/thinkpages/forum",
+    "/projects/ixstates/thinkpages/forum",
+    "/images/uploads/forum/55.png",
+    "/forums-of-old",
+    "/forumx/1",
+    "/Forum/thread/12",
+    "https://ixwiki.com/wiki/Forum",
+    "https://ixwiki.com/projects/ixstates/thinkpages/t/abc",
+    "/thinkpages/t/abc",
+    "/threads/x.12/",
+    "#post-5",
+    "mailto:admin@ixwiki.com",
+    "",
+  ])("is not an old forum link: %s", (href) => {
+    expect(classifyForumHref(href)).toBeNull();
+  });
+});
+
+const a = (href: string, text = "go") =>
+  `<a href="${href}" class="forum-link" rel="noopener">${text}</a>`;
+const TARGETS = new Map<string, string>([
+  [JSON.stringify(thread(100)), "/thinkpages/t/t100"],
+  [JSON.stringify(post(55)), "/thinkpages/post/p55"],
+  [JSON.stringify(HOME), "/thinkpages"],
+]);
+const targetOf = (ref: ForumRef) => TARGETS.get(JSON.stringify(ref)) ?? null;
+
+describe("forumHrefRefs", () => {
+  it("lists every ref the anchors' old forum links could resolve through, in order", () => {
+    const html = `<p>${a(`${XF}/threads/x.12/post-55`)} ${a("/forum/members/7")} ${a(XF)}</p>`;
+    expect(forumHrefRefs(html)).toEqual([post(55), thread(12), member(7), HOME]);
+  });
+
+  it("reads only anchors' href, decoded, and skips links that are not old forum links", () => {
+    const html = [
+      `<img src="${XF}/threads/x.1/">`,
+      `<p>${XF}/threads/x.2/</p>`,
+      `<a title="${XF}/threads/x.3/" href="https://example.com">e</a>`,
+      `<abbr title="x" href="${XF}/threads/x.4/">x</abbr>`,
+      a(`${XF}/goto/post?x=1&amp;id=5`),
+    ].join("");
+    expect(forumHrefRefs(html)).toEqual([post(5)]);
+  });
+});
+
+describe("rewriteForumHrefs", () => {
+  it("points a resolved link at its native page, keeping the other attributes and the text", () => {
+    const html = `<p>Thanks! ${a(`${XF}/threads/welcome.100/`, "again")}</p>`;
+    expect(rewriteForumHrefs(html, targetOf, "drop")).toEqual({
+      html: `<p>Thanks! ${a("/thinkpages/t/t100", "again")}</p>`,
+      mapped: 1,
+      unwrapped: 0,
+    });
+  });
+
+  it("falls back from the post to its thread, and maps the front page and bridge links", () => {
+    const html = [
+      a(`${XF}/threads/x.100/post-9`),
+      a("/projects/ixstates/forum/thread/100#post-55"),
+      a(`${XF}/forums/`),
+    ].join(" ");
+    expect(rewriteForumHrefs(html, targetOf, "keep")).toEqual({
+      html: [a("/thinkpages/t/t100"), a("/thinkpages/post/p55"), a("/thinkpages")].join(" "),
+      mapped: 3,
+      unwrapped: 0,
+    });
+  });
+
+  it("in drop mode unwraps an unresolved or dead link: the tags go, the inner text and markup stay", () => {
+    const html = `<p>See ${a(`${XF}/threads/x.404/`, "this <b>thread</b>")} and ${a(`${XF}/whats-new/`, "news")}.</p>`;
+    expect(rewriteForumHrefs(html, targetOf, "drop")).toEqual({
+      html: "<p>See this <b>thread</b> and news.</p>",
+      mapped: 0,
+      unwrapped: 2,
+    });
+  });
+
+  it("in keep mode leaves an unresolved link as written, for a later run", () => {
+    const html = `<p>${a(`${XF}/threads/x.404/`)} ${a(`${XF}/threads/x.100/`)}</p>`;
+    expect(rewriteForumHrefs(html, targetOf, "keep")).toEqual({
+      html: `<p>${a(`${XF}/threads/x.404/`)} ${a("/thinkpages/t/t100")}</p>`,
+      mapped: 1,
+      unwrapped: 0,
+    });
+  });
+
+  it("closes only the unwrapped anchor: other links, their ends and other tags stay", () => {
+    const html = `${a(`${XF}/threads/x.404/`, "dead")}<a href="https://example.com">kept</a><span>s</span>`;
+    expect(rewriteForumHrefs(html, targetOf, "drop").html).toBe(
+      'dead<a href="https://example.com">kept</a><span>s</span>'
+    );
+  });
+
+  it("decodes &amp; in the href before matching", () => {
+    const html = a(`${XF}/goto/post?x=1&amp;id=55`);
+    expect(rewriteForumHrefs(html, targetOf, "drop").html).toBe(a("/thinkpages/post/p55"));
+  });
+
+  it("rewrites only an anchor's href: text, other attributes, images and other links stay", () => {
+    const html = [
+      `<p>${XF}/threads/x.100/ and /forum/thread/100</p>`,
+      `<img src="${XF}/threads/x.100/" alt="${XF}/threads/x.100/">`,
+      `<a title="${XF}/threads/x.100/" href="https://example.com/forum/thread/100">e</a>`,
+      a("/images/uploads/forum/55.png"),
+      a("/thinkpages/forum"),
+    ].join("");
+    expect(rewriteForumHrefs(html, () => "/thinkpages/t/x", "drop")).toEqual({
+      html,
+      mapped: 0,
+      unwrapped: 0,
+    });
+  });
+
+  it("is idempotent, and keeps the post's plain text", () => {
+    const html = `<p>A ${a(`${XF}/threads/x.100/`, "one")} B ${a(`${XF}/threads/x.404/`, "two")} C</p>`;
+    const once = rewriteForumHrefs(html, targetOf, "drop").html;
+    expect(rewriteForumHrefs(once, targetOf, "drop")).toEqual({
+      html: once,
+      mapped: 0,
+      unwrapped: 0,
+    });
+    expect(stripHtml(once)).toBe(stripHtml(html));
   });
 });

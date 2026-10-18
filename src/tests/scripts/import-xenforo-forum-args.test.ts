@@ -215,11 +215,10 @@ describe("rollback lines (I2)", () => {
       "Pass --yes to delete these.",
     ]);
   });
-
 });
 
 describe("applyTotalLines", () => {
-  it("prints the re-hidden rows (I7) and the failed threads (M19)", () => {
+  it("prints the re-hidden rows (I7), the old forum links and the failed threads (M19)", () => {
     const lines = applyTotalLines({
       categoriesCreated: 0,
       threadsCreated: 1,
@@ -229,12 +228,16 @@ describe("applyTotalLines", () => {
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
       quoteIds: { remapped: 0, dropped: 0 },
+      forumLinks: { mapped: 4, unwrapped: 5 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 1, posts: 2, assets: 3 },
       failedThreads: [{ xenforoThreadId: 9, error: "boom" }],
     });
     expect(lines).toContain(
       "  re-hidden (moderated or deleted on XenForo since imported): 1 threads, 2 posts, 3 media assets made restricted"
+    );
+    expect(lines).toContain(
+      "  old forum links: 4 pointed at the native page, 5 unwrapped to their text (no public page to point at)"
     );
     expect(lines.slice(-2)).toEqual([
       "FAILED: 1 threads were rolled back and not imported; XenForo thread ids: 9",

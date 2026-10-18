@@ -1,5 +1,6 @@
 /** @jest-environment node */
 import type { Snapshot } from "~/lib/thinkpages-forum/import/snapshot";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { ImportLockLostError } from "~/server/modules/thinkpages-forum/import-db";
 import { importStore, type ImportTables } from "~/tests/helpers/forum-import-fake";
 import { readSmallSnapshot, runImport, SITE_ROWS } from "~/tests/helpers/forum-import-run";
@@ -104,6 +105,7 @@ describe("the XenForo import applied to the small snapshot", () => {
       linksRemapped: 0,
       bridgeLinks: { remapped: 0, twins: 0 },
       quoteIds: { remapped: 0, dropped: 0 },
+      forumLinks: { mapped: 0, unwrapped: 0 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 0, posts: 0, assets: 0 },
       failedThreads: [],
@@ -146,6 +148,19 @@ describe("the XenForo import applied to the small snapshot", () => {
     expect(html).not.toMatch(/data-post="\d/);
     expect(html.match(/<blockquote class="forum-quote">/g)).toHaveLength(1);
     expect(totals.quoteIds).toEqual({ remapped: 1, dropped: 1 });
+  });
+
+  it("points post 1001's old forum link at the native thread 100, once", async () => {
+    const store = importStore(seed());
+    const first = await runImport(store.db as never, snapshot);
+    const thread100 = store.tables().threads.find((t) => t.xenforoThreadId === 100)!;
+    const row = store.tables().posts.find((p) => p.xenforoPostId === 1001)!;
+    expect(row.contentHtml).toContain(`href="/thinkpages/t/${thread100.id}"`);
+    expect(row.contentHtml).not.toContain("forum.ixwiki.com");
+    expect(stripHtml(row.contentHtml as string)).toBe(row.plainText);
+    expect(first.totals.forumLinks).toEqual({ mapped: 1, unwrapped: 0 });
+    const second = await runImport(store.db as never, snapshot);
+    expect(second.totals.forumLinks).toEqual({ mapped: 0, unwrapped: 0 });
   });
 
   it("keeps an unmapped quote id while a thread failed, and maps it on the rerun", async () => {
