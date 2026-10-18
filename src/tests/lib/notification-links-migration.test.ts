@@ -42,6 +42,7 @@ const MOVED: ReadonlyArray<readonly [string, string]> = [
   ["/thinkpages/forum?realm=eurth&x=1#standing", "/thinkpages/r/eurth/hub#standing"],
   ["/thinkpages?realm=eurth", "/thinkpages/r/eurth/hub"],
   ["/thinkpages?realm=ixworld", "/thinkpages/r/ixnay/hub"],
+  ["/thinkpages/forum?realm=ixworld", "/thinkpages/r/ixnay/hub"],
   ["/thinkpages/feed", "/dashboard"],
   ["/thinkpages/feed?post=7", "/dashboard?post=7"],
   ["/thinkpages/saved", "/dashboard/saved"],
@@ -60,7 +61,8 @@ const MOVED: ReadonlyArray<readonly [string, string]> = [
   ["/@kaiser/work", "/@kaiser?tab=work"],
   ["/@kaiser/work?from=wiki", "/@kaiser?tab=work&from=wiki"],
   ["/profile", "/settings"],
-  ["/profile/notifications", "/settings/notifications"],
+  ["/profile/notifications", "/settings"],
+  ["/profile/notifications?tab=email#top", "/settings?tab=email#top"],
   ["/achievements", "/vault/achievements"],
   ["/achievements?a=first_steps", "/vault/achievements?a=first_steps"],
   ["/vault/exchange", "/labs/exchange"],
@@ -74,6 +76,10 @@ const MOVED: ReadonlyArray<readonly [string, string]> = [
   ["/vault/trading?offer=3", "/vault/store?tab=trading&offer=3"],
   ["/builder/import", "/builder?import=1"],
   ["/builder/import?from=wiki", "/builder?import=1&from=wiki"],
+  ["/mycountry/builder?section=import", "/builder?import=1"],
+  ["/mycountry/builder?section=import#wiki", "/builder?import=1#wiki"],
+  ["/mycountry/builder/?section=import&from=wiki", "/builder?import=1&from=wiki"],
+  ["/mycountry/builder?section=imports", "/builder?section=imports"],
   ["/mycountry/builder", "/builder"],
   ["/countries/caphiria/factbook", "/countries/caphiria"],
   ["/explore", "/countries"],
@@ -85,9 +91,6 @@ const MOVED: ReadonlyArray<readonly [string, string]> = [
   ["/forum/search", "/thinkpages"],
   ["/forum/new-thread", "/thinkpages"],
   ["/forum/bookmarks", "/thinkpages"],
-  [`${BASE}/thinkpages/feed`, `${BASE}/dashboard`],
-  [`${BASE}/achievements?a=first_steps`, `${BASE}/vault/achievements?a=first_steps`],
-  [`${BASE}/@kaiser/work`, `${BASE}/@kaiser?tab=work`],
 ];
 
 /** Live links, some sharing a legacy link's prefix, that the migration leaves alone. */
@@ -110,9 +113,20 @@ const KEPT = [
   "/id/kaiser",
   "/r/ixnay/nations",
   "/myclub/abc",
-  `${BASE}/thinkpages`,
   "https://ixwiki.com/wiki/Main_Page",
 ];
+
+/** A root-relative example the production basePath can go in front of (not one already under a basePath). */
+const underBase = (href: string): boolean => href.startsWith("/") && !href.startsWith("/projects/");
+
+/** Every example again, as NotificationAPI stores it in production: under the basePath. */
+const ALL_MOVED = [
+  ...MOVED,
+  ...MOVED.filter(([legacy]) => underBase(legacy)).map(
+    ([legacy, current]) => [`${BASE}${legacy}`, `${BASE}${current}`] as const
+  ),
+];
+const ALL_KEPT = [...KEPT, ...KEPT.filter(underBase).map((href) => `${BASE}${href}`)];
 
 describe("rewrite legacy notification links migration", () => {
   it("sorts after the forum readers drop", () => {
@@ -141,16 +155,16 @@ describe("rewrite legacy notification links migration", () => {
     }
   });
 
-  it.each(MOVED)("rewrites %s to %s", (legacy, current) => {
+  it.each(ALL_MOVED)("rewrites %s to %s", (legacy, current) => {
     expect(migrate(legacy)).toBe(current);
   });
 
-  it.each(KEPT)("leaves %s alone", (href) => {
+  it.each(ALL_KEPT)("leaves %s alone", (href) => {
     expect(migrate(href)).toBe(href);
   });
 
   it("changes nothing on a second run", () => {
-    for (const [, current] of MOVED) expect(migrate(current)).toBe(current);
+    for (const [, current] of ALL_MOVED) expect(migrate(current)).toBe(current);
   });
 
   it("has no statement that no example exercises", () => {

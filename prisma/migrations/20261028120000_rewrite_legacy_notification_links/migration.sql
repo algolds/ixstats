@@ -39,8 +39,8 @@ UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?(?:/id)?/@([^/?#]+)/([^/?#]+)/?(?=#|$)', '\1/@\2?tab=\3') WHERE "href" ~ '^(/projects/ixstates)?(?:/id)?/@([^/?#]+)/([^/?#]+)/?(?=#|$)';
 -- /id/@<handle> → /@<handle>.
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/id/@([^/?#]+)/?(?=[?#]|$)', '\1/@\2') WHERE "href" ~ '^(/projects/ixstates)?/id/@([^/?#]+)/?(?=[?#]|$)';
--- /profile[/...] → /settings[/...].
-UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/profile(?=[/?#]|$)', '\1/settings') WHERE "href" ~ '^(/projects/ixstates)?/profile(?=[/?#]|$)';
+-- /profile[/<sub>] → /settings; the sub path goes, as /settings has no sub pages.
+UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/profile(?:/[^?#]*)?(?=[?#]|$)', '\1/settings') WHERE "href" ~ '^(/projects/ixstates)?/profile(?:/[^?#]*)?(?=[?#]|$)';
 -- /achievements → /vault/achievements (?a=<key> kept).
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/achievements/?(?=[?#]|$)', '\1/vault/achievements') WHERE "href" ~ '^(/projects/ixstates)?/achievements/?(?=[?#]|$)';
 -- /vault/exchange → /labs/exchange.
@@ -63,6 +63,10 @@ UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/builder/import/?\?', '\1/builder?import=1&') WHERE "href" ~ '^(/projects/ixstates)?/builder/import/?\?';
 -- /builder/import without a query → /builder?import=1.
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/builder/import/?(?=#|$)', '\1/builder?import=1') WHERE "href" ~ '^(/projects/ixstates)?/builder/import/?(?=#|$)';
+-- /mycountry/builder?section=import with more query → /builder?import=1&<query> (the founding flow reads only import=1).
+UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/mycountry/builder/?\?section=import&', '\1/builder?import=1&') WHERE "href" ~ '^(/projects/ixstates)?/mycountry/builder/?\?section=import&';
+-- /mycountry/builder?section=import without more query → /builder?import=1.
+UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/mycountry/builder/?\?section=import(?=#|$)', '\1/builder?import=1') WHERE "href" ~ '^(/projects/ixstates)?/mycountry/builder/?\?section=import(?=#|$)';
 -- /mycountry/builder → /builder.
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/mycountry/builder/?(?=[?#]|$)', '\1/builder') WHERE "href" ~ '^(/projects/ixstates)?/mycountry/builder/?(?=[?#]|$)';
 -- /countries/<slug>/factbook → /countries/<slug>; the section routes (/factbook/economy, ...) stay.
