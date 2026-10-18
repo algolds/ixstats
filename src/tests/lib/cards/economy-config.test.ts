@@ -84,6 +84,10 @@ describe("card economy config", () => {
       dustHoloMult: 1,
     });
     expect(clamped({ dustFoilMult: 3, dustHoloMult: 2 }).dustHoloMult).toBe(3);
+    expect(clamped({ fusionCopies: 5, dustFoilMult: 2.6, dustHoloMult: 7.7 })).toMatchObject({
+      dustFoilMult: 3,
+      dustHoloMult: 8,
+    });
   });
 
   it("keeps fusion between 2 and 10 copies", () => {
@@ -135,6 +139,82 @@ describe("card economy config", () => {
       listingRefundPct: 50.4,
       saleFeeThreshold: 100.4,
       royaltyPct: 2.4,
+    });
+  });
+
+  it("caps every number against a slipped digit, so no yield, cost, fee or XP passes an Int", () => {
+    const set = (value: number) => {
+      const cfg = { ...CARD_ECONOMY_DEFAULTS };
+      for (const key of Object.keys(cfg) as (keyof typeof cfg)[]) cfg[key] = value;
+      return clampEconomyConfig(cfg);
+    };
+    const dust = 1_000_000;
+    const most = 100_000;
+    expect(set(1e12)).toEqual({
+      finishFoilPct: 0,
+      finishHoloPct: 100,
+      dailyCommonPct: 0,
+      dailyUncommonPct: 0,
+      dailyRarePct: 0,
+      dailyUltraRarePct: 0,
+      dailyEpicPct: 0,
+      dailyLegendaryPct: 100,
+      dustCommon: dust,
+      dustUncommon: dust,
+      dustRare: dust,
+      dustUltraRare: dust,
+      dustEpic: dust,
+      dustLegendary: dust,
+      dustFoilMult: 10,
+      dustHoloMult: 100,
+      dustImportMult: 1,
+      fusionCopies: 10,
+      craftDustMult: 100,
+      listingFee: most,
+      listingFeeFeatured: most,
+      listingRefundPct: 100,
+      listingDays: 60,
+      saleFeeThreshold: 1_000_000,
+      royaltyPct: 50,
+      xpPack: most,
+      xpDaily: most,
+      xpTradePerCard: most,
+      xpAuctionWin: most,
+      xpHoldingTick: most,
+      xpDailyCapPerCopy: most,
+    });
+    expect(set(-1e12)).toEqual({
+      finishFoilPct: 0,
+      finishHoloPct: 0,
+      dailyCommonPct: 100,
+      dailyUncommonPct: 0,
+      dailyRarePct: 0,
+      dailyUltraRarePct: 0,
+      dailyEpicPct: 0,
+      dailyLegendaryPct: 0,
+      dustCommon: 0,
+      dustUncommon: 0,
+      dustRare: 0,
+      dustUltraRare: 0,
+      dustEpic: 0,
+      dustLegendary: 0,
+      dustFoilMult: 1,
+      dustHoloMult: 1,
+      dustImportMult: 0,
+      fusionCopies: 2,
+      craftDustMult: 1,
+      listingFee: 0,
+      listingFeeFeatured: 0,
+      listingRefundPct: 0,
+      listingDays: 1,
+      saleFeeThreshold: 0,
+      royaltyPct: 0,
+      xpPack: 0,
+      xpDaily: 0,
+      xpTradePerCard: 0,
+      xpAuctionWin: 0,
+      xpHoldingTick: 0,
+      xpDailyCapPerCopy: 0,
     });
   });
 
@@ -194,6 +274,17 @@ describe("card economy config", () => {
     );
     expect(odds.COMMON).toBe(63.9);
     expect(Object.values(odds).reduce((sum, pct) => sum + pct, 0)).toBeCloseTo(100, 9);
+  });
+
+  it("keeps the daily odds to the hundredth, so they add up to exactly 100", () => {
+    const total = (pct: Record<string, number>) =>
+      Object.values(pct).reduce((sum, p) => sum + p, 0);
+    const down = dailyRarityOdds(clamped({ dailyLegendaryPct: 0.123 }));
+    expect([down.LEGENDARY, down.COMMON]).toEqual([0.12, 64.98]);
+    expect(total(down)).toBeCloseTo(100, 9);
+    const up = dailyRarityOdds(clamped({ dailyLegendaryPct: 0.126 }));
+    expect([up.LEGENDARY, up.COMMON]).toEqual([0.13, 64.97]);
+    expect(total(up)).toBeCloseTo(100, 9);
   });
 
   it("reads only the economy rows, and again once the minute's cache runs out", async () => {

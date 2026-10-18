@@ -31,12 +31,24 @@ describe("market fees", () => {
     expect(royaltyFromFee(90, 0, 2)).toBe(0);
     expect(royaltyFromFee(1000, 100, 0)).toBe(0);
     expect(royaltyFromFee(1000, -5, 2)).toBe(0);
+    expect(royaltyFromFee(-1000, 0, 2)).toBe(0);
+    expect(royaltyFromFee(-1000, 100, 2)).toBe(0);
   });
 
   it("works the royalty out exactly, rounding a part cent down", () => {
     expect(royaltyFromFee(100, 10, 0.29)).toBe(0.29);
     expect(royaltyFromFee(101, 10, 2)).toBe(2.02);
     expect(royaltyFromFee(333, 33, 0.5)).toBe(1.66);
+  });
+
+  it("applies a rate finer than a hundredth of a percent rounded down, never above the stated rate", () => {
+    // 7.555% of 1,000,000 is 75,550; the fee applies 7.55%.
+    expect(saleFee(1_000_000, { ratePct: 7.555, threshold: 0 })).toBe(75_500);
+    // 33.335% of 1,000 is 333.35; the refund applies 33.33%.
+    expect(listingRefund(1000, 33.335)).toBe(333.3);
+    // 2.005% of 1,000,000 is 20,050; the royalty applies 2%.
+    expect(royaltyFromFee(1_000_000, 100_000, 2.005)).toBe(20_000);
+    expect(saleFee(1_000_000, { ratePct: 7.559999, threshold: 0 })).toBe(75_500);
   });
 
   it("refunds half the listing fee in cents", () => {

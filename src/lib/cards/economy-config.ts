@@ -4,6 +4,7 @@
  * admin Economy tab and read through a 60-second cache. Card value numbers live in `valuation.ts`.
  */
 import type { CardRarity, PrismaClient } from "@prisma/client";
+import { MAX_LISTING_PRICE } from "./market/fees";
 
 export interface CardEconomyConfig {
   /** Finish odds at mint, in percent; the rest is Standard. */
@@ -121,27 +122,60 @@ export const ECONOMY_CONFIG_KEYS = {
 
 const FIELDS = Object.keys(ECONOMY_CONFIG_KEYS) as (keyof CardEconomyConfig)[];
 
-/** Stored as whole numbers. */
-const WHOLE: readonly (keyof CardEconomyConfig)[] = [
-  "dustCommon",
-  "dustUncommon",
-  "dustRare",
-  "dustUltraRare",
-  "dustEpic",
-  "dustLegendary",
-  "dustFoilMult",
-  "dustHoloMult",
-  "fusionCopies",
-  "listingFee",
-  "listingFeeFeatured",
-  "listingDays",
-  "xpPack",
-  "xpDaily",
-  "xpTradePerCard",
-  "xpAuctionWin",
-  "xpHoldingTick",
-  "xpDailyCapPerCopy",
-];
+interface NumberRange {
+  min: number;
+  max: number;
+  /** Whole numbers only: dust, copies, fees in IxC, days and XP. */
+  whole?: boolean;
+}
+
+// Ceilings against a slipped digit. With dust per rarity at most 1,000,000, Holo at most 10 × 10 times Standard (the
+// fusion ceiling squared) and a craft at most 100 times Standard, a break-down or craft is at most 100,000,000 dust,
+// well inside an Int column (CardDustBalance.balance). XP, listing fees and the threshold stay inside theirs too.
+const percent = { min: 0, max: 100 } as const;
+const dust = { min: 0, max: 1_000_000, whole: true } as const;
+const fee = { min: 0, max: 100_000, whole: true } as const;
+const xp = { min: 0, max: 100_000, whole: true } as const;
+
+/**
+ * The numbers whose range depends on others: daily Common takes what the rarer odds leave, and the Foil and Holo
+ * multiples depend on `fusionCopies`.
+ */
+type DerivedField = "dailyCommonPct" | "dustFoilMult" | "dustHoloMult";
+
+/** Every other number's fixed range; `clampEconomyConfig` then applies the ranges that depend on other numbers. */
+const RANGES: Record<Exclude<keyof CardEconomyConfig, DerivedField>, NumberRange> = {
+  finishFoilPct: percent,
+  finishHoloPct: percent,
+  dailyUncommonPct: percent,
+  dailyRarePct: percent,
+  dailyUltraRarePct: percent,
+  dailyEpicPct: percent,
+  dailyLegendaryPct: percent,
+  dustCommon: dust,
+  dustUncommon: dust,
+  dustRare: dust,
+  dustUltraRare: dust,
+  dustEpic: dust,
+  dustLegendary: dust,
+  dustImportMult: { min: 0, max: 1 },
+  fusionCopies: { min: 2, max: 10, whole: true },
+  craftDustMult: { min: 1, max: 100 },
+  listingFee: fee,
+  listingFeeFeatured: fee,
+  listingRefundPct: percent,
+  listingDays: { min: 1, max: 60, whole: true },
+  saleFeeThreshold: { min: 0, max: MAX_LISTING_PRICE },
+  royaltyPct: { min: 0, max: 50 },
+  xpPack: xp,
+  xpDaily: xp,
+  xpTradePerCard: xp,
+  xpAuctionWin: xp,
+  xpHoldingTick: xp,
+  xpDailyCapPerCopy: xp,
+};
+
+const RANGED = Object.keys(RANGES) as (keyof typeof RANGES)[];
 
 /** The daily odds that keep their share first, rarest first; Common takes what they leave. */
 const DAILY_RAREST_FIRST = [
@@ -154,14 +188,17 @@ const DAILY_RAREST_FIRST = [
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-/** A percentage to the hundredth, so the leftover share reads as entered (63.9, not 63.900000000000006). */
+/** A percentage to the hundredth, so the odds add up to exactly 100 (63.9, not 63.900000000000006). */
 const toHundredths = (pct: number) => Math.round(pct * 100) / 100;
 
-/** Each daily odd within what the rarer ones leave of 100%; Common gets the rest (a hand-edited row may not add up). */
+/**
+ * Each daily odd, to the hundredth, within what the rarer ones leave of 100%; Common gets the rest, so the odds always
+ * add up to 100 (a hand-edited row may not).
+ */
 function closeDailyOdds(cfg: CardEconomyConfig): void {
   let taken = 0;
   for (const key of DAILY_RAREST_FIRST) {
-    cfg[key] = Math.min(cfg[key], 100 - taken);
+    cfg[key] = toHundredths(Math.min(cfg[key], 100 - taken));
     taken += cfg[key];
   }
   cfg.dailyCommonPct = toHundredths(100 - taken);
@@ -176,20 +213,20 @@ function closeDailyOdds(cfg: CardEconomyConfig): void {
 export function clampEconomyConfig(raw: CardEconomyConfig): CardEconomyConfig {
   const cfg = { ...raw };
   for (const key of FIELDS) {
-    cfg[key] = Number.isFinite(cfg[key]) ? Math.max(0, cfg[key]) : CARD_ECONOMY_DEFAULTS[key];
+    if (!Number.isFinite(cfg[key])) cfg[key] = CARD_ECONOMY_DEFAULTS[key];
   }
-  for (const key of WHOLE) cfg[key] = Math.round(cfg[key]);
-  cfg.finishHoloPct = Math.min(cfg.finishHoloPct, 100);
+  for (const key of RANGED) {
+    const { min, max, whole } = RANGES[key];
+    cfg[key] = clamp(whole ? Math.round(cfg[key]) : cfg[key], min, max);
+  }
   cfg.finishFoilPct = Math.min(cfg.finishFoilPct, 100 - cfg.finishHoloPct);
   closeDailyOdds(cfg);
-  cfg.fusionCopies = clamp(cfg.fusionCopies, 2, 10);
-  cfg.dustFoilMult = clamp(cfg.dustFoilMult, 1, cfg.fusionCopies);
-  cfg.dustHoloMult = clamp(cfg.dustHoloMult, cfg.dustFoilMult, cfg.fusionCopies * cfg.dustFoilMult);
-  cfg.dustImportMult = Math.min(cfg.dustImportMult, 1);
-  cfg.craftDustMult = Math.max(1, cfg.craftDustMult);
-  cfg.listingRefundPct = Math.min(cfg.listingRefundPct, 100);
-  cfg.listingDays = clamp(cfg.listingDays, 1, 60);
-  cfg.royaltyPct = Math.min(cfg.royaltyPct, 50);
+  cfg.dustFoilMult = clamp(Math.round(cfg.dustFoilMult), 1, cfg.fusionCopies);
+  cfg.dustHoloMult = clamp(
+    Math.round(cfg.dustHoloMult),
+    cfg.dustFoilMult,
+    cfg.fusionCopies * cfg.dustFoilMult
+  );
   return cfg;
 }
 
@@ -198,9 +235,9 @@ type ConfigDb = Pick<PrismaClient, "systemConfig">;
 let cache: { value: CardEconomyConfig; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
-/** A stored value as a number; NaN for a blank or unreadable one, which keeps the default. */
+/** A stored value as a number; NaN for a missing, blank or unreadable one, which the clamp turns into the default. */
 function storedNumber(raw: string | undefined): number {
-  return raw === undefined || raw.trim() === "" ? Number.NaN : Number(raw);
+  return raw?.trim() === "" ? Number.NaN : Number(raw);
 }
 
 /** The merged economy config: defaults overlaid with any SystemConfig rows, then clamped. */
@@ -214,10 +251,7 @@ export async function getEconomyConfig(db: ConfigDb): Promise<CardEconomyConfig>
   });
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
   const merged = { ...CARD_ECONOMY_DEFAULTS };
-  for (const field of FIELDS) {
-    const parsed = storedNumber(byKey.get(ECONOMY_CONFIG_KEYS[field]));
-    if (Number.isFinite(parsed)) merged[field] = parsed;
-  }
+  for (const field of FIELDS) merged[field] = storedNumber(byKey.get(ECONOMY_CONFIG_KEYS[field]));
   const value = clampEconomyConfig(merged);
   cache = { value, expires: now + CACHE_TTL_MS };
   return value;

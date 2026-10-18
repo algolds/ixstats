@@ -50,6 +50,9 @@ describe("dust", () => {
     expect(dustYield(copy({ rarity: "RARE", finish: "HOLO", importDiscounted: true }), share)).toBe(
       513
     );
+    // 0.123456 of 100,000 is 12,345.6; the share applies 0.1234.
+    const fine = clampEconomyConfig({ ...cfg, dustRare: 100_000, dustImportMult: 0.123456 });
+    expect(dustYield(copy({ rarity: "RARE", importDiscounted: true }), fine)).toBe(12_340);
     const none = clampEconomyConfig({ ...cfg, dustImportMult: 0 });
     expect(
       dustYield(copy({ rarity: "LEGENDARY", finish: "HOLO", importDiscounted: true }), none)
@@ -69,6 +72,24 @@ describe("dust", () => {
   it("prices a craft exactly, rounding a part dust up", () => {
     expect(craftQuote("RARE", { ...cfg, craftDustMult: 1.1 }, valuation).dust).toBe(55);
     expect(craftQuote("COMMON", { ...cfg, craftDustMult: 1.1 }, valuation).dust).toBe(6);
+  });
+
+  it("never prices a craft above its stated multiplier", () => {
+    // 1.00006 × 50 is 50.003 and 1.00006 × 100,000 is 100,006; the cost applies 1.0000.
+    expect(craftQuote("RARE", { ...cfg, craftDustMult: 1.00006 }, valuation).dust).toBe(50);
+    const big = { ...cfg, dustRare: 100_000, craftDustMult: 1.00006 };
+    expect(craftQuote("RARE", big, valuation).dust).toBe(100_000);
+  });
+
+  it("charges the rarity floor in whole cents, never below 0, and the default floor for one that is not finite", () => {
+    const quote = (floorCommon: number) =>
+      craftQuote("COMMON", cfg, { ...valuation, floorCommon }).credits;
+    expect(quote(-5)).toBe(0);
+    expect(quote(Number.POSITIVE_INFINITY)).toBe(10);
+    expect(quote(Number.NaN)).toBe(10);
+    expect(quote(10.29)).toBe(10.29);
+    expect(quote(1.13)).toBe(1.13);
+    expect(quote(10.005)).toBe(10);
   });
 
   it("refuses Legendary, bound, Special, Trophy and retired cards", () => {

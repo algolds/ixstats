@@ -36,7 +36,11 @@ const HOSTILE: Partial<CardEconomyConfig>[] = [
   { craftDustMult: 1.1, dustRare: 50 },
   { fusionCopies: 10, dustFoilMult: 10, dustHoloMult: 100, dustImportMult: 0.9 },
   { fusionCopies: 50, dustFoilMult: 50, dustHoloMult: 2500 },
+  { fusionCopies: 10, dustFoilMult: 10, dustHoloMult: 100, dustLegendary: 3e8, craftDustMult: 1e6 },
 ];
+
+/** The largest Int column value (CardDustBalance.balance). */
+const INT_MAX = 2_147_483_647;
 
 /** Every way to mark n inputs imported or not. */
 function importPatterns(n: number): boolean[][] {
@@ -81,14 +85,13 @@ describe.each(
     }
   });
 
-  it("pays and charges whole, non-negative dust for every rarity and finish", () => {
+  it("pays and charges whole, non-negative dust that fits an Int, for every rarity and finish", () => {
+    const fits = (dust: number) => Number.isInteger(dust) && dust >= 0 && dust <= INT_MAX;
     for (const rarity of RARITIES) {
-      const { dust } = craftQuote(rarity, cfg, CARD_VALUATION_DEFAULTS);
-      expect(Number.isInteger(dust) && dust >= 0).toBe(true);
+      expect(fits(craftQuote(rarity, cfg, CARD_VALUATION_DEFAULTS).dust)).toBe(true);
       for (const finish of FINISHES) {
         for (const importDiscounted of [false, true]) {
-          const yielded = dustYield({ rarity, finish, importDiscounted }, cfg);
-          expect(Number.isInteger(yielded) && yielded >= 0).toBe(true);
+          expect(fits(dustYield({ rarity, finish, importDiscounted }, cfg))).toBe(true);
         }
       }
     }

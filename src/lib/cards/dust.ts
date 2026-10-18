@@ -5,7 +5,7 @@
 import type { CardFinish, CardRarity, CardType } from "@prisma/client";
 import type { CardEconomyConfig } from "./economy-config";
 import { nextFinish } from "./finish";
-import { rarityFloor, type CardValuationConfig } from "./valuation";
+import { CARD_VALUATION_DEFAULTS, rarityFloor, type CardValuationConfig } from "./valuation";
 
 export interface DustCopy {
   rarity: CardRarity;
@@ -27,11 +27,13 @@ export function standardDust(rarity: CardRarity, cfg: CardEconomyConfig): number
 }
 
 /**
- * Fractional multipliers apply in ten-thousandths, so whole dust times a multiplier is integer arithmetic and rounds
- * exactly (a float 100 × 0.29 is 28.999..., which would lose a whole dust).
+ * Fractional multipliers apply in whole ten-thousandths, rounded down, so whole dust times a multiplier is integer
+ * arithmetic: a float 100 × 0.29 is 28.999..., which would lose a whole dust, and a finer multiplier never yields or
+ * costs more than stated. The epsilon keeps a ten-thousandth that a float stores just below itself (0.57 × 10,000 is
+ * 5,699.999...) at its own value.
  */
 const MULT_UNIT = 10_000;
-const multUnits = (mult: number) => Math.round(mult * MULT_UNIT);
+const multUnits = (mult: number) => Math.floor(mult * MULT_UNIT + 1e-6);
 
 function finishDustMult(finish: CardFinish, cfg: CardEconomyConfig): number {
   if (finish === "FOIL") return cfg.dustFoilMult;
@@ -60,6 +62,16 @@ export interface CraftQuote {
 }
 
 /**
+ * The rarity floor as a credit charge: a stored floor that is not finite falls back to its default, a negative one
+ * charges nothing, and a part cent rounds down (the epsilon keeps a cent a float stores just below itself).
+ */
+function floorCredits(rarity: CardRarity, valuation: CardValuationConfig): number {
+  const stored = rarityFloor(valuation, rarity);
+  const floor = Number.isFinite(stored) ? stored : rarityFloor(CARD_VALUATION_DEFAULTS, rarity);
+  return Math.floor(Math.max(0, floor) * 100 + 1e-6) / 100;
+}
+
+/**
  * A craft: `craftDustMult` × the Standard yield in the card's realm dust (a part dust rounds up), plus the rarity floor
  * in IxC. A crafted copy is always Standard, so it never breaks down for more than it cost.
  */
@@ -70,7 +82,7 @@ export function craftQuote(
 ): CraftQuote {
   return {
     dust: Math.ceil((standardDust(rarity, cfg) * multUnits(cfg.craftDustMult)) / MULT_UNIT),
-    credits: rarityFloor(valuation, rarity),
+    credits: floorCredits(rarity, valuation),
   };
 }
 
