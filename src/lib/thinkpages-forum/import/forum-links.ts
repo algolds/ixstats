@@ -4,8 +4,9 @@
  * Every target is built from links.ts helpers (or a handle, encoded), so it is always an app path on this site.
  *
  * An old link is a forum.ixwiki.com URL (XenForo's friendly or `index.php?` form) or a path of the retired IxStates
- * bridge (`/forum/...`, on ixwiki.com or root-relative, with or without the app's base path). Only an anchor's href
- * is read and rewritten; text, images and every other attribute stay as written.
+ * bridge (`/forum/...`, on ixwiki.com or root-relative, with or without the app's base path). In post HTML only an
+ * anchor's href is read and rewritten; text, images and every other attribute stay as written. A stored
+ * notification link is rewritten whole (`rewriteNotificationHref`).
  */
 import { mapHtmlRuns } from "~/lib/action-links";
 import { categoryHref, FORUM_HOME, postHref, threadHref } from "../links";
@@ -74,7 +75,8 @@ export const FORUM_LINK_MARKERS = ["forum.ixwiki.com", "/forum/"] as const;
 /** XenForo ids are positive and the native columns are Int: anything past int4 cannot match a row. */
 const MAX_ID = 2_147_483_647;
 
-function forumId(digits: string | undefined): number | null {
+/** A XenForo id from its digits (a link's, or a bridge-era stash title's), or null when it cannot name a row. */
+export function xenforoId(digits: string | undefined): number | null {
   if (!digits || !/^\d{1,10}$/.test(digits)) return null;
   const id = Number(digits);
   return id >= 1 && id <= MAX_ID ? id : null;
@@ -89,7 +91,7 @@ const member = (userId: number): ForumRef => ({ kind: "member", userId });
 /** The refs to try, in order; digits that are not a XenForo id add none. */
 function refsOf(...candidates: Array<[string | undefined, (id: number) => ForumRef]>): ForumRef[] {
   return candidates.flatMap(([digits, make]) => {
-    const id = forumId(digits);
+    const id = xenforoId(digits);
     return id === null ? [] : [make(id)];
   });
 }
@@ -212,6 +214,7 @@ export interface ForumHrefRewrite {
   unwrapped: number;
 }
 
+/** The first of the refs `targetOf` resolves, or null. */
 function firstTarget(
   refs: readonly ForumRef[],
   targetOf: (ref: ForumRef) => string | null
@@ -256,4 +259,33 @@ export function rewriteForumHrefs(
     },
   });
   return out;
+}
+
+/** The app's base path, which a stored notification link may carry; the old one (`/projects/ixstats`) goes. */
+const APP_BASE_PATH = "/projects/ixstates";
+
+export interface NotificationHrefRewrite {
+  href: string;
+  /** Whether it points at its native page (else at the forum home: nothing public is there). */
+  mapped: boolean;
+}
+
+/**
+ * A stored notification link that is an old forum link, pointed at the first of its refs `targetOf` resolves (a
+ * post's link falls back to its thread). With nothing resolved it goes to the forum home ("drop"), or is left as
+ * written ("keep", while threads are still missing). The current base path is kept when the link starts with it;
+ * any other origin or base path goes (the app adds its base path to a bare path). Null when the link is not an old
+ * forum link, or is kept.
+ */
+export function rewriteNotificationHref(
+  href: string,
+  targetOf: (ref: ForumRef) => string | null,
+  unresolved: "drop" | "keep"
+): NotificationHrefRewrite | null {
+  const refs = classifyForumHref(href);
+  if (refs === null) return null;
+  const target = firstTarget(refs, targetOf);
+  if (target === null && unresolved === "keep") return null;
+  const base = href.startsWith(`${APP_BASE_PATH}/`) ? APP_BASE_PATH : "";
+  return { href: `${base}${target ?? FORUM_HOME}`, mapped: target !== null };
 }

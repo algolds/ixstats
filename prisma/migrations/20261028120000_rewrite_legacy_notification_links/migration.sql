@@ -9,7 +9,7 @@
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?(?:/projects/ixstats)+(?:/|(?=[?#])|$)', '\1/') WHERE "href" ~ '^(/projects/ixstates)?(?:/projects/ixstats)+(?:/|(?=[?#])|$)';
 -- The forum bridge's conversations, /forum/conversations[/<id>] → /messages.
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/forum/conversations(?:/[^?#]*)?(?=[?#]|$)', '\1/messages') WHERE "href" ~ '^(/projects/ixstates)?/forum/conversations(?:/[^?#]*)?(?=[?#]|$)';
--- The forum bridge's /forum, /forum/search, /forum/new-thread and /forum/bookmarks (exact) → /thinkpages; the XenForo thread, post, node and member routes stay.
+-- The forum bridge's /forum, /forum/search, /forum/new-thread and /forum/bookmarks (exact) → /thinkpages; the XenForo thread, post, node and member routes stay, for the XenForo import's apply to point at native pages (import-notification-links.ts).
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/forum(?:/search|/new-thread|/bookmarks)?/?(?=[?#]|$)', '\1/thinkpages') WHERE "href" ~ '^(/projects/ixstates)?/forum(?:/search|/new-thread|/bookmarks)?/?(?=[?#]|$)';
 -- /thinkpages/forum → /thinkpages (with ?realm=, the next statement takes it to the realm's Hub).
 UPDATE "Notification" SET "href" = regexp_replace("href", '^(/projects/ixstates)?/thinkpages/forum/?(?=[?#]|$)', '\1/thinkpages') WHERE "href" ~ '^(/projects/ixstates)?/thinkpages/forum/?(?=[?#]|$)';

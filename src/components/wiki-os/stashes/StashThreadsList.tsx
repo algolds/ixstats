@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { threadHref } from "~/lib/thinkpages-forum/links";
-import { LEGACY_THREAD_PREFIX, nativeThreadIdOf } from "~/lib/wiki-os/stash-content-type";
+import { nativeThreadIdOf } from "~/lib/wiki-os/stash-content-type";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
 
 import type { StashedThreadItem } from "./types";
@@ -15,27 +15,24 @@ interface StashThreadsListProps {
 }
 
 /**
- * Where a stashed thread opens and what it is called. A native item (`thinkpages:thread:<id>`) opens the
- * ThinkPages forum thread, built from its id; a legacy `forum:thread:` item keeps its XenForo-bridge path, which
- * the forum redirects resolve once the bridge is gone.
+ * Where a stashed thread opens and what it is called: a native item (`thinkpages:thread:<id>`) opens the ThinkPages
+ * forum thread, built from its id. Anything else has no target and is not listed (the stash listing passes no
+ * bridge-era item: the XenForo import moves those to native items).
  */
-export function stashedThreadTarget(item: StashedThreadItem): { title: string; href: string } {
+export function stashedThreadTarget(
+  item: StashedThreadItem
+): { title: string; href: string } | null {
   const nativeId = nativeThreadIdOf(item.pageTitle);
-  if (nativeId) return { title: item.note ?? "Thread", href: threadHref(nativeId) };
-  const legacyPath = item.pageSlug.startsWith("/forum")
-    ? item.pageSlug
-    : `/forum/thread/${item.pageSlug.replace(/^forum:thread:/, "")}`;
-  return {
-    title: item.note ?? item.pageTitle.replace(LEGACY_THREAD_PREFIX, "Thread #"),
-    href: legacyPath,
-  };
+  return nativeId ? { title: item.note ?? "Thread", href: threadHref(nativeId) } : null;
 }
 
 export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
   return (
     <div className="space-y-3">
       {items.map((item) => {
-        const { title: cleanTitle, href } = stashedThreadTarget(item);
+        const target = stashedThreadTarget(item);
+        if (!target) return null;
+        const { title: cleanTitle, href } = target;
         // Standalone WikiOS serves no forum, so there the link goes to IxStates; inside IxStates it is the plain path.
         const forumUrl = ixstatesLinkHref(href);
 

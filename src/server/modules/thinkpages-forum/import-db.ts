@@ -25,6 +25,8 @@ export type ImportDb = Pick<
   | "forumPost"
   | "postActionLink"
   | "uploadedAsset"
+  | "stashItem"
+  | "notification"
   | "$transaction"
   | "$executeRaw"
   | "$queryRaw"

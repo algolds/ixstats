@@ -137,11 +137,11 @@ model Stash {
 model StashItem {
   id          String            @id @default(cuid())
   stashId     String
-  pageTitle   String            // "commons:" prefix = image, "forum:thread:" prefix = thread
+  pageTitle   String            // "commons:" prefix = image, "thinkpages:thread:" prefix = thread
   pageSlug    String
   articleId   String?           // optional link to WikiArticle
   contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?              // XenForo thread_id of a legacy forum item (null for native threads)
+  contentId   Int?              // XenForo thread id of a bridge-era item: read by the forum import only
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())
@@ -181,7 +181,7 @@ Annotations hang off a `StashItem`. When a highlight is made on a page that is n
 
 ## 5. tRPC API Reference
 
-All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (items `thinkpages:thread:<id>`); legacy `forum:thread:<id>` items from the retired XenForo bridge stay listed and open their old `/forum/thread/<id>` path, which redirects.
+All operations are grouped under `api.wikios.*`: collection and item procedures in `src/server/api/routers/wikios/stash.ts`, annotation procedures in `watchlist-annotations.ts`, and thumbnails in `page-content.ts`. Forum threads use the native forum's `api.thinkpagesForum.stashThread` / `unstashThread` / `isThreadStashed` / `stashedThreads` (items `thinkpages:thread:<id>`). `forum:thread:<xenforoThreadId>` items from the retired XenForo bridge are left out of the listing (their `/forum` path is a 404): the XenForo import (`--apply`) moves each to its native thread, or deletes it when the thread was never imported (`src/server/modules/thinkpages-forum/import-stash-threads.ts`).
 
 | Procedure | Type | Input | Description |
 | :--- | :--- | :--- | :--- |
@@ -190,7 +190,7 @@ All operations are grouped under `api.wikios.*`: collection and item procedures 
 | `createStash` | Mutation | `{ name: string, color: string, icon?: string }` | Creates a new collection (max 25 per user). |
 | `updateStash` | Mutation | `{ id: string, name?, color?, icon? }` | Renames collection or updates color/icon. |
 | `deleteStash` | Mutation | `{ id: string }` | Deletes a non-default collection and cascades to its items. |
-| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string, contentId?: number, … }` | Saves an article, image, or thread (default stash if none given). |
+| `stashPage` | Mutation | `{ pageTitle: string, stashId?: string, contentType?: string }` | Saves an article, image, or thread (default stash if none given). |
 | `unstashPage` | Mutation | `{ pageTitle: string, stashId?: string }` | Removes item from collection. |
 | `isStashed` | Query | `{ pageTitle: string }` | Checks whether active user has stashed this page. |
 | `getAnnotations` | Query | `{ pageTitle: string }` | Fetches clipped quotes and Margin highlights for a page. |

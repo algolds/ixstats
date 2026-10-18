@@ -14,7 +14,8 @@
  * on any Forum node without an explicit node map entry (--accept-unmapped, alias --accept-defaults, accepts those).
  * Apply: archive categories, attachment copy and media assets, then one transaction per thread (resumable and
  * idempotent by XenForo ids), then the passes over every imported post (quote ids, and old forum links pointed at
- * native pages) and the author relink. A thread that fails is rolled back alone and listed, and the run goes on.
+ * native pages), the bridge's stash items and notification links moved to native threads, and the author relink. A
+ * thread that fails is rolled back alone and listed, and the run goes on.
  * Exit codes: 0 done; 1 refused, failed, or some threads failed (their XenForo ids are listed); 2 done, but some
  * media asset registrations failed non-retryably (their attachment ids are listed; pending ones are retried by a
  * rerun and do not change the code).

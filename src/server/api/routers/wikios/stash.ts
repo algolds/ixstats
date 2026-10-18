@@ -106,7 +106,6 @@ export const wikiosStashRouter = createTRPCRouter({
         pageTitle: z.string().min(1).max(500),
         stashId: z.string().max(64).optional(),
         contentType: z.string().max(32).optional(),
-        contentId: z.number().int().positive().max(2_147_483_647).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -141,9 +140,8 @@ export const wikiosStashRouter = createTRPCRouter({
           pageTitle: input.pageTitle,
           pageSlug,
           contentType: resolvedType,
-          contentId: input.contentId,
         },
-        update: input.contentId ? { contentId: input.contentId } : {},
+        update: {},
       });
       return { success: true, stashId };
     }),
@@ -243,7 +241,6 @@ export const wikiosStashRouter = createTRPCRouter({
           pageSlug: i.pageSlug,
           note: i.note,
           contentType: i.contentType || stashContentTypeForTitle(i.pageTitle),
-          contentId: i.contentId,
           annotations: i.annotations.map((a) => ({
             id: a.id,
             selectedText: a.selectedText,

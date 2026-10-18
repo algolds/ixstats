@@ -25,8 +25,7 @@ const SKIP_DIRS = new Set(["tests", "node_modules", "generated"]);
 const PERMALINK_FILES = ["app/thinkpages/post/[postId]/page.tsx", "lib/thinkpages-forum/links.ts"];
 /** Files that may spell `/forum`: they recognize stored old links. */
 const BRIDGE_FILES = [
-  "components/wiki-os/stashes/StashThreadsList.tsx", // legacy forum:thread: stash items open their old path (Q15)
-  "lib/thinkpages-forum/import/forum-links.ts", // the import points old links in imported posts at native pages
+  "lib/thinkpages-forum/import/forum-links.ts", // the import points old post and notification links at native pages
 ];
 /** The bridge's `/forum` path: not `/thinkpages/forum`, `~/components/forum`, `(forum)` or `forum.ixwiki.com`. */
 const BRIDGE_PATH = /(?<![\w./(-])\/forum(?=[/"'`?#]|$)/;

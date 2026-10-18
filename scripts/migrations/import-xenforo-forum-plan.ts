@@ -190,6 +190,8 @@ export function applyTotalLines(totals: ApplyTotals): string[] {
     `  action links remapped: ${totals.linksRemapped} with their posts, ${totals.bridgeLinks.remapped} made by the bridge since (${totals.bridgeLinks.twins} already on the native post)`,
     `  quote ids: ${totals.quoteIds.remapped} pointed at the native post, ${totals.quoteIds.dropped} dropped (the quoted post is not imported)`,
     `  old forum links: ${totals.forumLinks.mapped} pointed at the native page, ${totals.forumLinks.unwrapped} unwrapped to their text (no public page to point at)`,
+    `  stashed old forum threads: ${totals.stashedThreads.moved} moved to the native thread, ${totals.stashedThreads.twins} removed (already stashed natively), ${totals.stashedThreads.deleted} removed (never imported)`,
+    `  old forum notification links: ${totals.notificationLinks.mapped} pointed at the native page, ${totals.notificationLinks.unresolved} sent to the forum home (no public page to point at)`,
     `  authors relinked: ${totals.relinked.threads} threads, ${totals.relinked.posts} posts`,
     `  re-hidden (moderated or deleted on XenForo since imported): ${totals.rehidden.threads} threads, ${totals.rehidden.posts} posts, ${totals.rehidden.assets} media assets made restricted`,
     ...failedThreadLines(totals.failedThreads),

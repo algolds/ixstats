@@ -12,11 +12,19 @@ const native: StashedThreadItem = {
   note: "A native thread",
   savedAt: "2026-10-01T00:00:00.000Z",
 };
-const legacy: StashedThreadItem = {
+const second: StashedThreadItem = {
   id: "i2",
-  pageTitle: "forum:thread:77",
-  pageSlug: "/forum/thread/77",
-  note: "An old thread",
+  pageTitle: "thinkpages:thread:cdef456",
+  pageSlug: "/thinkpages/t/cdef456",
+  note: "Another thread",
+  savedAt: "2026-09-01T00:00:00.000Z",
+};
+/** Not a native thread item: the listing never passes one, and the list has nowhere to open it. */
+const other: StashedThreadItem = {
+  id: "i3",
+  pageTitle: "Main_Page",
+  pageSlug: "Main_Page",
+  note: "Not a thread",
   savedAt: "2026-09-01T00:00:00.000Z",
 };
 
@@ -27,49 +35,46 @@ describe("stashedThreadTarget", () => {
       href: "/thinkpages/t/cabc123",
     });
     // The stored path is never trusted: the id in the title decides.
-    expect(stashedThreadTarget({ ...native, pageSlug: "https://evil.example/x" }).href).toBe(
+    expect(stashedThreadTarget({ ...native, pageSlug: "https://evil.example/x" })?.href).toBe(
       "/thinkpages/t/cabc123"
     );
   });
 
-  it("keeps a legacy item on its bridge path, which the forum redirects resolve", () => {
-    expect(stashedThreadTarget(legacy)).toEqual({
-      title: "An old thread",
-      href: "/forum/thread/77",
-    });
-    expect(stashedThreadTarget({ ...legacy, pageSlug: "forum:thread:77", note: null })).toEqual({
-      title: "Thread #77",
-      href: "/forum/thread/77",
-    });
+  it("names a native item whose note is missing", () => {
+    expect(stashedThreadTarget({ ...native, note: null })?.title).toBe("Thread");
   });
 
-  it("names a native item whose note is missing", () => {
-    expect(stashedThreadTarget({ ...native, note: null }).title).toBe("Thread");
+  it("has no target for an item that is not a native thread", () => {
+    expect(stashedThreadTarget(other)).toBeNull();
   });
 });
 
 describe("StashThreadsList", () => {
-  it("lists native and legacy threads side by side with their own links", () => {
-    render(<StashThreadsList items={[native, legacy]} onUnstash={jest.fn()} />);
+  it("lists native threads with links to them, and leaves out anything else", () => {
+    render(<StashThreadsList items={[native, other, second]} onUnstash={jest.fn()} />);
 
     expect(screen.getByRole("heading", { name: "A native thread" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "An old thread" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Another thread" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Not a thread" })).not.toBeInTheDocument();
     const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual([
       "/thinkpages/t/cabc123",
       "/thinkpages/t/cabc123",
-      "/forum/thread/77",
-      "/forum/thread/77",
+      "/thinkpages/t/cdef456",
+      "/thinkpages/t/cdef456",
     ]);
   });
 
   it("unstashes by the item's own title", () => {
     const onUnstash = jest.fn();
-    render(<StashThreadsList items={[native, legacy]} onUnstash={onUnstash} />);
+    render(<StashThreadsList items={[native, second]} onUnstash={onUnstash} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Remove from stash" })[0]!);
     fireEvent.click(screen.getAllByRole("button", { name: "Remove from stash" })[1]!);
 
-    expect(onUnstash.mock.calls).toEqual([["thinkpages:thread:cabc123"], ["forum:thread:77"]]);
+    expect(onUnstash.mock.calls).toEqual([
+      ["thinkpages:thread:cabc123"],
+      ["thinkpages:thread:cdef456"],
+    ]);
   });
 });

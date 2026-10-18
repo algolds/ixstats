@@ -93,7 +93,10 @@ const MOVED: ReadonlyArray<readonly [string, string]> = [
   ["/forum/bookmarks", "/thinkpages"],
 ];
 
-/** Live links, some sharing a legacy link's prefix, that the migration leaves alone. */
+/**
+ * Links the migration leaves alone: current pages, some sharing a legacy link's prefix, and the bridge's XenForo
+ * thread, post, node and member routes, which the XenForo import points at native pages (import-notification-links.ts).
+ */
 const KEPT = [
   "/forum/thread/12",
   "/forum/post/9",

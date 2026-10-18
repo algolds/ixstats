@@ -236,7 +236,8 @@ The ThinkPages forum follow-ups add two hand-written, idempotent files, in this 
    runs it again before its own push (so do `start-development.sh` and `scripts/refresh-local-db.sh`).
 2. `prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql` rewrites the stored notification
    links (`"Notification"."href"`) that point at legacy URLs whose redirects this release deletes. It runs **after**
-   the new code is live, in step 5e.
+   the new code is live, in step 5e. It leaves the bridge's XenForo thread, post, node and member links
+   (`/forum/thread/<id>` and the rest) to the forum import, which points them at native pages (runbook step 6).
 
 ## 5. Deploy
 
@@ -484,6 +485,13 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
   < prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql
 #   expect: UPDATE 0 on all 34 lines
 ```
+
+The file does not touch the bridge's XenForo links (`/forum/thread/<id>[#post-<id>]`, `/forum/post/<id>`,
+`/forum/<nodeId>`, `/forum/members/<id>`): those need the imported threads, so the forum import's `--apply`
+(`docs/operations/forum-xenforo-import-runbook.md` step 6) points them at the native post or thread, or at
+`/thinkpages`. The same `--apply` moves the bridge's stashed threads (`forum:thread:<id>` items) to native items.
+Until step 6 runs, those notification links are 404s and those stash items are left out of `/stashes`, so run it soon
+after the deploy.
 
 ## 6. Smoke checks (browser)
 

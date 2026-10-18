@@ -106,6 +106,8 @@ describe("the XenForo import applied to the small snapshot", () => {
       bridgeLinks: { remapped: 0, twins: 0 },
       quoteIds: { remapped: 0, dropped: 0 },
       forumLinks: { mapped: 0, unwrapped: 0 },
+      stashedThreads: { moved: 0, twins: 0, deleted: 0 },
+      notificationLinks: { mapped: 0, unresolved: 0 },
       relinked: { threads: 0, posts: 0 },
       rehidden: { threads: 0, posts: 0, assets: 0 },
       failedThreads: [],
@@ -161,6 +163,49 @@ describe("the XenForo import applied to the small snapshot", () => {
     expect(first.totals.forumLinks).toEqual({ mapped: 1, unwrapped: 0 });
     const second = await runImport(store.db as never, snapshot);
     expect(second.totals.forumLinks).toEqual({ mapped: 0, unwrapped: 0 });
+  });
+
+  it("moves bridge-era stash items and notification links to the native threads, once", async () => {
+    const store = importStore({
+      ...seed(),
+      stashItems: [
+        {
+          id: "i-100",
+          stashId: "s-1",
+          pageTitle: "forum:thread:100",
+          pageSlug: "/forum/thread/100",
+          contentType: "forum_thread",
+          contentId: 100,
+        },
+        { id: "i-103", stashId: "s-1", pageTitle: "forum:thread:103", contentType: "forum_thread" },
+        { id: "i-555", stashId: "s-1", pageTitle: "forum:thread:555", contentType: "forum_thread" },
+      ],
+      notifications: [
+        { id: "n-post", href: "/projects/ixstates/forum/thread/100#post-1000" },
+        // Post 1001 was moderated on XenForo, so it is imported hidden: its link falls back to the thread.
+        { id: "n-hidden-post", href: "/forum/thread/100#post-1001" },
+        { id: "n-staff", href: "/forum/thread/103" },
+      ],
+    });
+    const first = await runImport(store.db as never, snapshot);
+    const thread = (xf: number) => store.tables().threads.find((t) => t.xenforoThreadId === xf)!;
+    const post1000 = store.tables().posts.find((p) => p.xenforoPostId === 1000)!;
+    expect(
+      store.tables().stashItems.map((i) => [i.id, i.pageTitle, i.pageSlug, i.contentId])
+    ).toEqual([
+      ["i-100", `thinkpages:thread:${thread(100).id}`, `/thinkpages/t/${thread(100).id}`, null],
+      ["i-103", `thinkpages:thread:${thread(103).id}`, `/thinkpages/t/${thread(103).id}`, null],
+    ]);
+    expect(store.tables().notifications.map((n) => [n.id, n.href])).toEqual([
+      ["n-post", `/projects/ixstates/thinkpages/post/${post1000.id}`],
+      ["n-hidden-post", `/thinkpages/t/${thread(100).id}`],
+      ["n-staff", "/thinkpages"],
+    ]);
+    expect(first.totals.stashedThreads).toEqual({ moved: 2, twins: 0, deleted: 1 });
+    expect(first.totals.notificationLinks).toEqual({ mapped: 2, unresolved: 1 });
+    const second = await runImport(store.db as never, snapshot);
+    expect(second.totals.stashedThreads).toEqual({ moved: 0, twins: 0, deleted: 0 });
+    expect(second.totals.notificationLinks).toEqual({ mapped: 0, unresolved: 0 });
   });
 
   it("keeps an unmapped quote id while a thread failed, and maps it on the rerun", async () => {

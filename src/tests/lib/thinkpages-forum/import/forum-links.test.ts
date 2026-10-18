@@ -5,6 +5,8 @@ import {
   forumRefTarget,
   nodeLandings,
   rewriteForumHrefs,
+  rewriteNotificationHref,
+  xenforoId,
   type ForumLookups,
   type ForumRef,
 } from "~/lib/thinkpages-forum/import/forum-links";
@@ -344,4 +346,66 @@ describe("rewriteForumHrefs", () => {
     });
     expect(stripHtml(once)).toBe(stripHtml(html));
   });
+});
+
+describe("rewriteNotificationHref", () => {
+  /** Thread 100 and post 1001 resolve; post 1002 (hidden) and thread 999 (never imported) do not. */
+  const targetOf = (ref: ForumRef): string | null => {
+    if (ref.kind === "thread" && ref.threadId === 100) return "/thinkpages/t/t100";
+    if (ref.kind === "post" && ref.postId === 1001) return "/thinkpages/post/p1001";
+    return ref.kind === "home" ? "/thinkpages" : null;
+  };
+
+  it.each([
+    ["/forum/thread/100", "/thinkpages/t/t100"],
+    ["/forum/thread/100?page=2", "/thinkpages/t/t100"],
+    ["/projects/ixstates/forum/thread/100#post-1001", "/projects/ixstates/thinkpages/post/p1001"],
+    ["/projects/ixstates/forum/thread/100#post-1002", "/projects/ixstates/thinkpages/t/t100"],
+    ["/projects/ixstats/forum/thread/100", "/thinkpages/t/t100"],
+    ["/projects/ixstats/forum/thread/100#post-1001", "/thinkpages/post/p1001"],
+    ["https://ixwiki.com/projects/ixstates/forum/thread/100", "/thinkpages/t/t100"],
+    ["/projects/ixstates/forum/", "/projects/ixstates/thinkpages"],
+  ])("points %s at %s, keeping only the current base path", (href, expected) => {
+    for (const unresolved of ["drop", "keep"] as const) {
+      expect(rewriteNotificationHref(href, targetOf, unresolved)).toEqual({
+        href: expected,
+        mapped: true,
+      });
+    }
+  });
+
+  it.each([
+    ["/forum/thread/999", "/thinkpages"],
+    ["/projects/ixstates/forum/thread/999#post-1002", "/projects/ixstates/thinkpages"],
+    ["/projects/ixstats/forum/thread/999", "/thinkpages"],
+    ["/forum/whats-new/", "/thinkpages"],
+  ])("sends %s, with nothing public to point at, to the forum home in drop mode", (href, home) => {
+    expect(rewriteNotificationHref(href, targetOf, "drop")).toEqual({ href: home, mapped: false });
+    expect(rewriteNotificationHref(href, targetOf, "keep")).toBeNull();
+  });
+
+  it.each([
+    "/thinkpages/t/t100",
+    "/projects/ixstates/thinkpages",
+    "/messages",
+    "/thinkpages/forum/x",
+    "https://evil.example/forum/thread/100",
+    "",
+  ])("leaves %p alone: it is not an old forum link", (href) => {
+    expect(rewriteNotificationHref(href, targetOf, "drop")).toBeNull();
+  });
+});
+
+describe("xenforoId", () => {
+  it("reads a positive Int4 id from its digits", () => {
+    expect(xenforoId("77")).toBe(77);
+    expect(xenforoId("2147483647")).toBe(2_147_483_647);
+  });
+
+  it.each([undefined, "", "0", "abc", "7a", "-3", "2147483648", "99999999999"])(
+    "is null for %p",
+    (digits) => {
+      expect(xenforoId(digits)).toBeNull();
+    }
+  );
 });

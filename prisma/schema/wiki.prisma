@@ -465,8 +465,8 @@ model StashItem {
   pageSlug    String
   articleId   String?
   article     WikiArticle?      @relation("ArticleStashItems", fields: [articleId], references: [id], onDelete: SetNull)
-  contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?                               // XenForo thread_id or post_id for forum items
+  contentType String            @default("wiki") // StashContentType ("wiki" | "image" | "forum_thread") or a caller's own ("name")
+  contentId   Int?                               // XenForo thread id of a bridge-era item: read by the forum import only, written by nothing
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())

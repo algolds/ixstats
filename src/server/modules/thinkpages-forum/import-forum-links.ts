@@ -135,6 +135,28 @@ export async function resolveForumRef(
   return forumRefTarget(ref, await lookup(db, ref, landings));
 }
 
+/** A pass's targets: `load` looks each distinct ref up once for the whole pass, `targetOf` reads what it found. */
+export interface ForumTargets {
+  load: (refs: readonly ForumRef[]) => Promise<void>;
+  targetOf: (ref: ForumRef) => string | null;
+}
+
+/** The memo a pass resolves old forum links through, over the run's node map; a failed lookup throws. */
+export function forumTargets(db: ForumLinksDb, nodeMap: NodeMapFile): ForumTargets {
+  const landings = nodeLandings(nodeMap);
+  const targets = new Map<string, string | null>();
+  const keyOf = (ref: ForumRef) => JSON.stringify(ref);
+  return {
+    load: async (refs) => {
+      for (const ref of refs) {
+        const key = keyOf(ref);
+        if (!targets.has(key)) targets.set(key, await resolveForumRef(db, ref, landings));
+      }
+    },
+    targetOf: (ref) => targets.get(keyOf(ref)) ?? null,
+  };
+}
+
 const PAGE = 500;
 
 /** Imported posts that may hold an old forum link; Canvas-sourced posts are rendered from their wikitext. */
@@ -161,17 +183,8 @@ export async function rewriteImportedForumLinks(
   db: ForumLinksDb,
   opts: { nodeMap: NodeMapFile; dropUnresolved: boolean }
 ): Promise<ForumLinkRewrite> {
-  const landings = nodeLandings(opts.nodeMap);
+  const targets = forumTargets(db, opts.nodeMap);
   const unresolved = opts.dropUnresolved ? "drop" : "keep";
-  const targets = new Map<string, string | null>();
-  const keyOf = (ref: ForumRef) => JSON.stringify(ref);
-  const resolveAll = async (refs: readonly ForumRef[]) => {
-    for (const ref of refs) {
-      const key = keyOf(ref);
-      if (!targets.has(key)) targets.set(key, await resolveForumRef(db, ref, landings));
-    }
-  };
-  const targetOf = (ref: ForumRef) => targets.get(keyOf(ref)) ?? null;
   const out: ForumLinkRewrite = { mapped: 0, unwrapped: 0 };
   let after = "";
   for (;;) {
@@ -184,8 +197,8 @@ export async function rewriteImportedForumLinks(
     if (!posts.length) return out;
     after = posts[posts.length - 1]!.id;
     for (const post of posts) {
-      await resolveAll(forumHrefRefs(post.contentHtml));
-      const rewrite = rewriteForumHrefs(post.contentHtml, targetOf, unresolved);
+      await targets.load(forumHrefRefs(post.contentHtml));
+      const rewrite = rewriteForumHrefs(post.contentHtml, targets.targetOf, unresolved);
       if (rewrite.html === post.contentHtml) continue;
       await db.forumPost.update({ where: { id: post.id }, data: { contentHtml: rewrite.html } });
       out.mapped += rewrite.mapped;
