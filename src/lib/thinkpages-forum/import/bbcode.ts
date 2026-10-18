@@ -391,9 +391,9 @@ function rewriteForumUrl(url: string, forumBaseUrl: string): string {
   const memberMatch = relative.match(/\/members\/[^/]*?\.?(\d+)\/?$/);
   if (memberMatch) return `/forum/members/${memberMatch[1]}`;
 
-  // Post URLs: /posts/123/ → /forum/thread/... (keep as-is, will need post resolution)
+  // Post URLs: /posts/123/ → /forum/post/123 (a XenForo post id, resolved to the imported post)
   const postMatch = relative.match(/\/posts\/(\d+)\/?$/);
-  if (postMatch) return `/forum/thread/${postMatch[1]}`;
+  if (postMatch) return `/forum/post/${postMatch[1]}`;
 
   return url;
 }

@@ -12,6 +12,21 @@ describe("transformBBCode (moved to the import lib)", () => {
     expect(html("[url]https://forum.ixwiki.com/forums/f.3/[/url]")).toContain('href="/forum/3"');
   });
 
+  it("rewrites a XenForo post link to the post route, not a thread (/posts/<id>/ is a post id)", () => {
+    expect(html("[url=https://forum.ixwiki.com/posts/123/]p[/url]")).toBe(
+      '<a href="/forum/post/123" class="forum-link" rel="noopener">p</a>'
+    );
+    expect(html("[url]https://forum.ixwiki.com/posts/123[/url]")).toContain(
+      'href="/forum/post/123"'
+    );
+    expect(
+      html("[url=http://old.forum/posts/9/]p[/url]", { forumBaseUrl: "http://old.forum" })
+    ).toContain('href="/forum/post/9"');
+    expect(html("[url=https://forum.ixwiki.com/threads/x.123/]t[/url]")).toContain(
+      'href="/forum/thread/123"'
+    );
+  });
+
   it("keeps forum.ixwiki.com links absolute with forumLinks: keep", () => {
     const out = html("[url=https://forum.ixwiki.com/threads/x.12/]t[/url]", { forumLinks: "keep" });
     expect(out).toContain('href="https://forum.ixwiki.com/threads/x.12/"');
