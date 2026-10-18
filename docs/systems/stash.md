@@ -6,7 +6,7 @@
 **Subsystem:** Stash (`STASH_VERSION = 1`)  
 **Primary Action:** `STASH` | **Domain Accent:** Crimson Rose (`#f43f5e` / rose-500, see [stash-style-guide.md](stash-style-guide.md))  
 **Route:** `/stashes` | **Status:** Release Candidate (platform 1.4.0)  
-*(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` lists only `wiki | forum_thread | forum_post`.)*  
+*(Stash is WikiOS's storage, but not WikiOS-only: forum threads (`forum/stash.ts`, `contentType: "forum_thread"`), the Onoma Name Bank (`onoma/namebank.ts`, `contentType` `name` and `dictionary`), lore cards (`lore-cards/wiki.ts`) and the media editor (`commons:`-prefixed titles) also write `StashItem` rows. The `StashItem.contentType` comment in `wiki.prisma` names the `StashContentType` values `wiki | image | forum_thread`, or a caller's own such as `name`.)*  
 *(Note: Prisma models are `Stash` / `StashItem` / `StashAnnotation`; the tables keep the legacy `lore_stash*` names)*  
 
 ---
@@ -140,8 +140,8 @@ model StashItem {
   pageTitle   String            // "commons:" prefix = image, "thinkpages:thread:" prefix = thread
   pageSlug    String
   articleId   String?           // optional link to WikiArticle
-  contentType String            @default("wiki") // "wiki" | "forum_thread" | "forum_post"
-  contentId   Int?              // XenForo thread id of a bridge-era item: read by the forum import only
+  contentType String            @default("wiki") // StashContentType ("wiki" | "image" | "forum_thread") or a caller's own ("name")
+  contentId   Int?              // XenForo thread id of a bridge-era item: the forum import reads it and writes null (as stashThread does); its rollback writes it back
   note        String?
   order       Int               @default(0)
   savedAt     DateTime          @default(now())

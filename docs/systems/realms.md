@@ -45,14 +45,15 @@ one realm.
 
 Each row reports only counted facts:
 
-| Field                 | Source                                                                                                                                                                                    |
-| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nationCount`         | Countries in the realm                                                                                                                                                                    |
-| `openNationCount`     | Countries in the realm with no owner (`ownerUserId: null`)                                                                                                                                |
-| `myNationCount`       | Countries in the realm the signed-in viewer owns (0 when signed out)                                                                                                                      |
-| `maxNationsPerUser`   | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                      |
-| `board`               | Always `{ recentPosts, lastPostAt }`: posts in the realm's forum section in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days and its latest thread activity, both in real time (not IxTime) |
-| `openNationPageCount` | Nation pages of the realm's lore index that no country has taken yet (claimable, `realms.claimNationPage`; the same rule as the realm page's `nationPages`)                               |
+| Field                   | Source                                                                                                                                                                                                                                                                            |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nationCount`           | Countries in the realm                                                                                                                                                                                                                                                            |
+| `openNationCount`       | Countries in the realm with no owner (`ownerUserId: null`)                                                                                                                                                                                                                        |
+| `myNationCount`         | Countries in the realm the signed-in viewer owns (0 when signed out)                                                                                                                                                                                                              |
+| `maxNationsPerUser`     | The realm's nation cap (`Realm.settings`, default 1)                                                                                                                                                                                                                              |
+| `board`                 | Always `{ recentPosts, lastPostAt }`: posts in the realm's forum section in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days and its latest thread activity, both in real time (not IxTime). Public categories only, and the live board's category is left out (`notBoardCategory`) |
+| `boardMessagesThisWeek` | Messages on the realm's live board in the last `FORUM_ACTIVITY_WINDOW_DAYS` (7) days: visible ones, not the placeholders of messages continued into a thread (`PREVIEWED_BOARD_MESSAGES`). Its own figure, never added to `board.recentPosts`                                     |
+| `openNationPageCount`   | Nation pages of the realm's lore index that no country has taken yet (claimable, `realms.claimNationPage`; the same rule as the realm page's `nationPages`)                                                                                                                       |
 
 Each row also carries `bannerUrl`, `tags` and `foundedAt` (`Realm.foundedAt`, else `createdAt`).
 

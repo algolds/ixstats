@@ -16,11 +16,14 @@ work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault co
 
 ### 💬 ThinkPages Forum Refresh, Material Palette and Old URLs Removed (2026-10-15 → 10-17) — ThinkPages v3
 
-- **Material app palette:** every app's tint is a named material, not a colour picked off a wheel. MyCountry is State
-  gold, Wiki is IxWiki navy, Labs is Uranium glass, ThinkPages is Commons leather (`#115536`), Maps is Chart
-  shallows, Realms is Banner purpure, and Vault is Jewel-case velvet. The default (Home, Help, Settings, Admin) is
-  iron-gall ink (`APP_TINTS`, regenerated tint blocks). Labs pages now carry `data-app="labs"`, and about 40
-  hard-coded app colours now read the tint.
+- **Security:** a signed-out `loreCards.searchLoreArchive` call with `source: "stash"` returned every user's stash
+  items, notes and annotations, and `fetchLoreMetadata` read any stash item by id. Both now return only the caller's
+  own items, and a signed-out caller reads none.
+- **Material app palette** (2026-10-15, on `rose-garden` itself, before the forum pull requests): every app's tint
+  is a named material, not a colour picked off a wheel. MyCountry is State gold, Wiki is IxWiki navy, Labs is Uranium
+  glass, ThinkPages is Commons leather (`#115536`), Maps is Chart shallows, Realms is Banner purpure, and Vault is
+  Jewel-case velvet. The default (Home, Help, Settings, Admin) is iron-gall ink (`APP_TINTS`, regenerated tint
+  blocks). Labs pages now carry `data-app="labs"`, and about 40 hard-coded app colours now read the tint.
 - **One author line** (`AuthorLine`) on thread posts, realm board messages, the home feed and the rails.
   - A member shows their flag and role chip.
   - A persona shows a neutral Government, Media or Citizen chip, and never a flag or a nation.
@@ -55,10 +58,16 @@ work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault co
   `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
   deleted.
 - **Old links still inside IxStates are rewritten** to the current pages:
-  - wiki articles' old profile links, when an article renders (renderer version 4)
+  - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
+    of an article is read
   - saved notifications, by a migration
-  - the XenForo import, which rewrites links in imported posts, bridge-era stash items and notifications. A link
-    whose target an anonymous reader may not see becomes plain text.
+  - the XenForo import:
+    - Links in imported posts point at the native page. A link whose target an anonymous reader may not see becomes
+      plain text.
+    - Bridge-era notification links point at the native post or thread, or at `/thinkpages` when nothing public is
+      there.
+    - Bridge-era stash items move to their native thread, whatever its visibility. They are deleted only when the
+      thread was never imported (or when the stash already holds the native thread).
 - **Smaller fixes:**
   - XenForo `/posts/<id>/` links map to the post.
   - "Jump to unread" answers a real redirect.
@@ -66,7 +75,10 @@ work. The version registry (`src/lib/buildVersion.ts`) reads 1.5.0 (the Vault co
   - The unused ThinkTank realm board (`realms.getBoard`) and the old forum link previews are deleted.
 - **Owner deploy steps:**
   - Run `20261027120000_drop_forum_readers` before `db:push:force`; the deploy scripts now do this.
-  - Run `20261028120000_rewrite_legacy_notification_links` once the code is live.
+  - Run `20261028120000_rewrite_legacy_notification_links` once the code is live (deploy step 5e). It must run before
+    the import's `--apply`.
+  - Run the import runbook's steps 2 to 9 soon after the deploy. Until step 6, bridge-era stash items are hidden and
+    `/forum` notification links answer 404.
   - Delete the redirect blocks in the hand-edited production `next.config.js`.
   - After XenForo is decommissioned, forum.ixwiki.com answers a 301 home on `/` and a 410 everywhere else (import
     runbook step 13).

@@ -86,6 +86,8 @@ Versioning communicates:
  │ 5. 💬 THINKPAGES — Real-Time Knowledge Feed & Communications (v3)                              │
  │    Action: DELIBERATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages          │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ • Forum                    │ Sitewide and realm boards, threads and replies, posting as        │
+ │                            │ yourself or a persona, and each realm's live board.               │
  │ • Sovereign Feed (v2)      │ Sovereign micro-posts, `[blurb:slug]` tags, polls, and live wiki  │
  │                            │ card embeds.                                                      │
  │ • Account Manager          │ Multi-account switching, automated Discord webhook syndication,   │
@@ -97,10 +99,11 @@ Versioning communicates:
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
  │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
- │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /forum                   │
+ │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • XenForo Native Bridge    │ Thread synchronization, category boards, and sovereign dispatches.│
- │ • Single Sign-On (SSO)     │ Unified auth via IxnayID session sharing.                         │
+ │ • XenForo bridge (retired) │ Retired in forum phase 4b; there is no /forum route. The import   │
+ │                            │ copies the old forum's threads into the native forum.             │
+ │ • Native forum             │ The community forum lives in ThinkPages at /thinkpages (box 5).   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
  ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
