@@ -4,6 +4,19 @@ import { type Prisma } from "@prisma/client";
 const SERIAL_LOCK_NAMESPACE = 7331;
 
 /**
+ * The one order for card ids whose serial locks a transaction takes together (a pack open, a deck import, a
+ * break-down), by UTF-16 code unit: two transactions that lock overlapping cards in one order never each hold a lock
+ * the other waits on. Code-unit order is the same on every host; `localeCompare` is not, and under ICU it sorts "_"
+ * before digits, so it disagrees on NS ids (`card_ns_1086420_s4` comes first here, second there).
+ */
+export const bySerialLockOrder = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/** The distinct card ids, in the order to take their serial locks in (`bySerialLockOrder`). */
+export function serialLockOrder(cardIds: Iterable<string>): string[] {
+  return [...new Set(cardIds)].sort(bySerialLockOrder);
+}
+
+/**
  * Must be called inside `$transaction`. Takes the per-card serial lock for the life of the transaction (released at
  * commit or rollback). Re-entrant: a transaction may lock, check, then allocate.
  *

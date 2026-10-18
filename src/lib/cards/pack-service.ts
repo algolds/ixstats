@@ -13,6 +13,7 @@ import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
 import { rarityList, undeliverableRarities, type PackOdds } from "./pack-odds";
 import { createPoolDrawer, rollRarity, tierCounts, type RarityOdds } from "./pool-draw";
+import { bySerialLockOrder } from "./serial-number";
 import { grantCardXp } from "./xp-utils";
 
 /**
@@ -371,14 +372,14 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       cards.push(card);
     }
 
-    // mintCopy holds its per-card serial lock until commit, so mint in cardId order: two concurrent opens that
-    // drew the same cards in different orders would otherwise deadlock.
+    // mintCopy holds its per-card serial lock until commit, so mint in serial-lock order (`bySerialLockOrder`, as a
+    // deck import and a break-down lock): two transactions over the same cards in different orders would deadlock.
     const pulled: Array<{ card: (typeof cards)[number]; ownershipId: string }> = new Array(
       cards.length
     );
     const mintOrder = cards
       .map((card, index) => ({ card, index }))
-      .sort((a, b) => a.card.id.localeCompare(b.card.id));
+      .sort((a, b) => bySerialLockOrder(a.card.id, b.card.id));
     for (const { card, index } of mintOrder) {
       const copy = await mintCopy(tx, { cardId: card.id, ownerId: userId, source: "PACK_OPEN" });
       await grantCardXp(

@@ -431,6 +431,27 @@ describe("openPack", () => {
     expect(result).toHaveLength(6);
   });
 
+  it("mints in code-unit order, the order a break-down locks in, where a locale would differ", async () => {
+    // ICU sorts "_" before digits, so localeCompare would put the longer id second; code units put it first
+    const { db } = makeDb(
+      [
+        { id: "card_ns_108642_s4", rarity: "COMMON", cardType: "NS" },
+        { id: "card_ns_1086420_s4", rarity: "COMMON", cardType: "NS" },
+      ],
+      { cardCount: 2 }
+    );
+    // Two rarity rolls, then the shorter id first and the longer second, so the draw order is not the mint order
+    const random = jest.spyOn(Math, "random");
+    for (const roll of [0.1, 0.1, 0.1, 0.9]) random.mockReturnValueOnce(roll);
+    const result = await openPack(db, USER, USER_PACK_ID);
+    expect(jest.mocked(mintCopy).mock.calls.map(([, input]) => input.cardId)).toEqual([
+      "card_ns_1086420_s4",
+      "card_ns_108642_s4",
+    ]);
+    // The pulls stay in draw order
+    expect(result.map((p) => p.card.id)).toEqual(["card_ns_108642_s4", "card_ns_1086420_s4"]);
+  });
+
   it("lets only one of two concurrent opens mint: the second is a CONFLICT", async () => {
     const { db } = makeDb([{ id: "ok", rarity: "COMMON", cardType: "LORE" }]);
     const [first, second] = await Promise.allSettled([

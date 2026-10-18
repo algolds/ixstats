@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { getValuationConfig, type CardValuationConfig } from "~/lib/cards/valuation";
 import { copyRoom, lockedCopyRoomTx } from "~/lib/cards/capacity";
 import { mintCopy } from "~/lib/cards/mint";
+import { bySerialLockOrder } from "~/lib/cards/serial-number";
 import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 import { nsNationKey } from "~/lib/cards/ns-facts";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
@@ -175,9 +176,10 @@ interface DeckImportOutcome {
 }
 
 /**
- * Mints one copy of each claimed card in cardId order, as a pack open does: `mintCopy` holds its per-card serial
- * lock until commit, so two transactions minting the same cards in different orders would deadlock. Returns the
- * copies' ids in the claimed (deck) order, which is the order the player sees them in.
+ * Mints one copy of each claimed card in serial-lock order (`bySerialLockOrder`), as a pack open mints and a
+ * break-down locks: `mintCopy` holds its per-card serial lock until commit, so two transactions over the same cards in
+ * different orders would deadlock. Returns the copies' ids in the claimed (deck) order, which is the order the player
+ * sees them in.
  */
 async function mintClaimed(
   tx: Tx,
@@ -186,7 +188,7 @@ async function mintClaimed(
 ): Promise<string[]> {
   const mintOrder = claimed
     .map((entry, index) => ({ ...entry, index }))
-    .sort((a, b) => a.card.id.localeCompare(b.card.id));
+    .sort((a, b) => bySerialLockOrder(a.card.id, b.card.id));
   const ownershipIds: string[] = new Array<string>(claimed.length);
   for (const { card, key, index } of mintOrder) {
     const copy = await mintCopy(tx, { cardId: card.id, ownerId: userId, source: "NS_DECK_IMPORT" });

@@ -1,6 +1,11 @@
 /** Plan 331: per-card advisory lock taken before max(serial) is read; a removed copy's serial is never reissued. */
 
-import { allocateSerialNumberTx, highestIssuedSerialTx } from "~/lib/cards/serial-number";
+import {
+  allocateSerialNumberTx,
+  bySerialLockOrder,
+  highestIssuedSerialTx,
+  serialLockOrder,
+} from "~/lib/cards/serial-number";
 
 function makeTx() {
   return {
@@ -76,5 +81,28 @@ describe("highestIssuedSerialTx", () => {
     tx.cardTransferEvent.findFirst.mockResolvedValue(null);
     await expect(highestIssuedSerialTx(asTx(tx), "fresh")).resolves.toBe(0);
     expect(tx.$executeRaw).not.toHaveBeenCalled();
+  });
+});
+
+/** NS ids where a locale's order and code-unit order disagree: ICU sorts "_" before digits, code units after. */
+const NS_LONG = "card_ns_1086420_s4";
+const NS_SHORT = "card_ns_108642_s4";
+
+describe("serialLockOrder", () => {
+  it("lists each card once, by UTF-16 code unit, whatever the locale would say", () => {
+    expect(serialLockOrder([NS_SHORT, "card_b", NS_LONG, "Card_z", NS_SHORT, "card_b"])).toEqual([
+      "Card_z",
+      "card_b",
+      NS_LONG,
+      NS_SHORT,
+    ]);
+    expect(serialLockOrder(new Set(["b", "a"]))).toEqual(["a", "b"]);
+    expect(serialLockOrder([])).toEqual([]);
+  });
+
+  it("compares two ids the same way, so a caller can sort its own rows by card", () => {
+    expect(bySerialLockOrder(NS_LONG, NS_SHORT)).toBe(-1);
+    expect(bySerialLockOrder(NS_SHORT, NS_LONG)).toBe(1);
+    expect(bySerialLockOrder(NS_SHORT, NS_SHORT)).toBe(0);
   });
 });
