@@ -122,6 +122,16 @@ export const NOTIFICATION_EVENTS: NotificationEventEntry[] = [
     defaultEnabled: true,
   },
   {
+    eventKey: "cardsNotification",
+    name: "Card notices",
+    description:
+      "Tells a player about their cards: packs bought and opened, and market and trade events",
+    category: "economic",
+    source: "cards",
+    triggerType: "user-action",
+    defaultEnabled: true,
+  },
+  {
     eventKey: "realmsNotification",
     name: "Realm Notices",
     description: "Tells a player their realm nation claim was rejected, and why",

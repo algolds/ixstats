@@ -101,7 +101,7 @@ export function NotificationSettingsPanel({ userId }: NotificationSettingsPanelP
         <SettingsSwitchRow
           id="alert-economic"
           label="Economic events"
-          description="Market listings, auction bids, tax changes and economic reports"
+          description="Cards and packs, market listings, auction bids, tax changes and economic reports"
           icon={TrendingUp}
           glyphClass="bg-amber-500/15 text-amber-500"
           checked={economicAlerts}

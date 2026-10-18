@@ -16,9 +16,10 @@ import {
   PackError,
 } from "~/lib/cards/pack-service";
 import { CardRarity } from "~/lib/cards/enums";
-import { rarityRank } from "~/lib/cards/face/labels";
+import { RARITY_LABEL, rarityRank } from "~/lib/cards/face/labels";
+import { cardCount } from "~/lib/cards/curation-limits";
 import { LedgerError } from "~/lib/vault/vault-ledger";
-import { notificationAPI } from "~/lib/notifications/api";
+import { notifyCard } from "~/lib/cards/card-notify";
 import { globalCache } from "~/lib/cache";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
@@ -91,20 +92,13 @@ export const cardPacksUserRouter = createTRPCRouter({
 
         const userPack = await purchasePack(ctx.db, ctx.user.id, input.packId);
 
-        // Notification: pack purchased (fire-and-forget)
-        try {
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Pack Purchased",
-            message: "Your card pack is ready to open!",
-            type: "info",
-            category: "achievement",
-            priority: "medium",
-            metadata: { packId: input.packId },
-          });
-        } catch (err) {
-          console.warn("[CardPacks] Purchase notification failed for pack", input.packId, err);
-        }
+        await notifyCard(ctx.db, {
+          userId: ctx.user.id,
+          title: "Pack bought",
+          message: "Your card pack is ready to open.",
+          category: "packs",
+          metadata: { packId: input.packId },
+        });
 
         await Promise.all([
           ...(ctx.auth?.userId
@@ -159,26 +153,16 @@ export const cardPacksUserRouter = createTRPCRouter({
         const results = await openPack(ctx.db, ctx.user.id, input.userPackId);
         queueAchievementCheck(ctx.user.id);
 
-        // Notification: cards revealed (fire-and-forget)
-        try {
-          const bestRarity = bestPulledRarity(results.map((r) => r.card));
-          await notificationAPI.create({
-            userId: ctx.user.id,
-            title: "Cards Revealed!",
-            message: `${results.length} cards obtained! Best: ${bestRarity.replace("_", " ")}`,
-            type: "info",
-            category: "achievement",
-            // Epic and up, in schema order (Epic ranks above Ultra Rare).
-            priority: rarityRank(bestRarity) >= rarityRank(CardRarity.EPIC) ? "high" : "medium",
-            metadata: { cardCount: results.length, bestRarity },
-          });
-        } catch (err) {
-          console.warn(
-            "[CardPacks] Reveal notification failed for user pack",
-            input.userPackId,
-            err
-          );
-        }
+        const bestRarity = bestPulledRarity(results.map((r) => r.card));
+        await notifyCard(ctx.db, {
+          userId: ctx.user.id,
+          title: "Cards revealed",
+          message: `${cardCount(results.length)}. Best: ${RARITY_LABEL[bestRarity]}.`,
+          category: "packs",
+          // Epic and up, in schema order (Epic ranks above Ultra Rare).
+          priority: rarityRank(bestRarity) >= rarityRank(CardRarity.EPIC) ? "high" : "medium",
+          metadata: { cardCount: results.length, bestRarity },
+        });
 
         await globalCache.delete(`user_vault_stats:${ctx.user.id}`);
 
