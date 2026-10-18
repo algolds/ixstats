@@ -2,6 +2,8 @@
 import type { Prisma } from "@prisma/client";
 
 export const INSCRIPTION_MAX = 60;
+/** Open reports the admin queue shows at a time, oldest first. */
+export const INSCRIPTION_QUEUE_SIZE = 100;
 
 /**
  * What a whole copy row a player reads leaves out: who signed it and the name frozen with it. Only the card sheet names a

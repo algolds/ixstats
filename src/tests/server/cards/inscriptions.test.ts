@@ -194,6 +194,7 @@ describe("listInscriptionReports", () => {
     createdAt: NOW,
     ownership: {
       cardId: "card_1",
+      serialNumber: 12,
       inscribedById: "u_sig",
       inscribedName: "@sig",
       cards: { title: "Elm" },
@@ -234,6 +235,7 @@ describe("listInscriptionReports", () => {
         ownership: {
           select: {
             cardId: true,
+            serialNumber: true,
             inscribedById: true,
             inscribedName: true,
             cards: { select: { title: true } },
@@ -250,6 +252,7 @@ describe("listInscriptionReports", () => {
         ownershipId: "own_r1",
         cardId: "card_1",
         cardTitle: "Elm",
+        serialNumber: 12,
         text: "gg",
         signerName: "@sig",
         reporterName: "@rep",

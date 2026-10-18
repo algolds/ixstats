@@ -1,6 +1,6 @@
-/** The player cards sheet: a player's copies, packs, auctions and trades, and the admin tools on them. */
+/** The player cards sheet: a player's copies, packs, auctions, listings and trades, and the admin tools on them. */
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -15,6 +15,7 @@ jest.mock("~/trpc/react", () => ({
           revoke: { useMutation: jest.fn() },
           awardPack: { useMutation: jest.fn() },
           cancelAuction: { useMutation: jest.fn() },
+          cancelListing: { useMutation: jest.fn() },
           voidTrade: { useMutation: jest.fn() },
         },
       },
@@ -34,6 +35,7 @@ import { PlayerCardsSheet } from "~/app/admin/vault/PlayerCardsSheet";
 type Inventory = RouterOutputs["cards"]["admin"]["tools"]["playerCards"];
 type Copy = Inventory["copies"][number];
 type Auction = Inventory["auctions"][number];
+type Listing = Inventory["listings"][number];
 
 const tools = api.cards.admin.tools;
 const mutations = {
@@ -41,6 +43,7 @@ const mutations = {
   revoke: jest.fn(),
   awardPack: jest.fn(),
   cancelAuction: jest.fn(),
+  cancelListing: jest.fn(),
   voidTrade: jest.fn(),
 };
 
@@ -67,7 +70,16 @@ const auction = (over: Partial<Auction> = {}): Auction => ({
   ...over,
 });
 
-function setup(inventory: Partial<Inventory> = {}) {
+const listing = (over: Partial<Listing> = {}): Listing => ({
+  id: "lst_1",
+  title: "Elm #4",
+  price: 250,
+  isFeatured: false,
+  expiresAt: new Date(0),
+  ...over,
+});
+
+function setup(inventory: Partial<Inventory> = {}, pending?: keyof typeof mutations) {
   jest.mocked(api.useUtils).mockReturnValue({
     cards: { admin: { tools: { playerCards: { invalidate: jest.fn() } } } },
   } as never);
@@ -80,6 +92,28 @@ function setup(inventory: Partial<Inventory> = {}) {
       { id: "pack_2", name: "Jubilee", cardCount: 3, isActive: false },
     ],
   } as never);
+  serveInventory(inventory);
+  // Each mutation succeeds at once, as the server would, so its dialog closes; a pending one is still on its way
+  for (const [name, mutate] of Object.entries(mutations)) {
+    jest.mocked(tools[name as keyof typeof mutations].useMutation).mockImplementation(((options: {
+      onSuccess: (data: { serialNumber: number }) => void;
+    }) => ({
+      mutate: (input: object) => {
+        mutate(input);
+        if (name !== pending) options.onSuccess({ serialNumber: 7 });
+      },
+      isPending: name === pending,
+    })) as never);
+  }
+  return render(sheet());
+}
+
+const sheet = () => (
+  <PlayerCardsSheet player={{ id: "user_1", displayName: "Elmland" }} onOpenChange={jest.fn()} />
+);
+
+/** What the inventory query returns, as after a refresh. */
+function serveInventory(inventory: Partial<Inventory>) {
   jest.mocked(tools.playerCards.useQuery).mockReturnValue({
     data: {
       copyCount: 1,
@@ -87,25 +121,11 @@ function setup(inventory: Partial<Inventory> = {}) {
       copies: [copy()],
       packs: [],
       auctions: [],
+      listings: [],
       trades: [],
       ...inventory,
     },
   } as never);
-  // Each mutation succeeds at once, as the server would, so its dialog closes
-  for (const [name, mutate] of Object.entries(mutations)) {
-    jest.mocked(tools[name as keyof typeof mutations].useMutation).mockImplementation(((options: {
-      onSuccess: (data: { serialNumber: number }) => void;
-    }) => ({
-      mutate: (input: object) => {
-        mutate(input);
-        options.onSuccess({ serialNumber: 7 });
-      },
-      isPending: false,
-    })) as never);
-  }
-  render(
-    <PlayerCardsSheet player={{ id: "user_1", displayName: "Elmland" }} onOpenChange={jest.fn()} />
-  );
 }
 
 const openTab = (name: RegExp) =>
@@ -207,7 +227,7 @@ it("cancels a live auction and voids a pending trade, each with a reason", () =>
       },
     ],
   });
-  openTab(/Auctions and trades/);
+  openTab(/Market and trades/);
   expect(screen.getByText(/^Selling · 2 bids · 120 IxC · ends/)).toBeInTheDocument();
   expect(screen.getByText(/^1 card and 0 IxC for 2 cards and 0 IxC · expires/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Cancel auction of Elm #3" }));
@@ -227,12 +247,91 @@ it("cancels a live auction and voids a pending trade, each with a reason", () =>
 
 it("tells the admin only the seller hears of a cancel when no bid is held", () => {
   setup({ auctions: [auction({ hasBid: false, bidCount: 0, currentBid: 50 })] });
-  openTab(/Auctions and trades/);
+  openTab(/Market and trades/);
   fireEvent.click(screen.getByRole("button", { name: "Cancel auction of Elm #3" }));
   expect(
     screen.getByText(
-      "The card goes back to the seller with half the listing fee. The seller is told why."
+      "The card goes back to the seller with their listing fee refund. The seller is told why."
     )
   ).toBeInTheDocument();
   expect(screen.queryByText(/Both players/)).not.toBeInTheDocument();
+});
+
+it("lists a player's live listings and cancels one with a reason", () => {
+  const expires = new Date(0).toLocaleDateString();
+  setup({ listings: [listing(), listing({ id: "lst_2", title: "Oak #1", isFeatured: true })] });
+  expect(screen.getByRole("tab", { name: /^Market and trades\b.*, 2 live$/ })).toBeInTheDocument();
+  openTab(/Market and trades/);
+  expect(screen.getByText("Live listings")).toBeInTheDocument();
+  expect(screen.getByText(`250 IxC · expires ${expires}`)).toBeInTheDocument();
+  expect(screen.getByText(`Featured · 250 IxC · expires ${expires}`)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel listing of Oak #1" }));
+  const dialog = screen.getByRole("dialog", { name: "Cancel the listing of Oak #1" });
+  expect(dialog).toHaveTextContent(
+    "The card goes back to the seller with their listing fee refund. The seller is told why."
+  );
+  confirmWithReason("Cancel the listing of Oak #1", "Wrong price", "Cancel listing");
+  expect(mutations.cancelListing).toHaveBeenCalledWith({
+    listingId: "lst_2",
+    reason: "Wrong price",
+  });
+  expect(mutations.cancelAuction).not.toHaveBeenCalled();
+});
+
+it("keeps the cancel off while a listing cancel is on its way", () => {
+  setup({ listings: [listing()] }, "cancelListing");
+  openTab(/Market and trades/);
+  fireEvent.click(screen.getByRole("button", { name: "Cancel listing of Elm #4" }));
+  const dialog = screen.getByRole("dialog", { name: "Cancel the listing of Elm #4" });
+  fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Wrong price" } });
+  expect(within(dialog).getByRole("button", { name: "Cancel listing" })).toBeDisabled();
+});
+
+it("counts live auctions, listings and pending trades on the market tab", () => {
+  setup({
+    auctions: [auction()],
+    listings: [listing()],
+    trades: [
+      {
+        id: "tr_1",
+        initiating: false,
+        copiesOffered: 1,
+        copiesAsked: 1,
+        creditsOffered: 0,
+        creditsAsked: 0,
+        expiresAt: new Date(0),
+      },
+    ],
+  });
+  expect(screen.getByRole("tab", { name: /^Market and trades\b.*, 3 live$/ })).toBeInTheDocument();
+});
+
+it("says when a player has nothing live on the market", () => {
+  setup();
+  expect(screen.getByRole("tab", { name: "Market and trades" })).toBeInTheDocument();
+  openTab(/Market and trades/);
+  expect(screen.getByText("No live auctions, listings or pending trades")).toBeInTheDocument();
+});
+
+it("moves focus to the next row's cancel once a cancelled listing leaves, and to the list after the last", async () => {
+  const oak = listing({ id: "lst_2", title: "Oak #1" });
+  const view = setup({ listings: [listing(), oak] });
+  openTab(/Market and trades/);
+  const cancelElm = screen.getByRole("button", { name: "Cancel listing of Elm #4" });
+  cancelElm.focus();
+  fireEvent.click(cancelElm);
+  confirmWithReason("Cancel the listing of Elm #4", "Wrong price", "Cancel listing");
+  await waitFor(() => expect(cancelElm).toHaveFocus());
+  serveInventory({ listings: [oak] });
+  view.rerender(sheet());
+  const cancelOak = screen.getByRole("button", { name: "Cancel listing of Oak #1" });
+  expect(cancelOak).toHaveFocus();
+
+  fireEvent.click(cancelOak);
+  confirmWithReason("Cancel the listing of Oak #1", "Wrong price", "Cancel listing");
+  await waitFor(() => expect(cancelOak).toHaveFocus());
+  serveInventory({});
+  view.rerender(sheet());
+  const empty = screen.getByText("No live auctions, listings or pending trades");
+  expect(empty.closest("[tabindex='-1']")).toHaveFocus();
 });

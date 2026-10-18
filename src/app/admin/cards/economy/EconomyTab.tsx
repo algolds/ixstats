@@ -1,5 +1,8 @@
 "use client";
-/** Economy: card values, market and capacity, bonuses and Loreward payouts, rarity tables, daily imports. */
+/**
+ * Economy: card values, market and capacity, the card economy (finishes, the daily card, dust, crafting, listings and
+ * card XP), bonuses and Loreward payouts, rarity tables, daily imports.
+ */
 import { Coins, Gift, Shop } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -14,6 +17,7 @@ import {
   MARKET_FIELDS,
   floorsProblem,
 } from "~/lib/cards/economy-fields";
+import { CardEconomyCards } from "./CardEconomyCards";
 import { DailyImportsCard } from "./DailyImportsCard";
 import { LorewardPayoutsCard } from "./LorewardPayoutsCard";
 import { NumberConfigCard } from "./NumberConfigCard";
@@ -72,7 +76,7 @@ export function EconomyTab() {
         id="values"
         title="Card values"
         icon={<Coins />}
-        description="A card is worth its rarity floor times its type multiplier, and a NationStates card at least its bank value times its multiplier. Saving revalues every card."
+        description="A copy's value is the highest of floor × type × finish, its finish's market median and, for NationStates cards before their first sale here, the bank value × premium; then the level bonus. Saving revalues every card."
         fields={CARD_VALUE_FIELDS}
         initial={data.values}
         saveLabel="Save card values"
@@ -99,6 +103,7 @@ export function EconomyTab() {
         pending={saveMarket.isPending}
         onSave={(changed) => saveMarket.mutate(changed)}
       />
+      <CardEconomyCards initial={data.economy} />
       <NumberConfigCard
         id="bonuses"
         title="Bonuses (IxC)"

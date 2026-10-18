@@ -6,6 +6,7 @@ import {
   dailyRarityOdds,
   ECONOMY_CONFIG_KEYS,
   getEconomyConfig,
+  readEconomyConfig,
   setEconomyConfig,
 } from "~/lib/cards/economy-config";
 
@@ -306,6 +307,20 @@ describe("card economy config", () => {
       where: { key: { startsWith: "card_economy_" } },
       select: { key: true, value: true },
     });
+  });
+
+  it("reads the stored rows past the cache, clamped, for a check inside a save", async () => {
+    const findMany = jest
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([{ key: "card_economy_finish_foil_pct", value: "99" }]);
+    const db = { systemConfig: { findMany } } as never;
+    expect((await getEconomyConfig(db)).finishFoilPct).toBe(8);
+    const stored = await readEconomyConfig(db);
+    expect(findMany).toHaveBeenCalledTimes(2);
+    expect(stored.finishFoilPct).toBe(98);
+    expect((await getEconomyConfig(db)).finishFoilPct).toBe(8);
+    expect(findMany).toHaveBeenCalledTimes(2);
   });
 
   it("stores one number and clears the cache only for the app client", async () => {

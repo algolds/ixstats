@@ -6,14 +6,13 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { sanitizeInscription } from "~/lib/cards/inscription";
+import { INSCRIPTION_QUEUE_SIZE, sanitizeInscription } from "~/lib/cards/inscription";
 import { isMissingRecord, isUniqueViolation } from "~/lib/prisma-error";
 import type { CardAdminActor } from "~/server/shared/admin-actor";
 import { recordCardAudit } from "./cards.audit";
 
 const REASON_MIN = 3;
 const REASON_MAX = 500;
-const QUEUE_SIZE = 100;
 /** Open reports one player may have waiting (as for takedown requests). */
 const WAITING_CAP = 5;
 const NO_INSCRIPTION = "This copy has no inscription.";
@@ -109,6 +108,8 @@ export interface InscriptionReportRow {
   ownershipId: string;
   cardId: string;
   cardTitle: string;
+  /** The copy's serial, so reports on two copies of one card read apart. */
+  serialNumber: number;
   /** The inscription as it read when reported. */
   text: string;
   /** The name frozen at signing (an older signature's: the signer's name now); null reads "a player". */
@@ -130,7 +131,7 @@ export async function listInscriptionReports(
   const reports = await db.cardInscriptionReport.findMany({
     where: { status: "open" },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    take: QUEUE_SIZE,
+    take: INSCRIPTION_QUEUE_SIZE,
     select: {
       id: true,
       ownershipId: true,
@@ -141,6 +142,7 @@ export async function listInscriptionReports(
       ownership: {
         select: {
           cardId: true,
+          serialNumber: true,
           inscribedById: true,
           inscribedName: true,
           cards: { select: { title: true } },
@@ -159,6 +161,7 @@ export async function listInscriptionReports(
     ownershipId: report.ownershipId,
     cardId: ownership.cardId,
     cardTitle: ownership.cards.title,
+    serialNumber: ownership.serialNumber,
     text: report.text,
     signerName: ownership.inscribedName ?? nameOf(ownership.inscribedById),
     reporterName: nameOf(reporterId),

@@ -1,5 +1,5 @@
 "use client";
-/** One player's cards, packs, auctions and trades, with the admin tools on them. */
+/** One player's cards, packs, auctions, listings and trades, with the admin tools on them. */
 import { useState } from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -45,7 +45,14 @@ function SectionPanel({
 }) {
   if (section === "packs") return <PacksSection userId={userId} packs={data.packs} />;
   if (section === "market") {
-    return <MarketSection userId={userId} auctions={data.auctions} trades={data.trades} />;
+    return (
+      <MarketSection
+        userId={userId}
+        auctions={data.auctions}
+        listings={data.listings}
+        trades={data.trades}
+      />
+    );
   }
   return <CopiesSection userId={userId} copies={data.copies} copyCount={data.copyCount} />;
 }
@@ -63,7 +70,7 @@ export function PlayerCardsSheet({
     { enabled: player !== null }
   );
   const data = inventory.data;
-  const live = data ? data.auctions.length + data.trades.length : 0;
+  const live = data ? data.auctions.length + data.listings.length + data.trades.length : 0;
 
   return (
     <Sheet open={player !== null} onOpenChange={onOpenChange}>
@@ -89,7 +96,7 @@ export function PlayerCardsSheet({
               },
               {
                 value: "market",
-                label: "Auctions and trades",
+                label: "Market and trades",
                 badge: live || undefined,
                 badgeLabel: `${live} live`,
               },

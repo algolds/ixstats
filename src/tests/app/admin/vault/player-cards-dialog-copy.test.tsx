@@ -13,6 +13,7 @@ jest.mock("~/trpc/react", () => ({
           grant: { useMutation: jest.fn() },
           revoke: { useMutation: jest.fn() },
           cancelAuction: { useMutation: jest.fn() },
+          cancelListing: { useMutation: jest.fn() },
           voidTrade: { useMutation: jest.fn() },
         },
       },
@@ -79,7 +80,13 @@ beforeEach(() => {
   jest.mocked(api.cards.admin.overview.findCards.useQuery).mockReturnValue({ data: [] } as never);
   // Each mutation succeeds at once, so the dialog closes as it would after the server answers
   const tools = api.cards.admin.tools;
-  for (const hook of [tools.grant, tools.revoke, tools.cancelAuction, tools.voidTrade]) {
+  for (const hook of [
+    tools.grant,
+    tools.revoke,
+    tools.cancelAuction,
+    tools.cancelListing,
+    tools.voidTrade,
+  ]) {
     jest.mocked(hook.useMutation).mockImplementation(((options: {
       onSuccess: (data: { serialNumber: number }) => void;
     }) => ({
@@ -104,11 +111,30 @@ it("keeps the revoke copy while the dialog closes after a revoke", () => {
 });
 
 it("keeps the void copy while the dialog closes after a trade void", () => {
-  render(<MarketSection userId="user_1" auctions={[]} trades={[trade]} />);
+  render(<MarketSection userId="user_1" auctions={[]} listings={[]} trades={[trade]} />);
   fireEvent.click(screen.getByRole("button", { name: "Void trade offered by this player" }));
   fireEvent.click(within(dialog()).getByRole("button", { name: "Void trade" }));
 
   expect(dialog()).toHaveAttribute("data-open", "false");
   expect(within(dialog()).getByRole("heading")).toHaveTextContent("Void this trade");
   expect(dialog()).not.toHaveTextContent(/auction/);
+});
+
+it("keeps the listing copy while the dialog closes after a listing cancel", () => {
+  const listing: Inventory["listings"][number] = {
+    id: "lst_1",
+    title: "Elm #4",
+    price: 250,
+    isFeatured: false,
+    expiresAt: new Date(0),
+  };
+  render(<MarketSection userId="user_1" auctions={[]} listings={[listing]} trades={[trade]} />);
+  fireEvent.click(screen.getByRole("button", { name: "Cancel listing of Elm #4" }));
+  fireEvent.click(within(dialog()).getByRole("button", { name: "Cancel listing" }));
+
+  expect(dialog()).toHaveAttribute("data-open", "false");
+  expect(within(dialog()).getByRole("heading")).toHaveTextContent("Cancel the listing of Elm #4");
+  expect(dialog()).toHaveTextContent(/listing fee refund/);
+  expect(dialog()).toHaveAttribute("data-destructive", "true");
+  expect(dialog()).not.toHaveTextContent(/trade|auction/i);
 });
