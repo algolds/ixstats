@@ -10,15 +10,29 @@ interface FindManyArgs {
   where: { key: { in?: string[]; startsWith?: string } };
 }
 
-function makeDb(lastDay: string | null, economy: Array<{ key: string; value: string }> = []) {
+/**
+ * A database whose stored tick day is `lastDay`. The tick's statement reports `outcome`, and claiming the day stores
+ * it, as Postgres would.
+ */
+function makeDb(
+  lastDay: string | null,
+  economy: Array<{ key: string; value: string }> = [],
+  outcome: { claimed: boolean; copies: number } = { claimed: true, copies: 42 }
+) {
+  let stored = lastDay;
   return {
     systemConfig: {
       findMany: jest.fn().mockImplementation(async ({ where }: FindManyArgs) => {
-        if (where.key.in) return lastDay ? [{ key: DAY_KEY, value: lastDay }] : [];
+        if (where.key.in) return stored ? [{ key: DAY_KEY, value: stored }] : [];
         return economy;
       }),
     },
-    $executeRaw: jest.fn().mockResolvedValue(42),
+    $queryRaw: jest
+      .fn()
+      .mockImplementation(async (_strings: TemplateStringsArray, ...values: string[]) => {
+        if (outcome.claimed) stored = values[1] ?? null;
+        return [outcome];
+      }),
   };
 }
 
@@ -26,7 +40,7 @@ const flat = (sql: string) => sql.replace(/\s+/g, " ").trim();
 
 /** The one statement the tick ran, fragments and all, as Postgres receives it. */
 function statementOf(db: ReturnType<typeof makeDb>): Prisma.Sql {
-  const [strings, ...values] = db.$executeRaw.mock.calls[0] as Parameters<typeof Prisma.sql>;
+  const [strings, ...values] = db.$queryRaw.mock.calls[0] as Parameters<typeof Prisma.sql>;
   return Prisma.sql(strings, ...values);
 }
 
@@ -40,9 +54,10 @@ describe("runHoldingXpTick", () => {
       copies: 42,
       skipped: false,
     });
-    expect(db.$executeRaw).toHaveBeenCalledTimes(1);
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const { sql, values } = statementOf(db);
-    // The day is claimed only when it is later than the last one stored, in the statement that ticks the copies
+    // The day is claimed only when it is later than the last one stored, in the statement that ticks the copies,
+    // and the statement says whether it claimed the day as well as how many copies it ticked
     expect(flat(sql)).toContain(
       flat(`WITH claim AS (
         INSERT INTO "SystemConfig" ("id", "key", "value", "description", "updatedAt")
@@ -50,10 +65,12 @@ describe("runHoldingXpTick", () => {
         ON CONFLICT ("key") DO UPDATE SET "value" = EXCLUDED."value", "updatedAt" = now()
           WHERE "SystemConfig"."value" < EXCLUDED."value"
         RETURNING 1
-      )
-      UPDATE "CardOwnership" o SET`)
+      ), ticked AS (
+        UPDATE "CardOwnership" o SET`)
     );
-    expect(sql).toContain("WHERE EXISTS (SELECT 1 FROM claim)");
+    expect(flat(sql)).toMatch(
+      /RETURNING 1 \) SELECT EXISTS \(SELECT 1 FROM claim\) AS claimed, \(SELECT count\(\*\) FROM ticked\)::int AS copies$/
+    );
     expect(sql).not.toContain("card_experience_events");
     expect(values.slice(0, 3)).toEqual([DAY_KEY, "2026-11-02", expect.any(String)]);
   });
@@ -79,7 +96,8 @@ describe("runHoldingXpTick", () => {
       WHERE EXISTS (SELECT 1 FROM claim)
         AND c."id" = o."cardId" AND NOT c."isRetired"
         AND o."acquiredAt" <= ?
-        AND ${grant} > 0`)
+        AND ${grant} > 0
+      RETURNING 1`)
     );
     const day = "2026-11-02";
     const tick = [7, 60, day];
@@ -103,12 +121,33 @@ describe("runHoldingXpTick", () => {
       copies: 0,
       skipped: true,
     });
-    expect(db.$executeRaw).not.toHaveBeenCalled();
+    expect(db.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it("skips every later run the same day once one has ticked it, reading only the stored day", async () => {
+    const db = makeDb("2026-11-01");
+    expect(await runHoldingXpTick(db as never, NOW)).toMatchObject({ copies: 42, skipped: false });
+    const later = new Date("2026-11-02T04:30:00Z");
+    expect(await runHoldingXpTick(db as never, later)).toEqual({
+      day: "2026-11-02",
+      copies: 0,
+      skipped: true,
+    });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports a run that lost the day to an overlapping run as skipped", async () => {
+    const db = makeDb("2026-11-01", [], { claimed: false, copies: 0 });
+    expect(await runHoldingXpTick(db as never, NOW)).toEqual({
+      day: "2026-11-02",
+      copies: 0,
+      skipped: true,
+    });
   });
 
   it("never ticks a day before the last one it ticked", async () => {
     const db = makeDb("2026-11-03");
     expect(await runHoldingXpTick(db as never, NOW)).toMatchObject({ skipped: true, copies: 0 });
-    expect(db.$executeRaw).not.toHaveBeenCalled();
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 });

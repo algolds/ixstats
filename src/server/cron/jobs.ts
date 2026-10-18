@@ -68,9 +68,10 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     load: async () => (await import("~/lib/lorewards/card-value-cron")).updateCardValues,
   },
   {
-    // Once per UTC day: the holding XP tick for every copy held a day or more (no event rows).
+    // The holding XP tick for every copy held a day or more (no event rows), once per UTC day at 03:30. The later
+    // hours retry a failed or missed run; once the day is claimed, each is one SystemConfig read that skips.
     name: "card-holding-xp",
-    defaultSchedule: "30 3 * * *",
+    defaultSchedule: "30 3-23 * * *",
     lockName: "card-holding-xp",
     timeoutMs: 10 * MINUTE,
     modulePath: "~/server/modules/cards/holding-xp",
