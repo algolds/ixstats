@@ -21,6 +21,8 @@ describe("currentProfileHref", () => {
     ["/@jane/work", "/@jane?tab=work"],
     ["/@jane/work/", "/@jane?tab=work"],
     ["/@jane/work?x=1", "/@jane?tab=work&x=1"],
+    ["/id/@jane/work?tab=x", "/@jane?tab=work"],
+    ["/id/@jane/work?x=1&amp;y=2&tab=x", "/@jane?tab=work&x=1&amp;y=2"],
   ])("sends %s to %s", (old, current) => {
     expect(currentProfileHref(old)).toBe(current);
   });

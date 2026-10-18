@@ -24,8 +24,12 @@ export function currentProfileHref(href: string): string {
   if (!passport) return href;
   const [, site, id, user, tab, query, hash = ""] = passport;
   if (!id && !tab) return href;
-  const params = [tab ? `tab=${tab}` : "", query ?? ""].filter(Boolean).join("&");
-  return `${site}/@${user}${params ? `?${params}` : ""}${hash}`;
+  // The path's tab wins over a `tab=` already in the query; the rest of the query stays byte for byte.
+  const rest = (query ?? "")
+    .split("&")
+    .filter((part) => part && (!tab || !/^tab(=|$)/u.test(part)));
+  const search = [...(tab ? [`tab=${tab}`] : []), ...rest].join("&");
+  return `${site}/@${user}${search ? `?${search}` : ""}${hash}`;
 }
 
 const HREF = /href="([^"]*)"/gu;

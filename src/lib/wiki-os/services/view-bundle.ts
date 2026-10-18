@@ -15,7 +15,7 @@ import { slimArticleHtml, templateStyleIdentifiers } from "../transformers/slim-
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 
 /** Bump when the bundle's shape or the transform changes. */
-const RENDERER_BASE_VERSION = 3;
+const RENDERER_BASE_VERSION = 4;
 
 /**
  * What a bundle was built by: the transform's version plus a fingerprint of the sanitizer (its

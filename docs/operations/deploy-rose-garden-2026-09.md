@@ -188,8 +188,9 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
   pages that still link `/id/@user`, `/@user/<tab>` or `/thinkpages/profile/<user>` are resolved to the new pages
   when they render.
 - **Check it parses:** run `node --check next.config.js`.
-- **If you skip this step,** the new `/@user` links still work, because the old config redirects them to `/id/@user`.
-  Do not apply only half of it, or you will create a redirect loop.
+- **If you skip this step,** the server's old `/@:username` redirects stay, and `/@user` links bounce to
+  `/id/@user`. There are no config redirects left in the repository: old profile links in wiki pages are rewritten
+  when the page renders, not by the config.
 
 ## 4. Database steps that must happen before the deploy
 
