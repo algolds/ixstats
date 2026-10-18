@@ -24,6 +24,8 @@ export function CardEconomyCards({ initial }: { initial: CardEconomyConfig }) {
     onSuccess: () => {
       notify.success("Economy numbers saved", "They apply within a minute.");
       void utils.cards.admin.economy.get.invalidate();
+      // The players' crafting numbers read the same config
+      void utils.crafting.getNumbers.invalidate();
     },
     onError: (error) => notify.error("Economy numbers not saved", error.message),
   });

@@ -23,6 +23,7 @@ interface SaveOptions {
 
 const notify = { success: jest.fn(), error: jest.fn() };
 const invalidate = jest.fn();
+const invalidateNumbers = jest.fn();
 const mutate = jest.fn();
 let saveOptions: SaveOptions | null = null;
 
@@ -30,6 +31,7 @@ function setup({ pending = false, initial = CARD_ECONOMY_DEFAULTS } = {}) {
   jest.mocked(useNotify).mockReturnValue(notify as never);
   jest.mocked(api.useUtils).mockReturnValue({
     cards: { admin: { economy: { get: { invalidate } } } },
+    crafting: { getNumbers: { invalidate: invalidateNumbers } },
   } as never);
   jest.mocked(api.cards.admin.economy.saveEconomy.useMutation).mockImplementation(((
     options: SaveOptions
@@ -146,6 +148,7 @@ it("says it saved and refreshes the tab, or shows the server's sentence", () => 
     "They apply within a minute."
   );
   expect(invalidate).toHaveBeenCalledTimes(1);
+  expect(invalidateNumbers).toHaveBeenCalledTimes(1);
   saveOptions?.onError({ message: "The daily odds add up to 101%. Make them 100%." });
   expect(notify.error).toHaveBeenCalledWith(
     "Economy numbers not saved",
