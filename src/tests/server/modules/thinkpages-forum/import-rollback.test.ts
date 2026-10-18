@@ -101,7 +101,6 @@ describe("rollbackImport", () => {
       nativeReplies: 1,
       links: 2,
       categories: ["xf-12", "xf-13"],
-      nodeMap: 1,
       assets: 3,
       files: 4,
     });
@@ -113,7 +112,6 @@ describe("rollbackImport", () => {
       posts: preview.posts,
       nativeReplies: preview.nativeReplies,
       categories: preview.categories.length,
-      nodeMap: preview.nodeMap,
       assets: preview.assets,
       files: preview.files,
     });
@@ -133,7 +131,6 @@ describe("rollbackImport", () => {
       linksRestored: 1,
       linksDeleted: 1,
       categories: 2,
-      nodeMap: 1,
       assets: 3,
       files: 4,
     });
@@ -164,7 +161,7 @@ describe("rollbackImport", () => {
     expect((await rollbackImport(store.db as never, opts)).categories).toBe(1);
     expect(store.tables().categories.some((c) => c.key === "xf-12")).toBe(true);
     const again = await rollbackImport(store.db as never, opts);
-    expect(again).toMatchObject({ threads: 0, posts: 0, categories: 0, nodeMap: 0 });
+    expect(again).toMatchObject({ threads: 0, posts: 0, categories: 0 });
   });
 
   it("deletes a remapped link instead of restoring it when the bridge has re-created the XenForo row", async () => {

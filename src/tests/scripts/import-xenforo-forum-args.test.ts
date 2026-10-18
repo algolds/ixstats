@@ -205,14 +205,13 @@ describe("rollback lines (I2)", () => {
         nativeReplies: 1,
         links: 2,
         categories: ["xf-12", "xf-13"],
-        nodeMap: 1,
         assets: 4,
         files: 5,
       })
     ).toEqual([
       "Rollback preview (nothing deleted): 3 imported threads, 7 posts (1 native replies on imported threads)",
       "  action links on those posts: 2 (returned to their XenForo post, or deleted with a native reply)",
-      "  archive categories 2 (xf-12, xf-13), node map rows 1, forum media assets 4, copied files 5",
+      "  archive categories 2 (xf-12, xf-13), forum media assets 4, copied files 5",
       "Pass --yes to delete these.",
     ]);
   });

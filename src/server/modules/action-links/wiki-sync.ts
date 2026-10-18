@@ -4,8 +4,9 @@
  * `wikiSyncedAt` null; `syncPendingChainWikis` (cron "story-chain-wiki-sync") retries them.
  */
 import type { PrismaClient } from "@prisma/client";
-import { chainWikiSection, postPermalinkPath, type PostSource } from "~/lib/action-links";
+import { chainWikiSection } from "~/lib/action-links";
 import { IxTime } from "~/lib/ixtime";
+import { postHref } from "~/lib/thinkpages-forum/links";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
@@ -16,9 +17,9 @@ export type WikiSyncDb = Pick<PrismaClient, "storyline">;
 
 const PENDING = { kind: "chain", status: "approved", wikiSyncedAt: null, wikiPageTitle: { not: null } } as const;
 
-/** A linked post's permalink as an absolute IxStates URL (every permalink is an app path). */
-function postUrl(source: PostSource, postRef: string): string {
-  return `${mediaWikiOrigin()}${createAbsoluteUrl(postPermalinkPath(source, postRef))}`;
+/** A native post's permalink (`/thinkpages/post/<id>`) as an absolute IxStates URL. */
+function postUrl(postId: string): string {
+  return `${mediaWikiOrigin()}${createAbsoluteUrl(postHref(postId))}`;
 }
 
 export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Promise<boolean> {
@@ -37,13 +38,14 @@ export async function appendChainToWiki(db: WikiSyncDb, storylineId: string): Pr
   if (!chain?.wikiPageTitle) return false;
 
   // An activity withdrawn since it was linked (an abandoned directive) is no longer public; its text stays off the wiki.
+  // A link still on a XenForo post (one the import has not remapped) has no page to point at, so it stays off too.
   const entries = chain.actionLinks
-    .filter((l) => l.activity.visibility === "public")
+    .filter((l) => l.postSource === "native" && l.activity.visibility === "public")
     .map((l) => ({
       title: l.activity.title,
       type: l.activity.type,
       ixTime: IxTime.convertToIxTime(l.activity.createdAt.getTime()),
-      url: postUrl(l.postSource as PostSource, l.postRef),
+      url: postUrl(l.postRef),
     }));
   if (entries.length === 0) {
     // Nothing public to publish: write no section, and mark the chain done so the cron does not retry it forever.

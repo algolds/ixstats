@@ -9,11 +9,6 @@
  * The passport redirect needs the real 308 too: `/id/[username]` (canonical handle) has no `loading.tsx` above it.
  * `/r`'s loading UI sits in the realm's `(region)` group instead.
  *
- * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page left of the
- * retired XenForo bridge (thread, post, forum node, member) calls `permanentRedirect()` before rendering anything,
- * so the `(forum)` group has no `loading.tsx` and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
- * instead of the redirect (seen on the clone in phase 4).
- *
  * The forum post permalink resolver (`/thinkpages/post/<id>`), "Your realm" (`/thinkpages/r/mine`) and "jump to
  * unread" (`/thinkpages/t/<id>/unread`) need the real 307 too, so no `loading.tsx` sits above them. Of the forum's
  * loaders only `thinkpages/loading.tsx` itself is absent: `c/`, `mod/` and `r/[realm]/[key]/` have their own, and the
@@ -39,7 +34,7 @@ const OWN_LOADING = new Set(["builder"]);
  * Top-level segments with no loading.tsx of their own: redirect pages need the real 307 or 308, and `r` keeps its
  * loading UI in the realm's `(region)` group.
  */
-const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages"]);
+const REDIRECT_SEGMENTS = new Set(["id", "r", "thinkpages"]);
 /** The redirect pages, relative to src/app. */
 const REDIRECT_PAGES = ["id/[username]/page.tsx"];
 
@@ -100,28 +95,6 @@ describe("no loading.tsx above the passport redirects", () => {
   it("keeps the realm pages' loading UI inside the (region) group", () => {
     const source = fs.readFileSync(path.join(APP, "r/[realm]/(region)/loading.tsx"), "utf8");
     expect(source).toContain('from "~/app/_components/RootLoading"');
-  });
-});
-
-describe("no loading.tsx above the legacy forum redirects", () => {
-  const FORUM_GROUP = path.join(APP, "(forum)");
-
-  it("the (forum) group and every directory below it have none", () => {
-    const dirs: string[] = [];
-    const pages: string[] = [];
-    walk(FORUM_GROUP, (file) => {
-      dirs.push(path.dirname(file));
-      if (PAGE_FILE.test(path.basename(file))) pages.push(file);
-    });
-    expect(pages.length).toBeGreaterThanOrEqual(4); // the walk found the redirect pages
-    const offenders = [...new Set([FORUM_GROUP, ...dirs])].filter(hasLoading);
-    expect(offenders.map((dir) => path.relative(process.cwd(), dir))).toEqual([]);
-  });
-
-  it("no layout wraps the redirects (nothing in the group renders)", () => {
-    for (const layout of ["(forum)/layout.tsx", "(forum)/forum/layout.tsx"]) {
-      expect(fs.existsSync(path.join(APP, layout))).toBe(false);
-    }
   });
 });
 

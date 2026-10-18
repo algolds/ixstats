@@ -100,11 +100,6 @@ export { readTimes, unreadIdsOf, type UnreadDb } from "./unread";
 export { forumNavCounts, type NavCounts, type NavCountsDb } from "./nav-counts";
 export { autoWatch, isWatching, unwatchThread, watchThread, type WatchDb } from "./watch";
 export { markUnreadThreads, withUnreadCounts, type UnreadAttachDb } from "./unread-attach";
-export {
-  FORUM_IMPORT_NODE_MAP_KEY,
-  legacyForumRedirectFor,
-  type LegacyDb,
-} from "./legacy-redirect";
 export { forumActivityOf, importedAuthorByName, type MemberActivityDb } from "./member-activity";
 export {
   linkOldForumAccount,

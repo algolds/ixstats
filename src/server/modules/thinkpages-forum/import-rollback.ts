@@ -1,21 +1,19 @@
 /**
  * Undoes the XenForo import (phase 4, `--rollback --yes`): every thread with a XenForo id (its posts cascade, native
  * replies posted on it included), the action links of those posts (a link the import moved from the XenForo post goes
- * back to it; a native reply's link is deleted, T0-7), the `xf-*` archive categories left without threads, the
- * applied node map, every "Forum" media asset and every copied file (with thumbnails) under `<uploadsDir>/forum`
- * named like the import names them (M18: whatever snapshot copied them). Reports, warnings and mod-log rows that name
- * deleted content stay (the report queue handles gone targets; the log is append-only). Threads go in chunks, one
- * transaction each, so an interrupted rollback is finished by a rerun. The import lock is asserted before every chunk
- * and before the remaining deletes (ImportLockLostError stops it).
- * `previewRollback` (I2, `--rollback` without `--yes`) counts the same rows and files and deletes nothing. The legacy
- * `/forum/*` redirects need no switching off first (phase 4b): an id that no longer resolves lands on the forum home.
+ * back to it; a native reply's link is deleted, T0-7), the `xf-*` archive categories left without threads, every
+ * "Forum" media asset and every copied file (with thumbnails) under `<uploadsDir>/forum` named like the import names
+ * them (M18: whatever snapshot copied them). Reports, warnings and mod-log rows that name deleted content stay (the
+ * report queue handles gone targets; the log is append-only). Threads go in chunks, one transaction each, so an
+ * interrupted rollback is finished by a rerun. The import lock is asserted before every chunk and before the
+ * remaining deletes (ImportLockLostError stops it).
+ * `previewRollback` (I2, `--rollback` without `--yes`) counts the same rows and files and deletes nothing.
  */
 import { promises as nodeFs } from "fs";
 import path from "path";
 import { ARCHIVE_KEY_PREFIX } from "~/lib/thinkpages-forum/import/node-map";
 import { assertImportLock, type ImportDb } from "./import-db";
 import { TRANSACTION_TIMEOUT_MS } from "./import-write";
-import { FORUM_IMPORT_NODE_MAP_KEY } from "./legacy-redirect";
 
 const THREAD_CHUNK = 100;
 const ID_CHUNK = 1000;
@@ -42,7 +40,6 @@ export interface RollbackTotals {
   linksRestored: number;
   linksDeleted: number;
   categories: number;
-  nodeMap: number;
   assets: number;
   files: number;
 }
@@ -153,7 +150,6 @@ export interface RollbackPreview {
   links: number;
   /** Keys of the `xf-*` archive categories left empty. */
   categories: string[];
-  nodeMap: number;
   assets: number;
   files: number;
 }
@@ -186,7 +182,6 @@ export async function previewRollback(
     nativeReplies: await nativeRepliesOnImported(db),
     links: await linksOnImported(db),
     categories: (await emptiedArchives(db)).map((c) => c.key),
-    nodeMap: await db.systemConfig.count({ where: { key: FORUM_IMPORT_NODE_MAP_KEY } }),
     assets: await db.uploadedAsset.count({ where: FORUM_SOURCE }),
     files: (await copiedFiles(opts.uploadsDir, opts.fs ?? diskFs)).length,
   };
@@ -203,7 +198,6 @@ export async function rollbackImport(
     linksRestored: 0,
     linksDeleted: 0,
     categories: 0,
-    nodeMap: 0,
     assets: 0,
     files: 0,
   };
@@ -218,9 +212,6 @@ export async function rollbackImport(
   }
   await assertImportLock(db);
   totals.categories = await rollbackCategories(db);
-  totals.nodeMap = (
-    await db.systemConfig.deleteMany({ where: { key: FORUM_IMPORT_NODE_MAP_KEY } })
-  ).count;
   totals.assets = (await db.uploadedAsset.deleteMany({ where: FORUM_SOURCE })).count;
   const fs = opts.fs ?? diskFs;
   for (const file of await copiedFiles(opts.uploadsDir, fs)) {

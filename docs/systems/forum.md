@@ -1,8 +1,8 @@
 # 🗨️ ThinkPages Forum — Community Discourse
 
-**Last updated:** 2026-10-09
+**Last updated:** 2026-10-17
 
-**Route:** `/thinkpages/*` (forum home `/thinkpages`) | **Legacy:** `/forum/*` redirects only (308) | **Status:** Release Candidate
+**Route:** `/thinkpages/*` (forum home `/thinkpages`) | **Legacy:** none (`/forum/*` is a 404) | **Status:** Release Candidate
 
 The community forum is native to IxStates: sitewide boards plus a section for every realm, with reports, moderation and an import of the old XenForo forum (forum.ixwiki.com). The XenForo bridge ("IxForum", the `/forum` app with its own tint, which proxied XenForo's REST API) was retired in ThinkPages forum phase 4b.
 
@@ -30,7 +30,7 @@ The old forum is copied in two steps, so the importer never talks to XenForo. Th
 
 Imported rows keep their XenForo ids (`xenforoThreadId`, `xenforoPostId`), the author's XenForo name (`importedAuthorName`) and original dates. A XenForo member resolves to an IxStats user only through `User.forumUserId` / `forumUsername`, which stay as the author map; everyone else keeps the old name with no account. Self-service forum account linking is retired: staff link a member who claims old posts in the admin users panel (**Old forum**: `admin.linkUserForum` / `unlinkUserForum`, `old-forum-accounts.ts`), which sets the columns and attributes that XenForo user's imported threads and posts at once (`relinkImportedAuthors`, scoped); unlinking hands them back to the old name. Both are audit-logged. Settings show the old account read-only. Threads land in a mapped category (an owner-reviewed node map, then title heuristics) or in a read-only archive category `xf-<nodeId>`, which the forum home groups under "From the old forum". Imported threads show "Imported from the old forum." on the thread page and an "Imported" tag in lists.
 
-**Legacy `/forum/*` links** answer a permanent redirect (308) through the import's id map: a thread, post, forum node or member goes to its native page, anything unknown or not public to the forum home. See [`src/app/(forum)/README.md`](<../../src/app/(forum)/README.md>). XenForo action links (`PostActionLink.postSource = "xenforo"`) are remapped to native posts by the import; any left point at `/forum/post/<id>`.
+**Legacy `/forum/*` links** are gone (phase 5): the routes that resolved XenForo ids at request time are deleted, so `/forum/*` is a 404. `src/server/modules/thinkpages-forum/import-forum-links.ts` (`resolveForumRef`) and `src/lib/thinkpages-forum/import/forum-links.ts` resolve a XenForo thread, post, node or member id to its native page, public content only, for the import. XenForo action links (`PostActionLink.postSource = "xenforo"`) are remapped to native posts by the import; a story chain's wiki section leaves out any left on a XenForo post.
 
 Importer code is in `src/lib/thinkpages-forum/import/`, `src/server/modules/thinkpages-forum/import-*.ts` and `scripts/migrations/`.
 
@@ -40,6 +40,5 @@ Importer code is in `src/lib/thinkpages-forum/import/`, `src/server/modules/thin
 
 - [ThinkPages feed and personas](./social.md)
 - [Halo Wayfinding & Contextual Overlay](./halo.md)
-- [Legacy redirects README](<../../src/app/(forum)/README.md>)
 - [Native forum README](../../src/app/thinkpages/README.md)
 - [API Reference](../reference/api-complete.md)

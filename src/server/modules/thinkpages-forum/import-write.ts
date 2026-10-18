@@ -1,10 +1,10 @@
 /**
  * The XenForo importer's writes (phase 4): archive categories, then one transaction per thread (the thread when new,
  * its posts in chunks with `skipDuplicates`, the action-link remap, the recount under the thread lock), then the
- * author relink and the applied node map. Idempotent: a rerun plans only what is missing, and a thread interrupted
- * mid-write rolled back whole, so it is written again in full. A thread that fails is recorded and the run goes on
- * (M19): its transaction rolled it back, and the bridge pass, the relink and the node map still run. Then the I7
- * re-hide (import-rehide.ts). No activity feed, notification or mod-log rows.
+ * author relink. Idempotent: a rerun plans only what is missing, and a thread interrupted mid-write rolled back
+ * whole, so it is written again in full. A thread that fails is recorded and the run goes on (M19): its transaction
+ * rolled it back, and the bridge pass and the relink still run. Then the I7 re-hide (import-rehide.ts). No activity
+ * feed, notification or mod-log rows.
  */
 import type { Prisma } from "@prisma/client";
 import { countActionTokens } from "~/lib/action-links";
@@ -17,7 +17,7 @@ import type {
   PlannedThread,
 } from "~/lib/thinkpages-forum/import/plan";
 import { isUniqueViolation } from "./errors";
-import { assertImportLock, storeNodeMap, type ImportDb } from "./import-db";
+import { assertImportLock, type ImportDb } from "./import-db";
 import { remapQuoteIds, type QuoteRemap } from "./import-quote-ids";
 import { rehideImported, type RehideTotals } from "./import-rehide";
 import { lockThread, recountThread } from "./thread-counts";
@@ -291,7 +291,7 @@ function addWrite(totals: ApplyTotals, write: ThreadWrite): void {
 }
 
 /**
- * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the relink pass, the applied node map.
+ * --apply: categories, every planned thread, the re-hide, the bridge link pass, the quote id pass, the relink pass.
  * The import lock is asserted before the first thread and every 100 threads (ImportLockLostError stops the run);
  * any other error in a thread's write is recorded in `failedThreads` and the run continues (M19).
  */
@@ -336,6 +336,5 @@ export async function applyImport(
   // A failed thread may hold a quoted post: keep the ids nothing maps yet, so the rerun can map them.
   totals.quoteIds = await remapQuoteIds(db, { dropUnmapped: totals.failedThreads.length === 0 });
   totals.relinked = await relinkImportedAuthors(db);
-  await storeNodeMap(db, opts.nodeMap);
   return totals;
 }

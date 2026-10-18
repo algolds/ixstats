@@ -26,7 +26,6 @@ export const STANDALONE_APP_ROUTES = [
   "feed",
   "flags",
   "fonts",
-  "forum",
   "hashtags",
   "health",
   "help",

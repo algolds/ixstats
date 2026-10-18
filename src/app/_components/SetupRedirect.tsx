@@ -33,7 +33,6 @@ export function SetupRedirect() {
     "/countries", // Skip setup redirect for country pages
     "/help", // Skip setup redirect for help center articles
     "/wiki", // Skip setup redirect for wikiOS
-    "/forum", // Skip setup redirect for forums
     "/thinkpages", // public forum, readable without a nation
     "/dashboard/post/", // public feed posts (the Dashboard itself stays gated)
     "/dashboard/profile/", // public persona profiles

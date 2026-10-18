@@ -85,7 +85,7 @@ describe("the XenForo import applied to the small snapshot", () => {
     expect(store.tables().categories.find((c) => c.key === "xf-13")?.visibility).toBe("staff");
     const remapped = store.tables().links[0]!;
     expect(store.tables().posts.find((p) => p.id === remapped.postRef)?.xenforoPostId).toBe(1000);
-    expect(store.tables().configs.map((c) => c.key)).toEqual(["forum_import_node_map"]);
+    expect(store.tables().configs).toEqual([]); // the run writes no SystemConfig row
     expect(store.db.forumThread.create).toHaveBeenCalledTimes(3);
   });
 
@@ -131,7 +131,7 @@ describe("the XenForo import applied to the small snapshot", () => {
         .sort()
     ).toEqual([100, 103]);
     expect(store.tables().posts.some((p) => p.xenforoPostId === 1010)).toBe(false);
-    expect(store.tables().configs.map((c) => c.key)).toEqual(["forum_import_node_map"]);
+    expect(store.tables().configs).toEqual([]); // the run writes no SystemConfig row
   });
 
   it("points quotes at the native post, and drops the id of a quoted post that was not imported", async () => {

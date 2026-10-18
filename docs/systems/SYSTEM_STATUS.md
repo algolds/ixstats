@@ -93,7 +93,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 | Feed | v2 | `/dashboard`, `/dashboard/post/[id]`, `/dashboard/profile/[username]`, `/dashboard/saved`, `/hashtags/[tag]` | `thinkpages/`, `polls/` | ✅ Live | `[blurb:slug]` is a Blurbs cross-post prefix. Trending and "hot" are scored by the `thinkpages-trending` cron (off until enabled); a realm filter scopes the feed to one realm |
 | Accounts (personas) | v2 | `/dashboard/accounts` | `thinkpages/accounts.ts` | 🟡 Partial | 25 accounts per user plus one personal persona ("post as yourself", no country); persona follows with real counts. The Discord mirror is off by default and cannot be enabled from the UI; the verified flag is admin-only |
 | ThinkTanks | v2 | `/thinktanks` | `thinkpages/thinktanks/` | 🟡 Partial | Feed, Members, Docs and Chat tabs; invites by username search, an invite inbox and single-use invite codes; the older realm boards are a ThinkTank type (a realm's page now shows the forum's live board) |
-| Forum (ThinkPages) | — | `/thinkpages`, `/thinkpages/c/[key]`, `/thinkpages/r/[realm]`, `/thinkpages/r/[realm]/[key]`, `/thinkpages/t/[threadId]`, `/thinkpages/mod` | `thinkpagesForum/`, `thinkpagesForumMod` | 🟡 Partial | Sitewide boards and a section per realm (its landing page is the realm's live board), reports, warnings, bans, appeals and a moderation log. The XenForo import is a runbook step ([runbook](../operations/forum-xenforo-import-runbook.md)). The XenForo bridge is retired: old `/forum` links only redirect (IxForum row, below) |
+| Forum (ThinkPages) | — | `/thinkpages`, `/thinkpages/c/[key]`, `/thinkpages/r/[realm]`, `/thinkpages/r/[realm]/[key]`, `/thinkpages/t/[threadId]`, `/thinkpages/mod` | `thinkpagesForum/`, `thinkpagesForumMod` | 🟡 Partial | Sitewide boards and a section per realm (its landing page is the realm's live board), reports, warnings, bans, appeals and a moderation log. The XenForo import is a runbook step ([runbook](../operations/forum-xenforo-import-runbook.md)). The XenForo bridge is retired and `/forum/*` is a 404 (IxForum row, below) |
 | ThinkShare messages | v2 | `/messages` | `messages/` | 🟡 Partial | Live for 1:1 and group DMs over `/ws/thinkpages`, with message requests, "Seen" and online status (SL-4); diplomatic conversation creation from the UI is unreachable, joining a thinktank-linked conversation requires active membership of that group, and encryption fields exist but no cryptography |
 | Blurbs | — | `/blurbs` | `blurbs/` | ✅ Live | |
 
@@ -101,7 +101,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 
 | Subsystem | Version | Routes | Routers / code | Status | Notes |
 |---|:---:|---|---|:---:|---|
-| IxForum (XenForo bridge) | platform | `/forum/thread|post|<node>|members` (308 redirects only) | — | ⛔ Retired | Bridge deleted in ThinkPages forum phase 4b; old links resolve through the import id map |
+| IxForum (XenForo bridge) | platform | — (`/forum/*` is a 404) | — | ⛔ Retired | Bridge deleted in ThinkPages forum phase 4b; its `/forum/*` redirects deleted in phase 5 |
 | Passport | — | `/@user`, `/id/[username]`, `/r/[realm]/@user` | `src/server/modules/identity/` | ✅ Live | Five tabs plus a showcase (achievements, pinned ribbons, top cards, Lorewards). Privacy settings are persisted and enforced server-side; nation switcher for multi-nation owners |
 | Verified wiki accounts | — | `/settings` | `identity.wiki-links.ts` | ✅ Live | Token saved to the user page on ixwiki, iiwiki or althistory |
 

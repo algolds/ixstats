@@ -208,7 +208,7 @@ export function rollbackLines(totals: RollbackTotals): string[] {
   return [
     `Rolled back: ${totals.threads} threads, ${totals.posts} posts (${totals.nativeReplies} native replies on imported threads)`,
     `  action links: ${totals.linksRestored} returned to their XenForo post, ${totals.linksDeleted} deleted`,
-    `  archive categories ${totals.categories}, node map rows ${totals.nodeMap}, media assets ${totals.assets}, files ${totals.files}`,
+    `  archive categories ${totals.categories}, media assets ${totals.assets}, files ${totals.files}`,
   ];
 }
 
@@ -217,7 +217,7 @@ export function rollbackPreviewLines(preview: RollbackPreview): string[] {
   return [
     `Rollback preview (nothing deleted): ${preview.threads} imported threads, ${preview.posts} posts (${preview.nativeReplies} native replies on imported threads)`,
     `  action links on those posts: ${preview.links} (returned to their XenForo post, or deleted with a native reply)`,
-    `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, node map rows ${preview.nodeMap}, forum media assets ${preview.assets}, copied files ${preview.files}`,
+    `  archive categories ${preview.categories.length}${preview.categories.length ? ` (${preview.categories.join(", ")})` : ""}, forum media assets ${preview.assets}, copied files ${preview.files}`,
     "Pass --yes to delete these.",
   ];
 }

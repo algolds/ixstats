@@ -1,9 +1,9 @@
 /** @jest-environment node */
 import { SITE_CATEGORIES } from "~/lib/thinkpages-forum/categories";
+import { nodeLandings } from "~/lib/thinkpages-forum/import/forum-links";
 import { resolveNodeTargets } from "~/lib/thinkpages-forum/import/node-map";
 import type { PlannedPost, PlannedThread } from "~/lib/thinkpages-forum/import/plan";
 import type { XfNode } from "~/lib/thinkpages-forum/import/xenforo-types";
-import { parseNodeLandings } from "~/lib/thinkpages-forum/legacy-forum";
 import {
   appliedNodeMap,
   assertImportLock,
@@ -11,7 +11,6 @@ import {
   mappedRealmSlugs,
   missingTargets,
   restrictedImportedPosts,
-  storeNodeMap,
   takeImportLock,
 } from "~/server/modules/thinkpages-forum/import-db";
 import {
@@ -20,7 +19,6 @@ import {
   relinkImportedAuthors,
   writeThread,
 } from "~/server/modules/thinkpages-forum/import-write";
-import { FORUM_IMPORT_NODE_MAP_KEY } from "~/server/modules/thinkpages-forum/legacy-redirect";
 import { importStore } from "~/tests/helpers/forum-import-fake";
 
 const SITE = SITE_CATEGORIES.map((c) => ({
@@ -220,52 +218,23 @@ describe("the applied node map", () => {
     display_order: node_id,
   });
 
-  it("stores each node's resolved target, which the /forum/<nodeId> redirect reads back", async () => {
+  it("holds each node's resolved target, which the link resolver reads as landings", () => {
     const resolved = resolveNodeTargets(
       [node(12, "General Discussion"), node(13, "Lore"), node(14, "Urcean news")],
       { nodes: { "14": { scope: "realm", realm: "urcea", key: "current-events" } } }
     );
-    const { db, tables } = importStore({ configs: [] });
-    await storeNodeMap(db as never, appliedNodeMap(resolved));
-    await storeNodeMap(db as never, appliedNodeMap(resolved));
-    const rows = tables().configs.filter((c) => c.key === FORUM_IMPORT_NODE_MAP_KEY);
-    expect(rows).toHaveLength(1);
-    const landings = parseNodeLandings(String(rows[0]!.value));
+    const applied = appliedNodeMap(resolved);
+    expect(applied).toEqual({
+      nodes: {
+        "12": { scope: "site", key: "general" },
+        "13": { archive: true },
+        "14": { scope: "realm", realm: "urcea", key: "current-events" },
+      },
+    });
+    const landings = nodeLandings(applied);
     expect(landings.get(12)).toEqual({ scope: "site", key: "general" });
     expect(landings.get(13)).toBeUndefined();
     expect(landings.get(14)).toEqual({ scope: "realm", realm: "urcea", key: "current-events" });
-  });
-
-  it("merges into the stored map: this run's nodes win, earlier nodes stay", async () => {
-    const earlier = {
-      nodes: {
-        "5": { scope: "site", key: "announcements" },
-        "12": { scope: "site", key: "side-games" },
-      },
-    };
-    const { db, tables } = importStore({
-      configs: [{ id: "cfg", key: FORUM_IMPORT_NODE_MAP_KEY, value: JSON.stringify(earlier) }],
-    });
-    await storeNodeMap(db as never, {
-      nodes: { "12": { scope: "site", key: "general" }, "13": { archive: true } },
-    });
-    expect(JSON.parse(String(tables().configs[0]!.value))).toEqual({
-      nodes: {
-        "5": { scope: "site", key: "announcements" },
-        "12": { scope: "site", key: "general" },
-        "13": { archive: true },
-      },
-    });
-  });
-
-  it("replaces a stored row it cannot read", async () => {
-    const { db, tables } = importStore({
-      configs: [{ id: "cfg", key: FORUM_IMPORT_NODE_MAP_KEY, value: "{not json" }],
-    });
-    await storeNodeMap(db as never, { nodes: { "13": { archive: true } } });
-    expect(JSON.parse(String(tables().configs[0]!.value))).toEqual({
-      nodes: { "13": { archive: true } },
-    });
   });
 });
 

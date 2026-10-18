@@ -17,7 +17,8 @@ export function directiveActivityId(intentId: string): string {
 
 /**
  * Where a linked post lives. "xenforo" rows predate the native forum: the XenForo import remaps them to "native"
- * (and its rollback restores them), so the type stays while such rows may exist; nothing creates new ones.
+ * (and its rollback restores them), so the type stays while such rows may exist; nothing creates new ones. A row
+ * still on a XenForo post has no page here, so a story chain's wiki section leaves it out.
  */
 export type PostSource = "native" | "xenforo";
 
@@ -236,16 +237,6 @@ export function splitActionTokens(body: string): BodySegment[] {
   if (!state.segments.length) return body ? [{ kind: "html", text: body }] : [];
   if (state.filled) state.segments.push({ kind: "html", text: state.html });
   return state.segments;
-}
-
-/**
- * A linked post's permalink: native posts by the ThinkPages permalink; a XenForo post by its legacy `/forum/post/`
- * path, which 308s to the imported post (or the forum home) through the import id map.
- */
-export function postPermalinkPath(source: PostSource, postRef: string): string {
-  return source === "native"
-    ? `/thinkpages/post/${encodeURIComponent(postRef)}`
-    : `/forum/post/${encodeURIComponent(postRef)}`;
 }
 
 export interface ChainWikiEntry {

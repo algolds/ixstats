@@ -39,7 +39,6 @@ describe("rebaseRootRelativeUrls", () => {
 
   it.each([
     "/images/uploads/a.png",
-    "/forum/members/7",
     "/thinkpages/t/abc",
     "/api/download/external-image?x=1",
     "/@aria",
@@ -55,7 +54,6 @@ describe("rebaseRootRelativeUrls", () => {
   it("covers exactly the app's own prefixes", () => {
     expect(APP_PATH_PREFIXES).toEqual([
       "/images/",
-      "/forum/",
       "/thinkpages/",
       "/api/",
       "/@",
@@ -69,6 +67,7 @@ describe("rebaseRootRelativeUrls", () => {
     "/wiki/Foo",
     "/countries/x",
     "/dashboard/feed",
+    "/forum/members/7",
     "/",
     "/imagesx/a.png",
     "/\\evil.com/x",

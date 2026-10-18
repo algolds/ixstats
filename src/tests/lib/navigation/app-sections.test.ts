@@ -323,7 +323,7 @@ describe("app section map resolvers", () => {
     expect(getAppForPath("/setup")).toBeUndefined();
   });
 
-  it("has no Forum app: /forum/* are legacy redirects (phase 4b)", () => {
+  it("has no Forum app: /forum/* is gone (phase 4b deleted the bridge, phase 5 its redirects)", () => {
     expect(getAppForPath("/forum/thread/1")).toBeUndefined();
     expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
       "forum"
