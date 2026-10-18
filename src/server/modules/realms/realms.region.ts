@@ -103,6 +103,7 @@ type OverviewDb = Pick<
   | "realmClaim"
   | "realmOfficer"
   | "activityFeed"
+  | "userConnection"
 >;
 
 /**

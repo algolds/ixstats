@@ -8,6 +8,7 @@ jest.mock("~/server/db", () => {
     country: { findUnique: jest.fn().mockResolvedValue(null) },
     thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
     wikiAccountLink: { findFirst: jest.fn() },
+    userConnection: { findMany: jest.fn() },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
 });
@@ -21,6 +22,7 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 const mocked = db as unknown as {
   user: { findUnique: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
+  userConnection: { findMany: jest.Mock };
 };
 const createCaller = createCallerFactory(ixnayidCoreRouter);
 
@@ -39,7 +41,12 @@ const ownerOfCountry = {
 
 function caller(sessionUsername?: string) {
   // A Clerk session may carry a username; no passport URL resolves it.
-  const user = { id: "db_1", clerkUserId: "clerk_1", role: { name: "user" }, username: sessionUsername };
+  const user = {
+    id: "db_1",
+    clerkUserId: "clerk_1",
+    role: { name: "user" },
+    username: sessionUsername,
+  };
   return createCaller(
     createMockRouterContext({
       auth: { userId: "clerk_1" },
@@ -53,6 +60,7 @@ describe("ixnayid.getStatus wiki state", () => {
   beforeEach(() => {
     mocked.user.findUnique.mockReset().mockResolvedValue(ownerOfCountry);
     mocked.wikiAccountLink.findFirst.mockReset();
+    mocked.userConnection.findMany.mockReset().mockResolvedValue([]);
   });
 
   it("is not linked for a country owner with no verified link", async () => {
@@ -87,5 +95,17 @@ describe("ixnayid.getStatus wiki state", () => {
     const status = await caller().getStatus();
     expect(status.wiki).toMatchObject({ linked: true, username: "Kir", lastSync: verifiedAt });
     expect(status.passportHandle).toBe("Kir");
+  });
+
+  it("keeps the wiki name out of the passport handle when wiki attribution is off", async () => {
+    const verifiedAt = new Date("2026-09-01T00:00:00Z");
+    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir", verifiedAt });
+    mocked.userConnection.findMany.mockResolvedValue([
+      { userId: "clerk_1", status: JSON.stringify({ showWikiAttribution: false }) },
+    ]);
+    const status = await caller().getStatus();
+    // The handle is what share and invite links carry; Settings still shows the owner their link.
+    expect(status.passportHandle).toBe("clerk_1");
+    expect(status.wiki).toMatchObject({ linked: true, username: "Kir" });
   });
 });

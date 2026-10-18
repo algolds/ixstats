@@ -6,6 +6,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { postHref } from "~/lib/thinkpages-forum/links";
+import { withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import type { ForumNotice } from "./forum-notices";
 
 export type NoticeKind = ForumNotice["metadata"]["kind"];
@@ -33,17 +34,23 @@ export interface NoticeSubject {
   reactionKey?: string;
 }
 
-/** A member's displayed name: their Passport handle, else their wiki name, else `fallback`. */
+/**
+ * A member's displayed name: their Passport handle, else their wiki name while they show wiki attribution
+ * (`showWikiAttribution`; a read error counts as off), else `fallback`.
+ */
 export async function memberName(
-  db: Pick<PrismaClient, "user">,
+  db: Pick<PrismaClient, "user" | "userConnection">,
   userId: string,
   fallback: string
 ): Promise<string> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { handle: true, wikiUsername: true },
+    select: { handle: true, wikiUsername: true, clerkUserId: true },
   });
-  return user?.handle ?? user?.wikiUsername ?? fallback;
+  if (!user) return fallback;
+  if (user.handle) return user.handle;
+  const [shown] = await withoutHiddenWikiNames(db, [user]);
+  return shown?.wikiUsername ?? fallback;
 }
 
 export function noticeFor(

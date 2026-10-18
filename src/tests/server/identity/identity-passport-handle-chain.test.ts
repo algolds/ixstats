@@ -1,8 +1,9 @@
 /** @jest-environment node */
 /**
- * Every handle the passport chain produces (`passportHandleOf`: stored handle, verified wiki name,
- * forum name, Clerk id) resolves back to the same user through the real resolver, including when
- * another user holds the computed name as their stored handle.
+ * Every handle the passport chain produces (`loadPassportHandle`: stored handle, verified wiki name
+ * while wiki attribution is on, forum name, Clerk id) resolves back to the same user through the real
+ * resolver, including when another user holds the computed name as their stored handle. With wiki
+ * attribution off the chain never emits the wiki name, though old links carrying it still resolve.
  */
 jest.mock("~/server/db", () => {
   const db = {
@@ -10,6 +11,7 @@ jest.mock("~/server/db", () => {
     country: { findUnique: jest.fn().mockResolvedValue(null) },
     thinkpagesAccount: { findFirst: jest.fn().mockResolvedValue(null) },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    userConnection: { findMany: jest.fn().mockResolvedValue([]) },
     lorewardUserStats: { findFirst: jest.fn().mockResolvedValue(null) },
     wikiRevision: { findFirst: jest.fn().mockResolvedValue(null) },
   };
@@ -22,7 +24,7 @@ jest.mock("~/lib/wiki-os/adapters/ixstates/user-sync", () => ({
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { db } from "~/server/db";
-import { passportHandleOf } from "~/server/modules/identity/identity.passport-handle";
+import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
 import { escapeRegExp } from "~/lib/utils/escape-regexp";
 import { resolveHandleUser, resolveIdentity } from "~/server/modules/identity/identity.resolve";
 
@@ -35,7 +37,11 @@ interface Row {
   wikiUsername: string | null;
 }
 
-const mocked = db as unknown as { user: { findUnique: jest.Mock; findFirst: jest.Mock } };
+const mocked = db as unknown as {
+  user: { findUnique: jest.Mock; findFirst: jest.Mock };
+  wikiAccountLink: { findFirst: jest.Mock };
+  userConnection: { findMany: jest.Mock };
+};
 
 type Clause = Record<string, string | { equals: string }>;
 
@@ -87,14 +93,26 @@ const row = (id: string, fields: Partial<Row>): Row => ({
 const noForum = { lookupUser: jest.fn().mockResolvedValue(null), getActivity: jest.fn() };
 
 async function roundTrip(user: Row, verifiedWikiName: string | null) {
-  const handle = await passportHandleOf(user, verifiedWikiName);
+  mocked.wikiAccountLink.findFirst.mockResolvedValue(
+    verifiedWikiName ? { username: verifiedWikiName } : null
+  );
+  const handle = await loadPassportHandle(user);
   const identity = await resolveIdentity(handle, null, noForum);
   return { handle, resolvedId: identity?.user?.id ?? null };
+}
+
+/** The user's stored privacy config (Settings → Privacy & Security). */
+function privacyOf(user: Row, config: Record<string, boolean>) {
+  mocked.userConnection.findMany.mockResolvedValue([
+    { userId: user.clerkUserId, status: JSON.stringify(config) },
+  ]);
 }
 
 beforeEach(() => {
   mocked.user.findUnique.mockReset();
   mocked.user.findFirst.mockReset();
+  mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue(null);
+  mocked.userConnection.findMany.mockReset().mockResolvedValue([]);
 });
 
 describe("passport handle chain round trip", () => {
@@ -134,5 +152,47 @@ describe("passport handle chain round trip", () => {
     }
     expect((await resolveHandleUser("helvianir"))?.id).toBe("h");
     expect((await resolveHandleUser("Dax_"))?.id).toBe("c");
+  });
+});
+
+describe("passport handle chain and wiki attribution", () => {
+  const lyra = row("b", { wikiUsername: "Lyra Wiki", forumUsername: "LyraForum" });
+  const bare = row("d", { wikiUsername: "Dee Wiki" });
+
+  beforeEach(() => usersTable([lyra, bare]));
+
+  it("uses the verified wiki name while wiki attribution is on", async () => {
+    privacyOf(lyra, { showWikiAttribution: true });
+    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "Lyra Wiki", resolvedId: "b" });
+  });
+
+  it("skips the wiki name when wiki attribution is off, for the next name that resolves back", async () => {
+    privacyOf(lyra, { showWikiAttribution: false });
+    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "LyraForum", resolvedId: "b" });
+
+    privacyOf(bare, { showWikiAttribution: false });
+    expect(await roundTrip(bare, "Dee Wiki")).toEqual({
+      handle: bare.clerkUserId,
+      resolvedId: "d",
+    });
+  });
+
+  it("treats an unreadable switch as off", async () => {
+    mocked.userConnection.findMany.mockRejectedValue(new Error("db down"));
+    expect(await roundTrip(lyra, "Lyra Wiki")).toEqual({ handle: "LyraForum", resolvedId: "b" });
+  });
+
+  it("keeps a stored handle whatever the switch, without reading it", async () => {
+    const kir = row("k", { handle: "kir", wikiUsername: "Kir Wiki" });
+    usersTable([kir]);
+    privacyOf(kir, { showWikiAttribution: false });
+    expect(await roundTrip(kir, "Kir Wiki")).toEqual({ handle: "kir", resolvedId: "k" });
+    expect(mocked.userConnection.findMany).not.toHaveBeenCalled();
+  });
+
+  it("still resolves an old link that carries the wiki name", async () => {
+    privacyOf(lyra, { showWikiAttribution: false });
+    expect((await resolveIdentity("Lyra Wiki", null, noForum))?.user?.id).toBe("b");
+    expect((await resolveHandleUser("lyra wiki"))?.id).toBe("b");
   });
 });

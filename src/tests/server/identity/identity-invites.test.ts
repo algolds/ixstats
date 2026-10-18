@@ -10,6 +10,7 @@ jest.mock("~/server/db", () => {
     country: { findFirst: jest.fn() },
     thinkpagesAccount: { findFirst: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    userConnection: { findMany: jest.fn() },
     realmClaim: { findMany: jest.fn() },
   };
   return { __esModule: true, db, isDatabaseReadOnly: false };
@@ -32,6 +33,7 @@ const mocked = db as unknown as {
   country: { findFirst: jest.Mock };
   thinkpagesAccount: { findFirst: jest.Mock };
   wikiAccountLink: { findFirst: jest.Mock };
+  userConnection: { findMany: jest.Mock };
   realmClaim: { findMany: jest.Mock };
 };
 
@@ -66,6 +68,7 @@ beforeEach(() => {
   mocked.country.findFirst.mockReset().mockResolvedValue(null);
   mocked.thinkpagesAccount.findFirst.mockReset().mockResolvedValue(null);
   mocked.wikiAccountLink.findFirst.mockReset().mockResolvedValue(null);
+  mocked.userConnection.findMany.mockReset().mockResolvedValue([]);
   mocked.realmClaim.findMany.mockReset();
 });
 
@@ -152,6 +155,20 @@ describe("resolveRealmInviter", () => {
     await expect(resolveRealmInviter("eurth", "clerk_kir")).resolves.toEqual({
       handle: "clerk_kir",
       displayName: "clerk_kir",
+    });
+  });
+
+  it("leaves the inviter's wiki name out of the chain when wiki attribution is off", async () => {
+    mocked.user.findFirst.mockResolvedValue({ ...kir, handle: null });
+    mocked.country.findFirst.mockResolvedValue({ id: "c1" });
+    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir Wiki" });
+    mocked.userConnection.findMany.mockResolvedValue([
+      { userId: "clerk_kir", status: JSON.stringify({ showWikiAttribution: false }) },
+    ]);
+    // An old invite link carrying the wiki name still names the inviter, by their other name.
+    await expect(resolveRealmInviter("eurth", "Kir Wiki")).resolves.toEqual({
+      handle: "Kir Forum",
+      displayName: "Kir Forum",
     });
   });
 });

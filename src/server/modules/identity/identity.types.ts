@@ -167,7 +167,7 @@ export type PassportCard =
   | { preview: false }
   | {
       preview: true;
-      /** The passport handle (`passportHandleOf`), as `getPassport` returns it. */
+      /** The passport handle (`loadPassportHandle`), as `getPassport` returns it. */
       handle: string;
       /** Personal ThinkPages persona name, else the forum name, else the handle (no Clerk call). */
       displayName: string;
