@@ -11,7 +11,7 @@ import {
   resolveSchedule,
   summarizeResult,
 } from "~/server/cron/jobs";
-import { isValidCronPattern } from "~/server/cron/scheduler";
+import { isValidCronPattern, matchesCron } from "~/server/cron/scheduler";
 
 const rootDir = path.resolve(__dirname, "../../../..");
 const moduleFile = (modulePath: string): string =>
@@ -74,6 +74,20 @@ describe("CRON_JOBS", () => {
       timeoutMs: 5 * 60_000,
       exportName: "runQueuedCardImports",
     });
+  });
+
+  it("ticks card holding XP at 03:30 UTC under its own lease, retrying hourly for the rest of the day", () => {
+    const job = CRON_JOBS.find((j) => j.name === "card-holding-xp");
+    expect(job).toMatchObject({
+      defaultSchedule: "30 3-23 * * *",
+      lockName: "card-holding-xp",
+      modulePath: "~/server/modules/cards/holding-xp",
+      exportName: "runHoldingXpTick",
+    });
+    const firesAt = (time: string) =>
+      matchesCron(job?.defaultSchedule ?? "", new Date(`2026-11-02T${time}Z`));
+    expect(["03:30", "04:30", "23:30"].map(firesAt)).toEqual([true, true, true]);
+    expect(["02:30", "03:00", "00:30"].map(firesAt)).toEqual([false, false, false]);
   });
 
   it.each(CRON_JOBS.map((job) => [job.name, job] as const))(

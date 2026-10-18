@@ -364,7 +364,7 @@ model CardExperienceEvent {
   amount       Int
   resultLevel  Int
   resultXP     Int
-  source       String   // e.g. "AUCTION_COMPLETE", "BUYOUT", "TRADE", "CRAFT", "PACK_OPEN"
+  source       String   // a CardXpSource (src/lib/cards/xp-utils.ts); older rows may hold "AUCTION_COMPLETE" or "BUYOUT"
   metadata     String?  // JSON string with additional context
   createdAt    DateTime @default(now())
   ownership    CardOwnership @relation(fields: [ownershipId], references: [id], onDelete: Cascade)

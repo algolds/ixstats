@@ -20,6 +20,7 @@ jest.mock("~/lib/websocket/market-websocket-server", () => ({
 
 import { TRPCError } from "@trpc/server";
 import { AuctionService, refundListingFeeTx } from "~/lib/economy/auction-service";
+import { grantCardXp } from "~/lib/cards/xp-utils";
 import { vaultService } from "~/lib/vault/vault-service";
 import { VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 
@@ -229,6 +230,7 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
       makeAuction({ currentBid: 500, currentBidderId: "p", endTime: tenMinutesAgo() }),
       { s: 0 }
     );
+    jest.mocked(grantCardXp).mockClear();
 
     await service.completeAuction("a1", h.db);
 
@@ -260,6 +262,12 @@ describe("AuctionService <-> ledger (transaction client without $transaction)", 
         price: 500,
       },
     });
+    expect(jest.mocked(grantCardXp)).toHaveBeenCalledWith(
+      h.tx,
+      "c1",
+      "AUCTION_WIN",
+      JSON.stringify({ auctionId: "a1" })
+    );
   });
 
   it("executeBuyout records the sale in the copy's trail as AUCTION_BUYOUT, with its price", async () => {

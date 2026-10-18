@@ -818,8 +818,8 @@ export class AuctionService {
             action: "AUCTION_END",
           });
 
-          // Grant 50 XP to the winner's card instance
-          await grantCardXp(tx, copyId, 50, "AUCTION_COMPLETE", JSON.stringify({ auctionId }));
+          // Card XP for the winner's copy (the Economy tab's auction-win amount)
+          await grantCardXp(tx, copyId, "AUCTION_WIN", JSON.stringify({ auctionId }));
 
           console.log(
             `[Auction Service] Completed auction ${auctionId} - Winner: ${auction.currentBidderId} for ${finalPrice} IxC`

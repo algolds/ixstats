@@ -62,7 +62,6 @@ it("mints a standard copy with a DAILY_CLAIM mint row and grants it XP", async (
   expect(grantCardXp).toHaveBeenCalledWith(
     db,
     "co_1",
-    10,
     "DAILY_CLAIM",
     JSON.stringify({ cardId: "card_1" })
   );

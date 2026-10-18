@@ -390,7 +390,6 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       await grantCardXp(
         tx,
         copy.id,
-        10,
         "PACK_OPEN",
         JSON.stringify({ packId: pack.id, packName: pack.name })
       );

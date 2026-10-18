@@ -32,6 +32,7 @@ import { tradingOffersRouter } from "~/server/api/routers/trading/offers";
 import { getVaultConfig } from "~/lib/vault/vault-service";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { notificationAPI } from "~/lib/notifications/api";
+import { grantCardXp } from "~/lib/cards/xp-utils";
 import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockDb, type MockPrismaProxy } from "~/tests/helpers/transactional-mock-db";
@@ -187,6 +188,13 @@ describe("respondToTrade ACCEPT", () => {
       expect.objectContaining({ userId: RECIPIENT, amount: 50, type: "EARN_CARDS" })
     );
     expect(db.tradeOffer.update).not.toHaveBeenCalled();
+    // Card XP for every copy that changed hands, from the Economy tab's trade amount
+    const tradeXp = JSON.stringify({ tradeId: "trade_1" });
+    expect(jest.mocked(grantCardXp).mock.calls).toEqual([
+      [db, "ci_1", "TRADE", tradeXp],
+      [db, "cr_1", "TRADE", tradeXp],
+      [db, "cr_2", "TRADE", tradeXp],
+    ]);
     // Each moved copy's trail row carries its card and serial, so it outlives the copy
     expect(db.cardTransferEvent.createMany).toHaveBeenNthCalledWith(1, {
       data: [
