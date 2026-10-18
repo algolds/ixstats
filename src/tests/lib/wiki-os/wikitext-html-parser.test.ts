@@ -1,4 +1,6 @@
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { proxiedFileUrl } from "~/lib/realms/sources/wiki-file-info";
+import { IIWIKI_EXCERPT } from "~/tests/fixtures/cards/iiwiki-excerpt";
 
 describe("wikitext-parser — template stripping", () => {
   it("strips unknown templates", () => {
@@ -112,5 +114,34 @@ describe("wikitext-parser — images left out", () => {
   it("keeps links to file pages as links by default", () => {
     const html = parseWikitextToHtml("See [[:File:Flag of Velarc.svg|the flag]].", "ixwiki");
     expect(html).toContain('<a href="/wiki/%3AFile%3AFlag_of_Velarc.svg"');
+  });
+});
+
+describe("wikitext-parser — another wiki's article", () => {
+  it("leaves out an infobox it cannot draw for that wiki, keeping the lead text", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki");
+    expect(html).not.toContain("infobox");
+    expect(html).not.toMatch(/Logo Size|Logo Caption|Map Alt|200px|Abbreviation/);
+    expect(html).toContain("is a multinational organization that maintains the Manamana Canal.");
+    expect(html).toContain("It was formed to bring stability to the area.");
+  });
+
+  it("draws its file links through that wiki's proxy, as the card art does, never IxWiki's", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki");
+    expect(html).toContain(`src="${proxiedFileUrl("iiwiki", null, "Manamana Canal.jpg")}"`);
+    expect(html).not.toContain("/api/mediawiki/ixwiki/");
+  });
+
+  it("draws no image at all with images off", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "iiwiki", { images: false });
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<figure");
+    expect(html).toContain("It was formed to bring stability to the area.");
+  });
+
+  it("still draws an IxWiki article's infobox", () => {
+    const html = parseWikitextToHtml(IIWIKI_EXCERPT, "ixwiki");
+    expect(html).toContain("wikios-infobox");
+    expect(html).toContain("Abbreviation");
   });
 });

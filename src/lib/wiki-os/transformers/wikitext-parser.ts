@@ -358,8 +358,9 @@ export function parseWikitextToHtml(
   // 6. Convert wikitables to responsive HTML tables
   text = parseWikitables(text);
 
-  // 6b. Extract and convert Infobox template to HTML table before stripping
-  const infoboxHtml = parseInfoboxToHtml(text, { images });
+  // 6b. Extract and convert Infobox template to HTML table before stripping. Only IxWiki's: the table knows its
+  // templates (and serves their images from IxWiki), so another wiki's infobox is left out, not printed as raw rows.
+  const infoboxHtml = wikiSource === "ixwiki" ? parseInfoboxToHtml(text, { images }) : "";
 
   // 7. Strip recursively nested templates: {{...}}
   text = stripWikitextTemplates(text);

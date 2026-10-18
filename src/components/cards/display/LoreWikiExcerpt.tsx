@@ -51,9 +51,10 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const excerptText =
     fetchedExcerpt?.wikitext || fetchedExcerpt?.extract || storedExcerpt || card.description;
 
+  // Compiled for the card's own wiki: its files through that wiki's proxy, and an infobox only where it can be drawn.
   const parsedHtml = useMemo(
-    () => parseWikitextToHtml(excerptText, articleSource ?? "ixwiki", { images: !artHidden }),
-    [excerptText, articleSource, artHidden]
+    () => parseWikitextToHtml(excerptText, source, { images: !artHidden }),
+    [excerptText, source, artHidden]
   );
 
   return (
