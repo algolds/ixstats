@@ -7,10 +7,12 @@ import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
 import { assertCapacityTx, CapacityError } from "./capacity";
 import { parseCardRarity } from "./enums";
-import { RARITY_ORDER, rarityRank } from "./face/labels";
+import { rarityRank } from "./face/labels";
+import { CATALOGUE_WHERE } from "./hub/catalogue";
 import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
-import { PACK_ODDS_FIELDS, type PackOdds } from "./pack-odds";
+import { rarityList, undeliverableRarities, type PackOdds } from "./pack-odds";
+import { createPoolDrawer, rollRarity, tierCounts, type RarityOdds } from "./pool-draw";
 import { grantCardXp } from "./xp-utils";
 
 /**
@@ -116,20 +118,22 @@ export function mergePackTheme(
   };
 }
 
-/**
- * Weighted random selection based on rarity odds
- */
-function selectRarityByOdds(odds: PackOdds): CardRarity {
-  const random = Math.random() * 100;
-  let cumulative = 0;
-
-  for (const [rarity, key] of PACK_ODDS_FIELDS) {
-    cumulative += odds[key] ?? 0;
-    if (random < cumulative) return rarity;
-  }
-
-  return "COMMON";
+/** A pack's odds columns as percent odds by rarity. */
+function packRarityOdds(pack: PackOdds): RarityOdds {
+  return {
+    COMMON: pack.commonOdds,
+    UNCOMMON: pack.uncommonOdds,
+    RARE: pack.rareOdds,
+    ULTRA_RARE: pack.ultraRareOdds,
+    EPIC: pack.epicOdds,
+    LEGENDARY: pack.legendaryOdds,
+  };
 }
+
+const cannotOpen = (rarities: string) =>
+  `This pack can't be opened right now: it has no ${rarities} cards to give. It stays unopened; try again later.`;
+const notOnSale = (rarities: string) =>
+  `This pack is not on sale right now: it has no ${rarities} cards to give.`;
 
 /**
  * Purchase pack with IxCredits deduction
@@ -184,6 +188,9 @@ export async function purchasePack(db: PrismaClient, userId: string, packId: str
       }
     }
 
+    // A pack that can't give a rarity it shows or guarantees would never open, so it is not sold
+    await deliverablePool(tx, pack, notOnSale);
+
     // 3. Charge through the ledger (lifetime counters, kill switches, maintenance mode,
     //    row-locked conditional decrement). Throws LedgerError, rolling this transaction back.
     if (pack.priceCredits > 0) {
@@ -230,17 +237,10 @@ export function generatePackCards(pack: {
   guaranteedRarity?: string | null;
 }): CardRarity[] {
   const rarities: CardRarity[] = [];
-  const odds = {
-    commonOdds: pack.commonOdds,
-    uncommonOdds: pack.uncommonOdds,
-    rareOdds: pack.rareOdds,
-    ultraRareOdds: pack.ultraRareOdds,
-    epicOdds: pack.epicOdds,
-    legendaryOdds: pack.legendaryOdds,
-  };
+  const odds = packRarityOdds(pack);
 
   for (let i = 0; i < pack.cardCount; i++) {
-    rarities.push(selectRarityByOdds(odds));
+    rarities.push(rollRarity(odds));
   }
 
   const guaranteed = parseCardRarity(pack.guaranteedRarity);
@@ -258,7 +258,8 @@ export function generatePackCards(pack: {
 /**
  * The pack's card pool, before rarity: active cards matching the pack's type, season and
  * theme, never Special or Trophy (achievement, event and trophy rewards) and never crafted;
- * only approved cards (imports wait in review), and never restricted-licence art.
+ * only catalogue cards (approved, as imports wait in review, and homed in a published realm,
+ * so a draft or generating realm's cards never drop), and never restricted-licence art.
  */
 export async function packPoolWhere(
   tx: Prisma.TransactionClient,
@@ -278,8 +279,7 @@ export async function packPoolWhere(
   });
 
   const and: Prisma.CardWhereInput[] = [
-    { reviewState: "APPROVED" },
-    { isRetired: false },
+    CATALOGUE_WHERE,
     // Special and Trophy cards never drop from packs (achievement and event rewards, Loreward and sports trophies)
     { cardType: { notIn: [CardType.SPECIAL, CardType.TROPHY] } },
     EXCLUDE_RESTRICTED_ART,
@@ -306,45 +306,30 @@ async function unclaimedPackError(
     : new PackError("NOT_FOUND", "Pack not found");
 }
 
-type PoolPack = Parameters<typeof packPoolWhere>[1];
+type PoolPack = Parameters<typeof packPoolWhere>[1] &
+  PackOdds & { guaranteedRarity: string | null };
 
-/** Draws one card of a rolled rarity; an empty tier falls back to the next-lower one, then reaches upward. */
-async function poolDrawer(tx: Prisma.TransactionClient, pack: PoolPack) {
-  const poolWhere = await packPoolWhere(tx, pack);
-  const tierCounts = new Map<CardRarity, number>();
-  const countTier = async (rarity: CardRarity) => {
-    const cached = tierCounts.get(rarity);
-    if (cached !== undefined) return cached;
-    const count = await tx.card.count({ where: { AND: [poolWhere, { rarity }] } });
-    tierCounts.set(rarity, count);
-    return count;
-  };
-  return async (rolled: CardRarity) => {
-    const rank = rarityRank(rolled);
-    const tiers = [...RARITY_ORDER.slice(0, rank + 1).reverse(), ...RARITY_ORDER.slice(rank + 1)];
-    for (const tier of tiers) {
-      const count = await countTier(tier);
-      if (count === 0) continue;
-      const card = await tx.card.findFirst({
-        where: { AND: [poolWhere, { rarity: tier }] },
-        skip: Math.floor(Math.random() * count),
-        take: 1,
-      });
-      if (!card) throw new PackError("PRECONDITION_FAILED", `Failed to select a ${tier} card`);
-      return card;
-    }
-    throw new PackError(
-      "PRECONDITION_FAILED",
-      "This pack has no cards available right now. Please try again later."
-    );
-  };
+/**
+ * The pack's pool and its cards of each rarity, refused (`refusal`) while a rarity the pack gives odds for, or
+ * guarantees, has no card. A pack never falls back to another rarity, so it never undercuts its shown odds (Q3).
+ */
+async function deliverablePool(
+  tx: Prisma.TransactionClient,
+  pack: PoolPack,
+  refusal: (rarities: string) => string
+) {
+  const where = await packPoolWhere(tx, pack);
+  const counts = await tierCounts(tx, where);
+  const missing = undeliverableRarities(pack, parseCardRarity(pack.guaranteedRarity), counts);
+  if (missing.length > 0) throw new PackError("PRECONDITION_FAILED", refusal(rarityList(missing)));
+  return { where, counts };
 }
 
 /**
  * Opens a pack: claims it first (only one open can flip `isOpened`, so a second, concurrent open throws CONFLICT
- * before anything is minted; cards refresh §5.4), checks capacity under the owner's lock, draws the whole pack, then
- * mints each pulled card through `mintCopy`, which rolls its finish. One transaction: any failure, a full collection
- * included, leaves the pack unopened.
+ * before anything is minted; cards refresh §5.4), checks capacity under the owner's lock, refuses a pool that can't
+ * give a rarity the pack shows, draws the whole pack, then mints each pulled card through `mintCopy`, which rolls its
+ * finish. One transaction: any failure, a full collection or an empty rarity included, leaves the pack unopened.
  */
 export async function openPack(db: PrismaClient, userId: string, userPackId: string) {
   return db.$transaction(async (tx) => {
@@ -370,9 +355,14 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       throw error;
     }
 
-    const draw = await poolDrawer(tx, pack);
+    const { where, counts } = await deliverablePool(tx, pack, cannotOpen);
+    const drawer = createPoolDrawer(tx, where, counts);
     const cards = [];
-    for (const rarity of generatePackCards(pack)) cards.push(await draw(rarity));
+    for (const rarity of generatePackCards(pack)) {
+      const card = await drawer.draw(rarity);
+      if (!card) throw new PackError("PRECONDITION_FAILED", cannotOpen(rarityList([rarity])));
+      cards.push(card);
+    }
 
     // mintCopy holds its per-card serial lock until commit, so mint in cardId order: two concurrent opens that
     // drew the same cards in different orders would otherwise deadlock.

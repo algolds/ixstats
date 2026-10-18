@@ -70,6 +70,31 @@ export function formatOdds(percent: number): string {
   return `${rounded}%`;
 }
 
+/** Cards of each rarity in a pack's pool. */
+export type TierCounts = Readonly<Partial<Record<CardRarity, number>>>;
+
+/**
+ * The rarities a pack promises but cannot give: odds above 0, or its guarantee, with no card in the pool. A pack with
+ * any is not sold, put on sale or opened (owner decision, 2026-10-17: a pack never undercuts its shown odds).
+ */
+export function undeliverableRarities(
+  odds: PackOdds,
+  guaranteed: CardRarity | null,
+  counts: TierCounts
+): CardRarity[] {
+  return PACK_ODDS_FIELDS.flatMap(([rarity, field]) =>
+    (odds[field] > 0 || rarity === guaranteed) && (counts[rarity] ?? 0) === 0 ? [rarity] : []
+  );
+}
+
+/** "Epic and Legendary", for the refusals. */
+export function rarityList(rarities: readonly CardRarity[]): string {
+  const names = rarities.map((rarity) => RARITY_LABEL[rarity]);
+  return names.length > 1
+    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+    : (names[0] ?? "");
+}
+
 /** True when the odds add up to 100, within float rounding. */
 export function oddsAddUp(odds: PackOdds): boolean {
   return Math.abs(packOddsTotal(odds) - 100) <= 0.01;
