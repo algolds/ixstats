@@ -11,7 +11,10 @@ jest.mock("~/server/db", () => ({
   },
 }));
 
-import { FORUM_IMPORT_NODE_MAP_KEY, legacyForumRedirectFor } from "~/server/modules/thinkpages-forum";
+import {
+  FORUM_IMPORT_NODE_MAP_KEY,
+  legacyForumRedirectFor,
+} from "~/server/modules/thinkpages-forum";
 import { __resetLegacyForumRedirectForTests } from "~/server/modules/thinkpages-forum/legacy-redirect";
 import { db } from "~/server/db";
 
@@ -162,8 +165,7 @@ describe("legacyForumRedirectFor", () => {
     );
   });
 
-  it("sends the home and the bridge's other pages to the forum home", async () => {
-    await expect(legacyForumRedirectFor(db, { kind: "home" })).resolves.toBe("/thinkpages");
+  it("sends the bridge's other pages to the forum home", async () => {
     await expect(legacyForumRedirectFor(db, { kind: "other" })).resolves.toBe("/thinkpages");
     expect(lookups()).toEqual([0, 0, 0, 0, 0]);
   });

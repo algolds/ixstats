@@ -7,7 +7,6 @@ import { z } from "zod";
 import { categoryHref, FORUM_HOME, postHref, threadHref } from "./links";
 
 export type LegacyForumRef =
-  | { kind: "home" }
   | { kind: "forum"; nodeId: number }
   | { kind: "thread"; threadId: number }
   | { kind: "post"; postId: number }

@@ -12,13 +12,13 @@
  * `/achievements` redirects to `/vault/achievements` (keeping `?a=<key>`), so it has no `loading.tsx` either.
  *
  * The legacy forum redirects need the real 308 too (ThinkPages forum phase 4b): every `/forum/*` page left of the
- * retired XenForo bridge (thread, post, forum node, member) calls `permanentRedirect()` before rendering anything, so the `(forum)` group has no `loading.tsx`
- * and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
+ * retired XenForo bridge (thread, post, forum node, member) calls `permanentRedirect()` before rendering anything,
+ * so the `(forum)` group has no `loading.tsx` and no layout at all. With a loading boundary, `/forum/thread/<id>` answered 200 with a streamed meta-refresh
  * instead of the redirect (seen on the clone in phase 4).
  *
- * The ThinkPages redirects need the real 307 and 308 too (phase 5): the forum post permalink resolver and the realm
- * redirect. `/thinkpages` has no `loading.tsx`; the forum's category, thread and moderation
- * pages, which never redirect, keep the loading UI in their own segments.
+ * The forum post permalink resolver (`/thinkpages/post/<id>`) needs the real 307 too (phase 5), so no `loading.tsx`
+ * sits above it. `/thinkpages` and the realm landing page have none either; the forum's category, thread and
+ * moderation pages keep the loading UI in their own segments.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -35,7 +35,10 @@ const NOT_LOADING_SEGMENTS = new Set([
 ]);
 /** A segment with a loading.tsx of its own that is not the shared one. */
 const OWN_LOADING = new Set(["builder"]);
-/** Top-level segments whose redirect pages need the real 308, so they have no loading.tsx. */
+/**
+ * Top-level segments with no loading.tsx of their own: redirect pages need the real 308, and `r` keeps its
+ * loading UI in the realm's `(region)` group.
+ */
 const REDIRECT_SEGMENTS = new Set(["id", "r", "(forum)", "thinkpages", "achievements"]);
 /** The redirect pages, relative to src/app. */
 const REDIRECT_PAGES = ["id/[username]/page.tsx", "achievements/page.tsx"];
@@ -122,7 +125,7 @@ describe("no loading.tsx above the legacy forum redirects", () => {
   });
 });
 
-describe("no loading.tsx above the ThinkPages redirects", () => {
+describe("no loading.tsx above the ThinkPages permalink and landing pages", () => {
   const pages = [
     "thinkpages/page.tsx",
     "thinkpages/post/[postId]/page.tsx",

@@ -74,7 +74,6 @@ describe("legacyForumTarget", () => {
 
   it("falls back to the forum home when nothing was found", () => {
     const refs: LegacyForumRef[] = [
-      { kind: "home" },
       { kind: "other" },
       { kind: "thread", threadId: 1 },
       { kind: "post", postId: 1 },
@@ -91,7 +90,6 @@ describe("legacyForumTarget", () => {
       category: { key: "general", realmSlug: null },
       handle: "jane",
     };
-    expect(legacyForumTarget({ kind: "home" }, all)).toBe(FORUM_HOME);
     expect(legacyForumTarget({ kind: "other" }, all)).toBe(FORUM_HOME);
     expect(legacyForumTarget({ kind: "post", postId: 1 }, all)).toBe("/thinkpages/post/p1");
   });
