@@ -1,11 +1,17 @@
-import { type Prisma, type PrismaClient } from "@prisma/client";
+import { type CardFinish, type Prisma, type PrismaClient } from "@prisma/client";
 import { earnCreditsTx, getOrCreateVault, LedgerError } from "~/lib/vault/vault-ledger";
 import { grantCardXp } from "~/lib/cards/xp-utils";
-import { CardFinish } from "~/lib/cards/enums";
+import { assertCapacityTx, CapacityError } from "~/lib/cards/capacity";
+import { dailyRarityOdds, getEconomyConfig } from "~/lib/cards/economy-config";
 import { mintCopy } from "~/lib/cards/mint";
-import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
+import {
+  createPoolDrawer,
+  DAILY_POOL_WHERE,
+  oddsWithCards,
+  rollRarity,
+  tierCounts,
+} from "~/lib/cards/pool-draw";
 import { CARD_ARTWORK_PLACEHOLDER } from "~/lib/cards/display-utils";
-import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { computeNextStreak, levelMultiplier, streakMultiplier } from "~/lib/vault/daily-roll";
 
 export function startOfUtcDay(now: Date): Date {
@@ -121,22 +127,46 @@ function rollDailyCredits(streak: number, vaultLevel: number): number {
   );
 }
 
-/**
- * The cards a daily claim can draw: live (a card whose art a takedown hid is retired), approved, never a Loreward
- * trophy or restricted-licence art.
- */
-const DAILY_POOL = {
-  isRetired: false,
-  reviewState: "APPROVED",
-  ...EXCLUDE_TROPHY_CARDS,
-  ...EXCLUDE_RESTRICTED_ART,
-} as const;
+/** No card can be drawn (an empty pool); the claim is kept. */
+class DailyCardError extends Error {}
 
-/** A random card from the pool; null when the pool is empty. */
-async function pickRandomCard(db: PrismaClient) {
-  const total = await db.card.count({ where: DAILY_POOL });
-  if (total === 0) return null;
-  return db.card.findFirst({ where: DAILY_POOL, skip: Math.floor(Math.random() * total) });
+type DailyVault = Awaited<ReturnType<typeof getOrCreateVault>>;
+
+/**
+ * The daily card in one transaction: today's slot, capacity under the owner's lock (before the mint's serial lock), a
+ * draw from any realm by the daily odds shared over the rarities that have cards (cards refresh §4, Q3), a copy with a
+ * rolled finish, its XP and the ledger marker. A full collection or an empty pool throws, which rolls the slot back, so
+ * the player can still take credits today.
+ */
+async function claimDailyCard(db: PrismaClient, vault: DailyVault, now: Date) {
+  return db.$transaction(async (tx) => {
+    const slot = await claimDailySlot(tx, vault, now);
+    if (!slot.claimed) return null;
+    await assertCapacityTx(tx, vault.userId, 1);
+    const counts = await tierCounts(tx, DAILY_POOL_WHERE);
+    const odds = oddsWithCards(dailyRarityOdds(await getEconomyConfig(tx)), counts);
+    const card = await createPoolDrawer(tx, DAILY_POOL_WHERE, counts).draw(rollRarity(odds));
+    if (!card) {
+      throw new DailyCardError("There is no card to draw right now. Take the credits instead.");
+    }
+    const copy = await mintCopy(tx, {
+      cardId: card.id,
+      ownerId: vault.userId,
+      source: "DAILY_CLAIM",
+    });
+    await grantCardXp(tx, copy.id, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }), now);
+    await tx.vaultTransaction.create({
+      data: {
+        vaultId: vault.id,
+        credits: 0,
+        balanceAfter: vault.credits,
+        type: "EARN_ACTIVE",
+        source: "DAILY_LOGIN_CARD",
+        metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title, finish: copy.finish }),
+      },
+    });
+    return { streak: slot.streak, card, copy };
+  });
 }
 
 /**
@@ -150,7 +180,14 @@ export async function claimCombinedDailyClaim(
   success: boolean;
   rewardType: "credits" | "card";
   creditsAwarded?: number;
-  cardAwarded?: { id: string; ownershipId: string; title: string; rarity: string; artwork: string };
+  cardAwarded?: {
+    id: string;
+    ownershipId: string;
+    title: string;
+    rarity: string;
+    artwork: string;
+    finish: CardFinish;
+  };
   streak: number;
   message?: string;
 }> {
@@ -189,58 +226,30 @@ export async function claimCombinedDailyClaim(
       };
     }
 
-    const card = await pickRandomCard(db);
-    if (!card) {
-      return {
-        success: false,
-        rewardType,
-        streak: vault.loginStreak,
-        message: "No cards exist in the database to award.",
-      };
+    let outcome: Awaited<ReturnType<typeof claimDailyCard>>;
+    try {
+      outcome = await claimDailyCard(db, vault, now);
+    } catch (error) {
+      if (error instanceof CapacityError || error instanceof DailyCardError) {
+        return { success: false, rewardType, streak: vault.loginStreak, message: error.message };
+      }
+      throw error;
     }
+    if (outcome === null) return alreadyClaimed;
 
-    // Slot, mint (serial, copy, mint row), XP and ledger row: one transaction
-    const claimed = await db.$transaction(async (tx) => {
-      const slot = await claimDailySlot(tx, vault, now);
-      if (!slot.claimed) return null;
-
-      // Serial, copy and its mint row (DAILY_CLAIM) through the one mint path
-      const ownership = await mintCopy(tx, {
-        cardId: card.id,
-        ownerId: vault.userId,
-        finish: CardFinish.STANDARD,
-        source: "DAILY_CLAIM",
-      });
-
-      await grantCardXp(tx, ownership.id, "DAILY_CLAIM", JSON.stringify({ cardId: card.id }));
-
-      await tx.vaultTransaction.create({
-        data: {
-          vaultId: vault.id,
-          credits: 0,
-          balanceAfter: vault.credits,
-          type: "EARN_ACTIVE",
-          source: "DAILY_LOGIN_CARD",
-          metadata: JSON.stringify({ cardId: card.id, cardTitle: card.title }),
-        },
-      });
-
-      return { streak: slot.streak, ownershipId: ownership.id };
-    });
-
-    if (claimed === null) return alreadyClaimed;
-
+    const { card, copy, streak } = outcome;
     return {
       success: true,
       rewardType,
       cardAwarded: {
         id: card.id,
-        ownershipId: claimed.ownershipId,
+        ownershipId: copy.id,
         title: card.title,
         rarity: card.rarity,
         artwork: card.artwork || CARD_ARTWORK_PLACEHOLDER,
+        finish: copy.finish,
       },
-      streak: claimed.streak,
+      streak,
       message: `Claimed daily card: ${card.title}!`,
     };
   } catch (error) {

@@ -6,6 +6,8 @@ import {
   PackOddsSchema,
   oddsAddUp,
   packOddsTotal,
+  rarityList,
+  undeliverableRarities,
 } from "~/lib/cards/pack-odds";
 
 const seeded = {
@@ -53,4 +55,42 @@ it("says why the odds were refused", () => {
 it("gives a new pack the seeded odds, which add up", () => {
   expect(DEFAULT_PACK_ODDS).toEqual(seeded);
   expect(PackOddsSchema.safeParse(DEFAULT_PACK_ODDS).success).toBe(true);
+});
+
+describe("undeliverableRarities", () => {
+  const everyTier = { COMMON: 9, UNCOMMON: 9, RARE: 9, ULTRA_RARE: 9, EPIC: 9, LEGENDARY: 9 };
+
+  it("names each rarity with odds but no card in the pool, an uncounted one included, lowest first", () => {
+    expect(undeliverableRarities(seeded, null, everyTier)).toEqual([]);
+    expect(
+      undeliverableRarities(seeded, null, {
+        COMMON: 9,
+        UNCOMMON: 9,
+        RARE: 9,
+        ULTRA_RARE: 9,
+        EPIC: 0,
+      })
+    ).toEqual(["EPIC", "LEGENDARY"]);
+  });
+
+  it("names a guaranteed rarity with no card, even at odds of 0", () => {
+    const noLegendary = { ...seeded, commonOdds: 65.1, legendaryOdds: 0 };
+    expect(undeliverableRarities(noLegendary, "LEGENDARY", { ...everyTier, LEGENDARY: 0 })).toEqual(
+      ["LEGENDARY"]
+    );
+    expect(undeliverableRarities(noLegendary, "LEGENDARY", everyTier)).toEqual([]);
+  });
+
+  it("ignores an empty rarity the pack never gives", () => {
+    const noLegendary = { ...seeded, commonOdds: 65.1, legendaryOdds: 0 };
+    expect(undeliverableRarities(noLegendary, null, { ...everyTier, LEGENDARY: 0 })).toEqual([]);
+    expect(undeliverableRarities(noLegendary, "EPIC", { ...everyTier, LEGENDARY: 0 })).toEqual([]);
+  });
+});
+
+it("lists rarities by name for a refusal", () => {
+  expect(rarityList(["EPIC"])).toBe("Epic");
+  expect(rarityList(["EPIC", "LEGENDARY"])).toBe("Epic and Legendary");
+  expect(rarityList(["RARE", "ULTRA_RARE", "LEGENDARY"])).toBe("Rare, Ultra Rare and Legendary");
+  expect(rarityList([])).toBe("");
 });

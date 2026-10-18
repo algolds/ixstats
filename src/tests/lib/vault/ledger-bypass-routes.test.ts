@@ -4,6 +4,7 @@
  * These run the real ledger against an in-memory vault to prove the route now goes through it.
  */
 
+import { DEFAULT_PACK_ODDS } from "~/lib/cards/pack-odds";
 import { purchasePack } from "~/lib/cards/pack-service";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 
@@ -15,6 +16,10 @@ interface State {
   maintenance: boolean;
   packsEnabled: boolean;
   rows: any[];
+  /** The pack pool's cards of each rarity. */
+  tiers: Record<string, number>;
+  /** Columns written over the pack's. */
+  pack: Record<string, unknown>;
 }
 
 function makeDb(over: Partial<State> = {}) {
@@ -24,6 +29,8 @@ function makeDb(over: Partial<State> = {}) {
     maintenance: false,
     packsEnabled: true,
     rows: [],
+    tiers: { COMMON: 9, UNCOMMON: 9, RARE: 9, ULTRA_RARE: 9, EPIC: 9, LEGENDARY: 9 },
+    pack: {},
     ...over,
   };
   const vaultRow = () => ({
@@ -68,7 +75,19 @@ function makeDb(over: Partial<State> = {}) {
         purchaseLimit: null,
         limitedQuantity: null,
         priceCredits: 150,
+        ...DEFAULT_PACK_ODDS,
+        guaranteedRarity: null,
+        cardType: null,
+        season: null,
+        themeFilter: null,
+        ...state.pack,
       }),
+    },
+    card: {
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn(async () =>
+        Object.entries(state.tiers).map(([rarity, all]) => ({ rarity, _count: { _all: all } }))
+      ),
     },
     userPack: {
       count: jest.fn().mockResolvedValue(0),
@@ -116,6 +135,30 @@ describe("purchasePack goes through the ledger", () => {
       code: "PACKS_DISABLED",
     });
     expect(off.state.credits).toBe(1000);
+  });
+
+  it("refuses to sell a pack it can't deliver, charging nothing", async () => {
+    const { db, state } = makeDb({ tiers: { COMMON: 9, UNCOMMON: 9, RARE: 9, ULTRA_RARE: 9 } });
+    await expect(purchasePack(db, USER, "pack_1")).rejects.toMatchObject({
+      name: "PackError",
+      code: "PRECONDITION_FAILED",
+      message: "This pack is not on sale right now: it has no Epic and Legendary cards to give.",
+    });
+    expect(state.credits).toBe(1000);
+    expect(state.rows).toHaveLength(0);
+    expect(db.userPack.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses to sell a pack whose guaranteed rarity has no cards, though its odds give none", async () => {
+    const { db, state } = makeDb({
+      tiers: { COMMON: 9, UNCOMMON: 9, RARE: 9, ULTRA_RARE: 9, EPIC: 9 },
+      pack: { commonOdds: 65.1, legendaryOdds: 0, guaranteedRarity: "LEGENDARY" },
+    });
+    await expect(purchasePack(db, USER, "pack_1")).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "This pack is not on sale right now: it has no Legendary cards to give.",
+    });
+    expect(state.credits).toBe(1000);
   });
 
   it("refuses when the balance is short", async () => {
