@@ -172,6 +172,34 @@ describe("transferCardsTx", () => {
       isLocked: true,
     });
   });
+
+  it("with a table time, moves only copies unsigned or signed by then, so a later signature is a CONFLICT", async () => {
+    const tx = makeTx();
+    const tableAt = new Date("2026-09-25T11:00:00.000Z");
+    // One of the two copies was signed after the table: the CAS matches only the other
+    tx.cardOwnership.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(
+      transferCardsTx(asTx(tx), {
+        ids: ["c1", "c2"],
+        fromId: "from_1",
+        toId: "to_1",
+        expectLocked: false,
+        now: NOW,
+        notSignedAfter: tableAt,
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    expect(tx.cardOwnership.updateMany.mock.calls[0][0]).toEqual({
+      where: {
+        id: { in: ["c1", "c2"] },
+        ownerId: "from_1",
+        isLocked: false,
+        OR: [{ inscribedAt: null }, { inscribedAt: { lte: tableAt } }],
+      },
+      data: { ownerId: "to_1", isLocked: false, acquiredAt: NOW },
+    });
+  });
 });
 
 describe("recordTradeTransfersTx", () => {

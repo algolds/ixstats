@@ -29,6 +29,7 @@ jest.mock("~/lib/vault/vault-ledger", () => ({
   LedgerError: class LedgerError extends Error {},
 }));
 
+import { Prisma } from "@prisma/client";
 import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
@@ -741,6 +742,28 @@ describe("voidTrade", () => {
       voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("answers a lost deadlock with a CONFLICT to try again, and passes any other failure through", async () => {
+    const db = createMockPrisma();
+    db.tradeOffer.findUnique.mockResolvedValue(pending);
+    const deadlock = new Prisma.PrismaClientKnownRequestError("deadlock detected", {
+      code: "P2034",
+      clientVersion: "6",
+    });
+    db.$transaction.mockRejectedValueOnce(deadlock);
+    await expect(
+      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "This trade changed at the same moment. Try again.",
+    });
+    const boom = new Error("connection reset");
+    db.$transaction.mockRejectedValueOnce(boom);
+    await expect(
+      voidTrade(db as never, actor, { tradeId: "tr_1", reason: "Scam report" })
+    ).rejects.toBe(boom);
+    expect(notificationAPI.create).not.toHaveBeenCalled();
   });
 });
 

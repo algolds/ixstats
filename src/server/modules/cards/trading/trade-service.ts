@@ -321,7 +321,8 @@ const realmsOf = (copies: TradeCopy[]) => copies.map((c) => c.cards.realmId);
  * copy signed after the current table was written (`updatedAt`, which the offer and each counter stamp), so
  * a trade never settles an inscription the proposer has not seen. Signing itself is never blocked; a counter-offer
  * with the same cards shows the signature. The proposer's copies are locked from the table on, and a locked copy
- * cannot be signed.
+ * cannot be signed. This check gives the clear message; the responder transfer's CAS (`notSignedAfter`) holds the same
+ * line against a signature that commits after this read.
  */
 function assertUnsignedSince(copies: TradeCopy[], tableWrittenAt: Date): void {
   if (copies.some((c) => (c.inscribedAt?.getTime() ?? 0) > tableWrittenAt.getTime())) {
@@ -429,12 +430,14 @@ async function settleTradeTx(
     expectLocked: true,
     now,
   });
+  // The signed-copy rule again, inside the CAS: a signature committing since the read fails the count (CONFLICT)
   await transferCardsTx(tx, {
     ids: responderGives.cardIds,
     fromId: responderId,
     toId: proposerId,
     expectLocked: false,
     now,
+    notSignedAfter: trade.updatedAt,
   });
 
   const isCrossRealm = isCrossRealmTrade(realmsOf(proposerCopies), realmsOf(responderCopies));

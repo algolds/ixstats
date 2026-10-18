@@ -63,15 +63,33 @@ export async function unlockCardsTx(tx: Tx, ids: string[], ownerId: string): Pro
   });
 }
 
-/** Transfer cards; fails if any card is bound, or not owned by `fromId` in the expected lock state. */
+/**
+ * Transfer cards; fails if any card is bound, or not owned by `fromId` in the expected lock state. With
+ * `notSignedAfter` (the time the trade's table was written), a copy signed later fails too, inside this one statement,
+ * so a signature that commits after the caller's read cannot settle unseen.
+ */
 export async function transferCardsTx(
   tx: Tx,
-  args: { ids: string[]; fromId: string; toId: string; expectLocked: boolean; now: Date }
+  args: {
+    ids: string[];
+    fromId: string;
+    toId: string;
+    expectLocked: boolean;
+    now: Date;
+    notSignedAfter?: Date;
+  }
 ): Promise<void> {
-  const { ids, fromId, toId, expectLocked, now } = args;
+  const { ids, fromId, toId, expectLocked, now, notSignedAfter } = args;
   await assertNoBoundCopies(tx, ids);
   const res = await tx.cardOwnership.updateMany({
-    where: { id: { in: ids }, ownerId: fromId, isLocked: expectLocked },
+    where: {
+      id: { in: ids },
+      ownerId: fromId,
+      isLocked: expectLocked,
+      ...(notSignedAfter
+        ? { OR: [{ inscribedAt: null }, { inscribedAt: { lte: notSignedAfter } }] }
+        : {}),
+    },
     data: { ownerId: toId, isLocked: false, acquiredAt: now },
   });
   if (res.count !== ids.length) {
