@@ -447,6 +447,8 @@ export function listTakedowns(
       status: true,
       reason: true,
       contact: true,
+      // Admin-only: the router names a player's request by it and never returns the id
+      requestedBy: true,
       receivedAt: true,
       dueAt: true,
       resolvedAt: true,

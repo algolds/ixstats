@@ -73,6 +73,9 @@ function TakedownRow({
       </TableCell>
       <TableCell>
         {labelOf(ORIGIN_LABELS, takedown.origin)}
+        {takedown.requester && (
+          <p className="text-footnote text-label-secondary">{`Asked by ${takedown.requester}`}</p>
+        )}
         {takedown.contact && (
           <p className="text-footnote text-label-secondary">{takedown.contact}</p>
         )}

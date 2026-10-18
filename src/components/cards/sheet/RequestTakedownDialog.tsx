@@ -16,16 +16,14 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Signal } from "~/components/ui/signal";
 import { Textarea } from "~/components/ui/textarea";
 
 const REASON_MIN = 10;
 const REASON_MAX = 1000;
 const CONTACT_MAX = 200;
 
-const ANSWERS = {
-  filed: `Request sent. Staff answer takedowns within ${TAKEDOWN_DEADLINE_DAYS} days.`,
-  already: "Staff already have a request for this card.",
-} as const;
+const FILED = `Request sent. Staff answer takedowns within ${TAKEDOWN_DEADLINE_DAYS} days.`;
 
 interface RequestTakedownDialogProps {
   open: boolean;
@@ -49,12 +47,22 @@ export function RequestTakedownDialog({
 }: RequestTakedownDialogProps) {
   const [reason, setReason] = useState("");
   const [contact, setContact] = useState("");
+  // The card already has a request open: say so here and keep what the player typed
+  const [alreadyOpen, setAlreadyOpen] = useState(false);
+  const changeOpen = (next: boolean) => {
+    if (!next) setAlreadyOpen(false);
+    onOpenChange(next);
+  };
   const send = api.cards.requestTakedown.useMutation({
     onSuccess: ({ status }) => {
-      vaultNotify.success(ANSWERS[status], cardTitle);
+      if (status === "already") {
+        setAlreadyOpen(true);
+        return;
+      }
+      vaultNotify.success(FILED, cardTitle);
       setReason("");
       setContact("");
-      onOpenChange(false);
+      changeOpen(false);
     },
     onError: (error) => vaultNotify.error(error.message),
   });
@@ -66,7 +74,7 @@ export function RequestTakedownDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -76,6 +84,11 @@ export function RequestTakedownDialog({
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-3" onSubmit={submit}>
+          {alreadyOpen && (
+            <Signal tone="info" title="A request for this card is already open">
+              {`Staff already have one, so yours was not sent. They answer within ${TAKEDOWN_DEADLINE_DAYS} days.`}
+            </Signal>
+          )}
           <div className="space-y-1">
             <Label htmlFor="takedown-request-reason">Why should this card come down?</Label>
             <Textarea
@@ -104,7 +117,7 @@ export function RequestTakedownDialog({
             </p>
           </div>
           <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="secondary" onClick={() => changeOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={!ready}>

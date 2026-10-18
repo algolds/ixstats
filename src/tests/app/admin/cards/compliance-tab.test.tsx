@@ -49,6 +49,7 @@ const takedown = (fields: Partial<Takedown> = {}): Takedown => ({
   dueAt: new Date("2026-10-15T00:00:00Z"),
   resolvedAt: null,
   resolutionNote: null,
+  requester: null,
   card: { id: "card_1", title: "Union Assembly", cardType: "LORE", wikiSource: "iiwiki" },
   ...fields,
 });
@@ -111,12 +112,20 @@ describe("ComplianceTab takedowns", () => {
     expect(mutations.hide).toHaveBeenCalledWith({ takedownId: "td_1" });
   });
 
-  it("names a player's request as the player's, with the contact they gave", () => {
-    serve({ takedowns: [takedown({ origin: "PLAYER_REQUEST", contact: "me@example.org" })] });
+  it("names a player's request as the player's, with who asked and the contact they gave", () => {
+    serve({
+      takedowns: [
+        takedown({ origin: "PLAYER_REQUEST", requester: "@ann", contact: "me@example.org" }),
+        takedown({ id: "td_2", origin: "AUTHOR_REQUEST" }),
+      ],
+    });
     render(<ComplianceTab />);
 
     expect(screen.getByText("Player")).toBeInTheDocument();
+    expect(screen.getByText("Asked by @ann")).toBeInTheDocument();
     expect(screen.getByText("me@example.org")).toBeInTheDocument();
+    // Only a player's request names who asked
+    expect(screen.getAllByText(/^Asked by/)).toHaveLength(1);
   });
 
   it("declines a request with the reason the admin gives", () => {
