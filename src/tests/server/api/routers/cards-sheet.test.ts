@@ -11,7 +11,7 @@ jest.mock("~/lib/cache", () => ({
   rateLimiter: { isEnabled: () => true, check: (...args: unknown[]) => mockCheck(...args) },
 }));
 jest.mock("~/server/db", () => ({
-  db: { user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() } },
+  db: { user: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(async () => []) } },
 }));
 jest.mock("~/lib/cards/hub/sheet", () => ({ loadCardSheet: jest.fn(async () => null) }));
 jest.mock("~/server/modules/identity/identity.privacy", () => ({
