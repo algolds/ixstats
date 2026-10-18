@@ -33,6 +33,7 @@ jest.mock("~/hooks/marketplace/useAuctionBid", () => ({
   })),
 }));
 jest.mock("~/hooks/marketplace/useAuctionWebSocket", () => ({ useAuctionWebSocket: jest.fn() }));
+jest.mock("~/hooks/useKeepSelectedInView", () => ({ useKeepSelectedInView: jest.fn() }));
 jest.mock("~/hooks/useCardsRefresh", () => {
   const refreshCards = jest.fn();
   return { useCardsRefresh: () => refreshCards };
@@ -59,6 +60,7 @@ jest.mock("~/components/vault/cards/market/CreateAuctionModal", () => ({
 import { api } from "~/trpc/react";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
+import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { MarketPane } from "~/components/vault/cards/market/MarketPane";
 import type { MarketTab } from "~/lib/cards/hub-routes";
@@ -147,6 +149,16 @@ describe("MarketPane", () => {
       expect(tab).toHaveClass("focus-visible:-outline-offset-2");
       expect(tab).not.toHaveClass("focus-visible:outline-offset-2");
     }
+  });
+
+  // The SegmentedControl's own keep-in-view (useKeepSelectedInView): a selected or focused tab past the edge, or one
+  // pushed out when a tab before it widens, scrolls back into the row.
+  it("keeps the selected tab in view in its row", () => {
+    renderPane("selling");
+    const list = screen.getByRole("tablist", { name: "Market" });
+    const [ref, options] = jest.mocked(useKeepSelectedInView).mock.calls.at(-1)!;
+    expect(ref.current).toBe(list);
+    expect(options).toEqual({ enabled: true, selected: "selling" });
   });
 
   it("browses live auctions as faces, ending soon first, and bids", () => {
