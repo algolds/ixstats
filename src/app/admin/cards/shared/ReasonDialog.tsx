@@ -1,6 +1,6 @@
 "use client";
 /** A confirmation that asks for a reason, which the action records in the audit trail. */
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { focusedElement, refocus } from "~/lib/utils/focus";
 
 interface ReasonDialogProps {
   open: boolean;
@@ -35,13 +36,24 @@ export function ReasonDialog({
   onConfirm,
 }: ReasonDialogProps) {
   const fieldId = useId();
+  const opener = useRef<HTMLElement | null>(null);
   const [reason, setReason] = useState("");
   const trimmed = reason.trim();
   // Each opening starts empty, however the last one ended (cancel, dismiss, or the parent closing it on success).
   useEffect(() => setReason(""), [open]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        // Opened from a row's button rather than a trigger, so focus goes back to that button by hand
+        onOpenAutoFocus={() => {
+          opener.current = focusedElement();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          refocus(opener.current);
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

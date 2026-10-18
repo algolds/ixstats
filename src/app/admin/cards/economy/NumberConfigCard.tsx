@@ -103,7 +103,11 @@ export function NumberConfigCard<K extends string>({
             );
           })}
         </div>
-        {sectionProblem && <p className="text-destructive text-footnote">{sectionProblem}</p>}
+        {sectionProblem && (
+          <p role="alert" className="text-destructive text-footnote">
+            {sectionProblem}
+          </p>
+        )}
         {children}
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={pending || blocked} onClick={() => onSave(changed)}>

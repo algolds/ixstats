@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { cardArticleSourceSchema, cardWikiSourceSchema } from "~/lib/cards/card-sources";
+import type { CardEconomyConfig } from "~/lib/cards/economy-config";
 import { LOREWARD_PLACES, LOREWARD_TYPES } from "~/lib/vault/loreward-places";
 import {
   economySettings,
@@ -8,6 +9,7 @@ import {
   saveBonuses,
   saveCardValues,
   saveDailyImport,
+  saveEconomy,
   saveLorewardPayouts,
   saveMarket,
   saveRarityThresholds,
@@ -17,6 +19,41 @@ import { adminActor } from "~/server/shared/admin-actor";
 // Inputs check only the shape. The bounds live in cards.economy, so a refusal shows its sentence rather than
 // zod's issue list.
 const value = z.number();
+
+/** Every card economy number, so none is dropped as an unknown key. */
+const economyShape = {
+  finishFoilPct: value,
+  finishHoloPct: value,
+  dailyCommonPct: value,
+  dailyUncommonPct: value,
+  dailyRarePct: value,
+  dailyUltraRarePct: value,
+  dailyEpicPct: value,
+  dailyLegendaryPct: value,
+  dustCommon: value,
+  dustUncommon: value,
+  dustRare: value,
+  dustUltraRare: value,
+  dustEpic: value,
+  dustLegendary: value,
+  dustFoilMult: value,
+  dustHoloMult: value,
+  dustImportMult: value,
+  fusionCopies: value,
+  craftDustMult: value,
+  listingFee: value,
+  listingFeeFeatured: value,
+  listingRefundPct: value,
+  listingDays: value,
+  saleFeeThreshold: value,
+  royaltyPct: value,
+  xpPack: value,
+  xpDaily: value,
+  xpTradePerCard: value,
+  xpAuctionWin: value,
+  xpHoldingTick: value,
+  xpDailyCapPerCopy: value,
+} satisfies Record<keyof CardEconomyConfig, typeof value>;
 
 export const cardsAdminEconomyRouter = createTRPCRouter({
   get: adminProcedure.query(({ ctx }) => economySettings(ctx.db)),
@@ -34,6 +71,13 @@ export const cardsAdminEconomyRouter = createTRPCRouter({
           nsPremium: value,
           multSpecial: value,
           multNation: value,
+          multTrophy: value,
+          finishFoil: value,
+          finishHolo: value,
+          levelBonusPerLevel: value,
+          levelBonusCap: value,
+          medianSales: value,
+          medianDays: value,
         })
         .partial()
     )
@@ -44,6 +88,10 @@ export const cardsAdminEconomyRouter = createTRPCRouter({
   saveMarket: adminProcedure
     .input(z.object({ auctionHouseRakePct: value, maxInventoryCards: value }).partial())
     .mutation(({ ctx, input }) => saveMarket(ctx.db, adminActor(ctx), input)),
+
+  saveEconomy: adminProcedure
+    .input(z.object(economyShape).partial())
+    .mutation(({ ctx, input }) => saveEconomy(ctx.db, adminActor(ctx), input)),
 
   saveBonuses: adminProcedure
     .input(

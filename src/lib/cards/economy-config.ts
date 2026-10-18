@@ -240,11 +240,8 @@ function storedNumber(raw: string | undefined): number {
   return raw?.trim() === "" ? Number.NaN : Number(raw);
 }
 
-/** The merged economy config: defaults overlaid with any SystemConfig rows, then clamped. */
-export async function getEconomyConfig(db: ConfigDb): Promise<CardEconomyConfig> {
-  const now = Date.now();
-  if (cache && cache.expires > now) return cache.value;
-
+/** The stored config, defaults overlaid with any SystemConfig rows and clamped, read past the cache. */
+export async function readEconomyConfig(db: ConfigDb): Promise<CardEconomyConfig> {
   const rows = await db.systemConfig.findMany({
     where: { key: { startsWith: "card_economy_" } },
     select: { key: true, value: true },
@@ -252,7 +249,14 @@ export async function getEconomyConfig(db: ConfigDb): Promise<CardEconomyConfig>
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
   const merged = { ...CARD_ECONOMY_DEFAULTS };
   for (const field of FIELDS) merged[field] = storedNumber(byKey.get(ECONOMY_CONFIG_KEYS[field]));
-  const value = clampEconomyConfig(merged);
+  return clampEconomyConfig(merged);
+}
+
+/** The merged economy config: defaults overlaid with any SystemConfig rows, then clamped. */
+export async function getEconomyConfig(db: ConfigDb): Promise<CardEconomyConfig> {
+  const now = Date.now();
+  if (cache && cache.expires > now) return cache.value;
+  const value = await readEconomyConfig(db);
   cache = { value, expires: now + CACHE_TTL_MS };
   return value;
 }

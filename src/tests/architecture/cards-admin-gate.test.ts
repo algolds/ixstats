@@ -56,6 +56,7 @@ const CARDS_ADMIN_PROCEDURES = {
     "saveValues",
     "recomputeValues",
     "saveMarket",
+    "saveEconomy",
     "saveBonuses",
     "saveLorewardPayouts",
     "saveRarityThresholds",

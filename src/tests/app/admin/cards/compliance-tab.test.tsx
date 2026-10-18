@@ -15,6 +15,8 @@ jest.mock("~/trpc/react", () => ({
           restore: { useMutation: jest.fn() },
           licences: { useQuery: jest.fn() },
           setLicence: { useMutation: jest.fn() },
+          inscriptionReports: { useQuery: jest.fn() },
+          resolveInscriptionReport: { useMutation: jest.fn() },
         },
       },
     },
@@ -37,6 +39,7 @@ const mutations = {
   decline: jest.fn(),
   restore: jest.fn(),
   setLicence: jest.fn(),
+  resolveInscriptionReport: jest.fn(),
 };
 
 const takedown = (fields: Partial<Takedown> = {}): Takedown => ({
@@ -75,7 +78,11 @@ function serve(options: {
     cards: {
       admin: {
         overview: { summary: { invalidate: jest.fn() } },
-        compliance: { takedowns: { invalidate: jest.fn() }, licences: { invalidate: jest.fn() } },
+        compliance: {
+          takedowns: { invalidate: jest.fn() },
+          licences: { invalidate: jest.fn() },
+          inscriptionReports: { invalidate: jest.fn() },
+        },
       },
     },
   } as never);
@@ -88,6 +95,23 @@ function serve(options: {
   } as never);
   jest.mocked(compliance.licences.useQuery).mockReturnValue({
     data: { rows: options.licences ?? [], total: options.licences?.length ?? 0 },
+    isError: false,
+  } as never);
+  jest.mocked(compliance.inscriptionReports.useQuery).mockReturnValue({
+    data: [
+      {
+        id: "rep_1",
+        ownershipId: "own_1",
+        cardId: "card_1",
+        cardTitle: "Union Assembly",
+        text: "first!",
+        signerName: "@ann",
+        reporterName: null,
+        reason: "spam",
+        createdAt: new Date("2026-11-02T00:00:00Z"),
+      },
+    ],
+    isLoading: false,
     isError: false,
   } as never);
   for (const [name, mutate] of Object.entries(mutations)) {
@@ -260,6 +284,27 @@ describe("ComplianceTab licence review", () => {
       status: "OPEN",
       licence: "CC BY-SA 3.0",
       note: "Uploader confirmed",
+    });
+  });
+});
+
+describe("ComplianceTab inscriptions", () => {
+  it("opens the reported inscriptions as a third section, and dismisses one", () => {
+    serve({});
+    render(<ComplianceTab />);
+    expect(compliance.inscriptionReports.useQuery).not.toHaveBeenCalled();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Inscriptions" }), { button: 0 });
+
+    expect(screen.getByRole("tab", { name: "Inscriptions" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByText("“first!”")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "File a takedown" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss report on Union Assembly" }));
+    expect(mutations.resolveInscriptionReport).toHaveBeenCalledWith({
+      reportId: "rep_1",
+      action: "dismiss",
     });
   });
 });

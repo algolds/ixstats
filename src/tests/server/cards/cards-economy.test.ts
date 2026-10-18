@@ -29,7 +29,25 @@ jest.mock("~/lib/vault/vault-bonus", () => ({
   ...jest.requireActual<typeof import("~/lib/vault/vault-bonus")>("~/lib/vault/vault-bonus"),
   clearBonusConfigCache: jest.fn(),
 }));
+jest.mock("~/lib/cards/economy-config", () => {
+  const actual = jest.requireActual<typeof import("~/lib/cards/economy-config")>(
+    "~/lib/cards/economy-config"
+  );
+  return {
+    ...actual,
+    getEconomyConfig: jest.fn().mockResolvedValue({ listingFee: 5 }),
+    readEconomyConfig: jest.fn().mockResolvedValue(actual.CARD_ECONOMY_DEFAULTS),
+    setEconomyConfig: jest.fn(),
+    clearEconomyConfigCache: jest.fn(),
+  };
+});
 
+import {
+  CARD_ECONOMY_DEFAULTS,
+  clearEconomyConfigCache,
+  readEconomyConfig,
+  setEconomyConfig,
+} from "~/lib/cards/economy-config";
 import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
 import { clearValuationCache, setValuationConfig } from "~/lib/cards/valuation";
 import { clearBonusConfigCache } from "~/lib/vault/vault-bonus";
@@ -39,6 +57,7 @@ import {
   saveBonuses,
   saveCardValues,
   saveDailyImport,
+  saveEconomy,
   saveLorewardPayouts,
   saveMarket,
   saveRarityThresholds,
@@ -124,6 +143,27 @@ describe("card values", () => {
     error.mockRestore();
   });
 
+  it("saves the finish, level and median numbers, and refuses them out of bounds", async () => {
+    const db = createMockPrisma();
+    await saveCardValues(db as never, actor, { medianSales: 10, levelBonusCap: 0.5 });
+    expect(
+      jest.mocked(setValuationConfig).mock.calls.map(([, field, value]) => [field, value])
+    ).toEqual([
+      ["levelBonusCap", 0.5],
+      ["medianSales", 10],
+    ]);
+    await expect(saveCardValues(db as never, actor, { levelBonusPerLevel: 0.3 })).rejects.toThrow(
+      "Level bonus per level: enter a number from 0 to 0.2."
+    );
+    await expect(saveCardValues(db as never, actor, { medianDays: 30.5 })).rejects.toThrow(
+      "Market median window (days): enter a whole number from 1 to 365."
+    );
+    await expect(saveCardValues(db as never, actor, { finishHolo: 0.5 })).rejects.toThrow(
+      "Holo value multiplier: enter a number from 1 to 100."
+    );
+    expect(setValuationConfig).toHaveBeenCalledTimes(2);
+  });
+
   it("writes, audits and revalues nothing when no field was sent", async () => {
     const db = createMockPrisma();
     expect(await saveCardValues(db as never, actor, {})).toEqual({ prices: 0, updated: 0 });
@@ -177,6 +217,7 @@ describe("caches", () => {
       clearGeneralCardSettingsCache,
     ],
     ["bonuses", (db: never) => saveBonuses(db, actor, { newPlayer: 4000 }), clearBonusConfigCache],
+    ["economy", (db: never) => saveEconomy(db, actor, { xpPack: 12 }), clearEconomyConfigCache],
   ])("clears the %s cache after the commit", async (_section, save, clear) => {
     const order: string[] = [];
     jest.mocked(clear).mockImplementation(() => {
@@ -226,10 +267,14 @@ describe("market and bonuses", () => {
     });
   });
 
-  it("refuses a fee over 50% and a fractional or tiny capacity", async () => {
+  it("refuses a fee over 50% or finer than a hundredth, and a fractional or tiny capacity", async () => {
     const db = createMockPrisma();
     await expect(saveMarket(db as never, actor, { auctionHouseRakePct: 51 })).rejects.toThrow(
-      "Market fee (%): enter a number from 0 to 50."
+      "Market fee (%): enter a number from 0 to 50 with at most 2 decimal places."
+    );
+    // 7.555% would be charged as 7.55% in basis points, so it is refused rather than cut short
+    await expect(saveMarket(db as never, actor, { auctionHouseRakePct: 7.555 })).rejects.toThrow(
+      "Market fee (%): enter a number from 0 to 50 with at most 2 decimal places."
     );
     await expect(saveMarket(db as never, actor, { maxInventoryCards: 150.5 })).rejects.toThrow(
       "Base card capacity: enter a whole number from 10 to 100,000."
@@ -390,6 +435,85 @@ describe("rarity tables and daily imports", () => {
   });
 });
 
+describe("card economy numbers", () => {
+  const written = () =>
+    jest.mocked(setEconomyConfig).mock.calls.map(([, field, value]) => [field, value]);
+
+  it("saves the sent numbers through the transaction, with one audit row", async () => {
+    const tx = createMockPrisma();
+    const db = createMockPrisma({
+      $transaction: jest.fn((write: (client: typeof tx) => Promise<void>) => write(tx)),
+    });
+    await saveEconomy(db as never, actor, { listingFee: 7, finishHoloPct: 3 });
+    expect(written()).toEqual([
+      ["finishHoloPct", 3],
+      ["listingFee", 7],
+    ]);
+    for (const [client] of jest.mocked(setEconomyConfig).mock.calls) expect(client).toBe(tx);
+    expect(readEconomyConfig).toHaveBeenCalledWith(tx);
+    expect(db.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(tx.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "CARD_ECONOMY_SAVE",
+        userId: "clerk_admin",
+        details: "Economy: finishHoloPct 3, listingFee 7",
+      }),
+    });
+  });
+
+  it("refuses a number out of bounds or finer than a hundredth with its sentence, and writes nothing", async () => {
+    const db = createMockPrisma();
+    await expect(saveEconomy(db as never, actor, { listingDays: 61 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Listing length (days): enter a whole number from 1 to 60.",
+    });
+    await expect(saveEconomy(db as never, actor, { royaltyPct: 2.555 })).rejects.toThrow(
+      "Nation royalty (%): enter a number from 0 to 50 with at most 2 decimal places."
+    );
+    await expect(
+      saveEconomy(db as never, actor, { xpPack: 12, dustFoilMult: 2.5 })
+    ).rejects.toThrow("Foil dust multiple: enter a whole number from 1 to 10.");
+    expect(setEconomyConfig).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses the section rules read against the stored numbers, before any write", async () => {
+    const db = createMockPrisma();
+    await expect(saveEconomy(db as never, actor, { dailyRarePct: 8 })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "The daily odds add up to 101%. Make them 100%.",
+    });
+    await expect(saveEconomy(db as never, actor, { fusionCopies: 2 })).rejects.toThrow(
+      "The Foil dust multiple can be at most the copies per fusion, 2, or fusing would make dust."
+    );
+    jest
+      .mocked(readEconomyConfig)
+      .mockResolvedValueOnce({ ...CARD_ECONOMY_DEFAULTS, finishHoloPct: 50 });
+    await expect(saveEconomy(db as never, actor, { finishFoilPct: 51 })).rejects.toThrow(
+      "Foil and Holo chances add up to 101%. Keep them at 100% or less."
+    );
+    expect(setEconomyConfig).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+
+    await saveEconomy(db as never, actor, { finishFoilPct: 51 });
+    await saveEconomy(db as never, actor, { dailyRarePct: 8, dailyCommonPct: 64 });
+    expect(written()).toEqual([
+      ["finishFoilPct", 51],
+      ["dailyCommonPct", 64],
+      ["dailyRarePct", 8],
+    ]);
+  });
+
+  it("writes and audits nothing when no number was sent", async () => {
+    const db = createMockPrisma();
+    await saveEconomy(db as never, actor, {});
+    expect(db.$transaction).not.toHaveBeenCalled();
+    expect(db.auditLog.create).not.toHaveBeenCalled();
+    expect(clearEconomyConfigCache).not.toHaveBeenCalled();
+  });
+});
+
 it("reads every section the tab shows", async () => {
   const db = createMockPrisma();
   const settings = await economySettings(db as never);
@@ -400,7 +524,9 @@ it("reads every section the tab shows", async () => {
     "lorewardPayouts",
     "rarityThresholds",
     "dailyImports",
+    "economy",
   ]);
+  expect(settings.economy).toEqual({ listingFee: 5 });
   expect(settings.values).toEqual({ floorCommon: 10 });
   expect(settings.lorewardPayouts.daily.winner).toBe(500);
   expect(settings.dailyImports.althistory).toEqual({ enabled: false, count: 0 });

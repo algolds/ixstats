@@ -1,8 +1,10 @@
 /**
- * The Economy tab: the card numbers an admin tunes, all SystemConfig-backed. Card values (rarity floors and type
- * multipliers; saving revalues every card), the market fee and base capacity, the bonuses with the Loreward payout
- * grid, each source wiki's rarity table, and each article wiki's daily import. Each save checks its numbers here, so
- * a refusal reaches the admin as a sentence, and writes one audit row in the transaction that writes the numbers.
+ * The Economy tab: the card numbers an admin tunes, all SystemConfig-backed. Card values (rarity floors, type, finish
+ * and level numbers, the market median; saving revalues every card), the market fee and base capacity, the bonuses
+ * with the Loreward payout grid, each source wiki's rarity table, and each article wiki's daily import. Each save
+ * checks its numbers here, so a refusal reaches the admin as a sentence, and writes one audit row in the transaction
+ * that writes the numbers. The finish, daily card, dust, crafting, listing, royalty and XP numbers are saved by
+ * `saveEconomy`.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -12,11 +14,20 @@ import {
   type CardWikiSource,
 } from "~/lib/cards/card-sources";
 import {
+  clearEconomyConfigCache,
+  getEconomyConfig,
+  readEconomyConfig,
+  setEconomyConfig,
+  type CardEconomyConfig,
+} from "~/lib/cards/economy-config";
+import {
   BONUS_FIELDS,
   BONUS_SWITCH_FIELD,
   CARD_VALUE_FIELDS,
+  ECONOMY_FIELDS,
   MARKET_FIELDS,
   dailyImportProblem,
+  economyProblem,
   floorsProblem,
   lorewardPayoutField,
   numberFieldProblem,
@@ -64,7 +75,7 @@ import { recomputeMarketValues, type MarketValuesResult } from "./market-values"
 type Tx = Prisma.TransactionClient;
 
 export async function economySettings(db: PrismaClient) {
-  const [values, market, bonuses, lorewardPayouts, rarityThresholds, dailyImports] =
+  const [values, market, bonuses, lorewardPayouts, rarityThresholds, dailyImports, economy] =
     await Promise.all([
       getValuationConfig(db),
       getGeneralCardSettings(db),
@@ -72,8 +83,9 @@ export async function economySettings(db: PrismaClient) {
       getLorewardPayouts(db),
       getRarityThresholds(db),
       getDailyImportConfig(db),
+      getEconomyConfig(db),
     ]);
-  return { values, market, bonuses, lorewardPayouts, rarityThresholds, dailyImports };
+  return { values, market, bonuses, lorewardPayouts, rarityThresholds, dailyImports, economy };
 }
 
 function refuse(message: string): never {
@@ -199,6 +211,31 @@ export async function saveMarket(
   await saveFields(db, actor, "Market", MARKET_FIELDS, input, {
     write: setGeneralCardSetting,
     clear: clearGeneralCardSettingsCache,
+  });
+}
+
+/**
+ * Refuses card economy numbers that break a section rule (the finish odds, the daily odds, the dust loop) once the
+ * sent ones replace the stored ones, which are read past the cache.
+ */
+async function checkEconomy(
+  tx: Tx,
+  sent: ReadonlyArray<[keyof CardEconomyConfig, number]>
+): Promise<void> {
+  const problem = economyProblem({ ...(await readEconomyConfig(tx)), ...Object.fromEntries(sent) });
+  if (problem) refuse(problem);
+}
+
+/** The finish, daily card, dust, crafting, fusion, listing, royalty and XP numbers. */
+export async function saveEconomy(
+  db: PrismaClient,
+  actor: CardAdminActor,
+  input: Partial<CardEconomyConfig>
+): Promise<void> {
+  await saveFields(db, actor, "Economy", ECONOMY_FIELDS, input, {
+    write: setEconomyConfig,
+    clear: clearEconomyConfigCache,
+    check: checkEconomy,
   });
 }
 

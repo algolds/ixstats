@@ -15,6 +15,7 @@ jest.mock("~/trpc/react", () => ({
           saveLorewardPayouts: { useMutation: jest.fn() },
           saveRarityThresholds: { useMutation: jest.fn() },
           saveDailyImport: { useMutation: jest.fn() },
+          saveEconomy: { useMutation: jest.fn() },
         },
       },
     },
@@ -24,6 +25,7 @@ jest.mock("~/hooks/useNotify", () => ({ useNotify: jest.fn() }));
 
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import { EconomyTab } from "~/app/admin/cards/economy";
 
 const economy = api.cards.admin.economy;
@@ -39,6 +41,13 @@ const data = {
     nsPremium: 1.5,
     multSpecial: 2,
     multNation: 1.5,
+    multTrophy: 0.25,
+    finishFoil: 3,
+    finishHolo: 9,
+    levelBonusPerLevel: 0.02,
+    levelBonusCap: 0.2,
+    medianSales: 5,
+    medianDays: 30,
   },
   market: { auctionHouseRakePct: 10, maxInventoryCards: 150 },
   bonuses: {
@@ -63,6 +72,7 @@ const data = {
     iiwiki: { enabled: true, count: 20 },
     althistory: { enabled: false, count: 0 },
   },
+  economy: CARD_ECONOMY_DEFAULTS,
 };
 
 const mutations = {
@@ -73,6 +83,7 @@ const mutations = {
   saveLorewardPayouts: jest.fn(),
   saveRarityThresholds: jest.fn(),
   saveDailyImport: jest.fn(),
+  saveEconomy: jest.fn(),
 };
 
 const notify = { success: jest.fn(), error: jest.fn() };
@@ -190,11 +201,14 @@ it("says when the values were saved but the revalue after them failed", () => {
 it("hints and blocks Save for an out-of-range or empty field, with the server's sentence", () => {
   serve({ data });
   render(<EconomyTab />);
+  const feeProblem = "Market fee (%): enter a number from 0 to 50 with at most 2 decimal places.";
   type("Market fee (%)", "60");
-  expect(screen.getByText("Market fee (%): enter a number from 0 to 50.")).toBeInTheDocument();
+  expect(screen.getByText(feeProblem)).toBeInTheDocument();
   expect(button("Save market")).toBeDisabled();
   type("Market fee (%)", "");
-  expect(screen.getByText("Market fee (%): enter a number from 0 to 50.")).toBeInTheDocument();
+  expect(screen.getByText(feeProblem)).toBeInTheDocument();
+  type("Market fee (%)", "7.555");
+  expect(screen.getByText(feeProblem)).toBeInTheDocument();
   type("Market fee (%)", "7.5");
   fireEvent.click(button("Save market"));
   expect(mutations.saveMarket).toHaveBeenCalledWith({ auctionHouseRakePct: 7.5 });
@@ -204,6 +218,42 @@ it("hints and blocks Save for an out-of-range or empty field, with the server's 
     screen.getByText("Daily winner: enter a whole number from 0 to 100,000.")
   ).toBeInTheDocument();
   expect(button("Save payouts")).toBeDisabled();
+});
+
+it("saves the trophy, finish, level and median numbers with the card values", () => {
+  serve({ data });
+  render(<EconomyTab />);
+  expect(
+    screen.getByText(
+      "A copy's value is the highest of floor × type × finish, its finish's market median and, for NationStates cards before their first sale here, the bank value × premium; then the level bonus. Saving revalues every card."
+    )
+  ).toBeInTheDocument();
+  type("Level bonus cap", "0.5");
+  type("Market median window (days)", "60");
+  fireEvent.click(button("Save card values"));
+  expect(mutations.saveValues).toHaveBeenCalledWith({ levelBonusCap: 0.5, medianDays: 60 });
+  type("Level bonus per level", "0.3");
+  expect(screen.getByLabelText("Level bonus per level")).toHaveAccessibleDescription(
+    "Level bonus per level: enter a number from 0 to 0.2."
+  );
+  expect(button("Save card values")).toBeDisabled();
+});
+
+it("says the market fee applies over the no-fee amount, and shows the card economy after the market", () => {
+  serve({ data });
+  render(<EconomyTab />);
+  expect(screen.getByLabelText("Market fee (%)")).toHaveAccessibleDescription(
+    "On sales and trade credits over the no-fee amount"
+  );
+  const order = ["Market and capacity", "Finish roll at mint", "Card XP", "Bonuses (IxC)"].map(
+    (title) => screen.getByText(title)
+  );
+  for (let i = 1; i < order.length; i++) {
+    expect(order[i - 1].compareDocumentPosition(order[i])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  }
+  type("Listing fee (IxC)", "7");
+  fireEvent.click(button("Save listings"));
+  expect(mutations.saveEconomy).toHaveBeenCalledWith({ listingFee: 7 });
 });
 
 it("saves only the changed Loreward payout cells", () => {
