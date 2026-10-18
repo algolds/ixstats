@@ -8,35 +8,25 @@
  * balance.
  */
 
-import { type Prisma } from "@prisma/client";
+import { type Prisma, type TradeOfferStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { assertNoBoundCopies } from "~/lib/cards/bound";
 import { earnCreditsTx, LedgerError, spendCreditsTx } from "./vault-ledger";
 
 type Tx = Prisma.TransactionClient;
 
-/** A trade offer's status (`TradeOffer.status` stays a string until Phase 4 reworks trades). */
-export const TradeStatus = {
-  PENDING: "PENDING",
-  ACCEPTED: "ACCEPTED",
-  REJECTED: "REJECTED",
-  CANCELLED: "CANCELLED",
-  EXPIRED: "EXPIRED",
-} as const;
-export type TradeStatus = (typeof TradeStatus)[keyof typeof TradeStatus];
-
 /** Move a PENDING trade to `next` iff it is still PENDING (and, for ACCEPTED, not expired). */
 export async function claimPendingTradeTx(
   tx: Tx,
   tradeId: string,
-  next: TradeStatus,
+  next: Exclude<TradeOfferStatus, "PENDING">,
   now: Date
 ): Promise<void> {
   const res = await tx.tradeOffer.updateMany({
     where: {
       id: tradeId,
-      status: TradeStatus.PENDING,
-      ...(next === TradeStatus.ACCEPTED ? { expiresAt: { gt: now } } : {}),
+      status: "PENDING",
+      ...(next === "ACCEPTED" ? { expiresAt: { gt: now } } : {}),
     },
     data: { status: next, respondedAt: now },
   });

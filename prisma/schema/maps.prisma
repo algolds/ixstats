@@ -567,6 +567,7 @@ model Realm {
   /// The realm's one Find a Realm advert thread (docs/superpowers/specs/2026-10-10-thinkpages-forum-realm-adverts-design.md).
   advertThread      ForumThread?    @relation("RealmAdvert")
   polls             Poll[]           @relation("RealmPolls")
+  cardDustBalances  CardDustBalance[]
   cards             Card[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

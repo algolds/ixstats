@@ -121,6 +121,22 @@ describe("fileTakedown", () => {
     expect(db.cardTakedown.create).not.toHaveBeenCalled();
   });
 
+  it("names a player's request in the audit row as the player's", async () => {
+    const db = mockDb();
+    db.card.findUnique.mockResolvedValue({ id: "card_1" });
+    db.cardTakedown.create.mockResolvedValue({ id: "td_1" });
+
+    await fileTakedown(db as never, actor, {
+      cardId: "card_1",
+      origin: "PLAYER_REQUEST",
+      reason: "It shows my house",
+    });
+
+    expect(audits(db)).toEqual([
+      expect.objectContaining({ details: "Filed a takedown (player): It shows my house" }),
+    ]);
+  });
+
   it("counts a received date still to come as now, so no deadline is pushed out", async () => {
     jest.useFakeTimers({
       now: new Date("2026-10-17T12:00:00Z"),

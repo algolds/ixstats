@@ -3,12 +3,11 @@
  * events are stamped with the card and serial (they outlive the copy, and `ownershipId` becomes null when it goes),
  * and one more event records the removal before the copy is deleted.
  *
- * Refused when the copy has ever been auctioned (deleting it would cascade the auction and its bids away), sits in a
- * pending trade offer, or moved or was locked meanwhile.
+ * Refused when the copy has ever been auctioned (the owner's rule: its auctions would stay, with their card and serial,
+ * but a copy with auction history is never removed), sits in a pending trade offer, or moved or was locked meanwhile.
  */
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "~/lib/vault/trade-settlement";
 import { lockCardSerialsTx } from "./serial-number";
 
 export interface RemovableCopy {
@@ -25,13 +24,13 @@ async function assertNoMarketHistoryTx(
   if ((await tx.cardAuction.count({ where: { cardInstanceId: copyId } })) > 0) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: "This copy has been auctioned, and removing it would erase that auction's history.",
+      message: "This copy has been auctioned, so it can't be removed.",
     });
   }
   // A recipient's copies are not locked by an offer, so the offer itself is the only record
   const offers = await tx.tradeOffer.count({
     where: {
-      status: TradeStatus.PENDING,
+      status: "PENDING",
       OR: [
         { initiatorCardIds: { array_contains: [copyId] } },
         { recipientCardIds: { array_contains: [copyId] } },

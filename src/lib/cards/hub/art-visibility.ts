@@ -33,7 +33,9 @@ export async function cardsWithVisibleArt(
       select: { CardOwnership: { select: { cardId: true } } },
     }),
   ]);
-  return new Set([...owned.map((o) => o.cardId), ...listed.map((a) => a.CardOwnership.cardId)]);
+  // A live auction's copy is locked, so it is there (only an ended auction can outlive its copy)
+  const listedCards = listed.flatMap((a) => (a.CardOwnership ? [a.CardOwnership.cardId] : []));
+  return new Set([...owned.map((o) => o.cardId), ...listedCards]);
 }
 
 export interface FaceSource {

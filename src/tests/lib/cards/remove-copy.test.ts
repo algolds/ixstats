@@ -1,5 +1,6 @@
 /** @jest-environment node */
 /** Removing a copy keeps its trail, and its serial is never issued again. */
+import { readFileSync } from "node:fs";
 import { mintCopy } from "~/lib/cards/mint";
 import { removeCopyTx } from "~/lib/cards/remove-copy";
 
@@ -24,13 +25,18 @@ const highest = (serials: number[]) => (serials.length > 0 ? Math.max(...serials
 
 /**
  * One card's copies and trail, with `ownershipId` set null when its copy goes (the FK is ON DELETE SET NULL). Cards
- * are unlimited and unbound unless `cards` says otherwise.
+ * are unlimited and unbound unless `cards` says otherwise; `auctioned` names the copies with an auction (any status).
  */
-function fakeTx(cards: Record<string, { totalSupply: number; isBound: boolean }> = {}) {
+function fakeTx(
+  cards: Record<string, { totalSupply: number; isBound: boolean }> = {},
+  auctioned: readonly string[] = []
+) {
   const copies: CopyRow[] = [];
   const events: EventRow[] = [];
   /** The order the removal's statements ran in */
   const log: string[] = [];
+  /** What each auction-history check asked for */
+  const auctionChecks: Array<Record<string, string>> = [];
   const tx = {
     $executeRaw: async (_sql: TemplateStringsArray, ...values: Array<string | number>) => {
       log.push(`lock ${values.join(" ")}`);
@@ -41,9 +47,10 @@ function fakeTx(cards: Record<string, { totalSupply: number; isBound: boolean }>
         cards[where.id] ?? { totalSupply: 0, isBound: false },
     },
     cardAuction: {
-      count: async () => {
+      count: async ({ where }: { where: { cardInstanceId: string } }) => {
         log.push("check auctions");
-        return 0;
+        auctionChecks.push(where);
+        return auctioned.includes(where.cardInstanceId) ? 1 : 0;
       },
     },
     tradeOffer: { count: async () => 0 },
@@ -102,10 +109,35 @@ function fakeTx(cards: Record<string, { totalSupply: number; isBound: boolean }>
       },
     },
   };
-  return { tx: tx as never, copies, events, log };
+  return { tx: tx as never, copies, events, log, auctionChecks };
 }
 
 describe("removeCopyTx", () => {
+  it("still refuses a copy with any auction history, though a removed copy's auctions would now stay (SET NULL)", async () => {
+    // The owner's rule outlives the cascade it once guarded against: the auctions keep their card and serial now
+    expect(readFileSync("prisma/schema/cards.prisma", "utf8")).toMatch(
+      /CardOwnership\s+CardOwnership\?\s+@relation\(fields: \[cardInstanceId\], references: \[id\], onDelete: SetNull\)/
+    );
+    const { tx, copies, events, auctionChecks } = fakeTx({}, ["own_1"]);
+    const copy = await mintCopy(tx, {
+      cardId: "c1",
+      ownerId: "u1",
+      finish: "STANDARD",
+      source: "PACK_OPEN",
+    });
+
+    await expect(
+      removeCopyTx(tx, { id: copy.id, cardId: "c1", serialNumber: 1, ownerId: "u1" }, "REVOKE")
+    ).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: "This copy has been auctioned, so it can't be removed.",
+    });
+    // Any auction counts, finished or cancelled: the check names the copy and nothing else
+    expect(auctionChecks).toEqual([{ cardInstanceId: "own_1" }]);
+    expect(copies.map((c) => c.id)).toEqual(["own_1"]);
+    expect(events.map((e) => e.action)).toEqual(["PACK_OPEN"]);
+  });
+
   it("takes the card's serial lock before anything else, so a mint of the card waits for the removal", async () => {
     const { tx, log } = fakeTx();
     const copy = await mintCopy(tx, {

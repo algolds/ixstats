@@ -14,6 +14,7 @@
  * history. Sums, distinct counts and "is there a week with all three" are single aggregate raw
  * queries (parameterised), and the verified wiki username is resolved once per evaluation.
  */
+import type { Prisma } from "@prisma/client";
 import { weekKey } from "~/lib/achievements/time-buckets";
 import { EXCLUDE_TROPHY_CARDS } from "~/lib/lorewards/trophy-cards";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
@@ -183,10 +184,11 @@ export const postingStreakLoader: MetricLoader = {
   },
 };
 
-const tradesOf = (userId: string) => ({
-  status: "ACCEPTED",
-  OR: [{ initiatorId: userId }, { recipientId: userId }],
-});
+const tradesOf = (userId: string) =>
+  ({
+    status: "ACCEPTED",
+    OR: [{ initiatorId: userId }, { recipientId: userId }],
+  }) satisfies Prisma.TradeOfferWhereInput;
 
 export const cardsActivityLoader: MetricLoader = {
   id: "platform-cards-activity",

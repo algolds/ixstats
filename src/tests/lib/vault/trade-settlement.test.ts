@@ -14,7 +14,6 @@ import {
   claimPendingTradeTx,
   lockCardsTx,
   recordTradeTransfersTx,
-  TradeStatus,
   transferCardsTx,
   transferCreditsTx,
   unlockCardsTx,
@@ -34,13 +33,17 @@ function makeTx() {
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
 
 describe("claimPendingTradeTx", () => {
+  it("takes the status from the TradeOfferStatus enum, with no string stand-in left", async () => {
+    expect(await import("~/lib/vault/trade-settlement")).not.toHaveProperty("TradeStatus");
+  });
+
   it("throws CONFLICT when the trade is no longer PENDING (count 0)", async () => {
     const tx = makeTx();
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 0 });
 
-    await expect(
-      claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.REJECTED, NOW)
-    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(claimPendingTradeTx(asTx(tx), "trade_1", "REJECTED", NOW)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
   });
 
   it("resolves when exactly one row moved, writing the new status and respondedAt", async () => {
@@ -48,23 +51,23 @@ describe("claimPendingTradeTx", () => {
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
 
     await expect(
-      claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.CANCELLED, NOW)
+      claimPendingTradeTx(asTx(tx), "trade_1", "CANCELLED", NOW)
     ).resolves.toBeUndefined();
 
     const call = tx.tradeOffer.updateMany.mock.calls[0][0];
-    expect(call.where).toEqual({ id: "trade_1", status: TradeStatus.PENDING });
-    expect(call.data).toEqual({ status: TradeStatus.CANCELLED, respondedAt: NOW });
+    expect(call.where).toEqual({ id: "trade_1", status: "PENDING" });
+    expect(call.data).toEqual({ status: "CANCELLED", respondedAt: NOW });
   });
 
   it("requires expiresAt > now only for ACCEPTED", async () => {
     const tx = makeTx();
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 1 });
 
-    await claimPendingTradeTx(asTx(tx), "trade_1", TradeStatus.ACCEPTED, NOW);
+    await claimPendingTradeTx(asTx(tx), "trade_1", "ACCEPTED", NOW);
 
     expect(tx.tradeOffer.updateMany.mock.calls[0][0].where).toEqual({
       id: "trade_1",
-      status: TradeStatus.PENDING,
+      status: "PENDING",
       expiresAt: { gt: NOW },
     });
   });

@@ -83,6 +83,20 @@ describe("copyFaces and withAuctionFaces", () => {
     expect(db.cardAuction.findMany).not.toHaveBeenCalled();
   });
 
+  it("keeps an ended auction whose copy is gone (broken down or fused), with no face and no copy read", async () => {
+    const db = createMockPrisma();
+    db.cardOwnership.findMany.mockResolvedValue([copyRow("o1", "c1")]);
+    const burned = { id: "a2", cardInstanceId: null, CardOwnership: null };
+    const rows = await withAuctionFaces(
+      db as never,
+      "me",
+      [auctionRow("a1", "o1", "c1"), burned],
+      false
+    );
+    expect(rows[1]).toEqual({ ...burned, face: null });
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({ id: { in: ["o1"] } });
+  });
+
   it("strips the art of past auctions the viewer holds nothing of", async () => {
     const db = createMockPrisma();
     ownership(db, [], [copyRow("o1", "c1")]);

@@ -26,6 +26,7 @@ const ORIGIN_NAMES: Record<CardTakedownOrigin, string> = {
   AUTHOR_REQUEST: "author",
   LICENCE_REVIEW: "licence review",
   ADMIN: "admin",
+  PLAYER_REQUEST: "player",
 };
 const NOT_HIDDEN = "Only hidden art can be restored";
 

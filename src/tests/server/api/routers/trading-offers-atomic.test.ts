@@ -258,7 +258,7 @@ describe("respondToTrade ACCEPT", () => {
 
 describe("createtradeOffer", () => {
   /** A valid offer of one card for one card, from the context's user. */
-  function offerCaller() {
+  function offerSetup() {
     const { db, caller } = makeCaller();
     db.user.findUnique = jest.fn().mockResolvedValue({ id: "user_recip" } as never);
     db.cardOwnership.findMany = jest
@@ -271,13 +271,27 @@ describe("createtradeOffer", () => {
       .mockResolvedValue(
         makeTrade({ initiator: { id: RECIPIENT, clerkUserId: "test_user_clerk_id" } }) as never
       );
-    return caller;
+    return { db, caller };
   }
+  const offerCaller = () => offerSetup().caller;
   const offer = {
     recipientId: "clerk_recip",
     initiatorCardIds: ["ci_1"],
     recipientCardIds: ["cr_1"],
   };
+
+  it("names the sender as the proposer, whose give side is the locked one", async () => {
+    jest.mocked(loadPlayerNames).mockResolvedValue(new Map());
+    const { db, caller } = offerSetup();
+
+    await caller.createtradeOffer(offer);
+
+    expect(db.tradeOffer.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ initiatorId: RECIPIENT, proposerId: RECIPIENT }),
+      })
+    );
+  });
 
   it("tells the recipient who sent the offer by the identity rule, and links to the Market's trades", async () => {
     // A sender whose handle is only their Clerk id is named by their nation.
@@ -405,6 +419,31 @@ describe("respondToTrade COUNTER", () => {
     expect(db.tradeOffer.updateMany).not.toHaveBeenCalled();
     expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
     expect(db.tradeOffer.create).not.toHaveBeenCalled();
+  });
+
+  it("names the counterer as the new offer's proposer, with no link back to the old row", async () => {
+    const { db, caller } = makeCaller();
+    db.cardOwnership.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        { id: "cr_1", inscription: null },
+        { id: "cr_2", inscription: null },
+      ] as never)
+      .mockResolvedValueOnce([{ id: "ci_1", inscription: null }] as never);
+    db.cardOwnership.count = jest.fn().mockResolvedValue(0) as never;
+    db.tradeOffer.updateMany = jest.fn().mockResolvedValue({ count: 1 } as never);
+    db.cardOwnership.updateMany = jest.fn().mockResolvedValue({ count: 2 } as never);
+    db.tradeOffer.create = jest.fn().mockResolvedValue(makeTrade() as never);
+
+    await caller.respondToTrade({ tradeId: "trade_1", action: "COUNTER" });
+
+    const { data } = jest.mocked(db.tradeOffer.create).mock.calls[0]![0];
+    expect(data).toMatchObject({
+      initiatorId: RECIPIENT,
+      recipientId: INITIATOR,
+      proposerId: RECIPIENT,
+    });
+    expect(data).not.toHaveProperty("counterOfferFromId");
   });
 });
 

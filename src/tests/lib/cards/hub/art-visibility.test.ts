@@ -42,7 +42,11 @@ describe("cardsWithVisibleArt", () => {
   it("joins the viewer's copies with the cards on a live auction", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([{ cardId: "a" }]);
-    db.cardAuction.findMany.mockResolvedValue([{ CardOwnership: { cardId: "b" } }]);
+    // A live auction's copy is locked, so it is there; the link is nullable only for ended auctions
+    db.cardAuction.findMany.mockResolvedValue([
+      { CardOwnership: { cardId: "b" } },
+      { CardOwnership: null },
+    ]);
     const set = await cardsWithVisibleArt(db as never, "me", ["a", "b", "c", "a"]);
     expect([...set].sort()).toEqual(["a", "b"]);
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({

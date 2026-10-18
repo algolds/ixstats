@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { TradeStatus } from "~/lib/vault/trade-settlement";
 import { deckValue } from "~/lib/cards/copy-value";
 import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
 import { tradeView } from "~/lib/cards/hub/market-faces";
@@ -39,7 +38,7 @@ export const tradingQueriesRouter = createTRPCRouter({
     const trades = await ctx.db.tradeOffer.findMany({
       where: {
         OR: [{ initiatorId: userId }, { recipientId: userId }],
-        status: TradeStatus.PENDING,
+        status: "PENDING",
         expiresAt: { gt: new Date() },
       },
       include: TRADE_PARTIES_INCLUDE,

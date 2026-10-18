@@ -464,6 +464,7 @@ enum CardTakedownOrigin {
   AUTHOR_REQUEST
   LICENCE_REVIEW
   ADMIN
+  PLAYER_REQUEST
 }
 
 enum CardTakedownStatus {
@@ -471,5 +472,29 @@ enum CardTakedownStatus {
   HIDDEN
   DECLINED
   RESTORED
+}
+
+/// Trade offer lifecycle. A counter-offer edits the same row (revision + 1), so there is no COUNTERED state.
+enum TradeOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+/// Auction lifecycle.
+enum CardAuctionStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+/// Fixed-price listing lifecycle.
+enum CardListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+  EXPIRED
 }
 

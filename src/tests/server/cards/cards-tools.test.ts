@@ -67,7 +67,8 @@ describe("playerCardInventory", () => {
         currentBidderId: null,
         bidCount: 2,
         endTime: new Date(0),
-        CardOwnership: { serialNumber: 3, cards: { title: "Elm" } },
+        serialNumber: 3,
+        card: { title: "Elm" },
       },
     ]);
     db.tradeOffer.findMany.mockResolvedValue([
@@ -93,6 +94,12 @@ describe("playerCardInventory", () => {
     expect(inventory.packs).toEqual([
       { id: "up_1", name: "Founders", acquiredMethod: "ADMIN_AWARD", acquiredDate: new Date(0) },
     ]);
+    // An auction names its card and serial from its own row, which outlives the copy
+    expect(db.cardAuction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({ serialNumber: true, card: { select: { title: true } } }),
+      })
+    );
     expect(inventory.auctions[0]).toMatchObject({
       title: "Elm #3",
       selling: true,
@@ -277,14 +284,14 @@ describe("revokeCopy", () => {
     );
   });
 
-  it("refuses a copy with any auction history, so the auction and its bids are never cascaded away", async () => {
+  it("refuses a copy with any auction history (the owner's rule, kept though its auctions would now stay)", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findUnique.mockResolvedValue(copy());
     db.cardAuction.count.mockResolvedValue(1);
 
     await expect(revoke(db)).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
-      message: "This copy has been auctioned, and removing it would erase that auction's history.",
+      message: "This copy has been auctioned, so it can't be removed.",
     });
     expect(db.cardAuction.count).toHaveBeenCalledWith({ where: { cardInstanceId: "own_1" } });
     expect(db.cardTransferEvent.create).not.toHaveBeenCalled();
@@ -396,6 +403,18 @@ describe("adminCancelAuction", () => {
     expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
     expect(db.auditLog.create.mock.calls[0]![0].data.details).toContain("no bid to refund");
     expect(clearVaultCaches).toHaveBeenCalledTimes(1);
+  });
+
+  it("unlocks no copy when the auction's copy is gone, still refunding the bid and the fee", async () => {
+    const db = createMockPrisma();
+    db.cardAuction.findUnique.mockResolvedValue({ ...auction, cardInstanceId: null });
+    db.cardAuction.updateMany.mockResolvedValue({ count: 1 });
+
+    await adminCancelAuction(db as never, actor, { auctionId: "auc_1", reason: "Seller asked" });
+
+    expect(db.cardOwnership.updateMany).not.toHaveBeenCalled();
+    expect(earnCreditsTx).toHaveBeenCalledTimes(1);
+    expect(refundListingFeeTx).toHaveBeenCalledTimes(1);
   });
 
   it("refuses an auction the completion cron settled after the admin loaded it, refunding nothing", async () => {
