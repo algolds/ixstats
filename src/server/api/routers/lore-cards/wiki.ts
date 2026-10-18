@@ -14,6 +14,7 @@ import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/artic
 import { getMediaWikiApiUrl, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import { withReadableThreads, type ForumUserSource } from "~/server/modules/thinkpages-forum";
 
 const isArticleTitle = (title: string): boolean => {
   if (!title || !title.trim()) return false;
@@ -42,14 +43,19 @@ const containsAny = (query: string, fields: string[]) => ({
   OR: fields.map((field) => ({ [field]: { contains: query, mode: "insensitive" as const } })),
 });
 
+/**
+ * The signed-in caller's stash items matching the query, and their stashes. Forum threads they can no longer read are
+ * left out and a readable one shows its current title, as in the /stashes listing (I5).
+ */
 async function searchStash(
   db: PrismaClient,
+  user: ForumUserSource,
   input: { query: string; stashId?: string },
-  ownerIds: string[] | null
+  ownerIds: string[]
 ) {
-  const items = await db.stashItem.findMany({
+  const found = await db.stashItem.findMany({
     where: {
-      ...(ownerIds ? { stash: { userId: { in: ownerIds } } } : {}),
+      stash: { userId: { in: ownerIds } },
       ...(input.stashId ? { stashId: input.stashId } : {}),
       ...(input.query.trim() ? containsAny(input.query, ["pageTitle", "note"]) : {}),
     },
@@ -60,8 +66,9 @@ async function searchStash(
     take: 30,
     orderBy: { updatedAt: "desc" },
   });
+  const items = await withReadableThreads(db, user, found);
   const stashes = await db.stash.findMany({
-    where: ownerIds ? { userId: { in: ownerIds } } : {},
+    where: { userId: { in: ownerIds } },
     select: { id: true, name: true, color: true, _count: { select: { items: true } } },
     orderBy: { order: "asc" },
   });
@@ -493,11 +500,9 @@ export const loreCardsWikiRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       try {
         if (input.source === "stash") {
-          return await searchStash(
-            ctx.db,
-            input,
-            ctx.auth?.userId ? requireWikiUserIds(ctx) : null
-          );
+          // A signed-out caller has no stash to search.
+          if (!ctx.auth?.userId || !ctx.user) return { items: [], stashes: [] };
+          return await searchStash(ctx.db, ctx.user, input, requireWikiUserIds(ctx));
         }
 
         if (input.source === "wikios" || input.source === "ixwiki") {
