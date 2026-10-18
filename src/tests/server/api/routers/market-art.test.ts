@@ -122,7 +122,7 @@ describe("auctions", () => {
       artwork: "https://art/c1.png",
       silhouette: false,
     });
-    expect(result.auctions[0]!.CardOwnership.cards.artwork).toBe("https://art/c1.png");
+    expect(result.auctions[0]!.CardOwnership!.cards.artwork).toBe("https://art/c1.png");
     expect(db.cardAuction.findMany).toHaveBeenCalledTimes(1);
   });
 
