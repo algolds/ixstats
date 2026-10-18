@@ -1,6 +1,16 @@
 /** Inscription text rules (client-safe: the sign dialog previews with the same check the server applies). */
+import type { Prisma } from "@prisma/client";
 
 export const INSCRIPTION_MAX = 60;
+
+/**
+ * What a whole copy row a player reads leaves out: who signed it and the name frozen with it. Only the card sheet names a
+ * signer, behind their Vault cards switch (`sheet.ts`); the inscription itself travels with the copy.
+ */
+export const INSCRIPTION_OMIT = {
+  inscribedById: true,
+  inscribedName: true,
+} as const satisfies Prisma.CardOwnershipOmit;
 
 export type InscriptionCheck = { ok: true; text: string } | { ok: false; reason: string };
 
