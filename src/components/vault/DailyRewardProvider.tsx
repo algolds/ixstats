@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
 import { Trophy, SystemRestart as Loader } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useCardSheetOpen } from "~/hooks/useCardSheet";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -274,13 +275,17 @@ function DailyRewardDialog({
   const levelBoost = levelMultiplier(balanceData?.vaultLevel ?? 1);
   const streakBoost = streakMultiplier(claimStreak);
 
+  // A card sheet in the address is what the visitor came for (a shared link, or signing in to reach it).
+  const sheetOpen = useCardSheetOpen();
+
   // Auto-open at most once per user per UTC day, not on every page load or navigation. Routes
-  // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open.
+  // without chrome (maps, full-screen editors) opt out, and do not spend the day's auto-open. Over
+  // an open card sheet it waits, and opens once the sheet closes.
   useEffect(() => {
-    if (!autoOpen || !canClaim || hasAutoOpenedToday(userId)) return;
+    if (!autoOpen || sheetOpen || !canClaim || hasAutoOpenedToday(userId)) return;
     markAutoOpenedToday(userId);
     setIsOpen(true);
-  }, [autoOpen, userId, canClaim, setIsOpen]);
+  }, [autoOpen, sheetOpen, userId, canClaim, setIsOpen]);
 
   // A claim (or a refused one) moves the balance, the statement and today's earnings.
   const refreshVault = () => {
@@ -503,7 +508,7 @@ export function DailyRewardStatus() {
         className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
-        <span className="flex-1 text-left">Daily reward</span>
+        <span className="min-w-0 flex-1 truncate text-left">Daily reward</span>
         {streak > 0 && <StreakPill streak={streak} />}
       </Button>
     </div>

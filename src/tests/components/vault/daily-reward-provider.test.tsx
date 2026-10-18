@@ -18,6 +18,11 @@ let mutationOptions: {
 };
 
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: mockUserId }) }));
+// The address the shell reads: `?card=` is an open card sheet (useCardSheet).
+jest.mock("next/navigation", () => ({
+  ...jest.requireActual<typeof import("next/navigation")>("next/navigation"),
+  useSearchParams: jest.fn(),
+}));
 jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({
@@ -51,6 +56,7 @@ jest.mock("~/hooks/useCardsRefresh", () => {
   return { useCardsRefresh: () => refreshCards };
 });
 
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import {
   DailyRewardProvider,
@@ -59,6 +65,9 @@ import {
 } from "~/components/vault/DailyRewardProvider";
 
 const refreshCards = jest.mocked(useCardsRefresh());
+const searchParams = jest.mocked(useSearchParams);
+const atAddress = (query: string) =>
+  searchParams.mockReturnValue(new ReadonlyURLSearchParams(query));
 
 const Widget = () => (
   <DailyRewardProvider>
@@ -78,6 +87,7 @@ beforeEach(() => {
   invalidateEarnings.mockClear();
   refreshCards.mockClear();
   window.localStorage.clear();
+  atAddress("");
 });
 
 const dialog = () => screen.getByRole("dialog");
@@ -363,6 +373,41 @@ describe("DailyRewardProvider", () => {
     off.unmount();
     render(<Widget />);
     expect(dialog()).toBeInTheDocument();
+  });
+
+  // A visitor who followed a card's link (or signed in to reach it) came for that card: the reward waits for the
+  // sheet to close rather than opening over it.
+  it("waits while a card sheet from the address is open, then auto-opens once it closes", () => {
+    atAddress("card=c1&from=holder.e2e_tester");
+    const { rerender } = render(<Widget />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    atAddress("");
+    rerender(<Widget />);
+    expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
+  });
+
+  it("does not spend today's auto-open while it waits for a card sheet", () => {
+    atAddress("card=c1");
+    render(<Widget />).unmount();
+    atAddress("");
+    render(<Widget />);
+    expect(dialog()).toBeInTheDocument();
+  });
+
+  it("still opens over a card sheet when the player asks for it", () => {
+    atAddress("card=c1");
+    render(<Widget />);
+    fireEvent.click(screen.getByRole("button", { name: /Daily reward/ }));
+    expect(within(dialog()).getByRole("heading", { name: "Daily reward" })).toBeInTheDocument();
+  });
+
+  // The sidebar's column is 224px: with a two-digit streak the label gives way rather than the card widening.
+  it("lets the claimable row shrink, truncating its label", () => {
+    balance = { canClaimDailyBonus: true, loginStreak: 12 };
+    render(<Widget />);
+    const trigger = screen.getByRole("button", { name: /Daily reward/, hidden: true });
+    expect(trigger).toHaveClass("w-full");
+    expect(within(trigger).getByText("Daily reward")).toHaveClass("min-w-0", "flex-1", "truncate");
   });
 
   it("renders its children and no dialog for a signed-out visitor", () => {
