@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { cn } from "~/lib/utils";
+import { currentProfileHref } from "~/lib/wiki-os/legacy-profile-links";
 import { entityKinds, mentionQueries } from "~/lib/wiki-os/mention-target";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import {
@@ -261,7 +262,10 @@ function domNodeToReact(
 
   const element = node as HTMLElement;
   const tagName = element.tagName.toLowerCase();
-  const href = element.getAttribute("href") || "";
+  const oldHref = element.getAttribute("href") || "";
+  // Old profile and passport links open the current pages, whichever branch below renders the link.
+  const href = tagName === "a" ? currentProfileHref(oldHref) : oldHref;
+  if (href !== oldHref) element.setAttribute("href", href);
 
   if (tagName === "div" && element.getAttribute("data-wikiembed") === "true") {
     return renderWikiEmbed(element, index);

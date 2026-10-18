@@ -24,7 +24,7 @@ Your passport lives at `/@yourname` (also `/id/yourname`). Anyone can view it, s
 | Vault | Collector level, deck value and your most valuable cards |
 | History | Your activity across the platform |
 
-A player's **wiki user profile** now opens their passport on the Work tab (`/id/@username?tab=work`), so wiki links to a user land on their work.
+A player's **wiki user profile** now opens their passport on the Work tab (`/@username?tab=work`), so wiki links to a user land on their work.
 
 ## Edit your passport and privacy
 

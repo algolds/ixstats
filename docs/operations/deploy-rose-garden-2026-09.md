@@ -183,12 +183,10 @@ echo 'REDIS_URL=redis://localhost:6379' >> .env.production.local   # ixstats-red
   ```js
   const passportRewrites = [{ source: "/@:username", destination: "/id/:username" }];
   ```
-- **In `redirects()`:** replace the two `/@:username…` entries (`permanent: false`) with these:
-  ```js
-  { source: "/@:username/:tab", destination: "/@:username?tab=:tab", permanent: true },
-  { source: "/id/@:username", destination: "/@:username", permanent: true },
-  { source: "/id/@:username/:tab", destination: "/@:username?tab=:tab", permanent: true },
-  ```
+- **In `redirects()`:** delete the `/@:username…` entries (`permanent: false`) and every other legacy entry (the
+  repository's `next.config.js` has no `redirects()` any more). Wiki
+  pages that still link `/id/@user`, `/@user/<tab>` or `/thinkpages/profile/<user>` are resolved to the new pages
+  when they render.
 - **Check it parses:** run `node --check next.config.js`.
 - **If you skip this step,** the new `/@user` links still work, because the old config redirects them to `/id/@user`.
   Do not apply only half of it, or you will create a redirect loop.
@@ -459,7 +457,7 @@ included, for the days since.
 
 - `/`, `/dashboard`, `/mycountry`, `/maps` load, and the console shows no errors.
 - Sign in: the page does not remount, and the title badge appears.
-- `/@<your handle>` shows your passport on the Overview tab, `/id/@<handle>` redirects to it (after step 3), and the
+- `/@<your handle>` shows your passport on the Overview tab, `/id/<handle>` redirects to it, and the
   tabs switch.
 - **Messages:** send a message in one browser and see it arrive in another. This proves the Redis bridge works.
   The folder badge shows your unread count.

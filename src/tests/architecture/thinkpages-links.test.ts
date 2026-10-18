@@ -21,8 +21,8 @@ const SKIP_DIRS = new Set(["tests", "node_modules", "generated"]);
 
 /** The retired /thinkpages pages are deleted: only the files that recognize their old paths may still name them. */
 const LEGACY_PAGES = [
-  // Recognizes the old persona profile path in existing wiki pages (hover card); it builds no link.
-  "lib/wiki-os/mention-target.ts",
+  // Resolves the old persona profile path in existing wiki pages to the current one; it builds no link.
+  "lib/wiki-os/legacy-profile-links.ts",
 ];
 /**
  * Where `/thinkpages/post/<id>` is built: the resolver page, the wiki action-link builder, and the forum link

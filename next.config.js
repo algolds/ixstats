@@ -221,10 +221,6 @@ const config = {
         {
           source: "/projects/ixstates/:path*",
           destination: "/:path*",
-        },
-        {
-          source: "/projects/ixstats/:path*",
-          destination: "/:path*",
         }
       );
     }
@@ -246,40 +242,6 @@ const config = {
     }
 
     return baseRewrites;
-  },
-
-  async redirects() {
-    return [
-      // The tenant-0 realm's former slug: IxWorld is now Ixnay.
-      { source: "/r/ixworld/:path*", destination: "/r/ixnay/:path*", permanent: true },
-      { source: "/thinkpages/r/ixworld/:path*", destination: "/thinkpages/r/ixnay/:path*", permanent: true },
-      // Passport: /@username is canonical. The page reads its tab from ?tab=, so tab paths redirect to the query form.
-      {
-        source: "/@:username/:tab",
-        destination: "/@:username?tab=:tab",
-        permanent: true,
-      },
-      {
-        source: "/id/@:username",
-        destination: "/@:username",
-        permanent: true,
-      },
-      {
-        source: "/id/@:username/:tab",
-        destination: "/@:username?tab=:tab",
-        permanent: true,
-      },
-      {
-        source: "/profile",
-        destination: "/settings",
-        permanent: true,
-      },
-      {
-        source: "/profile/:path*",
-        destination: "/settings/:path*",
-        permanent: true,
-      },
-    ];
   },
 
   async headers() {

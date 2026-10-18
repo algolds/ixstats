@@ -39,7 +39,7 @@ Images come from the wiki's media library; browse it in the [Repository](/util/r
 
 ## Your wiki profile
 
-A player's wiki user profile now opens their [IxnayID passport](/help/getting-started/ixnayid) on the **Work** tab (`/id/@username?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
+A player's wiki user profile now opens their [IxnayID passport](/help/getting-started/ixnayid) on the **Work** tab (`/@username?tab=work`), which lists their wiki pages and edits. Contribution lists are also at [/util/contributions](/util/contributions).
 
 ## Lorewards
 

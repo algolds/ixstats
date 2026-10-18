@@ -161,13 +161,6 @@ const config = {
     return baseRewrites;
   },
 
-  async redirects() {
-    return [
-      { source: "/profile", destination: "/settings", permanent: true },
-      { source: "/profile/:path*", destination: "/settings/:path*", permanent: true },
-    ];
-  },
-
   async headers() {
     return [
       {

@@ -9,13 +9,12 @@ export function entityKinds(href: string) {
     isLeague: href.includes("/myleague/"),
     isClub: href.includes("/myclub/"),
     isCountry: href.includes("/countries/"),
-    // Persona profiles: the current path and the old ThinkPages one that existing wiki pages still link.
-    isUser: href.includes("/dashboard/profile/") || href.includes("/thinkpages/profile/"),
+    // Persona profiles (an old ThinkPages profile link is already resolved to this path when the page renders).
+    isUser: href.includes("/dashboard/profile/"),
   };
 }
 
-const ENTITY_ID =
-  /\/(?:myleague|myclub|countries|dashboard\/profile|thinkpages\/profile|thinkpages\/u|u)\/([a-zA-Z0-9_-]+)/;
+const ENTITY_ID = /\/(?:myleague|myclub|countries|dashboard\/profile|u)\/([a-zA-Z0-9_-]+)/;
 
 /**
  * The entity id in `href` and which lookup to run: only once the card is `open`, and never for an empty id (a slug
