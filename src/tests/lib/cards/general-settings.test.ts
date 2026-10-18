@@ -4,6 +4,7 @@
  * the house rake (marketplace fee) and base card capacity.
  */
 import { describe, it, expect } from "@jest/globals";
+import type { PrismaClient } from "@prisma/client";
 
 type Mod = typeof import("~/lib/cards/general-settings");
 
@@ -15,8 +16,8 @@ function load(): Mod {
   return mod;
 }
 
-function dbWith(rows: Array<{ key: string; value: string }>) {
-  return { systemConfig: { findMany: jest.fn().mockResolvedValue(rows) } } as any;
+function dbWith(rows: Array<{ key: string; value: string }>): Pick<PrismaClient, "systemConfig"> {
+  return { systemConfig: { findMany: jest.fn().mockResolvedValue(rows) } } as never;
 }
 
 describe("card general settings", () => {
@@ -39,6 +40,12 @@ describe("card general settings", () => {
     expect(await load().marketplaceFee(dbWith([]), 1000)).toBe(100);
     const db = dbWith([{ key: "card_system_auction_rake_pct", value: "90" }]);
     expect(await load().marketplaceFee(db, 1000)).toBe(500);
+  });
+
+  it("marketplaceFee spares amounts at or under the Economy tab's threshold", async () => {
+    const db = dbWith([{ key: "card_economy_sale_fee_threshold", value: "500" }]);
+    expect(await load().marketplaceFee(db, 500)).toBe(0);
+    expect(await load().marketplaceFee(db, 1000)).toBe(100);
   });
 
   it("a setter in a transaction leaves the cache to its caller, which clears it after the commit", async () => {
