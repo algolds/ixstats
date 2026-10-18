@@ -14,7 +14,7 @@ import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
 import { vaultService } from "~/lib/vault/vault-service";
-import { ownedFaces } from "~/lib/cards/hub/faces";
+import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 import { notificationAPI } from "~/lib/notifications/api";
 import { globalCache } from "~/lib/cache";
 import type { CardFaceData } from "~/lib/cards/face/types";
@@ -28,13 +28,8 @@ async function claimedFace(
   ownershipId: string | undefined
 ): Promise<CardFaceData | null> {
   if (!ownershipId) return null;
-  try {
-    const [face] = await ownedFaces(db, [ownershipId]);
-    return face ?? null;
-  } catch (error) {
-    console.error("[Vault Router] Daily card face read failed:", error);
-    return null;
-  }
+  const [face] = await facesAfterCommit(db, [ownershipId], "A daily card claim");
+  return face ?? null;
 }
 
 export const vaultDailyClaimsRouter = createTRPCRouter({

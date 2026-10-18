@@ -1,18 +1,18 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidateMyPacks = jest.fn();
-  const invalidateMine = jest.fn();
   return {
     api: {
-      useUtils: () => ({
-        cardPacks: { getMyPacks: { invalidate: invalidateMyPacks } },
-        cards: { listMine: { invalidate: invalidateMine } },
-      }),
+      useUtils: () => ({ cardPacks: { getMyPacks: { invalidate: invalidateMyPacks } } }),
       cardPacks: { openPack: { useMutation: jest.fn() } },
     },
   };
+});
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
 });
 jest.mock("~/components/providers/FacetMotionConfig", () => ({
   useFacetReducedMotion: jest.fn(() => true),
@@ -35,10 +35,13 @@ jest.mock("next/link", () => ({
 }));
 
 import { api } from "~/trpc/react";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { PackReveal } from "~/components/cards/reveal/PackReveal";
 import type { CardFaceData } from "~/lib/cards/face/types";
 
+const refreshCards = jest.mocked(useCardsRefresh());
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = (n: number, rarity: CardFaceData["rarity"]): CardFaceData => ({
   cardId: `c${n}`,
@@ -98,6 +101,7 @@ const press = (key: string) => fireEvent.keyDown(screen.getByRole("dialog"), { k
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(useFacetReducedMotion).mockReturnValue(true);
   jest.useFakeTimers();
 });
 afterEach(() => jest.useRealTimers());
@@ -116,12 +120,11 @@ describe("PackReveal", () => {
     expect(playRevealFeedback).toHaveBeenLastCalledWith("COMMON", true);
   });
 
-  it("shows Mine the new copies and the Store one pack fewer", () => {
+  it("shows Mine, the display and Explore the new copies, and the Store one pack fewer", () => {
     setup();
     openPack();
-    const utils = api.useUtils();
-    expect(utils.cards.listMine.invalidate).toHaveBeenCalled();
-    expect(utils.cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
+    expect(refreshCards).toHaveBeenCalledTimes(1);
+    expect(api.useUtils().cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
   });
 
   it("holds a rarer card for its beat before the next turns", () => {
@@ -248,6 +251,36 @@ describe("PackReveal", () => {
     fallback.remove();
   });
 
+  it("lets Rare and better pulls tilt and catch the light in the summary", () => {
+    jest.mocked(useFacetReducedMotion).mockReturnValue(false);
+    setup();
+    openPack();
+    press("Escape");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    const pulled = within(screen.getByRole("list", { name: "Cards pulled" }));
+    const holo = (title: string) =>
+      pulled
+        .getByRole("button", { name: new RegExp(`^${title},`) })
+        .closest("li")
+        ?.querySelector(".card-holo") ?? null;
+    expect(holo("Card 1")).toBeNull();
+    expect(holo("Card 2")).not.toBeNull();
+    expect(holo("Card 3")).not.toBeNull();
+    // The holo never takes a tap meant for the card.
+    fireEvent.click(pulled.getByRole("button", { name: /^Card 3,/ }));
+    expect(screen.queryByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("keeps every pull still under Reduce Motion", () => {
+    setup();
+    openPack();
+    press("Escape");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(
+      screen.getByRole("list", { name: "Cards pulled" }).querySelector(".card-holo")
+    ).toBeNull();
+  });
+
   it("skips straight to the summary, with no next pack to offer", () => {
     setup();
     openPack();
@@ -282,9 +315,8 @@ describe("PackReveal, opening twice", () => {
       "This pack is already open. Its cards are in Mine."
     );
     expect(screen.queryByRole("button", { name: "Open pack" })).toBeNull();
-    const utils = api.useUtils();
-    expect(utils.cards.listMine.invalidate).toHaveBeenCalled();
-    expect(utils.cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
+    expect(refreshCards).toHaveBeenCalledTimes(1);
+    expect(api.useUtils().cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
     const mine = screen.getByRole("link", { name: "Go to Mine" });
     expect(mine).toHaveAttribute("href", "/vault/cards/mine");
     fireEvent.click(mine);
@@ -301,7 +333,7 @@ describe("PackReveal, opening twice", () => {
       })
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Failed to open pack");
-    expect(api.useUtils().cards.listMine.invalidate).not.toHaveBeenCalled();
+    expect(refreshCards).not.toHaveBeenCalled();
     openPack();
     expect(mutate).toHaveBeenCalledTimes(2);
   });

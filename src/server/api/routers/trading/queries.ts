@@ -6,7 +6,12 @@ import { TradeStatus } from "~/lib/vault/trade-settlement";
 import { deckValue } from "~/lib/cards/copy-value";
 import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
 import { tradeView } from "~/lib/cards/hub/market-faces";
-import { FINISHED_TRADE_STATUSES, TRADE_PARTIES_INCLUDE } from "./_shared";
+import {
+  FINISHED_TRADE_STATUSES,
+  TRADE_PARTIES_INCLUDE,
+  withPartyHandle,
+  withPartyHandles,
+} from "./_shared";
 
 /** What the trade view reads of each card; never the metadata or art credit, which name a hidden card's art. */
 const TRADE_CARD_SELECT = {
@@ -41,7 +46,7 @@ export const tradingQueriesRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
 
-    return trades;
+    return withPartyHandles(trades);
   }),
 
   /**
@@ -73,7 +78,7 @@ export const tradingQueriesRouter = createTRPCRouter({
       const total = await ctx.db.tradeOffer.count({ where });
 
       return {
-        trades,
+        trades: await withPartyHandles(trades),
         total,
         hasMore: input.offset + input.limit < total,
       };
@@ -121,7 +126,10 @@ export const tradingQueriesRouter = createTRPCRouter({
       const initiatorValue = sideValue(initiatorCards) + trade.initiatorCredits;
       const recipientValue = sideValue(recipientCards) + trade.recipientCredits;
 
-      const view = await tradeView(ctx.db, userId, trade, initiatorCards, recipientCards);
-      return { ...trade, ...view, initiatorValue, recipientValue };
+      const [named, view] = await Promise.all([
+        withPartyHandle(trade),
+        tradeView(ctx.db, userId, trade, initiatorCards, recipientCards),
+      ]);
+      return { ...named, ...view, initiatorValue, recipientValue };
     }),
 });

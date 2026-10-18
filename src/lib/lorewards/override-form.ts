@@ -78,18 +78,20 @@ export function trophyChangeNote(result: TrophyChanges): string {
 }
 
 /**
- * An override's success toast, for both override procedures: saved and synced when the bot was told, else a warning
- * that the override is saved and the bot picks it up on its next sync. The trophy note follows either.
+ * An override's success toast, for both override procedures: saved and announced when the bot was told, else a
+ * warning that the override is saved but nothing was announced, and the bot picks it up on its next sync. The trophy
+ * note follows either.
  */
 export function overrideToast(
   botSynced: boolean,
   changes: TrophyChanges
 ): { tone: "success" | "warning"; title: string; message: string } {
   const told = botSynced
-    ? { title: "Winner overridden", message: "The override is saved and synced." }
+    ? { title: "Winner overridden", message: "The override is saved and announced." }
     : {
         title: "Saved",
-        message: "The Discord bot was not told; it picks the change up on its next sync.",
+        message:
+          "The Discord bot was not told, so nothing was announced. It picks the change up on its next sync.",
       };
   const note = trophyChangeNote(changes);
   return {

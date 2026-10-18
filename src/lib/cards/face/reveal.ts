@@ -13,6 +13,11 @@ export function revealFeedbackFor(rarity: CardRarity): { sound: boolean; haptic:
   return { sound: rank >= rarityRank("RARE"), haptic: rank >= rarityRank("EPIC") };
 }
 
+/** Rare and rarer pulls tilt and catch the light in the reveal's summary (never under Reduce Motion). */
+export function revealShines(rarity: CardRarity): boolean {
+  return rarityRank(rarity) >= rarityRank("RARE");
+}
+
 /** The next card still face down after `from`, wrapping round; -1 when every card is up. */
 export function nextFaceDown(revealed: readonly boolean[], from: number): number {
   for (let step = 1; step <= revealed.length; step += 1) {

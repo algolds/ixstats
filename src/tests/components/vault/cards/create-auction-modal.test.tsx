@@ -1,32 +1,37 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({
-      cardMarket: {
-        getActiveAuctions: { invalidate: jest.fn() },
-        getMyActiveAuctions: { invalidate: jest.fn() },
-      },
-      cards: { listMine: { invalidate: jest.fn() } },
-    }),
-    cards: { listMine: { useQuery: jest.fn() } },
+    cards: { listMine: { useInfiniteQuery: jest.fn() } },
     cardMarket: { createAuction: { useMutation: jest.fn() } },
   },
 }));
+jest.mock("~/hooks/useDebounce", () => ({ useDebounce: <T,>(value: T) => value }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
 
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { CreateAuctionModal } from "~/components/vault/cards/market/CreateAuctionModal";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
-const row = (ownershipId: string, serialNumber: number, isLocked = false, isBound = false) => ({
+const row = (
+  ownershipId: string,
+  serialNumber: number,
+  isLocked = false,
+  isBound = false,
+  title = "Caphiria"
+) => ({
   face: {
     cardId: "c1",
-    title: "Caphiria",
+    title,
     rarity: "EPIC" as const,
     cardType: "LORE" as const,
     realm,
@@ -44,16 +49,29 @@ const row = (ownershipId: string, serialNumber: number, isLocked = false, isBoun
   isBound,
 });
 
+const refreshCards = jest.mocked(useCardsRefresh());
 type Listed = (result: { message: string }) => void;
 let mutate: jest.Mock;
 let onSuccess: Listed = () => undefined;
 
-beforeEach(() => {
-  mutate = jest.fn();
-  jest.mocked(api.cards.listMine.useQuery).mockReturnValue({
-    data: { rows: [row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)] },
+type Row = ReturnType<typeof row>;
+const fetchNextPage = jest.fn();
+/** Mine as the picker pages it: `pages` of copies, and whether a further page waits. */
+const mine = (pages: Row[][], hasNextPage = false) =>
+  jest.mocked(api.cards.listMine.useInfiniteQuery).mockReturnValue({
+    data: { pages: pages.map((rows) => ({ rows })) },
     isLoading: false,
+    hasNextPage,
+    isFetchingNextPage: false,
+    fetchNextPage,
   } as never);
+const lastQuery = () => jest.mocked(api.cards.listMine.useInfiniteQuery).mock.calls.at(-1);
+
+beforeEach(() => {
+  refreshCards.mockClear();
+  fetchNextPage.mockClear();
+  mutate = jest.fn();
+  mine([[row("o1", 4), row("o2", 9), row("o3", 12, true), row("o4", 20, false, true)]]);
   jest.mocked(api.cardMarket.createAuction.useMutation).mockImplementation(((options: {
     onSuccess: typeof onSuccess;
   }) => {
@@ -67,10 +85,11 @@ const field = (name: RegExp, value: string) =>
 const list = () => screen.getByRole("button", { name: "List it" });
 /** What the last listing sent, and the callback that closes the form once it lands. */
 const listing = () => mutate.mock.calls.at(-1)?.[0];
-const landed = (message: string) => {
-  onSuccess({ message });
-  (mutate.mock.calls.at(-1)?.[1] as { onSuccess: Listed }).onSuccess({ message });
-};
+const landed = (message: string) =>
+  act(() => {
+    onSuccess({ message });
+    (mutate.mock.calls.at(-1)?.[1] as { onSuccess: Listed }).onSuccess({ message });
+  });
 
 describe("CreateAuctionModal", () => {
   it("lists copies, not cards, and leaves out a copy already listed or traded, or bound", () => {
@@ -83,6 +102,37 @@ describe("CreateAuctionModal", () => {
     expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
     expect(screen.queryByText(/#12/)).toBeNull();
     expect(screen.queryByText(/#20/)).toBeNull();
+  });
+
+  it("searches every copy, most valuable first, a page at a time", () => {
+    mine([[row("o1", 4)], [row("o9", 31, false, false, "Urcea")]], true);
+    render(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(lastQuery()?.[0]).toEqual({ search: undefined, sort: "value", limit: 120 });
+    expect(lastQuery()?.[1]).toMatchObject({ enabled: true });
+    const copies = within(screen.getByRole("list", { name: "Your cards" })).getAllByRole("button");
+    expect(copies).toHaveLength(2);
+    expect(copies[0]).toHaveAccessibleName(/^Caphiria\s*#4 · Foil$/);
+    expect(copies[1]).toHaveAccessibleName(/^Urcea\s*#31 · Foil$/);
+    fireEvent.click(screen.getByRole("button", { name: "Show more" }));
+    expect(fetchNextPage).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
+      target: { value: " Urc " },
+    });
+    expect(lastQuery()?.[0]).toMatchObject({ search: "Urc" });
+  });
+
+  it("pages past a page of copies that cannot be listed, and says when a search finds none", () => {
+    mine([[row("o3", 12, true)]], true);
+    const { rerender } = render(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(screen.queryByText("No cards to sell")).toBeNull();
+    expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
+    mine([[]]);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
+      target: { value: "Nowhere" },
+    });
+    rerender(<CreateAuctionModal open onClose={jest.fn()} />);
+    expect(screen.getByText("No cards match this search")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
   });
 
   it("lists the copy picked, at the prices typed", () => {
@@ -139,13 +189,15 @@ describe("CreateAuctionModal", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it("closes once the copy is listed", () => {
+  it("closes once the copy is listed, and reads the listed copy's places again", () => {
     const onClose = jest.fn();
     render(<CreateAuctionModal open onClose={onClose} initialOwnershipId="o1" />);
     field(/Starting price/, "25");
     fireEvent.click(list());
+    expect(refreshCards).not.toHaveBeenCalled();
     landed("Auction created");
     expect(vaultNotify.success).toHaveBeenCalledWith("Auction created");
+    expect(refreshCards).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

@@ -58,6 +58,8 @@ export function MarketBrowse({
   const [limit, setLimit] = useState(PAGE);
   const [selling, setSelling] = useState(false);
   const shelves = api.cards.exploreShelves.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
+  // Every public realm with cards, as Explore's realm filter lists them, not only the realms it shelves.
+  const realms: ReadonlyArray<{ id: string; name: string }> = shelves.data?.realms ?? [];
   const query = api.cardMarket.getActiveAuctions.useQuery(
     {
       cardId: forCardId ?? undefined,
@@ -82,7 +84,7 @@ export function MarketBrowse({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ANY}>Every realm</SelectItem>
-            {(shelves.data ?? []).map(({ realm }) => (
+            {realms.map((realm) => (
               <SelectItem key={realm.id} value={realm.id}>
                 {realm.name}
               </SelectItem>

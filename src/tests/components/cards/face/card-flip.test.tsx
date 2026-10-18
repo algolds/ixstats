@@ -8,6 +8,7 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardBackProvenance } from "~/components/cards/face/CardBackProvenance";
 import { CardFlip, isFlipKey } from "~/components/cards/face/CardFlip";
+import { CardTilt } from "~/components/cards/face/CardTilt";
 import { focusRing } from "~/components/ui/button";
 import type { TrailEvent } from "~/lib/cards/face/trail";
 import type { CardFaceData, CardFinish } from "~/lib/cards/face/types";
@@ -440,5 +441,37 @@ describe("CardBackProvenance", () => {
     render(<CardBackProvenance face={face()} copy={null} artCredit={null} ns={null} />);
     expect(screen.getByText("#7 · Foil")).toBeInTheDocument();
     expect(screen.queryByText(/^Level/)).toBeNull();
+  });
+});
+
+describe("CardTilt", () => {
+  beforeEach(() => jest.mocked(useFacetReducedMotion).mockReturnValue(false));
+
+  it("leans the card toward the pointer and lights its holo where the pointer is", () => {
+    const { container } = render(
+      <CardTilt>
+        <p>The card</p>
+      </CardTilt>
+    );
+    const holo = container.querySelector<HTMLElement>(".card-holo");
+    expect(holo).not.toBeNull();
+    expect(holo).toHaveAttribute("aria-hidden", "true");
+    const stage = container.firstElementChild!;
+    stage.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 140 }) as DOMRect;
+    // jsdom has no PointerEvent, so a MouseEvent of that type carries the coordinates.
+    fireEvent(stage, new MouseEvent("pointermove", { bubbles: true, clientX: 25, clientY: 105 }));
+    expect(holo!.style.getPropertyValue("--holo-x")).toBe("25%");
+    expect(holo!.style.getPropertyValue("--holo-y")).toBe("75%");
+  });
+
+  it("is the card alone under Reduce Motion", () => {
+    jest.mocked(useFacetReducedMotion).mockReturnValue(true);
+    const { container } = render(
+      <CardTilt>
+        <p>The card</p>
+      </CardTilt>
+    );
+    expect(container.querySelector(".card-holo")).toBeNull();
+    expect(container.innerHTML).toBe("<p>The card</p>");
   });
 });

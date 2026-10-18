@@ -4,6 +4,7 @@
 
 import { useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-client";
 
 /**
@@ -14,6 +15,7 @@ import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-clien
  */
 export function useAuctionWebSocket({ enabled = true }: { enabled?: boolean } = {}) {
   const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
 
   useEffect(() => {
     if (!enabled) return;
@@ -26,12 +28,8 @@ export function useAuctionWebSocket({ enabled = true }: { enabled?: boolean } = 
         void utils.cardMarket.getActiveAuctions.invalidate();
         void utils.cardMarket.getMyActiveBids.invalidate();
       }),
-      client.subscribeToAll("auction_complete", () => {
-        void utils.cardMarket.getActiveAuctions.invalidate();
-        void utils.cardMarket.getMyActiveAuctions.invalidate();
-        void utils.cardMarket.getMyAuctionParticipation.invalidate();
-        void utils.vault.getBalance.invalidate();
-      }),
+      // A settled auction moves its copy to the winner and its credits to the seller.
+      client.subscribeToAll("auction_complete", () => refreshCards()),
       client.subscribeToAll("auction_created", () => {
         void utils.cardMarket.getActiveAuctions.invalidate();
         void utils.cardMarket.getMyActiveAuctions.invalidate();
@@ -42,5 +40,5 @@ export function useAuctionWebSocket({ enabled = true }: { enabled?: boolean } = 
       unsubscribes.forEach((unsubscribe) => unsubscribe());
       client.disconnect();
     };
-  }, [enabled, utils]);
+  }, [enabled, utils, refreshCards]);
 }

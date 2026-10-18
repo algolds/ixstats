@@ -3,15 +3,8 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({
-      cardMarket: {
-        getActiveAuctions: { invalidate: jest.fn() },
-        getMyActiveAuctions: { invalidate: jest.fn() },
-      },
-      cards: { listMine: { invalidate: jest.fn() } },
-    }),
     cards: {
-      exploreShelves: { useQuery: jest.fn(() => ({ data: [] })) },
+      exploreShelves: { useQuery: jest.fn(() => ({ data: { realms: [] } })) },
       listMine: { useQuery: jest.fn(() => ({ data: undefined, isLoading: true })) },
     },
     cardMarket: {
@@ -40,6 +33,10 @@ jest.mock("~/hooks/marketplace/useAuctionBid", () => ({
   })),
 }));
 jest.mock("~/hooks/marketplace/useAuctionWebSocket", () => ({ useAuctionWebSocket: jest.fn() }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "clerk_me" }) }));
 jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
 jest.mock("~/components/cards/trading/TradeNegotiation", () => ({
@@ -62,9 +59,11 @@ jest.mock("~/components/vault/cards/market/CreateAuctionModal", () => ({
 import { api } from "~/trpc/react";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { MarketPane } from "~/components/vault/cards/market/MarketPane";
 import type { MarketTab } from "~/lib/cards/hub-routes";
 
+const refreshCards = jest.mocked(useCardsRefresh());
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
 const face = {
   cardId: "c1",
@@ -197,6 +196,21 @@ describe("MarketPane", () => {
     expect(props.onTabChange).toHaveBeenCalledWith("selling");
   });
 
+  it("filters by every public realm with cards, not only the realms Explore shelves", () => {
+    jest.mocked(api.cards.exploreShelves.useQuery).mockReturnValue({
+      data: { realms: [realm, { ...realm, id: "r13", slug: "eurth", name: "Eurth" }] },
+    } as never);
+    renderPane("browse");
+    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Every realm",
+      "Ixnay",
+      "Eurth",
+    ]);
+    fireEvent.click(screen.getByRole("option", { name: "Eurth" }));
+    expect(lastAuctionQuery()).toMatchObject({ realmId: "r13" });
+  });
+
   it("narrows Browse to one card from the sheet's link, and lets the player see everything again", () => {
     const props = renderPane("browse", { forCardId: "c1" });
     expect(lastAuctionQuery()).toMatchObject({ cardId: "c1" });
@@ -255,12 +269,15 @@ describe("MarketPane", () => {
     expect(screen.getByRole("dialog")).toHaveTextContent("Selling o7");
   });
 
-  it("lists the player's listings and bids; a listing with bids cannot be cancelled", () => {
+  it("lists the player's listings; a listing with bids cannot be cancelled, and a cancel frees the card", () => {
     const cancel = jest.fn();
-    jest.mocked(api.cardMarket.cancelAuction.useMutation).mockReturnValue({
-      mutate: cancel,
-      isPending: false,
-    } as never);
+    let cancelled: { onSuccess: (result: { message: string }) => void } | undefined;
+    jest.mocked(api.cardMarket.cancelAuction.useMutation).mockImplementation(((
+      options: typeof cancelled
+    ) => {
+      cancelled = options;
+      return { mutate: cancel, isPending: false };
+    }) as never);
     jest.mocked(api.cardMarket.getMyActiveAuctions.useQuery).mockReturnValue({
       data: {
         auctions: [
@@ -268,10 +285,6 @@ describe("MarketPane", () => {
           { ...auction, id: "mine-ended", endTime: new Date(Date.now() - HOUR) },
         ],
       },
-      isLoading: false,
-    } as never);
-    jest.mocked(api.cardMarket.getMyActiveBids.useQuery).mockReturnValue({
-      data: { auctions: [{ ...auction, id: "bid-1" }] },
       isLoading: false,
     } as never);
     renderPane("selling");
@@ -284,8 +297,50 @@ describe("MarketPane", () => {
     expect(listings.getAllByText("Has bids, so it cannot be cancelled")).toHaveLength(1);
     fireEvent.click(open!);
     expect(cancel).toHaveBeenCalledWith({ auctionId: "mine-open" });
+    // The cancelled listing's copy is free again: Mine, the sheet and the Sell picker read it again.
+    refreshCards.mockClear();
+    cancelled?.onSuccess({ message: "Auction cancelled" });
+    expect(refreshCards).toHaveBeenCalledTimes(1);
+  });
+
+  it("lists every running auction the player bid on, winning or outbid, and raises an outbid bid", () => {
+    const placeBid = jest.fn();
+    jest.mocked(useAuctionBid).mockReturnValue({
+      placeBid,
+      executeBuyout: jest.fn(),
+      isBidding: false,
+      isBuyingOut: false,
+      error: null,
+    });
+    jest.mocked(api.cardMarket.getMyActiveBids.useQuery).mockReturnValue({
+      data: {
+        auctions: [
+          { ...auction, id: "bid-1", winning: true },
+          { ...auction, id: "bid-2", currentBid: 130, winning: false },
+        ],
+      },
+      isLoading: false,
+    } as never);
+    renderPane("selling");
     const bids = within(screen.getByRole("region", { name: "Your bids" }));
-    expect(bids.getByText("100 IxC · 3h 0m left")).toBeInTheDocument();
+    const [winning, outbid] = bids.getAllByRole("listitem");
+    expect(within(winning!).getByText("Winning")).toBeInTheDocument();
+    expect(within(winning!).getByText("100 IxC · 3h 0m left")).toBeInTheDocument();
+    expect(within(winning!).queryByRole("button", { name: /Raise bid/ })).toBeNull();
+    expect(within(outbid!).getByText("Outbid")).toBeInTheDocument();
+    expect(within(outbid!).getByText("130 IxC · 3h 0m left")).toBeInTheDocument();
+    fireEvent.click(within(outbid!).getByRole("button", { name: "Raise bid to 137 IxC" }));
+    expect(placeBid).toHaveBeenCalledWith("bid-2", 137);
+  });
+
+  it("says when the player has no bids running", () => {
+    jest.mocked(api.cardMarket.getMyActiveBids.useQuery).mockReturnValue({
+      data: { auctions: [] },
+      isLoading: false,
+    } as never);
+    renderPane("selling");
+    expect(screen.getByText("No bids running")).toBeInTheDocument();
+    expect(screen.getByText("Auctions you bid on appear here until they end.")).toBeInTheDocument();
   });
 
   it("splits open offers into the ones to the player and the ones they sent", () => {
@@ -316,6 +371,29 @@ describe("MarketPane", () => {
     ).toBeInTheDocument();
     fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("No trades or auctions yet")).toBeInTheDocument();
+  });
+
+  it("names a past trade's partner by passport handle in History", () => {
+    const history = jest.mocked(api.trading.getTradeHistory.useQuery);
+    history.mockReturnValue({
+      data: {
+        trades: [
+          {
+            id: "t9",
+            status: "ACCEPTED",
+            updatedAt: new Date("2026-10-03T00:00:00Z"),
+            initiatorCardIds: ["o1"],
+            recipientCardIds: [],
+            initiator: { clerkUserId: "clerk_ann", passportHandle: "Helvianir" },
+            recipient: { clerkUserId: "clerk_me", passportHandle: "max" },
+          },
+        ],
+      },
+    } as never);
+    renderPane("trades");
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
+    expect(screen.getByText("Trade with @Helvianir · gave 0, got 1")).toBeInTheDocument();
+    history.mockReturnValue({ data: { trades: [] } } as never);
   });
 
   it("keeps a place for the wishlist", () => {

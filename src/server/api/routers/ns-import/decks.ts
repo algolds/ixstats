@@ -7,7 +7,7 @@ import { getValuationConfig, type CardValuationConfig } from "~/lib/cards/valuat
 import { copyRoom } from "~/lib/cards/capacity";
 import { CardFinish } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
-import { ownedFaces } from "~/lib/cards/hub/faces";
+import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 import { nsNationKey } from "~/lib/cards/ns-facts";
 import { getBonusConfig, grantBonus, nsImportBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
@@ -357,7 +357,7 @@ export const nsImportDecksRouter = createTRPCRouter({
         bonusCredits,
         nation: nationName,
         // The copies just imported; their definitions may wait for review, and the owner sees their art all the same
-        faces: await ownedFaces(ctx.db, outcome.ownershipIds),
+        faces: await facesAfterCommit(ctx.db, outcome.ownershipIds, "An NS import"),
       };
     }),
 });

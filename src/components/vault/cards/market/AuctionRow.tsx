@@ -24,14 +24,23 @@ export interface AuctionRowData {
   isMine: boolean;
 }
 
-interface BidFormProps {
-  auction: AuctionRowData;
+/** What the bid form reads of an auction. */
+export type BidTarget = Pick<AuctionRowData, "id" | "currentBid" | "startingPrice" | "buyoutPrice">;
+
+export interface BidActions {
   onBid: (auctionId: string, amount: number) => void;
   onBuyout: (auctionId: string) => void;
   busy: boolean;
 }
 
-interface AuctionRowProps extends BidFormProps {
+interface BidFormProps extends BidActions {
+  auction: BidTarget;
+  /** The bid button's verb: "Raise bid to" on an auction the player was outbid on. */
+  verb?: "Bid" | "Raise bid to";
+}
+
+interface AuctionRowProps extends BidActions {
+  auction: AuctionRowData;
   onOpenCard: (cardId: string) => void;
   /** Opens Selling, where the viewer manages their own listings. */
   onShowSelling: () => void;
@@ -43,7 +52,7 @@ export const bidCountLabel = (count: number) => (count === 1 ? "1 bid" : `${coun
  * The bid and buy-now controls. An empty bid, or one typed under the floor, bids the floor: a bid from anyone raises
  * it, and a stale typed number must not leave Bid stuck. The button names the amount it sends.
  */
-function BidForm({ auction, onBid, onBuyout, busy }: BidFormProps) {
+export function BidForm({ auction, onBid, onBuyout, busy, verb = "Bid" }: BidFormProps) {
   const current = auction.currentBid || auction.startingPrice;
   const minimum = Math.ceil(current * BID_STEP);
   const [draft, setDraft] = useState("");
@@ -78,7 +87,7 @@ function BidForm({ auction, onBid, onBuyout, busy }: BidFormProps) {
         />
       </div>
       <Button type="submit" size="sm" variant="secondary" disabled={busy || !valid}>
-        Bid {amount.toLocaleString()} IxC
+        {verb} {amount.toLocaleString()} IxC
       </Button>
       {auction.buyoutPrice !== null && (
         <Button

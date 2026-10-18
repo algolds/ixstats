@@ -112,7 +112,7 @@ describe("WK-9: Lorewards admin procedures", () => {
     expect(overrideLorewardEntry).not.toHaveBeenCalled();
   });
 
-  it("moves an admin's override's trophies with it, then tells the bot what the entry now holds", async () => {
+  it("moves an admin's override's trophies with it, then tells the bot what the entry now holds, to announce", async () => {
     const fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
     const realFetch = global.fetch;
     global.fetch = fetchMock as never;
@@ -154,6 +154,7 @@ describe("WK-9: Lorewards admin procedures", () => {
             runnerUpPage: "Hive",
             runnerUpScore: 80,
             runnerUpBytes: 800,
+            announce: true,
           }),
         })
       );

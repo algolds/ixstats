@@ -3,10 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import type React from "react";
 
 jest.mock("~/trpc/react", () => {
-  const utils = {
-    cards: { listMine: { invalidate: jest.fn() } },
-    nsImport: { getMyNSCards: { invalidate: jest.fn() } },
-  };
+  const utils = { nsImport: { getMyNSCards: { invalidate: jest.fn() } } };
   const mutation = () => ({
     useMutation: jest.fn(() => ({ mutate: jest.fn(), isPending: false })),
   });
@@ -22,6 +19,10 @@ jest.mock("~/trpc/react", () => {
   };
 });
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({ success: jest.fn() }) }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { cardsImported: jest.fn(), error: jest.fn(), nationVerified: jest.fn() },
 }));
@@ -50,6 +51,7 @@ jest.mock("motion/react", () => {
 jest.mock("~/components/ui/number-flow", () => ({ NumberFlowDisplay: () => null }));
 
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { VaultImportSection } from "~/components/vault/sections/VaultImportSection";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { MutationOptions } from "~/tests/helpers/fake-mutation";
@@ -106,7 +108,7 @@ describe("VaultImportSection", () => {
     expect(
       screen.getByRole("img", { name: "Testlandia, Rare, Standard, NationStates, season 3" })
     ).toBeInTheDocument();
-    expect(api.useUtils().cards.listMine.invalidate).toHaveBeenCalledTimes(1);
+    expect(useCardsRefresh()).toHaveBeenCalledTimes(1);
     expect(api.useUtils().nsImport.getMyNSCards.invalidate).toHaveBeenCalledTimes(1);
   });
 });

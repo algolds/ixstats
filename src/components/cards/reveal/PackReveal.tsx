@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } fr
 import Link from "next/link";
 import { motion } from "motion/react";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { cn } from "~/lib/utils/cn";
 import { focusedElement, refocus } from "~/lib/utils/focus";
 import { Button, focusRing } from "~/components/ui/button";
@@ -144,17 +145,18 @@ export function PackReveal({
 }
 
 /**
- * Opens the pack once, and tells Mine and the Store. The latch is synchronous because `isPending` only shows after a
- * re-render, so a double tap in one frame would open twice.
+ * Opens the pack once, and tells the Store and every place its new copies show (Mine, the display, Explore). The latch
+ * is synchronous because `isPending` only shows after a re-render, so a double tap in one frame would open twice.
  */
 function usePackOpener(userPackId: string, onOpened: (faces: CardFaceData[]) => void) {
   const [failure, setFailure] = useState<OpenFailure | null>(null);
   const asked = useRef(false);
   const received = useRef(false);
   const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const refresh = () => {
     void utils.cardPacks.getMyPacks.invalidate();
-    void utils.cards.listMine.invalidate();
+    refreshCards();
   };
   const mutation = api.cardPacks.openPack.useMutation({
     onSuccess: (data) => {

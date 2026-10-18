@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { WarningCircle as AlertCircle, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { Card, CardContent } from "~/components/ui/card";
 import { Alert, AlertDescription } from "~/components/ui/alert";
@@ -26,6 +27,7 @@ interface VaultImportSectionProps {
 function ImportDeckTab() {
   const notify = useNotify();
   const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
   const [currentStep, setCurrentStep] = useState<WizardStep>("intro");
   const [nationName, setNationName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
@@ -74,8 +76,8 @@ function ImportDeckTab() {
       });
       setCurrentStep("complete");
       vaultNotify.cardsImported(data.cardsImported, data.nation);
-      // So Mine and the Settings NS panel list the new copies
-      void utils.cards.listMine.invalidate();
+      // So Mine, the display, Explore and the Settings NS panel list the new copies
+      refreshCards();
       void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (error) => {

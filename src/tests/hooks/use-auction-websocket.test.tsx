@@ -29,10 +29,15 @@ jest.mock("~/trpc/react", () => {
   };
   return { api: { useUtils: () => utils } };
 });
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 
 import { api } from "~/trpc/react";
 import { getMarketWebSocketClient } from "~/lib/websocket/market-websocket-client";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 
 const client = getMarketWebSocketClient() as never as {
   listeners: Map<EventType, () => void>;
@@ -41,6 +46,7 @@ const client = getMarketWebSocketClient() as never as {
   unsubscribe: jest.Mock;
 };
 const utils = api.useUtils();
+const refreshCards = jest.mocked(useCardsRefresh());
 const QUERIES = {
   getActiveAuctions: utils.cardMarket.getActiveAuctions,
   getMyActiveAuctions: utils.cardMarket.getMyActiveAuctions,
@@ -66,15 +72,13 @@ describe("useAuctionWebSocket", () => {
 
     client.listeners.get("bid")?.();
     expect(refetched()).toEqual(["getActiveAuctions", "getMyActiveBids"]);
+    expect(refreshCards).not.toHaveBeenCalled();
 
     jest.clearAllMocks();
+    // A settled auction moves its copy and its credits: every card list, the trades and the balance read again.
     client.listeners.get("auction_complete")?.();
-    expect(refetched()).toEqual([
-      "getActiveAuctions",
-      "getMyActiveAuctions",
-      "getMyAuctionParticipation",
-      "getBalance",
-    ]);
+    expect(refreshCards).toHaveBeenCalledTimes(1);
+    expect(refetched()).toEqual([]);
 
     jest.clearAllMocks();
     client.listeners.get("auction_created")?.();

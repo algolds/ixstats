@@ -12,7 +12,6 @@ const mutate = jest.fn();
 const invalidateBalance = jest.fn();
 const invalidateTransactions = jest.fn();
 const invalidateEarnings = jest.fn();
-const invalidateMine = jest.fn();
 let mutationOptions: {
   onSuccess: (data: unknown) => void;
   onError: (err: { message: string }) => void;
@@ -27,7 +26,6 @@ jest.mock("~/trpc/react", () => ({
         getTransactions: { invalidate: invalidateTransactions },
         getTodayEarnings: { invalidate: invalidateEarnings },
       },
-      cards: { listMine: { invalidate: invalidateMine } },
     }),
     vault: {
       getBalance: { useQuery: () => ({ data: balance, isLoading: false }) },
@@ -48,12 +46,19 @@ jest.mock("~/lib/sound/cuelume", () => ({
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { error: jest.fn(), success: jest.fn() },
 }));
+jest.mock("~/hooks/useCardsRefresh", () => {
+  const refreshCards = jest.fn();
+  return { useCardsRefresh: () => refreshCards };
+});
 
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import {
   DailyRewardProvider,
   DailyRewardStatus,
   useDailyReward,
 } from "~/components/vault/DailyRewardProvider";
+
+const refreshCards = jest.mocked(useCardsRefresh());
 
 const Widget = () => (
   <DailyRewardProvider>
@@ -71,7 +76,7 @@ beforeEach(() => {
   invalidateBalance.mockClear();
   invalidateTransactions.mockClear();
   invalidateEarnings.mockClear();
-  invalidateMine.mockClear();
+  refreshCards.mockClear();
   window.localStorage.clear();
 });
 
@@ -154,7 +159,7 @@ describe("DailyRewardProvider", () => {
       "href",
       "/vault/cards/mine?card=c1"
     );
-    expect(invalidateMine).toHaveBeenCalledTimes(1);
+    expect(refreshCards).toHaveBeenCalledTimes(1);
   });
 
   it("names the pulled card and still links to it when its face could not be read", async () => {

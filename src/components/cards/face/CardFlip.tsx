@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useRef, type PointerEvent, type ReactNode } from "react";
-import { AnimatePresence, motion, useSpring } from "motion/react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { CardFace } from "./CardFace";
-
-/** Degrees the card leans toward the pointer at its edge. */
-const MAX_TILT = 8;
-const TILT_SPRING = { stiffness: springSmooth.stiffness, damping: springSmooth.damping };
+import { CardHolo, useCardTilt } from "./CardTilt";
 
 /** Where keys belong to the focused widget: text entry, and lists that search as you type. */
 const TYPING_TARGET = [
@@ -72,9 +69,7 @@ interface CardFlipProps {
  */
 export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
   const reduce = useFacetReducedMotion();
-  const tiltX = useSpring(0, TILT_SPRING);
-  const tiltY = useSpring(0, TILT_SPRING);
-  const holo = useRef<HTMLSpanElement>(null);
+  const { tilt, holo, onPointerMove, onPointerLeave } = useCardTilt();
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -94,28 +89,11 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onFlip]);
 
-  // Measured on the wrapper, which never tilts, so the lean cannot feed back into the next reading.
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width;
-    const y = (event.clientY - rect.top) / rect.height;
-    tiltY.set((x - 0.5) * 2 * MAX_TILT);
-    tiltX.set((0.5 - y) * 2 * MAX_TILT);
-    holo.current?.style.setProperty("--holo-x", `${Math.round(x * 100)}%`);
-    holo.current?.style.setProperty("--holo-y", `${Math.round(y * 100)}%`);
-  };
-  const onPointerLeave = () => {
-    tiltX.set(0);
-    tiltY.set(0);
-  };
-
   const showHolo = !reduce && face.copy !== null && face.copy.finish !== "STANDARD";
   const front = (
     <span className="relative block">
       <CardFace face={face} size="L" />
-      {showHolo && (
-        <span ref={holo} aria-hidden="true" className="card-holo rounded-card absolute inset-0" />
-      )}
+      {showHolo && <CardHolo holoRef={holo} />}
     </span>
   );
 
@@ -146,7 +124,7 @@ export function CardFlip({ face, back, flipped, onFlip }: CardFlipProps) {
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
     >
-      <motion.div style={{ rotateX: tiltX, rotateY: tiltY }} className="transform-3d">
+      <motion.div style={tilt} className="transform-3d">
         <motion.div
           initial={false}
           animate={{ rotateY: flipped ? 180 : 0 }}

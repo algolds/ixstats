@@ -33,14 +33,15 @@ export async function postToBot<T>(
 }
 
 /**
- * Tells the bot what an overridden contest now holds. Whether it took it: the override is already saved, so a bot
- * that is down or refuses is logged, never thrown, and picks the change up on its next sync.
+ * Tells the bot what an overridden contest now holds, with announce on: saving an override is what announces it, and
+ * there is no separate announce. Whether it took it: the override is already saved, so a bot that is down or refuses
+ * is logged, never thrown, and picks the change up on its next sync (nothing is announced).
  */
 export async function tellBotOfOverride(override: object): Promise<boolean> {
   try {
     await postToBot(
       "/lorewards/override",
-      override,
+      { ...override, announce: true },
       "Failed to sync override with Discord bot",
       () => undefined
     );

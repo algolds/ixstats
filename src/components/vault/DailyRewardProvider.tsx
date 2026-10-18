@@ -6,6 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
 import { Trophy, SystemRestart as Loader } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Progress } from "~/components/ui/progress";
@@ -242,6 +243,7 @@ function DailyRewardDialog({
   autoOpen: boolean;
 }) {
   const utils = api.useUtils();
+  const refreshCards = useCardsRefresh();
 
   const [claiming, setClaiming] = useState<ClaimChoice | null>(null);
   const [claimResult, setClaimResult] = useState<ClaimResult | null>(null);
@@ -275,7 +277,8 @@ function DailyRewardDialog({
       setClaimResult(data);
       soundCues?.reveal?.();
       refreshVault();
-      void utils.cards.listMine.invalidate();
+      // A card pull is a new copy: Mine, the display and Explore read it.
+      refreshCards();
     },
     onError: (err) => {
       setClaiming(null);

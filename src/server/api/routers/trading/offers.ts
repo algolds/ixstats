@@ -17,6 +17,7 @@ import {
 } from "~/lib/vault/trade-settlement";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
 import { refusesTradeOffer } from "~/server/shared/privacy-permissions";
+import { loadPassportHandle } from "~/server/modules/identity/identity.passport-handle";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 
 /** Trade notifications open the Market's trades tab. */
@@ -162,11 +163,11 @@ export const tradingOffersRouter = createTRPCRouter({
 
       // Notify the recipient about the incoming trade offer
       try {
-        // The Vault names players by handle; a sender without one is "A player"
-        const senderName = trade.initiator.handle ? `@${trade.initiator.handle}` : "A player";
+        // A trade is direct, so the recipient is told who sent it: the sender's passport handle
+        const senderHandle = await loadPassportHandle(ctx.user);
         await notificationAPI.create({
           title: "New Trade Offer",
-          message: `${senderName} sent you a trade offer with ${input.initiatorCardIds.length} card(s)`,
+          message: `@${senderHandle} sent you a trade offer with ${input.initiatorCardIds.length} card(s)`,
           userId: input.recipientId,
           category: "economic",
           priority: "high",
@@ -475,7 +476,7 @@ export const tradingOffersRouter = createTRPCRouter({
         });
       }
 
-      const result = await ctx.db.$transaction(async (tx: any) => {
+      const result = await ctx.db.$transaction(async (tx) => {
         await claimPendingTradeTx(tx, input.tradeId, TradeStatus.CANCELLED, new Date());
         await unlockCardsTx(tx, trade.initiatorCardIds as string[], userId);
 
