@@ -18,11 +18,12 @@ In the sidebar, ThinkPages is a row under Home (`src/lib/navigation/app-sections
 | `/thinkpages/r/[realm]` | `r/[realm]/page.tsx` | A realm's landing page: its live board, the realm's boards beside it |
 | `/thinkpages/r/[realm]/[key]` | `r/[realm]/[key]/page.tsx` | A realm category's thread list (the Hub and its categories) |
 | `/thinkpages/r/[realm]/[key]/new` | `r/[realm]/[key]/new/page.tsx` | Start a thread in a realm category |
-| `/thinkpages/t/[threadId]` | `t/[threadId]/page.tsx` | Thread view with replies, reports and moderator tools |
+| `/thinkpages/t/[threadId]` | `t/[threadId]/(thread)/page.tsx` | Thread view with replies, reports and moderator tools |
+| `/thinkpages/t/[threadId]/unread` | `t/[threadId]/unread/page.tsx` | Jump to unread: redirects (307) to the thread at the viewer's first unread post, or at its last post when they have read it all; a signed-out visitor gets the thread |
 | `/thinkpages/mod` | `mod/page.tsx` | Moderation console for realm and category moderators and admins |
 | `/thinkpages/post/[postId]` | `post/[postId]/page.tsx` | Post permalink resolver (wiki story chains link here). A forum post the viewer may see redirects (307) to `/thinkpages/t/<threadId>?page=<n>#post-<id>`; any other id redirects (307) to the feed post at `/dashboard/post/<id>`. The lookup runs as the session's viewer (Clerk `auth()` in the page, `locatePostFor` in `routers/thinkpagesForum/permalink.ts`), so a member's own report thread or a moderator's hidden post redirects on the server, to the page that viewer's thread view shows. Both hops are temporary because the answer depends on the viewer and on moderation |
 
-No `loading.tsx` may sit above a redirecting page in this tree: a loading boundary turns `redirect()` into a streamed 200 with a meta refresh. `src/tests/architecture/wiki-loading-boundary.test.ts` pins this; loaders exist only below `c/`, `t/`, `mod/` and `r/[realm]/[key]/`.
+No `loading.tsx` may sit above a redirecting page in this tree: a loading boundary turns `redirect()` into a streamed 200 with a meta refresh. `src/tests/architecture/wiki-loading-boundary.test.ts` pins this; loaders exist only below `c/`, `t/[threadId]/(thread)/`, `mod/` and `r/[realm]/[key]/`. The thread page's loader sits in the `(thread)` route group so that it does not wrap the unread redirect beside it.
 
 ## Forum
 

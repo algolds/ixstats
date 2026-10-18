@@ -9,7 +9,7 @@ interface UnreadThreadPageProps {
 
 /**
  * Opens a thread at its first unread post. Temporary (307): the answer depends on who asks and on what they have read.
- * A server redirect, so the route has no loading.tsx.
+ * A server redirect, so no loading.tsx sits above it: the thread page's loader lives in the `(thread)` group beside it.
  */
 export default async function UnreadThreadPage({ params }: UnreadThreadPageProps) {
   const { threadId } = await params;

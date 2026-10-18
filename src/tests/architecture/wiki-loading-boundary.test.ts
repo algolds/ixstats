@@ -125,7 +125,11 @@ describe("no loading.tsx above the legacy forum redirects", () => {
 });
 
 describe("no loading.tsx above the ThinkPages redirect pages", () => {
-  const pages = ["thinkpages/post/[postId]/page.tsx", "thinkpages/r/mine/page.tsx"];
+  const pages = [
+    "thinkpages/post/[postId]/page.tsx",
+    "thinkpages/r/mine/page.tsx",
+    "thinkpages/t/[threadId]/unread/page.tsx",
+  ];
 
   it.each(pages)("%s has none in any ancestor directory", (page) => {
     const file = path.join(APP, page);
@@ -137,7 +141,7 @@ describe("no loading.tsx above the ThinkPages redirect pages", () => {
     expect(offenders).toEqual([]);
   });
 
-  it.each(["c", "t", "mod", "r/[realm]/[key]"])(
+  it.each(["c", "t/[threadId]/(thread)", "mod", "r/[realm]/[key]"])(
     "thinkpages/%s keeps the shared loading UI",
     (segment) => {
       const source = fs.readFileSync(path.join(APP, "thinkpages", segment, "loading.tsx"), "utf8");
