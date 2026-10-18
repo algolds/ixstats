@@ -193,15 +193,17 @@ const toHundredths = (pct: number) => Math.round(pct * 100) / 100;
 
 /**
  * Each daily odd, to the hundredth, within what the rarer ones leave of 100%; Common gets the rest, so the odds always
- * add up to 100 (a hand-edited row may not).
+ * add up to 100 (a hand-edited row may not). Counted in whole hundredths, so a float sum never leaves Common at -0 or
+ * a hair off what was saved.
  */
 function closeDailyOdds(cfg: CardEconomyConfig): void {
-  let taken = 0;
+  let left = 10_000;
   for (const key of DAILY_RAREST_FIRST) {
-    cfg[key] = toHundredths(Math.min(cfg[key], 100 - taken));
-    taken += cfg[key];
+    const share = Math.min(Math.round(cfg[key] * 100), left);
+    cfg[key] = share / 100;
+    left -= share;
   }
-  cfg.dailyCommonPct = toHundredths(100 - taken);
+  cfg.dailyCommonPct = left / 100;
 }
 
 /**
@@ -219,7 +221,8 @@ export function clampEconomyConfig(raw: CardEconomyConfig): CardEconomyConfig {
     const { min, max, whole } = RANGES[key];
     cfg[key] = clamp(whole ? Math.round(cfg[key]) : cfg[key], min, max);
   }
-  cfg.finishFoilPct = Math.min(cfg.finishFoilPct, 100 - cfg.finishHoloPct);
+  // To the hundredth: 100 - 8.21 is 91.78999999999999, which would rewrite a saved 91.79
+  cfg.finishFoilPct = Math.min(cfg.finishFoilPct, toHundredths(100 - cfg.finishHoloPct));
   closeDailyOdds(cfg);
   cfg.dustFoilMult = clamp(Math.round(cfg.dustFoilMult), 1, cfg.fusionCopies);
   cfg.dustHoloMult = clamp(

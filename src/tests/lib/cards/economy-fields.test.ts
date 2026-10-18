@@ -65,12 +65,22 @@ function around(key: Key, value: number): CardEconomyConfig {
   return cfg;
 }
 
-/** The clamp keeps every number of `cfg` (to a float's last digit: 100 - 33.33 is not exactly 66.67). */
+/** The clamp keeps every number of `cfg` exactly, so a saved number reads back as the admin typed it. */
 function expectKept(cfg: CardEconomyConfig) {
   const kept = clampEconomyConfig(cfg);
   for (const key of Object.keys(cfg) as Key[]) {
-    expect({ key, value: kept[key] }).toEqual({ key, value: expect.closeTo(cfg[key], 9) });
+    expect({ key, value: kept[key] }).toEqual({ key, value: cfg[key] });
   }
+}
+
+/** What reading `cfg` back gets wrong: a number the clamp changed, or one its own field or section now refuses. */
+function readBackProblems(cfg: CardEconomyConfig): string[] {
+  const kept = clampEconomyConfig(cfg);
+  const changed = (Object.keys(cfg) as Key[]).filter((key) => !Object.is(kept[key], cfg[key]));
+  const refused = ECONOMY_FIELDS.flatMap(
+    (field) => numberFieldProblem(field, kept[field.key]) ?? []
+  );
+  return [...changed, ...refused, ...(economyProblem(kept) ?? [])];
 }
 
 /** A seeded generator, so a failure repeats. */
@@ -165,6 +175,41 @@ describe("the economy fields", () => {
       expect(economyProblem(cfg)).toBeNull();
       expectKept(cfg);
     }
+  });
+
+  it("read back Foil and Holo chances that add up to exactly 100%, every two-place pair", () => {
+    expectKept({ ...CARD_ECONOMY_DEFAULTS, finishFoilPct: 91.79, finishHoloPct: 8.21 });
+    const broken: string[] = [];
+    for (let holo = 0; holo <= 10_000; holo++) {
+      const cfg = {
+        ...CARD_ECONOMY_DEFAULTS,
+        finishFoilPct: (10_000 - holo) / 100,
+        finishHoloPct: holo / 100,
+      };
+      const problems = readBackProblems(cfg);
+      if (problems.length > 0)
+        broken.push(`${cfg.finishFoilPct} + ${cfg.finishHoloPct}: ${problems.join("; ")}`);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it("read back daily odds that add up to 100 exactly", () => {
+    const random = seeded(7339);
+    const broken: string[] = [];
+    for (let run = 0; run < 20_000; run++) {
+      const cfg = { ...CARD_ECONOMY_DEFAULTS };
+      let left = 10_000;
+      for (const key of DAILY.slice(1).reverse()) {
+        const share = Math.floor(random() * (left + 1));
+        cfg[key] = share / 100;
+        left -= share;
+      }
+      cfg.dailyCommonPct = left / 100;
+      const problems = readBackProblems(cfg);
+      if (problems.length > 0)
+        broken.push(`${DAILY.map((key) => cfg[key]).join(", ")}: ${problems.join("; ")}`);
+    }
+    expect(broken).toEqual([]);
   });
 
   it("step each input by what the server accepts", () => {
