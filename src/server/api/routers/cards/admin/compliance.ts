@@ -9,7 +9,11 @@ import {
   restoreTakedown,
   setCardLicence,
 } from "~/server/modules/cards/cards.compliance";
-import { loadPlayerNames } from "~/server/modules/identity/identity.player-names";
+import {
+  listInscriptionReports,
+  resolveInscriptionReport,
+} from "~/server/modules/cards/inscriptions";
+import { loadPlayerNames, type PlayerName } from "~/server/modules/identity/identity.player-names";
 import { adminActor } from "~/server/shared/admin-actor";
 
 const takedownInput = z.object({ takedownId: z.string().min(1) });
@@ -18,9 +22,20 @@ const limit = z.number().int().min(1).max(200).default(100);
 type TakedownRow = Awaited<ReturnType<typeof listTakedowns>>[number];
 
 /**
- * Who asked a player's request, for staff: the player's name, else their passport handle (staff need to know who it
- * is even when other players read "a player"). Any other origin's requester is the filing admin, which the queue does
- * not name. The raw user id never leaves the server.
+ * A player named for staff: the name other players read, else their passport handle (staff need to know who it is
+ * even when other players read "a player"). No Vault cards switch applies to staff.
+ */
+const staffName = (name: PlayerName) => name.displayName ?? name.handle;
+
+/** Players named for staff, in one read (the inscription queue's `StaffNames`). */
+async function staffNames(userIds: readonly string[]): Promise<Map<string, string>> {
+  const names = await loadPlayerNames(userIds);
+  return new Map([...names].map(([id, name]) => [id, staffName(name)]));
+}
+
+/**
+ * Who asked a player's request, for staff (`staffName`). Any other origin's requester is the filing admin, which the
+ * queue does not name. The raw user id never leaves the server.
  */
 async function withRequesters(rows: TakedownRow[]) {
   const names = await loadPlayerNames(
@@ -31,7 +46,7 @@ async function withRequesters(rows: TakedownRow[]) {
   return rows.map(({ requestedBy, ...row }) => {
     const name =
       row.origin === "PLAYER_REQUEST" && requestedBy ? names.get(requestedBy) : undefined;
-    return { ...row, requester: name ? (name.displayName ?? name.handle) : null };
+    return { ...row, requester: name ? staffName(name) : null };
   });
 }
 
@@ -74,4 +89,12 @@ export const cardsAdminComplianceRouter = createTRPCRouter({
       })
     )
     .mutation(({ ctx, input }) => setCardLicence(ctx.db, adminActor(ctx), input)),
+  /** Open inscription reports, oldest first: the signer by the name frozen at signing, the reporter for staff. */
+  inscriptionReports: adminProcedure.query(({ ctx }) => listInscriptionReports(ctx.db, staffNames)),
+  /** Clear (the copy cannot be signed again) or dismiss. */
+  resolveInscriptionReport: adminProcedure
+    .input(z.object({ reportId: z.string().min(1).max(64), action: z.enum(["clear", "dismiss"]) }))
+    .mutation(({ ctx, input }) =>
+      resolveInscriptionReport(ctx.db, { actor: adminActor(ctx), ...input, now: new Date() })
+    ),
 });

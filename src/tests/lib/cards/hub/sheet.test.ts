@@ -53,6 +53,8 @@ const COPY = {
   inscription: "For the archive",
   inscribedAt: new Date("2026-10-02T00:00:00Z"),
   inscribedById: "u-signer",
+  /** The signer's name, frozen when they signed. */
+  inscribedName: "@sig",
 };
 /** A sale in the sales record (`card_transfer_events`, priced). */
 const SALE = { price: 140, finish: "FOIL", createdAt: new Date("2026-09-01T00:00:00Z") };
@@ -667,7 +669,8 @@ describe("loadCardSheet", () => {
     });
 
     it("names each player as the identity rule does: a nation for a player with no handle, or nobody", async () => {
-      const db = setup({ listed: [LISTING] });
+      // An older signature, with no name frozen, names its signer as they are named now
+      const db = setup({ listed: [LISTING], copies: [{ ...COPY, inscribedName: null }] });
       playersOf.mockResolvedValueOnce(
         new Map([
           ["u-a", { name: "Caphiria", showsVault: true }],
@@ -695,6 +698,72 @@ describe("loadCardSheet", () => {
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.copies[0]!.trail[0]!.to).toEqual({ name: "@max" });
       expect(sheet!.market.listings[0]).toMatchObject({ sellerName: "@max", isMine: true });
+    });
+  });
+
+  describe("the signature", () => {
+    const signedBy = (signer: string | null, inscribedName: string | null) =>
+      setup({ copies: [{ ...COPY, inscribedById: signer, inscribedName }] });
+    const signerOf = async (db: ReturnType<typeof setup>, players: Map<string, HubPlayer>) => {
+      playersOf.mockResolvedValueOnce(players);
+      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+      return sheet!.copies[0]!.inscription!.signerName;
+    };
+
+    it("prints the name frozen at signing, though the signer is named otherwise now", async () => {
+      const db = signedBy("u-signer", "@sig");
+      await expect(
+        signerOf(db, new Map([["u-signer", { name: "@newname", showsVault: true }]]))
+      ).resolves.toBe("@sig");
+      expect(db.cardOwnership.findMany.mock.calls[0]![0].select).toMatchObject({
+        inscription: true,
+        inscribedAt: true,
+        inscribedById: true,
+        inscribedName: true,
+      });
+      // The frozen name prints even when the signer has no name at all now
+      await expect(
+        signerOf(db, new Map([["u-signer", { name: null, showsVault: true }]]))
+      ).resolves.toBe("@sig");
+    });
+
+    it("names an older signature, with no name frozen, by the signer's name now", async () => {
+      await expect(
+        signerOf(
+          signedBy("u-signer", null),
+          new Map([["u-signer", { name: "@now", showsVault: true }]])
+        )
+      ).resolves.toBe("@now");
+    });
+
+    it("hides the frozen name while the signer's Passport hides Vault cards, or once they are gone", async () => {
+      const db = signedBy("u-signer", "@sig");
+      await expect(
+        signerOf(db, new Map([["u-signer", { name: "@sig", showsVault: false }]]))
+      ).resolves.toBeNull();
+      // The viewer showing their Vault cards does not show someone else's name
+      await expect(
+        signerOf(
+          db,
+          new Map([
+            ["me", { name: "@max", showsVault: true }],
+            ["u-signer", { name: "@sig", showsVault: false }],
+          ])
+        )
+      ).resolves.toBeNull();
+      await expect(signerOf(db, new Map())).resolves.toBeNull();
+    });
+
+    it("names no signer for a signature with none recorded, frozen name or not", async () => {
+      await expect(
+        signerOf(signedBy(null, "@sig"), new Map([["me", { name: "@max", showsVault: true }]]))
+      ).resolves.toBeNull();
+    });
+
+    it("always shows the viewer their own signature", async () => {
+      await expect(
+        signerOf(signedBy("me", "@max"), new Map([["me", { name: "@renamed", showsVault: false }]]))
+      ).resolves.toBe("@max");
     });
   });
 

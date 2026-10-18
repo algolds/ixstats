@@ -106,6 +106,7 @@ const AUDIT_TITLES: Record<CardAuditAction, string> = {
   CARD_SEASON_SET: "Season changed",
   CARD_TAKEDOWN: "Takedown updated",
   CARD_LICENCE: "Licence reviewed",
+  CARD_INSCRIPTION_CLEAR: "Inscription cleared",
   CARD_SPECIAL_SAVE: "Special card saved",
   CARD_SUGGESTION: "Suggestion answered",
   CARD_IMPORT: "Import started",

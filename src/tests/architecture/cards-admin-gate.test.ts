@@ -62,7 +62,17 @@ const CARDS_ADMIN_PROCEDURES = {
     "saveDailyImport",
   ],
   seasons: ["get", "set"],
-  compliance: ["takedowns", "file", "hide", "decline", "restore", "licences", "setLicence"],
+  compliance: [
+    "takedowns",
+    "file",
+    "hide",
+    "decline",
+    "restore",
+    "licences",
+    "setLicence",
+    "inscriptionReports",
+    "resolveInscriptionReport",
+  ],
   designer: ["list", "save", "achievements"],
   tools: ["playerCards", "grant", "revoke", "cancelAuction", "voidTrade", "awardPack"],
 } as const;
