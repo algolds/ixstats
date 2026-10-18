@@ -23,19 +23,22 @@ import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { useDebounce } from "~/hooks/useDebounce";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import type { MineRow } from "~/lib/cards/hub/mine";
+import {
+  AUCTION_DURATIONS,
+  AUCTION_DURATION_LABEL,
+  type AuctionDuration,
+} from "~/lib/cards/market/auction-timing";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-
-type Duration = "30" | "60";
 
 /** Mine's largest page. */
 const PAGE = 120;
 /** The longest search Mine's query takes. */
 const SEARCH_MAX = 100;
 
-const DURATIONS: ReadonlyArray<{ value: Duration; label: string }> = [
-  { value: "30", label: "30 minutes" },
-  { value: "60", label: "1 hour" },
-];
+const DURATIONS = AUCTION_DURATIONS.map((value) => ({
+  value,
+  label: AUCTION_DURATION_LABEL[value],
+}));
 
 interface CreateAuctionModalProps {
   open: boolean;
@@ -144,7 +147,7 @@ function withLinkedFirst(held: readonly MineRow[], linked: MineRow | null, searc
 /**
  * Lists one copy at auction. It picks copies, not cards: two copies of one card are two rows. A copy already in a
  * listing or a trade is left out, and so is a bound copy (trophies, achievement rewards), which the server refuses
- * anyway. Phase 4 adds longer durations.
+ * anyway.
  */
 export function CreateAuctionModal({
   open,
@@ -154,7 +157,7 @@ export function CreateAuctionModal({
   const [picked, setPicked] = useState<string | null>(initialOwnershipId);
   const [startingPrice, setStartingPrice] = useState("");
   const [buyoutPrice, setBuyoutPrice] = useState("");
-  const [duration, setDuration] = useState<Duration>("60");
+  const [duration, setDuration] = useState<AuctionDuration>("24h");
   const [search, setSearch] = useState("");
   const refreshCards = useCardsRefresh();
   const { mine, held, searching } = useSellableCopies(open, search);
@@ -172,7 +175,7 @@ export function CreateAuctionModal({
     setPicked(initialOwnershipId);
     setStartingPrice("");
     setBuyoutPrice("");
-    setDuration("60");
+    setDuration("24h");
     setSearch("");
     onClose();
   };
@@ -211,8 +214,9 @@ export function CreateAuctionModal({
       <DialogContent className="max-h-[85dvh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Sell at auction</DialogTitle>
+          {/* The fee comes from the Economy tab, so no amount is named here. */}
           <DialogDescription>
-            Listing costs 5 IxC, and half of it comes back if the card does not sell.
+            There is a small listing fee, and half comes back if the card does not sell.
           </DialogDescription>
         </DialogHeader>
         {sentBound ? (

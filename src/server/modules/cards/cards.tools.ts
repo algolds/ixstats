@@ -299,14 +299,14 @@ interface CancellableAuction {
   cardInstanceId: string | null;
   currentBid: number;
   currentBidderId: string | null;
-  isFeatured: boolean;
+  listingFee: number;
   endTime: Date;
 }
 
 /**
- * Cancels the auction as read, refunding the bid it holds and half the listing fee; returns the fee refunded. An
- * auction past its end is refused: the cron settles it and pays the seller, so a cancel must not turn a sale into a
- * refund.
+ * Cancels the auction as read, refunding the bid it holds and the seller's share of the listing fee it stored; returns
+ * the fee refunded. An auction past its end is refused: the cron settles it and pays the seller, so a cancel must not
+ * turn a sale into a refund.
  */
 async function cancelAuctionTx(
   tx: Prisma.TransactionClient,
@@ -349,7 +349,7 @@ async function cancelAuctionTx(
       metadata: { auctionId: auction.id, reason: "admin_cancel" },
     });
   }
-  // The same half-fee refund the seller gets for cancelling their own listing
+  // The same share of the fee the seller gets back for cancelling their own listing
   return refundListingFeeTx(tx, auction, "admin_cancel");
 }
 
@@ -367,7 +367,7 @@ export async function adminCancelAuction(
       cardInstanceId: true,
       currentBid: true,
       currentBidderId: true,
-      isFeatured: true,
+      listingFee: true,
       endTime: true,
     },
   });
