@@ -4,8 +4,7 @@ import { createTRPCRouter, rateLimitedMutationProcedure } from "~/server/api/trp
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { TRPCError } from "@trpc/server";
 import { getValuationConfig, type CardValuationConfig } from "~/lib/cards/valuation";
-import { copyRoom } from "~/lib/cards/capacity";
-import { CardFinish } from "~/lib/cards/enums";
+import { copyRoom, lockedCopyRoomTx } from "~/lib/cards/capacity";
 import { mintCopy } from "~/lib/cards/mint";
 import { facesAfterCommit } from "~/lib/cards/hub/committed-faces";
 import { nsNationKey } from "~/lib/cards/ns-facts";
@@ -126,7 +125,7 @@ async function fetchUnknownCards(cards: NsCard[]) {
 }
 
 interface DeckPlan {
-  /** What the transaction imports: at most the player's room. */
+  /** What the transaction imports: at most the player's room as read before it (the transaction reads it again). */
   cards: NsCard[];
   alreadyImported: number;
   skipped: string[];
@@ -190,12 +189,7 @@ async function mintClaimed(
     .sort((a, b) => a.card.id.localeCompare(b.card.id));
   const ownershipIds: string[] = new Array<string>(claimed.length);
   for (const { card, key, index } of mintOrder) {
-    const copy = await mintCopy(tx, {
-      cardId: card.id,
-      ownerId: userId,
-      finish: CardFinish.STANDARD,
-      source: "NS_DECK_IMPORT",
-    });
+    const copy = await mintCopy(tx, { cardId: card.id, ownerId: userId, source: "NS_DECK_IMPORT" });
     await tx.nSImportLedger.update({
       where: { nsCardId_nsSeason_nation: key },
       data: { ownershipId: copy.id },
@@ -207,9 +201,11 @@ async function mintClaimed(
 
 /**
  * The import itself, inside one transaction: for each card the ledger claims (NS card, season, nation) once ever,
- * across all accounts (cards refresh §2.2), and only a fresh claim mints a copy.
+ * across all accounts (cards refresh §2.2), and only a fresh claim mints a copy. The room is read again under the
+ * owner's capacity lock (the plan's read was unlocked), and a card past it is never claimed, so it can import later.
  */
 async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome> {
+  const room = await lockedCopyRoomTx(tx, run.userId);
   const nation = nsNationKey(run.nationName);
   const outcome: DeckImportOutcome = { ownershipIds: [], alreadyImported: 0, skipped: [] };
   const claimed: Array<{ card: Card; key: LedgerKey }> = [];
@@ -224,6 +220,10 @@ async function importDeckTx(tx: Tx, run: DeckImport): Promise<DeckImportOutcome>
     // A taken-down card mints no new copies; unclaimed, it can import again if it is restored
     if (definition.card.isRetired) {
       outcome.skipped.push(`${label} (Taken down)`);
+      continue;
+    }
+    if (claimed.length >= room) {
+      outcome.skipped.push(`${label} (Inventory Full)`);
       continue;
     }
     const { card } = definition;
@@ -249,6 +249,7 @@ async function importVerifiedDeck(
   nationName: string
 ): Promise<DeckImportOutcome> {
   const deck = await loadDeck(nationName);
+  // Unlocked, to bound the NationStates calls; the transaction reads the room again under the owner's lock
   const room = await copyRoom(db, { id: user.id, roleLevel: user.role?.level });
   const plan = await planDeckImport(db, nationName, deck, room);
   const run: DeckImport = {

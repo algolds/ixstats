@@ -1,5 +1,6 @@
 /** @jest-environment node */
 /** Cards refresh §5.4: mintCopy is the one way a copy comes into being. */
+import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import { MINT_SOURCES, mintCopy } from "~/lib/cards/mint";
 
 interface CopyRow {
@@ -8,13 +9,18 @@ interface CopyRow {
   ownerId: string;
   serialNumber: number;
   finish: string;
+  importDiscounted: boolean;
 }
+
+type ConfigRow = { key: string; value: string };
+
+beforeEach(() => clearEconomyConfigCache());
 
 /**
  * A database with one advisory lock that a transaction holds from its lock call until it ends (as
  * pg_advisory_xact_lock), and reads that yield, so racing transactions interleave unless the lock serialises them.
  */
-function fakeDatabase(runs: Record<string, number | null> = {}) {
+function fakeDatabase(runs: Record<string, number | null> = {}, config: ConfigRow[] = []) {
   const copies: CopyRow[] = [];
   const events: Array<Record<string, string | number | null>> = [];
   const create = jest.fn(async ({ data }: { data: Omit<CopyRow, "id"> }) => {
@@ -42,6 +48,8 @@ function fakeDatabase(runs: Record<string, number | null> = {}) {
         findUnique: async ({ where }: { where: { id: string } }) =>
           where.id in runs ? { totalSupply: runs[where.id] ?? null } : null,
       },
+      // The Economy tab's rows, which the finish roll reads
+      systemConfig: { findMany: async () => config },
       cardOwnership: {
         findFirst: async ({ where }: { where: { cardId: string } }) => {
           await tick();
@@ -93,6 +101,7 @@ describe("mintCopy", () => {
       ownerId: "u1",
       serialNumber: 1,
       finish: "STANDARD",
+      importDiscounted: false,
     });
     expect(copy.id).toBe("cuid_1");
   });
@@ -112,6 +121,58 @@ describe("mintCopy", () => {
         action: "NS_DECK_IMPORT",
       },
     ]);
+  });
+
+  it("rolls the finish from the Economy tab when the caller names none", async () => {
+    const db = fakeDatabase({}, [{ key: "card_economy_finish_holo_pct", value: "100" }]);
+    await db.transaction((tx) =>
+      mintCopy(tx, { cardId: "card_1", ownerId: "u1", source: "PACK_OPEN" })
+    );
+    expect(db.copies[0]).toMatchObject({ finish: "HOLO", importDiscounted: false });
+    expect(db.events[0]).toMatchObject({
+      cardId: "card_1",
+      serialNumber: 1,
+      finish: "HOLO",
+      action: "PACK_OPEN",
+    });
+  });
+
+  it.each([
+    ["100", "FOIL"],
+    ["0", "STANDARD"],
+  ])("rolls Foil at %s%% odds as %s", async (foilPct, finish) => {
+    const db = fakeDatabase({}, [
+      { key: "card_economy_finish_foil_pct", value: foilPct },
+      { key: "card_economy_finish_holo_pct", value: "0" },
+    ]);
+    const rolled = await db.transaction((tx) =>
+      mintCopy(tx, { cardId: "card_1", ownerId: "u1", source: "DAILY_CLAIM" })
+    );
+    expect(rolled).toMatchObject({ finish });
+  });
+
+  it("keeps a named finish whatever the odds, and marks imported copies for the import share of dust", async () => {
+    const db = fakeDatabase({}, [{ key: "card_economy_finish_holo_pct", value: "100" }]);
+    await db.transaction((tx) =>
+      mintCopy(tx, {
+        cardId: "card_1",
+        ownerId: "u1",
+        source: "NS_DECK_IMPORT",
+        finish: "STANDARD",
+      })
+    );
+    expect(db.copies[0]).toMatchObject({ finish: "STANDARD", importDiscounted: true });
+    expect(db.events[0]).toMatchObject({ finish: "STANDARD", action: "NS_DECK_IMPORT" });
+  });
+
+  it("mints a craft as the CRAFT source, not import-discounted", async () => {
+    expect(MINT_SOURCES).toContain("CRAFT");
+    const db = fakeDatabase();
+    await db.transaction((tx) =>
+      mintCopy(tx, { cardId: "c1", ownerId: "u1", finish: "STANDARD", source: "CRAFT" })
+    );
+    expect(db.copies[0]).toMatchObject({ importDiscounted: false });
+    expect(db.events[0]).toMatchObject({ action: "CRAFT", finish: "STANDARD" });
   });
 
   it("mints an admin grant as the ADMIN source", async () => {
@@ -184,7 +245,13 @@ describe("mintCopy reissuing a serial", () => {
     await expect(reissue(tx)).resolves.toMatchObject({ serialNumber: 1 });
 
     expect(tx.cardOwnership.create).toHaveBeenCalledWith({
-      data: { cardId: "trophy", ownerId: "u2", serialNumber: 1, finish: "SERIALISED" },
+      data: {
+        cardId: "trophy",
+        ownerId: "u2",
+        serialNumber: 1,
+        finish: "SERIALISED",
+        importDiscounted: false,
+      },
     });
     expect(tx.cardTransferEvent.create).toHaveBeenCalledWith({
       data: {

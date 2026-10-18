@@ -37,6 +37,7 @@ const TRAIL_LABEL: Readonly<Record<TrailAction, string>> = {
   TROPHY: "Loreward trophy",
   SPORTS: "Sports trophy",
   ADMIN: "Granted by staff",
+  CRAFT: "Crafted",
   REISSUE: "Granted again",
   TRADE: "Traded",
   GIFT: "Gifted",

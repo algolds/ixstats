@@ -14,7 +14,7 @@ import type {
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { EXCLUDE_RESTRICTED_ART } from "~/lib/cards/art-licence";
-import { copyRoom } from "~/lib/cards/capacity";
+import { assertCapacityTx, CapacityError, copyRoom } from "~/lib/cards/capacity";
 import { refundListingFeeTx } from "~/lib/economy/auction-service";
 import { mintCopy } from "~/lib/cards/mint";
 import { removeCopyTx } from "~/lib/cards/remove-copy";
@@ -213,13 +213,15 @@ export async function grantCard(
   if (!card) throw new TRPCError({ code: "NOT_FOUND", message: "Card not found" });
   const refusal = grantRefusal(card);
   if (refusal) throw new TRPCError({ code: "PRECONDITION_FAILED", message: refusal });
-  if ((await copyRoom(db, { id: user.id, roleLevel: user.role?.level })) < 1) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "This player's inventory is full",
-    });
-  }
   const copy = await db.$transaction(async (tx) => {
+    // A grant is a new-copy source (§3): checked under the owner's capacity lock, which comes before the serial lock
+    await assertCapacityTx(tx, user.id, 1).catch((error: Error) => {
+      if (!(error instanceof CapacityError)) throw error;
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "This player's inventory is full",
+      });
+    });
     const minted = await mintCopy(tx, {
       cardId: card.id,
       ownerId: user.id,

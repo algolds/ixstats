@@ -5,8 +5,8 @@ import { CardType, LoreCategory } from "@prisma/client";
 import type { CardRarity, Prisma, PrismaClient } from "@prisma/client";
 import { spendCreditsTx } from "~/lib/vault/vault-ledger";
 import { EXCLUDE_RESTRICTED_ART } from "./art-licence";
-import { copyRoom } from "./capacity";
-import { CardFinish, parseCardRarity } from "./enums";
+import { assertCapacityTx, CapacityError } from "./capacity";
+import { parseCardRarity } from "./enums";
 import { RARITY_ORDER, rarityRank } from "./face/labels";
 import { mintCopy } from "./mint";
 import { isJsonObject } from "./ns-facts";
@@ -342,8 +342,9 @@ async function poolDrawer(tx: Prisma.TransactionClient, pack: PoolPack) {
 
 /**
  * Opens a pack: claims it first (only one open can flip `isOpened`, so a second, concurrent open throws CONFLICT
- * before anything is minted; cards refresh §5.4), checks capacity, draws the whole pack, then mints each pulled
- * card through `mintCopy`. One transaction: any failure leaves the pack unopened.
+ * before anything is minted; cards refresh §5.4), checks capacity under the owner's lock, draws the whole pack, then
+ * mints each pulled card through `mintCopy`, which rolls its finish. One transaction: any failure, a full collection
+ * included, leaves the pack unopened.
  */
 export async function openPack(db: PrismaClient, userId: string, userPackId: string) {
   return db.$transaction(async (tx) => {
@@ -357,15 +358,16 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       include: { pack: true },
     });
 
-    const user = await tx.user.findUnique({
-      where: { id: userId },
-      select: { role: { select: { level: true } } },
-    });
-    if ((await copyRoom(tx, { id: userId, roleLevel: user?.role?.level })) < pack.cardCount) {
-      throw new PackError(
-        "PRECONDITION_FAILED",
-        "Your inventory is full. Purchase a Card Capacity Upgrade in the Store to hold more."
-      );
+    try {
+      await assertCapacityTx(tx, userId, pack.cardCount);
+    } catch (error) {
+      if (error instanceof CapacityError) {
+        throw new PackError(
+          "PRECONDITION_FAILED",
+          "Your inventory is full. Purchase a Card Capacity Upgrade in the Store to hold more."
+        );
+      }
+      throw error;
     }
 
     const draw = await poolDrawer(tx, pack);
@@ -381,12 +383,7 @@ export async function openPack(db: PrismaClient, userId: string, userPackId: str
       .map((card, index) => ({ card, index }))
       .sort((a, b) => a.card.id.localeCompare(b.card.id));
     for (const { card, index } of mintOrder) {
-      const copy = await mintCopy(tx, {
-        cardId: card.id,
-        ownerId: userId,
-        finish: CardFinish.STANDARD,
-        source: "PACK_OPEN",
-      });
+      const copy = await mintCopy(tx, { cardId: card.id, ownerId: userId, source: "PACK_OPEN" });
       await grantCardXp(
         tx,
         copy.id,
