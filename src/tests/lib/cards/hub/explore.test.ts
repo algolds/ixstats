@@ -247,6 +247,19 @@ describe("exploreShelves", () => {
     expect(realms.map((r) => r.id)).toEqual(["default", "emptied"]);
   });
 
+  it("leaves out a realm it cannot read, from the shelves and the filters", async () => {
+    const db = createMockPrisma();
+    db.card.groupBy.mockResolvedValue([
+      { realmId: "default", _count: { _all: 4 } },
+      { realmId: "gone", _count: { _all: 9 } },
+    ]);
+    db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
+    db.card.findMany.mockResolvedValue([card("new")]);
+    const { shelves, realms } = await exploreShelves(db as never, "me");
+    expect(shelves.map((s) => s.realm.id)).toEqual(["default"]);
+    expect(realms.map((r) => r.id)).toEqual(["default"]);
+  });
+
   it("shows art on the shelves for cards the viewer holds", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 1 } }]);
