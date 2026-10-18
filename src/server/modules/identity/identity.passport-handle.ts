@@ -12,7 +12,7 @@
  * that carry the wiki name still resolve (identity.resolve.ts); only the emitted handle changes.
  */
 import { db } from "~/server/db";
-import { switchIsOn } from "~/server/shared/privacy-permissions";
+import { switchIsOn, withoutHiddenWikiNames } from "~/server/shared/privacy-permissions";
 import { resolveHandleUser } from "./identity.resolve";
 
 /** The user columns the chain reads. */
@@ -70,6 +70,27 @@ export async function loadPassportHandle(
     showsWikiAttribution(user.clerkUserId),
   ]);
   return passportHandleOf(user, attributed ? verifiedWikiName : null);
+}
+
+/**
+ * The passport handles of many users at once, in their order, by `loadPassportHandle`'s rule, given the verified
+ * ixwiki names already read for them: one read of the wiki attribution switch for the batch, for the users a wiki
+ * name could name (no stored handle, a verified name). A switch that cannot be read hides every wiki name.
+ */
+export async function loadPassportHandles(
+  users: readonly PassportHandleUser[],
+  verifiedWikiNames: ReadonlyMap<string, string>
+): Promise<string[]> {
+  const allowed = await withoutHiddenWikiNames(
+    db,
+    users.map((user) => ({
+      ...user,
+      wikiUsername: user.handle ? null : (verifiedWikiNames.get(user.id) ?? null),
+    }))
+  );
+  return Promise.all(
+    allowed.map((user) => user.handle || passportHandleOf(user, user.wikiUsername))
+  );
 }
 
 /** The passport handle of the user with this id (`loadPassportHandle`); null when there is no such user. */

@@ -1,15 +1,16 @@
 /**
  * How the card surfaces name players (card sheets, showcases, trades and their history), many at once, by one rule
  * (`playerDisplayName`). One read of the players, then one of the verified ixwiki names and one of the nations of those
- * with no stored handle, however many rows name them; only the handle chain's resolve-back check runs per player.
+ * with no stored handle, and one of the wiki attribution switch, however many rows name them; only the handle chain's
+ * resolve-back check runs per player.
  */
 import { db } from "~/server/db";
-import { passportHandleOf, type PassportHandleUser } from "./identity.passport-handle";
+import { loadPassportHandles, type PassportHandleUser } from "./identity.passport-handle";
 import { LISTED_NATION_WHERE, NATIONS_LARGEST_FIRST } from "./identity.selects";
 
 /** A player as the card surfaces name them. */
 export interface PlayerName {
-  /** Their passport handle (`passportHandleOf`), for a Passport link: it may be their Clerk id, which still resolves. */
+  /** Their passport handle (`loadPassportHandle`), for a Passport link: it may be their Clerk id, which still resolves. */
   handle: string;
   /** What other players read (`playerDisplayName`); null reads "a player". */
   displayName: string | null;
@@ -78,9 +79,11 @@ export async function loadPlayerNames(
     verifiedWikiNames(unhandled),
     nationNames(unhandled),
   ]);
-  const named = await Promise.all(
-    users.map(async (user): Promise<[string, PlayerName]> => {
-      const handle = await passportHandleOf(user, wikiNames.get(user.id) ?? null);
+  // A verified wiki name names only a player who shows wiki attribution (one switch read for the batch).
+  const handles = await loadPassportHandles(users, wikiNames);
+  return new Map(
+    users.map((user, i): [string, PlayerName] => {
+      const handle = handles[i]!;
       const nation = nations.get(user.id) ?? null;
       return [
         user.id,
@@ -91,5 +94,4 @@ export async function loadPlayerNames(
       ];
     })
   );
-  return new Map(named);
 }
