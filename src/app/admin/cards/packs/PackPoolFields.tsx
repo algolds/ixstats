@@ -125,10 +125,13 @@ function oddsGapNote(rarities: readonly RarityValue[]): string {
   return `${rarityList(rarities, RARITY_LABELS)} ${one ? "has" : "have"} odds but no cards, so this pack can't go on sale. Set ${one ? "its" : "their"} odds to 0 or widen the pool.`;
 }
 
-/** Bought packs wait unopened while their pool can't give a rarity they show. */
+/** Unopened packs, bought or granted, wait while their pool can't give a rarity they show. */
 function unopenedNote(unopened: number, rarities: number): string {
-  const packs = `${unopened.toLocaleString()} bought ${unopened === 1 ? "pack" : "packs"}`;
-  return `${packs} can't be opened until ${rarities === 1 ? "that rarity has" : "those rarities have"} cards.`;
+  const held =
+    unopened === 1
+      ? "A player holds 1 unopened pack"
+      : `Players hold ${unopened.toLocaleString()} unopened packs`;
+  return `${held} that can't be opened until ${rarities === 1 ? "that rarity has" : "those rarities have"} cards.`;
 }
 
 function PoolPreview({
@@ -156,19 +159,22 @@ function PoolPreview({
           </li>
         ))}
       </ul>
-      {oddsGaps.length > 0 && (
-        <p className="text-footnote text-warning-ink">{oddsGapNote(oddsGaps)}</p>
-      )}
-      {guaranteeGap && (
-        <p className="text-footnote text-warning-ink">
-          {`No ${RARITY_LABELS[guaranteeGap]} cards are in this pool, so the guarantee can't be met.`}
-        </p>
-      )}
-      {preview.undeliverable.length > 0 && preview.unopened > 0 && (
-        <p className="text-footnote text-warning-ink">
-          {unopenedNote(preview.unopened, preview.undeliverable.length)}
-        </p>
-      )}
+      {/* The warnings change as the admin edits, so they are announced */}
+      <div aria-live="polite" className="space-y-2">
+        {oddsGaps.length > 0 && (
+          <p className="text-footnote text-warning-ink">{oddsGapNote(oddsGaps)}</p>
+        )}
+        {guaranteeGap && (
+          <p className="text-footnote text-warning-ink">
+            {`No ${RARITY_LABELS[guaranteeGap]} cards are in this pool, so the guarantee can't be met.`}
+          </p>
+        )}
+        {preview.undeliverable.length > 0 && preview.unopened > 0 && (
+          <p className="text-footnote text-warning-ink">
+            {unopenedNote(preview.unopened, preview.undeliverable.length)}
+          </p>
+        )}
+      </div>
       {preview.samples.length === 0 ? (
         <p className="text-footnote text-label-secondary">No cards match this pool.</p>
       ) : (
@@ -286,6 +292,11 @@ export function PackPoolFields({
           value={pool.cardTypes}
           onChange={(cardTypes) => onPoolChange({ ...pool, cardTypes })}
         />
+        {cardType && pool.cardTypes.length > 0 && !pool.cardTypes.includes(cardType) && (
+          <p className="text-footnote text-warning-ink">
+            {`No card is both ${CARD_TYPE_LABELS[cardType]} and one of these types, so this pool is empty.`}
+          </p>
+        )}
         <PoolToggles
           label="Categories"
           none="every category"

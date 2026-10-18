@@ -14,6 +14,7 @@ import {
   PACK_MAX_LIMIT,
   PACK_MAX_PRICE,
   PackOddsSchema,
+  rarityList,
 } from "~/lib/cards/pack-odds";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -91,8 +92,11 @@ const isCount = (value: number, max: number) =>
   Number.isInteger(value) && value >= 1 && value <= max;
 const range = (max: number) => `1 to ${max.toLocaleString("en")}`;
 
-/** Why the pack cannot be saved yet, or null. The server checks the same rules; this says which one. */
-function saveBlocker(form: PackForm): string | null {
+/**
+ * Why the pack cannot be saved yet, or null. The server checks the same rules; this says which one. `poolGaps` counts
+ * the rarities the last preview found the pack shows with no card, which the server refuses on sale.
+ */
+function saveBlocker(form: PackForm, poolGaps: number): string | null {
   if (form.name.trim() === "") return "Give the pack a name.";
   if (!form.packType) return "Choose the pack's kind.";
   if (form.cardType !== null && !PACK_CARD_TYPES.includes(form.cardType))
@@ -106,6 +110,8 @@ function saveBlocker(form: PackForm): string | null {
     return `Total stock and the per-player limit are blank or a whole number from ${range(PACK_MAX_LIMIT)}.`;
   if (!PackOddsSchema.safeParse(form.odds).success)
     return "Each rarity's odds are 0 to 100%, adding up to 100%.";
+  if (form.isActive && poolGaps > 0)
+    return "Take the pack off sale, or give those rarities cards, to save it.";
   return null;
 }
 
@@ -134,8 +140,9 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
     odds: form.odds,
     guaranteedRarity: form.guaranteedRarity,
   });
+  const poolGaps = preview.data?.undeliverable ?? [];
   // A pool that can't give a rarity the pack shows keeps it off sale; a pack on sale can still come off
-  const keptOffSale = !form.isActive && (preview.data?.undeliverable.length ?? 0) > 0;
+  const keptOffSale = !form.isActive && poolGaps.length > 0;
   const save = api.cards.admin.packs.save.useMutation({
     onSuccess: () => {
       notify.success("Pack saved");
@@ -146,7 +153,7 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
   });
   const set = <K extends keyof PackForm>(key: K, value: PackForm[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
-  const blocker = saveBlocker(form);
+  const blocker = saveBlocker(form, poolGaps.length);
   const submit = () => {
     if (form.packType && blocker === null) save.mutate({ ...form, packType: form.packType });
   };
@@ -307,10 +314,16 @@ export function PackEditorSheet({ pack, open, onOpenChange }: PackEditorSheetPro
                 id="pack-active"
                 checked={form.isActive}
                 disabled={keptOffSale}
+                aria-describedby={keptOffSale ? "pack-active-reason" : undefined}
                 onCheckedChange={(checked) => set("isActive", checked)}
               />
               <Label htmlFor="pack-active">On sale</Label>
             </div>
+            {keptOffSale && (
+              <p id="pack-active-reason" className="text-footnote text-label-secondary">
+                {`This pool has no ${rarityList(poolGaps, RARITY_LABELS)} cards, so the pack stays off sale.`}
+              </p>
+            )}
           </fieldset>
         </div>
         <SheetFooter className="border-separator shrink-0 border-t pt-4 sm:items-center">

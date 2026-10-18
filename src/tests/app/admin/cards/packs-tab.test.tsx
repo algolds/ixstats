@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -281,11 +281,11 @@ describe("PacksTab", () => {
     expect(screen.getByText("43 approved cards in the pool")).toBeInTheDocument();
     expect(screen.getByText("Uncommon: 0, none to draw")).toBeInTheDocument();
     expect(screen.getByText("Common: 40")).toBeInTheDocument();
-    expect(screen.getByText(ODDS_GAP)).toBeInTheDocument();
+    expect(screen.getByText(ODDS_GAP).parentElement).toHaveAttribute("aria-live", "polite");
     expect(screen.getByRole("list", { name: "Some cards in the pool" })).toHaveTextContent("Elm");
-    // The guaranteed Rare has cards, so nothing warns about it, and no bought pack waits
+    // The guaranteed Rare has cards, so nothing warns about it, and no unopened pack waits
     expect(screen.queryByText(/the guarantee can.t be met/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/bought/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/unopened pack/)).not.toBeInTheDocument();
   });
 
   it("says one rarity has odds but no cards", () => {
@@ -301,40 +301,104 @@ describe("PacksTab", () => {
   });
 
   it("warns when the pool has no card of the guaranteed rarity, naming it once", () => {
-    serve({ data: [{ ...booster, guaranteedRarity: "EPIC" }] }, preview);
+    serve({ data: [{ ...booster, guaranteedRarity: "EPIC" }] }, { ...preview, unopened: 2 });
     render(<PacksTab />);
     openEditor();
     showPreview();
-    expect(
-      screen.getByText("No Epic cards are in this pool, so the guarantee can't be met.")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Uncommon, Ultra rare and Legendary have odds but no cards, so this pack can't go on sale. Set their odds to 0 or widen the pool."
-      )
-    ).toBeInTheDocument();
+    const guarantee = screen.getByText(
+      "No Epic cards are in this pool, so the guarantee can't be met."
+    );
+    const oddsGap = screen.getByText(
+      "Uncommon, Ultra rare and Legendary have odds but no cards, so this pack can't go on sale. Set their odds to 0 or widen the pool."
+    );
+    const unopened = screen.getByText(/unopened packs/);
+    // One polite live region announces the warnings as the edits change them
+    expect(guarantee.parentElement).toBe(oddsGap.parentElement);
+    expect(unopened.parentElement).toBe(oddsGap.parentElement);
+    expect(guarantee.parentElement).toHaveAttribute("aria-live", "polite");
   });
 
-  it("keeps a pack off sale while its preview shows a rarity it can't give", () => {
+  it("keeps a pack off sale while its preview shows a rarity it can't give, saying why", () => {
     serve({ data: [{ ...booster, isActive: false }] }, preview);
     render(<PacksTab />);
     openEditor();
     expect(onSale()).toBeEnabled();
+    expect(onSale()).not.toHaveAttribute("aria-describedby");
     showPreview();
     expect(onSale()).toBeDisabled();
     expect(onSale()).not.toBeChecked();
+    expect(onSale()).toHaveAccessibleDescription(
+      "This pool has no Uncommon, Ultra rare, Epic and Legendary cards, so the pack stays off sale."
+    );
   });
 
-  it("lets a pack on sale come off it when its pool can't deliver", () => {
-    serve({ data: [booster] }, preview);
+  it("says why the switch is off when only the guarantee has no card", () => {
+    serve(
+      { data: [{ ...booster, isActive: false, guaranteedRarity: "EPIC" }] },
+      { ...stocked, undeliverable: ["EPIC"] }
+    );
     render(<PacksTab />);
     openEditor();
     showPreview();
+    expect(onSale()).toBeDisabled();
+    expect(onSale()).toHaveAccessibleDescription(
+      "This pool has no Epic cards, so the pack stays off sale."
+    );
+  });
+
+  it("blocks saving a pack on sale its pool can't deliver, until it comes off sale", () => {
+    serve({ data: [booster] }, preview);
+    render(<PacksTab />);
+    openEditor();
+    expect(saveButton()).toBeEnabled();
+    showPreview();
+    expect(
+      screen.getByText("Take the pack off sale, or give those rarities cards, to save it.")
+    ).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
     expect(onSale()).toBeEnabled();
+    expect(onSale()).not.toHaveAttribute("aria-describedby");
     fireEvent.click(onSale());
     expect(onSale()).toBeDisabled();
+    expect(screen.queryByText(/Take the pack off sale/)).not.toBeInTheDocument();
     fireEvent.click(saveButton());
     expect(save.mock.calls[0]?.[0]).toMatchObject({ isActive: false });
+  });
+
+  it("says when the card type and the pool's types can share no card", () => {
+    serve({
+      data: [
+        {
+          ...booster,
+          cardType: "NATION",
+          pool: { realmIds: [], categories: [], cardTypes: ["LORE", "NS"] },
+        },
+      ],
+    });
+    render(<PacksTab />);
+    openEditor();
+    const empty = "No card is both Nation and one of these types, so this pool is empty.";
+    // The Types toggles follow their label; Categories has a Nation button too
+    const types = screen.getByText(/^Types/).nextElementSibling as HTMLElement;
+    expect(screen.getByText(empty)).toBeInTheDocument();
+    fireEvent.click(within(types).getByRole("button", { name: "Nation" }));
+    expect(screen.queryByText(empty)).not.toBeInTheDocument();
+    // Any type shares a card with whatever types the pool keeps
+    fireEvent.change(screen.getByLabelText("Card type"), { target: { value: "any" } });
+    fireEvent.click(within(types).getByRole("button", { name: "Lore" }));
+    expect(screen.queryByText(/No card is both/)).not.toBeInTheDocument();
+    fireEvent.click(saveButton());
+    expect(save.mock.calls[0]?.[0]).toMatchObject({
+      cardType: null,
+      pool: { cardTypes: ["NATION", "NS"] },
+    });
+  });
+
+  it("says nothing of the types when the pool names none", () => {
+    serve({ data: [{ ...booster, cardType: "NATION" }] });
+    render(<PacksTab />);
+    openEditor();
+    expect(screen.queryByText(/No card is both/)).not.toBeInTheDocument();
   });
 
   it("puts a pack on sale when its pool has every rarity it shows", () => {
@@ -343,19 +407,21 @@ describe("PacksTab", () => {
     openEditor();
     showPreview();
     expect(screen.queryByText(/can't go on sale/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/bought/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/unopened pack/)).not.toBeInTheDocument();
     fireEvent.click(onSale());
     fireEvent.click(saveButton());
     expect(save.mock.calls[0]?.[0]).toMatchObject({ isActive: true });
   });
 
-  it("says how many bought packs wait unopened on a pool that can't deliver", () => {
+  it("says how many unopened packs players hold on a pool that can't deliver", () => {
     serve({ data: [booster] }, { ...preview, unopened: 3 });
     const { unmount } = render(<PacksTab />);
     openEditor();
     showPreview();
     expect(
-      screen.getByText("3 bought packs can't be opened until those rarities have cards.")
+      screen.getByText(
+        "Players hold 3 unopened packs that can't be opened until those rarities have cards."
+      )
     ).toBeInTheDocument();
     unmount();
     serve({ data: [booster] }, { ...stocked, undeliverable: ["EPIC"], unopened: 1 });
@@ -363,7 +429,9 @@ describe("PacksTab", () => {
     openEditor();
     showPreview();
     expect(
-      screen.getByText("1 bought pack can't be opened until that rarity has cards.")
+      screen.getByText(
+        "A player holds 1 unopened pack that can't be opened until that rarity has cards."
+      )
     ).toBeInTheDocument();
   });
 
