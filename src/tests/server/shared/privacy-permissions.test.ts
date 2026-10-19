@@ -9,7 +9,10 @@ jest.mock("~/server/db", () => ({ db: {} }));
 import {
   containsMutedKeyword,
   mutedKeywords,
+  permissionAudiences,
   recipientsRefusing,
+  refusesTradeOffer,
+  tradeOfferRefusers,
 } from "~/server/shared/privacy-permissions";
 import { createMessagingService } from "~/server/modules/messaging";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -78,6 +81,40 @@ describe("recipientsRefusing", () => {
     expect(await recipientsRefusing(db as never, "s", ["r1"], "directMessages")).toEqual(["r1"]);
     db.thinkpagesAccount.findFirst.mockResolvedValue({ id: "acc" });
     expect(await recipientsRefusing(db as never, "s", ["r1"], "directMessages")).toEqual([]);
+  });
+});
+
+describe("trade offer audiences", () => {
+  it("reads each user's audience for a permission, missing configs reading as everyone", async () => {
+    const db = withConfigs({
+      user_a: { tradeOffers: "nobody" },
+      user_c: { tradeOffers: "followers", directMessages: "nobody" },
+      user_d: { tradeOffers: "friends" },
+      user_e: "not json",
+    });
+    const ids = ["user_a", "user_b", "user_c", "user_d", "user_e"];
+    expect([...(await permissionAudiences(db as never, ids, "tradeOffers"))]).toEqual([
+      ["user_a", "nobody"],
+      ["user_b", "everyone"],
+      ["user_c", "followers"],
+      ["user_d", "everyone"],
+      ["user_e", "everyone"],
+    ]);
+  });
+
+  it("refuses a sender outside the audience or on the block list, never the sender themself", async () => {
+    const db = withConfigs({ closed: { tradeOffers: "nobody" }, s: { tradeOffers: "nobody" } });
+    const configs = db.userConnection.findMany.getMockImplementation()!;
+    const withBlock = async (args: { where: { connectionType: string } }) =>
+      args.where.connectionType === "blocked" ? [{ userId: "blocker" }] : configs(args);
+    db.userConnection.findMany.mockImplementation(withBlock);
+    const refusers = await tradeOfferRefusers(db as never, "s", ["s", "closed", "blocker", "open"]);
+    expect([...refusers].sort()).toEqual(["blocker", "closed"]);
+    expect(await refusesTradeOffer(db as never, "s", "closed")).toBe(true);
+    expect(await refusesTradeOffer(db as never, "s", "blocker")).toBe(true);
+    db.userConnection.findMany.mockImplementation(configs);
+    expect(await refusesTradeOffer(db as never, "s", "open")).toBe(false);
+    expect(await tradeOfferRefusers(db as never, "s", [])).toEqual(new Set());
   });
 });
 

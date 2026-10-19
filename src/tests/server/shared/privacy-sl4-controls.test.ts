@@ -8,7 +8,7 @@ jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { usersPreferencesRouter } from "~/server/api/routers/users/preferences";
-import { tradingSocialRouter } from "~/server/api/routers/trading/social";
+import { searchTradePartners } from "~/server/modules/cards/trading/partners";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import {
@@ -234,16 +234,14 @@ describe("trading partner search", () => {
         country: { name: "Elsewhere", leader: "Other" },
       },
     ]);
-    const ctx = createMockRouterContext({
-      db,
-      auth: { userId: "me" },
-      user: { id: "db_me", clerkUserId: "me" },
-    });
-    const results = await createCallerFactory(tradingSocialRouter)(
-      ctx as never
-    ).searchTradingPartners({
-      query: "rosegarden",
-    });
-    expect(results.map((r) => [r.id, r.username])).toEqual([["clerk_v", "rosegarden2"]]);
+    const rules = {
+      userOfHandle: async () => null,
+      namesOf: async (ids: readonly string[]) =>
+        new Map(ids.map((id) => [id, { handle: id, displayName: null }])),
+      cardsShown: async () => new Set<string>(),
+    };
+    const viewer = { id: "db_me", clerkUserId: "me" };
+    const results = await searchTradePartners(db as never, rules, viewer, "rosegarden");
+    expect(results.map((r) => r.id)).toEqual(["u_v"]);
   });
 });

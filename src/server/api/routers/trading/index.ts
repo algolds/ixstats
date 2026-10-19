@@ -7,15 +7,15 @@
  * Domains:
  *  - offers:  P2P trade offer lifecycle (create, accept/reject/counter, cancel)
  *  - queries: read-only trade queries (active list, history, detail by id)
- *  - social:  card gifting and partner search (gifting + discovery)
+ *  - builder: partner lookup by handle and search, tradeable copies, the partner's wishlist
  */
 import { mergeRouters } from "~/server/api/trpc";
+import { tradingBuilderRouter } from "./builder";
 import { tradingOffersRouter } from "./offers";
 import { tradingQueriesRouter } from "./queries";
-import { tradingSocialRouter } from "./social";
 
 export const tradingRouter = mergeRouters(
   tradingOffersRouter,
   tradingQueriesRouter,
-  tradingSocialRouter
+  tradingBuilderRouter
 );

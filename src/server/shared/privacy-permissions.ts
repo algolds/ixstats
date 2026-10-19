@@ -29,6 +29,8 @@ import { recipientsBlockingSender } from "./user-blocks";
 
 export type PermissionKey = "directMessages" | "mentions" | "tradeOffers";
 type Audience = "everyone" | "followers" | "verified" | "nobody";
+/** Who a user takes something from (one `PermissionKey`). */
+export type PermissionAudience = Audience;
 
 type PrivacyDb = Pick<
   PrismaClient,
@@ -89,6 +91,16 @@ async function loadAudiences(
     }
   }
   return audiences;
+}
+
+/** Each user's audience for `key`; a user with no stored setting reads as "everyone". */
+export async function permissionAudiences(
+  db: Pick<PrismaClient, "userConnection">,
+  clerkIds: string[],
+  key: PermissionKey
+): Promise<Map<string, PermissionAudience>> {
+  const stored = await loadAudiences(db, clerkIds, key);
+  return new Map(clerkIds.map((id) => [id, stored.get(id) ?? "everyone"]));
 }
 
 /**
@@ -270,19 +282,28 @@ export async function recipientsRefusing(
 }
 
 /**
- * Whether the recipient refuses a card trade offer from the sender: outside their `tradeOffers` audience, or on their
- * block list. Offer creation refuses such a sender, and the recipient's tradeable copies are hidden from them.
+ * Which recipients refuse a card trade offer from the sender: outside their `tradeOffers` audience, or on their block
+ * list. Offer creation refuses such a sender, and the recipient's tradeable copies are hidden from them.
  */
+export async function tradeOfferRefusers(
+  db: PrivacyDb,
+  senderClerkId: string,
+  recipientClerkIds: string[]
+): Promise<Set<string>> {
+  const [refusing, blocking] = await Promise.all([
+    recipientsRefusing(db, senderClerkId, recipientClerkIds, "tradeOffers"),
+    recipientsBlockingSender(db, senderClerkId, recipientClerkIds),
+  ]);
+  return new Set([...refusing, ...blocking]);
+}
+
+/** Whether the recipient refuses a card trade offer from the sender (`tradeOfferRefusers`). */
 export async function refusesTradeOffer(
   db: PrivacyDb,
   senderClerkId: string,
   recipientClerkId: string
 ): Promise<boolean> {
-  const [refusing, blocking] = await Promise.all([
-    recipientsRefusing(db, senderClerkId, [recipientClerkId], "tradeOffers"),
-    recipientsBlockingSender(db, senderClerkId, [recipientClerkId]),
-  ]);
-  return refusing.length > 0 || blocking.length > 0;
+  return (await tradeOfferRefusers(db, senderClerkId, [recipientClerkId])).size > 0;
 }
 
 /** The viewer's muted words, lower-cased. Empty for anonymous viewers. */
