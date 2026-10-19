@@ -149,6 +149,34 @@ describe("CardsHub", () => {
       tab: "browse",
       sellOwnershipId: null,
       forCardId: null,
+      trade: null,
+    });
+  });
+
+  it("hands the Market the trade builder's address, and closes it in one rewrite", () => {
+    at("/vault/cards/market?tab=trades&trade=new&partner=bob&give=o1&get=o2#offers");
+    render(<CardsHub initialTab="market" />);
+    expect(lastProps(MarketPane).trade).toEqual({
+      trade: "new",
+      partner: "bob",
+      give: "o1",
+      get: "o2",
+    });
+    spyOnHistory();
+    act(() => lastProps(MarketPane).onCloseTrade());
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/vault/cards/market?tab=trades#offers");
+    expect(pushState).not.toHaveBeenCalled();
+  });
+
+  it("opens an existing trade with no seed", () => {
+    at("/vault/cards/market?tab=trades&trade=t1");
+    render(<CardsHub initialTab="market" />);
+    expect(lastProps(MarketPane).trade).toEqual({
+      trade: "t1",
+      partner: null,
+      give: null,
+      get: null,
     });
   });
 

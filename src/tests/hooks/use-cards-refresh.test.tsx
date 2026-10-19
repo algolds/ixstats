@@ -27,6 +27,8 @@ jest.mock("~/trpc/react", () => {
       getActiveTrades: query(),
       getTradeById: query(),
       getTradeHistory: query(),
+      getTradeables: query(),
+      getPartnerWishlist: query(),
     },
     vault: { getBalance: query(), getTransactions: query() },
   };
@@ -72,6 +74,8 @@ describe("useCardsRefresh", () => {
       "trading.getActiveTrades",
       "trading.getTradeById",
       "trading.getTradeHistory",
+      "trading.getTradeables",
+      "trading.getPartnerWishlist",
       "vault.getBalance",
     ]);
   });
