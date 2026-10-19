@@ -11,15 +11,20 @@ import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { useEconomyNumbers } from "~/hooks/cards/useSheetEconomy";
 import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { BulkListDialog } from "~/components/vault/cards/BulkListDialog";
+import { BulkListDialog, type BulkListCopy } from "~/components/vault/cards/BulkListDialog";
 
 type Listed = { ownershipId: string; listingId: string | null; error: string | null };
 type Done = { onSuccess?: (results: Listed[]) => void };
 
-const copy = (ownershipId: string, title: string, value: number, serialNumber = 1) => ({
+const copy = (
+  ownershipId: string,
+  title: string,
+  value: number,
+  serialNumber = 1
+): BulkListCopy => ({
   ownershipId,
   title,
-  finish: "STANDARD" as const,
+  finish: "STANDARD",
   serialNumber,
   value,
 });
