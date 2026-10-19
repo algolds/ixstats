@@ -255,8 +255,8 @@ const TRADEABLE_SELECT = {
 } satisfies Prisma.CardOwnershipSelect;
 
 /**
- * The copies an offer can carry: unlocked (not listed, at auction or given in a pending trade), unbound and not
- * retired, so the builder never offers a copy the offer refuses or a hidden card.
+ * The copies an offer can carry, as the offer checks them: unlocked (not listed, at auction or given in a pending
+ * trade) and unbound. A retired card's copies stay tradeable (spec §3), at 0 with the placeholder face.
  */
 function tradeableWhere(ownerId: string, f: TradeableFilters): Prisma.CardOwnershipWhereInput {
   return {
@@ -265,7 +265,6 @@ function tradeableWhere(ownerId: string, f: TradeableFilters): Prisma.CardOwners
     ...(f.finish ? { finish: f.finish } : {}),
     cards: {
       isBound: false,
-      isRetired: false,
       ...(f.realmId ? { realmId: f.realmId } : {}),
       ...(f.rarity ? { rarity: f.rarity } : {}),
       ...(f.cardType ? { cardType: f.cardType } : {}),

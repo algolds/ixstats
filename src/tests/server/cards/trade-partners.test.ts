@@ -25,12 +25,14 @@ import {
   getPartnerWishlist,
   getTradeables,
   searchTradePartners,
+  type PartnerName,
   type PartnerRules,
 } from "~/server/modules/cards/trading/partners";
 import {
   hiddenLinkedNames,
   permissionAudiences,
   tradeOfferRefusers,
+  type PermissionAudience,
 } from "~/server/shared/privacy-permissions";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -47,17 +49,22 @@ const row = (id: string, cardId: string) => ({
 const face = (cardId: string, artwork: string | null) =>
   ({ cardId, title: cardId, artwork, silhouette: artwork === null }) as never as CardFaceData;
 
+type UserOfHandle = PartnerRules["userOfHandle"];
+type NamesOf = PartnerRules["namesOf"];
+type CardsShown = PartnerRules["cardsShown"];
+
+/** Doubles of the injected rules, each typed by the rule it stands in for. */
 function rulesFor(shown: readonly string[] = ["bob"]) {
   return {
-    userOfHandle: jest.fn(async (handle: string) =>
+    userOfHandle: jest.fn<ReturnType<UserOfHandle>, Parameters<UserOfHandle>>(async (handle) =>
       handle.toLowerCase() === "bob" ? "bob" : null
     ),
-    namesOf: jest.fn(
-      async (ids: readonly string[]) =>
-        new Map(ids.map((id) => [id, { handle: id, displayName: `@${id}` }]))
+    namesOf: jest.fn<ReturnType<NamesOf>, Parameters<NamesOf>>(
+      async (ids) =>
+        new Map<string, PartnerName>(ids.map((id) => [id, { handle: id, displayName: `@${id}` }]))
     ),
-    cardsShown: jest.fn(
-      async (ids: readonly string[]) => new Set(ids.filter((id) => shown.includes(id)))
+    cardsShown: jest.fn<ReturnType<CardsShown>, Parameters<CardsShown>>(
+      async (ids) => new Set(ids.filter((id) => shown.includes(id)))
     ),
   } satisfies PartnerRules;
 }
@@ -118,7 +125,7 @@ describe("findTradePartner", () => {
 
   it("shows a closed door, hidden cards and a missing setting before building", async () => {
     jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(new Set(["user_bob"]));
-    jest.mocked(permissionAudiences).mockResolvedValueOnce(new Map());
+    jest.mocked(permissionAudiences).mockResolvedValueOnce(new Map<string, PermissionAudience>());
     const db = makeDb();
     db.user.findUnique.mockResolvedValue({ ...BOB, country: null });
     expect(await findTradePartner(db as never, rulesFor([]), VIEWER, "bob")).toEqual({
@@ -151,13 +158,22 @@ describe("findTradePartner", () => {
     inactive.user.findUnique.mockResolvedValue({ ...BOB, isActive: false });
     expect(await findTradePartner(inactive as never, rules, VIEWER, "bob")).toBeNull();
 
-    rules.namesOf.mockResolvedValueOnce(new Map());
+    rules.namesOf.mockResolvedValueOnce(new Map<string, PartnerName>());
     expect(await findTradePartner(makeDb() as never, rules, VIEWER, "bob")).toBeNull();
   });
 });
 
 describe("searchTradePartners", () => {
-  const user = (id: string, fields: Record<string, string | null> = {}) => ({
+  interface SearchUser {
+    id: string;
+    clerkUserId: string;
+    handle: string | null;
+    forumUsername: string | null;
+    wikiUsername: string | null;
+    discordUsername: string | null;
+    country: { name: string; leader: string } | null;
+  }
+  const user = (id: string, fields: Partial<SearchUser> = {}): SearchUser => ({
     id,
     clerkUserId: `clerk_${id}`,
     handle: null,
@@ -274,8 +290,8 @@ describe("searchTradePartners", () => {
     );
     const rules = rulesFor();
     rules.namesOf.mockImplementationOnce(
-      async (ids: readonly string[]) =>
-        new Map(
+      async (ids) =>
+        new Map<string, PartnerName>(
           ids.filter((id) => id !== "p1").map((id) => [id, { handle: id, displayName: null }])
         )
     );
@@ -313,7 +329,7 @@ describe("getTradeables", () => {
       where: {
         ownerId: "bob",
         isLocked: false,
-        cards: { isBound: false, isRetired: false, rarity: "RARE" },
+        cards: { isBound: false, rarity: "RARE" },
       },
       // The text travels with the copy; who signed it never leaves the server
       select: { id: true, cardId: true, inscription: true },
@@ -361,7 +377,6 @@ describe("getTradeables", () => {
           finish: "FOIL",
           cards: {
             isBound: false,
-            isRetired: false,
             realmId: "default",
             rarity: "EPIC",
             cardType: "NS",
@@ -377,6 +392,23 @@ describe("getTradeables", () => {
     expect(page.items.map((i) => [i.ownershipId, i.value, i.highlighted])).toEqual([
       ["o1", 120, false],
       ["o2", 0, true],
+    ]);
+  });
+
+  it("keeps a retired card's copy tradeable, worth 0 with its placeholder face", async () => {
+    // A takedown or Library hide retires the card; its copies stay tradeable (spec §3) and the face shows no art
+    const retired: CardFaceData = { ...face("c2", null), isRetired: true };
+    jest.mocked(copyFaces).mockResolvedValue(new Map([["o2", retired]]));
+    jest.mocked(loadCopyValues).mockResolvedValue([]);
+    const db = makeDb([row("o2", "c2")]);
+    const page = await getTradeables(db as never, rulesFor(), VIEWER, input);
+    expect(db.cardOwnership.findMany.mock.calls[0]![0].where).toEqual({
+      ownerId: "bob",
+      isLocked: false,
+      cards: { isBound: false },
+    });
+    expect(page.items).toEqual([
+      { ownershipId: "o2", face: retired, inscription: null, value: 0, highlighted: true },
     ]);
   });
 
@@ -470,7 +502,7 @@ describe("getPartnerWishlist", () => {
       where: {
         ownerId: "alice",
         isLocked: false,
-        cards: { isBound: false, isRetired: false },
+        cards: { isBound: false },
         cardId: { in: ["c1", "c2"] },
       },
       _count: { _all: true },
