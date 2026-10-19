@@ -108,6 +108,9 @@ export function craftability(card: CraftableCard): Verdict {
   return { ok: true };
 }
 
+/** The most copies one break-down or fusion takes. */
+export const MAX_WORKSHOP_COPIES = 100;
+
 export interface WorkshopCopy extends DustCopy {
   cardId: string;
   inscription: string | null;

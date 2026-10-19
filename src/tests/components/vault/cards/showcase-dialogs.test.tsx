@@ -71,6 +71,9 @@ const row = (n: number, isBound = false): MineRow => ({
   acquiredAt: new Date("2026-10-01"),
   isLocked: false,
   isBound,
+  inscription: null,
+  importDiscounted: false,
+  inOffer: false,
 });
 const page = (rows: MineRow[], total = rows.length): MinePage => ({
   rows,

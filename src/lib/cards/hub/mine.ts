@@ -6,6 +6,7 @@ import { loadCopyValues, type ValueDb } from "~/lib/cards/copy-value";
 import { rarityRank } from "~/lib/cards/face/labels";
 import { MINE_SORTS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData, CardRealmBadge } from "~/lib/cards/face/types";
+import { offeredCopyIds } from "~/lib/cards/trade/offered-copies";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace, toRealmBadge } from "./faces";
 
 /**
@@ -32,6 +33,9 @@ const MINE_COPY_SELECT = {
   cardId: true,
   acquiredAt: true,
   isLocked: true,
+  // The copy's own inscription text decides whether it breaks down; the signer's id and frozen name are never read.
+  inscription: true,
+  importDiscounted: true,
   cards: { select: { ...CARD_FACE_SELECT, category: true, isBound: true } },
 } satisfies Prisma.CardOwnershipSelect;
 type MineCopyRow = Prisma.CardOwnershipGetPayload<{ select: typeof MINE_COPY_SELECT }>;
@@ -50,6 +54,11 @@ export interface MineRow {
   isLocked: boolean;
   /** A trophy or achievement-reward copy, which can never be traded, listed or transferred. */
   isBound: boolean;
+  /** For the bulk actions: a signed copy never breaks down or fuses, and an imported one breaks down for its share. */
+  inscription: string | null;
+  importDiscounted: boolean;
+  /** Named in a pending trade offer, on either side, which the workshop counts as a lock (`judgedCopiesTx`). */
+  inOffer: boolean;
 }
 
 export interface MinePage {
@@ -124,6 +133,10 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
       acquiredAt: row.acquiredAt,
       isLocked: row.isLocked,
       isBound: row.cards.isBound,
+      inscription: row.inscription,
+      importDiscounted: row.importDiscounted,
+      // The pure selection reads no offers; listMine marks the page's.
+      inOffer: false,
     })),
     total: picked.length,
     nextCursor: next < picked.length ? next : null,
@@ -135,9 +148,12 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
 /** Far above any inventory (capacity is 150 plus upgrades); only a guard against a runaway account. */
 const MAX_MINE_COPIES = 5000;
 
-/** Mine: every copy the player holds, retired cards included (spec §3), valued by the shared per-copy value. */
+/**
+ * Mine: every copy the player holds, retired cards included (spec §3), valued by the shared per-copy value. The copies
+ * on the page a pending trade offer names are marked, read for that page alone so the offer predicate stays small.
+ */
 export async function listMine(
-  db: Pick<PrismaClient, "cardOwnership"> & ValueDb,
+  db: Pick<PrismaClient, "cardOwnership" | "tradeOffer"> & ValueDb,
   ownerId: string,
   query: MineQuery
 ): Promise<MinePage> {
@@ -153,8 +169,17 @@ export async function listMine(
   ]);
   // A hidden (retired) copy has no value there, so it is worth nothing, as in the Wallet's figures and the dividend.
   const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
-  return selectMine(
+  const page = selectMine(
     rows.map((row) => ({ row, value: valueOf.get(row.id) ?? 0 })),
     query
   );
+  const ids = page.rows.flatMap((row) => (row.face.copy ? [row.face.copy.ownershipId] : []));
+  const offered = await offeredCopyIds(db, ids);
+  return {
+    ...page,
+    rows: page.rows.map((row) => ({
+      ...row,
+      inOffer: row.face.copy !== null && offered.has(row.face.copy.ownershipId),
+    })),
+  };
 }

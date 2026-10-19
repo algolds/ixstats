@@ -264,6 +264,37 @@ describe("AddToShowcaseDialog", () => {
     await waitFor(() => expect(document.activeElement).toBe(opener));
   });
 
+  it("gives focus to the place the caller names once the copies are in, when its opener leaves with them", async () => {
+    listed([showcase()]);
+    mutations({ add: (options) => options.onSuccess?.({ added: 1 }) });
+    function Host() {
+      const [open, setOpen] = React.useState(false);
+      const [selecting, setSelecting] = React.useState(true);
+      const after = React.useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button ref={after}>Select</button>
+          {selecting && <button onClick={() => setOpen(true)}>Add to showcase</button>}
+          <AddToShowcaseDialog
+            open={open}
+            onOpenChange={setOpen}
+            ownershipIds={["o1"]}
+            onAdded={() => setSelecting(false)}
+            focusAfterAdd={after}
+          />
+        </>
+      );
+    }
+    render(<Host />);
+    const opener = screen.getByRole("button", { name: "Add to showcase" });
+    opener.focus();
+    fireEvent.click(opener);
+    await screen.findByRole("dialog");
+    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
+  });
+
   it("will not overfill a showcase, and says how much room is left", () => {
     listed([
       showcase({ id: "full", name: "Full one", itemCount: SHOWCASE_LIMITS.items }),

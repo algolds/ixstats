@@ -15,8 +15,14 @@ import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import type { CopyDialogProps } from "./ListCopyDialog";
 
-/** Confirm fusing a ready group into one copy at the next finish. It stays open until the fusion goes through. */
-export function FuseDialog({ group, ...props }: CopyDialogProps & { group: FusionGroupView }) {
+/**
+ * Confirm fusing a ready group into one copy at the next finish (the sheet's group, or Mine's selection). It stays open
+ * until the fusion goes through.
+ */
+export function FuseDialog({
+  group,
+  ...props
+}: Omit<CopyDialogProps, "ownershipId"> & { group: FusionGroupView }) {
   const { fuse } = useCopyActions();
   const from = FINISH_LABEL[group.finish];
   const to = FINISH_LABEL[group.next];

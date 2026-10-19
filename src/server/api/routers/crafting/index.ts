@@ -4,6 +4,7 @@
  * returns.
  */
 import { z } from "zod";
+import { MAX_WORKSHOP_COPIES } from "~/lib/cards/dust";
 import { clearVaultCachesFor } from "~/lib/vault/vault-cache";
 import {
   createTRPCRouter,
@@ -18,7 +19,9 @@ import { workshopCall } from "~/server/modules/cards/workshop/errors";
 import { fuseCopies } from "~/server/modules/cards/workshop/fusion";
 import { getPublicEconomyNumbers } from "~/server/modules/cards/workshop/numbers";
 
-const copies = z.object({ ownershipIds: z.array(z.string().min(1).max(64)).min(1).max(100) });
+const copies = z.object({
+  ownershipIds: z.array(z.string().min(1).max(64)).min(1).max(MAX_WORKSHOP_COPIES),
+});
 
 export const craftingRouter = createTRPCRouter({
   getNumbers: publicReadOnlyProcedure.query(({ ctx }) => getPublicEconomyNumbers(ctx.db)),

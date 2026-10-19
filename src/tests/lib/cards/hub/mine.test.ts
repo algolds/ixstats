@@ -6,6 +6,7 @@ import type { z } from "zod";
 import { loadCopyValues } from "~/lib/cards/copy-value";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { listMine, MineQuerySchema, selectMine, type MineEntry } from "~/lib/cards/hub/mine";
+import { pendingOffersNaming } from "~/lib/cards/trade/offered-copies";
 
 const IXNAY = { id: "default", slug: "ixnay", name: "Ixnay", emblemUrl: null, isSystem: false };
 const NS = {
@@ -33,6 +34,8 @@ function entry(
       cardId,
       acquiredAt: new Date(Date.UTC(2026, 9, seq)),
       isLocked: false,
+      inscription: null,
+      importDiscounted: false,
       ...copy,
       cards: {
         id: cardId,
@@ -96,6 +99,16 @@ describe("selectMine", () => {
       finish: "STANDARD",
       serialNumber: locked.row.serialNumber,
       level: 1,
+    });
+  });
+
+  it("carries what the bulk actions need on each row, and leaves offers to listMine", () => {
+    const page = selectMine([entry({}, { inscription: "gg", importDiscounted: true })], query());
+    expect(page.rows[0]).toMatchObject({
+      inscription: "gg",
+      importDiscounted: true,
+      isBound: false,
+      inOffer: false,
     });
   });
 
@@ -250,6 +263,38 @@ describe("listMine", () => {
       ["Alpha", 77],
       ["Beta", 12],
     ]);
+  });
+
+  it("marks the page's copies a pending trade offer names, from one read of the page alone", async () => {
+    const db = createMockPrisma();
+    const offered = entry({ title: "Alpha" });
+    const asked = entry({ title: "Beta" });
+    const free = entry({ title: "Gamma" });
+    const offPage = entry({ title: "Omega" });
+    db.cardOwnership.findMany.mockResolvedValue([offered.row, asked.row, free.row, offPage.row]);
+    db.tradeOffer.findMany.mockResolvedValue([
+      { initiatorCardIds: [offered.row.id], recipientCardIds: [] },
+      { initiatorCardIds: [], recipientCardIds: [asked.row.id, offPage.row.id] },
+    ]);
+    jest.mocked(loadCopyValues).mockResolvedValue([]);
+    const page = await listMine(db as never, "u1", query({ sort: "title", limit: 3 }));
+    expect(page.rows.map((r) => [r.face.title, r.inOffer, r.isLocked])).toEqual([
+      ["Alpha", true, false],
+      ["Beta", true, false],
+      ["Gamma", false, false],
+    ]);
+    expect(db.tradeOffer.findMany).toHaveBeenCalledTimes(1);
+    expect(db.tradeOffer.findMany.mock.calls[0]![0].where).toEqual(
+      pendingOffersNaming([offered.row.id, asked.row.id, free.row.id])
+    );
+  });
+
+  it("reads no offers for an empty page", async () => {
+    const db = createMockPrisma();
+    db.cardOwnership.findMany.mockResolvedValue([]);
+    jest.mocked(loadCopyValues).mockResolvedValue([]);
+    expect((await listMine(db as never, "u1", query())).rows).toEqual([]);
+    expect(db.tradeOffer.findMany).not.toHaveBeenCalled();
   });
 
   it("values a hidden (retired) copy at 0 but still lists it", async () => {

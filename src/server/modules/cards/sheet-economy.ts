@@ -10,6 +10,7 @@ import { loadCopyValues } from "~/lib/cards/copy-value";
 import { copyBlocker, dustYield } from "~/lib/cards/dust";
 import { getEconomyConfig } from "~/lib/cards/economy-config";
 import { nextFinish } from "~/lib/cards/finish";
+import { offeredCopyIds } from "~/lib/cards/trade/offered-copies";
 import { craftOfferFor, type CraftOffer } from "./workshop/craft";
 
 export interface CopyEconomy {
@@ -84,7 +85,9 @@ const COPY_SELECT = {
 
 /**
  * Values come from the one loader with its default, so a retired card's copies are worth 0 (Phase 3 Q5). A copy may be
- * signed once: never after a signature, even one staff cleared (`inscribedAt` stays), and never while it is locked.
+ * signed once: never after a signature, even one staff cleared (`inscribedAt` stays), and never while it is locked. A
+ * copy a pending trade offer names counts as locked for breaking down and fusing, as the workshop judges it
+ * (`judgedCopiesTx`); signing it is not blocked (an accept refuses a copy signed since the offer).
  */
 export async function getSheetEconomy(
   db: PrismaClient,
@@ -112,8 +115,13 @@ export async function getSheetEconomy(
     craftOfferFor(db, viewerId, cardId),
     signerNameOf(viewerId),
   ]);
-  const values = await loadCopyValues(db, { ownershipIds: rows.map((r) => r.id) });
+  const ids = rows.map((r) => r.id);
+  const [values, offered] = await Promise.all([
+    loadCopyValues(db, { ownershipIds: ids }),
+    offeredCopyIds(db, ids),
+  ]);
   const valueOf = new Map(values.map((v) => [v.ownershipId, v.value]));
+  const workshopLocked = (r: (typeof rows)[number]) => r.isLocked || offered.has(r.id);
 
   const copies = rows.map((r): CopyEconomy => {
     const workshop = {
@@ -122,7 +130,7 @@ export async function getSheetEconomy(
       finish: r.finish,
       importDiscounted: r.importDiscounted,
       inscription: r.inscription,
-      isLocked: r.isLocked,
+      isLocked: workshopLocked(r),
       isBound: card.isBound,
     };
     return {
@@ -139,7 +147,7 @@ export async function getSheetEconomy(
   const fusible = rows.map((r) => ({
     ownershipId: r.id,
     finish: r.finish,
-    isLocked: r.isLocked,
+    isLocked: workshopLocked(r),
     signed: r.inscription !== null,
   }));
 
