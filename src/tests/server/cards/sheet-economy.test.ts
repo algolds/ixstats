@@ -9,6 +9,7 @@ jest.mock("~/server/modules/cards/workshop/craft", () => ({ craftOfferFor: jest.
 
 import { loadCopyValues } from "~/lib/cards/copy-value";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
+import { pendingOffersNaming } from "~/lib/cards/trade/offered-copies";
 import { craftOfferFor, type CraftOffer } from "~/server/modules/cards/workshop/craft";
 import {
   fusionGroups,
@@ -38,10 +39,12 @@ const offer: CraftOffer = {
 
 function fakeDb(
   rows: object[],
-  card: object | null = { id: "c1", rarity: "RARE", isBound: false }
+  card: object | null = { id: "c1", rarity: "RARE", isBound: false },
+  offers: Array<{ initiatorCardIds: string[]; recipientCardIds: string[] }> = []
 ) {
   return {
     systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
+    tradeOffer: { findMany: jest.fn().mockResolvedValue(offers) },
     card: { findUnique: jest.fn().mockResolvedValue(card) },
     cardOwnership: { findMany: jest.fn().mockResolvedValue(rows) },
     cardWatchlist: { findUnique: jest.fn().mockResolvedValue({ id: "w" }) },
@@ -200,6 +203,27 @@ describe("getSheetEconomy", () => {
     expect(economy.fusionGroups).toEqual([
       { finish: "STANDARD", next: "FOIL", ownershipIds: ["cleared", "b", "c"] },
     ]);
+  });
+
+  it("treats a copy a pending trade offer names as locked: no break down, and fusion takes the next ready copies", async () => {
+    const db = fakeDb([copyRow("asked"), copyRow("a"), copyRow("b"), copyRow("c")], undefined, [
+      { initiatorCardIds: ["theirs"], recipientCardIds: ["asked"] },
+    ]);
+    const economy = await getSheetEconomy(db as never, "u1", "c1", named("@ixnay"));
+    expect(economy.copies.map((c) => [c.ownershipId, c.breakdownBlocker, c.canSign])).toEqual([
+      // Signing is never blocked by an offer (Task 17: an accept refuses a copy signed since), only by a lock.
+      ["asked", "A copy that is listed or in a trade can't be broken down.", true],
+      ["a", null, true],
+      ["b", null, true],
+      ["c", null, true],
+    ]);
+    expect(economy.fusionGroups).toEqual([
+      { finish: "STANDARD", next: "FOIL", ownershipIds: ["a", "b", "c"] },
+    ]);
+    expect(db.tradeOffer.findMany).toHaveBeenCalledTimes(1);
+    expect(db.tradeOffer.findMany.mock.calls[0]![0].where).toEqual(
+      pendingOffersNaming(["asked", "a", "b", "c"])
+    );
   });
 
   it("is NOT_FOUND for an unknown card", async () => {

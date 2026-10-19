@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import type { WorkshopCopy } from "~/lib/cards/dust";
 import { lockCardSerialsTx, serialLockOrder } from "~/lib/cards/serial-number";
+import { pendingOffersNaming } from "~/lib/cards/trade/offered-copies";
 
 /** The columns the workshop judges a copy by; the signer's id and frozen name are never read. */
 export const WORKSHOP_COPY_SELECT = {
@@ -53,13 +54,7 @@ export async function judgedCopiesTx(
   rows: WorkshopRow[]
 ): Promise<WorkshopCopy[]> {
   const offered = await tx.tradeOffer.count({
-    where: {
-      status: "PENDING",
-      OR: rows.flatMap(({ id }) => [
-        { initiatorCardIds: { array_contains: [id] } },
-        { recipientCardIds: { array_contains: [id] } },
-      ]),
-    },
+    where: pendingOffersNaming(rows.map(({ id }) => id)),
   });
   return rows.map((row) => ({
     cardId: row.cardId,

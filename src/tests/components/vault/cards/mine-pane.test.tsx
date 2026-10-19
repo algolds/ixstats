@@ -1,11 +1,14 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { keepPreviousData } from "@tanstack/react-query";
 
 jest.mock("~/trpc/react", () => ({
   api: { cards: { listMine: { useInfiniteQuery: jest.fn() } } },
 }));
 jest.mock("~/hooks/useDebounce", () => ({ useDebounce: <T,>(value: T) => value }));
+jest.mock("~/hooks/cards/useCopyActions", () => ({ useCopyActions: jest.fn() }));
+jest.mock("~/hooks/cards/useSheetEconomy", () => ({ useEconomyNumbers: jest.fn() }));
+jest.mock("~/hooks/cards/useWorkshop", () => ({ useDust: jest.fn(() => ({ data: [] })) }));
 jest.mock("~/components/cards/showcase/AddToShowcaseDialog", () => ({
   AddToShowcaseDialog: ({
     open,
@@ -51,6 +54,9 @@ jest.mock("next/link", () => ({
 }));
 
 import { api } from "~/trpc/react";
+import { useCopyActions } from "~/hooks/cards/useCopyActions";
+import { useEconomyNumbers } from "~/hooks/cards/useSheetEconomy";
+import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import { MinePane } from "~/components/vault/cards/MinePane";
 import type { MinePage, MineRow } from "~/lib/cards/hub/mine";
 
@@ -74,6 +80,9 @@ const row = (n: number, value = 100, copies = 1, isRetired = false): MineRow => 
   acquiredAt: new Date("2026-10-01T00:00:00Z"),
   isLocked: false,
   isBound: false,
+  inscription: null,
+  importDiscounted: false,
+  inOffer: false,
 });
 const listMine = () => jest.mocked(api.cards.listMine.useInfiniteQuery);
 interface QueryState {
@@ -110,7 +119,15 @@ const lastInput = () => listMine().mock.calls.at(-1)![0];
 const face = (n: number) =>
   screen.getByRole("button", { name: `Card ${n}, Rare, Standard, Ixnay` });
 
-beforeEach(() => listMine().mockReset());
+const breakDown = { mutate: jest.fn(), isPending: false };
+beforeEach(() => {
+  listMine().mockReset();
+  breakDown.mutate.mockReset();
+  jest.mocked(useCopyActions).mockReturnValue({ breakDown } as never);
+  jest
+    .mocked(useEconomyNumbers)
+    .mockReturnValue({ data: { economy: CARD_ECONOMY_DEFAULTS, feeRatePct: 10 } } as never);
+});
 
 describe("MinePane", () => {
   it("shows the player's copies as faces that open the sheet", () => {
@@ -148,6 +165,48 @@ describe("MinePane", () => {
     expect(screen.getByRole("group", { name: "Selected cards" })).toHaveTextContent("2 selected");
     fireEvent.click(screen.getByRole("button", { name: "Add to showcase" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("Adding o1,o2");
+  });
+
+  it("hands the bar the picked copies, a copy in a pending offer counted as locked", () => {
+    listMine().mockReturnValue(page([row(1), row(2), { ...row(3), inOffer: true }]) as never);
+    render(<MinePane onOpenCard={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    fireEvent.click(face(1));
+    fireEvent.click(face(2));
+    const bar = screen.getByRole("group", { name: "Selected cards" });
+    expect(bar).toHaveTextContent("2 selected");
+    fireEvent.click(screen.getByRole("button", { name: "Break down 2" }));
+    expect(screen.getByText("Break down 2 copies for 100 dust?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Keep them" }));
+    fireEvent.click(face(3));
+    expect(bar).toHaveTextContent("3 selected");
+    expect(screen.getByRole("button", { name: "Break down 3" })).toBeDisabled();
+    expect(
+      screen.getByText("A copy that is listed or in a trade can't be broken down.")
+    ).toBeInTheDocument();
+  });
+
+  it("gives focus to Select once a bulk action ends select mode", async () => {
+    breakDown.mutate.mockImplementation((_input: object, done: { onSuccess?: () => void }) =>
+      done.onSuccess?.()
+    );
+    listMine().mockReturnValue(page([row(1), row(2)]) as never);
+    render(<MinePane onOpenCard={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    fireEvent.click(face(1));
+    fireEvent.click(screen.getByRole("button", { name: "Break down 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Break down" }));
+    expect(breakDown.mutate).toHaveBeenCalledWith({ ownershipIds: ["o1"] }, expect.anything());
+    expect(screen.queryByRole("group", { name: "Selected cards" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
+  });
+
+  it("shows the player's dust first among the bar's controls", () => {
+    listMine().mockReturnValue(page([row(1)]) as never);
+    render(<MinePane onOpenCard={jest.fn()} />);
+    const dust = screen.getByRole("button", { name: "Dust: 0" });
+    const view = screen.getByRole("tab", { name: "Grid" });
+    expect(dust.compareDocumentPosition(view) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("leaves select mode once the copies are added", () => {

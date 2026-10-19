@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
 import { List, MultiplePages, ViewGrid } from "iconoir-react";
@@ -19,7 +19,8 @@ import { CARD_HUB_PATHS, STORE_PATH } from "~/lib/cards/hub-routes";
 import { cn } from "~/lib/utils/cn";
 import { CardFilterBar, type FilterDimension } from "./CardFilterBar";
 import { CardGrid } from "./CardGrid";
-import { MineBulkBar } from "./MineBulkBar";
+import { DustBalances } from "./DustBalances";
+import { MineBulkBar, selectedCopyOf } from "./MineBulkBar";
 import { MineList } from "./MineList";
 import { MoreCards } from "./MoreCards";
 
@@ -121,6 +122,18 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
   const totalCopies = first?.totalCopies ?? 0;
   const picks = useMinePicks(listed);
   const selected = picks.selected;
+  const rowById = useMemo(() => new Map(rows.map((row) => [copyIdOf(row), row])), [rows]);
+  // Picks are already limited to the listed copies.
+  const selectedCopies = useMemo(
+    () =>
+      picks.picked.flatMap((id) => {
+        const row = rowById.get(id);
+        const copy = row && selectedCopyOf(row);
+        return copy ? [copy] : [];
+      }),
+    [picks.picked, rowById]
+  );
+  const selectButton = useRef<HTMLButtonElement>(null);
   // Select mode picks from the grid, whichever view was on.
   const shownView: MineView = selected ? "grid" : view;
 
@@ -142,6 +155,7 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
         onSortChange={setSort}
         trailing={
           <>
+            <DustBalances />
             <SegmentedControl
               asTabs
               size="sm"
@@ -153,6 +167,7 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
               options={VIEW_OPTIONS}
             />
             <Button
+              ref={selectButton}
               variant="secondary"
               disabled={totalCopies === 0}
               onClick={selected ? picks.stop : picks.start}
@@ -166,9 +181,10 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
         // First in the DOM, so the keyboard reaches it before the cards; drawn last, held above the tab bar.
         <MineBulkBar
           className="order-last"
-          count={selected.size}
+          copies={selectedCopies}
           onAddToShowcase={() => setShowcasing(true)}
           onDone={picks.stop}
+          focusAfter={selectButton}
         />
       )}
       <div

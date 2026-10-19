@@ -3,6 +3,9 @@
 /** The highest fixed listing price, in IxC. */
 export const MAX_LISTING_PRICE = 1_000_000;
 
+/** The most copies one bulk listing takes (Mine's select mode). */
+export const MAX_BULK_LISTINGS = 20;
+
 export interface FeeRule {
   /** The admin house rake, in percent (clamped to 0..50). */
   ratePct: number;

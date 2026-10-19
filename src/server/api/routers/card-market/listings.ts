@@ -2,7 +2,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { CardFinish, CardRarity, CardType } from "~/lib/cards/enums";
-import { MAX_LISTING_PRICE } from "~/lib/cards/market/fees";
+import { MAX_BULK_LISTINGS, MAX_LISTING_PRICE } from "~/lib/cards/market/fees";
 import { clearVaultCachesFor } from "~/lib/vault/vault-cache";
 import {
   createTRPCRouter,
@@ -21,7 +21,6 @@ import {
   listMyListings,
 } from "~/server/modules/cards/market/listings";
 
-const MAX_BULK_LISTINGS = 20;
 const price = z.number().int().min(1).max(MAX_LISTING_PRICE);
 const ownershipId = z.string().min(1).max(64);
 const listingId = z.object({ listingId: z.string().min(1).max(64) });
