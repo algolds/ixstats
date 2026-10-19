@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -26,6 +26,8 @@ interface AddToShowcaseDialogProps {
   ownershipIds: string[];
   /** Called once the copies are in a showcase, never on a dismissal: Mine then leaves select mode. */
   onAdded?: () => void;
+  /** Where focus goes once the copies are in, when the opener leaves with them (Mine's bulk bar). */
+  focusAfterAdd?: RefObject<HTMLElement | null>;
 }
 
 interface ShowcaseChoice {
@@ -104,6 +106,7 @@ export function AddToShowcaseDialog({
   onOpenChange,
   ownershipIds,
   onAdded,
+  focusAfterAdd,
 }: AddToShowcaseDialogProps) {
   const [name, setName] = useState("");
   // While the dialog animates out, the caller may already have let go of the cards: keep saying what it was adding.
@@ -113,6 +116,7 @@ export function AddToShowcaseDialog({
   const target = useRef({ id: "", name: "" });
   // No Radix trigger opens this dialog, so it gives focus back to what had it.
   const opener = useRef<HTMLElement | null>(null);
+  const afterAdd = useRef<HTMLElement | null>(null);
   const utils = api.useUtils();
   const refresh = useShowcaseRefresh();
   const showcases = api.cards.listMyShowcases.useQuery(undefined, { enabled: open });
@@ -125,6 +129,7 @@ export function AddToShowcaseDialog({
     );
     refresh(id);
     setName("");
+    afterAdd.current = focusAfterAdd?.current ?? null;
     onOpenChange(false);
     onAdded?.();
   };
@@ -166,8 +171,9 @@ export function AddToShowcaseDialog({
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
-          refocus(opener.current);
+          refocus(afterAdd.current ?? opener.current);
           opener.current = null;
+          afterAdd.current = null;
         }}
       >
         <DialogHeader>

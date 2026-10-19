@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import type { CardFinish } from "@prisma/client";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -16,12 +17,15 @@ import type { DialogFocus } from "~/components/cards/sheet/economy/dialog-focus"
 import { parsePrice } from "~/components/cards/sheet/economy/ListCopyDialog";
 import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { useEconomyNumbers, type EconomyNumbers } from "~/hooks/cards/useSheetEconomy";
-import { listingRefund, MAX_LISTING_PRICE } from "~/lib/cards/market/fees";
+import { FINISH_LABEL } from "~/lib/cards/face/labels";
+import { listingFeeNote, MAX_LISTING_PRICE } from "~/lib/cards/market/fees";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 
 export interface BulkListCopy {
   ownershipId: string;
   title: string;
+  finish: CardFinish;
+  serialNumber: number;
   value: number;
 }
 
@@ -47,22 +51,16 @@ export const copiesLabel = (n: number) => `${n} ${n === 1 ? "copy" : "copies"}`;
 const startingPrice = (value: number) =>
   String(Math.min(MAX_LISTING_PRICE, Math.max(1, Math.round(value))));
 
+/** The listing rule as the sheet's List and the auction form say it, then the total for several copies. */
 function FeeNotes({ count, numbers }: { count: number; numbers: EconomyNumbers }) {
   const { listingFee, listingRefundPct, listingDays } = numbers.economy;
-  const refund = listingRefund(listingFee, listingRefundPct);
   const total = listingFee * count;
   return (
     <div className="text-footnote text-label-secondary space-y-1">
-      <p>
-        {total > 0
-          ? `Listing ${copiesLabel(count)} costs ${total.toLocaleString()} IxC.`
-          : "Listing is free."}
-      </p>
-      <p>
-        {refund > 0
-          ? `Each listing stays up for ${listingDays} days, and ${refund} IxC of its fee comes back if the copy does not sell.`
-          : `Each listing stays up for ${listingDays} days.`}
-      </p>
+      <p>{`${listingFeeNote(listingFee, listingRefundPct)} Each listing stays up for ${listingDays} days.`}</p>
+      {count > 1 && total > 0 && (
+        <p>{`Listing ${copiesLabel(count)} costs ${total.toLocaleString()} IxC.`}</p>
+      )}
     </div>
   );
 }
@@ -165,6 +163,8 @@ function PriceRow({ id, hintId, copy, raw, error, onChange }: PriceRowProps) {
         <Label htmlFor={id} className="min-w-0 truncate">
           <span className="sr-only">Price for </span>
           {copy.title}
+          {/* Copies of one card are told apart by finish and serial. */}
+          <span className="text-label-secondary">{` ${FINISH_LABEL[copy.finish]} #${copy.serialNumber}`}</span>
           <span className="sr-only"> in IxC</span>
         </Label>
         <Input

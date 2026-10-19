@@ -16,10 +16,14 @@ import { BulkListDialog } from "~/components/vault/cards/BulkListDialog";
 type Listed = { ownershipId: string; listingId: string | null; error: string | null };
 type Done = { onSuccess?: (results: Listed[]) => void };
 
-const copies = [
-  { ownershipId: "a", title: "Aurelia", value: 120 },
-  { ownershipId: "b", title: "Burgundie", value: 80 },
-];
+const copy = (ownershipId: string, title: string, value: number, serialNumber = 1) => ({
+  ownershipId,
+  title,
+  finish: "STANDARD" as const,
+  serialNumber,
+  value,
+});
+const copies = [copy("a", "Aurelia", 120, 3), copy("b", "Burgundie", 80, 7)];
 let mutate: jest.Mock;
 
 beforeEach(() => {
@@ -37,15 +41,16 @@ const dialog = (onDone = jest.fn(), list = copies) =>
 describe("BulkListDialog", () => {
   it("lists each selected copy at its own price", () => {
     dialog();
-    fireEvent.change(screen.getByLabelText("Price for Burgundie in IxC"), {
+    fireEvent.change(screen.getByLabelText("Price for Burgundie Standard #7 in IxC"), {
       target: { value: "95" },
     });
-    expect(screen.getByText("Listing 2 copies costs 10 IxC.")).toBeTruthy();
+    // The listing rule in the words the sheet's List and the auction form use, then the total.
     expect(
       screen.getByText(
-        "Each listing stays up for 14 days, and 2.5 IxC of its fee comes back if the copy does not sell."
+        "Listing costs 5 IxC, and 2.5 IxC comes back if the card does not sell. Each listing stays up for 14 days."
       )
     ).toBeTruthy();
+    expect(screen.getByText("Listing 2 copies costs 10 IxC.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "List 2 copies" }));
     expect(mutate).toHaveBeenCalledWith(
       {
@@ -61,21 +66,30 @@ describe("BulkListDialog", () => {
 
   it("starts each price at the copy's value, whole and within the market's range", () => {
     dialog(jest.fn(), [
-      { ownershipId: "a", title: "Aurelia", value: 0 },
-      { ownershipId: "b", title: "Burgundie", value: 80.6 },
-      { ownershipId: "c", title: "Caphiria", value: 5_000_000 },
+      copy("a", "Aurelia", 0),
+      copy("b", "Burgundie", 80.6),
+      copy("c", "Caphiria", 5_000_000),
     ]);
-    expect(screen.getByLabelText("Price for Aurelia in IxC")).toHaveValue("1");
-    expect(screen.getByLabelText("Price for Burgundie in IxC")).toHaveValue("81");
-    expect(screen.getByLabelText("Price for Caphiria in IxC")).toHaveValue("1000000");
+    expect(screen.getByLabelText("Price for Aurelia Standard #1 in IxC")).toHaveValue("1");
+    expect(screen.getByLabelText("Price for Burgundie Standard #1 in IxC")).toHaveValue("81");
+    expect(screen.getByLabelText("Price for Caphiria Standard #1 in IxC")).toHaveValue("1000000");
+  });
+
+  it("tells copies of one card apart by finish and serial", () => {
+    dialog(jest.fn(), [
+      copy("a", "Aurelia", 10, 3),
+      { ...copy("b", "Aurelia", 10, 12), finish: "FOIL" as const },
+    ]);
+    expect(screen.getByLabelText("Price for Aurelia Standard #3 in IxC")).toBeTruthy();
+    expect(screen.getByLabelText("Price for Aurelia Foil #12 in IxC")).toBeTruthy();
   });
 
   it("holds the listing while a price is not a whole IxC in range, and marks it", () => {
     dialog();
-    const price = screen.getByLabelText("Price for Aurelia in IxC");
+    const price = screen.getByLabelText("Price for Aurelia Standard #3 in IxC");
     fireEvent.change(price, { target: { value: "1.5" } });
     expect(price).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText("Price for Burgundie in IxC")).toHaveAttribute(
+    expect(screen.getByLabelText("Price for Burgundie Standard #7 in IxC")).toHaveAttribute(
       "aria-invalid",
       "false"
     );
@@ -95,8 +109,8 @@ describe("BulkListDialog", () => {
       data: { economy: { ...CARD_ECONOMY_DEFAULTS, listingFee: 0 }, feeRatePct: 10 },
     } as never);
     dialog();
-    expect(screen.getByText("Listing is free.")).toBeTruthy();
-    expect(screen.getByText("Each listing stays up for 14 days.")).toBeTruthy();
+    expect(screen.getByText("Listing is free. Each listing stays up for 14 days.")).toBeTruthy();
+    expect(screen.queryByText(/^Listing 2 copies/)).toBeNull();
   });
 
   it("is done once every copy is listed", () => {
@@ -126,11 +140,13 @@ describe("BulkListDialog", () => {
     expect(onDone).not.toHaveBeenCalled();
     expect(vaultNotify.success).toHaveBeenCalledWith("1 copy is on the market.", "Listed");
     expect(screen.getByRole("alert")).toHaveTextContent("1 of 2 copies could not be listed.");
-    expect(screen.queryByLabelText("Price for Aurelia in IxC")).toBeNull();
-    const price = screen.getByLabelText("Price for Burgundie in IxC");
+    expect(screen.queryByLabelText("Price for Aurelia Standard #3 in IxC")).toBeNull();
+    const price = screen.getByLabelText("Price for Burgundie Standard #7 in IxC");
     const why = screen.getByText("You need 5 IxC to list this copy.");
     expect(price.getAttribute("aria-describedby")).toContain(why.id);
-    expect(screen.getByText("Listing 1 copy costs 5 IxC.")).toBeTruthy();
+    // One copy left: the listing rule says its cost, with no total beside it.
+    expect(screen.getByText(/^Listing costs 5 IxC/)).toBeTruthy();
+    expect(screen.queryByText(/^Listing 1 copy/)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "List 1 copy" }));
     expect(mutate).toHaveBeenLastCalledWith(
       { items: [{ ownershipId: "b", price: 80 }], isFeatured: false },

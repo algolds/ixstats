@@ -21,6 +21,7 @@ const pick = (id: string, over: Partial<SelectedCopy> = {}): SelectedCopy => ({
   ownershipId: id,
   cardId: "c1",
   title: "Aurelia",
+  serialNumber: 1,
   value: 100,
   rarity: "RARE",
   finish: "STANDARD",
@@ -46,6 +47,27 @@ beforeEach(() => {
     .mocked(useEconomyNumbers)
     .mockReturnValue({ data: { economy: CARD_ECONOMY_DEFAULTS, feeRatePct: 10 } } as never);
 });
+
+/** A pane stand-in: its Select button is where focus goes once the bar leaves. */
+function FocusHost() {
+  const after = useRef<HTMLButtonElement>(null);
+  const [selecting, setSelecting] = useState(true);
+  return (
+    <>
+      <button ref={after} type="button">
+        Select
+      </button>
+      {selecting && (
+        <MineBulkBar
+          copies={[pick("a")]}
+          onAddToShowcase={jest.fn()}
+          onDone={() => setSelecting(false)}
+          focusAfter={after}
+        />
+      )}
+    </>
+  );
+}
 
 const bar = (copies: SelectedCopy[], onDone = jest.fn()) =>
   render(<MineBulkBar copies={copies} onAddToShowcase={jest.fn()} onDone={onDone} />);
@@ -142,7 +164,7 @@ describe("MineBulkBar", () => {
     bar([pick("a", { value: 0 })]);
     expect(screen.getByRole("button", { name: "Break down 1" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "List 1" }));
-    expect(screen.getByLabelText("Price for Aurelia in IxC")).toHaveValue("1");
+    expect(screen.getByLabelText("Price for Aurelia Standard #1 in IxC")).toHaveValue("1");
   });
 
   it("lists at most 20 and breaks down at most 100 copies at a time, and says so", () => {
@@ -180,30 +202,18 @@ describe("MineBulkBar", () => {
 
   it("ends select mode once a burn goes through, and gives focus to the place the pane names", async () => {
     actions.breakDown.mutate.mockImplementation((_input: object, done: Done) => done.onSuccess?.());
-    function Pane() {
-      const after = useRef<HTMLButtonElement>(null);
-      const [selecting, setSelecting] = useState(true);
-      return (
-        <>
-          <button ref={after} type="button">
-            Select
-          </button>
-          {selecting && (
-            <MineBulkBar
-              copies={[pick("a")]}
-              onAddToShowcase={jest.fn()}
-              onDone={() => setSelecting(false)}
-              focusAfter={after}
-            />
-          )}
-        </>
-      );
-    }
-    render(<Pane />);
+    render(<FocusHost />);
     fireEvent.click(screen.getByRole("button", { name: "Break down 1" }));
     fireEvent.click(screen.getByRole("button", { name: "Break down" }));
     expect(screen.queryByRole("group", { name: "Selected cards" })).toBeNull();
     await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
+  });
+
+  it("gives focus to the place the pane names on Done, as the bar leaves", () => {
+    render(<FocusHost />);
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("group", { name: "Selected cards" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Select" })).toHaveFocus();
   });
 
   it("ends select mode once a fusion goes through", () => {
@@ -247,6 +257,7 @@ describe("selectedCopyOf", () => {
       ownershipId: "o1",
       cardId: "c1",
       title: "Aurelia",
+      serialNumber: 4,
       value: 80,
       rarity: "RARE",
       finish: "FOIL",

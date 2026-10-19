@@ -15,11 +15,13 @@ jest.mock("~/components/cards/showcase/AddToShowcaseDialog", () => ({
     onOpenChange,
     ownershipIds,
     onAdded,
+    focusAfterAdd,
   }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     ownershipIds: string[];
     onAdded?: () => void;
+    focusAfterAdd?: React.RefObject<HTMLElement | null>;
   }) =>
     open ? (
       <div role="dialog">
@@ -33,6 +35,8 @@ jest.mock("~/components/cards/showcase/AddToShowcaseDialog", () => ({
           onClick={() => {
             onOpenChange(false);
             onAdded?.();
+            // The real dialog gives focus there once it has closed.
+            focusAfterAdd?.current?.focus();
           }}
         >
           Added
@@ -217,7 +221,7 @@ describe("MinePane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add to showcase" }));
     fireEvent.click(screen.getByRole("button", { name: "Added" }));
     expect(screen.queryByRole("group", { name: "Selected cards" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Select" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Select" })).toHaveFocus();
     expect(face(1)).not.toHaveAttribute("aria-pressed");
   });
 
@@ -314,6 +318,14 @@ describe("MinePane", () => {
       expect(onOpenCard).toHaveBeenCalledWith("c1");
     }
   );
+
+  it("gives focus to Select on Done, not the page body, as the bar leaves", () => {
+    listMine().mockReturnValue(page([row(1)]) as never);
+    render(<MinePane onOpenCard={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(screen.getByRole("button", { name: "Select" })).toHaveFocus();
+  });
 
   it("starts select mode afresh each time", () => {
     listMine().mockReturnValue(page([row(1)]) as never);

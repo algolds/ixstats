@@ -218,6 +218,7 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
         onOpenChange={setShowcasing}
         ownershipIds={picks.picked}
         onAdded={picks.stop}
+        focusAfterAdd={selectButton}
       />
     </div>
   );

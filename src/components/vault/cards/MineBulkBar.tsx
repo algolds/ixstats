@@ -16,6 +16,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 import { useDialogFocus, type DialogFocus } from "~/components/cards/sheet/economy/dialog-focus";
+import { FuseDialog } from "~/components/cards/sheet/economy/FuseDialog";
 import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { useEconomyNumbers } from "~/hooks/cards/useSheetEconomy";
 import {
@@ -26,7 +27,6 @@ import {
   type WorkshopCopy,
 } from "~/lib/cards/dust";
 import type { CardEconomyConfig } from "~/lib/cards/economy-config";
-import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import { nextFinish } from "~/lib/cards/finish";
 import type { MineRow } from "~/lib/cards/hub/mine";
 import { MAX_BULK_LISTINGS } from "~/lib/cards/market/fees";
@@ -36,6 +36,8 @@ import { BulkListDialog, copiesLabel } from "./BulkListDialog";
 export interface SelectedCopy extends WorkshopCopy {
   ownershipId: string;
   title: string;
+  /** Tells copies of one card apart in the bulk list. */
+  serialNumber: number;
   value: number;
 }
 
@@ -50,6 +52,7 @@ export function selectedCopyOf(row: MineRow): SelectedCopy | null {
     ownershipId: copy.ownershipId,
     cardId: row.face.cardId,
     title: row.face.title,
+    serialNumber: copy.serialNumber,
     value: row.value,
     rarity: row.face.rarity,
     finish: copy.finish,
@@ -148,7 +151,15 @@ export function MineBulkBar({
           focusAfter={focusAfter}
         />
       )}
-      <Button size="sm" variant="ghost" onClick={onDone}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => {
+          // The bar leaves with select mode; focus goes where the pane says, not to the page body.
+          focusAfter?.current?.focus();
+          onDone();
+        }}
+      >
         Done
       </Button>
       {/* Always present, so a reason that appears is announced; while empty it cancels its row's gap. */}
@@ -221,27 +232,33 @@ function WorkshopActions({ copies, plan, reasons, onDone, focusAfter }: Workshop
         Break down {count}
       </Button>
       {open === "breakdown" && <BreakDownConfirm {...dialog} copies={copies} dust={plan.dust} />}
-      {open === "fuse" && plan.fuse && <FuseConfirm {...dialog} copies={copies} fuse={plan.fuse} />}
+      {open === "fuse" && plan.fuse && (
+        <FuseDialog
+          {...dialog}
+          open
+          cardTitle={plan.fuse.title}
+          group={{
+            finish: plan.fuse.from,
+            next: plan.fuse.to,
+            ownershipIds: copies.map((c) => c.ownershipId),
+          }}
+        />
+      )}
       {open === "list" && <BulkListDialog {...dialog} open copies={copies} />}
     </>
   );
 }
 
-interface ConfirmProps {
+interface BreakDownConfirmProps {
   copies: SelectedCopy[];
+  dust: number;
   focus: DialogFocus;
   onOpenChange: (open: boolean) => void;
   onDone: () => void;
 }
 
 /** Confirm a bulk break-down with the dust it gives. It stays open until the break-down goes through. */
-function BreakDownConfirm({
-  copies,
-  dust,
-  focus,
-  onOpenChange,
-  onDone,
-}: ConfirmProps & { dust: number }) {
+function BreakDownConfirm({ copies, dust, focus, onOpenChange, onDone }: BreakDownConfirmProps) {
   const { breakDown } = useCopyActions();
   return (
     <AlertDialog open onOpenChange={onOpenChange}>
@@ -269,47 +286,6 @@ function BreakDownConfirm({
             }}
           >
             Break down
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-/** Confirm fusing the selection into one copy at the next finish. It stays open until the fusion goes through. */
-function FuseConfirm({
-  copies,
-  fuse: plan,
-  focus,
-  onOpenChange,
-  onDone,
-}: ConfirmProps & { fuse: FusePlan }) {
-  const { fuse } = useCopyActions();
-  const to = FINISH_LABEL[plan.to];
-  return (
-    <AlertDialog open onOpenChange={onOpenChange}>
-      <AlertDialogContent {...focus}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {`Fuse ${copies.length} ${FINISH_LABEL[plan.from]} copies into one ${to}?`}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {`You keep the copy with the lowest serial number, now ${to}. The other copies of ${plan.title} are gone.`}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Not now</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={fuse.isPending}
-            onClick={(event) => {
-              event.preventDefault();
-              fuse.mutate(
-                { ownershipIds: copies.map((c) => c.ownershipId) },
-                { onSuccess: onDone }
-              );
-            }}
-          >
-            Fuse
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
