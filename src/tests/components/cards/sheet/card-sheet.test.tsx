@@ -56,6 +56,14 @@ jest.mock("~/components/cards/reveal/reveal-feedback", () => ({ playRevealFeedba
 jest.mock("~/hooks/cards/useSheetEconomy", () => ({
   useSheetEconomy: jest.fn(() => ({ data: undefined })),
 }));
+jest.mock("~/hooks/cards/useMarketActions", () => {
+  const mutation = () => ({ mutate: jest.fn(), isPending: false });
+  const actions = { wish: mutation(), unwish: mutation(), setMute: mutation(), buy: mutation() };
+  return {
+    useMarketActions: jest.fn(() => actions),
+    useCardMute: jest.fn(() => ({ data: false })),
+  };
+});
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({
@@ -75,6 +83,8 @@ import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
 import { useCardSheet } from "~/hooks/useCardSheet";
+import { useCardMute } from "~/hooks/cards/useMarketActions";
+import { useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
 import type { CardSheetData, SheetCopy, SheetListing, SheetSignIn } from "~/lib/cards/hub/sheet";
 
 const realm = { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false };
@@ -127,13 +137,18 @@ const sheet = (overrides: Partial<CardSheetData> = {}): CardSheetData => ({
   ...overrides,
 });
 const listing = (overrides: Partial<SheetListing> = {}): SheetListing => ({
-  auctionId: "a1",
-  currentBid: 900,
+  kind: "auction",
+  id: "a1",
+  ownershipId: "o5",
+  price: 900,
   buyoutPrice: null,
-  endTime: new Date(Date.now() + 3 * 3_600_000 + 12 * 60_000 + 30_000),
+  endsAt: new Date(Date.now() + 3 * 3_600_000 + 12 * 60_000 + 30_000),
   bidCount: 2,
   sellerName: "@ann",
   isMine: false,
+  finish: "STANDARD",
+  serialNumber: 3,
+  inscription: null,
   ...overrides,
 });
 
@@ -464,6 +479,38 @@ describe("CardSheet", () => {
   });
 });
 
+describe("CardSheet header", () => {
+  afterEach(() =>
+    jest.mocked(useSheetEconomy).mockImplementation(() => ({ data: undefined }) as never)
+  );
+
+  it("gives a signed-in player the wishlist and the mute beside the link", () => {
+    jest.mocked(useSheetEconomy).mockReturnValue({
+      data: { isBound: false, wishlisted: false, craft: null, copies: [], fusionGroups: [] },
+    } as never);
+    showSheet();
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    const header = screen.getByRole("heading", { level: 2, name: "Caphiria" }).closest("header")!;
+    expect(within(header).getByRole("button", { name: "Copy link" })).toBeInTheDocument();
+    expect(within(header).getByRole("button", { name: "Add to wishlist" })).toBeInTheDocument();
+    expect(
+      within(header).getByRole("button", { name: "Mute notices about this card" })
+    ).toBeInTheDocument();
+    expect(useCardMute).toHaveBeenCalledWith("c1");
+  });
+
+  it("gives a visitor neither, and asks nothing about them", () => {
+    showSheet(sheet({ signedIn: false, copies: [], face: { ...face, copy: null } }));
+    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /wishlist/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /notices about this card/ })).toBeNull();
+    expect(useCardMute).not.toHaveBeenCalled();
+    expect(useSheetEconomy).not.toHaveBeenCalledWith("c1");
+    expect(useSheetEconomy).toHaveBeenCalledWith("c1", false);
+  });
+});
+
 describe("CardSheet market", () => {
   it("lists live listings by seller, time left and bid, and links to bid", () => {
     showSheet(
@@ -471,9 +518,9 @@ describe("CardSheet market", () => {
         market: {
           listings: [
             listing(),
-            listing({ auctionId: "a2", sellerName: null, isMine: true, currentBid: 1500 }),
+            listing({ id: "a2", sellerName: null, isMine: true, price: 1500 }),
             // The server names a seller with no handle by their nation, and the sheet adds nothing.
-            listing({ auctionId: "a3", sellerName: "Caphiria" }),
+            listing({ id: "a3", sellerName: "Caphiria" }),
           ],
           recentSales: [{ price: 800, finish: "STANDARD", at: new Date("2026-10-10T00:00:00Z") }],
           wantedBy: 0,
@@ -484,7 +531,7 @@ describe("CardSheet market", () => {
     const listings = within(screen.getByRole("list", { name: "Live listings" })).getAllByRole(
       "listitem"
     );
-    expect(listings[0]).toHaveTextContent("@ann · 3h 12m left");
+    expect(listings[0]).toHaveTextContent("@ann · Standard #3 · 3h 12m left");
     expect(listings[0]).toHaveTextContent("900");
     expect(listings[1]).toHaveTextContent("Your listing");
     expect(listings[1]).toHaveTextContent("1,500");
@@ -521,7 +568,7 @@ describe("CardSheet market", () => {
     showSheet(
       sheet({
         market: {
-          listings: [listing({ endTime: new Date(Date.now() - 60_000) })],
+          listings: [listing({ endsAt: new Date(Date.now() - 60_000) })],
           recentSales: [],
           wantedBy: 0,
         },
@@ -529,7 +576,7 @@ describe("CardSheet market", () => {
     );
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
     const list = screen.getByRole("list", { name: "Live listings" });
-    expect(list).toHaveTextContent("@ann · Ended");
+    expect(list).toHaveTextContent("@ann · Standard #3 · Ended");
     expect(list).not.toHaveTextContent("left");
   });
 });

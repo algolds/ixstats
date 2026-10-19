@@ -27,6 +27,8 @@ import { AddToShowcaseDialog } from "~/components/cards/showcase/AddToShowcaseDi
 import { CardSheetCopies } from "./CardSheetCopies";
 import { CardSheetMarket } from "./CardSheetMarket";
 import { CardSheetAbout } from "./CardSheetAbout";
+import { MuteToggle } from "./economy/MuteToggle";
+import { WishlistToggle } from "./economy/WishlistToggle";
 
 interface CardSheetProps {
   cardId: string;
@@ -206,10 +208,19 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
               .filter(Boolean)
               .join(" · ")}
           </SheetDescription>
-          <Button variant="ghost" size="sm" className="px-0" onClick={() => void copyLink()}>
-            <LinkIcon />
-            Copy link
-          </Button>
+          {/* The wishlist and the mute are the signed-in player's own */}
+          <div className="flex flex-wrap items-center gap-1">
+            <Button variant="ghost" size="sm" className="px-0" onClick={() => void copyLink()}>
+              <LinkIcon />
+              Copy link
+            </Button>
+            {sheet.signedIn && (
+              <>
+                <WishlistToggle cardId={card.id} />
+                <MuteToggle cardId={card.id} />
+              </>
+            )}
+          </div>
         </header>
         {sheet.signedIn && (
           <CardSheetCopies
@@ -221,6 +232,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
         )}
         <CardSheetMarket
           cardId={card.id}
+          cardTitle={card.title}
           value={card.value}
           market={sheet.market}
           signedIn={sheet.signedIn}

@@ -87,7 +87,8 @@ const hidden = { vaultVisible: jest.fn(async () => false), holderOf, playersOf }
 function setup({
   card = CARD as object,
   copies = [COPY] as object[],
-  listed = [] as object[],
+  auctions = [] as object[],
+  fixed = [] as object[],
   sold = [SALE] as object[],
   trail = [TRADE] as object[],
   catalogued = 1,
@@ -96,7 +97,8 @@ function setup({
   db.card.findUnique.mockResolvedValue(card);
   db.card.count.mockResolvedValue(catalogued);
   db.cardOwnership.findMany.mockResolvedValue(copies);
-  db.cardAuction.findMany.mockResolvedValue(listed);
+  db.cardAuction.findMany.mockResolvedValue(auctions);
+  db.cardListing.findMany.mockResolvedValue(fixed);
   // The copies' trail reads by copy; the sales record by card
   db.cardTransferEvent.findMany.mockImplementation(
     async (args: { where: { ownershipId?: object } }) => (args.where.ownershipId ? trail : sold)
@@ -115,13 +117,33 @@ const trailReads = (db: ReturnType<typeof setup>) =>
 const salesReads = (db: ReturnType<typeof setup>) =>
   eventReads(db).filter((args: EventRead) => args.where.cardId !== undefined);
 
+/** A live auction of another player's copy, two bids in. */
 const LISTING = {
   id: "a1",
   currentBid: 50,
+  startingPrice: 20,
   buyoutPrice: null,
   endTime: new Date("2030-01-01T00:00:00Z"),
   bidCount: 2,
   sellerId: "u-a",
+  serialNumber: 5,
+  CardOwnership: {
+    id: "o5",
+    finish: "STANDARD",
+    inscription: null,
+    inscribedById: null,
+    inscribedName: null,
+  },
+};
+/** A live fixed-price listing of another player's signed copy; the serial and finish are the listing's own. */
+const FIXED = {
+  id: "l1",
+  price: 140,
+  expiresAt: new Date("2030-02-01T00:00:00Z"),
+  sellerId: "u-a",
+  serialNumber: 7,
+  finish: "FOIL",
+  ownership: { id: "o7", inscription: "gg", inscribedById: "u-signer", inscribedName: "@sig" },
 };
 
 /** The shared copy value: each copy asked for is worth `worth[id]`, else 120. */
@@ -253,33 +275,161 @@ describe("loadCardSheet", () => {
     expect(playersOf).not.toHaveBeenCalled();
   });
 
-  it("shows the art while the card is on a live listing, with each seller by passport handle", async () => {
+  it("shows the art while the card is at auction, with each seller by passport handle", async () => {
     const mine = { ...LISTING, id: "a2", sellerId: "me", buyoutPrice: 300 };
-    const db = setup({ copies: [], listed: [LISTING, mine] });
+    const db = setup({ copies: [], auctions: [LISTING, mine] });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face.silhouette).toBe(false);
     expect(sheet!.face.artwork).toBe("https://art/c1.png");
+    const auction = {
+      kind: "auction",
+      id: "a1",
+      ownershipId: "o5",
+      price: 50,
+      buyoutPrice: null,
+      endsAt: LISTING.endTime,
+      bidCount: 2,
+      sellerName: "@ann",
+      isMine: false,
+      finish: "STANDARD",
+      serialNumber: 5,
+      inscription: null,
+    };
     expect(sheet!.market.listings).toEqual([
-      {
-        auctionId: "a1",
-        currentBid: 50,
-        buyoutPrice: null,
-        endTime: LISTING.endTime,
-        bidCount: 2,
-        sellerName: "@ann",
-        isMine: false,
-      },
-      {
-        auctionId: "a2",
-        currentBid: 50,
-        buyoutPrice: 300,
-        endTime: LISTING.endTime,
-        bidCount: 2,
-        sellerName: "@max",
-        isMine: true,
-      },
+      auction,
+      { ...auction, id: "a2", buyoutPrice: 300, sellerName: "@max", isMine: true },
     ]);
     expect(playersOf).toHaveBeenCalledWith(["u-a", "me"]);
+  });
+
+  it("shows the art while the card is on a live fixed-price listing, to a visitor too", async () => {
+    const db = setup({ copies: [], fixed: [FIXED] });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", silhouette: false });
+    const visitor = await sheetFor(setup({ copies: [], fixed: [FIXED] }) as never, null, "c1", {
+      from: null,
+      rules,
+    });
+    expect(visitor).toMatchObject({ face: { silhouette: false }, signedIn: false });
+    expect(visitor!.market.listings[0]).toMatchObject({ id: "l1", isMine: false });
+  });
+
+  it("lists fixed-price listings first, cheapest first, then auctions, with each copy's inscription", async () => {
+    const cheaper = {
+      ...FIXED,
+      id: "l0",
+      price: 90,
+      sellerId: "me",
+      ownership: { ...FIXED.ownership, id: "o8", inscription: null },
+    };
+    const db = setup({ copies: [], fixed: [cheaper, FIXED], auctions: [LISTING] });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.market.listings).toEqual([
+      expect.objectContaining({
+        kind: "listing",
+        id: "l0",
+        ownershipId: "o8",
+        price: 90,
+        sellerName: "@max",
+        isMine: true,
+        inscription: null,
+      }),
+      {
+        kind: "listing",
+        id: "l1",
+        ownershipId: "o7",
+        price: 140,
+        buyoutPrice: null,
+        endsAt: FIXED.expiresAt,
+        bidCount: 0,
+        sellerName: "@ann",
+        isMine: false,
+        finish: "FOIL",
+        serialNumber: 7,
+        inscription: { text: "gg", signerName: "@sig" },
+      },
+      expect.objectContaining({ kind: "auction", id: "a1" }),
+    ]);
+    // Everyone named, in one batch: the sellers, then the listed copies' signers
+    expect(playersOf).toHaveBeenCalledTimes(1);
+    expect(playersOf).toHaveBeenCalledWith(["me", "u-a", "u-a", "u-signer", "u-signer"]);
+  });
+
+  it("reads live fixed-price listings cheapest first, with only the copy fields the signature rule needs", async () => {
+    const db = setup({ copies: [] });
+    await loadCardSheet(db as never, "me", "c1", { from: null, rules });
+    expect(db.cardListing.findMany).toHaveBeenCalledTimes(1);
+    expect(db.cardListing.findMany).toHaveBeenCalledWith({
+      where: { cardId: "c1", status: "ACTIVE", expiresAt: { gt: expect.any(Date) } },
+      orderBy: [{ price: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+      take: 10,
+      select: {
+        id: true,
+        price: true,
+        expiresAt: true,
+        sellerId: true,
+        serialNumber: true,
+        finish: true,
+        ownership: {
+          select: { id: true, inscription: true, inscribedById: true, inscribedName: true },
+        },
+      },
+    });
+    expect(db.cardAuction.findMany.mock.calls[0]![0].select).toEqual({
+      id: true,
+      currentBid: true,
+      startingPrice: true,
+      buyoutPrice: true,
+      endTime: true,
+      bidCount: true,
+      sellerId: true,
+      serialNumber: true,
+      CardOwnership: {
+        select: {
+          id: true,
+          finish: true,
+          inscription: true,
+          inscribedById: true,
+          inscribedName: true,
+        },
+      },
+    });
+  });
+
+  it("prices an auction with no bids yet at its starting price", async () => {
+    const db = setup({ copies: [], auctions: [{ ...LISTING, bidCount: 0, currentBid: 0 }] });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.market.listings[0]).toMatchObject({ price: 20, bidCount: 0 });
+  });
+
+  it("signs a listed copy as it signs any copy: the frozen name, hidden with its signer", async () => {
+    const auctioned = {
+      ...LISTING,
+      CardOwnership: { ...LISTING.CardOwnership, inscription: "old", inscribedById: "u-a" },
+    };
+    const db = setup({ copies: [], fixed: [FIXED], auctions: [auctioned] });
+    playersOf.mockResolvedValueOnce(
+      new Map([
+        ["u-a", { name: "@ann", showsVault: true }],
+        ["u-signer", { name: "@renamed", showsVault: false }],
+      ])
+    );
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    // A hidden signer is a player, though a name was frozen; an older signature reads its signer's name now
+    expect(sheet!.market.listings.map((l) => l.inscription)).toEqual([
+      { text: "gg", signerName: null },
+      { text: "old", signerName: "@ann" },
+    ]);
+  });
+
+  it("leaves out a listing whose copy is gone", async () => {
+    const db = setup({
+      copies: [],
+      fixed: [{ ...FIXED, ownership: null }],
+      auctions: [{ ...LISTING, CardOwnership: null }],
+    });
+    const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
+    expect(sheet!.market.listings).toEqual([]);
   });
 
   it("shows the art inside an offer waiting on the viewer", async () => {
@@ -505,7 +655,7 @@ describe("loadCardSheet", () => {
   });
 
   it("values a card the viewer holds no copy of at its own value", async () => {
-    const db = setup({ copies: [], listed: [LISTING] });
+    const db = setup({ copies: [], auctions: [LISTING] });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.card.value).toBe(100);
   });
@@ -615,10 +765,10 @@ describe("loadCardSheet", () => {
     });
 
     it("opens with no art while a retired card is on a live listing", async () => {
-      const db = setup({ card: RETIRED, copies: [], listed: [LISTING], catalogued: 0 });
+      const db = setup({ card: RETIRED, copies: [], auctions: [LISTING], catalogued: 0 });
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.face).toMatchObject({ artwork: null, isRetired: true });
-      expect(sheet!.market.listings).toMatchObject([{ auctionId: "a1" }]);
+      expect(sheet!.market.listings).toMatchObject([{ kind: "auction", id: "a1" }]);
     });
 
     it("is null for a retired copy opened from another player's showcase, which lists it to its owner only", async () => {
@@ -656,7 +806,7 @@ describe("loadCardSheet", () => {
 
   describe("naming players", () => {
     it("calls a player whose Passport hides Vault cards a player, in the trail, the signature and the listings", async () => {
-      const db = setup({ listed: [LISTING] });
+      const db = setup({ auctions: [LISTING] });
       playersOf.mockResolvedValueOnce(
         new Map([
           ["u-a", { name: "@ann", showsVault: false }],
@@ -675,7 +825,7 @@ describe("loadCardSheet", () => {
 
     it("names each player as the identity rule does: a nation for a player with no handle, or nobody", async () => {
       // An older signature, with no name frozen, names its signer as they are named now
-      const db = setup({ listed: [LISTING], copies: [{ ...COPY, inscribedName: null }] });
+      const db = setup({ auctions: [LISTING], copies: [{ ...COPY, inscribedName: null }] });
       playersOf.mockResolvedValueOnce(
         new Map([
           ["u-a", { name: "Caphiria", showsVault: true }],
@@ -693,7 +843,7 @@ describe("loadCardSheet", () => {
     });
 
     it("always names the viewer to themselves", async () => {
-      const db = setup({ listed: [{ ...LISTING, sellerId: "me" }] });
+      const db = setup({ auctions: [{ ...LISTING, sellerId: "me" }] });
       playersOf.mockResolvedValueOnce(
         new Map([
           ["u-a", { name: "@ann", showsVault: true }],
@@ -778,13 +928,13 @@ describe("loadCardSheet", () => {
       db.cardOwnership.findMany.mock.calls.map((call: [{ where: object }]) => call[0].where);
 
     it("sees a card on a live listing with its art, and no copies of their own", async () => {
-      const db = setup({ copies: [], listed: [LISTING] });
+      const db = setup({ copies: [], auctions: [LISTING] });
       const sheet = await sheetFor(db as never, null, "c1", { from: null, rules });
       expect(sheet).toMatchObject({
         face: { artwork: "https://art/c1.png", silhouette: false, copy: null },
         signedIn: false,
         copies: [],
-        market: { listings: [{ auctionId: "a1", sellerName: "@ann", isMine: false }] },
+        market: { listings: [{ kind: "auction", id: "a1", sellerName: "@ann", isMine: false }] },
       });
       expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
       expect(trailReads(db)).toEqual([]);

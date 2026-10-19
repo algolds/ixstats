@@ -19,6 +19,7 @@ type SheetDb = Pick<
   | "card"
   | "cardOwnership"
   | "cardAuction"
+  | "cardListing"
   | "cardTransferEvent"
   | "cardWatchlist"
   | "cardCollection"
@@ -82,14 +83,22 @@ export interface SheetCopy {
 }
 
 export interface SheetListing {
-  auctionId: string;
-  currentBid: number;
+  /** A fixed-price listing, bought outright, or an auction, bid on in the market. */
+  kind: "listing" | "auction";
+  id: string;
+  ownershipId: string;
+  /** A listing's price, or an auction's current bid (its starting price before the first bid). */
+  price: number;
   buyoutPrice: number | null;
-  endTime: Date;
+  endsAt: Date;
   bidCount: number;
   /** The seller's name (`HubPlayer.name`); null ("A player") while their passport hides Vault cards, or with no name. */
   sellerName: string | null;
   isMine: boolean;
+  finish: CardFinish;
+  serialNumber: number;
+  /** The listed copy's inscription, its name hidden as the sheet hides any signer's; others may report it. */
+  inscription: { text: string; signerName: string | null } | null;
 }
 
 export interface CardSheetData {
@@ -162,40 +171,61 @@ function storedAuthor(metadata: Prisma.JsonValue | null): string | null {
   return (isJsonObject(info) ? textOf(info.displayAuthor) : null) ?? textOf(metadata.author);
 }
 
-const LISTING_SELECT = {
+/** What a listing shows of the listed copy: its inscription, and its signer only to gate the name. */
+const LISTED_COPY_SELECT = {
+  id: true,
+  inscription: true,
+  inscribedById: true,
+  inscribedName: true,
+} satisfies Prisma.CardOwnershipSelect;
+
+/** The serial and finish are the listing's own, the ones a purchase settles. */
+const FIXED_SELECT = {
+  id: true,
+  price: true,
+  expiresAt: true,
+  sellerId: true,
+  serialNumber: true,
+  finish: true,
+  ownership: { select: LISTED_COPY_SELECT },
+} satisfies Prisma.CardListingSelect;
+
+const AUCTION_SELECT = {
   id: true,
   currentBid: true,
+  startingPrice: true,
   buyoutPrice: true,
   endTime: true,
   bidCount: true,
   sellerId: true,
+  serialNumber: true,
+  CardOwnership: { select: { ...LISTED_COPY_SELECT, finish: true } },
 } satisfies Prisma.CardAuctionSelect;
-type ListingRow = Prisma.CardAuctionGetPayload<{ select: typeof LISTING_SELECT }>;
 
-function loadListings(db: SheetDb, cardId: string): Promise<ListingRow[]> {
-  return db.cardAuction.findMany({
-    where: { status: "ACTIVE", endTime: { gt: new Date() }, CardOwnership: { cardId } },
-    orderBy: [{ endTime: "asc" }, { id: "asc" }],
-    take: MAX_LISTINGS,
-    select: LISTING_SELECT,
-  });
+interface ListingRows {
+  fixed: Prisma.CardListingGetPayload<{ select: typeof FIXED_SELECT }>[];
+  auctions: Prisma.CardAuctionGetPayload<{ select: typeof AUCTION_SELECT }>[];
 }
+type ListedCopy = Prisma.CardOwnershipGetPayload<{ select: typeof LISTED_COPY_SELECT }>;
 
-/** A signed-out viewer (null) owns no listing. */
-function toSheetListing(
-  row: ListingRow,
-  viewerId: string | null,
-  nameOf: (id: string) => string | null
-): SheetListing {
-  return {
-    auctionId: row.id,
-    currentBid: row.currentBid,
-    buyoutPrice: row.buyoutPrice,
-    endTime: row.endTime,
-    bidCount: row.bidCount,
-    sellerName: nameOf(row.sellerId),
-    isMine: row.sellerId === viewerId,
-  };
+/** The card's live fixed-price listings, cheapest first, and its live auctions, ending first. */
+async function loadListings(db: SheetDb, cardId: string): Promise<ListingRows> {
+  const now = new Date();
+  const [fixed, auctions] = await Promise.all([
+    db.cardListing.findMany({
+      where: { cardId, status: "ACTIVE", expiresAt: { gt: now } },
+      orderBy: [{ price: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+      take: MAX_LISTINGS,
+      select: FIXED_SELECT,
+    }),
+    db.cardAuction.findMany({
+      where: { status: "ACTIVE", endTime: { gt: now }, CardOwnership: { cardId } },
+      orderBy: [{ endTime: "asc" }, { id: "asc" }],
+      take: MAX_LISTINGS,
+      select: AUCTION_SELECT,
+    }),
+  ]);
+  return { fixed, auctions };
 }
 
 /** Every move of the viewer's copies, newest first. */
@@ -224,14 +254,20 @@ type TrailRow = Awaited<ReturnType<typeof loadTrailEvents>>[number];
  * leaving every player no recipient: `toUserId` is nullable since Phase 2), and the signers.
  */
 function namedPlayers(
-  listings: readonly ListingRow[],
+  listings: ListingRows,
   events: readonly TrailRow[],
   copies: readonly SheetCopyRow[]
 ): string[] {
+  const listed = [
+    ...listings.fixed.map((l) => l.ownership),
+    ...listings.auctions.map((a) => a.CardOwnership),
+  ];
   return [
-    ...listings.map((l) => l.sellerId),
+    ...listings.fixed.map((l) => l.sellerId),
+    ...listings.auctions.map((a) => a.sellerId),
     ...events.flatMap((e) => [e.fromUserId, e.toUserId]),
     ...copies.map((c) => c.inscribedById),
+    ...listed.map((c) => c?.inscribedById ?? null),
   ].filter((id): id is string => id !== null);
 }
 
@@ -255,9 +291,66 @@ function namer(players: ReadonlyMap<string, HubPlayer>, viewerId: string | null)
  * The name printed with a signature: the one frozen at signing, else (an older signature) the signer's name now. The
  * same switch hides it as hides the signer anywhere on the sheet.
  */
-function signerName(copy: SheetCopyRow, naming: SheetNamer): string | null {
+function signerName(
+  copy: Pick<SheetCopyRow, "inscribedById" | "inscribedName">,
+  naming: SheetNamer
+): string | null {
   const signer = copy.inscribedById;
   return signer && naming.shows(signer) ? (copy.inscribedName ?? naming.nameOf(signer)) : null;
+}
+
+const listedInscription = (copy: ListedCopy, naming: SheetNamer) =>
+  copy.inscription ? { text: copy.inscription, signerName: signerName(copy, naming) } : null;
+
+/**
+ * Fixed-price listings, then auctions, each in the order read. A live listing's copy is locked, so it is always there;
+ * one gone all the same is left out. A signed-out viewer (null) owns no listing.
+ */
+function toSheetListings(
+  rows: ListingRows,
+  viewerId: string | null,
+  naming: SheetNamer
+): SheetListing[] {
+  const seller = (id: string) => ({ sellerName: naming.nameOf(id), isMine: id === viewerId });
+  const fixed = rows.fixed.flatMap(({ ownership: copy, ...l }): SheetListing[] =>
+    copy
+      ? [
+          {
+            kind: "listing",
+            id: l.id,
+            ownershipId: copy.id,
+            price: l.price,
+            buyoutPrice: null,
+            endsAt: l.expiresAt,
+            bidCount: 0,
+            ...seller(l.sellerId),
+            finish: l.finish,
+            serialNumber: l.serialNumber,
+            inscription: listedInscription(copy, naming),
+          },
+        ]
+      : []
+  );
+  const auctions = rows.auctions.flatMap(({ CardOwnership: copy, ...a }): SheetListing[] =>
+    copy
+      ? [
+          {
+            kind: "auction",
+            id: a.id,
+            ownershipId: copy.id,
+            price: a.bidCount > 0 ? a.currentBid : a.startingPrice,
+            buyoutPrice: a.buyoutPrice,
+            endsAt: a.endTime,
+            bidCount: a.bidCount,
+            ...seller(a.sellerId),
+            finish: copy.finish,
+            serialNumber: a.serialNumber,
+            inscription: listedInscription(copy, naming),
+          },
+        ]
+      : []
+  );
+  return [...fixed, ...auctions];
 }
 
 /** The named players in one read; with nobody to name, no read. */
@@ -344,10 +437,11 @@ function toSheetCard(card: SheetCardRow, artHidden: boolean, value: number): Car
 }
 
 /**
- * The sheet a `?card=` link opens. Art shows to a holder, while the card is on a live listing, or when the sheet was
- * opened from another player's showcase or an offer made to the viewer (spec §2.3 Discovery). A card outside the
- * catalogue (in review, hidden, or in an unpublished realm) opens only in those same places, so a bare link to one is
- * null, as is a card that does not exist. A retired card still shows no art (`toCardFace`).
+ * The sheet a `?card=` link opens. Art shows to a holder, while the card is on a live listing (at a fixed price or at
+ * auction), or when the sheet was opened from another player's showcase or an offer made to the viewer (spec §2.3
+ * Discovery). A card outside the catalogue (in review, hidden, or in an unpublished realm) opens only in those same
+ * places, so a bare link to one is null, as is a card that does not exist. A retired card still shows no art
+ * (`toCardFace`).
  *
  * A signed-out visitor (`viewerId` null) has no copies to read, and sees the sheet only where a player shows the card
  * publicly: a live listing, a public showcase, or a holder's passport display. Everywhere else, a card that does not
@@ -374,8 +468,8 @@ export async function loadCardSheet(
   ]);
   if (!card) return viewerId ? null : SIGN_IN;
 
-  // Held or listed already shows the art, so the opening place is asked only otherwise.
-  const shown = copies.length > 0 || listings.length > 0;
+  // Held or listed (at a fixed price or at auction) already shows the art, so the opening place is asked only otherwise.
+  const shown = copies.length > 0 || listings.fixed.length > 0 || listings.auctions.length > 0;
   const [shownThere, events, recentSales, wantedBy, values] = await Promise.all([
     !shown && options.from !== null
       ? contextRevealsArt(db, viewerId, cardId, options.from, options.rules)
@@ -399,7 +493,7 @@ export async function loadCardSheet(
     card: toSheetCard(card, face.silhouette || card.isRetired, sheetValue(card, values)),
     copies: copies.map((copy) => toSheetCopy(card, copy, trail, naming)),
     market: {
-      listings: listings.map((row) => toSheetListing(row, viewerId, naming.nameOf)),
+      listings: toSheetListings(listings, viewerId, naming),
       recentSales,
       wantedBy,
     },
