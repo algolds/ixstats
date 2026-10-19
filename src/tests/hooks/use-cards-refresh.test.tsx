@@ -27,7 +27,6 @@ jest.mock("~/trpc/react", () => {
       getActiveTrades: query(),
       getTradeById: query(),
       getTradeHistory: query(),
-      searchTradingPartners: query(),
     },
     vault: { getBalance: query(), getTransactions: query() },
   };

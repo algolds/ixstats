@@ -10,10 +10,14 @@ jest.mock("~/server/modules/identity/identity.player-names", () => ({
 }));
 jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn(async () => []) }));
 jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn() } }));
+jest.mock("~/server/modules/identity/identity.privacy", () => ({
+  loadVaultCardsShown: jest.fn(async (ids: readonly string[]) => new Set(ids)),
+}));
 
 import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardMarketRouter } from "~/server/api/routers/card-market";
+import { tradingBuilderRouter } from "~/server/api/routers/trading/builder";
 import { tradingOffersRouter } from "~/server/api/routers/trading/offers";
 import { tradingQueriesRouter } from "~/server/api/routers/trading/queries";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
@@ -252,6 +256,24 @@ describe("whole copy rows a player reads", () => {
     expect(namesTheSigner(listings)).toBe(false);
     expect(JSON.stringify(listings)).not.toContain("inscri");
     expect(db.cardListing.findMany.mock.calls[0]![0].select.ownership).toBeUndefined();
+  });
+
+  it("each side of the trade builder, which reads the inscription and never the signer", async () => {
+    for (const side of ["mine", "theirs"] as const) {
+      const db = signedCopyDb();
+      db.user.findUnique.mockResolvedValue({
+        id: "them",
+        clerkUserId: "clerk_them",
+        isActive: true,
+        country: null,
+      });
+      const builder = createCallerFactory(tradingBuilderRouter)(context(db));
+      const page = await builder.getTradeables({ partnerId: "them", side });
+      expect(page.items).toHaveLength(1);
+      expect(namesTheSigner(page)).toBe(false);
+      expect(readsNoSigner(db)).toBe(true);
+      expect(JSON.stringify(page)).toContain('"inscription":"gg"');
+    }
   });
 
   it("a trade offer, a counter-offer and an accept, which read copies by the columns they check", async () => {
