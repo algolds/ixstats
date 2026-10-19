@@ -66,21 +66,37 @@ function FeeNotes({
   );
 }
 
+/** Until the fees are shown, List waits, so a fee is never paid unseen; this says why. */
+function FeesPending({ failed }: { failed: boolean }) {
+  return failed ? (
+    <p role="alert" className="text-footnote text-destructive-ink">
+      The listing fee did not load, so this copy cannot be listed yet.
+    </p>
+  ) : (
+    <p role="status" className="text-footnote text-label-secondary">
+      Loading the listing fee
+    </p>
+  );
+}
+
 /** List one copy at a fixed price, with the listing fee, the refund and what the seller receives spelled out. */
 export function ListCopyDialog({
   suggestedPrice,
   ...props
 }: CopyDialogProps & { suggestedPrice: number }) {
-  const { data: numbers } = useEconomyNumbers();
+  const { data: numbers, isError } = useEconomyNumbers();
   const { list } = useCopyActions();
-  const [raw, setRaw] = useState(String(Math.max(1, Math.round(suggestedPrice))));
+  // A copy worth more than the cap starts at the cap, so the dialog opens listable
+  const [raw, setRaw] = useState(
+    String(Math.min(MAX_LISTING_PRICE, Math.max(1, Math.round(suggestedPrice))))
+  );
   const [featured, setFeatured] = useState(false);
   const price = parsePrice(raw);
   const id = useId();
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (price === null) return;
+    if (price === null || !numbers) return;
     list.mutate(
       { ownershipId: props.ownershipId, price, isFeatured: featured },
       { onSuccess: props.onDone }
@@ -114,9 +130,13 @@ export function ListCopyDialog({
             <Label htmlFor={`${id}-featured`}>Feature it at the top of Browse</Label>
             <Switch id={`${id}-featured`} checked={featured} onCheckedChange={setFeatured} />
           </div>
-          {numbers && <FeeNotes numbers={numbers} featured={featured} price={price} />}
+          {numbers ? (
+            <FeeNotes numbers={numbers} featured={featured} price={price} />
+          ) : (
+            <FeesPending failed={isError} />
+          )}
           <DialogFooter>
-            <Button type="submit" disabled={price === null || list.isPending}>
+            <Button type="submit" disabled={price === null || !numbers || list.isPending}>
               {price === null ? "Enter a price" : `List for ${price.toLocaleString()} IxC`}
             </Button>
           </DialogFooter>

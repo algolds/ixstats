@@ -25,13 +25,13 @@ export function useAuctionWebSocket({ enabled = true }: { enabled?: boolean } = 
 
     const unsubscribes = [
       client.subscribeToAll("bid", () => {
-        void utils.cardMarket.getActiveAuctions.invalidate();
+        void utils.cardMarket.browse.invalidate();
         void utils.cardMarket.getMyActiveBids.invalidate();
       }),
       // A settled auction moves its copy to the winner and its credits to the seller.
       client.subscribeToAll("auction_complete", () => refreshCards()),
       client.subscribeToAll("auction_created", () => {
-        void utils.cardMarket.getActiveAuctions.invalidate();
+        void utils.cardMarket.browse.invalidate();
         void utils.cardMarket.getMyActiveAuctions.invalidate();
       }),
     ];

@@ -8,7 +8,6 @@ jest.mock("~/trpc/react", () => ({
       listMine: { useQuery: jest.fn(() => ({ data: undefined, isLoading: true })) },
     },
     cardMarket: {
-      getActiveAuctions: { useQuery: jest.fn() },
       getMyActiveAuctions: {
         useQuery: jest.fn(() => ({ data: { auctions: [] }, isLoading: false })),
       },
@@ -33,6 +32,15 @@ jest.mock("~/hooks/marketplace/useAuctionBid", () => ({
   })),
 }));
 jest.mock("~/hooks/marketplace/useAuctionWebSocket", () => ({ useAuctionWebSocket: jest.fn() }));
+jest.mock("~/hooks/cards/useMarketTabs", () => ({
+  useBrowse: jest.fn(),
+  useWishlist: jest.fn(() => ({ data: [], isLoading: false })),
+  useMyListings: jest.fn(() => ({ data: [], isLoading: false })),
+  useListingActions: jest.fn(() => ({
+    cancel: { mutate: jest.fn(), isPending: false },
+    removeWish: { mutate: jest.fn(), isPending: false },
+  })),
+}));
 jest.mock("~/hooks/useKeepSelectedInView", () => ({ useKeepSelectedInView: jest.fn() }));
 jest.mock("~/hooks/useCardsRefresh", () => {
   const refreshCards = jest.fn();
@@ -59,6 +67,12 @@ jest.mock("~/components/vault/cards/market/CreateAuctionModal", () => ({
 import { api } from "~/trpc/react";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
+import {
+  useBrowse,
+  useListingActions,
+  useMyListings,
+  useWishlist,
+} from "~/hooks/cards/useMarketTabs";
 import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { MarketPane } from "~/components/vault/cards/market/MarketPane";
@@ -80,16 +94,31 @@ const face = {
   copy: { ownershipId: "o1", finish: "STANDARD" as const, serialNumber: 1, level: 1 },
 };
 const HOUR = 3_600_000;
+// A little over 3 hours, so the rows still read "3h 0m" a few milliseconds later.
+const ENDS = new Date(Date.now() + 3 * HOUR + 30_000);
 const auction = {
   id: "a1",
   cardInstanceId: "o1",
   currentBid: 100,
   startingPrice: 50,
   buyoutPrice: 500,
-  // A little over 3 hours, so the rows still read "3h 0m" a few milliseconds later.
-  endTime: new Date(Date.now() + 3 * HOUR + 30_000),
+  endTime: ENDS,
   bidCount: 2,
   isMine: false,
+  face,
+};
+/** The same auction as Browse lists it. */
+const browseItem = {
+  kind: "auction",
+  id: "a1",
+  price: 100,
+  isFeatured: false,
+  endsAt: ENDS,
+  createdAt: new Date(),
+  isMine: false,
+  ownershipId: "o1",
+  bidCount: 2,
+  buyoutPrice: 500,
   face,
 };
 
@@ -111,21 +140,17 @@ function renderPane(
   return { ...props, rerender: () => view.rerender(<MarketPane {...props} />) };
 }
 
-const lastAuctionQuery = () =>
-  jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mock.calls.at(-1)?.[0];
-const listingsAt = (overrides: Partial<typeof auction>, extra: object = {}) =>
-  jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
-    data: { auctions: [{ ...auction, ...overrides }], total: 1, hasMore: false },
+const lastBrowse = () => jest.mocked(useBrowse).mock.calls.at(-1)?.[0];
+const browsing = (items: object[], extra: object = {}) =>
+  jest.mocked(useBrowse).mockReturnValue({
+    data: { items, hasMore: false },
     isLoading: false,
     ...extra,
   } as never);
+const listingsAt = (overrides: Partial<typeof browseItem>, extra: object = {}) =>
+  browsing([{ ...browseItem, ...overrides }], extra);
 
-beforeEach(() => {
-  jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
-    data: { auctions: [auction], total: 1, hasMore: false },
-    isLoading: false,
-  } as never);
-});
+beforeEach(() => browsing([browseItem]));
 
 describe("MarketPane", () => {
   it("has the four sub-tabs and no success-rate tile", () => {
@@ -170,10 +195,10 @@ describe("MarketPane", () => {
       error: null,
     });
     const props = renderPane("browse");
-    expect(lastAuctionQuery()).toMatchObject({ sortBy: "ending_soon" });
+    expect(lastBrowse()).toMatchObject({ kind: "all", sort: "ending_soon" });
     fireEvent.click(screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay" }));
     expect(props.onOpenCard).toHaveBeenCalledWith("c1");
-    expect(screen.getByText("2 bids · 3h 0m left")).toBeInTheDocument();
+    expect(screen.getByText("3h 0m left").parentElement).toHaveTextContent("2 bids · 3h 0m left");
     fireEvent.click(screen.getByRole("button", { name: "Bid 105 IxC" }));
     expect(placeBid).toHaveBeenCalledWith("a1", 105);
   });
@@ -197,7 +222,7 @@ describe("MarketPane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bid 120 IxC" }));
     expect(placeBid).toHaveBeenLastCalledWith("a1", 120);
     // Someone outbids the typed 120: the floor rises to 137 and Bid follows it.
-    listingsAt({ currentBid: 130 });
+    listingsAt({ price: 130 });
     pane.rerender();
     expect(screen.getByLabelText("Bid, now 130 IxC")).toHaveValue(120);
     fireEvent.click(screen.getByRole("button", { name: "Bid 137 IxC" }));
@@ -230,37 +255,30 @@ describe("MarketPane", () => {
       "Eurth",
     ]);
     fireEvent.click(screen.getByRole("option", { name: "Eurth" }));
-    expect(lastAuctionQuery()).toMatchObject({ realmId: "r13" });
+    expect(lastBrowse()).toMatchObject({ filters: { realmId: "r13" } });
   });
 
   it("narrows Browse to one card from the sheet's link, and lets the player see everything again", () => {
     const props = renderPane("browse", { forCardId: "c1" });
-    expect(lastAuctionQuery()).toMatchObject({ cardId: "c1" });
+    expect(lastBrowse()).toMatchObject({ filters: { cardId: "c1" } });
     fireEvent.click(screen.getByRole("button", { name: "Show every listing" }));
     expect(props.onClearFor).toHaveBeenCalled();
   });
 
   it("shows more listings a page at a time, up to the router's cap", () => {
-    jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
-      data: { auctions: [auction], total: 300, hasMore: true },
-      isLoading: false,
-    } as never);
+    listingsAt({}, { data: { items: [browseItem], hasMore: true } });
     renderPane("browse");
-    expect(lastAuctionQuery()).toMatchObject({ limit: 20, cardId: undefined });
+    expect(lastBrowse()).toMatchObject({ limit: 20, offset: 0, filters: { cardId: undefined } });
     for (let page = 0; page < 4; page += 1) {
       fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     }
-    expect(lastAuctionQuery()).toMatchObject({ limit: 100 });
+    expect(lastBrowse()).toMatchObject({ limit: 100 });
     expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
   });
 
   it("keeps the listings on screen while the next page loads", () => {
-    const previous = { auctions: [auction], total: 300, hasMore: true };
-    listingsAt({}, { data: previous, isPlaceholderData: true });
+    listingsAt({}, { data: { items: [browseItem], hasMore: true }, isPlaceholderData: true });
     renderPane("browse");
-    const options = jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mock.calls.at(-1)?.[1];
-    const keep = options?.placeholderData;
-    expect(typeof keep === "function" && keep(previous as never, undefined)).toBe(previous);
     expect(screen.getByRole("list", { name: "Listings" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show more" })).toBeDisabled();
   });
@@ -275,10 +293,7 @@ describe("MarketPane", () => {
   });
 
   it("says when nothing is listed, and offers to sell", () => {
-    jest.mocked(api.cardMarket.getActiveAuctions.useQuery).mockReturnValue({
-      data: { auctions: [], total: 0, hasMore: false },
-      isLoading: false,
-    } as never);
+    browsing([]);
     renderPane("browse");
     expect(screen.getByText("Nothing is listed right now")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -291,7 +306,43 @@ describe("MarketPane", () => {
     expect(screen.getByRole("dialog")).toHaveTextContent("Selling o7");
   });
 
-  it("lists the player's listings; a listing with bids cannot be cancelled, and a cancel frees the card", () => {
+  it("puts the player's fixed-price listings first, above their auctions and bids, and cancels one", () => {
+    const cancel = jest.fn();
+    jest.mocked(useListingActions).mockReturnValue({
+      cancel: { mutate: cancel, isPending: false },
+      removeWish: { mutate: jest.fn(), isPending: false },
+    } as never);
+    jest.mocked(useMyListings).mockReturnValue({
+      data: [
+        {
+          id: "l1",
+          price: 140,
+          isFeatured: false,
+          expiresAt: ENDS,
+          sellerId: "me",
+          ownershipId: "o1",
+          finish: "FOIL",
+          serialNumber: 7,
+          status: "ACTIVE",
+          cardId: "c1",
+          cardTitle: "Caphiria",
+          soldAt: null,
+        },
+      ],
+      isLoading: false,
+    } as never);
+    renderPane("selling");
+    expect(
+      screen.getAllByRole("region").map((region) => region.getAttribute("aria-labelledby"))
+    ).toEqual(["selling-fixed", "selling-auctions", "selling-bids"]);
+    const fixed = within(screen.getByRole("region", { name: "Your listings" }));
+    expect(fixed.getByText("Foil #7 · 3h 0m left")).toBeInTheDocument();
+    fireEvent.click(fixed.getByRole("button", { name: "Cancel listing" }));
+    expect(cancel).toHaveBeenCalledWith({ listingId: "l1" });
+    jest.mocked(useMyListings).mockReturnValue({ data: [], isLoading: false } as never);
+  });
+
+  it("lists the player's auctions; one with bids cannot be cancelled, and a cancel frees the card", () => {
     const cancel = jest.fn();
     let cancelled: { onSuccess: (result: { message: string }) => void } | undefined;
     jest.mocked(api.cardMarket.cancelAuction.useMutation).mockImplementation(((
@@ -310,7 +361,7 @@ describe("MarketPane", () => {
       isLoading: false,
     } as never);
     renderPane("selling");
-    const listings = within(screen.getByRole("region", { name: "Your listings" }));
+    const listings = within(screen.getByRole("region", { name: "Your auctions" }));
     expect(listings.getByText("50 IxC · 0 bids · 3h 0m left")).toBeInTheDocument();
     expect(listings.getByText("100 IxC · 2 bids · Ended")).toBeInTheDocument();
     const [open, ended] = listings.getAllByRole("button", { name: "Cancel" });
@@ -319,6 +370,12 @@ describe("MarketPane", () => {
     expect(listings.getAllByText("Has bids, so it cannot be cancelled")).toHaveLength(1);
     fireEvent.click(open!);
     expect(cancel).toHaveBeenCalledWith({ auctionId: "mine-open" });
+    // A face in a list row is never narrower than Browse's
+    for (const card of listings.getAllByRole("button", {
+      name: "Caphiria, Epic, Standard, Ixnay",
+    })) {
+      expect(card).toHaveClass("w-20");
+    }
     // The cancelled listing's copy is free again: Mine, the sheet and the Sell picker read it again.
     refreshCards.mockClear();
     cancelled?.onSuccess({ message: "Auction cancelled" });
@@ -428,10 +485,30 @@ describe("MarketPane", () => {
     history.mockReturnValue({ data: { trades: [] } } as never);
   });
 
-  it("keeps a place for the wishlist", () => {
+  it("shows the wishlist, and sends an empty one to Browse", () => {
     const props = renderPane("wishlist");
-    expect(screen.getByText("Wishlists are not open yet")).toBeInTheDocument();
+    expect(screen.getByText("No cards on your wishlist yet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Browse listings" }));
     expect(props.onTabChange).toHaveBeenCalledWith("browse");
+  });
+
+  it("opens a wished card's sheet from the wishlist", () => {
+    jest.mocked(useWishlist).mockReturnValue({
+      data: [
+        {
+          face: { ...face, copy: null },
+          addedAt: new Date(),
+          owned: 0,
+          listings: 1,
+          lowestPrice: 140,
+          auctions: 0,
+        },
+      ],
+      isLoading: false,
+    } as never);
+    const props = renderPane("wishlist");
+    fireEvent.click(screen.getByRole("button", { name: /^Caphiria/ }));
+    expect(props.onOpenCard).toHaveBeenCalledWith("c1");
+    jest.mocked(useWishlist).mockReturnValue({ data: [], isLoading: false } as never);
   });
 });

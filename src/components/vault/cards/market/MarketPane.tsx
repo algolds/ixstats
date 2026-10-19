@@ -70,7 +70,10 @@ export function MarketPane(props: MarketPaneProps) {
         <MarketTrades onOpenCard={props.onOpenCard} />
       </TabsContent>
       <TabsContent value="wishlist">
-        <MarketWishlist onBrowse={() => props.onTabChange("browse")} />
+        <MarketWishlist
+          onBrowse={() => props.onTabChange("browse")}
+          onOpenCard={props.onOpenCard}
+        />
       </TabsContent>
       <TabsContent value="selling">
         <MarketSelling

@@ -20,6 +20,7 @@ import {
   type BidTarget,
 } from "./AuctionRow";
 import { CreateAuctionModal } from "./CreateAuctionModal";
+import { MyListings } from "./MyListings";
 
 interface MarketSellingProps {
   /** `?sell=<ownershipId>` from a card's sheet: open the auction form with that copy. */
@@ -39,7 +40,7 @@ function ListingCard({
   return (
     <>
       {face && (
-        <CardFace face={face} size="S" className="w-16" onOpen={() => onOpenCard(face.cardId)} />
+        <CardFace face={face} size="S" className="w-20" onOpen={() => onOpenCard(face.cardId)} />
       )}
       <p className="text-callout min-w-0 flex-1 truncate">{face?.title ?? "A card"}</p>
     </>
@@ -51,7 +52,7 @@ type OwnListingData = Pick<
   "id" | "currentBid" | "startingPrice" | "bidCount" | "endTime" | "face"
 >;
 
-/** One of the player's listings. A listing with bids cannot be cancelled, and says so where Cancel is. */
+/** One of the player's auctions. An auction with bids cannot be cancelled, and says so where Cancel is. */
 function OwnListing({
   auction,
   onOpenCard,
@@ -116,7 +117,7 @@ function BidRow({
   );
 }
 
-/** Selling: the player's own listings and the auctions they bid on. */
+/** Selling: the player's fixed-price listings, then their auctions, then the auctions they bid on. */
 export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: MarketSellingProps) {
   const [selling, setSelling] = useState(false);
   const refreshCards = useCardsRefresh();
@@ -136,10 +137,11 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
 
   return (
     <div className="space-y-8">
-      <section aria-labelledby="selling-listings" className="space-y-3">
+      <MyListings />
+      <section aria-labelledby="selling-auctions" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 id="selling-listings" className="text-headline">
-            Your listings
+          <h3 id="selling-auctions" className="text-headline">
+            Your auctions
           </h3>
           <Button size="sm" onClick={() => setSelling(true)}>
             Sell a card
@@ -148,8 +150,8 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
         {mine.length === 0 ? (
           <EmptyState
             compact
-            title="You have nothing listed"
-            message="Sell a card here, or from its sheet."
+            title="You have no auctions running"
+            message="Sell a card at auction here, or from its sheet."
           />
         ) : (
           <Card content="data">

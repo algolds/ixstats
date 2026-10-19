@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -8,6 +9,7 @@ import { CardFace } from "~/components/cards/face/CardFace";
 import { RarityMark } from "~/components/cards/face/RarityMark";
 import { timeLeftPhrase } from "~/lib/cards/face/time-left";
 import type { CardFaceData } from "~/lib/cards/face/types";
+import { auctionUrgency } from "~/lib/cards/market/auction-timing";
 
 /** A bid must beat the standing price by 5%, rounded up: the auction service's own rule. */
 const BID_STEP = 1.05;
@@ -22,6 +24,8 @@ export interface AuctionRowData {
   face: CardFaceData | null;
   /** The viewer's own listing, which they cannot bid on. */
   isMine: boolean;
+  /** The seller paid to put it at the top of Browse. */
+  isFeatured: boolean;
 }
 
 /** What the bid form reads of an auction. */
@@ -47,6 +51,35 @@ interface AuctionRowProps extends BidActions {
 }
 
 export const bidCountLabel = (count: number) => (count === 1 ? "1 bid" : `${count} bids`);
+
+/** The time left reads amber in an auction's last hours and red in its last hour. */
+const URGENCY_CLASS = {
+  normal: "",
+  soon: "text-warning-ink",
+  final: "text-destructive-ink",
+} as const;
+
+/** A Browse row's title, marked when the seller paid to feature it. */
+export function MarketRowTitle({ title, featured }: { title: string; featured: boolean }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <p className="text-headline truncate">{title}</p>
+      {featured && <Badge variant="info">Featured</Badge>}
+    </div>
+  );
+}
+
+/** The viewer's own item in Browse: no Buy or Bid, and the way to Selling, where they manage it. */
+export function YourListing({ onShowSelling }: { onShowSelling: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <p className="text-footnote text-label-secondary">Your listing</p>
+      <Button variant="link" size="sm" className="px-0" onClick={onShowSelling}>
+        See it in Selling
+      </Button>
+    </div>
+  );
+}
 
 /**
  * The bid and buy-now controls. An empty bid, or one typed under the floor, bids the floor: a bid from anyone raises
@@ -107,25 +140,25 @@ export function BidForm({ auction, onBid, onBuyout, busy, verb = "Bid" }: BidFor
 /** One live auction: the card's face, where it stands, time left, and the bid and buy-now controls. */
 export function AuctionRow({ auction, onOpenCard, onShowSelling, ...bidding }: AuctionRowProps) {
   const face = auction.face;
+  const urgency = auctionUrgency(auction.endTime.getTime() - Date.now());
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
       {face && (
         <CardFace face={face} size="S" className="w-20" onOpen={() => onOpenCard(face.cardId)} />
       )}
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-headline truncate">{face?.title ?? "A card"}</p>
+        <MarketRowTitle title={face?.title ?? "A card"} featured={auction.isFeatured} />
         {face && <RarityMark rarity={face.rarity} />}
         <p className="text-footnote text-label-secondary tabular-nums">
-          {bidCountLabel(auction.bidCount)} · {timeLeftPhrase(auction.endTime)}
+          {bidCountLabel(auction.bidCount)}
+          {" · "}
+          <span data-urgency={urgency} className={URGENCY_CLASS[urgency]}>
+            {timeLeftPhrase(auction.endTime)}
+          </span>
         </p>
       </div>
       {auction.isMine ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-footnote text-label-secondary">Your listing</p>
-          <Button variant="link" size="sm" className="px-0" onClick={onShowSelling}>
-            See it in Selling
-          </Button>
-        </div>
+        <YourListing onShowSelling={onShowSelling} />
       ) : (
         <BidForm auction={auction} {...bidding} />
       )}
