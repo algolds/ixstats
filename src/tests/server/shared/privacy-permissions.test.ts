@@ -105,16 +105,25 @@ describe("trade offer audiences", () => {
   it("refuses a sender outside the audience or on the block list, never the sender themself", async () => {
     const db = withConfigs({ closed: { tradeOffers: "nobody" }, s: { tradeOffers: "nobody" } });
     const configs = db.userConnection.findMany.getMockImplementation()!;
-    const withBlock = async (args: { where: { connectionType: string } }) =>
-      args.where.connectionType === "blocked" ? [{ userId: "blocker" }] : configs(args);
+    // "blocker" blocks the sender: the block rows answer only for the recipients asked about
+    const withBlock = async (args: {
+      where: { connectionType: string; userId: { in: string[] } };
+    }) =>
+      args.where.connectionType === "blocked"
+        ? args.where.userId.in.filter((id) => id === "blocker").map((userId) => ({ userId }))
+        : configs(args);
     db.userConnection.findMany.mockImplementation(withBlock);
-    const refusers = await tradeOfferRefusers(db as never, "s", ["s", "closed", "blocker", "open"]);
-    expect([...refusers].sort()).toEqual(["blocker", "closed"]);
+    const refusals = await tradeOfferRefusers(db as never, "s", ["s", "closed", "blocker", "open"]);
+    expect([...refusals.refused].sort()).toEqual(["blocker", "closed"]);
+    // Which of them block the sender, so a surface can hide a block behind "nobody"
+    expect([...refusals.blocking]).toEqual(["blocker"]);
     expect(await refusesTradeOffer(db as never, "s", "closed")).toBe(true);
     expect(await refusesTradeOffer(db as never, "s", "blocker")).toBe(true);
-    db.userConnection.findMany.mockImplementation(configs);
     expect(await refusesTradeOffer(db as never, "s", "open")).toBe(false);
-    expect(await tradeOfferRefusers(db as never, "s", [])).toEqual(new Set());
+    expect(await tradeOfferRefusers(db as never, "s", [])).toEqual({
+      refused: new Set(),
+      blocking: new Set(),
+    });
   });
 });
 

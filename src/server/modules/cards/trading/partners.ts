@@ -35,7 +35,7 @@ export interface PartnerRules {
 }
 
 export interface TradePrivacy {
-  /** Who they take trade offers from. */
+  /** Who they take trade offers from; "nobody" to a viewer they block, so a block never shows as one. */
   audience: PermissionAudience;
   /** Whether that includes this viewer, who is not on their block list. */
   allowed: boolean;
@@ -73,7 +73,7 @@ const PARTNER_SELECT = {
   country: { select: { name: true } },
 } satisfies Prisma.UserSelect;
 
-/** Each player's trade privacy toward the viewer, in the players' order. */
+/** Each player's trade privacy toward the viewer, in the players' order. A block reads as "nobody" (messaging's rule). */
 async function privacyOf(
   db: PartnerDb,
   rules: PartnerRules,
@@ -81,14 +81,16 @@ async function privacyOf(
   users: readonly PartnerUser[]
 ): Promise<TradePrivacy[]> {
   const clerkIds = users.map((u) => u.clerkUserId);
-  const [audiences, refusers, shown] = await Promise.all([
+  const [audiences, refusals, shown] = await Promise.all([
     permissionAudiences(db, clerkIds, "tradeOffers"),
     tradeOfferRefusers(db, viewer.clerkUserId, clerkIds),
     rules.cardsShown(users.map((u) => u.id)),
   ]);
-  return users.map((u) => ({
-    audience: audiences.get(u.clerkUserId) ?? "everyone",
-    allowed: !refusers.has(u.clerkUserId),
+  return users.map((u): TradePrivacy => ({
+    audience: refusals.blocking.has(u.clerkUserId)
+      ? "nobody"
+      : (audiences.get(u.clerkUserId) ?? "everyone"),
+    allowed: !refusals.refused.has(u.clerkUserId),
     cardsShown: shown.has(u.id),
   }));
 }
@@ -201,11 +203,12 @@ export async function searchTradePartners(
   viewer: Party,
   query: string
 ): Promise<TradePartner[]> {
-  const text = query.trim().replace(/^@/, "");
+  const text = query.trim().replace(/^@/, "").trim();
   if (text.length < SEARCH_MIN) return [];
   const rows = await db.user.findMany({
     where: searchWhere(viewer, text),
     select: SEARCH_SELECT,
+    orderBy: [{ handle: "asc" }, { id: "asc" }],
     take: SEARCH_SCAN,
   });
   const hidden = await hiddenLinkedNames(
@@ -275,6 +278,17 @@ function tradeableWhere(ownerId: string, f: TradeableFilters): Prisma.CardOwners
   };
 }
 
+/**
+ * The partner's wishes a trade partner may see: catalogue cards only (so no hidden or unpublished card is named or
+ * hinted at), newest first, as many as a wishlist holds. The wishlist shows them and my side's highlights use them.
+ */
+const partnerWishes = (userId: string) =>
+  ({
+    where: { userId, card: CATALOGUE_WHERE },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: WISHLIST_MAX,
+  }) satisfies Prisma.CardWatchlistFindManyArgs;
+
 /** The cards to highlight: the partner's wishes among my copies (only while they show their cards), mine among theirs. */
 async function highlightedCards(
   db: PartnerDb,
@@ -283,7 +297,12 @@ async function highlightedCards(
   mine: boolean
 ): Promise<ReadonlySet<string>> {
   if (!mine) return wishlistCardIds(db, viewer.id);
-  return partner.cardsShown ? wishlistCardIds(db, partner.id) : new Set();
+  if (!partner.cardsShown) return new Set();
+  const wishes = await db.cardWatchlist.findMany({
+    ...partnerWishes(partner.id),
+    select: { cardId: true },
+  });
+  return new Set(wishes.map((w) => w.cardId));
 }
 
 export interface TradeablesInput {
@@ -348,8 +367,8 @@ export interface PartnerWish {
 }
 
 /**
- * The partner's wishlist, shown while building a trade with them (catalogue cards only, so no hidden or unpublished
- * card is named), with how many tradeable copies of each the viewer holds.
+ * The partner's wishlist, shown while building a trade with them (`partnerWishes`), with how many tradeable copies of
+ * each the viewer holds.
  */
 export async function getPartnerWishlist(
   db: PartnerDb,
@@ -360,10 +379,8 @@ export async function getPartnerWishlist(
   const partner = await openPartner(db, rules, viewer, partnerId);
   if (!partner.cardsShown) throw hiddenCards();
   const rows = await db.cardWatchlist.findMany({
-    where: { userId: partner.id, card: CATALOGUE_WHERE },
+    ...partnerWishes(partner.id),
     select: { cardId: true, card: { select: { title: true, rarity: true, realmId: true } } },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: WISHLIST_MAX,
   });
   if (rows.length === 0) return [];
   const owned = await db.cardOwnership.groupBy({

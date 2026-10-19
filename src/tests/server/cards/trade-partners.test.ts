@@ -69,6 +69,19 @@ function rulesFor(shown: readonly string[] = ["bob"]) {
   } satisfies PartnerRules;
 }
 
+/** What `tradeOfferRefusers` answers: everyone who refuses the viewer, and those of them who block the viewer. */
+const refusals = (refusing: string[] = [], blocking: string[] = []) => ({
+  refused: new Set([...refusing, ...blocking]),
+  blocking: new Set(blocking),
+});
+
+/** The partner's wishlist rows a trade partner may see: catalogue cards, newest first, a wishlist's worth. */
+const PARTNER_WISHES = {
+  where: { userId: "bob", card: CATALOGUE_WHERE },
+  orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  take: 200,
+};
+
 function makeDb(rows = [row("o1", "c1"), row("o2", "c2")]) {
   const db = createMockPrisma();
   db.user.findUnique.mockResolvedValue(BOB);
@@ -79,7 +92,7 @@ function makeDb(rows = [row("o1", "c1"), row("o2", "c2")]) {
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(permissionAudiences).mockResolvedValue(new Map([["user_bob", "followers"]]));
-  jest.mocked(tradeOfferRefusers).mockResolvedValue(new Set());
+  jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals());
   jest.mocked(hiddenLinkedNames).mockResolvedValue({ discord: new Set(), wiki: new Set() });
   jest.mocked(wishlistCardIds).mockResolvedValue(new Set(["c2"]));
   jest.mocked(loadCopyValues).mockResolvedValue([
@@ -123,9 +136,8 @@ describe("findTradePartner", () => {
     expect(await findTradePartner(db as never, rules, VIEWER, "bob")).toMatchObject({ id: "bob" });
   });
 
-  it("shows a closed door, hidden cards and a missing setting before building", async () => {
-    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(new Set(["user_bob"]));
-    jest.mocked(permissionAudiences).mockResolvedValueOnce(new Map<string, PermissionAudience>());
+  it("shows a closed door and hidden cards before building", async () => {
+    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(refusals(["user_bob"]));
     const db = makeDb();
     db.user.findUnique.mockResolvedValue({ ...BOB, country: null });
     expect(await findTradePartner(db as never, rulesFor([]), VIEWER, "bob")).toEqual({
@@ -133,8 +145,20 @@ describe("findTradePartner", () => {
       handle: "bob",
       displayName: "@bob",
       countryName: null,
-      privacy: { audience: "everyone", allowed: false, cardsShown: false },
+      privacy: { audience: "followers", allowed: false, cardsShown: false },
     });
+  });
+
+  it("hides a block: a blocked viewer reads nobody, whatever the partner's setting", async () => {
+    jest
+      .mocked(permissionAudiences)
+      .mockResolvedValue(new Map<string, PermissionAudience>([["user_bob", "everyone"]]));
+    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(refusals([], ["user_bob"]));
+    const blocked = await findTradePartner(makeDb() as never, rulesFor(), VIEWER, "bob");
+    expect(blocked?.privacy).toEqual({ audience: "nobody", allowed: false, cardsShown: true });
+    // The same partner, not blocking: the real setting shows
+    const open = await findTradePartner(makeDb() as never, rulesFor(), VIEWER, "bob");
+    expect(open?.privacy).toEqual({ audience: "everyone", allowed: true, cardsShown: true });
   });
 
   it("finds nobody for an empty or unknown handle, yourself, an inactive or an unnamed player", async () => {
@@ -217,7 +241,17 @@ describe("searchTradePartners", () => {
         discordUsername: true,
         country: { select: { name: true, leader: true } },
       },
+      // A stable order, so the scan and the results are the same from call to call
+      orderBy: [{ handle: "asc" }, { id: "asc" }],
       take: 15,
+    });
+  });
+
+  it("strips one @ and the spaces around it, as find does", async () => {
+    const db = makeDb();
+    await searchTradePartners(db as never, rulesFor(), VIEWER, " @ bo ");
+    expect(db.user.findMany.mock.calls[0]![0].where.OR[0]).toEqual({
+      handle: { startsWith: "bo", mode: "insensitive" },
     });
   });
 
@@ -226,8 +260,14 @@ describe("searchTradePartners", () => {
       discord: new Set(["clerk_hidden", "clerk_nation"]),
       wiki: new Set(["clerk_wiki"]),
     });
-    jest.mocked(tradeOfferRefusers).mockResolvedValue(new Set(["clerk_forum"]));
-    jest.mocked(permissionAudiences).mockResolvedValue(new Map([["clerk_forum", "nobody"]]));
+    jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals(["clerk_forum"], ["clerk_leader"]));
+    jest.mocked(permissionAudiences).mockResolvedValue(
+      new Map<string, PermissionAudience>([
+        ["clerk_forum", "nobody"],
+        ["clerk_leader", "everyone"],
+        ["clerk_handle", "followers"],
+      ])
+    );
     const db = makeDb();
     db.user.findMany.mockResolvedValue([
       user("hidden", { discordUsername: "rosegarden" }),
@@ -280,6 +320,9 @@ describe("searchTradePartners", () => {
       privacy: { audience: "everyone", allowed: true, cardsShown: true },
     });
     expect(found[3]!.privacy).toEqual({ audience: "nobody", allowed: false, cardsShown: false });
+    // A player who blocks the viewer reads as "nobody", not their real "everyone"; an unblocked one shows theirs
+    expect(found[2]!.privacy).toEqual({ audience: "nobody", allowed: false, cardsShown: false });
+    expect(found[4]!.privacy).toEqual({ audience: "followers", allowed: true, cardsShown: false });
     expect(found[5]!.countryName).toBeNull();
   });
 
@@ -412,11 +455,17 @@ describe("getTradeables", () => {
     ]);
   });
 
-  it("highlights the partner's wishlist among my copies, and leaves out a copy that is gone", async () => {
+  it("highlights the partner's catalogue wishes among my copies, and leaves out a copy that is gone", async () => {
     const db = makeDb([row("o2", "c2"), row("o3", "c3")]);
+    db.cardWatchlist.findMany.mockResolvedValue([{ cardId: "c2" }]);
     const page = await getTradeables(db as never, rulesFor(), VIEWER, { ...input, side: "mine" });
     expect(db.cardOwnership.findMany.mock.calls[0]![0].where.ownerId).toBe("alice");
-    expect(wishlistCardIds).toHaveBeenCalledWith(db, "bob");
+    // The wishes the partner's wishlist shows, so a highlight never reveals a wish for a hidden card
+    expect(db.cardWatchlist.findMany).toHaveBeenCalledWith({
+      ...PARTNER_WISHES,
+      select: { cardId: true },
+    });
+    expect(wishlistCardIds).not.toHaveBeenCalled();
     expect(page.items).toEqual([
       {
         ownershipId: "o2",
@@ -430,7 +479,7 @@ describe("getTradeables", () => {
   });
 
   it("refuses up front when the partner does not take offers from you, reading no copies", async () => {
-    jest.mocked(tradeOfferRefusers).mockResolvedValue(new Set(["user_bob"]));
+    jest.mocked(tradeOfferRefusers).mockResolvedValue(refusals(["user_bob"]));
     for (const side of ["theirs", "mine"] as const) {
       const db = makeDb();
       await expect(
@@ -452,6 +501,7 @@ describe("getTradeables", () => {
 
     const mine = await getTradeables(db as never, rules, VIEWER, { ...input, side: "mine" });
     expect(mine.items.map((i) => i.highlighted)).toEqual([false, false]);
+    expect(db.cardWatchlist.findMany).not.toHaveBeenCalled();
     expect(wishlistCardIds).not.toHaveBeenCalled();
   });
 
@@ -517,7 +567,7 @@ describe("getPartnerWishlist", () => {
 
   it("is refused when the partner does not take offers from you or hides their cards", async () => {
     const closed = makeDb();
-    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(new Set(["user_bob"]));
+    jest.mocked(tradeOfferRefusers).mockResolvedValueOnce(refusals(["user_bob"]));
     await expect(
       getPartnerWishlist(closed as never, rulesFor(), VIEWER, "bob")
     ).rejects.toMatchObject(FORBIDDEN);

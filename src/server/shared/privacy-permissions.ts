@@ -281,6 +281,13 @@ export async function recipientsRefusing(
   });
 }
 
+export interface TradeOfferRefusals {
+  /** Every recipient who refuses the sender's offers. */
+  refused: Set<string>;
+  /** Those of them who block the sender: a surface hides why, as messaging does, and shows them as "nobody". */
+  blocking: Set<string>;
+}
+
 /**
  * Which recipients refuse a card trade offer from the sender: outside their `tradeOffers` audience, or on their block
  * list. Offer creation refuses such a sender, and the recipient's tradeable copies are hidden from them.
@@ -289,12 +296,12 @@ export async function tradeOfferRefusers(
   db: PrivacyDb,
   senderClerkId: string,
   recipientClerkIds: string[]
-): Promise<Set<string>> {
+): Promise<TradeOfferRefusals> {
   const [refusing, blocking] = await Promise.all([
     recipientsRefusing(db, senderClerkId, recipientClerkIds, "tradeOffers"),
     recipientsBlockingSender(db, senderClerkId, recipientClerkIds),
   ]);
-  return new Set([...refusing, ...blocking]);
+  return { refused: new Set([...refusing, ...blocking]), blocking: new Set(blocking) };
 }
 
 /** Whether the recipient refuses a card trade offer from the sender (`tradeOfferRefusers`). */
@@ -303,7 +310,7 @@ export async function refusesTradeOffer(
   senderClerkId: string,
   recipientClerkId: string
 ): Promise<boolean> {
-  return (await tradeOfferRefusers(db, senderClerkId, [recipientClerkId])).size > 0;
+  return (await tradeOfferRefusers(db, senderClerkId, [recipientClerkId])).refused.size > 0;
 }
 
 /** The viewer's muted words, lower-cased. Empty for anonymous viewers. */
