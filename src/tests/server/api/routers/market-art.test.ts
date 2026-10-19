@@ -98,24 +98,6 @@ describe("auctions", () => {
     });
   });
 
-  it("filters live listings by realm and shows their art to every viewer", async () => {
-    const db = createMockPrisma();
-    db.cardAuction.count.mockResolvedValue(1);
-    db.cardAuction.findMany.mockResolvedValue([listing("a", "o1", "c1")]);
-    ownership(db, [], [faceRow("o1", "c1")]);
-    const result = await market(db).getActiveAuctions({ realmId: "r1" });
-    expect(db.cardAuction.count.mock.calls[0]![0].where).toMatchObject({
-      status: "ACTIVE",
-      CardOwnership: { cards: { realmId: "r1" } },
-    });
-    expect(result.auctions[0]!.face).toMatchObject({
-      artwork: "https://art/c1.png",
-      silhouette: false,
-    });
-    expect(result.auctions[0]!.CardOwnership!.cards.artwork).toBe("https://art/c1.png");
-    expect(db.cardAuction.findMany).toHaveBeenCalledTimes(1);
-  });
-
   it("lists every running auction the viewer bid on, winning or outbid, with their faces", async () => {
     const db = createMockPrisma();
     db.cardAuction.findMany.mockResolvedValue([

@@ -20,7 +20,7 @@ jest.mock("~/trpc/react", () => {
   const query = () => ({ invalidate: jest.fn() });
   const utils = {
     cardMarket: {
-      getActiveAuctions: query(),
+      browse: query(),
       getMyActiveAuctions: query(),
       getMyActiveBids: query(),
       getMyAuctionParticipation: query(),
@@ -48,7 +48,7 @@ const client = getMarketWebSocketClient() as never as {
 const utils = api.useUtils();
 const refreshCards = jest.mocked(useCardsRefresh());
 const QUERIES = {
-  getActiveAuctions: utils.cardMarket.getActiveAuctions,
+  browse: utils.cardMarket.browse,
   getMyActiveAuctions: utils.cardMarket.getMyActiveAuctions,
   getMyActiveBids: utils.cardMarket.getMyActiveBids,
   getMyAuctionParticipation: utils.cardMarket.getMyAuctionParticipation,
@@ -71,7 +71,7 @@ describe("useAuctionWebSocket", () => {
     expect(client.connect).toHaveBeenCalled();
 
     client.listeners.get("bid")?.();
-    expect(refetched()).toEqual(["getActiveAuctions", "getMyActiveBids"]);
+    expect(refetched()).toEqual(["browse", "getMyActiveBids"]);
     expect(refreshCards).not.toHaveBeenCalled();
 
     jest.clearAllMocks();
@@ -82,7 +82,7 @@ describe("useAuctionWebSocket", () => {
 
     jest.clearAllMocks();
     client.listeners.get("auction_created")?.();
-    expect(refetched()).toEqual(["getActiveAuctions", "getMyActiveAuctions"]);
+    expect(refetched()).toEqual(["browse", "getMyActiveAuctions"]);
   });
 
   it("lets go of every subscription and the socket when it unmounts", () => {

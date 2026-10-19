@@ -14,7 +14,6 @@ jest.mock("~/trpc/react", () => {
       getWikiArticleExcerpt: query(),
     },
     cardMarket: {
-      getActiveAuctions: query(),
       getMyActiveAuctions: query(),
       getMyActiveBids: query(),
       getMyAuctionParticipation: query(),
@@ -34,7 +33,7 @@ jest.mock("~/trpc/react", () => {
 });
 
 import { api } from "~/trpc/react";
-import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { useBidRefresh, useCardsRefresh } from "~/hooks/useCardsRefresh";
 
 type Utils = Record<string, Record<string, { invalidate: jest.Mock }>>;
 const utils = api.useUtils() as never as Utils;
@@ -61,7 +60,6 @@ describe("useCardsRefresh", () => {
       "cards.getSheetEconomy",
       "cards.exploreShelves",
       "cards.exploreGrid",
-      "cardMarket.getActiveAuctions",
       "cardMarket.getMyActiveAuctions",
       "cardMarket.getMyActiveBids",
       "cardMarket.getMyAuctionParticipation",
@@ -79,6 +77,22 @@ describe("useCardsRefresh", () => {
   it("stays the same function across renders, so a socket subscription can hold it", () => {
     const { result, rerender } = renderHook(() => useCardsRefresh());
     const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
+});
+
+describe("useBidRefresh", () => {
+  it("reads again what a bid changes, and not Explore, since no copy moves", () => {
+    const { result, rerender } = renderHook(() => useBidRefresh());
+    const first = result.current;
+    result.current();
+    expect(refetched()).toEqual([
+      "cards.getSheet",
+      "cardMarket.getMyActiveBids",
+      "cardMarket.browse",
+      "vault.getBalance",
+    ]);
     rerender();
     expect(result.current).toBe(first);
   });

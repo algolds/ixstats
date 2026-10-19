@@ -53,7 +53,7 @@ export function MarketHistory({ onOpenCard }: { onOpenCard: (cardId: string) => 
                 <CardFace
                   face={face}
                   size="S"
-                  className="w-16"
+                  className="w-20"
                   onOpen={() => onOpenCard(face.cardId)}
                 />
               ) : (

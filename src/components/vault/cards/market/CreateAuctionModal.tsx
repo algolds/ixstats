@@ -95,7 +95,7 @@ function CopyPicker({ rows, loading, searching, picked, onPick }: CopyPickerProp
             >
               {/* The title and serial name the copy; the face would say the title again. */}
               <span aria-hidden="true" className="shrink-0">
-                <CardFace face={face} size="S" className="w-16" />
+                <CardFace face={face} size="S" className="w-20" />
               </span>
               <span className="min-w-0 truncate text-left">
                 {face.title}

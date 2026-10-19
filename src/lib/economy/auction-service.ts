@@ -18,10 +18,9 @@
 import { vaultService, LedgerError } from "~/lib/vault/vault-service";
 import { lockVaultsTx, vaultsBusyError } from "~/lib/vault/vault-locks";
 import { TRPCError } from "@trpc/server";
-import type { CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { boundCopyError } from "~/lib/cards/bound";
-import { INSCRIPTION_OMIT } from "~/lib/cards/inscription";
 import { notifyCard, notifyCards } from "~/lib/cards/card-notify";
 import { getEconomyConfig } from "~/lib/cards/economy-config";
 import { AUCTION_DURATION_MS, type AuctionDuration } from "~/lib/cards/market/auction-timing";
@@ -794,73 +793,6 @@ export class AuctionService {
 
       return { success: true as const, refund };
     });
-  }
-
-  /** One page of active auctions, with filters. */
-  async getActiveAuctions(
-    params: {
-      cardId?: string;
-      realmId?: string;
-      sellerId?: string;
-      isFeatured?: boolean;
-      rarity?: CardRarity;
-      cardType?: CardType;
-      minPrice?: number;
-      maxPrice?: number;
-      sortBy?: "ending_soon" | "newest" | "price_low" | "price_high";
-      limit?: number;
-      offset?: number;
-    },
-    db: PrismaClient
-  ) {
-    const limit = Math.min(params.limit ?? 20, 100);
-    const offset = params.offset ?? 0;
-
-    const cards: Prisma.CardWhereInput = {
-      ...(params.cardId ? { id: params.cardId } : {}),
-      ...(params.rarity ? { rarity: params.rarity } : {}),
-      ...(params.cardType ? { cardType: params.cardType } : {}),
-      ...(params.realmId ? { realmId: params.realmId } : {}),
-    };
-    const currentBid: Prisma.IntFilter = {
-      ...(params.minPrice !== undefined ? { gte: params.minPrice } : {}),
-      ...(params.maxPrice !== undefined ? { lte: params.maxPrice } : {}),
-    };
-    // Every filter is in the query, so the count and the page agree
-    const where: Prisma.CardAuctionWhereInput = {
-      status: "ACTIVE",
-      endTime: { gt: new Date() },
-      ...(params.sellerId ? { sellerId: params.sellerId } : {}),
-      ...(params.isFeatured !== undefined ? { isFeatured: params.isFeatured } : {}),
-      ...(Object.keys(cards).length > 0 ? { CardOwnership: { cards } } : {}),
-      ...(Object.keys(currentBid).length > 0 ? { currentBid } : {}),
-    };
-
-    const SORTS: Record<string, Prisma.CardAuctionOrderByWithRelationInput> = {
-      newest: { createdAt: "desc" },
-      price_low: { currentBid: "asc" },
-      price_high: { currentBid: "desc" },
-    };
-    const orderBy: Prisma.CardAuctionOrderByWithRelationInput[] = [
-      { isFeatured: "desc" },
-      SORTS[params.sortBy ?? ""] ?? { endTime: "asc" },
-    ];
-
-    const [total, auctions] = await Promise.all([
-      db.cardAuction.count({ where }),
-      db.cardAuction.findMany({
-        where,
-        include: {
-          CardOwnership: { omit: INSCRIPTION_OMIT, include: { cards: true } },
-          AuctionBid: { orderBy: { createdAt: "desc" }, take: 1 },
-        },
-        orderBy,
-        take: limit,
-        skip: offset,
-      }),
-    ]);
-
-    return { auctions, total, hasMore: offset + limit < total };
   }
 }
 

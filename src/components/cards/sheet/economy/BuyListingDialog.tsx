@@ -18,6 +18,12 @@ import type { SheetListing } from "~/lib/cards/hub/sheet";
 import { buyFailureMessage, listingGone, type BuyFailure } from "~/lib/cards/market/buy-failure";
 import type { DialogFocus } from "./dialog-focus";
 
+/** What the dialog shows of a listing: the sheet's listing, or a Browse row's, which names no seller. */
+export type BuyTarget = Pick<
+  SheetListing,
+  "id" | "price" | "finish" | "serialNumber" | "sellerName"
+>;
+
 interface BuyListingDialogProps {
   /** Closing without buying: Not now, Escape. */
   onOpenChange: (open: boolean) => void;
@@ -25,7 +31,7 @@ interface BuyListingDialogProps {
   onDone: () => void;
   cardId: string;
   cardTitle: string;
-  listing: SheetListing;
+  listing: BuyTarget;
   /** The dialog has no trigger of its own, so its opener says where focus goes (`useDialogFocus`). */
   focus?: DialogFocus;
 }

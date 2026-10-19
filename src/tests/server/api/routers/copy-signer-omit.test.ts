@@ -204,10 +204,6 @@ describe("whole copy rows a player reads", () => {
 
   it.each([
     [
-      "the live market",
-      (db: MockDb) => createCallerFactory(cardMarketRouter)(context(db)).getActiveAuctions({}),
-    ],
-    [
       "the seller's listings",
       (db: MockDb) => createCallerFactory(cardMarketRouter)(context(db)).getMyActiveAuctions(),
     ],

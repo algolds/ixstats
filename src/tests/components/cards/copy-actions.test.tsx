@@ -20,6 +20,7 @@ jest.mock("next/link", () => ({
 import { useEconomyNumbers, useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
 import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { COPIES_HEADING_ID, CopyActions } from "~/components/cards/sheet/CopyActions";
+import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import type { CardSheetData, SheetCopy } from "~/lib/cards/hub/sheet";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
@@ -258,6 +259,10 @@ describe("CopyActions focus", () => {
   it("moves focus to the copy's showcase button once a listing or a signature takes the opener away", async () => {
     showEconomy(economy());
     renderActions();
+    // List waits for the fees it shows
+    jest
+      .mocked(useEconomyNumbers)
+      .mockReturnValue({ data: { economy: CARD_ECONOMY_DEFAULTS, feeRatePct: 10 } } as never);
     const showcase = screen.getByRole("button", { name: "Add to showcase" });
 
     await openFrom("List");

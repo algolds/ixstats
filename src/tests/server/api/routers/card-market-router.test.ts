@@ -14,7 +14,6 @@ jest.mock("~/lib/economy/auction-service", () => ({
     executeBuyout: jest.fn(),
     cancelAuction: jest.fn(),
     placeBid: jest.fn(),
-    getActiveAuctions: jest.fn(),
   },
 }));
 
@@ -59,7 +58,6 @@ beforeEach(() => {
   });
   service.cancelAuction!.mockResolvedValue({ success: true, refund: 2.5 });
   service.placeBid!.mockResolvedValue(undefined);
-  service.getActiveAuctions!.mockResolvedValue({ auctions: [], total: 0 });
 });
 
 describe("authentication", () => {
@@ -71,7 +69,7 @@ describe("authentication", () => {
     await expect(anon.placeBid({ auctionId: "a1", amount: 5 })).rejects.toThrow(
       /Authentication required/
     );
-    await expect(anon.getActiveAuctions({})).rejects.toThrow(/Authentication required/);
+    await expect(anon.browse({})).rejects.toThrow(/Authentication required/);
     await expect(anon.getMyActiveBids()).rejects.toThrow(/Authentication required/);
     expect(service.createAuction).not.toHaveBeenCalled();
     expect(service.placeBid).not.toHaveBeenCalled();
@@ -295,33 +293,6 @@ describe("caller-scoped reads", () => {
     );
   });
 
-  it("filters active auctions by realm", async () => {
-    await callerAs("u1", db).getActiveAuctions({ realmId: "r1", sortBy: "ending_soon" });
-    expect(service.getActiveAuctions).toHaveBeenCalledWith(
-      expect.objectContaining({ realmId: "r1", sortBy: "ending_soon" }),
-      db
-    );
-  });
-
-  it("marks the caller's own listings, which they cannot bid on", async () => {
-    const listed = (id: string, sellerId: string) => ({
-      id,
-      sellerId,
-      cardInstanceId: `o_${id}`,
-      CardOwnership: { cards: { id: `c_${id}` } },
-    });
-    service.getActiveAuctions!.mockResolvedValue({
-      auctions: [listed("a", "u1"), listed("b", "u2")],
-      total: 2,
-      hasMore: false,
-    });
-    const result = await callerAs("u1", db).getActiveAuctions({});
-    expect(result.auctions.map((a) => [a.id, a.isMine])).toEqual([
-      ["a", true],
-      ["b", false],
-    ]);
-  });
-
   it("labels past auctions by the caller's part in them", async () => {
     db.cardAuction.count.mockResolvedValue(3);
     // Each past auction as the query includes it: the listed copy with its card
@@ -350,11 +321,8 @@ describe("caller-scoped reads", () => {
     expect("getEndingSoon" in cardMarketRouter._def.procedures).toBe(false);
   });
 
-  it("caps the active-auction page size", async () => {
-    await expect(callerAs("u1", db).getActiveAuctions({ limit: 101 })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    expect(service.getActiveAuctions).not.toHaveBeenCalled();
+  it("has no auction-only list: Browse holds listings and auctions", () => {
+    expect("getActiveAuctions" in cardMarketRouter._def.procedures).toBe(false);
   });
 });
 

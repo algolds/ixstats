@@ -24,7 +24,7 @@ const numbers = (over: object = {}, feeRatePct = 10) => ({
 function setup(
   props: {
     suggestedPrice?: number;
-    numbers?: ReturnType<typeof numbers> | { data: undefined };
+    numbers?: ReturnType<typeof numbers> | { data: undefined; isError?: boolean };
   } = {}
 ) {
   const mutate = jest.fn();
@@ -111,10 +111,28 @@ describe("ListCopyDialog", () => {
     expect(field.getAttribute("aria-invalid")).toBe("false");
   });
 
-  it("says nothing about fees until the numbers arrive", () => {
-    setup({ numbers: { data: undefined } });
+  it("starts a copy worth more than the cap at the cap, so it opens listable", () => {
+    const { mutate } = setup({ suggestedPrice: 4_000_000 });
+    expect((screen.getByLabelText("Price in IxC") as HTMLInputElement).value).toBe("1000000");
+    fireEvent.click(screen.getByRole("button", { name: "List for 1,000,000 IxC" }));
+    expect(mutate.mock.calls[0]![0]).toMatchObject({ price: 1_000_000 });
+  });
+
+  it("will not list until the fees are shown, so a fee is never paid unseen", () => {
+    const { mutate } = setup({ numbers: { data: undefined } });
     expect(screen.queryByText(/Listing costs/)).toBeNull();
-    expect(screen.getByRole("button", { name: "List for 120 IxC" })).toBeTruthy();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading the listing fee");
+    expect(screen.getByRole("button", { name: "List for 120 IxC" })).toBeDisabled();
+    fireEvent.submit(screen.getByLabelText("Price in IxC").closest("form")!);
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("says why it cannot list when the fees did not load", () => {
+    setup({ numbers: { data: undefined, isError: true } });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "The listing fee did not load, so this copy cannot be listed yet."
+    );
+    expect(screen.getByRole("button", { name: "List for 120 IxC" })).toBeDisabled();
   });
 });
 
