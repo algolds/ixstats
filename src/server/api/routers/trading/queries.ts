@@ -10,7 +10,8 @@ import {
 
 export const tradingQueriesRouter = createTRPCRouter({
   /**
-   * Get active trades (sent and received)
+   * The open trades, sent and received. Each says whether it waits on the viewer: the other party wrote its current
+   * table (a counter-offer turns it around), and only unexpired offers are listed.
    */
   getActiveTrades: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id;
@@ -25,7 +26,8 @@ export const tradingQueriesRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
 
-    return withPartyNames(trades);
+    const named = await withPartyNames(trades);
+    return named.map((trade) => ({ ...trade, myTurn: trade.proposerId !== userId }));
   }),
 
   /**

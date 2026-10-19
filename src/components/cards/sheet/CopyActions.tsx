@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Combine, EditPencil, Shop, Trash } from "iconoir-react";
+import { ArrowSeparate, Combine, EditPencil, Shop, Trash } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
@@ -10,7 +10,7 @@ import {
   type CopyEconomyView,
   type FusionGroupView,
 } from "~/hooks/cards/useSheetEconomy";
-import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
+import { CARD_HUB_PATHS, tradeBuilderHref } from "~/lib/cards/hub-routes";
 import type { CardSheetData, SheetCopy } from "~/lib/cards/hub/sheet";
 import { BreakDownDialog } from "./economy/BreakDownDialog";
 import { useDialogFocus, type DialogFocus } from "./economy/dialog-focus";
@@ -69,6 +69,14 @@ export function CopyActions({ copy, card, onAddToShowcase }: CopyActionsProps) {
         </Button>
       )}
       {sellable && <AuctionLink ownershipId={ownershipId} />}
+      {sellable && (
+        <Button size="sm" variant="ghost" asChild>
+          <Link href={tradeBuilderHref({ give: ownershipId })}>
+            <ArrowSeparate aria-hidden />
+            Offer in a trade
+          </Link>
+        </Button>
+      )}
       {economy && <WorkshopButtons economy={economy} group={group} onOpen={setOpen} />}
       {economy && (economy.listingId ?? economy.auctionId) !== null && <SellingLink />}
       {data && economy && (

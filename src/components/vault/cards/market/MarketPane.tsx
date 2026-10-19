@@ -7,6 +7,7 @@ import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { marketTabOf, type MarketTab } from "~/lib/cards/hub-routes";
 import { MarketBrowse } from "./MarketBrowse";
+import type { TradeAddress } from "~/components/cards/trade/TradeBuilderHost";
 import { MarketSelling } from "./MarketSelling";
 import { MarketTrades } from "./MarketTrades";
 import { MarketWishlist } from "./MarketWishlist";
@@ -21,6 +22,8 @@ interface MarketPaneProps {
   sellOwnershipId: string | null;
   onSellHandled: () => void;
   onOpenCard: (cardId: string, from?: SheetFrom | null) => void;
+  trade?: TradeAddress | null;
+  onCloseTrade?: () => void;
 }
 
 /** The tab row's track clips its overflow, so each tab draws its focus ring inside itself. */
@@ -67,7 +70,11 @@ export function MarketPane(props: MarketPaneProps) {
         />
       </TabsContent>
       <TabsContent value="trades">
-        <MarketTrades onOpenCard={props.onOpenCard} />
+        <MarketTrades
+          onOpenCard={props.onOpenCard}
+          trade={props.trade}
+          onCloseTrade={props.onCloseTrade}
+        />
       </TabsContent>
       <TabsContent value="wishlist">
         <MarketWishlist

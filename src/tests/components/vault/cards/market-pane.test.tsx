@@ -47,11 +47,14 @@ jest.mock("~/hooks/useCardsRefresh", () => {
   return { useCardsRefresh: () => refreshCards };
 });
 jest.mock("@clerk/nextjs", () => ({ useAuth: () => ({ userId: "clerk_me" }) }));
-jest.mock("~/components/cards/trading/TradeNegotiation", () => ({
-  TradeNegotiation: ({ tradeId, isRecipient }: { tradeId: string; isRecipient: boolean }) => (
-    <p>
-      Offer {tradeId}, {isRecipient ? "to you" : "from you"}
-    </p>
+jest.mock("~/components/cards/trade/TradeBuilderHost", () => ({
+  TradeBuilderHost: ({ address, onClose }: { address: { trade: string } | null; onClose: () => void }) =>
+    address ? <button onClick={onClose}>Close trade {address.trade}</button> : null,
+}));
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
+    <a href={href}>{children}</a>
   ),
 }));
 jest.mock("~/components/vault/cards/market/CreateAuctionModal", () => ({
@@ -134,6 +137,8 @@ function renderPane(
     sellOwnershipId: null,
     onSellHandled: jest.fn(),
     onOpenCard: jest.fn(),
+    trade: null,
+    onCloseTrade: jest.fn(),
     ...overrides,
   };
   const view = render(<MarketPane {...props} />);
@@ -422,18 +427,20 @@ describe("MarketPane", () => {
     expect(screen.getByText("Auctions you bid on appear here until they end.")).toBeInTheDocument();
   });
 
-  it("splits open offers into the ones to the player and the ones they sent", () => {
+  it("splits open offers into the ones waiting on the player and the ones waiting on the other side", () => {
     jest.mocked(api.trading.getActiveTrades.useQuery).mockReturnValue({
       data: [
         {
           id: "t1",
-          initiator: { clerkUserId: "clerk_ann" },
-          recipient: { clerkUserId: "clerk_me" },
+          myTurn: true,
+          initiator: { clerkUserId: "clerk_ann", displayName: "@ann" },
+          recipient: { clerkUserId: "clerk_me", displayName: "@max" },
         },
         {
           id: "t2",
-          initiator: { clerkUserId: "clerk_me" },
-          recipient: { clerkUserId: "clerk_ann" },
+          myTurn: false,
+          initiator: { clerkUserId: "clerk_me", displayName: "@max" },
+          recipient: { clerkUserId: "clerk_ann", displayName: "@ann" },
         },
       ],
       refetch: jest.fn(),
@@ -442,14 +449,28 @@ describe("MarketPane", () => {
     const incoming = screen.getByRole("tab", { name: /^Incoming\s*, 1 offer$/ });
     const panel = screen.getByRole("tabpanel", { name: "Incoming" });
     expect(incoming).toHaveAttribute("aria-controls", panel.id);
-    expect(within(panel).getByText("Offer t1, to you")).toBeInTheDocument();
-    expect(screen.queryByText(/Offer t2/)).toBeNull();
+    expect(within(panel).getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      "/vault/cards/market?tab=trades&trade=t1"
+    );
+    expect(within(panel).getByText("Your turn")).toBeInTheDocument();
     fireEvent.mouseDown(screen.getByRole("tab", { name: /^Sent\s*, 1 offer$/ }));
-    expect(
-      within(screen.getByRole("tabpanel", { name: "Sent" })).getByText("Offer t2, from you")
-    ).toBeInTheDocument();
+    const sent = within(screen.getByRole("tabpanel", { name: "Sent" }));
+    expect(sent.getByText("Trade with @ann")).toBeInTheDocument();
+    expect(sent.getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      "/vault/cards/market?tab=trades&trade=t2"
+    );
     fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
     expect(screen.getByText("No trades or auctions yet")).toBeInTheDocument();
+  });
+
+  it("opens the trade builder the address names on the Trades tab, and closes it through the hub", () => {
+    const props = renderPane("trades", {
+      trade: { trade: "t7", partner: null, give: null, get: null },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Close trade t7" }));
+    expect(props.onCloseTrade).toHaveBeenCalledTimes(1);
   });
 
   it("names a past trade's partner as the server names them in History, else a player", () => {

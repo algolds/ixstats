@@ -118,6 +118,9 @@ describe("CopyActions", () => {
     expect(screen.getByRole("link", { name: "Sell at auction" }).getAttribute("href")).toBe(
       "/vault/cards/market?tab=selling&sell=a"
     );
+    expect(screen.getByRole("link", { name: "Offer in a trade" }).getAttribute("href")).toBe(
+      "/vault/cards/market?tab=trades&trade=new&give=a"
+    );
     expect(screen.getByText("120")).toBeTruthy();
     expect(screen.queryByText("Retired")).toBeNull();
     expect(useSheetEconomy).toHaveBeenCalledWith("c1");
@@ -148,6 +151,7 @@ describe("CopyActions", () => {
     renderActions(sheetCopy({ isLocked: true }));
     expect(shown()).toEqual(["Add to showcase"]);
     expect(screen.queryByRole("link", { name: "Sell at auction" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Offer in a trade" })).toBeNull();
     expect(screen.getByRole("link", { name: "See it in Selling" }).getAttribute("href")).toBe(
       "/vault/cards/market?tab=selling"
     );
@@ -175,6 +179,7 @@ describe("CopyActions", () => {
     renderActions(sheetCopy(), card({ isBound: true }));
     expect(shown()).toEqual(["Add to showcase", "Sign"]);
     expect(screen.queryByRole("link", { name: "Sell at auction" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Offer in a trade" })).toBeNull();
   });
 
   it("still sells a signed copy, but never breaks it down or signs it again", () => {

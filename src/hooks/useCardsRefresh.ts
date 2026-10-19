@@ -30,6 +30,8 @@ export function useCardsRefresh(): () => void {
     void utils.trading.getActiveTrades.invalidate();
     void utils.trading.getTradeById.invalidate();
     void utils.trading.getTradeHistory.invalidate();
+    void utils.trading.getTradeables.invalidate();
+    void utils.trading.getPartnerWishlist.invalidate();
     void utils.vault.getBalance.invalidate();
   }, [utils]);
 }

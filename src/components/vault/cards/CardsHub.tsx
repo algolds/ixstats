@@ -42,6 +42,23 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
   const param = (key: string) => params?.get(key) || null;
   const panelId = useId();
 
+  const tradeParam = param("trade");
+  const trade = tradeParam
+    ? {
+        trade: tradeParam,
+        partner: param("partner"),
+        give: param("give"),
+        get: param("get"),
+      }
+    : null;
+
+  const closeTrade = () => {
+    const next = addressWith(window.location.href, (query) => {
+      for (const key of ["trade", "partner", "give", "get"]) query.delete(key);
+    });
+    window.history.replaceState(null, "", next);
+  };
+
   return (
     // pt-14: the tabs are the first row and the hub has no header toolbar, so it clears Halo's floating band itself.
     <div className="space-y-4 pt-14">
@@ -80,6 +97,8 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
             sellOwnershipId={param("sell")}
             onSellHandled={() => setParam("sell", null)}
             onOpenCard={sheet.open}
+            trade={trade}
+            onCloseTrade={closeTrade}
           />
         )}
         {tab === "explore" && (
