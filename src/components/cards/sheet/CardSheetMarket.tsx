@@ -1,20 +1,31 @@
 "use client";
 
+import { useId, useState } from "react";
 import Link from "next/link";
 import { cn } from "~/lib/utils/cn";
-import { focusRing } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { CardPriceHistoryChart } from "~/components/cards/display/CardPriceHistoryChart";
+import { ReportInscriptionButton } from "~/components/cards/inscription/ReportInscriptionButton";
+import { useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
+import { FINISH_LABEL } from "~/lib/cards/face/labels";
 import { timeLeftPhrase } from "~/lib/cards/face/time-left";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import type { CardSheetData, SheetListing } from "~/lib/cards/hub/sheet";
+import { BuyListingDialog } from "./economy/BuyListingDialog";
+import { CraftButton } from "./economy/CraftButton";
+import { useDialogFocus } from "./economy/dialog-focus";
+
+/** The "Market" heading, where focus goes once a purchase takes the listing, and its Buy button, away. */
+const MARKET_HEADING_ID = "sheet-market";
 
 interface CardSheetMarketProps {
   cardId: string;
+  cardTitle: string;
   value: number;
   market: CardSheetData["market"];
-  /** The price history is for players; a signed-out visitor does not ask for it. */
+  /** Buying, crafting, reporting and the price history are for players; a signed-out visitor only looks. */
   signedIn: boolean;
 }
 
@@ -31,12 +42,31 @@ const seller = (listing: SheetListing) => {
   return listing.sellerName ?? "A player";
 };
 
-/** "Market": what a copy is worth, how many want it, live listings, price history and recent sales. */
-export function CardSheetMarket({ cardId, value, market, signedIn }: CardSheetMarketProps) {
+/**
+ * "Market": what a copy is worth, how many want it, live listings (Buy at a fixed price; auctions are bid on in the
+ * market), the craft offer, price history and recent sales. What the viewer may do, and every price, comes from the
+ * server.
+ */
+export function CardSheetMarket({
+  cardId,
+  cardTitle,
+  value,
+  market,
+  signedIn,
+}: CardSheetMarketProps) {
+  const { data: economy } = useSheetEconomy(cardId, signedIn);
+  const [buying, setBuying] = useState<SheetListing | null>(null);
+  const { focus, settle } = useDialogFocus();
   const marketHref = `${CARD_HUB_PATHS.market}?for=${encodeURIComponent(cardId)}`;
+  const hasAuction = market.listings.some((l) => l.kind === "auction");
+  const bought = () => {
+    settle(document.getElementById(MARKET_HEADING_ID));
+    setBuying(null);
+  };
+
   return (
-    <section aria-labelledby="sheet-market" className="space-y-3">
-      <h3 id="sheet-market" className="text-headline">
+    <section aria-labelledby={MARKET_HEADING_ID} className="space-y-3">
+      <h3 id={MARKET_HEADING_ID} tabIndex={-1} className="text-headline">
         Market
       </h3>
       <Stat
@@ -52,34 +82,88 @@ export function CardSheetMarket({ cardId, value, market, signedIn }: CardSheetMa
       {market.listings.length > 0 && (
         <ul className="divide-separator divide-y" aria-label="Live listings">
           {market.listings.map((listing) => (
-            <li
-              key={listing.auctionId}
-              className="text-callout flex items-center justify-between gap-3 py-2"
-            >
-              <span className="min-w-0 truncate">
-                {`${seller(listing)} · ${timeLeftPhrase(listing.endTime)}`}
-              </span>
-              <span className="shrink-0">{credits(listing.currentBid)}</span>
-            </li>
+            <ListingLine
+              key={`${listing.kind}-${listing.id}`}
+              listing={listing}
+              cardId={cardId}
+              signedIn={signedIn}
+              onBuy={setBuying}
+            />
           ))}
         </ul>
       )}
       <p className="text-callout">
         <Link href={marketHref} className={cn("text-tint underline", focusRing)}>
-          {market.listings.length > 0 ? "Bid in the market" : "Look for it in the market"}
+          {hasAuction ? "Bid in the market" : "Look for it in the market"}
         </Link>
       </p>
+      {signedIn && economy?.craft && <CraftButton cardId={cardId} offer={economy.craft} />}
       {signedIn && <CardPriceHistoryChart cardId={cardId} />}
       {market.recentSales.length > 0 && (
         <ul aria-label="Recent sales" className="text-footnote text-label-secondary space-y-1">
           {market.recentSales.map((sale, index) => (
             <li key={`${sale.at.getTime()}-${index}`} className="flex justify-between">
-              <span>{sale.at.toLocaleDateString()}</span>
+              <span>
+                {sale.at.toLocaleDateString()}
+                {sale.finish ? ` · ${FINISH_LABEL[sale.finish]}` : ""}
+              </span>
               {credits(sale.price)}
             </li>
           ))}
         </ul>
       )}
+      {buying && (
+        <BuyListingDialog
+          onOpenChange={(open) => !open && setBuying(null)}
+          onDone={bought}
+          cardId={cardId}
+          cardTitle={cardTitle}
+          listing={buying}
+          focus={focus}
+        />
+      )}
     </section>
+  );
+}
+
+interface ListingLineProps {
+  listing: SheetListing;
+  cardId: string;
+  signedIn: boolean;
+  onBuy: (listing: SheetListing) => void;
+}
+
+/** One live listing: who sells which copy for how long, its inscription, its price, and Buy where the viewer may. */
+function ListingLine({ listing, cardId, signedIn, onBuy }: ListingLineProps) {
+  const lineId = useId();
+  const left = timeLeftPhrase(listing.endsAt);
+  // Only another player's fixed-price listing still running is bought here
+  const buyable = signedIn && listing.kind === "listing" && !listing.isMine && left !== "Ended";
+  return (
+    <li className="text-callout flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+      <span className="min-w-0">
+        <span id={lineId} className="block truncate">
+          {`${seller(listing)} · ${FINISH_LABEL[listing.finish]} #${listing.serialNumber} · ${left}`}
+        </span>
+        {listing.inscription && (
+          <span className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-2">
+            <span>
+              {`“${listing.inscription.text}”${listing.inscription.signerName ? ` · ${listing.inscription.signerName}` : ""}`}
+            </span>
+            {signedIn && !listing.isMine && (
+              <ReportInscriptionButton ownershipId={listing.ownershipId} cardId={cardId} />
+            )}
+          </span>
+        )}
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        {credits(listing.price)}
+        {buyable && (
+          <Button size="sm" aria-describedby={lineId} onClick={() => onBuy(listing)}>
+            Buy
+          </Button>
+        )}
+      </span>
+    </li>
   );
 }

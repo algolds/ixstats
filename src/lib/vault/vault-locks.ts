@@ -10,8 +10,9 @@
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { InternalError } from "~/lib/app-error";
+import { VAULTS_BUSY_MESSAGE } from "~/lib/vault/vault-busy";
 
-export const VAULTS_BUSY_MESSAGE = "Someone else was buying at the same moment. Try again.";
+export { VAULTS_BUSY_MESSAGE };
 
 /**
  * Locks the vault rows of `userIds` (each once, by code point, as the database orders ids; a null, such as an auction
