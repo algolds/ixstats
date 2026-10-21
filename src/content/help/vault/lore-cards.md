@@ -12,7 +12,7 @@ nextLabel: Importing NationStates Cards
 
 A lore card is a card made from a wiki article (from the wiki, IIWiki or the AltHistory Wiki): a historical event, a person, an organisation, a place and so on. It shows an excerpt of the article, links to it in WikiOS (IIWiki and AltHistory Wiki articles open there too, read-only), and has a category (military, diplomacy, geography, religion, culture, government, people, economy, science, history and others). A few lore cards are made from Wikimedia Commons files instead, and link to the file's page there.
 
-Browse every lore card in [Cards → Explore](/vault/cards/explore), realm by realm. Until you collect a card it shows as a silhouette: its title, realm, rarity and number, but not its art. The art shows once you hold a copy, and also on a card that's up for auction, in another player's public showcase, and in a trade offer made to you.
+Browse every lore card in [Cards → Explore](/vault/cards/explore), realm by realm, each with its art. Until you collect a card, its art is muted and the card shows its number; once you hold a copy, it shows in full colour.
 
 ## How lore cards are made
 

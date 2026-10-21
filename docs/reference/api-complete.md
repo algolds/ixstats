@@ -659,7 +659,7 @@ Showcases replaced the `vault.*` collection procedures, and the daily reward is 
 23 player procedures at `api.cards.*`, and 64 admin procedures under `api.cards.admin.<tab>.*`, one sub-router per
 `/admin/cards` tab plus NationStates imports and the player tools (all `adminProcedure`; the inventory above counts
 only the 23). Wiki and Commons imports are queued from `api.cards.admin.imports.*`. Every card face these return
-follows the silhouette rules ([cards.md](../systems/cards.md#silhouettes)).
+shows its art, marked when the viewer holds no copy ([cards.md](../systems/cards.md#uncollected-cards)).
 
 ```typescript
 // Queries (12)
@@ -723,7 +723,7 @@ api.cardPacks.openPack.useMutation() // { userPackId }; needs room for the whole
 ### cardMarket Router (17 procedures)
 
 The cards hub's Market (`/vault/cards/market`): fixed-price listings, auctions and the wishlist
-([cards.md](../systems/cards.md#card-economy)). Card faces in these payloads follow the silhouette rules.
+([cards.md](../systems/cards.md#card-economy)). Card faces in these payloads show their art, marked by the viewer's own copies.
 
 ```typescript
 // Queries (7)
