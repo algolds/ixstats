@@ -12,7 +12,7 @@
  * routes and their Jest tests use the exact same source of truth.
  */
 
-export const FACTBOOK_SECTIONS = [
+const FACTBOOK_SECTIONS = [
   "overview",
   "economy",
   "labor",
@@ -22,7 +22,7 @@ export const FACTBOOK_SECTIONS = [
 
 export type FactbookSection = (typeof FACTBOOK_SECTIONS)[number];
 
-export function isFactbookSection(value: string): value is FactbookSection {
+function isFactbookSection(value: string): value is FactbookSection {
   return (FACTBOOK_SECTIONS as readonly string[]).includes(value);
 }
 
