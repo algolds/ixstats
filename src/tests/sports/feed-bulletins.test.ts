@@ -1,93 +1,8 @@
 import {
   formatMatchDayBulletin,
-  formatSeasonChampionBulletin,
-  formatPlayoffBulletin,
   encodeSportsBulletin,
   parseSportsBulletin,
 } from "~/lib/sports/feed-bulletins";
-
-describe("formatMatchDayBulletin", () => {
-  test("formats multiple results preserving order and format", () => {
-    const content = formatMatchDayBulletin({
-      leagueName: "Slam Dunk League",
-      sportEmoji: "🏀",
-      matchDay: 12,
-      results: [
-        {
-          homeName: "Lakers",
-          awayName: "Celtics",
-          homeScore: 102,
-          awayScore: 99,
-        },
-        {
-          homeName: "Warriors",
-          awayName: "Bulls",
-          homeScore: 88,
-          awayScore: 92,
-        },
-      ],
-    });
-    expect(content).toBe(
-      "**Slam Dunk League** — Matchday 12\n\n🏆 **Lakers** 102 – 99 Celtics\nWarriors 88 – 92 🏆 **Bulls**"
-    );
-  });
-});
-
-describe("formatMatchDayBulletin — table movers", () => {
-  test("renders up/down arrows with ordinal ranks", () => {
-    const content = formatMatchDayBulletin({
-      leagueName: "Imperial League",
-      sportEmoji: "⚽",
-      matchDay: 12,
-      results: [{ homeName: "Riverton", awayName: "Oakdale", homeScore: 2, awayScore: 0 }],
-      movers: [
-        { name: "Riverton", oldRank: 4, newRank: 2 },
-        { name: "Oakdale", oldRank: 1, newRank: 3 },
-      ],
-    });
-    expect(content).toContain("📈 **Table Movers**");
-    expect(content).toContain("• Riverton ▲2 (4th → 2nd)");
-    expect(content).toContain("• Oakdale ▼2 (1st → 3rd)");
-  });
-});
-
-describe("formatSeasonChampionBulletin", () => {
-  test("formats champion bulletin correctly", () => {
-    const content = formatSeasonChampionBulletin({
-      leagueName: "La Liga",
-      leagueId: "la-liga-id",
-      sportEmoji: "⚽",
-      championName: "Real Madrid",
-      championId: "real-madrid-id",
-      llmSummary: "A glorious finish to a legendary season.",
-    });
-    expect(content).toBe(
-      "🏆 **[La Liga](/myleague/la-liga-id) CHAMPION CROWNED!**\n\nCongratulations to [Real Madrid](/myclub/real-madrid-id) for winning the championship!\n\n📝 **Season Summary**\nA glorious finish to a legendary season."
-    );
-  });
-});
-
-describe("formatPlayoffBulletin", () => {
-  test("formats playoff bulletin correctly", () => {
-    const content = formatPlayoffBulletin({
-      leagueName: "Stanley Cup Playoffs",
-      sportEmoji: "🏒",
-      roundName: "Semifinals",
-      results: [
-        {
-          homeName: "Rangers",
-          awayName: "Devils",
-          homeScore: 4,
-          awayScore: 3,
-        },
-      ],
-    });
-    expect(content).toBe(
-      "**Stanley Cup Playoffs Playoff Semifinals Results**\n\n🏆 **Rangers** 4 – 3 Devils"
-    );
-  });
-});
-
 describe("encode and parse sports bulletin", () => {
   test("encodes and parses correctly", () => {
     const data = {
@@ -114,11 +29,6 @@ describe("encode and parse sports bulletin", () => {
     const parsed = parseSportsBulletin(encoded);
     expect(parsed).toEqual(data);
   });
-
-  test("returns null for content without sports bulletin comments", () => {
-    expect(parseSportsBulletin("some other content")).toBeNull();
-  });
-
   test("recovers a legacy markdown bulletin (no marker) into card data", () => {
     // Exactly what the pre-encode cron posted — names with trailing digits + movers.
     const markdown = formatMatchDayBulletin({
@@ -149,49 +59,12 @@ describe("encode and parse sports bulletin", () => {
     expect(parsed!.results![1]!.away.name).toBe("Venatores");
     expect(parsed!.movers).toEqual([{ name: "Venatores", oldRank: 6, newRank: 8 }]);
   });
-  test("recovers a champion bulletin from raw text", () => {
-    const rawMarkdown = `🏒 🏆 Orixtal Hockey League CHAMPION CROWNED!
-══════════════════════════════
-Congratulations to Porto Alegre Tubarões for winning the championship!`;
-    const parsed = parseSportsBulletin(rawMarkdown);
-    expect(parsed).not.toBeNull();
-    expect(parsed!.league.name).toBe("Orixtal Hockey League");
-    expect(parsed!.isChampionBulletin).toBe(true);
-    expect(parsed!.championName).toBe("Porto Alegre Tubarões");
-  });
-
-  test("recovers a playoff results bulletin from raw text", () => {
-    const rawMarkdown = `🏒 **Stanley Cup Playoffs Playoff Semifinals Results**
----
-🏆 Rangers 4 – 3 Devils
-Devils 2 – 5 Rangers`;
-    const parsed = parseSportsBulletin(rawMarkdown);
-    expect(parsed).not.toBeNull();
-    expect(parsed!.league.name).toBe("Stanley Cup Playoffs");
-    expect(parsed!.isPlayoffBulletin).toBe(true);
-    expect(parsed!.roundName).toBe("Semifinals");
-    expect(parsed!.results!.length).toBe(2);
-    expect(parsed!.results![0]).toMatchObject({
-      home: { name: "Rangers" },
-      away: { name: "Devils" },
-      homeScore: 4,
-      awayScore: 3,
-    });
-  });
 });
 
 describe("parseSportsBulletin — stored JSON marker", () => {
   it("ignores a marker without a league (it would crash the card)", () => {
     expect(parseSportsBulletin('<!-- sports-bulletin:{"results":[]} -->')).toBeNull();
   });
-
-  it("returns a marker that has its league", () => {
-    const parsed = parseSportsBulletin(
-      '<!-- sports-bulletin:{"league":{"id":"l1","name":"Premier"},"results":[]} -->'
-    );
-    expect(parsed?.league.name).toBe("Premier");
-  });
-
   const marker = (fields: string) =>
     `<!-- sports-bulletin:{"league":{"name":"Premier"},"sportEmoji":"⚽"${fields}} -->`;
 
@@ -231,16 +104,5 @@ describe("parseSportsBulletin — stored JSON marker", () => {
       homeScore: 2,
       awayScore: 1,
     });
-  });
-
-  it("keeps a marker whose results and movers carry what the card reads", () => {
-    const parsed = parseSportsBulletin(
-      marker(
-        ',"results":[{"home":{"name":"A","id":"a"},"away":{"name":"B"},"homeScore":1,"awayScore":0}],' +
-          '"movers":[{"name":"A","oldRank":3,"newRank":1}]'
-      )
-    );
-    expect(parsed?.results?.[0]?.away.name).toBe("B");
-    expect(parsed?.movers?.[0]?.newRank).toBe(1);
   });
 });

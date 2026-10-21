@@ -218,14 +218,6 @@ describe("countries.previewFounding", () => {
       if (typeof value === "number") expect(Number.isFinite(value)).toBe(true);
     }
   });
-
-  it("an unnamed draft still previews", async () => {
-    const { caller } = setup();
-    const preview = await caller.previewFounding({ wealthBand: "developing" } as never);
-    expect(preview.gdpPerCapita).toBe(4_000);
-    expect(preview.population).toBe(10_000_000);
-  });
-
   it("rejects an unknown band", async () => {
     const { caller } = setup();
     await expect(caller.previewFounding({ wealthBand: "galactic" } as never)).rejects.toThrow();

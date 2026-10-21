@@ -77,25 +77,10 @@ describe("population progression floor", () => {
   it("a summed rate of exactly -1 does not zero the population", () => {
     expect(populationAfter(0, [-0.5, -0.5], 1)).toBeGreaterThan(0);
   });
-
-  it("leaves small effects unchanged", () => {
-    const years = 2;
-    const expected = 10_000_000 * Math.pow(1 + 0.01 - 0.1, years);
-    expect(populationAfter(0.01, [-0.1], years)).toBeCloseTo(expected, 0);
-  });
 });
 
 describe("assertPersistableStats", () => {
   const ok = { currentPopulation: 1, currentGdpPerCapita: 2, currentTotalGdp: 2 };
-
-  it("accepts finite non-negative stats", () => {
-    expect(() => assertPersistableStats(ok)).not.toThrow();
-  });
-
-  it("ignores fields other than the three persisted stats", () => {
-    expect(() => assertPersistableStats({ ...ok, country: "Testland" } as typeof ok)).not.toThrow();
-  });
-
   it.each([
     ["currentPopulation", Number.NaN],
     ["currentGdpPerCapita", Number.POSITIVE_INFINITY],

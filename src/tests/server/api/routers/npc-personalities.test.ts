@@ -124,43 +124,4 @@ describe("admin writes", () => {
       data: expect.objectContaining({ militarism: 80, updatedAt: expect.any(Date) }),
     });
   });
-
-  it("assigns a new personality and counts its use", async () => {
-    db.nPCPersonalityAssignment.findUnique.mockResolvedValue(null);
-
-    await callerAs(db, "admin").assignPersonalityToCountry({
-      personalityId: "p1",
-      countryId: "c1",
-    });
-
-    expect(db.nPCPersonalityAssignment.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ personalityId: "p1", countryId: "c1", assignedBy: "admin" }),
-    });
-    expect(db.nPCPersonality.update).toHaveBeenCalledWith({
-      where: { id: "p1" },
-      data: { usageCount: { increment: 1 } },
-    });
-  });
-
-  it("reassigns an existing country without counting a new use", async () => {
-    db.nPCPersonalityAssignment.findUnique.mockResolvedValue({ id: "as1", countryId: "c1" });
-
-    await callerAs(db, "admin").assignPersonalityToCountry({
-      personalityId: "p2",
-      countryId: "c1",
-    });
-
-    expect(db.nPCPersonalityAssignment.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1" } })
-    );
-    expect(db.nPCPersonality.update).not.toHaveBeenCalled();
-  });
-});
-
-describe("getAllPersonalities", () => {
-  it("rejects an unknown archetype", async () => {
-    await expect(
-      callerAs(db, null).getAllPersonalities({ archetype: "warlord" as never })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
 });

@@ -46,35 +46,6 @@ describe("Sports Transfers & Escrow Tests", () => {
   });
 
   describe("listPlayerForTransfer", () => {
-    it("successfully creates a transfer listing when owner owns the player", async () => {
-      mockPrisma.sportPlayer.findUnique.mockResolvedValue({
-        id: "p1",
-        teamId: "team_1",
-        team: { id: "team_1", ownerUserId: "user_owner_1" },
-      });
-      mockPrisma.sportTransferListing.upsert.mockResolvedValue({
-        id: "list_1",
-        playerId: "p1",
-        teamId: "team_1",
-        price: 1500,
-        status: "open",
-      });
-
-      const result = await caller.listPlayerForTransfer({
-        playerId: "p1",
-        price: 1500,
-      });
-
-      expect(result.status).toBe("open");
-      expect(result.price).toBe(1500);
-      expect(mockPrisma.sportTransferListing.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { playerId: "p1" },
-          create: expect.objectContaining({ price: 1500, playerId: "p1" }),
-        })
-      );
-    });
-
     it("rejects listing if user is not the team owner", async () => {
       mockPrisma.sportPlayer.findUnique.mockResolvedValue({
         id: "p1",

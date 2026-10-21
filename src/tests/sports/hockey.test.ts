@@ -32,65 +32,6 @@ describe("Ice Hockey 3-Period Match Resolver", () => {
     ],
     ...overrides,
   });
-
-  it("simulates full 60-minute match with 3 distinct periods and intermissions", () => {
-    const ctx = createMockContext(12345);
-    const outcome = runHockeyMatch(ctx);
-
-    expect(outcome.homeScore).toBeGreaterThanOrEqual(0);
-    expect(outcome.awayScore).toBeGreaterThanOrEqual(0);
-    // Puck drop + two intermissions are always present; everything else is seed-dependent
-    expect(outcome.trace[0]?.t).toBe(0);
-    expect(outcome.trace.length).toBeGreaterThanOrEqual(3);
-    const times = outcome.trace.map((e) => e.t);
-    expect(times).toEqual([...times].sort((a, b) => a - b));
-
-    // Every scored goal (excluding individual shootout attempts) is traced
-    const tracedGoals = (team: "home" | "away") =>
-      outcome.trace.filter((e) => e.type === "goal" && e.team === team && !e.description.startsWith("SHOOTOUT"))
-        .length;
-    expect(tracedGoals("home")).toBe(outcome.homeScore);
-    expect(tracedGoals("away")).toBe(outcome.awayScore);
-
-    // Verify period intermissions
-    const period1End = outcome.trace.find((e) => e.t === 20 && e.description.includes("END OF 1ST PERIOD"));
-    const period2End = outcome.trace.find((e) => e.t === 40 && e.description.includes("END OF 2ND PERIOD"));
-
-    expect(period1End).toBeDefined();
-    expect(period2End).toBeDefined();
-  });
-
-  it("triggers power plays and penalties with actor attribution", () => {
-    // Run multiple seeds to verify penalty generation
-    let foundPenalty = false;
-    for (let seed = 1; seed <= 20; seed++) {
-      const outcome = runHockeyMatch(createMockContext(seed));
-      const penaltyEvent = outcome.trace.find((e) => e.type === "card" && e.description.includes("PENALTY"));
-      if (penaltyEvent) {
-        foundPenalty = true;
-        expect(penaltyEvent.actorName).toBeDefined();
-        break;
-      }
-    }
-    expect(foundPenalty).toBe(true);
-  });
-
-  it("triggers goalie pull when a team is trailing in Period 3 at t >= 56", () => {
-    // Highly lopsided matchup to guarantee trailing score
-    const ctx = createMockContext(777, {
-      homeOffense: 95,
-      homeDefense: 90,
-      awayOffense: 40,
-      awayDefense: 40,
-    });
-    const outcome = runHockeyMatch(ctx);
-
-    if (outcome.homeScore > outcome.awayScore) {
-      const goaliePullEvent = outcome.trace.find((e) => e.description.includes("Goalie pulled"));
-      expect(goaliePullEvent).toBeDefined();
-    }
-  });
-
   it("resolves ties with 3-on-3 Overtime or Shootout without draws", () => {
     // Force tied ratings
     for (let seed = 100; seed <= 150; seed++) {

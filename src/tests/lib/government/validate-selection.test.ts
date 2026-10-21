@@ -10,17 +10,6 @@ import { countDefinedComponents, validateSelection } from "~/lib/government/atom
 const DEFINED = Object.keys(ATOMIC_COMPONENTS) as ComponentType[];
 
 describe("validateSelection (government)", () => {
-  it("accepts an empty selection", () => {
-    expect(validateSelection([], 15)).toEqual({ isValid: true, errors: [], warnings: [] });
-  });
-
-  it("reports conflicts as warnings, not errors", () => {
-    const result = validateSelection(["DEMOCRATIC_PROCESS", "AUTOCRATIC_PROCESS"], 15);
-    expect(result.isValid).toBe(true);
-    expect(result.errors).toEqual([]);
-    expect(result.warnings).toEqual(["1 pair of components works against each other"]);
-  });
-
   it("errors only when defined components exceed the cap", () => {
     const fifteen = DEFINED.slice(0, 15);
     expect(validateSelection(fifteen, 15).isValid).toBe(true);

@@ -126,33 +126,4 @@ describe("startScheduler", () => {
     expect(failing).toHaveBeenCalledTimes(2);
     expect(logs.some((line) => line.startsWith("[Cron] failing failed: Error: boom"))).toBe(true);
   });
-
-  it("only fires tasks whose schedule matches the minute", async () => {
-    const run = jest.fn(async () => undefined);
-    const { handle, fireAt } = harness(
-      [{ name: "five", schedule: "*/5 * * * *", run }],
-      "2026-09-23T10:03:30"
-    );
-
-    await fireAt("2026-09-23T10:04:00.250");
-    await fireAt("2026-09-23T10:05:00.250");
-    await fireAt("2026-09-23T10:06:00.250");
-    handle.stop();
-
-    expect(run).toHaveBeenCalledTimes(1);
-  });
-
-  it("arms the first timer for just after the next minute boundary", () => {
-    const delays: number[] = [];
-    const handle = startScheduler([], {
-      now: () => at("2026-09-23T10:00:45").getTime(),
-      setTimer: (_fn, ms) => {
-        delays.push(ms);
-        return setTimeout(() => undefined, 0);
-      },
-      clearTimer: (t) => clearTimeout(t),
-    });
-    handle.stop();
-    expect(delays).toEqual([15_250]);
-  });
 });

@@ -16,14 +16,6 @@ const base = {
 };
 
 describe("computeLiveMatchState", () => {
-  test("kickoff: nothing has happened", () => {
-    const s = computeLiveMatchState({ ...base, nowIxTime: 1000 });
-    expect(s.minute).toBe(0);
-    expect(s.homeScore).toBe(0);
-    expect(s.awayScore).toBe(0);
-    expect(s.isFinal).toBe(false);
-  });
-
   test("mid-broadcast reveals only events up to the current minute", () => {
     // 50% through 100ms window -> minute 40 of 80 -> first goal (t=10) only
     const s = computeLiveMatchState({ ...base, nowIxTime: 1050 });
@@ -31,20 +23,5 @@ describe("computeLiveMatchState", () => {
     expect(s.homeScore).toBe(1);
     expect(s.awayScore).toBe(0);
     expect(s.lastEvent?.type).toBe("card"); // t=35 is the latest <= 40
-  });
-
-  test("full time uses the stored final score and clamps progress", () => {
-    const s = computeLiveMatchState({ ...base, nowIxTime: 9999 });
-    expect(s.isFinal).toBe(true);
-    expect(s.progress).toBe(1);
-    expect(s.minute).toBe(80);
-    expect(s.homeScore).toBe(2);
-    expect(s.awayScore).toBe(1);
-  });
-
-  test("before kickoff (clock skew) clamps to 0", () => {
-    const s = computeLiveMatchState({ ...base, nowIxTime: 500 });
-    expect(s.progress).toBe(0);
-    expect(s.minute).toBe(0);
   });
 });

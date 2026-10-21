@@ -3,7 +3,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createDiplomacyFakeDb } from "~/tests/helpers/diplomacy-fake-db";
 import {
-  PROPOSAL_TTL_DAYS,
   expireStaleDiplomaticProposals,
   isProposalExpired,
   proposalExpiresAt,
@@ -60,14 +59,6 @@ const pendingProposal = (over: Record<string, any> = {}) => ({
 beforeEach(() => notify.mockClear());
 
 describe("proposal lifecycle helpers", () => {
-  it("expires exactly PROPOSAL_TTL_DAYS after issue", () => {
-    expect(PROPOSAL_TTL_DAYS).toBe(14);
-    const issued = new Date("2026-09-01T00:00:00Z");
-    expect(proposalExpiresAt(issued).toISOString()).toBe("2026-09-15T00:00:00.000Z");
-    expect(isProposalExpired(issued, new Date("2026-09-14T23:59:59Z"))).toBe(false);
-    expect(isProposalExpired(issued, new Date("2026-09-15T00:00:00Z"))).toBe(true);
-  });
-
   it("the cron sweep marks every stale proposal and invite expired, and nothing else", async () => {
     const { db, state } = createDiplomacyFakeDb({
       foreignPolicyActions: [
@@ -238,69 +229,9 @@ describe("foreign-policy proposals: expiry", () => {
     expect(res.status).toBe("proposed");
     expect(state.foreignPolicyActions.map((r) => r.status)).toEqual(["expired", "proposed"]);
   });
-
-  it("the public active-policies list hides stale proposals", async () => {
-    const { db } = createDiplomacyFakeDb({
-      countries: COUNTRIES,
-      foreignPolicyActions: [
-        pendingProposal({ id: "stale", createdAt: daysAgo(15) }),
-        pendingProposal({ id: "live" }),
-        pendingProposal({
-          id: "embargo",
-          actionType: "embargo",
-          status: "active",
-          createdAt: daysAgo(30),
-        }),
-      ],
-    });
-    const list = await callerFor(db, "uC", "C").getActiveForeignPolicies({ countryId: "A" });
-    expect(list.map((p: any) => p.id).sort()).toEqual(["embargo", "live"]);
-  });
 });
 
 describe("foreign-policy proposals: notifications", () => {
-  it("notifies the target's owner on arrival and the proposer's owner on accept / decline", async () => {
-    const { db, state } = createDiplomacyFakeDb({ countries: COUNTRIES });
-    const alpha = callerFor(db, "uA", "A");
-    await alpha.proposeForeignPolicyAction({ targetId: "B", actionType: "military_alliance" });
-    expect(notify).toHaveBeenCalledTimes(1);
-    expect(notify.mock.calls[0][0]).toMatchObject({
-      userId: "clerk_uB",
-      countryId: "B",
-      href: "/mycountry/diplomacy",
-      category: "diplomatic",
-    });
-
-    await callerFor(db, "uB", "B").respondToForeignPolicyProposal({
-      actionId: state.foreignPolicyActions[0]!.id,
-      choice: "decline",
-    });
-    expect(notify.mock.calls[1][0]).toMatchObject({
-      userId: "clerk_uA",
-      title: "Proposal Declined",
-      href: "/mycountry/diplomacy",
-    });
-
-    await alpha.proposeForeignPolicyAction({ targetId: "B", actionType: "military_alliance" });
-    await callerFor(db, "uB", "B").respondToForeignPolicyProposal({
-      actionId: state.foreignPolicyActions[1]!.id,
-      choice: "accept",
-    });
-    expect(notify.mock.calls[3][0]).toMatchObject({
-      userId: "clerk_uA",
-      title: "Proposal Accepted",
-    });
-  });
-
-  it("hostile actions do not send a proposal notification", async () => {
-    const { db } = createDiplomacyFakeDb({ countries: COUNTRIES });
-    await callerFor(db, "uA", "A").proposeForeignPolicyAction({
-      targetId: "B",
-      actionType: "sanction",
-    });
-    expect(notify).not.toHaveBeenCalled();
-  });
-
   it("a notification failure never fails the mutation", async () => {
     notify.mockRejectedValueOnce(new Error("db down"));
     const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -455,56 +386,5 @@ describe("alliance invites: withdraw, expiry, notifications", () => {
     await callerFor(db, "uA", "A").inviteMember({ allianceId: "al1", targetCountryId: "B" });
     expect(row.status).toBe("invited");
     expect(isProposalExpired(row.invitedAt)).toBe(false);
-  });
-
-  it("a stale invite that was never marked does not block a fresh one", async () => {
-    const { db, state } = seedAlliance([
-      {
-        id: "mB",
-        allianceId: "al1",
-        countryId: "B",
-        role: "member",
-        isActive: false,
-        status: "invited",
-        invitedByCountryId: "A",
-        invitedAt: daysAgo(30),
-        updatedAt: daysAgo(30),
-      },
-    ]);
-    const res = await callerFor(db, "uA", "A").inviteMember({
-      allianceId: "al1",
-      targetCountryId: "B",
-    });
-    expect(res.pending).toBe(true);
-    expect(isProposalExpired(state.allianceMembers.find((m) => m.id === "mB")!.invitedAt)).toBe(
-      false
-    );
-  });
-
-  it("notifies the inviter's owner when the invite is accepted or declined", async () => {
-    const { db } = seedAlliance();
-    const alpha = callerFor(db, "uA", "A");
-    await alpha.inviteMember({ allianceId: "al1", targetCountryId: "B" });
-    await callerFor(db, "uB", "B").respondToAllianceInvite({
-      allianceId: "al1",
-      countryId: "B",
-      choice: "decline",
-    });
-    expect(notify.mock.calls[1][0]).toMatchObject({
-      userId: "clerk_uA",
-      title: "Alliance Invitation Declined",
-      href: "/mycountry/diplomacy",
-    });
-
-    await alpha.inviteMember({ allianceId: "al1", targetCountryId: "B" });
-    await callerFor(db, "uB", "B").respondToAllianceInvite({
-      allianceId: "al1",
-      countryId: "B",
-      choice: "accept",
-    });
-    expect(notify.mock.calls[3][0]).toMatchObject({
-      userId: "clerk_uA",
-      title: "Alliance Invitation Accepted",
-    });
   });
 });

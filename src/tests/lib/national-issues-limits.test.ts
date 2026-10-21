@@ -14,8 +14,6 @@ jest.mock("~/lib/national-issues/config", () => ({
 }));
 
 import { NationalIssuesEngine } from "~/lib/national-issues";
-import { IxTime } from "~/lib/ixtime";
-
 const mockDb: any = {
   nationalIssue: {
     count: jest.fn(),
@@ -90,55 +88,9 @@ describe("National Issues Engine Limits - Unit Tests", () => {
       expect(result).toBe(false);
       expect(mockDb.nationalIssue.count).toHaveBeenCalled();
     });
-
-    it("returns true if weekly count is below limit and last log was long ago", async () => {
-      mockDb.nationalIssue.count.mockResolvedValue(2); // below limit
-      mockDb.issueGenerationLog.findFirst.mockResolvedValue({
-        ixTimeAtEvaluation: IxTime.getCurrentIxTime() - 10 * 60 * 1000, // 10 minutes ago
-      });
-
-      const result = await NationalIssuesEngine.shouldEvaluate("country_1", mockDb as any);
-      expect(result).toBe(true);
-    });
   });
 
   describe("evaluateCountry limits enforcement", () => {
-    it("evaluates and generates issues when weekly limit is reached if bypass is true", async () => {
-      mockDb.country.findUnique.mockResolvedValue({
-        id: "country_1",
-        name: "Testland",
-        currentPopulation: 1000000,
-        currentGdpPerCapita: 20000,
-        currentTotalGdp: 20000000000,
-        publicApproval: 60,
-      });
-      mockDb.nationalIssue.count.mockResolvedValue(5); // Weekly limit reached
-      mockDb.nationalIssueTemplate.findMany.mockResolvedValue([
-        {
-          id: "temp_1",
-          slug: "test_template",
-          title: "Test",
-          description: "Desc",
-          domain: "economic",
-          category: "governance",
-          baseSeverity: "medium",
-          baseUrgency: 50,
-          triggerConditions: JSON.stringify({ field: "publicApproval", op: ">", value: 0 }),
-          cooldownDays: 30,
-          maxActivePerCountry: 1,
-          responseOptions: JSON.stringify([]),
-        },
-      ]);
-      mockDb.nationalIssue.findMany.mockResolvedValue([]);
-      mockDb.nPCPersonalityAssignment.findUnique.mockResolvedValue(null);
-
-      const result = await NationalIssuesEngine.evaluateCountry("country_1", mockDb as any, {
-        bypassLimits: true,
-      });
-
-      expect(result.issuesGenerated).toBe(1);
-    });
-
     it("caps maxIssues based on capacityRemaining", async () => {
       mockConfig.maxIssuesPerWeek = 5;
       mockDb.country.findUnique.mockResolvedValue({

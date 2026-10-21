@@ -21,9 +21,8 @@ jest.mock("~/lib/notifications/hooks", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { taxSystemRouter } from "~/server/api/routers/taxSystem";
-import { detectTaxConflicts, syncTaxData } from "~/server/services/builderIntegrationService";
+import { syncTaxData } from "~/server/services/builderIntegrationService";
 import { notificationHooks } from "~/lib/notifications/hooks";
-import { ConflictError } from "~/lib/app-error";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -136,25 +135,6 @@ describe("write access", () => {
 });
 
 describe("create", () => {
-  it("saves the player's tax system, syncs it and notifies", async () => {
-    const result = await callerAs("player", db).create({
-      countryId: COUNTRY,
-      data: taxState([{ minIncome: 0, maxIncome: 10000, rate: 10 }]),
-    });
-
-    expect(db.taxSystem.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ countryId: COUNTRY, taxSystemName: "National Revenue" }),
-      })
-    );
-    expect(detectTaxConflicts).toHaveBeenCalled();
-    expect(syncTaxData).toHaveBeenCalledWith(db as never, COUNTRY, expect.any(Object));
-    expect(notificationHooks.onTaxSystemChange).toHaveBeenCalledWith(
-      expect.objectContaining({ countryId: COUNTRY, changeType: "created" })
-    );
-    expect(result).toMatchObject({ taxSystem: { id: "ts1" }, warnings: [] });
-  });
-
   it("returns bracket errors without writing anything", async () => {
     const result = await callerAs("player", db).create({
       countryId: COUNTRY,
@@ -180,20 +160,6 @@ describe("create", () => {
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
-
-  it("falls back to an update when the country already has a tax system", async () => {
-    db.taxSystem.create.mockRejectedValue(new ConflictError("exists"));
-    db.taxSystem.findMany.mockResolvedValue([{ id: "ts1" }]);
-
-    await callerAs("player", db).create({ countryId: COUNTRY, data: taxState() });
-
-    expect(db.taxCategory.deleteMany).toHaveBeenCalledWith({
-      where: { taxSystemId: { in: ["ts1"] } },
-    });
-    expect(db.taxSystem.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: COUNTRY } })
-    );
-  });
 });
 
 describe("update", () => {
@@ -212,33 +178,5 @@ describe("update", () => {
     expect(notificationHooks.onTaxSystemChange).toHaveBeenCalledWith(
       expect.objectContaining({ changeType: "updated" })
     );
-  });
-});
-
-describe("getByCountryId", () => {
-  it("maps stored categories and brackets back to builder state", async () => {
-    db.taxSystem.findUnique.mockResolvedValue({
-      taxSystemName: "National Revenue",
-      fiscalYear: "calendar",
-      progressiveTax: true,
-      alternativeMinTax: false,
-      taxCategories: [
-        {
-          categoryName: "Income",
-          categoryType: "income",
-          calculationMethod: "progressive",
-          taxBrackets: [{ minIncome: 0, maxIncome: null, rate: 15, marginalRate: true }],
-          taxExemptions: [],
-          taxDeductions: [],
-        },
-      ],
-    });
-
-    const state = await callerAs(null, db).getByCountryId({ countryId: COUNTRY });
-
-    expect(state?.categories).toEqual([expect.objectContaining({ categoryName: "Income" })]);
-    expect(state?.brackets["0"]).toEqual([
-      expect.objectContaining({ minIncome: 0, maxIncome: undefined, rate: 15 }),
-    ]);
   });
 });

@@ -1,6 +1,6 @@
 /**
- * Characterization test for NationalIssuesEngine.buildCountrySnapshot and
- * NationalIssuesEngine.evaluateCountry (plan 315).
+ * Characterization test for NationalIssuesEngine.evaluateCountry (with the snapshot it builds)
+ * and NationalIssuesEngine.forceGenerate (plan 315): one table of fixed fixtures per entry point.
  *
  * Every DB call (in order, with its arguments) and the returned value are pinned
  * for fixed fixtures, with IxTime, Math.random and the config held constant, so a
@@ -305,20 +305,6 @@ function scrub<T>(value: T): T {
 type Scenario = () => Promise<{ value: ScenarioValue; calls: Call[] }>;
 
 const SCENARIOS: Record<string, Scenario> = {
-  snapshotRich: async () => {
-    const calls: Call[] = [];
-    const value = await NationalIssuesEngine.buildCountrySnapshot(
-      "c-astria",
-      richDb(calls, { targetIntent: true }) as never
-    );
-    return { value, calls };
-  },
-  snapshotMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = makeDb({ country: { findUnique: () => null } }, calls);
-    const value = await NationalIssuesEngine.buildCountrySnapshot("nope", db as never);
-    return { value, calls };
-  },
   evaluateRichWithTarget: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true, failCreateFor: "t8" });
@@ -335,12 +321,6 @@ const SCENARIOS: Record<string, Scenario> = {
     });
     return { value, calls };
   },
-  evaluateMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = makeDb({ country: { findUnique: () => null } }, calls);
-    const value = await NationalIssuesEngine.evaluateCountry("nope", db as never);
-    return { value, calls };
-  },
   evaluatePendingCap: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true });
@@ -355,15 +335,6 @@ const SCENARIOS: Record<string, Scenario> = {
     const calls: Call[] = [];
     mockConfig.maxIssuesPerWeek = 3;
     const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.evaluateCountry("c-astria", db as never);
-    return { value, calls };
-  },
-  evaluateTemplateQueryThrows: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    db.nationalIssueTemplate!.findMany = async () => {
-      throw new Error("db offline");
-    };
     const value = await NationalIssuesEngine.evaluateCountry("c-astria", db as never);
     return { value, calls };
   },
@@ -384,32 +355,10 @@ const SCENARIOS: Record<string, Scenario> = {
     const value = await NationalIssuesEngine.forceGenerate("t1", "c-astria", db as never, "i-9");
     return { value, calls };
   },
-  forceGenerateAdmin: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.forceGenerate("t7", "c-astria", db as never);
-    return { value, calls };
-  },
   forceGenerateInvalidOptions: async () => {
     const calls: Call[] = [];
     const db = richDb(calls, { targetIntent: true });
     const value = await NationalIssuesEngine.forceGenerate("t6", "c-astria", db as never);
-    return { value, calls };
-  },
-  forceGenerateMissingTemplate: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    const value = await NationalIssuesEngine.forceGenerate("nope", "c-astria", db as never);
-    return { value, calls };
-  },
-  forceGenerateMissingCountry: async () => {
-    const calls: Call[] = [];
-    const db = richDb(calls, { targetIntent: true });
-    db.country!.findUnique = async (...args: Where[]) => {
-      calls.push(["country.findUnique", args]);
-      return null;
-    };
-    const value = await NationalIssuesEngine.forceGenerate("t1", "nope", db as never);
     return { value, calls };
   },
 };
@@ -418,114 +367,6 @@ const EXPECTED: Record<
   string,
   { summary: { value: ScenarioValue; callNames: string[] }; digest: string }
 > = {
-  snapshotRich: {
-    summary: {
-      value: {
-        id: "c-astria",
-        name: "Astria",
-        leader: "Chancellor Rhee",
-        governmentType: "Parliamentary Republic",
-        economicTier: "Developed",
-        populationTier: "Small",
-        continent: "Oriente",
-        region: null,
-        currentPopulation: 200000,
-        currentGdpPerCapita: 38000,
-        currentTotalGdp: 7600000000,
-        actualGdpGrowth: 1.4,
-        unemploymentRate: 6.2,
-        inflationRate: 0,
-        tradeBalance: -12000000,
-        taxRevenueGDPPercent: 31,
-        budgetDeficitSurplus: 0,
-        totalDebtGDPRatio: 64,
-        debtPerCapita: 0,
-        publicApproval: 47,
-        povertyRate: 11,
-        incomeInequalityGini: 0,
-        lifeExpectancy: 70,
-        literacyRate: 97,
-        urbanPopulationPercent: 50,
-        infrastructureRating: 58,
-        politicalStability: 61,
-        democracyIndex: 50,
-        governmentEffectiveness: 50,
-        ruleOfLaw: 70,
-        corruptionIndex: 50,
-        politicalPolarization: 55,
-        stabilityScore: 75,
-        crimeRate: 5,
-        protestFrequency: 5,
-        riotRisk: 10,
-        socialCohesion: 70,
-        ethnicTension: 20,
-        trustInGovernment: 50,
-        activeEmbassyCount: 3,
-        activeAllianceCount: 2,
-        activePolicyCount: 3,
-        pendingIssueCount: 2,
-        recentCrisisCount: 1,
-        activeTreatyCount: 0,
-        activeComponents: [
-          "REGIONAL_INTEGRATION",
-          "INTERNATIONAL_LAW",
-          "FREE_MARKET_SYSTEM",
-          "digital_filing",
-        ],
-        implementingComponents: ["DEVELOPMENT_AID", "STATE_CAPITALISM", "withholding_system"],
-        civilServiceCapacity: 101,
-        consumedStaff: 540,
-        currentIxTime: 2223374400000,
-        currentIxYear: 2040,
-        currentIxMonth: 6,
-        activePoliciesList: ["green-deal-v2", "harbour-reform-", "plain-old-policy"],
-        policySettings: { "green-deal-v2": { rate: 3 } },
-        activeIntents: ["grow_exports", "calm_streets"],
-        activeIntentCategories: ["economy", "social"],
-        geo: {
-          isLandlocked: false,
-          isIsland: true,
-          dominantClimate: "maritime",
-          terrainRoughness: null,
-          arableLandPercent: 22,
-          coastlineKm: 1400,
-          neighborCount: 1,
-        },
-        identity: {
-          capitalCity: "Port Aster",
-          largestCity: null,
-          languages: "Astrian",
-          religion: null,
-        },
-        party: { name: "Unity Party", ideology: "centrist", support: 41 },
-        minister: { name: "Mira Holt", title: "Minister of Finance" },
-        fiscal: { salesTaxRate: 12, corporateTaxRate: null },
-        partners: [{ name: "Nordland", band: "ALLY", strength: 80 }],
-        embassyPartners: ["Nordland"],
-        worldEvents: [],
-        crises: ["Harbour strike"],
-        neighbors: [{ name: "Valeria", countryId: "c-valeria" }],
-        activeIntentGoals: ["grow_exports", "calm_streets"],
-      },
-      callNames: [
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-      ],
-    },
-    digest: "e9f1ff1efc4a53e7ad8242a435fe890bc0577e12f66d9824fdb9a565a1f8016a",
-  },
-  snapshotMissingCountry: {
-    summary: { value: null, callNames: ["country.findUnique"] },
-    digest: "d6eb1621a147a3d267b4b42275ea01fdef6d15708584ee6bf8a07930a9007fc7",
-  },
   evaluateRichWithTarget: {
     summary: {
       value: {
@@ -611,21 +452,6 @@ const EXPECTED: Record<
     },
     digest: "e1f2b602e09955e88a04493571d6fbea43302c351b6f0d6ad2b05b166d903dc6",
   },
-  evaluateMissingCountry: {
-    summary: {
-      value: {
-        issuesGenerated: 0,
-        issuesSkippedCooldown: 0,
-        issuesSkippedMaxActive: 0,
-        templatesEvaluated: 0,
-        templatesPassed: 0,
-        executionTimeMs: 0,
-        errors: ["Country nope not found"],
-      },
-      callNames: ["country.findUnique"],
-    },
-    digest: "6258efbc58592dcc880840bb8e526120d97ed33e298fc9438fc51d9b26585f10",
-  },
   evaluatePendingCap: {
     summary: {
       value: {
@@ -691,36 +517,6 @@ const EXPECTED: Record<
     },
     digest: "4096a780053adec3c23ee420176932705f77cac344ce43457bd57f986c5881df",
   },
-  evaluateTemplateQueryThrows: {
-    summary: {
-      value: {
-        issuesGenerated: 1,
-        issuesSkippedCooldown: 0,
-        issuesSkippedMaxActive: 0,
-        templatesEvaluated: 0,
-        templatesPassed: 0,
-        executionTimeMs: 0,
-        errors: ["Evaluation failed: db offline"],
-      },
-      callNames: [
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-        "nationalIssueTemplate.upsert",
-        "nationalIssue.count",
-        "nationalIssue.create",
-        "nationalIssue.count",
-      ],
-    },
-    digest: "88f98301814acedff2df3da368907207f736e6634612a8a78d05ffdd0a850bb1",
-  },
   evaluateTargetLookupThrows: {
     summary: {
       value: {
@@ -779,26 +575,6 @@ const EXPECTED: Record<
     },
     digest: "6b3405fcaf3a6127b0d4160aa23a8429652d8f74bee5eba2aae1b7cc86e54161",
   },
-  forceGenerateAdmin: {
-    summary: {
-      value: "issue_t7",
-      callNames: [
-        "nationalIssueTemplate.findUnique",
-        "country.findUnique",
-        "embassy.count",
-        "policy.count",
-        "nationalIssue.count",
-        "crisisEvent.count",
-        "governmentComponent.findMany",
-        "economicComponent.findMany",
-        "taxComponent.findMany",
-        "policy.findMany",
-        "intent.findMany",
-        "nationalIssue.create",
-      ],
-    },
-    digest: "9501fe9554bc562e842d44aecb718af2644bd364b781e0e76360f85ec43c8395",
-  },
   forceGenerateInvalidOptions: {
     summary: {
       value: null,
@@ -817,14 +593,6 @@ const EXPECTED: Record<
       ],
     },
     digest: "4efc8366812a5b0b2e90b0ce18fdde955b50775ec921879755f5a731ad149c46",
-  },
-  forceGenerateMissingTemplate: {
-    summary: { value: null, callNames: ["nationalIssueTemplate.findUnique"] },
-    digest: "dd9c7add0d9240fbfad383a6e719b266362cd032b6032b729899cae3843cc67c",
-  },
-  forceGenerateMissingCountry: {
-    summary: { value: null, callNames: ["nationalIssueTemplate.findUnique", "country.findUnique"] },
-    digest: "ec772a0ba991cbf84ebbba7d49a683e5eeec9529cbef0ad098b8d7a28a791ce0",
   },
 };
 

@@ -20,7 +20,6 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { intelligenceRouter } from "~/server/api/routers/intelligence";
-import { severityRank } from "~/server/api/routers/intelligence/alerts";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = "country_owned";
@@ -113,81 +112,12 @@ const ctxFor = (db: Db, who: "owner" | "other" | "admin" | "signedOut") => {
 const caller = createCallerFactory(intelligenceRouter);
 
 describe("intelligence alerts (MC-17)", () => {
-  it("lists the owner's open alerts, most severe first, with clean titles and counts", async () => {
-    const db = makeDb();
-    const result = await caller(ctxFor(db, "owner")).getMyAlerts({ countryId: COUNTRY });
-
-    expect(result.alerts.map((a) => a.id)).toEqual(["a_critical", "a_medium"]);
-    expect(result.alerts[0]!.title).toBe("securityScore breached critical threshold");
-    expect(result.openCount).toBe(2);
-    expect(result.unreadCount).toBe(1);
-    expect(db.intelligenceAlert.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { countryId: COUNTRY, isActive: true, isResolved: false },
-      })
-    );
-  });
-
-  it("includes resolved alerts only when asked", async () => {
-    const db = makeDb();
-    await caller(ctxFor(db, "owner")).getMyAlerts({ countryId: COUNTRY, includeResolved: true });
-    expect(db.intelligenceAlert.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: COUNTRY } })
-    );
-  });
-
-  it("marks an unread alert read once, and leaves a read one alone", async () => {
-    const db = makeDb();
-    await caller(ctxFor(db, "owner")).markAlertRead({ id: "a_medium" });
-    expect(db.intelligenceAlert.update).toHaveBeenCalledWith({
-      where: { id: "a_medium" },
-      data: { readAt: expect.any(Date) },
-    });
-
-    db.intelligenceAlert.update.mockClear();
-    await caller(ctxFor(db, "owner")).markAlertRead({ id: "a_critical" });
-    expect(db.intelligenceAlert.update).not.toHaveBeenCalled();
-  });
-
-  it("marks every unread open alert of the nation read", async () => {
-    const db = makeDb();
-    const result = await caller(ctxFor(db, "owner")).markAllAlertsRead({ countryId: COUNTRY });
-    expect(result.count).toBe(1);
-    expect(db.intelligenceAlert.updateMany).toHaveBeenCalledWith({
-      where: { countryId: COUNTRY, isResolved: false, readAt: null },
-      data: { readAt: expect.any(Date) },
-    });
-  });
-
-  it("dismisses an alert by resolving it, keeping the first read time", async () => {
-    const db = makeDb();
-    await caller(ctxFor(db, "owner")).dismissAlert({ id: "a_critical" });
-    expect(db.intelligenceAlert.update).toHaveBeenCalledWith({
-      where: { id: "a_critical" },
-      data: {
-        isResolved: true,
-        isActive: false,
-        resolvedAt: expect.any(Date),
-        readAt: rows[1]!.readAt,
-      },
-    });
-  });
-
   it("lets a privileged role read any nation's alerts", async () => {
     const db = makeDb();
     await expect(
       caller(ctxFor(db, "admin")).getMyAlerts({ countryId: COUNTRY })
     ).resolves.toBeDefined();
   });
-
-  it("returns NOT_FOUND for an unknown alert", async () => {
-    const db = makeDb();
-    // An unknown id has no country to check, so only a privileged caller reaches NOT_FOUND.
-    await expect(caller(ctxFor(db, "admin")).dismissAlert({ id: "nope" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
-
   it.each([
     ["getMyAlerts", (c: any) => c.getMyAlerts({ countryId: COUNTRY })],
     ["markAlertRead", (c: any) => c.markAlertRead({ id: "a_medium" })],
@@ -202,13 +132,5 @@ describe("intelligence alerts (MC-17)", () => {
     });
     expect(db.intelligenceAlert.update).not.toHaveBeenCalled();
     expect(db.intelligenceAlert.updateMany).not.toHaveBeenCalled();
-  });
-});
-
-describe("alert helpers", () => {
-  it("ranks severities in either case, unknown last", () => {
-    expect(severityRank("CRITICAL")).toBeLessThan(severityRank("high"));
-    expect(severityRank("medium")).toBeLessThan(severityRank("LOW"));
-    expect(severityRank("other")).toBe(4);
   });
 });

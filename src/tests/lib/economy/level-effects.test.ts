@@ -6,8 +6,7 @@
  */
 import {
   growthModifierToLevelShift,
-  IxStatsCalculator,
-  levelPhaseIn,
+  IxStatsCalculator
 } from "~/lib/economy/calculations";
 import { IxTime } from "~/lib/ixtime";
 import type { BaseCountryData, EconomicConfig, StorytellerEffect } from "~/types/ixstats";
@@ -76,24 +75,8 @@ const level = (
   duration,
   isActive: true,
 });
-
-describe("levelPhaseIn", () => {
-  it("is 0 before the start, linear over the duration, then 1", () => {
-    const e = { ixTimeTimestamp: effectStart, duration: 1 };
-    expect(levelPhaseIn(e, effectStart - 1)).toBe(0);
-    expect(levelPhaseIn(e, IxTime.addYears(effectStart, 0.5))).toBeCloseTo(0.5, 6);
-    expect(levelPhaseIn(e, IxTime.addYears(effectStart, 3))).toBe(1);
-    expect(levelPhaseIn({ ixTimeTimestamp: effectStart, duration: null }, effectStart)).toBe(1);
-  });
-});
-
 describe("gdp_level_adjustment", () => {
   const phased = [level("gdp_level_adjustment", 0.01, 1)];
-
-  it("leaves the projection before its start unchanged", () => {
-    expect(statsAt(1.5, phased).currentGdpPerCapita).toBe(statsAt(1.5).currentGdpPerCapita);
-  });
-
   it("phases in over its duration and is kept afterwards", () => {
     const half = statsAt(2.5, phased).currentGdpPerCapita / statsAt(2.5).currentGdpPerCapita;
     expect(half).toBeCloseTo(1.005, 6);

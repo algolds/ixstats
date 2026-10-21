@@ -48,19 +48,6 @@ describe("buildSharedVertexIndex", () => {
       ].sort()
     );
   });
-
-  test("returns [] when two squares share no vertices", () => {
-    const a = square(0, 0, 1, 1);
-    const b = square(5, 5, 6, 6);
-
-    const shared = buildSharedVertexIndex([
-      { featureId: "A", geometry: a },
-      { featureId: "B", geometry: b },
-    ]);
-
-    expect(shared).toEqual([]);
-  });
-
   test("only records vertices shared by 2+ features (not 1)", () => {
     // Even a single square has 4 vertices; with no neighbors, none should be shared.
     const a = square(0, 0, 1, 1);

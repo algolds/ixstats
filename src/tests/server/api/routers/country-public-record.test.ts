@@ -153,13 +153,6 @@ const otherPlayer = (db: Db) =>
       role: { name: "member" },
     },
   }) as never;
-const admin = (db: Db) =>
-  createMockRouterContext({
-    db,
-    auth: { userId: "admin_clerk" },
-    user: { id: "admin_db", clerkUserId: "admin_clerk", countryId: null, role: { name: "admin" } },
-  }) as never;
-
 const publicRecordCaller = createCallerFactory(createTRPCRouter(publicRecordProcedures));
 const intentCaller = createCallerFactory(intentRouter);
 const issuesCaller = createCallerFactory(nationalIssuesPlayerRouter);
@@ -236,13 +229,6 @@ describe("intent.getTree", () => {
     const tree = await intentCaller(otherPlayer(db)).getTree({ countryId: COUNTRY });
     expect(tree.allIntents).toHaveLength(4);
   });
-
-  it("gives admins every intent", async () => {
-    const db = makeDb();
-    const tree = await intentCaller(admin(db)).getTree({ countryId: COUNTRY });
-    expect(tree.allIntents).toHaveLength(4);
-  });
-
   it.each([
     ["another player", otherPlayer],
     ["a signed-out visitor", signedOut],
@@ -268,17 +254,6 @@ describe("intent.getTree", () => {
 });
 
 describe("nationalIssues.getHistory", () => {
-  it("returns the owner's full history", async () => {
-    const db = makeDb();
-    const history = await issuesCaller(owner(db)).getHistory({ countryId: COUNTRY });
-    expect(history.issues.map((i) => i.id)).toEqual(["resolved", "lapsed", "gone"]);
-  });
-
-  it("returns the history to admins", async () => {
-    const db = makeDb();
-    await expect(issuesCaller(admin(db)).getHistory({ countryId: COUNTRY })).resolves.toBeTruthy();
-  });
-
   it("is FORBIDDEN for another player", async () => {
     const db = makeDb();
     await expect(

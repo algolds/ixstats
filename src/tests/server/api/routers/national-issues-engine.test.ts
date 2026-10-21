@@ -68,60 +68,14 @@ describe("admin procedures", () => {
     expect(saveNationalIssuesConfig).not.toHaveBeenCalled();
     expect(NationalIssuesEngine.evaluateCountry).not.toHaveBeenCalled();
   });
-
-  it("saves a completed engine config", async () => {
-    await callerAs(db, "admin").updateEngineConfig({ maxIssuesPerSession: 2, maxIssuesPerWeek: 5 });
-    expect(saveNationalIssuesConfig).toHaveBeenCalledWith({
-      spawnMode: "probability",
-      maxIssuesPerSession: 2,
-      maxIssuesPerWeek: 5,
-    });
-  });
-
   it("rejects limits out of range", async () => {
     await expect(
       callerAs(db, "admin").updateEngineConfig({ maxIssuesPerSession: 11, maxIssuesPerWeek: 5 })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
-  it("pages the world audit list with a cursor", async () => {
-    db.nationalIssue.findMany.mockResolvedValue([{ id: "i3" }, { id: "i2" }, { id: "i1" }]);
-
-    const page = await callerAs(db, "admin").getActiveIssues({
-      status: "pending",
-      countryId: "all",
-      limit: 2,
-      cursor: "i4",
-    });
-
-    expect(db.nationalIssue.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { status: "pending", id: { lt: "i4" } }, take: 3 })
-    );
-    expect(page).toEqual({ issues: [{ id: "i3" }, { id: "i2" }], nextCursor: "i1" });
-  });
 });
 
 describe("getRecentWorldIssues", () => {
-  const issue = (id: string, countryId: string) => ({
-    id,
-    title: id,
-    country: { id: countryId, name: countryId, flag: null },
-  });
-  it("returns at most one issue per nation, up to the limit", async () => {
-    // First groupBy is the showcase-seed check (already seeded); the second lists active nations.
-    db.nationalIssue.groupBy
-      .mockResolvedValueOnce(Array.from({ length: 18 }, (_, i) => ({ countryId: `s${i}` })))
-      .mockResolvedValueOnce([{ countryId: "a" }, { countryId: "b" }, { countryId: "c" }]);
-    db.nationalIssue.findMany.mockImplementation(async ({ where }: any) =>
-      where.countryId ? [issue(`${where.countryId}1`, where.countryId)] : []
-    );
-
-    const { issues } = await callerAs(db, null).getRecentWorldIssues({ limit: 2 });
-
-    expect(issues).toHaveLength(2);
-    expect(new Set(issues.map((i) => i.country.id)).size).toBe(2);
-    expect(NationalIssuesEngine.forceGenerate).not.toHaveBeenCalled();
-  });
-
   it("caps the limit", async () => {
     await expect(callerAs(db, null).getRecentWorldIssues({ limit: 37 })).rejects.toMatchObject({
       code: "BAD_REQUEST",

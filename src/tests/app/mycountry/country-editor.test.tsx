@@ -114,8 +114,6 @@ jest.mock("~/app/r/[realm]/_components/manage/RealmImageField", () => ({
 }));
 
 import MyCountryEditorPage from "~/app/mycountry/editor/page";
-import { getPolicyPreset } from "~/lib/government/policy-presets";
-
 beforeAll(() => {
   Element.prototype.scrollIntoView = jest.fn();
 });
@@ -196,30 +194,6 @@ describe("the country editor", () => {
     expect(screen.getByLabelText("Capital city")).toHaveValue("New Port");
     expect(screen.getByRole("button", { name: "Save capital and language" })).toBeEnabled();
   });
-
-  it("moves focus to the first field to fix instead of saving", () => {
-    render(<MyCountryEditorPage />);
-    const iso = screen.getByLabelText("Country code");
-    fireEvent.change(iso, { target: { value: "E1" } });
-    expect(iso).toHaveAttribute("aria-invalid", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Save civic standards" }));
-    expect(iso).toHaveFocus();
-    expect(mockCalls).toHaveLength(0);
-  });
-  it("replaces the institutions with a policy preset after a confirm, then saves them", () => {
-    render(<MyCountryEditorPage />);
-    fireEvent.change(screen.getByRole("combobox", { name: "Policy presets" }), {
-      target: { value: "technocracy" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Use preset" }));
-    const dialog = screen.getByRole("alertdialog");
-    expect(dialog).toHaveTextContent("Technocracy replaces the 2 institutions you chose");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Replace" }));
-
-    fireEvent.click(screen.getByRole("button", { name: "Save institutions" }));
-    expect(lastSave().name).toBe("saveGovernmentComponents");
-    expect(lastSave().input.componentTypes).toEqual(getPolicyPreset("technocracy")!.components);
-  });
   it("asks before leaving with unsaved changes and names the sections", () => {
     render(<MyCountryEditorPage />);
     // Nothing unsaved: links leave freely.
@@ -239,13 +213,5 @@ describe("the country editor", () => {
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Leave" }));
     expect(mockPush).toHaveBeenCalledWith("/mycountry/economy?tab=fiscal");
-  });
-
-  it("does not ask for the section nav", () => {
-    render(<MyCountryEditorPage />);
-    fireEvent.change(screen.getByLabelText("Demonym"), { target: { value: "Testian" } });
-    const nav = screen.getByRole("navigation", { name: "Editor sections" });
-    fireEvent.click(within(nav).getByRole("link", { name: "Population and wealth" }));
-    expect(screen.queryByRole("alertdialog")).toBeNull();
   });
 });

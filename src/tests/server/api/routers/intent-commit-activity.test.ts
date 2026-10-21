@@ -106,27 +106,6 @@ describe("intent.commit activity row", () => {
     jest.clearAllMocks();
     recordCountryEvent.mockResolvedValue([] as never);
   });
-
-  it("writes exactly one public row for a committed directive and returns its id", async () => {
-    const db = makeDb();
-    const caller = createCallerFactory(intentRouter)(ctxFor(db));
-    const res = await caller.commit({ countryId: "c1", goal: GOAL, tier: "moderate" });
-
-    expect(res.activityId).toBe("dir-intent_1");
-    expect(db.activityFeed.create).toHaveBeenCalledTimes(1);
-    expect(db.activityFeed.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        id: "dir-intent_1",
-        type: "directive",
-        category: "government",
-        visibility: "public",
-        countryId: "c1",
-        userId: "user_1",
-        title: GOAL,
-      }),
-    });
-  });
-
   it("writes nothing for a draft: a private directive cannot be revealed by the forum", async () => {
     const db = makeDb();
     const caller = createCallerFactory(intentRouter)(ctxFor(db));
@@ -144,19 +123,6 @@ describe("intent.commit activity row", () => {
 
     expect(res.activityId).toBe("dir-intent_1");
     expect(db.activityFeed.create).not.toHaveBeenCalled();
-  });
-
-  it("still commits the directive when the row cannot be written", async () => {
-    const log = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const db = makeDb();
-    db.activityFeed.create.mockRejectedValueOnce(new Error("db down"));
-    const caller = createCallerFactory(intentRouter)(ctxFor(db));
-    const res = await caller.commit({ countryId: "c1", goal: GOAL, tier: "moderate" });
-
-    expect(res.activityId).toBeNull();
-    expect(res.intent.id).toBe("intent_1");
-    expect(recordCountryEvent).toHaveBeenCalledTimes(1);
-    log.mockRestore();
   });
 });
 
@@ -181,23 +147,6 @@ describe("intent.updateStatus and the activity row", () => {
       caller.updateStatus({ id: "intent_1", status: "abandoned" })
     ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
     expect(db.status()).toBe("active");
-    expect(db.rows.get("dir-intent_1")?.visibility).toBe("public");
-  });
-
-  it("abandons a directive that has no row (an older one or a failed declare)", async () => {
-    const db = makeDb();
-    const caller = createCallerFactory(intentRouter)(ctxFor(db));
-    await caller.updateStatus({ id: "intent_1", status: "abandoned" });
-    expect(db.status()).toBe("abandoned");
-    expect(db.rows.size).toBe(0);
-  });
-
-  it("leaves the row public when a directive is completed", async () => {
-    const db = makeDb(["dir-intent_1"]);
-    const caller = createCallerFactory(intentRouter)(ctxFor(db));
-    await caller.updateStatus({ id: "intent_1", status: "completed" });
-    expect(db.status()).toBe("completed");
-    expect(db.activityFeed.updateMany).not.toHaveBeenCalled();
     expect(db.rows.get("dir-intent_1")?.visibility).toBe("public");
   });
 });

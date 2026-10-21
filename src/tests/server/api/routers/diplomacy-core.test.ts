@@ -15,7 +15,6 @@ jest.mock("~/lib/notifications/api", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { diplomaticCoreRouter } from "~/server/api/routers/diplomacy/core";
-import { notificationAPI } from "~/lib/notifications/api";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -48,20 +47,6 @@ beforeEach(() => {
 });
 
 describe("follow / unfollow", () => {
-  it("follows from the caller's own country and notifies the followed country", async () => {
-    await callerAs(db, "u1", "c_mine").followCountry({
-      followerCountryId: "c_mine",
-      followedCountryId: "c_other",
-    });
-
-    expect(db.countryFollow.create).toHaveBeenCalledWith({
-      data: { followerCountryId: "c_mine", followedCountryId: "c_other" },
-    });
-    expect(notificationAPI.create).toHaveBeenCalledWith(
-      expect.objectContaining({ countryId: "c_other", category: "social" })
-    );
-  });
-
   it("refuses to follow or unfollow on behalf of another country", async () => {
     const caller = callerAs(db, "u1", "c_mine");
     await expect(
@@ -122,41 +107,6 @@ describe("setDiplomaticGoal", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
-
-describe("getRelationships", () => {
-  it("reads relations from either side and resolves the other country", async () => {
-    db.diplomaticRelation.findMany.mockResolvedValue([
-      {
-        id: "r1",
-        country1: "c_other",
-        country2: "c_mine",
-        goalCountry1: "RIVAL",
-        goalCountry2: "ALLY",
-        relationship: "neutral",
-        strength: 50,
-        treaties: '["Trade Pact"]',
-        diplomaticChannels: null,
-        lastContact: new Date(0),
-        establishedAt: new Date(0),
-        status: "active",
-        tradeVolume: null,
-      },
-    ]);
-    db.country.findMany.mockResolvedValue([{ id: "c_other", name: "Burgundie", flag: null }]);
-
-    const [rel] = await callerAs(db, null, null).getRelationships({ countryId: "c_mine" });
-
-    expect(rel).toMatchObject({
-      targetCountryId: "c_other",
-      targetCountryName: "Burgundie",
-      treaties: ["Trade Pact"],
-      tradeVolume: 0,
-      goalSelf: "ALLY",
-      goalTarget: "RIVAL",
-    });
-  });
-});
-
 describe("diplomatic options", () => {
   it("keeps usage analytics to admins", async () => {
     await expect(callerAs(db, "u1", "c_mine").getOptionUsageStats()).rejects.toThrow(

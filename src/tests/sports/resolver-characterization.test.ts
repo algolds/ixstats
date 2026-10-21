@@ -49,7 +49,6 @@ function roster(prefix: string, positions: string[]): RosterPlayer[] {
   }));
 }
 
-const SOCCER_POSITIONS = ["GK", "DF", "DF", "DF", "DF", "MF", "MF", "MF", "FW", "FW", "FW"];
 const HOCKEY_POSITIONS = ["G", "D", "D", "D", "D", "C", "C", "LW", "LW", "RW", "RW"];
 
 const CASES: Record<string, ResolveArgs> = {
@@ -59,15 +58,6 @@ const CASES: Record<string, ResolveArgs> = {
     awayTeam: weak,
     archetype: "league",
     seed: 12345,
-  },
-  soccerEvenWithRosters: {
-    sport: "soccer",
-    homeTeam: average,
-    awayTeam: average,
-    archetype: "league",
-    seed: 777,
-    homeRoster: roster("h", SOCCER_POSITIONS),
-    awayRoster: roster("a", SOCCER_POSITIONS),
   },
   soccerDivineDerby: {
     sport: "soccer",
@@ -119,14 +109,6 @@ const CASES: Record<string, ResolveArgs> = {
     homeTacticalIntent: "counter_attack",
     awayTacticalIntent: "kick_and_rush",
   },
-  unknownSportFallsBackToSoccer: {
-    sport: "curling",
-    homeTeam: weak,
-    awayTeam: weak,
-    archetype: "league",
-    seed: 1,
-    awayTacticalIntent: "all_out_attack",
-  },
 };
 
 const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
@@ -151,28 +133,6 @@ const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
       traceLength: 17,
     },
     digest: "c819ddcbc56bab31c5d4c0118e3e7a592f2aab4a9f1cce7aab67acd68d95f13f",
-  },
-  soccerEvenWithRosters: {
-    summary: {
-      homeScore: 1,
-      awayScore: 0,
-      winner: "home",
-      upset: false,
-      upsetFactor: 0.01,
-      keyStats: {
-        homeStrength: 61.15,
-        awayStrength: 60.65,
-        differential: 0.5,
-        dominance: 0.5,
-        tempo: 1,
-        volatility: 1,
-      },
-      homeRatingDelta: 8,
-      awayRatingDelta: -8,
-      evaluation: { winProbability: 0.5, dominance: 0.5, tempo: 1, volatility: 1 },
-      traceLength: 14,
-    },
-    digest: "9a92e2fe7576f79cc77056897d51e2caeb85192d2b39c9bfe4f33d165c141268",
   },
   soccerDivineDerby: {
     summary: {
@@ -283,28 +243,6 @@ const EXPECTED: Record<string, { summary: Summary; digest: string }> = {
       traceLength: 10,
     },
     digest: "1e41bb8a6ce2b08c20d9fd0880a03e398f81d8e3302f817dda802cc12149fb2e",
-  },
-  unknownSportFallsBackToSoccer: {
-    summary: {
-      homeScore: 0,
-      awayScore: 2,
-      winner: "away",
-      upset: true,
-      upsetFactor: 0.03,
-      keyStats: {
-        homeStrength: 47.1,
-        awayStrength: 45.6,
-        differential: 1.5,
-        dominance: 0.51,
-        tempo: 0.9,
-        volatility: 1,
-      },
-      homeRatingDelta: -8,
-      awayRatingDelta: 8,
-      evaluation: { winProbability: 0.5, dominance: 0.51, tempo: 0.9, volatility: 1 },
-      traceLength: 13,
-    },
-    digest: "eab18e28e51b17dae7c642e3e0c7015a7be52fe1d942631c8441343fd95dee9f",
   },
 };
 

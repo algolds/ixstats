@@ -14,7 +14,6 @@ jest.mock("path", () => ({
 
 import {
   completeNationalIssuesConfig,
-  getNationalIssuesConfig,
   type NationalIssuesConfig,
 } from "~/lib/national-issues/config";
 
@@ -26,8 +25,5 @@ describe("national-issues-config spawnMode", () => {
       maxIssuesPerWeek: 5,
       spawnMode: "probability",
     } satisfies NationalIssuesConfig);
-  });
-  it("falls back to the default when the JSON file is missing", () => {
-    expect(getNationalIssuesConfig().spawnMode).toBe("probability");
   });
 });

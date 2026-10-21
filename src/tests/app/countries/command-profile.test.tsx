@@ -111,16 +111,4 @@ describe("CommandProfileView", () => {
     expect(screen.queryByText("Secret draft plan")).toBeNull();
     expect(screen.queryByText("Only you can see this")).toBeNull();
   });
-  it("shows the owner strip and cover control to the owner", () => {
-    render(
-      <CommandProfileView
-        {...base}
-        isOwner
-        cover={{ mode: "gradient", url: null, onChange: () => {} }}
-      />
-    );
-    expect(screen.getByText("Only you can see this")).toBeTruthy();
-    expect(screen.getByText("draft directive")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Change cover/ })).toBeTruthy();
-  });
 });

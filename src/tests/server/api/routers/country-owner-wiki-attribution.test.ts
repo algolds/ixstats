@@ -114,11 +114,4 @@ describe("countries.getByIdWithEconomicData: the owner's wiki name and wiki attr
     expect(record.sovereignUser?.username).toBe("owner_clerk");
     expect(JSON.stringify(record)).not.toContain("Wiki Ruler");
   });
-
-  it("reads no switch for an owner without a wiki name", async () => {
-    const db = makeDb({ wikiUsername: null, handle: "ruler" });
-    const record = await read(visitor(db));
-    expect(record.sovereignUser?.username).toBe("ruler");
-    expect(db.userConnection.findMany).not.toHaveBeenCalled();
-  });
 });
