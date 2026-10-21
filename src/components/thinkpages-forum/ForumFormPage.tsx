@@ -17,7 +17,10 @@ export function ForumFormPage({
 }) {
   return (
     <ForumPage title={title} breadcrumbs={breadcrumbs} back={back}>
-      <div className="flex min-w-0 flex-col gap-4">{children}</div>
+      {/* 70% of the page column, at least 56rem and at most 72rem: roomy on a laptop, never full width on a big screen */}
+      <div className="flex w-full max-w-[clamp(56rem,70%,72rem)] min-w-0 flex-col gap-4">
+        {children}
+      </div>
     </ForumPage>
   );
 }
