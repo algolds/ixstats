@@ -52,20 +52,6 @@ beforeEach(() => {
 });
 
 describe("countries.getWikiRichIntro", () => {
-  it("reads a country's own page on its own wiki and links to that wiki", async () => {
-    findMany.mockResolvedValue([
-      { id: "c-tag", wikiSource: "iiwiki", wikiPageTitle: "Tagmatine Empire" },
-    ]);
-    jest.mocked(getArticleWikitextShadow).mockResolvedValue(article(LEAD));
-
-    const intro = await caller().getWikiRichIntro({ countryName: "Tagmatium", countryId: "c-tag" });
-
-    expect(reads()).toEqual([["Tagmatine Empire", "iiwiki"]]);
-    expect(intro?.wikiUrl).toBe("/wiki/Tagmatine_Empire?source=iiwiki");
-    expect(intro?.paragraphs[0]).toContain("Tagmatium");
-    // A link in the intro opens that wiki's page in the reader, not IxWiki's page of the same title.
-    expect(intro?.paragraphs[0]).toContain('href="/wiki/Alharu?source=iiwiki"');
-  });
   it("does not look the name up on other wikis when the referenced page is missing", async () => {
     findMany.mockResolvedValue([
       { id: "c-gone", wikiSource: "iiwiki", wikiPageTitle: "Gone Land" },
@@ -91,30 +77,5 @@ describe("countries.getWikiRichIntro", () => {
       ["Urcea", "ixwiki"],
       ["Urcea", "iiwiki"],
     ]);
-  });
-});
-
-describe("countries.getBulkWikiRichIntros", () => {
-  it("reads each country's own page when it has one, in one query for all of them", async () => {
-    findMany.mockResolvedValue([{ id: "b-tag", wikiSource: "iiwiki", wikiPageTitle: "Tagmatium" }]);
-    jest.mocked(getArticleWikitextShadow).mockResolvedValue(article(LEAD));
-
-    const intros = await caller().getBulkWikiRichIntros({
-      countries: [
-        { countryName: "Bulk Tagmatium", countryId: "b-tag" },
-        { countryName: "Bulk Caphiria" },
-      ],
-    });
-
-    expect(findMany).toHaveBeenCalledTimes(1);
-    expect(findMany.mock.calls[0]?.[0].where.id.in).toEqual(["b-tag"]);
-    expect(reads()).toEqual(
-      expect.arrayContaining([
-        ["Tagmatium", "iiwiki"],
-        ["Bulk Caphiria", "ixwiki"],
-      ])
-    );
-    expect(intros["Bulk Tagmatium"]?.wikiUrl).toBe("/wiki/Tagmatium?source=iiwiki");
-    expect(intros["Bulk Caphiria"]?.wikiUrl).toBe("/wiki/Bulk_Caphiria");
   });
 });

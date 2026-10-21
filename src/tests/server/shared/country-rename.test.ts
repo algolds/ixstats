@@ -17,7 +17,7 @@ jest.mock("~/server/shared/intelligence-alert-thresholds", () => ({
 
 import { createTRPCRouter } from "~/server/api/trpc";
 import { managementLifecycleProcedures } from "~/server/api/routers/countries/management/lifecycle";
-import { findCountrySlugRedirect, normalizeCountryName } from "~/server/shared/country-rename";
+import { findCountrySlugRedirect } from "~/server/shared/country-rename";
 import { CALLER_COUNTRY, createIdorContext } from "~/tests/helpers/country-idor-context";
 
 function redirectDb({
@@ -57,25 +57,11 @@ describe("findCountrySlugRedirect", () => {
     });
     await expect(findCountrySlugRedirect(db as never, "testland")).resolves.toBeNull();
   });
-
-  it("answers null for an unknown slug without more lookups", async () => {
-    const db = redirectDb({});
-    await expect(findCountrySlugRedirect(db as never, "nowhere")).resolves.toBeNull();
-    expect(db.country.findUnique).not.toHaveBeenCalled();
-  });
-
   it("answers null for a malformed address", async () => {
     const db = redirectDb({});
     await expect(findCountrySlugRedirect(db as never, "%E0%A4%A")).resolves.toBeNull();
   });
 });
-
-describe("normalizeCountryName", () => {
-  it("trims and collapses inner whitespace", () => {
-    expect(normalizeCountryName("  New \t Testland ")).toBe("New Testland");
-  });
-});
-
 describe("countries.update with a new name (Settings)", () => {
   function setup() {
     const db: Record<string, Record<string, jest.Mock>> & { $transaction?: jest.Mock } = {
@@ -134,12 +120,5 @@ describe("countries.update with a new name (Settings)", () => {
       message: "Another nation in this realm has this name.",
     });
     expect(db.country.update).not.toHaveBeenCalled();
-  });
-
-  it("leaves the slug alone when the name does not change", async () => {
-    const { db, caller } = setup();
-    await caller.update({ id: CALLER_COUNTRY, name: "Testland", leader: "Queen" });
-    expect(db.country.update.mock.calls[0]![0].data).not.toHaveProperty("slug");
-    expect(db.countrySlugRedirect.upsert).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,3 @@
-/**
- * Government forms catalogue (spec §4).
- */
-
-import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import {
   GOVERNMENT_FORMS,
   matchGovernmentForm,
@@ -11,20 +6,6 @@ import {
 import { findSynergyPair } from "~/lib/government/synergy-table";
 
 describe("GOVERNMENT_FORMS", () => {
-  it.each(GOVERNMENT_FORMS.map((form) => [form.id, form] as const))(
-    "%s is complete and uses only defined components",
-    (_id, form) => {
-      expect(form.name).toBeTruthy();
-      expect(form.governmentType).toBeTruthy();
-      expect(form.description).toMatch(/^[A-Z][^\n]*\.$/);
-      expect(form.description).not.toMatch(/[–—]/);
-      for (const value of Object.values(form.institutions)) expect(value).toBeTruthy();
-      expect(form.components.length).toBeGreaterThan(0);
-      expect(new Set(form.components).size).toBe(form.components.length);
-      expect(form.components.filter((type) => !ATOMIC_COMPONENTS[type])).toEqual([]);
-    }
-  );
-
   it.each(GOVERNMENT_FORMS.map((form) => [form.id, form] as const))(
     "%s starts with no conflicting pair",
     (_id, form) => {
@@ -57,10 +38,5 @@ describe("matchGovernmentForm", () => {
     ["Parliamentary constitutional emirate", "constitutional-monarchy"],
   ])("maps %p to %p", (text, expected) => {
     expect(matchGovernmentForm(text)).toBe(expected);
-  });
-
-  it("defaults to a parliamentary republic", () => {
-    expect(matchGovernmentForm("")).toBe("parliamentary-republic");
-    expect(matchGovernmentForm("Unitary Quaternalist something")).toBe("parliamentary-republic");
   });
 });

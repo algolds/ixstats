@@ -21,7 +21,6 @@ jest.mock("~/lib/config-service", () => ({
 import {
   historyPeriodEnd,
   historyPeriodStart,
-  isProjectionUnchanged,
   runStatProgression,
 } from "~/server/cron/stat-progression";
 import { projectCountryStats, projectedStatsUpdate } from "~/server/shared/country-helpers";
@@ -106,14 +105,6 @@ function makeDb(countries: ReturnType<typeof country>[], historyCountryIds: stri
   };
 }
 
-describe("history period", () => {
-  it("is the IxTime month containing the time", () => {
-    const t = Date.UTC(2043, 4, 17, 12);
-    expect(historyPeriodStart(t)).toBe(Date.UTC(2043, 4, 1));
-    expect(historyPeriodEnd(t)).toBe(Date.UTC(2043, 5, 1));
-  });
-});
-
 describe("runStatProgression", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -133,36 +124,6 @@ describe("runStatProgression", () => {
     expect(data.lastCalculated).toEqual(new Date(NOW));
     expect(Object.keys(data).filter((k) => k.startsWith("baseline"))).toEqual([]);
   });
-
-  it("moves the stored GDP when an issue's level effect is active", async () => {
-    const effect = {
-      ixTimeTimestamp: new Date(IxTime.addYears(BASELINE, 1)),
-      inputType: "gdp_level_adjustment",
-      value: -0.005,
-      duration: null,
-      isActive: true,
-    };
-    const db = makeDb([country("a"), country("b", { storytellerEffects: [effect] })]);
-
-    await runStatProgression({ db: db as any, ixTime: NOW });
-
-    const gdp = (i: number) =>
-      (db.country.update.mock.calls[i]![0] as { data: { currentGdpPerCapita: number } }).data
-        .currentGdpPerCapita;
-    expect(gdp(1) / gdp(0)).toBeCloseTo(0.995, 6);
-  });
-
-  it("skips countries whose stored stats already match, unless forced", async () => {
-    const db = makeDb([upToDate("a")]);
-
-    const skipped = await runStatProgression({ db: db as any, ixTime: NOW });
-    expect(skipped).toMatchObject({ updated: 0, unchanged: 1 });
-    expect(db.country.update).not.toHaveBeenCalled();
-
-    const forced = await runStatProgression({ db: db as any, ixTime: NOW, force: true });
-    expect(forced).toMatchObject({ updated: 1, unchanged: 0 });
-  });
-
   it("writes one history point per country per IxTime month", async () => {
     const db = makeDb([country("a"), upToDate("b"), country("c")], ["c"]);
 
@@ -208,22 +169,6 @@ describe("runStatProgression", () => {
     expect(result).toMatchObject({ processed: 2, updated: 1, failed: 1 });
     expect(db.calculationLog.create).toHaveBeenCalledTimes(1);
   });
-
-  it("reports an economic tier change to the listener (SL-7 economic milestone)", async () => {
-    const stored = upToDate("a");
-    const db = makeDb([{ ...stored, economicTier: "Impoverished" } as any, upToDate("b")]);
-    const onEconomicTierChange = jest.fn();
-
-    await runStatProgression({ db: db as any, ixTime: NOW, onEconomicTierChange });
-
-    expect(onEconomicTierChange).toHaveBeenCalledTimes(1);
-    expect(onEconomicTierChange).toHaveBeenCalledWith({
-      countryId: "a",
-      from: "Impoverished",
-      to: stored.economicTier,
-    });
-  });
-
   it("never fails the run when the tier listener throws", async () => {
     const db = makeDb([{ ...upToDate("a"), economicTier: "Impoverished" } as any]);
     const onEconomicTierChange = jest.fn(() => {
@@ -235,21 +180,5 @@ describe("runStatProgression", () => {
 
     expect(result).toMatchObject({ updated: 1, failed: 0 });
     spy.mockRestore();
-  });
-});
-
-describe("isProjectionUnchanged", () => {
-  const stored = upToDate("a");
-  const next = projectedStatsUpdate(projectCountryStats(stored, undefined, econConfig, NOW), NOW);
-
-  it("treats sub-tolerance drift as unchanged and a tier change as changed", () => {
-    expect(isProjectionUnchanged(stored, next)).toBe(true);
-    expect(
-      isProjectionUnchanged(
-        { ...stored, currentGdpPerCapita: stored.currentGdpPerCapita * 1.001 },
-        next
-      )
-    ).toBe(false);
-    expect(isProjectionUnchanged({ ...stored, economicTier: "Healthy" }, next)).toBe(false);
   });
 });

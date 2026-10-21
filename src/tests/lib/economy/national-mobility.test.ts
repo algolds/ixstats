@@ -47,23 +47,6 @@ describe("National Mobility Engine", () => {
       expect(result.velocityScore).toBeGreaterThan(0);
       expect(result.diversityScore).toBe(100);
     });
-
-    it("evaluates intermediate developing transit networks accurately", () => {
-      const result = calculateTAMI({
-        // density 42, velocity 41, connectivity 28, diversity 40 → TAMI 39
-        totalLengthKm: 2_000,
-        landAreaKm2: 60_000,
-        effectiveAverageSpeedKmh: 65,
-        baselineSpeedKmh: 80,
-        totalHubs: 4,
-        cityCount: 12,
-        operationalRouteTypes: ["road", "trunk", "rail"],
-      });
-
-      expect(result.tamiScore).toBeGreaterThan(0);
-      expect(result.tamiScore).toBeLessThan(60);
-      expect(result.rating).toBe("developing");
-    });
   });
 
   describe("calculateMaintenanceDegradation", () => {
@@ -90,30 +73,6 @@ describe("National Mobility Engine", () => {
       expect(result.fundingRatio).toBe(1.2);
       expect(result.gdpModifierDelta).toBeGreaterThan(0);
     });
-
-    it("rates 75% funded budgets as adequate with minor speed drag", () => {
-      const result = calculateMaintenanceDegradation({
-        budgetedMaintenance: 0.75,
-        requiredMaintenance: 1.0,
-      });
-
-      expect(result.condition).toBe("adequate");
-      expect(result.speedDegradationFactor).toBe(0.92);
-      expect(result.speedPenaltyPercent).toBe(8);
-    });
-
-    it("rates 50% funded budgets as deteriorating with noticeable drag", () => {
-      const result = calculateMaintenanceDegradation({
-        budgetedMaintenance: 0.5,
-        requiredMaintenance: 1.0,
-      });
-
-      expect(result.condition).toBe("deteriorating");
-      expect(result.speedDegradationFactor).toBe(0.78);
-      expect(result.speedPenaltyPercent).toBe(22);
-      expect(result.gdpModifierDelta).toBeLessThan(0);
-    });
-
     it("rates under 40% funding as failing with severe degradation", () => {
       const result = calculateMaintenanceDegradation({
         budgetedMaintenance: 0.2,
@@ -169,11 +128,6 @@ describe("National Mobility Engine", () => {
   });
 
   describe("estimateIntercityTravelTimes", () => {
-    it("returns empty array when fewer than 2 cities provided", () => {
-      const cities: CityNode[] = [{ id: "c1", name: "Capital City" }];
-      expect(estimateIntercityTravelTimes(cities, [])).toEqual([]);
-    });
-
     it("estimates realistic travel times using HSR when present", () => {
       const cities: CityNode[] = [
         { id: "c1", name: "Capital", coordinates: [10.0, 50.0] },

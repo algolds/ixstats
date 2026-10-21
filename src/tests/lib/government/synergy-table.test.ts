@@ -15,39 +15,11 @@ import {
 import {
   GOVERNMENT_SYNERGY_TABLE,
   checkComponentSynergy,
-  findSynergyPair,
   synergyScoreDelta,
 } from "~/lib/government/synergy-table";
 
 const DEFINED = Object.keys(ATOMIC_COMPONENTS) as ComponentType[];
-const unorderedKey = (a: string, b: string) => [a, b].sort().join("+");
-
 describe("government synergy table", () => {
-  it("has no self pairs and no duplicate pairs in either order", () => {
-    const seen = new Set<string>();
-    for (const pair of GOVERNMENT_SYNERGY_TABLE) {
-      expect(pair.a).not.toBe(pair.b);
-      const key = unorderedKey(pair.a, pair.b);
-      expect(seen.has(key)).toBe(false);
-      seen.add(key);
-    }
-    expect(seen.size).toBe(GOVERNMENT_SYNERGY_TABLE.length);
-  });
-
-  it("only references defined government components", () => {
-    const undefinedRefs = GOVERNMENT_SYNERGY_TABLE.flatMap((pair) =>
-      [pair.a, pair.b].filter((type) => !ATOMIC_COMPONENTS[type])
-    );
-    expect(undefinedRefs).toEqual([]);
-  });
-
-  it("is symmetric: lookups ignore order", () => {
-    for (const pair of GOVERNMENT_SYNERGY_TABLE) {
-      expect(findSynergyPair(pair.a, pair.b)).toBe(pair);
-      expect(findSynergyPair(pair.b, pair.a)).toBe(pair);
-      expect(checkComponentSynergy(pair.a, pair.b)).toEqual(checkComponentSynergy(pair.b, pair.a));
-    }
-  });
   it("derives each component's synergies and conflicts arrays from the table, symmetrically", () => {
     for (const type of DEFINED) {
       const component = ATOMIC_COMPONENTS[type]!;

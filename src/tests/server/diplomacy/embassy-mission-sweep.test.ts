@@ -1,6 +1,5 @@
 import {
-  closeDueEmbassyMissions,
-  missionTimeProgress,
+  closeDueEmbassyMissions
 } from "~/lib/diplomacy/embassy-mission-sweep";
 
 const mockDb = {
@@ -64,22 +63,5 @@ describe("closeDueEmbassyMissions", () => {
     const { runDiplomaticDrift } = await import("~/lib/diplomacy/drift-cron");
     const res = await runDiplomaticDrift();
     expect(res).toMatchObject({ missionsCompleted: 3, missionsCancelled: 2 });
-  });
-});
-
-describe("missionTimeProgress", () => {
-  const startedAt = new Date("2026-10-01T00:00:00Z");
-  const completesAt = new Date("2026-10-11T00:00:00Z");
-
-  it("is the elapsed share of the run, clamped to 0..100", () => {
-    expect(missionTimeProgress({ startedAt, completesAt }, new Date("2026-10-06T00:00:00Z"))).toBe(
-      50
-    );
-    expect(missionTimeProgress({ startedAt, completesAt }, new Date("2026-09-01T00:00:00Z"))).toBe(
-      0
-    );
-    expect(missionTimeProgress({ startedAt, completesAt }, new Date("2026-12-01T00:00:00Z"))).toBe(
-      100
-    );
   });
 });

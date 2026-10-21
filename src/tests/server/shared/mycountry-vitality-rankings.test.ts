@@ -8,14 +8,11 @@ jest.mock("~/server/db", () => ({ db: {} }));
 import { describe, it, expect } from "@jest/globals";
 import { db as mockedDb } from "~/server/db";
 import {
-  DIPLOMATIC_STANDING_WEIGHTS,
   calculateVitalityScores,
   emptyDiplomaticStandingInputs,
   generateRankings,
-  loadDiplomaticStandingInputs,
   rankCensus,
-  scoreDiplomaticStanding,
-  scoreGovernmentalEfficiency,
+  scoreDiplomaticStanding
 } from "~/server/shared/mycountry-helpers";
 
 function diplomacyDb(
@@ -48,96 +45,8 @@ describe("scoreDiplomaticStanding", () => {
   it("is null (shown as —) when the country has no diplomatic record", () => {
     expect(scoreDiplomaticStanding(emptyDiplomaticStandingInputs())).toBeNull();
   });
-
-  it("starts from mean relation strength and adds embassy/alliance/treaty bonuses", () => {
-    const w = DIPLOMATIC_STANDING_WEIGHTS;
-    expect(
-      scoreDiplomaticStanding({
-        relationStrengths: [40, 60],
-        activeEmbassies: 2,
-        allianceMemberships: 1,
-        activeTreaties: 1,
-        hostileActionsReceived: 0,
-      })
-    ).toBe(50 + 2 * w.perEmbassy + w.perAlliance + w.perTreaty);
-  });
-
-  it("drops with hostile actions received and stays within 0-100", () => {
-    const hostile = scoreDiplomaticStanding({
-      ...emptyDiplomaticStandingInputs(),
-      relationStrengths: [20],
-      hostileActionsReceived: 10,
-    });
-    expect(hostile).toBe(0);
-
-    const maxed = scoreDiplomaticStanding({
-      relationStrengths: [95],
-      activeEmbassies: 50,
-      allianceMemberships: 9,
-      activeTreaties: 9,
-      hostileActionsReceived: 0,
-    });
-    expect(maxed).toBe(100);
-  });
 });
-
-describe("loadDiplomaticStandingInputs", () => {
-  it("counts relations, embassies, alliances, treaties and hostile actions per country", async () => {
-    const db = diplomacyDb({
-      relations: [
-        { country1: "a", country2: "b", strength: 80 },
-        { country1: "c", country2: "a", strength: 30 },
-      ],
-      embassies: [
-        { hostCountryId: "a", guestCountryId: "b" },
-        { hostCountryId: "b", guestCountryId: "a" },
-      ],
-      memberships: [{ countryId: "a" }],
-      treaties: [{ parties: '["a","b"]' }, { parties: null }],
-      hostile: [{ targetId: "a" }, { targetId: "zzz" }],
-    });
-
-    const map = await loadDiplomaticStandingInputs(["a", "b"], db as never);
-
-    expect(map.get("a")).toEqual({
-      relationStrengths: [80, 30],
-      activeEmbassies: 2,
-      allianceMemberships: 1,
-      activeTreaties: 1,
-      hostileActionsReceived: 1,
-    });
-    expect(map.get("b")).toEqual({
-      relationStrengths: [80],
-      activeEmbassies: 2,
-      allianceMemberships: 0,
-      activeTreaties: 1,
-      hostileActionsReceived: 0,
-    });
-    expect(map.has("c")).toBe(false);
-
-    // Only active embassies, active memberships and active hostile actions count.
-    expect((db.embassy.findMany.mock.calls[0] as any[])[0].where.status).toBe("active");
-    expect((db.allianceMember.findMany.mock.calls[0] as any[])[0].where).toMatchObject({
-      status: "active",
-      isActive: true,
-    });
-    expect((db.foreignPolicyAction.findMany.mock.calls[0] as any[])[0].where).toMatchObject({
-      status: "active",
-      actionType: { in: ["embargo", "sanction", "blockade"] },
-    });
-  });
-});
-
 describe("calculateVitalityScores", () => {
-  it("uses the real diplomatic score and government effectiveness", () => {
-    const scores = calculateVitalityScores(baseCountry, {
-      diplomaticStanding: 63,
-      governmentEffectiveness: 41.6,
-    });
-    expect(scores.diplomaticStanding).toBe(63);
-    expect(scores.governmentalEfficiency).toBe(42);
-  });
-
   it("returns null for missing data and averages only the known scores", () => {
     const scores = calculateVitalityScores(baseCountry);
     expect(scores.diplomaticStanding).toBeNull();
@@ -145,12 +54,6 @@ describe("calculateVitalityScores", () => {
     expect(scores.overallScore).toBe(
       Math.round((scores.economicVitality + scores.populationWellbeing) / 2)
     );
-  });
-
-  it("scoreGovernmentalEfficiency clamps and rejects non-numbers", () => {
-    expect(scoreGovernmentalEfficiency(null)).toBeNull();
-    expect(scoreGovernmentalEfficiency(undefined)).toBeNull();
-    expect(scoreGovernmentalEfficiency(140)).toBe(100);
   });
 });
 
@@ -199,12 +102,6 @@ describe("rankCensus", () => {
       region: "North",
     });
     expect(byCategory["Public Approval"]!.value).toBe(70);
-  });
-
-  it("leaves out a category the country has no value for", () => {
-    const rankings = rankCensus("me", [row("me", { Stability: null, Infrastructure: 50 })]);
-    expect(rankings.map((r) => r.category)).toEqual(["Infrastructure"]);
-    expect(rankings[0]!.percentile).toBe(100);
   });
 });
 

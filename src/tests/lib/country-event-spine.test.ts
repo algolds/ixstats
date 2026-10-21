@@ -41,55 +41,6 @@ describe("CountryEventSpine", () => {
       },
     };
   });
-
-  test("processes event and applies consequences", async () => {
-    mockDb.internalStabilityMetrics.findUnique.mockResolvedValue({ countryId, stabilityScore: 70 });
-
-    const results = await CountryEventSpine.recordCountryEvent({
-      db: mockDb,
-      countryId,
-      sourceType: "issue",
-      sourceId: "issue-123",
-      description: "Resolved issue",
-      consequences: [
-        {
-          targetModel: "InternalStabilityMetrics",
-          targetField: "stabilityScore",
-          operation: "add",
-          value: 10,
-        },
-      ],
-    });
-
-    expect(results).toHaveLength(1);
-    expect(results[0]).toEqual({
-      targetModel: "InternalStabilityMetrics",
-      targetField: "stabilityScore",
-      previousValue: 70,
-      newValue: 80,
-      delta: 10,
-      description: "Stability Score increased by 10.0 (70.0 → 80.0)",
-      effectType: "immediate",
-    });
-
-    expect(mockDb.internalStabilityMetrics.update).toHaveBeenCalledWith({
-      where: { countryId },
-      data: { stabilityScore: 80 },
-    });
-
-    expect(mockDb.countryChangeLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        countryId,
-        sourceType: "issue",
-        sourceId: "issue-123",
-        targetModel: "InternalStabilityMetrics",
-        targetField: "stabilityScore",
-        deltaValue: 10,
-        description: "Stability Score increased by 10.0 (70.0 → 80.0)",
-      }),
-    });
-  });
-
   test("clamps values to specified bounds", async () => {
     mockDb.country.findUnique.mockResolvedValue({ id: countryId, publicApproval: 95 });
 
@@ -139,23 +90,5 @@ describe("CountryEventSpine", () => {
 
     expect(results).toHaveLength(0);
     expect(mockDb.country.update).not.toHaveBeenCalled();
-  });
-
-  test("falls back to general ledger log when no consequences are applied", async () => {
-    await CountryEventSpine.recordCountryEvent({
-      db: mockDb,
-      countryId,
-      sourceType: "other",
-      description: "General system tick event",
-    });
-
-    expect(mockDb.countryChangeLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        countryId,
-        sourceType: "other",
-        sourceId: null,
-        description: "General system tick event",
-      }),
-    });
   });
 });

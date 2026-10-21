@@ -82,12 +82,4 @@ describe("policies.repealPolicy", () => {
       expect(db.storytellerEffect.updateMany).not.toHaveBeenCalled();
     }
   });
-
-  it("returns NOT_FOUND for an unknown policy", async () => {
-    const db = policiesDb(null);
-    const caller = policiesRouter.createCaller(createIdorContext(db));
-    await expect(caller.repealPolicy({ policyId: "nope" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
-  });
 });

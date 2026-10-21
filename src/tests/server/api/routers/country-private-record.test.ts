@@ -1,5 +1,5 @@
 /** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals" (see intent-outcome.test.ts): the
+// `jest` is deliberately NOT imported from "@jest/globals": the
 // hoisted jest.mock() factories rely on the ambient global.
 //
 // The owner's side of a nation's statecraft, enforced on the server (the public side is

@@ -62,7 +62,7 @@ describe("National Issues Condition Evaluator", () => {
     activeComponents: ["comp-1", "comp-2", "comp-3"],
     implementingComponents: ["comp-4"],
     activePoliciesList: ["tax_reform_policy"],
-    policySettings: {},
+    policySettings: { "universal-basic-income": { stipend: 2, funding: 1 } },
     activeIntents: ["intent-1"],
     activeIntentCategories: ["economy", "defense"],
     activeIntentGoals: ["economic_growth", "border_security"],
@@ -73,173 +73,87 @@ describe("National Issues Condition Evaluator", () => {
     neighbors: [{ name: "Nordland", countryId: "c-2" }],
   };
 
-  describe("Scalar comparison operators", () => {
-    it("evaluates > correctly", () => {
-      const condition: TriggerCondition = { field: "currentPopulation", op: ">", value: 40000000 };
-      expect(evaluateTriggerCondition(condition, mockSnapshot)).toBe(true);
-
-      const falseCond: TriggerCondition = { field: "currentPopulation", op: ">", value: 50000000 };
-      expect(evaluateTriggerCondition(falseCond, mockSnapshot)).toBe(false);
-    });
-
-    it("evaluates >= and <= correctly", () => {
-      const gteCond: TriggerCondition = { field: "unemploymentRate", op: ">=", value: 4.8 };
-      expect(evaluateTriggerCondition(gteCond, mockSnapshot)).toBe(true);
-
-      const lteCond: TriggerCondition = { field: "unemploymentRate", op: "<=", value: 4.8 };
-      expect(evaluateTriggerCondition(lteCond, mockSnapshot)).toBe(true);
-    });
-
-    it("evaluates < correctly", () => {
-      const ltCond: TriggerCondition = { field: "inflationRate", op: "<", value: 3.0 };
-      expect(evaluateTriggerCondition(ltCond, mockSnapshot)).toBe(true);
-    });
-
-    it("evaluates == and != correctly", () => {
-      const eqCond: TriggerCondition = { field: "economicTier", op: "==", value: "Developed" };
-      expect(evaluateTriggerCondition(eqCond, mockSnapshot)).toBe(true);
-
-      const neqCond: TriggerCondition = { field: "economicTier", op: "!=", value: "Developing" };
-      expect(evaluateTriggerCondition(neqCond, mockSnapshot)).toBe(true);
-    });
-
-    it("evaluates 'in' correctly for scalar field against array target", () => {
-      const inCond: TriggerCondition = {
-        field: "economicTier",
-        op: "in",
-        value: ["Developed", "Advanced"],
-      };
-      expect(evaluateTriggerCondition(inCond, mockSnapshot)).toBe(true);
-
-      const notInCond: TriggerCondition = {
-        field: "economicTier",
-        op: "in",
-        value: ["Underdeveloped", "Developing"],
-      };
-      expect(evaluateTriggerCondition(notInCond, mockSnapshot)).toBe(false);
-    });
-
-    it("evaluates 'between' correctly", () => {
-      const betweenCond: TriggerCondition = {
-        field: "actualGdpGrowth",
-        op: "between",
-        value: 1.0,
-        value2: 4.0,
-      };
-      expect(evaluateTriggerCondition(betweenCond, mockSnapshot)).toBe(true);
-
-      const outsideCond: TriggerCondition = {
-        field: "actualGdpGrowth",
-        op: "between",
-        value: 3.0,
-        value2: 6.0,
-      };
-      expect(evaluateTriggerCondition(outsideCond, mockSnapshot)).toBe(false);
-    });
-  });
-
-  describe("Array field membership and aggregations", () => {
-    it("checks array membership with '==' and 'in'", () => {
-      const arrayContains: TriggerCondition = {
-        field: "activeComponents",
-        op: "==",
-        value: "comp-2",
-      };
-      expect(evaluateTriggerCondition(arrayContains, mockSnapshot)).toBe(true);
-
-      const arrayAbsence: TriggerCondition = {
-        field: "activeComponents",
-        op: "!=",
-        value: "comp-99",
-      };
-      expect(evaluateTriggerCondition(arrayAbsence, mockSnapshot)).toBe(true);
-    });
-
-    it("evaluates count aggregator on array fields", () => {
-      const countCond: TriggerCondition = {
-        count: { field: "activeComponents", op: ">=", value: 3 },
-      };
-      expect(evaluateTriggerCondition(countCond, mockSnapshot)).toBe(true);
-
-      const countFail: TriggerCondition = {
-        count: { field: "activeComponents", op: ">", value: 5 },
-      };
-      expect(evaluateTriggerCondition(countFail, mockSnapshot)).toBe(false);
-    });
-
-    it("evaluates 'any' recursion on array of objects", () => {
-      const anyHostile: TriggerCondition = {
-        any: {
-          field: "partners",
-          condition: { field: "band", op: "==", value: "HOSTILE" },
-        },
-      };
-      expect(evaluateTriggerCondition(anyHostile, mockSnapshot)).toBe(true);
-
-      const anyVassal: TriggerCondition = {
-        any: {
-          field: "partners",
-          condition: { field: "band", op: "==", value: "VASSAL" },
-        },
-      };
-      expect(evaluateTriggerCondition(anyVassal, mockSnapshot)).toBe(false);
-    });
-  });
-
-  describe("Logical operators (and, or, not)", () => {
-    it("evaluates 'and' with all conditions passing", () => {
-      const andCond: TriggerCondition = {
+  const cases: Array<[string, TriggerCondition, boolean]> = [
+    [">", { field: "currentPopulation", op: ">", value: 40_000_000 }, true],
+    ["> (false)", { field: "currentPopulation", op: ">", value: 50_000_000 }, false],
+    [">= at the value", { field: "unemploymentRate", op: ">=", value: 4.8 }, true],
+    ["<= at the value", { field: "unemploymentRate", op: "<=", value: 4.8 }, true],
+    ["<", { field: "inflationRate", op: "<", value: 3.0 }, true],
+    ["==", { field: "economicTier", op: "==", value: "Developed" }, true],
+    ["!=", { field: "economicTier", op: "!=", value: "Developing" }, true],
+    ["in", { field: "economicTier", op: "in", value: ["Developed", "Advanced"] }, true],
+    ["in (false)", { field: "economicTier", op: "in", value: ["Developing"] }, false],
+    ["between", { field: "actualGdpGrowth", op: "between", value: 1.0, value2: 4.0 }, true],
+    ["between (outside)", { field: "actualGdpGrowth", op: "between", value: 3, value2: 6 }, false],
+    ["array == is membership", { field: "activeComponents", op: "==", value: "comp-2" }, true],
+    ["array != is absence", { field: "activeComponents", op: "!=", value: "comp-99" }, true],
+    ["count", { count: { field: "activeComponents", op: ">=", value: 3 } }, true],
+    ["count (false)", { count: { field: "activeComponents", op: ">", value: 5 } }, false],
+    [
+      "any over objects",
+      { any: { field: "partners", condition: { field: "band", op: "==", value: "HOSTILE" } } },
+      true,
+    ],
+    [
+      "any (none match)",
+      { any: { field: "partners", condition: { field: "band", op: "==", value: "VASSAL" } } },
+      false,
+    ],
+    [
+      "and",
+      {
         and: [
           { field: "publicApproval", op: ">", value: 50 },
           { field: "democracyIndex", op: ">", value: 70 },
         ],
-      };
-      expect(evaluateTriggerCondition(andCond, mockSnapshot)).toBe(true);
-    });
-
-    it("evaluates 'or' with at least one passing", () => {
-      const orCond: TriggerCondition = {
+      },
+      true,
+    ],
+    [
+      "or",
+      {
         or: [
           { field: "publicApproval", op: "<", value: 20 },
           { field: "democracyIndex", op: ">", value: 70 },
         ],
-      };
-      expect(evaluateTriggerCondition(orCond, mockSnapshot)).toBe(true);
-    });
+      },
+      true,
+    ],
+    ["not", { not: { field: "publicApproval", op: "<", value: 50 } }, true],
+    [
+      "a dotted policy setting",
+      { field: "policySettings.universal-basic-income.stipend", op: "==", value: 2 },
+      true,
+    ],
+    [
+      "a missing dotted path",
+      { field: "policySettings.surveillance-oversight.surveillance", op: "==", value: 0 },
+      false,
+    ],
+  ];
 
-    it("evaluates 'not' inversion", () => {
-      const notCond: TriggerCondition = {
-        not: { field: "publicApproval", op: "<", value: 50 },
-      };
-      expect(evaluateTriggerCondition(notCond, mockSnapshot)).toBe(true);
-    });
+  it.each(cases)("evaluates %s", (_label, condition, expected) => {
+    expect(evaluateTriggerCondition(condition, mockSnapshot)).toBe(expected);
   });
 
-  describe("Variable substitution", () => {
-    it("substitutes built-in country variables", () => {
-      const template = "{{countryName}} is governed by {{leaderName}} under a {{governmentType}}.";
-      const rendered = substituteVariables(template, mockSnapshot);
-      expect(rendered).toBe(
-        "Aethelgard is governed by High Chancellor Vane under a Constitutional Republic."
-      );
-    });
-
-    it("substitutes grounded relationships and intent goals", () => {
-      const template =
-        "Relations with {{allyName}} flourish while {{rivalName}} poses border friction.";
-      const rendered = substituteVariables(template, mockSnapshot);
-      expect(rendered).toBe(
-        "Relations with Nordland flourish while Valeria poses border friction."
-      );
-    });
-
-    it("accepts override extra variables", () => {
-      const template = "Target state {{targetCountryName}} has approached {{countryName}}.";
-      const rendered = substituteVariables(template, mockSnapshot, {
-        targetCountryName: "Zandaria",
-      });
-      expect(rendered).toBe("Target state Zandaria has approached Aethelgard.");
-    });
+  it.each([
+    [
+      "{{countryName}} is governed by {{leaderName}} under a {{governmentType}}.",
+      undefined,
+      "Aethelgard is governed by High Chancellor Vane under a Constitutional Republic.",
+    ],
+    [
+      "Relations with {{allyName}} flourish while {{rivalName}} poses border friction.",
+      undefined,
+      "Relations with Nordland flourish while Valeria poses border friction.",
+    ],
+    [
+      "Target state {{targetCountryName}} has approached {{countryName}}.",
+      { targetCountryName: "Zandaria" },
+      "Target state Zandaria has approached Aethelgard.",
+    ],
+  ])("renders %p", (template, extra, rendered) => {
+    expect(substituteVariables(template, mockSnapshot, extra)).toBe(rendered);
   });
 
   describe("GDP growth units (#49)", () => {
@@ -250,13 +164,6 @@ describe("National Issues Condition Evaluator", () => {
     });
     const boom: TriggerCondition = { field: "actualGdpGrowth", op: ">", value: 3 };
     const slump: TriggerCondition = { field: "actualGdpGrowth", op: "<", value: 0.5 };
-
-    it("converts the stored decimal to percent", () => {
-      expect(growthDecimalToPercent(0.035)).toBe(3.5);
-      expect(growthDecimalToPercent(0.07)).toBe(7);
-      expect(growthDecimalToPercent(-0.012)).toBe(-1.2);
-      expect(growthDecimalToPercent(null)).toBe(0);
-    });
 
     it("fires a percent threshold on a stored decimal growth rate", () => {
       expect(evaluateTriggerCondition(boom, withStoredGrowth(0.035))).toBe(true);

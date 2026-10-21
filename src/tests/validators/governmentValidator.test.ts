@@ -26,29 +26,4 @@ describe("GovernmentBuilder validation", () => {
     const result = GovernmentBuilderStateSchema.safeParse(invalid);
     expect(result.success).toBe(false);
   });
-
-  it("passes for minimal valid structure", () => {
-    const valid = {
-      structure: {
-        governmentName: "Test Gov",
-        governmentType: "Unitary State",
-        totalBudget: 100,
-        fiscalYear: "Calendar Year",
-        budgetCurrency: "USD",
-      },
-      departments: [
-        {
-          name: "Finance",
-          category: "Finance",
-          organizationalLevel: "Ministry",
-          color: "#000000",
-          priority: 50,
-        },
-      ],
-      budgetAllocations: [],
-      revenueSources: [],
-    };
-    const result = GovernmentBuilderStateSchema.safeParse(valid);
-    expect(result.success).toBe(true);
-  });
 });

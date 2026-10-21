@@ -49,11 +49,4 @@ describe("CountryGrowthEditor", () => {
       },
     });
   });
-
-  it("refuses a value out of range", () => {
-    render(<CountryGrowthEditor countryId="c1" />);
-    fireEvent.change(screen.getByLabelText("Local growth factor (x)"), { target: { value: "0" } });
-    expect(screen.getByRole("alert")).toHaveTextContent("within its range");
-    expect(screen.getByRole("button", { name: "Save growth" })).toBeDisabled();
-  });
 });

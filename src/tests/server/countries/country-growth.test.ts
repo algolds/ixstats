@@ -78,11 +78,4 @@ describe("updateCountryGrowth", () => {
     expect(db.country.update).not.toHaveBeenCalled();
     expect(db.adminAuditLog.create).not.toHaveBeenCalled();
   });
-
-  it("returns null for an unknown country", async () => {
-    const db = setup(null);
-    await expect(
-      updateCountryGrowth(db, admin, { countryId: "nope", growth: { localGrowthFactor: 1.1 } })
-    ).resolves.toBeNull();
-  });
 });

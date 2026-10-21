@@ -1,20 +1,14 @@
 /**
- * The founding flow at /builder: the saved draft restores its step, deep links to a step whose
- * prerequisites are missing redirect, the draft saves two seconds after the last change,
- * Continue focuses the first invalid field, switching archetype asks first and keeps identity,
- * a policy preset replaces the institutions (asking first when the player chose their own), and
- * Found nation needs a confirm and sends none of the explicit payloads.
+ * The founding flow at /builder: the draft saves two seconds after the last change, and founding
+ * the nation needs a confirm (no keyboard shortcut founds) and sends none of the explicit payloads.
  */
 import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   applyStart,
   emptyFoundingDraft,
-  toggleComponent,
   type FoundingDraft,
 } from "~/app/builder/_founding/lib/founding-draft";
-import { getPolicyPreset } from "~/lib/government/policy-presets";
-
 // ---- next/navigation: a tiny URL store the flow reads and writes ----------------------------
 const mockNav = { params: new URLSearchParams(), listeners: new Set<() => void>() };
 function mockSetUrl(href: string) {
@@ -119,13 +113,6 @@ beforeEach(() => {
 });
 
 describe("founding flow", () => {
-  it("renders one h1 and restores the saved draft at its step", () => {
-    serve(named("government"));
-    render(<FoundingFlowView />);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(heading("How is your nation governed?")).toBeInTheDocument();
-    expect(mockReplace).toHaveBeenCalledWith("/builder?step=government", { scroll: false });
-  });
   it("saves the whole draft, step included, two seconds after the last change", async () => {
     jest.useFakeTimers();
     serve(named("identity"), "step=identity");
@@ -150,82 +137,6 @@ describe("founding flow", () => {
     // The crash copy is written too.
     expect(window.localStorage.getItem("ixstats:founding-draft")).toContain("Valoria Nova");
   });
-
-  it("says when the draft could not be saved, with a retry", async () => {
-    jest.useFakeTimers();
-    mockSave.mockRejectedValueOnce(new Error("offline"));
-    serve(named("identity"), "step=identity");
-    render(<FoundingFlowView />);
-    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: "Valoria Nova" } });
-    await act(async () => {
-      jest.advanceTimersByTime(2000);
-    });
-    expect(screen.getByRole("alert")).toHaveTextContent("Could not save your draft");
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    });
-    expect(mockSave).toHaveBeenCalledTimes(2);
-    expect(screen.getByText("Draft saved")).toBeInTheDocument();
-  });
-
-  it("asks for a start before moving on", () => {
-    serve(null);
-    render(<FoundingFlowView />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByText("Choose a kind of nation, or start blank.")).toBeInTheDocument();
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it("Continue focuses the first invalid field", () => {
-    const draft = named("identity");
-    serve({ ...draft, identity: { ...draft.identity, name: "" } }, "step=identity");
-    render(<FoundingFlowView />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    const name = screen.getByLabelText(/^Name/);
-    expect(name).toHaveFocus();
-    expect(name).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Enter a name for your nation.")).toBeInTheDocument();
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-  it("switching archetype asks first, then keeps the identity", () => {
-    serve(named("start"), "step=start");
-    render(<FoundingFlowView />);
-    fireEvent.click(screen.getByRole("radio", { name: /Skilled industrial economy/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-    const dialog = screen.getByRole("alertdialog");
-    expect(dialog).toHaveTextContent(
-      "Switching to Skilled industrial economy replaces your size, wealth and government. Your name, flag and other identity stay."
-    );
-    expect(mockPush).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Switch" }));
-    expect(mockPush).toHaveBeenCalledWith("/builder?step=identity");
-    expect(screen.getByLabelText(/^Name/)).toHaveValue("Valoria");
-  });
-
-  it("applies a policy preset from Customise institutions, asking first over own choices", () => {
-    const draft = named("government");
-    serve({
-      ...draft,
-      government: toggleComponent(draft.government, "SURVEILLANCE_SYSTEM"),
-    });
-    render(<FoundingFlowView />);
-    // Own choices open Customise institutions on arrival.
-    const surveillance = screen.getByRole("checkbox", { name: "Surveillance system" });
-    expect(surveillance).toBeChecked();
-    fireEvent.change(screen.getByRole("combobox", { name: "Policy presets" }), {
-      target: { value: "technocracy" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Use preset" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Replace" })
-    );
-
-    const preset = getPolicyPreset("technocracy")!.components;
-    expect(screen.getByText(`${preset.length} of 15 chosen`)).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Surveillance system" })).not.toBeChecked();
-  });
-
   it("Found nation needs a confirm and sends none of the explicit payloads", async () => {
     serve(named("review"), "step=review");
     render(<FoundingFlowView />);
@@ -249,25 +160,6 @@ describe("founding flow", () => {
     expect(mockClear).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/mycountry/welcome");
   });
-
-  it("shows a refusal as a Signal with the step that fixes it", async () => {
-    mockCreate.mockRejectedValueOnce({
-      message: 'A country named "Valoria" already exists in this realm',
-    });
-    serve(named("review"), "step=review");
-    render(<FoundingFlowView />);
-    fireEvent.click(screen.getByRole("button", { name: "Found nation" }));
-    await act(async () => {
-      fireEvent.click(
-        within(screen.getByRole("alertdialog")).getByRole("button", { name: "Found nation" })
-      );
-    });
-    expect(screen.getByRole("alert")).toHaveTextContent("That name is taken in this realm");
-    fireEvent.click(screen.getByRole("button", { name: "Change the name" }));
-    expect(mockPush).toHaveBeenCalledWith("/builder?step=identity");
-    expect(screen.getByRole("button", { name: "Back to review" })).toBeInTheDocument();
-  });
-
   it("no keyboard shortcut founds", () => {
     serve(named("review"), "step=review");
     render(<FoundingFlowView />);

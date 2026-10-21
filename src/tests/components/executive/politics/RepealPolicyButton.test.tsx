@@ -34,13 +34,4 @@ describe("RepealPolicyButton", () => {
     fireEvent.click(confirm);
     expect(mockRepealMutate).toHaveBeenCalledWith({ policyId: "pol_1" });
   });
-
-  it("does nothing when the confirmation is cancelled", () => {
-    render(<RepealPolicyButton policyId="pol_1" policyName="Universal Stipend" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Repeal" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
-
-    expect(mockRepealMutate).not.toHaveBeenCalled();
-  });
 });

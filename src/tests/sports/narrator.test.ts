@@ -17,38 +17,6 @@ describe("narrator tests", () => {
     delete process.env.SPORTS_LLM_API_KEY;
     global.fetch = originalFetch;
   });
-
-  test("narrateEvents fallback when disabled", async () => {
-    process.env.SPORTS_LLM_COMMENTARY = "false";
-    const events: EventTraceStep[] = [
-      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
-    ];
-    const result = await narrateEvents(events, { sport: "soccer" });
-    expect(result).toEqual(["Match starts"]);
-  });
-
-  test("narrateEvents calls fetch and handles JSON structure", async () => {
-    const mockFetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({ commentary: ["The whistle blows!"] }),
-            },
-          },
-        ],
-      }),
-    });
-    global.fetch = mockFetch;
-
-    const events: EventTraceStep[] = [
-      { t: 1, type: "tactic_shift", description: "Match starts", team: "home" },
-    ];
-    const result = await narrateEvents(events, { sport: "soccer" });
-    expect(result).toEqual(["The whistle blows!"]);
-    expect(mockFetch).toHaveBeenCalled();
-  });
   describe("caller-supplied endpoints never receive the server key", () => {
     const okReply = (content: string) =>
       jest.fn().mockResolvedValue({

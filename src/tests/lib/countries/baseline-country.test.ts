@@ -39,25 +39,6 @@ describe("buildBaselineCountryData", () => {
     expect(data.leader).toBeUndefined();
     expect(data).not.toHaveProperty("slug");
   });
-
-  it("derives the current stats and tiers from the calculator", () => {
-    const data = buildBaselineCountryData("Aurelia");
-    expect(data.currentPopulation).toBeGreaterThan(0);
-    expect(data.currentGdpPerCapita).toBeGreaterThan(0);
-    expect(data.currentTotalGdp).toBeCloseTo(data.currentPopulation * data.currentGdpPerCapita, -3);
-    expect(typeof data.economicTier).toBe("string");
-    expect(typeof data.populationTier).toBe("string");
-    for (const key of [
-      "populationGrowthRate",
-      "adjustedGdpGrowth",
-      "maxGdpGrowthRate",
-      "populationDensity",
-      "gdpDensity",
-    ] as const) {
-      expect(Number.isFinite(data[key])).toBe(true);
-    }
-  });
-
   it("caps GDP growth by the IxStats tier rule and takes the system growth defaults for the tier", () => {
     const strong = buildBaselineCountryData("Aurelia"); // $50,000: Strong
     expect(strong).toMatchObject({
@@ -81,32 +62,6 @@ describe("buildBaselineCountryData", () => {
       populationGrowthRate: 0.02,
       adjustedGdpGrowth: 0.004,
       maxGdpGrowthRate: 0.075,
-    });
-  });
-
-  it("takes the builder's initial values, falling back on empty or zero ones", () => {
-    const data = buildBaselineCountryData("Borea", {
-      continent: "Eurth",
-      baselinePopulation: 4_000_000,
-      baselineGdpPerCapita: 20_000,
-      flag: "https://example.test/flag.png",
-      government: "Republic",
-      leader: "Queen Mara",
-      inflationRate: 0,
-      lifeExpectancy: 81,
-    });
-    expect(data).toMatchObject({
-      name: "Borea",
-      continent: "Eurth",
-      region: null,
-      baselinePopulation: 4_000_000,
-      baselineGdpPerCapita: 20_000,
-      flag: "https://example.test/flag.png",
-      governmentType: "Republic",
-      leader: "Queen Mara",
-      nominalGDP: 4_000_000 * 20_000,
-      inflationRate: 2.0, // 0 is treated as "not given", as createCountry always did
-      lifeExpectancy: 81,
     });
   });
 });

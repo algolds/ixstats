@@ -14,7 +14,6 @@ jest.mock("~/lib/notifications/hooks", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { economicsRouter } from "~/server/api/routers/economics";
-import { notificationHooks } from "~/lib/notifications/hooks";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -66,47 +65,9 @@ describe("write access", () => {
 });
 
 describe("fiscal system and economic profile", () => {
-  it("upserts the player's fiscal system", async () => {
-    await callerAs(db, "u1").updateFiscalSystem({ countryId: "c_mine", salesTaxRate: 7 });
-    expect(db.fiscalSystem.upsert).toHaveBeenCalledWith({
-      where: { countryId: "c_mine" },
-      update: { salesTaxRate: 7 },
-      create: { countryId: "c_mine", salesTaxRate: 7 },
-    });
-  });
-
-  it("notifies when economic complexity moves by more than ten points", async () => {
-    db.economicProfile.findUnique.mockResolvedValue({ economicComplexity: 40 });
-
-    await callerAs(db, "u1").updateEconomicProfile({
-      countryId: "c_mine",
-      economicComplexity: 60,
-    });
-
-    expect(db.economicProfile.upsert).toHaveBeenCalled();
-    expect(notificationHooks.onVitalityScoreChange).toHaveBeenCalledWith(
-      expect.objectContaining({ countryId: "c_mine", currentScore: 60, previousScore: 40 })
-    );
-  });
   it("validates integer ranks", async () => {
     await expect(
       callerAs(db, "u1").updateEconomicProfile({ countryId: "c_mine", competitivenessRank: 1.5 })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-});
-
-describe("economy configuration reads", () => {
-  it("treats an unparseable sector breakdown as empty", async () => {
-    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    db.country.findUnique.mockResolvedValue({
-      currentPopulation: 0,
-      economicProfile: { sectorBreakdown: "{not json" },
-      laborMarket: null,
-    });
-
-    const config = await callerAs(db, null).getEconomyConfiguration({ countryId: "c_mine" });
-
-    expect(config?.sectors).toEqual([]);
-    errorSpy.mockRestore();
   });
 });

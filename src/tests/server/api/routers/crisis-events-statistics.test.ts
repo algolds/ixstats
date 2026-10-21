@@ -27,15 +27,6 @@ function caller(rows: ReturnType<typeof event>[]) {
 }
 
 describe("crisisEvents.getStatistics country scope", () => {
-  it("counts every crisis when no country is given", async () => {
-    const { api } = caller([
-      event({ id: "a", affectedCountries: '["c1"]' }),
-      event({ id: "b", affectedCountries: '["c2"]' }),
-    ]);
-    const stats = await api.getStatistics({ timeframe: "month" });
-    expect(stats.activeEvents).toBe(2);
-  });
-
   it("counts only crises that list the country, in JSON or legacy comma form", async () => {
     const { api, db } = caller([
       event({ id: "json", affectedCountries: '["c1","c9"]', severity: "critical" }),

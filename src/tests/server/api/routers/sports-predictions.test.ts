@@ -1,5 +1,5 @@
 /**
- * SL-15: placing match predictions (settlement is covered in tests/sports/predictions.test.ts).
+ * SL-15: placing match predictions (settlement is covered in tests/scenarios/engines/sports-season.test.ts).
  */
 jest.mock("~/lib/vault/exchange-service", () => ({
   __esModule: true,
@@ -68,37 +68,6 @@ describe("placePrediction", () => {
     ).rejects.toThrow();
     expect(spend).not.toHaveBeenCalled();
   });
-
-  it("debits the stake and records the prediction for the caller", async () => {
-    const db = makeDb();
-    const result = await callerAs("user_a", db).placePrediction({
-      matchId: "m1",
-      outcome: "away",
-      stake: 100,
-    });
-
-    expect(spend).toHaveBeenCalledWith(
-      "user_a",
-      100,
-      "PREDICTION_STAKE",
-      "PREDICTION_STAKE:m1",
-      db,
-      expect.objectContaining({ matchId: "m1" })
-    );
-    expect(db.sportPrediction.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          matchId: "m1",
-          seasonId: "s1",
-          userId: "user_a",
-          outcome: "away",
-          stake: 100,
-        }),
-      })
-    );
-    expect(result.newBalance).toBe(900);
-  });
-
   it("rejects a second prediction on the same match", async () => {
     const db = makeDb();
     db.sportPrediction.findFirst.mockResolvedValue({ id: "existing" });

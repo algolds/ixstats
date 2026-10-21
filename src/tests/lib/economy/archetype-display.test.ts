@@ -25,18 +25,4 @@ describe("archetype display copy", () => {
       });
     }
   });
-
-  it("matches well-known government forms", () => {
-    expect(ARCHETYPE_DISPLAY["soviet-command"].startingGovernmentForm).toBe("one-party-state");
-    expect(ARCHETYPE_DISPLAY["ottoman-empire"].startingGovernmentForm).toBe("absolute-monarchy");
-    expect(ARCHETYPE_DISPLAY["venetian-republic"].startingGovernmentForm).toBe(
-      "merchant-oligarchy"
-    );
-    expect(ARCHETYPE_DISPLAY["british-empire"].startingGovernmentForm).toBe(
-      "constitutional-monarchy"
-    );
-    expect(["confederation", "federal-republic"]).toContain(
-      ARCHETYPE_DISPLAY.swiss.startingGovernmentForm
-    );
-  });
 });

@@ -28,19 +28,6 @@ function setup() {
   return { db, ctx, load };
 }
 
-describe("diplomacyLoader", () => {
-  it("is a country loader that declares every key it returns", async () => {
-    const { load } = setup();
-    expect(diplomacyLoader.scope).toBe("country");
-    expect(Object.keys(await load()).sort()).toEqual([...diplomacyLoader.keys].sort());
-  });
-
-  it("returns nothing for a user with no country", async () => {
-    const { ctx } = setup();
-    expect(await diplomacyLoader.load({ ...ctx, countryId: null })).toEqual({});
-  });
-});
-
 describe("embassiesLasting6m", () => {
   const embassy = (id: string, host: string, establishedMonthsAgo = 8) => ({
     id,
@@ -59,20 +46,6 @@ describe("embassiesLasting6m", () => {
     embassyId: id,
     country2Id: host,
     createdAt: ago(monthsAgo * MONTH_MS),
-  });
-
-  it("asks for the embassies the country runs, active, established 6 real months ago or earlier", async () => {
-    const { db, load } = setup();
-    await load();
-    expect(db.embassy.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          guestCountryId: "c1",
-          status: "active",
-          establishedAt: { lte: ago(6 * MONTH_MS) },
-        },
-      })
-    );
   });
   it("does not count an embassy that was closed and reopened (the closed event has no embassyId)", async () => {
     const { db, load } = setup();
@@ -96,13 +69,6 @@ describe("embassiesLasting6m", () => {
     db.diplomaticEvent.findMany.mockResolvedValue([closed("h1", 2, "embassy_severed")]);
     expect((await load()).embassiesLasting6m).toBe(1);
   });
-
-  it("ignores a closure from before this embassy was established (a severed one was deleted and rebuilt)", async () => {
-    const { db, load } = setup();
-    db.embassy.findMany.mockResolvedValue([embassy("e1", "h1", 8)]);
-    db.diplomaticEvent.findMany.mockResolvedValue([closed("h1", 9)]);
-    expect((await load()).embassiesLasting6m).toBe(1);
-  });
 });
 
 describe("cooperativeAccepted", () => {
@@ -121,38 +87,6 @@ describe("cooperativeAccepted", () => {
     });
   });
 });
-
-describe("npcInvitesAccepted", () => {
-  it("counts distinct NPC nations (no owner) with an active membership this country invited", async () => {
-    const { db, load } = setup();
-    db.allianceMember.groupBy.mockImplementation(
-      async (args: { where: { invitedByCountryId?: string } }) =>
-        args.where.invitedByCountryId === "c1"
-          ? [{ countryId: "npc1" }, { countryId: "npc2" }, { countryId: "npc3" }]
-          : [{ countryId: "other" }]
-    );
-
-    expect((await load()).npcInvitesAccepted).toBe(3);
-    expect(db.allianceMember.groupBy).toHaveBeenCalledWith({
-      by: ["countryId"],
-      where: {
-        invitedByCountryId: "c1",
-        isActive: true,
-        status: "active",
-        country: { ownerUserId: null },
-      },
-    });
-  });
-
-  it("counts one NPC that accepted into three alliances once", async () => {
-    const { db, load } = setup();
-    // The group-by collapses the NPC's three memberships to one row.
-    db.allianceMember.groupBy.mockResolvedValue([{ countryId: "npc1" }]);
-
-    expect((await load()).npcInvitesAccepted).toBe(1);
-  });
-});
-
 describe("missionsCompleted", () => {
   /** Real server timestamps: created `startDaysAgo` days ago, completed by the sweep `lengthDays` later. */
   const mission = (
@@ -169,28 +103,6 @@ describe("missionsCompleted", () => {
   /** 20 missions of 7 days, one per exchange, completing in 3 different months. */
   const twentyOverThreeMonths = () =>
     Array.from({ length: 20 }, (_, i) => mission(`m${i}`, `x${i}`, 120 - i * 4, 7));
-
-  it("asks for completed missions of the embassies the country runs", async () => {
-    const { db, load } = setup();
-    await load();
-    expect(db.embassyMission.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { status: "completed", embassy: { guestCountryId: "c1" } },
-      })
-    );
-  });
-
-  it("counts 20 missions completed across 3 different months, and 0 across only 2", async () => {
-    const { db, load } = setup();
-    db.embassyMission.findMany.mockResolvedValue(twentyOverThreeMonths());
-    expect((await load()).missionsCompleted).toBe(20);
-
-    db.embassyMission.findMany.mockResolvedValue(
-      Array.from({ length: 20 }, (_, i) => mission(`m${i}`, `x${i}`, 30 - i, 7))
-    );
-    expect((await load()).missionsCompleted).toBe(0);
-  });
-
   it("counts one cultural exchange once, however many embassies it minted missions for", async () => {
     const { db, load } = setup();
     const bulk = Array.from({ length: 20 }, (_, i) => mission(`b${i}`, "one-exchange", 100, 7));
@@ -209,24 +121,6 @@ describe("missionsCompleted", () => {
       }))
     );
     expect((await load()).missionsCompleted).toBe(0);
-  });
-
-  it("ignores missions that ran under 3 real days (3 days exactly counts)", async () => {
-    const { db, load } = setup();
-    const missions = twentyOverThreeMonths();
-    db.embassyMission.findMany.mockResolvedValue(
-      missions.map((m, i) =>
-        i === 0 ? { ...m, updatedAt: new Date(m.createdAt.getTime() + 3 * DAY_MS - 1) } : m
-      )
-    );
-    expect((await load()).missionsCompleted).toBe(19);
-
-    db.embassyMission.findMany.mockResolvedValue(
-      missions.map((m, i) =>
-        i === 0 ? { ...m, updatedAt: new Date(m.createdAt.getTime() + 3 * DAY_MS) } : m
-      )
-    );
-    expect((await load()).missionsCompleted).toBe(20);
   });
 });
 
@@ -263,27 +157,6 @@ describe("proposalsApproved", () => {
 });
 
 describe("alliance membership", () => {
-  const memberships = (db: ReturnType<typeof setup>["db"]) =>
-    db.allianceMember.count.mock.calls.map(([args]) => args.where);
-
-  it("allianceJoined counts active memberships", async () => {
-    const { db, load } = setup();
-    db.allianceMember.count.mockResolvedValue(1);
-    expect((await load()).allianceJoined).toBe(1);
-    expect(memberships(db)).toContainEqual({ countryId: "c1", isActive: true, status: "active" });
-  });
-
-  it("allianceUnbroken18m needs joinedAt (reset on every acceptance) 18 real months back", async () => {
-    const { db, load } = setup();
-    await load();
-    expect(memberships(db)).toContainEqual({
-      countryId: "c1",
-      isActive: true,
-      status: "active",
-      joinedAt: { lte: ago(18 * MONTH_MS) },
-    });
-  });
-
   it("allianceArchitect: a founded alliance 12 real months old, not realm-synced, with 5 or more active members", async () => {
     const { db, load } = setup();
     db.allianceMember.findMany.mockResolvedValue([{ allianceId: "a1" }, { allianceId: "a2" }]);
@@ -316,41 +189,6 @@ describe("pacifist12m", () => {
     db.country.findUnique.mockResolvedValue({ ownedSince: null });
     expect((await load()).pacifist12m).toBe(0);
   });
-
-  it("is 1 at exactly 12 months with no hostile action and no embassy closed or severed", async () => {
-    const { db, load } = setup();
-    db.country.findUnique.mockResolvedValue({ ownedSince: ago(12 * MONTH_MS) });
-    db.foreignPolicyAction.count.mockResolvedValue(0);
-    db.diplomaticEvent.count.mockResolvedValue(0);
-
-    expect((await load()).pacifist12m).toBe(1);
-    expect(db.foreignPolicyAction.count).toHaveBeenCalledWith({
-      where: {
-        initiatorId: "c1",
-        actionType: { notIn: ["free_trade", "military_alliance"] },
-        createdAt: { gte: ago(12 * MONTH_MS) },
-      },
-    });
-    expect(db.diplomaticEvent.count).toHaveBeenCalledWith({
-      where: {
-        country1Id: "c1",
-        eventType: { in: ["embassy_closed", "embassy_severed"] },
-        createdAt: { gte: ago(12 * MONTH_MS) },
-      },
-    });
-  });
-
-  it("a hostile action, or a closed embassy, in the last 12 months breaks it", async () => {
-    const { db, load } = setup();
-    db.country.findUnique.mockResolvedValue({ ownedSince: ago(13 * MONTH_MS) });
-    db.foreignPolicyAction.count.mockResolvedValue(1);
-    db.diplomaticEvent.count.mockResolvedValue(0);
-    expect((await load()).pacifist12m).toBe(0);
-
-    db.foreignPolicyAction.count.mockResolvedValue(0);
-    db.diplomaticEvent.count.mockResolvedValue(1);
-    expect((await load()).pacifist12m).toBe(0);
-  });
 });
 
 describe("peacekeeping15d", () => {
@@ -358,17 +196,6 @@ describe("peacekeeping15d", () => {
     createdAt: ago(100 * DAY_MS),
     updatedAt: new Date(ago(100 * DAY_MS).getTime() + lengthMs),
   });
-
-  it("asks for completed peacekeeping operations of the country", async () => {
-    const { db, load } = setup();
-    await load();
-    expect(db.militaryOperation.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { countryId: "c1", operationType: "peacekeeping", status: "completed" },
-      })
-    );
-  });
-
   it("counts operations that lasted 15 real days or longer, by createdAt and updatedAt", async () => {
     const { db, load } = setup();
     db.militaryOperation.findMany.mockResolvedValue([

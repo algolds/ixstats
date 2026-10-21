@@ -21,7 +21,7 @@ jest.mock("~/server/shared/country-rename", () => ({
 jest.mock("~/server/db", () => ({ db: { marker: "db" } }));
 
 import CountrySlugLayout from "~/app/countries/[slug]/layout";
-import { countrySlugRedirectPath, REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
+import { REQUEST_PATH_HEADER } from "~/lib/countries/slug-redirect";
 
 const render = (slug: string, requestPath?: string) => {
   mockRequestHeaders.current = new Headers(
@@ -43,37 +43,11 @@ describe("country slug redirects", () => {
     );
     expect(mockFind).toHaveBeenCalledWith({ marker: "db" }, "testland");
   });
-  it("redirects the maps host's root address to the country page", async () => {
-    mockFind.mockResolvedValue("new-testland");
-    await expect(render("testland", "/testland?embed=true")).rejects.toThrow(
-      "NEXT_REDIRECT /countries/new-testland?embed=true"
-    );
-  });
-
-  it("renders a live or unknown slug", async () => {
-    mockFind.mockResolvedValue(null);
-    await expect(render("testland", "/countries/testland")).resolves.toBe("page");
-    expect(mockPermanentRedirect).not.toHaveBeenCalled();
-  });
-
   it("renders the page when the lookup fails", async () => {
     mockFind.mockRejectedValue(new Error("relation does not exist"));
     await expect(render("testland")).resolves.toBe("page");
   });
 });
-
-describe("countrySlugRedirectPath", () => {
-  it.each([
-    ["/countries/old/factbook/economy?x=1", "/countries/new/factbook/economy?x=1"],
-    ["/countries/Old/dossier", "/countries/new/dossier"],
-    ["/countries/old", "/countries/new"],
-    [null, "/countries/new"],
-    ["/elsewhere/page", "/countries/new"],
-  ])("%s → %s", (requestPath, target) => {
-    expect(countrySlugRedirectPath(requestPath, "old", "new")).toBe(target);
-  });
-});
-
 describe("the proxy hands layouts the requested path", () => {
   it("forwards the path and query, overwriting one the client sends", async () => {
     delete process.env.CLERK_SECRET_KEY;

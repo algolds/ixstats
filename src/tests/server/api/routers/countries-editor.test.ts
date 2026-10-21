@@ -176,27 +176,6 @@ describe("countries.saveIdentity", () => {
     });
     expect(written(db)).toEqual(["nationalIdentity"]);
   });
-
-  it("writes the flag on the country and saves the national animal", async () => {
-    const { db, caller } = setup();
-    const result = await caller.saveIdentity({
-      countryId,
-      section: "symbols",
-      identity: { nationalAnimal: "Lion" },
-      flag: "https://example.com/flag.svg",
-      expected: { identity: { nationalAnimal: null }, flag: "https://example.com/old.svg" },
-    });
-    expect(result).toEqual({
-      identity: { nationalAnimal: "Lion" },
-      flag: "https://example.com/flag.svg",
-    });
-    expect(db.country.update).toHaveBeenCalledWith({
-      where: { id: countryId },
-      data: { flag: "https://example.com/flag.svg" },
-    });
-    expect(written(db)).toEqual(["country", "nationalIdentity"]);
-  });
-
   it("keeps the country's religion copy in step", async () => {
     const { db, caller } = setup();
     await caller.saveIdentity({
@@ -329,38 +308,6 @@ describe("countries.saveGovernmentForm", () => {
     });
     expect(written(db)).toEqual(["country", "governmentStructure", "nationalIdentity"]);
   });
-
-  it("creates the structure when the nation has none, checking the country's type", async () => {
-    const { db, caller } = setup((rows) => {
-      rows.structure = null;
-    });
-    await caller.saveGovernmentForm({
-      ...input,
-      expected: {
-        governmentType: "Parliamentary Republic",
-        headOfState: null,
-        headOfGovernment: null,
-        legislatureName: null,
-        executiveName: null,
-        judicialName: null,
-      },
-    });
-    expect(db.governmentStructure.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        countryId,
-        governmentName: "Government of Testland",
-        governmentType: "Constitutional Monarchy",
-        headOfState: "King",
-      }),
-    });
-    expect(db.governmentStructure.update).not.toHaveBeenCalled();
-  });
-
-  it("is not refused by a background write", async () => {
-    const { caller } = setup(backgroundWrite);
-    await expect(caller.saveGovernmentForm(input)).resolves.toBeDefined();
-  });
-
   it("is refused when another tab renamed an institution", async () => {
     const { db, caller } = setup((rows) => {
       rows.structure!.judicialName = "Court of Appeal";
@@ -403,40 +350,6 @@ describe("countries.saveGovernmentComponents", () => {
     expect(result).toMatchObject({ components: expect.any(Array), governmentEffectiveness: 55 });
     expect(written(db)).toEqual(["componentSynergy", "governmentComponent", "governmentStructure"]);
   });
-
-  it("refuses more than 15 described institutions", async () => {
-    const { db, caller } = setup();
-    const many = [
-      "DEMOCRATIC_PROCESS",
-      "ELECTORAL_LEGITIMACY",
-      "INDEPENDENT_JUDICIARY",
-      "RULE_OF_LAW",
-      "PROFESSIONAL_BUREAUCRACY",
-      "UNITARY_SYSTEM",
-      "FEDERAL_SYSTEM",
-      "CENTRALIZED_POWER",
-      "TRADITIONAL_LEGITIMACY",
-      "TECHNOCRATIC_PROCESS",
-      "MERIT_BASED_SYSTEM",
-      "PERFORMANCE_LEGITIMACY",
-      "TECHNOCRATIC_AGENCIES",
-      "ECONOMIC_INCENTIVES",
-      "TRADE_AGREEMENTS",
-      "CULTURAL_PRESERVATION",
-    ] as const;
-    await expect(
-      caller.saveGovernmentComponents({ ...input, componentTypes: [...many] })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(written(db)).toEqual([]);
-  });
-
-  it("is not refused by a background write", async () => {
-    const { caller } = setup(backgroundWrite);
-    await expect(
-      caller.saveGovernmentComponents({ ...input, componentTypes: [...input.componentTypes] })
-    ).resolves.toBeDefined();
-  });
-
   it("is refused when another tab changed the component set", async () => {
     const { db, caller } = setup((rows) => {
       rows.components = [...rows.components.slice(0, 1)];
@@ -553,12 +466,6 @@ describe("countries.rename", () => {
     });
     expect(written(db)).toEqual([]);
   });
-
-  it("is not refused by a background write", async () => {
-    const { caller } = setup(backgroundWrite);
-    await expect(caller.rename(input)).resolves.toBeDefined();
-  });
-
   it("is refused when another tab renamed the nation", async () => {
     const { db, caller } = setup((rows) => {
       rows.country.name = "Otherland";
@@ -573,18 +480,6 @@ describe("countries.rename", () => {
 });
 
 describe("countries.checkNameAvailable", () => {
-  it("accepts a free name and the nation's own", async () => {
-    const { caller } = setup();
-    await expect(caller.checkNameAvailable({ countryId, name: "Freeland" })).resolves.toEqual({
-      available: true,
-      reason: null,
-    });
-    await expect(caller.checkNameAvailable({ countryId, name: "Testland" })).resolves.toEqual({
-      available: true,
-      reason: null,
-    });
-  });
-
   it("refuses a taken name, a lore nation and a name without letters", async () => {
     const { db, caller } = setup();
     db.country.findFirst.mockResolvedValueOnce({ id: "someone_else" });

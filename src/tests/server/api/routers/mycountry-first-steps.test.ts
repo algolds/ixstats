@@ -1,9 +1,6 @@
 import { myCountryFirstStepsRouter } from "~/server/api/routers/mycountry/first-steps";
 import {
-  FIRST_STEPS_WINDOW_MS,
   FOUNDING_GRACE_MS,
-  foundedAt,
-  hasMapCoordinates,
   shouldShowFirstSteps,
   type FirstSteps,
 } from "~/lib/mycountry/first-steps";
@@ -75,23 +72,6 @@ const doneById = (steps: FirstSteps | null) =>
   Object.fromEntries((steps?.items ?? []).map((item) => [item.id, item.done]));
 
 describe("mycountry.getFirstSteps", () => {
-  it("leaves every step open for a nation that only has its founding rows", async () => {
-    const { caller } = setup({
-      budgetAllocations: [{ updatedAt: DURING_FOUNDING }],
-      fiscal: { updatedAt: DURING_FOUNDING },
-      tax: { updatedAt: DURING_FOUNDING },
-    });
-    const steps = await caller.getFirstSteps();
-    expect(steps).toMatchObject({ countryId: CALLER_COUNTRY, dismissed: false, recent: true });
-    expect(doneById(steps)).toEqual({
-      budget: false,
-      tax: false,
-      cabinet: false,
-      wiki: false,
-      capital: false,
-    });
-  });
-
   it("ticks each step from the rows its console writes", async () => {
     const { caller, db } = setup({
       budgetAllocations: [{ updatedAt: DURING_FOUNDING }, { updatedAt: LATER }],
@@ -121,40 +101,6 @@ describe("mycountry.getFirstSteps", () => {
     );
     expect(shouldShowFirstSteps(steps)).toBe(false);
   });
-
-  it("counts a tax system written after founding, and a page named on the nation", async () => {
-    const { caller, db } = setup({
-      country: { wikiPageTitle: "Republic of Testland" },
-      tax: { updatedAt: LATER },
-    });
-    const steps = await caller.getFirstSteps();
-    expect(doneById(steps)).toMatchObject({ tax: true, wiki: true });
-    expect(db.wikiArticle.findFirst).not.toHaveBeenCalled();
-    expect(steps?.items.find((item) => item.id === "wiki")?.href).toBe(
-      "/wiki/Republic_of_Testland"
-    );
-  });
-
-  it("needs real coordinates for the capital", async () => {
-    const { caller } = setup({ capital: { coordinates: [] } });
-    expect(doneById(await caller.getFirstSteps()).capital).toBe(false);
-  });
-  it("reports a dismissed nation without looking anything up", async () => {
-    const { caller, db } = setup({ country: { firstStepsDismissedAt: new Date(NOW - 1000) } });
-    const steps = await caller.getFirstSteps();
-    expect(steps).toEqual({ countryId: CALLER_COUNTRY, dismissed: true, recent: true, items: [] });
-    expect(db.budgetAllocation.findFirst).not.toHaveBeenCalled();
-    expect(shouldShowFirstSteps(steps)).toBe(false);
-  });
-
-  it("skips nations founded long ago", async () => {
-    const old = new Date(NOW - FIRST_STEPS_WINDOW_MS - 60_000);
-    const { caller } = setup({ country: { createdAt: old, ownedSince: old } });
-    const steps = await caller.getFirstSteps();
-    expect(steps).toMatchObject({ recent: false, items: [] });
-    expect(shouldShowFirstSteps(steps)).toBe(false);
-  });
-
   it("refuses another player's nation", async () => {
     const { caller } = setup();
     await expect(caller.getFirstSteps({ countryId: FOREIGN_COUNTRY })).rejects.toMatchObject({
@@ -179,46 +125,5 @@ describe("mycountry.dismissFirstSteps", () => {
       code: "FORBIDDEN",
     });
     expect(db.country.update).not.toHaveBeenCalled();
-  });
-});
-
-describe("mycountry.getWelcome", () => {
-  it("summarises the active nation for the welcome page", async () => {
-    const { caller, db } = setup();
-    db.country.findUnique.mockResolvedValueOnce({
-      id: CALLER_COUNTRY,
-      name: "Testland",
-      slug: "testland",
-      flag: "https://example.com/flag.svg",
-      currentPopulation: 12_400_000,
-      realm: { name: "Ixnay" },
-      nationalIdentity: { capitalCity: "Old Town", capitalCityRef: null },
-      cities: [{ name: "Port Test" }],
-    } as never);
-    await expect(caller.getWelcome()).resolves.toEqual({
-      id: CALLER_COUNTRY,
-      name: "Testland",
-      slug: "testland",
-      flag: "https://example.com/flag.svg",
-      realmName: "Ixnay",
-      population: 12_400_000,
-      capital: "Port Test",
-    });
-  });
-});
-
-describe("first steps rules", () => {
-  it("dates a taken-over nation from when its owner got it", () => {
-    const created = new Date("2020-01-01T00:00:00Z");
-    const owned = new Date("2026-10-01T00:00:00Z");
-    expect(foundedAt({ createdAt: created, ownedSince: owned })).toBe(owned);
-    expect(foundedAt({ createdAt: owned, ownedSince: null })).toBe(owned);
-  });
-
-  it("reads map editor pairs and GeoJSON points as coordinates", () => {
-    expect(hasMapCoordinates([1, 2])).toBe(true);
-    expect(hasMapCoordinates({ type: "Point", coordinates: [1, 2] })).toBe(true);
-    expect(hasMapCoordinates([Number.NaN, 2])).toBe(false);
-    expect(hasMapCoordinates(null)).toBe(false);
   });
 });

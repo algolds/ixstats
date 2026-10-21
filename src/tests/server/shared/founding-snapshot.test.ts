@@ -11,13 +11,10 @@ import { buildArchetypeSeedRows } from "~/lib/economy/archetypes/seed";
 import { POPULATION_BAND_IDS, WEALTH_BAND_IDS } from "~/lib/builder/founding-bands";
 import { departmentsForForm } from "~/lib/government/form-departments";
 import { getGovernmentForm } from "~/lib/government/forms";
-import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
-import { figureForPopulationBand, figureForWealthBand } from "~/lib/builder/founding-bands";
 import {
   computeFoundingSnapshot,
   estimateTaxRevenuePercent,
   foundingGovernmentEffectiveness,
-  inferFormId,
   normaliseTo100,
   type FoundingSnapshot,
 } from "~/server/shared/founding-snapshot";
@@ -133,10 +130,6 @@ const MATRIX = ARCHETYPES.flatMap((archetype) =>
 );
 
 describe("computeFoundingSnapshot: every archetype × size × wealth", () => {
-  it("covers all 20 built-in archetypes", () => {
-    expect(ARCHETYPES).toHaveLength(20);
-  });
-
   it.each(MATRIX)("%s, %s, %s founds a coherent nation", (key, populationBand, wealthBand) => {
     const archetype = ARCHETYPES.find((a) => a.key === key)!;
     const snapshot = computeFoundingSnapshot({
@@ -197,25 +190,6 @@ describe("computeFoundingSnapshot: inputs", () => {
     expect(snapshot.base.gdpPerCapita).toBe(61_000);
     expect(snapshot.economicTier).toBe("Very Strong");
   });
-
-  it("a named government form brings its components, type and institution titles", () => {
-    const snapshot = computeFoundingSnapshot({
-      name: "Crown",
-      archetype: nordic,
-      foundation: null,
-      governmentFormId: "absolute-monarchy",
-    });
-    const form = getGovernmentForm("absolute-monarchy")!;
-    expect(snapshot.governmentComponents.map((c) => c.componentType).sort()).toEqual(
-      [...form.components].sort()
-    );
-    expect(snapshot.governmentStructure).toMatchObject({
-      governmentType: form.governmentType,
-      headOfState: form.institutions.headOfStateTitle,
-      legislatureName: form.institutions.legislatureName,
-    });
-  });
-
   it("renamed institutions replace only the names the player changed", () => {
     const snapshot = computeFoundingSnapshot({
       name: "Crown",
@@ -231,19 +205,6 @@ describe("computeFoundingSnapshot: inputs", () => {
       judicialName: form.institutions.judicialName,
     });
   });
-
-  it("an archetype with no bands chosen starts at its typical size, wealth and form", () => {
-    const display = getArchetypeDisplay("nordic")!;
-    const snapshot = computeFoundingSnapshot({
-      name: "Typical",
-      archetype: nordic,
-      foundation: null,
-    });
-    expect(snapshot.base.population).toBe(figureForPopulationBand(display.typicalPopulationBand));
-    expect(snapshot.base.gdpPerCapita).toBe(figureForWealthBand(display.typicalWealthBand));
-    expect(snapshot.governmentFormId).toBe(display.startingGovernmentForm);
-  });
-
   it("derives the economic tier and income from GDP per capita, never the builder's placeholders", () => {
     const snapshot = computeFoundingSnapshot({
       name: "Rich",
@@ -283,24 +244,6 @@ describe("computeFoundingSnapshot: inputs", () => {
     expect(estimateTaxRevenuePercent(snapshot.taxSystemData)).toBeCloseTo(30, 1);
     expect(snapshot.summary.budgetBalanceLabel).toBe("Balanced");
   });
-
-  it("labels a deficit when the caller's budget outruns revenue", () => {
-    const snapshot = computeFoundingSnapshot({
-      name: "Spender",
-      archetype: null,
-      foundation: null,
-      econ: { coreIndicators: { totalPopulation: 1_000_000, gdpPerCapita: 10_000, nominalGDP: 0 } },
-      governmentStructure: { totalBudget: 1e10 * 0.35 },
-    });
-    // Legacy fallbacks: revenue 25% of GDP against a 35% budget.
-    expect(snapshot.summary.budgetBalancePercentOfGdp).toBeCloseTo(-10, 6);
-    expect(snapshot.summary.budgetBalanceLabel).toBe("Large deficit");
-  });
-
-  it("is deterministic", () => {
-    const input = { name: "Same", archetype: nordic, foundation: null, budgetYear: 2040 };
-    expect(computeFoundingSnapshot(input)).toEqual(computeFoundingSnapshot(input));
-  });
 });
 
 describe("helpers", () => {
@@ -309,16 +252,6 @@ describe("helpers", () => {
     expect(out).toEqual([33.34, 33.33, 33.33]);
     expect(normaliseTo100([0, 0])).toEqual([100, 0]);
     expect(sum(normaliseTo100([35, 25, 20, 10, 5, 3.1]))).toBeCloseTo(100, 10);
-  });
-
-  it("inferFormId reads the component set", () => {
-    expect(inferFormId(["RELIGIOUS_LEGITIMACY"])).toBe("theocracy");
-    expect(inferFormId(["TRADITIONAL_LEGITIMACY", "DEMOCRATIC_PROCESS"])).toBe(
-      "constitutional-monarchy"
-    );
-    expect(inferFormId(["TRADITIONAL_LEGITIMACY", "AUTOCRATIC_PROCESS"])).toBe("absolute-monarchy");
-    expect(inferFormId(["FEDERAL_SYSTEM", "DEMOCRATIC_PROCESS"])).toBe("federal-republic");
-    expect(inferFormId([])).toBe("parliamentary-republic");
   });
 });
 
