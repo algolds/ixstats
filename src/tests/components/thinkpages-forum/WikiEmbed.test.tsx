@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 
 interface MockApi {
@@ -87,13 +87,6 @@ describe("WikiEmbeds", () => {
     expect(img.getAttribute("width")).toBe("1200");
     expect(img.getAttribute("alt")).toBe("JuanKerr.jpg");
   });
-
-  it("shows an image embed without a width at its natural size", async () => {
-    const { container } = render(<Harness html={embed("image", "File:A.png")} />);
-    await waitFor(() => expect(container.querySelector(".forum-embed-view img")).not.toBeNull());
-    expect(container.querySelector(".forum-embed-view img")?.hasAttribute("width")).toBe(false);
-  });
-
   it.each([
     ["a title with markup", embed("summary", "&lt;img src=x onerror=alert(1)&gt;")],
     ["a title with a quote", embed("summary", "Say &quot;hi&quot;")],

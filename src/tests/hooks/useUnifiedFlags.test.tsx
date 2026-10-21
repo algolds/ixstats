@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import { useBulkFlags, useFlag } from "~/hooks/useUnifiedFlags";
 import { api } from "~/trpc/react";
 
@@ -63,12 +63,6 @@ describe("useUnifiedFlags hooks (Plan 164)", () => {
         expect.anything()
       );
     });
-
-    test("returns null for empty country name", () => {
-      const { result } = renderHook(() => useFlag(""));
-      expect(result.current.flagUrl).toBeNull();
-      expect(result.current.isLoading).toBe(false);
-    });
   });
 
   describe("useBulkFlags & Immutability Contract", () => {
@@ -88,17 +82,6 @@ describe("useUnifiedFlags hooks (Plan 164)", () => {
       // 2. Assert result keys exist
       expect(result.current.flagUrls["Zambia"]).toBe("https://example.com/flags/zambia.svg");
       expect(result.current.flagUrls["Australia"]).toBe("https://example.com/flags/australia.svg");
-    });
-
-    test("handles refetch action without throwing", async () => {
-      const input = ["Germany", "Japan"];
-      const { result } = renderHook(() => useBulkFlags(input));
-
-      await act(async () => {
-        await result.current.refetch();
-      });
-
-      expect(result.current.flagUrls["Germany"]).toBe("https://example.com/flags/germany.svg");
     });
   });
 });

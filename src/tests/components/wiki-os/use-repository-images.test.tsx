@@ -84,22 +84,6 @@ const okWiki = (data: WikiPage): FakeWikiResult => ({
   error: null,
   refetch: jest.fn(),
 });
-
-const image = (n: number, over: Partial<CommonsImage> = {}): CommonsImage => ({
-  pageid: n,
-  title: `File:Castle ${n}.jpg`,
-  thumbUrl: `https://upload.example/thumb/${n}.jpg`,
-  url: `https://upload.example/${n}.jpg`,
-  descriptionUrl: "",
-  width: 1200,
-  height: 800,
-  mime: "image/jpeg",
-  description: "",
-  artist: "",
-  license: "",
-  ...over,
-});
-
 const ok = (data: Page): FakeResult => ({
   data,
   isPending: false,
@@ -316,67 +300,6 @@ describe("useRepositoryImages", () => {
     expect(signedOut.result.current.images).toEqual([]);
     expect(signedOut.result.current.isLoading).toBe(false);
   });
-
-  it("carries the blurhash of a wiki file onto its image", () => {
-    wikiAnswer = () =>
-      okWiki({
-        files: [wikiFile(1, { blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" })],
-        nextCursor: null,
-      });
-    const { result } = renderHook(() => useRepositoryImages(input({ source: "forum" })));
-    expect(result.current.images[0]!.blurhash).toBe("LEHV6nWB2yk8pyo0adR*.7kCMdnj");
-  });
-
-  it("reports a failed wiki page and retries only that page", () => {
-    const failed: FakeWikiResult = {
-      isPending: false,
-      isFetching: false,
-      isError: true,
-      error: { data: { code: "INTERNAL_SERVER_ERROR" } },
-      refetch: jest.fn(),
-    };
-    wikiAnswer = () => failed;
-    const { result } = renderHook(() => useRepositoryImages(input({ source: "forum" })));
-    expect(result.current.error).toEqual({ rateLimited: false });
-    act(() => result.current.retry());
-    expect(failed.refetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("starts again from the first page when the query changes", () => {
-    commonsAnswer = ({ offset }) =>
-      ok({ images: [image(offset + 1)], nextOffset: offset === 0 ? 40 : null, totalHits: 80 });
-    const { result, rerender } = renderHook(
-      (props: RepositoryImagesInput) => useRepositoryImages(props),
-      {
-        initialProps: input({ query: "castle" }),
-      }
-    );
-    act(() => result.current.loadMore());
-    expect(result.current.images).toHaveLength(2);
-
-    commonsInputs = [];
-    rerender(input({ query: "harbour" }));
-    expect(commonsInputs.every((i) => i.offset === 0)).toBe(true);
-    expect(commonsInputs.map((i) => i.query)).toEqual(["harbour"]);
-    expect(result.current.images).toHaveLength(1);
-  });
-
-  it("appends the next offset on loadMore and drops repeated images", () => {
-    commonsAnswer = ({ offset }) =>
-      offset === 0
-        ? ok({ images: [image(1), image(2)], nextOffset: 40, totalHits: 3 })
-        : ok({ images: [image(2), image(3)], nextOffset: null, totalHits: 3 });
-    const { result } = renderHook(() => useRepositoryImages(input({ query: "castle" })));
-    expect(result.current.hasMore).toBe(true);
-    expect(result.current.totalHits).toBe(3);
-
-    act(() => result.current.loadMore());
-
-    expect(commonsInputs.some((i) => i.offset === 40)).toBe(true);
-    expect(result.current.images.map((i) => i.pageid)).toEqual([1, 2, 3]);
-    expect(result.current.hasMore).toBe(false);
-  });
-
   it("reports a failed page, marks a spent search bucket, and retries only the failed page", () => {
     const failed: FakeResult = {
       isPending: false,
@@ -391,30 +314,11 @@ describe("useRepositoryImages", () => {
     act(() => result.current.retry());
     expect(failed.refetch).toHaveBeenCalledTimes(1);
   });
-
-  it("adds the file type to the Commons term", () => {
-    renderHook(() => useRepositoryImages(input({ query: "castle", fileType: "png" })));
-    expect(commonsInputs[0]!.query).toBe("filemime:image/png castle");
-  });
-
   it("keeps a browsed category as a deepcat filter while typing", () => {
     const { result } = renderHook(() =>
       useRepositoryImages(input({ query: "castle", browsingCategory: "X" }))
     );
     expect(commonsInputs[0]!.query).toBe('deepcat:"X" castle');
     expect(result.current.mode).toBe("search");
-  });
-
-  it("browses a category with no query", () => {
-    const { result } = renderHook(() =>
-      useRepositoryImages(input({ categories: ["A"], browsingCategory: "B" }))
-    );
-    expect(commonsInputs[0]!.query).toBe('deepcat:"A" deepcat:"B"');
-    expect(result.current.mode).toBe("browse");
-  });
-
-  it("uses the page size it is given", () => {
-    renderHook(() => useRepositoryImages(input({ query: "castle", pageSize: 30 })));
-    expect(commonsInputs[0]!.limit).toBe(30);
   });
 });

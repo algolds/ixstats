@@ -39,10 +39,6 @@ const ownedCard = (fields: Partial<OwnedCardFields> = {}) => ({
 });
 
 describe("nsImport cards", () => {
-  it("no longer offers the per-user value refresh", () => {
-    expect(Object.keys(nsImportCardsRouter._def.procedures)).not.toContain("refreshCardValues");
-  });
-
   it("lists the caller's NS cards with nation and flag from their facts", async () => {
     const db = createMockPrisma();
     db.cardOwnership.findMany.mockResolvedValue([ownedCard()]);

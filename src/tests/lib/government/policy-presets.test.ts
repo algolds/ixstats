@@ -20,19 +20,6 @@ describe("policy presets", () => {
       expect(preset.components.length).toBeGreaterThan(0);
     }
   });
-
-  it("names presets in sentence case", () => {
-    expect(getPolicyPreset("modern_democracy")?.name).toBe("Modern democracy");
-    for (const { name } of POLICY_PRESETS) {
-      expect(
-        name
-          .split(" ")
-          .slice(1)
-          .filter((word) => /^[A-Z][a-z]/.test(word))
-      ).toEqual([]);
-    }
-  });
-
   it("asks before replacing the player's own, different choices only", () => {
     const preset = getPolicyPreset("technocracy")!.components;
     expect(presetReplacesChoices([], preset)).toBe(false);

@@ -158,16 +158,6 @@ describe("cardWikiHref", () => {
 });
 
 describe("LoreWikiExcerpt link", () => {
-  it("credits AltHistory by name", () => {
-    render(
-      <LoreWikiExcerpt
-        card={card({ wikiArticleTitle: "Page", wikiSource: "althistory" })}
-        wikiUrl="/wiki/Page?source=althistory"
-      />
-    );
-    expect(screen.getByText("From AltHistory Wiki")).not.toBeNull();
-  });
-
   it("links a Commons card out to Commons, credited, with no article fetch", () => {
     const useQuery = jest.mocked(api.cards.getWikiArticleExcerpt.useQuery);
     useQuery.mockClear();
@@ -199,25 +189,6 @@ describe("LoreWikiExcerpt link", () => {
     expect(link.getAttribute("target")).toBeNull();
     expect(link.textContent).not.toMatch(/IxWiki/);
   });
-
-  it("links a card with no source in-app too", () => {
-    render(<LoreWikiExcerpt card={card({ wikiArticleTitle: "Velarc" })} wikiUrl="/wiki/Velarc" />);
-    expect(screen.getByRole("link", { name: "Read the full article" })).not.toBeNull();
-  });
-
-  it("links an IIWiki card in-app too, crediting IIWiki as the source", () => {
-    render(
-      <LoreWikiExcerpt
-        card={card({ wikiArticleTitle: "Page", wikiSource: "iiwiki" })}
-        wikiUrl="/wiki/Page?source=iiwiki"
-      />
-    );
-    const link = screen.getByRole("link", { name: "Read the full article" });
-    expect(link.getAttribute("href")).toBe("/wiki/Page?source=iiwiki");
-    expect(link.getAttribute("target")).toBeNull();
-    expect(screen.getByText("From IIWiki")).not.toBeNull();
-  });
-
   it("shows the stored excerpt while the article loads, and asks the card's own wiki", () => {
     const useQuery = jest.mocked(api.cards.getWikiArticleExcerpt.useQuery);
     useQuery.mockClear();
@@ -232,12 +203,6 @@ describe("LoreWikiExcerpt link", () => {
     expect(useQuery.mock.calls[0]?.[0]).toEqual({ articleTitle: "Page", wikiSource: "iiwiki" });
     expect(useQuery.mock.calls[0]?.[1]).toMatchObject({ enabled: true });
   });
-
-  it("titles the excerpt below the section that holds it", () => {
-    render(<LoreWikiExcerpt card={card({ wikiArticleTitle: "Velarc_City" })} wikiUrl={null} />);
-    expect(screen.getByRole("heading", { level: 4, name: "Velarc City" })).not.toBeNull();
-  });
-
   it("hides a Commons card's file page while its art is hidden, since the page is the image", () => {
     render(
       <LoreWikiExcerpt

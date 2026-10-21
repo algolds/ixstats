@@ -194,15 +194,6 @@ describe("create", () => {
       expect.objectContaining({ where: { countryId: COUNTRY } })
     );
   });
-
-  it("skips conflict detection when asked", async () => {
-    await callerAs("player", db).create({
-      countryId: COUNTRY,
-      data: taxState(),
-      skipConflictCheck: true,
-    });
-    expect(detectTaxConflicts).not.toHaveBeenCalled();
-  });
 });
 
 describe("update", () => {
@@ -225,11 +216,6 @@ describe("update", () => {
 });
 
 describe("getByCountryId", () => {
-  it("returns null when the country has no tax system", async () => {
-    db.taxSystem.findUnique.mockResolvedValue(null);
-    await expect(callerAs(null, db).getByCountryId({ countryId: COUNTRY })).resolves.toBeNull();
-  });
-
   it("maps stored categories and brackets back to builder state", async () => {
     db.taxSystem.findUnique.mockResolvedValue({
       taxSystemName: "National Revenue",

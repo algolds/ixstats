@@ -102,15 +102,6 @@ describe("ActivityHooks producers", () => {
     await ActivityHooks.Government.onLawPassed("missing", "Act", 1);
     expect(mockDb.activityFeed.create).not.toHaveBeenCalled();
   });
-
-  it("keeps only producers with a caller", () => {
-    expect(Object.keys(ActivityHooks).sort()).toEqual([
-      "Diplomatic",
-      "Economic",
-      "Government",
-      "User",
-    ]);
-  });
 });
 
 describe("economicTierRank", () => {

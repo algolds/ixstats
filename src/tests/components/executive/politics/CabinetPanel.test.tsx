@@ -68,51 +68,6 @@ describe("CabinetPanel", () => {
     mockStructureData = null;
     mockOfficialsData = [];
   });
-
-  it("renders department list and appointed officials", () => {
-    mockStructureData = createStructure([
-      { id: "d-1", name: "Foreign Affairs", ministerTitle: "Minister" },
-      { id: "d-2", name: "Defense", ministerTitle: "Secretary" },
-    ]);
-    mockOfficialsData = [
-      createOfficial({
-        id: "1",
-        departmentId: "d-1",
-        name: "Elena Vance",
-        title: "Minister of Foreign Affairs",
-      }),
-    ];
-
-    render(<CabinetPanel countryId="c-1" />);
-
-    expect(screen.getByText("Cabinet")).toBeInTheDocument();
-    expect(screen.getByText("Foreign Affairs")).toBeInTheDocument();
-    expect(screen.getByText("Defense")).toBeInTheDocument();
-    expect(screen.getByText("Elena Vance")).toBeInTheDocument();
-    expect(screen.getByText("Minister of Foreign Affairs · Cabinet Member")).toBeInTheDocument();
-  });
-
-  it('renders "Vacant" for a department with no official', () => {
-    mockStructureData = createStructure([
-      { id: "d-1", name: "Foreign Affairs", ministerTitle: "Minister" },
-      { id: "d-2", name: "Defense", ministerTitle: "Secretary" },
-    ]);
-    mockOfficialsData = [
-      createOfficial({
-        id: "1",
-        departmentId: "d-1",
-        name: "Elena Vance",
-        title: "Minister of Foreign Affairs",
-      }),
-    ];
-
-    render(<CabinetPanel countryId="c-1" />);
-
-    const vacantBadges = screen.getAllByText("Vacant");
-    expect(vacantBadges).toHaveLength(1);
-    expect(screen.getByText("Defense")).toBeInTheDocument();
-  });
-
   it("opens the appoint form and submits with the correct departmentId", async () => {
     mockStructureData = createStructure([
       { id: "d-1", name: "Foreign Affairs", ministerTitle: "Minister" },

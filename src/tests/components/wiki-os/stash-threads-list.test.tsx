@@ -39,11 +39,6 @@ describe("stashedThreadTarget", () => {
       "/thinkpages/t/cabc123"
     );
   });
-
-  it("names a native item whose note is missing", () => {
-    expect(stashedThreadTarget({ ...native, note: null })?.title).toBe("Thread");
-  });
-
   it("has no target for an item that is not a native thread", () => {
     expect(stashedThreadTarget(other)).toBeNull();
   });

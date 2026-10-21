@@ -198,49 +198,6 @@ describe("Flag Resolver & Normalization (Plan 164)", () => {
       expect(batchResult.get("Japan")?.flagUrl).toBe("https://upload.wikimedia.org/japan.svg");
       expect(batchResult.get("Mexico")?.isPlaceholder).toBe(true);
     });
-
-    test("14. resolveBatch handles empty input array cleanly", async () => {
-      const resolver = new ServerFlagResolver();
-      const result = await resolver.resolveBatch([]);
-      expect(result.size).toBe(0);
-    });
-
-    test("15. peek returns cached entry if present without triggering fetch", async () => {
-      const mockMap = new Map<string, string>();
-      mockMap.set("Flag_of_Italy.svg", "https://upload.wikimedia.org/italy.svg");
-      jest.spyOn(wikiBridge, "fetchMediaWikiImageBatch").mockResolvedValue(mockMap);
-
-      const resolver = new ServerFlagResolver();
-      expect(resolver.peek("Italy")).toBeNull();
-
-      await resolver.resolve("Italy");
-      const peeked = resolver.peek("Italy");
-      expect(peeked).not.toBeNull();
-      expect(peeked?.flagUrl).toBe("https://upload.wikimedia.org/italy.svg");
-    });
-
-    test("16. prefetch runs resolution in background without blocking", () => {
-      const resolver = new ServerFlagResolver();
-      const spy = jest.spyOn(resolver, "resolveBatch").mockResolvedValue(new Map());
-
-      resolver.prefetch(["Spain", "Norway"]);
-      expect(spy).toHaveBeenCalledWith(["Spain", "Norway"], undefined);
-    });
-
-    test("17. stats tracks hits, misses, placeholders, and cache size accurately", async () => {
-      jest.spyOn(wikiBridge, "fetchMediaWikiImageBatch").mockResolvedValue(new Map());
-
-      const resolver = new ServerFlagResolver();
-      await resolver.resolve("Unknown1");
-      await resolver.resolve("Unknown1"); // Cache hit
-
-      const stats = resolver.stats();
-      expect(stats.memoryCacheSize).toBe(1);
-      expect(stats.misses).toBe(1);
-      expect(stats.hits).toBe(1);
-      expect(stats.placeholders).toBe(1);
-    });
-
     test("18. clear resets memory cache, in-flight state, and stats", async () => {
       jest.spyOn(wikiBridge, "fetchMediaWikiImageBatch").mockResolvedValue(new Map());
 

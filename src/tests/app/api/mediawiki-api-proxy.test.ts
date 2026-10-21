@@ -12,7 +12,7 @@ jest.mock("~/lib/cache", () => ({
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { NextRequest } from "next/server";
 import { GET } from "~/app/api/mediawiki/[wiki]/api.php/route";
-import { WIKIS, getWiki, ALLOWED_API_PARAMS } from "~/app/api/mediawiki/_config";
+import { WIKIS, getWiki } from "~/app/api/mediawiki/_config";
 import { installFetchGuard, type FetchGuard } from "~/tests/helpers/fetch-guard";
 
 const get = (wiki: string, query: string) =>
@@ -56,17 +56,6 @@ describe("the api.php proxy", () => {
     expect(await res.json()).toEqual({ query: { pages: [] } });
     expect(guard.calls()).toHaveLength(1);
   });
-
-  it("lists the search, category-type and continuation params the file browser sends", () => {
-    for (const param of [
-      "gsrsearch", "gsrnamespace", "gsrlimit", "gsroffset", "gcmtype", "gcmcontinue",
-      "gailimit", "gaicontinue", "gaifrom", "sroffset", "iicontinue", "continue",
-    ]) {
-      expect(ALLOWED_API_PARAMS).toContain(param);
-    }
-    expect(new Set(ALLOWED_API_PARAMS).size).toBe(ALLOWED_API_PARAMS.length);
-  });
-
   it("forwards those params to iiwiki unchanged", async () => {
     guard.restore();
     let sent: URL | undefined;

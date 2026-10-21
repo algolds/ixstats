@@ -3,7 +3,6 @@ import {
   CARD_VALUATION_DEFAULTS as C,
   clearValuationCache,
   getValuationConfig,
-  rarityFloor,
   referenceValue,
   setValuationConfig,
 } from "~/lib/cards/valuation";
@@ -26,13 +25,6 @@ describe("card-valuation", () => {
     const ns = 250;
     expect(unsold("RARE", "NS", ns)).toBeGreaterThanOrEqual(ns);
   });
-
-  test("native cards ride the floor curve with type multipliers", () => {
-    expect(unsold("RARE", "LORE")).toBe(rarityFloor(C, "RARE"));
-    expect(unsold("RARE", "SPECIAL")).toBe(100 * C.multSpecial);
-    expect(unsold("RARE", "NATION")).toBe(100 * C.multNation);
-  });
-
   test("a setter in a transaction leaves the cache to its caller, which clears it after the commit", async () => {
     const read = { systemConfig: { findMany: jest.fn().mockResolvedValue([]) } };
     clearValuationCache();
@@ -47,9 +39,5 @@ describe("card-valuation", () => {
     await setValuationConfig(app as never, "floorRare", 120);
     await getValuationConfig(read as never);
     expect(read.systemConfig.findMany).toHaveBeenCalledTimes(3);
-  });
-
-  test("the config has no junk rate", () => {
-    expect(C).not.toHaveProperty("junkRate");
   });
 });

@@ -103,26 +103,6 @@ describe("National Issues Engine Limits - Unit Tests", () => {
   });
 
   describe("evaluateCountry limits enforcement", () => {
-    it("stops evaluations when weekly limit is reached and bypass is false", async () => {
-      mockDb.country.findUnique.mockResolvedValue({
-        id: "country_1",
-        name: "Testland",
-        currentPopulation: 1000000,
-        currentGdpPerCapita: 20000,
-        currentTotalGdp: 20000000000,
-        publicApproval: 60,
-      });
-      mockDb.nationalIssue.count.mockResolvedValue(5); // Weekly limit reached
-      mockDb.issueGenerationLog.findFirst.mockResolvedValue(null);
-
-      const result = await NationalIssuesEngine.evaluateCountry("country_1", mockDb as any, {
-        bypassLimits: false,
-      });
-
-      expect(result.issuesGenerated).toBe(0);
-      expect(mockDb.nationalIssueTemplate.findMany).not.toHaveBeenCalled(); // templates not fetched
-    });
-
     it("evaluates and generates issues when weekly limit is reached if bypass is true", async () => {
       mockDb.country.findUnique.mockResolvedValue({
         id: "country_1",

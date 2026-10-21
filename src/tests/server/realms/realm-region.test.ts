@@ -465,24 +465,6 @@ describe("realm poll", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
-
-describe("realm board mutes and bans are retired (phase 3)", () => {
-  it("has no procedure to restrict or lift a board nation any more", () => {
-    const names = Object.keys(realmsRouter._def.procedures);
-    expect(names).toContain("region.abandonNation");
-    expect(names).not.toContain("region.restrictBoardNation");
-    expect(names).not.toContain("region.liftBoardRestriction");
-  });
-
-  it("leaves boardRestrictions out of Manage and never reads the board bans", async () => {
-    const db = makeDb(realmRow({ officers: [{ userId: OFFICER, powers: ["board"] }] }));
-    const manage = await callerAs(OFFICER, db).region.manage({ slug: "eurth" });
-    expect(manage.powers).toEqual(["board"]);
-    expect(manage).not.toHaveProperty("boardRestrictions");
-    expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
-  });
-});
-
 describe("leaving a realm", () => {
   it("releases the nation, keeps its board restriction and drops the officer post", async () => {
     const db = makeDb();
@@ -627,14 +609,6 @@ describe("overview and happenings", () => {
       where: { realmId: "eurth", claimable: true, ownerUserId: { not: null } },
     });
   });
-
-  it("gives the viewer no board restriction and never reads the board bans", async () => {
-    const db = overviewDb();
-    const overview = await callerAs(PLAYER, db).region.overview({ slug: "eurth" });
-    expect(overview?.viewer).not.toHaveProperty("boardRestriction");
-    expect(db.realmBoardBan.findMany).not.toHaveBeenCalled();
-  });
-
   it("re-sanitizes factbook and rules HTML stored before the stricter sanitizer", async () => {
     const db = overviewDb();
     const stored = `<p>Hi</p><div class='fixed inset-0 z-50' style="position:fixed;inset:0;z-index:99999" id="x"><a href="https://evil.example">Session expired</a></div>`;

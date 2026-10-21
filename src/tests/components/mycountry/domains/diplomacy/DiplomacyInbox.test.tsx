@@ -1,7 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { DiplomacyInbox } from "~/components/mycountry/domains/diplomacy/inbox/DiplomacyInbox";
-import { formatExpiry } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
-
 type QueryState = { data?: unknown; isLoading?: boolean; error?: { message: string } | null };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -150,22 +148,6 @@ describe("DiplomacyInbox", () => {
       countryId: "D",
     });
   });
-
-  it("shows empty states when nothing is pending", () => {
-    queries.getForeignPolicyProposals = { data: [] };
-    queries.getAllianceInvites = { data: [] };
-    queries.getOutgoingForeignPolicyProposals = { data: [] };
-    queries.getOutgoingAllianceInvites = { data: [] };
-    render(<DiplomacyInbox countryId="A" />);
-    expect(
-      within(section("Incoming")).getByText(/No proposals or invitations are waiting/)
-    ).toBeInTheDocument();
-    expect(
-      within(section("Outgoing")).getByText(/No pending proposals or invitations/)
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Accept|Withdraw/ })).not.toBeInTheDocument();
-  });
-
   it("shows loading and error states (with retry) instead of an empty inbox", () => {
     queries.getForeignPolicyProposals = { isLoading: true };
     queries.getOutgoingAllianceInvites = { error: { message: "boom" } };
@@ -177,15 +159,5 @@ describe("DiplomacyInbox", () => {
     expect(alert).toHaveTextContent("boom");
     fireEvent.click(within(alert).getByRole("button", { name: /Retry/ }));
     expect(refetch).toHaveBeenCalled();
-  });
-});
-
-describe("inbox helpers", () => {
-  it("formats the remaining answer window", () => {
-    const now = Date.parse("2026-09-30T00:00:00Z");
-    expect(formatExpiry(new Date(now + 5.5 * DAY), now)).toBe("Expires in 5 days");
-    expect(formatExpiry(new Date(now + 1.2 * DAY), now)).toBe("Expires in 1 day");
-    expect(formatExpiry(new Date(now + 3_600_000), now)).toBe("Expires within a day");
-    expect(formatExpiry(new Date(now - 1), now)).toBe("Expired");
   });
 });

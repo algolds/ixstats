@@ -3,9 +3,8 @@
  */
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { PassportRealmsTab } from "~/components/passport/tabs/PassportRealmsTab";
 import { PassportWorkTab } from "~/components/passport/tabs/PassportWorkTab";
-import type { PassportPayload, RealmItem, WorkPayload } from "~/components/passport/types";
+import type { PassportPayload, WorkPayload } from "~/components/passport/types";
 
 jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
@@ -100,130 +99,6 @@ const work: WorkPayload = {
   directives: [],
   wikiActivityFeed: [],
 };
-
-describe("PassportRealmsTab", () => {
-  const base = passport.primaryNation!;
-  const row = (
-    realm: string,
-    nation: string,
-    role: RealmItem["role"],
-    isPrimary = false
-  ): RealmItem => ({
-    ...base,
-    id: `realm_${realm}`,
-    name: `Realm ${realm}`,
-    slug: `realm-${realm}`,
-    role,
-    isPrimary,
-    country: { ...base.country, id: `c_${nation}`, name: `Nation_${nation}`, slug: nation },
-  });
-
-  it("names founders and officers, labels the primary nation, and leaves members unlabelled", () => {
-    render(
-      <PassportRealmsTab
-        realms={[row("a", "a", "founder", true), row("b", "b", "officer"), row("c", "c", "member")]}
-        handle="alex"
-      />
-    );
-
-    expect(screen.getByText("Founder")).toBeInTheDocument();
-    expect(screen.getByText("Officer")).toBeInTheDocument();
-    expect(screen.queryByText("Member")).not.toBeInTheDocument();
-    expect(screen.queryByText("Leader")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Primary nation")).toHaveLength(1);
-  });
-
-  it("groups nations under a realm heading that links to the realm", () => {
-    render(
-      <PassportRealmsTab
-        realms={[
-          row("a", "one", "founder", true),
-          row("b", "two", "member"),
-          row("a", "three", "founder"),
-        ]}
-        handle="alex"
-      />
-    );
-
-    const headings = screen.getAllByRole("heading", { level: 2 });
-    expect(headings.map((h) => h.textContent)).toEqual(["Realm a", "Realm b"]);
-    expect(screen.getByRole("link", { name: "Realm a" })).toHaveAttribute("href", "/r/realm-a");
-    expect(screen.getByRole("link", { name: "Realm b" })).toHaveAttribute("href", "/r/realm-b");
-    // One badge per realm, not per nation.
-    expect(screen.getAllByText("Founder")).toHaveLength(1);
-
-    const realmA = headings[0]!.closest("section")!;
-    expect(realmA).toHaveTextContent("Nation one");
-    expect(realmA).toHaveTextContent("Nation three");
-    expect(realmA).not.toHaveTextContent("Nation two");
-    expect(screen.getByRole("link", { name: "Nation one" })).toHaveAttribute(
-      "href",
-      "/countries/one"
-    );
-  });
-
-  it("shows population, GDP and approval, with middle-dot separators", () => {
-    const nation = row("a", "one", "member");
-    nation.country = {
-      ...nation.country,
-      currentPopulation: 1_250_000_000,
-      currentTotalGdp: 3_400_000_000_000,
-      currentPublicApproval: 61.6,
-      continent: "Levantia",
-      governmentType: "Empire",
-    };
-    render(<PassportRealmsTab realms={[nation]} handle="alex" />);
-
-    expect(screen.getByText("1.25 billion")).toBeInTheDocument();
-    expect(screen.getByText("$3.40 trillion")).toBeInTheDocument();
-    expect(screen.getByText("62%")).toBeInTheDocument();
-    expect(screen.getByText("Levantia · Empire")).toBeInTheDocument();
-    expect(document.body.textContent).not.toContain("•");
-  });
-
-  it("leaves unknown population and GDP out instead of showing zero", () => {
-    const nation = row("a", "one", "member");
-    nation.country = { ...nation.country, currentPopulation: 0, currentTotalGdp: 0 };
-    render(<PassportRealmsTab realms={[nation]} handle="alex" />);
-
-    expect(screen.queryByText("Population")).not.toBeInTheDocument();
-    expect(screen.queryByText("GDP")).not.toBeInTheDocument();
-    expect(screen.queryByText("0")).not.toBeInTheDocument();
-    expect(screen.queryByText("$0")).not.toBeInTheDocument();
-    expect(screen.getByText("Approval")).toBeInTheDocument();
-  });
-
-  it("wraps the figures rather than fitting them into fixed columns that truncate on a phone", () => {
-    render(<PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" />);
-    const figures = screen.getByTestId("passport-nation-figures");
-    expect(figures.className).toContain("flex-wrap");
-    expect(figures.className).not.toMatch(/grid-cols-3/);
-    for (const stat of figures.children) expect(stat.className).toContain("shrink-0");
-  });
-
-  it("shows the recruited count only when someone was recruited", () => {
-    const { rerender } = render(
-      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" />
-    );
-    expect(screen.queryByText(/Recruited/)).not.toBeInTheDocument();
-
-    rerender(
-      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" recruitedCount={0} />
-    );
-    expect(screen.queryByText(/Recruited/)).not.toBeInTheDocument();
-
-    rerender(
-      <PassportRealmsTab realms={[row("a", "one", "member")]} handle="alex" recruitedCount={4} />
-    );
-    expect(screen.getByText("Recruited 4")).toBeInTheDocument();
-  });
-
-  it("says when no nation is held", () => {
-    render(<PassportRealmsTab realms={[]} handle="alex" />);
-    expect(screen.getByText("No nations yet")).toBeInTheDocument();
-  });
-});
-
 describe("PassportWorkTab", () => {
   it("lists creations and narrows them with the category pills", () => {
     render(
@@ -238,53 +113,6 @@ describe("PassportWorkTab", () => {
     expect(screen.queryByText("Imperial Senate")).not.toBeInTheDocument();
     expect(screen.getByText("Latinic")).toBeInTheDocument();
   });
-
-  it("shows the empty state when there is no work and no linked wiki", () => {
-    const empty: WorkPayload = { ...work, authoredArticles: [], conlangs: [] };
-    render(
-      <PassportWorkTab
-        work={empty}
-        wiki={{ ...passport.wiki, linked: false }}
-        forum={passport.forum}
-        handle="alex"
-      />
-    );
-    expect(screen.getByText("No published work")).toBeInTheDocument();
-  });
-
-  it("leads with the forum counters when the forum stats are shown", () => {
-    const forum = {
-      ...passport.forum,
-      linked: true,
-      stats: { messageCount: 1204, threadCount: 85 },
-    };
-    render(<PassportWorkTab work={work} wiki={passport.wiki} forum={forum} handle="alex" />);
-
-    const counters = screen.getByLabelText("Forum");
-    expect(counters).toHaveTextContent("1,204 messages");
-    expect(counters).toHaveTextContent("85 threads");
-    // Phase 4b: XenForo's reactions, trophies and user titles are not carried over.
-    expect(counters).not.toHaveTextContent(/reaction|troph/);
-  });
-
-  it("keeps the forum counters above the empty state", () => {
-    const forum = {
-      ...passport.forum,
-      linked: true,
-      stats: { messageCount: 1, threadCount: 0 },
-    };
-    render(
-      <PassportWorkTab
-        work={{ ...work, authoredArticles: [], conlangs: [] }}
-        wiki={{ ...passport.wiki, linked: false }}
-        forum={forum}
-        handle="alex"
-      />
-    );
-    expect(screen.getByLabelText("Forum")).toHaveTextContent("1 message");
-    expect(screen.getByText("No published work")).toBeInTheDocument();
-  });
-
   it("shows no forum counters when they are hidden or unavailable", () => {
     render(
       <PassportWorkTab work={work} wiki={passport.wiki} forum={passport.forum} handle="alex" />

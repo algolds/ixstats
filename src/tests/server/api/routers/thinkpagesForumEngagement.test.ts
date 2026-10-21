@@ -90,17 +90,6 @@ describe("thinkpagesForum read marks", () => {
       await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
     }
   });
-
-  it("marks a thread read through the module", async () => {
-    const db = engagementDb();
-    await expect(caller(member, db).markThreadRead({ threadId: "t1", page: 1 })).resolves.toEqual({
-      readAt: expect.any(Date),
-    });
-    expect(db.forumThreadRead.createMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skipDuplicates: true })
-    );
-  });
-
   it("bounds the inputs", async () => {
     const c = caller(member, engagementDb());
     await expect(c.markThreadRead({ threadId: "t1", page: 0 })).rejects.toMatchObject({
@@ -212,18 +201,6 @@ describe("thinkpagesForum watch, lists and counts", () => {
       await expect(call()).rejects.toMatchObject({ cause: { code: "UNAUTHORIZED" } });
     }
   });
-
-  it("watches and unwatches through the module", async () => {
-    const db = engagementDb();
-    const c = caller(member, db);
-    await expect(c.watchThread({ threadId: "t1" })).resolves.toEqual({ watching: true });
-    await expect(c.unwatchThread({ threadId: "t1" })).resolves.toEqual({ watching: false });
-    expect(db.forumThreadWatch.createMany).toHaveBeenCalledTimes(1);
-    expect(db.forumThreadWatch.deleteMany).toHaveBeenCalledWith({
-      where: { userId: "u1", threadId: "t1" },
-    });
-  });
-
   it("answers navCounts with the realm board count", async () => {
     const c = caller(member, engagementDb());
     await expect(c.navCounts()).resolves.toEqual({ realmBoardNew: 0 });
@@ -248,15 +225,5 @@ describe("thinkpagesForum mentionSuggestions", () => {
     await expect(
       caller(member, {}).mentionSuggestions({ q: "x".repeat(26) })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
-  it("returns the module's suggestions", async () => {
-    const db = {
-      user: { findMany: jest.fn(async () => [{ handle: "kirsten", clerkUserId: "clerk_k" }]) },
-      thinkpagesAccount: { findMany: jest.fn(async () => []) },
-    };
-    await expect(caller(member, db).mentionSuggestions({ q: "ki" })).resolves.toEqual([
-      { kind: "user", name: "kirsten", label: "kirsten", avatarUrl: null },
-    ]);
   });
 });

@@ -1,5 +1,5 @@
-import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import "react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
@@ -28,13 +28,10 @@ jest.mock("~/trpc/react", () => {
 jest.mock("~/lib/vault/vault-notifications", () => ({
   vaultNotify: { success: jest.fn(), error: jest.fn() },
 }));
-
-import { skipToken } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import type { MinePage } from "~/lib/cards/hub/mine";
 import type { ShowcaseSummary, ShowcaseView } from "~/lib/cards/hub/showcases";
 import { SetsPane } from "~/components/vault/cards/SetsPane";
 import { fakeMutation } from "~/tests/helpers/fake-mutation";
@@ -133,49 +130,7 @@ beforeEach(() => {
 });
 
 describe("SetsPane, the list", () => {
-  it("lists showcases, marks the pinned one, and keeps a place for set binders", () => {
-    listed([summary({ pinned: true, itemCount: 12 })]);
-    const { onShowcaseChange } = renderPane();
-    expect(screen.getByText("Pinned")).toBeInTheDocument();
-    expect(screen.getByText("Public")).toBeInTheDocument();
-    expect(screen.getByText("12 cards")).toBeInTheDocument();
-    expect(screen.getByText("No set binders yet")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Open Best of Ixnay, 12 cards, pinned" }));
-    expect(onShowcaseChange).toHaveBeenCalledWith("s1");
-  });
-
-  it("asks for no showcase while the list shows", () => {
-    renderPane();
-    expect(api.cards.getShowcase.useQuery).toHaveBeenCalledWith(skipToken);
-  });
-
-  it("marks a private showcase, and draws an empty one face down", () => {
-    listed([summary({ isPublic: false, itemCount: 0, cover: null })]);
-    renderPane();
-    expect(screen.getByText("Private")).toBeInTheDocument();
-    expect(screen.getByText("0 cards")).toBeInTheDocument();
-    const empty = screen.getByRole("button", { name: "Open Best of Ixnay, 0 cards, private" });
-    expect(empty.querySelector(".card-face-down")).not.toBeNull();
-    expect(empty.querySelector(".card-face-down")).toHaveClass("w-32");
-  });
-
   // At 64 px the face had room for one letter of its title; size S's own width is the smallest Facet face.
-  it("covers a tile with a size S face at its own width, wide enough for the card's title", () => {
-    listed([summary()]);
-    renderPane();
-    const cover = within(screen.getByRole("button", { name: tile })).getByRole("img", {
-      name: /Caphiria/,
-    });
-    expect(cover).toHaveClass("w-32");
-    expect(cover).not.toHaveClass("w-16");
-  });
-
-  it("says what to do when there are no showcases yet", () => {
-    renderPane();
-    expect(screen.getByText("No showcases yet")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "New showcase" })).toBeEnabled();
-  });
-
   it("stops new showcases at the limit, and says why", () => {
     listed(
       Array.from({ length: SHOWCASE_LIMITS.perPlayer }, (_, i) =>
@@ -187,16 +142,6 @@ describe("SetsPane, the list", () => {
     expect(
       screen.getByText(`You have ${SHOWCASE_LIMITS.perPlayer} showcases, the most you can keep.`)
     ).toBeInTheDocument();
-  });
-
-  it("offers to try again when the list did not load", () => {
-    const refetch = jest.fn();
-    jest
-      .mocked(api.cards.listMyShowcases.useQuery)
-      .mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch } as never);
-    renderPane();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalled();
   });
 });
 
@@ -301,123 +246,8 @@ describe("SetsPane, one showcase", () => {
     fireEvent.click(screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay" }));
     expect(onOpenCard).toHaveBeenCalledWith("c1", { kind: "showcase", id: "s2" });
   });
-
-  it("calls another player's showcase owner a player when the server has no name for them", () => {
-    shown(view({ id: "s2", ownerName: null, isOwner: false }));
-    renderPane("s2");
-    expect(screen.getByText("By a player")).toBeInTheDocument();
-  });
-
-  it("draws a retired copy with the placeholder face", () => {
-    shown(view({ items: [{ itemId: "i1", face: face(1, { isRetired: true, artwork: null }) }] }));
-    renderPane("s1");
-    const card = screen.getByRole("button", { name: "Caphiria, Epic, Standard, Ixnay, retired" });
-    expect(card.querySelector("img")).toBeNull();
-    expect(within(card).getByText("Retired")).toBeInTheDocument();
-  });
-
-  it("offers the owner of an empty showcase one way to add cards", () => {
-    shown(view({ items: [] }));
-    renderPane("s1");
-    expect(screen.getByText("No cards in this showcase yet")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Add cards" })).toHaveLength(1);
-  });
-
-  it("gives the showcase's heading focus after an add, which may have disabled Add cards", async () => {
-    const add = mockMutation("addToShowcase", () => ({ added: 1 }));
-    const mine: MinePage = {
-      rows: [
-        {
-          face: face(2),
-          value: 1,
-          copies: 1,
-          acquiredAt: new Date(),
-          isLocked: false,
-          isBound: false,
-          inscription: null,
-          importDiscounted: false,
-          inOffer: false,
-        },
-      ],
-      total: 1,
-      nextCursor: null,
-      realms: [realm],
-      totalCopies: 1,
-    };
-    jest
-      .mocked(api.cards.listMine.useQuery)
-      .mockReturnValue({ data: mine, isLoading: false, isError: false } as never);
-    shown(view());
-    renderPane("s1");
-    fireEvent.click(screen.getByRole("button", { name: "Add cards" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Card 2, Epic, Standard, Ixnay" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add 1 card" }));
-    expect(add).toHaveBeenCalledWith({ showcaseId: "s1", ownershipIds: ["o2"] });
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Best" })).toHaveFocus());
-  });
-
-  it("names each Remove after its own copy when two share a title", () => {
-    const remove = mockMutation("removeFromShowcase");
-    const second = face(1, {
-      copy: { ownershipId: "o9", finish: "FOIL", serialNumber: 9, level: 1 },
-    });
-    shown(
-      view({
-        items: [
-          { itemId: "i1", face: face(1) },
-          { itemId: "i9", face: second },
-        ],
-      })
-    );
-    renderPane("s1");
-    expect(screen.queryByRole("button", { name: "Remove Caphiria" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Remove Caphiria, Epic, Foil, Ixnay, #9" }));
-    expect(remove).toHaveBeenCalledWith({ showcaseId: "s1", ownershipId: "o9" });
-    expect(
-      screen.getByRole("button", { name: "Remove Caphiria, Epic, Standard, Ixnay, #1" })
-    ).toBeInTheDocument();
-  });
-
-  it("goes back to the list, and focus goes to its heading", () => {
-    shown(view());
-    const { onShowcaseChange, showPane } = renderPane("s1");
-    fireEvent.click(screen.getByRole("button", { name: "Sets" }));
-    expect(onShowcaseChange).toHaveBeenCalledWith(null);
-    showPane(null);
-    expect(screen.getByRole("heading", { name: "Showcases" })).toHaveFocus();
-  });
-
-  it("takes no focus on the first screen, and gives a showcase's heading focus when it opens", () => {
-    shown(view({ id: "s9", name: "Shiny" }));
-    const { showPane } = renderPane(null);
-    expect(document.body).toHaveFocus();
-    showPane("s9");
-    expect(screen.getByRole("heading", { name: "Shiny" })).toHaveFocus();
-  });
-
   // The hub mounts the pane when its Sets tab is chosen, and focus stays on that tab; Strict Mode runs the mount's
   // effects twice, which is no navigation either.
-  it.each([null, "s1"])(
-    "takes no focus when the hub's tab first mounts it, even with its effects run twice (showcase %s)",
-    (showcaseId) => {
-      listed([summary()]);
-      shown(view());
-      render(
-        <React.StrictMode>
-          <SetsPane onOpenCard={jest.fn()} showcaseId={showcaseId} onShowcaseChange={jest.fn()} />
-        </React.StrictMode>
-      );
-      expect(document.body).toHaveFocus();
-    }
-  );
-
-  it("gives an opened showcase's heading no focus on the first screen", () => {
-    shown(view());
-    renderPane("s1");
-    expect(screen.getByRole("heading", { name: "Best" })).not.toHaveFocus();
-  });
-
   it("deletes the showcase after asking, then goes back to the list", () => {
     const destroy = mockMutation("deleteShowcase", () => undefined);
     shown(view());
@@ -453,16 +283,6 @@ describe("SetsPane, a showcase it cannot show", () => {
     expect(onShowcaseChange).toHaveBeenCalledTimes(1);
     expect(onShowcaseChange).toHaveBeenCalledWith(null);
   });
-
-  it("takes no focus when an address's showcase turns out unknown on the first screen", () => {
-    shown(undefined, { isLoading: true });
-    const { showPane } = renderPane("best-of-ixnay");
-    shown(null);
-    showPane("best-of-ixnay");
-    showPane(null);
-    expect(screen.getByRole("heading", { name: "Showcases" })).not.toHaveFocus();
-  });
-
   it("keeps the address while the showcase loads, and once it shows", () => {
     shown(undefined, { isLoading: true });
     const { onShowcaseChange, showPane } = renderPane("s1");

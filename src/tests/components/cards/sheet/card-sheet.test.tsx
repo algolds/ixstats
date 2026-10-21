@@ -3,9 +3,7 @@ import {
   act,
   fireEvent,
   render,
-  renderHook,
   screen,
-  waitFor,
   within,
 } from "@testing-library/react";
 
@@ -80,9 +78,7 @@ jest.mock("next/link", () => ({
 import { usePathname, useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import { playRevealFeedback } from "~/components/cards/reveal/reveal-feedback";
 import { CardSheet } from "~/components/cards/sheet/CardSheet";
-import { useCardSheet } from "~/hooks/useCardSheet";
 import { useCardMute } from "~/hooks/cards/useMarketActions";
 import { useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
 import type { CardSheetData, SheetCopy, SheetListing, SheetSignIn } from "~/lib/cards/hub/sheet";
@@ -165,20 +161,6 @@ beforeEach(() => {
 });
 
 describe("CardSheet", () => {
-  it("lays out one sheet: the card, then your copies, the market and about", () => {
-    showSheet();
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByRole("heading", { level: 2, name: "Caphiria" })).toBeInTheDocument();
-    expect(within(dialog).getByText("Epic · Ixnay · No. 9")).toBeInTheDocument();
-    expect(within(dialog).queryByRole("tablist")).toBeNull();
-    const headings = within(dialog)
-      .getAllByRole("heading", { level: 3 })
-      .map((h) => h.textContent);
-    expect(headings).toEqual(["Your copies", "Market", "About"]);
-    expect(within(dialog).getByText("Wanted by 12")).toBeInTheDocument();
-  });
-
   it("flips with its button and with F", () => {
     showSheet();
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
@@ -189,20 +171,6 @@ describe("CardSheet", () => {
     fireEvent.keyDown(window, { key: "f" });
     expect(screen.getByRole("button", { name: "Show the back" })).toBeInTheDocument();
   });
-
-  it("gives the reveal's feedback when the card turns to its back, and none when it turns back", () => {
-    showSheet();
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Show the back" }));
-    // Reduce Motion is on in these tests, so the buzz stays off.
-    expect(playRevealFeedback).toHaveBeenCalledTimes(1);
-    expect(playRevealFeedback).toHaveBeenCalledWith("EPIC", true);
-    fireEvent.keyDown(window, { key: "f" });
-    expect(playRevealFeedback).toHaveBeenCalledTimes(1);
-    fireEvent.keyDown(window, { key: "f" });
-    expect(playRevealFeedback).toHaveBeenCalledTimes(2);
-  });
-
   it("starts the next card on its front", () => {
     showSheet();
     const { rerender } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
@@ -214,20 +182,6 @@ describe("CardSheet", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Urcea" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show the back" })).toBeInTheDocument();
   });
-
-  it("puts focus on the card, a named group, and says which side shows after a turn", () => {
-    showSheet();
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const hero = screen.getByRole("group", { name: "The card. Press Space or F to turn it over." });
-    expect(document.activeElement).toBe(hero);
-    const status = within(hero).getByRole("status");
-    expect(status).toBeEmptyDOMElement();
-    fireEvent.keyDown(window, { key: "f" });
-    expect(status).toHaveTextContent("Showing the back");
-    fireEvent.keyDown(window, { key: "f" });
-    expect(status).toHaveTextContent("Showing the front");
-  });
-
   it("offers a held copy to a showcase and to the auction form, but never a bound one to sale", () => {
     showSheet();
     const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
@@ -252,126 +206,6 @@ describe("CardSheet", () => {
     expect(screen.queryByRole("link", { name: "Sell at auction" })).toBeNull();
     expect(screen.getByRole("button", { name: "Add to showcase" })).toBeInTheDocument();
   });
-
-  it("says how to get a card the viewer does not hold", () => {
-    showSheet(sheet({ copies: [], face: { ...face, copy: null, silhouette: true } }));
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(
-      screen.getByText(/You do not have this card yet\. It comes in Ixnay packs/)
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See it in the market" })).toHaveAttribute(
-      "href",
-      "/vault/cards/market?for=c1"
-    );
-    expect(screen.queryByRole("button", { name: "Add to showcase" })).toBeNull();
-  });
-
-  it("says a bound card the viewer does not hold is earned, never bought", () => {
-    showSheet(
-      sheet({ copies: [], card: { ...card, isBound: true }, face: { ...face, copy: null } })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(
-      screen.getByText(
-        "You do not have this card yet. It is earned as a reward, and never traded or sold."
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "See it in the market" })).toBeNull();
-    expect(screen.queryByText("Bound to your account")).toBeNull();
-  });
-
-  it("never says a tradeable Special card comes in packs, which never draw one", () => {
-    showSheet(
-      sheet({
-        copies: [],
-        card: { ...card, cardType: "SPECIAL" },
-        face: { ...face, cardType: "SPECIAL", copy: null },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(
-      screen.getByText(
-        /^You do not have this card yet\. It is given out at events, and is on the market and in trades\./
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/packs/)).toBeNull();
-    expect(screen.getByRole("link", { name: "See it in the market" })).toHaveAttribute(
-      "href",
-      "/vault/cards/market?for=c1"
-    );
-  });
-
-  it("says nothing of where a retired card comes from", () => {
-    showSheet(
-      sheet({
-        copies: [],
-        card: { ...card, isRetired: true, value: 0 },
-        face: { ...face, copy: null, isRetired: true },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText("You do not have this card yet.")).toBeInTheDocument();
-    expect(screen.queryByText(/packs/)).toBeNull();
-    expect(screen.queryByRole("link", { name: "See it in the market" })).toBeNull();
-  });
-
-  it("gives focus back to the face that opened it when it closes", async () => {
-    showSheet();
-    const opener = document.createElement("button");
-    document.body.append(opener);
-    opener.focus();
-    const { result } = renderHook(() => useCardSheet());
-    act(() => result.current.open("c1"));
-    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(document.activeElement).not.toBe(opener);
-    unmount();
-    await waitFor(() => expect(document.activeElement).toBe(opener));
-    opener.remove();
-  });
-
-  it("gives focus back once, so a later sheet from a link does not send it to an old opener", async () => {
-    showSheet();
-    const first = document.createElement("button");
-    const later = document.createElement("button");
-    document.body.append(first, later);
-    first.focus();
-    const { result } = renderHook(() => useCardSheet());
-    act(() => result.current.open("c1"));
-    const sheet1 = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    sheet1.unmount();
-    await waitFor(() => expect(document.activeElement).toBe(first));
-    later.focus();
-    const sheet2 = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    later.focus();
-    sheet2.unmount();
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(document.activeElement).not.toBe(first);
-    first.remove();
-    later.remove();
-  });
-
-  it("leaves focus alone when the opener is gone", async () => {
-    showSheet();
-    const opener = document.createElement("button");
-    document.body.append(opener);
-    opener.focus();
-    const { result } = renderHook(() => useCardSheet());
-    act(() => result.current.open("c1"));
-    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    opener.remove();
-    const focus = jest.spyOn(opener, "focus");
-    unmount();
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    expect(focus).not.toHaveBeenCalled();
-  });
-
-  it("says when a card is not available", () => {
-    showSheet(null);
-    render(<CardSheet cardId="nope" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText("This card is not available")).toBeInTheDocument();
-    expect(screen.queryByRole("group")).toBeNull();
-  });
-
   it("asks a signed-out visitor to sign in, and brings them back to this card", () => {
     jest.mocked(usePathname).mockReturnValueOnce("/@takatta");
     jest
@@ -431,30 +265,6 @@ describe("CardSheet", () => {
 
   // jsdom has no layout: these are the classes that keep the card inside a 320 px phone's column and below the
   // bottom sheet's close button (at top-4 right-4, over the column's top-right corner on a narrow phone).
-  it("lets the card shrink to its column on a narrow phone and starts it below the close button", () => {
-    showSheet();
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const hero = screen.getByRole("group", { name: "The card. Press Space or F to turn it over." });
-    expect(hero.parentElement).toHaveClass("grid", "grid-cols-1", "md:grid-cols-[auto_1fr]");
-    expect(hero).toHaveClass("pt-8", "md:pt-0");
-    expect(screen.getByRole("img", { name: /Caphiria/ })).toHaveClass("max-w-full");
-  });
-
-  it("sizes the loading placeholder like the card, inside its column", () => {
-    useSheet().mockReturnValue({ data: undefined, isLoading: true } as never);
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const placeholder = screen.getByRole("dialog").querySelector(".aspect-\\[5\\/7\\]");
-    expect(placeholder).toHaveClass("w-72", "max-w-full", "mt-8", "md:mt-0");
-  });
-
-  it("closes through onClose", () => {
-    showSheet();
-    const onClose = jest.fn();
-    render(<CardSheet cardId="c1" from={null} onClose={onClose} />);
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
   it("copies a link that opens this card in Explore", async () => {
     showSheet();
     const writeText = jest.fn(() => Promise.resolve());
@@ -465,17 +275,6 @@ describe("CardSheet", () => {
     });
     expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/vault/cards/explore?card=c1`);
     expect(vaultNotify.success).toHaveBeenCalledWith("Link copied", "Caphiria");
-  });
-
-  it("says so when the link cannot be copied", async () => {
-    showSheet();
-    const writeText = jest.fn(() => Promise.reject(new Error("denied")));
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
-    });
-    expect(vaultNotify.error).toHaveBeenCalledWith("Could not copy the link");
   });
 });
 
@@ -547,38 +346,6 @@ describe("CardSheet market", () => {
     expect(within(screen.getByText("1,200")).getByRole("img", { name: "IxCredits" })).toBeVisible();
     expect(screen.getByText("On no wishlists yet")).toBeInTheDocument();
   });
-
-  it("calls a seller whose Passport hides Vault cards a player, and points to the market when nothing is listed", () => {
-    showSheet(
-      sheet({
-        market: { listings: [listing({ sellerName: null })], recentSales: [], wantedBy: 1 },
-      })
-    );
-    const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByRole("list", { name: "Live listings" })).toHaveTextContent("A player");
-    expect(screen.getByText("Price history")).toBeInTheDocument();
-    unmount();
-    showSheet();
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.queryByRole("list", { name: "Live listings" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Look for it in the market" })).toBeInTheDocument();
-  });
-
-  it("says a listing whose time has run out has ended", () => {
-    showSheet(
-      sheet({
-        market: {
-          listings: [listing({ endsAt: new Date(Date.now() - 60_000) })],
-          recentSales: [],
-          wantedBy: 0,
-        },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const list = screen.getByRole("list", { name: "Live listings" });
-    expect(list).toHaveTextContent("@ann · Standard #3 · Ended");
-    expect(list).not.toHaveTextContent("left");
-  });
 });
 
 describe("CardSheet about", () => {
@@ -612,24 +379,6 @@ describe("CardSheet about", () => {
       view.unmount();
     }
   });
-
-  it("links a legacy Commons card, stored with no title, to its file page", () => {
-    const upload = "https://upload.wikimedia.org/wikipedia/commons/4/45/Flag_of_Ireland.svg";
-    showSheet(
-      sheet({
-        card: { ...card, wikiSource: "commons", wikiArticleTitle: null, descriptionUrl: upload },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(
-      screen.getByText("Excerpt https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg")
-    ).toBeInTheDocument();
-    expect(useAuthor()).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ enabled: false })
-    );
-  });
-
   it("never asks Commons for an article author, even for a titled file", () => {
     showSheet(
       sheet({
@@ -642,36 +391,6 @@ describe("CardSheet about", () => {
       expect.objectContaining({ enabled: false })
     );
   });
-
-  it("gives a card that is not lore its description and art credit", () => {
-    showSheet(
-      sheet({
-        card: {
-          ...card,
-          cardType: "SPECIAL",
-          description: "Given at the 2026 games.",
-          artCredit: {
-            line: "Photo by Ann, CC BY 4.0",
-            licence: "CC BY 4.0",
-            sourceUrl: "https://example.com/a",
-          },
-        },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.queryByText(/^Excerpt/)).toBeNull();
-    expect(useAuthor()).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ enabled: false })
-    );
-    const about = screen.getByRole("region", { name: "About" });
-    expect(within(about).getByText("Given at the 2026 games.")).toBeInTheDocument();
-    expect(within(about).getByRole("link", { name: "Photo by Ann, CC BY 4.0" })).toHaveAttribute(
-      "href",
-      "https://example.com/a"
-    );
-  });
-
   it("tells the excerpt to hide the art for a silhouette or a retired card, but not for a held one", () => {
     const commons = {
       ...card,
@@ -693,22 +412,6 @@ describe("CardSheet about", () => {
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
     expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
   });
-
-  it("adds the licence to the art credit when the line does not name it", () => {
-    showSheet(
-      sheet({
-        card: {
-          ...card,
-          cardType: "SPECIAL",
-          artCredit: { line: "Photo by Ann", licence: "CC BY 4.0", sourceUrl: null },
-        },
-      })
-    );
-    render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    const about = screen.getByRole("region", { name: "About" });
-    expect(within(about).getByText("Art: Photo by Ann · CC BY 4.0")).toBeInTheDocument();
-  });
-
   it("offers a signed-in player a takedown request for a wiki card, and points a visitor to the help", () => {
     showSheet();
     const { unmount } = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);

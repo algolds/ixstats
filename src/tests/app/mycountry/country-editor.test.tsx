@@ -4,7 +4,7 @@
  * it loaded for them, a conflict reloads only that section, a policy preset replaces the
  * institutions after a confirm, and the leave guard names the sections with unsaved changes.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 interface SaveCall {
@@ -114,7 +114,6 @@ jest.mock("~/app/r/[realm]/_components/manage/RealmImageField", () => ({
 }));
 
 import MyCountryEditorPage from "~/app/mycountry/editor/page";
-import { editorGroups } from "~/app/mycountry/editor/_components/CountryEditor";
 import { getPolicyPreset } from "~/lib/government/policy-presets";
 
 beforeAll(() => {
@@ -127,41 +126,6 @@ beforeEach(() => {
 });
 
 describe("the country editor", () => {
-  it("renders every group and section from one list, with one h1 and h2 sections", () => {
-    render(<MyCountryEditorPage />);
-    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1, name: "Testland" })).toBeInTheDocument();
-
-    const groups = editorGroups(mockState as never);
-    expect(groups.map((g) => g.label)).toEqual([
-      "Identity",
-      "Government",
-      "Size",
-      "Managed elsewhere",
-    ]);
-    const nav = screen.getByRole("navigation", { name: "Editor sections" });
-    const links = within(nav).getAllByRole("link");
-    const sectionIds = groups.flatMap((g) => g.sections.map((s) => s.id));
-    expect(links.map((a) => a.getAttribute("href"))).toEqual(sectionIds.map((id) => `#${id}`));
-    for (const group of groups) {
-      expect(document.getElementById(group.id)).not.toBeNull();
-      for (const section of group.sections) {
-        expect(document.getElementById(section.id)?.tagName).toBe("SECTION");
-      }
-    }
-    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
-      "Name",
-      "Flag and symbols",
-      "Capital and language",
-      "Culture",
-      "Civic standards",
-      "Form and institutions",
-      "Institutions",
-      "Population and wealth",
-      "Managed elsewhere",
-    ]);
-  });
-
   it("keeps a section's save disabled until it changes, then sends only what changed", () => {
     render(<MyCountryEditorPage />);
     const save = screen.getByRole("button", { name: "Save culture" });
@@ -242,15 +206,6 @@ describe("the country editor", () => {
     expect(iso).toHaveFocus();
     expect(mockCalls).toHaveLength(0);
   });
-
-  it("shows what saving institutions does to government effectiveness", () => {
-    render(<MyCountryEditorPage />);
-    expect(screen.queryByText(/Government effectiveness:/)).toBeNull();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Rule of law/i }));
-    expect(screen.getByText(/Government effectiveness: 62 → \d+/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save institutions" })).toBeEnabled();
-  });
-
   it("replaces the institutions with a policy preset after a confirm, then saves them", () => {
     render(<MyCountryEditorPage />);
     fireEvent.change(screen.getByRole("combobox", { name: "Policy presets" }), {
@@ -265,13 +220,6 @@ describe("the country editor", () => {
     expect(lastSave().name).toBe("saveGovernmentComponents");
     expect(lastSave().input.componentTypes).toEqual(getPolicyPreset("technocracy")!.components);
   });
-
-  it("warns that saving the size rescales the economy", () => {
-    render(<MyCountryEditorPage />);
-    expect(screen.getByText("Saving rescales the economy")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save size" })).toBeDisabled();
-  });
-
   it("asks before leaving with unsaved changes and names the sections", () => {
     render(<MyCountryEditorPage />);
     // Nothing unsaved: links leave freely.

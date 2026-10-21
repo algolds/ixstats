@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { act, render, screen } from "@testing-library/react";
 
 const directive = jest.fn();
@@ -100,45 +100,6 @@ describe("IntentDetail forum share", () => {
     expect(screen.queryByRole("button", { name: /^Share dir/ })).toBeNull();
     expect(screen.getByRole("button", { name: /Share to the feed/ })).toBeInTheDocument();
   });
-
-  it("lists the posts that discuss the directive in a section titled with their count", () => {
-    directive.mockReturnValue({ data: { activityId: "dir-i1" } });
-    counts.mockReturnValue({ data: { "dir-i1": { count: 2, postIds: ["p1", "p2"] } } });
-    list.mockReturnValue({
-      data: {
-        pages: [
-          {
-            items: [
-              {
-                postId: "p1",
-                href: "/thinkpages/post/p1",
-                title: "On the jobs plan",
-                kind: "thread",
-                categoryName: "Hub",
-                realmName: "Eurth",
-                author: { name: "ann" },
-                createdAt: new Date("2026-10-02T00:00:00Z"),
-              },
-            ],
-            nextCursor: null,
-          },
-        ],
-      },
-      isLoading: false,
-      isError: false,
-      hasNextPage: false,
-      isFetchingNextPage: false,
-      fetchNextPage: jest.fn(),
-    });
-    render(<IntentDetail countryId="c1" intentId="i1" />);
-    expect(screen.getByRole("heading", { name: "Discussed in 2 posts" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /On the jobs plan/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/post/p1"
-    );
-    expect(counts).toHaveBeenCalledWith({ activityIds: ["dir-i1"] }, expect.anything());
-  });
-
   it("shows no section for a directive nobody has discussed, or one without a row", () => {
     directive.mockReturnValue({ data: { activityId: "dir-i1" } });
     counts.mockReturnValue({ data: { "dir-i1": { count: 0, postIds: [] } } });

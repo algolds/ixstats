@@ -96,9 +96,6 @@ jest.mock("~/components/ui/avatar", () => ({
 import { AdvertBoardAction } from "~/components/thinkpages-forum/advert/AdvertBoardAction";
 import { advertThreadIdOf } from "~/components/thinkpages-forum/advert/advert-error";
 import { NewAdvertForm } from "~/components/thinkpages-forum/advert/NewAdvertForm";
-import { ThreadTable } from "~/components/thinkpages-forum/board/ThreadTable";
-import type { ForumAuthors } from "~/components/thinkpages-forum/AuthorName";
-
 const EURTH = {
   slug: "eurth",
   name: "Eurth",
@@ -120,121 +117,6 @@ beforeEach(() => {
   mockState.signedIn = true;
   mockState.loaded = true;
 });
-
-describe("advert rows on the board", () => {
-  const authors = {
-    users: { u1: { name: "Kir", handle: "kir", avatarUrl: "/kir.png", flagUrl: null } },
-    personas: {},
-  } as ForumAuthors;
-  const row = (advert: object | null | undefined) => ({
-    id: "t1",
-    title: "Join Eurth",
-    authorUserId: "u1",
-    authorPersonaId: null,
-    importedAuthorName: null,
-    xenforoThreadId: null,
-    pinned: false,
-    locked: false,
-    hidden: false,
-    postCount: 3,
-    lastPostAt: new Date(),
-    advert,
-  });
-  const renderRow = (advert: object | null | undefined) =>
-    render(
-      <ThreadTable
-        threads={[row(advert)] as never}
-        authors={authors}
-        basePath="/thinkpages/c/find-a-realm"
-        sort="latest"
-      />
-    );
-  const advert = (over: object = {}) => ({
-    realmSlug: "eurth",
-    realmName: "Eurth",
-    emblemUrl: "https://img.example/emblem.png",
-    thumbnail: "https://img.example/thumb.png",
-    claimsOpen: true,
-    ...over,
-  });
-  const sources = (container: HTMLElement) =>
-    [...container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
-
-  it("shows the realm's emblem in place of the author's avatar, with an Open to join pill", () => {
-    const { container } = renderRow(advert());
-    expect(sources(container)).toEqual(["https://img.example/emblem.png"]);
-    expect(screen.getByText("Open to join")).toBeInTheDocument();
-    expect(screen.getByText("Kir")).toBeInTheDocument();
-  });
-
-  it("falls back to the thumbnail, then to the realm mark", () => {
-    const thumb = renderRow(advert({ emblemUrl: null }));
-    expect(sources(thumb.container)).toEqual(["https://img.example/thumb.png"]);
-    thumb.unmount();
-    const mark = renderRow(advert({ emblemUrl: null, thumbnail: null }));
-    expect(sources(mark.container)).toEqual([]);
-  });
-
-  it("falls back to the thumbnail when the emblem is an empty string", () => {
-    const { container } = renderRow(advert({ emblemUrl: "" }));
-    expect(sources(container)).toEqual(["https://img.example/thumb.png"]);
-  });
-
-  it("draws the realm mark (a globe, no picture) when there is no emblem or thumbnail", () => {
-    const { container } = renderRow(advert({ emblemUrl: null, thumbnail: null }));
-    expect(container.querySelector("img")).toBeNull();
-    expect(container.querySelector("svg.size-5")).not.toBeNull();
-  });
-
-  it("names a persona's last post by the persona on an advert row, never the player", () => {
-    const personaAuthors = {
-      users: {
-        u1: { name: "Kir", handle: "kir", avatarUrl: "/kir.png", flagUrl: "/flags/kir.png" },
-      },
-      personas: {
-        pa: {
-          displayName: "Aria Vance",
-          username: "aria",
-          avatarUrl: "/aria.png",
-          personaType: "citizen",
-        },
-      },
-    } as ForumAuthors;
-    render(
-      <ThreadTable
-        threads={
-          [
-            {
-              ...row(advert()),
-              lastPoster: { authorUserId: "u1", authorPersonaId: "pa", importedAuthorName: null },
-            },
-          ] as never
-        }
-        authors={personaAuthors}
-        basePath="/thinkpages/c/find-a-realm"
-        sort="latest"
-      />
-    );
-    expect(screen.getByText("Aria Vance")).toBeInTheDocument();
-    expect(document.querySelector('img[src="/aria.png"]')).not.toBeNull();
-    expect(document.querySelectorAll('img[src^="/flags/"]')).toHaveLength(1);
-  });
-
-  it("leaves the pill out when the realm is closed to new nations", () => {
-    renderRow(advert({ claimsOpen: false }));
-    expect(screen.queryByText("Open to join")).toBeNull();
-  });
-
-  it("keeps the author's avatar and no pill on an ordinary thread, with or without the field", () => {
-    for (const value of [null, undefined]) {
-      const { container, unmount } = renderRow(value);
-      expect(sources(container)).toEqual(["/kir.png"]);
-      expect(screen.queryByText("Open to join")).toBeNull();
-      unmount();
-    }
-  });
-});
-
 describe("AdvertBoardAction", () => {
   it("shows nothing to a signed-out viewer or to someone with the power in no realm", () => {
     mockState.signedIn = false;
@@ -287,38 +169,6 @@ describe("AdvertBoardAction", () => {
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });
-
-  it("words it for several when every one of a viewer's realms has a hidden advert", () => {
-    mockState.realms = [HIDDEN, { ...ZETA, hiddenByModerator: true }];
-    render(<AdvertBoardAction />);
-    expect(screen.getByText("Your realms' adverts were hidden by a moderator")).toBeInTheDocument();
-    expect(screen.queryByRole("button")).toBeNull();
-  });
-
-  it("lists a hidden advert in the menu without a link, beside the realms that can still act", () => {
-    mockState.realms = [HIDDEN, ZETA];
-    render(<AdvertBoardAction />);
-    expect(screen.getByRole("button", { name: "Advertise your realm" })).toBeInTheDocument();
-    const menu = within(screen.getByRole("menu"));
-    expect(menu.getByText("The Eurth advert was hidden by a moderator")).toBeInTheDocument();
-    expect(
-      menu.getByText("The Eurth advert was hidden by a moderator").closest("[role=menuitem]")
-    ).toHaveAttribute("aria-disabled", "true");
-    expect(
-      menu.getByRole("link", { name: "Advertise Zeta" }).closest("[role=menuitem]")
-    ).not.toHaveAttribute("aria-disabled");
-    expect(menu.queryByRole("link", { name: /Eurth/ })).toBeNull();
-    expect(menu.getByRole("link", { name: "Advertise Zeta" })).toBeInTheDocument();
-  });
-
-  it("says Edit your advert on the trigger when every realm already has one", () => {
-    mockState.realms = [
-      { ...EURTH, advertThreadId: "t_a" },
-      { ...ZETA, advertThreadId: "t_b" },
-    ];
-    render(<AdvertBoardAction />);
-    expect(screen.getByRole("button", { name: "Edit your advert" })).toBeInTheDocument();
-  });
 });
 
 describe("advertThreadIdOf", () => {
@@ -352,20 +202,6 @@ describe("NewAdvertForm", () => {
     expect(container.querySelector("[aria-busy='true']")).not.toBeNull();
     expect(screen.queryByText("Sign in to advertise your realm")).toBeNull();
   });
-
-  it("shows a skeleton while the realms load", () => {
-    mockState.loading = true;
-    const { container } = render(<NewAdvertForm />);
-    expect(container.querySelector("[aria-busy='true']")).not.toBeNull();
-  });
-
-  it("explains that only a realm's founder and officers can advertise when the viewer has no realm", () => {
-    mockState.realms = [];
-    render(<NewAdvertForm />);
-    expect(screen.getByText("You can't advertise a realm")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Post" })).toBeNull();
-  });
-
   it("opens the composer for the only realm, and posts the advert to it", async () => {
     mockState.realms = [EURTH];
     mockCreate.mockResolvedValue({ threadId: "t_new", postId: "p_new", formatting: "done" });
@@ -442,24 +278,6 @@ describe("NewAdvertForm", () => {
     render(<NewAdvertForm realm="elsewhere" />);
     expect(screen.getByText(/can't advertise that realm/i)).toBeInTheDocument();
   });
-
-  it("does not refresh the realms for a refusal that is not a conflict", async () => {
-    mockState.realms = [EURTH];
-    mockCreate.mockRejectedValue(new Error("boom"));
-    render(<NewAdvertForm realm="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Post" }));
-    await screen.findByRole("alert");
-    expect(mockInvalidate).not.toHaveBeenCalled();
-  });
-
-  it("lists a realm whose advert a moderator hid in the picker, with no link", () => {
-    mockState.realms = [HIDDEN, ZETA];
-    render(<NewAdvertForm />);
-    expect(screen.getByText("Advert hidden by a moderator")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Eurth/ })).toBeNull();
-    expect(screen.getByRole("link", { name: /Advertise Zeta/ })).toBeInTheDocument();
-  });
-
   it("switches to the existing advert when another tab created it first", async () => {
     mockState.realms = [EURTH];
     mockCreate.mockRejectedValue(

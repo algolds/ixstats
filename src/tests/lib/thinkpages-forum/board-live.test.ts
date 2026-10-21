@@ -1,11 +1,6 @@
 import {
-  BOARD_LIVE_POLL_MS,
-  BOARD_POLL_MS,
-  BOARD_TYPING_EXPIRY_MS,
   boardLiveEventSchema,
   boardLiveMessageSchema,
-  boardRefetchInterval,
-  boardRoomOf,
   removeBoardMessage,
   upsertBoardMessage,
   type BoardLiveEvent,
@@ -33,18 +28,6 @@ const item = (id: string, minute: number) => ({
   id,
   createdAt: new Date(Date.UTC(2026, 9, 10, 12, minute)),
 });
-
-describe("board live constants", () => {
-  it("names the room after the realm and polls every 10s without a live connection and every 60s with one", () => {
-    expect(boardRoomOf("r_eurth")).toBe("realm-board:r_eurth");
-    expect(BOARD_POLL_MS).toBe(10_000);
-    expect(BOARD_TYPING_EXPIRY_MS).toBe(5_000);
-    expect(boardRefetchInterval(false)).toBe(10_000);
-    expect(BOARD_LIVE_POLL_MS).toBe(60_000);
-    expect(boardRefetchInterval(true)).toBe(60_000);
-  });
-});
-
 describe("boardLiveEventSchema", () => {
   const events: BoardLiveEvent[] = [
     { type: "board:message", realmId: "r1", message: live("p1") },

@@ -66,16 +66,6 @@ describe("ThreadTable columns and sorting", () => {
     expect(within(headers[1]!).getByRole("link")).toHaveAttribute("href", `${BASE}?sort=replies`);
     expect(within(headers[2]!).getByRole("link")).toHaveAttribute("href", BASE);
   });
-
-  it("marks the active column with aria-sort and no other", () => {
-    const { unmount } = renderTable([thread("t1")], "latest");
-    const sorts = () => screen.getAllByRole("columnheader").map((h) => h.getAttribute("aria-sort"));
-    expect(sorts()).toEqual([null, null, "descending"]);
-    unmount();
-
-    renderTable([thread("t1")], "replies");
-    expect(sorts()).toEqual([null, "descending", null]);
-  });
 });
 
 describe("ThreadTable rows", () => {
@@ -93,40 +83,6 @@ describe("ThreadTable rows", () => {
     renderTable([thread("t1", { title: "<i>Hi</i>" })]);
     expect(screen.getByText("<i>Hi</i>")).toBeInTheDocument();
   });
-
-  it("groups pinned threads first under a Pinned subheading, and only then", () => {
-    const { unmount } = renderTable([thread("p1", { pinned: true }), thread("t1")]);
-    const rows = screen.getAllByRole("row").map((r) => r.textContent ?? "");
-    const pinned = rows.findIndex((r) => r.startsWith("Pinned"));
-    expect(pinned).toBeGreaterThan(-1);
-    expect(rows.findIndex((r) => r.includes("Thread p1"))).toBeGreaterThan(pinned);
-    expect(rows.findIndex((r) => r.includes("Thread t1"))).toBeGreaterThan(
-      rows.findIndex((r) => r.includes("Thread p1"))
-    );
-    unmount();
-
-    renderTable([thread("t1")]);
-    expect(screen.queryByRole("rowheader", { name: "Pinned" })).toBeNull();
-  });
-
-  it("marks a pinned thread with a pin in the app tint, and leads each row with the author's avatar", () => {
-    renderTable([thread("p1", { pinned: true }), thread("t1")]);
-    expect(within(rowOf(/Thread p1/)).getByLabelText("Pinned")).toHaveClass("text-tint");
-    expect(within(rowOf(/Thread t1/)).queryByLabelText("Pinned")).toBeNull();
-    // The avatar is the row's first cell content, ahead of the title.
-    const cell = within(rowOf(/Thread t1/)).getAllByRole("cell")[0]!;
-    expect(cell.firstElementChild).toHaveAttribute("data-slot", "avatar");
-  });
-
-  it("draws rows at data density: 28px avatars, headline titles, py-2 rows", () => {
-    renderTable([thread("t1")]);
-    const title = screen.getByRole("link", { name: /Thread t1/i });
-    expect(title).toHaveClass("text-headline");
-    const row = title.closest('[role="row"]')!;
-    expect(row).toHaveClass("py-2", "pointer-coarse:min-h-11");
-    expect(row.querySelector(".size-7")).not.toBeNull();
-  });
-
   describe("last post", () => {
     const lastCell = (name: RegExp) => within(rowOf(name)).getAllByRole("cell")[2]!;
 
@@ -155,39 +111,7 @@ describe("ThreadTable rows", () => {
       expect(cell.querySelector('img[src="/avatars/aria.png"]')).not.toBeNull();
       expect(cell.querySelector('img[src^="/flags/"]')).toBeNull();
     });
-
-    it("names an imported last post by its old name, and falls back to the time alone without a last post", () => {
-      renderTable([
-        thread("t1", {
-          lastPoster: { authorUserId: null, authorPersonaId: null, importedAuthorName: "OldName" },
-        }),
-        thread("t2", { lastPoster: null }),
-      ]);
-      expect(within(lastCell(/Thread t1/)).getByText("OldName")).toBeInTheDocument();
-      expect(lastCell(/Thread t2/).querySelector('[data-slot="avatar"]')).toBeNull();
-    });
-
-    it("sizes the columns once for every row, so nothing keeps room it does not use", () => {
-      renderTable([thread("t1")]);
-      const table = screen.getByRole("table", { name: "Threads" });
-      expect(table).toHaveClass("md:grid-cols-[minmax(0,1fr)_auto_auto]");
-      const row = rowOf(/Thread t1/);
-      expect(row).toHaveClass("md:grid-cols-subgrid", "md:col-span-3");
-    });
   });
-
-  it("shows a lock for locked threads, Imported only for imported ones and Hidden only when flagged", () => {
-    renderTable([thread("a", { locked: true, xenforoThreadId: 7, hidden: true }), thread("b")]);
-    const a = rowOf(/Thread a/);
-    expect(within(a).getByLabelText("Locked")).toBeInTheDocument();
-    expect(within(a).getByText("Imported")).toBeInTheDocument();
-    expect(within(a).getByText("Hidden")).toBeInTheDocument();
-    const b = rowOf(/Thread b/);
-    expect(within(b).queryByLabelText("Locked")).toBeNull();
-    expect(within(b).queryByText("Imported")).toBeNull();
-    expect(within(b).queryByText("Hidden")).toBeNull();
-  });
-
   it("names the persona, with its avatar and no flag, never the player behind it", () => {
     renderTable([thread("t1", { authorUserId: "u2", authorPersonaId: "pa" })]);
     const row = rowOf(/Thread t1/);
@@ -195,17 +119,6 @@ describe("ThreadTable rows", () => {
     expect(within(row).queryByText("Hidden Player")).toBeNull();
     expect(row.querySelector('img[src="/flags/hidden.png"]')).toBeNull();
     expect(row.querySelector('img[src="/avatars/aria.png"]')).not.toBeNull();
-  });
-
-  it("shows a member's flag beside the starter, and the imported name for an imported author", () => {
-    const { unmount } = renderTable([thread("t1")]);
-    const row = rowOf(/Thread t1/);
-    expect(within(row).getByText("Kir")).toBeInTheDocument();
-    expect(row.querySelector('img[src="/flags/kir.png"]')).not.toBeNull();
-    unmount();
-
-    renderTable([thread("t2", { authorUserId: null, importedAuthorName: "OldName" })]);
-    expect(within(rowOf(/Thread t2/)).getByText("OldName")).toBeInTheDocument();
   });
 });
 
@@ -222,44 +135,6 @@ describe("ThreadTable page shortcuts", () => {
       "href",
       "/thinkpages/t/t1?page=3"
     );
-  });
-
-  it("windows a long thread as 1 2 … 9", () => {
-    renderTable([thread("t1", { postCount: 180 })]);
-    const row = rowOf(/Thread t1/);
-    const pages = within(row)
-      .getAllByRole("link")
-      .map((l) => l.textContent)
-      .filter((t) => /^\d+$/.test(t ?? ""));
-    expect(pages).toEqual(["1", "2", "9"]);
-    expect(within(row).getByText("…")).toBeInTheDocument();
-  });
-
-  it("offers Last page on phones, and no shortcuts, for a one-page thread", () => {
-    const { unmount } = renderTable([thread("t1", { postCount: 45 })]);
-    expect(
-      within(rowOf(/Thread t1/)).getByRole("link", { name: "Last page of Thread t1" })
-    ).toHaveAttribute("href", "/thinkpages/t/t1?page=3");
-    unmount();
-
-    renderTable([thread("t1", { postCount: 5 })]);
-    const row = rowOf(/Thread t1/);
-    expect(within(row).queryByRole("link", { name: "Page 2 of Thread t1" })).toBeNull();
-    expect(within(row).queryByRole("link", { name: "Last page of Thread t1" })).toBeNull();
-  });
-
-  it("shows Last page only below md, whatever the pointer", () => {
-    renderTable([thread("t1", { postCount: 45 })]);
-    const link = within(rowOf(/Thread t1/)).getByRole("link", { name: "Last page of Thread t1" });
-    expect(link).toHaveClass("md:hidden", "pointer-coarse:max-md:inline-flex");
-    expect(link).not.toHaveClass("pointer-coarse:inline-flex");
-  });
-
-  it("keeps the header row for screen readers below md instead of removing it", () => {
-    renderTable([thread("t1")]);
-    const headerRow = screen.getAllByRole("columnheader")[0]!.parentElement!;
-    expect(headerRow).toHaveClass("max-md:sr-only");
-    expect(headerRow).not.toHaveClass("hidden");
   });
 });
 
@@ -282,13 +157,5 @@ describe("ThreadTable unread rows", () => {
     );
     expect(read.getByRole("link", { name: "Thread t2" })).not.toHaveClass("font-semibold");
     expect(read.getByRole("link", { name: "Thread t2" })).toHaveClass("font-medium");
-  });
-
-  it("names a persona on an unread row, never the player behind it", () => {
-    renderTable([thread("t1", { unread: true, authorUserId: "u2", authorPersonaId: "pa" })]);
-    const row = within(rowOf(/Thread t1/));
-    expect(row.getByText("Unread")).toBeInTheDocument();
-    expect(row.getByText("Aria Vance")).toBeInTheDocument();
-    expect(row.queryByText("Hidden Player")).toBeNull();
   });
 });

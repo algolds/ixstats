@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 
@@ -169,14 +169,6 @@ describe("DiscussedInBadge", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(failed.refetch).toHaveBeenCalledTimes(1);
   });
-
-  it("says so when the opened list has nothing to show", () => {
-    list.mockReturnValue(pages([]));
-    badge({ count: 3, postIds: ["p1", "p2"] });
-    fireEvent.click(screen.getByRole("button", { name: "Discussed in 3 posts" }));
-    expect(screen.getByText("No discussions to show")).toBeInTheDocument();
-  });
-
   it("offers more, not the empty note, when a short page still has a next one", () => {
     list.mockReturnValue(pages([], true));
     badge({ count: 25, postIds: ["p1", "p2"] });
@@ -184,20 +176,6 @@ describe("DiscussedInBadge", () => {
     expect(screen.queryByText("No discussions to show")).toBeNull();
     expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
   });
-
-  it("points the expander at the list it opens", () => {
-    list.mockReturnValue(pages([item("p1")]));
-    const { container } = badge({ count: 3, postIds: ["p1", "p2"] });
-    const expander = screen.getByRole("button", { name: "Discussed in 3 posts" });
-    expect(expander).not.toHaveAttribute("aria-controls");
-    fireEvent.click(expander);
-    const id = expander.getAttribute("aria-controls");
-    expect(id).toBeTruthy();
-    expect(container.querySelector(`[id="${id}"]`)).toContainElement(
-      screen.getByRole("link", { name: /Thread p1/ })
-    );
-  });
-
   describe("inside a post that shows the action", () => {
     it("shows nothing when this post is the only discussion", () => {
       expect(

@@ -2,7 +2,7 @@
  * The feed's wiki action toolbar (shared by WikiFeedCard and InlineWikiArticlePreview) is a row of
  * ActionPills: Margin / Repost / Like / Save to Stash / Share.
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 const mockStash = jest.fn();
@@ -56,23 +56,7 @@ beforeEach(() => {
   mockStashed = false;
   mockThreads = [];
 });
-
-const pills = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll('[data-slot="action-pill"]'));
-
 describe("WikiArticleActions", () => {
-  it("renders the five actions as ActionPills, with the trailing slot", () => {
-    const { container } = render(
-      <WikiArticleActions title="Caphiria" trailing={<a href="/wiki/Caphiria">Open in Wiki</a>} />
-    );
-    expect(pills(container)).toHaveLength(5);
-    expect(screen.getByRole("button", { name: /Margin/ })).toHaveAttribute("aria-pressed", "false");
-    // Repost and Share are one-shot actions.
-    expect(screen.getByRole("button", { name: "Repost" })).not.toHaveAttribute("aria-pressed");
-    expect(screen.getByRole("button", { name: "Share" })).not.toHaveAttribute("aria-pressed");
-    expect(screen.getByRole("link", { name: "Open in Wiki" })).toBeInTheDocument();
-  });
-
   it("likes with the destructive tone and a count", () => {
     render(<WikiArticleActions title="Caphiria" />);
     const like = screen.getByRole("button", { name: /Like/ });

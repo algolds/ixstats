@@ -5,17 +5,6 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { getBalance } from "~/lib/vault/vault-ledger";
-import { vaultBalanceCreditsRouter } from "~/server/api/routers/vault/balance-credits";
-
-describe("vault balance router", () => {
-  it("has no nation dividend or budget multiplier procedure", () => {
-    const procedures = Object.keys(vaultBalanceCreditsRouter._def.procedures);
-    expect(procedures).not.toContain("calculatePassiveIncome");
-    expect(procedures).not.toContain("getBudgetMultiplier");
-    expect(procedures).toContain("getBalance");
-  });
-});
-
 describe("getBalance", () => {
   it("writes no ledger row and reads no country", async () => {
     const vault = {

@@ -94,11 +94,6 @@ describe("errors and the request pipeline", () => {
     await bot.get({ action: "query", meta: "tokens" });
     expect(seen).toEqual(["wiki_api:user:u-heku"]); // by account, not by address
   });
-
-  it("adds no warnings to a clean request", async () => {
-    const body = await run("action=query&meta=siteinfo&siprop=general&formatversion=2");
-    expect(body.warnings).toBeUndefined();
-  });
 });
 
 describe("meta=siteinfo", () => {

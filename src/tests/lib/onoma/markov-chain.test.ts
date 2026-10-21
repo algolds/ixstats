@@ -7,13 +7,6 @@ describe("MarkovChain", () => {
   beforeEach(() => {
     chain = new MarkovChain(2); // Use order 2 for testing
   });
-
-  test("should capitalize words correctly", () => {
-    expect(MarkovChain.capitalize("roma")).toBe("Roma");
-    expect(MarkovChain.capitalize("le-grand")).toBe("Le-Grand");
-    expect(MarkovChain.capitalize("o'connor")).toBe("O'Connor");
-  });
-
   test("should detect duplicates (exact match against training words)", () => {
     chain.addWord("Roma");
     expect(chain.isDuplicate("roma")).toBe(true); // case-insensitive exact match

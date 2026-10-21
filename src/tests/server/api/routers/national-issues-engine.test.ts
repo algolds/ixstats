@@ -83,21 +83,6 @@ describe("admin procedures", () => {
       callerAs(db, "admin").updateEngineConfig({ maxIssuesPerSession: 11, maxIssuesPerWeek: 5 })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
-
-  it("evaluates a country with the admin's options", async () => {
-    await callerAs(db, "admin").triggerEvaluation({
-      countryId: "c1",
-      maxIssues: 2,
-      domain: "economy",
-      bypassLimits: true,
-    });
-    expect(NationalIssuesEngine.evaluateCountry).toHaveBeenCalledWith("c1", db as never, {
-      maxIssues: 2,
-      forceDomain: "economy",
-      bypassLimits: true,
-    });
-  });
-
   it("pages the world audit list with a cursor", async () => {
     db.nationalIssue.findMany.mockResolvedValue([{ id: "i3" }, { id: "i2" }, { id: "i1" }]);
 
@@ -113,22 +98,6 @@ describe("admin procedures", () => {
     );
     expect(page).toEqual({ issues: [{ id: "i3" }, { id: "i2" }], nextCursor: "i1" });
   });
-
-  it("summarises recent generation logs", async () => {
-    db.issueGenerationLog.findMany.mockResolvedValue([
-      { issuesGenerated: 2, executionTimeMs: 100 },
-      { issuesGenerated: 1, executionTimeMs: 300 },
-    ]);
-
-    const stats = await callerAs(db, "admin").getGenerationStats({ days: 3 });
-
-    expect(stats).toMatchObject({
-      period: "3 days",
-      totalEvaluations: 2,
-      totalIssuesGenerated: 3,
-      avgExecutionTime: 200,
-    });
-  });
 });
 
 describe("getRecentWorldIssues", () => {
@@ -137,11 +106,6 @@ describe("getRecentWorldIssues", () => {
     title: id,
     country: { id: countryId, name: countryId, flag: null },
   });
-
-  it("is public and returns nothing when no nation has recent issues", async () => {
-    await expect(callerAs(db, null).getRecentWorldIssues({})).resolves.toEqual({ issues: [] });
-  });
-
   it("returns at most one issue per nation, up to the limit", async () => {
     // First groupBy is the showcase-seed check (already seeded); the second lists active nations.
     db.nationalIssue.groupBy

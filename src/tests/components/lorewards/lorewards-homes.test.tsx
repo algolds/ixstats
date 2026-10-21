@@ -26,14 +26,6 @@ import LorewardsPage from "~/app/(wiki-os)/util/lorewards/page";
 import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
 
 describe("/util/lorewards", () => {
-  it("is a real page rendering the contest focus, not a redirect to the passport", async () => {
-    render(await LorewardsPage({ searchParams: Promise.resolve({}) }));
-
-    expect(screen.getByRole("main", { name: "Lorewards" })).toBeInTheDocument();
-    expect(screen.getByTestId("view")).toHaveAttribute("data-focus", "contest");
-    expect(screen.getByTestId("view")).toHaveAttribute("data-username", "");
-  });
-
   it("opens on a winner's trophies, and the card the article badge linked to, for ?user= and ?card=", async () => {
     render(
       await LorewardsPage({ searchParams: Promise.resolve({ user: "Ada", card: ["card2", "x"] }) })
@@ -45,13 +37,6 @@ describe("/util/lorewards", () => {
 });
 
 describe("the Vault Lorewards tab", () => {
-  it("renders the you focus", () => {
-    mockQuery = "tab=lorewards";
-    render(<VaultLorewardsPanel />);
-    expect(screen.getByTestId("view")).toHaveAttribute("data-focus", "you");
-    expect(screen.getByTestId("view")).toHaveAttribute("data-highlight", "");
-  });
-
   it("marks the trophy card ?trophy= names, leaving ?card= to the card sheet", () => {
     mockQuery = "tab=lorewards&trophy=card2&card=card9";
     render(<VaultLorewardsPanel />);

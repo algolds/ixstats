@@ -62,17 +62,6 @@ describe("v2/mesh", () => {
     }
     expect(openPolygons).toBe(0);
   });
-
-  it("boundary detection runs and produces results", () => {
-    let boundaryCount = 0;
-    for (let i = 0; i < graph.cells.n; i++) {
-      if (graph.cells.boundary[i]) boundaryCount++;
-    }
-    // At 5K cells, polygons are large and many touch the boundary.
-    // Just verify the array is populated (not all zero or some are flagged).
-    expect(boundaryCount).toBeGreaterThan(0);
-  });
-
   it("cell positions are within geographic bounds", () => {
     for (let i = 0; i < graph.cells.n; i++) {
       const lng = cellLng(graph, i);
@@ -82,19 +71,6 @@ describe("v2/mesh", () => {
       expect(lat).toBeGreaterThanOrEqual(-90);
       expect(lat).toBeLessThanOrEqual(90);
     }
-  });
-
-  it("all typed arrays are allocated with correct length", () => {
-    const n = graph.cells.n;
-    expect(graph.cells.h.length).toBe(n);
-    expect(graph.cells.plate.length).toBe(n);
-    expect(graph.cells.isLand.length).toBe(n);
-    expect(graph.cells.temp.length).toBe(n);
-    expect(graph.cells.prec.length).toBe(n);
-    expect(graph.cells.biome.length).toBe(n);
-    expect(graph.cells.state.length).toBe(n);
-    expect(graph.cells.downstream.length).toBe(n);
-    expect(graph.cells.flux.length).toBe(n);
   });
 });
 

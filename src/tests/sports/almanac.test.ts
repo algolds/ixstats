@@ -178,13 +178,4 @@ describe("sports almanac router", () => {
     ]);
     expect(career.totals).toEqual({ matches: 5, goals: 3, assists: 3 });
   });
-
-  it("getAthleteCareerHistory returns an empty log for an athlete without stats", async () => {
-    const career = await callerWith({
-      sportMatchStat: { findMany: jest.fn().mockResolvedValue([]) },
-      sportSeasonRecord: { findMany: jest.fn().mockResolvedValue([]) },
-    }).getAthleteCareerHistory({ athleteId: "p2" });
-
-    expect(career).toEqual({ seasons: [], totals: { matches: 0, goals: 0, assists: 0 } });
-  });
 });

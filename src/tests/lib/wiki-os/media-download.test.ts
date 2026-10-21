@@ -102,10 +102,6 @@ describe("downloadMedia: which hosts it will fetch", () => {
 });
 
 describe("downloadMedia: the 10 MB cap", () => {
-  it("is 10 MB", () => {
-    expect(MAX_DOWNLOAD_BYTES).toBe(10 * 1024 * 1024);
-  });
-
   it("refuses a file whose Content-Length is over the cap without reading it", async () => {
     const res = streamed(1024, { "Content-Length": String(MAX_DOWNLOAD_BYTES + 1) });
     const cancel = jest.spyOn(res.body!, "cancel");

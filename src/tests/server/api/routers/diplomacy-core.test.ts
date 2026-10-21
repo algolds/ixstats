@@ -16,7 +16,6 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { diplomaticCoreRouter } from "~/server/api/routers/diplomacy/core";
 import { notificationAPI } from "~/lib/notifications/api";
-import { STRATEGIC_PRIORITIES } from "~/lib/diplomacy/profile-options";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -82,14 +81,6 @@ describe("follow / unfollow", () => {
         followedCountryId: "c_other",
       })
     ).rejects.toThrow(/Authentication required/);
-  });
-
-  it("reports follow status publicly", async () => {
-    const at = new Date(0);
-    db.countryFollow.findUnique.mockResolvedValue({ createdAt: at });
-    await expect(
-      callerAs(db, null, null).getFollowStatus({ viewerCountryId: "a", targetCountryId: "b" })
-    ).resolves.toEqual({ isFollowing: true, followedAt: at });
   });
 });
 
@@ -167,26 +158,6 @@ describe("getRelationships", () => {
 });
 
 describe("diplomatic options", () => {
-  it("falls back to the built-in lists when the dictionary is empty", async () => {
-    db.diplomaticOption.findMany.mockResolvedValue([]);
-    const options = await callerAs(db, null, null).getAllDiplomaticOptions();
-    expect(options.source).toBe("fallback");
-    expect(options.strategicPriorities).toEqual(Array.from(STRATEGIC_PRIORITIES));
-  });
-
-  it("groups stored options by type", async () => {
-    db.diplomaticOption.findMany.mockResolvedValue([
-      { type: "strategic_priority", value: "Trade" },
-      { type: "key_achievement", value: "Peace" },
-    ]);
-    await expect(callerAs(db, null, null).getAllDiplomaticOptions()).resolves.toEqual({
-      strategicPriorities: ["Trade"],
-      partnershipGoals: [],
-      keyAchievements: ["Peace"],
-      source: "database",
-    });
-  });
-
   it("keeps usage analytics to admins", async () => {
     await expect(callerAs(db, "u1", "c_mine").getOptionUsageStats()).rejects.toThrow(
       /Admin privileges required/

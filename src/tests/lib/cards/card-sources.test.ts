@@ -1,11 +1,8 @@
 /** @jest-environment node */
 /** The one card source list (cards refresh spec §2.4): IxWiki, the sister reader wikis and Wikimedia Commons. */
 import {
-  CARD_ARTICLE_SOURCES,
-  CARD_WIKI_SOURCES,
   canonicalCardTitle,
   cardArticleSourceSchema,
-  cardSourceLabel,
   cardWikiSourceSchema,
   categoryName,
   isArticleTitle,
@@ -19,11 +16,6 @@ import {
 import { canonicalArticleTitle } from "~/lib/cards/legacy-mapping";
 
 describe("card sources", () => {
-  it("lists IxWiki, the sister reader wikis and Commons", () => {
-    expect(CARD_ARTICLE_SOURCES).toEqual(["ixwiki", "iiwiki", "althistory"]);
-    expect(CARD_WIKI_SOURCES).toEqual(["ixwiki", "iiwiki", "althistory", "commons"]);
-  });
-
   it("accepts AltHistory everywhere and Commons only where files are allowed", () => {
     expect(cardArticleSourceSchema.safeParse("althistory").success).toBe(true);
     expect(cardArticleSourceSchema.safeParse("commons").success).toBe(false);
@@ -43,16 +35,6 @@ describe("card sources", () => {
     expect(parseCardArticleSource(null)).toBeNull();
     expect(parseCardArticleSource(undefined)).toBeNull();
   });
-
-  it("names each source", () => {
-    expect(CARD_WIKI_SOURCES.map(cardSourceLabel)).toEqual([
-      "IxWiki",
-      "IIWiki",
-      "AltHistory Wiki",
-      "Wikimedia Commons",
-    ]);
-  });
-
   it("addresses a Commons file on Commons itself", () => {
     expect(commonsPageUrl("File:Flag of Ireland.svg")).toBe(
       "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg"

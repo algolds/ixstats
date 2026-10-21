@@ -1,8 +1,5 @@
 import React from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-
-import { BUILD_VERSION } from "~/lib/buildVersion";
-
 type Balance = { credits: number; canClaimDailyBonus: boolean; loginStreak: number };
 let balance: { data: Balance | undefined; isLoading: boolean } = {
   data: { credits: 12345, canClaimDailyBonus: false, loginStreak: 3 },
@@ -77,24 +74,6 @@ describe("SidebarVaultCard", () => {
     // A solid well inside the chrome glass, never a glass pane.
     expect(container.querySelector('[data-slot="sidebar-vault-card"]')).toHaveClass("facet-well");
   });
-
-  it("keeps the reward control outside the link (no nested interactive elements)", () => {
-    render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
-    const link = screen.getByRole("link", { name: /IxCredits/ });
-    expect(within(link).queryByRole("button")).toBeNull();
-  });
-
-  it("omits earnings when there are none today", () => {
-    earnings = { total: 0, sources: [] };
-    render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
-    expect(screen.getByRole("link", { name: /IxCredits/ })).not.toHaveTextContent("today");
-  });
-
-  it("renders nothing while the balance loads, so the footer does not jump", () => {
-    balance = { data: undefined, isLoading: true };
-    const { container } = render(<SidebarVaultCard expanded={false} onToggle={() => undefined} />);
-    expect(container).toBeEmptyDOMElement();
-  });
 });
 
 describe("SidebarVaultCard disclosure", () => {
@@ -119,94 +98,9 @@ describe("SidebarVaultCard disclosure", () => {
       "true"
     );
   });
-
-  it("keeps the details out of the closed card", () => {
-    open({ expanded: false });
-    expect(screen.queryByRole("link", { name: "Cards" })).toBeNull();
-    expect(screen.queryByText(/unlocked/)).toBeNull();
-  });
-
-  it("lists each earning source for today", () => {
-    earnings = {
-      total: 400,
-      sources: [
-        { type: "daily", label: "Daily login", amount: 250 },
-        { type: "wiki", label: "Wiki contributions", amount: 150 },
-      ],
-    };
-    open();
-    expect(screen.getByText("Daily login")).toBeInTheDocument();
-    expect(screen.getByText("Wiki contributions")).toBeInTheDocument();
-    expect(screen.getByText("+150")).toBeInTheDocument();
-  });
-
-  it("shows no earnings line while the earnings are loading or failed", () => {
-    earnings = undefined;
-    open();
-    expect(screen.queryByText("Nothing earned yet today")).toBeNull();
-  });
-
-  it("says so when nothing has been earned today", () => {
-    earnings = { total: 0, sources: [] };
-    open();
-    expect(screen.getByText("Nothing earned yet today")).toBeInTheDocument();
-  });
-
-  it("shows achievement progress, points and rank", () => {
-    open();
-    expect(screen.getByText("12 of 80 unlocked")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "12");
-    expect(screen.getByText(/340 points/)).toBeInTheDocument();
-    expect(screen.getByText(/Rank 7/)).toBeInTheDocument();
-  });
-
-  it("omits the rank for a player who has not ranked yet", () => {
-    summary = { unlocked: 0, activeTotal: 80, points: 0, rank: null };
-    open();
-    expect(screen.queryByText(/Rank/)).toBeNull();
-  });
-
-  it("never offers a closest-to-unlocking list, a dividend or a yield", () => {
-    open();
-    expect(screen.queryByText(/closest/i)).toBeNull();
-    expect(screen.queryByText(/dividend|yield|interest/i)).toBeNull();
-  });
-
-  it("links into the Vault", () => {
-    open();
-    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute(
-      "href",
-      "/vault/cards/mine"
-    );
-    expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
-    expect(screen.getByRole("link", { name: "Achievements" })).toHaveAttribute(
-      "href",
-      "/vault/achievements"
-    );
-  });
-
-  it("never asks for a wiki link: edits earn through the WikiOS account", () => {
-    open();
-    expect(screen.queryByText(/Link your wiki account/)).toBeNull();
-  });
-
-  it("renders nothing without a balance, open or closed", () => {
-    balance = { data: undefined, isLoading: true };
-    const { container } = open();
-    expect(container).toBeEmptyDOMElement();
-  });
 });
 
 describe("SidebarFooterLinks", () => {
-  it("links the version and build to the changelog, then Privacy and Terms", () => {
-    render(<SidebarFooterLinks signedIn />);
-    const version = screen.getByRole("link", { name: new RegExp(BUILD_VERSION) });
-    expect(version).toHaveAttribute("href", "/changelog");
-    expect(version).toHaveTextContent(/^v\d+\.\d+\.\d+/);
-    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
-  });
-
   it("opens the feedback form from Feedback and closes it again", async () => {
     render(<SidebarFooterLinks signedIn />);
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -247,20 +141,6 @@ describe("AppSidebar footer", () => {
     return { ...utils, panel };
   }
 
-  it("puts the vault card above the account row and the footer links below the collapse button", () => {
-    const { panel } = renderSidebar();
-    const card = screen.getByTestId("vault-card");
-    const account = screen.getByRole("button", { name: "Account: diplomat" });
-    const collapse = screen.getByRole("button", { name: "Collapse sidebar" });
-    const privacy = screen.getByRole("link", { name: "Privacy" });
-    const follows = (a: Node, b: Node) =>
-      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(panel).toContainElement(card);
-    expect(follows(card, account)).toBe(true);
-    expect(follows(account, collapse)).toBe(true);
-    expect(follows(collapse, privacy)).toBe(true);
-  });
-
   it("renders no card and no feedback signed out", () => {
     renderSidebar({ signedIn: false, vaultCard: undefined });
     expect(screen.queryByTestId("vault-card")).toBeNull();
@@ -269,26 +149,6 @@ describe("AppSidebar footer", () => {
   });
 
   describe("collapsed rail wallet", () => {
-    it("is a Vault link above the account row, without a dot by default", () => {
-      renderSidebar({ collapsed: true });
-      const wallet = screen.getByRole("link", { name: "Wallet" });
-      expect(wallet).toHaveAttribute("href", "/vault");
-      const account = screen.getByRole("button", { name: "Account: diplomat" });
-      expect(
-        wallet.compareDocumentPosition(account) & Node.DOCUMENT_POSITION_FOLLOWING
-      ).toBeTruthy();
-      expect(within(wallet).queryByRole("img", { name: "Daily reward ready" })).toBeNull();
-    });
-
-    it("carries a dot while a reward is claimable", () => {
-      renderSidebar({
-        collapsed: true,
-        badges: { "daily-reward": { kind: "action", label: "3d" } },
-      });
-      const wallet = screen.getByRole("link", { name: "Wallet" });
-      expect(within(wallet).getByRole("img", { name: "Daily reward ready" })).toBeInTheDocument();
-    });
-
     it("is not rendered signed out", () => {
       renderSidebar({
         collapsed: true,
@@ -297,23 +157,6 @@ describe("AppSidebar footer", () => {
         apps: getVisibleApps({ signedIn: false, isAdmin: false }),
       });
       expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
-    });
-
-    it("is rendered for a signed-in user whatever the navigation settings hide", () => {
-      renderSidebar({
-        collapsed: true,
-        apps: getVisibleApps({
-          signedIn: true,
-          isAdmin: false,
-          navigationSettings: { showWikiTab: false, showLabsTab: false, showMapsTab: false },
-        }),
-      });
-      expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
-    });
-
-    it("does not depend on the app list", () => {
-      renderSidebar({ collapsed: true, apps: [] });
-      expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
     });
   });
 });

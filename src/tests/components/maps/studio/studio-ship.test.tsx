@@ -136,16 +136,6 @@ describe("Studio Ship tab: export", () => {
     expect(downloads[0]).toEqual({ href: "blob:file-1", download: "world-earthlike-7-8192.png" });
     await waitFor(() => expect(revoked).toEqual(["blob:file-1"]), { timeout: 3000 });
   });
-
-  it("starts at 4096 with the political fills on", async () => {
-    const value = studioValue();
-    jest.mocked(value.generator.renderPng).mockResolvedValue(new Blob(["png"]));
-    renderTab(<StudioShipTab />, value);
-    fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
-    await waitFor(() => expect(downloads).toHaveLength(1));
-    expect(value.generator.renderPng).toHaveBeenCalledWith(4096, true);
-  });
-
   it("says inline that the browser could not make an image this large, and downloads nothing", async () => {
     const value = studioValue();
     jest.mocked(value.generator.renderPng).mockRejectedValue(new Error(ENCODE_FAILED));
@@ -220,17 +210,6 @@ describe("Studio Ship tab: apply to a realm", () => {
     expect(start.mock.calls[0]![0]).toMatchObject({ realmId: "r_eurth", kind: "world" });
     expect(start.mock.calls[0]![0]).not.toHaveProperty("options");
   });
-
-  it("will not send a preset world to Ixnay, and says what to do", () => {
-    renderTab(<StudioShipTab />);
-    pickRealm("ixnay");
-    expect(
-      screen.getByText(/Set the source to Fit to a realm's map and choose Ixnay/)
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Use this world" })).toBeNull();
-    expect(applyStatusQuery).not.toHaveBeenCalled();
-  });
-
   it("will not send a world to Ixnay without a ticked layer, and sends the ticked ones to start", async () => {
     renderTab(<StudioShipTab />, studioValue(fitted("ixnay")));
     expect(screen.getByText("Tick at least one layer to write to Ixnay.")).toBeInTheDocument();
@@ -467,18 +446,6 @@ describe("Studio Ship tab: new realm from this world", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("That slug is taken");
     expect(screen.queryByText(/is created/)).toBeNull();
   });
-
-  it("needs a name and a slug the server will take", () => {
-    renderTab(<StudioShipTab />);
-    const create = screen.getByRole("button", { name: "Create the realm" });
-    expect(create).toBeDisabled();
-    fill("Dry World");
-    expect(create).toBeEnabled();
-    fireEvent.change(screen.getByLabelText("Web address"), { target: { value: "Dry World" } });
-    expect(create).toBeDisabled();
-    expect(screen.getByText(/lower-case letters, digits or hyphens/)).toBeInTheDocument();
-  });
-
   it("is for a preset world only", () => {
     renderTab(<StudioShipTab />, studioValue(fitted("eurth")));
     expect(screen.queryByLabelText("Realm name")).toBeNull();

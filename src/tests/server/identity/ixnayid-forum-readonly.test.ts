@@ -16,7 +16,6 @@ jest.mock("~/server/db", () => {
 import { beforeEach, describe, expect, it } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { ixnayidCoreRouter } from "~/server/api/routers/ixnayid/core";
-import { ixnayidLinkingRouter } from "~/server/api/routers/ixnayid/linking";
 import { db } from "~/server/db";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -71,22 +70,5 @@ describe("ixnayid.getStatus old forum account", () => {
     storedUser(null, null);
     const status = await caller().getStatus();
     expect(status.forum).toMatchObject({ linked: false, username: null });
-  });
-});
-
-describe("forum linking procedures", () => {
-  it("are gone from IxnayID", () => {
-    const procedures = [
-      ...Object.keys(ixnayidCoreRouter._def.procedures),
-      ...Object.keys(ixnayidLinkingRouter._def.procedures),
-    ];
-    for (const name of [
-      "lookupForumUser",
-      "startForumVerification",
-      "confirmForumVerification",
-      "unlinkForum",
-    ]) {
-      expect(procedures).not.toContain(name);
-    }
   });
 });

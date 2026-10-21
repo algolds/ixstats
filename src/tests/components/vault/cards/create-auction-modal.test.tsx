@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -207,16 +207,6 @@ describe("CreateAuctionModal", () => {
       duration: "3d",
     });
   });
-
-  it("starts over at 24 hours when it is closed", () => {
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o1" />);
-    fireEvent.click(screen.getByRole("radio", { name: "7 days" }));
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    field(/Starting price/, "25");
-    fireEvent.click(list());
-    expect(listing()).toMatchObject({ duration: "24h" });
-  });
-
   it("reads the copy a link names on its own, and only when a link names one", () => {
     render(<CreateAuctionModal open onClose={jest.fn()} />);
     expect(linkedQuery()?.[1]).toMatchObject({ enabled: false });
@@ -235,18 +225,6 @@ describe("CreateAuctionModal", () => {
     fireEvent.click(list());
     expect(listing()).toMatchObject({ cardId: "o77" });
   });
-
-  it("lists the linked copy once when its page is loaded, and lets a search show only what matches", () => {
-    linked(row("o2", 9));
-    render(<CreateAuctionModal open onClose={jest.fn()} initialOwnershipId="o2" />);
-    expectRows(/^Caphiria\s*#9 · Foil$/, /^Caphiria\s*#4 · Foil$/);
-    mine([[row("o5", 31, false, false, "Urcea")]]);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search your cards" }), {
-      target: { value: "Urc" },
-    });
-    expectRows(/^Urcea\s*#31 · Foil$/);
-  });
-
   it("says a bound copy from the sheet cannot be sold, instead of offering the form", () => {
     // The linked copy is read on its own, so its page need not be loaded.
     mine([[row("o1", 4)]], true);

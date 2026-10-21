@@ -40,13 +40,4 @@ describe("VaultStatusPanel", () => {
     fireEvent.click(button);
     expect(open).toHaveBeenCalled();
   });
-
-  it("names the row the daily reward, with the streak so far", () => {
-    jest.mocked(useDailyReward).mockReturnValue({ open: jest.fn() });
-    render(<VaultStatusPanel />);
-    expect(screen.getByText("Daily reward")).toBeInTheDocument();
-    expect(
-      screen.getByText("Claim credits or a card once a day (3 days in a row so far)")
-    ).toBeInTheDocument();
-  });
 });

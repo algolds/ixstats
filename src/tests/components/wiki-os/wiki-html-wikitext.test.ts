@@ -8,14 +8,6 @@ function fromHtml(html: string): Descendant[] {
 }
 
 describe("serializePlateToWikitext", () => {
-  it("serializes headings and bold text", () => {
-    const value = fromHtml("<h2>History</h2><p>A <b>bold</b> claim.</p>");
-    const { wikitext, complete } = serializePlateToWikitext(value);
-    expect(complete).toBe(true);
-    expect(wikitext).toContain("== History ==");
-    expect(wikitext).toContain("'''bold'''");
-  });
-
   it("emits atomic node wikitext verbatim and reports complete", () => {
     const value = fromHtml("<p>Before</p>");
     // simulate an inserted template node

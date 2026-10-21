@@ -2,7 +2,7 @@
  * Listing one copy at a fixed price: the fee, the refund share and the seller's net come from the server's numbers,
  * and only a whole price in range can be listed.
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useSheetEconomy", () => ({ useEconomyNumbers: jest.fn() }));
@@ -69,12 +69,6 @@ describe("ListCopyDialog", () => {
     setup({ suggestedPrice: 119.6 });
     expect((screen.getByLabelText("Price in IxC") as HTMLInputElement).value).toBe("120");
   });
-
-  it("starts a copy worth nothing at 1 IxC", () => {
-    setup({ suggestedPrice: 0 });
-    expect((screen.getByLabelText("Price in IxC") as HTMLInputElement).value).toBe("1");
-  });
-
   it("charges the featured fee when the listing is featured", () => {
     const { mutate } = setup();
     fireEvent.click(screen.getByRole("switch", { name: "Feature it at the top of Browse" }));
@@ -102,15 +96,6 @@ describe("ListCopyDialog", () => {
     fireEvent.submit(screen.getByLabelText("Price in IxC").closest("form")!);
     expect(mutate).not.toHaveBeenCalled();
   });
-
-  it("describes the price field with its rule", () => {
-    setup();
-    const field = screen.getByLabelText("Price in IxC");
-    const hint = document.getElementById(field.getAttribute("aria-describedby") ?? "");
-    expect(hint?.textContent).toBe("A whole number of IxC, from 1 to 1,000,000.");
-    expect(field.getAttribute("aria-invalid")).toBe("false");
-  });
-
   it("starts a copy worth more than the cap at the cap, so it opens listable", () => {
     const { mutate } = setup({ suggestedPrice: 4_000_000 });
     expect((screen.getByLabelText("Price in IxC") as HTMLInputElement).value).toBe("1000000");

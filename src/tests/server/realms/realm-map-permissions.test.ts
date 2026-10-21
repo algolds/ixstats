@@ -18,11 +18,6 @@ import { geoFeaturesLabelsRouter } from "~/server/api/routers/geo/features/label
 import { realmMapPipelineRouter } from "~/server/api/routers/realms/map-pipeline";
 import { canEditRealmMap, canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
-import {
-  REALM_POWERS,
-  REALM_POWER_DESCRIPTIONS,
-  REALM_POWER_LABELS,
-} from "~/lib/realms/realm-region";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -121,14 +116,6 @@ const LABEL = {
 beforeEach(() => clearTrpcMemoryCache());
 
 describe("the map power", () => {
-  it("is an officer power with a label and a description for the Officers section", () => {
-    expect(REALM_POWERS).toContain("map");
-    expect(REALM_POWER_LABELS.map).toBe("Map");
-    expect(REALM_POWER_DESCRIPTIONS.map).toBe(
-      "Edit the realm's map, borders and labels, and import maps"
-    );
-  });
-
   const realm = { id: EURTH, ownerId: FOUNDER };
   const officers = OFFICERS[EURTH]!;
   const actor = (clerkUserId: string, admin = false) => ({

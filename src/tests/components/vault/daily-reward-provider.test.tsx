@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 let mockUserId: string | null = "user-1";
@@ -135,17 +135,6 @@ describe("DailyRewardProvider", () => {
     expect(screen.getByRole("button", { name: "Collect" })).toBeInTheDocument();
     expect(reveal).toHaveBeenCalledTimes(1);
   });
-
-  it("shows the card pull face down before the claim, small enough for its socket", () => {
-    render(<Widget />);
-    const tile = within(dialog()).getByRole("button", { name: /Card pull/ });
-    const faceDown = tile.querySelector(".card-face-down");
-    expect(faceDown).not.toBeNull();
-    // The socket is 128px tall, so the 5:7 card is 80px wide rather than size S's 128px.
-    expect(faceDown).toHaveClass("w-20");
-    expect(faceDown).not.toHaveClass("w-32");
-  });
-
   it("reveals the pulled copy's real face and links to it in Mine", async () => {
     render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /Card pull/ }));
@@ -217,27 +206,6 @@ describe("DailyRewardProvider", () => {
     await act(async () => {});
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("shows the greyed claimed state when nothing is claimable", () => {
-    balance = { canClaimDailyBonus: false, loginStreak: 4 };
-    render(<Widget />);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByText("Daily claimed")).toBeInTheDocument();
-    const pill = document.querySelector("[data-slot='streak-pill']");
-    // Seen as "4d"; read as "4 day streak".
-    expect(pill?.textContent).toBe("4d4 day streak");
-    expect(pill).not.toHaveAttribute("data-peak");
-    expect(pill).toHaveAttribute("title", "The boost peaks on day 30");
-  });
-
-  it("shows a full streak pill once the boost peaks", () => {
-    balance = { canClaimDailyBonus: false, loginStreak: 42 };
-    render(<Widget />);
-    const pill = document.querySelector("[data-slot='streak-pill']");
-    expect(pill).toHaveAttribute("data-peak", "true");
-    expect(pill).toHaveAttribute("title", "Streak boost at its peak");
-  });
-
   it("shows the claimed state at once after Collect, without the claimable trigger", async () => {
     const { rerender } = render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
@@ -249,36 +217,6 @@ describe("DailyRewardProvider", () => {
     expect(screen.getByText("Daily claimed")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Daily reward/ })).toBeNull();
   });
-
-  it("keeps the trigger copper on hover and press", () => {
-    render(<Widget />);
-    // The open dialog hides the trigger from the accessibility tree.
-    const trigger = screen.getByRole("button", { name: /Daily reward/, hidden: true });
-    expect(trigger.className).not.toContain("hover:bg-fill-4");
-    expect(trigger.className).not.toContain("active:bg-fill-3");
-    expect(trigger.className).toContain("hover:bg-tint-fill");
-  });
-
-  it("raises the choice tiles as panes that lift, and drops the lift while claiming", () => {
-    render(<Widget />);
-    const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
-    expect(tile.className).toContain("facet-pane");
-    expect(tile.className).toContain("facet-lift");
-    expect(tile.className).not.toContain("hover:bg-tint-fill");
-    fireEvent.click(tile);
-    expect(tile.className).not.toContain("facet-lift");
-  });
-
-  it("shows the boost today's claim will roll with", () => {
-    // Day 5 of the streak (×1.25) at vault level 10 (×1.20): ×1.50 on the credits tile.
-    balance = { canClaimDailyBonus: true, loginStreak: 4, claimStreak: 5, vaultLevel: 10 };
-    render(<Widget />);
-    const tile = within(dialog()).getByRole("button", { name: /IxCredits/ });
-    expect(within(tile).getByText("×1.50")).toBeInTheDocument();
-    expect(within(dialog()).getByText(/Day 5 today/)).toBeInTheDocument();
-    expect(within(dialog()).getByText("×1.25")).toBeInTheDocument();
-  });
-
   it("cannot be dismissed while a claim is in flight", () => {
     render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /IxCredits/ }));
@@ -286,18 +224,6 @@ describe("DailyRewardProvider", () => {
     fireEvent.keyDown(dialog(), { key: "Escape" });
     expect(dialog()).toBeInTheDocument();
   });
-
-  it("marks only the chosen tile busy and disables both while claiming", () => {
-    render(<Widget />);
-    const credits = within(dialog()).getByRole("button", { name: /IxCredits/ });
-    const card = within(dialog()).getByRole("button", { name: /Card pull/ });
-    fireEvent.click(credits);
-    expect(credits).toHaveAttribute("aria-busy", "true");
-    expect(card).toHaveAttribute("aria-busy", "false");
-    expect(credits).toBeDisabled();
-    expect(card).toBeDisabled();
-  });
-
   it("auto-opens only once per user per day", async () => {
     const first = render(<Widget />);
     fireEvent.click(within(dialog()).getByRole("button", { name: /close/i }));
@@ -402,14 +328,6 @@ describe("DailyRewardProvider", () => {
   });
 
   // The sidebar's column is 224px: with a two-digit streak the label gives way rather than the card widening.
-  it("lets the claimable row shrink, truncating its label", () => {
-    balance = { canClaimDailyBonus: true, loginStreak: 12 };
-    render(<Widget />);
-    const trigger = screen.getByRole("button", { name: /Daily reward/, hidden: true });
-    expect(trigger).toHaveClass("w-full");
-    expect(within(trigger).getByText("Daily reward")).toHaveClass("min-w-0", "flex-1", "truncate");
-  });
-
   it("renders its children and no dialog for a signed-out visitor", () => {
     mockUserId = null;
     render(

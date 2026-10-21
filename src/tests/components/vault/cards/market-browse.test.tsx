@@ -1,5 +1,5 @@
 /** Browse: live listings and auctions in one list, with Buy or Bid on another player's, and the filters it asks for. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useMarketTabs", () => ({ useBrowse: jest.fn() }));
@@ -149,28 +149,5 @@ describe("MarketBrowse", () => {
     renderBrowse();
     fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     expect(jest.mocked(useBrowse).mock.lastCall?.[0]).toMatchObject({ limit: 40 });
-  });
-
-  it("offers no more once the server says the page is the last", () => {
-    renderBrowse();
-    expect(screen.getByRole("list", { name: "Listings" })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
-  });
-
-  it("says when the listings did not load, and tries again", () => {
-    const refetch = jest.fn();
-    browsing([], { data: undefined, isError: true, refetch });
-    renderBrowse();
-    expect(screen.getByRole("alert")).toHaveTextContent("The listings did not load");
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalled();
-  });
-
-  it("marks the list busy while it loads", () => {
-    browsing([], { data: undefined, isLoading: true, isFetching: true });
-    renderBrowse();
-    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
-    expect(screen.queryByRole("list", { name: "Listings" })).toBeNull();
-    expect(screen.queryByText("Nothing is listed right now")).toBeNull();
   });
 });

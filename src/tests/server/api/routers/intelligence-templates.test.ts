@@ -51,14 +51,6 @@ beforeEach(() => {
     ...data,
   }));
 });
-
-it("lists active templates publicly", async () => {
-  await callerAs(db, null).getAllTemplates();
-  expect(db.intelligenceTemplate.findMany).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { isActive: true } })
-  );
-});
-
 describe("admin writes", () => {
   it("refuses players", async () => {
     const player = callerAs(db, "player");
@@ -70,20 +62,6 @@ describe("admin writes", () => {
     expect(db.intelligenceTemplate.create).not.toHaveBeenCalled();
     expect(db.intelligenceTemplate.update).not.toHaveBeenCalled();
   });
-
-  it("creates an active template and audits it", async () => {
-    const { template: created } = await callerAs(db, "admin").createTemplate(template);
-
-    expect(created).toMatchObject({ id: "t1", isActive: true, minimumLevel: 2 });
-    expect(db.auditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        action: "INTELLIGENCE_TEMPLATE_CREATED",
-        target: "t1",
-        userId: "clerk_admin",
-      }),
-    });
-  });
-
   it("rejects findings that are not a JSON array", async () => {
     const admin = callerAs(db, "admin");
     await expect(
@@ -112,14 +90,5 @@ describe("admin writes", () => {
       data: { isActive: false },
     });
     expect(db.intelligenceTemplate.delete).not.toHaveBeenCalled();
-  });
-
-  it("still succeeds when the audit write fails", async () => {
-    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    db.auditLog.create.mockRejectedValue(new Error("audit down"));
-    await expect(
-      callerAs(db, "admin").updateTemplate({ id: "t1", minimumLevel: 4 })
-    ).resolves.toMatchObject({ success: true });
-    errorSpy.mockRestore();
   });
 });

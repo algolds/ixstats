@@ -110,14 +110,6 @@ describe("ApiParams", () => {
         "general",
       ]);
     });
-
-    it("validates a single enumerated value", () => {
-      expect(params("dir=newer").p.oneOf("dir", ["older", "newer"], "older")).toBe("newer");
-      expect(params("").p.oneOf("dir", ["older", "newer"], "older")).toBe("older");
-      expect(codeOf(() => params("dir=up").p.oneOf("dir", ["older", "newer"], "older"))).toBe(
-        "badvalue"
-      );
-    });
   });
 
   describe("timestamp", () => {

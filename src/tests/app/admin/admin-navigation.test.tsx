@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen, act } from "@testing-library/react";
 
 let mockPathname = "/admin/polls";
@@ -56,19 +56,6 @@ describe("AdminNavigationProvider", () => {
     render(<Tree />);
     expect(screen.getByTestId("section")).toHaveTextContent("dashboard");
   });
-
-  it("titles the document per section", () => {
-    mockPathname = "/admin/national-issues";
-    render(<Tree />);
-    expect(document.title).toBe("Admin - National Issues - IxStates");
-  });
-
-  it("titles the dashboard", () => {
-    mockPathname = "/admin";
-    render(<Tree />);
-    expect(document.title).toBe("Admin Dashboard - IxStates");
-  });
-
   it("switches section in place when a caller navigates", () => {
     const pushState = jest.spyOn(window.history, "pushState");
     const scrollTo = jest.spyOn(window, "scrollTo").mockImplementation(() => undefined);

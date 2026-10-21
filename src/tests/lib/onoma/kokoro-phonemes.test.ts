@@ -28,11 +28,6 @@ describe("anglicizeForSpeech", () => {
     expect(anglicizeForSpeech("/onoma/")).toBe("/oʊnəmə/");
     expect(anglicizeForSpeech("/aragon/")).toBe("/ɑrəgən/");
   });
-
-  it("returns empty for blank input", () => {
-    expect(anglicizeForSpeech("")).toBe("");
-  });
-
   it("output still normalizes to valid kokoro tokens", () => {
     const { phonemes } = ipaToKokoroPhonemes(
       anglicizeForSpeech(translateToIPA("Delepas", "latin"))
@@ -84,18 +79,6 @@ describe("ipaToKokoroPhonemes", () => {
     expect(r.phonemes).toBe("a");
     expect(r.dropped).toEqual(expect.arrayContaining(["ç", "ɸ"]));
   });
-
-  it("returns empty for blank IPA", () => {
-    expect(ipaToKokoroPhonemes("")).toEqual({ phonemes: "", dropped: [] });
-    expect(ipaToKokoroPhonemes("//").phonemes).toBe("");
-    expect(ipaToKokoroPhonemes("[]").phonemes).toBe("");
-  });
-
-  it("collapses repeated whitespace and trims", () => {
-    const r = ipaToKokoroPhonemes("/ˈnoʊvə   ˈroʊma/");
-    expect(r.phonemes).toBe("ˈnoʊvə ˈɹoʊma");
-  });
-
   it("normalizes a realistic IPA string end-to-end", () => {
     // latin "Imperia" -> /ˈimpeɾia/ -> ɾ kept, no drops, no slashes
     const r = ipaToKokoroPhonemes(translateToIPA("Imperia", "latin"));

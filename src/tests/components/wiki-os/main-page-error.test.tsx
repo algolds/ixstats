@@ -59,13 +59,6 @@ beforeEach(() => {
 });
 
 describe("WikiOSMainPage when its data fails", () => {
-  it("shows skeletons while the answer is on its way, with no error", () => {
-    render(<WikiOSMainPage />);
-
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(lastProps()).toMatchObject({ isLoadingRecent: true, isLoadingAlmanac: true });
-  });
-
   it("says it could not be loaded, offers a retry, and stops the skeletons", () => {
     mockMain = { data: undefined, error: { message: "Too many requests" } };
     render(<WikiOSMainPage />);

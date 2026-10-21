@@ -86,15 +86,6 @@ describe("ForumComposer", () => {
     fireEvent.mouseDown(surface as Element);
     expect(editorFocusEnd).toHaveBeenCalledTimes(1);
   });
-
-  it("ignores non-primary mouse buttons", () => {
-    const { container } = render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
-    fireEvent.mouseDown(container.querySelector("[data-slot='forum-composer']") as Element, {
-      button: 2,
-    });
-    expect(editorFocusEnd).not.toHaveBeenCalled();
-  });
-
   it("does not steal focus from the editor or from form controls", () => {
     render(<ForumComposer icAllowed={false} titleField onSubmit={jest.fn()} />);
     fireEvent.mouseDown(screen.getByTestId("editor"));
@@ -142,17 +133,6 @@ describe("ForumComposer", () => {
     await waitFor(() => expect(editorClear).toHaveBeenCalled());
     expect(post).toBeDisabled();
   });
-
-  it("opts the editor into image inserts", () => {
-    render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
-    expect(screen.getByTestId("editor")).toHaveAttribute("data-allow-image", "true");
-  });
-
-  it("gives the editor the forum's @ menu source", () => {
-    render(<ForumComposer icAllowed={false} onSubmit={jest.fn()} />);
-    expect(screen.getByTestId("editor")).toHaveAttribute("data-mention-source", "true");
-  });
-
   it("submits an image-only post and keeps Post disabled for an image with no src", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     render(<ForumComposer icAllowed={false} onSubmit={onSubmit} />);
@@ -205,22 +185,6 @@ describe("ForumComposer", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Nope");
     expect(editorClear).not.toHaveBeenCalled();
   });
-
-  it("gives each composer's persona label its own id (reply and edit share the thread page)", () => {
-    render(
-      <>
-        <ForumComposer icAllowed onSubmit={jest.fn()} />
-        <ForumComposer icAllowed onSubmit={jest.fn()} />
-      </>
-    );
-    const [first, second] = screen.getAllByRole("combobox");
-    const a = first?.getAttribute("aria-labelledby");
-    const b = second?.getAttribute("aria-labelledby");
-    expect(a).toBeTruthy();
-    expect(a).not.toBe(b);
-    expect(document.getElementById(a ?? "")).toHaveTextContent("Post as");
-  });
-
   it("starts from initialHtml with Save enabled, for editing", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     render(

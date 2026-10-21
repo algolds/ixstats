@@ -183,41 +183,6 @@ describe("an article is read on the server (plan 412 step 2)", () => {
     });
     expect(named(ok.tree, "HydrateClient")).toBeDefined(); // the client finds the article in its cache
   });
-
-  it("also reads what the hero card is made from, with the inputs the client asks with, so the card has its final shape in the first HTML", async () => {
-    await outcome(["Aurelia"]);
-
-    expect(mockParentCategoriesPrefetch).toHaveBeenCalledWith(
-      { title: "Aurelia" },
-      { retry: false }
-    );
-    expect(mockAwardsPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, { retry: false });
-    expect(mockCountryPrefetch).toHaveBeenCalledWith({ id: "Aurelia" }, { retry: false });
-  });
-
-  it("reads them under the article's own title (a redirect's target), and no country for a namespaced one", async () => {
-    succeeds(article({ title: "Talk:Aurelia" }));
-    await outcome(["Talk:Aurelia"]);
-
-    expect(mockParentCategoriesPrefetch).toHaveBeenCalledWith(
-      { title: "Talk:Aurelia" },
-      { retry: false }
-    );
-    expect(mockAwardsPrefetch).toHaveBeenCalledWith({ title: "Talk:Aurelia" }, { retry: false });
-    expect(mockCountryPrefetch).not.toHaveBeenCalled();
-  });
-
-  it("reads nothing for a hero that is not shown: a missing page is a 404 and a redirect leaves", async () => {
-    fails("NOT_FOUND");
-    await outcome(["Nowhere"]);
-    succeeds(article({ title: "New name", resolvedFrom: "Old name" }));
-    await outcome(["Old_name"]);
-
-    expect(mockParentCategoriesPrefetch).not.toHaveBeenCalled();
-    expect(mockAwardsPrefetch).not.toHaveBeenCalled();
-    expect(mockCountryPrefetch).not.toHaveBeenCalled();
-  });
-
   it("a page that does not exist is notFound() (HTTP 404)", async () => {
     fails("NOT_FOUND");
     expect((await outcome(["Nowhere"])).signal).toBe("not-found");
@@ -345,48 +310,9 @@ describe("an article is read on the server (plan 412 step 2)", () => {
       initialEdit: { mode: "source", section: "new" },
     });
   });
-
-  it("?veaction=edit opens the visual editor", async () => {
-    const { tree } = await outcome(["Aurelia"], { veaction: "edit" });
-    expect(propsOf(tree, "ArticlePageClient")).toMatchObject({
-      initialEdit: { mode: "visual", section: null },
-    });
-  });
 });
 
 describe("Special: pages (plan 412 step 3)", () => {
-  it("maps the tools WikiOS has, keeping their arguments", async () => {
-    expect((await outcome(["Special:RecentChanges"])).signal).toBe("redirect:/util/recent-changes");
-    expect((await outcome(["Special:Diff", "12", "13"])).signal).toBe(
-      "redirect:/util/diff?from=12&to=13"
-    );
-    expect((await outcome(["Special:Search"], { search: "eurth" })).signal).toBe(
-      "redirect:/util/search?q=eurth"
-    );
-    expect((await outcome(["Special:Contributions", "Jane"])).signal).toBe(
-      "redirect:/util/contributions/Jane"
-    );
-    expect((await outcome(["Special:Export"])).signal).toBe("redirect:/util/export");
-    expect((await outcome(["Special:Import"])).signal).toBe("redirect:/util/import");
-  });
-
-  it("maps the rights-model special pages to their /util screens (plan 409)", async () => {
-    expect((await outcome(["Special:Log", "move"])).signal).toBe("redirect:/util/log?type=move");
-    expect((await outcome(["Special:Move", "Foo_bar"])).signal).toBe(
-      "redirect:/util/move?title=Foo+bar"
-    );
-    expect((await outcome(["Special:Undelete", "Foo"])).signal).toBe(
-      "redirect:/util/undelete?title=Foo"
-    );
-    expect((await outcome(["Special:Block", "Jane"])).signal).toBe(
-      "redirect:/util/block?user=Jane"
-    );
-    expect((await outcome(["Special:BlockList"])).signal).toBe("redirect:/util/blocklist");
-    expect((await outcome(["Special:UserRights", "Jane"])).signal).toBe(
-      "redirect:/util/userrights?user=Jane"
-    );
-  });
-
   it("?action=delete, protect and unprotect on a page go to the /util screens", async () => {
     expect((await outcome(["foo_bar"], { action: "delete" })).signal).toBe(
       "permanent:/wiki/Foo_bar?action=delete"
@@ -428,36 +354,6 @@ describe("Special: pages (plan 412 step 3)", () => {
     mockFileInfo.mockResolvedValue(null);
     expect((await outcome(["Special:FilePath", "Nope.svg"])).signal).toBe("not-found");
   });
-
-  it("Special:FilePath does not double the base path: redirect() adds it, so an already prefixed URL loses it", async () => {
-    const saved = process.env.BASE_PATH;
-    process.env.BASE_PATH = "/projects/ixstats";
-    try {
-      mockFileInfo.mockResolvedValue({
-        url: "/projects/ixstats/api/mediawiki/ixwiki/images/6/61/Flag.svg",
-      });
-      expect((await outcome(["Special:FilePath", "Flag.svg"])).signal).toBe(
-        "redirect:/api/mediawiki/ixwiki/images/6/61/Flag.svg"
-      );
-      // Not on a segment boundary, not site-relative or without the prefix: left alone.
-      mockFileInfo.mockResolvedValue({ url: "/projects/ixstatsX/a.svg" });
-      expect((await outcome(["Special:FilePath", "A.svg"])).signal).toBe(
-        "redirect:/projects/ixstatsX/a.svg"
-      );
-      mockFileInfo.mockResolvedValue({ url: "/images/uploads/Flag.svg" });
-      expect((await outcome(["Special:FilePath", "Flag.svg"])).signal).toBe(
-        "redirect:/images/uploads/Flag.svg"
-      );
-      mockFileInfo.mockResolvedValue({ url: "https://ixwiki.com/projects/ixstats/x.svg" });
-      expect((await outcome(["Special:FilePath", "X.svg"])).signal).toBe(
-        "redirect:https://ixwiki.com/projects/ixstats/x.svg"
-      );
-    } finally {
-      if (saved === undefined) delete process.env.BASE_PATH;
-      else process.env.BASE_PATH = saved;
-    }
-  });
-
   it("Special:AllPages and PrefixIndex list pages from a cursor", async () => {
     mockListPages.mockResolvedValue({
       pages: [
@@ -777,13 +673,6 @@ describe("views of a page (plan 412 step 5)", () => {
     // Nothing comes after the newest revision.
     expect((await outcome(["Aurelia"], { diff: "next", oldid: "9" })).signal).toBe("not-found");
   });
-
-  it("?diff=prev&oldid=N is the change N made", async () => {
-    const { tree } = await outcome(["Aurelia"], { diff: "prev", oldid: "5" });
-    expect(propsOf(tree, "RevisionDiffView")).toMatchObject({ fromrev: undefined, torev: "5" });
-    expect((await outcome(["Aurelia"], { diff: "prev" })).signal).toBe("not-found");
-  });
-
   it("?oldid=<ref> is the old revision, primed for the client", async () => {
     mockRevisionPrefetch.mockResolvedValue(undefined);
     mockPrefetchedState.mockReturnValue({

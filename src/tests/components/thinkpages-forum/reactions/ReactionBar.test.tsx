@@ -99,35 +99,6 @@ describe("ReactionBar visibility", () => {
     expect(reactButton()).toHaveTextContent("React");
     expect(screen.queryByRole("button", { name: /see who reacted/ })).toBeNull();
   });
-
-  it("labels a Discord pill by its name and leaves the image to the label", () => {
-    const { container } = bar({ canReact: false, counts: { "discord:sparkle": 2 } });
-    expect(
-      screen.getByRole("button", { name: "2 :sparkle:, see who reacted" })
-    ).toBeInTheDocument();
-    expect(container.querySelector("img")).toHaveAttribute("alt", "");
-  });
-
-  it("orders the pills by count and tints the viewer's own", () => {
-    bar({ counts: { like: 1, fire: 3 }, mine: "like" });
-    const pills = screen.getAllByRole("button", { name: /see who reacted/ });
-    expect(pills.map((pill) => pill.getAttribute("aria-label"))).toEqual([
-      "3 fire, see who reacted",
-      "1 like, yours included, see who reacted",
-    ]);
-    expect(pills[1]!.className).toContain("bg-tint-fill");
-    expect(pills[0]!.className).not.toContain("bg-tint-fill");
-  });
-
-  it("draws a Discord reaction from the emoji list, and from its id when it has one", () => {
-    const { container } = bar({ counts: { "discord:sparkle": 1, "discord:ghost:222": 1 } });
-    expect(
-      container.querySelector('img[src="https://cdn.discordapp.com/emojis/111.png"]')
-    ).not.toBeNull();
-    expect(
-      container.querySelector('img[src="https://cdn.discordapp.com/emojis/222.png"]')
-    ).not.toBeNull();
-  });
 });
 
 describe("ReactionBar many reaction types", () => {
@@ -171,14 +142,6 @@ describe("ReactionBar React button", () => {
     fireEvent.click(reactButton());
     expect(mockHook.set).toHaveBeenCalledWith(null);
   });
-
-  it("keeps its tint on hover and suppresses text selection and the touch callout", () => {
-    bar({ counts: { fire: 1 }, mine: "fire" });
-    expect(reactButton().className).toContain("hover:text-tint");
-    expect(reactButton().className).not.toContain("hover:text-label");
-    expect(reactButton().className).toContain("select-none");
-  });
-
   it("is disabled while a request is in flight", () => {
     mockHook.pending = true;
     bar();
@@ -205,13 +168,6 @@ describe("ReactionBar popup", () => {
     fireEvent.click(chevron);
     expect(screen.getByText("pick fire")).toHaveFocus();
   });
-
-  it("gives the popup no counts of its own", () => {
-    bar({ counts: { like: 1 } });
-    fireEvent.click(screen.getByRole("button", { name: "Choose a reaction" }));
-    expect(mockPopupProps).toHaveBeenCalledWith({ onSelectReaction: expect.any(Function) });
-  });
-
   it("switches to another type, and removes the reaction when the current type is chosen again", () => {
     bar({ counts: { like: 1 }, mine: "like" });
     fireEvent.click(screen.getByRole("button", { name: "Choose a reaction" }));

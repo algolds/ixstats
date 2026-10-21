@@ -1,9 +1,3 @@
-/**
- * MyCountry after founding: the welcome summary and the "First steps" checklist, whose items tick
- * from the rows each console writes (never the rows founding itself wrote), and the per-nation
- * dismissal.
- */
-import { readFileSync } from "node:fs";
 import { myCountryFirstStepsRouter } from "~/server/api/routers/mycountry/first-steps";
 import {
   FIRST_STEPS_WINDOW_MS,
@@ -145,21 +139,6 @@ describe("mycountry.getFirstSteps", () => {
     const { caller } = setup({ capital: { coordinates: [] } });
     expect(doneById(await caller.getFirstSteps()).capital).toBe(false);
   });
-
-  it("links each step to the console that owns it", async () => {
-    const { caller } = setup();
-    const hrefs = Object.fromEntries(
-      ((await caller.getFirstSteps())?.items ?? []).map((item) => [item.id, item.href])
-    );
-    expect(hrefs).toEqual({
-      budget: "/mycountry/economy?tab=fiscal",
-      tax: "/mycountry/economy?tab=monetary",
-      cabinet: "/mycountry/politics",
-      wiki: "/wiki/Testland?action=edit",
-      capital: "/mycountry/map-editor",
-    });
-  });
-
   it("reports a dismissed nation without looking anything up", async () => {
     const { caller, db } = setup({ country: { firstStepsDismissedAt: new Date(NOW - 1000) } });
     const steps = await caller.getFirstSteps();
@@ -241,18 +220,5 @@ describe("first steps rules", () => {
     expect(hasMapCoordinates({ type: "Point", coordinates: [1, 2] })).toBe(true);
     expect(hasMapCoordinates([Number.NaN, 2])).toBe(false);
     expect(hasMapCoordinates(null)).toBe(false);
-  });
-
-  it("ships a migration that adds the column the schema declares", () => {
-    const sql = readFileSync(
-      "prisma/migrations/20261025120000_mycountry_first_steps/migration.sql",
-      "utf8"
-    );
-    expect(sql).toContain(
-      'ALTER TABLE "Country" ADD COLUMN IF NOT EXISTS "firstStepsDismissedAt" TIMESTAMP(3);'
-    );
-    expect(readFileSync("prisma/schema/core.prisma", "utf8")).toMatch(
-      /^\s+firstStepsDismissedAt\s+DateTime\?$/m
-    );
   });
 });

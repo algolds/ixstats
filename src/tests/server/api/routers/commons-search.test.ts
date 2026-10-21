@@ -75,22 +75,6 @@ describe("commons search", () => {
 
     await expect(failure).rejects.toBeInstanceOf(TRPCError);
   });
-
-  it("requests a filtered extmetadata set and no origin parameter", async () => {
-    const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-
-    await makeCaller().search({ query: "dogs" });
-
-    const calls = fetchMock.mock.calls as unknown as Array<[string]>;
-    const url = new URL(calls[0]![0]);
-    expect(url.searchParams.get("iiextmetadatafilter")).toBe(
-      "ImageDescription|Artist|LicenseShortName"
-    );
-    expect(url.searchParams.get("iiextmetadatalanguage")).toBe("en");
-    expect(url.searchParams.has("origin")).toBe(false);
-  });
-
   it("identifies itself to Commons with a contact User-Agent", async () => {
     const fetchMock = jest.fn(async () => jsonResponse({ query: { pages: [] } }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;

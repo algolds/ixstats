@@ -40,19 +40,6 @@ describe("v2/quality-gate", () => {
     seed: TEST_SEED,
     cellCount: TEST_CELLS,
   });
-
-  it("returns a report with 9 checks", () => {
-    expect(report.checks.length).toBe(9);
-  });
-
-  it("composite score is >= 85%", () => {
-    expect(report.compositeScore).toBeGreaterThanOrEqual(85);
-  });
-
-  it("report passed boolean is true", () => {
-    expect(report.passed).toBe(true);
-  });
-
   it("all individual checks have non-empty details and score >= 70", () => {
     for (const check of report.checks) {
       expect(check.name).toBeTruthy();

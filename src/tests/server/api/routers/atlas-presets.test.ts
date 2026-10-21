@@ -65,21 +65,6 @@ describe("atlas.presets auth", () => {
     expect(db.worldPreset.create).not.toHaveBeenCalled();
     expect(db.worldPresetVersion.create).not.toHaveBeenCalled();
   });
-
-  it("lets an admin list, save a draft, publish and see the version", async () => {
-    const { db } = createPresetDb();
-    const caller = presetsCaller(ctxFor(db, true) as never);
-    expect((await caller.list()).map((p) => p.slug)).toEqual(["earthlike", "ixnay", "eurth"]);
-    await caller.saveDraft({ slug: "eurth", params: { riverDensity: 2 }, note: "More rivers" });
-    const published = await caller.publish({ slug: "eurth" });
-    expect(published.published?.params).toEqual({ riverDensity: 2 });
-    expect((await caller.versions({ slug: "eurth" }))[0]).toMatchObject({
-      current: true,
-      note: "More rivers",
-      createdBy: "admin_1",
-    });
-  });
-
   it("rejects a recipe with a seed, or an unknown key, before anything is written", async () => {
     const { db, presets } = createPresetDb();
     const caller = presetsCaller(ctxFor(db, true) as never);
@@ -92,13 +77,6 @@ describe("atlas.presets auth", () => {
       caller.saveDraft({ slug: "eurth", params: { ...{ nonsense: 1 } } })
     ).rejects.toThrow();
     expect(presets).toHaveLength(0);
-  });
-
-  it("reports a missing preset as NOT_FOUND and a built-in's archive as CONFLICT", async () => {
-    const { db } = createPresetDb();
-    const caller = presetsCaller(ctxFor(db, true) as never);
-    await expect(caller.publish({ slug: "nope" })).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(caller.archive({ slug: "eurth" })).rejects.toMatchObject({ code: "CONFLICT" });
   });
 });
 

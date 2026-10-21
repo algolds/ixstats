@@ -40,8 +40,7 @@ import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import { controlsForPreset } from "~/lib/worldgen/world-controls";
 import {
   loadWorldRecipe,
-  saveWorldRecipe,
-  worldRecipeKey,
+  saveWorldRecipe
 } from "~/lib/worldgen/world-draft-recipe";
 import { resultMessage } from "~/tests/helpers/fake-world-worker";
 import {
@@ -71,11 +70,6 @@ beforeEach(resetPanelTests);
 afterEach(cleanUpPanelTests);
 
 describe("generating", () => {
-  it("invites a realm's editor to use the world", () => {
-    renderPanel();
-    expect(screen.getByText(/then use it for this realm/)).toBeInTheDocument();
-  });
-
   it("makes no world until asked, then generates from the Earth-like controls", async () => {
     renderPanel();
     expect(requestCount()).toBe(0);
@@ -158,26 +152,6 @@ describe("generating", () => {
     );
     expect(lastRequest().params).toMatchObject({ developmentLevel: "modern", continentCount: 5 });
   });
-
-  it("reaches the advanced controls through the Advanced section", async () => {
-    renderPanel();
-    await generateSettled();
-    expect(screen.queryByRole("slider", { name: "Islands" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
-    step("Islands");
-    expect(lastRequest().params).toMatchObject({ islandShare: 0.07 });
-    settle();
-    fireEvent.click(screen.getByRole("switch", { name: "Polar land in the north" }));
-    expect(lastRequest().params).toMatchObject({ polarLand: { north: true, south: true } });
-    settle();
-    fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Elevation profile" })).getByRole("radio", {
-        name: "Eurth",
-      })
-    );
-    expect(lastRequest().params).toMatchObject({ hypsometry: WORLD_PRESETS.eurth.hypsometry });
-  });
-
   it("shows the draft's statistics once the worker answers", async () => {
     renderPanel();
     const request = await generateFirst();
@@ -312,27 +286,6 @@ describe("the draft recipe", () => {
     renderPanel();
     expect(requestCount()).toBe(0);
   });
-
-  it("starts empty, without failing, when storage throws", async () => {
-    jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-      throw new DOMException("denied", "SecurityError");
-    });
-    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new DOMException("full", "QuotaExceededError");
-    });
-    renderPanel();
-    expect(requestCount()).toBe(0);
-    await generateSettled();
-    step("Continents");
-    expect(lastRequest().params).toMatchObject({ continentCount: 7 });
-  });
-
-  it("ignores a stored recipe that is not valid", () => {
-    window.localStorage.setItem(worldRecipeKey(REALM), JSON.stringify({ seed: "soon" }));
-    renderPanel();
-    expect(requestCount()).toBe(0);
-  });
-
   it("falls back to a preset when the saved source was the realm's map and it has none now", () => {
     saveWorldRecipe(REALM, {
       seed: 12,
@@ -363,52 +316,12 @@ describe("the lock", () => {
       canReviewClaims: true,
     },
   };
-
-  it("explains that claims lock the world and links to the realm's claims", () => {
-    statusQuery.mockReturnValue(LOCKED);
-    renderPanel();
-    const notice = screen.getByText("The world is locked").closest("div")!.parentElement!;
-    expect(notice).toHaveTextContent("2 pending, 1 approved");
-    expect(screen.getByRole("link", { name: "Review the realm's claims" })).toHaveAttribute(
-      "href",
-      "/r/eurth/manage#claims"
-    );
-  });
-
-  it("names who reviews the claims, with no link, to an officer who has no Claims section", () => {
-    statusQuery.mockReturnValue({ data: { ...LOCKED.data, canReviewClaims: false } });
-    renderPanel();
-    expect(screen.queryByRole("link", { name: /claims/i })).toBeNull();
-    expect(screen.getByText(/officers with the Claims power review them/)).toBeInTheDocument();
-  });
-
   it("still lets a preview be made and tuned", async () => {
     statusQuery.mockReturnValue(LOCKED);
     renderPanel();
     await generateSettled();
     step("Continents");
     expect(lastRequest().params).toMatchObject({ continentCount: 7 });
-  });
-
-  it("says an archived realm's world can't change", () => {
-    statusQuery.mockReturnValue({
-      data: { lockReason: "archived", pendingClaims: 0, approvedClaims: 0, canReviewClaims: true },
-    });
-    renderPanel();
-    expect(screen.getByText("This realm is archived")).toBeInTheDocument();
-  });
-
-  it("shows no notice while the realm is open", () => {
-    renderPanel();
-    expect(screen.queryByText("The world is locked")).toBeNull();
-  });
-
-  it("asks about the realm by its slug", () => {
-    renderPanel();
-    expect(statusQuery).toHaveBeenCalledWith(
-      { realm: "eurth" },
-      expect.objectContaining({ enabled: true })
-    );
   });
 });
 

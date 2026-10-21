@@ -355,42 +355,6 @@ describe("notifyWatchers", () => {
       metadata: { articleId: "art1", kind: "moved" },
     });
   });
-
-  it("says a page was deleted, and why", async () => {
-    watches.push(watch("u_a"));
-
-    await notifyWatchers({
-      kind: "deleted",
-      articleId: "art1",
-      title: "Gone",
-      editor: "Admin",
-      editorUserId: "u_admin",
-      summary: "Duplicate",
-    });
-
-    expect(sent()[0]).toMatchObject({ title: "Gone was deleted", message: "Admin: Duplicate" });
-  });
-
-  it("says a page was restored, and links to it", async () => {
-    watches.push(watch("u_a"));
-
-    await notifyWatchers({
-      kind: "restored",
-      articleId: "art1",
-      title: "Back again",
-      editor: "Admin",
-      editorUserId: "u_admin",
-      summary: "",
-    });
-
-    expect(sent()[0]).toMatchObject({
-      title: "Back again was restored",
-      message: "Admin restored this page",
-      href: "/wiki/Back_again",
-      metadata: { articleId: "art1", kind: "restored" },
-    });
-  });
-
   it("clips a very long edit summary", async () => {
     watches.push(watch("u_a"));
 

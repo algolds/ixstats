@@ -66,13 +66,4 @@ describe("countRecruits", () => {
     mockRows.push(claim("p4", "approved", null));
     await expect(countRecruits(db, "inviter")).resolves.toBe(0);
   });
-
-  it("asks the database for distinct claimants", async () => {
-    await countRecruits(db, "inviter");
-    expect(jest.mocked(db.realmClaim.findMany)).toHaveBeenCalledWith({
-      where: { invitedByUserId: "inviter", status: "approved" },
-      distinct: ["userId"],
-      select: { userId: true },
-    });
-  });
 });

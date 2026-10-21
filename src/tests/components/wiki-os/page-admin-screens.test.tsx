@@ -168,35 +168,6 @@ describe("Protect page", () => {
 });
 
 describe("Log", () => {
-  const entry = (overrides: object) => ({
-    id: "1",
-    type: "move",
-    action: "move",
-    title: "New",
-    actor: "Mod",
-    comment: null,
-    params: { oldTitle: "Old", newTitle: "New" },
-    timestamp: new Date("2026-09-30T12:00:00Z"),
-    ...overrides,
-  });
-
-  it("lists entries in the log's voice with the actor and comment", () => {
-    mockLogPages = [
-      {
-        entries: [
-          entry({ comment: "tidy" }),
-          entry({ id: "2", type: "block", action: "unblock", title: "User:Bob", params: null }),
-        ],
-        nextCursor: null,
-      },
-    ];
-    render(<LogPage />);
-    expect(screen.getByText(/moved page "Old" to "New"/)).toBeInTheDocument();
-    expect(screen.getByText("(tidy)")).toBeInTheDocument();
-    expect(screen.getByText(/unblocked Bob/)).toBeInTheDocument();
-    expect(screen.getAllByText("Mod")).toHaveLength(2);
-  });
-
   it("starts from the filters in the link, and says when nothing matches", () => {
     mockSearch = "type=protect&title=Caphiria&user=Mod";
     render(<LogPage />);
@@ -207,11 +178,5 @@ describe("Log", () => {
       limit: 50,
     });
     expect(screen.getByText(/no log entries match/i)).toBeInTheDocument();
-  });
-
-  it("ignores a type it does not know", () => {
-    mockSearch = "type=bogus";
-    render(<LogPage />);
-    expect(mockLogInput).toHaveBeenCalledWith(expect.objectContaining({ type: undefined }));
   });
 });

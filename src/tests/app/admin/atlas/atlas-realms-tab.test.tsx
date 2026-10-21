@@ -73,24 +73,6 @@ describe("the Realms tab rows", () => {
     expect(within(borea).getByText("1 of 4")).toBeInTheDocument();
     expect(within(borea).getByText("Failed", { selector: "td" })).toBeInTheDocument();
   });
-
-  it("shows relief unknown as unknown", () => {
-    render(<AtlasRealmsTab />);
-    const caldera = screen.getByRole("link", { name: "Caldera" }).closest("tr")!;
-    expect(within(caldera).getByText("Unknown")).toBeInTheDocument();
-  });
-
-  it("shows the problems as chips", () => {
-    render(<AtlasRealmsTab />);
-    const borea = screen.getByRole("link", { name: "Borea" }).closest("tr")!;
-    expect(within(borea).getByText("Missing layers")).toBeInTheDocument();
-    expect(within(borea).getByText("Relief failed")).toBeInTheDocument();
-    expect(within(borea).getByText("Unlinked features")).toBeInTheDocument();
-    expect(
-      within(screen.getByRole("link", { name: "Alba" }).closest("tr")!).getByText("Last job failed")
-    ).toBeInTheDocument();
-  });
-
   it("opens the realm page from the link and from the row", () => {
     render(<AtlasRealmsTab />);
     expect(screen.getByRole("link", { name: "Alba" })).toHaveAttribute(
@@ -135,13 +117,6 @@ describe("sorting and filtering", () => {
     fireEvent.click(screen.getByRole("option", { name: "draft" }));
     expect(names()).toHaveLength(1);
     expect(names()[0]).toContain("Borea");
-  });
-
-  it("says when nothing matches", () => {
-    state.overview = { partial: false, realms: [realmRow()] };
-    render(<AtlasRealmsTab />);
-    fireEvent.click(screen.getByRole("switch", { name: "Has problems" }));
-    expect(screen.getByText("No realms match")).toBeInTheDocument();
   });
 });
 

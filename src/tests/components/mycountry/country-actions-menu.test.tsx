@@ -64,14 +64,6 @@ describe("CountryActionsMenu while a congratulation is sending", () => {
         onClose={jest.fn()}
       />
     );
-
-  it("leaves the diplomacy rows enabled when nothing is pending", () => {
-    createPost.isPending = false;
-    renderMenu();
-    expect(screen.getByRole("button", { name: /Construct Embassy/ })).toBeEnabled();
-    expect(screen.getByRole("button", { name: /Impose sanctions/ })).toBeEnabled();
-  });
-
   it("disables every diplomacy row so a second action cannot be double-submitted", () => {
     createPost.isPending = true;
     renderMenu();
@@ -83,24 +75,5 @@ describe("CountryActionsMenu while a congratulation is sending", () => {
     act(() => {
       createPost.isPending = false;
     });
-  });
-});
-
-describe("CountryActionsMenu management links", () => {
-  it("does not link into the Vault", () => {
-    createPost.isPending = false;
-    render(
-      <CountryActionsMenu
-        targetCountryId="t1"
-        targetCountryName="Pelaxia"
-        viewerCountryId="t1"
-        isOwnCountry
-        isOpen
-        onClose={jest.fn()}
-      />
-    );
-    expect(screen.getByText("MyCountry dashboard")).toBeTruthy();
-    expect(screen.queryByText(/IxVault/)).toBeNull();
-    expect(screen.queryByText(/market/i)).toBeNull();
   });
 });

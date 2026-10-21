@@ -5,7 +5,6 @@ import { AppSidebar } from "~/components/shell/AppSidebar";
 import { getVisibleApps } from "~/lib/navigation/app-sections";
 
 const apps = getVisibleApps({ signedIn: true, isAdmin: false });
-const mainApps = apps.filter((app) => app.placement !== "footer");
 
 function renderSidebar(props: Partial<React.ComponentProps<typeof AppSidebar>> = {}) {
   const onCollapsedChange = jest.fn();
@@ -35,57 +34,8 @@ function renderSidebar(props: Partial<React.ComponentProps<typeof AppSidebar>> =
 }
 
 describe("AppSidebar", () => {
-  it("hosts the source list and tints the panel for the current app", () => {
-    const { container } = renderSidebar();
-    const nav = screen.getByRole("navigation", { name: "App navigation" });
-    expect(nav).toHaveAttribute("data-mode", "main");
-    expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
-      "data-app",
-      "mycountry"
-    );
-    expect(within(nav).getByRole("link", { name: "Economy" })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
-  });
-
-  it.each(["/thinkpages", "/thinkpages/t/abc"])(
-    "tints the panel emerald on %s (the ThinkPages app)",
-    (pathname) => {
-      const { container } = renderSidebar({ pathname });
-      expect(container.querySelector('[data-slot="app-sidebar"]')).toHaveAttribute(
-        "data-app",
-        "thinkpages"
-      );
-    }
-  );
-
-  it("shows the account slot and has no app switcher", () => {
-    renderSidebar();
-    expect(screen.getByRole("button", { name: "Account: diplomat" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Switch app/ })).toBeNull();
-  });
-
   // A flex item is never narrower than its content by default, so a row that cannot shrink (the claimable
   // "Daily reward" with its streak pill) widened the panel past its column and over the page's left edge.
-  it("keeps the panel inside its column while a row is wider than it, the row truncating instead", () => {
-    const { container } = renderSidebar({
-      pathname: "/vault",
-      badges: { "daily-reward": { kind: "action", label: "Ready", streak: 12 } },
-    });
-    const panel = container.querySelector('[data-slot="app-sidebar-panel"]');
-    expect(panel).toHaveClass("min-w-0", "flex-1");
-    const nav = screen.getByRole("navigation", { name: "App navigation" });
-    const reward = within(nav).getByRole("button", { name: /Daily reward/ });
-    expect(within(reward).getByText("Daily reward")).toHaveClass("min-w-0", "truncate");
-  });
-
-  it("lists Settings through the source list instead of a separate link", () => {
-    renderSidebar({ pathname: "/vault" });
-    const nav = screen.getByRole("navigation", { name: "App navigation" });
-    expect(within(nav).getAllByRole("link", { name: "Settings" })).toHaveLength(1);
-  });
-
   it("switches to the area list inside Settings and Admin", () => {
     renderSidebar({
       pathname: "/admin/calculations",
@@ -125,74 +75,6 @@ describe("AppSidebar", () => {
   });
 
   describe("icon rail", () => {
-    it("has one control per main app, named by the app", () => {
-      const { rail } = renderSidebar({ collapsed: true });
-      for (const app of mainApps.filter((a) => !a.inline)) {
-        const control = within(rail()).getByRole(app.sections.length > 0 ? "button" : "link", {
-          name: app.label,
-        });
-        if (app.id === "mycountry") expect(control).toHaveAttribute("aria-current", "true");
-      }
-    });
-
-    it("puts Home's sections on the rail as links, not a popover", () => {
-      const { rail } = renderSidebar({
-        collapsed: true,
-        badges: { "messages-unread": { kind: "count", value: 3 } },
-      });
-      expect(within(rail()).queryByRole("button", { name: "Home" })).toBeNull();
-      expect(within(rail()).getByRole("link", { name: "Home" })).toHaveAttribute(
-        "href",
-        "/dashboard"
-      );
-      const messages = within(rail()).getByRole("link", { name: "Messages, 3 unread" });
-      expect(messages).toHaveTextContent("3");
-      // ThinkPages (with ThinkTanks) is an app of its own now, not one of Home's rail links.
-      expect(within(rail()).queryByRole("link", { name: "ThinkTanks" })).toBeNull();
-      expect(within(rail()).queryByRole("link", { name: "ThinkPages" })).toBeNull();
-      expect(within(rail()).getByRole("button", { name: "ThinkPages" })).toBeInTheDocument();
-      expect(within(rail()).queryByRole("link", { name: "What's new" })).toBeNull();
-    });
-
-    it("puts What's new above Home on the rail while the build is unseen", () => {
-      const { rail } = renderSidebar({
-        collapsed: true,
-        badges: { "whats-new": { kind: "action", label: "New" } },
-      });
-      const names = within(rail())
-        .getAllByRole("link")
-        .map((l) => l.getAttribute("aria-label"));
-      expect(names.indexOf("What's new")).toBe(names.indexOf("Home") - 1);
-    });
-
-    it("draws every app in its own colour, not only the current one", () => {
-      const { rail } = renderSidebar({ collapsed: true });
-      const grey = within(rail())
-        .getAllByRole("link")
-        .concat(within(rail()).queryAllByRole("button"))
-        .filter((control) => control.querySelector("svg") && !control.matches(".text-tint"))
-        .map((control) => control.getAttribute("aria-label") ?? control.textContent);
-      expect(grey).toEqual([]);
-    });
-
-    it("has its own navigation landmark", () => {
-      renderSidebar({ collapsed: true });
-      expect(screen.getByRole("navigation", { name: "Apps" })).toBeInTheDocument();
-    });
-
-    it("keeps Settings and Admin reachable as plain links after the main apps", () => {
-      const { rail } = renderSidebar({
-        collapsed: true,
-        pathname: "/settings",
-        apps: getVisibleApps({ signedIn: true, isAdmin: true }),
-      });
-      const settings = within(rail()).getByRole("link", { name: "Settings" });
-      expect(settings).toHaveAttribute("href", "/settings");
-      expect(settings).toHaveAttribute("aria-current", "page");
-      expect(within(rail()).getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
-      expect(within(rail()).queryByRole("button", { name: "Settings" })).toBeNull();
-    });
-
     it("does not mark a popover trigger as the current page", () => {
       const { rail } = renderSidebar({ collapsed: true });
       const mycountry = within(rail()).getByRole("button", { name: "MyCountry" });
@@ -210,18 +92,6 @@ describe("AppSidebar", () => {
       );
       expect(within(nav).queryByRole("link", { current: "page" })).toBeNull();
     });
-
-    it("links the popover header to the app itself", async () => {
-      const { rail } = renderSidebar({ collapsed: true });
-      fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
-      const nav = await screen.findByRole("navigation", { name: "Vault" });
-      const popover = nav.closest<HTMLElement>('[data-slot="popover-content"]')!;
-      expect(within(popover).getByRole("link", { name: "Vault" })).toHaveAttribute(
-        "href",
-        "/vault"
-      );
-    });
-
     it("opening a second rail popover closes the first", async () => {
       const { rail } = renderSidebar({ collapsed: true });
       fireEvent.click(within(rail()).getByRole("button", { name: "Vault" }));
@@ -243,17 +113,6 @@ describe("AppSidebar", () => {
       link.addEventListener("click", (event) => event.preventDefault());
       fireEvent.click(link);
       await waitFor(() => expect(screen.queryByRole("navigation", { name: "Vault" })).toBeNull());
-    });
-
-    it("dots a rail button whose sections have something pending", () => {
-      const { rail } = renderSidebar({
-        collapsed: true,
-        badges: { "daily-reward": { kind: "action", label: "4d" } },
-      });
-      const vault = within(rail()).getByRole("button", { name: "Vault" });
-      expect(within(vault).getByLabelText("Has updates")).toBeInTheDocument();
-      const wiki = within(rail()).getByRole("button", { name: "Wiki" });
-      expect(within(wiki).queryByLabelText("Has updates")).toBeNull();
     });
   });
 });

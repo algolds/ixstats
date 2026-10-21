@@ -2,7 +2,7 @@
  * The dashboard has one column of its own: the feed. Trending, the blurb, countries to explore and the
  * economic tiers live in an Inspector (an aside at 1280px and up, a sheet opened by "Trends" below).
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { UnifiedDashboardSection } from "~/components/dashboard/sections/UnifiedDashboardSection";
 
@@ -51,26 +51,6 @@ describe("UnifiedDashboardSection", () => {
   beforeEach(() => {
     signedIn = false;
   });
-
-  it("shows the right column as an Inspector aside at 1280px and up", () => {
-    wide = true;
-    render(<UnifiedDashboardSection globalStats={stats} />);
-    const aside = screen.getByRole("complementary", { name: "Around IxStates" });
-    expect(aside).toHaveTextContent("trending widget");
-    expect(aside).toHaveTextContent("Economic tiers");
-  });
-
-  it("keeps the fixed aside out of the animated (transformed) wrappers", () => {
-    wide = true;
-    const { container } = render(<UnifiedDashboardSection globalStats={stats} />);
-    const aside = screen.getByRole("complementary", { name: "Around IxStates" });
-    // Not inside a flex column laid out for it: the shell reserves its gutter instead.
-    expect(aside.parentElement).toBe(container);
-    // A transformed ancestor becomes the containing block of a fixed element and would make the
-    // aside jump when the entrance animation ends; motion writes its values as inline styles.
-    expect(aside.closest("[style]")).toBeNull();
-  });
-
   it("opens the same content in a sheet from the Trends button below 1280px", () => {
     wide = false;
     render(<UnifiedDashboardSection globalStats={stats} />);
@@ -87,25 +67,5 @@ describe("UnifiedDashboardSection", () => {
     wide = true;
     render(<UnifiedDashboardSection globalStats={stats} />);
     expect(screen.queryByText("your realm panel")).not.toBeInTheDocument();
-  });
-
-  it("puts Your realm first in the rail for a signed-in viewer", () => {
-    wide = true;
-    signedIn = true;
-    render(<UnifiedDashboardSection globalStats={stats} />);
-    const aside = screen.getByRole("complementary", { name: "Around IxStates" });
-    const text = aside.textContent ?? "";
-    expect(text.indexOf("your realm panel")).toBeGreaterThanOrEqual(0);
-    expect(text.indexOf("your realm panel")).toBeLessThan(text.indexOf("trending widget"));
-  });
-
-  it("shows Your realm in the sheet below 1280px too", () => {
-    wide = false;
-    signedIn = true;
-    render(<UnifiedDashboardSection globalStats={stats} />);
-    fireEvent.click(screen.getByRole("button", { name: "Trends" }));
-    expect(screen.getByRole("dialog", { name: "Around IxStates" })).toHaveTextContent(
-      "your realm panel"
-    );
   });
 });

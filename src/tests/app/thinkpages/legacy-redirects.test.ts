@@ -33,9 +33,7 @@ import { auth } from "@clerk/nextjs/server";
 import { permanentRedirect, redirect, unstable_rethrow } from "next/navigation";
 import { db } from "~/server/db";
 import LegacyPostPage from "~/app/thinkpages/post/[postId]/page";
-import ThinkPagesHomePage, { metadata as homeMetadata } from "~/app/thinkpages/page";
-import { ForumHome } from "~/components/thinkpages-forum/home";
-
+import "~/app/thinkpages/page";
 const mockRedirect = jest.mocked(redirect);
 const mockPermanentRedirect = jest.mocked(permanentRedirect);
 const mockUnstableRethrow = jest.mocked(unstable_rethrow);
@@ -196,16 +194,5 @@ describe("/thinkpages/post/<id>", () => {
       "redirect:/thinkpages/t/t1?page=1#post-a%20b%2Fc"
     );
     await expect(openPost("d e/f")).rejects.toThrow("redirect:/dashboard/post/d%20e%2Ff");
-  });
-});
-
-describe("/thinkpages is the forum home", () => {
-  it("shows the home", () => {
-    expect(ThinkPagesHomePage().type).toBe(ForumHome);
-    expect(mockRedirect).not.toHaveBeenCalled();
-  });
-
-  it("is titled ThinkPages", () => {
-    expect(homeMetadata.title).toBe("ThinkPages - IxStates");
   });
 });

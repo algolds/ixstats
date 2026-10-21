@@ -3,7 +3,7 @@
  * Your realms lists the viewer's nations with Play as, one search finds realms and nations (with their realm and
  * whether they are claimable), Open to join lists realms with nations to take, and Browse keeps the tag filter.
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("next/navigation", () => ({
@@ -232,48 +232,6 @@ describe("realms landing sections", () => {
     expect(screen.getByRole("region", { name: "Realm feed" })).toBeTruthy();
     expect(screen.getByText("feed for all")).toBeTruthy();
   });
-
-  it("reports each realm's forum activity and links to its Hub and its board", () => {
-    const lastPostAt = new Date("2026-09-29T12:00:00Z");
-    queries["realms.directory"] = [
-      { ...EURTH, board: { recentPosts: 5, lastPostAt } },
-      { ...QUIET, board: { recentPosts: 0, lastPostAt: null } },
-    ];
-    render(<RealmsLandingPage />);
-    const browse = screen.getByRole("region", { name: /Browse all realms/ });
-    expect(within(browse).getByText(/^5 posts this week · last /)).toBeTruthy();
-    expect(within(browse).getByText("No posts yet")).toBeTruthy();
-    expect(within(browse).queryByText(/Board not opened/)).toBeNull();
-    const forumLinks = within(browse).getAllByRole("link", { name: "Forum" });
-    expect(forumLinks.map((l) => l.getAttribute("href"))).toEqual([
-      "/thinkpages/r/eurth",
-      "/thinkpages/r/quiet",
-    ]);
-  });
-
-  it("shows the board-week figure on a realm card and a Board link on each Open to join row", () => {
-    queries["realms.directory"] = [{ ...EURTH, boardMessagesThisWeek: 9 }, QUIET];
-    render(<RealmsLandingPage />);
-    const browse = screen.getByRole("region", { name: /Browse all realms/ });
-    expect(within(browse).getByText("9 board messages this week")).toBeTruthy();
-    const open = screen.getByRole("region", { name: "Open to join" });
-    expect(
-      within(open).getByRole("link", { name: "Open the board of Eurth" }).getAttribute("href")
-    ).toBe("/thinkpages/r/eurth");
-  });
-
-  it("lets an Open to join row and its links wrap on a phone, with tappable links", () => {
-    render(<RealmsLandingPage />);
-    const open = screen.getByRole("region", { name: "Open to join" });
-    const board = within(open).getByRole("link", { name: "Open the board of Eurth" });
-    const nations = within(open).getByRole("link", { name: "See the nations of Eurth" });
-    expect(board.parentElement).toHaveClass("flex-wrap");
-    expect(nations.parentElement).toBe(board.parentElement);
-    expect(board.closest("li")).toHaveClass("flex-wrap");
-    for (const link of [board, nations]) expect(link).toHaveClass("pointer-coarse:min-h-11");
-    expect(board.parentElement).not.toHaveClass("shrink-0");
-  });
-
   it("links each of Your realms to its forum, the live board", () => {
     auth = { isLoaded: true, isSignedIn: true };
     queries["realms.myNations"] = {

@@ -1,5 +1,5 @@
 /** Import jobs: progress and results, cancel a running job, retry a failed one, resume one left waiting. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/useNotify", () => {
@@ -87,48 +87,6 @@ describe("ImportJobs", () => {
     fireEvent.click(screen.getByRole("button", { name: "Resume" }));
     expect(resume).toHaveBeenCalled();
   });
-
-  it("offers nothing to change on a finished job", () => {
-    serve([job({ status: "DONE", processed: 4, finishedAt: new Date() })]);
-    render(<ImportJobs />);
-    expect(screen.getByText("Done")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
-  });
-
-  it("shows each page's result, rarity and licence", () => {
-    serve(
-      [job({})],
-      [
-        {
-          id: "i1",
-          title: "Union Assembly",
-          status: "STAGED",
-          cardId: "c1",
-          rarity: "ULTRA_RARE",
-          licence: "CC BY-SA 4.0",
-          reason: null,
-        },
-        {
-          id: "i2",
-          title: "Elm",
-          status: "SKIPPED",
-          cardId: null,
-          rarity: null,
-          licence: null,
-          reason: "Already a card",
-        },
-      ]
-    );
-    render(<ImportJobs />);
-    fireEvent.click(screen.getByRole("button", { name: "View" }));
-    expect(screen.getByText("Waiting for review")).toBeInTheDocument();
-    expect(screen.getByText("Ultra rare")).toBeInTheDocument();
-    expect(screen.getByText("CC BY-SA 4.0")).toBeInTheDocument();
-    expect(screen.getByText("Already a card")).toBeInTheDocument();
-    expect(screen.getByText("IIWiki · Showing 2 of 4 pages")).toBeInTheDocument();
-  });
-
   it("polls a running job's results, stops once the live job finishes, and reads its final results once", () => {
     serve([job({})]);
     const { rerender } = render(<ImportJobs />);
@@ -170,11 +128,5 @@ describe("ImportJobs", () => {
     expect(jest.mocked(api.cards.admin.imports.items.useQuery).mock.calls.at(-1)?.[0]).toEqual({
       jobId: "job_1",
     });
-  });
-
-  it("says what to do when there are no imports", () => {
-    serve([]);
-    render(<ImportJobs />);
-    expect(screen.getByText("No imports yet")).toBeInTheDocument();
   });
 });

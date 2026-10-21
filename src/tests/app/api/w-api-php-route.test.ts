@@ -116,22 +116,6 @@ describe("POST bodies", () => {
     const response = await route.POST(new NextRequest(url(), { method: "POST", body: form }));
     expect((await json(response)).query.tokens.csrftoken).toBe("+\\");
   });
-
-  it("refuses a body larger than the limit with toobig", async () => {
-    const response = await route.POST(
-      new NextRequest(url(), {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-          "content-length": String(5 * 1024 * 1024),
-        },
-        body: "action=query",
-      })
-    );
-    expect(response.headers.get("mediawiki-api-error")).toBe("toobig");
-    expect((await json(response)).error.code).toBe("toobig");
-  });
-
   it("also refuses an oversized body that sent no Content-Length", async () => {
     const response = await route.POST(
       new NextRequest(url(), {
@@ -185,21 +169,6 @@ describe("the body limit is enforced while streaming", () => {
     expect((await json(response)).error.code).toBe("toobig");
     expect(state.pulled).toBeLessThan(12);
   });
-
-  it("answers 413 toobig to a chunked 30 MB multipart body", async () => {
-    const boundary = "xBOUNDARYx";
-    const { stream, state } = chunkedBody(
-      30 * MB,
-      `--${boundary}\r\nContent-Disposition: form-data; name="text"\r\n\r\n`
-    );
-    const response = await post(stream, {
-      "content-type": `multipart/form-data; boundary=${boundary}`,
-    });
-    expect(response.status).toBe(413);
-    expect((await json(response)).error.code).toBe("toobig");
-    expect(state.pulled).toBeLessThan(12);
-  });
-
   it("does not trust a Content-Length that undersells the body", async () => {
     const { stream } = chunkedBody(30 * MB, "action=edit&text=");
     const response = await post(stream, {

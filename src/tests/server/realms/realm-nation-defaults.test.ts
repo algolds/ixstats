@@ -15,7 +15,6 @@ import {
   saveNationDefaults,
   UNCLAIMED_NATION_WHERE,
 } from "~/server/modules/realms/realms.nation-defaults";
-import { realmNationDefaultsRouter } from "~/server/api/routers/realms/nation-defaults";
 import {
   hasNationDefaults,
   realmNationDefaults,
@@ -219,16 +218,5 @@ describe("realm nation defaults service", () => {
     db.country.updateMany.mockResolvedValueOnce({ count: 0 }); // "a" was claimed meanwhile
     const result = await applyNationDefaults(db, admin, "eurth-id");
     expect(result.updated).toBe(1);
-  });
-});
-
-describe("realms.nationDefaults router", () => {
-  it("builds (no tRPC reserved names) with its four admin procedures", () => {
-    expect(Object.keys(realmNationDefaultsRouter._def.procedures).sort()).toEqual([
-      "applyToUnclaimed",
-      "get",
-      "preview",
-      "save",
-    ]);
   });
 });

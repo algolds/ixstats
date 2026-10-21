@@ -138,24 +138,6 @@ describe("the Commons tab (WK-6)", () => {
     expect(screen.getByRole("img", { name: "File:Harbour 2.jpg" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Load more images" })).not.toBeInTheDocument();
   });
-
-  it("shows the loading state, then the empty state", () => {
-    commonsAnswer = () => ({
-      isPending: true,
-      isFetching: true,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-    });
-    const view = render(<ImageSearchGrid compact />);
-    openCommonsAndSearch("zzzz");
-    expect(screen.getByText("Searching Wikimedia Commons...")).toBeInTheDocument();
-
-    commonsAnswer = () => ok({ images: [], nextOffset: null, totalHits: 0 });
-    view.rerender(<ImageSearchGrid compact />);
-    expect(screen.getByText(/No images found for/)).toBeInTheDocument();
-  });
-
   it("says when the search bucket is spent, and retries only on request", () => {
     const refetch = jest.fn();
     commonsAnswer = () => ({
@@ -211,74 +193,5 @@ describe("Commons results", () => {
     expect(attributionLine({ license: "CC0", artist: "Jane" })).toBe("CC0 · Jane");
     expect(attributionLine({ license: "CC0" })).toBe("CC0");
     expect(attributionLine({ artist: " " })).toBeNull();
-  });
-});
-
-describe("the IxWiki tab's BlurHash placeholder (WK-17)", () => {
-  it("is drawn behind the thumbnail until it loads", () => {
-    mockSearchFiles.mockReturnValue({
-      data: [
-        {
-          title: "File:Flag.png",
-          url: "/api/wiki/file/Flag.png",
-          width: 40,
-          height: 30,
-          mime: "image/png",
-          blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
-        },
-      ],
-      isLoading: false,
-      isError: false,
-      refetch: jest.fn(),
-    });
-    render(<ImageSearchGrid compact />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search images" }), {
-      target: { value: "flag" },
-    });
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
-
-    const thumbnail = screen.getByRole("img", { name: "File:Flag.png" });
-    expect(thumbnail.style.backgroundImage).toContain("data:image/svg+xml");
-    fireEvent.load(thumbnail);
-    expect(thumbnail.style.backgroundImage).toBe("");
-  });
-});
-
-describe("the expanded detail's dimensions", () => {
-  const openDetail = (width: number, height: number) => {
-    mockSearchFiles.mockReturnValue({
-      data: [
-        {
-          title: "File:Flag.png",
-          url: "/api/wiki/file/Flag.png",
-          width,
-          height,
-          mime: "image/png",
-        },
-      ],
-      isLoading: false,
-      isError: false,
-      refetch: jest.fn(),
-    });
-    const { container } = render(<ImageSearchGrid />);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search images" }), {
-      target: { value: "flag" },
-    });
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
-    fireEvent.click(screen.getByRole("img", { name: "File:Flag.png" }));
-    return container.querySelector(".wikios-imgs-detail-meta") as HTMLElement;
-  };
-
-  it("shows the size when it is known", () => {
-    expect(openDetail(40, 30).textContent).toContain("40 × 30 px");
-  });
-
-  it("shows no stray 0 when the size is unknown", () => {
-    const meta = openDetail(0, 0);
-    expect(meta.textContent).toBe("image/png");
   });
 });

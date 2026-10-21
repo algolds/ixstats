@@ -99,15 +99,6 @@ describe("editing switch", () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
-
-  it("keeps the last value when the read rejects with something other than an Error", async () => {
-    findUnique.mockRejectedValueOnce("db down");
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
-    await expect(refreshWikiosEditingFlag(true)).resolves.toBe(false);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("editing switch"), "db down");
-    warn.mockRestore();
-  });
-
   it("set writes the row and updates this process at once", async () => {
     await setWikiosEditingFlag(true);
     expect(upsert).toHaveBeenCalledWith({

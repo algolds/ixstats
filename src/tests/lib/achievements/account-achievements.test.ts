@@ -99,14 +99,6 @@ describe("achievement scope", () => {
       ])
     );
   });
-
-  it("covers General, Social and Cards achievements", () => {
-    const categories = new Set(ACCOUNT_LEVEL_IDS.map((id) => getAchievementById(id)!.category));
-    for (const category of ["General", "Social", "Cards"] as const) {
-      expect(categories.has(category)).toBe(true);
-    }
-  });
-
   it("account-level definitions evaluate without country data", () => {
     const data = {
       daysActive: 400,

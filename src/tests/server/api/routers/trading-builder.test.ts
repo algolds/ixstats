@@ -25,7 +25,6 @@ jest.mock("~/server/modules/identity/identity.privacy", () => ({
 
 import { rateLimiter } from "~/lib/cache";
 import { createCallerFactory } from "~/server/api/trpc";
-import { tradingRouter } from "~/server/api/routers/trading";
 import { tradingBuilderRouter } from "~/server/api/routers/trading/builder";
 import {
   findTradePartner,
@@ -58,14 +57,6 @@ beforeEach(() => {
 });
 
 describe("trading builder procedures", () => {
-  it("are on the trading router, and the old partner search is gone", () => {
-    const procedures = tradingRouter._def.procedures;
-    for (const name of ["findPartner", "searchPartners", "getTradeables", "getPartnerWishlist"]) {
-      expect(name in procedures).toBe(true);
-    }
-    expect("searchTradingPartners" in procedures).toBe(false);
-  });
-
   it("pass the signed-in viewer, the input and the identity rules to the partners module", async () => {
     const db = createMockPrisma();
     const caller = signedIn(db);

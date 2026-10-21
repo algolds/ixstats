@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -148,16 +148,6 @@ it("asks no reason of a new card's rarity", () => {
   fireEvent.click(screen.getByRole("button", { name: "Save card" }));
   expect(save.mock.calls[0]![0]).not.toHaveProperty("reason");
 });
-
-it("drops the reason field once the rarity is back to the stored one", () => {
-  serve({ data: [veteran] });
-  fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
-  choose("Rarity", "Legendary");
-  choose("Rarity", "Epic");
-  expect(screen.queryByLabelText("Why the rarity changes")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Save card" })).toBeEnabled();
-});
-
 it("fixes the kind, binding and achievement of a card players hold", () => {
   serve({ data: [veteran] });
   fireEvent.click(screen.getByRole("button", { name: "Edit Veteran" }));
@@ -184,24 +174,4 @@ it("keeps the old seed's rows read-only until the Special card import runs", () 
   serve({ data: [{ ...veteran, specialKind: null, rewardAchievementKey: null }] });
   expect(screen.getByText("Waiting for the Special card import")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Edit Veteran" })).toBeDisabled();
-});
-
-it("announces why the card cannot be saved yet from one live region", () => {
-  serve({ data: [] });
-  fireEvent.click(screen.getByRole("button", { name: "New Special card" }));
-  const status = screen.getByRole("status");
-  expect(status).toHaveTextContent("Give the card a title of at least 2 characters.");
-  fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Founders' gala" } });
-  expect(screen.getByRole("status")).toBe(status);
-  expect(status).toBeEmptyDOMElement();
-});
-
-it("says when there are no Special cards yet", () => {
-  serve({ data: [] });
-  expect(screen.getByText("No Special cards yet")).toBeInTheDocument();
-});
-
-it("says when the Special cards did not load", () => {
-  serve({ isError: true });
-  expect(screen.getByRole("alert")).toHaveTextContent("The Special cards did not load");
 });

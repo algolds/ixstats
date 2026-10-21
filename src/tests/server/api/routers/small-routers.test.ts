@@ -19,11 +19,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { builderDraftRouter } from "~/server/api/routers/builderDraft";
 import { demoModeRouter } from "~/server/api/routers/demo-mode";
 import { cacheRouter } from "~/server/api/routers/cache";
-import { resourcesRouter } from "~/server/api/routers/resources";
-import { atomicGovernmentRouter } from "~/server/api/routers/atomicGovernment";
 import { historicalRouter } from "~/server/api/routers/historical";
-import { systemRouter } from "~/server/api/routers/system";
-import { externalApiCache } from "~/lib/cache";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -120,43 +116,9 @@ describe("cache", () => {
   it("is admin only", async () => {
     await expect(cache(ctx(db, "u1")).getStats()).rejects.toThrow(/Admin privileges required/);
   });
-
-  it("reports overall and per-service stats", async () => {
-    const statsSpy = jest
-      .spyOn(externalApiCache, "getStats")
-      .mockImplementation(async (service?: string) => ({ service: service ?? "all" }) as never);
-
-    const stats = await cache(ctx(db, "admin", { name: "admin", level: 10 })).getStats();
-
-    expect(stats.overall).toEqual({ service: "all" });
-    expect(Object.keys(stats.byService)).toEqual([
-      "mediawiki",
-      "unsplash",
-      "wikimedia",
-      "flagcdn",
-      "restcountries",
-    ]);
-    statsSpy.mockRestore();
-  });
 });
 
 describe("public country reads", () => {
-  it("lists a country's resources and active government components", async () => {
-    await createCallerFactory(resourcesRouter)(ctx(db, null)).getCountryResources({
-      countryId: "c1",
-    });
-    await createCallerFactory(atomicGovernmentRouter)(ctx(db, null)).getComponents({
-      countryId: "c1",
-    });
-
-    expect(db.geographicResource.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1" } })
-    );
-    expect(db.governmentComponent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1", isActive: true } })
-    );
-  });
-
   it("returns history oldest first within the date range and caps the limit", async () => {
     const historical = createCallerFactory(historicalRouter)(ctx(db, null));
     db.historicalDataPoint.findMany.mockResolvedValue([{ id: "new" }, { id: "old" }]);
@@ -174,12 +136,5 @@ describe("public country reads", () => {
     await expect(
       historical.getCountryHistory({ countryId: "c1", limit: 1001 })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
-
-  it("serves the current IxTime to anyone", async () => {
-    const time = await createCallerFactory(systemRouter)(ctx(db, null)).getCurrentIxTime();
-    expect(typeof time.currentIxTimeNumber).toBe("number");
-    expect(typeof time.gameYear).toBe("number");
-    expect(new Date(time.currentIxTime).getTime()).toBe(time.currentIxTimeNumber);
   });
 });

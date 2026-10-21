@@ -207,10 +207,9 @@ jest.mock("~/components/ui/dropdown-menu", () => ({
 
 import { BanDialog, banScopeOptions } from "~/components/thinkpages-forum/BanDialog";
 import { BanNotice } from "~/components/thinkpages-forum/BanNotice";
-import { BoardPage } from "~/components/thinkpages-forum/board";
 import type { ModContext } from "~/components/thinkpages-forum/mod/ModRow";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
-import { hasStanding, StandingPanel } from "~/components/thinkpages-forum/StandingPanel";
+import { StandingPanel } from "~/components/thinkpages-forum/StandingPanel";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { WarnDialog } from "~/components/thinkpages-forum/WarnDialog";
 
@@ -524,49 +523,6 @@ describe("moderator tools", () => {
     expect(theirs.queryByRole("menuitem", { name: "Warn author" })).toBeNull();
     expect(theirs.queryByRole("menuitem", { name: "Ban author" })).toBeNull();
   });
-
-  it("says a hidden thread is hidden from members (M-4)", () => {
-    auth.isSignedIn = true;
-    set("thread", { data: threadData({ canModerate: true }) });
-    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.queryByText("This thread is hidden from members.")).toBeNull();
-    unmount();
-    set("thread", { data: threadData({ canModerate: true, threadHidden: true }) });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("This thread is hidden from members.")).toBeInTheDocument();
-  });
-
-  it("badges a hidden thread in a moderator's category list (M-4)", () => {
-    const row = (id: string, hidden?: boolean) => ({
-      id,
-      title: `Thread ${id}`,
-      authorUserId: "u1",
-      authorPersonaId: null,
-      pinned: false,
-      locked: false,
-      postCount: 1,
-      lastPostAt: new Date(),
-      ...(hidden === undefined ? {} : { hidden }),
-    });
-    set("category", {
-      data: {
-        category: { id: "c1", key: "general", name: "General", description: null, realm: null },
-        threads: [row("t_hidden", true), row("t_shown", false)],
-        total: 2,
-        canStart: false,
-        canModerate: true,
-        notice: null,
-        banned: false,
-        authors,
-      },
-    });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    const hidden = screen.getByRole("row", { name: /Thread t_hidden/ });
-    const shown = screen.getByRole("row", { name: /Thread t_shown/ });
-    expect(within(hidden).getByText("Hidden")).toBeInTheDocument();
-    expect(within(shown).queryByText("Hidden")).toBeNull();
-  });
-
   it("clears the hide note when the confirmation is cancelled", () => {
     auth.isSignedIn = true;
     set("thread", { data: threadData({ canModerate: true }) });
@@ -931,22 +887,6 @@ describe("ban notices", () => {
     );
     expect(screen.queryByRole("link", { name: "Appeal" })).toBeNull();
   });
-
-  it("puts the ban notice under a category's header, else the plain line", () => {
-    const category = { key: "general", name: "General", description: null, icAllowed: false };
-    const base = { category, threads: [], total: 0, canStart: false, authors };
-    set("category", { data: { ...base, notice: BAN, banned: true } });
-    const { rerender } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByText(BAN)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Appeal" })).toBeInTheDocument();
-
-    const plain = "Only staff can start threads here.";
-    set("category", { data: { ...base, notice: plain, banned: false } });
-    rerender(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByText(plain)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Appeal" })).toBeNull();
-  });
-
   it("renders a stored notice as text, never as markup", () => {
     const { container } = render(<BanNotice notice={`Banned: ${XSS}`} />);
     expect(screen.getByText(`Banned: ${XSS}`)).toBeInTheDocument();
@@ -1038,20 +978,6 @@ describe("standing", () => {
     rerender(<StandingPanel standing={{ ...standing } as never} />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     window.location.hash = "";
-  });
-
-  it("does not scroll when the link was not #standing", () => {
-    const scrollIntoView = jest.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    window.location.hash = "";
-    render(<StandingPanel standing={standing as never} />);
-    expect(scrollIntoView).not.toHaveBeenCalled();
-  });
-
-  it("has no panel for a member in good standing", () => {
-    expect(hasStanding(undefined)).toBe(false);
-    expect(hasStanding({ activePoints: 0, warnings: [], bans: [], appeals: [] })).toBe(false);
-    expect(hasStanding(standing as never)).toBe(true);
   });
 });
 

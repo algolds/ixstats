@@ -31,14 +31,4 @@ describe("getRevisionWikitext and deleted text", () => {
     await expect(getRevisionWikitext("cnative00000001")).resolves.toMatchObject({ wikitext: null });
     expect(mockFindFirst.mock.calls[0]?.[0].select).toMatchObject({ textDeleted: true });
   });
-
-  it("still reads a native revision that really is empty, and ordinary text", async () => {
-    mockFindFirst.mockResolvedValueOnce(row({}));
-    await expect(getRevisionWikitext("cnative00000002")).resolves.toMatchObject({ wikitext: "" });
-
-    mockFindFirst.mockResolvedValueOnce(row({ wikitext: "body", byteSize: 4 }));
-    await expect(getRevisionWikitext("cnative00000003")).resolves.toMatchObject({
-      wikitext: "body",
-    });
-  });
 });

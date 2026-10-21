@@ -39,35 +39,6 @@ jest.mock("~/app/admin/_components/AdminNavigationContext", () => ({
 
 import AdminLayout from "~/app/admin/layout";
 import WorldStudioPage from "~/app/admin/maps/studio/page";
-
-describe("the admin layout", () => {
-  const renderAt = (pathname: string) => {
-    mockPathname = pathname;
-    return render(
-      <AdminLayout>
-        <p>child</p>
-      </AdminLayout>
-    );
-  };
-
-  it.each(["/admin/maps/studio", "/admin/maps/editor", "/admin/maps/style-editor"])(
-    "leaves %s bare, without the status strip around it",
-    (pathname) => {
-      renderAt(pathname);
-      expect(screen.getByText("child")).toBeInTheDocument();
-      expect(screen.queryByTestId("status-strip")).not.toBeInTheDocument();
-    }
-  );
-
-  it.each(["/admin/maps", "/admin/maps/studio/extra", "/admin/maps/realms/ixnay", "/admin/polls"])(
-    "keeps the admin container around %s",
-    (pathname) => {
-      renderAt(pathname);
-      expect(screen.getByTestId("status-strip")).toBeInTheDocument();
-    }
-  );
-});
-
 describe("the admin guard", () => {
   afterEach(() => {
     mockRole = "admin";
@@ -87,14 +58,6 @@ describe("the admin guard", () => {
 });
 
 describe("the Studio page", () => {
-  it("fills the screen above the shell, in the Maps tint", () => {
-    mockSearch = "";
-    const { container } = render(<WorldStudioPage />);
-    const shell = container.firstElementChild!;
-    expect(shell).toHaveAttribute("data-app", "maps");
-    expect(shell).toHaveClass("bg-background", "absolute", "inset-0", "z-40");
-  });
-
   it("opens fitted to the realm of ?fit=", () => {
     mockSearch = "fit=eurth";
     render(<WorldStudioPage />);

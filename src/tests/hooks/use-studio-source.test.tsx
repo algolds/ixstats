@@ -54,10 +54,4 @@ describe("useStudioSource", () => {
     act(() => result.current.setSource({ kind: "fit", preset: "eurth", realm: null }));
     expect(result.current.source).toMatchObject({ kind: "fit", realm: "ixnay" });
   });
-
-  it("ignores a preset that does not exist", () => {
-    const { result } = setup();
-    act(() => result.current.setSource({ kind: "preset", preset: "nope" }));
-    expect(result.current.source).toEqual({ kind: "preset", preset: "earthlike" });
-  });
 });

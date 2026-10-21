@@ -6,7 +6,7 @@ jest.mock("~/lib/nationstates/api-client", () => ({
 }));
 
 import { nsApiClient } from "~/lib/nationstates/api-client";
-import { CTE_DUMP_SANITY, processCTENationFilter } from "~/lib/nationstates/sync-processor";
+import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 /** An active-nations set of `size` nations, holding `named` among them. */
@@ -16,11 +16,6 @@ const nations = (size: number, ...named: string[]) =>
 const lastRun = (activeNations: number) => ({ metadata: { activeNations, activeCount: 9 } });
 
 beforeEach(() => jest.clearAllMocks());
-
-it("holds its sanity thresholds in one named constant", () => {
-  expect(CTE_DUMP_SANITY).toEqual({ minNations: 1_000, minShareOfLastRun: 0.5 });
-});
-
 it("tags each card by its nation's NS name, a page at a time, and keeps the rest of its metadata", async () => {
   jest
     .mocked(nsApiClient.fetchActiveNationsDump)

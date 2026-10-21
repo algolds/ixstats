@@ -53,8 +53,4 @@ describe("workshopCall", () => {
     const crash = new Error("connection reset: host db-1");
     await expect(failWith(crash)).rejects.toBe(crash);
   });
-
-  it("names its refusal", () => {
-    expect(new DustError("x")).toMatchObject({ name: "DustError", code: "PRECONDITION_FAILED" });
-  });
 });

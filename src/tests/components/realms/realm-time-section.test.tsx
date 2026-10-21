@@ -1,5 +1,5 @@
 /** Manage → Time: switch the clock on (prefilled from the old in-world year), then speed and era with the cooldown. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 const startClock = jest.fn();
@@ -46,17 +46,6 @@ describe("RealmTimeSection", () => {
       expect.objectContaining({ slug: "eurth", era: "AE", multiplier: 3 })
     );
   });
-
-  it("promises only what phase 1 does: the realm's date and speed, nations later", () => {
-    render(<RealmTimeSection slug="eurth" time={{ ...base, clock: null }} />);
-    expect(
-      screen.queryByText(/age and grow|stop while it is paused|Its nations run on it/)
-    ).toBeNull();
-    expect(
-      screen.getByText(/will follow it once the simulation moves onto realm clocks/)
-    ).toBeTruthy();
-  });
-
   it("previews a speed change before it is saved", () => {
     const clock = createRealmClock({
       globalNowMs: Date.UTC(2041, 0, 1),

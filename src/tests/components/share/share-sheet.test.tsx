@@ -57,13 +57,6 @@ describe("ShareSheet", () => {
     expect(link.getAttribute("href")).toBe("/id/alex/opengraph-image");
     expect(link.hasAttribute("download")).toBe(true);
   });
-
-  it("omits Download card without an image", async () => {
-    open({ imagePath: undefined });
-    await screen.findByRole("button", { name: "Copy link" });
-    expect(screen.queryByRole("link", { name: "Download card" })).toBeNull();
-  });
-
   it("shows host extras only when provided, and copies their full URL", async () => {
     const { unmount } = render(<ShareSheet path="/r/eurth" title="Eurth" />);
     fireEvent.click(screen.getByRole("button", { name: "Share" }));

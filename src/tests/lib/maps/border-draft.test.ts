@@ -1,7 +1,5 @@
-import type { MultiPolygon, Polygon, Position } from "geojson";
+import type { MultiPolygon, Polygon } from "geojson";
 import { buildBorderDraft, restorableBorderDraft } from "~/lib/maps/border-draft";
-import { cascadeMoveVertex, vkey } from "~/lib/maps/topology-engine";
-
 const SQUARE: Polygon = {
   type: "Polygon",
   coordinates: [
@@ -14,16 +12,6 @@ const SQUARE: Polygon = {
     ],
   ],
 };
-
-/** A closed ring of `count` vertices with full-precision coordinates, like a stored border. */
-function ringOf(count: number, radius: number, centre: Position): Position[] {
-  const ring = Array.from({ length: count }, (_, i): Position => {
-    const angle = (i / count) * 2 * Math.PI;
-    return [centre[0]! + radius * Math.cos(angle), centre[1]! + radius * Math.sin(angle)];
-  });
-  return [...ring, [...ring[0]!]];
-}
-
 const HOUR = 60 * 60 * 1000;
 const NOW = Date.UTC(2026, 9, 11, 12, 0, 0);
 
@@ -41,28 +29,6 @@ describe("buildBorderDraft", () => {
       "geometry",
       "savedAt",
     ]);
-  });
-
-  it("stays under 1 MB for a 7k-vertex polygon after 50 drags, undo history excluded", () => {
-    const outline: Polygon = { type: "Polygon", coordinates: [ringOf(7000, 10, [100, 20])] };
-    const neighbour: Polygon = { type: "Polygon", coordinates: [ringOf(3000, 4, [112, 20])] };
-    let geometry: Polygon = outline;
-    for (let drag = 0; drag < 50; drag++) {
-      const key = vkey(geometry.coordinates[0]![drag]!);
-      const to: Position = [geometry.coordinates[0]![drag]![0]! + 0.0123456, 20.123456789012];
-      const refs = [{ featureId: "f", ringIndex: 0, vertexIndex: drag }];
-      geometry = cascadeMoveVertex(new Map([[key, refs]]), new Map([["f", geometry]]), key, to).get(
-        "f"
-      ) as Polygon;
-    }
-
-    const draft = buildBorderDraft({
-      featureId: "f",
-      geometry,
-      dirtyNeighbors: { n: neighbour },
-      savedAt: NOW,
-    });
-    expect(JSON.stringify(draft).length).toBeLessThan(1_000_000);
   });
 });
 

@@ -3,7 +3,6 @@
  * department categories the government types accept.
  */
 import {
-  KNOWN_FORM_IDS,
   departmentsForForm,
   governmentTypeForForm,
 } from "~/lib/government/form-departments";
@@ -50,10 +49,6 @@ const FORM_IDS = [
 ];
 
 describe("departmentsForForm", () => {
-  it("knows every form in the spec", () => {
-    expect([...KNOWN_FORM_IDS].sort()).toEqual([...FORM_IDS].sort());
-  });
-
   it.each([...FORM_IDS, "no-such-form", ""])("%s: 5 to 9 valid departments", (formId) => {
     const departments = departmentsForForm(formId);
     expect(departments.length).toBeGreaterThanOrEqual(5);
@@ -80,16 +75,6 @@ describe("departmentsForForm", () => {
       departmentsForForm("parliamentary-republic")
     );
   });
-
-  it("names departments for the form", () => {
-    expect(departmentsForForm("absolute-monarchy").map((d) => d.name)).toContain(
-      "Royal Army Command"
-    );
-    expect(departmentsForForm("parliamentary-republic").map((d) => d.name)).toContain(
-      "Ministry of Defence"
-    );
-  });
-
   it("gives every known form a government type", () => {
     for (const formId of FORM_IDS) expect(governmentTypeForForm(formId)).toBeTruthy();
     expect(governmentTypeForForm("no-such-form")).toBeNull();

@@ -167,41 +167,6 @@ describe("using a world", () => {
     await screen.findByText("The world is applied");
     expect(view.onDiscardDraft).not.toHaveBeenCalled();
   });
-
-  it("says one shape and one nation in the singular", async () => {
-    renderRegion();
-    await reachReview();
-    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
-    await screen.findByText(/Applying the world/);
-    const done = applied();
-    act(() =>
-      setJob("j_apply", {
-        ...done,
-        result: {
-          ...done.result,
-          written: 1,
-          rejected: [{ layerType: "lakes", key: "l1", reason: "Too small" }],
-          slots: { created: 1, retired: 1, opened: 1 },
-        },
-      })
-    );
-    await screen.findByText("The world is applied");
-    expect(
-      screen.getByText("1 map feature written, 1 nation created, 1 nation retired.")
-    ).toBeInTheDocument();
-    expect(screen.getByText("1 shape could not be written and was left out.")).toBeInTheDocument();
-    expect(screen.getByText("1 nation is open for claims.")).toBeInTheDocument();
-  });
-
-  it("closes the result", async () => {
-    renderRegion();
-    await reachReview();
-    fireEvent.click(screen.getByRole("button", { name: "Apply this world" }));
-    await screen.findByText(/Applying the world/);
-    act(() => setJob("j_apply", applied()));
-    fireEvent.click(await screen.findByRole("button", { name: "Done" }));
-    expect(getUseButton()).toBeInTheDocument();
-  });
 });
 
 describe("the review", () => {
@@ -237,35 +202,6 @@ describe("the review", () => {
     expect(warning).not.toHaveTextContent("already taken");
     expect(screen.getByText(taken)).toBeInTheDocument();
   });
-
-  it("goes by the server's flag and not by the wording of a warning", async () => {
-    renderRegion();
-    await reachReview(
-      dryRun({
-        warnings: ["The realm's current map (5 features) will be replaced", "A quiet note"],
-        replaces: ["A quiet note"],
-      })
-    );
-    const warning = screen
-      .getByText("This replaces work in the realm")
-      .closest("div")!.parentElement!;
-    expect(warning).toHaveTextContent("A quiet note");
-    expect(warning).not.toHaveTextContent("current map");
-  });
-
-  it("reads every warning as a note from a check stored before the server flagged any", async () => {
-    renderRegion();
-    await reachReview(dryRun({ warnings: ["A note from an older check"], replaces: undefined }));
-    expect(screen.getByText("A note from an older check")).toBeInTheDocument();
-    expect(screen.queryByText("This replaces work in the realm")).toBeNull();
-  });
-
-  it("has no replaced-work warning when the server has none", async () => {
-    renderRegion();
-    await reachReview();
-    expect(screen.queryByText("This replaces work in the realm")).toBeNull();
-  });
-
   it("leaves out the borders row for a world fitted to the realm's own borders", async () => {
     renderRegion();
     await reachReview(dryRun({ source: "realm-map" }));

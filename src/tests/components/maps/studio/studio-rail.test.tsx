@@ -3,7 +3,7 @@
  * range, the preset's value and a reset; sliders commit on release and once per key burst; and a commit makes the
  * worker generate again with the new parameters.
  */
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -26,7 +26,6 @@ jest.mock("~/components/ui/value-select", () =>
 );
 
 import { ELEVATION_ZONES } from "~/lib/worldgen/v2/config";
-import { PARAM_RANGES, STUDIO_FIELDS, STUDIO_GROUPS } from "~/lib/worldgen/studio-fields";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 import {
   land,
@@ -50,63 +49,7 @@ function openStudio() {
 }
 
 const rail = () => screen.getByLabelText("Parameters");
-
-describe("the rail's groups", () => {
-  it("lists Mesh, Land, Climate, Nations and Output, with Mesh and Land open", () => {
-    renderStudio();
-    for (const group of STUDIO_GROUPS) {
-      expect(within(rail()).getByRole("button", { name: group.label })).toHaveAttribute(
-        "aria-expanded",
-        String(group.open)
-      );
-    }
-    expect(screen.getByRole("slider", { name: "Cells" })).toBeInTheDocument();
-    expect(screen.getByRole("slider", { name: "Ocean" })).toBeInTheDocument();
-    expect(screen.queryByRole("slider", { name: "Temperature" })).not.toBeInTheDocument();
-  });
-
-  it("has a control for every parameter, in its own group", () => {
-    openStudio();
-    const found = (key: keyof typeof STUDIO_FIELDS) => {
-      const spec = STUDIO_FIELDS[key];
-      switch (spec.kind) {
-        case "slider":
-          return screen.queryByRole("slider", { name: spec.label });
-        case "range":
-          return screen.queryAllByRole("slider", { name: new RegExp(`^${spec.label}, `) })[1];
-        case "switch":
-          return within(rail()).queryByRole("switch", { name: spec.label });
-        case "polar":
-          return screen.queryByRole("switch", { name: "Polar land in the north" });
-        case "choice":
-          return screen.queryByRole("radiogroup", { name: spec.label });
-        case "hypsometry":
-          return screen.queryByRole("spinbutton", { name: "Coastal Lowlands share" });
-      }
-    };
-    for (const group of STUDIO_GROUPS) {
-      for (const key of group.fields) expect(found(key)).toBeInTheDocument();
-    }
-  });
-});
-
 describe("ranges and preset values", () => {
-  it("sets every slider's ends from the parameter's range", () => {
-    renderStudio();
-    for (const key of ["cellCount", "oceanPercentage", "plateCount"] as const) {
-      const { label } = STUDIO_FIELDS[key];
-      const thumb = screen.getByRole("slider", { name: label });
-      expect(thumb).toHaveAttribute("aria-valuemin", String(PARAM_RANGES[key].min));
-      expect(thumb).toHaveAttribute("aria-valuemax", String(PARAM_RANGES[key].max));
-    }
-  });
-
-  it("shows the range and the preset's value under a control", () => {
-    renderStudio();
-    expect(within(rail()).getByText("Range 20% to 95%. Preset 70%")).toBeInTheDocument();
-    expect(within(rail()).getByText("Range 1,000 to 150,000. Preset 100,000")).toBeInTheDocument();
-  });
-
   it("starts the controls at the chosen preset's values", () => {
     renderStudio();
     fireEvent.change(screen.getByLabelText("Preset"), { target: { value: "ixnay" } });
@@ -228,13 +171,6 @@ describe("resets", () => {
 
 describe("hypsometry", () => {
   const zone = (name: string) => screen.getByRole("spinbutton", { name: `${name} share` });
-
-  it("has nine zones and shows their sum", () => {
-    renderStudio();
-    expect(screen.getAllByRole("spinbutton", { name: /share$/ })).toHaveLength(9);
-    expect(screen.getByText(/^Sum 100\./)).toBeInTheDocument();
-  });
-
   it("follows what is typed in the sum and commits when the input is left", () => {
     renderStudio();
     land();

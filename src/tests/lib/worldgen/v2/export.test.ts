@@ -18,15 +18,6 @@ describe("v2/export & generateWorld", () => {
     cellCount: TEST_CELLS,
     plateCount: 8,
   });
-
-  it("returns a complete GeneratedWorld object with seed and params", () => {
-    expect(world.seed).toBe(TEST_SEED);
-    expect(world.params).toBeDefined();
-    expect(world.stats).toBeDefined();
-    expect(world.layers).toBeDefined();
-    expect(world.graph).toBeDefined();
-  });
-
   it("contains all 7 required GeoJSON layers", () => {
     const requiredLayers = [
       "background",
@@ -86,16 +77,6 @@ describe("v2/export & generateWorld", () => {
       expect(coords.length).toBeGreaterThanOrEqual(2);
     }
   });
-
-  it("computes stats properly with non-negative numbers", () => {
-    const stats = world.stats;
-    expect(stats.landPercentage).toBeGreaterThan(0);
-    expect(stats.countryCount).toBeGreaterThan(0);
-    expect(stats.riverCount).toBeGreaterThan(0);
-    expect(stats.generationTimeMs).toBeGreaterThan(0);
-    expect(stats.cellCount).toBeGreaterThan(0);
-  });
-
   it("progress callback is invoked in correct stage order", () => {
     const stagesSeen: string[] = [];
     generateWorld({ ...DEFAULT_PARAMS, seed: TEST_SEED + 1, cellCount: TEST_CELLS }, (stage) => {

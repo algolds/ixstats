@@ -81,12 +81,6 @@ describe("invalidateRealmMap", () => {
       ])
     );
   });
-
-  it("names the procedures that exist, not the removed layer procedures' prefixes", () => {
-    expect(MAP_TRPC_KEYS).not.toContain("geoCore.getWorldMap");
-    expect(MAP_TRPC_KEYS).not.toContain("geoCore.getMapBundle");
-  });
-
   it("increments the realm's version once and returns the new one", async () => {
     const db = fakeDb(7);
     const version = await invalidateRealmMap(db, "r1");

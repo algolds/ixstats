@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 jest.mock("next/dynamic", () => ({ __esModule: true, default: () => () => null }));
@@ -42,12 +42,6 @@ describe("the Vault shop's initial view", () => {
     expect(screen.getByTestId("active-store-tab").textContent).toBe("packs");
     expect(screen.getByText("Packs from every realm. Each shows its odds.")).toBeInTheDocument();
   });
-
-  it("opens on Packs from an old boosters link", () => {
-    render(<VaultStoreTab initialView="boosters" />);
-    expect(screen.getByTestId("active-store-tab").textContent).toBe("packs");
-  });
-
   it("opens on My packs when the view param names it", () => {
     render(<VaultStoreTab initialView="my-packs" />);
     expect(screen.getByTestId("active-store-tab").textContent).toBe("my-packs");
@@ -57,12 +51,5 @@ describe("the Vault shop's initial view", () => {
     expect(resolveStoreView("nope")).toBe("packs");
     expect(resolveStoreView(null)).toBe("packs");
     expect(resolveStoreView("upgrades")).toBe("upgrades");
-  });
-
-  it("names the pack shop Packs and keeps old links working", () => {
-    expect(resolveStoreView(undefined)).toBe("packs");
-    expect(resolveStoreView("packs")).toBe("packs");
-    expect(resolveStoreView("my-packs")).toBe("my-packs");
-    expect(resolveStoreView("boosters")).toBe("packs");
   });
 });

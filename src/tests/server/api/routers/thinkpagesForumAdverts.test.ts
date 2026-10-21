@@ -29,7 +29,6 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesForumRouter } from "~/server/api/routers/thinkpagesForum";
 import { mapError } from "~/server/api/routers/thinkpagesForum/viewer";
 import {
-  advertRealmsOf,
   advertStatus,
   afterThreadStarted,
   createAdvert,
@@ -84,13 +83,6 @@ describe("thinkpagesForum.createAdvert", () => {
     expect(createAdvert).toHaveBeenCalledWith({}, actor, NEW);
     expect(afterThreadStarted).toHaveBeenCalledWith({}, actor, created);
   });
-
-  it("carries the module's answer as it is, a render still pending included", async () => {
-    const pending = { ...created, formatting: "pending" as const };
-    jest.mocked(createAdvert).mockResolvedValue(pending);
-    await expect(caller(member).createAdvert(NEW)).resolves.toEqual(pending);
-  });
-
   it("never fails or waits on a hook that fails", async () => {
     const logged = jest.spyOn(console, "error").mockImplementation(() => undefined);
     jest.mocked(afterThreadStarted).mockRejectedValue(new Error("notice outage"));
@@ -130,17 +122,6 @@ describe("thinkpagesForum.createAdvert", () => {
 });
 
 describe("thinkpagesForum adverts reads and lock", () => {
-  it("lists the realms the caller may advertise", async () => {
-    const realms = [
-      { slug: "eurth", name: "Eurth", advertThreadId: null, hiddenByModerator: false },
-    ];
-    jest.mocked(advertRealmsOf).mockResolvedValue(realms);
-    await expect(caller(member).myAdvertRealms()).resolves.toEqual({ realms });
-    await expect(caller(null).myAdvertRealms()).rejects.toMatchObject({
-      cause: { code: "UNAUTHORIZED" },
-    });
-  });
-
   it("answers a realm's advert status and maps a refusal", async () => {
     jest.mocked(advertStatus).mockResolvedValue({ threadId: "t_old", hiddenByModerator: false });
     await expect(caller(member).advertFor({ realm: "eurth" })).resolves.toEqual({

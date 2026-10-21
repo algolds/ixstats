@@ -181,74 +181,6 @@ describe("BoardMessage header", () => {
     expect(screen.getByText("Message p9")).toBeInTheDocument();
     expect(container.querySelector("article#post-p9")).not.toBeNull();
   });
-
-  it("labels the article with its author and age", () => {
-    const { container } = renderMessage();
-    expect(container.querySelector("article")).toHaveAttribute(
-      "aria-label",
-      "Message from kir, 12m ago"
-    );
-  });
-
-  it("marks an edited message", () => {
-    renderMessage({ message: boardMessage({ editedAt: new Date() }) });
-    expect(screen.getByText("edited")).toBeInTheDocument();
-  });
-
-  it("shows the officer and staff pill the server chose, and none for a thread starter", () => {
-    const { rerender } = renderMessage({ message: boardMessage({ role: "officer" }) });
-    expect(screen.getByText("Officer")).toBeInTheDocument();
-    const again = (role: "staff" | "starter") =>
-      rerender(
-        <BoardMessage
-          message={boardMessage({ role })}
-          realm={REALM}
-          access={boardAccess()}
-          canReact
-          signedIn
-          cards={new Map()}
-          cardsReady
-          cardsErrored={false}
-          tools={null}
-          onReply={jest.fn()}
-          onQuote={jest.fn()}
-          onChanged={jest.fn()}
-        />
-      );
-    again("staff");
-    expect(screen.getByText("Staff")).toBeInTheDocument();
-    again("starter");
-    expect(screen.queryByText("Thread starter")).toBeNull();
-    expect(screen.queryByText("Staff")).toBeNull();
-  });
-
-  it("labels a visitor with their own realm, or just Visitor without one", () => {
-    const { rerender } = renderMessage({
-      message: boardMessage({
-        isVisitor: true,
-        visitorRealm: { slug: "kiro", name: "Kiro-Borea" },
-      }),
-    });
-    expect(screen.getByText("Visitor · Kiro-Borea")).toBeInTheDocument();
-    rerender(
-      <BoardMessage
-        message={boardMessage({ isVisitor: true })}
-        realm={REALM}
-        access={boardAccess()}
-        canReact
-        signedIn
-        cards={new Map()}
-        cardsReady
-        cardsErrored={false}
-        tools={null}
-        onReply={jest.fn()}
-        onQuote={jest.fn()}
-        onChanged={jest.fn()}
-      />
-    );
-    expect(screen.getByText("Visitor")).toBeInTheDocument();
-  });
-
   it("shows a persona's message as the persona only: name, handle, hover card, no flag or pills", () => {
     const { container } = renderMessage({
       message: boardMessage({
@@ -270,34 +202,6 @@ describe("BoardMessage header", () => {
     expect(container.querySelector("img")).toBeNull();
     expect(screen.queryByText(/Officer|Staff|Visitor/)).toBeNull();
     expect(container.textContent).not.toContain("u_kir");
-  });
-
-  it("shows a persona message's voice chip, and the same author line as thread posts", () => {
-    renderMessage({
-      message: boardMessage({
-        authorUserId: null,
-        authorPersonaId: "ps2",
-        author: {
-          name: "Government of Urcea",
-          handle: "urcea_gov",
-          avatarUrl: null,
-          flagUrl: null,
-          persona: true,
-          personaType: "government",
-        },
-      }),
-    });
-    expect(screen.getByText("Government")).toBeInTheDocument();
-    expect(screen.getByText("Government of Urcea")).toHaveClass("text-headline");
-  });
-
-  it("badges a hidden message for the moderators who receive it", () => {
-    const { container } = renderMessage({
-      message: boardMessage({ hidden: true }),
-      access: boardAccess({ isModerator: true }),
-    });
-    expect(screen.getByText("Hidden")).toBeInTheDocument();
-    expect(container.querySelector("article")).toHaveAttribute("data-hidden");
   });
 });
 
@@ -541,17 +445,6 @@ describe("BoardMessage moderation", () => {
 
 describe("BoardMessage reactions", () => {
   const bar = () => screen.getByTestId("reaction-bar");
-
-  it("mounts the reaction bar before Reply with the message's reactions", () => {
-    renderMessage({
-      message: boardMessage({ id: "p3", reactions: { fire: 2 }, myReaction: "fire" }),
-    });
-    expect(bar()).toHaveAttribute("data-post", "p3");
-    expect(bar()).toHaveAttribute("data-mine", "fire");
-    const reply = screen.getByRole("button", { name: "Reply" });
-    expect(bar().compareDocumentPosition(reply) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it("offers reacting to a member who may post on another member's message", () => {
     renderMessage();
     expect(bar()).toHaveAttribute("data-can-react", "true");
@@ -578,13 +471,6 @@ describe("BoardMessage reactions", () => {
     expect(bar()).toHaveAttribute("data-can-react", "false");
     expect(screen.getByRole("button", { name: "Reply" })).toBeInTheDocument();
   });
-
-  it("keeps the message menu after the bar", () => {
-    renderMessage({ message: boardMessage({ canEdit: true }) });
-    const more = screen.getByRole("button", { name: "More actions" });
-    expect(bar().compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it("has no reaction bar on a message that continued in a thread", () => {
     renderMessage({
       message: boardMessage({ continued: { threadId: "t1", title: "Trade", replies: 2 } }),

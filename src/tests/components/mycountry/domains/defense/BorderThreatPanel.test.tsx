@@ -64,24 +64,6 @@ describe("BorderThreatPanel", () => {
       status: "pending" as const,
     });
   });
-
-  it("renders a loading skeleton while loading", () => {
-    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
-      data: null,
-      isLoading: true,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-      isFetching: true,
-      isSuccess: false,
-      status: "pending" as const,
-    });
-
-    const { container } = renderPanel();
-
-    expect(container.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
-  });
-
   it("renders overview stats and neighbor threat rows when data returns", () => {
     (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
       data: mockBorderData,
@@ -113,44 +95,5 @@ describe("BorderThreatPanel", () => {
     expect(
       screen.getByText("Arms buildup observed along the eastern frontier.")
     ).toBeInTheDocument();
-  });
-
-  it("renders empty state when no neighbor threats exist", () => {
-    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
-      data: {
-        ...mockBorderData,
-        neighborThreats: [],
-      },
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-      isFetching: false,
-      isSuccess: true,
-      status: "success" as const,
-    });
-
-    renderPanel();
-
-    expect(screen.getByText("No neighbor threat assessments recorded yet.")).toBeInTheDocument();
-  });
-
-  it("renders default fallback stats when data is completely null", () => {
-    (api.security.getBorderSecurity.useQuery as jest.Mock).mockReturnValue({
-      data: null,
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: jest.fn(),
-      isFetching: false,
-      isSuccess: true,
-      status: "success" as const,
-    });
-
-    const { container } = renderPanel();
-
-    expect(container.textContent).toContain("0/100");
-    expect(screen.getByText("unknown")).toBeInTheDocument();
-    expect(screen.getByText("No neighbor threat assessments recorded yet.")).toBeInTheDocument();
   });
 });

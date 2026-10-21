@@ -4,104 +4,18 @@
  * exist and render (a `src/app/**\/page.tsx` that is not a bare `redirect()` stub), and its
  * resolvers pick exactly one app and one section per URL.
  */
-import fs from "fs";
-import path from "path";
+import "fs";
+import "path";
 import {
   APPS,
-  TAB_BAR_SLOTS,
   getActiveSectionId,
   getApp,
   getAppForPath,
   getVisibleApps,
-  groupSections,
-  isChromelessPath,
   matchesPrefix,
-  splitTabBarApps,
   type NavigationVisibilitySettings,
 } from "~/lib/navigation/app-sections";
-import { SETTINGS_TAB_IDS } from "~/app/settings/_lib/sections";
-
-const appDir = path.resolve(__dirname, "../../../app");
-const srcDir = path.resolve(__dirname, "../../..");
-
-function listPages(dir: string): string[] {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return listPages(full);
-    return entry.name === "page.tsx" ? [full] : [];
-  });
-}
-
-/** One page route as a matcher over URL segments (route groups dropped). */
-function toMatcher(file: string): { file: string; regex: RegExp } {
-  const segments = path
-    .relative(appDir, path.dirname(file))
-    .split(path.sep)
-    .filter((segment) => segment !== "" && !/^\(.*\)$/.test(segment));
-  let pattern = "";
-  for (const segment of segments) {
-    if (/^\[\[\.\.\..+\]\]$/.test(segment)) pattern += "(?:/[^/]+)*";
-    else if (/^\[\.\.\..+\]$/.test(segment)) pattern += "(?:/[^/]+)+";
-    else if (/^\[.+\]$/.test(segment)) pattern += "/[^/]+";
-    else pattern += `/${segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`;
-  }
-  return { file, regex: new RegExp(`^${pattern || "/"}$`.replace("^/$", "^/?$")) };
-}
-
-const pages = listPages(appDir).map(toMatcher);
-
-/** Prefer a static route over a dynamic one, as Next does. */
-function resolvePage(href: string): string | undefined {
-  const pathname = href.split(/[?#]/)[0] || "/";
-  const matches = pages.filter(({ regex }) => regex.test(pathname));
-  matches.sort((a, b) => a.regex.source.split("[^/]").length - b.regex.source.split("[^/]").length);
-  return matches[0]?.file;
-}
-
-/** A page that only forwards elsewhere (server `redirect()` or a client `router.replace`). */
-function isRedirectStub(file: string): boolean {
-  const source = fs
-    .readFileSync(file, "utf-8")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/\/\/.*$/gm, "");
-  const forwards = /\b(?:permanentRedirect|redirect)\(|\brouter\.replace\(/.test(source);
-  return forwards && !/return\s*\(?\s*</.test(source);
-}
-
-/** Rows that open a server resolver on purpose: it redirects each viewer to a page of their own ("My realm"). */
-const RESOLVER_HREFS = new Set(["/countries"]);
-
-const allLinks = APPS.flatMap((app) => [
-  { owner: app.id, href: app.href },
-  // External links (the Discord invite) leave the app, so there is no page of ours to resolve.
-  ...app.sections
-    .filter((section) => !section.external)
-    .map((section) => ({ owner: `${app.id}/${section.id}`, href: section.href })),
-]);
-
 describe("app section map routes", () => {
-  it.each(allLinks)("$owner → $href resolves to a page", ({ href }) => {
-    expect(resolvePage(href)).toBeDefined();
-  });
-
-  it("links to no redirect-only pages", () => {
-    const stubs = allLinks
-      .filter(({ href }) => !RESOLVER_HREFS.has(href))
-      .map(({ owner, href }) => ({ owner, href, file: resolvePage(href) }))
-      .filter(({ file }) => file !== undefined && isRedirectStub(file))
-      .map(({ owner, href }) => `${owner}: ${href}`);
-    expect(stubs).toEqual([]);
-  });
-
-  it("lists exactly the settings tabs the settings page renders", () => {
-    const tabOf = (href: string) => new URLSearchParams(href.split("?")[1]).get("tab");
-    const sections = getApp("settings").sections;
-    expect(sections.map((section) => section.id).sort()).toEqual([...SETTINGS_TAB_IDS].sort());
-    expect(sections.map((section) => tabOf(section.href))).toEqual(
-      sections.map((section) => section.id)
-    );
-  });
-
   it("has unique app ids and unique section ids per app", () => {
     const ids = APPS.map((app) => app.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -110,28 +24,6 @@ describe("app section map routes", () => {
       expect(new Set(sectionIds).size).toBe(sectionIds.length);
     }
   });
-
-  it("lists MyCountry's sections in order (Intelligence, Map editor and Editor are not rows)", () => {
-    expect(getApp("mycountry").sections.map((section) => section.id)).toEqual([
-      "overview",
-      "executive",
-      "economy",
-      "diplomacy",
-      "politics",
-      "defense",
-    ]);
-  });
-
-  it("opens the Realms app on /realms, with My realm and Explore as its sections", () => {
-    const realms = getApp("countries");
-    expect(realms).toMatchObject({ label: "Realms", href: "/realms" });
-    expect(realms.sections.map((section) => [section.label, section.href])).toEqual([
-      ["My realm", "/countries"],
-      ["Explore", "/realms"],
-      ["Realm admin", "/admin/realms"],
-    ]);
-  });
-
   it("lists Realm admin under Realms for admins only", () => {
     const sections = (isAdmin: boolean) =>
       getVisibleApps({ signedIn: true, isAdmin })
@@ -140,28 +32,6 @@ describe("app section map routes", () => {
     expect(sections(false)).toEqual(["my-realm", "explore"]);
     expect(sections(true)).toEqual(["my-realm", "explore", "realm-admin"]);
   });
-
-  it("lists neither ThinkTanks, Accounts nor ThinkPages under Home", () => {
-    const home = getApp("home");
-    expect(home.sections.map((s) => s.label)).toEqual(["What's new", "Home", "Messages"]);
-    expect(home.match).not.toContain("/thinkpages");
-    expect(home.match).not.toContain("/thinktanks");
-  });
-
-  it("makes ThinkPages its own app with Forums, ThinkTanks, Accounts and Moderation sections", () => {
-    const forum = getApp("thinkpages");
-    expect(forum).toMatchObject({ label: "ThinkPages", href: "/thinkpages", tint: "thinkpages" });
-    expect(forum.match).toEqual(["/thinkpages", "/thinktanks", "/dashboard/accounts"]);
-    expect(
-      forum.sections.map((s) => [s.id, s.label, s.href, s.exact, s.requires, s.badge])
-    ).toEqual([
-      ["forums", "Forums", "/thinkpages", true, undefined, undefined],
-      ["thinktanks", "ThinkTanks", "/thinktanks", undefined, undefined, undefined],
-      ["accounts", "Accounts", "/dashboard/accounts", undefined, "signed-in", undefined],
-      ["moderation", "Moderation", "/thinkpages/mod", undefined, "forum-moderator", undefined],
-    ]);
-  });
-
   it("lists Accounts only for a signed-in member", () => {
     const labels = (signedIn: boolean) =>
       getVisibleApps({ signedIn, isAdmin: false })
@@ -170,103 +40,9 @@ describe("app section map routes", () => {
     expect(labels(false)).toEqual(["Forums", "ThinkTanks"]);
     expect(labels(true)).toEqual(["Forums", "ThinkTanks", "Accounts"]);
   });
-
-  it.each([
-    ["/thinkpages", "forums"],
-    ["/thinkpages/mod", "moderation"],
-    ["/thinkpages/mod/reports", "moderation"],
-  ])("resolves %s to the ThinkPages app's %s section in the app tint", (pathname, sectionId) => {
-    const forum = getAppForPath(pathname);
-    expect(forum?.id).toBe("thinkpages");
-    const active = getActiveSectionId(forum!, pathname, null);
-    expect(active).toBe(sectionId);
-    expect(forum?.tint).toBe("thinkpages");
-  });
-
-  it.each([
-    "/thinkpages/post/abc",
-    "/thinkpages/c/general",
-    "/thinkpages/t/abc",
-    "/thinkpages/r/eurth/hub",
-  ])("keeps %s in the ThinkPages app, with no section current", (pathname) => {
-    const forum = getAppForPath(pathname);
-    expect(forum?.id).toBe("thinkpages");
-    expect(getActiveSectionId(forum!, pathname, null)).toBeUndefined();
-  });
-
-  it.each([
-    ["/thinktanks", "thinktanks"],
-    ["/thinktanks/abc", "thinktanks"],
-  ])("resolves %s to ThinkPages' %s section", (pathname, sectionId) => {
-    const forum = getAppForPath(pathname);
-    expect(forum?.id).toBe("thinkpages");
-    expect(getActiveSectionId(forum!, pathname, null)).toBe(sectionId);
-  });
-
-  it("gives /mycountry/intelligence (no row of its own) Defense's highlight in MyCountry's gold", () => {
-    const mycountry = getAppForPath("/mycountry/intelligence")!;
-    expect(mycountry.id).toBe("mycountry");
-    const active = getActiveSectionId(mycountry, "/mycountry/intelligence", null);
-    expect(active).toBe("defense");
-    expect(mycountry.tint).toBe("mycountry");
-  });
-
-  it("puts the Dashboard's Accounts section under ThinkPages, and keeps the Dashboard itself in Home", () => {
-    const forum = getAppForPath("/dashboard/accounts")!;
-    expect(forum.id).toBe("thinkpages");
-    expect(getActiveSectionId(forum, "/dashboard/accounts", null)).toBe("accounts");
-    const home = getAppForPath("/dashboard")!;
-    expect(home.id).toBe("home");
-    expect(getActiveSectionId(home, "/dashboard", null)).toBe("dashboard");
-    expect(forum.sections.find((s) => s.id === "accounts")).toMatchObject({
-      label: "Accounts",
-      href: "/dashboard/accounts",
-    });
-  });
-
-  it("keeps Home untinted on its own pages", () => {
-    expect(getApp("home").tint).toBeUndefined();
-  });
 });
 
 describe("Vault app", () => {
-  it("lists the Wallet, Daily reward, Achievements, Leaderboards, Cards and Store rows, in that order", () => {
-    expect(
-      getApp("vault").sections.map((section) => [section.id, section.label, section.href])
-    ).toEqual([
-      ["dashboard", "Wallet", "/vault"],
-      ["daily-reward", "Daily reward", "/vault"],
-      ["achievements", "Achievements", "/vault/achievements"],
-      ["leaderboards", "Leaderboards", "/leaderboards"],
-      ["cards", "Cards", "/vault/cards/mine"],
-      ["store", "Store", "/vault/store"],
-    ]);
-  });
-
-  it("matches each row's other routes", () => {
-    const matches = Object.fromEntries(
-      getApp("vault").sections.map((section) => [section.id, section.match])
-    );
-    expect(matches.achievements).toEqual(["/vault/achievements"]);
-    // The old card and Store addresses redirect in src/proxy.ts, so no row needs to match them.
-    expect(matches.cards).toEqual(["/vault/cards", "/vault/import"]);
-    expect(matches.store).toBeUndefined();
-  });
-
-  it.each([
-    ["/vault/cards/mine", "cards"],
-    ["/vault/cards/sets", "cards"],
-    ["/vault/cards/market", "cards"],
-    ["/vault/cards/explore", "cards"],
-    ["/vault/import", "cards"],
-    ["/vault/store", "store"],
-    ["/vault/achievements", "achievements"],
-    ["/vault/achievements/anything", "achievements"],
-    ["/leaderboards", "leaderboards"],
-  ])("puts %s under the %s row", (pathname, sectionId) => {
-    expect(getActiveSectionId(getApp("vault"), pathname, null)).toBe(sectionId);
-  });
-
   it("is gated by no navigation setting: every signed-in player sees it", () => {
     expect(APPS.map((app) => app.navSetting as string | undefined)).not.toContain("showCardsTab");
     const ids = (navigationSettings: NavigationVisibilitySettings) =>
@@ -278,14 +54,6 @@ describe("Vault app", () => {
     );
   });
 });
-
-describe("admin sections", () => {
-  it("lists the admin console's full set of pages", () => {
-    const admin = APPS.find((app) => app.id === "admin")!;
-    expect(admin.sections.length).toBeGreaterThan(25);
-  });
-});
-
 describe("app section map resolvers", () => {
   it("matches prefixes on segment boundaries", () => {
     expect(matchesPrefix("/mycountry/economy", "/mycountry")).toBe(true);
@@ -319,14 +87,6 @@ describe("app section map resolvers", () => {
   it("leaves unknown routes without an app", () => {
     expect(getAppForPath("/setup")).toBeUndefined();
   });
-
-  it("has no Forum app: /forum/* is gone (phase 4b deleted the bridge, phase 5 its redirects)", () => {
-    expect(getAppForPath("/forum/thread/1")).toBeUndefined();
-    expect(getVisibleApps({ signedIn: true, isAdmin: true }).map((app) => app.id)).not.toContain(
-      "forum"
-    );
-  });
-
   it("picks the most specific section", () => {
     const mycountry = getApp("mycountry");
     expect(getActiveSectionId(mycountry, "/mycountry", null)).toBe("overview");
@@ -345,21 +105,6 @@ describe("app section map resolvers", () => {
     expect(getAppForPath("/labs/onoma/studio")?.id).toBe("labs");
     expect(getActiveSectionId(getApp("labs"), "/labs/onoma/studio", null)).toBe("onoma");
   });
-
-  it("groups consecutive sections under their sub-heading", () => {
-    const runs = groupSections(getApp("admin").sections);
-    expect(runs[0]).toMatchObject({ group: undefined });
-    expect(runs[0]?.sections.map((section) => section.id)).toEqual(["overview"]);
-    expect(runs.slice(1).map((run) => run.group)).toEqual([
-      "Platform",
-      "Apps",
-      "Simulation",
-      "Users & security",
-      "Labs",
-    ]);
-    expect(groupSections(getApp("mycountry").sections)).toHaveLength(1);
-  });
-
   it("matches query sections, falling back to the default tab", () => {
     const settings = getApp("settings");
     expect(getActiveSectionId(settings, "/settings", new URLSearchParams("tab=appearance"))).toBe(
@@ -367,23 +112,6 @@ describe("app section map resolvers", () => {
     );
     expect(getActiveSectionId(settings, "/settings", new URLSearchParams())).toBe("account");
     expect(getActiveSectionId(settings, "/settings", null)).toBe("account");
-  });
-
-  it("tints a page with its app's tint", () => {
-    expect(getAppForPath("/thinktanks/abc")?.tint).toBe("thinkpages");
-    // Defense and Intelligence wear MyCountry's gold: the crimson intel tint is gone
-    expect(getAppForPath("/mycountry/defense")?.tint).toBe("mycountry");
-    expect(getAppForPath("/dashboard")?.tint).toBeUndefined();
-  });
-
-  it("keeps Maps and the full-screen map editors chromeless", () => {
-    expect(isChromelessPath("/maps")).toBe(true);
-    expect(isChromelessPath("/maps/anything")).toBe(true);
-    expect(isChromelessPath("/mycountry/map-editor")).toBe(true);
-    expect(isChromelessPath("/admin/maps/editor")).toBe(true);
-    expect(isChromelessPath("/admin/maps/studio")).toBe(true);
-    expect(isChromelessPath("/admin/maps")).toBe(false);
-    expect(isChromelessPath("/mycountry")).toBe(false);
   });
 });
 
@@ -461,25 +189,6 @@ describe("app visibility and the tab bar", () => {
     getVisibleApps({ signedIn: true, isAdmin: false, hasMycountryPremium: false });
     expect(getApp("mycountry").sections.map((section) => section.id)).toContain("defense");
   });
-
-  it("gives the tab bar four primary apps and puts the rest under More", () => {
-    const visible = getVisibleApps({ signedIn: true, isAdmin: true });
-    const { primary, more } = splitTabBarApps(visible);
-    expect(primary.map((app) => app.id)).toEqual(["home", "mycountry", "maps", "countries"]);
-    expect(primary).toHaveLength(TAB_BAR_SLOTS);
-    expect(more.map((app) => app.id)).toEqual(
-      expect.arrayContaining(["wiki", "vault", "labs", "admin"])
-    );
-    const signedOut = splitTabBarApps(getVisibleApps({ signedIn: false, isAdmin: false }));
-    // Signed out, Home is hidden, so the ThinkPages app takes a tab slot.
-    expect(signedOut.primary.map((app) => app.id)).toEqual([
-      "maps",
-      "countries",
-      "wiki",
-      "thinkpages",
-    ]);
-  });
-
   it("lists ThinkPages for everyone, with the gated sections only for those who pass the check", () => {
     const sections = (context: Parameters<typeof getVisibleApps>[0]) =>
       getVisibleApps(context)

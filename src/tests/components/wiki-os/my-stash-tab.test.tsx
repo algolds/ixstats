@@ -106,17 +106,6 @@ beforeEach(() => {
 });
 
 describe("MyStashTab", () => {
-  it("lists stash folders as buttons", () => {
-    render(
-      <MyStashTab
-        selectedImageObj={null}
-        onSelectImage={jest.fn()}
-        onDoubleClickConfirm={jest.fn()}
-      />
-    );
-    expect(screen.getByRole("button", { name: /Harbours/ })).toBeInTheDocument();
-  });
-
   it("shows both a stashed Commons image and an image from a stashed IxWiki page", () => {
     openStash();
 
@@ -188,16 +177,5 @@ describe("MyStashTab", () => {
     openStash();
     expect(sisterCalls.at(-1)!.input.titles).toEqual([]);
     expect(sisterCalls.at(-1)!.options.enabled).toBe(false);
-  });
-
-  it("shows an error with a retry when the IIWiki lookup fails", () => {
-    stashItems = ok({ items: [{ pageTitle: "iiwiki:File:A.png" }] });
-    const failed = { isLoading: false, isError: true, refetch: jest.fn() };
-    sisterFileInfo = () => failed;
-    openStash();
-
-    expect(screen.getByText("Could not load this stash.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(failed.refetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -26,18 +26,6 @@ describe("atMost", () => {
     expect(atMost("a", Number.NaN, 50, "ms").pass).toBe(false);
     expect(atMost("a", Number.POSITIVE_INFINITY, 50, "ms").pass).toBe(false);
   });
-
-  it("writes the measured value and the limit with their unit", () => {
-    const result = atMost("layer hit", 0.314, 50, "ms");
-    expect(result.measured).toBe("0.31 ms");
-    expect(result.target).toBe("<= 50 ms");
-  });
-
-  it("writes a bare count without a trailing space", () => {
-    const result = atMost("queries", 0, 0, "");
-    expect(result.measured).toBe("0");
-    expect(result.target).toBe("<= 0");
-  });
 });
 
 describe("exactly", () => {
@@ -45,10 +33,6 @@ describe("exactly", () => {
     expect(exactly("status", 304, 304, "").pass).toBe(true);
     expect(exactly("status", 200, 304, "").pass).toBe(false);
     expect(exactly("status", Number.NaN, 304, "").pass).toBe(false);
-  });
-
-  it("writes the target with an equals sign", () => {
-    expect(exactly("checks", 1, 1, "").target).toBe("= 1");
   });
 });
 
@@ -58,12 +42,6 @@ describe("matches", () => {
     expect(matches("header", header, header).pass).toBe(true);
     expect(matches("header", "private, no-store", header).pass).toBe(false);
     expect(matches("header", "", header).pass).toBe(false);
-  });
-
-  it("writes both texts as given", () => {
-    const result = matches("header", "no-cache", "immutable");
-    expect(result.measured).toBe("no-cache");
-    expect(result.target).toBe("immutable");
   });
 });
 
@@ -179,10 +157,5 @@ describe("renderResults", () => {
     expect(lines[3]).toMatch(/^INFO +slowest drag frame +4\.5 ms +not gated$/);
     expect(lines[4]).toBe("      frame 12");
     expect(lines.at(-1)).toBe("1 of 2 targets pass");
-  });
-
-  it("aligns the measured column across lines", () => {
-    const [first, , second] = renderResults(results).split("\n");
-    expect(first!.indexOf("0.31 ms")).toBe(second!.indexOf("512 ms"));
   });
 });

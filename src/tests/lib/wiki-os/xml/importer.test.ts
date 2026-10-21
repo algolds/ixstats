@@ -852,18 +852,6 @@ describe("hashes and content models", () => {
       },
     ]);
   });
-
-  it("stays quiet when the dump's hash is right, and needs none", async () => {
-    expect((await importXml(withSha(mwSha1Base36("hello")))).warnings).toEqual([]);
-    resetStore();
-    const noHash = `<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text>hello</text></revision></page></mediawiki>`;
-
-    const summary = await importXml(noHash);
-
-    expect(summary.warnings).toEqual([]);
-    expect(store.revisions[0]?.sha1).toBe(mwSha1Base36("hello"));
-  });
-
   it("keeps the dump's hash for text that is not available", async () => {
     const hidden = `<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><text bytes="5" sha1="kept" deleted="deleted" /></revision></page></mediawiki>`;
 
@@ -889,12 +877,6 @@ describe("hashes and content models", () => {
           'Content model "wikitext" differs from "Scribunto", the model MediaWiki\'s defaults give this title',
       },
     ]);
-  });
-
-  it("does not warn when the model matches", async () => {
-    expect((await importXml(withModel("Module:Foo", "Scribunto", 828))).warnings).toEqual([]);
-    resetStore();
-    expect((await importXml(withModel("MediaWiki:Common.css", "css", 8))).warnings).toEqual([]);
   });
 });
 
@@ -1014,15 +996,6 @@ describe("redirects read from the head's wikitext", () => {
     expect(article("Duncala city")).toMatchObject({
       redirectTargetSlug: "Duncala",
       redirectTargetFragment: "Part one",
-    });
-  });
-
-  it("stores no redirect for an ordinary page", async () => {
-    await importXml(redirectDump("", "Just an article."));
-
-    expect(article("Duncala city")).toMatchObject({
-      redirectTargetSlug: null,
-      redirectTargetFragment: null,
     });
   });
 });

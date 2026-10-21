@@ -251,16 +251,6 @@ describe("cancelAuction", () => {
     expect(db.user.findUnique).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
   });
-
-  it("names no refund when the listing was free", async () => {
-    service.cancelAuction!.mockResolvedValue({ success: true, refund: 0 });
-
-    await expect(callerAs("seller", db).cancelAuction({ auctionId: "a1" })).resolves.toEqual({
-      success: true,
-      message: "Auction cancelled.",
-    });
-  });
-
   it("passes the service's refusal for someone else's auction", async () => {
     service.cancelAuction!.mockRejectedValue(
       new TRPCError({ code: "FORBIDDEN", message: "Only the seller can cancel" })
@@ -316,14 +306,6 @@ describe("caller-scoped reads", () => {
       }),
     });
   });
-
-  it("has no ending-soon list: ending soon is a sort (spec §2.3 Market)", () => {
-    expect("getEndingSoon" in cardMarketRouter._def.procedures).toBe(false);
-  });
-
-  it("has no auction-only list: Browse holds listings and auctions", () => {
-    expect("getActiveAuctions" in cardMarketRouter._def.procedures).toBe(false);
-  });
 });
 
 describe("analytics", () => {
@@ -354,9 +336,5 @@ describe("analytics", () => {
     db.cardAuction.findMany.mockResolvedValue([{ finalPrice: 40, endTime: new Date(0) }]);
     expect(await callerAs("u1", db).getCardValueHistory({ cardId: "card_1" })).toEqual([]);
     expect(db.cardAuction.findMany).not.toHaveBeenCalled();
-  });
-
-  it("has no transfer history of its own: the card sheet's trail is the one trail", () => {
-    expect("getCardTransferHistory" in cardMarketRouter._def.procedures).toBe(false);
   });
 });

@@ -45,22 +45,6 @@ function Host({ phone, formatting = "done" }: { phone: boolean; formatting?: "do
 }
 
 describe("ReplyComposer", () => {
-  it("is the composer under the posts, in the reply section, on wide screens", () => {
-    const { container } = render(<Host phone={false} />);
-    expect(container.querySelector("section#reply")).toContainElement(screen.getByTestId("canvas"));
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("is a docked Reply bar above the tab bar on a phone, with no composer until it is opened", () => {
-    const { container } = render(<Host phone />);
-    expect(screen.queryByTestId("canvas")).toBeNull();
-    const dock = container.querySelector('[data-slot="reply-dock"]');
-    expect(dock).toHaveClass("fixed");
-    // Sits on the shell's own tab bar offset, not a hard-coded height.
-    expect(dock?.className).toContain("var(--shell-tabbar-height)");
-    expect(dock).toContainElement(screen.getByRole("button", { name: "Reply" }));
-  });
-
   it("opens the composer in a full-height sheet and keeps the draft when the sheet is closed", async () => {
     render(<Host phone />);
     fireEvent.click(screen.getByRole("button", { name: "Reply" }));

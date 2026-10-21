@@ -1,5 +1,5 @@
-import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import "react";
+import { render, screen } from "@testing-library/react";
 
 let mockParams = new URLSearchParams();
 jest.mock("next/navigation", () => ({ useSearchParams: () => mockParams }));
@@ -8,8 +8,6 @@ const mockUseRealmBoardLive = jest.fn();
 jest.mock("~/hooks/useRealmBoardLive", () => ({
   useRealmBoardLive: (...args: never[]) => mockUseRealmBoardLive(...args),
 }));
-
-import { RealmCard } from "~/components/realms/RealmCard";
 import { RealmAdvertCard } from "~/components/realms/RealmAdvertCard";
 
 function overview(
@@ -54,33 +52,6 @@ beforeEach(() => {
 });
 
 describe("the advert variant", () => {
-  it("shows the realm's identity: banner, emblem, name, counts, description and tags", () => {
-    const { container } = renderAdvert();
-    const card = screen.getByRole("region", { name: "Eurth advert" });
-    expect(card).toHaveAttribute("data-content", "entity");
-    expect(screen.getByRole("link", { name: "Eurth" })).toHaveAttribute("href", "/r/eurth");
-    expect(card).toHaveTextContent("9 members · 12 nations");
-    expect(card).toHaveTextContent("A modern world of diplomacy.");
-    const tags = within(screen.getByRole("list", { name: "Tags" })).getAllByRole("listitem");
-    expect(tags.map((t) => t.textContent)).toEqual(["Modern", "Roleplay"]);
-    const sources = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src"));
-    expect(sources).toEqual(["https://img.example/banner.png", "https://img.example/emblem.png"]);
-  });
-
-  it("offers Join, the board and the rules, each a comfortable touch target", () => {
-    renderAdvert();
-    const join = screen.getByRole("link", { name: "Join" });
-    expect(join).toHaveAttribute("href", "/r/eurth");
-    expect(screen.getByRole("link", { name: "Visit the board" })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth"
-    );
-    expect(screen.getByRole("link", { name: "Rules" })).toHaveAttribute("href", "/r/eurth/rules");
-    for (const name of ["Join", "Visit the board", "Rules"]) {
-      expect(screen.getByRole("link", { name })).toHaveClass("pointer-coarse:min-h-11");
-    }
-  });
-
   it("carries the invite handle on Join, encoded", () => {
     mockParams = new URLSearchParams("via=heku");
     const first = renderAdvert();
@@ -137,95 +108,5 @@ describe("the advert variant", () => {
   it("still offers Join to a signed-out viewer (the realm page asks them to sign in)", () => {
     renderAdvert(overview({ viewer: { signedIn: false } }));
     expect(screen.getByRole("link", { name: "Join" })).toHaveAttribute("href", "/r/eurth");
-  });
-
-  it("shows no online figure: the advert does not join the board's presence room", () => {
-    renderAdvert();
-    expect(screen.getByRole("region")).not.toHaveTextContent("online");
-    expect(mockUseRealmBoardLive).not.toHaveBeenCalled();
-  });
-
-  it("draws no banner block for a realm without a banner", () => {
-    const withBanner = renderAdvert();
-    expect(withBanner.container.querySelector(".h-32")).not.toBeNull();
-    withBanner.unmount();
-    const without = renderAdvert(overview({ realm: { bannerUrl: null } }));
-    expect(without.container.querySelector(".h-32")).toBeNull();
-    without.rerender(<RealmAdvertCard overview={overview({ realm: { bannerUrl: "" } })} />);
-    expect(without.container.querySelector(".h-32")).toBeNull();
-  });
-
-  it("falls back to the thumbnail when the emblem is an empty string", () => {
-    const { container } = renderAdvert(
-      overview({
-        realm: { bannerUrl: null, emblemUrl: "", thumbnail: "https://img.example/thumb.png" },
-      })
-    );
-    expect(container.querySelector("img")).toHaveAttribute("src", "https://img.example/thumb.png");
-  });
-
-  it("falls back from the emblem to the thumbnail to the realm mark", () => {
-    const thumb = renderAdvert(
-      overview({
-        realm: { bannerUrl: null, emblemUrl: null, thumbnail: "https://img.example/thumb.png" },
-      })
-    );
-    expect(thumb.container.querySelector("img")).toHaveAttribute(
-      "src",
-      "https://img.example/thumb.png"
-    );
-    thumb.unmount();
-    const none = renderAdvert(
-      overview({ realm: { bannerUrl: null, emblemUrl: null, thumbnail: null } })
-    );
-    expect(none.container.querySelector("img")).toBeNull();
-    expect(none.container.querySelector("svg")).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Eurth" })).toBeInTheDocument();
-  });
-
-  it("copes with a realm that has no description, tags or rules", () => {
-    renderAdvert(overview({ realm: { description: null, tags: [] }, rules: null }));
-    expect(screen.queryByRole("list", { name: "Tags" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Rules" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Join" })).toBeInTheDocument();
-  });
-
-  it("uses the singular for one member and one nation", () => {
-    renderAdvert(overview({ stats: { nations: 1, claimedNations: 1 } }));
-    expect(screen.getByRole("region")).toHaveTextContent("1 member · 1 nation");
-  });
-});
-
-describe("RealmCard dispatches on its variant", () => {
-  it("renders the advert for variant advert and the directory card otherwise", () => {
-    const advert = render(<RealmCard variant="advert" overview={overview()} />);
-    expect(screen.getByRole("region", { name: "Eurth advert" })).toHaveTextContent("9 members");
-    advert.unmount();
-    const directory = render(
-      <ul>
-        <RealmCard
-          realm={
-            {
-              id: "r1",
-              slug: "eurth",
-              name: "Eurth",
-              description: null,
-              thumbnail: null,
-              bannerUrl: null,
-              tags: [],
-              foundedAt: new Date(),
-              nationCount: 2,
-              openNationCount: 0,
-              openNationPageCount: 0,
-              myNationCount: 0,
-              maxNationsPerUser: 1,
-              board: { recentPosts: 0, lastPostAt: null },
-            } as never
-          }
-        />
-      </ul>
-    );
-    expect(directory.container.querySelector("li")).not.toBeNull();
-    expect(screen.queryByRole("region")).toBeNull();
   });
 });

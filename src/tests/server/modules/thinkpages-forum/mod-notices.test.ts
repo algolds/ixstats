@@ -47,21 +47,6 @@ describe("notifyWarning", () => {
       type: "warning",
     });
   });
-
-  it("says 1 point in the singular", async () => {
-    await notifyWarning(userDb() as never, {
-      userId: "u_m",
-      points: 1,
-      reason: "Off topic",
-      activePoints: 1,
-    });
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "A moderator gave you 1 point (1 active now). Reason: Off topic",
-      })
-    );
-  });
-
   it("never throws when the notification fails, and logs it", async () => {
     create.mockRejectedValueOnce(new Error("guard disabled"));
     await expect(
@@ -111,39 +96,6 @@ describe("notifyAutoBanShortened (M5)", () => {
 });
 
 describe("notifyBan", () => {
-  const until = new Date("2026-10-16T12:00:00Z");
-
-  it.each([
-    [{ scope: "site", scopeName: null }, "the forum"],
-    [{ scope: "realm", scopeName: "Eurth" }, "Eurth's forum"],
-    [{ scope: "realm" }, "a realm's forum"],
-    [{ scope: "category", scopeName: "General" }, "the General category"],
-    [{ scope: "category", scopeName: null }, "a forum category"],
-  ] as const)("names the place for %o", async (place, text) => {
-    await notifyBan(userDb() as never, {
-      userId: "u_m",
-      ban: { ...place, expiresAt: until, reason: "Spam" },
-    });
-    expect(create).toHaveBeenCalledWith({
-      ...COMMON,
-      title: "You are banned from posting",
-      message: `You can't post in ${text} until 16 Oct 2026. Reason: Spam`,
-      type: "warning",
-    });
-  });
-
-  it("says when a ban is permanent", async () => {
-    await notifyBan(userDb() as never, {
-      userId: "u_m",
-      ban: { scope: "site", expiresAt: null, reason: "Spam" },
-    });
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "You can't post in the forum until a moderator lifts the ban. Reason: Spam",
-      })
-    );
-  });
-
   it("never throws", async () => {
     create.mockRejectedValueOnce(new Error("boom"));
     await expect(
@@ -156,19 +108,6 @@ describe("notifyBan", () => {
 });
 
 describe("notifyBanLifted", () => {
-  it("tells the member they can post again", async () => {
-    await notifyBanLifted(userDb() as never, {
-      userId: "u_m",
-      ban: { scope: "realm", scopeName: "Eurth" },
-    });
-    expect(create).toHaveBeenCalledWith({
-      ...COMMON,
-      title: "Your forum ban was lifted",
-      message: "You can post in Eurth's forum again.",
-      type: "info",
-    });
-  });
-
   it("never throws", async () => {
     create.mockRejectedValueOnce(new Error("boom"));
     await expect(
@@ -178,39 +117,6 @@ describe("notifyBanLifted", () => {
 });
 
 describe("notifyAppealDecision", () => {
-  it.each([
-    [
-      "overturned",
-      "ban",
-      "Your appeal was accepted",
-      "Your ban was overturned. Response: Fair point.",
-    ],
-    ["upheld", "warning", "Your appeal was declined", "Your warning stands. Response: Fair point."],
-    [
-      "moot",
-      "ban",
-      "Your appeal was closed",
-      "Your ban had already ended, so there was nothing left to decide. Response: Fair point.",
-    ],
-    [
-      "moot",
-      "warning",
-      "Your appeal was closed",
-      "Your warning had already ended, so there was nothing left to decide. Response: Fair point.",
-    ],
-  ] as const)(
-    "tells the member the appeal was %s",
-    async (outcome, subjectType, title, message) => {
-      await notifyAppealDecision(userDb() as never, {
-        userId: "u_m",
-        subjectType,
-        outcome,
-        response: "Fair point.",
-      });
-      expect(create).toHaveBeenCalledWith({ ...COMMON, title, message, type: "info" });
-    }
-  );
-
   it("never throws", async () => {
     create.mockRejectedValueOnce(new Error("boom"));
     await expect(

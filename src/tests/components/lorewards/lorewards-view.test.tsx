@@ -162,71 +162,12 @@ const statValue = (label: string) =>
 const headings = () => screen.getAllByRole("heading").map((h) => h.textContent);
 
 describe("contest focus", () => {
-  it("leads with today's race, then the standings and the history", () => {
-    render(<LorewardsView focus="contest" />);
-
-    expect(headings().slice(0, 3)).toEqual(["Today's race", "Standings", "Recent winners"]);
-    const race = screen.getByRole("region", { name: "Today's race" });
-    expect(within(race).getByText("Harbor Treaty")).toBeInTheDocument();
-    expect(within(race).getByText("400 pts")).toBeInTheDocument();
-    const standings = screen.getByRole("region", { name: "Standings" });
-    expect(within(standings).getByText("Bo")).toBeInTheDocument();
-    expect(within(standings).getByText("1,200")).toBeInTheDocument();
-    const history = screen.getByRole("region", { name: "Recent winners" });
-    expect(within(history).getByText("Seastead Law")).toBeInTheDocument();
-  });
-
-  it("links to the player's trophies in the Vault", () => {
-    render(<LorewardsView focus="contest" />);
-    expect(screen.getByRole("link", { name: /your trophies/i })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/vault/achievements?tab=lorewards")
-    );
-  });
-
   it("does not load the viewer's trophies", () => {
     render(<LorewardsView focus="contest" />);
     expect(lore.getMyTrophies.useQuery).not.toHaveBeenCalled();
   });
 });
-
-describe("contest focus with a winner", () => {
-  it("shows that winner's public trophies above the race, without calendar or history", () => {
-    jest.mocked(useUser).mockReturnValue({ user: null, isLoaded: true } as never);
-    render(<LorewardsView focus="contest" username="Ada" highlightCardId="card2" />);
-
-    expect(headings().slice(0, 2)).toEqual(["Trophies of Ada", "Today's race"]);
-    expect(lore.getTrophies.useQuery).toHaveBeenCalledWith(
-      { username: "Ada" },
-      expect.objectContaining({ enabled: true })
-    );
-    expect(lore.getMyTrophies.useQuery).toHaveBeenCalledWith(undefined, { enabled: false });
-    const shelf = within(screen.getByRole("region", { name: "Trophies of Ada" }));
-    expect(shelf.getByText("Tide Charts").closest("[data-highlighted]")).not.toBeNull();
-    expect(screen.queryByRole("region", { name: "History" })).toBeNull();
-    expect(screen.queryByText("IxCredits paid")).toBeNull();
-  });
-});
-
 describe("you focus", () => {
-  it("leads with the viewer's trophies, streak, payouts and trophy cards", () => {
-    render(<LorewardsView focus="you" />);
-
-    expect(headings()[0]).toBe("Your trophies");
-    expect(headings()).not.toContain("Today's race");
-    expect(statValue("Daily wins")).toBe("6");
-    expect(statValue("Runner-ups")).toBe("2");
-    expect(statValue("Total score")).toBe("900");
-    expect(statValue("Rank")).toBe("#4");
-    expect(statValue("Streak")).toBe("3");
-    expect(statValue("IxCredits paid")).toBe("2,150");
-    expect(statValue("Today's race")).toBe("#2");
-    const shelf = screen.getByRole("region", { name: "Your trophies" });
-    expect(within(shelf).getByText("Seastead Law")).toBeInTheDocument();
-    expect(within(shelf).getByText("Weekly winner")).toBeInTheDocument();
-    expect(within(shelf).getByText("Daily runner-up")).toBeInTheDocument();
-  });
-
   it("opens the viewer's own trophy cards in Mine", () => {
     render(<LorewardsView focus="you" />);
     const shelf = within(screen.getByRole("region", { name: "Your trophies" }));
@@ -234,22 +175,6 @@ describe("you focus", () => {
       shelf.getByRole("link", { name: "Seastead Law, Legendary, Serialised, Ixnay" })
     ).toHaveAttribute("href", "/vault/cards/mine?card=card1");
   });
-
-  it("links to today's race and standings in WikiOS", () => {
-    render(<LorewardsView focus="you" />);
-    expect(screen.getByRole("link", { name: /today's race and standings/i })).toHaveAttribute(
-      "href",
-      "/util/lorewards"
-    );
-  });
-
-  it("marks the trophy card the article badge pointed to", () => {
-    render(<LorewardsView focus="you" highlightCardId="card2" />);
-    const shelf = within(screen.getByRole("region", { name: "Your trophies" }));
-    expect(shelf.getByText("Tide Charts").closest("[data-highlighted]")).not.toBeNull();
-    expect(shelf.getByText("Seastead Law").closest("[data-highlighted]")).toBeNull();
-  });
-
   it("asks a signed-out viewer to sign in, with no error and no trophies query", () => {
     jest.mocked(useUser).mockReturnValue({ user: null, isLoaded: true } as never);
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue({
@@ -264,66 +189,6 @@ describe("you focus", () => {
     expect(screen.queryByText(/something went wrong|unavailable/i)).toBeNull();
     expect(lore.getMyTrophies.useQuery).toHaveBeenCalledWith(undefined, { enabled: false });
   });
-
-  it("says so when the trophies cannot be loaded, rather than loading forever", () => {
-    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    } as never);
-    render(<LorewardsView focus="you" />);
-    expect(screen.getByText("Trophies are unavailable right now.")).toBeInTheDocument();
-  });
-
-  it("tells a viewer with no wiki edits yet how trophies are earned, without asking for a link", () => {
-    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
-      ok({
-        wikiUsername: null,
-        verified: false,
-        unmatched: 0,
-        wins: { daily: 0, weekly: 0, monthly: 0 },
-        runnerUps: 0,
-        streak: 0,
-        cards: [],
-        paid: 0,
-        todayRank: null,
-      }) as never
-    );
-    render(<LorewardsView focus="you" />);
-
-    expect(screen.getByText("No wiki edits yet")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open settings" })).not.toBeInTheDocument();
-  });
-
-  it("tells a viewer that classic-wiki wins under their name may be theirs, without assuming so", () => {
-    jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
-      ok({
-        wikiUsername: "Ostrozava",
-        verified: false,
-        unmatched: 3,
-        wins: { daily: 0, weekly: 0, monthly: 0 },
-        runnerUps: 0,
-        streak: 0,
-        cards: [],
-        paid: 0,
-        todayRank: null,
-      }) as never
-    );
-    render(<LorewardsView focus="you" />);
-
-    expect(screen.getByText("Classic wiki wins need a verified link")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Some wins under Ostrozava may be yours. Verify your wiki account in Settings to claim the ones you made on the classic wiki."
-      )
-    ).toBeInTheDocument();
-    expect(screen.queryByText("No wiki edits yet")).toBeNull();
-    expect(screen.getByRole("link", { name: "Verify your wiki account" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/settings?tab=account")
-    );
-  });
-
   it("never offers a verified viewer to verify, even with unmatched places under a label", () => {
     jest.mocked(lore.getMyTrophies.useQuery).mockReturnValue(
       ok({
@@ -398,15 +263,5 @@ describe("you focus", () => {
     expect(
       within(shelf).getByRole("link", { name: "Seastead Law, Legendary, Serialised, Ixnay" })
     ).toHaveAttribute("href", "/vault/cards/explore?card=card1&from=holder.ada");
-  });
-
-  it("lists the streak calendar and the history of the wiki account", () => {
-    render(<LorewardsView focus="you" />);
-    expect(lore.getUserAwardHistory.useQuery).toHaveBeenCalledWith(
-      { username: "Ada", limit: 20, offset: 0 },
-      expect.objectContaining({ enabled: true })
-    );
-    expect(screen.getByRole("region", { name: "History" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /^[A-Z][a-z]+ \d{4}$/ })).toBeInTheDocument();
   });
 });

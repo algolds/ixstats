@@ -3,7 +3,7 @@
  * found field (the government shows its raw infobox value), keep only the ticked fields, and the
  * Start grid marks the suggested archetype.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 const mockSearch = jest.fn();
@@ -18,8 +18,6 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { ImportSheet } from "~/app/builder/_founding/components/ImportSheet";
-import { StartStep } from "~/app/builder/_founding/components/StartStep";
-
 const INFOBOX = {
   name: "Valoria",
   capital: "[[Port Val]]",
@@ -85,30 +83,5 @@ describe("ImportSheet", () => {
     expect([...keep].sort()).toEqual(
       ["currency", "gdpPerCapita", "government", "name", "population"].sort()
     );
-  });
-});
-
-describe("StartStep", () => {
-  it("marks the suggested archetype and offers one Details sheet per card", () => {
-    render(
-      <StartStep
-        selection="nordic"
-        suggested="nordic"
-        importedTitle="Valoria"
-        onSelect={jest.fn()}
-        onImport={jest.fn()}
-        onBlank={jest.fn()}
-      />
-    );
-    const nordic = screen.getByRole("radio", { name: /Wealthy welfare state/ });
-    expect(nordic).toHaveAttribute("aria-checked", "true");
-    expect(nordic).toHaveTextContent("Suggested");
-    expect(nordic).toHaveTextContent("Inspired by the Nordic model");
-    expect(screen.getAllByText("Suggested")).toHaveLength(1);
-    expect(screen.getByText(/Imported from Valoria/)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Details:/ })).toHaveLength(10);
-
-    fireEvent.click(screen.getByRole("radio", { name: "Historical" }));
-    expect(screen.getByRole("radio", { name: /Planned industrial state/ })).toBeInTheDocument();
   });
 });

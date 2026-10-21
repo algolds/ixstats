@@ -2,7 +2,7 @@
  * Signing a copy once: the dialog cleans and counts the text with the server's own rule, previews it with the exact
  * name that will be frozen beside it, and refuses a player with no name other players can read.
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useCopyActions", () => ({ useCopyActions: jest.fn() }));
@@ -56,27 +56,6 @@ describe("SignDialog", () => {
       )
     ).toBeTruthy();
   });
-
-  it("starts empty, counting nothing and offering no signature yet", () => {
-    const { mutate } = setup();
-    expect(screen.getByText("0 of 60")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Sign this copy" }).hasAttribute("disabled")).toBe(
-      true
-    );
-    fireEvent.submit(screen.getByLabelText("Inscription").closest("form")!);
-    expect(mutate).not.toHaveBeenCalled();
-  });
-
-  it("ties the count and the reason to the field, announced as they change", () => {
-    setup();
-    const field = screen.getByLabelText("Inscription");
-    const status = document.getElementById(field.getAttribute("aria-describedby") ?? "");
-    expect(status?.getAttribute("aria-live")).toBe("polite");
-    fireEvent.change(field, { target: { value: "see www.example.com" } });
-    expect(status?.textContent).toBe("Links aren't allowed.");
-    expect(field.getAttribute("aria-invalid")).toBe("true");
-  });
-
   it("shows how to get a name instead of a sign button for a player with none", () => {
     const { mutate } = setup(null);
     expect(

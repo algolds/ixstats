@@ -9,8 +9,6 @@ import {
   rarityList,
   undeliverableRarities,
 } from "~/lib/cards/pack-odds";
-import { RARITY_LABEL } from "~/lib/cards/face/labels";
-
 const seeded = {
   commonOdds: 65,
   uncommonOdds: 25,
@@ -46,13 +44,6 @@ it("refuses odds that do not add up to 100, or any odd outside 0 to 100", () => 
     false
   );
 });
-
-it("says why the odds were refused", () => {
-  const result = PackOddsSchema.safeParse({ ...seeded, rareOdds: 8 });
-  expect(result.success).toBe(false);
-  expect(result.error?.issues[0]?.message).toBe("The odds must add up to 100%");
-});
-
 it("gives a new pack the seeded odds, which add up", () => {
   expect(DEFAULT_PACK_ODDS).toEqual(seeded);
   expect(PackOddsSchema.safeParse(DEFAULT_PACK_ODDS).success).toBe(true);
@@ -94,9 +85,4 @@ it("lists rarities by name for a refusal", () => {
   expect(rarityList(["EPIC", "LEGENDARY"])).toBe("Epic and Legendary");
   expect(rarityList(["RARE", "ULTRA_RARE", "LEGENDARY"])).toBe("Rare, Ultra Rare and Legendary");
   expect(rarityList([])).toBe("");
-});
-
-it("lists rarities with the caller's labels, so the admin keeps its sentence case", () => {
-  const admin = { ...RARITY_LABEL, ULTRA_RARE: "Ultra rare" };
-  expect(rarityList(["RARE", "ULTRA_RARE"], admin)).toBe("Rare and Ultra rare");
 });

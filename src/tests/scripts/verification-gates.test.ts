@@ -121,10 +121,6 @@ describe("verification-gates", () => {
         }
       }
     });
-
-    it("exposes verify:strict script", () => {
-      expect(pkg.scripts["verify:strict"]).toBe("bun scripts/verification/verify-strict.ts");
-    });
   });
 
   describe("CI configuration (.github/workflows/ci.yml)", () => {

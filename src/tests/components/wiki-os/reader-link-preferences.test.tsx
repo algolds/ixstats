@@ -2,7 +2,7 @@
  * WK-14: the WikiOS reader honours "Citation tooltips" and "Open links in a new tab"
  * (Settings → WikiOS options, stored in localStorage).
  */
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useCiteTooltips } from "~/components/wiki-os/reader/useCiteTooltips";
 
@@ -58,13 +58,6 @@ describe("reader link preferences", () => {
     });
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
-
-  it("follows links in place by default", () => {
-    render(<Harness />);
-    fireEvent.click(screen.getByRole("link", { name: "Other page" }));
-    expect(openSpy).not.toHaveBeenCalled();
-  });
-
   it("opens article links in a new tab when switched on, but not in-page anchors", () => {
     localStorage.setItem("wikios:openInNewTab", "true");
     render(<Harness />);

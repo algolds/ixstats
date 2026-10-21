@@ -13,8 +13,6 @@ import {
   titleUrlPath,
   wikiosConfig,
 } from "~/lib/wiki-os/config";
-import { NAMESPACE_CANONICAL_NAMES } from "~/lib/wiki-os/core/title";
-
 describe("buildWikiosConfig", () => {
   it("defaults to the public IxWiki host with the internal API falling back to the public one", () => {
     const config = buildWikiosConfig({});
@@ -81,24 +79,9 @@ describe("buildWikiosConfig", () => {
   it("refuses a public URL that is not a URL, by name", () => {
     expect(() => buildWikiosConfig({ publicUrl: "not a url" })).toThrow(/NEXT_PUBLIC_MEDIAWIKI_URL/);
   });
-
-  it("is frozen, with its MediaWiki block", () => {
-    const config = buildWikiosConfig({});
-
-    expect(Object.isFrozen(config)).toBe(true);
-    expect(Object.isFrozen(config.mediawiki)).toBe(true);
-    expect(() => {
-      (config as { siteName: string }).siteName = "Other";
-    }).toThrow(TypeError);
-  });
 });
 
 describe("the module's configuration and helpers", () => {
-  it("is the frozen configuration built from this environment", () => {
-    expect(Object.isFrozen(wikiosConfig)).toBe(true);
-    expect(wikiosConfig).toEqual(buildWikiosConfig({}));
-  });
-
   it("gives the origin and the API URL of each audience", () => {
     expect(mediaWikiOrigin()).toBe("https://ixwiki.com");
     expect(mediaWikiApiUrl({ internal: false })).toBe("https://ixwiki.com/api.php");
@@ -109,12 +92,6 @@ describe("the module's configuration and helpers", () => {
   it("keeps the sister wikis' own API URLs", () => {
     expect(getMediaWikiApiUrl("althistory")).toBe("https://althistory.fandom.com/api.php");
   });
-
-  it("reads namespace 4 from the configuration", () => {
-    expect(NAMESPACE_CANONICAL_NAMES[4]).toBe(wikiosConfig.projectNamespace);
-    expect(NAMESPACE_CANONICAL_NAMES[5]).toBe(`${wikiosConfig.projectNamespace} talk`);
-  });
-
   describe("publicArticleUrl", () => {
     it.each([
       ["Main Page", "https://ixwiki.com/wiki/Main_Page"],

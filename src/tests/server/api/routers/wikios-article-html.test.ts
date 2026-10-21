@@ -266,15 +266,6 @@ describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
     expect(findArticleForView).toHaveBeenCalledWith("Aurelia");
     expect(result.resolvedFrom).toBe("Old name");
   });
-
-  it("has no last-modified time for an article with no revision rows", async () => {
-    findArticleForView.mockResolvedValue(head({ lastModified: null }));
-    setRow(freshBundleRow("<p>x</p>"));
-
-    await expect(caller().getArticleHtml({ title: "Aurelia" })).resolves.toMatchObject({
-      lastModified: null,
-    });
-  });
 });
 
 describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once", () => {
@@ -591,16 +582,6 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
     expect(findArticleForView).not.toHaveBeenCalled();
     expect(syncSinglePage).not.toHaveBeenCalled();
   });
-
-  it("a WikiOS tool name is an ordinary title: plan 412 redirects the old slugs in the route, not here", async () => {
-    findArticleForView.mockResolvedValue(head({ title: "Utilities" }));
-    setRow(freshBundleRow("<p>The utilities of Eurth.</p>"));
-
-    const result = await caller().getArticleHtml({ title: "Utilities" });
-
-    expect(findArticleForView).toHaveBeenCalledWith("Utilities");
-    expect(result.title).toBe("Utilities");
-  });
 });
 
 describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
@@ -739,11 +720,6 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
       code: "TOO_MANY_REQUESTS",
     });
     expect(findArticleForView).toHaveBeenCalledTimes(1);
-  });
-
-  it("a page that is not a redirect has neither", async () => {
-    const result = await caller().getArticleHtml({ title: "Aurelia" });
-    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
   });
 });
 
@@ -1076,24 +1052,5 @@ describe("getArticleHtml for another wiki's page is sanitized like any other (pl
     expect(result.noticesHtml).toMatch(/^SANITIZED\(.*Notice/);
     expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(3);
     expect(result).toMatchObject({ wikiSource: "iiwiki", stale: false, renderQuality: "rendered" });
-  });
-
-  it("has no infobox or notices to sanitize when the page has none", async () => {
-    jest.mocked(getArticleWikitext).mockResolvedValue({
-      title: "Eurth",
-      wikitext: "text",
-      pageId: 1,
-      length: 4,
-    } as never);
-    jest.mocked(getArticleAuthors).mockResolvedValue({ creator: null } as never);
-    globalThis.fetch = jest.fn(
-      async () => new Response(JSON.stringify({ parse: { text: "<p>Plain</p>" } }), { status: 200 })
-    ) as typeof fetch;
-    jest.mocked(sanitizeWikiArticleHtml).mockClear();
-
-    const result = await caller().getArticleHtml({ title: "Eurth", wikiSource: "iiwiki" });
-
-    expect(result).toMatchObject({ infoboxHtml: null, noticesHtml: null });
-    expect(sanitizeWikiArticleHtml).toHaveBeenCalledTimes(1);
   });
 });

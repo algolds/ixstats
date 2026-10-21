@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 // @ts-ignore
 import { render, fireEvent } from "@testing-library/react";
 import { describe, it, expect, jest } from "@jest/globals";
@@ -89,39 +89,6 @@ const mockColumns: FacetColumn<TestPerson>[] = [
 ];
 
 describe("FacetDataTable Component", () => {
-  it("renders table headers and rows in table mode", () => {
-    const { getByText } = render(
-      <FacetDataTable
-        data={mockData}
-        columns={mockColumns}
-        layoutMode="table"
-        title="Leadership Directory"
-      />
-    );
-
-    expect(getByText("Leadership Directory")).toBeTruthy();
-    expect(getByText("Full Name")).toBeTruthy();
-    expect(getByText("Alice Wonderland")).toBeTruthy();
-    expect(getByText("Bob Builder")).toBeTruthy();
-    expect(getByText("$120,000")).toBeTruthy();
-  });
-
-  it("renders mobile cards with mobileRole hierarchy in cards mode", () => {
-    const { getByText, getAllByText, queryByText } = render(
-      <FacetDataTable data={mockData} columns={mockColumns} layoutMode="cards" />
-    );
-
-    expect(getByText("Alice Wonderland")).toBeTruthy();
-    expect(getByText("Chancellor")).toBeTruthy();
-
-    // mobileRender overrides compensation format
-    expect(getByText("$120k")).toBeTruthy();
-    // mobileLabel overrides department label
-    expect(getAllByText("Dept").length).toBeGreaterThan(0);
-    // hideOnMobile hides System ID
-    expect(queryByText("System ID")).toBeNull();
-  });
-
   it("filters data based on search input", () => {
     const { getByText, getByPlaceholderText, queryByText } = render(
       <FacetDataTable

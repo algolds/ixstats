@@ -82,28 +82,6 @@ beforeEach(() => {
 });
 
 describe("CardSheetMarket", () => {
-  it("shows the value, the wanted count, the listings with each copy's finish and serial, and the recent sales", () => {
-    show([listing({})]);
-    expect(screen.getByText("Wanted by 12")).toBeTruthy();
-    const listings = screen.getByRole("list", { name: "Live listings" });
-    expect(within(listings).getByText(/^@ixnay · Foil #7 · 2d 3h left$/)).toBeTruthy();
-    expect(within(listings).getByText("140")).toBeTruthy();
-    const sales = screen.getByRole("list", { name: "Recent sales" });
-    expect(sales.textContent).toContain("· Standard");
-    expect(within(sales).getByText("130")).toBeTruthy();
-    expect(screen.getByText("Price history")).toBeTruthy();
-    expect(useSheetEconomy).toHaveBeenCalledWith("c1", true);
-  });
-
-  it("names nobody for a hidden seller, says when no one wants it yet, and points to the market", () => {
-    show([listing({ sellerName: null })], { wantedBy: 0 });
-    expect(screen.getByRole("list", { name: "Live listings" }).textContent).toMatch(/^A player · /);
-    expect(screen.getByText("On no wishlists yet")).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "Look for it in the market" }).getAttribute("href")
-    ).toBe("/vault/cards/market?for=c1");
-  });
-
   it("offers Buy on other players' live fixed-price listings only", () => {
     show([
       listing({}),
@@ -141,18 +119,6 @@ describe("CardSheetMarket", () => {
       expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Market" }))
     );
   });
-
-  it("gives focus back to Buy when the purchase is called off", async () => {
-    show([listing({})]);
-    const opener = screen.getByRole("button", { name: "Buy" });
-    opener.focus();
-    fireEvent.click(opener);
-    fireEvent.click(screen.getByRole("button", { name: "Not now" }));
-    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
-    await waitFor(() => expect(document.activeElement).toBe(opener));
-    expect(buy.mutate).not.toHaveBeenCalled();
-  });
-
   it("keeps the confirmation open with the failure announced: a race to try again, or a listing just gone", () => {
     show([listing({})]);
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));

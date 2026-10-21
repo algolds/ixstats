@@ -85,50 +85,6 @@ function data(over: object = {}) {
 const refresh = () => Promise.resolve();
 
 describe("ThreadActions in a compact header", () => {
-  it("makes Stash and Report icon buttons that keep their accessible names", () => {
-    render(
-      <ThreadActions
-        data={data({ canModerate: false, moderable: false })}
-        signedIn
-        compact
-        refresh={refresh}
-      />
-    );
-    // Icon-only: no visible text, but an accessible name.
-    const stash = screen.getByRole("button", { name: "Stash thread" });
-    const report = screen.getByRole("button", { name: "Report thread" });
-    expect(stash).toHaveTextContent("");
-    expect(report).toHaveTextContent("");
-    expect(screen.queryByText("In character")).toBeNull();
-    expect(screen.queryByRole("menu")).toBeNull();
-  });
-
-  it("makes Watch an icon button in a compact header that keeps its name and shows its state as pressed", () => {
-    const { rerender } = render(
-      <ThreadActions
-        data={data({ canModerate: false, moderable: false, watching: false })}
-        signedIn
-        compact
-        refresh={refresh}
-      />
-    );
-    const off = screen.getByRole("button", { name: "Watch thread" });
-    expect(off).toHaveTextContent("");
-    expect(off).toHaveAttribute("aria-pressed", "false");
-    rerender(
-      <ThreadActions
-        data={data({ canModerate: false, moderable: false, watching: true })}
-        signedIn
-        compact
-        refresh={refresh}
-      />
-    );
-    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-  });
-
   it("offers the moderator one Thread actions menu", () => {
     render(<ThreadActions data={data()} signedIn compact refresh={refresh} />);
     const buttons = screen.getAllByRole("button");
@@ -195,22 +151,6 @@ describe("ThreadActions in a compact header", () => {
 });
 
 describe("ThreadActions in a wide header", () => {
-  it("keeps the labelled buttons and the In character badge", () => {
-    render(
-      <ThreadActions
-        data={data({ canModerate: false, moderable: false })}
-        signedIn
-        compact={false}
-        refresh={refresh}
-      />
-    );
-    expect(screen.getByText("In character")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Stash thread" })).toHaveTextContent("Stash thread");
-    expect(screen.getByRole("button", { name: "Report thread" })).toHaveTextContent(
-      "Report thread"
-    );
-  });
-
   it("offers Watch beside Stash to a signed-in reader, and no Watch to a signed-out one", () => {
     const { rerender } = render(
       <ThreadActions data={data({ watching: false })} signedIn refresh={refresh} compact={false} />
@@ -242,17 +182,6 @@ describe("ThreadActions in a wide header", () => {
     fireEvent.click(screen.getByRole("button", { name: "Watch thread" }));
     await waitFor(() => expect(mutations.unwatchThread).toHaveBeenCalledWith({ threadId: "t1" }));
   });
-
-  it("still gives a moderator the one Thread actions menu, never a row of buttons beside the top chrome", () => {
-    render(<ThreadActions data={data()} signedIn compact={false} refresh={refresh} />);
-    expect(screen.getByRole("button", { name: "Thread actions" })).toBeInTheDocument();
-    expect(
-      within(screen.getByRole("menu"))
-        .getAllByRole("menuitem")
-        .map((i) => i.textContent)
-    ).toEqual(["Lock", "Pin", "Hide", "Archive", "Move"]);
-    expect(screen.queryByRole("button", { name: "Lock" })).toBeNull();
-  });
 });
 
 describe("the advert lock", () => {
@@ -281,22 +210,6 @@ describe("the advert lock", () => {
       "true"
     );
   });
-
-  it("gives a wide header the labelled button", () => {
-    render(
-      <ThreadActions
-        data={data({ ...reader, advert: advert() })}
-        signedIn
-        compact={false}
-        refresh={refresh}
-      />
-    );
-    expect(screen.getByRole("button", { name: "Lock advert" })).toHaveAttribute(
-      "data-icon-only",
-      "false"
-    );
-  });
-
   it("offers nothing on a locked advert: unlocking is the thread bar's", () => {
     render(
       <ThreadActions

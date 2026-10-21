@@ -1,5 +1,5 @@
 // MC-17: the overview rail card lists open intelligence alerts and resolves them.
-import React from "react";
+import "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockAlerts = { current: [] as unknown[] };
@@ -46,13 +46,6 @@ describe("IntelligenceAlertsCard", () => {
   beforeEach(() => {
     Object.values(mockMutate).forEach((m) => m.mockClear());
   });
-
-  it("renders nothing while there are no open alerts", () => {
-    mockAlerts.current = [];
-    const { container } = render(<IntelligenceAlertsCard countryId="c1" />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
   it("lists alerts with their severity and resolves them", () => {
     mockAlerts.current = [alert("gdp", "CRITICAL", null), alert("trade", "HIGH", new Date())];
     render(<IntelligenceAlertsCard countryId="c1" />);

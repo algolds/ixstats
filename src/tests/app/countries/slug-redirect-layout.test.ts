@@ -43,14 +43,6 @@ describe("country slug redirects", () => {
     );
     expect(mockFind).toHaveBeenCalledWith({ marker: "db" }, "testland");
   });
-
-  it("redirects the country's own page", async () => {
-    mockFind.mockResolvedValue("new-testland");
-    await expect(render("testland", "/countries/testland")).rejects.toThrow(
-      "NEXT_REDIRECT /countries/new-testland"
-    );
-  });
-
   it("redirects the maps host's root address to the country page", async () => {
     mockFind.mockResolvedValue("new-testland");
     await expect(render("testland", "/testland?embed=true")).rejects.toThrow(

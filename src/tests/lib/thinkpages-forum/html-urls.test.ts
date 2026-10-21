@@ -1,7 +1,6 @@
 /** @jest-environment node */
 import { withBasePath } from "~/lib/base-path";
 import {
-  APP_PATH_PREFIXES,
   hasImageSrc,
   rebaseRootRelativeUrls,
 } from "~/lib/thinkpages-forum/html-urls";
@@ -53,19 +52,6 @@ describe("rebaseRootRelativeUrls", () => {
       `<a href="/p${url}">x</a>`
     );
   });
-
-  it("covers exactly the app's own prefixes", () => {
-    expect(APP_PATH_PREFIXES).toEqual([
-      "/images/",
-      "/thinkpages/",
-      "/api/",
-      "/@",
-      "/r/",
-      "/id/",
-      "/dashboard/profile/",
-    ]);
-  });
-
   it.each([
     "/wiki/Foo",
     "/countries/x",

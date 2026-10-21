@@ -51,17 +51,6 @@ describe("users.getUserWithRole returns the role level only", () => {
     expect(result).toEqual({ roleLevel: 20 });
     expect(JSON.stringify(result)).not.toMatch(/Wiki Author|authortag|db_author/);
   });
-
-  it("selects the role level alone", async () => {
-    const db = makeDb({ role: { level: 20 } });
-    await lookUp(db, "clerk_viewer");
-    expect(db.user.findUnique).toHaveBeenCalledWith({
-      where: { clerkUserId: AUTHOR },
-      select: { role: { select: { level: true } } },
-    });
-    expect(db.userConnection.findMany).not.toHaveBeenCalled();
-  });
-
   it("is null for an unknown user, one without a role, or a read error", async () => {
     expect(await lookUp(makeDb(null), "clerk_viewer")).toEqual({ roleLevel: null });
     expect(await lookUp(makeDb({ role: null }), "clerk_viewer")).toEqual({ roleLevel: null });

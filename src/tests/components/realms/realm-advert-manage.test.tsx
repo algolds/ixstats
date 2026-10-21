@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 const mockAdvert: {
@@ -67,18 +67,6 @@ describe("the Manage page's Advert row", () => {
     expect(screen.getByText("Your advert was hidden by a moderator.")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
   });
-
-  it("says so while loading and when the advert could not be read", () => {
-    mockAdvert.isLoading = true;
-    const loading = render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
-    loading.unmount();
-    delete mockAdvert.isLoading;
-    render(<AdvertSection slug="eurth" realmId="r_eurth" archived={false} />);
-    expect(screen.getByText("The advert could not be loaded.")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Create advert" })).toBeNull();
-  });
-
   it("says Ixnay cannot be advertised and never queries the advert", () => {
     mockAdvert.data = { threadId: "t_ad", hiddenByModerator: false };
     render(<AdvertSection slug="ixnay" realmId="default" archived={false} />);

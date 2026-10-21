@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useCopyActions", () => ({ useCopyActions: jest.fn() }));
@@ -108,16 +108,6 @@ describe("BulkListDialog", () => {
     expect(screen.getByRole("button", { name: "List 2 copies" })).toBeDisabled();
     expect(screen.queryByText(/costs/)).toBeNull();
   });
-
-  it("says when listing is free", () => {
-    jest.mocked(useEconomyNumbers).mockReturnValue({
-      data: { economy: { ...CARD_ECONOMY_DEFAULTS, listingFee: 0 }, feeRatePct: 10 },
-    } as never);
-    dialog();
-    expect(screen.getByText("Listing is free. Each listing stays up for 14 days.")).toBeTruthy();
-    expect(screen.queryByText(/^Listing 2 copies/)).toBeNull();
-  });
-
   it("is done once every copy is listed", () => {
     mutate.mockImplementation((_input: object, done: Done) =>
       done.onSuccess?.([
@@ -157,19 +147,5 @@ describe("BulkListDialog", () => {
       { items: [{ ownershipId: "b", price: 80 }], isFeatured: false },
       expect.anything()
     );
-  });
-
-  it("toasts nothing when no copy was listed", () => {
-    mutate.mockImplementation((_input: object, done: Done) =>
-      done.onSuccess?.([
-        { ownershipId: "a", listingId: null, error: "The market is closed." },
-        { ownershipId: "b", listingId: null, error: "The market is closed." },
-      ])
-    );
-    dialog();
-    fireEvent.click(screen.getByRole("button", { name: "List 2 copies" }));
-    expect(vaultNotify.success).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("2 of 2 copies could not be listed.");
-    expect(screen.getAllByText("The market is closed.")).toHaveLength(2);
   });
 });

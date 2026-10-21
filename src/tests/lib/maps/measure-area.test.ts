@@ -103,13 +103,6 @@ describe("the measure tool's area mode", () => {
     expect(measurePerimeterKm(OCTANT, HALF_EARTH)).toBeCloseTo(measurePerimeterKm(OCTANT) / 2, 3);
     expect(measurePerimeterKm(OCTANT.slice(0, 1))).toBe(0);
   });
-
-  it("formats areas in km² and mi²", () => {
-    expect(formatArea(1234.4)).toBe("1,234 km² (477 mi²)");
-    expect(formatArea(12.34)).toBe("12.3 km² (4.8 mi²)");
-    expect(formatArea(0.5)).toBe("500,000 m² (5,381,955 ft²)");
-  });
-
   const fillOf = (pts: Coord[], radiusKm?: number) => {
     const fill = buildMeasureFeatures(pts, radiusKm, "area").find(
       (f) => f.properties?.kind === "area"

@@ -66,28 +66,6 @@ describe("WikiPageActions", () => {
     fireEvent.click(screen.getByRole("button", { name: "New page" }));
     expect(onNewPage).toHaveBeenCalledTimes(1);
   });
-
-  it("has no tools menu without page tools", () => {
-    render(<WikiPageActions onNewPage={jest.fn()} />);
-    expect(screen.queryByRole("button", { name: "Page tools" })).toBeNull();
-  });
-
-  it("lists every tool the old rail offered", () => {
-    render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
-    openMenu();
-    for (const name of [
-      "Show margin",
-      "Revision history",
-      "What links here",
-      "Save to Stash",
-      "Print",
-      "Utilities",
-    ]) {
-      expect(screen.getByRole("menuitem", { name: new RegExp(name) })).toBeTruthy();
-    }
-    expect(screen.getByRole("menuitem", { name: /Utilities/ }).getAttribute("href")).toBe("/util");
-  });
-
   it("opens the quick sheets and toggles the margin", () => {
     render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
     openMenu();
@@ -100,14 +78,6 @@ describe("WikiPageActions", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: /Show margin/ }));
     expect(mockToggleMargin).toHaveBeenCalledTimes(1);
   });
-
-  it("says Hide margin while the margin is open", () => {
-    mockMarginOpen = true;
-    render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
-    openMenu();
-    expect(screen.getByRole("menuitem", { name: /Hide margin/ })).toBeTruthy();
-  });
-
   it("stashes and unstashes the page", () => {
     const { unmount } = render(<WikiPageActions onNewPage={jest.fn()} pageTools={pageTools} />);
     openMenu();

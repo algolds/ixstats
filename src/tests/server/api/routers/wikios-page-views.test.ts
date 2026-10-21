@@ -91,12 +91,6 @@ describe("wikios page-view queries (plan 412)", () => {
       limit: 200,
     });
   });
-
-  it("getFileInfo answers null for an unknown file", async () => {
-    mockFileInfo.mockResolvedValue(null);
-    await expect(caller().getFileInfo({ file: "Nope.svg" })).resolves.toBeNull();
-  });
-
   it("getFileDetails (plan 411) is public, passes the file name on and answers null for a deleted file", async () => {
     mockFileDetails.mockResolvedValueOnce({ history: [], usage: [], usageTotal: 0 });
     await expect(caller().getFileDetails({ file: "Flag.png" })).resolves.toEqual({

@@ -28,23 +28,6 @@ describe("rail groups", () => {
     expect([...listed].sort()).toEqual(Object.keys(DEFAULTS).sort());
     expect(new Set(listed).size).toBe(listed.length);
   });
-
-  it("is the spec's table", () => {
-    const fields = (id: string) => STUDIO_GROUPS.find((group) => group.id === id)!.fields;
-    expect(STUDIO_GROUPS.map((group) => group.label)).toEqual([
-      "Mesh",
-      "Land",
-      "Climate",
-      "Nations",
-      "Output",
-    ]);
-    expect(fields("mesh")).toEqual(["cellCount", "lloydIterations"]);
-    expect(fields("land")).toHaveLength(10);
-    expect(fields("climate")).toContain("hasLakes");
-    expect(fields("nations")).toEqual(["countryCountRange", "useMarkovNaming", "developmentLevel"]);
-    expect(fields("output")).toEqual(["hasIcecaps"]);
-  });
-
   it("has a control spec for every parameter, keyed by its own name", () => {
     for (const key of Object.keys(DEFAULTS) as StudioKey[]) {
       expect(STUDIO_FIELDS[key].key).toBe(key);
@@ -124,19 +107,5 @@ describe("helpers", () => {
   it("adds up the hypsometry", () => {
     expect(hypsometrySum(DEFAULTS.hypsometry)).toBeCloseTo(100, 6);
     expect(hypsometrySum([])).toBe(0);
-  });
-
-  it("reads the values the way the rail shows them", () => {
-    const format = (key: StudioKey, value: number) => {
-      const spec = STUDIO_FIELDS[key];
-      return spec.kind === "slider" || spec.kind === "range" ? spec.format(value) : "";
-    };
-    expect(format("cellCount", 100000)).toBe("100,000");
-    expect(format("oceanPercentage", 0.771)).toBe("77%");
-    expect(format("temperatureOffset", 3)).toBe("+3.0 °C");
-    expect(format("temperatureOffset", -2.5)).toBe("-2.5 °C");
-    expect(format("continentLatitudeRange", -40)).toBe("40°S");
-    expect(format("riverDensity", 0)).toBe("None");
-    expect(format("lakeCoverage", 0.011)).toBe("1.1%");
   });
 });

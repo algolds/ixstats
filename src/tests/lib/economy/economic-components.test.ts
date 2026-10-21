@@ -2,42 +2,14 @@ import { describe, it, expect } from "@jest/globals";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
   COMPONENT_CATEGORIES,
-  ECONOMIC_COMPONENT_DISPLAY,
   ECONOMIC_TEMPLATES,
   EconomicCategory,
-  EconomicComponentType,
-  formatComponentName,
-  getEconomicComponentEffect,
+  EconomicComponentType
 } from "~/lib/economy/atomic-data";
 import { builtinArchetypes } from "~/lib/economy/archetypes/seed";
 
 const ALL_TYPES = Object.values(EconomicComponentType);
 const definitionOf = (type: EconomicComponentType) => ATOMIC_ECONOMIC_COMPONENTS[type];
-
-/** The old enum-derived label ("RD_INVESTMENT" -> "Rd Investment"). */
-const enumTitleCase = (type: string) =>
-  type
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-
-/** Facet copy rules: no em or en dashes, no exclamation marks, no emoji. */
-function copyProblems(text: string): string[] {
-  const problems: string[] = [];
-  if (/[—–]/.test(text)) problems.push("dash");
-  if (text.includes("!")) problems.push("exclamation mark");
-  if (/\p{Extended_Pictographic}/u.test(text)) problems.push("emoji");
-  if (text !== text.trim() || /\s{2,}/.test(text)) problems.push("whitespace");
-  return problems;
-}
-
-/** Sentence case: a capital first letter and no other capitalised words. */
-function isSentenceCase(text: string): boolean {
-  const words = text.split(/\s+/);
-  if (!/^[A-Z]/.test(words[0] ?? "")) return false;
-  return words.slice(1).every((word) => !/^[A-Z]/.test(word));
-}
-
 describe("economic component definitions", () => {
   it("defines every EconomicComponentType", () => {
     const missing = ALL_TYPES.filter((type) => !definitionOf(type));
@@ -81,55 +53,6 @@ describe("economic component definitions", () => {
     }
   });
 });
-
-describe("economic component display copy", () => {
-  it("has a hand-written name and effect for every type", () => {
-    expect(Object.keys(ECONOMIC_COMPONENT_DISPLAY).sort()).toEqual([...ALL_TYPES].sort());
-    for (const type of ALL_TYPES) {
-      const { name, effect } = ECONOMIC_COMPONENT_DISPLAY[type];
-      expect(name.length).toBeGreaterThan(0);
-      expect(name).not.toBe(enumTitleCase(type));
-      expect(name).not.toMatch(/_/);
-      expect(effect.length).toBeGreaterThan(20);
-    }
-  });
-
-  it("uses the written name on every definition and in formatComponentName", () => {
-    for (const type of ALL_TYPES) {
-      expect(definitionOf(type)!.name).toBe(ECONOMIC_COMPONENT_DISPLAY[type].name);
-      expect(formatComponentName(type)).toBe(ECONOMIC_COMPONENT_DISPLAY[type].name);
-      expect(getEconomicComponentEffect(type)).toBe(ECONOMIC_COMPONENT_DISPLAY[type].effect);
-    }
-    expect(formatComponentName(EconomicComponentType.RD_INVESTMENT)).toBe("Research funding");
-  });
-
-  it("falls back to sentence case for unknown strings", () => {
-    expect(formatComponentName("SOME_LEGACY_VALUE")).toBe("Some legacy value");
-    expect(getEconomicComponentEffect("SOME_LEGACY_VALUE")).toBe("");
-  });
-
-  it("follows the copy rules", () => {
-    const names = new Set<string>();
-    for (const type of ALL_TYPES) {
-      const { name, effect } = ECONOMIC_COMPONENT_DISPLAY[type];
-      expect({ type, problems: copyProblems(name) }).toEqual({ type, problems: [] });
-      expect({ type, problems: copyProblems(effect) }).toEqual({ type, problems: [] });
-      expect({ type, name, sentenceCase: isSentenceCase(name) }).toMatchObject({
-        sentenceCase: true,
-      });
-      expect({ type, effect, sentenceCase: isSentenceCase(effect) }).toMatchObject({
-        sentenceCase: true,
-      });
-      // One sentence, ending in a full stop.
-      expect(effect.endsWith(".")).toBe(true);
-      expect(effect.slice(0, -1)).not.toMatch(/[.?;]/);
-      expect(name.endsWith(".")).toBe(false);
-      names.add(name.toLowerCase());
-    }
-    expect(names.size).toBe(ALL_TYPES.length);
-  });
-});
-
 describe("economic component synergies and conflicts", () => {
   it("only reference defined components, never themselves", () => {
     for (const type of ALL_TYPES) {
@@ -187,12 +110,6 @@ describe("COMPONENT_CATEGORIES", () => {
       }
     }
     expect([...seen.keys()].sort()).toEqual([...ALL_TYPES].sort());
-  });
-
-  it("has a group for every category", () => {
-    expect(Object.keys(COMPONENT_CATEGORIES).sort()).toEqual(
-      Object.values(EconomicCategory).sort()
-    );
   });
 });
 

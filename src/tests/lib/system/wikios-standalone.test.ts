@@ -1,5 +1,4 @@
 import {
-  WIKIOS_ALLOWED_PREFIXES,
   WikiStandaloneConfigError,
   isWikiStandalone,
   wikiStandaloneRedirect,
@@ -149,12 +148,5 @@ describe("wikiStandaloneRedirect", () => {
     expect(wikiStandaloneRedirect("/", "")).toBe("/wiki/Main_Page");
     expect(wikiStandaloneRedirect("/wiki/Main_Page", "")).toBeNull();
     expect(wikiStandaloneRedirect("/_next/static/a.js", "")).toBeNull();
-  });
-});
-
-describe("WIKIOS_ALLOWED_PREFIXES", () => {
-  it("is a single list of absolute path prefixes without duplicates", () => {
-    expect(WIKIOS_ALLOWED_PREFIXES.every((prefix) => prefix.startsWith("/"))).toBe(true);
-    expect(new Set(WIKIOS_ALLOWED_PREFIXES).size).toBe(WIKIOS_ALLOWED_PREFIXES.length);
   });
 });

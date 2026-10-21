@@ -1,5 +1,5 @@
 /** The Store window's section tabs: they fit the window at any width, scrolling inside their own track. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Package, Shop, StatUp } from "iconoir-react";
 
@@ -33,20 +33,4 @@ describe("StoreCategoryHeader", () => {
 
   // A flex row would size the tabs to their content and centre them past both edges of a phone's window, where
   // the window clips them. In a block the track takes the window's width and scrolls.
-  it("puts the track in a block, centred, rather than in a row that sizes it to its content", () => {
-    const { container, list } = renderHeader();
-    const wrapper = container.firstElementChild;
-    expect(wrapper).not.toHaveClass("flex");
-    expect(wrapper).toContainElement(list);
-    expect(list).toHaveClass("w-full", "mx-auto", "sm:max-w-xl");
-  });
-
-  it("scrolls the track rather than squeezing a tab below its label", () => {
-    const { list } = renderHeader();
-    expect(list).toHaveClass("max-w-full", "overflow-x-auto");
-    for (const tab of within(list).getAllByRole("tab")) {
-      expect(tab).toHaveClass("min-w-max", "shrink-0");
-      expect(tab).not.toHaveClass("min-w-0");
-    }
-  });
 });

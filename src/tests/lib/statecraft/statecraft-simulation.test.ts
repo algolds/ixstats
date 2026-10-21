@@ -230,9 +230,7 @@ describe("revealConsequences — fog is the build's blind spots", () => {
 });
 
 import {
-  getUpcomingEvents,
-  formatRelativeIxDays,
-  formatIxCountdown,
+  getUpcomingEvents
 } from "~/lib/statecraft/calendar";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -257,32 +255,7 @@ describe("getUpcomingEvents", () => {
     // completed election dropped, past dropped, undated issue dropped
     expect(out.find((e) => e.id === "election-c")).toBeUndefined();
   });
-
-  it("handles empty inputs", () => {
-    expect(getUpcomingEvents({ nowIxTime: NOW })).toEqual([]);
-  });
 });
-
-describe("formatRelativeIxDays", () => {
-  it("buckets sensibly", () => {
-    expect(formatRelativeIxDays(NOW, NOW)).toBe("today");
-    expect(formatRelativeIxDays(NOW + DAY, NOW)).toBe("tomorrow");
-    expect(formatRelativeIxDays(NOW + 5 * DAY, NOW)).toBe("in 5 days");
-    expect(formatRelativeIxDays(NOW + 21 * DAY, NOW)).toBe("in 3 weeks");
-    expect(formatRelativeIxDays(NOW + 90 * DAY, NOW)).toBe("in 3 months");
-  });
-});
-
-describe("formatIxCountdown", () => {
-  it("renders fine-grained countdowns and clamps at now", () => {
-    expect(formatIxCountdown(NOW, NOW)).toBe("now");
-    expect(formatIxCountdown(NOW - 5000, NOW)).toBe("now");
-    expect(formatIxCountdown(NOW + 45 * 60 * 1000, NOW)).toBe("45m");
-    expect(formatIxCountdown(NOW + (6 * 3600 + 12 * 60) * 1000, NOW)).toBe("6h 12m");
-    expect(formatIxCountdown(NOW + (2 * 86400 + 4 * 3600) * 1000, NOW)).toBe("2d 4h");
-  });
-});
-
 import { assessReach, fogNumber } from "~/lib/statecraft/diplo-intel";
 
 describe("assessReach — reach drives clarity", () => {

@@ -1,10 +1,8 @@
-import React from "react";
-import { fireEvent, render, renderHook, screen } from "@testing-library/react";
+import "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { PlateMediaElement } from "~/components/wiki-os/editor/plate/elements/PlateMediaElement";
 import {
-  PlateWikiCallbacksProvider,
-  useOptionalPlateWikiCallbacks,
-  usePlateWikiCallbacks,
+  PlateWikiCallbacksProvider
 } from "~/components/wiki-os/editor/plate/elements/PlateRawHtmlElement";
 
 const mockRemoveNodes = jest.fn();
@@ -50,11 +48,5 @@ describe("PlateMediaElement callbacks (F3: the hook is always called, never in a
     fireEvent.click(screen.getByText("Remove"));
     expect(deleteNode).toHaveBeenCalledWith("node-1");
     expect(mockRemoveNodes).not.toHaveBeenCalled();
-  });
-
-  it("keeps the throwing hook for elements that need the provider, and the optional one answers null", () => {
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
-    expect(renderHook(() => useOptionalPlateWikiCallbacks()).result.current).toBeNull();
-    expect(() => renderHook(() => usePlateWikiCallbacks())).toThrow("PlateWikiCallbacks missing from tree");
   });
 });

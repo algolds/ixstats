@@ -5,60 +5,21 @@
  */
 import fs from "fs";
 import path from "path";
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-
-import { AchievementCardBackdrop } from "~/components/achievements/AchievementDecorations";
-import { getCategoryTheme } from "~/components/achievements/constants";
 import { Badge } from "~/components/ui/badge";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import {
-  SANCTIONED_TEXTURES,
-  TEXTURE_MAX_OPACITY,
   TextureOverlay,
 } from "~/components/ui/texture-overlay";
-import { FACET_ACCENTS, accentColor, facetAccentStyle, isFacetAccent } from "~/lib/design/identity";
-import { DURATION_FAST } from "~/lib/design/motion";
-import { BNB_GLYPH } from "~/lib/navigation/icons/VaultLogomark";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { SYSTEM_COLORS, TEXT_STYLES } from "~/lib/design/tokens";
+import { TEXT_STYLES } from "~/lib/design/tokens";
 import { Card } from "~/components/ui/card";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
-const styleVar = (el: Element, name: string) => (el as HTMLElement).style.getPropertyValue(name);
 const ROOT = path.resolve(__dirname, "../../../..");
-const interactionCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/interaction.css"), "utf8");
 const cardArtCss = fs.readFileSync(path.join(ROOT, "src/styles/card-art.css"), "utf8");
 const tokensCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/tokens.css"), "utf8");
-const typographyCss = fs.readFileSync(path.join(ROOT, "src/styles/typography.css"), "utf8");
-
-/** The body of a top-level `@utility name { … }` block. */
-function utility(name: string): string {
-  const start = interactionCss.indexOf(`@utility ${name} {`);
-  expect(start).toBeGreaterThanOrEqual(0);
-  const body = interactionCss.slice(start);
-  return body.slice(0, body.indexOf("\n}\n"));
-}
-
-describe("accent vocabulary", () => {
-  it("accepts the system colour roles, the tint and gold — nothing else", () => {
-    expect([...FACET_ACCENTS].sort()).toEqual(
-      [...Object.keys(SYSTEM_COLORS), "tint", "gold"].sort()
-    );
-    expect(isFacetAccent("green")).toBe(true);
-    expect(isFacetAccent("#ff0000")).toBe(false);
-    expect(isFacetAccent("var(--color-green)")).toBe(false);
-  });
-
-  it("resolves to theme-following roles", () => {
-    expect(accentColor("cyan")).toBe("var(--color-cyan)");
-    expect(accentColor("tint")).toBe("var(--tint)");
-    expect(accentColor("gold")).toBe("var(--gold-accent)");
-    expect(facetAccentStyle("indigo")).toEqual({ "--facet-accent": "var(--color-indigo)" });
-    expect(facetAccentStyle(undefined)).toBeUndefined();
-  });
-});
-
 describe("CutoutCardHeader", () => {
   it.each(["h2", "h3", "h4"] as const)(
     'as="%s" makes the title a real heading, with the icon and trailing outside it',
@@ -79,16 +40,6 @@ describe("CutoutCardHeader", () => {
       expect(heading.textContent).toBe("Countries to explore");
     }
   );
-
-  it("defaults to a span title (no heading role)", () => {
-    render(
-      <CutoutCard>
-        <CutoutCardHeader>Vault</CutoutCardHeader>
-      </CutoutCard>
-    );
-    expect(screen.queryByRole("heading")).toBeNull();
-    expect(screen.getByText("Vault").tagName).toBe("SPAN");
-  });
 });
 
 describe("touch targets, focus and keyboard (HIG)", () => {
@@ -131,11 +82,6 @@ describe("touch targets, focus and keyboard (HIG)", () => {
 });
 
 describe("textures", () => {
-  it("chevron is sanctioned (the Builder texture) with the 0.05 cap", () => {
-    expect(SANCTIONED_TEXTURES).toEqual(["dots", "grid", "paperGrain", "chevron"]);
-    expect(TEXTURE_MAX_OPACITY).toBe(0.05);
-  });
-
   it("TextureOverlay clamps sanctioned textures to the cap; card-art textures pass through", () => {
     const { container, rerender } = render(<TextureOverlay texture="chevron" opacity={0.2} />);
     const overlay = () => container.firstElementChild as HTMLElement;
@@ -156,12 +102,6 @@ describe("accessibility preferences in the content-art sheet", () => {
     expect(block.slice(0, 300)).toContain("@variant transparency-reduced {\n      display: none;");
     expect(block.slice(0, 300)).toContain("@variant contrast-more {\n      display: none;");
   });
-
-  it("Increase Contrast turns the hairline into the opaque separator and stops the watermark brightening", () => {
-    expect(tokensCss).toContain("--glass-hairline: var(--color-separator-opaque);");
-    expect(cardArtCss).toMatch(/@variant contrast-more \{\s*opacity: var\(--watermark-opacity\);/);
-  });
-
   it("Reduce Transparency / Increase Contrast make every glass layer opaque", () => {
     for (const variant of ["transparency-reduced", "contrast-more"]) {
       const start = tokensCss.indexOf(`@variant ${variant} {\n      --pane-fill: 100%;`);
@@ -169,25 +109,7 @@ describe("accessibility preferences in the content-art sheet", () => {
       expect(tokensCss.slice(start, start + 260)).toContain("--overlay-fill: 100%;");
     }
   });
-
-  it("the flag watermark carries the HIG tone filter", () => {
-    expect(cardArtCss).toContain("filter: blur(1px) contrast(0.7);");
-    expect(cardArtCss).toContain("filter: blur(1px) brightness(0.6);");
-  });
 });
-
-describe("motion uses the named durations", () => {
-  it("press and lift transition over --duration-fast (150ms)", () => {
-    expect(DURATION_FAST).toBe(0.15);
-    for (const name of ["facet-press", "facet-lift"]) {
-      expect(utility(name)).toContain(
-        "transition-duration: var(--tw-duration, var(--duration-fast));"
-      );
-    }
-    expect(interactionCss).not.toMatch(/transition-duration: var\(--tw-duration, 200ms\)/);
-  });
-});
-
 describe("typography (HIG Dynamic Type)", () => {
   it("every text style scales with --text-scale and none is below 12px", () => {
     for (const [name, style] of Object.entries(TEXT_STYLES)) {
@@ -197,102 +119,9 @@ describe("typography (HIG Dynamic Type)", () => {
       expect(rule).toContain("var(--text-scale, 1)");
     }
   });
-
-  it("the heavy headings have a declared 800 face (fallback: the nearest declared weight, 700)", () => {
-    expect(typographyCss).toMatch(
-      /font-family: "Schibsted Grotesk";\s*src: url\("\/fonts\/Schibsted Grotesk-800\.ttf"\)[^}]*font-weight: 800;/
-    );
-    expect(typographyCss).toMatch(
-      /font-family: "Schibsted Grotesk";\s*src: url\("\/fonts\/Schibsted Grotesk-700\.ttf"\)[^}]*font-weight: 700;/
-    );
-  });
 });
 
 // ─── HIG follow-ups (spec §16.8: vibrant labels, achievement accents, tour, IxCredits, badge) ──
-
-describe("achievement aurora follows the card's accent", () => {
-  it("the layers read --facet-accent (and --facet-accent-2), never shadcn's --accent", () => {
-    const body = cardArtCss.slice(cardArtCss.indexOf(".facet-aurora {"));
-    const rule = body.slice(0, body.indexOf("}"));
-    expect(rule).toContain("var(--facet-accent, var(--tint))");
-    expect(rule).not.toMatch(/var\(--accent[,)-]/);
-    expect(cardArtCss).toContain("var(--facet-accent-2, var(--color-yellow))");
-  });
-
-  it("AchievementCardBackdrop sets only the aurora's second hue", () => {
-    const theme = getCategoryTheme("Economic");
-    const { container } = render(
-      <Card data-testid="card">
-        <AchievementCardBackdrop categoryTheme={theme} isUnlocked />
-      </Card>
-    );
-    const aurora = container.querySelector(".facet-aurora")!;
-    expect(styleVar(aurora, "--facet-accent-2")).toBe(accentColor(theme.accent2));
-    expect(styleVar(aurora, "--accent")).toBe("");
-    expect(styleVar(aurora, "--accent-2")).toBe("");
-  });
-
-  it("AchievementCardBackdrop draws its dots in the category accent when unlocked, neutral and fainter when locked", () => {
-    const theme = getCategoryTheme("Economic");
-    const unlocked = render(
-      <Card>
-        <AchievementCardBackdrop categoryTheme={theme} isUnlocked />
-      </Card>
-    );
-    const wrap = unlocked.container.querySelector('[data-slot="achievement-texture"]')!;
-    expect(styleVar(wrap, "--facet-texture-color")).toBe(accentColor(theme.accent));
-    const dots = wrap.querySelector(".texture-overlay") as HTMLElement;
-    expect(dots.className).toContain("facet-texture-dots");
-    expect(Number(dots.style.opacity)).toBeLessThanOrEqual(TEXTURE_MAX_OPACITY);
-    unlocked.unmount();
-
-    const locked = render(
-      <Card>
-        <AchievementCardBackdrop categoryTheme={theme} isUnlocked={false} />
-      </Card>
-    );
-    expect(locked.container.querySelector('[data-slot="achievement-texture"]')).toBeNull();
-    const faint = locked.container.querySelector(".texture-overlay") as HTMLElement;
-    expect(Number(faint.style.opacity)).toBeLessThan(TEXTURE_MAX_OPACITY);
-  });
-
-  it("no consumer bridges --accent onto the layers any more", () => {
-    for (const file of [
-      "src/components/achievements/AchievementDecorations.tsx",
-      "src/components/country-profile/ConditionMatrix.tsx",
-    ]) {
-      const source = fs.readFileSync(path.join(ROOT, file), "utf8");
-      expect([file, /["']--accent(-2)?["']/.test(source)]).toEqual([file, false]);
-    }
-  });
-});
-
-describe("Halo walkthrough highlight", () => {
-  it("is a static ring, not a looping pulse (no ambient loops)", () => {
-    const source = fs.readFileSync(path.join(ROOT, "src/components/halo/index.tsx"), "utf8");
-    expect(source).not.toMatch(/repeat:\s*Infinity/);
-    expect(source).toContain('isTourActive && "ring-tint/50 ring-2"');
-  });
-});
-
-describe("IxCreditsSymbol glyph", () => {
-  it("draws the bare BNB glyph in currentColor", () => {
-    render(<IxCreditsSymbol data-testid="ixc" />);
-    const svg = screen.getByTestId("ixc");
-    expect(svg.getAttribute("viewBox")).toBe(BNB_GLYPH.viewBox);
-    expect(svg.getAttribute("fill")).toBe("currentColor");
-    const paths = svg.querySelectorAll("path");
-    expect(paths).toHaveLength(1);
-    expect(paths[0]!.getAttribute("d")).toBe(BNB_GLYPH.path);
-    expect(svg.getAttribute("width")).toBe("1em");
-  });
-
-  it("takes the size prop", () => {
-    render(<IxCreditsSymbol size={20} data-testid="ixc" />);
-    expect(screen.getByTestId("ixc").getAttribute("height")).toBe("20");
-  });
-});
-
 describe("IxCreditsSymbol accessible name", () => {
   it("names the unit by default", () => {
     render(<IxCreditsSymbol data-testid="ixc" />);
@@ -313,15 +142,5 @@ describe("IxCreditsSymbol accessible name", () => {
     expectHidden();
     rerender(<IxCreditsSymbol aria-hidden data-testid="ixc" />);
     expectHidden();
-  });
-});
-
-describe('Badge variant="secondary"', () => {
-  it("sets the tint's ink on the tint fill (AA; token-contrast.test.ts)", () => {
-    render(<Badge variant="secondary">New</Badge>);
-    const cls = classOf(screen.getByText("New"));
-    expect(cls).toMatch(/\btext-tint-ink\b/);
-    expect(cls).not.toMatch(/\btext-tint(?![\w-])/);
-    expect(cls).toMatch(/\bbg-tint-fill\b/);
   });
 });

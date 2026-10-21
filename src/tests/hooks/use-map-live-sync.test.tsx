@@ -110,34 +110,6 @@ describe("useMapLiveSync", () => {
 
     expect(called()).toEqual(["countryBundle", "countryFeatures", "countryGeometry", "storyPins"]);
   });
-
-  it("takes a change with no realm as its own", () => {
-    renderHook(() => useMapLiveSync("eurth"));
-
-    receive({ changeType: "mapLabel" });
-
-    expect(called()).toContain("labels");
-    expect(called()).not.toContain("storyPins");
-  });
-
-  it("refetches everything for a bulk change in its realm", () => {
-    renderHook(() => useMapLiveSync("eurth"));
-
-    receive({ changeType: "bulk", realmId: "r_a" });
-
-    expect(called()).toEqual([
-      "countryBundle",
-      "countryFeatures",
-      "countryGeometry",
-      "detail",
-      "display",
-      "labels",
-      "markers",
-      "storyPins",
-      "version",
-    ]);
-  });
-
   it("refetches once for a burst of changes, each query it needs and no other", () => {
     renderHook(() => useMapLiveSync("eurth"));
 
@@ -155,16 +127,6 @@ describe("useMapLiveSync", () => {
     expect(invalidators.version).toHaveBeenCalledTimes(1);
     expect(invalidators.markers).not.toHaveBeenCalled();
   });
-
-  it("does not ignore a change while its own realm is not known yet", () => {
-    mockVersion = undefined;
-    renderHook(() => useMapLiveSync());
-
-    receive({ changeType: "version", realmId: "r_b" });
-
-    expect(called()).toEqual(["display", "version"]);
-  });
-
   it("reads the version of the realm the map shows", () => {
     renderHook(() => useMapLiveSync("eurth"));
     expect(mockVersionRealm).toHaveBeenCalledWith("eurth");

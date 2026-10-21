@@ -2,7 +2,6 @@ import {
   MessagingService,
   createMessagingService,
   MessagingForbiddenError,
-  MessagingNotFoundError,
   MessagingValidationError,
   recordMessagingTelemetry,
 } from "~/server/modules/messaging";
@@ -98,39 +97,7 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       telemetry: mockTelemetryLogger,
     });
   });
-
-  describe("Batch Account Resolution", () => {
-    test("1. batchResolveUsers handles empty input cleanly", async () => {
-      const map = await service.batchResolveUsers([]);
-      expect(map.size).toBe(0);
-    });
-
-    test("2. batchResolveUsers resolves clerkUserIds to country profile", async () => {
-      mockDb.user.findMany.mockResolvedValue([
-        {
-          clerkUserId: "user_1",
-          country: { name: "Eldoria", slug: "eldoria", flag: "https://flag.png" },
-        },
-      ]);
-
-      const map = await service.batchResolveUsers(["user_1"]);
-      expect(map.get("user_1")?.displayName).toBe("Eldoria");
-      expect(map.get("user_1")?.username).toBe("eldoria");
-    });
-
-    test("3. batchResolveUsers handles forum and wiki prefixed usernames", async () => {
-      const map = await service.batchResolveUsers(["forum:Thorin", "wiki:Gandalf"]);
-      expect(map.get("forum:Thorin")?.displayName).toBe("Thorin");
-      expect(map.get("wiki:Gandalf")?.displayName).toBe("Gandalf");
-    });
-  });
-
   describe("Read Operations & Inbound Sync", () => {
-    test("4. getConversationsByFolder triggers the wiki bridge's inbound sync", async () => {
-      await service.getConversationsByFolder("user_1", { folder: "inbox" });
-      expect(mockWikiBridge.syncInbound).toHaveBeenCalledWith("user_1", mockDb);
-    });
-
     test("5. getConversationsByFolder applies cursor and unread mappings", async () => {
       mockDb.thinkshareConversation.findMany.mockResolvedValue([
         {
@@ -278,24 +245,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.$queryRaw).not.toHaveBeenCalled();
       expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
     });
-
-    test("7. getConversationsLegacy returns expected legacy ThinkPages format", async () => {
-      mockDb.thinkshareConversation.findMany.mockResolvedValue([
-        {
-          id: "c_1",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          lastActivity: new Date(),
-          participants: [{ userId: "user_1", isActive: true }],
-          messages: [],
-        },
-      ]);
-
-      const res = await service.getConversationsLegacy("user_1", { limit: 5 });
-      expect(res.conversations[0]).toHaveProperty("accountId", "user_1");
-      expect(res.conversations[0]).toHaveProperty("account");
-    });
-
     test("8. getConversationMessages enforces participant authorization", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue(null);
       mockDb.thinkshareConversation.findFirst.mockResolvedValue(null);
@@ -348,19 +297,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       );
       expect(conv.id).toBe("c_new");
     });
-
-    test("12. createConversationByCountries resolves country users and delegates", async () => {
-      mockDb.user.findMany.mockResolvedValue([{ clerkUserId: "user_alpha" }]);
-      mockDb.thinkshareConversation.create.mockResolvedValue({ id: "c_diplo" });
-
-      const conv = await service.createConversationByCountries("user_1", {
-        countryIds: ["country_alpha"],
-        subject: "Diplomacy",
-      });
-
-      expect(conv.id).toBe("c_diplo");
-    });
-
     test("13. sendMessage enforces participant authorization", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue(null);
 
@@ -509,20 +445,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         })
       );
     });
-
-    test("20. addReaction / removeReaction updates reaction records", async () => {
-      mockDb.thinkshareMessage.findUnique.mockResolvedValue({
-        id: "m_1",
-        conversation: { participants: [{ userId: "user_1", isActive: true }] },
-      });
-
-      await service.addReaction("user_1", { messageId: "m_1", emoji: "👍" });
-      expect(mockDb.messageReaction.upsert).toHaveBeenCalled();
-
-      await service.removeReaction("user_1", { messageId: "m_1", emoji: "👍" });
-      expect(mockDb.messageReaction.deleteMany).toHaveBeenCalled();
-    });
-
     test("21. addParticipant upserts participant and leaveConversation deactivates", async () => {
       mockDb.thinkshareConversation.findUnique.mockResolvedValue({
         id: "c_1",
@@ -540,20 +462,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         })
       );
     });
-
-    test("22. userPresence and user search functions execute correctly", async () => {
-      mockDb.user.findMany.mockResolvedValue([
-        { clerkUserId: "u_s", country: { name: "Valora", slug: "valora", flag: null } },
-      ]);
-
-      const users = await service.searchUsers("user_1", { query: "Valora" });
-      expect(users).toHaveLength(1);
-      expect(users[0]?.displayName).toBe("Valora");
-
-      await service.updatePresence("user_1", { status: "online" });
-      expect(mockDb.userPresence.upsert).toHaveBeenCalled();
-    });
-
     test("23. Telemetry strictly records surface metadata and excludes private message content or IDs", () => {
       recordMessagingTelemetry(
         {

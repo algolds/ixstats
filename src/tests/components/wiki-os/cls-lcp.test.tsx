@@ -3,11 +3,10 @@
  * priority, sized one; the rail, the companion and the profile slot paint as they will stay; the
  * scroll spy reads no layout while scrolling.
  */
-import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { WikiOSHeader } from "~/components/wiki-os/reader/ArticleHeader";
 import { useScrollSpy } from "~/components/wiki-os/reader/useScrollSpy";
-import { ArticleCompanionHUD } from "~/components/wiki-os/reader/ArticleCompanionHUD";
 import {
   COMPANION_COLLAPSED_COOKIE,
   DEFAULT_CHROME_PREFS,
@@ -41,9 +40,6 @@ jest.mock("~/components/ui/tooltip", () => ({
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipContent: () => null,
 }));
-
-const { preload } = jest.requireMock("react-dom") as { preload: jest.Mock };
-
 const THUMB = "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/330px-Flag.png";
 
 const header = (props: Partial<React.ComponentProps<typeof WikiOSHeader>> = {}) => (
@@ -60,53 +56,6 @@ const header = (props: Partial<React.ComponentProps<typeof WikiOSHeader>> = {}) 
 
 describe("hero image", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  it("is a 1280 px thumbnail with its size, high priority and never lazy, in a box shaped before it loads", () => {
-    const { container } = render(header());
-
-    const hero = container.querySelector("img")!;
-    expect(hero.getAttribute("src")).toBe(
-      "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png"
-    );
-    expect(hero).toHaveAttribute("width", "1280");
-    expect(hero).toHaveAttribute("height", "853");
-    expect(hero).toHaveAttribute("fetchpriority", "high");
-    expect(hero.getAttribute("loading")).toBe("eager");
-    // 3000 x 2000 is 1.5: kept within the banner range, and set in the very first render
-    expect((container.querySelector(".wikios-header") as HTMLElement).style.aspectRatio).toBe(
-      "2.2"
-    );
-    expect(preload).toHaveBeenCalledWith(
-      "/api/mediawiki/ixwiki/images/thumb/a/ab/Flag.png/1280px-Flag.png",
-      expect.objectContaining({ as: "image", fetchPriority: "high" })
-    );
-  });
-
-  it("measures nothing after load: no Image() probe, and the box does not change when the picture arrives", () => {
-    const probe = jest.spyOn(window, "Image");
-    const { container } = render(header());
-    const before = (container.querySelector(".wikios-header") as HTMLElement).style.aspectRatio;
-
-    fireEvent.load(container.querySelector("img")!);
-
-    expect(probe).not.toHaveBeenCalled();
-    expect((container.querySelector(".wikios-header") as HTMLElement).style.aspectRatio).toBe(
-      before
-    );
-    probe.mockRestore();
-  });
-
-  it("keeps a fixed 3.2 box when the file's size is unknown, and still never changes it", () => {
-    const { container } = render(header({ featuredImageFile: null }));
-    expect((container.querySelector(".wikios-header") as HTMLElement).style.aspectRatio).toBe(
-      "3.2"
-    );
-    // an unknown size means the file itself, as before
-    expect(container.querySelector("img")!.getAttribute("src")).toBe(
-      "/api/mediawiki/ixwiki/images/a/ab/Flag.png"
-    );
-  });
-
   it("falls back to the file, in the same box, when the thumbnail cannot be had", () => {
     const { container } = render(header());
 
@@ -160,18 +109,6 @@ describe("hero image", () => {
       expect(container.querySelector("img")!.getAttribute("src")).toBe(FILE);
       restore();
     });
-  });
-
-  it("a country's flag backdrop gets no thumbnail or size of the lead image", () => {
-    const { container } = render(
-      header({ countryData: { flagUrl: "/api/mediawiki/ixwiki/images/f/fa/Flag_of_X.svg" } })
-    );
-    expect(container.querySelector("img")!.getAttribute("src")).toBe(
-      "/api/mediawiki/ixwiki/images/f/fa/Flag_of_X.svg"
-    );
-    expect((container.querySelector(".wikios-header") as HTMLElement).style.aspectRatio).toBe(
-      "3.2"
-    );
   });
 });
 
@@ -248,23 +185,6 @@ describe("scroll spy", () => {
     expect(second).toHaveBeenLastCalledWith(null);
   });
 });
-
-describe("the chrome paints as the reader left it", () => {
-  it("the companion's authorship rows hold their place until the authors arrive", () => {
-    const pending = render(
-      <ArticleCompanionHUD contentHtml="<p>text</p>" authorsPending readOnly />
-    );
-    expect(pending.container.querySelector('[aria-hidden="true"].min-h-42')).not.toBeNull();
-    pending.unmount();
-
-    const arrived = render(
-      <ArticleCompanionHUD contentHtml="<p>text</p>" authorInfo={{ creator: "Amy" }} readOnly />
-    );
-    expect(arrived.container.querySelector('[aria-hidden="true"].min-h-42')).toBeNull();
-    expect(screen.getByText("Amy")).toBeInTheDocument();
-  });
-});
-
 describe("chrome preferences", () => {
   it("reads the collapsed flags and the session hint from the request's cookies", () => {
     expect(

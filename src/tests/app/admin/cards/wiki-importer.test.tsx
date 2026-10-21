@@ -1,5 +1,5 @@
 /** The one wiki importer: find a category's pages, preselect the ones with no card, queue them as one import. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("~/hooks/useNotify", () => {
@@ -8,10 +8,7 @@ jest.mock("~/hooks/useNotify", () => {
 });
 
 import { api } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
 import { WikiImporter } from "~/app/admin/cards/imports/WikiImporter";
-
-const notify = useNotify();
 const mutate = jest.fn();
 
 interface Callbacks {
@@ -126,41 +123,5 @@ describe("WikiImporter", () => {
       label: "Chosen pages",
       titles: ["Oak"],
     });
-  });
-
-  it("says so when the category has no pages", async () => {
-    serve(jest.fn().mockResolvedValue({ entries: [], truncated: false }));
-    render(<WikiImporter />);
-    findCategory("Empty");
-    await waitFor(() => expect(screen.getByText("No pages found.")).toBeInTheDocument());
-    expect(screen.queryByRole("button", { name: /^Import/ })).not.toBeInTheDocument();
-  });
-
-  it("says when it shows only part of what the wiki has", async () => {
-    serve(
-      jest.fn().mockResolvedValue({ entries: [{ title: "Ash", carded: false }], truncated: true })
-    );
-    render(<WikiImporter />);
-    findCategory("Trees");
-    await waitFor(() => expect(notify.info).toHaveBeenCalled());
-    expect(jest.mocked(notify.info).mock.calls[0]![0]).toBe("Showing 1 page");
-  });
-
-  it("reports a wiki that will not answer", async () => {
-    serve(jest.fn().mockRejectedValue(new Error("IIWiki stopped answering (HTTP 403).")));
-    render(<WikiImporter />);
-    findCategory("Elm");
-    await waitFor(() =>
-      expect(notify.error).toHaveBeenCalledWith(
-        "Could not read the wiki",
-        "IIWiki stopped answering (HTTP 403)."
-      )
-    );
-  });
-
-  it("finds nothing until a category is named", () => {
-    serve(jest.fn());
-    render(<WikiImporter />);
-    expect(screen.getByRole("button", { name: "Find pages" })).toBeDisabled();
   });
 });

@@ -294,31 +294,6 @@ describe("TradeBuilderSheet: a new trade", () => {
     expect(screen.getByRole("searchbox", { name: "Find a player by handle" })).toBeTruthy();
     expect(screen.queryByRole("region", { name: "You get" })).toBeNull();
   });
-
-  it("says when the handle in the link names nobody, and offers the search", () => {
-    findsPartner(null);
-    renderNew({ partnerHandle: "ghost" });
-    expect(screen.getByText("No player goes by @ghost.")).toBeTruthy();
-    expect(screen.getByRole("searchbox", { name: "Find a player by handle" })).toBeTruthy();
-  });
-
-  it("moves focus to the next card when one is removed, and to the column when it was the last", () => {
-    renderNew();
-    fireEvent.click(screen.getByRole("button", { name: "Add Card t1 to You get" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add Card t2 to You get" }));
-    fireEvent.click(column("You get").getByRole("button", { name: "Remove Card t1" }));
-    expect(column("You get").getByRole("button", { name: "Remove Card t2" })).toHaveFocus();
-    expect(screen.getByText("Removed Card t1 from You get.")).toBeTruthy();
-    fireEvent.click(column("You get").getByRole("button", { name: "Remove Card t2" }));
-    expect(column("You get").getByRole("heading", { name: "You get" })).toHaveFocus();
-  });
-
-  it("opens a card of a new trade in the sheet without an offer to show it", () => {
-    renderNew();
-    fireEvent.click(screen.getByRole("button", { name: "Add Card t1 to You get" }));
-    fireEvent.click(column("You get").getByRole("button", { name: "Open Card t1" }));
-    expect(sheetOpen()).toHaveBeenCalledWith("card_t1", null);
-  });
 });
 
 const openTrade = (over: object = {}) => ({

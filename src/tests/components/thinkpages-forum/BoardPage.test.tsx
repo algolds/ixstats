@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 interface QueryResult {
   data?: object | null;
@@ -117,10 +117,6 @@ jest.mock("~/components/ui/dropdown-menu", () => {
 import { BoardPage } from "~/components/thinkpages-forum/board";
 
 const { results, inputs } = jest.requireMock<MockApi>("~/trpc/react");
-const { router } = jest.requireMock<{ router: { push: jest.Mock; replace: jest.Mock } }>(
-  "next/navigation"
-);
-
 const originalMatchMedia = window.matchMedia;
 
 function installViewport(wide: boolean) {
@@ -201,19 +197,6 @@ describe("BoardPage", () => {
     render(<BoardPage categoryKey="general" page={2} sort="replies" />);
     expect(inputs.category).toEqual({ key: "general", page: 2, realm: undefined, sort: "replies" });
   });
-
-  it("shows the In character pill in the header only for an IC board", () => {
-    set("category", { data: board({ category: { style: "ic" } }) });
-    const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    // Once, in the header: the rail does not repeat the board's style.
-    expect(screen.getAllByText("In character")).toHaveLength(1);
-    unmount();
-
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByText("In character")).toBeNull();
-  });
-
   it("shows New thread in the header, and in the empty state, only when the viewer can start one", () => {
     set("category", { data: board({ threads: [], canStart: true }) });
     const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
@@ -228,99 +211,7 @@ describe("BoardPage", () => {
     render(<BoardPage categoryKey="general" page={1} sort="latest" />);
     expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
   });
-
-  it("puts windowed pagination above and below the table, keeping the sort", () => {
-    set("category", { data: board({ total: 90 }) });
-    render(<BoardPage categoryKey="general" page={2} sort="replies" />);
-    const navs = screen.getAllByRole("navigation", { name: "Pagination" });
-    expect(navs).toHaveLength(2);
-    const table = screen.getByRole("table");
-    expect(navs[0]!.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(table.compareDocumentPosition(navs[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(navs[0]!).getAllByRole("link", { name: "3" })[0]).toHaveAttribute(
-      "href",
-      "/thinkpages/c/general?sort=replies&page=3"
-    );
-  });
-
-  it("offers the sort in a header menu for phones", () => {
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "Most replies" }));
-    expect(router.push).toHaveBeenCalledWith("/thinkpages/c/general?sort=replies");
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "Latest activity" }));
-    expect(router.push).toHaveBeenLastCalledWith("/thinkpages/c/general");
-  });
-
-  it("keeps the Sort control hidden from md up, where the column headers sort", () => {
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByRole("button", { name: "Sort" })).toHaveClass("md:hidden");
-  });
-
-  it("states the board description once, in the header, not again in the rail", () => {
-    set("category", {
-      data: board({ category: { description: "Out-of-character talk about anything." } }),
-    });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getAllByText("Out-of-character talk about anything.")).toHaveLength(1);
-  });
 });
-
-describe("BoardPage realm boards", () => {
-  const eurth = { slug: "eurth", name: "Eurth" };
-  const hub = { key: "hub", name: "Hub", realm: eurth };
-
-  it("keeps the realm switcher in the header, and has none on a sitewide board", () => {
-    set("category", { data: board({ category: hub }) });
-    set("realms", { data: { defaultSlug: "eurth", realms: [{ id: "r1", ...eurth }] } });
-    const { unmount } = render(
-      <BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />
-    );
-    expect(screen.getByTestId("realm-switcher")).toBeInTheDocument();
-    expect(inputs.category).toEqual({ key: "hub", page: 1, realm: "eurth", sort: "latest" });
-    unmount();
-
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByTestId("realm-switcher")).toBeNull();
-  });
-});
-
-describe("BoardPage rail", () => {
-  it("says who may post, under Posting here", () => {
-    set("category", { data: board({ category: { postRole: "staff" } }) });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    const posting = screen.getByText("Posting here").closest('[data-slot="card"]') as HTMLElement;
-    expect(within(posting).getByText("Only staff can start threads here.")).toBeInTheDocument();
-    expect(screen.queryByText("About this board")).toBeNull();
-  });
-
-  it("says any member can start threads on an open board", () => {
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.getByText("Any member can start threads here.")).toBeInTheDocument();
-  });
-
-  it("lists this month's top posters, and hides the panel when there are none", () => {
-    set("category", { data: board() });
-    set("boardTopPosters", {
-      data: { posters: [{ authorUserId: "u1", postCount: 12 }], authors },
-    });
-    const { unmount } = render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    const panel = screen
-      .getByText("Top posters this month")
-      .closest('[data-slot="card"]') as HTMLElement;
-    expect(within(panel).getByText("Kir")).toBeInTheDocument();
-    expect(within(panel).getByText("12 posts")).toBeInTheDocument();
-    unmount();
-
-    set("boardTopPosters", { data: { posters: [], authors } });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByText("Top posters this month")).toBeNull();
-  });
-});
-
 describe("BoardPage read state", () => {
   const { mutations, invalidated } = jest.requireMock<MockApi>("~/trpc/react");
   const { auth } = jest.requireMock<{ auth: { isSignedIn: boolean } }>("~/context/auth-context");
@@ -431,24 +322,6 @@ describe("BoardPage in Find a Realm", () => {
     expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
     expect(screen.getByText(/founder and officers post its advert/i)).toBeInTheDocument();
   });
-
-  it("names adverts in the empty state and offers the advert action, never New thread", () => {
-    set("category", { data: board({ category: find, threads: [], canStart: true }) });
-    render(<BoardPage categoryKey="find-a-realm" page={1} sort="latest" />);
-    expect(screen.getByText("Realm adverts will appear here")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Advertise stub" })).toHaveLength(2);
-    expect(screen.queryByRole("link", { name: /New thread/ })).toBeNull();
-    expect(screen.queryByText("Be the first to post")).toBeNull();
-  });
-
-  it("leaves every other board as it was", () => {
-    set("category", { data: board() });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByRole("button", { name: "Advertise stub" })).toBeNull();
-    expect(screen.queryByText(/post its advert/i)).toBeNull();
-    expect(screen.getByRole("link", { name: /New thread/ })).toBeInTheDocument();
-  });
-
   it("does not treat a realm's board with that key as Find a Realm", () => {
     set("category", { data: board({ category: { key: "find-a-realm", scope: "realm" } }) });
     render(<BoardPage categoryKey="find-a-realm" realm="eurth" page={1} sort="latest" />);

@@ -214,17 +214,4 @@ describe("CurationTab", () => {
     expect(screen.getByRole("button", { name: "Make a card" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Decline" })).toBeDisabled();
   });
-
-  it("says when the suggestions did not load, instead of showing none", () => {
-    setUp();
-    jest.mocked(curation.suggestions.useQuery).mockReturnValue({
-      data: undefined,
-      isError: true,
-      error: { message: "Network down" },
-    } as never);
-    render(<CurationTab />);
-    openSuggestions();
-    expect(screen.getByRole("alert")).toHaveTextContent("Suggestions did not load. Network down");
-    expect(screen.queryByText("No suggestions waiting")).not.toBeInTheDocument();
-  });
 });

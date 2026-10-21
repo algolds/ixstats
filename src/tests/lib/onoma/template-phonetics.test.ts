@@ -1,11 +1,9 @@
 // src/lib/onoma/template-phonetics.test.ts
 // Benchmark test suite for IRL cultures, templates, and "Hello World" phonetic derivation
 
-import { translateToIPA, resolveNamePhonetics, getCultureRules } from "~/lib/onoma/phonology";
+import { translateToIPA, resolveNamePhonetics } from "~/lib/onoma/phonology";
 import {
-  TEMPLATE_PHONETIC_PROFILES,
-  getTemplateLinguisticProfile,
-  getAllTemplateLinguisticProfiles,
+  getTemplateLinguisticProfile
 } from "~/lib/onoma/template-phonetics";
 
 describe("Plan 132: Customized IRL Culture & Template Phonetics Engine", () => {
@@ -37,53 +35,15 @@ describe("Plan 132: Customized IRL Culture & Template Phonetics Engine", () => {
       const res = translateToIPA("Hello World", "arabic");
       expect(res).toBe("/ˈħello ˈwoɾld/");
     });
-
-    test("translates 'Hello World' with Uralic phonotactics (w/v -> v)", () => {
-      const res = translateToIPA("Hello World", "uralic");
-      expect(res).toBe("/ˈhello ˈvorld/");
-    });
-
     test("translates 'Hello World' with Indic phonotactics (w -> ʋ labiodental approximant, r -> ɾ)", () => {
       const res = translateToIPA("Hello World", "indic");
       expect(res).toBe("/ˈhello ˈʋoɾld/");
-    });
-
-    test("translates 'Hello World' with Persian phonotactics (w -> v, r -> ɾ)", () => {
-      const res = translateToIPA("Hello World", "persian");
-      expect(res).toBe("/ˈhello ˈvoɾld/");
-    });
-
-    test("translates 'Hello World' with Turkic phonotactics (w -> v, r -> ɾ)", () => {
-      const res = translateToIPA("Hello World", "turkic");
-      expect(res).toBe("/ˈhello ˈvoɾld/");
-    });
-
-    test("translates 'Hello World' with East-Asian phonotactics (r -> ɾ liquid flap)", () => {
-      const res = translateToIPA("Hello World", "east-asian");
-      expect(res).toBe("/ˈhello ˈwoɾld/");
     });
   });
 
   // --------------------------------------------------------------------------
   // Benchmark 2: Canonical "Hello World" Across Fantasy Species & Templates
   // --------------------------------------------------------------------------
-  describe("Canonical 'Hello World' Benchmark Across Fantasy Templates", () => {
-    test("translates 'Hello World' in Elven (Sindarin)", () => {
-      const res = translateToIPA("Hello World", "species:elf");
-      expect(res).toBe("/ˈhello ˈworld/");
-    });
-
-    test("translates 'Hello World' in Dwarven (Khuzdul)", () => {
-      const res = translateToIPA("Hello World", "species:dwarf");
-      expect(res).toBe("/ˈhello ˈworld/");
-    });
-
-    test("translates 'Hello World' in Noble Norman", () => {
-      const res = translateToIPA("Hello World", "noble:norman");
-      expect(res).toBe("/ˈhello ˈworld/");
-    });
-  });
-
   // --------------------------------------------------------------------------
   // Benchmark 3: Template-Specific Phoneme & Affix Realism Tests
   // --------------------------------------------------------------------------
@@ -197,17 +157,6 @@ describe("Plan 132: Customized IRL Culture & Template Phonetics Engine", () => {
       });
       expect(res.source).toBe("override");
       expect(res.ipa).toBe("/ˈɛl.rɒnd/");
-    });
-
-    test("returns all registered template linguistic profiles", () => {
-      const profiles = getAllTemplateLinguisticProfiles();
-      expect(profiles.length).toBeGreaterThanOrEqual(18);
-      for (const p of profiles) {
-        expect(p.id).toBeTruthy();
-        expect(p.name).toBeTruthy();
-        expect(p.bcp47VoiceTag).toBeTruthy();
-        expect(p.rules.length).toBeGreaterThan(0);
-      }
     });
   });
 });

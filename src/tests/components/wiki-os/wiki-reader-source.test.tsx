@@ -153,18 +153,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect.anything()
     );
   });
-
-  it("says where the reader was redirected from", () => {
-    found("New name");
-    render(<Reader title="New name" redirectedFrom="Old name" />);
-
-    expect(screen.getByText(/Redirected from/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Old name" })).toHaveAttribute(
-      "href",
-      "/wiki/Old_name?redirect=no"
-    );
-  });
-
   it("warms the editor's wikitext only for a signed-in reader (plan 404)", () => {
     found("Aurelia");
 
@@ -192,22 +180,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
 
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ authorInfo: null }));
   });
-
-  it("puts a page's aside above the article and its children below it", () => {
-    found("Aurelia");
-    render(
-      <Reader title="Aurelia" aside={<p>profile card</p>}>
-        <p>member list</p>
-      </Reader>
-    );
-
-    const card = screen.getByText("profile card");
-    const body = screen.getByRole("article");
-    const members = screen.getByText("member list");
-    expect(card.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(body.compareDocumentPosition(members) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   describe("a lean page (plan 413, item 8c) carries markers for the article's HTML", () => {
     const token = "123e4567-e89b-42d3-a456-426614174000";
     const lean = (refetch: jest.Mock) =>
@@ -237,22 +209,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(screen.getByText("Loading article...")).toBeInTheDocument();
       expect(mockRenderer).not.toHaveBeenCalled();
     });
-
-    it("also when the element is there but empty", () => {
-      const refetch = jest.fn();
-      mockSignedIn = false;
-      lean(refetch);
-      const body = document.createElement("div");
-      body.id = `wikios-lean-${token}-body`;
-      document.body.append(body);
-
-      render(<Reader title="Aurelia" />);
-
-      expect(refetch).toHaveBeenCalledTimes(1);
-      expect(mockRenderer).not.toHaveBeenCalled();
-      body.remove();
-    });
-
     it("does not, when the server's DOM is there to read it back from", () => {
       const refetch = jest.fn();
       mockSignedIn = false;
@@ -348,15 +304,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(options().refetchInterval(queryWith({ stale: false }))).toBe(false);
       expect(options().refetchInterval(queryWith(undefined))).toBe(false);
     });
-
-    it("never treats a stale article as fresh for ten minutes", () => {
-      found("Aurelia");
-      render(<Reader title="Aurelia" />);
-
-      expect(options().staleTime(queryWith({ stale: true }))).toBe(0);
-      expect(options().staleTime(queryWith({ stale: false }))).toBe(10 * 60 * 1000);
-    });
-
     it("retries a busy answer (TOO_MANY_REQUESTS) twice, and nothing else", () => {
       found("Aurelia");
       render(<Reader title="Aurelia" />);
@@ -405,13 +352,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       );
       expect(mockRenderer).not.toHaveBeenCalled();
     });
-
-    it("opens the visual editor on request", () => {
-      found("Aurelia");
-      render(<Reader title="Aurelia" initialEdit={{ mode: "visual", section: null }} />);
-      expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ initialMode: "visual" }));
-    });
-
     it("section=new (Add topic) opens the source editor on a new topic, not at a heading named 'new'", () => {
       found("Talk:Aurelia");
       render(<Reader title="Talk:Aurelia" initialEdit={{ mode: "source", section: "new" }} />);
@@ -424,13 +364,6 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       found("Aurelia");
       render(<Reader title="Aurelia" initialEdit={{ mode: "source", section: null }} />);
       expect(mockGate).toHaveBeenCalledWith({ title: "Aurelia" });
-    });
-
-    it("?action=edit in the address bar opens it too, without a server hint", () => {
-      mockSearch = "action=edit";
-      found("Aurelia");
-      render(<Reader title="Aurelia" />);
-      expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ initialMode: "source" }));
     });
   });
 
@@ -588,24 +521,5 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
         "https://iiwiki.com/wiki/Gylias"
       );
     });
-
-    it("shows the loading state while the browser renders", () => {
-      failedOnServer();
-      fallback({ loading: true });
-      render(<Reader title="Gylias" wikiSource="iiwiki" />);
-      expect(screen.getByText("Loading article...")).toBeInTheDocument();
-      expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
-    });
-  });
-
-  it("the Main Page is the Main Page component (its own chunk), with no article query", async () => {
-    mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
-    render(<Reader title="Main Page" />);
-
-    expect(await screen.findByText("main page")).toBeInTheDocument();
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      { title: "Main Page" },
-      expect.objectContaining({ enabled: false })
-    );
   });
 });

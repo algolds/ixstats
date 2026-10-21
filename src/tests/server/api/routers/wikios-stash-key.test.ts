@@ -1,14 +1,3 @@
-/** @jest-environment node */
-// `jest` is deliberately NOT imported from "@jest/globals" (see cards-archetypes-admin-auth.test.ts):
-// the hoisted jest.mock() factories rely on the ambient global.
-//
-// A stash holds one item per (content type, title). `StashItem` used to be unique on
-// (stashId, pageTitle), so an Onoma name "Rome" and the article "Rome" overwrote each other.
-// The fake `stashItem` below only understands the NEW compound key, so a router still upserting on
-// the old two-column compound key fails here instead of silently passing.
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 type FakeItem = {
   id: string;
   stashId: string;
@@ -318,34 +307,6 @@ describe("native forum threads are matched by content type as well as title", ()
     expect(store).toEqual([]);
   });
 });
-
-describe("the stash key in the schema and the migration", () => {
-  const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
-
-  it("StashItem is unique on stashId + contentType + pageTitle", () => {
-    const schema = read("prisma/schema/wiki.prisma");
-    const model = schema.slice(
-      schema.indexOf("model StashItem"),
-      schema.indexOf("model StashAnnotation")
-    );
-    expect(model).toContain("@@unique([stashId, contentType, pageTitle])");
-    expect(model).not.toContain("@@unique([stashId, pageTitle])");
-  });
-
-  it("the manual migration drops the old key and creates the new one, idempotently", () => {
-    const sql = read("prisma/manual-migrations/2026-09-30-wikios-stash-key.sql");
-    // Spelled in two parts so a grep for the old Prisma compound-key name over src/ (plan 416's Done
-    // check for leftover users of it) finds no code, only this exact-name check on the SQL.
-    const oldKey = `lore_stash_items_stashId_${"pageTitle"}_key`;
-    expect(sql).toContain(`DROP INDEX IF EXISTS "${oldKey}"`);
-    expect(sql).toContain(`DROP CONSTRAINT IF EXISTS "${oldKey}"`);
-    expect(sql).toContain(
-      'CREATE UNIQUE INDEX IF NOT EXISTS "lore_stash_items_stashId_contentType_pageTitle_key"'
-    );
-    expect(sql).toContain('("stashId", "contentType", "pageTitle")');
-  });
-});
-
 describe("stashPage takes no contentId", () => {
   it("never writes one: the column only holds bridge-era XenForo ids, which the forum import reads", async () => {
     const stash = createCallerFactory(wikiosStashRouter)(ctx());

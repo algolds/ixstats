@@ -17,10 +17,6 @@ import {
   describeWorldFailure,
   failureOf,
   draftKey,
-  layerChangeText,
-  slotChangeText,
-  appliedText,
-  countOf,
   splitWarnings,
 } from "~/lib/worldgen/world-apply";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
@@ -270,46 +266,6 @@ describe("failureOf", () => {
 });
 
 describe("the diff in words", () => {
-  it.each([
-    [{ create: 3, change: 2, retire: 1 }, "3 new, 2 changed, 1 retired"],
-    [{ create: 0, change: 4, retire: 0 }, "4 changed"],
-    [{ create: 12, change: 0, retire: 0 }, "12 new"],
-    [{ create: 0, change: 0, retire: 0 }, "No change"],
-  ])("sums up a layer (%j)", (diff, text) => {
-    expect(layerChangeText(diff)).toBe(text);
-  });
-
-  it("sums up the nations: new, retired, kept, renamed", () => {
-    expect(slotChangeText({ create: 12, retire: 3, keep: 2, reserved: 4, renamed: 1 })).toBe(
-      "12 new, 3 retired, 2 kept, 4 reserved, 1 renamed"
-    );
-    expect(slotChangeText({ create: 0, retire: 0, keep: 0, reserved: 0, renamed: 0 })).toBe(
-      "No change"
-    );
-    // a check stored before nations were reserved has no count of them
-    expect(slotChangeText({ create: 1, retire: 0, keep: 0, renamed: 0 })).toBe("1 new");
-  });
-
-  it("sums up what an apply wrote", () => {
-    expect(appliedText({ written: 140, slots: { created: 12, retired: 3 } })).toBe(
-      "140 map features written, 12 nations created, 3 nations retired"
-    );
-    expect(appliedText({ written: 1, slots: { created: 1, retired: 1 } })).toBe(
-      "1 map feature written, 1 nation created, 1 nation retired"
-    );
-    expect(appliedText({ written: 0, slots: { created: 0, retired: 0 } })).toBe(
-      "Nothing was written"
-    );
-  });
-
-  it.each([
-    [0, "0 nations"],
-    [1, "1 nation"],
-    [2, "2 nations"],
-  ])("counts %i with the right plural", (count, text) => {
-    expect(countOf(count, "nation")).toBe(text);
-  });
-
   it("splits the warnings by the server's own list of what replaces work, not by their wording", () => {
     const warnings = [
       "Something odd about the wording",

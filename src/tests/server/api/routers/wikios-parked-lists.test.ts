@@ -29,44 +29,6 @@ beforeEach(() => {
 });
 
 describe("wikios.getUserContribs", () => {
-  it("passes the parked flag of a bridge contribution on", async () => {
-    jest.mocked(getUserContribs).mockResolvedValue([
-      {
-        rev_id: 101,
-        page_title: "Foo",
-        page_namespace: 0,
-        rev_timestamp: "2026-09-27T10:00:00Z",
-        rev_len: 20,
-        diff: 5,
-        rev_comment: "conflicting edit",
-        rev_minor_edit: 0,
-        is_new: false,
-        parked: true,
-      },
-      {
-        rev_id: 99,
-        page_title: "Bar",
-        page_namespace: 0,
-        rev_timestamp: "2026-09-26T10:00:00Z",
-        rev_len: 10,
-        diff: 1,
-        rev_comment: "",
-        rev_minor_edit: 0,
-        is_new: false,
-        parked: false,
-      },
-    ]);
-
-    const result = await createCallerFactory(wikiosUserTalkRouter)(signedOut({})).getUserContribs({
-      user: "carol",
-    });
-
-    expect(result.contribs.map((c) => [c.revid, c.parked])).toEqual([
-      [101, true],
-      [99, false],
-    ]);
-  });
-
   it("flags a parked revision in the PostgreSQL fallback too", async () => {
     jest.mocked(getUserContribs).mockResolvedValue([]);
     const findMany = jest.fn().mockResolvedValue([

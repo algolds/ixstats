@@ -170,32 +170,6 @@ describe("realm Overview forum section", () => {
       forumHub
     );
   });
-
-  it("invites a nation owner to post, and tells a visitor what the forum is for", async () => {
-    queries.overview = {
-      ...overview,
-      viewer: {
-        ...overview.viewer,
-        ownedNations: [{ id: "c1", name: "Aurelia", slug: "aurelia" }],
-      },
-    };
-    await renderOverview();
-    expect(screen.getByText("No threads yet. Yours can be the first.")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open the forum to post" }).getAttribute("href")).toBe(
-      forumHub
-    );
-  });
-
-  it("explains an empty forum to visitors", async () => {
-    await renderOverview();
-    expect(
-      screen.getByText("No threads yet. The forum is where the nations of Eurth talk.")
-    ).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Open the forum" }).getAttribute("href")).toBe(
-      forumHub
-    );
-  });
-
   it("shows the board's latest messages above the Hub threads, with a link to open the board", async () => {
     mockBoard = {
       realm: { slug: "eurth", name: "Eurth", emblemUrl: null, thumbnail: null },

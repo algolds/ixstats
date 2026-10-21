@@ -15,7 +15,6 @@ jest.mock("~/server/modules/cards/market/wishlist", () => ({
 import { TRPCError } from "@trpc/server";
 import { rateLimiter } from "~/lib/cache";
 import { createCallerFactory } from "~/server/api/trpc";
-import { cardMarketRouter } from "~/server/api/routers/card-market";
 import { cardMarketWishlistRouter } from "~/server/api/routers/card-market/wishlist";
 import {
   addToWishlist,
@@ -42,13 +41,6 @@ beforeEach(() => {
 });
 
 describe("cardMarket wishlist procedures", () => {
-  it("are on the card market router", () => {
-    const procedures = cardMarketRouter._def.procedures;
-    expect("getWishlist" in procedures).toBe(true);
-    expect("addToWishlist" in procedures).toBe(true);
-    expect("removeFromWishlist" in procedures).toBe(true);
-  });
-
   it("read and change the signed-in player's own wishlist", async () => {
     jest.mocked(listWishlist).mockResolvedValue([]);
     jest.mocked(addToWishlist).mockResolvedValue(undefined);

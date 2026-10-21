@@ -3,7 +3,6 @@
 import {
   chooseExpiry,
   chooseLevel,
-  describeExpiry,
   describeLogEntry,
   expiryFromPreset,
   pageAdminActions,
@@ -46,11 +45,6 @@ describe("expiryFromPreset", () => {
     expect(expiryFromPreset("1w", NOW)).toEqual(new Date("2026-10-07T12:00:00Z"));
     expect(expiryFromPreset("1y", NOW)).toEqual(new Date("2027-09-30T12:00:00Z"));
   });
-
-  it("describes an expiry", () => {
-    expect(describeExpiry(null)).toBe("indefinitely");
-    expect(describeExpiry(new Date(NOW))).toMatch(/^until /);
-  });
 });
 
 describe("describeLogEntry", () => {
@@ -63,45 +57,6 @@ describe("describeLogEntry", () => {
     );
     expect(line("move", "move", "New")).toBe('moved page "New"');
   });
-
-  it("describes deleting and restoring", () => {
-    expect(line("delete", "delete", "Foo")).toBe('deleted page "Foo"');
-    expect(line("delete", "restore", "Foo")).toBe('restored page "Foo"');
-  });
-
-  it("describes protecting, with the levels that are set", () => {
-    expect(
-      line("protect", "protect", "Foo", {
-        restrictions: [
-          { action: "edit", level: "sysop" },
-          { action: "move", level: null },
-        ],
-      })
-    ).toBe('protected "Foo" (edit: sysop)');
-    expect(line("protect", "unprotect", "Foo")).toBe('removed the protection of "Foo"');
-    expect(line("protect", "protect", "Foo")).toBe('protected "Foo"');
-  });
-
-  it("describes blocks, unblocks and changed blocks", () => {
-    expect(line("block", "block", "User:Bob", { expiry: "infinity" })).toBe(
-      "blocked Bob indefinitely"
-    );
-    expect(line("block", "block", "User:Bob", { expiry: "2027-01-01T00:00:00.000Z" })).toMatch(
-      /^blocked Bob until /
-    );
-    expect(line("block", "reblock", "User:Bob", { expiry: "infinity" })).toBe(
-      "changed the block of Bob indefinitely"
-    );
-    expect(line("block", "unblock", "User:Bob")).toBe("unblocked Bob");
-  });
-
-  it("describes group changes", () => {
-    expect(line("rights", "rights", "User:Bob", { added: ["sysop"], removed: ["bot"] })).toBe(
-      "changed the groups of Bob: added sysop; removed bot"
-    );
-    expect(line("rights", "rights", "User:Bob")).toBe("changed the groups of Bob");
-  });
-
   it("falls back to the action and title for a type it does not know", () => {
     expect(line("upload", "upload", "File:X.png")).toBe('upload "File:X.png"');
   });

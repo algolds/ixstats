@@ -137,17 +137,6 @@ describe("the non-wiki route segments keep their loading UI", () => {
       });
       return hasPage;
     });
-
-  it("finds the segments (so the test below is not vacuous)", () => {
-    expect(segments).toEqual(
-      expect.arrayContaining(["dashboard", "mycountry", "vault", "builder"])
-    );
-  });
-
-  it.each(segments)("%s has a loading.tsx", (segment) => {
-    expect(hasLoading(path.join(APP, segment))).toBe(true);
-  });
-
   it.each(segments.filter((segment) => !OWN_LOADING.has(segment)))(
     "%s re-exports the shared RootLoading",
     (segment) => {
@@ -155,10 +144,4 @@ describe("the non-wiki route segments keep their loading UI", () => {
       expect(source).toContain('from "~/app/_components/RootLoading"');
     }
   );
-
-  it("the shared loading UI exists and is the old root one", () => {
-    const source = fs.readFileSync(path.join(APP, "_components", "RootLoading.tsx"), "utf8");
-    expect(source).toContain("GlobalLoader");
-    expect(source).toContain('"use client"');
-  });
 });

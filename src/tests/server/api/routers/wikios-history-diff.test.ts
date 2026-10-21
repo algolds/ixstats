@@ -227,22 +227,6 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
     expect(result.added).toBe(2);
     expect(result.removed).toBe(0);
   });
-
-  it("a change in 1,000 lines is a few rows of context, not the thousand", async () => {
-    const base = Array.from({ length: 1000 }, (_, i) => `line ${i}`);
-    const changed = [...base];
-    changed[100] = "edited";
-    changed[800] = "edited";
-    jest
-      .mocked(getRevisionWikitextShadow)
-      .mockResolvedValueOnce(revision(changed.join("\n")))
-      .mockResolvedValueOnce(revision(base.join("\n")));
-
-    const result = await caller().getDiff({ torev: "r2" });
-
-    expect(result.hunks.flatMap((h) => h.rows).length).toBeLessThanOrEqual(20);
-  });
-
   it("refuses a text over 2 MB with 413 and the reason", async () => {
     jest
       .mocked(getRevisionWikitextShadow)

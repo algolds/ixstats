@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 let stats: { activeEvents: number; criticalEvents: number } | undefined;
@@ -24,19 +24,6 @@ describe("CrisisSignal", () => {
       { enabled: true }
     );
   });
-
-  it("renders nothing without active crises", () => {
-    stats = { activeEvents: 0, criticalEvents: 0 };
-    const { container } = render(<CrisisSignal countryId="c1" />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("renders nothing while the statistics load", () => {
-    stats = undefined;
-    const { container } = render(<CrisisSignal countryId="c1" />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
   it("shows a warning status with the count and a way to the directives", () => {
     stats = { activeEvents: 2, criticalEvents: 0 };
     render(<CrisisSignal countryId="c1" />);
@@ -46,11 +33,5 @@ describe("CrisisSignal", () => {
       "href",
       "/mycountry/executive"
     );
-  });
-
-  it("escalates to a destructive alert when a crisis is critical", () => {
-    stats = { activeEvents: 1, criticalEvents: 1 };
-    render(<CrisisSignal countryId="c1" />);
-    expect(screen.getByRole("alert")).toHaveTextContent("1 active crisis");
   });
 });

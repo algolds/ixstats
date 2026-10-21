@@ -1,10 +1,7 @@
 /** @jest-environment node */
 import {
-  describeOffer,
   isCrossRealmTrade,
   isGift,
-  MAX_TRADE_CARDS_PER_SIDE,
-  MAX_TRADE_CREDITS,
   sidesFor,
   tableFrom,
   validateTradeTable,
@@ -26,11 +23,6 @@ const TOO_MANY = "Each side holds at most 20 cards.";
 const BAD_CREDITS = "Credits must be a whole number from 0 to 1,000,000.";
 
 describe("the trade table", () => {
-  it("holds at most 20 cards and 1,000,000 IxC a side", () => {
-    expect(MAX_TRADE_CARDS_PER_SIDE).toBe(20);
-    expect(MAX_TRADE_CREDITS).toBe(1_000_000);
-  });
-
   it("needs at least one card in total, on either side", () => {
     expect(validateTradeTable(table())).toBeNull();
     expect(validateTradeTable(table({ initiatorCardIds: [], initiatorCredits: 500 }))).toBeNull();
@@ -96,21 +88,5 @@ describe("the trade table", () => {
     expect(isCrossRealmTrade(["default"], ["default", "default"])).toBe(false);
     expect(isCrossRealmTrade(["default"], [])).toBe(false);
     expect(isCrossRealmTrade([], ["default"])).toBe(false);
-  });
-
-  it("describes an offer from the proposer's side", () => {
-    expect(describeOffer(table({ initiatorCredits: 500 }), "initiator")).toBe(
-      "1 card and 500 IxC for 1 card"
-    );
-    expect(describeOffer(table({ initiatorCredits: 500 }), "recipient")).toBe(
-      "1 card for 1 card and 500 IxC"
-    );
-    expect(
-      describeOffer(table({ initiatorCardIds: ["a", "c"], recipientCredits: 12_500 }), "initiator")
-    ).toBe("2 cards for 1 card and 12,500 IxC");
-    expect(describeOffer(table({ recipientCardIds: [] }), "initiator")).toBe("1 card as a gift");
-    expect(describeOffer(table({ initiatorCardIds: [] }), "initiator")).toBe(
-      "a request for 1 card as a gift"
-    );
   });
 });

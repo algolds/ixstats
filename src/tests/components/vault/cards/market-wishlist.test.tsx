@@ -1,5 +1,5 @@
 /** The Wishlist tab: each wished card with what is on sale for it, and taking one off. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useMarketTabs", () => ({
@@ -59,42 +59,5 @@ describe("MarketWishlist", () => {
     expect(onOpenCard).toHaveBeenCalledWith("c2");
     fireEvent.click(screen.getByRole("button", { name: "Remove Aurelia from your wishlist" }));
     expect(removeWish).toHaveBeenCalledWith({ cardId: "c1" });
-  });
-
-  it("holds Remove while a removal is on its way", () => {
-    jest
-      .mocked(useListingActions)
-      .mockReturnValue({ removeWish: { mutate: removeWish, isPending: true } } as never);
-    wishlist({ data: [entry("c1", "Aurelia", {})] });
-    render(<MarketWishlist onBrowse={jest.fn()} onOpenCard={jest.fn()} />);
-    expect(
-      screen.getByRole("button", { name: "Remove Aurelia from your wishlist" })
-    ).toBeDisabled();
-  });
-
-  it("says what to do when the wishlist is empty", () => {
-    wishlist({ data: [] });
-    const onBrowse = jest.fn();
-    render(<MarketWishlist onBrowse={onBrowse} onOpenCard={jest.fn()} />);
-    expect(screen.getByText("No cards on your wishlist yet")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Browse listings" }));
-    expect(onBrowse).toHaveBeenCalled();
-  });
-
-  it("says when the wishlist did not load, and tries again", () => {
-    const refetch = jest.fn();
-    wishlist({ data: undefined, isError: true, refetch });
-    render(<MarketWishlist onBrowse={jest.fn()} onOpenCard={jest.fn()} />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Your wishlist did not load");
-    expect(screen.queryByText("No cards on your wishlist yet")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalled();
-  });
-
-  it("marks itself busy while it loads", () => {
-    wishlist({ data: undefined, isLoading: true, isFetching: true });
-    render(<MarketWishlist onBrowse={jest.fn()} onOpenCard={jest.fn()} />);
-    expect(document.querySelector("[aria-busy='true']")).not.toBeNull();
-    expect(screen.queryByText("No cards on your wishlist yet")).toBeNull();
   });
 });

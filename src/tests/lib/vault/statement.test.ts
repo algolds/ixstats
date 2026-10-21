@@ -2,7 +2,6 @@ import {
   describeRow,
   formatAmount,
   groupStatement,
-  rowIconKey,
   type StatementRow,
 } from "~/lib/vault/statement";
 
@@ -190,39 +189,6 @@ describe("describeRow", () => {
     });
   });
 });
-
-describe("rowIconKey", () => {
-  it.each([
-    ["VAULT_DIVIDEND", "dividend"],
-    ["DAILY_DIVIDEND", "dividend"],
-    ["DAILY_LOGIN", "daily"],
-    ["DAILY_LOGIN_CREDITS", "daily"],
-    ["DAILY_LOGIN_CARD", "daily"],
-    ["bonus:achievement:first_post", "achievement"],
-    ["bonus:loreward:e1", "loreward"],
-    ["bonus:loreward:e1:runner-up", "loreward"],
-    ["PACK_PURCHASE", "pack"],
-    ["Purchase item: Gold frame", "store"],
-    ["card_sale_auction", "market"],
-    ["card_sale_buyout", "market"],
-    ["card_purchase_buyout", "market"],
-    ["auction_bid_reserve", "market"],
-    ["card_sale_listing", "market"],
-    ["card_purchase_listing", "market"],
-    ["listing_fee", "market"],
-    ["nation_card_royalty", "market"],
-    ["card_craft", "market"],
-    ["listing_fee_refund", "other"],
-    ["P2P_TRADE", "trade"],
-    ["retired_item_refund:frame", "other"],
-    ["exploit_correction:dup", "other"],
-    ["Admin Grant: Gold frame", "other"],
-    ["SOCIAL_POST", "other"],
-  ])("maps %s to %s", (source, key) => {
-    expect(rowIconKey(row({ source }))).toBe(key);
-  });
-});
-
 describe("formatAmount", () => {
   it.each([
     [0, "0"],

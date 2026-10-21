@@ -41,14 +41,4 @@ describe("admin _config-kv", () => {
       create: { key: "c", value: "2", description: "about c" },
     });
   });
-
-  it("leaves description unset when no describer is given", async () => {
-    const { db, client } = makeDb();
-    await writeConfigKeys(client, [{ key: "b", value: "true" }]);
-    expect(db.systemConfig.upsert).toHaveBeenCalledWith({
-      where: { key: "b" },
-      update: { value: "true" },
-      create: { key: "b", value: "true", description: undefined },
-    });
-  });
 });

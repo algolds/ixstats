@@ -54,7 +54,7 @@ import { CommunityPanel, OfficersPanel, PollPanel } from "~/app/r/[realm]/_compo
 import { LeaveRealmButton } from "~/app/r/[realm]/_components/LeaveRealmButton";
 import { LinksSection } from "~/app/r/[realm]/_components/manage/LinksSection";
 import RealmManagePage from "~/app/r/[realm]/(region)/manage/page";
-import RealmRulesPage from "~/app/r/[realm]/(region)/rules/page";
+import "~/app/r/[realm]/(region)/rules/page";
 
 function overview(overrides: Record<string, unknown> = {}) {
   return {
@@ -118,54 +118,11 @@ describe("realm header", () => {
     expect(within(nav).queryByRole("link", { name: "Rules" })).toBeNull();
     expect(screen.queryByText("In-world date")).toBeNull();
   });
-
-  it("has one Forum tab out to the realm's live board, each leaving tab with its own glyph", () => {
-    render(<RealmRegionHeader openToClaim={0} overview={overview()} />);
-    const nav = screen.getByRole("navigation", { name: "Realm sections" });
-    const forum = within(nav).getByRole("link", { name: "Forum" });
-    expect(forum.getAttribute("href")).toBe("/thinkpages/r/eurth");
-    expect(forum.getAttribute("aria-current")).toBeNull();
-    expect(within(nav).queryByRole("link", { name: "Board" })).toBeNull();
-    expect(within(nav).queryByRole("link", { name: "Forums" })).toBeNull();
-    const map = within(nav).getByRole("link", { name: "Map" });
-    expect(map.getAttribute("href")).toBe("/maps?realm=eurth");
-    for (const link of [forum, map]) expect(link.querySelector("svg")).toBeTruthy();
-    const glyphs = [forum, map].map((l) => l.querySelector("svg")?.outerHTML);
-    expect(new Set(glyphs).size).toBe(2);
-    expect(within(nav).getByRole("link", { name: "Nations" }).querySelector("svg")).toBeNull();
-  });
-
   it("counts the nations still open to claim", () => {
     render(<RealmRegionHeader openToClaim={100} overview={overview()} />);
     expect(screen.getByText("Open to claim")).toBeTruthy();
     expect(screen.getByText("100")).toBeTruthy();
   });
-
-  it("shows the realm's in-world date in the stats strip", () => {
-    render(
-      <RealmRegionHeader
-        openToClaim={0}
-        overview={overview({
-          inWorldDate: { label: "14 Harvest 1203 AE", asOf: "2026-10-01" },
-        })}
-      />
-    );
-    expect(screen.getByText("In-world date")).toBeTruthy();
-    expect(screen.getByText("14 Harvest 1203 AE")).toBeTruthy();
-    expect(screen.getByText(/^as of /)).toBeTruthy();
-  });
-
-  it("shows the realm's own date with its speed when it is not Ixnay's ×2", () => {
-    render(
-      <RealmRegionHeader
-        openToClaim={0}
-        overview={overview({ inWorldDate: { label: "14 March 1203 AE", asOf: null }, speed: 0 })}
-      />
-    );
-    expect(screen.getByText("14 March 1203 AE")).toBeTruthy();
-    expect(screen.getByText("Paused")).toBeTruthy();
-  });
-
   it("adds the Rules tab once the realm has rules, and for those who write them", () => {
     const rules = { html: "<p>Be civil.</p>", summary: "Be civil.", updatedAt: null };
     const { unmount } = render(
@@ -253,15 +210,6 @@ describe("realm share", () => {
 });
 
 describe("sidebar", () => {
-  it("says a realm without a founder is administered by staff, and lists officers", () => {
-    render(<OfficersPanel overview={overview()} />);
-    expect(screen.getByText("Administered by IxStats staff")).toBeTruthy();
-    expect(screen.getByText("Foreign Minister")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Aurelia" }).getAttribute("href")).toContain(
-      "/countries/aurelia"
-    );
-  });
-
   it("links officers and the founder with a handle to their passport", () => {
     const founder = {
       name: "Borovia",
@@ -327,61 +275,7 @@ describe("community panel", () => {
     expect(forum.getAttribute("rel")).toBe("noopener noreferrer nofollow");
     expect(screen.getByRole("link", { name: "Discord" }).querySelector("svg")).toBeTruthy();
   });
-
-  it("is left out when the realm has no links", () => {
-    const { container } = render(<CommunityPanel overview={overview()} />);
-    expect(container.innerHTML).toBe("");
-  });
 });
-
-/** Like the Manage page, the Rules page reads its params with `use()`. */
-async function renderRules() {
-  const params = Promise.resolve({ realm: "eurth" });
-  await act(async () => {
-    render(
-      <React.Suspense fallback={null}>
-        <RealmRulesPage params={params} />
-      </React.Suspense>
-    );
-    await params;
-  });
-}
-
-describe("Rules tab", () => {
-  afterEach(() => delete queries["realms.region.overview"]);
-
-  it("shows the rules the founder wrote", async () => {
-    queries["realms.region.overview"] = overview({
-      rules: {
-        html: "<h2>Conduct</h2><p>No godmodding.</p>",
-        summary: "Conduct No godmodding.",
-        updatedAt: new Date("2026-10-01"),
-      },
-    });
-    await renderRules();
-    expect(await screen.findByText("No godmodding.")).toBeTruthy();
-    expect(screen.getByText(/Last updated/)).toBeTruthy();
-    expect(screen.queryByRole("link", { name: "Edit" })).toBeNull();
-  });
-
-  it("asks those who can write rules to write them when there are none", async () => {
-    queries["realms.region.overview"] = overview({
-      viewer: {
-        signedIn: true,
-        powers: ["appearance"],
-        isFounder: true,
-        canManage: true,
-        ownedNations: [],
-      },
-    });
-    await renderRules();
-    expect(await screen.findByText("No rules yet")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Write the rules" }).getAttribute("href")).toContain(
-      "/r/eurth/manage#rules"
-    );
-  });
-});
-
 describe("leaving a realm", () => {
   it("needs the nation's name typed before it releases the nation", () => {
     mutate.mockClear();

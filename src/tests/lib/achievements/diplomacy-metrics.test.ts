@@ -74,27 +74,6 @@ describe("embassiesLasting6m", () => {
       })
     );
   });
-
-  it("asks for closures by country pair (closed events carry no embassyId) and for reopenings", async () => {
-    const { db, load } = setup();
-    db.embassy.findMany.mockResolvedValue([embassy("e1", "h1"), embassy("e2", "h2")]);
-    await load();
-    expect(db.diplomaticEvent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          OR: [
-            { embassyId: { in: ["e1", "e2"] }, eventType: "embassy_reopened" },
-            {
-              country1Id: "c1",
-              country2Id: { in: ["h1", "h2"] },
-              eventType: { in: ["embassy_closed", "embassy_severed"] },
-            },
-          ],
-        },
-      })
-    );
-  });
-
   it("does not count an embassy that was closed and reopened (the closed event has no embassyId)", async () => {
     const { db, load } = setup();
     db.embassy.findMany.mockResolvedValue([
@@ -123,12 +102,6 @@ describe("embassiesLasting6m", () => {
     db.embassy.findMany.mockResolvedValue([embassy("e1", "h1", 8)]);
     db.diplomaticEvent.findMany.mockResolvedValue([closed("h1", 9)]);
     expect((await load()).embassiesLasting6m).toBe(1);
-  });
-
-  it("is 0 without embassies and skips the event query", async () => {
-    const { db, load } = setup();
-    expect((await load()).embassiesLasting6m).toBe(0);
-    expect(db.diplomaticEvent.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -287,14 +260,6 @@ describe("proposalsApproved", () => {
       })
     );
   });
-
-  it("is 0 without proposals and skips the member query", async () => {
-    const { db, load } = setup();
-    expect((await load()).proposalsApproved).toBe(0);
-    expect(db.allianceMember.groupBy).not.toHaveBeenCalledWith(
-      expect.objectContaining({ by: ["allianceId"] })
-    );
-  });
 });
 
 describe("alliance membership", () => {
@@ -339,13 +304,6 @@ describe("alliance membership", () => {
         },
       })
     );
-  });
-
-  it("allianceArchitect is 0 when no founded alliance reaches 5 members", async () => {
-    const { db, load } = setup();
-    db.allianceMember.findMany.mockResolvedValue([{ allianceId: "a2" }]);
-    db.allianceMember.groupBy.mockResolvedValue([{ allianceId: "a2", _count: { _all: 4 } }]);
-    expect((await load()).allianceArchitect).toBe(0);
   });
 });
 

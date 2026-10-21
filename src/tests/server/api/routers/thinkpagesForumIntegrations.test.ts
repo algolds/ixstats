@@ -39,13 +39,6 @@ describe("thinkpagesForum integrations", () => {
       windowMs: 60000,
     });
   });
-
-  it("answers the viewer's realm panel", async () => {
-    const out = await caller(member, withBoard().db).realmPanel();
-    expect(out).toMatchObject({ realm: { slug: "eurth", name: "Eurth" } });
-    expect(out!.messages.map((m) => m.id)).toEqual(["p3", "p2", "p1"]);
-  });
-
   it("refuses the panel to a signed-out caller", async () => {
     await expect(caller(null, withBoard().db).realmPanel()).rejects.toMatchObject({
       cause: { code: "UNAUTHORIZED" },

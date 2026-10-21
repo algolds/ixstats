@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/components/wiki-os/editor/context/EditorModalContext", () => ({
@@ -48,40 +48,8 @@ function renderToolbar(props: { compact?: boolean; hideHeader?: boolean } = {}) 
   return { exec };
 }
 
-const toolbarNames = () =>
-  screen
-    .getAllByRole("button")
-    .map((button) => button.getAttribute("aria-label") ?? button.textContent);
-
 describe("WikiVisualToolbar", () => {
-  it("is the full toolbar, with no More control, by default (the wiki editor is unchanged)", () => {
-    renderToolbar();
-    const names = toolbarNames();
-    expect(names).toEqual(
-      expect.arrayContaining(["Undo (Ctrl+Z)", "Strikethrough (Ctrl+Shift+X)", "Insert table"])
-    );
-    expect(screen.queryByRole("button", { name: "More" })).toBeNull();
-  });
-
   describe("compact", () => {
-    it("starts with the few controls a short post needs, and a More control", () => {
-      renderToolbar({ compact: true, hideHeader: true });
-      expect(toolbarNames()).toEqual([
-        "Bold (Ctrl+B)",
-        "Italic (Ctrl+I)",
-        "Bullet list",
-        "Numbered list",
-        "Blockquote",
-        "Insert link (Ctrl+K)",
-        "Insert image",
-        "More",
-      ]);
-      expect(screen.getByRole("button", { name: "More" })).toHaveAttribute(
-        "aria-expanded",
-        "false"
-      );
-    });
-
     it("opens the full toolbar behind More and folds it back", () => {
       renderToolbar({ compact: true, hideHeader: true });
       fireEvent.click(screen.getByRole("button", { name: "More" }));

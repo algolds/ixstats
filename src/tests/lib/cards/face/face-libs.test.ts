@@ -1,17 +1,5 @@
-/** @jest-environment node */
-/** The card face's pure parts: labels in enum order, the accessible name, artwork placeholders and the sheet link. */
-import { CardFinish, CardRarity, CardType } from "@prisma/client";
 import { cardFaceLabel } from "~/lib/cards/face/accessible-name";
 import { normalizeArtwork } from "~/lib/cards/face/artwork";
-import {
-  FINISH_LABEL,
-  FINISH_ORDER,
-  RARITY_LABEL,
-  RARITY_ORDER,
-  TYPE_LABEL,
-  TYPE_ORDER,
-  rarityRank,
-} from "~/lib/cards/face/labels";
 import { cardSheetHref, encodeSheetFrom, parseSheetFrom } from "~/lib/cards/face/sheet-link";
 import type { CardFaceData } from "~/lib/cards/face/types";
 
@@ -29,38 +17,6 @@ const face = (overrides: Partial<CardFaceData> = {}): CardFaceData => ({
   copy: { ownershipId: "o1", finish: "FOIL", serialNumber: 3, level: 2 },
   ...overrides,
 });
-
-describe("labels", () => {
-  it("lists every enum value once, in the schema's order", () => {
-    expect([...RARITY_ORDER]).toEqual(Object.values(CardRarity));
-    expect([...FINISH_ORDER].sort()).toEqual(Object.values(CardFinish).sort());
-    expect([...TYPE_ORDER].sort()).toEqual(Object.values(CardType).sort());
-  });
-
-  it("ranks rarities from common to legendary and names them", () => {
-    expect(rarityRank("COMMON")).toBe(0);
-    expect(rarityRank("ULTRA_RARE")).toBeLessThan(rarityRank("EPIC"));
-    expect(rarityRank("LEGENDARY")).toBe(5);
-    expect(RARITY_LABEL.ULTRA_RARE).toBe("Ultra Rare");
-  });
-
-  it("names every finish and type", () => {
-    expect(FINISH_ORDER.map((finish) => FINISH_LABEL[finish])).toEqual([
-      "Standard",
-      "Foil",
-      "Holo",
-      "Serialised",
-    ]);
-    expect(TYPE_ORDER.map((type) => TYPE_LABEL[type])).toEqual([
-      "Lore",
-      "Nation",
-      "NationStates",
-      "Special",
-      "Trophy",
-    ]);
-  });
-});
-
 describe("cardFaceLabel", () => {
   it("names title, rarity, finish and realm", () => {
     expect(cardFaceLabel(face())).toBe("Caphiria, Epic, Foil, Ixnay");

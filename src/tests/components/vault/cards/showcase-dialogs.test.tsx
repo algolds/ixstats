@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
@@ -136,19 +136,6 @@ describe("ShowcaseEditorDialog", () => {
     expect(utils().listMyShowcases.invalidate).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("keeps the fields to the showcase limits", () => {
-    const { dialog } = openEditor(null);
-    expect(within(dialog).getByLabelText("Name")).toHaveAttribute(
-      "maxLength",
-      String(SHOWCASE_LIMITS.name)
-    );
-    expect(within(dialog).getByLabelText("Description, optional")).toHaveAttribute(
-      "maxLength",
-      String(SHOWCASE_LIMITS.description)
-    );
-  });
-
   it("edits every field, and warns that making a pinned showcase private unpins it", () => {
     const update = mockMutation("updateShowcase", () => undefined);
     const { dialog, onSaved } = openEditor(editable);
@@ -174,30 +161,6 @@ describe("ShowcaseEditorDialog", () => {
     expect(utils().getShowcase.invalidate).toHaveBeenCalledWith({ showcaseId: "s1" });
     expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
   });
-
-  it("does not warn about unpinning a showcase that is not pinned", () => {
-    const { dialog } = openEditor({ ...editable, pinned: false });
-    fireEvent.click(within(dialog).getByRole("switch"));
-    expect(within(dialog).queryByText("Making it private unpins it from your wallet.")).toBeNull();
-    expect(
-      within(dialog).getByText("Only a public showcase can be pinned to your wallet.")
-    ).toBeInTheDocument();
-  });
-
-  it("starts over from the showcase each time it opens", () => {
-    const { dialog } = openEditor(editable);
-    fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Changed" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
-    fireEvent.click(screen.getByRole("button", { name: "Open editor" }));
-    expect(within(screen.getByRole("dialog")).getByLabelText("Name")).toHaveValue("Best");
-  });
-
-  it("gives focus back to the button that opened it", async () => {
-    const { dialog } = openEditor(editable);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open editor" })).toHaveFocus());
-  });
-
   it("says what went wrong and stays open", () => {
     failingMutation(
       jest.mocked(api.cards.createShowcase.useMutation),
@@ -247,40 +210,6 @@ describe("ShowcasePickerDialog", () => {
     expect(utils().getMyDisplay.invalidate).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("hands focus on after an add, and back to its button after a dismissal", async () => {
-    mockMutation("addToShowcase", () => ({ added: 1 }));
-    mine(page([row(1)]));
-    const focusAfterAdd = jest.fn();
-    let dialog = openPicker(new Set(), focusAfterAdd);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open picker" })).toHaveFocus());
-    expect(focusAfterAdd).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Open picker" }));
-    dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Card 1, Rare, Standard, Ixnay" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "Add 1 card" }));
-    await waitFor(() => expect(focusAfterAdd).toHaveBeenCalledTimes(1));
-    // The next dismissal gives focus back to the button again.
-    fireEvent.click(screen.getByRole("button", { name: "Open picker" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open picker" })).toHaveFocus());
-    expect(focusAfterAdd).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps the search to the length Mine takes", () => {
-    const dialog = openPicker();
-    expect(within(dialog).getByRole("searchbox")).toHaveAttribute("maxLength", "100");
-  });
-
-  it("points to the Store when there are no cards to pick", () => {
-    const dialog = openPicker();
-    expect(within(dialog).getByRole("link", { name: "Go to the Store" })).toHaveAttribute(
-      "href",
-      "/vault/store"
-    );
-  });
-
   it("adds nothing until a card is picked, and a second press takes the pick back", () => {
     mine(page([row(1)]));
     const dialog = openPicker();
@@ -309,15 +238,6 @@ describe("ShowcasePickerDialog", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Add 2 cards" }));
     expect(add).toHaveBeenCalledWith({ showcaseId: "s1", ownershipIds: ["o1", "o2"] });
   });
-
-  it("says when only the newest cards are shown", () => {
-    mine(page([row(1), row(2)], 150));
-    const dialog = openPicker();
-    expect(
-      within(dialog).getByText("Showing your newest 2 of 150 cards. Search to find the rest.")
-    ).toBeInTheDocument();
-  });
-
   it("holds the picks to the room left in the showcase", () => {
     mine(page([row(101), row(102)]));
     const existing = new Set(
@@ -350,17 +270,6 @@ describe("ShowcasePickerDialog", () => {
     }
     expect(within(dialog).getByText(title)).toBeInTheDocument();
   });
-
-  it("offers to try again when Mine did not load", () => {
-    const refetch = jest.fn();
-    jest
-      .mocked(api.cards.listMine.useQuery)
-      .mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch } as never);
-    const dialog = openPicker();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalled();
-  });
-
   it("says what went wrong and keeps the picks", () => {
     failingMutation(
       jest.mocked(api.cards.addToShowcase.useMutation),

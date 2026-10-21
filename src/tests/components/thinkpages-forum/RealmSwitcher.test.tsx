@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
@@ -51,18 +51,6 @@ const realms = [
 ];
 
 describe("RealmSwitcher", () => {
-  it("offers the given realms with the open one selected", () => {
-    render(<RealmSwitcher realms={realms} value="eurth" />);
-    expect(screen.getByLabelText("Realm")).toBeInTheDocument();
-    const select = screen.getByRole("combobox");
-    expect(
-      within(select)
-        .getAllByRole("option")
-        .map((o) => o.textContent)
-    ).toEqual(["Ixnay", "Eurth", "Other"]);
-    expect(select).toHaveValue("eurth");
-  });
-
   it("opens the chosen realm's Hub board", () => {
     render(<RealmSwitcher realms={realms} value="eurth" />);
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "other" } });

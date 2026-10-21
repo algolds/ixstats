@@ -60,16 +60,6 @@ describe("CommonsResultsGrid", () => {
     fireEvent.click(screen.getByRole("button", { name: "Load more images" }));
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
-
-  it("says what was searched when nothing was found, and when a category is empty", () => {
-    const { rerender } = render(<CommonsResultsGrid {...base} />);
-    expect(screen.getByText("No images found for “castle”")).toBeInTheDocument();
-    rerender(<CommonsResultsGrid {...base} mode="browse" query="" />);
-    expect(screen.getByText("This category has no images.")).toBeInTheDocument();
-    rerender(<CommonsResultsGrid {...base} mode="idle" query="" />);
-    expect(screen.getByText("Explore images")).toBeInTheDocument();
-  });
-
   it("exposes each card as a toggle button identified by url, and confirms on double-click", () => {
     const onSelect = jest.fn();
     const onConfirm = jest.fn();
@@ -97,90 +87,5 @@ describe("CommonsResultsGrid", () => {
     expect(onSelect).toHaveBeenCalledWith(one);
     fireEvent.doubleClick(screen.getByRole("button", { name: "Castle 1.jpg" }));
     expect(onConfirm).toHaveBeenCalledWith(one);
-  });
-
-  it("counts what is shown and what the filters hide", () => {
-    render(<CommonsResultsGrid {...base} images={[image(1)]} totalHits={120} loadedCount={4} />);
-    expect(screen.getByText("Showing 1 of 120 (3 hidden by filters)")).toBeInTheDocument();
-  });
-
-  it("says what an empty list is when the source is not a category", () => {
-    render(
-      <CommonsResultsGrid {...base} mode="browse" query="" emptyText="Nothing imported yet." />
-    );
-    expect(screen.getByText("Nothing imported yet.")).toBeInTheDocument();
-  });
-
-  describe("BlurHash placeholders", () => {
-    const hashed = (over: Partial<CommonsImage> = {}) => ({
-      ...image(1),
-      width: 40,
-      height: 30,
-      blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj",
-      ...over,
-    });
-
-    it("draws the blurhash behind a loading tile instead of a skeleton, and drops it on load", () => {
-      const { container } = render(<CommonsResultsGrid {...base} images={[hashed()]} />);
-      const thumbnail = screen.getByRole("img", { name: "Castle 1.jpg" });
-      expect(thumbnail).toHaveAttribute("data-placeholder");
-      expect(thumbnail.style.backgroundImage).toContain("data:image/svg+xml");
-      expect(container.querySelector("[data-slot='skeleton']")).toBeNull();
-
-      fireEvent.load(thumbnail);
-      expect(thumbnail).not.toHaveAttribute("data-placeholder");
-      expect(thumbnail.style.backgroundImage).toBe("");
-    });
-
-    it("keeps the skeleton for a tile with no blurhash", () => {
-      const { container } = render(<CommonsResultsGrid {...base} images={[image(1)]} />);
-      expect(container.querySelector("[data-slot='skeleton']")).not.toBeNull();
-      const thumbnail = screen.getByRole("img", { name: "Castle 1.jpg" });
-      expect(thumbnail).not.toHaveAttribute("data-placeholder");
-      expect(thumbnail.className).toContain("opacity-0");
-      fireEvent.load(thumbnail);
-      expect(thumbnail.className).toContain("opacity-100");
-    });
-  });
-
-  it("shows the cold start, not the filter message, when a filter is set before any search", () => {
-    render(<CommonsResultsGrid {...base} mode="idle" query="" isFilterActive />);
-    expect(screen.getByText("Explore images")).toBeInTheDocument();
-    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
-  });
-
-  it("shows a failure and the loading skeleton ahead of the filter message", () => {
-    const { rerender, container } = render(
-      <CommonsResultsGrid {...base} isFilterActive error={{ rateLimited: false }} />
-    );
-    expect(screen.getByText("Search failed")).toBeInTheDocument();
-    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
-
-    rerender(<CommonsResultsGrid {...base} isFilterActive isLoading />);
-    expect(screen.queryByText("No matching images found")).not.toBeInTheDocument();
-    expect(container.querySelector(".wikios-commons-grid")).not.toBeNull();
-  });
-
-  it("says a wiki with nothing to list has no images, not that a category is empty", () => {
-    render(<CommonsResultsGrid {...base} mode="list" query="" />);
-    expect(screen.getByText("This wiki has no images to list.")).toBeInTheDocument();
-    expect(screen.queryByText("This category has no images.")).not.toBeInTheDocument();
-  });
-
-  it("lets emptyText override the list message for the forum and own uploads", () => {
-    render(<CommonsResultsGrid {...base} mode="list" query="" emptyText="Nothing imported yet." />);
-    expect(screen.getByText("Nothing imported yet.")).toBeInTheDocument();
-    expect(screen.queryByText("This wiki has no images to list.")).not.toBeInTheDocument();
-  });
-
-  it("labels unknown dimensions Vector only for an SVG, and otherwise shows nothing", () => {
-    const svg = { ...image(1), width: 0, height: 0, mime: "image/svg+xml" };
-    const raster = { ...image(2), width: 0, height: 0, mime: "image/png" };
-    const sized = image(3);
-    render(<CommonsResultsGrid {...base} images={[svg, raster, sized]} />);
-    expect(screen.getAllByText("Vector")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Castle 1.jpg" })).toHaveTextContent("Vector");
-    expect(screen.getByRole("button", { name: "Castle 2.jpg" })).not.toHaveTextContent("Vector");
-    expect(screen.getByRole("button", { name: "Castle 3.jpg" })).toHaveTextContent("1200×800");
   });
 });

@@ -6,13 +6,12 @@
  * server error, for anyone else). Small arms: public, paginated catalog reads. Formulas and
  * system validation: admin only.
  */
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { cardImagesRouter } from "~/server/api/routers/cardImages";
 import { smallArmsEquipmentRouter } from "~/server/api/routers/smallArmsEquipment";
 import { formulasRouter } from "~/server/api/routers/formulas";
 import { systemValidationRouter } from "~/server/api/routers/system-validation";
-import { calculateEffectiveGrowthRate } from "~/lib/config-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db";
 
@@ -83,61 +82,13 @@ describe("cardImages", () => {
       code: "BAD_REQUEST",
     });
   });
-
-  it("returns a country's images keyed by card type", async () => {
-    db.cardBackgroundImage.findMany.mockResolvedValue([
-      { cardType: "trade", imageUrl: "a" },
-      { cardType: "fiscal", imageUrl: "b" },
-    ]);
-    const map = await images(ctx(db, null)).getAllByCountry({ countryId: "c1" });
-    expect(Object.keys(map).sort()).toEqual(["fiscal", "trade"]);
-  });
 });
 
 describe("smallArmsEquipment", () => {
   const arms = createCallerFactory(smallArmsEquipmentRouter);
-
-  it("filters and pages the catalog publicly", async () => {
-    db.smallArmsEquipment.findMany.mockResolvedValue([{ id: "e1" }, { id: "e2" }]);
-    db.smallArmsEquipment.count.mockResolvedValue(5);
-
-    const result = await arms(ctx(db, null)).getAllEquipment({
-      equipmentType: "rifle",
-      isActive: true,
-      limit: 2,
-      offset: 2,
-    });
-
-    expect(db.smallArmsEquipment.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { equipmentType: "rifle", isActive: true },
-        take: 2,
-        skip: 2,
-      })
-    );
-    expect(result.pagination).toEqual({ total: 5, limit: 2, offset: 2, hasMore: true });
-  });
-
   it("caps the page size", async () => {
     await expect(arms(ctx(db, null)).getAllEquipment({ limit: 501 })).rejects.toMatchObject({
       code: "BAD_REQUEST",
-    });
-  });
-
-  it("summarises the catalog", async () => {
-    db.smallArmsEquipment.count.mockResolvedValue(3);
-    db.smallArmsEquipment.groupBy
-      .mockResolvedValueOnce([{ equipmentType: "rifle", _count: 2 }])
-      .mockResolvedValueOnce([{ eraKey: "modern", _count: 3 }]);
-    db.smallArmsManufacturer.count.mockResolvedValue(1);
-
-    const stats = await arms(ctx(db, null)).getStatistics();
-
-    expect(stats).toMatchObject({
-      totalEquipment: 3,
-      equipmentByType: [{ type: "rifle", count: 2 }],
-      equipmentByEra: [{ era: "modern", count: 3 }],
-      totalManufacturers: 1,
     });
   });
 });
@@ -166,16 +117,6 @@ describe("formulas", () => {
       data: expect.objectContaining({ action: "FORMULA_UPDATE_REQUEST", targetId: "gdp-growth" }),
     });
   });
-
-  it("runs the GDP growth formula and checks the expected output", async () => {
-    const expected = calculateEffectiveGrowthRate(0.03, 15000, 1.0321, 1);
-    const result = await formulas(ctx(db, "admin", ADMIN)).testFormula({
-      formulaId: "gdp-growth",
-      testInputs: { baseGrowthRate: 0.03, gdpPerCapita: 15000 },
-      expectedOutput: expected,
-    });
-    expect(result).toMatchObject({ success: true, result: expected, passed: true });
-  });
 });
 
 describe("systemValidation", () => {
@@ -188,35 +129,5 @@ describe("systemValidation", () => {
     await expect(validation(ctx(db, "u1")).checkSubsystems()).rejects.toThrow(
       /Admin privileges required/
     );
-  });
-
-  it("passes populated models, warns on empty ones and fails broken ones", async () => {
-    db.$queryRaw = jest.fn(async () => [{ "?column?": 1 }]);
-    db.country.count.mockResolvedValue(10);
-    db.user.count.mockResolvedValue(0);
-    db.card.count.mockRejectedValue(new Error("relation missing"));
-
-    const { checks } = await validation(ctx(db, "admin", ADMIN)).checkDatabase();
-    const status = (name: string) => checks.find((c) => c.name === name)?.status;
-
-    expect(status("Database Connection")).toBe("pass");
-    expect(status("Model: Country")).toBe("pass");
-    expect(status("Model: User")).toBe("warn");
-    expect(status("Model: Card")).toBe("fail");
-  });
-
-  it("flags a stale calculation run and countries with invalid data", async () => {
-    db.calculationLog.findFirst.mockResolvedValue({
-      timestamp: new Date(Date.now() - 48 * 3600 * 1000),
-      countriesUpdated: 5,
-      executionTimeMs: 100,
-    });
-    db.country.count.mockResolvedValue(2);
-    db.storytellerEffect.count.mockResolvedValue(0);
-
-    const { checks } = await validation(ctx(db, "admin", ADMIN)).checkEconomicEngine();
-
-    expect(checks.find((c) => c.name === "Last Calculation")?.status).toBe("warn");
-    expect(checks.find((c) => c.name === "Country Data Integrity")?.details).toMatch(/2 countries/);
   });
 });

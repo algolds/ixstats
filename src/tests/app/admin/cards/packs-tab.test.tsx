@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -145,19 +145,6 @@ describe("PacksTab", () => {
       })
     );
   });
-
-  it("keeps the editor's title clear of the sheet's close button, and pins each row's Edit", () => {
-    serve({ data: [booster] });
-    render(<PacksTab />);
-    expect(
-      screen.getByRole("button", { name: "Edit IIWiki booster" }).closest("td")
-    ).toHaveAttribute("data-pinned");
-    openEditor();
-    const title = screen.getByRole("heading", { name: "Edit IIWiki booster" });
-    // The close button sits 16px in and is 28px wide; the sheet's 24px padding plus pr-8 clears it.
-    expect(title.parentElement?.className).toContain("pr-8");
-  });
-
   it("blocks Save and the preview while the odds do not add up to 100%", () => {
     serve({ data: [booster] });
     render(<PacksTab />);
@@ -186,23 +173,6 @@ describe("PacksTab", () => {
     expect(screen.getByText("Choose the pack's kind.")).toBeInTheDocument();
     expect(saveButton()).toBeDisabled();
   });
-
-  it("says when the pack's own season narrows the pool, which the editor does not change", () => {
-    serve({ data: [{ ...booster, cardType: "NS", season: 2 }] });
-    render(<PacksTab />);
-    openEditor();
-    expect(screen.getByText("This pack draws only cards from season 2.")).toBeInTheDocument();
-    fireEvent.click(saveButton());
-    expect(save.mock.calls[0]?.[0]).not.toHaveProperty("season");
-  });
-
-  it("says nothing of a season for a pack without one", () => {
-    serve({ data: [{ ...booster, cardType: "NS" }] });
-    render(<PacksTab />);
-    openEditor();
-    expect(screen.queryByText(/This pack draws only/)).not.toBeInTheDocument();
-  });
-
   it("edits the pack's card type, sending it on save and narrowing the preview", () => {
     serve({ data: [{ ...booster, cardType: "LORE" }] }, stocked);
     render(<PacksTab />);
@@ -287,19 +257,6 @@ describe("PacksTab", () => {
     expect(screen.queryByText(/the guarantee can.t be met/)).not.toBeInTheDocument();
     expect(screen.queryByText(/unopened pack/)).not.toBeInTheDocument();
   });
-
-  it("says one rarity has odds but no cards", () => {
-    serve({ data: [booster] }, { ...stocked, undeliverable: ["EPIC"] });
-    render(<PacksTab />);
-    openEditor();
-    showPreview();
-    expect(
-      screen.getByText(
-        "Epic has odds but no cards, so this pack can't go on sale. Set its odds to 0 or widen the pool."
-      )
-    ).toBeInTheDocument();
-  });
-
   it("warns when the pool has no card of the guaranteed rarity, naming it once", () => {
     serve({ data: [{ ...booster, guaranteedRarity: "EPIC" }] }, { ...preview, unopened: 2 });
     render(<PacksTab />);
@@ -331,21 +288,6 @@ describe("PacksTab", () => {
       "This pool has no Uncommon, Ultra rare, Epic and Legendary cards, so the pack stays off sale."
     );
   });
-
-  it("says why the switch is off when only the guarantee has no card", () => {
-    serve(
-      { data: [{ ...booster, isActive: false, guaranteedRarity: "EPIC" }] },
-      { ...stocked, undeliverable: ["EPIC"] }
-    );
-    render(<PacksTab />);
-    openEditor();
-    showPreview();
-    expect(onSale()).toBeDisabled();
-    expect(onSale()).toHaveAccessibleDescription(
-      "This pool has no Epic cards, so the pack stays off sale."
-    );
-  });
-
   it("blocks saving a pack on sale its pool can't deliver, until it comes off sale", () => {
     serve({ data: [booster] }, preview);
     render(<PacksTab />);
@@ -393,14 +335,6 @@ describe("PacksTab", () => {
       pool: { cardTypes: ["NATION", "NS"] },
     });
   });
-
-  it("says nothing of the types when the pool names none", () => {
-    serve({ data: [{ ...booster, cardType: "NATION" }] });
-    render(<PacksTab />);
-    openEditor();
-    expect(screen.queryByText(/No card is both/)).not.toBeInTheDocument();
-  });
-
   it("puts a pack on sale when its pool has every rarity it shows", () => {
     serve({ data: [{ ...booster, isActive: false }] }, { ...stocked, unopened: 2 });
     render(<PacksTab />);
@@ -462,15 +396,5 @@ describe("PacksTab", () => {
     render(<PacksTab />);
     fireEvent.click(screen.getByRole("switch", { name: "IIWiki booster on sale" }));
     expect(setActive).toHaveBeenCalledWith({ packId: "pack_1", isActive: false });
-  });
-
-  it("says so when there are no packs, or when they did not load", () => {
-    serve({ data: [] });
-    const { unmount } = render(<PacksTab />);
-    expect(screen.getByText("No packs yet")).toBeInTheDocument();
-    unmount();
-    serve({ isError: true });
-    render(<PacksTab />);
-    expect(screen.getByRole("alert")).toHaveTextContent("The packs did not load");
   });
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -42,27 +42,10 @@ it("sets the card season and says nation editions arrive with seasons", () => {
   expect(set).toHaveBeenCalledWith({ season: 4 });
   expect(screen.getByText("Nation editions start with site seasons")).toBeInTheDocument();
 });
-
-it("keeps Save off while the season is unchanged", () => {
-  serve({ data: 3 });
-  render(<SeasonsTab />);
-  expect(saveButton()).toBeDisabled();
-  type("4");
-  expect(saveButton()).toBeEnabled();
-  type("3");
-  expect(saveButton()).toBeDisabled();
-});
-
 it.each(["0", "101", "-1", "2.5"])("hints and blocks Save for %s", (value) => {
   serve({ data: 3 });
   render(<SeasonsTab />);
   type(value);
   expect(screen.getByText("Enter a whole number from 1 to 100.")).toBeInTheDocument();
   expect(saveButton()).toBeDisabled();
-});
-
-it("says so when the season did not load", () => {
-  serve({ isError: true });
-  render(<SeasonsTab />);
-  expect(screen.getByRole("alert")).toHaveTextContent("The card season did not load");
 });

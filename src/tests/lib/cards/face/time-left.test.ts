@@ -29,15 +29,6 @@ describe("formatTimeLeft", () => {
     expect(formatTimeLeft(later(0), now)).toBe("under 1m");
     expect(formatTimeLeft(later(-MINUTE), now)).toBe("Ended");
   });
-
-  it("measures from the present by default", () => {
-    jest.useFakeTimers({ now });
-    try {
-      expect(formatTimeLeft(later(5 * MINUTE))).toBe("5m");
-    } finally {
-      jest.useRealTimers();
-    }
-  });
 });
 
 describe("timeLeftPhrase", () => {

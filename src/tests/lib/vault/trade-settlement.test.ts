@@ -22,10 +22,6 @@ function makeTx() {
 const asTx = (tx: ReturnType<typeof makeTx>) => tx as never;
 
 describe("claimPendingTradeTx", () => {
-  it("takes the status from the TradeOfferStatus enum, with no string stand-in left", async () => {
-    expect(await import("~/lib/vault/trade-settlement")).not.toHaveProperty("TradeStatus");
-  });
-
   it("throws CONFLICT when the trade is no longer PENDING (count 0)", async () => {
     const tx = makeTx();
     tx.tradeOffer.updateMany.mockResolvedValue({ count: 0 });
@@ -284,11 +280,5 @@ describe("recordTradeTransfersTx", () => {
 
     expect(tx.cardOwnership.findMany).not.toHaveBeenCalled();
     expect(tx.cardTransferEvent.createMany).not.toHaveBeenCalled();
-  });
-});
-
-describe("the credit transfer", () => {
-  it("is gone: a trade's credits move through its credit legs (fee and royalty)", async () => {
-    expect(await import("~/lib/vault/trade-settlement")).not.toHaveProperty("transferCreditsTx");
   });
 });

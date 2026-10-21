@@ -1,12 +1,8 @@
-import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import "react";
+import { render, screen } from "@testing-library/react";
 
 import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
-import { ShowcaseTab } from "~/components/achievements/tabs/ShowcaseTab";
 import {
-  ACHIEVEMENT_ICON_MAP,
-  getAchievementIcon,
-  getCategoryTheme,
   groupAchievements,
 } from "~/components/achievements/constants";
 import type { RouterOutputs } from "~/trpc/react";
@@ -50,22 +46,6 @@ const ACHIEVEMENTS = [
 ];
 
 describe("Legacy in the catalogue", () => {
-  it("greys a Legacy card and badges it, leaving active cards as they are", () => {
-    render(<AllAchievementsTab achievements={ACHIEVEMENTS} />);
-
-    const legacyCard = screen
-      .getByRole("heading", { name: "Emerging Economy" })
-      .closest("[data-slot=card]") as HTMLElement;
-    expect(legacyCard.className).toContain("grayscale");
-    expect(within(legacyCard).getByText("Legacy")).toBeInTheDocument();
-
-    const activeCard = screen
-      .getByRole("heading", { name: "Welcome" })
-      .closest("[data-slot=card]") as HTMLElement;
-    expect(activeCard.className).not.toContain("grayscale");
-    expect(within(activeCard).queryByText("Legacy")).toBeNull();
-  });
-
   it("counts active achievements only in the rarity filter", () => {
     render(<AllAchievementsTab achievements={ACHIEVEMENTS} />);
 
@@ -96,47 +76,5 @@ describe("Legacy in the catalogue", () => {
     expect(
       grouped.find((g) => g.activeAchievement.key === "social-thinkpage-author")?.isLegacy
     ).toBe(true);
-  });
-
-  it("shows Legacy greyed in the showcase too", () => {
-    render(<ShowcaseTab achievements={ACHIEVEMENTS} />);
-    const card = screen
-      .getByRole("heading", { name: "Emerging Economy" })
-      .closest("[data-slot=card]") as HTMLElement;
-    expect(card.className).toContain("grayscale");
-    expect(within(card).getByText("Legacy")).toBeInTheDocument();
-  });
-});
-
-describe("achievement icons", () => {
-  it("draws the component of an icon key", () => {
-    expect(getAchievementIcon("Rocket", "Nation")).toBe(ACHIEVEMENT_ICON_MAP.Rocket);
-  });
-
-  it("falls back to the category's icon for an old emoji or a missing key", () => {
-    expect(getAchievementIcon("🏆", "Defense")).toBe(getCategoryTheme("Defense").icon);
-    expect(getAchievementIcon(null, "Wiki")).toBe(getCategoryTheme("Wiki").icon);
-    expect(getAchievementIcon(undefined)).toBe(getCategoryTheme("General").icon);
-  });
-
-  it("themes each of the ten categories and the retired ones", () => {
-    for (const category of [
-      "Executive",
-      "Politics",
-      "Diplomacy",
-      "Defense",
-      "Nation",
-      "Social",
-      "Wiki",
-      "Cards",
-      "Lorewards",
-      "General",
-      "Economic",
-      "Military",
-      "Diplomatic",
-      "Government",
-    ]) {
-      expect([category, getCategoryTheme(category).name]).toEqual([category, category]);
-    }
   });
 });

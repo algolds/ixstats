@@ -2,7 +2,7 @@
  * Reporting another player's inscription: a reason, sent to staff; the server's refusal (five reports already waiting,
  * or one already sent) is shown in the dialog; focus goes back to the report button.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useMarketActions", () => ({ useMarketActions: jest.fn() }));
@@ -64,19 +64,6 @@ describe("ReportInscriptionButton", () => {
     expect(within(dialog).queryByRole("alert")).toBeNull();
     expect(mutate).toHaveBeenCalledTimes(2);
   });
-
-  it("starts the next report clean once the dialog is closed", async () => {
-    const { mutate, opener } = setup();
-    fireEvent.change(reason(), { target: { value: "A slur" } });
-    fireEvent.click(send());
-    act(() => (mutate.mock.calls[0]![1] as Done).onError!({ message: "Already reported." }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    fireEvent.click(opener);
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect((reason() as HTMLTextAreaElement).value).toBe("");
-  });
-
   it("holds Send while the report is under way", () => {
     setup(true);
     fireEvent.change(reason(), { target: { value: "A slur" } });

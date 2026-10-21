@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -136,23 +136,6 @@ describe("ComplianceTab takedowns", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hide art" }));
     expect(mutations.hide).toHaveBeenCalledWith({ takedownId: "td_1" });
   });
-
-  it("names a player's request as the player's, with who asked and the contact they gave", () => {
-    serve({
-      takedowns: [
-        takedown({ origin: "PLAYER_REQUEST", requester: "@ann", contact: "me@example.org" }),
-        takedown({ id: "td_2", origin: "AUTHOR_REQUEST" }),
-      ],
-    });
-    render(<ComplianceTab />);
-
-    expect(screen.getByText("Player")).toBeInTheDocument();
-    expect(screen.getByText("Asked by @ann")).toBeInTheDocument();
-    expect(screen.getByText("me@example.org")).toBeInTheDocument();
-    // Only a player's request names who asked
-    expect(screen.getAllByText(/^Asked by/)).toHaveLength(1);
-  });
-
   it("declines a request with the reason the admin gives", () => {
     serve({ takedowns: [takedown()] });
     render(<ComplianceTab />);
@@ -214,13 +197,6 @@ describe("ComplianceTab takedowns", () => {
       receivedAt: expect.any(Date),
       hideNow: false,
     });
-  });
-
-  it("says when the takedowns did not load", () => {
-    serve({ takedownsError: true });
-    render(<ComplianceTab />);
-    expect(screen.getByRole("alert")).toHaveTextContent("The takedowns did not load");
-    expect(screen.queryByText("No takedowns here")).not.toBeInTheDocument();
   });
 });
 

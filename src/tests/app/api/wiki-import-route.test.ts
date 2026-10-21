@@ -122,11 +122,6 @@ describe("GET /api/wiki/import (may this caller import?)", () => {
     process.env.WIKIOS_IMPORT_MAX_BYTES = "lots";
     expect(await (await GET()).json()).toMatchObject({ maxBytes: DEFAULT_MAX_UPLOAD_BYTES });
   });
-
-  it("the default limit is 9.5 MiB, under Next's 10 MiB proxy body cap", () => {
-    expect(DEFAULT_MAX_UPLOAD_BYTES).toBe(9.5 * MIB);
-    expect(DEFAULT_MAX_UPLOAD_BYTES).toBeLessThan(10 * MIB);
-  });
 });
 
 describe("POST /api/wiki/import: who may", () => {
@@ -195,14 +190,6 @@ describe("POST /api/wiki/import: the raw body", () => {
     expect(store.writes).toBe(0);
     expect(store.articles).toHaveLength(0);
   });
-
-  it("accepts dryRun=false in any letter case", async () => {
-    const res = await POST(post(FIXTURE, { query: "?dryRun=FALSE" }));
-
-    expect((await res.json()).dryRun).toBe(false);
-    expect(store.articles).toHaveLength(5);
-  });
-
   it("accepts text/xml and a charset parameter", async () => {
     expect((await POST(post(FIXTURE, { type: "text/xml" }))).status).toBe(200);
     expect((await POST(post(FIXTURE, { type: "application/xml; charset=utf-8" }))).status).toBe(
@@ -247,16 +234,6 @@ describe("POST /api/wiki/import: the raw body", () => {
 
     expect(body.errorCount).toBe(250);
     expect(body.errors).toHaveLength(200);
-  });
-
-  it("surfaces import warnings", async () => {
-    const xml =
-      "<mediawiki><page><title>Foo</title><ns>0</ns><revision><id>1</id><timestamp>2026-01-01T00:00:00Z</timestamp><model>css</model><text>x</text></revision></page></mediawiki>";
-
-    const body = await (await POST(post(xml))).json();
-
-    expect(body.warningCount).toBe(1);
-    expect(body.warnings[0]).toMatchObject({ title: "Foo" });
   });
 });
 

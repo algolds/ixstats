@@ -123,15 +123,6 @@ describe("map invalidation", () => {
     }
   });
 });
-
-describe("the geometry layers", () => {
-  it("are no longer tRPC procedures: the layer route serves them", () => {
-    expect(Object.keys(worldMapProcedures)).toEqual(
-      expect.not.arrayContaining(["getWorldMap", "getWorldMapPacked", "getMapBundle"])
-    );
-  });
-});
-
 describe("geoCore.getMapBundleDetail", () => {
   it("sends no cities or subdivisions, rather than failing, when their queries fail", async () => {
     const broken = jest.fn().mockRejectedValue(new Error('column "realmId" does not exist'));

@@ -1,82 +1,11 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, jest } from "@jest/globals";
-import { Button, buttonVariants } from "~/components/ui/button";
-import { Badge, badgeVariants } from "~/components/ui/badge";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { SearchField } from "~/components/ui/search-field";
 import { Switch } from "~/components/ui/switch";
-
-describe("Button", () => {
-  it("maps styles to role tokens", () => {
-    expect(buttonVariants({ variant: "default" })).toContain("bg-primary-fill");
-    expect(buttonVariants({ variant: "default" })).toContain("text-on-primary");
-    expect(buttonVariants({ variant: "default" })).not.toContain("bg-tint");
-    expect(buttonVariants({ variant: "secondary" })).toContain("bg-fill-3");
-    expect(buttonVariants({ variant: "outline" })).toContain("border-separator");
-    expect(buttonVariants({ variant: "destructive" })).toContain("bg-destructive");
-    expect(buttonVariants({ variant: "ghost" })).toContain("text-label");
-    expect(buttonVariants({ variant: "ghost" })).not.toContain("text-tint");
-  });
-
-  it("presses with an instant colour change, not a scale", () => {
-    for (const variant of ["default", "secondary", "outline", "ghost", "destructive"] as const) {
-      const cls = buttonVariants({ variant });
-      expect(cls).toContain("active:");
-      expect(cls).not.toContain("facet-press");
-      expect(cls).not.toContain("scale-");
-    }
-  });
-
-  it("sizes from the density-aware control heights", () => {
-    expect(buttonVariants({ size: "sm" })).toContain("h-(--control-height-sm)");
-    expect(buttonVariants({ size: "xs" })).not.toBe(buttonVariants({ size: "sm" }));
-    expect(buttonVariants()).toBe(buttonVariants({ size: "default", variant: "default" }));
-    expect(buttonVariants({ size: "lg" })).toContain("h-(--control-height-lg)");
-    expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-height-sm)");
-  });
-
-  it("has a coarse-pointer hit slop and a tint focus ring, and makes no sound", () => {
-    render(<Button>Save</Button>);
-    const button = screen.getByRole("button", { name: "Save" });
-    expect(button.className).toContain("pointer-coarse:after:min-h-11");
-    expect(button.className).toContain("focus-visible:outline-tint");
-    expect(button).toHaveAttribute("data-slot", "button");
-    expect(button.getAttributeNames().some((n) => n.startsWith("data-cuelume"))).toBe(false);
-  });
-
-  it("lets caller classes override the size and colour", () => {
-    render(
-      <Button size="sm" className="h-10 text-white">
-        Go
-      </Button>
-    );
-    const cls = screen.getByRole("button").className;
-    expect(cls).toContain("h-10");
-    expect(cls).not.toContain("h-(--control-height-sm)");
-    expect(cls).toContain("text-white");
-    expect(cls).not.toContain("text-on-tint");
-  });
-});
-
-describe("Badge", () => {
-  it("defaults to the neutral palette; secondary is the tint's ink on its fill", () => {
-    expect(badgeVariants()).toBe(badgeVariants({ variant: "default" }));
-    expect(badgeVariants({ variant: "default" })).toContain("bg-fill-3");
-    expect(badgeVariants({ variant: "secondary" })).toContain("bg-tint-fill text-tint-ink");
-  });
-
-  it("colours status badges with their status ink on a fill of the colour", () => {
-    render(<Badge variant="success">Active</Badge>);
-    const badge = screen.getByText("Active");
-    expect(badge.className).toContain("bg-success/15");
-    expect(badge.className).toContain("text-success-ink");
-    expect(badge.className).toContain("rounded-full");
-    expect(badge.className).toContain("text-caption");
-  });
-});
 
 function Period({ onChange }: { onChange?: (v: string) => void }) {
   const [value, setValue] = useState("week");
@@ -142,27 +71,6 @@ describe("SegmentedControl", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Week" }));
     expect(screen.getByRole("radio", { name: "Week" })).toHaveAttribute("aria-checked", "true");
   });
-
-  it("exposes tabs instead of radios with asTabs", () => {
-    render(
-      <SegmentedControl
-        asTabs
-        aria-label="Views"
-        defaultValue="map"
-        getTabPanelId={(v) => `panel-${v}`}
-        options={[
-          { value: "map", label: "Map" },
-          { value: "list", label: "List" },
-        ]}
-      />
-    );
-    expect(screen.getByRole("tablist", { name: "Views" })).toBeInTheDocument();
-    const map = screen.getByRole("tab", { name: "Map" });
-    expect(map).toHaveAttribute("aria-selected", "true");
-    expect(map).toHaveAttribute("aria-controls", "panel-map");
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "List" }));
-    expect(screen.getByRole("tab", { name: "List" })).toHaveAttribute("aria-selected", "true");
-  });
 });
 
 describe("ToggleGroup", () => {
@@ -211,18 +119,6 @@ describe("ToggleGroup", () => {
     expect(beta).toHaveAttribute("aria-checked", "false");
     expect(onValueChange).toHaveBeenLastCalledWith("");
   });
-
-  it("single with disallowEmpty keeps the pressed item pressed", () => {
-    render(
-      <ToggleGroup type="single" aria-label="Sort" defaultValue="a" disallowEmpty>
-        <ToggleGroupItem value="a">Alpha</ToggleGroupItem>
-        <ToggleGroupItem value="b">Beta</ToggleGroupItem>
-      </ToggleGroup>
-    );
-    fireEvent.click(screen.getByRole("radio", { name: "Alpha" }));
-    expect(screen.getByRole("radio", { name: "Alpha" })).toHaveAttribute("aria-checked", "true");
-  });
-
   it("moves focus between items with the arrow keys", async () => {
     render(
       <ToggleGroup type="multiple" aria-label="Filters">

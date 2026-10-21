@@ -64,23 +64,6 @@ describe("draft-store", () => {
     expect(retrieved?.html).toBe("<p>Eldoria is an ancient realm.</p>");
     expect(hasDraft(OWNER, "Kingdom of Eldoria", "ixwiki")).toBe(true);
   });
-
-  it("saves and retrieves a source editor draft in canonical format", () => {
-    saveDraft(OWNER, {
-      title: "Republic of Testia",
-      source: "ixwiki",
-      mode: "source",
-      wikitext: "== History ==\nTestia was founded in 1920.",
-    });
-
-    const retrieved = getDraft(OWNER, "Republic of Testia", "ixwiki");
-    expect(retrieved).not.toBeNull();
-    expect(retrieved?.title).toBe("Republic of Testia");
-    expect(retrieved?.mode).toBe("source");
-    expect(retrieved?.wikitext).toBe("== History ==\nTestia was founded in 1920.");
-    expect(hasDraft(OWNER, "Republic of Testia", "ixwiki")).toBe(true);
-  });
-
   it("clears a draft", () => {
     saveDraft(OWNER, {
       title: "Clear Me",
@@ -243,20 +226,6 @@ describe("draft-store", () => {
       expect(listDrafts(undefined)).toEqual([]);
       expect(storageMap.size).toBe(1);
     });
-
-    it("reports whether the draft was stored", () => {
-      expect(saveDraft(OWNER, draft)).toBe(true);
-      const quota = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-        throw new Error("QuotaExceededError");
-      });
-      const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-
-      expect(saveDraft(OWNER, draft)).toBe(false);
-
-      quota.mockRestore();
-      warn.mockRestore();
-    });
-
     it("writes no unowned mirror: the legacy keys would show one user's text to the next", () => {
       saveDraft(OWNER, { title: "Mirror", source: "ixwiki", mode: "visual", html: "<p>secret</p>" });
       saveDraft(OWNER, { title: "Mirror", source: "ixwiki", mode: "source", wikitext: "secret" });

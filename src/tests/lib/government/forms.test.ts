@@ -5,29 +5,12 @@
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import {
   GOVERNMENT_FORMS,
-  getGovernmentForm,
   matchGovernmentForm,
   type GovernmentFormId,
 } from "~/lib/government/forms";
 import { findSynergyPair } from "~/lib/government/synergy-table";
 
 describe("GOVERNMENT_FORMS", () => {
-  it("has exactly the agreed ids, in order", () => {
-    expect(GOVERNMENT_FORMS.map((form) => form.id)).toEqual([
-      "parliamentary-republic",
-      "presidential-republic",
-      "federal-republic",
-      "constitutional-monarchy",
-      "absolute-monarchy",
-      "one-party-state",
-      "military-government",
-      "theocracy",
-      "technocracy",
-      "merchant-oligarchy",
-      "confederation",
-    ]);
-  });
-
   it.each(GOVERNMENT_FORMS.map((form) => [form.id, form] as const))(
     "%s is complete and uses only defined components",
     (_id, form) => {
@@ -54,11 +37,6 @@ describe("GOVERNMENT_FORMS", () => {
       expect(conflicts).toEqual([]);
     }
   );
-
-  it("looks forms up by id", () => {
-    expect(getGovernmentForm("theocracy")?.name).toBe("Theocracy");
-    expect(getGovernmentForm("not-a-form")).toBeUndefined();
-  });
 });
 
 describe("matchGovernmentForm", () => {

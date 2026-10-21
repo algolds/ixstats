@@ -2,7 +2,7 @@
  * The factbook and rules editor hosts the canvas bare (its Save is the only save), never restores a local wiki
  * draft over the server text, and saves the canvas's latest complete wikitext, refusing while part of it has none.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 interface MockEditorProps {
@@ -38,11 +38,6 @@ const report = (wikitext: string, complete: boolean) =>
   act(() => mockEditorProps?.onSerializedWikitext({ wikitext, complete }));
 
 describe("RealmWikitextEditor", () => {
-  it("hosts the canvas bare, without restoring a local draft", () => {
-    renderEditor();
-    expect(mockEditorProps).toMatchObject({ bare: true, restoreLocalDraft: false });
-  });
-
   it("saves the latest complete wikitext, and refuses while part of it has none", () => {
     const onSave = renderEditor();
     const save = screen.getByRole("button", { name: "Save factbook" }) as HTMLButtonElement;

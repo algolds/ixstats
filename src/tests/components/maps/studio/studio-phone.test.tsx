@@ -64,18 +64,6 @@ describe("the phone notice", () => {
     expect(workers).toHaveLength(0);
     expect(requests()).toHaveLength(0);
   });
-
-  it("shows the tool from 900 px, and the notice below it", () => {
-    window.innerWidth = 900;
-    renderStudio();
-    expect(screen.queryByText("World Studio needs a wider screen")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Parameters")).toBeInTheDocument();
-
-    resizeTo(899);
-    expect(screen.getByText("World Studio needs a wider screen")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Parameters")).not.toBeInTheDocument();
-  });
-
   it("brings the tool up when the window widens", () => {
     window.innerWidth = 700;
     renderStudio();

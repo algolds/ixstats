@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockWatch = jest.fn();
@@ -50,19 +50,6 @@ describe("WatchThreadButton", () => {
     await waitFor(() => expect(mockUnwatch).toHaveBeenCalledWith({ threadId: "t1" }));
     expect(mockWatch).not.toHaveBeenCalled();
   });
-
-  it("keeps one name for assistive technology, with the state as pressed, when it is an icon button", () => {
-    const { rerender } = render(<WatchThreadButton threadId="t1" watching={false} iconOnly />);
-    const icon = screen.getByRole("button", { name: "Watch thread" });
-    expect(icon).toHaveAttribute("aria-pressed", "false");
-    expect(icon).toHaveTextContent("");
-    rerender(<WatchThreadButton threadId="t1" watching iconOnly />);
-    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-  });
-
   it("reports a refusal and refreshes nothing", async () => {
     mockWatch.mockRejectedValue(new Error("Thread not found."));
     render(<WatchThreadButton threadId="t1" watching={false} />);

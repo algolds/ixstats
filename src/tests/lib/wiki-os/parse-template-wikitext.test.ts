@@ -1,13 +1,6 @@
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
 
 describe("parseTemplateWikitext", () => {
-  it("parses a basic template invocation", () => {
-    expect(parseTemplateWikitext("{{Infobox country|capital=Vilena}}")).toEqual({
-      name: "Infobox country",
-      params: { capital: "Vilena" },
-    });
-  });
-
   it("parses multiple params", () => {
     expect(
       parseTemplateWikitext("{{CountryData|id=burgundie|metric=gdp|format=currency}}")

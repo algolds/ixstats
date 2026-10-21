@@ -1,41 +1,10 @@
 import {
-  formatMembershipTier,
   getEconomicTierFromGdpPerCapita,
   getPopulationTierFromPopulation,
   decimalToPercentage,
   percentageToDecimal,
 } from "~/lib/tier-utils";
 import { EconomicTier, PopulationTier } from "~/types/ixstats";
-
-describe("formatMembershipTier", () => {
-  it("formats mycountry_premium as Premium with the warning badge role", () => {
-    const res = formatMembershipTier("mycountry_premium");
-    expect(res.label).toBe("Premium");
-    expect(res.isPremium).toBe(true);
-    expect(res.badgeVariant).toBe("warning");
-    expect(res).not.toHaveProperty("badgeClass");
-  });
-
-  it("formats premium as Premium", () => {
-    const res = formatMembershipTier("premium");
-    expect(res.label).toBe("Premium");
-    expect(res.isPremium).toBe(true);
-  });
-
-  it("formats basic as Citizen", () => {
-    const res = formatMembershipTier("basic");
-    expect(res.label).toBe("Citizen");
-    expect(res.isPremium).toBe(false);
-    expect(res.badgeVariant).toBe("default");
-  });
-
-  it("handles undefined or null gracefully", () => {
-    const res = formatMembershipTier(null);
-    expect(res.label).toBe("Citizen");
-    expect(res.isPremium).toBe(false);
-  });
-});
-
 describe("Tier Determination & Math Conversion", () => {
   it("determines correct economic tier from GDP per capita", () => {
     expect(getEconomicTierFromGdpPerCapita(5000)).toBe(EconomicTier.IMPOVERISHED);

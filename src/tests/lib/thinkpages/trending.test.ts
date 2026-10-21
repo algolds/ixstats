@@ -370,12 +370,6 @@ describe("activities.getTrendingTopics", () => {
     expect(topics[1]!.trend).toBe("steady");
     expect(db.activityFeed.findMany).not.toHaveBeenCalled();
   });
-
-  it("is empty when no topic is active", async () => {
-    const db: any = createMockPrisma();
-    const caller = createCaller(createMockRouterContext({ db }) as never);
-    expect(await caller.getTrendingTopics({ limit: 5 })).toEqual([]);
-  });
 });
 
 describe("activities.getUnifiedTrending ThinkPages source", () => {

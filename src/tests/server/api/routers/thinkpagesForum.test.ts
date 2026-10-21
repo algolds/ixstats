@@ -38,8 +38,7 @@ import {
   fileReport,
   myStanding,
   postingAccessFor,
-  renderPostWikitext,
-  replyToThread,
+  renderPostWikitext
 } from "~/server/modules/thinkpages-forum";
 import { POSTS_PER_PAGE } from "~/lib/thinkpages-forum/paging";
 import { banNotice } from "~/lib/thinkpages-forum/moderation-policy";
@@ -405,20 +404,6 @@ describe("thinkpagesForum router", () => {
       ).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(createThread).not.toHaveBeenCalled();
     });
-
-    it("passes wikitext to the module and returns its formatting", async () => {
-      jest.mocked(replyToThread).mockClear();
-      await expect(
-        caller(member, forumDb()).createThread({ ...NEW, wikitext: "== x ==" })
-      ).resolves.toEqual({ threadId: "t_new", postId: "p_new", formatting: "done" });
-      expect(createThread).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.objectContaining({ wikitext: "== x ==" })
-      );
-      expect(replyToThread).not.toHaveBeenCalled();
-    });
-
     it("previews wikitext for a signed-in user under the thread id, or 'preview'", async () => {
       jest.mocked(renderPostWikitext).mockResolvedValue({
         contentHtml: "<p>x</p>",

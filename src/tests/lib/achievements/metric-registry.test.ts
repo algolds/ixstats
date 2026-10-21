@@ -19,7 +19,6 @@ jest.mock("~/lib/notifications/hooks", () => ({
 }));
 
 import { ACHIEVEMENT_ICON_MAP } from "~/components/achievements/constants";
-import { ACHIEVEMENT_ICON_KEYS } from "~/lib/achievements/icons";
 import type { AchievementCategory, AchievementDefinition } from "~/lib/achievements/definitions";
 import { METRIC_LOADERS, type MetricLoader } from "~/lib/achievements/metrics/registry";
 import { achievementRequiresCountry } from "~/lib/achievements/scope";
@@ -91,14 +90,6 @@ describe("definitions", () => {
       expect([def.id, def.icon in ACHIEVEMENT_ICON_MAP]).toEqual([def.id, true]);
     }
   });
-
-  it("map every icon key to a component, and nothing else", () => {
-    expect(Object.keys(ACHIEVEMENT_ICON_MAP).sort()).toEqual([...ACHIEVEMENT_ICON_KEYS].sort());
-    for (const Icon of Object.values(ACHIEVEMENT_ICON_MAP)) {
-      expect(Icon).toBeDefined();
-    }
-  });
-
   it("can all unlock: an active definition has a rule or a condition", () => {
     for (const def of ALL_DEFINITIONS.filter((d) => !d.retired)) {
       expect([def.id, Boolean(def.rule ?? def.condition)]).toEqual([def.id, true]);

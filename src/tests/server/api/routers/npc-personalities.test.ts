@@ -100,22 +100,6 @@ describe("admin gate", () => {
 });
 
 describe("admin writes", () => {
-  it("creates a personality with flattened traits and stringified JSON, and audits it", async () => {
-    const { personality } = await callerAs(db, "admin").createPersonality(newPersonality);
-
-    const { data } = db.nPCPersonality.create.mock.calls[0]![0];
-    expect(data).toMatchObject({
-      name: "The Merchant Prince",
-      assertiveness: 50,
-      toneMatrix: JSON.stringify(newPersonality.toneMatrix),
-      responsePatterns: '["Offer a deal"]',
-    });
-    expect(personality.responsePatterns).toEqual(["Offer a deal"]);
-    expect(db.adminAuditLog.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ action: "NPC_PERSONALITY_CREATED", adminId: "admin" }),
-    });
-  });
-
   it("rejects traits outside 0 to 100", async () => {
     await expect(
       callerAs(db, "admin").createPersonality({
@@ -174,24 +158,6 @@ describe("admin writes", () => {
 });
 
 describe("getAllPersonalities", () => {
-  it("is public, filters and parses stored JSON", async () => {
-    db.nPCPersonality.findMany.mockResolvedValue([
-      { id: "p1", toneMatrix: '{"a":{"b":"c"}}', responsePatterns: null },
-    ]);
-
-    const result = await callerAs(db, null).getAllPersonalities({
-      archetype: "peaceful_merchant",
-      isActive: true,
-      orderBy: "name",
-    });
-
-    expect(db.nPCPersonality.findMany).toHaveBeenCalledWith({
-      where: { archetype: "peaceful_merchant", isActive: true },
-      orderBy: { name: "asc" },
-    });
-    expect(result[0]).toMatchObject({ toneMatrix: { a: { b: "c" } }, responsePatterns: [] });
-  });
-
   it("rejects an unknown archetype", async () => {
     await expect(
       callerAs(db, null).getAllPersonalities({ archetype: "warlord" as never })

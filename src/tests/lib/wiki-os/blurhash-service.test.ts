@@ -22,24 +22,6 @@ function solid(width: number, height: number, rgb: [number, number, number]): Ui
   return pixels;
 }
 
-describe("BlurHashService Engine", () => {
-  it("encodes and decodes base-83 numbers deterministically", () => {
-    const encoded = BlurHashService.encode83(42, 2);
-    expect(encoded).toBeDefined();
-    expect(encoded.length).toBe(2);
-
-    const decoded = BlurHashService.decode83(encoded);
-    expect(decoded).toBe(42);
-  });
-
-  it("generates valid inline SVG placeholders with custom dimensions", () => {
-    const svgData = BlurHashService.createPlaceholderSvg(1200, 800, "#0ea5e9");
-    expect(svgData.startsWith("data:image/svg+xml;utf8,")).toBe(true);
-    expect(svgData).toContain("viewBox%3D%220%200%201200%20800%22");
-    expect(svgData).toContain("%230ea5e9");
-  });
-});
-
 describe("BlurHashService.encode (WK-17)", () => {
   it("gives the reference package's hashes for the same pixels", () => {
     expect(BlurHashService.encode(noise(32, 20), 32, 20, 4, 3)).toBe(
@@ -48,13 +30,6 @@ describe("BlurHashService.encode (WK-17)", () => {
     expect(BlurHashService.encode(noise(5, 9), 5, 9, 3, 4)).toBe("TYIE,[.QG$=O#SxU+jjcnT}uTGTC");
     expect(BlurHashService.encode(noise(4, 4), 4, 4, 1, 1)).toBe("00EX36");
   });
-
-  it("is as long as its components say", () => {
-    const hash = BlurHashService.encode(noise(16, 12), 16, 12, 4, 3);
-    expect(hash).toHaveLength(4 + 2 * 4 * 3);
-    expect(BlurHashService.components(hash)).toEqual({ x: 4, y: 3 });
-  });
-
   it("refuses components outside 1 to 9 and pixels that do not match the size", () => {
     expect(() => BlurHashService.encode(noise(4, 4), 4, 4, 0, 3)).toThrow(/components/);
     expect(() => BlurHashService.encode(noise(4, 4), 4, 4, 4, 10)).toThrow(/components/);

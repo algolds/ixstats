@@ -16,13 +16,6 @@ describe("WikiArticleTabs", () => {
       Talk: "/wiki/Talk:Foo_bar",
     });
   });
-
-  it("marks the current view selected", () => {
-    render(<WikiArticleTabs title="Talk:Aurelia" active="talk" canEdit />);
-    expect(screen.getByRole("tab", { name: "Talk" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("tab", { name: "Read" }).getAttribute("aria-selected")).toBe("false");
-  });
-
   it("on a talk page Read is the subject page and Add topic opens the editor on a new section", () => {
     render(<WikiArticleTabs title="User talk:Jane" active="talk" canEdit />);
     expect(hrefs()).toMatchObject({
@@ -37,10 +30,5 @@ describe("WikiArticleTabs", () => {
     expect(screen.queryByRole("tab", { name: "Edit" })).toBeNull();
     expect(screen.queryByRole("tab", { name: "Add topic" })).toBeNull();
     expect(screen.getAllByRole("tab")).toHaveLength(3);
-  });
-
-  it("shows nothing for a title that is not one", () => {
-    const { container } = render(<WikiArticleTabs title="" active="read" canEdit />);
-    expect(container).toBeEmptyDOMElement();
   });
 });

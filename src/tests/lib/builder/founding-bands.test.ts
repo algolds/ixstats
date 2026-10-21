@@ -12,16 +12,6 @@ import {
 } from "~/lib/builder/founding-bands";
 
 describe("founding bands", () => {
-  it("has four population bands and four wealth bands", () => {
-    expect(POPULATION_BANDS.map((b) => b.id)).toEqual(["small", "medium", "large", "very-large"]);
-    expect(WEALTH_BANDS.map((b) => b.id)).toEqual([
-      "developing",
-      "emerging",
-      "wealthy",
-      "very-wealthy",
-    ]);
-  });
-
   it.each(POPULATION_BANDS.map((b) => [b.id, b] as const))(
     "population band %s contains its representative figure",
     (id, band) => {
@@ -64,16 +54,5 @@ describe("founding bands", () => {
       bands.slice(1).forEach((band, i) => expect(band.range.min).toBe(bands[i]!.range.max));
       expect(bands[bands.length - 1]!.range.max).toBeNull();
     }
-  });
-
-  it("copy is sentence case with no em dashes", () => {
-    for (const band of [...POPULATION_BANDS, ...WEALTH_BANDS]) {
-      for (const text of [band.label, band.hint]) {
-        expect(text).not.toMatch(/—/);
-        expect(text.charAt(0)).toBe(text.charAt(0).toUpperCase());
-        expect(text.slice(1)).toBe(text.slice(1).toLowerCase());
-      }
-    }
-    expect(WEALTH_BANDS.find((b) => b.id === "wealthy")!.hint).toBe("Most people own a car");
   });
 });

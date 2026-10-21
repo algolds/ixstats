@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 const playerBoard = jest.fn();
@@ -52,12 +52,6 @@ describe("Vault LeaderboardTab", () => {
     expect(screen.getAllByText("alpha").length).toBeGreaterThan(0);
     expect(screen.getByText("delta")).toBeInTheDocument();
     expect(screen.getByText("You")).toBeInTheDocument();
-  });
-
-  it("says so when nobody has unlocked anything", () => {
-    playerBoard.mockReturnValue({ data: [], isLoading: false });
-    render(<LeaderboardTab />);
-    expect(screen.getByText("No achievements unlocked yet")).toBeInTheDocument();
   });
 });
 

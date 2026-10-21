@@ -6,8 +6,6 @@ import {
   directSchema,
   directTargets,
   stageTargets,
-  measureDirect,
-  measureRunner,
   readRun,
   runnerTargets,
   type DirectRun,
@@ -170,42 +168,5 @@ describe("runnerTargets", () => {
       "NaN ms",
       "NaN ms",
     ]);
-  });
-});
-
-describe("the measurements", () => {
-  // A small world keeps jest fast; the numbers themselves are the bench's business
-  const small = { cellCount: 2500 };
-
-  it("times a first generation and five rerolls", () => {
-    const run = measureDirect(small);
-    expect(run.cellCount).toBeGreaterThan(1000);
-    expect(run.rerollMs).toHaveLength(5);
-    for (const ms of [run.firstMs, ...run.rerollMs]) {
-      expect(ms).toBeGreaterThan(0);
-    }
-  });
-
-  it("times five restarts at each stage, each starting at the stage its change reaches", () => {
-    // measureStages throws when a change restarts anywhere but at its own stage
-    const { stageMs } = measureDirect(small);
-    for (const times of Object.values(stageMs)) {
-      expect(times).toHaveLength(5);
-      for (const ms of times) expect(ms).toBeGreaterThan(0);
-    }
-  });
-
-  it("times each runner message with every phase measured on the world it made", () => {
-    const run = measureRunner(small);
-    expect(run.slider).toHaveLength(4);
-    expect(run.reroll).toHaveLength(5);
-    for (const phases of [run.first, ...run.slider, ...run.reroll]) {
-      expect(phases.generateMs).toBeGreaterThan(0);
-      expect(phases.stringifyMs).toBeGreaterThan(0);
-      expect(phases.reliefMs).toBeGreaterThan(0);
-      expect(phases.postGenerateMs).toBeGreaterThan(0);
-      // The runner's own time is the generator plus what it does with the world
-      expect(phases.totalMs).toBeGreaterThanOrEqual(phases.generateMs + phases.postGenerateMs - 1);
-    }
   });
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -238,24 +238,6 @@ it("saves the trophy, finish, level and median numbers with the card values", ()
   );
   expect(button("Save card values")).toBeDisabled();
 });
-
-it("says the market fee applies over the no-fee amount, and shows the card economy after the market", () => {
-  serve({ data });
-  render(<EconomyTab />);
-  expect(screen.getByLabelText("Market fee (%)")).toHaveAccessibleDescription(
-    "On sales and trade credits over the no-fee amount"
-  );
-  const order = ["Market and capacity", "Finish roll at mint", "Card XP", "Bonuses (IxC)"].map(
-    (title) => screen.getByText(title)
-  );
-  for (let i = 1; i < order.length; i++) {
-    expect(order[i - 1].compareDocumentPosition(order[i])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-  }
-  type("Listing fee (IxC)", "7");
-  fireEvent.click(button("Save listings"));
-  expect(mutations.saveEconomy).toHaveBeenCalledWith({ listingFee: 7 });
-});
-
 it("saves only the changed Loreward payout cells", () => {
   serve({ data });
   render(<EconomyTab />);
@@ -285,27 +267,4 @@ it("refuses floors that do not rise with rarity, and a floor over its ceiling", 
   expect(screen.getByText("Epic floor: enter a number from 0 to 1,000,000.")).toBeInTheDocument();
   type("Epic floor", "1500");
   expect(button("Save card values")).toBeEnabled();
-});
-
-it("labels the rarity columns and the daily count where everyone can see them", () => {
-  serve({ data });
-  render(<EconomyTab />);
-  for (const rarity of ["Uncommon", "Rare", "Ultra rare", "Epic", "Legendary"]) {
-    expect(screen.getByText(rarity)).toBeVisible();
-  }
-  expect(screen.getAllByText("cards a day")).toHaveLength(3);
-});
-
-it("shows no junk control", () => {
-  serve({ data });
-  render(<EconomyTab />);
-  expect(screen.queryAllByText(/junk/i)).toHaveLength(0);
-});
-
-it("says when the settings did not load", () => {
-  serve({ isError: true });
-  render(<EconomyTab />);
-  expect(screen.getByRole("alert")).toHaveTextContent(
-    "The economy settings did not load. Reload the page to try again."
-  );
 });

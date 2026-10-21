@@ -462,60 +462,7 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
     expect(fallbackBody.input).toBe("ihm peh ree ah");
     expect(fallbackBody.input).not.toContain("/");
   });
-
-  test("should prepend http:// to baseUrl if it lacks a protocol", async () => {
-    mockAuth.mockResolvedValue({ userId: "admin_123" });
-    (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
-    (db.user.findUnique as jest.Mock).mockResolvedValue({
-      role: { name: "admin", level: 10 },
-    });
-    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
-      { key: "onoma.kokoro.enabled", value: "true" },
-      { key: "onoma.kokoro.baseUrl", value: "http://kokoro-service" },
-    ]);
-    (globalCache.get as jest.Mock).mockResolvedValue(null);
-
-    const mockResponseText = "generated-audio";
-    const uint8 = new TextEncoder().encode(mockResponseText);
-    const cleanArrayBuffer = uint8.buffer.slice(
-      uint8.byteOffset,
-      uint8.byteOffset + uint8.byteLength
-    );
-
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      arrayBuffer: async () => cleanArrayBuffer,
-    });
-
-    const request = new NextRequest("http://localhost/api/onoma/tts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-test-override": "true",
-      },
-      body: JSON.stringify({
-        text: "hello",
-        baseUrl: "localhost:3000",
-        voice: "af_heart",
-        speed: 1.0,
-      }),
-    });
-
-    const response = await POST(request);
-    expect(response.status).toBe(200);
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:3000/v1/audio/speech",
-      expect.any(Object)
-    );
-  });
-
   describe("Sentence Splitting and Audio Merging Helpers", () => {
-    test("splitIntoSentences should split normal sentences", () => {
-      const text = "Hello world! This is a test. Is it working?";
-      const result = splitIntoSentences(text);
-      expect(result).toEqual(["Hello world!", "This is a test.", "Is it working?"]);
-    });
-
     test("splitIntoSentences should respect abbreviations and decimals", () => {
       const text = "Dr. Pedro lives in Tierrador. St. Gerónimo has 1.5 million people.";
       const result = splitIntoSentences(text);

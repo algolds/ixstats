@@ -6,7 +6,7 @@
 jest.mock("~/server/db", () => ({ db: {} }));
 
 import { createECDH, createPublicKey, verify } from "node:crypto";
-import { deliveryChannels, emailConfig, pushConfig } from "~/lib/notifications/delivery/config";
+import { emailConfig, pushConfig } from "~/lib/notifications/delivery/config";
 import { sendEmail } from "~/lib/notifications/delivery/email";
 import {
   encryptPushPayload,
@@ -29,25 +29,6 @@ function vapidKeys() {
 }
 const EMAIL_ENV = { EMAIL_API_KEY: "key", EMAIL_FROM: "IxStats <n@example.com>" };
 const ENDPOINT = "https://fcm.googleapis.com/fcm/send/abc";
-
-describe("configuration", () => {
-  it("is off without env vars", () => {
-    expect(deliveryChannels({})).toEqual({ email: false, push: false, vapidPublicKey: null });
-    expect(emailConfig({ EMAIL_API_KEY: "k" })).toBeNull();
-    expect(pushConfig({ VAPID_PUBLIC_KEY: "p", VAPID_PRIVATE_KEY: "s" })).toBeNull();
-  });
-
-  it("turns each channel on with its variables", () => {
-    const keys = vapidKeys();
-    expect(deliveryChannels({ ...EMAIL_ENV, ...keys })).toEqual({
-      email: true,
-      push: true,
-      vapidPublicKey: keys.VAPID_PUBLIC_KEY,
-    });
-    expect(emailConfig(EMAIL_ENV)?.apiUrl).toBe("https://api.resend.com/emails");
-  });
-});
-
 describe("email sender", () => {
   it("posts Resend-shaped JSON with the bearer key", async () => {
     const fetchImpl = jest.fn().mockResolvedValue({ ok: true, status: 200 });

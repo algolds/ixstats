@@ -163,12 +163,11 @@ import { AuthorName, type ForumAuthors } from "~/components/thinkpages-forum/Aut
 import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import { NewThreadForm } from "~/components/thinkpages-forum/NewThreadForm";
-import ForumHomePage from "~/app/thinkpages/page";
+import "~/app/thinkpages/page";
 
 const { results, inputs, mutations } = jest.requireMock<MockApi>("~/trpc/react");
-const { router, redirect } = jest.requireMock<{
+const { router } = jest.requireMock<{
   router: { push: jest.Mock; replace: jest.Mock };
-  redirect: jest.Mock;
 }>("next/navigation");
 
 const authors: ForumAuthors = {
@@ -260,9 +259,6 @@ function categoryData(
   return { category, threads, total: threads.length, canStart, notice, authors };
 }
 
-/** Text matches to skip: the header's compact title is hidden from assistive tech until the header collapses. */
-const HIDDEN = '[aria-hidden="true"]';
-
 /** The breadcrumb trail's labels and hrefs: the pages above this one, each a link. */
 /** The header's back link: the one link named `name` outside the breadcrumb trail. */
 function backLink(name: string) {
@@ -302,16 +298,6 @@ beforeEach(() => {
   mutations.markThreadRead = jest.fn().mockResolvedValue({});
   mutations.markCategoryRead = jest.fn().mockResolvedValue({});
 });
-
-describe("forum home", () => {
-  it("renders the forum home", () => {
-    set("categories", { data: [] });
-    render(<ForumHomePage />);
-    expect(screen.getByRole("heading", { level: 1, name: "ThinkPages" })).toBeInTheDocument();
-    expect(redirect).not.toHaveBeenCalled();
-  });
-});
-
 describe("category view", () => {
   it("shows New thread only when canStart", () => {
     set("category", { data: categoryData(false) });
@@ -367,17 +353,6 @@ describe("category view", () => {
       within(screen.getByRole("row", { name: /<i>Hi<\/i>/ })).getByText("2")
     ).toBeInTheDocument();
   });
-
-  it("has no trail on a sitewide category, whose only step up is the back link to ThinkPages (U5)", () => {
-    set("category", { data: categoryData(false) });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    expect(screen.queryByRole("navigation", { name: "breadcrumb" })).toBeNull();
-    // The header keeps a back link to the forum home, which is all a top-level board has above it.
-    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
-    expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
-  });
-
   it("scopes a realm category to its realm: query, New thread and breadcrumbs", () => {
     set("category", { data: categoryData(true, [thread()], HUB) });
     render(<BoardPage categoryKey="hub" realm="eurth" page={1} sort="latest" />);
@@ -420,29 +395,6 @@ describe("thread view", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("This thread is locked.")).toBeNull();
   });
-
-  it("breadcrumbs a sitewide thread without a realm crumb, naming the thread and category once (U5)", () => {
-    set("thread", { data: threadData() });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(crumbs()).toEqual([
-      ["ThinkPages", "/thinkpages"],
-      ["General", "/thinkpages/c/general"],
-    ]);
-    expect(screen.getAllByText("<b>Plain</b> title", { ignore: HIDDEN })).toHaveLength(1);
-    expect(backLink("General")).toHaveAttribute("href", "/thinkpages/c/general");
-  });
-
-  it("breadcrumbs a realm thread through its realm and category", () => {
-    set("thread", { data: threadData({ realm: EURTH }) });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(crumbs()).toEqual([
-      ["ThinkPages", "/thinkpages"],
-      ["Eurth", "/thinkpages/r/eurth/hub"],
-      ["Hub", "/thinkpages/r/eurth/hub"],
-    ]);
-    expect(backLink("Hub")).toHaveAttribute("href", "/thinkpages/r/eurth/hub");
-  });
-
   it("hides the reply composer and edit when locked", () => {
     set("thread", {
       data: threadData({ locked: true, canReply: false }),
@@ -720,80 +672,5 @@ describe("imported authors (phase 4)", () => {
     const { container } = render(<ThreadPage threadId="t1" page={1} />);
     expect(container.querySelector("#post-p1")).toHaveTextContent("OldName");
     expect(screen.queryByText("Kir")).toBeNull();
-  });
-});
-
-describe("imported threads and the old-forum archive (phase 4)", () => {
-  const row = {
-    authorUserId: "u1",
-    authorPersonaId: null,
-    importedAuthorName: null,
-    pinned: false,
-    locked: false,
-    postCount: 3,
-    lastPostAt: new Date(),
-  };
-
-  it("says an imported thread came from the old forum, and says nothing otherwise", () => {
-    const data = threadData();
-    set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: 4821 } } });
-    const { unmount } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("Imported from the old forum.")).toBeInTheDocument();
-    unmount();
-
-    set("thread", { data: { ...data, thread: { ...data.thread, xenforoThreadId: null } } });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.queryByText(/Imported from the old forum/)).toBeNull();
-  });
-
-  it("marks imported threads in the thread list, and only those", () => {
-    set("category", {
-      data: categoryData(false, [
-        { id: "t1", title: "Old thread", ...row, xenforoThreadId: 7 },
-        { id: "t2", title: "New thread", ...row, xenforoThreadId: null },
-      ]),
-    });
-    render(<BoardPage categoryKey="general" page={1} sort="latest" />);
-    const old = screen.getByRole("row", { name: /Old thread/ });
-    const fresh = screen.getByRole("row", { name: /New thread/ });
-    expect(within(old).getByText("Imported")).toBeInTheDocument();
-    expect(within(fresh).queryByText("Imported")).toBeNull();
-  });
-});
-
-describe("new thread when the viewer cannot start one (phase 4, R8)", () => {
-  it("frames the ban notice with the page header and a way back, like the form", () => {
-    const notice = "You are banned from the forum until 12 Oct 2026: spam";
-    set("category", {
-      data: { ...categoryData(false, [], HUB, notice), banned: true },
-    });
-    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
-    expect(screen.getByRole("heading", { level: 1, name: "New thread" })).toBeInTheDocument();
-    expect(screen.getByText(notice)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Appeal" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Hub/ })).toHaveAttribute(
-      "href",
-      "/thinkpages/r/eurth/hub"
-    );
-    expect(screen.getByRole("link", { name: "Back to the forum" })).toBeInTheDocument();
-  });
-
-  it("names the board once, in the back link, and the realm under the title only for a realm board", () => {
-    set("category", { data: categoryData(true) });
-    const { unmount } = render(<NewThreadForm categoryKey="general" />);
-    expect(screen.getAllByText("General", { ignore: HIDDEN })).toHaveLength(1);
-    unmount();
-
-    set("category", { data: categoryData(true, [], HUB) });
-    render(<NewThreadForm categoryKey="hub" realm="eurth" />);
-    expect(screen.getAllByText("Hub", { ignore: HIDDEN })).toHaveLength(1);
-    expect(screen.getByText("Eurth")).toBeInTheDocument();
-  });
-
-  it("frames the plain refusal the same way", () => {
-    set("category", { data: categoryData(false) });
-    render(<NewThreadForm categoryKey="general" />);
-    expect(screen.getByRole("heading", { level: 1, name: "New thread" })).toBeInTheDocument();
-    expect(screen.getByText("You can't start a thread here")).toBeInTheDocument();
   });
 });

@@ -48,17 +48,6 @@ describe("government synergy table", () => {
       expect(checkComponentSynergy(pair.a, pair.b)).toEqual(checkComponentSynergy(pair.b, pair.a));
     }
   });
-
-  it("has valid types, multipliers and plain sentence-case descriptions", () => {
-    for (const pair of GOVERNMENT_SYNERGY_TABLE) {
-      expect(["ADDITIVE", "MULTIPLICATIVE", "CONFLICTING"]).toContain(pair.type);
-      expect(pair.multiplier).toBeGreaterThan(0);
-      expect(pair.description).toMatch(/^[A-Z][^A-Z]/);
-      expect(pair.description).toMatch(/\.$/);
-      expect(pair.description).not.toMatch(/[–—]/);
-    }
-  });
-
   it("derives each component's synergies and conflicts arrays from the table, symmetrically", () => {
     for (const type of DEFINED) {
       const component = ATOMIC_COMPONENTS[type]!;

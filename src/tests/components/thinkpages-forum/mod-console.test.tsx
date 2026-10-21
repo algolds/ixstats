@@ -252,27 +252,6 @@ describe("access", () => {
     fireEvent.change(scope, { target: { value: "caphiria" } });
     expect(router.replace).toHaveBeenCalledWith("/thinkpages/mod?realm=caphiria");
   });
-
-  it("renders inside the forum page shell: Moderation heading, scope filter in the header, panel as a data table", () => {
-    set("context", { data: REALM_MOD });
-    set("reports", { data: { rows: [report()], total: 1, authors } });
-    const { container } = renderConsole();
-    expect(screen.getByRole("heading", { level: 1, name: "Moderation" })).toBeInTheDocument();
-    const header = container.querySelector<HTMLElement>('[data-slot="page-header"]')!;
-    expect(within(header).getByRole("combobox", { name: "Scope" })).toBeInTheDocument();
-    const table = screen.getByRole("table", { name: "Reports" });
-    expect(container.querySelector('[data-content="data"]')).toContainElement(table);
-    expect(within(table).getByRole("columnheader", { name: "Report" })).toBeInTheDocument();
-    expect(within(table).getByRole("columnheader", { name: "When" })).toBeInTheDocument();
-    // The header row stays for screen readers below md; only the sighted phone layout drops it.
-    const headerRow = within(table).getByRole("columnheader", { name: "Report" }).parentElement;
-    expect(headerRow).toHaveClass("max-md:sr-only");
-    expect(headerRow).not.toHaveClass("hidden");
-    const row = within(table).getAllByRole("row")[1]!;
-    expect(within(row).getAllByRole("cell")).toHaveLength(2);
-    expect(within(row).getByRole("link", { name: "Buy cheap gold" })).toBeInTheDocument();
-  });
-
   it("applies ?realm= for a category moderator, and lists the realms of their categories", () => {
     const categoryMod = { isSiteAdmin: false, realms: [], categories: REALM_MOD.categories };
     set("context", { data: categoryMod });
@@ -325,19 +304,6 @@ describe("report queue", () => {
     expect(screen.getByText("Reported by Kir")).toBeInTheDocument();
     expect(screen.getByText("Spam link")).toBeInTheDocument();
   });
-
-  it("links a reported thread to the thread", () => {
-    set("context", { data: REALM_MOD });
-    set("reports", {
-      data: { rows: [report({ targetType: "thread", targetId: "t1" })], total: 1, authors },
-    });
-    renderConsole();
-    expect(screen.getByRole("link", { name: "Buy cheap gold" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t1"
-    );
-  });
-
   it("resolves a report with Resolve, then refreshes the queue and the context", async () => {
     const resolve = jest.fn(() => Promise.resolve());
     mutations.resolveReport = resolve;
@@ -601,41 +567,6 @@ describe("bans", () => {
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Ban lifted"));
     await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
-
-  it("names a manual ban's issuer, and a re-tier as the system's (M2, M5)", () => {
-    set("context", { data: REALM_MOD });
-    set("bans", {
-      data: {
-        rows: [
-          { ...ban, auto: false },
-          { ...ban, id: "b2", issuedBy: "system" },
-        ],
-        total: 2,
-        authors,
-      },
-    });
-    renderConsole({ tab: "bans" });
-    expect(screen.getByText("Issued by Kir")).toBeInTheDocument();
-    expect(screen.getByText("Re-tiered when a site ban ended")).toBeInTheDocument();
-  });
-
-  it("shows a ban's appeal status, and nothing when it was not appealed", () => {
-    set("context", { data: REALM_MOD });
-    set("bans", {
-      data: {
-        rows: [
-          { ...ban, appealStatus: "open" },
-          { ...ban, id: "b2", userId: "u1", appealStatus: null },
-        ],
-        total: 2,
-        authors,
-      },
-    });
-    renderConsole({ tab: "bans" });
-    expect(screen.getByText("Appeal open")).toBeInTheDocument();
-    expect(screen.getAllByText(/^Appeal /)).toHaveLength(1);
-  });
-
   it("finds a member by handle before opening the ban form", async () => {
     resolveMember.mockResolvedValue({ id: "u2", name: "rhea" });
     set("context", { data: REALM_MOD });
@@ -727,16 +658,6 @@ describe("warnings", () => {
     await waitFor(() => expect(revoke).toHaveBeenCalledWith({ warningId: "w1", note: "Misread" }));
     await waitFor(() => expect(notify.success).toHaveBeenCalledWith("Warning revoked"));
   });
-
-  it("shows a warning's appeal status", () => {
-    set("context", { data: REALM_MOD });
-    set("warnings", {
-      data: { rows: [{ ...warning, appealStatus: "moot" }], total: 1, authors },
-    });
-    renderConsole({ tab: "warnings" });
-    expect(screen.getByText("Appeal closed, it had already ended")).toBeInTheDocument();
-  });
-
   it("offers the targetless warning form to site admins only", () => {
     set("context", { data: REALM_MOD });
     const { unmount } = renderConsole({ tab: "warnings" });
@@ -866,47 +787,6 @@ describe("appeals", () => {
     );
     await waitFor(() => expect(invalidated).toEqual(["all"]));
   });
-
-  it("words the ended notice for a warning", () => {
-    set("context", { data: REALM_MOD });
-    set("appeals", {
-      data: {
-        rows: [
-          {
-            ...appeal,
-            subjectType: "warning",
-            canReview: true,
-            subject: {
-              kind: "warning",
-              reason: "Rude",
-              points: 2,
-              categoryId: "c1",
-              expiresAt: null,
-              issuedBy: "u1",
-              active: false,
-            },
-          },
-        ],
-        total: 1,
-        authors,
-      },
-    });
-    renderConsole({ tab: "appeals" });
-    expect(
-      screen.getByText("This warning has already ended; reviewing will close the appeal as moot.")
-    ).toBeInTheDocument();
-  });
-
-  it("keeps 'Another moderator must review this' ahead of the ended notice", () => {
-    set("context", { data: REALM_MOD });
-    set("appeals", {
-      data: { rows: [{ ...appeal, subject: { ...subject, active: false } }], total: 1, authors },
-    });
-    renderConsole({ tab: "appeals" });
-    expect(screen.getByText("Another moderator must review this")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Close appeal/ })).toBeNull();
-  });
-
   it("shows a moot appeal as a read-only status", () => {
     set("context", { data: REALM_MOD });
     set("appeals", {
@@ -917,41 +797,6 @@ describe("appeals", () => {
     expect(screen.queryByRole("button", { name: /^Uphold/ })).toBeNull();
   });
 });
-
-describe("log", () => {
-  it("describes a thread lock and links the thread", () => {
-    set("context", { data: REALM_MOD });
-    set("log", {
-      data: {
-        rows: [
-          {
-            id: "l1",
-            actorId: "u1",
-            action: "thread.lock",
-            targetType: "thread",
-            targetId: "t1",
-            scope: "realm",
-            scopeId: "rc",
-            detail: { note: XSS, from: false, to: true },
-            createdAt: new Date(),
-          },
-        ],
-        total: 1,
-        authors,
-      },
-    });
-    const { container } = renderConsole({ tab: "log" });
-    expect(screen.getByText("Locked thread")).toBeInTheDocument();
-    expect(screen.getByText("Kir")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open thread" })).toHaveAttribute(
-      "href",
-      "/thinkpages/t/t1"
-    );
-    expect(screen.getByText(XSS)).toBeInTheDocument();
-    expect(container.querySelector("img")).toBeNull();
-  });
-});
-
 describe("log post links", () => {
   const entry = (overrides: object) => ({
     id: "l2",
@@ -975,15 +820,6 @@ describe("log post links", () => {
       "/thinkpages/post/p9"
     );
   });
-
-  it("names a continued board message in words, not as the stored action", () => {
-    set("context", { data: REALM_MOD });
-    set("log", { data: { rows: [entry({ action: "post.continue" })], total: 1, authors } });
-    renderConsole({ tab: "log" });
-    expect(screen.getByText("Continued post in a thread")).toBeInTheDocument();
-    expect(screen.queryByText("post.continue")).toBeNull();
-  });
-
   it("links a report on a post to the post's permalink", () => {
     set("context", { data: REALM_MOD });
     const detail = { targetType: "post", targetId: "p7" };

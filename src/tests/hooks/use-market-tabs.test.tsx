@@ -87,16 +87,6 @@ describe("useListingActions", () => {
     );
     expect(refreshCards).toHaveBeenCalledTimes(1);
   });
-
-  it("says so when no fee comes back", () => {
-    renderHook(() => useListingActions());
-    void cancel.onSuccess({ refund: 0 });
-    expect(vaultNotify.success).toHaveBeenCalledWith(
-      "The copy is back in your collection.",
-      "Listing cancelled"
-    );
-  });
-
   it("says why a cancel failed and reads the listings again, since one may have sold", () => {
     renderHook(() => useListingActions());
     cancel.onError({ message: "This listing has already sold or ended." });

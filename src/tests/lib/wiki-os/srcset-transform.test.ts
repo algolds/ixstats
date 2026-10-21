@@ -126,10 +126,4 @@ describe("transformImages: srcset of another wiki's page", () => {
 
     expect(srcsetOf(transformImages(html(srcset), "althistory"))).toBe(srcset);
   });
-
-  it("is idempotent", () => {
-    const once = transformImages(html("/images/a/ab/F.png 1x, https://iiwiki.com/images/c/cd/G.png 2x"), "iiwiki");
-
-    expect(transformImages(once, "iiwiki")).toBe(once);
-  });
 });

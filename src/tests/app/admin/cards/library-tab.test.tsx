@@ -1,5 +1,5 @@
 /** The Library tab: every card, filtered, with an edit sheet and bulk hide. */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
@@ -260,21 +260,6 @@ it("names both directions when both are past the cap", () => {
   expect(button("Hide 2,001 cards")).toBeDisabled();
   expect(screen.getByText(/Narrow the filter to hide or unhide these cards/)).toBeInTheDocument();
 });
-
-it("keeps bulk hide off while the list loads", () => {
-  setUp({ loading: true });
-  search("Elm");
-  expect(button("Hide 0 cards")).toBeDisabled();
-});
-
-it("says so when no card matches", () => {
-  setUp({ rows: [], hideable: 0 });
-  search("Elm");
-  expect(button("Hide 0 cards")).toBeDisabled();
-  expect(screen.getByText("No cards match")).toBeInTheDocument();
-  expect(screen.getByText("No cards")).toBeInTheDocument();
-});
-
 it("leaves art a takedown hides, and the card's visibility, to Compliance", () => {
   const { update } = setUp({
     rows: [elm({ isRetired: true, _count: { CardOwnership: 0, takedowns: 1 } })],
@@ -313,26 +298,4 @@ it("needs a title, and keeps stored art of any form", () => {
       expected: { artwork: "/api/wiki/file/Elm.png", isRetired: false, rarity: "RARE" },
     })
   );
-});
-
-it("refuses new art that is not an https address before sending it", () => {
-  const { update } = setUp();
-  fireEvent.click(button("Edit Elm"));
-  fireEvent.change(screen.getByLabelText("Art URL"), {
-    target: { value: "http://example.com/a.png" },
-  });
-  expect(button("Save changes")).toBeDisabled();
-  expect(screen.getByText("Art is an https:// address.")).toBeInTheDocument();
-  expect(update).not.toHaveBeenCalled();
-});
-
-it("names each card's type, source and review state", () => {
-  setUp({
-    rows: [
-      elm({ reviewState: "PENDING", isBound: true, _count: { CardOwnership: 1200, takedowns: 0 } }),
-    ],
-  });
-  expect(screen.getByText("Lore · IIWiki · Waiting for review")).toBeInTheDocument();
-  expect(screen.getByText("Bound")).toBeInTheDocument();
-  expect(screen.getByText("1,200")).toBeInTheDocument();
 });

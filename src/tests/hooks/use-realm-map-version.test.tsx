@@ -35,32 +35,9 @@ describe("useRealmMapVersion", () => {
     renderHook(() => useRealmMapVersion());
     expect(useQuery).toHaveBeenCalledWith(undefined, expect.any(Object));
   });
-
-  it("has no version until it is known", () => {
-    useQuery.mockReturnValue({ data: undefined, error: null });
-    expect(renderHook(() => useRealmMapVersion("eurth")).result.current.mapVersion).toBeUndefined();
-  });
-
   it("reports the error when the version could not be had", () => {
     const error = new Error("version query failed");
     useQuery.mockReturnValue({ data: undefined, error });
     expect(renderHook(() => useRealmMapVersion("eurth")).result.current.error).toBe(error);
-  });
-
-  it("keeps the version for a minute, and checks again when the tab regains focus", () => {
-    useQuery.mockReturnValue({ data: undefined, error: null });
-    renderHook(() => useRealmMapVersion());
-    expect(useQuery.mock.calls[0]![1]).toMatchObject({
-      staleTime: 60_000,
-      refetchOnWindowFocus: true,
-    });
-  });
-
-  it("holds the query back while disabled, and runs it otherwise", () => {
-    useQuery.mockReturnValue({ data: undefined, error: null });
-    renderHook(() => useRealmMapVersion("eurth", false));
-    renderHook(() => useRealmMapVersion("eurth"));
-    expect(useQuery.mock.calls[0]![1]).toMatchObject({ enabled: false });
-    expect(useQuery.mock.calls[1]![1]).toMatchObject({ enabled: true });
   });
 });

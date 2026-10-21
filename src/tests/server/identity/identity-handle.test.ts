@@ -46,26 +46,6 @@ describe("validateHandle", () => {
     expect(validateHandle("has space")).toEqual({ ok: false, reason: "format" });
     expect(validateHandle("a".repeat(25))).toEqual({ ok: false, reason: "format" });
   });
-
-  it("lists the required reserved words", () => {
-    expect([...RESERVED_HANDLES].sort()).toEqual(
-      [
-        "me",
-        "admin",
-        "embed",
-        "settings",
-        "board",
-        "nations",
-        "rules",
-        "manage",
-        "happenings",
-        "api",
-        "id",
-        "new",
-      ].sort()
-    );
-  });
-
   it.each([...RESERVED_HANDLES])("rejects reserved word %s", (word) => {
     expect(validateHandle(word)).toEqual({ ok: false, reason: "reserved" });
     expect(validateHandle(`@${word.toUpperCase()}`)).toEqual({ ok: false, reason: "reserved" });

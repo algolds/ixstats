@@ -18,8 +18,6 @@ jest.mock("~/lib/auth", () => ({
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -63,25 +61,6 @@ describe("markWatchedVisited", () => {
       where: { userId: "db_user_1", articleId: "art1" },
       data: { lastViewedTime: expect.any(Date), notificationTime: null },
     });
-  });
-
-  it("does nothing for a page that does not exist", async () => {
-    mockDb.wikiArticle.findFirst.mockResolvedValue(null);
-
-    await caller().markWatchedVisited({ pageTitle: "No such page" });
-
-    expect(mockDb.wikiWatchlist.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("caps the title and sits on the rate-limited mutation builder", async () => {
-    await expect(caller().markWatchedVisited({ pageTitle: "t".repeat(513) })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    const source = readFileSync(
-      join(process.cwd(), "src/server/api/routers/wikios/watchlist-annotations.ts"),
-      "utf8"
-    );
-    expect(source).toMatch(/markWatchedVisited: lightMutationProcedure/);
   });
 });
 

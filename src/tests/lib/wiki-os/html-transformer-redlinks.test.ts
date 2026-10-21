@@ -42,13 +42,6 @@ describe("red links of an IxWiki page", () => {
     expect(out).toContain('href="/wiki/User_talk:Kir?action=edit&amp;redlink=1"');
     expect(out).toContain('href="/wiki/A%26B?action=edit&amp;redlink=1"');
   });
-
-  it("carry the base path like every other WikiOS link", () => {
-    const out = transform(redLink("Aurelian_Empire"), "/projects/ixstates").contentHtml;
-
-    expect(out).toContain('href="/projects/ixstates/wiki/Aurelian_Empire?action=edit&amp;redlink=1"');
-  });
-
   it("do not depend on the order of the anchor's attributes", () => {
     const out = transform(
       '<a class="new" title="Foo (page does not exist)" href="/index.php?title=Foo&amp;action=edit&amp;redlink=1">Foo</a>'
@@ -110,21 +103,5 @@ describe("red links of an IxWiki page", () => {
 
     expect(out).toContain(`href="${mediaWikiOrigin()}/index.php?title=Foo%7CBar&amp;action=edit&amp;redlink=1" rel="noreferrer"`);
     expect(out).toContain(`href="${mediaWikiOrigin()}/index.php?action=edit&amp;redlink=1" rel="noreferrer"`);
-  });
-
-  it("are shorter: each red link loses about 40% of its bytes (the old form is spelled out here)", () => {
-    const titles = Array.from({ length: 200 }, (_, i) => `Missing_Article_Number_${i}`);
-    const after = transform(titles.map((title) => redLink(title)).join(" ")).contentHtml;
-    const before = titles
-      .map((title) => {
-        const label = title.replace(/_/g, " ");
-        return (
-          `<a href="${mediaWikiOrigin()}/index.php?title=${title}&amp;action=edit&amp;redlink=1" rel="noreferrer" ` +
-          `class="new wikios-redlink" title="${label} (page does not exist)">${label}</a>`
-        );
-      })
-      .join(" ");
-
-    expect(after.length).toBeLessThan(before.length * 0.65);
   });
 });

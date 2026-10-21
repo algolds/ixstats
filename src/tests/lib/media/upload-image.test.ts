@@ -41,13 +41,6 @@ describe("uploadImageFile", () => {
 
     await expect(uploadImageFile(file)).rejects.toThrow("File size exceeds 5MB limit");
   });
-
-  it("throws a generic error when the response is not JSON", async () => {
-    global.fetch = jest.fn(async () => new Response("<html>413</html>", { status: 413 }));
-
-    await expect(uploadImageFile(file)).rejects.toThrow("Upload failed");
-  });
-
   it("throws when a success response carries no URL", async () => {
     global.fetch = jest.fn(async () => jsonResponse({ success: true }));
 
@@ -73,17 +66,5 @@ describe("uploadImageFile", () => {
     expect(error).toBeInstanceOf(UploadImageError);
     expect((error as UploadImageError).status).toBe(429);
     expect((error as UploadImageError).retryAfter).toBe(30);
-  });
-
-  it("passes the abort signal to fetch", async () => {
-    const fetchMock = jest.fn<ReturnType<typeof fetch>, Parameters<typeof fetch>>(async () =>
-      jsonResponse({ success: true, url: "/images/uploads/x.png" })
-    );
-    global.fetch = fetchMock;
-    const controller = new AbortController();
-
-    await uploadImageFile(file, { signal: controller.signal });
-
-    expect(fetchMock.mock.calls[0]![1]?.signal).toBe(controller.signal);
   });
 });

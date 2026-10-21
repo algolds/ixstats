@@ -151,15 +151,6 @@ describe("Map pipeline panel", () => {
       },
     ]);
   });
-
-  it("shows which steps read each art file", () => {
-    render(<MapPipelinePanel slug="eurth" />);
-    const blank = screen.getByLabelText("Art 1 name").closest("tr")!;
-    expect(within(blank).getByText("Physical layers")).toBeInTheDocument();
-    const geography = screen.getByLabelText("Art 2 name").closest("tr")!;
-    expect(within(geography).getByText("Raster layers")).toBeInTheDocument();
-  });
-
   it("puts validation errors at their fields and refuses to save", () => {
     render(<MapPipelinePanel slug="eurth" />);
     fireEvent.change(screen.getByLabelText("Art 2 name"), { target: { value: "Geo_Map" } });

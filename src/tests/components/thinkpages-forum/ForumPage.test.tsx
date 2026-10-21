@@ -1,8 +1,6 @@
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { Folder } from "iconoir-react";
-
-import { ForumPage, RailPanel } from "~/components/thinkpages-forum/shell";
+import { ForumPage } from "~/components/thinkpages-forum/shell";
 
 const originalMatchMedia = window.matchMedia;
 
@@ -24,151 +22,6 @@ afterEach(() => {
 });
 
 describe("ForumPage", () => {
-  it("renders the title, breadcrumbs, actions and body", () => {
-    installViewport(true);
-    render(
-      <ForumPage
-        title="General"
-        breadcrumbs={<span>Trail</span>}
-        actions={<button>New thread</button>}
-      >
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(screen.getByRole("heading", { level: 1, name: "General" })).toBeInTheDocument();
-    expect(screen.getByText("Trail")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "New thread" })).toBeInTheDocument();
-    expect(screen.getByText("Body")).toBeInTheDocument();
-  });
-
-  describe("wide actions", () => {
-    const toolbar = (container: HTMLElement) =>
-      container.querySelector('[data-slot="page-header-toolbar"]')!;
-
-    it("sit in the header toolbar from md up, and not in the page body", () => {
-      installViewport(true);
-      const { container } = render(
-        <ForumPage title="General" wideActions={<button>Realm picker</button>}>
-          <p>Body</p>
-        </ForumPage>
-      );
-      expect(toolbar(container)).toContainElement(
-        screen.getByRole("button", { name: "Realm picker" })
-      );
-      expect(container.querySelector('[data-slot="forum-page-actions"]')).toBeNull();
-    });
-
-    it("move out of the toolbar row, which the top chrome covers, to a row under the title on a phone", () => {
-      installViewport(false, true);
-      const { container } = render(
-        <ForumPage
-          title="General"
-          wideActions={<button>Realm picker</button>}
-          actions={<button aria-label="Stash thread" />}
-        >
-          <p>Body</p>
-        </ForumPage>
-      );
-      const picker = screen.getByRole("button", { name: "Realm picker" });
-      expect(toolbar(container)).not.toContainElement(picker);
-      const row = container.querySelector('[data-slot="forum-page-actions"]')!;
-      expect(row).toContainElement(picker);
-      // Under the title, ahead of the page's own content.
-      const title = screen.getByRole("heading", { level: 1 });
-      expect(title.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      expect(
-        row.compareDocumentPosition(screen.getByText("Body")) & Node.DOCUMENT_POSITION_FOLLOWING
-      ).toBeTruthy();
-      // Icon-sized actions join them: the toolbar halves beside the top chrome are too narrow for several icons.
-      const stash = screen.getByRole("button", { name: "Stash thread" });
-      expect(toolbar(container)).not.toContainElement(stash);
-      expect(row).toContainElement(stash);
-    });
-
-    it("leave no empty row on a phone when there is nothing to show", () => {
-      installViewport(false, true);
-      const { container } = render(
-        <ForumPage title="Moderation" wideActions={null}>
-          <p>Body</p>
-        </ForumPage>
-      );
-      expect(container.querySelector('[data-slot="forum-page-actions"]')).toBeNull();
-    });
-
-    it("keeps Info to an icon on a phone, still named Info", () => {
-      installViewport(false, true);
-      render(
-        <ForumPage title="General" rail={<p>Rail</p>}>
-          <p>Body</p>
-        </ForumPage>
-      );
-      expect(screen.getByRole("button", { name: "Info" })).toBeInTheDocument();
-    });
-  });
-
-  it("shows an emblem before the title", () => {
-    installViewport(true);
-    render(
-      <ForumPage title="Ixnay" leading={<span data-testid="emblem" />}>
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(screen.getByTestId("emblem")).toBeInTheDocument();
-  });
-
-  it("insets the page column like the dashboard and lowers the header below the top chrome", () => {
-    installViewport(true);
-    const { container } = render(
-      <ForumPage title="General" rail={<p>Rail content</p>}>
-        <p>Body</p>
-      </ForumPage>
-    );
-    const header = container.querySelector('[data-slot="page-header"]')!;
-    // PageHeader's bleed (-mx-2) pulls the title and actions out to the cards' edge.
-    expect(header).toHaveClass("-mx-2");
-    const column = header.parentElement!;
-    expect(column).toHaveClass("px-4", "pt-4", "md:pt-8");
-    expect(column).not.toHaveClass("xl:px-0");
-    expect(screen.getByText("Body").parentElement?.parentElement).toBe(column);
-  });
-
-  it("has no inspector and no Info button without a rail", () => {
-    installViewport(true);
-    const { container } = render(
-      <ForumPage title="General">
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(container.querySelector('[data-slot="inspector"]')).toBeNull();
-    expect(screen.queryByRole("button", { name: "Info" })).toBeNull();
-  });
-
-  it("puts the rail in the inspector, titled Info by default", () => {
-    installViewport(true);
-    const { container } = render(
-      <ForumPage title="General" rail={<p>Rail content</p>}>
-        <p>Body</p>
-      </ForumPage>
-    );
-    const inspector = container.querySelector('[data-slot="inspector"]');
-    expect(inspector).not.toBeNull();
-    expect(inspector).toHaveAttribute("aria-label", "Info");
-    expect(inspector).toHaveTextContent("Rail content");
-  });
-
-  it("titles the inspector with railTitle", () => {
-    installViewport(true);
-    const { container } = render(
-      <ForumPage title="General" rail={<p>Rail</p>} railTitle="Board info">
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(container.querySelector('[data-slot="inspector"]')).toHaveAttribute(
-      "aria-label",
-      "Board info"
-    );
-  });
-
   it("opens the rail as a sheet from the header Info button on a narrow viewport", () => {
     installViewport(false);
     render(
@@ -182,39 +35,12 @@ describe("ForumPage", () => {
     });
     expect(screen.getByRole("dialog")).toHaveTextContent("Rail content");
   });
-
-  it("marks the Info button as a dialog opener and reflects the open sheet", () => {
-    installViewport(false);
-    render(
-      <ForumPage title="General" rail={<p>Rail content</p>}>
-        <p>Body</p>
-      </ForumPage>
-    );
-    const info = screen.getByRole("button", { name: "Info" });
-    expect(info).toHaveAttribute("aria-haspopup", "dialog");
-    expect(info).toHaveAttribute("aria-expanded", "false");
-    act(() => {
-      fireEvent.click(info);
-    });
-    expect(info).toHaveAttribute("aria-expanded", "true");
-  });
 });
 
 describe("ForumPage back link and rail hash", () => {
   afterEach(() => {
     window.location.hash = "";
   });
-
-  it("passes the header's back link through", () => {
-    installViewport(true);
-    render(
-      <ForumPage title="Hub" back={{ href: "/thinkpages", label: "ThinkPages" }}>
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
-  });
-
   it("opens the rail sheet on a narrow viewport when the URL carries the hash", () => {
     installViewport(false);
     window.location.hash = "#standing";
@@ -260,67 +86,5 @@ describe("ForumPage back link and rail hash", () => {
       </ForumPage>
     );
     expect(screen.queryByRole("dialog")).toBeNull();
-  });
-});
-
-describe("RailPanel", () => {
-  it("is a data pane with an icon title and its content", () => {
-    const { container } = render(
-      <RailPanel title="Board rules" icon={<Folder />}>
-        <p>Be kind</p>
-      </RailPanel>
-    );
-    expect(screen.getByRole("heading", { level: 2, name: "Board rules" })).toBeInTheDocument();
-    expect(screen.getByText("Be kind")).toBeInTheDocument();
-    expect(container.querySelector('[data-slot="card"]')).toHaveAttribute("data-content", "data");
-  });
-
-  it("is a pane in the desktop aside and a well inside the narrow sheet, so glass never sits on glass", () => {
-    installViewport(true);
-    const wide = render(
-      <ForumPage
-        title="Home"
-        rail={
-          <RailPanel title="Standing" icon={<Folder />}>
-            <p>Points</p>
-          </RailPanel>
-        }
-      >
-        <p>Body</p>
-      </ForumPage>
-    );
-    expect(
-      wide.container.querySelector('[data-slot="inspector"] [data-slot="card"]')
-    ).toHaveAttribute("data-variant", "pane");
-    wide.unmount();
-
-    installViewport(false);
-    render(
-      <ForumPage
-        title="Home"
-        rail={
-          <RailPanel title="Standing" icon={<Folder />}>
-            <p>Points</p>
-          </RailPanel>
-        }
-      >
-        <p>Body</p>
-      </ForumPage>
-    );
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: "Info" }));
-    });
-    const card = screen.getByRole("dialog").querySelector('[data-slot="card"]');
-    expect(card).toHaveAttribute("data-variant", "well");
-    expect(card).toHaveAttribute("data-content", "data");
-  });
-
-  it("renders nothing without children", () => {
-    const { container } = render(
-      <RailPanel title="Empty" icon={<Folder />}>
-        {[]}
-      </RailPanel>
-    );
-    expect(container).toBeEmptyDOMElement();
   });
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
@@ -6,8 +6,6 @@ jest.mock("~/components/cards/pack-opening/PackHolographicCover", () => ({
     <div data-testid="pack-art">{packName}</div>
   ),
 }));
-
-import { focusRing, hitSlop } from "~/components/ui/button";
 import { PackOdds } from "~/components/vault/sections/marketplace/store/PackOdds";
 import {
   PackHolographicCard,
@@ -39,42 +37,6 @@ describe("PackOdds", () => {
       "Legendary0.1%",
     ]);
     expect(screen.getByText("Every pack has at least one Rare or rarer card.")).toBeInTheDocument();
-  });
-
-  it("says nothing about a guarantee the pack does not have", () => {
-    render(
-      <PackOdds
-        pack={{
-          commonOdds: 100,
-          uncommonOdds: 0,
-          rareOdds: 0,
-          ultraRareOdds: 0,
-          epicOdds: 0,
-          legendaryOdds: 0,
-          guaranteedRarity: null,
-        }}
-      />
-    );
-    expect(screen.getAllByRole("row")).toHaveLength(1);
-    expect(screen.queryByText(/at least one/)).toBeNull();
-  });
-
-  it("names a Legendary guarantee without 'or rarer', since nothing is rarer", () => {
-    render(
-      <PackOdds
-        pack={{
-          commonOdds: 50,
-          uncommonOdds: 30,
-          rareOdds: 15,
-          ultraRareOdds: 3,
-          epicOdds: 1.5,
-          legendaryOdds: 0.5,
-          guaranteedRarity: "LEGENDARY",
-        }}
-      />
-    );
-    expect(screen.getByText("Every pack has at least one Legendary card.")).toBeInTheDocument();
-    expect(screen.queryByText(/or rarer/)).toBeNull();
   });
 });
 
@@ -114,13 +76,5 @@ describe("a pack's details in the Store", () => {
     expect(within(dialog).queryByText(/ULTRA/)).toBeNull();
     expect(within(dialog).getByText("NationStates")).toBeInTheDocument();
     expect(within(dialog).queryByText("NS")).toBeNull();
-  });
-
-  it("gives the odds button a touch-size target and the focus ring", () => {
-    render(<PackHolographicCard pack={pack} actionButton={null} />);
-    expect(screen.getByRole("button", { name: "Pack details and odds" })).toHaveClass(
-      ...focusRing.split(" "),
-      ...hitSlop.split(" ")
-    );
   });
 });

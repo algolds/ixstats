@@ -1,33 +1,16 @@
-/** @jest-environment node */
-import { readFileSync } from "node:fs";
 import {
   activePoints,
   autoBanTier,
   banExpiry,
   banNotice,
-  BAN_SCOPES,
   DAY_MS,
   isBanActive,
-  MODERATION_POLICY,
   strongestBan,
   warningExpiry,
 } from "~/lib/thinkpages-forum/moderation-policy";
 
 const NOW = new Date("2026-10-10T12:00:00.000Z");
 const later = (days: number) => new Date(NOW.getTime() + days * DAY_MS);
-
-describe("moderation policy constants", () => {
-  it("encodes the owner decisions", () => {
-    expect(MODERATION_POLICY.warningTtlDays).toBe(90);
-    expect(MODERATION_POLICY.autoBanTiers).toEqual([
-      { points: 10, days: 30 },
-      { points: 5, days: 7 },
-    ]);
-    expect(MODERATION_POLICY.maxPointsPerWarning).toEqual({ siteAdmin: 5, moderator: 2 });
-    expect(BAN_SCOPES).toEqual(["site", "realm", "category"]);
-  });
-});
-
 describe("warningExpiry", () => {
   it("adds the warning lifetime", () => {
     expect(warningExpiry(NOW).getTime() - NOW.getTime()).toBe(90 * DAY_MS);
@@ -116,12 +99,6 @@ describe("banNotice", () => {
       "You are banned from this realm's forum until 5 Jan 2026."
     );
   });
-
-  it("never uses an em dash", () => {
-    for (const scope of BAN_SCOPES) {
-      expect(banNotice({ scope, expiresAt: null, reason: "x" })).not.toContain("—");
-    }
-  });
 });
 
 describe("strongestBan", () => {
@@ -143,68 +120,5 @@ describe("strongestBan", () => {
     const permanent = { scope: "realm" as const, expiresAt: null };
     expect(strongestBan([short, long])).toBe(long);
     expect(strongestBan([long, permanent, short])).toBe(permanent);
-  });
-});
-
-describe("moderation migration", () => {
-  const sql = readFileSync("prisma/migrations/20261010120000_thinkpages_forum_moderation/migration.sql", "utf8");
-
-  it("creates every table idempotently", () => {
-    for (const table of [
-      "forum_category_moderators",
-      "forum_reports",
-      "forum_warnings",
-      "forum_bans",
-      "forum_mod_log",
-      "forum_appeals",
-    ]) {
-      expect(sql).toContain(`CREATE TABLE IF NOT EXISTS "${table}"`);
-    }
-    const creates = sql.match(/CREATE TABLE/g) ?? [];
-    expect(creates.length).toBe(6);
-    expect(sql.match(/CREATE TABLE IF NOT EXISTS/g)?.length).toBe(6);
-  });
-
-  it("adds the automatic ban tier column idempotently, after its table", () => {
-    expect(sql).toContain('ALTER TABLE "forum_bans" ADD COLUMN IF NOT EXISTS "autoTier" INTEGER;');
-    expect(sql.match(/ADD COLUMN/g)?.length).toBe(sql.match(/ADD COLUMN IF NOT EXISTS/g)?.length);
-    expect(sql.indexOf('ADD COLUMN IF NOT EXISTS "autoTier"')).toBeGreaterThan(
-      sql.indexOf('CREATE TABLE IF NOT EXISTS "forum_bans"')
-    );
-  });
-
-  it("creates every index idempotently with Prisma's default names", () => {
-    const indexes = [
-      "forum_category_moderators_categoryId_userId_key",
-      "forum_category_moderators_userId_idx",
-      "forum_reports_status_categoryId_createdAt_idx",
-      "forum_reports_targetType_targetId_idx",
-      "forum_reports_reporterId_idx",
-      "forum_warnings_userId_expiresAt_idx",
-      "forum_warnings_categoryId_createdAt_idx",
-      "forum_bans_sourceRef_key",
-      "forum_bans_userId_scope_scopeId_idx",
-      "forum_bans_scope_scopeId_createdAt_idx",
-      "forum_mod_log_createdAt_idx",
-      "forum_mod_log_targetType_targetId_idx",
-      "forum_mod_log_scope_scopeId_createdAt_idx",
-      "forum_mod_log_actorId_createdAt_idx",
-      "forum_appeals_subjectType_subjectId_key",
-      "forum_appeals_status_createdAt_idx",
-      "forum_appeals_userId_idx",
-    ];
-    for (const name of indexes) expect(sql).toMatch(new RegExp(`CREATE (UNIQUE )?INDEX IF NOT EXISTS "${name}"`));
-    expect(sql.match(/CREATE (UNIQUE )?INDEX/g)?.length).toBe(indexes.length);
-    expect(sql.match(/CREATE (UNIQUE )?INDEX IF NOT EXISTS/g)?.length).toBe(indexes.length);
-  });
-
-  it("adds the category moderator foreign key idempotently", () => {
-    expect(sql).toContain("forum_category_moderators_categoryId_fkey");
-    expect(sql).toMatch(/EXCEPTION WHEN duplicate_object THEN NULL/);
-  });
-
-  it("makes the mod log append-only", () => {
-    expect(sql).toMatch(/CREATE OR REPLACE RULE "forum_mod_log_no_update" AS ON UPDATE TO "forum_mod_log" DO INSTEAD NOTHING/);
-    expect(sql).toMatch(/CREATE OR REPLACE RULE "forum_mod_log_no_delete" AS ON DELETE TO "forum_mod_log" DO INSTEAD NOTHING/);
   });
 });

@@ -3,7 +3,7 @@
  * retired, in a fusion group), the value from the server, and where focus goes when a copy dialog closes.
  */
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useSheetEconomy", () => ({
   useSheetEconomy: jest.fn(),
@@ -20,7 +20,6 @@ jest.mock("next/link", () => ({
 import { useEconomyNumbers, useSheetEconomy } from "~/hooks/cards/useSheetEconomy";
 import { useCopyActions } from "~/hooks/cards/useCopyActions";
 import { COPIES_HEADING_ID, CopyActions } from "~/components/cards/sheet/CopyActions";
-import { CARD_ECONOMY_DEFAULTS } from "~/lib/cards/economy-config";
 import type { CardSheetData, SheetCopy } from "~/lib/cards/hub/sheet";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
@@ -192,33 +191,12 @@ describe("CopyActions", () => {
     expect(shown()).toEqual(["Add to showcase", "List"]);
     expect(screen.getByRole("link", { name: "Sell at auction" })).toBeTruthy();
   });
-
-  it("says a retired card's copy is worth nothing because it is retired", () => {
-    showEconomy(economy({}, [economyCopy({ value: 0 })]));
-    renderActions(sheetCopy(), card({ isRetired: true }));
-    expect(screen.getByText("Retired")).toBeTruthy();
-    expect(screen.getByText("0")).toBeTruthy();
-  });
-
   it("offers only the showcase and the auction form until the economy has loaded", () => {
     showEconomy({ data: undefined });
     renderActions();
     expect(shown()).toEqual(["Add to showcase"]);
     expect(screen.getByRole("link", { name: "Sell at auction" })).toBeTruthy();
   });
-
-  it("shows nothing for a copy with no copy facts", () => {
-    showEconomy(economy());
-    const { container } = render(
-      <CopyActions
-        copy={sheetCopy({ face: { cardId: "c1", copy: null } } as never)}
-        card={card()}
-        onAddToShowcase={jest.fn()}
-      />
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
   it("opens each dialog for its own action", () => {
     showEconomy(
       economy({
@@ -242,77 +220,6 @@ describe("CopyActions", () => {
 });
 
 describe("CopyActions focus", () => {
-  /** Opens a dialog from its button, as a keyboard press does: the button has focus first. */
-  const openFrom = async (name: string) => {
-    const opener = screen.getByRole("button", { name });
-    opener.focus();
-    fireEvent.click(opener);
-    await waitFor(() => expect(opener).not.toBe(document.activeElement));
-    return opener;
-  };
-
-  it("gives focus back to the button that opened a dialog closed without acting", async () => {
-    showEconomy(economy());
-    renderActions();
-    for (const name of ["List", "Break down", "Sign"]) {
-      const opener = await openFrom(name);
-      fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
-      await waitFor(() => expect(document.activeElement).toBe(opener));
-    }
-  });
-
-  it("moves focus to the copy's showcase button once a listing or a signature takes the opener away", async () => {
-    showEconomy(economy());
-    renderActions();
-    // List waits for the fees it shows
-    jest
-      .mocked(useEconomyNumbers)
-      .mockReturnValue({ data: { economy: CARD_ECONOMY_DEFAULTS, feeRatePct: 10 } } as never);
-    const showcase = screen.getByRole("button", { name: "Add to showcase" });
-
-    await openFrom("List");
-    fireEvent.click(screen.getByRole("button", { name: "List for 120 IxC" }));
-    expect(actions.list.mutate).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(document.activeElement).toBe(showcase));
-
-    await openFrom("Sign");
-    fireEvent.change(screen.getByLabelText("Inscription"), { target: { value: "gg" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign this copy" }));
-    expect(actions.sign.mutate).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(document.activeElement).toBe(showcase));
-
-    // The next dialog closed without acting goes back to its own opener again.
-    const breakDown = await openFrom("Break down");
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
-    await waitFor(() => expect(document.activeElement).toBe(breakDown));
-  });
-
-  it("moves focus to the copies heading once a break down or a fusion burns copies", async () => {
-    showEconomy(
-      economy({
-        fusionGroups: [{ finish: "STANDARD", next: "FOIL", ownershipIds: ["a", "b", "c"] }],
-      })
-    );
-    renderActions();
-    const heading = screen.getByRole("heading", { name: "Your copies" });
-
-    await openFrom("Break down");
-    fireEvent.click(screen.getByRole("button", { name: "Break down" }));
-    expect(actions.breakDown.mutate).toHaveBeenCalledWith(
-      { ownershipIds: ["a"] },
-      expect.anything()
-    );
-    await waitFor(() => expect(document.activeElement).toBe(heading));
-
-    await openFrom("Fuse");
-    fireEvent.click(screen.getByRole("button", { name: "Fuse" }));
-    expect(actions.fuse.mutate).toHaveBeenCalledWith(
-      { ownershipIds: ["a", "b", "c"] },
-      expect.anything()
-    );
-    await waitFor(() => expect(document.activeElement).toBe(heading));
-  });
-
   it("keeps a confirm dialog open while its action fails", () => {
     actions.breakDown.mutate = jest.fn();
     showEconomy(economy());

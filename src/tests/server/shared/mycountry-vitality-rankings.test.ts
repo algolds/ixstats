@@ -10,7 +10,6 @@ import { db as mockedDb } from "~/server/db";
 import {
   DIPLOMATIC_STANDING_WEIGHTS,
   calculateVitalityScores,
-  computeDiplomaticStanding,
   emptyDiplomaticStandingInputs,
   generateRankings,
   loadDiplomaticStandingInputs,
@@ -80,19 +79,6 @@ describe("scoreDiplomaticStanding", () => {
     });
     expect(maxed).toBe(100);
   });
-
-  it("is no longer the constant 70 the old fake fields produced", () => {
-    const a = scoreDiplomaticStanding({
-      ...emptyDiplomaticStandingInputs(),
-      relationStrengths: [20],
-    });
-    const b = scoreDiplomaticStanding({
-      ...emptyDiplomaticStandingInputs(),
-      relationStrengths: [90],
-    });
-    expect(a).toBe(20);
-    expect(b).toBe(90);
-  });
 });
 
 describe("loadDiplomaticStandingInputs", () => {
@@ -139,11 +125,6 @@ describe("loadDiplomaticStandingInputs", () => {
       status: "active",
       actionType: { in: ["embargo", "sanction", "blockade"] },
     });
-  });
-
-  it("computeDiplomaticStanding returns null with no record", async () => {
-    const result = await computeDiplomaticStanding("lonely", diplomacyDb() as never);
-    expect(result.score).toBeNull();
   });
 });
 

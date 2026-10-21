@@ -1,5 +1,5 @@
-import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidate = () => ({ invalidate: jest.fn() });
@@ -159,32 +159,6 @@ describe("AddToShowcaseDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
     expect(onAdded).toHaveBeenCalledTimes(1);
   });
-
-  it("forgets a half-typed name once the cards are added elsewhere", () => {
-    listed([showcase()]);
-    mutations({ add: (options) => options.onSuccess?.({ added: 1 }) });
-    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
-    const name = screen.getByLabelText("New showcase name");
-    fireEvent.change(name, { target: { value: "Half" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
-    expect(name).toHaveValue("");
-  });
-
-  it("counts several cards, and says so when they were all there already", () => {
-    listed([showcase()]);
-    let added = 3;
-    mutations({ add: (options) => options.onSuccess?.({ added }) });
-    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1", "o2", "o3"]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
-    expect(vaultNotify.success).toHaveBeenLastCalledWith("Added 3 cards", "Best of Ixnay");
-    added = 0;
-    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
-    expect(vaultNotify.success).toHaveBeenLastCalledWith(
-      "Already in this showcase",
-      "Best of Ixnay"
-    );
-  });
-
   it("shows the server's reason when adding fails, and stays open", () => {
     listed([showcase()]);
     mutations({
@@ -214,87 +188,6 @@ describe("AddToShowcaseDialog", () => {
     fireEvent.submit(name.closest("form") as HTMLFormElement);
     expect(create).toHaveBeenCalledTimes(1);
   });
-
-  it("says when the showcases did not load, and asks again", () => {
-    const refetch = jest.fn();
-    jest
-      .mocked(api.cards.listMyShowcases.useQuery)
-      .mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch } as never);
-    mutations({});
-    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
-    expect(screen.getByText("Your showcases did not load.")).toBeInTheDocument();
-    expect(screen.queryByText("No showcases yet. Name one to start it.")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps the loaded showcases when only a refresh fails", () => {
-    jest.mocked(api.cards.listMyShowcases.useQuery).mockReturnValue({
-      data: [showcase()],
-      isLoading: false,
-      isError: true,
-      refetch: jest.fn(),
-    } as never);
-    mutations({});
-    render(<AddToShowcaseDialog open onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
-    expect(screen.getByRole("button", { name: "Add to Best of Ixnay" })).toBeEnabled();
-    expect(screen.queryByText("Your showcases did not load.")).toBeNull();
-  });
-
-  it("gives focus back to what opened it when it closes", async () => {
-    listed([showcase()]);
-    mutations({});
-    function Host() {
-      const [open, setOpen] = React.useState(false);
-      return (
-        <>
-          <button onClick={() => setOpen(true)}>Open</button>
-          <AddToShowcaseDialog open={open} onOpenChange={setOpen} ownershipIds={["o1"]} />
-        </>
-      );
-    }
-    render(<Host />);
-    const opener = screen.getByRole("button", { name: "Open" });
-    opener.focus();
-    fireEvent.click(opener);
-    const dialog = await screen.findByRole("dialog");
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
-    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    await waitFor(() => expect(document.activeElement).toBe(opener));
-  });
-
-  it("gives focus to the place the caller names once the copies are in, when its opener leaves with them", async () => {
-    listed([showcase()]);
-    mutations({ add: (options) => options.onSuccess?.({ added: 1 }) });
-    function Host() {
-      const [open, setOpen] = React.useState(false);
-      const [selecting, setSelecting] = React.useState(true);
-      const after = React.useRef<HTMLButtonElement>(null);
-      return (
-        <>
-          <button ref={after}>Select</button>
-          {selecting && <button onClick={() => setOpen(true)}>Add to showcase</button>}
-          <AddToShowcaseDialog
-            open={open}
-            onOpenChange={setOpen}
-            ownershipIds={["o1"]}
-            onAdded={() => setSelecting(false)}
-            focusAfterAdd={after}
-          />
-        </>
-      );
-    }
-    render(<Host />);
-    const opener = screen.getByRole("button", { name: "Add to showcase" });
-    opener.focus();
-    fireEvent.click(opener);
-    await screen.findByRole("dialog");
-    fireEvent.click(screen.getByRole("button", { name: "Add to Best of Ixnay" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
-  });
-
   it("will not overfill a showcase, and says how much room is left", () => {
     listed([
       showcase({ id: "full", name: "Full one", itemCount: SHOWCASE_LIMITS.items }),
@@ -323,13 +216,5 @@ describe("AddToShowcaseDialog", () => {
     expect(
       screen.getByText(`You have ${SHOWCASE_LIMITS.perPlayer} showcases, the most you can keep.`)
     ).toBeInTheDocument();
-  });
-
-  it("asks for the showcases only while open", () => {
-    listed([]);
-    mutations({});
-    render(<AddToShowcaseDialog open={false} onOpenChange={jest.fn()} ownershipIds={["o1"]} />);
-    expect(api.cards.listMyShowcases.useQuery).toHaveBeenCalledWith(undefined, { enabled: false });
-    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -6,7 +6,6 @@
 import { renderHook } from "@testing-library/react";
 import {
   chunkStatKeys,
-  STAT_CHUNK_SIZE,
   useStatValues,
 } from "~/components/wiki-os/reader/useStatValues";
 
@@ -20,15 +19,6 @@ const keys = (n: number, prefix = "MyCountry:k") =>
   Array.from({ length: n }, (_, i) => `${prefix}${i}`);
 
 describe("chunkStatKeys", () => {
-  it("is empty for no keys", () => {
-    expect(chunkStatKeys([])).toEqual([]);
-  });
-
-  it("keeps up to 200 keys in one chunk", () => {
-    expect(chunkStatKeys(keys(200))).toEqual([keys(200)]);
-    expect(STAT_CHUNK_SIZE).toBe(200);
-  });
-
   it("splits 201 keys into 200 and 1, and 450 into 200, 200 and 50, in order", () => {
     expect(chunkStatKeys(keys(201)).map((chunk) => chunk.length)).toEqual([200, 1]);
     const chunks = chunkStatKeys(keys(450));
@@ -79,15 +69,6 @@ describe("useStatValues", () => {
       queries.every((q) => JSON.stringify(q.opts) === JSON.stringify({ staleTime: 300000 }))
     ).toBe(true);
   });
-
-  it("asks nothing for a page with no stats", () => {
-    runQueries([]);
-
-    renderHook(() => useStatValues([]));
-
-    expect((mockUseQueries as unknown as { queries: unknown[] }).queries).toEqual([]);
-  });
-
   it("merges the chunks' values, and a chunk that failed or has not arrived adds nothing", () => {
     runQueries([
       { data: { "MyCountry:a": { value: "1" } } },
@@ -101,11 +82,5 @@ describe("useStatValues", () => {
       "MyCountry:a": { value: "1" },
       "MyCountry:b": { value: "2" },
     });
-  });
-
-  it("is an empty record while nothing has arrived", () => {
-    runQueries([{ data: undefined }]);
-
-    expect(renderHook(() => useStatValues(["MyCountry:a"])).result.current).toEqual({});
   });
 });

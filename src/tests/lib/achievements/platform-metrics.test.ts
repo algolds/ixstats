@@ -67,14 +67,6 @@ describe("registry shape", () => {
     const keys = PLATFORM_LOADERS.flatMap((l) => l.keys);
     expect(new Set(keys).size).toBe(keys.length);
   });
-
-  it("drops the NOT LIVE sets key and the map-edit key Task 14 owns", () => {
-    const keys = PLATFORM_LOADERS.flatMap((l) => l.keys);
-    expect(keys).not.toContain("setsCompleted");
-    expect(keys).not.toContain("mapEditsApprovedByUser");
-    expect(keys).not.toContain("mapEditsApproved");
-  });
-
   /**
    * The one loader allowed reads past the 3-query budget, and why (the header of metrics/platform.ts). Its deck value
    * is the shared per-copy value, mocked in this file, so its reads are not counted here: no other loader may reach it.

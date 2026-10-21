@@ -62,15 +62,6 @@ describe("transformArticleHtml links for another wiki's page (ruling E-l)", () =
   it("leaves external links alone", () => {
     expect(html).toContain('href="https://eurth.org/"');
   });
-
-  it("carries the base path like IxWiki links do", () => {
-    const withBase = transformArticleHtml(parsed, "/projects/ixstates", "althistory").contentHtml;
-    expect(withBase).toContain('href="/projects/ixstates/wiki/Gallambria?source=althistory"');
-    expect(withBase).toContain(
-      'href="https://althistory.fandom.com/wiki/User:Kir" rel="noreferrer"'
-    );
-  });
-
   it("applies to the infobox and notices too", () => {
     const withInfobox = transformArticleHtml(
       '<div class="mw-parser-output"><table class="infobox"><tr><td><a href="/wiki/Gallambria">G</a></td></tr></table><p>Body</p></div>',

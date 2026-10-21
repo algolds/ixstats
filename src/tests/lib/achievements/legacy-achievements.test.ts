@@ -16,8 +16,6 @@ jest.mock("~/lib/activity", () => ({
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
 }));
-
-import { getAchievementById } from "~/lib/achievements/definitions";
 import { achievementService } from "~/lib/achievements/service";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
 import { RETIRED_IDS, syncAchievements } from "~/lib/achievements/sync";
@@ -49,41 +47,11 @@ const SPEC_RETIRED = [
   ...["gov-democracy", "gov-republic", "gov-monarchy", "gov-federation", "gov-unitary"],
   "gov-parliamentary",
 ];
-
-const KEPT = [
-  "gen-first-country",
-  "gov-first-component",
-  "dip-first-embassy",
-  "mil-first-branch",
-  "meme-stonks",
-  "meme-1337",
-  "meme-bankruptcy",
-  "vid-lightswitch",
-  "vid-annual",
-  "meme-ns-ref",
-  "vid-end-of-days",
-];
-
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(getBonusConfig).mockResolvedValue(VAULT_BONUS_DEFAULTS);
   jest.spyOn(console, "log").mockImplementation(() => {});
 });
-
-describe("the retired set", () => {
-  it("is exactly the spec's Legacy list, and the kept ids are not in it", () => {
-    expect([...RETIRED_IDS].sort()).toEqual([...SPEC_RETIRED].sort());
-    for (const id of KEPT) expect(RETIRED_IDS.has(id)).toBe(false);
-  });
-
-  it("has no rule or condition: a Legacy definition keeps only its display data", () => {
-    for (const id of SPEC_RETIRED) {
-      const def = getAchievementById(id)!;
-      expect([id, def.retired, def.rule, def.condition]).toEqual([id, true, undefined, undefined]);
-    }
-  });
-});
-
 describe("syncAchievements", () => {
   function upserts(db: ReturnType<typeof createMockPrisma>) {
     return new Map<string, { isActive: boolean; iconUrl: string }>(

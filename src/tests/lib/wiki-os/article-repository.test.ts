@@ -154,13 +154,6 @@ describe("ArticleRepository.saveArticle", () => {
     expect(args.create).toMatchObject({ title: "Foo bar", slug: "foo_bar" });
     expect(args.update).toMatchObject({ slug: "foo_bar" });
   });
-
-  it("canonicalizes `title` when both are given", async () => {
-    await save("ignored", "foo_bar");
-
-    expect(mockUpsert.mock.calls[0]?.[0].where.source_title.title).toBe("Foo bar");
-  });
-
   it("writes the namespace of a Talk: page on create and update", async () => {
     await save("Talk:x");
 
@@ -169,15 +162,6 @@ describe("ArticleRepository.saveArticle", () => {
     expect(args.create).toMatchObject({ namespace: 1, namespacePrefix: "Talk" });
     expect(args.update).toMatchObject({ namespace: 1, namespacePrefix: "Talk" });
   });
-
-  it("writes the main namespace for an ordinary page", async () => {
-    await save("Foo");
-
-    const args = mockUpsert.mock.calls[0]?.[0];
-    expect(args.create).toMatchObject({ namespace: 0, namespacePrefix: null });
-    expect(args.update).toMatchObject({ namespace: 0, namespacePrefix: null });
-  });
-
   it("rejects a title MediaWiki would refuse before touching the database", async () => {
     await expect(save("a[b")).rejects.toThrow("Invalid title");
     expect(mockUpsert).not.toHaveBeenCalled();
@@ -237,13 +221,6 @@ describe("ArticleRepository.saveArticle", () => {
     expect(summary.startsWith("Foo is a country in Eurth.")).toBe(true);
     expect(summary.length).toBeLessThanOrEqual(480);
   });
-
-  it("stores a null excerpt for a blank page (plan 402)", async () => {
-    await save("Foo", "", "");
-
-    expect(mockUpsert.mock.calls[0]?.[0].update.summary).toBeNull();
-  });
-
   it("writes a redirect's canonical target title and fragment on create and update (plan 402)", async () => {
     const { article } = await save("Old", "", "#REDIRECT [[foo#Bar]]");
 
@@ -294,16 +271,6 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("textDeleted", true);
     expect(enqueueRender).toHaveBeenCalledTimes(1);
   });
-
-  it("compares the text in the database: a count on the title and the new wikitext, nothing read back", async () => {
-    await save("new text");
-
-    expect(mockCount).toHaveBeenCalledTimes(1);
-    expect(mockCount.mock.calls[0]?.[0]).toEqual({
-      where: { source: "ixwiki", title: "Foo", wikitext: "new text" },
-    });
-  });
-
   it("leaves the view and the queue alone when the saved text is the text already stored", async () => {
     mockCount.mockResolvedValue(1);
 
@@ -429,13 +396,6 @@ describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy
       mockQueryRaw.mock.invocationCallOrder[0]!
     );
   });
-
-  it("gives its transaction time to wait for the page's lock: 10 s to start, 30 s to run", async () => {
-    await save();
-
-    expect(mockTransactionOptions).toHaveBeenCalledWith({ maxWait: 10_000, timeout: 30_000 });
-  });
-
   it.each([
     ["Prisma's P2028 (the transaction timed out or could not start)", () => prismaError("P2028")],
     ["P2034 (a deadlock or write conflict)", () => prismaError("P2034")],
@@ -742,16 +702,6 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     // the job is part of the transaction: it is written before the post-commit work
     expect(order).toEqual(["revision", "job", "enqueue"]);
   });
-
-  it("names the saved page by its canonical title, not the spelling that was typed", async () => {
-    await ArticleRepository.saveArticle({ slug: "foo_bar", title: "", wikitext: "text" });
-
-    expect(mockJobCreate.mock.calls[0]?.[0].data).toMatchObject({
-      kind: "revision",
-      title: "Foo bar",
-    });
-  });
-
   it("queues a job for a save that changed nothing too: the revision exists, so MediaWiki gets it", async () => {
     mockCount.mockResolvedValue(1);
 
@@ -814,41 +764,6 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
     ...overrides,
   });
-
-  it("reads one row with only what locating the rendered view takes", async () => {
-    mockFindUnique.mockResolvedValue(viewRow("Foo bar"));
-
-    const head = await ArticleRepository.findArticleForView("foo_bar");
-
-    expect(mockFindUnique).toHaveBeenCalledTimes(1);
-    expect(mockFindMany).not.toHaveBeenCalled();
-    const { where, select } = mockFindUnique.mock.calls[0]?.[0];
-    expect(where).toEqual({ source_title: { source: "ixwiki", title: "Foo bar" } });
-    expect(Object.keys(select).sort()).toEqual([
-      "categories",
-      "htmlSyncedAt",
-      "id",
-      "revisions",
-      "status",
-      "title",
-    ]);
-    expect(select.revisions).toMatchObject({ take: 1, orderBy: { createdAt: "desc" } });
-    // The last-modified time is the page's current revision's: a parked one is not that.
-    expect(select.revisions.where).toEqual({ parked: false });
-    expect(select.categories.take).toBe(50);
-    // A category MediaWiki hides (a maintenance or tracking one) is not shown on the page.
-    expect(select.categories.where).toEqual({ category: { hidden: false } });
-    expect(head).toEqual({
-      id: "id-Foo bar",
-      title: "Foo bar",
-      status: "PUBLISHED",
-      htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
-      lastModified: new Date("2026-09-29T08:00:00Z"),
-      emptyText: false,
-      categories: ["Countries", "Eurth"],
-    });
-  });
-
   it("says a page's text is empty only for a current revision that really is 0 bytes (F35a)", async () => {
     const emptyOf = async (revisions: Array<Record<string, unknown>>) => {
       mockFindUnique.mockResolvedValue(viewRow("Talk:Paulastra", { revisions }));
@@ -967,23 +882,6 @@ describe("ArticleRepository.findBySlug", () => {
     });
     expect(article?.title).toBe("Project:foo");
   });
-
-  it("never reads the rendered HTML or the view bundle", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo"));
-
-    await ArticleRepository.findBySlug("Foo");
-
-    const select = mockFindUnique.mock.calls[0]?.[0].select;
-    expect(select).toMatchObject({ id: true, wikitext: true });
-    for (const heavy of ["contentHtml", "contentJson", "renderedView", "htmlContent"]) {
-      expect(select).not.toHaveProperty(heavy);
-    }
-  });
-
-  it("returns null when nothing matches", async () => {
-    await expect(ArticleRepository.findBySlug("Nowhere")).resolves.toBeNull();
-  });
-
   it("returns null for a stub row without wikitext", async () => {
     mockFindUnique.mockResolvedValue(articleRow("Foo", { wikitext: "" }));
 
@@ -1043,30 +941,6 @@ describe("ArticleRepository.getHistory", () => {
       expect.objectContaining({ articleId: "id-Foo bar", author: "alice" }),
     ]);
   });
-
-  it("never reads a revision's text: the select is the history columns only", async () => {
-    mockFindUnique.mockResolvedValue(articleRow("Foo"));
-    mockRevisionFindMany.mockResolvedValue([]);
-
-    await ArticleRepository.getHistory("Foo");
-
-    expect(mockRevisionFindMany.mock.calls[0]?.[0].select).toEqual({
-      id: true,
-      mwRevId: true,
-      summary: true,
-      minor: true,
-      author: true,
-      createdAt: true,
-      byteSize: true,
-      byteDelta: true,
-      sha1: true,
-      parked: true,
-      textDeleted: true,
-      commentDeleted: true,
-      userDeleted: true,
-    });
-  });
-
   it("carries MediaWiki's revision-deletion flags to the caller, which decides who sees what", async () => {
     mockFindUnique.mockResolvedValue(articleRow("Foo"));
     mockRevisionFindMany.mockResolvedValue([

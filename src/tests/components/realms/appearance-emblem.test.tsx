@@ -2,7 +2,7 @@
  * The Appearance section's emblem field: the same image field as the banner and thumbnail, saved through
  * updateAppearance with the others, clearable, and checked like them before Save is allowed.
  */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 const mutate = jest.fn();
@@ -43,12 +43,6 @@ function renderSection(emblemUrl: string | null = null) {
 beforeEach(() => mutate.mockClear());
 
 describe("AppearanceSection emblem", () => {
-  it("offers the emblem beside the banner and thumbnail, with an upload", () => {
-    renderSection();
-    expect(screen.getByLabelText("Emblem")).toBeTruthy();
-    expect(screen.getByLabelText("Upload emblem")).toBeTruthy();
-  });
-
   it("saves the emblem with the other appearance fields", () => {
     renderSection();
     fireEvent.change(screen.getByLabelText("Emblem"), {

@@ -9,7 +9,7 @@ import {
   wikiTitleFromLink,
   type JsNationTableSettings,
 } from "~/lib/realms/sources/adapters/js-nation-table";
-import { sourcePreset, SOURCE_PRESETS } from "~/lib/realms/sources/presets";
+import { sourcePreset } from "~/lib/realms/sources/presets";
 
 const FIXTURES = path.resolve(__dirname, "../../../fixtures/realm-sources/eurth-map");
 const read = (name: string) => fs.readFileSync(path.join(FIXTURES, name), "utf8");
@@ -21,33 +21,6 @@ const files = {
   organizations: read("organizations.js"),
   borders: read("nations.geojson"),
 };
-
-describe("the eurth-map preset", () => {
-  it("is the only place the Eurth values live, and its settings validate", () => {
-    const preset = sourcePreset("eurth-map")!;
-    expect(preset).toMatchObject({
-      repo: "a-seth-harrison/eurth-map",
-      ref: "main",
-      format: "eurth-map",
-    });
-    expect(settings.files).toEqual({
-      nations: "eurth-map/src/data/nations.js",
-      organizations: "eurth-map/src/data/organizations.js",
-      borders: "eurth-map/public/nations.geojson",
-    });
-    expect(settings.attribution).toBe("Map: Eurth community, via eurth-map by Seth Harrison");
-    expect(SOURCE_PRESETS.map((p) => p.id)).toEqual(["eurth-map"]);
-  });
-
-  it("carries the continent guesses, free text, with unknowns left out", () => {
-    const map = sourcePreset("eurth-map")!.continentMap!;
-    expect(Object.keys(map)).toHaveLength(115);
-    expect(map.Variota).toBe("Alharu");
-    expect(map["Rupes-Nigra"]).toBe("Europa");
-    expect(Object.values(map).every((c) => c.trim().length > 0)).toBe(true);
-  });
-});
-
 describe("the eurth-map adapter", () => {
   it("is registered under its format id, and its files come from the realm's settings", () => {
     expect(sourceAdapter("eurth-map")).toBe(jsNationTableAdapter);

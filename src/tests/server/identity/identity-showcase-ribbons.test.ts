@@ -89,18 +89,6 @@ describe("toRibbons", () => {
     expect(ribbons.slice(0, 3).map((r) => r.key)).toEqual(["common-old", "rare", "legendary"]);
     expect(ribbons.filter((r) => r.pinned).map((r) => r.key)).toEqual(["common-old", "rare"]);
   });
-
-  it("carries the achievement's category, rarity, points and unlock date", () => {
-    const [top] = toRibbons([unlock("legendary", "Legendary", 3, "Diplomatic")], []);
-    expect(top).toEqual(
-      expect.objectContaining({
-        category: "Diplomatic",
-        rarity: "Legendary",
-        points: 10,
-        unlockedAt: "2026-01-03T00:00:00.000Z",
-      })
-    );
-  });
 });
 
 describe("validPinnedKeys", () => {

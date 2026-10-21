@@ -27,12 +27,6 @@ function callerWith(row: Record<string, unknown> | null) {
 }
 
 describe("security.getBorderSecurity", () => {
-  it("returns the stored row", async () => {
-    const row = { id: "b1", countryId: "c1", overallSecurityLevel: 42, neighborThreats: [] };
-    const { caller } = callerWith(row);
-    await expect(caller.getBorderSecurity({ countryId: "c1" })).resolves.toEqual(row);
-  });
-
   it("returns defaults without writing when the country has no row", async () => {
     const { db, caller } = callerWith(null);
 

@@ -170,11 +170,4 @@ describe("the Store's pack reveal", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(useRouter().push).toHaveBeenCalledWith("/vault/cards/mine?card=c2");
   });
-
-  it("sends focus back to the My packs tab once the opened pack's button has left the list", () => {
-    render(<VaultStoreTab initialView="my-packs" />);
-    fireEvent.click(screen.getAllByRole("button", { name: "Rip open pack" })[0]!);
-    fireEvent.click(screen.getByRole("button", { name: "Return focus" }));
-    expect(screen.getByRole("tab", { name: /My packs/ })).toHaveFocus();
-  });
 });

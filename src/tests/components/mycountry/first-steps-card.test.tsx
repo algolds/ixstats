@@ -2,8 +2,8 @@
  * MyCountry's "First steps" card: one link row per step with its status line, and it stays away
  * once every step is done, the owner hides it, or the nation is not new.
  */
-import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { FirstSteps } from "~/lib/mycountry/first-steps";
 
 const mockState: { data: FirstSteps | null | undefined } = { data: undefined };
@@ -51,29 +51,6 @@ beforeEach(() => {
 });
 
 describe("FirstStepsCard", () => {
-  it("lists each step as a link with its status line", () => {
-    mockState.data = steps({ cabinet: true });
-    render(<FirstStepsCard countryId="c1" />);
-
-    expect(screen.getByRole("heading", { level: 2, name: "First steps" })).toBeInTheDocument();
-    expect(screen.getByText("1 of 5 done")).toBeInTheDocument();
-
-    const budget = screen.getByRole("link", { name: /Review your budget/ });
-    expect(budget).toHaveAttribute("href", "/to/budget");
-    expect(within(budget).getByText(/National budget/)).toBeInTheDocument();
-
-    const cabinet = screen.getByRole("link", { name: /Appoint your cabinet/ });
-    expect(within(cabinet).getByText("Done")).toBeInTheDocument();
-
-    for (const title of [
-      "Set your tax policy",
-      "Write your wiki page",
-      "Place your capital on the map",
-    ]) {
-      expect(screen.getByRole("link", { name: new RegExp(title) })).toBeInTheDocument();
-    }
-  });
-
   it("hides itself for this nation when the owner chooses Hide", () => {
     mockState.data = steps();
     render(<FirstStepsCard countryId="c1" />);

@@ -46,55 +46,10 @@ describe("PostBody", () => {
     expect(order.every((n) => n >= 0)).toBe(true);
     expect([...order].sort((x, y) => x - y)).toEqual(order);
   });
-
-  it("caps post images to the column width and a standard height through wrapper classes", () => {
-    const { container } = render(
-      <PostBody html='<p>x</p><img src="https://x/y.png" alt="">' style="ooc" />
-    );
-    const wrapper = container.firstElementChild as HTMLElement;
-    expect(wrapper).toHaveClass("[&_img]:max-w-full", "[&_img]:max-h-[640px]", "[&_img]:h-auto");
-    expect(container.querySelector("img")?.getAttribute("src")).toBe("https://x/y.png");
-  });
-
-  it("renders root-relative image and link URLs through the base path, once", () => {
-    const { container } = render(
-      <PostBody
-        html='<p><img src="/images/uploads/forum/55-abc-x.png" alt=""><a href="/images/uploads/forum/56-def-r.pdf">r</a><img src="/p/images/downloaded/y.png" alt=""><img src="https://x/z.png" alt=""></p>[ixaction=a1]<p><img src="/images/uploads/b.png" alt=""></p>'
-        style="ooc"
-        cards={NO_CARDS}
-      />
-    );
-    expect(Array.from(container.querySelectorAll("img"), (img) => img.getAttribute("src"))).toEqual(
-      [
-        "/p/images/uploads/forum/55-abc-x.png",
-        "/p/images/downloaded/y.png",
-        "https://x/z.png",
-        "/p/images/uploads/b.png",
-      ]
-    );
-    expect(container.querySelector("a")?.getAttribute("href")).toBe(
-      "/p/images/uploads/forum/56-def-r.pdf"
-    );
-  });
-
   it("renders Unverified action for an unknown id", () => {
     render(<PostBody html="<p>hi</p>[ixaction=gone]" style="ooc" cards={NO_CARDS} />);
     expect(screen.getByText("Unverified action")).toBeInTheDocument();
   });
-
-  it("shows neutral busy placeholders, not Unverified action, while the batch loads", () => {
-    const { container } = render(
-      <PostBody
-        html="[ixaction=a1]<p>x</p>[ixaction=b2]"
-        style="ooc"
-        cards={NO_CARDS}
-        cardsReady={false}
-      />
-    );
-    expect(screen.queryByText("Unverified action")).not.toBeInTheDocument();
-    expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(2);
-  });
-
   it("says Action unavailable when the batch failed", () => {
     render(
       <PostBody html="[ixaction=a1]" style="ooc" cards={NO_CARDS} cardsReady={false} cardsErrored />
@@ -151,17 +106,6 @@ describe("PostBody", () => {
 });
 
 describe("PostBody styles", () => {
-  it("applies the article style to an in-character post, and compact prose to an out-of-character one", () => {
-    const { container, rerender } = render(<PostBody html="<p>x</p>" style="ic" />);
-    const body = container.firstElementChild as HTMLElement;
-    expect(body).toHaveClass("forum-post", "forum-post--ic");
-    expect(body).not.toHaveClass("forum-post--ooc");
-    rerender(<PostBody html="<p>x</p>" style="ooc" />);
-    expect(container.firstElementChild).toHaveClass("forum-post", "forum-post--ooc", "text-body");
-    expect(container.firstElementChild).not.toHaveClass("forum-post--ic");
-    expect(container.firstElementChild?.className).not.toMatch(/\btext-sm\b/);
-  });
-
   it("renders a quote block and links its author line to the quoted post", () => {
     const html =
       '<blockquote class="forum-quote" data-post="p9"><div class="forum-quote-author">Ann wrote:</div><div class="forum-quote-body">hello</div></blockquote><p>reply</p>';

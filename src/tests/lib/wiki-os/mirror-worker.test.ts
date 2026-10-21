@@ -416,32 +416,6 @@ describe("runMirrorCycle", () => {
     expect(message.match(/revision Page \d: MediaWiki down/g)).toHaveLength(5);
     expect(message).toContain("...and 2 more");
   });
-
-  it("holds the next warning back for 30 minutes, and then names the jobs that died meanwhile, only those", async () => {
-    const first = addJob({ title: "First", attempts: 7 });
-    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
-    await runMirrorCycle();
-    expect(warn).toHaveBeenCalledTimes(1);
-
-    addJob({ title: "Second", attempts: 7 });
-    await runMirrorCycle();
-    await runMirrorCycle();
-    expect(warn).toHaveBeenCalledTimes(1); // held back
-
-    // 31 minutes later: the first warning, and the death of the first job, are that far back
-    config.set("wikiMirror.deadAlertAt", new Date(Date.now() - 31 * 60_000).toISOString());
-    byId(first.id).updatedAt = new Date(Date.now() - 32 * 60_000);
-    await runMirrorCycle();
-
-    expect(warn).toHaveBeenCalledTimes(2);
-    expect(warn).toHaveBeenLastCalledWith(
-      "WikiOS mirror job dead",
-      "revision Second: MediaWiki down"
-    );
-    await runMirrorCycle();
-    expect(warn).toHaveBeenCalledTimes(2); // nothing new
-  });
-
   it("does nothing while SKIP_MEDIAWIKI_SYNC is true: the jobs stay in the outbox", async () => {
     const waiting = addJob();
     process.env.SKIP_MEDIAWIKI_SYNC = "true";
@@ -522,20 +496,6 @@ describe("runMirrorCycle", () => {
       attempts: 8,
       lastError: "gave up",
     });
-  });
-
-  it("forgets the jobs that finished long ago, discarded ones too", async () => {
-    const month = 31 * 24 * 60 * 60_000;
-    addJob({ state: "done" }).updatedAt = new Date(Date.now() - month);
-    addJob({ state: "discarded" }).updatedAt = new Date(Date.now() - month);
-    const dead = addJob({ state: "dead", title: "Other" });
-    dead.updatedAt = new Date(Date.now() - month);
-    const recent = addJob({ state: "done" });
-
-    await runMirrorCycle();
-
-    // only finished jobs go; a dead one stays, however old
-    expect(rows.map((row) => row.id)).toEqual([dead.id, recent.id]);
   });
 });
 

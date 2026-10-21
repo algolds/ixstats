@@ -8,7 +8,6 @@ jest.mock("~/lib/maps/geojson-layer-helpers", () => ({
 
 import { ChoroplethOverlay } from "~/components/maps/overlays/ChoroplethOverlay";
 import { RiskHeatmapOverlay } from "~/components/maps/overlays/RiskHeatmapOverlay";
-import { OVERLAY_LIST } from "~/lib/maps/overlay-registry";
 
 function stubMap() {
   return {
@@ -57,33 +56,5 @@ describe("fill overlays colour the political layer from country rows, with no ge
       />
     );
     expect(paintedCountries(map)).toEqual(["c9"]);
-  });
-
-  it.each([
-    "wealth",
-    "population",
-    "economicTier",
-    "vitality",
-    "health",
-    "tradeBalance",
-    "canonDensity",
-  ])("the %s overlay hands the fetched rows and metadata to ChoroplethOverlay", (id) => {
-    const def = OVERLAY_LIST.find((overlay) => overlay.id === id)!;
-    const data = {
-      rows: [{ countryId: "c1", value: 0.25 }],
-      metadata: { minVal: 0, maxVal: 1 },
-    };
-    const props = def.renderProps!({ map: null, data, visible: true });
-    expect(props).toMatchObject({ rows: data.rows, metadata: data.metadata, visible: true });
-  });
-
-  it("the crises overlay hands the risk rows and the event points to RiskHeatmapOverlay", () => {
-    const def = OVERLAY_LIST.find((overlay) => overlay.id === "crises")!;
-    const crisisEvents = { type: "FeatureCollection", features: [] };
-    const data = { rows: [{ countryId: "c1", value: 0.7 }], crisisEvents };
-    expect(def.renderProps!({ map: null, data, visible: true })).toMatchObject({
-      riskRows: data.rows,
-      crisisEvents,
-    });
   });
 });

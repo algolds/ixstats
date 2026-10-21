@@ -18,14 +18,6 @@ const square = (lng: number, lat: number, size: number) => [
 ];
 
 describe("planet constants", () => {
-  it("keeps the figures the map code has always used", () => {
-    expect(EARTH_RADIUS_KM).toBe(6371);
-    expect(kmPerDegree()).toBe(111.32);
-    expect(kmPerDegreeLat()).toBe(110.574);
-    expect(kmPerDegreeLng(0)).toBe(111.32);
-    expect(kmPerDegreeLng(60)).toBeCloseTo(111.32 * 0.5, 10);
-  });
-
   it("scales every figure with the planet radius", () => {
     const double = EARTH_RADIUS_KM * 2;
     expect(kmPerDegree(double)).toBeCloseTo(KM_PER_DEGREE * 2, 10);

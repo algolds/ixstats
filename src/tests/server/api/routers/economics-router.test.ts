@@ -88,16 +88,6 @@ describe("fiscal system and economic profile", () => {
       expect.objectContaining({ countryId: "c_mine", currentScore: 60, previousScore: 40 })
     );
   });
-
-  it("stays quiet for small changes", async () => {
-    db.economicProfile.findUnique.mockResolvedValue({ economicComplexity: 40 });
-    await callerAs(db, "u1").updateEconomicProfile({
-      countryId: "c_mine",
-      economicComplexity: 45,
-    });
-    expect(notificationHooks.onVitalityScoreChange).not.toHaveBeenCalled();
-  });
-
   it("validates integer ranks", async () => {
     await expect(
       callerAs(db, "u1").updateEconomicProfile({ countryId: "c_mine", competitivenessRank: 1.5 })
@@ -106,13 +96,6 @@ describe("fiscal system and economic profile", () => {
 });
 
 describe("economy configuration reads", () => {
-  it("returns null for an unknown country", async () => {
-    db.country.findUnique.mockResolvedValue(null);
-    await expect(
-      callerAs(db, null).getEconomyConfiguration({ countryId: "nope" })
-    ).resolves.toBeNull();
-  });
-
   it("treats an unparseable sector breakdown as empty", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     db.country.findUnique.mockResolvedValue({

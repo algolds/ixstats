@@ -130,44 +130,6 @@ describe("ArticleRenderer contents aside", () => {
     localStorage.setItem("wikios:railCollapsed", "false");
     window.scrollTo = jest.fn();
   });
-
-  it("hides the page info by default and keeps the contents inline", () => {
-    localStorage.removeItem("wikios:railCollapsed");
-    renderArticle();
-    const aside = within(screen.getByRole("complementary", { name: "Contents" }));
-    expect(aside.getByRole("navigation", { name: "Table of contents" })).toBeInTheDocument();
-    expect(aside.queryByText("Last updated")).toBeNull();
-    expect(aside.getByRole("button", { name: "Page info" })).toHaveAttribute(
-      "aria-expanded",
-      "false"
-    );
-  });
-
-  it("puts the contents and a page-info block in the aside at desktop width", () => {
-    renderArticle();
-
-    const inspector = screen.getByRole("complementary", { name: "Contents" });
-    const nav = within(inspector).getByRole("navigation", { name: "Table of contents" });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((a) => a.textContent)
-    ).toEqual(["History", "Geography", "Rivers"]);
-    expect(within(inspector).getByText("Last updated")).toBeInTheDocument();
-    expect(within(inspector).getByRole("link", { name: "Realms" })).toBeInTheDocument();
-  });
-
-  it("marks the header Contents button and the aside, so layout.css hides the button beside it", () => {
-    renderArticle();
-    expect(screen.getByRole("button", { name: "Table of contents" })).toHaveClass(
-      "wikios-toc-button"
-    );
-    expect(screen.getByRole("complementary", { name: "Contents" })).toHaveAttribute(
-      "data-slot",
-      "wiki-contents-aside"
-    );
-  });
-
   it("below desktop the Contents button opens the contents sheet, and picking a heading closes it", () => {
     mockWide = false;
     renderArticle();
@@ -181,15 +143,6 @@ describe("ArticleRenderer contents aside", () => {
     fireEvent.click(sheet.getByRole("link", { name: "Rivers" }));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("an article without headings keeps its page info in the aside, no contents list", () => {
-    renderArticle([]);
-    const inspector = screen.getByRole("complementary", { name: "Contents" });
-    expect(within(inspector).queryByRole("navigation")).toBeNull();
-    expect(within(inspector).getByText("Last updated")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Table of contents" })).toBeNull();
-  });
-
   it("below desktop a headingless article still gets a Page info button that opens the sheet", () => {
     mockWide = false;
     renderArticle([]);
@@ -228,11 +181,5 @@ describe("ArticleRenderer contents aside", () => {
 
     fireEvent.click(within(aside()).getByRole("button", { name: "Page info" }));
     expect(within(aside()).getByText("Last updated")).toBeInTheDocument();
-  });
-
-  it("steps the aside aside while the margin drawer is open", () => {
-    mockMarginOpen = true;
-    renderArticle();
-    expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
   });
 });

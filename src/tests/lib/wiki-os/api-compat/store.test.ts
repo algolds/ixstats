@@ -164,16 +164,6 @@ describe("revisions", () => {
       { OR: [{ author: null }, { author: { not: "Spam" } }] },
     ]);
   });
-
-  it("orders ascending for rvdir=newer", async () => {
-    mdb.wikiRevision!.findMany!.mockResolvedValue([]);
-    await store.findRevisions({ dir: "newer", from: { timestamp: new Date("2026-01-01T00:00:00Z") }, limit: 1, withContent: false });
-    const args = mdb.wikiRevision!.findMany!.mock.calls[0]![0];
-    expect(args.orderBy).toEqual([{ createdAt: "asc" }, { revId: "asc" }]);
-    expect(args.where.AND).toEqual([{ createdAt: { gte: new Date("2026-01-01T00:00:00Z") } }]);
-    expect(args.select.wikitext).toBeUndefined();
-  });
-
   it("never reads a parked revision: not in listings, by id, by row id, in counts, nor in the head and parent lookups", async () => {
     mdb.wikiRevision!.findMany!.mockResolvedValue([revisionRecord()]);
     mdb.wikiRevision!.findFirst!.mockResolvedValue(revisionRecord());

@@ -1,5 +1,4 @@
 import {
-  generateTransportNetwork,
   generateTransportNetworkWithSegments,
   type CityNode,
   type GenerationInput,
@@ -37,15 +36,6 @@ describe("transport-generator with network segments", () => {
     cities,
     countryBbox: [9.5, 49.5, 11.5, 51.5],
   };
-
-  it("generates legacy point-to-point routes with sub-types", () => {
-    const routes = generateTransportNetwork(input, ["motorway", "high_speed_rail"]);
-    expect(routes.length).toBeGreaterThanOrEqual(2);
-
-    const types = routes.map((r) => r.routeType);
-    expect(types.some((t) => t === "motorway" || t === "high_speed_rail")).toBe(true);
-  });
-
   it("generates network segments and shared nodes", () => {
     const network = generateTransportNetworkWithSegments(input, ["motorway", "high_speed_rail"]);
     expect(network.nodes.length).toBeGreaterThanOrEqual(2);

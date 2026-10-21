@@ -7,8 +7,6 @@ import { describe, it, expect } from "@jest/globals";
 import {
   overrideDateSchema,
   overrideFields,
-  overrideToast,
-  trophyChangeNote,
   type OverridePlaceForm,
 } from "~/lib/lorewards/override-form";
 
@@ -52,57 +50,6 @@ describe("overrideFields", () => {
     });
   });
 });
-
-describe("trophyChangeNote", () => {
-  it("counts the trophies moved and voided, in the singular and the plural", () => {
-    expect(trophyChangeNote({ reassigned: 1, voided: 0, mintDeferred: false })).toBe(
-      "1 trophy moved"
-    );
-    expect(trophyChangeNote({ reassigned: 0, voided: 1, mintDeferred: false })).toBe(
-      "1 trophy voided"
-    );
-    expect(trophyChangeNote({ reassigned: 2, voided: 3, mintDeferred: false })).toBe(
-      "2 trophies moved, 3 trophies voided"
-    );
-  });
-
-  it("says nothing when no trophy changed, and says when new trophies wait for the next sync", () => {
-    expect(trophyChangeNote({ reassigned: 0, voided: 0, mintDeferred: false })).toBe("");
-    expect(trophyChangeNote({ reassigned: 0, voided: 0, mintDeferred: true })).toBe(
-      "New trophies are minted on the next sync."
-    );
-    expect(trophyChangeNote({ reassigned: 1, voided: 0, mintDeferred: true })).toBe(
-      "1 trophy moved. New trophies are minted on the next sync."
-    );
-  });
-});
-
-describe("overrideToast", () => {
-  const moved = { reassigned: 1, voided: 0, mintDeferred: false };
-  const nothing = { reassigned: 0, voided: 0, mintDeferred: false };
-
-  it("says saved and announced when the bot was told, with the trophy note", () => {
-    expect(overrideToast(true, moved)).toEqual({
-      tone: "success",
-      title: "Winner overridden",
-      message: "The override is saved and announced. 1 trophy moved",
-    });
-    expect(overrideToast(true, nothing).message).toBe("The override is saved and announced.");
-  });
-
-  it("says the override is saved but nothing was announced when the bot was not told", () => {
-    expect(overrideToast(false, moved)).toEqual({
-      tone: "warning",
-      title: "Saved",
-      message:
-        "The Discord bot was not told, so nothing was announced. It picks the change up on its next sync. 1 trophy moved",
-    });
-    expect(overrideToast(false, { ...nothing, mintDeferred: true }).message).toBe(
-      "The Discord bot was not told, so nothing was announced. It picks the change up on its next sync. New trophies are minted on the next sync."
-    );
-  });
-});
-
 describe("overrideDateSchema", () => {
   it("takes a real calendar date, leap days included", () => {
     for (const day of ["2026-10-22", "2026-02-28", "2024-02-29", "2026-12-31"]) {

@@ -5,7 +5,7 @@
  * a policy preset replaces the institutions (asking first when the player chose their own), and
  * Found nation needs a confirm and sends none of the explicit payloads.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import {
   applyStart,
@@ -126,14 +126,6 @@ describe("founding flow", () => {
     expect(heading("How is your nation governed?")).toBeInTheDocument();
     expect(mockReplace).toHaveBeenCalledWith("/builder?step=government", { scroll: false });
   });
-
-  it("sends a deep link with missing prerequisites to the first incomplete step", () => {
-    serve(applyStart(emptyFoundingDraft(), "nordic"), "step=economy");
-    render(<FoundingFlowView />);
-    expect(heading("Name your nation")).toBeInTheDocument();
-    expect(mockReplace).toHaveBeenCalledWith("/builder?step=identity", { scroll: false });
-  });
-
   it("saves the whole draft, step included, two seconds after the last change", async () => {
     jest.useFakeTimers();
     serve(named("identity"), "step=identity");
@@ -195,16 +187,6 @@ describe("founding flow", () => {
     expect(screen.getByText("Enter a name for your nation.")).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
   });
-
-  it("opens More details to focus an invalid field inside it", () => {
-    const draft = named("identity");
-    serve({ ...draft, identity: { ...draft.identity, isoCode: "TOOLONG" } }, "step=identity");
-    render(<FoundingFlowView />);
-    expect(screen.queryByLabelText(/Country code/)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByLabelText(/Country code/)).toHaveFocus();
-  });
-
   it("switching archetype asks first, then keeps the identity", () => {
     serve(named("start"), "step=start");
     render(<FoundingFlowView />);

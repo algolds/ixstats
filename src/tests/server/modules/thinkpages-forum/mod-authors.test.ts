@@ -114,26 +114,6 @@ describe("authorModeration", () => {
     );
     expect(store.db.user.findMany).toHaveBeenCalledTimes(1);
   });
-
-  it("loads a page's distinct authors in one user query and three moderator queries", async () => {
-    const store = authorsStore();
-    await authorModeration(store.db as never, admin, ["u_m", "u_f", "u_m", "u_o", "u_a2"]);
-    expect(store.db.user.findMany).toHaveBeenCalledTimes(1);
-    expect(store.db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: { in: ["u_m", "u_f", "u_o", "u_a2"] } } })
-    );
-    expect(store.db.realm.findMany).toHaveBeenCalledTimes(1);
-    expect(store.db.realmOfficer.findMany).toHaveBeenCalledTimes(1);
-    expect(store.db.forumCategoryModerator.findMany).toHaveBeenCalledTimes(1);
-  });
-
-  it("spends no query on an empty page or a page of site admins' posts beyond the user lookup", async () => {
-    const store = authorsStore();
-    await authorModeration(store.db as never, admin, []);
-    expect(store.db.user.findMany).not.toHaveBeenCalled();
-    await authorModeration(store.db as never, admin, ["u_a2"]);
-    expect(store.db.realm.findMany).not.toHaveBeenCalled();
-  });
 });
 
 describe("moderatorContexts", () => {

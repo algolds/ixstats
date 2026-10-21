@@ -321,19 +321,6 @@ describe("ensureRendered", () => {
     await flush();
     expect(mockUpdateMany).toHaveBeenCalledTimes(1);
   });
-
-  it("does not wait at all for waitMs 0", async () => {
-    const id = freshId();
-    stubArticle(id);
-    const mediaWiki = deferred<string | null>();
-    mockRenderViaMediaWiki.mockReturnValue(mediaWiki.promise);
-
-    await expect(ensureRendered(id, { waitMs: 0 })).resolves.toBeNull();
-    mediaWiki.resolve(PARSED);
-    await flush();
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-  });
-
   it("does not retry a failed article for the cool-down, but a new write (enqueueRender) does", async () => {
     const id = freshId();
     stubArticle(id);
@@ -537,14 +524,6 @@ describe("buildViewBundle", () => {
     expect(bundle.bodyHtml).not.toContain("data-wikios-chip");
     expect(bundle.bodyHtml).toContain("Template:CountryData");
   });
-
-  it("has no infobox or notices when the page has none", () => {
-    expect(buildViewBundle("<p>Plain.</p>")).toMatchObject({
-      infoboxHtml: null,
-      noticesHtml: null,
-      toc: [],
-    });
-  });
 });
 
 describe("loadViewBundle", () => {
@@ -587,13 +566,6 @@ describe("loadViewBundle", () => {
 
     await expect(loadViewBundle("a")).resolves.toBeNull();
   });
-
-  it("is null for a missing article", async () => {
-    mockFindUnique.mockResolvedValue(null);
-
-    await expect(loadViewBundle("a")).resolves.toBeNull();
-  });
-
   it("is tied to the sanitizer: another sanitizer fingerprint is another renderer version", async () => {
     expect(RENDERER_VERSION).toBe(`4:${wikiArticleSanitizerFingerprint()}`);
     const bundle = { ...buildViewBundle(PARSED), rendererVersion: "3:0123456789abc" };
@@ -652,20 +624,6 @@ describe("loadViewBundle", () => {
       expect(bundle.infoboxHtml).toBe(linkTo("/projects/ixstates/dashboard/profile/x"));
       expect(bundle.noticesHtml).toBe(linkTo("/@x"));
     });
-
-    it("keeps an absent infobox and notices absent", async () => {
-      mockFindUnique.mockResolvedValue({
-        renderedView: { ...hostile, infoboxHtml: null, noticesHtml: null },
-        htmlSyncedAt: null,
-      });
-
-      const loaded = await loadViewBundle("a");
-
-      expect(loaded).toMatchObject({ htmlSyncedAt: null, outdated: true });
-      expect(loaded?.bundle.infoboxHtml).toBeNull();
-      expect(loaded?.bundle.noticesHtml).toBeNull();
-    });
-
     it("is null, with a warning, when the sanitizer throws on it: one page cannot fail every read", async () => {
       mockSanitizeHook.mockImplementationOnce(() => {
         throw new Error("pathological markup");

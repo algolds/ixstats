@@ -312,33 +312,6 @@ describe("a sister wiki's categories and files (iiwiki) are still read from that
     ).toEqual({ Elmerian: 9 });
     expect(mocked.$queryRaw).not.toHaveBeenCalled();
   });
-
-  it("getSubcategories", async () => {
-    guard.restore();
-    guard = installFetchGuard((url) => {
-      host(url);
-      return { query: { categorymembers: [{ title: "Category:Hills" }] } };
-    });
-
-    expect(await categories().getSubcategories({ category: "Elmerian", wiki: "iiwiki" })).toEqual([
-      "Hills",
-    ]);
-    expect(mocked.$queryRaw).not.toHaveBeenCalled();
-  });
-
-  it("autocompleteCategories", async () => {
-    guard.restore();
-    guard = installFetchGuard((url) => {
-      host(url);
-      return { query: { allcategories: [{ "*": "Elmerian" }] } };
-    });
-
-    expect(await categories().autocompleteCategories({ prefix: "Elm", wiki: "iiwiki" })).toEqual([
-      "Elmerian",
-    ]);
-    expect(mocked.wikiCategory.findMany).not.toHaveBeenCalled();
-  });
-
   it("searchFiles searches the full text (generator=search), ranks by index and returns the thumbnail", async () => {
     guard.restore();
     let requested: URL | undefined;

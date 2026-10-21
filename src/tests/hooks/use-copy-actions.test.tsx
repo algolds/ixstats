@@ -82,17 +82,4 @@ describe("useCopyActions", () => {
       expect(refreshCards()).not.toHaveBeenCalled();
     }
   );
-
-  it("says what each single action did", () => {
-    optionsOf("list").onSuccess(RESULTS.list);
-    optionsOf("breakDown").onSuccess(RESULTS.breakDown);
-    optionsOf("fuse").onSuccess(RESULTS.fuse);
-    optionsOf("sign").onSuccess(RESULTS.sign);
-    expect(jest.mocked(vaultNotify.success).mock.calls).toEqual([
-      ["Your copy is on the market.", "Listed"],
-      ["You got 50 dust.", "Broken down"],
-      ["Copy #4 is now Foil.", "Fused"],
-      ["Your inscription travels with this copy.", "Signed"],
-    ]);
-  });
 });

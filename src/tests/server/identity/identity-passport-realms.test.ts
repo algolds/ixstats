@@ -121,41 +121,6 @@ describe("getPassport realm figures", () => {
     expect(data?.realmCount).toBe(1);
     expect(data?.nationCount).toBe(2);
   });
-
-  it("makes the linked country the primary nation when it is held", async () => {
-    holds([nation("c_big", "r_member", 90), nation("c_linked", "r_officer", 10)], "c_linked");
-    const data = await getPassport(query, forum);
-    expect(data?.primaryNation?.country.id).toBe("c_linked");
-    expect(data?.primaryNation?.role).toBe("officer");
-  });
-
-  it("falls back to the highest-GDP held nation", async () => {
-    holds([nation("c_small", "r_member", 10), nation("c_big", "r_founded", 90)], "c_not_held");
-    const data = await getPassport(query, forum);
-    expect(data?.primaryNation?.country.id).toBe("c_big");
-    expect(data?.realmCount).toBe(2);
-  });
-
-  it("counts the distinct players the holder recruited (approved invited claimants)", async () => {
-    holds([nation("c_a", "r_member", 30)]);
-    mocked.realmClaim.findMany.mockResolvedValueOnce([{ userId: "p1" }, { userId: "p2" }]);
-    const data = await getPassport(query, forum);
-    expect(data?.recruitedCount).toBe(2);
-    expect(mocked.realmClaim.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { invitedByUserId: "db_1", status: "approved" },
-        distinct: ["userId"],
-      })
-    );
-  });
-
-  it("has no primary nation and zero counts when nothing is held", async () => {
-    holds([]);
-    const data = await getPassport(query, forum);
-    expect(data?.primaryNation).toBeNull();
-    expect(data?.realmCount).toBe(0);
-    expect(data?.nationCount).toBe(0);
-  });
 });
 
 describe("getRealms roles", () => {

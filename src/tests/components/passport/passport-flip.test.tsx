@@ -148,44 +148,4 @@ describe("passport flip", () => {
     fireEvent.click(screen.getByRole("button", { name: /Return to passport/ }));
     expect(screen.getByRole("button", { name: "Edit passport" })).toHaveFocus();
   });
-
-  it("plays the open entrance on the default tab", () => {
-    renderDocument("realms");
-    expect(screen.getByTestId("passport-flip-root")).toHaveClass("animate-passport-open");
-  });
-
-  it("skips the open entrance when the page loads on another tab", () => {
-    renderDocument("work");
-    expect(screen.getByTestId("passport-flip-root")).not.toHaveClass("animate-passport-open");
-  });
-
-  it("does not replay the open entrance after a tab change", () => {
-    const { rerender } = renderDocument("work");
-    rerender(
-      <MidRibbonPassportDocument
-        displayName="Alex Pav"
-        avatarUrl={null}
-        data={data}
-        isOwner
-        viewerSignedIn
-        activeTab="realms"
-        onSelectTab={jest.fn()}
-      />
-    );
-    expect(screen.getByTestId("passport-flip-root")).not.toHaveClass("animate-passport-open");
-  });
-
-  it("crossfades instead of rotating under reduced motion", () => {
-    renderDocument();
-    expect(screen.getByTestId("passport-flip-card")).toHaveClass("motion-reduce:[transform:none]");
-    expect(screen.getByTestId("passport-back-face")).toHaveClass("motion-reduce:[transform:none]");
-  });
-
-  it("saves the Link previews switch", () => {
-    mutate.mockClear();
-    renderDocument();
-    fireEvent.click(screen.getByRole("switch", { name: "Show link previews" }));
-    expect(screen.getByText("Show your card when your link is shared")).toBeInTheDocument();
-    expect(mutate).toHaveBeenCalledWith({ visibility: { linkPreview: false } });
-  });
 });

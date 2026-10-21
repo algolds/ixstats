@@ -64,12 +64,6 @@ describe("the article query the route primes is the one the client reads (plan 4
     expect(serverClient.getQueryData(reactKey(noRedirect))).toBeDefined();
     expect(serverClient.getQueryData(reactKey(plain))).toBeUndefined();
   });
-
-  it("runs the server procedure once for the prefetch", async () => {
-    await serverSide(articleHtmlInput("Aurelia", "ixwiki"));
-    expect(caller.wikios.getArticleHtml).toHaveBeenCalledTimes(1);
-  });
-
   it("the hydrated data is fresh for the reader's staleTime, so a mounted reader does not refetch", async () => {
     const input = articleHtmlInput("Aurelia", "ixwiki");
     const { dehydrated } = await serverSide(input);

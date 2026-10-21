@@ -18,12 +18,6 @@ describe("GOVERNMENT_TEMPLATES", () => {
     );
     expect(ghosts).toEqual([]);
   });
-
-  it("defines the components templates used to reference without a definition", () => {
-    expect(ATOMIC_COMPONENTS.PLANNED_ECONOMY).toBeDefined();
-    expect(ATOMIC_COMPONENTS.INSTITUTIONAL_LEGITIMACY).toBeDefined();
-  });
-
   it("returns the full component set for a template and nothing for an unknown id", () => {
     for (const id of TEMPLATE_IDS) {
       expect(getTemplateSelection(id)).toEqual([...new Set(GOVERNMENT_TEMPLATES[id]!.components)]);

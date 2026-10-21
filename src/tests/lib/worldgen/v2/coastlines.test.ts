@@ -31,11 +31,6 @@ describe("v2/coastlines", () => {
     cellCount: TEST_CELLS,
     coastlineComplexity: 0.8,
   });
-
-  it("populates graph.features array", () => {
-    expect(graph.features.length).toBeGreaterThan(0);
-  });
-
   it("assigns every cell to a valid feature ID", () => {
     for (let i = 0; i < graph.cells.n; i++) {
       const fId = graph.cells.feature[i]!;

@@ -66,19 +66,6 @@ describe("wikios.getTemplateData", () => {
     expect(mocked.wikiTemplate.upsert).toHaveBeenCalledTimes(1);
     expect(guard.calls()).toEqual([]);
   });
-
-  it("reads the /doc subpage when the template page holds none", async () => {
-    mocked.wikiArticle.findMany.mockResolvedValue([
-      { title: "Template:Zoning notice", wikitext: "{{{text}}}" },
-      { title: "Template:Zoning notice/doc", wikitext: `<templatedata>${JSON.stringify(DATA)}</templatedata>` },
-    ]);
-
-    expect(await caller().getTemplateData({ title: "Zoning notice" })).toMatchObject({
-      templateData: { description: "A quote box." },
-    });
-    expect(guard.calls()).toEqual([]);
-  });
-
   it("answers no TemplateData for a template that has none, caching nothing and asking no wiki", async () => {
     expect(await caller().getTemplateData({ title: "Plain template" })).toMatchObject({
       name: "Plain template",

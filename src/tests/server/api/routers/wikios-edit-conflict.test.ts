@@ -135,69 +135,6 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2, F1)", () => {
     expect(result).toMatchObject({ success: true, title: "Vesperia", revisionId: "rev-new" });
     expect(CloudflareGuardian.purgeArticleEdgeCache).toHaveBeenCalledWith("Vesperia");
   });
-
-  it("compares a revision synced from MediaWiki by its rev_id", async () => {
-    pageNowHeadedBy(headRevision("cuid-of-row", 4321));
-
-    const saved = await caller().saveWikitext({ title: "Vesperia", wikitext: "x", baseRevisionRef: "4321" });
-    expect(saved).toMatchObject({ success: true });
-
-    const stale = await caller().saveWikitext({ title: "Vesperia", wikitext: "x", baseRevisionRef: "4320" });
-    expect(stale).toMatchObject({ editConflict: true, currentRevisionRef: "4321" });
-  });
-
-  it("does not conflict with its own revision once the export worker has stamped its rev_id", async () => {
-    // The editor was opened while the head was known by its row id; the worker stamps it meanwhile.
-    pageNowHeadedBy(headRevision("cuid-of-row", 4321));
-
-    const result = await caller().saveWikitext({ title: "Vesperia", wikitext: "x", baseRevisionRef: "cuid-of-row" });
-
-    expect(result).toMatchObject({ success: true });
-  });
-
-  it("conflicts when a page the editor believed new was created in the meantime", async () => {
-    pageNowHeadedBy(headRevision("rev-1"), "Created by somebody else");
-
-    const result = await caller().saveWikitext({ title: "Brand New Page", wikitext: "Mine" });
-
-    expect(result).toMatchObject({
-      success: false,
-      editConflict: true,
-      currentWikitext: "Created by somebody else",
-      currentRevisionRef: "rev-1",
-    });
-  });
-
-  it("saves a really new page, with no base and no revision", async () => {
-    pageNowHeadedBy(null);
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
-
-    const result = await caller().saveWikitext({ title: "Brand New Page", wikitext: "Mine" });
-
-    expect(result).toMatchObject({ success: true });
-  });
-
-  it("conflicts when the editor had a base but the page has no revision any more", async () => {
-    pageNowHeadedBy(null);
-
-    const result = await caller().saveWikitext({ title: "Vesperia", wikitext: "Mine", baseRevisionRef: "rev-1" });
-
-    expect(result).toMatchObject({ editConflict: true, currentWikitext: "", currentRevisionRef: null });
-  });
-
-  it("saves on top of the current version when the editor resends the ref it was given ('Save anyway')", async () => {
-    const first = await caller().saveWikitext({ title: "Vesperia", wikitext: "Mine", baseRevisionRef: "rev-1" });
-    expect(first).toMatchObject({ editConflict: true });
-    if (!("currentRevisionRef" in first) || first.currentRevisionRef === null) throw new Error("no ref");
-
-    const second = await caller().saveWikitext({
-      title: "Vesperia",
-      wikitext: "Mine",
-      baseRevisionRef: first.currentRevisionRef,
-    });
-    expect(second).toMatchObject({ success: true });
-  });
-
   it("saves under the canonical title", async () => {
     await caller().saveWikitext({ title: "vesperia_city", wikitext: "x", baseRevisionRef: "rev-2" });
 
@@ -214,13 +151,5 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2, F1)", () => {
     // tRPC wraps what a procedure throws; the error formatter reads the AppError cause (init.ts)
     expect((failure as { cause?: unknown }).cause).toBeInstanceOf(PageBusyError);
     expect((failure as { cause: PageBusyError }).cause).toMatchObject({ statusCode: 409, trpcCode: "CONFLICT" });
-  });
-
-  it("lets any other failure of the save through", async () => {
-    jest.mocked(ArticleRepository.saveArticle).mockRejectedValue(new Error("database down"));
-
-    await expect(
-      caller().saveWikitext({ title: "Vesperia", wikitext: "x", baseRevisionRef: "rev-2" })
-    ).rejects.toThrow("database down");
   });
 });

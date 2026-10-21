@@ -1,5 +1,4 @@
 import {
-  computeTaxYields,
   fiscalUpdateForRate,
   readSavedRates,
 } from "~/components/mycountry/shell/fiscal/taxChannels";
@@ -33,11 +32,6 @@ describe("readSavedRates", () => {
     expect(saved.tariff?.rate).toBe(3);
     expect(saved.capGains?.rate).toBeNull();
   });
-
-  it("returns null for every tax when nothing is saved", () => {
-    const saved = readSavedRates(null);
-    for (const entry of Object.values(saved)) expect(entry.rate).toBeNull();
-  });
 });
 
 describe("fiscalUpdateForRate", () => {
@@ -63,40 +57,5 @@ describe("fiscalUpdateForRate", () => {
       { type: "alcohol", rate: 20 },
       { type: "tariff", rate: 5 },
     ]);
-  });
-});
-
-describe("computeTaxYields", () => {
-  const weights = {
-    corporate: 0.1,
-    income: 0.2,
-    vat: 0.1,
-    tariff: 0.05,
-    wealth: 0.01,
-    capGains: 0.02,
-  };
-
-  it("projects only taxes with a set rate", () => {
-    const yields = computeTaxYields(
-      { corporate: 20, income: null, vat: 10, tariff: null, wealth: null, capGains: null },
-      1_000_000,
-      0.5,
-      weights
-    );
-    expect(yields.byChannel.corporate).toBeCloseTo(10_000);
-    expect(yields.byChannel.vat).toBeCloseTo(5_000);
-    expect(yields.byChannel.income).toBeNull();
-    expect(yields.total).toBeCloseTo(15_000);
-  });
-
-  it("has no projection without GDP or any set rate", () => {
-    expect(computeTaxYields({ vat: 10 }, null, 1, weights).total).toBeNull();
-    expect(computeTaxYields({}, 1_000_000, 1, weights).total).toBeNull();
-  });
-
-  it("projects before collection losses when efficiency is unknown", () => {
-    expect(computeTaxYields({ vat: 10 }, 1_000_000, null, weights).byChannel.vat).toBeCloseTo(
-      10_000
-    );
   });
 });

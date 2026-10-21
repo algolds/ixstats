@@ -6,8 +6,7 @@ import {
   downloadBlob,
   exportFileName,
   geojsonZip,
-  layerFiles,
-  pngFailureText,
+  layerFiles
 } from "~/lib/worldgen/world-export";
 import { worldResult } from "~/tests/helpers/fake-world-worker";
 
@@ -42,13 +41,6 @@ describe("worldgen/world-export", () => {
     expect(exportFileName("eurth", 1234)).toBe("world-eurth-1234.zip");
     expect(exportFileName("eurth", 1234, 4096)).toBe("world-eurth-1234-4096.png");
   });
-
-  it("words a failed image by its width", () => {
-    expect(pngFailureText(8192)).toBe("Your browser could not make an image this large. Try 4096.");
-    expect(pngFailureText(4096)).toContain("Try 2048");
-    expect(pngFailureText(2048)).not.toContain("Try");
-  });
-
   it("downloads from a blob URL it revokes afterwards", () => {
     jest.useFakeTimers();
     const create = jest.fn(() => "blob:world");

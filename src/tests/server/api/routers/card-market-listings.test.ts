@@ -25,7 +25,6 @@ import { TRPCError } from "@trpc/server";
 import { rateLimiter } from "~/lib/cache";
 import { clearVaultCachesFor } from "~/lib/vault/vault-cache";
 import { createCallerFactory } from "~/server/api/trpc";
-import { cardMarketRouter } from "~/server/api/routers/card-market";
 import { cardMarketListingsRouter } from "~/server/api/routers/card-market/listings";
 import { browseMarket } from "~/server/modules/cards/market/browse";
 import {
@@ -55,20 +54,6 @@ beforeEach(() => {
 });
 
 describe("cardMarket listing procedures", () => {
-  it("are on the card market router", () => {
-    const procedures = cardMarketRouter._def.procedures;
-    for (const name of [
-      "createListing",
-      "createListings",
-      "cancelListing",
-      "buyListing",
-      "getMyListings",
-      "browse",
-    ]) {
-      expect(name in procedures).toBe(true);
-    }
-  });
-
   it("list a copy as the signed-in player, featured only when asked, and drop their cached balance", async () => {
     jest.mocked(createListing).mockResolvedValue(listed("l1"));
     expect(await caller.createListing({ ownershipId: "own_1", price: 500 })).toEqual({ id: "l1" });

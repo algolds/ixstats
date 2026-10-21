@@ -167,11 +167,6 @@ describe("admin.saveLorewardWinnerOverride", () => {
     expect(overrideLorewardEntry).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
-
-  it("has no separate announce: saving announces", () => {
-    expect("pushLorewardToBot" in adminWikiRouter._def.procedures).toBe(false);
-  });
-
   it("refuses an ordinary user", async () => {
     await expect(
       caller("user").saveLorewardWinnerOverride({

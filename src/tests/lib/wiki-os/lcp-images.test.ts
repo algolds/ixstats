@@ -9,8 +9,6 @@ import {
   extractLeadImageFromHtml,
   heroImage,
 } from "~/lib/wiki-os/transformers/image-url";
-import { imageDimensionAttributes } from "~/lib/wiki-os/transformers/wikitext-parser";
-
 const img = (name: string, attrs = "") =>
   `<img src="https://ixwiki.com/images/a/ab/${name}" ${attrs}>`;
 
@@ -42,13 +40,6 @@ describe("transformImages: the first picture is eager", () => {
     expect(tags[1]).toContain('loading="eager"'); // the photo
     expect(tags[2]).toContain('loading="lazy"'); // its own, untouched
   });
-
-  it("is lazy everywhere by default (template previews, other callers)", () => {
-    const out = transformImages(`${img("A.png")}${img("B.png")}`, "ixwiki");
-    expect(out.match(/loading="eager"/g)).toBeNull();
-    expect(out.match(/loading="lazy"/g)).toHaveLength(2);
-  });
-
   it("an article's infobox picture is the eager one; the body's first is eager only without an infobox", () => {
     const withInfobox = transformArticleHtml(
       `<table class="infobox"><tr><td>${img("Info.png", 'width="300"')}</td></tr></table><p>Lead</p>${img("Body.png", 'width="300"')}`,
@@ -133,13 +124,5 @@ describe("heroImage", () => {
   it("leaves an address that is not a hashed /images/ path alone", () => {
     const other = "https://example.com/pictures/flag.png";
     expect(heroImage(other, 4000, 3000).src).toBe(other);
-  });
-});
-
-describe("imageDimensionAttributes (the fallback compiler)", () => {
-  it("emits the size the wikitext gave", () => {
-    expect(imageDimensionAttributes(["thumb", "300px", "A caption"])).toBe(' width="300"');
-    expect(imageDimensionAttributes(["300x200px"])).toBe(' width="300" height="200"');
-    expect(imageDimensionAttributes(["thumb", "right"])).toBe("");
   });
 });

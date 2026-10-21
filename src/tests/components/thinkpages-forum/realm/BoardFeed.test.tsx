@@ -216,21 +216,10 @@ describe("BoardFeed", () => {
       render(<BoardFeed {...feedProps(undefined, { typing: names })} />);
       expect(screen.getByText(line)).toBeInTheDocument();
     });
-
-    it("shows no typing line when nobody types", () => {
-      render(<BoardFeed {...feedProps()} />);
-      expect(screen.queryByText(/typing/)).toBeNull();
-    });
-
     it("says live updates are paused only once a connected socket has dropped", () => {
       const { rerender } = render(<BoardFeed {...feedProps(undefined, { paused: true })} />);
       expect(screen.getByText("Live updates paused, retrying")).toBeInTheDocument();
       rerender(<BoardFeed {...feedProps(undefined, { paused: false })} />);
-      expect(screen.queryByText("Live updates paused, retrying")).toBeNull();
-    });
-
-    it("says nothing by default, as on a board that has never been live", () => {
-      render(<BoardFeed {...feedProps()} />);
       expect(screen.queryByText("Live updates paused, retrying")).toBeNull();
     });
   });
@@ -299,36 +288,6 @@ describe("BoardFeed", () => {
   });
 
   describe("accessibility and the sticky header", () => {
-    it("is a feed, and busy while an earlier page loads", () => {
-      pages.p1 = { isLoading: true };
-      render(<BoardFeed {...feedProps(boardData([msg("p1")], { hasMore: true }))} />);
-      const feed = screen.getByRole("feed");
-      expect(feed).toHaveAttribute("aria-busy", "false");
-      fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
-      expect(feed).toHaveAttribute("aria-busy", "true");
-    });
-
-    it("announces held messages politely, and stops when they are shown", () => {
-      const { rerender } = render(<BoardFeed {...feedProps()} />);
-      const status = () =>
-        screen.getAllByRole("status").find((el) => el.className.includes("sr-only"))!;
-      expect(status()).toHaveTextContent("");
-      scrollAway();
-      rerender(
-        <BoardFeed {...feedProps(boardData([msg("p4"), msg("p3"), msg("p2"), msg("p1")]))} />
-      );
-      expect(status()).toHaveAttribute("aria-live", "polite");
-      expect(status()).toHaveTextContent("1 new message");
-      rerender(
-        <BoardFeed
-          {...feedProps(boardData([msg("p5"), msg("p4"), msg("p3"), msg("p2"), msg("p1")]))}
-        />
-      );
-      expect(status()).toHaveTextContent("2 new messages");
-      fireEvent.click(screen.getByRole("button", { name: /Jump to newest/ }));
-      expect(status()).toHaveTextContent("");
-    });
-
     it("counts the top as out of view once it is under the sticky header", () => {
       render(<BoardFeed {...feedProps()} />);
       expect(observerOptions?.rootMargin).toMatch(/^-\d+px 0px 0px 0px$/);

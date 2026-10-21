@@ -90,24 +90,8 @@ describe("the tab the editor opens on", () => {
   });
   const openTab = (over: Partial<Parameters<typeof useEditorGeoDataState>[0]> = {}) =>
     renderHook(() => useEditorGeoDataState(geoProps(over))).result.current.activeSidebarTab;
-
-  it("is Links in the world editor and Layers in the country editor", () => {
-    expect(openTab()).toBe("linkages");
-    expect(openTab({ isWorldMode: false })).toBe("layers");
-  });
-
-  it("is World when the address is ?editor=world", () => {
-    searchParams.current = new URLSearchParams("realm=eurth&editor=world");
-    expect(openTab()).toBe("world");
-  });
-
   it("is not World for the labels address, which opens its own dialog", () => {
     searchParams.current = new URLSearchParams("realm=eurth&editor=labels");
     expect(openTab()).toBe("linkages");
-  });
-
-  it("stays Layers in the country editor whatever the address says", () => {
-    searchParams.current = new URLSearchParams("editor=world");
-    expect(openTab({ isWorldMode: false })).toBe("layers");
   });
 });

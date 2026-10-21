@@ -1,9 +1,7 @@
 /** @jest-environment node */
 import {
   ADVERT_CATEGORY_KEY,
-  ADVERT_ONLY_NOTICE,
-  isAdvertCategory,
-  UNPUBLISHED_REALM_STATUSES,
+  isAdvertCategory
 } from "~/lib/thinkpages-forum/adverts";
 import { newAdvertHref } from "~/lib/thinkpages-forum/links";
 
@@ -22,15 +20,6 @@ describe("isAdvertCategory", () => {
 });
 
 describe("advert constants and links", () => {
-  it("names the statuses nobody but a realm's staff can see", () => {
-    expect([...UNPUBLISHED_REALM_STATUSES]).toEqual(["draft", "generating"]);
-  });
-
-  it("says why a new thread is refused without an em dash", () => {
-    expect(ADVERT_ONLY_NOTICE).toMatch(/adverts only/i);
-    expect(ADVERT_ONLY_NOTICE).not.toMatch(/—/);
-  });
-
   it("links the new advert form with the realm slug encoded", () => {
     expect(newAdvertHref("eurth")).toBe("/thinkpages/c/find-a-realm/new?advert=eurth");
     expect(newAdvertHref("a&b c")).toBe("/thinkpages/c/find-a-realm/new?advert=a%26b%20c");

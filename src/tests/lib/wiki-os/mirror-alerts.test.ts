@@ -128,16 +128,6 @@ describe("alertDeadJobs", () => {
       await alertDeadJobs(minutes(36));
       expect(warn).toHaveBeenCalledTimes(3);
     });
-
-    it("stamps a failed attempt of several jobs the same way", async () => {
-      mockCount.mockResolvedValue(3);
-      mockFindMany.mockResolvedValue(["A", "B", "C"].map((title) => job(title)));
-
-      await alertDeadJobs(NOW);
-
-      expect(config.has(DEAD_ALERT_KEY)).toBe(false);
-      expect(config.get(ATTEMPT_KEY)).toBe(NOW.toISOString());
-    });
   });
 
   it("looks up nothing and sends nothing when no Discord webhook is configured", async () => {

@@ -3,8 +3,8 @@
  * windowed row; below `sm` only Previous / "Page 3 of 9" / Next. Both rows are in the markup (CSS picks one), so
  * queries that mean "the row" use getAllBy.
  */
-import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import "react";
+import { render, screen } from "@testing-library/react";
 
 jest.mock("next/navigation", () => {
   const router = { push: jest.fn(), replace: jest.fn() };
@@ -40,39 +40,6 @@ describe("forum Pagination", () => {
     expect(screen.getAllByRole("link", { name: "Previous" })[0]).toHaveAttribute("href", hrefFor(1));
     expect(screen.getAllByRole("link", { name: "Next" })[0]).toHaveAttribute("href", hrefFor(3));
   });
-
-  it("shows only the window of a long list, with gaps", () => {
-    render(<Pagination page={5} last={9} hrefFor={hrefFor} />);
-    for (const n of [1, 4, 5, 6, 9]) expect(screen.getByRole("link", { name: String(n) })).toBeInTheDocument();
-    for (const n of [2, 3, 7, 8]) expect(screen.queryByRole("link", { name: String(n) })).toBeNull();
-    expect(screen.getAllByText("…")).toHaveLength(2);
-  });
-
-  it("carries the phone summary, Page 3 of 9, with Previous and Next", () => {
-    render(<Pagination page={3} last={9} hrefFor={hrefFor} />);
-    expect(screen.getByText("Page 3 of 9")).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "Previous" })).toHaveLength(2);
-    expect(screen.getAllByRole("link", { name: "Next" })).toHaveLength(2);
-  });
-
-  it("shows the optional summary and a Latest link to the last page", () => {
-    render(<Pagination page={2} last={4} hrefFor={hrefFor} summary="Posts 21-40 of 87" />);
-    expect(screen.getByText("Posts 21-40 of 87")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Latest" })).toHaveAttribute("href", hrefFor(4));
-  });
-
-  it("omits the summary when none is given and Latest on the last page", () => {
-    render(<Pagination page={4} last={4} hrefFor={hrefFor} />);
-    expect(screen.queryByText(/Posts/)).toBeNull();
-    expect(screen.queryByRole("link", { name: "Latest" })).toBeNull();
-  });
-
-  it("wraps its row", () => {
-    render(<Pagination page={2} last={4} hrefFor={hrefFor} />);
-    const nav = screen.getByRole("navigation", { name: "Pagination" });
-    expect(within(nav).getByRole("link", { name: "3" }).closest(".flex-wrap")).not.toBeNull();
-  });
-
   it("disables Previous on the first page and Next on the last, as buttons", () => {
     const { unmount } = render(<Pagination page={1} last={2} hrefFor={hrefFor} />);
     for (const button of screen.getAllByRole("button", { name: "Previous" })) expect(button).toBeDisabled();

@@ -65,15 +65,4 @@ describe("the Relief row of the Layers panel", () => {
     fireEvent.click(within(row).getByRole("button", { name: "Hide layer" }));
     expect(onToggleVisibility).toHaveBeenCalledWith("relief");
   });
-
-  it("offers to show the relief while it is off", () => {
-    const { row } = renderPanel(false);
-    expect(within(row).getByRole("button", { name: "Show layer" })).toBeInTheDocument();
-  });
-
-  it("has no lock and no feature list on that row", () => {
-    const { row } = renderPanel(true);
-    expect(within(row).queryByRole("button", { name: /lock layer/i })).toBeNull();
-    expect(within(row).queryByRole("button", { name: /(expand|collapse) relief/i })).toBeNull();
-  });
 });

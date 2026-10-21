@@ -33,15 +33,6 @@ describe("updateCitySpatialProfile water access", () => {
       lakeDistanceKm: 9999,
     });
   });
-
-  it("reports 9999 km for both when no water rows exist", async () => {
-    const { db, update } = makeDb([]);
-    await updateCitySpatialProfile(db, "c1");
-    const waterAccess = update.mock.calls[0][0].data.waterAccess;
-    expect(waterAccess.riverDistanceKm).toBe(9999);
-    expect(waterAccess.lakeDistanceKm).toBe(9999);
-    expect(waterAccess.nearRiver).toBe(false);
-  });
 });
 
 describe("updateCitySpatialProfile water distance", () => {

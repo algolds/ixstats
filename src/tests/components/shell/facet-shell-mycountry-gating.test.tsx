@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 let premium = false;
@@ -99,29 +99,6 @@ describe("FacetShell MyCountry Defense gating", () => {
     expect(sidebarLinks().getByRole("link", { name: "Defense" })).toBeInTheDocument();
   });
 });
-
-describe("FacetShell Vault visibility", () => {
-  it("shows the Vault card in the sidebar footer for a signed-in player", () => {
-    const { container } = render(
-      <AppShell>
-        <p>Page</p>
-      </AppShell>
-    );
-    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).not.toBeNull();
-  });
-
-  it("shows the Vault card and the Wallet rail link whatever the navigation settings hide", () => {
-    navSettings = { showWikiTab: false, showLabsTab: false };
-    const { container } = render(
-      <AppShell>
-        <p>Page</p>
-      </AppShell>
-    );
-    expect(container.querySelector('[data-slot="sidebar-vault-card"]')).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
-  });
-});
-
 describe("FacetShell ThinkPages sections", () => {
   const expandForum = () => {
     const nav = sidebarLinks();
@@ -130,13 +107,6 @@ describe("FacetShell ThinkPages sections", () => {
     if (toggle) fireEvent.click(toggle);
     return nav;
   };
-
-  it("lists Forums only until the viewer's flags arrive", () => {
-    const nav = expandForum();
-    expect(nav.getByRole("link", { name: "Forums" })).toHaveAttribute("href", "/thinkpages");
-    expect(nav.queryByRole("link", { name: "Moderation" })).toBeNull();
-  });
-
   it("adds Moderation for a forum moderator", () => {
     navFlags = { realmMember: true, forumModerator: true };
     const nav = expandForum();

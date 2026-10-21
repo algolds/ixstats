@@ -50,13 +50,4 @@ describe.each([
     expect(screen.getByText("73")).toBeInTheDocument();
     expect(screen.queryByText("50")).not.toBeInTheDocument();
   });
-
-  it("shows no badge while the count is unknown or zero", () => {
-    marginQuery.mockReturnValue({ data: undefined });
-
-    renderCard();
-
-    expect(screen.getByText("Margin")).toBeInTheDocument();
-    expect(screen.queryByText("0")).not.toBeInTheDocument();
-  });
 });

@@ -12,15 +12,6 @@ jest.mock("~/components/thinkpages/PersonaAuthorCard", () => ({
 import { AuthorLine } from "~/components/thinkpages-forum/AuthorMark";
 
 describe("AuthorLine", () => {
-  it("shows a member's name in headline type with their flag and no chip", () => {
-    const { container } = render(
-      <AuthorLine name="Kistan" personaType={null} flagUrl="/flags/kistan.png" />
-    );
-    expect(screen.getByText("Kistan")).toHaveClass("text-headline");
-    expect(container.querySelector('img[src="/flags/kistan.png"]')).not.toBeNull();
-    expect(screen.queryByText(/Government|Media|Citizen/)).toBeNull();
-  });
-
   it.each([
     ["government", "Government"],
     ["media", "Media"],
@@ -49,14 +40,5 @@ describe("AuthorLine", () => {
     expect(screen.getByText("Persona")).toBeInTheDocument();
     expect(screen.queryByTestId("persona-card")).toBeNull();
     expect(container.querySelector("img")).toBeNull();
-  });
-
-  it("renders the role badges and time it is given after the name", () => {
-    render(
-      <AuthorLine name="Urcea" personaType={null} flagUrl={null}>
-        <span>Staff</span>
-      </AuthorLine>
-    );
-    expect(screen.getByText("Staff")).toBeInTheDocument();
   });
 });

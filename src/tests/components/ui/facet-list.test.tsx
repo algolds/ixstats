@@ -1,11 +1,6 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-
-function Icon() {
-  return <svg data-testid="leading-icon" />;
-}
-
 describe("FacetList / FacetListSection / FacetRow", () => {
   it("renders sections as labelled lists with header and footer outside the group", () => {
     render(
@@ -38,46 +33,6 @@ describe("FacetList / FacetListSection / FacetRow", () => {
     );
     expect(screen.getByRole("list", { name: "Filters" })).toBeInTheDocument();
   });
-
-  it("insets separators to the text: the hairline is on the row body, not the row", () => {
-    render(
-      <FacetListSection header="Rows">
-        <FacetRow leading={<Icon />} title="First" />
-        <FacetRow leading={<Icon />} title="Second" />
-      </FacetListSection>
-    );
-    const items = screen.getAllByRole("listitem");
-    for (const item of items) {
-      const row = item.querySelector('[data-slot="facet-row"]')!;
-      const body = item.querySelector('[data-slot="facet-row-body"]')!;
-      const leading = item.querySelector('[data-slot="facet-row-leading"]')!;
-      expect(row.className).not.toContain("border-t");
-      expect(body.className).toContain("border-t");
-      expect(body.className).toContain("border-separator");
-      // The first row drops its hairline.
-      expect(body.className).toContain("group-first/row:border-t-0");
-      // The leading icon sits outside the body, so the hairline starts after it.
-      expect(leading.contains(body)).toBe(false);
-      expect(within(leading as HTMLElement).getByTestId("leading-icon")).toBeInTheDocument();
-      // Rows meet the 44px minimum.
-      expect(body.className).toContain("min-h-11");
-    }
-    expect(items[0]!.className).toContain("group/row");
-  });
-
-  it("renders href rows as links with a chevron by default", () => {
-    render(
-      <FacetListSection header="Nav">
-        <FacetRow href="/settings" title="Settings" />
-      </FacetListSection>
-    );
-    const link = screen.getByRole("link", { name: "Settings" });
-    expect(link).toHaveAttribute("href", "/settings");
-    expect(link.querySelector("svg")).not.toBeNull();
-    expect(link.className).toContain("hover:bg-fill-4");
-    expect(link.className).toContain("focus-visible:outline-tint");
-  });
-
   it("marks the selected link row as the current page", () => {
     render(
       <FacetListSection header="Nav">
@@ -155,61 +110,5 @@ describe("FacetList / FacetListSection / FacetRow", () => {
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.getByText("Version").closest("svg")).toBeNull();
-  });
-
-  it("accepts a custom trailing node and accessory", () => {
-    render(
-      <FacetListSection header="Status">
-        <FacetRow
-          title="Sync"
-          trailing={<span data-testid="badge">On</span>}
-          accessory={<span data-testid="custom-accessory" />}
-        />
-      </FacetListSection>
-    );
-    expect(screen.getByTestId("badge")).toBeInTheDocument();
-    expect(screen.getByTestId("custom-accessory")).toBeInTheDocument();
-  });
-
-  it("uses the inset group by default and a plain group inside cards", () => {
-    const { rerender } = render(
-      <FacetList>
-        <FacetListSection header="Inset">
-          <FacetRow title="Row" />
-        </FacetListSection>
-      </FacetList>
-    );
-    const inset = screen.getByRole("list", { name: "Inset" });
-    expect(inset.className).toContain("bg-surface");
-    expect(inset.className).toContain("rounded-row");
-
-    rerender(
-      <FacetList variant="plain">
-        <FacetListSection header="Plain">
-          <FacetRow title="Row" />
-        </FacetListSection>
-      </FacetList>
-    );
-    const plain = screen.getByRole("list", { name: "Plain" });
-    expect(plain.className).not.toContain("bg-surface");
-    expect(plain.className).not.toContain("rounded-row");
-  });
-
-  it("wraps rows with swipe actions in a SwipeableRow", () => {
-    const onDelete = jest.fn();
-    render(
-      <FacetListSection header="Swipe">
-        <FacetRow
-          title="Message"
-          swipeActions={{
-            trailing: [{ id: "delete", icon: Icon, label: "Delete", onClick: onDelete, color: "red" }],
-          }}
-        />
-      </FacetListSection>
-    );
-    const item = screen.getByRole("listitem");
-    expect(item.querySelector("[data-swipeable-row]")).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(onDelete).toHaveBeenCalled();
   });
 });

@@ -57,27 +57,6 @@ describe("recent and paused pages remember their wiki (ruling E-l″)", () => {
       { title: "Gallambria", source: "iiwiki" },
     ]);
   });
-
-  it("reopening a recent iiwiki page goes to its read view on iiwiki", () => {
-    const { result } = renderHook(() => useWikiContext(), { wrapper });
-    act(() => result.current.setWikiPage("Portal:Eurth", [], null, "iiwiki"));
-
-    act(() => result.current.restoreSession());
-    expect(mockPush).toHaveBeenLastCalledWith("/wiki/Portal%3AEurth?source=iiwiki");
-
-    act(() => result.current.restoreSession({ title: "Portal:Eurth", source: "iiwiki" }));
-    expect(mockPush).toHaveBeenLastCalledWith("/wiki/Portal%3AEurth?source=iiwiki");
-  });
-
-  it("a recent entry saved before sources were recorded (a bare title) reopens on IxWiki as before", () => {
-    sessionStorage.setItem("wikios:recentArticles", JSON.stringify(["Aurelia"]));
-    const { result } = renderHook(() => useWikiContext(), { wrapper });
-    expect(result.current.recentArticles).toEqual([{ title: "Aurelia" }]);
-
-    act(() => result.current.restoreSession());
-    expect(mockPush).toHaveBeenCalledWith("/wiki/Aurelia");
-  });
-
   it("reading progress on an iiwiki page is saved with its wiki", () => {
     jest.useFakeTimers();
     try {

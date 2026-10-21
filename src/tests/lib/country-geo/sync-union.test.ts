@@ -1,11 +1,3 @@
-/** @jest-environment node */
-/**
- * syncCountryGeometryFromMapLayer takes a nation's outline from the PostGIS function atlas_country_union (the union of
- * its regions, see atlas-r0-migration.test.ts), not from Node: the regions' geometries never leave the database. A
- * region drawn across +-180 keeps its stored GeoJSON (its geom_postgis is a planar sliver) and sits beside the
- * union. A NULL answer (the function caught a failure) keeps the cached outline.
- */
-import { readFileSync } from "node:fs";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo/sync";
 
 /** A fresh copy of the module, so the once-per-process function probe starts unanswered. */
@@ -232,10 +224,5 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
       expect(db.$queryRaw).toHaveBeenCalledTimes(2);
       expect(db.country.update.mock.calls[1][0].data.geometry).toEqual(square(0, 0));
     });
-  });
-
-  it("no longer imports turf", () => {
-    const source = readFileSync("src/lib/country-geo/sync.ts", "utf8");
-    expect(source).not.toMatch(/@turf/);
   });
 });

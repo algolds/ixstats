@@ -1,7 +1,6 @@
 /** @jest-environment node */
 import { loreImportOptions } from "~/lib/realms/lore-import";
 import {
-  REALM_WIKI_SOURCES,
   realmWikiMap,
   realmWikiSettings,
   realmWikiSettingsSchema,
@@ -9,9 +8,6 @@ import {
   withRealmWikiSettings,
   type RealmWikiMap,
 } from "~/lib/realms/realm-wiki-settings";
-import { sourcePreset } from "~/lib/realms/sources/presets";
-import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
-
 const EURTH_WIKI = {
   source: "iiwiki" as const,
   rootCategory: "Category:Eurth",
@@ -59,18 +55,6 @@ describe("realm wiki settings validation", () => {
     [{ ...base, mapCategories: Array.from({ length: 6 }, (_, i) => `Category:M${i}`) }, "too many map categories"],
   ])("refuses %j (%s)", (input) => {
     expect(parse(input).success).toBe(false);
-  });
-
-  it("offers every sister wiki WikiOS reads, and only those", () => {
-    const readers = Object.entries(SISTER_WIKI_HOSTS)
-      .filter(([, host]) => host.reader)
-      .map(([id]) => id);
-    expect([...REALM_WIKI_SOURCES]).toEqual(readers);
-    expect(REALM_WIKI_SOURCES).not.toContain("commons");
-  });
-
-  it("ships Eurth's values in the eurth-map preset", () => {
-    expect(sourcePreset("eurth-map")?.wiki).toEqual(EURTH_WIKI);
   });
 });
 

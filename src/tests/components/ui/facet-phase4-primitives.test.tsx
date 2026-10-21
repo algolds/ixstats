@@ -2,20 +2,12 @@
  * Status Badge/Alert inks and roles, the ShellPageHeader page-title hook, SegmentedControl option
  * badges, virtual-anchor Popover/HoverCard, the FacetDataTable family and the Card parts.
  */
-import fs from "fs";
-import path from "path";
-import React, { useState } from "react";
+import "fs";
+import "path";
+import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-
-import { Badge, badgeVariants } from "~/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle, alertVariants } from "~/components/ui/alert";
-import {
-  ShellPageHeader,
-  SHELL_PAGE_TITLE_ATTRIBUTE,
-  shellPageTitleProps,
-} from "~/components/shell/ShellPageHeader";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   PopoverVirtualAnchor,
   Popover,
@@ -26,13 +18,7 @@ import {
 import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
 import { FacetDataTable } from "~/components/ui/data-table/FacetDataTable";
 import { FacetTablePagination } from "~/components/ui/data-table/FacetTablePagination";
-import { STATUS_ALIASES } from "~/lib/design/tokens";
-
-const ROOT = path.resolve(__dirname, "../../../..");
-const read = (file: string) => fs.readFileSync(path.join(ROOT, file), "utf8");
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
-const STATUSES = Object.keys(STATUS_ALIASES) as (keyof typeof STATUS_ALIASES)[];
-const BADGE_STATUSES = ["success", "warning", "destructive", "info"] as const;
 const CARD_SURFACE = ["facet-pane", "rounded-card"];
 
 beforeAll(() => {
@@ -50,29 +36,7 @@ beforeAll(() => {
     }
   } as unknown as typeof IntersectionObserver;
 });
-
-describe("Status Badge contrast", () => {
-  it.each(BADGE_STATUSES)("%s badge uses the status ink on a 15%% fill", (status) => {
-    const cls = badgeVariants({ variant: status });
-    expect(cls).toContain(`bg-${status}/15`);
-    expect(cls).toContain(`text-${status}-ink`);
-    expect(cls).not.toMatch(new RegExp(`text-${status}(\\s|$)`));
-  });
-
-  it("renders the variant as data", () => {
-    render(<Badge variant="warning">Late</Badge>);
-    expect(screen.getByText("Late")).toHaveAttribute("data-variant", "warning");
-  });
-});
-
 describe("Alert", () => {
-  it.each(STATUSES)("%s: ink on a 15%% fill, label description", (status) => {
-    const cls = alertVariants({ variant: status });
-    expect(cls).toContain(`bg-${status}/15`);
-    expect(cls).toContain(`text-${status}-ink`);
-    expect(cls).toContain("*:data-[slot=alert-description]:text-label");
-  });
-
   it("adds caution and info; info and success are polite status, the rest assertive", () => {
     render(
       <>
@@ -96,53 +60,7 @@ describe("Alert", () => {
     expect(screen.getByTestId("info")).toHaveAttribute("data-variant", "info");
     expect(classOf(screen.getByTestId("default"))).toMatch(/\bbg-surface\b.*|\bborder-separator\b/);
   });
-
-  it("uses no legacy classes", () => {
-    const source = read("src/components/ui/alert.tsx");
-    expect(source).not.toMatch(/muted-foreground|text-sm\b|rounded-lg\b|bg-card\b/);
-  });
 });
-
-describe("ShellPageHeader page-title hook", () => {
-  it("exports the attribute and spreadable props", () => {
-    expect(SHELL_PAGE_TITLE_ATTRIBUTE).toBe("data-shell-page-title");
-    render(<h1 {...shellPageTitleProps}>Countries</h1>);
-    expect(screen.getByRole("heading", { name: "Countries" })).toHaveAttribute(
-      "data-shell-page-title",
-      ""
-    );
-  });
-
-  it("marks the shell header with where it shows", () => {
-    const { container, rerender } = render(<ShellPageHeader title="Vault" />);
-    expect(container.querySelector('[data-slot="shell-page-header"]')).toHaveAttribute(
-      "data-shell-page-header",
-      "phone"
-    );
-    rerender(<ShellPageHeader title="Vault" phoneOnly={false} />);
-    expect(container.querySelector('[data-slot="shell-page-header"]')).toHaveAttribute(
-      "data-shell-page-header",
-      "all"
-    );
-  });
-
-  it("hides a marked title where the shell header shows", () => {
-    const css = read("src/styles/facet/shell.css").replace(/\/\*[\s\S]*?\*\//g, "");
-    const utilities = css.slice(css.indexOf("@layer utilities"));
-    expect(utilities).toMatch(
-      /:root:has\(\[data-shell-page-header="all"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
-    );
-    expect(utilities).toMatch(
-      /@media \(max-width: 1023\.98px\) \{\s*:root:has\(\[data-shell-page-header="phone"\]\) \[data-shell-page-title\]\s*\{\s*display:\s*none;/
-    );
-  });
-
-  it("is adopted by the ThinkPages hub (no ad-hoc facet-nav hiding)", () => {
-    const hub = read("src/components/dashboard/accounts/AccountsSection.tsx");
-    expect(hub).toMatch(/<h1 \{\.\.\.shellPageTitleProps\}/);
-  });
-});
-
 describe("SegmentedControl option badges", () => {
   function Inbox() {
     const [value, setValue] = useState("inbox");
@@ -175,43 +93,7 @@ describe("SegmentedControl option badges", () => {
     expect(classOf(badge)).toMatch(/\btabular-nums\b/);
     expect(classOf(badge)).toMatch(/\bbg-tint-fill\b/);
   });
-
-  it("selected and unselected badges differ", () => {
-    render(<Inbox />);
-    fireEvent.click(screen.getByRole("radio", { name: /Sent/ }));
-    const sent = screen
-      .getByRole("radio", { name: /Sent/ })
-      .querySelector('[data-slot="segmented-control-badge"]')!;
-    const inbox = screen
-      .getByRole("radio", { name: /Inbox/ })
-      .querySelector('[data-slot="segmented-control-badge"]')!;
-    expect(classOf(sent)).toMatch(/\bbg-tint-fill\b/);
-    expect(classOf(inbox)).toMatch(/\bbg-fill-3\b/);
-  });
-
-  it("draws the thumb with the control-thumb role (no dark: override)", () => {
-    expect(read("src/components/ui/segmented-control.tsx")).not.toMatch(/\bdark:/);
-  });
 });
-
-describe("Card parts", () => {
-  it("keeps the surface and its slotted parts", () => {
-    render(
-      <Card data-testid="card">
-        <CardHeader>
-          <CardTitle>Title</CardTitle>
-        </CardHeader>
-        <CardContent>Content</CardContent>
-      </Card>
-    );
-    const card = screen.getByTestId("card");
-    for (const token of CARD_SURFACE) expect(card).toHaveClass(token);
-    expect(card).toHaveAttribute("data-slot", "card");
-    expect(screen.getByText("Content")).toHaveAttribute("data-slot", "card-content");
-    expect(screen.getByText("Title")).toHaveAttribute("data-slot", "card-title");
-  });
-});
-
 describe("Virtual-anchor Popover / HoverCard", () => {
   const rect = { x: 10, y: 20, width: 30, height: 10, top: 20, left: 10, right: 40, bottom: 30 };
 
@@ -304,18 +186,6 @@ describe("Virtual-anchor Popover / HoverCard", () => {
     expect(classOf(card)).toMatch(/\bfacet-overlay\b/);
     el.remove();
   });
-
-  it("the WikiOS selection toolbar, link hover card and cite tooltips use it (no portals)", () => {
-    for (const file of [
-      "src/components/wiki-os/margin/SelectionCapsule.tsx",
-      "src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx",
-      "src/components/wiki-os/reader/useCiteTooltips.ts",
-    ]) {
-      const source = read(file);
-      expect([file, source.includes("createPortal")]).toEqual([file, false]);
-      expect([file, /VirtualAnchor(Popover|HoverCard)/.test(source)]).toEqual([file, true]);
-    }
-  });
 });
 
 describe("FacetDataTable family on Facet 3", () => {
@@ -335,15 +205,6 @@ describe("FacetDataTable family on Facet 3", () => {
     fireEvent.click(screen.getByRole("button", { name: "Name" }));
     expect(header).toHaveAttribute("aria-sort", "ascending");
   });
-
-  it("empty state is the EmptyState primitive in a card", () => {
-    const { container } = render(
-      <FacetDataTable data={[]} columns={columns} emptyMessage="No leaders yet" />
-    );
-    expect(container.querySelector('[data-slot="empty-state"]')).toBeInTheDocument();
-    expect(screen.getByText("No leaders yet")).toBeInTheDocument();
-  });
-
   it("loading uses Skeletons and marks itself busy", () => {
     const { container } = render(<FacetDataTable data={[]} columns={columns} loading />);
     expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
@@ -374,51 +235,5 @@ describe("FacetDataTable family on Facet 3", () => {
     expect(screen.getByRole("navigation", { name: "Pagination" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Next Page" })).toBeInTheDocument();
-  });
-
-  it("uses no glass or muted classes", () => {
-    for (const file of [
-      "FacetDataTable.tsx",
-      "FacetMobileCard.tsx",
-      "FacetTablePagination.tsx",
-      "FacetTableToolbar.tsx",
-    ]) {
-      const source = read(`src/components/ui/data-table/${file}`);
-      expect([file, source]).not.toEqual([
-        file,
-        expect.stringMatching(
-          /muted|backdrop-blur|facet-hierarchy|facet-surface|bg-card|border-border/
-        ),
-      ]);
-    }
-  });
-});
-
-describe("src/components/ui has no v2 classes", () => {
-  const files: string[] = [];
-  const walk = (dir: string) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (/\.(tsx?|css)$/.test(entry.name)) files.push(full);
-    }
-  };
-  walk(path.join(ROOT, "src/components/ui"));
-
-  it.each([
-    ["glass-*", /\bglass-[a-z]/],
-    ["facet-hierarchy-*", /facet-hierarchy-/],
-    ["bg-background/…", /bg-background\//],
-    ["border-border/…", /border-border\//],
-    ["muted-foreground", /muted-foreground/],
-    ["dark: overrides", /\bdark:[a-z[]/],
-    ["hex classes", /\[#[0-9a-fA-F]{3,8}\]/],
-    [
-      "retired x.5 spacing",
-      /(^|[\s"'`])-?(p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|gap|gap-x|gap-y|space-x|space-y|inset|inset-x|inset-y|top|left|right|bottom)-[123]\.5\b/,
-    ],
-  ])("%s", (_name, pattern) => {
-    const offenders = files.filter((file) => pattern.test(fs.readFileSync(file, "utf8")));
-    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 });

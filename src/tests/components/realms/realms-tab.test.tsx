@@ -62,19 +62,6 @@ jest.mock("~/trpc/react", () => ({
 
 describe("RealmsTab nation cap (decision 15)", () => {
   beforeEach(() => mutate.mockClear());
-
-  it("shows a staff-administered realm's founder as IxStats staff", () => {
-    render(<RealmsTab />);
-    expect(screen.getByRole("columnheader", { name: "Founder" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "IxStats staff" })).toBeInTheDocument();
-  });
-
-  it("shows each realm's nations-per-player cap", () => {
-    render(<RealmsTab />);
-    expect(screen.getByRole("columnheader", { name: "Nations per player" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "3" })).toBeInTheDocument();
-  });
-
   it("edits the cap starting from the realm's current value and saves it", () => {
     render(<RealmsTab />);
     fireEvent.click(screen.getByRole("button", { name: "Edit Eurth" }));

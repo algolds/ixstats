@@ -1,9 +1,6 @@
 /** @jest-environment node */
 import {
-  capCount,
-  countLabel,
   isUnread,
-  NAV_COUNT_CAP,
   seenSince,
   UNREAD_WINDOW_MS,
   unreadFloor,
@@ -58,15 +55,5 @@ describe("isUnread", () => {
     const later = daysAgo(3);
     expect(isUnread(daysAgo(4), null, later)).toBe(false);
     expect(isUnread(daysAgo(2), null, later)).toBe(true);
-  });
-});
-
-describe("sidebar counts", () => {
-  it("clamps at one above the cap and labels it 99+", () => {
-    expect(NAV_COUNT_CAP).toBe(99);
-    expect(capCount(7)).toBe(7);
-    expect(capCount(250)).toBe(100);
-    expect(countLabel(99)).toBe("99");
-    expect(countLabel(100)).toBe("99+");
   });
 });

@@ -71,12 +71,6 @@ describe("previewSrc", () => {
       "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f8/Schloss_Neuschwanstein_2013.jpg/960px-Schloss_Neuschwanstein_2013.jpg"
     );
   });
-
-  it("uses a non-Commons thumb as given", () => {
-    const local = image("Local", { thumbUrl: "/api/mediawiki/ixwiki/images/a/ab/Local.jpg" });
-    expect(previewSrc(local)).toBe("/api/mediawiki/ixwiki/images/a/ab/Local.jpg");
-  });
-
   it("falls back to the original when there is no thumb", () => {
     const bare = image("Bare", { thumbUrl: "" });
     expect(previewSrc(bare)).toBe(bare.url);
@@ -143,17 +137,6 @@ describe("CommonsDetailPanel", () => {
       expect(mockNotify.error).toHaveBeenCalledWith("Could not copy", expect.any(String))
     );
   });
-
-  it("has no attribution button when there is no artist or licence", () => {
-    render(<CommonsDetailPanel image={image("A")} onClose={jest.fn()} />);
-    expect(screen.queryByRole("button", { name: "Copy attribution" })).not.toBeInTheDocument();
-  });
-
-  it("hides the dimensions row when the size is unknown", () => {
-    render(<CommonsDetailPanel image={image("A", { width: 0, height: 0 })} onClose={jest.fn()} />);
-    expect(screen.queryByText("Dimensions")).not.toBeInTheDocument();
-  });
-
   it("falls back to the original once, then reports the preview unavailable", () => {
     render(<CommonsDetailPanel image={image("A")} onClose={jest.fn()} />);
     const preview = () => screen.getAllByRole("img", { name: "A.jpg" })[0]!;

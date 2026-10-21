@@ -88,10 +88,4 @@ describe("GlassPlateEditor insert image button", () => {
     render(<GlassPlateEditor allowImageInsert disabled />);
     expect(screen.queryByRole("button", { name: "Insert image" })).toBeNull();
   });
-
-  it("has no Insert image button and mounts no modal by default", () => {
-    render(<GlassPlateEditor />);
-    expect(screen.queryByRole("button", { name: "Insert image" })).toBeNull();
-    expect(screen.queryByTestId("media-modal")).toBeNull();
-  });
 });

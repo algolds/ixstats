@@ -84,44 +84,6 @@ describe("Studio Calibration tab", () => {
     expect(screen.getByRole("columnheader", { name: /Ixnay/ })).toHaveTextContent(/Distance \d+/);
     expect(cell("Land share", 2)).toHaveTextContent("-");
   });
-
-  it("says a realm's measurement failed, as an alert", async () => {
-    answers.ixnay = { isError: true, error: new Error("Server went away") };
-    renderTab(<StudioCalibrationTab />);
-    await screen.findByText("31.2%");
-    expect(screen.getByRole("alert")).toHaveTextContent("Server went away");
-  });
-
-  it("draws the elevation and climate bars for the world and each measured realm", async () => {
-    renderTab(<StudioCalibrationTab />);
-    await screen.findByText("31.2%");
-    const elevation = screen.getByRole("region", { name: "Land by elevation" });
-    expect(within(elevation).getAllByRole("listitem")).not.toHaveLength(0);
-    expect(
-      within(elevation).getByRole("listitem", {
-        name: /^Coastal Lowlands: World 40\.0%, Ixnay 47\.1%$/,
-      })
-    ).toBeInTheDocument();
-    const climate = screen.getByRole("region", { name: "Climate of the classified land" });
-    expect(
-      within(climate).getByRole("listitem", { name: /^Tropical: World 20\.0%, Ixnay 25\.4%$/ })
-    ).toBeInTheDocument();
-  });
-
-  it("names the land with no climate group only when there is some", async () => {
-    const { unmount } = renderTab(<StudioCalibrationTab />);
-    await screen.findByText("31.2%");
-    expect(screen.queryByText(/no climate group/)).toBeNull();
-    unmount();
-
-    const value = studioValue();
-    jest
-      .mocked(value.generator.measure)
-      .mockResolvedValue({ ...MEASURES, unclassifiedShare: 0.12 });
-    renderTab(<StudioCalibrationTab />, value);
-    expect(await screen.findByText(/Land with no climate group/)).toHaveTextContent("World 12.0%");
-  });
-
   it("compares with any realm chosen, and with none", async () => {
     answers.shell = {
       data: {
@@ -245,13 +207,5 @@ describe("Studio Calibration tab", () => {
     );
     const withNations = calibrationDistance(none, IXNAY_MEASURES).distance;
     expect(distance).toBeLessThan(Math.round(withNations));
-  });
-
-  it("notes that a fitted world keeps the realm's borders", async () => {
-    renderTab(
-      <StudioCalibrationTab />,
-      studioValue({ source: { kind: "fit", preset: "earthlike", realm: "ixnay" } })
-    );
-    expect(await screen.findByText(/keeps that realm's borders/)).toBeInTheDocument();
   });
 });

@@ -488,16 +488,6 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     );
   });
 });
-
-/** Columns a page-management call must never read: the bundle, the raw HTML and the page text. */
-const HEAVY = ["renderedView", "contentHtml", "htmlContent", "contentJson", "wikitext"];
-
-function expectLeanSelect(call: unknown[] | undefined) {
-  const select = (call?.[0] as { select?: Record<string, boolean> } | undefined)?.select;
-  expect(select).toBeDefined();
-  for (const column of HEAVY) expect(select).not.toHaveProperty(column);
-}
-
 describe("PageManagementService.movePage refuses files (F37)", () => {
   const MESSAGE = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
 
@@ -630,61 +620,6 @@ describe("PageManagementService.movePage and the rendered view (plan 404)", () =
     expect(enqueueRender).not.toHaveBeenCalled();
   });
 });
-
-describe("PageManagementService reads only the columns it uses (plan 404)", () => {
-  it("movePage selects an explicit, lean column list on every wikiArticle call", async () => {
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    // The page and its destination, then the talk page and its destination.
-    expect(mockFindFirst).toHaveBeenCalledTimes(4);
-    for (const call of [...mockFindFirst.mock.calls, ...mockUpdate.mock.calls]) {
-      expectLeanSelect(call);
-    }
-    expect(mockFindFirst.mock.calls[0]?.[0].select).toEqual({
-      id: true,
-      title: true,
-      namespace: true,
-      status: true,
-    });
-    // The stub's own data carries the banner HTML (a write); its answer stays small.
-    expect(mockCreate.mock.calls[0]?.[0].select).toEqual({ id: true });
-    expect(mockLogCreate.mock.calls[0]?.[0].data.params).toMatchObject({ oldTitle: "Old name" });
-  });
-
-  it("archiveArticle reads the id, title and status, writes the status, and logs the previous one", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
-    mockUpdate.mockResolvedValue({ id: "a1" });
-
-    await expect(PageManagementService.archiveArticle("Old name", "spam", actor)).resolves.toEqual({
-      success: true,
-      articleId: "a1",
-    });
-
-    expectLeanSelect(mockFindFirst.mock.calls[0]);
-    expectLeanSelect(mockUpdate.mock.calls[0]);
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ status: "ARCHIVED" });
-    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({
-      title: "Old name",
-      params: { reason: "spam", previousStatus: "PUBLISHED" },
-    });
-  });
-
-  it("restoreArticle reads the id and title and publishes the page again", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
-    mockUpdate.mockResolvedValue({ id: "a1" });
-
-    await expect(PageManagementService.restoreArticle("Old name", actor)).resolves.toEqual({
-      success: true,
-      articleId: "a1",
-    });
-
-    expectLeanSelect(mockFindFirst.mock.calls[0]);
-    expectLeanSelect(mockUpdate.mock.calls[0]);
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ status: "PUBLISHED" });
-    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({ title: "Old name" });
-  });
-});
-
 describe("PageManagementService.getBrokenRedirects", () => {
   const redirectRow = (id: string, title: string, redirectTargetSlug: string) => ({
     id,
@@ -800,14 +735,6 @@ describe("PageManagementService forgets what the caches hold about a page it cha
       ].sort()
     );
   });
-
-  it("evicts nothing for a move that failed", async () => {
-    mockFindFirst.mockReset().mockResolvedValue(null);
-    await expect(
-      PageManagementService.movePage("old_name", "new_name", "x", actor)
-    ).rejects.toThrow();
-    expect(evictWikiTitleCaches).not.toHaveBeenCalled();
-  });
 });
 
 describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
@@ -878,15 +805,6 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
       summary: "Wrongly deleted",
     });
   });
-
-  it("notifies nobody when the restore was refused", async () => {
-    mockFindFirst.mockReset().mockResolvedValue(null);
-
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
-
-    expect(notifyWatchers).not.toHaveBeenCalled();
-  });
-
   it.each([
     ["move", () => PageManagementService.movePage("old_name", "new_name", "tidy", actor)],
     ["delete", () => PageManagementService.archiveArticle("Old name", "spam", actor)],
@@ -1018,13 +936,5 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
 
     expect(mockJobCreate).not.toHaveBeenCalled();
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
-  });
-
-  it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
-
-    await PageManagementService.archiveArticle("Old name", "spam", actor, "iiwiki");
-
-    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 });

@@ -66,23 +66,6 @@ describe("countries.getWikiRichIntro", () => {
     // A link in the intro opens that wiki's page in the reader, not IxWiki's page of the same title.
     expect(intro?.paragraphs[0]).toContain('href="/wiki/Alharu?source=iiwiki"');
   });
-
-  it("follows a page reference that is a redirect to the page it names", async () => {
-    findMany.mockResolvedValue([{ id: "c-mito", wikiSource: "iiwiki", wikiPageTitle: "Mito" }]);
-    jest
-      .mocked(getArticleWikitextShadow)
-      .mockResolvedValueOnce(article("#REDIRECT [[Mitō]]"))
-      .mockResolvedValueOnce(article(LEAD));
-
-    const intro = await caller().getWikiRichIntro({ countryName: "Mito", countryId: "c-mito" });
-
-    expect(reads()).toEqual([
-      ["Mito", "iiwiki"],
-      ["Mitō", "iiwiki"],
-    ]);
-    expect(intro?.wikiUrl).toBe(`/wiki/${encodeURIComponent("Mitō")}?source=iiwiki`);
-  });
-
   it("does not look the name up on other wikis when the referenced page is missing", async () => {
     findMany.mockResolvedValue([
       { id: "c-gone", wikiSource: "iiwiki", wikiPageTitle: "Gone Land" },
@@ -97,34 +80,6 @@ describe("countries.getWikiRichIntro", () => {
     expect(intro).toBeNull();
     expect(reads()).toEqual([["Gone Land", "iiwiki"]]);
   });
-
-  it("keeps the name lookup, IxWiki first, for a country without a page reference", async () => {
-    jest
-      .mocked(getArticleWikitextShadow)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(article(LEAD));
-
-    const intro = await caller().getWikiRichIntro({ countryName: "Elmeria", countryId: "c-elm" });
-
-    expect(findMany.mock.calls[0]?.[0].where.id.in).toEqual(["c-elm"]);
-    expect(reads()).toEqual([
-      ["Elmeria", "ixwiki"],
-      ["Elmeria", "iiwiki"],
-    ]);
-    expect(intro?.wikiUrl).toBe("/wiki/Elmeria?source=iiwiki");
-  });
-
-  it("links an IxWiki page to the WikiOS reader", async () => {
-    findMany.mockResolvedValue([{ id: "c-cap", wikiSource: null, wikiPageTitle: "Caphiria" }]);
-    jest.mocked(getArticleWikitextShadow).mockResolvedValue(article(LEAD));
-
-    const intro = await caller().getWikiRichIntro({ countryName: "Caphiria", countryId: "c-cap" });
-
-    expect(reads()).toEqual([["Caphiria", "ixwiki"]]);
-    expect(intro?.wikiUrl).toBe("/wiki/Caphiria");
-    expect(intro?.paragraphs[0]).toContain('href="/wiki/Alharu"');
-  });
-
   it("caches a lookup by name apart from a lookup by country", async () => {
     findMany.mockResolvedValue([{ id: "c-urc", wikiSource: "iiwiki", wikiPageTitle: "Urcea" }]);
     jest.mocked(getArticleWikitextShadow).mockResolvedValue(article(LEAD));

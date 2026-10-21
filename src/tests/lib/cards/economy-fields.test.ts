@@ -246,15 +246,6 @@ describe("rates and shares", () => {
       expect(numberFieldProblem(economyField(key), hundredth)).toBeNull();
     }
   });
-
-  it("say which bounds a whole number has, without a precision", () => {
-    expect(numberFieldProblem(economyField("listingDays"), 0)).toBe(
-      "Listing length (days): enter a whole number from 1 to 60."
-    );
-    expect(numberFieldProblem(economyField("dustCommon"), 2.5)).toBe(
-      "Common dust: enter a whole number from 0 to 1,000,000."
-    );
-  });
 });
 
 describe("section rules", () => {

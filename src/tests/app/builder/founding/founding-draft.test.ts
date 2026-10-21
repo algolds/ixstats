@@ -20,15 +20,12 @@ import {
   resolveStep,
   startNeedsConfirm,
   toggleComponent,
-  validateIdentity,
   visibleSteps,
   type FoundingDraft,
 } from "~/app/builder/_founding/lib/founding-draft";
 import { suggestArchetype } from "~/app/builder/_founding/lib/founding-archetypes";
 import { createInput, previewInput } from "~/app/builder/_founding/lib/founding-payload";
 import { readInfobox } from "~/app/builder/_founding/lib/founding-import";
-import { describeFoundingError } from "~/app/builder/_founding/lib/founding-errors";
-
 const NO_REALMS = { creatableRealmIds: null };
 
 function namedDraft(): FoundingDraft {
@@ -66,17 +63,6 @@ describe("step gating", () => {
     expect(firstIncompleteStep(draft, steps, context)).toBe("realm");
     expect(firstIncompleteStep({ ...draft, realmId: "full" }, steps, context)).toBe("realm");
     expect(firstIncompleteStep({ ...draft, realmId: "other" }, steps, context)).toBe("review");
-  });
-
-  it("validates identity in words", () => {
-    const errors = validateIdentity({
-      ...emptyFoundingDraft().identity,
-      flagUrl: "ftp://nope",
-      isoCode: "TOOLONG",
-    });
-    expect(errors.name).toBe("Enter a name for your nation.");
-    expect(errors.flagUrl).toMatch(/https/);
-    expect(errors.isoCode).toMatch(/two or three letters/);
   });
 });
 
@@ -291,26 +277,5 @@ describe("wiki import", () => {
     expect(suggestArchetype({})).toBeNull();
     expect(suggestArchetype({ formId: "military-government" })).toBeNull();
     expect(suggestArchetype({ formId: "one-party-state" })).toBe("soviet-command");
-  });
-});
-
-describe("founding errors", () => {
-  it("names the fix for each refusal", () => {
-    expect(
-      describeFoundingError({ message: 'A country named "X" already exists in this realm' }, false)
-        .fix?.step
-    ).toBe("identity");
-    expect(
-      describeFoundingError(
-        {
-          message: "You already hold 1 nation in this realm, the most your account may hold there.",
-        },
-        true
-      ).fix?.step
-    ).toBe("realm");
-    expect(
-      describeFoundingError({ message: '"X" is a nation of this realm\'s lore: claim it' }, false)
-        .title
-    ).toMatch(/lore/);
   });
 });

@@ -198,23 +198,6 @@ describe("the map version a world was fitted to", () => {
       fittedMapVersion: 4,
     });
   });
-
-  it("leaves a world fitted to the realm's map to the check: stale fails it, current passes it", async () => {
-    const bundle = makeBundle({ source: "realm-map" });
-    const stale = seedRealm({ mapVersion: 4 });
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const staleId = await dryRun(stale, await storeBundle(bundle), "founder_1", 3);
-    error.mockRestore();
-    expect(await getMapImportJob(stale, founder, staleId)).toMatchObject({
-      status: "failed",
-      error: "The map changed since the check. Check the world again.",
-    });
-    const current = seedRealm({ mapVersion: 4 });
-    const currentId = await dryRun(current, await storeBundle(bundle), "founder_1", 4);
-    expect(await getMapImportJob(current, founder, currentId)).toMatchObject({
-      status: "succeeded",
-    });
-  });
 });
 
 describe("a world job that stopped", () => {

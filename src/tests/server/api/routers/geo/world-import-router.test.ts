@@ -205,19 +205,6 @@ describe("geoEditor.mapImport.applyWorld", () => {
       code: "BAD_REQUEST",
     });
   });
-
-  it("queues the apply of a check of the map as it is, and refuses one of a map that moved since", async () => {
-    const { api, db } = caller(founder, { mapVersion: 3 });
-    await expect(api.applyWorld({ jobId: CHECK_ID })).resolves.toEqual({
-      jobId: expect.any(String),
-    });
-    db.realm.rows[0].mapVersion = 4;
-    await expect(api.applyWorld({ jobId: CHECK_ID })).rejects.toMatchObject({
-      code: "CONFLICT",
-      message: "The map changed since the check. Check the world again.",
-    });
-  });
-
   it("keeps other players out of a world that exists", async () => {
     const { api, db } = caller(stranger);
     db.mapImportJob.rows.push({

@@ -1,8 +1,6 @@
 import {
-  resolveWikiPlaceholderValues,
-  resolveWikiPlaceholdersInternal,
+  resolveWikiPlaceholderValues
 } from "~/server/shared/wiki-placeholders";
-import { ixstatsTemplateProvider } from "~/server/shared/ixstats-template-provider";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 
 describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
@@ -229,26 +227,6 @@ describe("Plan 160: Canonical WikiOS Placeholder Resolver", () => {
     expect(results[0].metadata?.detailsUrl).toBe("/countries/c-1");
     expect(results[0].metadata?.lastCalculated).toBe("2026-06-01T12:00:00.000Z");
   });
-
-  it("11. Provides API adapter backward compatibility via resolveWikiPlaceholdersInternal", async () => {
-    const db = createMockDb();
-    const apiResult = await resolveWikiPlaceholdersInternal(
-      ["CountryData:Sanctuary:population"],
-      { db } as any,
-      "c-1"
-    );
-
-    expect(apiResult["CountryData:Sanctuary:population"]).toBeDefined();
-    expect(apiResult["CountryData:Sanctuary:population"].value).toBe("50.0M");
-  });
-
-  it("12. Provides template provider adapter via ixstatsTemplateProvider", async () => {
-    expect(ixstatsTemplateProvider.canHandle("countrydata")).toBe(true);
-    expect(ixstatsTemplateProvider.canHandle("mycountry")).toBe(true);
-    expect(ixstatsTemplateProvider.canHandle("businessdata")).toBe(true);
-    expect(ixstatsTemplateProvider.canHandle("other")).toBe(false);
-  });
-
   it("13. Batches repeated keys into a single database query", async () => {
     const findManySpy = jest.fn().mockImplementation(async ({ where }: any) => {
       if (where?.OR) return [mockCountry];

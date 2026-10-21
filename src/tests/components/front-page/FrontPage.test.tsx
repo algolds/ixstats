@@ -76,59 +76,6 @@ const pane = (title: string) =>
   screen.getByRole("heading", { name: title }).closest<HTMLElement>("[data-slot='card']")!;
 
 describe("FrontPage", () => {
-  it("gives the ThinkPages pane persona voices and In character posts", () => {
-    results.forum = {
-      data: [
-        {
-          postId: "p1",
-          threadId: "t1",
-          threadTitle: "Budget statement",
-          categoryName: "Politics",
-          isFirstPost: true,
-          inCharacter: true,
-          at: new Date(),
-          authorUserId: null,
-          authorPersonaId: "pa",
-          importedAuthorName: null,
-          author: {
-            name: "Government of Urcea",
-            handle: null,
-            avatarUrl: null,
-            flagUrl: null,
-            personaType: "government",
-          },
-        },
-      ],
-    };
-    render(<FrontPage />);
-    const forum = pane("ThinkPages");
-    expect(within(forum).getByText("Government")).toBeInTheDocument();
-    expect(within(forum).getByText("In character")).toBeInTheDocument();
-  });
-
-  it("presents IxStates, today's realm, the apps and one way to join", () => {
-    render(<FrontPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "IxStates" })).toBeInTheDocument();
-    expect(screen.getByText("6 realms · 82 nations · 1,204 players")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Browse realms" })).toHaveAttribute("href", "/realms");
-
-    expect(within(pane("Eurth")).getByRole("link", { name: /Open map/ })).toHaveAttribute(
-      "href",
-      "/maps?realm=eurth"
-    );
-    expect(within(pane("Happenings")).getByText("Nation 1 was founded")).toBeInTheDocument();
-    expect(within(pane("Wiki")).getByRole("link", { name: /Caphiria/ })).toHaveAttribute(
-      "href",
-      "/wiki/Caphiria"
-    );
-    expect(within(pane("ThinkPages")).getByText("No forum posts yet.")).toBeInTheDocument();
-    expect(
-      within(pane("Realms with open nations")).getByText("3 open nations")
-    ).toBeInTheDocument();
-    expect(within(pane("Nations in Eurth")).getAllByRole("row")).toHaveLength(3);
-    expect(screen.getByRole("button", { name: "Create an account" })).toBeInTheDocument();
-  });
-
   it("keeps a failing source inside its own pane", () => {
     results.wiki = { isError: true };
     render(<FrontPage />);

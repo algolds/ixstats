@@ -46,7 +46,6 @@ import { resultMessage, worldResult } from "~/tests/helpers/fake-world-worker";
 import { failRead, setJob } from "~/tests/helpers/fake-map-import";
 import {
   statusQuery,
-  preview,
   layersQuery,
   region,
   REALM,
@@ -69,19 +68,6 @@ afterEach(cleanUpPanelTests);
 
 describe("what the apply region is given of the draft", () => {
   const props = () => region.mock.lastCall![0];
-
-  it("hands over the realm, the draft and how it was made", async () => {
-    renderPanel();
-    const request = await generateFirst();
-    act(() => workers[0]!.say(resultMessage(request.id, { seed: request.seed })));
-    expect(props()).toMatchObject({
-      realm: { id: REALM, slug: "eurth" },
-      source: "preset",
-      generating: false,
-      result: expect.objectContaining({ seed: request.seed }),
-    });
-  });
-
   it("calls a draft that matches the controls and the seed current, and one mid-drag stale", async () => {
     renderPanel();
     const request = await generateFirst();

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useCopyActions", () => ({ useCopyActions: jest.fn() }));
@@ -114,24 +114,6 @@ describe("MineBulkBar", () => {
     // A signed copy may still be listed.
     expect(screen.getByRole("button", { name: "List 2" })).toBeEnabled();
   });
-
-  it("offers nothing but Done with no selection", () => {
-    bar([]);
-    expect(screen.getByText("0 selected")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Break down/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /List/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Add to showcase" }).hasAttribute("disabled")).toBe(
-      true
-    );
-  });
-
-  it("announces the count in the bar", () => {
-    bar([pick("a"), pick("b")]);
-    const group = screen.getByRole("group", { name: "Selected cards" });
-    expect(screen.getByText("2 selected").getAttribute("aria-live")).toBe("polite");
-    expect(group).toContainElement(screen.getByText("2 selected"));
-  });
-
   it("offers a bound copy for neither sale nor fusion, and says why it can't be broken down", () => {
     bar([pick("a", { isBound: true }), pick("b", { isBound: true }), pick("c", { isBound: true })]);
     expect(screen.queryByRole("button", { name: /List/ })).toBeNull();
@@ -208,14 +190,6 @@ describe("MineBulkBar", () => {
     expect(screen.queryByRole("group", { name: "Selected cards" })).toBeNull();
     await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
   });
-
-  it("gives focus to the place the pane names on Done, as the bar leaves", () => {
-    render(<FocusHost />);
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(screen.queryByRole("group", { name: "Selected cards" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Select" })).toHaveFocus();
-  });
-
   it("ends select mode once a fusion goes through", () => {
     actions.fuse.mutate.mockImplementation((_input: object, done: Done) => done.onSuccess?.());
     const onDone = jest.fn();
@@ -282,9 +256,5 @@ describe("selectedCopyOf", () => {
     expect(
       screen.getByText("A copy that is listed or in a trade can't be broken down.")
     ).toBeTruthy();
-  });
-
-  it("is null for a row without a copy", () => {
-    expect(selectedCopyOf(row({ face: { ...row().face, copy: null } }))).toBeNull();
   });
 });

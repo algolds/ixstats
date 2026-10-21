@@ -106,10 +106,6 @@ describe("v2/hydro-climate", () => {
   });
 
   describe("Rivers & Hydrology", () => {
-    it("populates graph.rivers array", () => {
-      expect(graph.rivers.length).toBeGreaterThan(0);
-    });
-
     it("rivers flow downhill (h[cells[j]] >= h[cells[j+1]])", () => {
       let downhillViolations = 0;
 

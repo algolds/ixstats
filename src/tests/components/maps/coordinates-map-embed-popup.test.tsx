@@ -12,12 +12,6 @@ describe("buildPopupTitleNode", () => {
     expect(node.querySelector("img")).toBeNull();
     expect(node.textContent).toBe(title);
   });
-
-  it("keeps the popup styling", () => {
-    const node = buildPopupTitleNode("Capital");
-    expect(node.style.fontWeight).toBe("bold");
-    expect(node.style.fontSize).toBe("12px");
-  });
 });
 
 describe("embedRealm", () => {

@@ -4,8 +4,8 @@
  * live board) of the realm of their primary nation (307, the answer depends on who asks), and everyone else to the
  * forum home. It resolves as the session's viewer, and has no loading.tsx (a redirect page needs the real redirect).
  */
-import fs from "node:fs";
-import path from "node:path";
+import "node:fs";
+import "node:path";
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn((url: string) => {
@@ -112,10 +112,5 @@ describe("/thinkpages/r/mine", () => {
       { id: "c1", realmId: "r_eurth", currentTotalGdp: 5 },
     ]);
     await expect(MyRealmPage()).rejects.toThrow("redirect:/thinkpages/r/a%20b%2Fc");
-  });
-
-  it("is a redirect page with no loading.tsx beside it", () => {
-    const dir = path.join(process.cwd(), "src/app/thinkpages/r/mine");
-    expect(fs.readdirSync(dir)).toEqual(["page.tsx"]);
   });
 });

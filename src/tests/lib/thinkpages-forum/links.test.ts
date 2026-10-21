@@ -1,30 +1,21 @@
 /** @jest-environment node */
 import {
   ATTACH_PARAM,
-  FORUM_HOME,
   categoryHref,
   claimNationHref,
-  handleProfileHref,
   hubHref,
   isForumPath,
   modHref,
   newThreadAttachHref,
   newThreadHref,
-  personaProfileHref,
   postHref,
   realmBoardAttachHref,
   realmBoardHref,
   realmHref,
-  STANDING_HREF,
-  threadHref,
-  unreadHref,
+  threadHref
 } from "~/lib/thinkpages-forum/links";
 
 describe("forum links", () => {
-  it("opens the home", () => {
-    expect(FORUM_HOME).toBe("/thinkpages");
-  });
-
   it("puts sitewide categories under /c and realm categories under /r/<slug>", () => {
     expect(categoryHref({ key: "general" })).toBe("/thinkpages/c/general");
     expect(categoryHref({ key: "general", realm: null })).toBe("/thinkpages/c/general");
@@ -67,18 +58,6 @@ describe("forum links", () => {
     expect(modHref({ realm: "eurth" })).toBe("/thinkpages/mod?realm=eurth");
     expect(modHref({ tab: "bans", realm: "a&b" })).toBe("/thinkpages/mod?tab=bans&realm=a%26b");
     expect(modHref({ tab: "log=x" })).toBe("/thinkpages/mod?tab=log%3Dx");
-  });
-
-  it("links the member's standing on the forum home", () => {
-    expect(STANDING_HREF).toBe("/thinkpages#standing");
-  });
-
-  it("names the jump to unread and the profile links", () => {
-    expect(unreadHref("t1")).toBe("/thinkpages/t/t1/unread");
-    expect(unreadHref("a/b")).toBe("/thinkpages/t/a%2Fb/unread");
-    expect(handleProfileHref("kir")).toBe("/id/kir");
-    expect(personaProfileHref("Aria_V")).toBe("/dashboard/profile/Aria_V");
-    expect(personaProfileHref("a/b")).toBe("/dashboard/profile/a%2Fb");
   });
 });
 

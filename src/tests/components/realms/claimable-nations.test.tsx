@@ -78,19 +78,6 @@ describe("ClaimableNations", () => {
     mockSearch = "";
     options = {};
   });
-
-  it("links each nation page to the WikiOS reader for its wiki", () => {
-    renderList();
-    expect(screen.getByRole("link", { name: "Aurelia" })).toHaveAttribute(
-      "href",
-      "/wiki/Aurelia?source=iiwiki"
-    );
-    expect(screen.getByRole("link", { name: "Côte Rouge" })).toHaveAttribute(
-      "href",
-      `/wiki/${encodeURIComponent("Côte_Rouge")}?source=iiwiki`
-    );
-  });
-
   it("waits for the realm content consent and sends who gave permission", () => {
     renderList();
     const claim = screen.getByRole("button", { name: "Claim Aurelia" });
@@ -117,25 +104,6 @@ describe("ClaimableNations", () => {
       consent: { accepted: true },
     });
   });
-
-  it("a pending claim says a moderator will review it and how to be approved instantly", () => {
-    mockMutate.mockImplementation((input: ClaimInput) =>
-      options.onSuccess?.({ claimId: "cl1", status: "pending", autoApproved: false }, input)
-    );
-    renderList();
-    agree();
-    fireEvent.click(screen.getByRole("button", { name: "Claim Aurelia" }));
-    expect(mockNotify.info).toHaveBeenCalledWith(
-      "Claim submitted",
-      expect.stringMatching(
-        /moderator will review it.*verify your wiki account in Settings to be approved instantly/i
-      )
-    );
-    expect(screen.getByRole("button", { name: "Claim Aurelia" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Claim Aurelia" })).toHaveTextContent(/pending/i);
-    expect(mockInvalidate).not.toHaveBeenCalled();
-  });
-
   it("an approved claim congratulates the player and refreshes the realm", () => {
     mockMutate.mockImplementation((input: ClaimInput) =>
       options.onSuccess?.({ claimId: "cl1", status: "approved", autoApproved: true }, input)

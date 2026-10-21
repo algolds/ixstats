@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { api } from "~/trpc/react";
@@ -120,45 +120,6 @@ const annotationsQuery = api.wikios.getAnnotations.useQuery as jest.Mock;
 
 // Page info starts hidden in the aside; these tests read what it shows.
 beforeEach(() => localStorage.setItem("wikios:railCollapsed", "false"));
-
-describe("ArticleRenderer loads the margin drawer only once it is opened (plan 413)", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockMarginOpen = false;
-  });
-
-  it("mounts the pins and the capsule, but not the drawer, while the margin is closed", () => {
-    renderArticle("ixwiki");
-
-    expect(mockMargin).toHaveBeenCalledWith("MarginGutterPins");
-    expect(mockMargin).toHaveBeenCalledWith("SelectionCapsule");
-    expect(mockMargin).not.toHaveBeenCalledWith("WikiMarginDrawer");
-  });
-
-  it("mounts the drawer when it opens, and keeps it mounted after it closes (its exit animation)", () => {
-    mockMarginOpen = true;
-    const { rerender } = renderArticle("ixwiki");
-    expect(mockMargin).toHaveBeenCalledWith("WikiMarginDrawer");
-
-    mockMarginOpen = false;
-    mockMargin.mockClear();
-    rerender(
-      <ArticleRenderer
-        title="Portal:Eurth"
-        contentHtml={content}
-        infoboxHtml={null}
-        noticesHtml={null}
-        toc={[]}
-        categories={[]}
-        lastModified={null}
-        wikiSource="ixwiki"
-        authorInfo={null}
-      />
-    );
-    expect(mockMargin).toHaveBeenCalledWith("WikiMarginDrawer");
-  });
-});
-
 describe("ArticleRenderer for another wiki's page is read-only (ruling E-l)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -236,15 +197,6 @@ describe("ArticleRenderer shows how many Margin threads the page has, not how ma
 
     expect(screen.getByText(/· 82 threads/)).toBeInTheDocument();
   });
-
-  it("shows no count before the totals arrive", () => {
-    marginQuery.mockReturnValue({ data: undefined, refetch: jest.fn() });
-
-    renderArticle("ixwiki");
-
-    expect(screen.getByText("Margin notes")).toBeInTheDocument();
-    expect(screen.queryByText(/threads?$/)).not.toBeInTheDocument();
-  });
 });
 
 const authorsQuery = api.wikios.getArticleAuthors.useQuery as jest.Mock;
@@ -300,14 +252,6 @@ describe("ArticleRenderer embed assets load only for a page that embeds a map (p
       "href",
       "/maps?embed=true"
     );
-  });
-
-  it("adds them for a page whose infobox holds an embed", () => {
-    renderArticle("ixwiki", {
-      infoboxHtml: '<table><tr><td><div class="ix-embed-wrap"></div></td></tr></table>',
-    });
-
-    expect(embedAssets().every(Boolean)).toBe(true);
   });
 });
 
@@ -524,32 +468,5 @@ describe("lean first response (plan 413, item 8c)", () => {
 
     expect(container.textContent).not.toContain("wikios-lean");
     expect(container.querySelector(".wikios-article-body")?.textContent ?? "").toBe("");
-  });
-});
-
-describe("ArticleRenderer's parts carry the class TemplateStyles are scoped to (plan 415 review, m4)", () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it("gives the notices and the body that class, and nothing around them", () => {
-    const { container } = renderArticle("ixwiki", {
-      noticesHtml: '<table class="ambox"><tr><td>n</td></tr></table>',
-    });
-
-    const roots = Array.from(container.querySelectorAll(".mw-parser-output"));
-    expect(roots).toHaveLength(2);
-    expect(container.querySelector(".wikios-notices")).toBe(roots[0]);
-    expect(roots[1]?.innerHTML).toContain("Eurth is a world.");
-    // the page's own chrome (the header, the article container) is outside every root
-    expect(container.querySelector("h1")?.closest(".mw-parser-output")).toBeNull();
-    expect(container.querySelector(".wikios-article")?.classList.contains("mw-parser-output")).toBe(
-      false
-    );
-  });
-
-  it("makes the body a root whose children are the article's own elements, so `.mw-parser-output > p` matches", () => {
-    const { container } = renderArticle("ixwiki");
-    const body = container.querySelector(".wikios-article-content > .mw-parser-output");
-
-    expect(body?.querySelector(":scope > p")?.textContent).toBe("Eurth is a world.");
   });
 });

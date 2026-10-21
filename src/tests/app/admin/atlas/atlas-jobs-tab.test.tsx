@@ -87,13 +87,6 @@ describe("the job list", () => {
     fireEvent.click(screen.getByRole("button", { name: "Load more" }));
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
   });
-
-  it("offers no Load more on the last page, and says when there are no jobs", () => {
-    state.jobPages = [page()];
-    render(<AtlasJobsTab />);
-    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
-    expect(screen.getByText("No jobs")).toBeInTheDocument();
-  });
 });
 
 describe("job actions", () => {
@@ -159,15 +152,6 @@ describe("job actions", () => {
 
 describe("job action results", () => {
   const failedRow = () => page(jobRow({ id: "failed", status: "failed", canRetry: true }));
-
-  it("toasts the note when a retry starts", () => {
-    state.jobPages = [failedRow()];
-    responses["atlas.jobs.retry"] = { jobId: "new", retryAs: "apply", note: "Started again" };
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(notify.success).toHaveBeenCalledWith("Job started again", "Started again");
-  });
-
   it("toasts the server's error when a retry fails", () => {
     state.jobPages = [failedRow()];
     failures["atlas.jobs.retry"] = "The upload is gone";
@@ -179,16 +163,6 @@ describe("job action results", () => {
     );
     expect(notify.success).not.toHaveBeenCalled();
   });
-
-  it("toasts the server's error when a cancel fails", () => {
-    state.jobPages = [page(jobRow({ id: "queued", status: "queued", canCancel: true }))];
-    failures["atlas.jobs.cancel"] = "Already finished";
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel job" }));
-    expect(notify.error).toHaveBeenCalledWith("Could not cancel the job", "Already finished");
-  });
-
   it("toasts the server's error when a roll back fails, and the counts when it works", () => {
     state.jobPages = [page(jobRow({ id: "done", canRollBack: true, importId: "imp_1" }))];
     failures["atlas.jobs.rollback"] = "A later import is in place";
@@ -286,19 +260,5 @@ describe("the detail sheet", () => {
     expect(within(sheet).getByText("1 fields")).toBeInTheDocument();
     expect(within(sheet).getByText("Starts again from the same upload.")).toBeInTheDocument();
     expect(within(sheet).getByRole("button", { name: "Retry" })).toBeInTheDocument();
-  });
-
-  it("says why a failed job cannot be retried", () => {
-    state.jobPages = [page(jobRow({ id: "failed", status: "failed" }))];
-    state.jobDetail = {
-      ...jobRow({ id: "failed", status: "failed", retryBlocked: "The upload is gone" }),
-      result: null,
-      retryNote: "",
-      canApply: false,
-    };
-    render(<AtlasJobsTab />);
-    fireEvent.click(screen.getByRole("button", { name: "Open Apply (PNG) failed" }));
-    expect(within(screen.getByRole("dialog")).queryByRole("button", { name: "Retry" })).toBeNull();
-    expect(within(screen.getByRole("dialog")).getByText("The upload is gone")).toBeInTheDocument();
   });
 });

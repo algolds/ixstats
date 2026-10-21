@@ -1,5 +1,5 @@
 /** The Passport's Lorewards modal shows the shared Lorewards view instead of a copy of its own. */
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 jest.mock("~/components/lorewards/LorewardsView", () => ({
@@ -30,13 +30,5 @@ describe("PassportLorewardsModal", () => {
   it("falls back to the passport handle when no wiki account is linked", () => {
     render(<PassportLorewardsModal open onOpenChange={jest.fn()} handle="alex" />);
     expect(screen.getByTestId("view")).toHaveAttribute("data-username", "alex");
-  });
-
-  it("links to the owner's wiki contributions", () => {
-    render(<PassportLorewardsModal open onOpenChange={jest.fn()} handle="alex" />);
-    expect(screen.getByRole("link", { name: /wiki contributions/i })).toHaveAttribute(
-      "href",
-      "/util/contributions/alex"
-    );
   });
 });

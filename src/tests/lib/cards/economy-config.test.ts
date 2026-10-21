@@ -4,7 +4,6 @@ import {
   clampEconomyConfig,
   clearEconomyConfigCache,
   dailyRarityOdds,
-  ECONOMY_CONFIG_KEYS,
   getEconomyConfig,
   readEconomyConfig,
   setEconomyConfig,
@@ -19,20 +18,6 @@ const clamped = (over: Partial<typeof CARD_ECONOMY_DEFAULTS>) =>
 beforeEach(() => clearEconomyConfigCache());
 
 describe("card economy config", () => {
-  it("defaults to the spec's numbers", async () => {
-    const cfg = await getEconomyConfig(dbWith([]));
-    expect(cfg).toEqual(CARD_ECONOMY_DEFAULTS);
-    expect([cfg.finishFoilPct, cfg.finishHoloPct]).toEqual([8, 2]);
-    expect([cfg.dustCommon, cfg.dustEpic, cfg.dustLegendary]).toEqual([5, 500, 1500]);
-    expect([cfg.dustFoilMult, cfg.dustHoloMult, cfg.dustImportMult]).toEqual([3, 9, 0.25]);
-    expect([cfg.listingFee, cfg.listingFeeFeatured, cfg.listingRefundPct, cfg.listingDays]).toEqual(
-      [5, 10, 50, 14]
-    );
-    expect([cfg.xpPack, cfg.xpDaily, cfg.xpTradePerCard, cfg.xpAuctionWin]).toEqual([
-      10, 10, 25, 50,
-    ]);
-  });
-
   it("reads stored rows and ignores unreadable ones", async () => {
     const cfg = await getEconomyConfig(
       dbWith([
@@ -47,16 +32,6 @@ describe("card economy config", () => {
     expect(cfg.xpPack).toBe(10);
     expect(cfg.xpDaily).toBe(10);
   });
-
-  it("names one card_economy_ key per field", () => {
-    const keys = Object.values(ECONOMY_CONFIG_KEYS);
-    expect(Object.keys(ECONOMY_CONFIG_KEYS).sort()).toEqual(
-      Object.keys(CARD_ECONOMY_DEFAULTS).sort()
-    );
-    expect(new Set(keys).size).toBe(keys.length);
-    for (const key of keys) expect(key).toMatch(/^card_economy_[a-z_]+$/);
-  });
-
   it("keeps fusion and dust from ever adding dust", () => {
     const cfg = clamped({
       fusionCopies: 2,

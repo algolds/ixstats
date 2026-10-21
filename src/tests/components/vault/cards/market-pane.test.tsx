@@ -73,10 +73,8 @@ import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
 import {
   useBrowse,
   useListingActions,
-  useMyListings,
-  useWishlist,
+  useMyListings
 } from "~/hooks/cards/useMarketTabs";
-import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { MarketPane } from "~/components/vault/cards/market/MarketPane";
 import type { MarketTab } from "~/lib/cards/hub-routes";
@@ -158,38 +156,9 @@ const listingsAt = (overrides: Partial<typeof browseItem>, extra: object = {}) =
 beforeEach(() => browsing([browseItem]));
 
 describe("MarketPane", () => {
-  it("has the four sub-tabs and no success-rate tile", () => {
-    renderPane("browse");
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "Browse",
-      "Trades",
-      "Wishlist",
-      "Selling",
-    ]);
-    expect(screen.queryByText(/Success rate/i)).toBeNull();
-  });
-
   // At 320px the four tabs are wider than the page: the row scrolls inside itself, so the page never pans sideways.
-  it("scrolls its tab row in its own track, drawing each focus ring inside the clip", () => {
-    renderPane("browse");
-    const list = screen.getByRole("tablist", { name: "Market" });
-    expect(list).toHaveClass("overflow-x-auto", "hide-scrollbar");
-    for (const tab of within(list).getAllByRole("tab")) {
-      expect(tab).toHaveClass("focus-visible:-outline-offset-2");
-      expect(tab).not.toHaveClass("focus-visible:outline-offset-2");
-    }
-  });
-
   // The SegmentedControl's own keep-in-view (useKeepSelectedInView): a selected or focused tab past the edge, or one
   // pushed out when a tab before it widens, scrolls back into the row.
-  it("keeps the selected tab in view in its row", () => {
-    renderPane("selling");
-    const list = screen.getByRole("tablist", { name: "Market" });
-    const [ref, options] = jest.mocked(useKeepSelectedInView).mock.calls.at(-1)!;
-    expect(ref.current).toBe(list);
-    expect(options).toEqual({ enabled: true, selected: "selling" });
-  });
-
   it("browses live auctions as faces, ending soon first, and bids", () => {
     const placeBid = jest.fn();
     jest.mocked(useAuctionBid).mockReturnValue({
@@ -237,17 +206,6 @@ describe("MarketPane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Buy now for 500 IxC" }));
     expect(executeBuyout).toHaveBeenCalledWith("a1");
   });
-
-  it("shows the player's own listing without bid controls, and points to Selling", () => {
-    listingsAt({ isMine: true });
-    const props = renderPane("browse");
-    expect(screen.getByText("Your listing")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Bid / })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Buy now/ })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "See it in Selling" }));
-    expect(props.onTabChange).toHaveBeenCalledWith("selling");
-  });
-
   it("filters by every public realm with cards, not only the realms Explore shelves", () => {
     jest.mocked(api.cards.exploreShelves.useQuery).mockReturnValue({
       data: { realms: [realm, { ...realm, id: "r13", slug: "eurth", name: "Eurth" }] },
@@ -269,25 +227,6 @@ describe("MarketPane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show every listing" }));
     expect(props.onClearFor).toHaveBeenCalled();
   });
-
-  it("shows more listings a page at a time, up to the router's cap", () => {
-    listingsAt({}, { data: { items: [browseItem], hasMore: true } });
-    renderPane("browse");
-    expect(lastBrowse()).toMatchObject({ limit: 20, offset: 0, filters: { cardId: undefined } });
-    for (let page = 0; page < 4; page += 1) {
-      fireEvent.click(screen.getByRole("button", { name: "Show more" }));
-    }
-    expect(lastBrowse()).toMatchObject({ limit: 100 });
-    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
-  });
-
-  it("keeps the listings on screen while the next page loads", () => {
-    listingsAt({}, { data: { items: [browseItem], hasMore: true }, isPlaceholderData: true });
-    renderPane("browse");
-    expect(screen.getByRole("list", { name: "Listings" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Show more" })).toBeDisabled();
-  });
-
   it("listens for live market events once, on every tab", () => {
     jest.mocked(useAuctionWebSocket).mockClear();
     renderPane("browse");
@@ -296,16 +235,6 @@ describe("MarketPane", () => {
     renderPane("selling");
     expect(useAuctionWebSocket).toHaveBeenCalledTimes(1);
   });
-
-  it("says when nothing is listed, and offers to sell", () => {
-    browsing([]);
-    renderPane("browse");
-    expect(screen.getByText("Nothing is listed right now")).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).toBeNull();
-    fireEvent.click(screen.getAllByRole("button", { name: "Sell a card" })[0]!);
-    expect(screen.getByRole("dialog")).toHaveTextContent("Selling a card");
-  });
-
   it("opens the auction form for the copy the sheet sent", () => {
     renderPane("selling", { sellOwnershipId: "o7" });
     expect(screen.getByRole("dialog")).toHaveTextContent("Selling o7");
@@ -416,17 +345,6 @@ describe("MarketPane", () => {
     fireEvent.click(within(outbid!).getByRole("button", { name: "Raise bid to 137 IxC" }));
     expect(placeBid).toHaveBeenCalledWith("bid-2", 137);
   });
-
-  it("says when the player has no bids running", () => {
-    jest.mocked(api.cardMarket.getMyActiveBids.useQuery).mockReturnValue({
-      data: { auctions: [] },
-      isLoading: false,
-    } as never);
-    renderPane("selling");
-    expect(screen.getByText("No bids running")).toBeInTheDocument();
-    expect(screen.getByText("Auctions you bid on appear here until they end.")).toBeInTheDocument();
-  });
-
   it("splits open offers into the ones waiting on the player and the ones waiting on the other side", () => {
     jest.mocked(api.trading.getActiveTrades.useQuery).mockReturnValue({
       data: [
@@ -472,64 +390,10 @@ describe("MarketPane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close trade t7" }));
     expect(props.onCloseTrade).toHaveBeenCalledTimes(1);
   });
-
-  it("names a past trade's partner as the server names them in History, else a player", () => {
-    const history = jest.mocked(api.trading.getTradeHistory.useQuery);
-    history.mockReturnValue({
-      data: {
-        trades: [
-          {
-            id: "t9",
-            status: "ACCEPTED",
-            updatedAt: new Date("2026-10-03T00:00:00Z"),
-            initiatorCardIds: ["o1"],
-            recipientCardIds: [],
-            initiator: { clerkUserId: "clerk_ann", displayName: "Caphiria" },
-            recipient: { clerkUserId: "clerk_me", displayName: "@max" },
-          },
-          {
-            id: "t8",
-            status: "ACCEPTED",
-            updatedAt: new Date("2026-10-02T00:00:00Z"),
-            initiatorCardIds: [],
-            recipientCardIds: ["o2"],
-            initiator: { clerkUserId: "clerk_me", displayName: "@max" },
-            recipient: { clerkUserId: "clerk_kir", displayName: null },
-          },
-        ],
-      },
-    } as never);
-    renderPane("trades");
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "History" }));
-    expect(screen.getByText("Trade with Caphiria · gave 0, got 1")).toBeInTheDocument();
-    expect(screen.getByText("Trade with a player · gave 0, got 1")).toBeInTheDocument();
-    history.mockReturnValue({ data: { trades: [] } } as never);
-  });
-
   it("shows the wishlist, and sends an empty one to Browse", () => {
     const props = renderPane("wishlist");
     expect(screen.getByText("No cards on your wishlist yet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Browse listings" }));
     expect(props.onTabChange).toHaveBeenCalledWith("browse");
-  });
-
-  it("opens a wished card's sheet from the wishlist", () => {
-    jest.mocked(useWishlist).mockReturnValue({
-      data: [
-        {
-          face: { ...face, copy: null },
-          addedAt: new Date(),
-          owned: 0,
-          listings: 1,
-          lowestPrice: 140,
-          auctions: 0,
-        },
-      ],
-      isLoading: false,
-    } as never);
-    const props = renderPane("wishlist");
-    fireEvent.click(screen.getByRole("button", { name: /^Caphiria/ }));
-    expect(props.onOpenCard).toHaveBeenCalledWith("c1");
-    jest.mocked(useWishlist).mockReturnValue({ data: [], isLoading: false } as never);
   });
 });

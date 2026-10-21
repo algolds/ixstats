@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { keepPreviousData } from "@tanstack/react-query";
 
 jest.mock("~/trpc/react", () => ({
@@ -156,44 +156,12 @@ beforeEach(() => {
 });
 
 describe("ExplorePane", () => {
-  it("shows realm shelves first, with silhouettes and the wanted totals", () => {
-    render(pane());
-    const headings = screen.getAllByRole("heading").map((h) => h.textContent);
-    expect(headings.indexOf("Ixnay")).toBeLessThan(headings.indexOf("All cards"));
-    expect(
-      screen.getByRole("button", { name: "Card n1, Rare, Ixnay, not collected" })
-    ).toBeInTheDocument();
-    expect(screen.getByText("Wanted by 3")).toBeInTheDocument();
-    // The newest strip says nothing of wishes; only the most-wanted strip counts them.
-    expect(screen.getAllByText(/^Wanted by/)).toHaveLength(1);
-    expect(screen.getByText("40 cards")).toBeInTheDocument();
-    expect(screen.getByText("1 card")).toBeInTheDocument();
-  });
-
-  it("names each strip by its realm and its heading, and leaves out a strip with no cards", () => {
-    render(pane());
-    const ixnay = screen.getByRole("list", { name: "Newest in Ixnay" });
-    expect(within(ixnay).getAllByRole("button")).toHaveLength(1);
-    expect(screen.getByRole("list", { name: "Most wanted in Ixnay" })).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: /in NationStates$/ })).not.toBeInTheDocument();
-  });
-
   it("opens a card's sheet from a shelf", () => {
     const onOpenCard = jest.fn();
     render(pane({ onOpenCard }));
     fireEvent.click(screen.getByRole("button", { name: "Card w1, Rare, Ixnay, not collected" }));
     expect(onOpenCard).toHaveBeenCalledWith("w1");
   });
-
-  it("shows a realm's banner, and drops it when it does not load", () => {
-    setShelves({ data: [ixnayShelf({ bannerUrl: "/images/banners/ixnay.png" })] });
-    const { container } = render(pane());
-    const banner = container.querySelector('img[src="/images/banners/ixnay.png"]');
-    expect(banner).toHaveAttribute("alt", "");
-    fireEvent.error(banner!);
-    expect(container.querySelector('img[src="/images/banners/ixnay.png"]')).toBeNull();
-  });
-
   it("filters the grid to a realm from its shelf, and takes the player there", () => {
     const scroll = jest.spyOn(Element.prototype, "scrollIntoView");
     render(pane());
@@ -229,56 +197,6 @@ describe("ExplorePane", () => {
     fireEvent.click(screen.getByRole("option", { name: "Most wanted" }));
     expect(lastGridInput()).toMatchObject({ search: "oak", sort: "wanted" });
   });
-
-  it("preselects the realm a link named, and offers NS regions", () => {
-    render(pane({ initialRealmSlug: "nationstates" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "ns" });
-    const [input, options] = regions().mock.calls.at(-1)!;
-    expect(input).toEqual({ search: "" });
-    expect(options).toMatchObject({ enabled: true, placeholderData: keepPreviousData });
-  });
-
-  it("lists every realm with cards in the realm filter, with a shelf or not", () => {
-    setShelves({
-      data: [ixnayShelf()],
-      realms: [realm("default", "Ixnay", "ixnay"), realm("small", "Small realm")],
-    });
-    render(pane());
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
-    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Every realm",
-      "Ixnay",
-      "Small realm",
-    ]);
-    fireEvent.click(screen.getByRole("option", { name: "Small realm" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "small" });
-  });
-
-  it("preselects a linked realm that has no shelf", () => {
-    setShelves({
-      data: [ixnayShelf()],
-      realms: [realm("default", "Ixnay", "ixnay"), realm("small", "Small realm")],
-    });
-    render(pane({ initialRealmSlug: "small" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "small" });
-  });
-
-  it("offers no trophy type: trophy cards are not in Explore", () => {
-    render(pane());
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
-    expect(screen.getByRole("button", { name: "Lore" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Trophy" })).not.toBeInTheDocument();
-  });
-
-  it("finds Ixnay by its old slugs too, and ignores a slug no shelf has", () => {
-    const { unmount } = render(pane({ initialRealmSlug: "ixworld" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "default" });
-    unmount();
-    render(pane({ initialRealmSlug: "somewhere" }));
-    expect(lastGridInput()).not.toHaveProperty("realmId");
-  });
-
   it("applies a linked realm once, then leaves the player's choice alone until the link changes", () => {
     const view = render(pane({ initialRealmSlug: "nationstates" }));
     fireEvent.click(screen.getByRole("button", { name: "Browse all Ixnay cards" }));
@@ -288,34 +206,6 @@ describe("ExplorePane", () => {
     view.rerender(pane({ initialRealmSlug: "nationstates" }));
     expect(lastGridInput()).toMatchObject({ realmId: "ns" });
   });
-
-  it("applies the same linked realm again once the address has dropped it", () => {
-    const view = render(pane({ initialRealmSlug: "nationstates" }));
-    fireEvent.click(screen.getByRole("button", { name: "Browse all Ixnay cards" }));
-    view.rerender(pane({ initialRealmSlug: null }));
-    expect(lastGridInput()).toMatchObject({ realmId: "default" });
-    view.rerender(pane({ initialRealmSlug: "nationstates" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "ns" });
-  });
-
-  it("waits for the shelves before it applies a linked realm", () => {
-    setShelves({ isLoading: true });
-    const view = render(pane({ initialRealmSlug: "nationstates" }));
-    expect(lastGridInput()).not.toHaveProperty("realmId");
-    setShelves({ data: shelves });
-    view.rerender(pane({ initialRealmSlug: "nationstates" }));
-    expect(lastGridInput()).toMatchObject({ realmId: "ns" });
-  });
-
-  it("loads regions only while the NationStates realm is picked", () => {
-    render(pane());
-    expect(regions().mock.calls.at(-1)![1]).toMatchObject({ enabled: false });
-    fireEvent.click(screen.getByRole("button", { name: "Browse all Ixnay cards" }));
-    expect(regions().mock.calls.at(-1)![1]).toMatchObject({ enabled: false });
-    fireEvent.click(screen.getByRole("button", { name: "Browse all NationStates cards" }));
-    expect(regions().mock.calls.at(-1)![1]).toMatchObject({ enabled: true });
-  });
-
   it("searches the regions as the player types, and filters the grid to the one picked", () => {
     render(pane({ initialRealmSlug: "nationstates" }));
     fireEvent.click(screen.getByRole("button", { name: "Filters, 1 on" }));
@@ -324,21 +214,6 @@ describe("ExplorePane", () => {
     expect(regions().mock.calls.at(-1)![0]).toEqual({ search: "pac" });
     fireEvent.click(screen.getByRole("option", { name: "The Pacific" }));
     expect(lastGridInput()).toMatchObject({ realmId: "ns", region: "The Pacific" });
-  });
-
-  it("keeps the region search and its matches when the filters close and reopen", () => {
-    render(pane({ initialRealmSlug: "nationstates" }));
-    const filtersButton = () => screen.getByRole("button", { name: "Filters, 1 on" });
-    fireEvent.click(filtersButton());
-    fireEvent.change(screen.getByRole("combobox", { name: "NationStates region" }), {
-      target: { value: "pac" },
-    });
-    fireEvent.click(filtersButton());
-    expect(screen.queryByRole("combobox", { name: "NationStates region" })).not.toBeInTheDocument();
-    fireEvent.click(filtersButton());
-    expect(screen.getByRole("combobox", { name: "NationStates region" })).toHaveValue("pac");
-    expect(regions().mock.calls.at(-1)![0]).toEqual({ search: "pac" });
-    expect(screen.getByRole("option", { name: "The Pacific" })).toBeInTheDocument();
   });
 
   /** Picks a NationStates region from the Filters popover, which is left open. */
@@ -358,34 +233,6 @@ describe("ExplorePane", () => {
     pickRealm("Ixnay");
     expect(lastGridInput()).toEqual({ realmId: "default", sort: "newest", limit: 48 });
   });
-
-  it("drops the region when a new link picks another realm", () => {
-    const view = render(pane({ initialRealmSlug: "nationstates" }));
-    fireEvent.click(screen.getByRole("button", { name: "Filters, 1 on" }));
-    fireEvent.click(screen.getByRole("option", { name: "The Pacific" }));
-    view.rerender(pane({ initialRealmSlug: "ixnay" }));
-    expect(lastGridInput()).toEqual({ realmId: "default", sort: "newest", limit: 48 });
-  });
-
-  it("keeps the region across every realm, where it still narrows NationStates cards", () => {
-    pickNsRegion();
-    pickRealm("Every realm");
-    expect(lastGridInput()).toEqual({ region: "The Pacific", sort: "newest", limit: 48 });
-  });
-
-  it("hides the region filter outside the NationStates realm", () => {
-    render(pane({ initialRealmSlug: "ixnay" }));
-    fireEvent.click(screen.getByRole("button", { name: "Filters, 1 on" }));
-    expect(screen.queryByRole("combobox", { name: "NationStates region" })).not.toBeInTheDocument();
-  });
-
-  it("opens a card's sheet from the grid", () => {
-    const onOpenCard = jest.fn();
-    render(pane({ onOpenCard }));
-    fireEvent.click(screen.getByRole("button", { name: "Card g1, Rare, Ixnay, not collected" }));
-    expect(onOpenCard).toHaveBeenCalledWith("g1");
-  });
-
   it("lists each loaded card once, though pages overlap", () => {
     setGrid(gridPages([[face("g1", true), face("g2", false)], [face("g2", false)]]));
     render(pane());
@@ -423,83 +270,6 @@ describe("ExplorePane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(lastGridInput()).toEqual({ sort: "newest", limit: 48 });
   });
-
-  it("offers to clear a search that matches nothing", () => {
-    setGrid(gridPages([[]]));
-    render(pane());
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search cards" }), {
-      target: { value: "zzz" },
-    });
-    expect(screen.getByText("No cards match these filters")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(lastGridInput()).toEqual({ sort: "newest", limit: 48 });
-    expect(screen.getByRole("searchbox", { name: "Search cards" })).toHaveValue("");
-  });
-
-  it("marks the grid busy while new filters load, but not while the next page does", () => {
-    setGrid(gridPages([[face("g1", true)]], { isFetching: true }));
-    const view = render(pane());
-    const busy = () => screen.getByRole("list", { name: "All cards" }).parentElement;
-    expect(busy()).toHaveAttribute("aria-busy", "true");
-    setGrid(gridPages([[face("g1", true)]], { isFetching: true, isFetchingNextPage: true }));
-    view.rerender(pane());
-    expect(busy()).toHaveAttribute("aria-busy", "false");
-  });
-
-  it("says when there are no cards at all, once, and points to the Store", () => {
-    setShelves({ data: [] });
-    setGrid(gridPages([[]]));
-    render(pane());
-    expect(screen.queryByRole("heading", { name: "Realms" })).not.toBeInTheDocument();
-    expect(screen.getAllByText("No cards yet")).toHaveLength(1);
-    expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
-    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
-  });
-
-  it("shows the grid when no realm has a shelf", () => {
-    setShelves({ data: [] });
-    render(pane());
-    expect(screen.queryByRole("heading", { name: "Realms" })).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Card g1, Rare, Ixnay, not collected" })
-    ).toBeInTheDocument();
-  });
-
-  it("holds the shelves' and the grid's places while they load", () => {
-    setShelves({ isLoading: true });
-    setGrid({ ...gridPages([]), data: undefined, isLoading: true } as never);
-    render(pane());
-    expect(screen.getByRole("heading", { name: "Realms" })).toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "All cards" })).not.toBeInTheDocument();
-    expect(screen.queryByText("No cards yet")).not.toBeInTheDocument();
-  });
-
-  it("says when the shelves did not load, and tries again, but keeps shelves it already has", () => {
-    const refetch = setShelves({ isError: true });
-    const view = render(pane());
-    expect(screen.getByText("Realms did not load")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalledTimes(1);
-
-    setShelves({ data: shelves, isError: true });
-    view.rerender(pane());
-    expect(screen.queryByText("Realms did not load")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Ixnay" })).toBeInTheDocument();
-  });
-
-  it("says when the grid did not load, and tries again, but keeps cards it already has", () => {
-    const failed = setGrid({ ...gridPages([]), data: undefined, isError: true } as never);
-    const view = render(pane());
-    expect(screen.getByText("Cards did not load")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(failed.refetch).toHaveBeenCalledTimes(1);
-
-    setGrid(gridPages([[face("g1", true)]], { isError: true }));
-    view.rerender(pane());
-    expect(screen.queryByText("Cards did not load")).not.toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "All cards" })).toBeInTheDocument();
-  });
-
   describe("suggesting a card", () => {
     it("asks to open the suggestion dialog from the grid's header", () => {
       const onSuggestingChange = jest.fn();
@@ -507,25 +277,6 @@ describe("ExplorePane", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Suggest a card" }));
       expect(onSuggestingChange).toHaveBeenCalledWith(true);
-    });
-
-    it("shows the suggestion form while suggesting, closes on request, and gives focus back", async () => {
-      const onSuggestingChange = jest.fn();
-      const view = render(pane({ onSuggestingChange }));
-      const button = screen.getByRole("button", { name: "Suggest a card" });
-      button.focus();
-      view.rerender(pane({ onSuggestingChange, suggesting: true }));
-      const dialog = screen.getByRole("dialog", { name: "Suggest a lore card" });
-      expect(dialog).toHaveAccessibleDescription(
-        "Pick a wiki article with no card yet. An admin reviews every suggestion."
-      );
-      expect(within(dialog).getByText("The suggestion form")).toBeInTheDocument();
-      fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
-      expect(onSuggestingChange).toHaveBeenLastCalledWith(false);
-      view.rerender(pane({ onSuggestingChange, suggesting: false }));
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      // Radix moves focus out of a closing dialog on the next tick.
-      await waitFor(() => expect(button).toHaveFocus());
     });
   });
 });

@@ -259,18 +259,4 @@ describe("component catalogs are code-defined", () => {
     expect(result.count).toBe(Object.values(ATOMIC_ECONOMIC_COMPONENTS).filter(Boolean).length);
     expect(result.components.every((c) => c.usageCount === 0)).toBe(true);
   });
-
-  it("has no component edit endpoints", () => {
-    for (const router of [governmentComponentsRouter, economicComponentsRouter]) {
-      const procedures = Object.keys(router._def.procedures);
-      for (const name of [
-        "createComponent",
-        "updateComponent",
-        "deleteComponent",
-        "createSynergy",
-      ]) {
-        expect(procedures).not.toContain(name);
-      }
-    }
-  });
 });

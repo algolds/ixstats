@@ -3,9 +3,6 @@ import {
   exceedsHysteresis,
   detectAxis,
   axisLock,
-  HYSTERESIS_PX,
-  NUDGE_SMALL,
-  NUDGE_LARGE,
   isKeyboardInputTarget,
 } from "~/components/maps/editor/hooks/drag-utils";
 import {
@@ -17,12 +14,6 @@ import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { Polygon } from "geojson";
 
 describe("drag-utils", () => {
-  it("defines correct hysteresis and nudge constants", () => {
-    expect(HYSTERESIS_PX).toBe(4);
-    expect(NUDGE_SMALL).toBe(0.001);
-    expect(NUDGE_LARGE).toBe(0.01);
-  });
-
   describe("exceedsHysteresis", () => {
     it("returns false for displacements under threshold", () => {
       const start = { x: 100, y: 100 };

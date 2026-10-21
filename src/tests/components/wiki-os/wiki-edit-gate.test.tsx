@@ -2,8 +2,8 @@
  * F35c: `?action=edit` opens the editor only for someone who may edit; everyone else gets MediaWiki's
  * "View source": the wikitext read-only, the reason, and a way to sign in when signed out.
  */
-import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import "react";
+import { render, screen } from "@testing-library/react";
 
 let mockAuth = { isLoaded: true, isSignedIn: false };
 const mockEditAccess = jest.fn();
@@ -55,13 +55,6 @@ describe("WikiEditGate", () => {
     // the server is not asked for a reader who cannot edit anyway
     expect(mockEditAccess.mock.calls[0]?.[1]).toMatchObject({ enabled: false });
   });
-
-  it("goes back to the page", () => {
-    renderGate();
-    fireEvent.click(screen.getByRole("button", { name: "Back to page" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
   it("tells a signed-out reader they cannot create a page that does not exist, and shows no source", () => {
     mockWikitext.mockReturnValue({ data: { wikitext: "", revisionRef: null }, isLoading: false, isError: false });
     renderGate();
@@ -115,12 +108,5 @@ describe("WikiEditGate", () => {
     mockEditAccess.mockReturnValue({ data: undefined, isLoading: false, isError: true });
     renderGate();
     expect(screen.getByText("the live editor")).toBeInTheDocument();
-  });
-
-  it("says so when the source cannot be loaded", () => {
-    mockWikitext.mockReturnValue({ data: undefined, isLoading: false, isError: true });
-    renderGate();
-    expect(screen.getByRole("alert").textContent).toContain("could not be loaded");
-    expect(screen.getByRole("button", { name: "Back to page" })).toBeInTheDocument();
   });
 });

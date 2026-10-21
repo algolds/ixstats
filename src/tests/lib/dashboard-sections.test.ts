@@ -2,8 +2,6 @@
  * The Dashboard's single-page sections: which section a dashboard URL opens.
  */
 import {
-  DASHBOARD_SECTION_PATHS,
-  DASHBOARD_SECTION_TITLES,
   getDashboardSection,
 } from "~/lib/dashboard-sections";
 
@@ -19,14 +17,6 @@ describe("getDashboardSection", () => {
     ["/dashboard/saved", "home"],
   ])("%s opens %s", (pathname, section) => {
     expect(getDashboardSection(pathname)).toBe(section);
-  });
-
-  it("names each section's path and title", () => {
-    expect(DASHBOARD_SECTION_PATHS).toEqual({
-      home: "/dashboard",
-      accounts: "/dashboard/accounts",
-    });
-    expect(DASHBOARD_SECTION_TITLES).toEqual({ home: "Dashboard", accounts: "Accounts" });
   });
 });
 

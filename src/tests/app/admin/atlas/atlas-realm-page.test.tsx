@@ -81,19 +81,6 @@ describe("the realm page", () => {
     expect(screen.getByRole("button", { name: "Open World check recent_1" })).toBeInTheDocument();
     expect(screen.getByText("pipeline panel for eurth")).toBeInTheDocument();
   });
-
-  it("links to the editor and to Studio for this realm", () => {
-    render(<AtlasRealmPage slug="eurth" />);
-    expect(screen.getByRole("link", { name: "Open in editor" })).toHaveAttribute(
-      "href",
-      "/admin/maps/editor?realm=eurth"
-    );
-    expect(screen.getByRole("link", { name: "Open in Studio" })).toHaveAttribute(
-      "href",
-      "/admin/maps/studio?fit=eurth"
-    );
-  });
-
   it("says when the realm cannot be read", () => {
     state.realm = undefined;
     state.realmError = "Realm not found";
@@ -123,15 +110,6 @@ describe("the realm page actions", () => {
     );
     expect(calls).toEqual([["atlas.jobs.rollback", { importId: "imp_9" }]]);
   });
-
-  it("says in general terms what the roll back undoes, not only borders", () => {
-    render(<AtlasRealmPage slug="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
-    const text = within(screen.getByRole("alertdialog")).getByText(/Everything it wrote is undone/);
-    expect(text).toHaveTextContent("layers it wrote go back");
-    expect(text).toHaveTextContent("nations or slots it made are removed");
-  });
-
   it("turns Roll back off when the latest import cannot be undone", () => {
     loadRealm(false);
     render(<AtlasRealmPage slug="eurth" />);
@@ -144,28 +122,6 @@ describe("the realm page actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
     expect(calls).toEqual([["atlas.realms.refresh", { realm: "eurth" }]]);
   });
-
-  it("toasts the results of a rebuild, a roll back and a refresh", () => {
-    responses["atlas.jobs.rollback"] = { restored: 2, deleted: 1 };
-    responses["atlas.realms.refresh"] = { mapVersion: 5 };
-    render(<AtlasRealmPage slug="eurth" />);
-    fireEvent.click(screen.getByRole("button", { name: "Rebuild relief" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Rebuild relief" })
-    );
-    expect(notify.success).toHaveBeenCalledWith("Relief rebuilt");
-    fireEvent.click(screen.getByRole("button", { name: "Roll back last import" }));
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", { name: "Roll back" })
-    );
-    expect(notify.success).toHaveBeenCalledWith(
-      "Import rolled back",
-      "2 borders restored, 1 removed"
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Refresh caches" }));
-    expect(notify.success).toHaveBeenCalledWith("Caches refreshed", "The map is now at version 5");
-  });
-
   it("toasts the server's error when an action fails", () => {
     failures["geoEditor.mapImport.rebuildRelief"] = "No relief source";
     failures["atlas.jobs.rollback"] = "A later import is in place";

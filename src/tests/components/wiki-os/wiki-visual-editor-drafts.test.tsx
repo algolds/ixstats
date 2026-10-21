@@ -141,17 +141,6 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     expect(draft.html).toBeUndefined();
     expect(draft.mode).toBe("visual");
   });
-
-  it("keeps no draft for a signed-out editor and says why (plan 416)", async () => {
-    mockUserId = null;
-    setup();
-    fireEvent.click(screen.getByText("save-draft"));
-    await waitFor(() =>
-      expect(mockNotifyError).toHaveBeenCalledWith("Sign in to save a draft", expect.any(String))
-    );
-    expect(window.localStorage.length).toBe(0);
-  });
-
   it("does not start from another user's draft (plan 416)", () => {
     saveDraft("user_bob", {
       title: "Vesperia",
@@ -173,36 +162,6 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     setup();
     expect(screen.getByTestId("canvas").textContent).toBe("From the draft");
   });
-
-  it("does not start from a draft when restoreLocalDraft is false", () => {
-    saveDraft("user_alice", {
-      title: "Vesperia",
-      source: "ixwiki",
-      mode: "visual",
-      wikitext: "From the draft",
-    });
-    setup({ restoreLocalDraft: false });
-    expect(screen.getByTestId("canvas").textContent).toBe("Start");
-  });
-
-  it("hands the host a reader of the editor's content, and withdraws it on unmount", () => {
-    const register = jest.fn();
-    const view = render(
-      <WikiVisualEditor
-        title="Vesperia"
-        initialWikitext="Start"
-        onSave={jest.fn()}
-        onCancel={jest.fn()}
-        onSwitchToSource={jest.fn()}
-        registerContentReader={register}
-      />
-    );
-    const reader = register.mock.calls[0]![0] as () => string | null;
-    expect(reader()).toBe("Edited text.");
-    view.unmount();
-    expect(register).toHaveBeenLastCalledWith(null);
-  });
-
   it("tells the author when an edit could not be applied or a block was moved, and still saves", async () => {
     mockNodes = [
       { type: "p", children: [{ text: "Inserted above the redirect." }] },

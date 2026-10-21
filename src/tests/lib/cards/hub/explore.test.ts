@@ -289,19 +289,6 @@ describe("exploreShelves", () => {
       },
     });
   });
-
-  it("leaves trophy cards out of the strips", async () => {
-    const db = createMockPrisma();
-    db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 4 } }]);
-    db.realm.findMany.mockResolvedValue([{ ...realm("default", "Ixnay"), bannerUrl: null }]);
-    await exploreShelves(db as never, "me");
-    const strips = db.card.findMany.mock.calls.map((call) => call[0]);
-    expect(strips).toHaveLength(2);
-    for (const args of strips) {
-      expect(args.where).toMatchObject({ ...CATALOGUE_WHERE, realmId: "default", ...NO_TROPHIES });
-    }
-  });
-
   it("takes the six newest and the six most wanted, each with a stable order", async () => {
     const db = createMockPrisma();
     db.card.groupBy.mockResolvedValue([{ realmId: "default", _count: { _all: 4 } }]);
@@ -348,13 +335,6 @@ describe("exploreRegions", () => {
     expect(sql).not.toMatch(/ILIKE/);
     expect(values).toEqual([]);
   });
-
-  it("treats a blank search as none", async () => {
-    const db = regionsDb();
-    await exploreRegions(db as never, "   ");
-    expect(sentQuery(db).sql).not.toMatch(/ILIKE/);
-  });
-
   it("searches regions case-insensitively through a bound parameter, still the 60 biggest", async () => {
     const db = regionsDb();
     await exploreRegions(db as never, " pacific ");

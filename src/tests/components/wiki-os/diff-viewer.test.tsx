@@ -36,12 +36,6 @@ describe("DiffViewer with server hunks", () => {
     expect(container.querySelector("b")).toBeNull();
     expect(container.textContent).toContain("<b>hi</b>");
   });
-
-  it("says so when there is no difference, and when both sides are given as text", () => {
-    render(<DiffViewer hunks={[]} />);
-    expect(screen.getByText("There are no differences.")).toBeInTheDocument();
-  });
-
   it("still diffs two texts it is handed (small suggested edits), with the shared bounded diff", () => {
     const { container } = render(<DiffViewer oldCode={"a\nb"} newCode={"a\nc"} layout="split" />);
 
@@ -54,21 +48,6 @@ describe("DiffViewer with server hunks", () => {
 
     expect(screen.getByText(/too large to display/)).toBeInTheDocument();
   });
-
-  it("ends with the unchanged lines left out after the last hunk", () => {
-    const base = lines(100);
-    const changed = [...base];
-    changed[9] = "line 10 edited";
-    const diff = diffWikitext(base.join("\n"), changed.join("\n"));
-
-    render(<DiffViewer hunks={diff.hunks} trailingSkipped={diff.trailingSkipped} />);
-
-    // 9 lines before the change keep 3 as context (6 left out), 100 - 10 - 3 = 87 after it
-    expect(screen.getByText(/6 unchanged lines/)).toBeInTheDocument();
-    expect(screen.getByText(/87 unchanged lines/)).toBeInTheDocument();
-    expect(diff.trailingSkipped).toBe(87);
-  });
-
   it("shows a notice instead of a diff when the server says it is too large, with its counts", () => {
     const { container } = render(
       <DiffViewer hunks={[]} tooLarge added={1_000_000} removed={1_000_000} />

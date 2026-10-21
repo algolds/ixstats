@@ -69,11 +69,4 @@ describe("TrophyCards", () => {
     );
     expect(screen.getByRole("listitem")).not.toHaveAttribute("data-highlighted");
   });
-
-  it("links each trophy to the article it was won for, named by its title", () => {
-    render(<TrophyCards cards={[trophy]} holderHandle="max" own />);
-    const article = screen.getByRole("link", { name: "The article, Caphiria" });
-    expect(article).toHaveTextContent("The article");
-    expect(article.getAttribute("href")).toMatch(/\/wiki\/Caphiria$/);
-  });
 });

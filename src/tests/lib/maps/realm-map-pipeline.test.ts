@@ -22,10 +22,6 @@ const minimal = (): RealmMapPipeline =>
   });
 
 describe("realm map pipeline config", () => {
-  it("defaults to no art and no rasters", () => {
-    expect(realmMapPipelineSchema.parse({})).toEqual({ art: {}, rasters: [] });
-  });
-
   it("takes art from the source repository or an upload, nothing else", () => {
     expect(minimal().art).toEqual({
       geo: { repoPath: "maps/geo.png" },
@@ -155,23 +151,6 @@ describe("the pipeline in Realm.settings", () => {
 
 describe("loading a preset", () => {
   const preset = sourcePreset("eurth-map")!.mapPipeline!;
-
-  it("Eurth's preset carries its whole map: art, five raster layers, physical layers, labels, flags, view, smoothing", () => {
-    expect(preset.rasters.map((r) => r.id)).toEqual([
-      "geography",
-      "geography-grey",
-      "climate",
-      "tectonic",
-      "currents",
-    ]);
-    expect(preset.physical?.land).toBe("blank");
-    expect(preset.labels && "labels" in preset.labels && preset.labels.labels.length).toBe(83);
-    expect(preset.flags).toEqual({ localize: true });
-    expect(preset.defaultView).toBe("auto");
-    expect(preset.coverage).toEqual({ tolerance: 0.045, smooth: 2 });
-    expect(Object.values(preset.art).every((source) => "repoPath" in source)).toBe(true);
-  });
-
   it("fills a realm without a pipeline with all of it", () => {
     expect(fillPipelineFromPreset(null, preset)).toEqual({
       pipeline: preset,

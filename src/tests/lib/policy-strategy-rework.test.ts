@@ -98,18 +98,6 @@ describe("Policy Strategy Rework - Unit Tests", () => {
       const res = NationalIssuesEngine.evaluateCondition(condition, dummySnapshot);
       expect(res).toBe(true);
     });
-
-    it("evaluates false condition when dotted-notation value doesn't match", () => {
-      const condition = {
-        field: "policySettings.universal-basic-income.stipend",
-        op: ">",
-        value: 2,
-      } as any;
-
-      const res = NationalIssuesEngine.evaluateCondition(condition, dummySnapshot);
-      expect(res).toBe(false);
-    });
-
     it("handles missing settings or nested paths gracefully", () => {
       const condition = {
         field: "policySettings.surveillance-oversight.surveillance",

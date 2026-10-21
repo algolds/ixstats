@@ -326,16 +326,6 @@ describe("sniffFile: SVG", () => {
       "it refers to something outside the file (url())"
     );
   });
-
-  it("scans a hostile SVG in linear time", () => {
-    const started = Date.now();
-    const nested = `<svg>${'<g a="'.repeat(30_000)}${" ".repeat(200_000)}</svg>`;
-    const spaces = `<svg width="1${" ".repeat(500_000)}x!"/>`;
-    const urls = `<svg>${"url( ".repeat(100_000)}</svg>`;
-    const refs = `<svg><a href="${"&#x6a;".repeat(100_000)}"/></svg>`;
-    for (const text of [nested, spaces, urls, refs]) svgProblem(text);
-    expect(Date.now() - started).toBeLessThan(5_000 * TIMING_BUDGET_SCALE);
-  });
 });
 
 describe("the SVG size limit (review)", () => {

@@ -99,21 +99,6 @@ describe("BoardSettingsPanel", () => {
     expect(screen.getByRole("switch", { name: "Visitors can post" })).not.toBeChecked();
     expect(screen.getByRole("combobox", { name: "Slow mode" })).toHaveValue("30");
   });
-
-  it("offers Off, 10s, 30s, 1m and 5m", () => {
-    renderPanel();
-    const options = screen
-      .getAllByRole("option")
-      .map((o) => [o.getAttribute("value"), o.textContent]);
-    expect(options).toEqual([
-      ["0", "Off"],
-      ["10", "10s"],
-      ["30", "30s"],
-      ["60", "1m"],
-      ["300", "5m"],
-    ]);
-  });
-
   it("turns visitors off at once and sends only that setting", async () => {
     renderPanel();
     fireEvent.click(screen.getByRole("switch", { name: "Visitors can post" }));

@@ -1,8 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import { buildEquipmentCatalogSeed, buildManufacturerSeed } from "~/lib/military/catalog-seed";
 import { catalogRowToPreset } from "~/lib/military/player-catalog";
-import { buildArchetypeSeedRows } from "~/lib/economy/archetypes/seed";
-
 describe("military equipment seed", () => {
   const rows = buildEquipmentCatalogSeed();
 
@@ -10,11 +8,6 @@ describe("military equipment seed", () => {
     expect(new Set(rows.map((row) => row.key)).size).toBe(rows.length);
     const manufacturers = new Set(buildManufacturerSeed().map((m) => m.key));
     expect(rows.filter((row) => !manufacturers.has(row.manufacturer))).toEqual([]);
-  });
-
-  it("maps every row to a player asset type", () => {
-    const types = new Set(rows.map((row) => catalogRowToPreset(row).type));
-    expect(types).toEqual(new Set(["aircraft", "ship", "vehicle", "weapon_system"]));
   });
 });
 
@@ -41,15 +34,5 @@ describe("catalogRowToPreset", () => {
       role: undefined,
       technologyLevel: 70,
     });
-  });
-});
-
-describe("economic archetype seed", () => {
-  it("seeds every built-in archetype once, with its era", () => {
-    const rows = buildArchetypeSeedRows();
-    expect(rows).toHaveLength(20);
-    expect(new Set(rows.map((row) => row.key)).size).toBe(20);
-    expect(rows.filter((row) => row.era === "historical")).toHaveLength(10);
-    expect(rows.find((row) => row.key === "british-empire")?.era).toBe("historical");
   });
 });

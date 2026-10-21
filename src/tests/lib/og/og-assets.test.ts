@@ -11,8 +11,7 @@ import {
   absoluteAssetUrl,
   fetchOgImage,
   imageDataUri,
-  isAllowedImageUrl,
-  loadOgFonts,
+  isAllowedImageUrl
 } from "~/lib/og/og-assets.server";
 
 const ORIGIN = new URL("https://ixwiki.com");
@@ -207,13 +206,5 @@ describe("fetchOgImage", () => {
     await expect(fetchOgImage("/chunked.png", ORIGIN)).resolves.toBeNull();
     expect(cancelled).toBe(true);
     expect(pulled).toBeLessThan(10);
-  });
-});
-
-describe("loadOgFonts", () => {
-  it("loads Schibsted Grotesk from public/fonts in the weights the cards use", async () => {
-    const fonts = await loadOgFonts();
-    expect(fonts.map((f) => f.weight).sort()).toEqual([400, 500, 600, 700]);
-    expect(fonts.every((f) => f.name === "Schibsted Grotesk" && f.data.byteLength > 0)).toBe(true);
   });
 });

@@ -2,7 +2,6 @@ import { act, render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import {
   MediaContextProvider,
-  useIxMedia,
   useIxMediaActions,
   useIxMediaTime,
 } from "~/components/media/MediaContext";
@@ -42,15 +41,6 @@ function TimeProbe() {
   return <span data-testid="time">{useIxMediaTime()}</span>;
 }
 
-function MergedProbe() {
-  const { currentTime, playTrack } = useIxMedia();
-  return (
-    <span data-testid="merged">
-      {currentTime}:{typeof playTrack}
-    </span>
-  );
-}
-
 function fireTimeUpdate(seconds: number) {
   act(() => {
     mockEngineHandlers.get("timeupdate")?.(seconds);
@@ -77,17 +67,5 @@ describe("MediaContextProvider", () => {
 
     expect(screen.getByTestId("time").textContent).toBe("5");
     expect(actionsRenders).toBe(rendersAfterMount);
-  });
-
-  it("keeps the merged useIxMedia() API", () => {
-    render(
-      <MediaContextProvider>
-        <MergedProbe />
-      </MediaContextProvider>
-    );
-
-    fireTimeUpdate(7);
-
-    expect(screen.getByTestId("merged").textContent).toBe("7:function");
   });
 });

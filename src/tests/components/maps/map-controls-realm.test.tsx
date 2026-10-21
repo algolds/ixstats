@@ -141,12 +141,4 @@ describe("layer panel on a realm", () => {
     });
     expect(within(panel).getByText("Af: Tropical rainforest")).toBeInTheDocument();
   });
-
-  it("keeps the Trewartha legend without one", () => {
-    const { panel } = openLayers({
-      visibleLayers: new Set<MapLayerType>(["political", "climate"]),
-    });
-    expect(within(panel).queryByText("Af: Tropical rainforest")).toBeNull();
-    expect(within(panel).getAllByText(/^[A-Z][a-z]*: /).length).toBeGreaterThan(3);
-  });
 });

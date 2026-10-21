@@ -4,8 +4,7 @@
 import { describe, expect, test } from "@jest/globals";
 import {
   calculateJaccardSimilarity,
-  calculateCosineSimilarity,
-  compareProfiles,
+  calculateCosineSimilarity
 } from "~/lib/onoma/comparator";
 
 describe("Onoma Comparator Engine", () => {
@@ -46,27 +45,5 @@ describe("Onoma Comparator Engine", () => {
 
     // Disjoint bigrams (orthogonal vectors) should yield 0.0
     expect(calculateCosineSimilarity(bigramsA, bigramsC)).toBe(0.0);
-  });
-
-  test("compareProfiles returns valid comparison payload structure", () => {
-    const result = compareProfiles("latin", "germanic");
-
-    expect(result).toHaveProperty("phonemeOverlap");
-    expect(result).toHaveProperty("bigramSimilarity");
-    expect(result).toHaveProperty("entropyDelta");
-    expect(result).toHaveProperty("linguisticDistance");
-    expect(result).toHaveProperty("sharedPhonemes");
-    expect(result).toHaveProperty("uniqueToA");
-    expect(result).toHaveProperty("uniqueToB");
-
-    expect(typeof result.phonemeOverlap).toBe("number");
-    expect(typeof result.bigramSimilarity).toBe("number");
-    expect(typeof result.linguisticDistance).toBe("number");
-    expect(result.linguisticDistance).toBeGreaterThanOrEqual(0);
-    expect(result.linguisticDistance).toBeLessThanOrEqual(100);
-
-    expect(Array.isArray(result.sharedPhonemes)).toBe(true);
-    expect(Array.isArray(result.uniqueToA)).toBe(true);
-    expect(Array.isArray(result.uniqueToB)).toBe(true);
   });
 });

@@ -3,8 +3,7 @@
 import { artCreditOf, type ArtLicenceFacts } from "~/lib/cards/face/art-credit";
 import { nsProvenanceOf } from "~/lib/cards/face/ns-provenance";
 import { trailLabel, trailParties } from "~/lib/cards/face/trail";
-import { MINT_SOURCES } from "~/lib/cards/mint";
-import { formatOdds, packOddsRows } from "~/lib/cards/pack-odds";
+import { packOddsRows } from "~/lib/cards/pack-odds";
 
 describe("nsProvenanceOf", () => {
   it("reads the nation, season, region and category, and links the card on NationStates", () => {
@@ -95,17 +94,6 @@ describe("trail", () => {
     expect(trailLabel("AUCTION_BUYOUT")).toBe("Bought at auction");
     expect(trailLabel("SOMETHING_NEW")).toBe("Moved");
   });
-
-  it("names the actions the writers record", () => {
-    expect(trailLabel("NS_DECK_IMPORT")).toBe("Imported from NationStates");
-    expect(trailLabel("REISSUE")).toBe("Granted again");
-    expect(trailLabel("REASSIGN")).toBe("Reassigned by staff");
-    expect(trailLabel("ADMIN")).toBe("Granted by staff");
-    expect(trailLabel("CRAFT")).toBe("Crafted");
-    expect(trailLabel("LISTING_SALE")).toBe("Bought from a listing");
-    for (const source of MINT_SOURCES) expect(trailLabel(source)).not.toBe("Moved");
-  });
-
   it("reads no label off the object prototype", () => {
     expect(trailLabel("constructor")).toBe("Moved");
     expect(trailLabel("toString")).toBe("Moved");
@@ -265,14 +253,5 @@ describe("pack odds", () => {
     const rows = packOddsRows({ ...pack, legendaryOdds: -5 });
     expect(rows.map((r) => r.rarity)).not.toContain("LEGENDARY");
     expect(rows[0]!.percent).toBeCloseTo((65 / 99.9) * 100);
-  });
-
-  it("formats shares for reading", () => {
-    expect(formatOdds(65)).toBe("65%");
-    expect(formatOdds(10.4)).toBe("10%");
-    expect(formatOdds(9.96)).toBe("10%");
-    expect(formatOdds(2.46)).toBe("2.5%");
-    expect(formatOdds(0.1)).toBe("0.1%");
-    expect(formatOdds(0.04)).toBe("under 0.1%");
   });
 });

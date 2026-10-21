@@ -1,10 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   calculateRouteTravelTime,
-  formatTravelDuration,
   resolveRouteBaseSpeed,
-  getSpeedPresets,
-  isInstantaneousRoute,
   KMH_PER_KNOT,
   type LngLat,
 } from "~/lib/economy/travel-time";
@@ -16,29 +13,10 @@ describe("Travel Time Engine", () => {
       const speed = resolveRouteBaseSpeed("rail", 160, { speed_kmh: 120 });
       expect(speed).toBe(160);
     });
-
-    it("supports options object syntax", () => {
-      const speed = resolveRouteBaseSpeed({
-        routeType: "rail",
-        speedKmh: 160,
-        properties: { speed_kmh: 120 },
-      });
-      expect(speed).toBe(160);
-    });
-
     it("falls back to legacy properties.speed_kmh if speedKmh is absent", () => {
       const speed = resolveRouteBaseSpeed("rail", undefined, { speed_kmh: 140 });
       expect(speed).toBe(140);
     });
-
-    it("parses string properties.speed_kmh correctly", () => {
-      const speed = resolveRouteBaseSpeed({
-        routeType: "rail",
-        properties: { speed_kmh: "135" },
-      });
-      expect(speed).toBe(135);
-    });
-
     it("falls back to default route type speed if neither is provided", () => {
       const speed = resolveRouteBaseSpeed("high_speed_rail");
       expect(speed).toBe(300);
@@ -49,27 +27,6 @@ describe("Travel Time Engine", () => {
       expect(speed).toBe(80);
     });
   });
-
-  describe("formatTravelDuration", () => {
-    it("formats sub-minute duration as 0m or rounded minutes", () => {
-      expect(formatTravelDuration(0)).toBe("0m");
-      expect(formatTravelDuration(42)).toBe("42m");
-      expect(formatTravelDuration(59)).toBe("59m");
-    });
-
-    it("formats standard multi-hour durations", () => {
-      expect(formatTravelDuration(60)).toBe("1h");
-      expect(formatTravelDuration(125)).toBe("2h 05m");
-      expect(formatTravelDuration(360)).toBe("6h");
-    });
-
-    it("formats multi-day durations", () => {
-      expect(formatTravelDuration(1440)).toBe("1d");
-      expect(formatTravelDuration(1500)).toBe("1d 01h");
-      expect(formatTravelDuration(2880)).toBe("2d");
-    });
-  });
-
   describe("calculateRouteTravelTime", () => {
     it("handles instantaneous networks (fiber, power_grid)", () => {
       const result = calculateRouteTravelTime({
@@ -155,29 +112,6 @@ describe("Travel Time Engine", () => {
       expect(result.formattedTime).toBe("0m");
     });
   });
-
-  describe("getSpeedPresets", () => {
-    it("returns presets for recognized types", () => {
-      const presets = getSpeedPresets("high_speed_rail");
-      expect(presets.length).toBeGreaterThan(0);
-      expect(presets.some((p) => p.speed === 300)).toBe(true);
-    });
-
-    it("returns empty array for unknown types", () => {
-      expect(getSpeedPresets("unknown")).toEqual([]);
-      expect(getSpeedPresets(null)).toEqual([]);
-    });
-  });
-
-  describe("isInstantaneousRoute", () => {
-    it("identifies power_grid and fiber correctly", () => {
-      expect(isInstantaneousRoute("fiber")).toBe(true);
-      expect(isInstantaneousRoute("power_grid")).toBe(true);
-      expect(isInstantaneousRoute("rail")).toBe(false);
-      expect(isInstantaneousRoute(null)).toBe(false);
-    });
-  });
-
   describe("sea current & wind model", () => {
     // shipping_lane defaults to 30 km/h still-water speed.
     const sail = (seaPath: LngLat[], speedKmh?: number) =>

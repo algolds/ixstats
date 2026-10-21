@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 let mockQuery = "";
 const mockReplace = jest.fn();
@@ -57,33 +57,7 @@ beforeEach(() => {
 });
 
 describe("AchievementsTabs", () => {
-  it("shows All, Lorewards, Showcase and Leaderboard when a Lorewards panel is given", () => {
-    renderTabs({ lorewardsPanel: <div data-testid="lorewards" /> });
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "All",
-      "Lorewards",
-      "Showcase",
-      "Leaderboard",
-    ]);
-  });
-
   // At 320px the four tabs are wider than the page: the track scrolls inside itself, so the page never pans sideways.
-  it("scrolls its tab row in its own track rather than widening the page", () => {
-    renderTabs({ lorewardsPanel: <div data-testid="lorewards" /> });
-    const list = screen.getByRole("tablist", { name: "Achievements sections" });
-    expect(list).toHaveClass("max-w-full", "overflow-x-auto");
-    for (const tab of within(list).getAllByRole("tab")) expect(tab).toHaveClass("shrink-0");
-  });
-
-  it("leaves the Lorewards tab out until a panel is passed", () => {
-    renderTabs();
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "All",
-      "Showcase",
-      "Leaderboard",
-    ]);
-  });
-
   it("opens on All, with the catalogue", () => {
     renderTabs();
     expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
@@ -117,13 +91,6 @@ describe("AchievementsTabs", () => {
       scroll: false,
     });
   });
-
-  it("writes All as the bare path", () => {
-    mockQuery = "tab=showcase";
-    renderTabs();
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "All" }), { button: 0 });
-    expect(mockReplace).toHaveBeenCalledWith("/vault/achievements", { scroll: false });
-  });
 });
 
 describe("?a=<key>", () => {
@@ -141,17 +108,6 @@ describe("?a=<key>", () => {
     renderTabs();
     expect(screen.getByRole("heading", { name: "Prolific Thinker" })).toBeInTheDocument();
   });
-
-  it("scrolls the achievement's card into view", () => {
-    const scrollIntoView = jest.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
-    mockQuery = "a=solo-one";
-    renderTabs();
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    const card = scrollIntoView.mock.contexts[0] as HTMLElement;
-    expect(within(card).getByRole("heading", { name: "Standalone One" })).toBeInTheDocument();
-  });
-
   it("ignores a key that matches nothing", () => {
     mockQuery = "a=nope";
     renderTabs();

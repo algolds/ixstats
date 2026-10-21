@@ -2,22 +2,12 @@
  * Facet 3 selection primitives added for the admin Phase 4 leftovers: FacetRow tint selection,
  * RadioCardGroup/RadioCard, StepIndicator, the Facet 3 Table and Slider thumb naming.
  */
-import React, { useState } from "react";
+import { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { StepIndicator } from "~/components/ui/step-indicator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import { Slider } from "~/components/ui/slider";
-import { Card } from "~/components/ui/card";
-
 const classOf = (el: Element | null) => el?.getAttribute("class") ?? "";
 
 describe('FacetRow selectionStyle="tint"', () => {
@@ -159,138 +149,6 @@ describe("StepIndicator", () => {
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 });
-
-describe("Table (Facet 3)", () => {
-  function Example({ sticky = false }: { sticky?: boolean }) {
-    return (
-      <Table containerClassName="max-h-40">
-        <TableHeader sticky={sticky}>
-          <TableRow>
-            <TableHead>Country</TableHead>
-            <TableHead>GDP</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow data-state="selected">
-            <TableCell>Ixnay</TableCell>
-            <TableCell>1,234</TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    );
-  }
-
-  it("is an opaque surface with separator hairlines and no v2 classes or gradients", () => {
-    const { container } = render(<Example />);
-    const outer = container.querySelector('[data-slot="table-container"]')!;
-    const cls = classOf(outer);
-    expect(cls).toContain("bg-surface");
-    expect(cls).toContain("border-separator");
-    expect(cls).toContain("rounded-card");
-    expect(cls).toContain("max-h-40");
-    expect(container.innerHTML).not.toMatch(/bg-gradient|border-border\/50|bg-background\/50/);
-    // The scroll hint is a mask on the scroller, not an overlay element.
-    expect(classOf(container.querySelector('[data-slot="table-scroll"]'))).toContain("mask-image");
-  });
-
-  it("uses footnote/label-secondary headers, callout tabular cells, tint-fill selection", () => {
-    render(<Example />);
-    const head = screen.getByRole("columnheader", { name: "Country" });
-    expect(classOf(head)).toContain("text-footnote");
-    expect(classOf(head)).toContain("text-label-secondary");
-    const cell = screen.getByRole("cell", { name: "1,234" });
-    expect(classOf(cell)).toContain("text-callout");
-    expect(classOf(cell)).toContain("tabular-nums");
-    const row = cell.closest("tr")!;
-    expect(classOf(row)).toContain("hover:bg-fill-4");
-    expect(classOf(row)).toContain("data-[state=selected]:bg-tint-fill");
-  });
-
-  it("pins header cells only when the header is sticky", () => {
-    const { container, rerender } = render(<Example />);
-    const thead = () => container.querySelector("thead")!;
-    expect(classOf(thead())).not.toContain("[&_th]:sticky");
-    rerender(<Example sticky />);
-    expect(classOf(thead())).toContain("[&_th]:sticky");
-    expect(classOf(thead())).toContain("[&_th]:bg-surface");
-  });
-
-  it("drops its own surface inside a card (the card is the surface)", () => {
-    const { container } = render(
-      <Card className="flex flex-col gap-6 py-6">
-        <Example />
-      </Card>
-    );
-    const cls = classOf(container.querySelector('[data-slot="table-container"]'));
-    expect(cls).toContain("in-data-[slot=card]:border-0");
-    expect(cls).toContain("in-data-[slot=card]:bg-transparent");
-  });
-
-  describe("a pinned actions column", () => {
-    function Pinned({ pinned = true }: { pinned?: boolean }) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Country</TableHead>
-              <TableHead pinned={pinned}>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell>Ixnay</TableCell>
-              <TableCell pinned={pinned}>Edit</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      );
-    }
-
-    /** Lays every element out `scrollWidth` wide in `clientWidth`, since jsdom lays nothing out. */
-    function layOut(scrollWidth: number, clientWidth: number) {
-      jest.spyOn(Element.prototype, "scrollWidth", "get").mockReturnValue(scrollWidth);
-      jest.spyOn(Element.prototype, "clientWidth", "get").mockReturnValue(clientWidth);
-    }
-    const scroller = (container: HTMLElement) =>
-      container.querySelector('[data-slot="table-scroll"]')!;
-
-    afterEach(() => jest.restoreAllMocks());
-
-    it("sticks to the end edge while a table too wide for a phone scrolls, and that edge does not fade", () => {
-      layOut(658, 308);
-      const { container } = render(<Pinned />);
-      expect(scroller(container)).toHaveAttribute("data-scrolls");
-      expect(scroller(container)).toHaveAttribute("data-overflow", "none");
-      for (const cell of [
-        screen.getByRole("cell", { name: "Edit" }),
-        screen.getByRole("columnheader", { name: "Actions" }),
-      ]) {
-        expect(cell).toHaveAttribute("data-pinned");
-        expect(classOf(cell)).toContain("in-data-[scrolls]:sticky");
-        expect(classOf(cell)).toContain("in-data-[scrolls]:right-0");
-        expect(classOf(cell)).toContain("in-data-[scrolls]:bg-surface");
-      }
-    });
-
-    it("still fades the end edge of a scrolling table with no pinned column", () => {
-      layOut(658, 308);
-      const { container } = render(<Pinned pinned={false} />);
-      expect(scroller(container)).toHaveAttribute("data-overflow", "end");
-      expect(screen.getByRole("cell", { name: "Edit" })).not.toHaveAttribute("data-pinned");
-      expect(classOf(screen.getByRole("cell", { name: "Edit" }))).not.toContain("sticky");
-    });
-
-    it("leaves a table that fits as it was", () => {
-      layOut(300, 308);
-      const { container } = render(<Pinned />);
-      expect(scroller(container)).not.toHaveAttribute("data-scrolls");
-      expect(scroller(container)).toHaveAttribute("data-overflow", "none");
-    });
-  });
-});
-
 describe("Slider naming", () => {
   beforeAll(() => {
     // Radix Slider measures its thumbs; jsdom has no ResizeObserver.

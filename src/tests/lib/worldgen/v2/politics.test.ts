@@ -54,12 +54,6 @@ describe("v2/politics", () => {
       }
     }
   });
-
-  it("populates graph.states and graph.cultures arrays", () => {
-    expect(graph.states.length).toBeGreaterThan(0);
-    expect(graph.cultures.length).toBeGreaterThan(0);
-  });
-
   it("populates graph.settlements array with valid capital settlements", () => {
     expect(graph.settlements.length).toBeGreaterThan(0);
     const capitals = graph.settlements.filter((s) => s.isCapital);

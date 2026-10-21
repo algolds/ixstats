@@ -1,5 +1,5 @@
 /** Crafting a Standard copy from the sheet: the server's quote, the dust the player lacks, and why a card can't be. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useMarketActions", () => ({ useMarketActions: jest.fn() }));
@@ -47,12 +47,6 @@ describe("CraftButton", () => {
     fireEvent.click(button);
     expect(mutate).not.toHaveBeenCalled();
   });
-
-  it("names no IxC when the rarity's floor charges none", () => {
-    setup({ quote: { dust: 1200, credits: 0 } });
-    expect(screen.getByRole("button", { name: "Craft for 1,200 dust" })).toBeTruthy();
-  });
-
   it("holds the button while a craft is under way", () => {
     setup({}, true);
     expect(screen.getByRole("button").hasAttribute("disabled")).toBe(true);

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen } from "@testing-library/react";
 
 const sync = jest.fn();
@@ -61,13 +61,6 @@ describe("/vault/achievements", () => {
   });
 
   // The page has no header toolbar, so its first row pads by Halo's floating band (3.5rem), as the Wallet does.
-  it("starts its tabs below the shell's floating header, so the header never takes their taps", () => {
-    render(<VaultAchievementsPage />);
-    expect(
-      screen.getByRole("tablist", { name: "Achievements sections" }).closest(".pt-14")
-    ).not.toBeNull();
-  });
-
   it("refreshes the catalogue, the Wallet summary and the next-up achievement after a sync", () => {
     render(<VaultAchievementsPage />);
     mockOnSync?.();

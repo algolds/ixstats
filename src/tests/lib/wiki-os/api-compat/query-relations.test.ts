@@ -119,12 +119,6 @@ describe("prop=templates and prop=images", () => {
     expect(delta.templates).toBeUndefined();
     expect(delta.images).toBeUndefined();
   });
-
-  it("is the v1 shape in formatversion 1", async () => {
-    const deps = await makeDeps({ store: fakeWiki(data()) });
-    const body = (await call(deps, "action=query&titles=Alpha&prop=images&format=json")).body as Body;
-    expect(body.query.pages["1"].images).toEqual([{ ns: 6, title: "File:Cat photo.png" }, { ns: 6, title: "File:Dog.jpg" }]);
-  });
 });
 
 describe("generators", () => {

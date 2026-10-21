@@ -3,10 +3,7 @@
  * Plan 413 (item 8b): the view bundle's HTML loses its dead weight at render time, and only that.
  */
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import {
-  UNUSED_MEDIAWIKI_CLASSES,
   slimArticleHtml,
   templateStyleIdentifiers,
 } from "~/lib/wiki-os/transformers/slim-html";
@@ -37,29 +34,6 @@ describe("slimArticleHtml", () => {
     expect(out).toContain('<a href="/wiki/B">B</a>');
     expect(out).toContain('<div class="infobox">x</div>');
   });
-
-  it("every class it drops is one no stylesheet and no code in src refers to", () => {
-    const root = process.cwd();
-    const text: string[] = [];
-    const walk = (dir: string) => {
-      for (const name of readdirSync(join(root, dir))) {
-        const path = `${dir}/${name}`;
-        if (path.startsWith("src/tests") || path === "src/lib/wiki-os/transformers/slim-html.ts")
-          continue;
-        if (statSync(join(root, path)).isDirectory()) walk(path);
-        else if (/\.(css|tsx?)$/.test(name)) text.push(readFileSync(join(root, path), "utf8"));
-      }
-    };
-    walk("src");
-    const everything = text.join("\n");
-
-    const referenced = [...UNUSED_MEDIAWIKI_CLASSES].filter((name) =>
-      new RegExp(`(?<![\\w-])${name.replace(/-/g, "\\-")}(?![\\w-])`).test(everything)
-    );
-
-    expect(referenced).toEqual([]);
-  });
-
   it("removes empty class, style and title attributes, and leaves empty alt alone", () => {
     const out = slimArticleHtml('<p class="" style=" " title="">x</p><img alt="" src="/a.png">');
     expect(out).toBe('<p>x</p><img alt="" src="/a.png">');

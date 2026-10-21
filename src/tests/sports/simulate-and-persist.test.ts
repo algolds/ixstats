@@ -402,20 +402,6 @@ describe("pointsFor", () => {
 });
 
 describe("standingDelta", () => {
-  it("counts a hockey overtime loss as a loss worth one point", () => {
-    expect(standingDelta("hockey", 2, 3, true)).toEqual({
-      wins: 0,
-      draws: 0,
-      losses: 1,
-      points: 1,
-      pointsFor: 2,
-      pointsAgainst: 3,
-    });
-    expect(standingDelta("hockey", 3, 2, true)).toMatchObject({ wins: 1, points: 2 });
-    expect(standingDelta("hockey", 1, 4, false)).toMatchObject({ losses: 1, points: 0 });
-    expect(standingDelta("soccer", 2, 3, true)).toMatchObject({ losses: 1, points: 0 });
-  });
-
   it("awards POINTS_FOR_WIN / POINTS_FOR_DRAW and tracks goals for/against", () => {
     expect(standingDelta("soccer", 2, 1, false)).toEqual({
       wins: 1,

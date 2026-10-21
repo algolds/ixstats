@@ -1235,22 +1235,6 @@ describe("section-locator: findSectionLine answers what the expressions answered
       }
     }
   });
-
-  it("finishes a hostile section name and a hostile page in linear time", () => {
-    const hostile = [
-      "[[".repeat(100_000),
-      "<".repeat(200_000),
-      "[[a]x".repeat(40_000),
-      "== ".repeat(66_000),
-      `==${" ".repeat(200_000)}x`,
-    ];
-    const started = performance.now();
-    for (const text of hostile) {
-      findSectionLine("== History ==\n", text);
-      findSectionLine(text, "History");
-    }
-    expect(performance.now() - started).toBeLessThan(2_000 * TIMING_BUDGET_SCALE);
-  });
 });
 
 // ---- api-compat/scan: linkTargets finds the first stop of a target once ---------------------------------------

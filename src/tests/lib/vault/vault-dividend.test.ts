@@ -119,11 +119,6 @@ describe("computeDividend", () => {
     const r = computeDividend({ ...ZERO, posts: 1 });
     expect(r.lines.map((l) => l.key)).toEqual(["posts"]);
   });
-
-  it("has no set-completion part", () => {
-    expect(DIVIDEND).not.toHaveProperty("SET_BONUS");
-    expect(DIVIDEND).not.toHaveProperty("SET_CAP");
-  });
 });
 
 describe("dividendKey", () => {

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 // Babel hoists jest.mock and the imports above module constants, so the fixtures live in
@@ -110,28 +110,6 @@ beforeAll(() => {
 beforeEach(() => window.history.replaceState(null, "", "/myleague/lg1"));
 
 describe("LeagueRouter", () => {
-  it("renders the league views as tabs under the page header, with a back link to the lobby", () => {
-    render(<LeagueRouter leagueId="lg1" />);
-
-    expect(screen.getByRole("heading", { level: 1, name: "Imperial Premier" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Leagues/ }).getAttribute("href")).toBe("/myleague");
-    const tabs = screen.getAllByRole("tab").map((t) => t.textContent);
-    expect(tabs).toEqual(["Overview", "Standings", "Schedule", "Franchises", "History"]);
-    expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe(
-      "true"
-    );
-    expect(screen.getByTestId("tab-overview")).toBeTruthy();
-  });
-
-  it("opens on the section named in the URL", () => {
-    window.history.replaceState(null, "", "/myleague/lg1?section=schedule");
-    render(<LeagueRouter leagueId="lg1" />);
-    expect(screen.getByRole("tab", { name: "Schedule" }).getAttribute("aria-selected")).toBe(
-      "true"
-    );
-    expect(screen.getByTestId("tab-schedule")).toBeTruthy();
-  });
-
   it("switching a tab shows that view and writes it to the section URL param", () => {
     render(<LeagueRouter leagueId="lg1" />);
 

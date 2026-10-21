@@ -3,9 +3,8 @@
  * clears it, and the cursor is a pointer over a country.
  */
 
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import type { Map as MapLibreMap } from "maplibre-gl";
-import { StudioCountryCard } from "~/components/maps/studio/StudioCountryCard";
 import { useStudioCountryPick } from "~/hooks/useStudioCountryPick";
 import { DRAFT_POLITICAL_ID } from "~/lib/maps/world-draft-layers";
 import type { WorldSlot } from "~/lib/worldgen/v2/types";
@@ -98,19 +97,5 @@ describe("useStudioCountryPick", () => {
     expect(rig.canvas.style.cursor).toBe("");
     view.rerender(<Host map={null} result={world} />);
     expect(rig.handlers.size).toBe(0);
-  });
-});
-
-describe("StudioCountryCard", () => {
-  it("shows the country's name and starting figures, and closes", () => {
-    const onClose = jest.fn();
-    render(<StudioCountryCard slot={slot("slot_1", "Varenia")} onClose={onClose} />);
-    const card = screen.getByLabelText("Varenia");
-    expect(card).toHaveTextContent("Varenia");
-    expect(card).toHaveTextContent("312k km²");
-    expect(card).toHaveTextContent("8.40M");
-    expect(card).toHaveTextContent("$21,500");
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

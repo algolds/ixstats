@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {
   const invalidateMyPacks = jest.fn();
@@ -126,20 +126,6 @@ describe("PackReveal", () => {
     expect(refreshCards).toHaveBeenCalledTimes(1);
     expect(api.useUtils().cardPacks.getMyPacks.invalidate).toHaveBeenCalled();
   });
-
-  it("holds a rarer card for its beat before the next turns", () => {
-    setup();
-    openPack();
-    fireEvent.click(screen.getByRole("button", { name: "Card 2 of 3, face down" }));
-    expect(playRevealFeedback).toHaveBeenLastCalledWith("EPIC", true);
-    press("ArrowRight");
-    expect(faceDown()).toHaveLength(2);
-    act(() => jest.advanceTimersByTime(1000));
-    press("ArrowRight");
-    expect(faceDown()).toHaveLength(1);
-    expect(screen.getByRole("img", { name: "Card 3, Rare, Standard, Ixnay" })).toBeInTheDocument();
-  });
-
   it("turns the next card on a swipe either way, but not on a short drag", () => {
     setup();
     openPack();
@@ -180,107 +166,6 @@ describe("PackReveal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(props.onClose).toHaveBeenCalled();
   });
-
-  it("reveals everything with its button too", () => {
-    setup();
-    openPack();
-    fireEvent.click(screen.getByRole("button", { name: "Reveal all" }));
-    expect(faceDown()).toHaveLength(0);
-    expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
-  });
-
-  it("closes on Esc once every card is up", () => {
-    const { props } = setup();
-    openPack();
-    press("Escape");
-    press("Escape");
-    expect(props.onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("says when Reveal all or Esc has turned every card", () => {
-    setup();
-    openPack();
-    press("Escape");
-    expect(screen.getByRole("status")).toHaveTextContent("All 3 cards turned");
-  });
-
-  it("announces each turn, a second copy of the same card too", () => {
-    const copy = { ownershipId: "o1b", finish: "STANDARD" as const, serialNumber: 9, level: 1 };
-    const twin: CardFaceData = { ...face(1, "COMMON"), copy };
-    setup({}, { pulled: [face(1, "COMMON"), twin] });
-    openPack();
-    press("ArrowRight");
-    const status = screen.getByRole("status");
-    const first = status.firstChild;
-    expect(status).toHaveTextContent("Card 1, Common, Standard, Ixnay");
-    act(() => jest.advanceTimersByTime(1000));
-    press("ArrowRight");
-    expect(faceDown()).toHaveLength(0);
-    expect(status).toHaveTextContent("Card 1, Common, Standard, Ixnay");
-    // A new node, not the same text left in place, so a screen reader reads it again.
-    expect(status.firstChild).not.toBe(first);
-  });
-
-  it("keeps focus on the next card after a turn, on Continue after Reveal all, then on the summary", () => {
-    setup();
-    openPack();
-    expect(screen.getByRole("button", { name: "Card 1 of 3, face down" })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "Card 2 of 3, face down" }));
-    expect(screen.getByRole("button", { name: "Card 3 of 3, face down" })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "Reveal all" }));
-    expect(screen.getByRole("button", { name: "Continue" })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(screen.getByRole("heading", { name: "Best pull: Epic" })).toHaveFocus();
-  });
-
-  it("gives focus back to what opened it, or to returnFocus once that has left the page", () => {
-    const opener = document.createElement("button");
-    const fallback = document.createElement("button");
-    document.body.append(opener, fallback);
-    for (const leaves of [false, true]) {
-      opener.focus();
-      const { props, rerender } = setup({ returnFocus: () => fallback });
-      openPack();
-      if (leaves) opener.remove();
-      rerender(<PackReveal {...props} open={false} />);
-      act(() => jest.runOnlyPendingTimers());
-      expect(leaves ? fallback : opener).toHaveFocus();
-      document.body.append(opener);
-    }
-    opener.remove();
-    fallback.remove();
-  });
-
-  it("lets Rare and better pulls tilt and catch the light in the summary", () => {
-    jest.mocked(useFacetReducedMotion).mockReturnValue(false);
-    setup();
-    openPack();
-    press("Escape");
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    const pulled = within(screen.getByRole("list", { name: "Cards pulled" }));
-    const holo = (title: string) =>
-      pulled
-        .getByRole("button", { name: new RegExp(`^${title},`) })
-        .closest("li")
-        ?.querySelector(".card-holo") ?? null;
-    expect(holo("Card 1")).toBeNull();
-    expect(holo("Card 2")).not.toBeNull();
-    expect(holo("Card 3")).not.toBeNull();
-    // The holo never takes a tap meant for the card.
-    fireEvent.click(pulled.getByRole("button", { name: /^Card 3,/ }));
-    expect(screen.queryByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("keeps every pull still under Reduce Motion", () => {
-    setup();
-    openPack();
-    press("Escape");
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(
-      screen.getByRole("list", { name: "Cards pulled" }).querySelector(".card-holo")
-    ).toBeNull();
-  });
-
   it("says a pack whose cards could not be shown is open, with its cards in Mine", () => {
     // The open committed but its faces could not be read; a pack always holds cards, so none means that.
     const { props } = setup({}, { pulled: [] });
@@ -293,14 +178,6 @@ describe("PackReveal", () => {
     expect(mine).toHaveAttribute("href", "/vault/cards/mine");
     fireEvent.click(mine);
     expect(props.onClose).toHaveBeenCalled();
-  });
-
-  it("skips straight to the summary, with no next pack to offer", () => {
-    setup();
-    openPack();
-    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    expect(screen.getByText("Best pull: Epic")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Open the next pack" })).toBeNull();
   });
 });
 

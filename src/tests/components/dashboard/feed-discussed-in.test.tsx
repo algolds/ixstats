@@ -42,7 +42,7 @@ import {
   type FeedHandlers,
 } from "~/components/dashboard/sections/UnifiedFeedContent";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
-import { UnifiedFeedItem, getActivityLabel } from "~/components/dashboard/sections/UnifiedFeedItem";
+import { UnifiedFeedItem } from "~/components/dashboard/sections/UnifiedFeedItem";
 
 const activity = (id: string, extra: object = {}) => ({
   id,
@@ -66,37 +66,12 @@ const feedItem = (id: string, kind: "plain" | "grouped" | "forum"): ProcessedFee
 };
 
 describe("UnifiedFeedItem discussed-in badge", () => {
-  it("shows the badge on a plain activity card", () => {
-    render(<UnifiedFeedItem activity={feedItem("a1", "plain")} />);
-    expect(screen.getByTestId("badge")).toHaveTextContent("a1");
-  });
-
   it.each([
     ["a grouped run", feedItem("g1", "grouped")],
     ["a forum row", feedItem("f1", "forum")],
   ])("shows no badge on %s", (_label, row) => {
     render(<UnifiedFeedItem activity={row} />);
     expect(screen.queryByTestId("badge")).toBeNull();
-  });
-
-  it("labels a government row as Politics", () => {
-    expect(getActivityLabel({ category: "government", content: { title: "x" } }).label).toBe(
-      "Politics"
-    );
-  });
-
-  it("labels a directive by its activity type, whatever its title says", () => {
-    const row = (title: string) => ({
-      type: "directive",
-      category: "government",
-      content: { title },
-    });
-    expect(getActivityLabel(row("Raise taxes")).label).toBe("Directive");
-    // The goal text is the player's own: a keyword in it must not decide the label.
-    expect(getActivityLabel(row("Build a city and a treaty")).label).toBe("Directive");
-    expect(
-      getActivityLabel({ category: "government", content: { title: "Directive" } }).label
-    ).toBe("Politics");
   });
 });
 

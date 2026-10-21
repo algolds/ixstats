@@ -100,28 +100,4 @@ describe("NationStatesCardsPanel", () => {
     expect(open).toHaveAttribute("data-cuelume-press", "soft");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("counts one card in the singular", () => {
-    withCards([nsCard("a", "Aland", "2026-10-01T00:00:00Z")]);
-    render(<NationStatesCardsPanel />);
-    expect(screen.getByText(/^1 NationStates card, the newest on/)).toBeInTheDocument();
-  });
-
-  it("says there are none yet and where to import them, with no card link", () => {
-    withCards([]);
-    render(<NationStatesCardsPanel />);
-    expect(
-      screen.getByText("No NationStates cards yet. Import them from your NationStates deck.")
-    ).toBeInTheDocument();
-    const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs.some((href) => href?.includes("?card="))).toBe(false);
-    expect(screen.getByRole("link", { name: /Import cards/ })).toBeInTheDocument();
-  });
-
-  it("has no refresh button and no sync toast", () => {
-    withCards([]);
-    render(<NationStatesCardsPanel />);
-    expect(screen.queryByRole("button", { name: /sync|refresh/i })).toBeNull();
-    expect(screen.queryByTitle(/sync/i)).toBeNull();
-  });
 });

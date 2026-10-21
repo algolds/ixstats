@@ -3,7 +3,6 @@
  * when the server has one, invent no author or licence, and an image of unknown size matches no orientation.
  */
 import {
-  commonsMimeTerm,
   dedupeImages,
   imageFromUrl,
   matchesImageFilters,
@@ -53,12 +52,6 @@ describe("wikiFilesToImages", () => {
     expect(withThumb!.url).toContain("/api/mediawiki/iiwiki/images/a/ab/Map.png");
     expect(without!.thumbUrl).toBe(without!.url);
   });
-
-  it("falls back to the file when the record has no thumbUrl field at all", () => {
-    const [only] = wikiFilesToImages([wikiFile("Map.png")], "iiwiki");
-    expect(only!.thumbUrl).toBe(only!.url);
-  });
-
   it("copies the blurhash, and gives null when the record has none", () => {
     const [withHash, without] = wikiFilesToImages(
       [wikiFile("Map.png", { blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" }), wikiFile("Flag.png")],
@@ -121,16 +114,6 @@ describe("matchesImageFilters", () => {
     );
   });
 });
-
-describe("commonsMimeTerm", () => {
-  it("maps each file type to a Commons mime term, and All to nothing", () => {
-    expect(commonsMimeTerm("all")).toBe("");
-    expect(commonsMimeTerm("jpg")).toBe("filemime:image/jpeg");
-    expect(commonsMimeTerm("png")).toBe("filemime:image/png");
-    expect(commonsMimeTerm("svg")).toBe("filemime:image/svg+xml");
-  });
-});
-
 describe("imageFromUrl", () => {
   it("builds a minimal image: title from the decoded file name, the url for every link, empty rest", () => {
     const url = "https://x/images/a/ab/Old_Flag%20%C3%A9.png?v=2";

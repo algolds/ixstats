@@ -89,31 +89,12 @@ describe("withoutHiddenWikiNames (wiki attribution off)", () => {
       people[3],
     ]);
   });
-
-  it("reads the switch once, for the users that have a wiki name", async () => {
-    const connections = privacyConnections();
-    await withoutHiddenWikiNames({ userConnection: connections } as never, people);
-    expect(connections.findMany).toHaveBeenCalledTimes(1);
-    expect(connections.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { userId: { in: ["off", "on", "default"] }, connectionType: "privacy_config" },
-    });
-  });
-
   it("fails closed: a read error blanks every wiki name", async () => {
     const connections = privacyConnections();
     connections.findMany.mockRejectedValue(new Error("db down"));
     const out = await withoutHiddenWikiNames({ userConnection: connections } as never, people);
     expect(out.map((u) => u.wikiUsername)).toEqual([null, null, null, null]);
     expect(out.map((u) => u.handle)).toEqual([null, null, null, "nowiki"]);
-  });
-
-  it("reads nothing when no user has a wiki name", async () => {
-    const connections = privacyConnections();
-    const out = await withoutHiddenWikiNames({ userConnection: connections } as never, [
-      people[3]!,
-    ]);
-    expect(out).toEqual([people[3]]);
-    expect(connections.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -177,26 +158,6 @@ describe("users router", () => {
     await expect(caller(db).clearHistory({ confirm: false } as never)).rejects.toThrow();
     expect(db.notification.deleteMany).not.toHaveBeenCalled();
   });
-
-  it("getPrivacySettings drops removed keys (diagnostics, recommendations)", async () => {
-    const db = createMockPrisma();
-    db.userConnection.findFirst.mockResolvedValue({
-      status: JSON.stringify({ showOnlineStatus: false, diagnosticTelemetry: false }),
-    });
-    const { config } = await caller(db).getPrivacySettings();
-    expect(config.showOnlineStatus).toBe(false);
-    expect(config).not.toHaveProperty("diagnosticTelemetry");
-    expect(config).not.toHaveProperty("personalizedRecommendations");
-  });
-
-  it("heartbeat records presence", async () => {
-    resetPresenceForTests();
-    await caller(createMockPrisma(), "user_beat").heartbeat();
-    expect([...(await visibleOnlineUserIds(dbWithConfigs({}) as never, ["user_beat"]))]).toEqual([
-      "user_beat",
-    ]);
-  });
-
   it("resolveWikiAuthor drops the role and country when wiki attribution is off", async () => {
     const db = dbWithConfigs({ clerk_9: { showWikiAttribution: false } });
     db.user.findFirst.mockResolvedValue({

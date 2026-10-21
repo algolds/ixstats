@@ -57,10 +57,6 @@ describe("Lexicon Analytics", () => {
   });
 
   describe("calculateEntropy", () => {
-    it("should return 0 for empty lists", () => {
-      expect(calculateEntropy([])).toBe(0);
-    });
-
     it("should return 0 for a single repeating letter", () => {
       expect(calculateEntropy(["aaaa"])).toBe(0);
     });

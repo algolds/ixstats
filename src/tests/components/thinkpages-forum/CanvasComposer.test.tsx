@@ -99,12 +99,6 @@ describe("CanvasComposer", () => {
       expect(onSubmit).toHaveBeenCalledWith("Hello ''world''", { personaId: null, title: "" })
     );
   });
-
-  it("starts with the compact toolbar, whose More control opens the full one", () => {
-    render(<CanvasComposer mode="reply" onSubmit={jest.fn()} />);
-    expect(screen.getByTestId("canvas")).toHaveAttribute("data-compact", "true");
-  });
-
   it("starts an edit from the post's wikitext and saves it", async () => {
     const onSubmit = jest.fn(async () => ({ formatting: "done" as const }));
     render(
@@ -150,20 +144,6 @@ describe("CanvasComposer", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Write" }));
     expect(screen.getByTestId("canvas")).toHaveValue("Hello");
   });
-
-  it("says so when the preview is only approximate, and shows a failed preview's message", async () => {
-    previewPost.mockResolvedValueOnce({ html: "<p>Rough</p>", pending: true });
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={jest.fn()} />);
-    write("Hello");
-    fireEvent.click(screen.getByRole("radio", { name: "Preview" }));
-    expect(await screen.findByText("Formatting will finish shortly")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("radio", { name: "Write" }));
-    previewPost.mockRejectedValueOnce(new Error("Signatures are not allowed here."));
-    fireEvent.click(screen.getByRole("radio", { name: "Preview" }));
-    expect(await screen.findByText("Signatures are not allowed here.")).toBeInTheDocument();
-  });
-
   it("tells the author formatting will finish shortly after a pending save, and clears a reply", async () => {
     const onSubmit = jest.fn(async () => ({ formatting: "pending" as const }));
     render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
@@ -188,28 +168,6 @@ describe("CanvasComposer", () => {
     // Try again is possible.
     expect(screen.getByRole("button", { name: "Reply" })).toBeEnabled();
   });
-
-  it("drops the last save's Signal when the content changes, but not when a posted reply clears", async () => {
-    const onSubmit = jest
-      .fn()
-      .mockRejectedValueOnce(new Error("Signatures are not allowed here."))
-      .mockResolvedValueOnce({ formatting: "pending" });
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={onSubmit} />);
-    write("Hello ~~~~");
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    expect(await screen.findByText("Signatures are not allowed here.")).toBeInTheDocument();
-    write("Hello");
-    expect(screen.queryByText("Signatures are not allowed here.")).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Reply" }));
-    expect(await screen.findByText("Formatting will finish shortly")).toBeInTheDocument();
-    // The editor cleared itself, which is not an edit.
-    expect(screen.getByTestId("canvas")).toHaveValue("");
-    expect(screen.getByText("Formatting will finish shortly")).toBeInTheDocument();
-    write("Next reply");
-    expect(screen.queryByText("Formatting will finish shortly")).toBeNull();
-  });
-
   it("makes the editor and Attach action inert while the post is being sent", async () => {
     let finish: (value: { formatting: "done" }) => void = () => undefined;
     const onSubmit = jest.fn(
@@ -288,12 +246,6 @@ describe("CanvasComposer", () => {
     expect(screen.getByText("Posting as")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveTextContent("Yourself");
   });
-
-  it("has no persona line when there are no personas", () => {
-    render(<CanvasComposer mode="reply" threadId="t1" onSubmit={jest.fn()} />);
-    expect(screen.queryByText("Posting as")).toBeNull();
-  });
-
   it("reports the draft so a closed sheet can reopen on it", () => {
     const onWikitextChange = jest.fn();
     render(

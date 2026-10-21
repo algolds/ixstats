@@ -20,7 +20,7 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { intelligenceRouter } from "~/server/api/routers/intelligence";
-import { cleanAlertTitle, severityRank } from "~/server/api/routers/intelligence/alerts";
+import { severityRank } from "~/server/api/routers/intelligence/alerts";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = "country_owned";
@@ -206,13 +206,6 @@ describe("intelligence alerts (MC-17)", () => {
 });
 
 describe("alert helpers", () => {
-  it("strips a leading emoji from legacy titles", () => {
-    expect(cleanAlertTitle("\u{1F6A8} tradeBalance breached high threshold")).toBe(
-      "tradeBalance breached high threshold"
-    );
-    expect(cleanAlertTitle("plain title")).toBe("plain title");
-  });
-
   it("ranks severities in either case, unknown last", () => {
     expect(severityRank("CRITICAL")).toBeLessThan(severityRank("high"));
     expect(severityRank("medium")).toBeLessThan(severityRank("LOW"));

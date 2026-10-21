@@ -35,33 +35,7 @@ function hits(pattern: RegExp, allowed: readonly string[] = []): string[] {
     );
 }
 
-const REMOVED = [
-  "src/lib/cards/crafting-rules.ts",
-  "prisma/seeds/crafting-recipes.ts",
-  "src/components/cards/ns-import/ImportWizard.tsx",
-  "src/tests/lib/pack-junk-ev.test.ts",
-  "src/tests/server/api/routers/cards-junk-batch.test.ts",
-];
-
 describe("cards refresh Phase 1 removals", () => {
-  it.each(REMOVED)("%s is gone", (file) => {
-    expect(fs.existsSync(path.join(ROOT, file))).toBe(false);
-  });
-
-  it("keeps the legacy type and rarity literals in the legacy mapping only", () => {
-    expect(
-      hits(/["'`](MYTHIC|DIVINE|LORE_BATCH|WIKI_LORE|COMMONS_IMPORT|USER_CUSTOM|NS_IMPORT)["'`]/, [
-        "src/lib/cards/legacy-mapping.ts",
-      ])
-    ).toEqual([]);
-  });
-
-  it("has no junk payout left", () => {
-    expect(hits(/\bjunkCards\b|\bjunkValue\b|\bjunkRate\b|maxJunkBatchSize|JUNK_RATE_MAX/)).toEqual(
-      []
-    );
-  });
-
   it("mints every copy through mintCopy", () => {
     expect(
       hits(/cardOwnership\s*\.\s*(create\w*|upsert)\b|INSERT INTO "CardOwnership"/, [

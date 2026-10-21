@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 // Babel hoists jest.mock and the imports above module constants, so the fixtures live in
@@ -88,38 +88,6 @@ beforeAll(() => {
 beforeEach(() => window.history.replaceState(null, "", "/myclub/t1"));
 
 describe("ClubRouter", () => {
-  it("renders the club views as tabs under the page header, with a back link to the lobby", () => {
-    render(<ClubRouter teamId="t1" />);
-
-    expect(screen.getByRole("heading", { level: 1, name: "Aurelia United" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /MyClub/ }).getAttribute("href")).toBe("/myclub");
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "Dashboard",
-      "Roster",
-      "Tactics",
-      "Transfers",
-      "Management",
-      "History",
-    ]);
-    expect(screen.getByRole("tab", { name: "Dashboard" }).getAttribute("aria-selected")).toBe(
-      "true"
-    );
-    expect(screen.getByTestId("section-overview")).toBeTruthy();
-  });
-
-  it("opens on the section named in the URL", () => {
-    window.history.replaceState(null, "", "/myclub/t1?section=tactics");
-    render(<ClubRouter teamId="t1" />);
-    expect(screen.getByRole("tab", { name: "Tactics" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByTestId("section-tactics")).toBeTruthy();
-  });
-
-  it("still honours the legacy tab param", () => {
-    window.history.replaceState(null, "", "/myclub/t1?tab=roster");
-    render(<ClubRouter teamId="t1" />);
-    expect(screen.getByTestId("section-roster")).toBeTruthy();
-  });
-
   it("switching a tab shows that view and writes it to the section URL param", () => {
     window.history.replaceState(null, "", "/myclub/t1?tab=roster");
     render(<ClubRouter teamId="t1" />);

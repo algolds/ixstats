@@ -81,11 +81,6 @@ beforeEach(() => {
 });
 
 describe("ScrubbableRevisionTimeline revert and rollback errors", () => {
-  it("shows no error line before anything fails", () => {
-    renderTimeline();
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
-
   it("shows the reason a rollback was refused", () => {
     rollbackState = { error: rollbackError };
     renderTimeline();
@@ -111,24 +106,11 @@ describe("Revision diff page revert errors", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent(revertError.message);
   });
-
-  it("shows no error line for a clean page", () => {
-    render(<DiffPage />);
-
-    expect(screen.queryByRole("alert")).toBeNull();
-  });
-
   it("offers no revert to a parked revision (it never went live), and says why", () => {
     mockFromParked = true;
     render(<DiffPage />);
 
     expect(screen.queryByRole("button", { name: /Revert to rr1/ })).toBeNull();
     expect(screen.getByText(/rr1 never went live, so it cannot be restored/)).toBeInTheDocument();
-  });
-
-  it("offers it for a live one", () => {
-    render(<DiffPage />);
-
-    expect(screen.getByRole("button", { name: "Revert to rr1" })).toBeInTheDocument();
   });
 });

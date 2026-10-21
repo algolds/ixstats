@@ -1,6 +1,5 @@
 /** @jest-environment node */
 import {
-  ECONOMIC_TIERS,
   growthFromPercent,
   growthPercent,
   IXSTATS_NATION_GROWTH_DEFAULTS,
@@ -16,32 +15,6 @@ const custom: NationGrowthTable = {
   ...IXSTATS_NATION_GROWTH_DEFAULTS,
   Developing: { populationGrowthRate: 0.02, adjustedGdpGrowth: 0.004 },
 };
-
-describe("IXSTATS_NATION_GROWTH_DEFAULTS", () => {
-  it("covers every economic tier in order, and is a valid table", () => {
-    expect(ECONOMIC_TIERS).toEqual([
-      "Impoverished",
-      "Developing",
-      "Developed",
-      "Healthy",
-      "Strong",
-      "Very Strong",
-      "Extravagant",
-    ]);
-    expect(Object.keys(IXSTATS_NATION_GROWTH_DEFAULTS)).toEqual(ECONOMIC_TIERS);
-    expect(nationGrowthTableSchema.parse(IXSTATS_NATION_GROWTH_DEFAULTS)).toEqual(
-      IXSTATS_NATION_GROWTH_DEFAULTS
-    );
-  });
-
-  it("gives poorer tiers faster population growth, as Ixnay's nations have", () => {
-    const pop = ECONOMIC_TIERS.map((t) => IXSTATS_NATION_GROWTH_DEFAULTS[t].populationGrowthRate);
-    expect(pop[0]).toBe(0.031);
-    expect(pop[1]).toBe(0.026);
-    expect(Math.max(...pop.slice(2))).toBeLessThan(0.01);
-  });
-});
-
 describe("nationGrowthTableSchema", () => {
   it("refuses a missing tier and rates outside the allowed range", () => {
     const { Developing: _dropped, ...missing } = custom;

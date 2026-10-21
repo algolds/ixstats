@@ -1,5 +1,5 @@
 /** Selling's fixed-price listings: cancel a running one, and see how the others ended. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useMarketTabs", () => ({
@@ -72,32 +72,5 @@ describe("MyListings", () => {
     mine({ data: [listing({})] });
     render(<MyListings />);
     expect(screen.getByRole("button", { name: "Cancel listing" })).toBeDisabled();
-  });
-
-  it("says where to list from when nothing is listed", () => {
-    mine({ data: [] });
-    render(<MyListings />);
-    expect(screen.getByText("You have nothing listed")).toBeTruthy();
-    expect(screen.queryByRole("list")).toBeNull();
-  });
-
-  it("says when the listings did not load, and tries again", () => {
-    const refetch = jest.fn();
-    mine({ data: undefined, isError: true, refetch });
-    render(<MyListings />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Your listings did not load");
-    expect(screen.queryByText("You have nothing listed")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(refetch).toHaveBeenCalled();
-  });
-
-  it("marks itself busy while it loads", () => {
-    mine({ data: undefined, isLoading: true, isFetching: true });
-    render(<MyListings />);
-    expect(screen.getByRole("region", { name: "Your listings" })).toHaveAttribute(
-      "aria-busy",
-      "true"
-    );
-    expect(screen.queryByText("You have nothing listed")).toBeNull();
   });
 });

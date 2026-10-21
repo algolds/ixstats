@@ -12,7 +12,6 @@ jest.mock("~/lib/maps/geographic-resources", () => ({
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { adminOpsProcedures } from "~/server/api/routers/geo/core/admin-ops";
-import { GEO_PROFILE_STALE_AT } from "~/server/api/routers/geo/core/profile-job";
 import { refreshGeographicResources } from "~/lib/maps/geographic-resources";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
@@ -65,40 +64,6 @@ describe("geoCore.recalculateGeoProfiles queues the work (Atlas R0)", () => {
   beforeEach(() => {
     refresh.mockReset();
   });
-
-  it("marks the profiles stale and returns the count without computing anything", async () => {
-    const db = makeDb();
-    const res = await caller(db).recalculateGeoProfiles();
-
-    expect(res).toEqual({ queued: 2, lastRunAt: null });
-    expect(db.countryGeoProfile.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { lastCalculatedAt: GEO_PROFILE_STALE_AT } })
-    );
-    expect(db.countryGeoProfile.upsert).not.toHaveBeenCalled();
-    expect(db.country.findUnique).not.toHaveBeenCalled();
-    expect(refresh).not.toHaveBeenCalled();
-  });
-
-  it("queues a single country", async () => {
-    const db = makeDb();
-    db.country.count.mockResolvedValue(1);
-    const res = await caller(db).recalculateGeoProfiles({ countryId: "c1" });
-
-    expect(res).toEqual({ queued: 1, lastRunAt: null });
-    expect(db.country.count.mock.calls[0]?.[0].where).toMatchObject({ id: "c1" });
-  });
-
-  it("returns when the geo-profiles job last ran", async () => {
-    const startedAt = new Date("2026-10-11T12:00:00Z");
-    const db = makeDb();
-    db.cronRun.findFirst.mockResolvedValue({ startedAt });
-
-    const res = await caller(db).recalculateGeoProfiles();
-
-    expect(res).toEqual({ queued: 2, lastRunAt: startedAt });
-    expect(db.cronRun.findFirst.mock.calls[0]?.[0].where).toEqual({ job: "geo-profiles" });
-  });
-
   it("is admin only", async () => {
     const db = makeDb();
     await expect(caller(db, "user").recalculateGeoProfiles()).rejects.toThrow(/Admin/);

@@ -38,7 +38,7 @@ jest.mock("~/lib/vault/vault-notifications", () => ({
 
 import { api } from "~/trpc/react";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
-import { useCardMute, useMarketActions } from "~/hooks/cards/useMarketActions";
+import { useMarketActions } from "~/hooks/cards/useMarketActions";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { VAULTS_BUSY_MESSAGE } from "~/lib/vault/vault-busy";
 
@@ -122,13 +122,5 @@ describe("useMarketActions", () => {
       "Reported"
     );
     expect(report.onError).toBeUndefined();
-  });
-});
-
-describe("useCardMute", () => {
-  it("asks whether the player muted this card", () => {
-    const { result } = renderHook(() => useCardMute("c1"));
-    expect(api.cards.getCardMute.useQuery).toHaveBeenCalledWith({ cardId: "c1" });
-    expect(result.current.data).toBe(true);
   });
 });

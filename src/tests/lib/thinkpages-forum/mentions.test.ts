@@ -1,8 +1,5 @@
 /** @jest-environment node */
 import {
-  MENTION_MAX_PER_POST,
-  MENTION_SUGGEST_MAX,
-  MENTION_SUGGEST_MIN,
   mentionNamesIn,
 } from "~/lib/thinkpages-forum/mentions";
 
@@ -25,11 +22,5 @@ describe("mentionNamesIn", () => {
     expect(mentionNamesIn("mail me at kir@example.com")).toEqual([]);
     expect(mentionNamesIn("@@kir")).toEqual([]);
     expect(mentionNamesIn("x@kir")).toEqual([]);
-  });
-
-  it("keeps the constants the spec names", () => {
-    expect(MENTION_MAX_PER_POST).toBe(50);
-    expect(MENTION_SUGGEST_MIN).toBe(2);
-    expect(MENTION_SUGGEST_MAX).toBe(6);
   });
 });

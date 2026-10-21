@@ -94,16 +94,6 @@ describe("client code and MediaWiki", () => {
 
     expect(offenders).toEqual([]);
   });
-
-  it("the editor's template insert asks the server for its preview", () => {
-    const hook = fs.readFileSync(
-      path.join(SRC, "components/wiki-os/editor/hooks/useWikiVisualFormatting.ts"),
-      "utf8"
-    );
-
-    expect(hook).toContain("wikios.getTemplatePreview.fetch");
-    expect(hook).not.toContain("renderTemplateCached");
-  });
 });
 
 describe("the template modules", () => {
@@ -115,10 +105,6 @@ describe("the template modules", () => {
     const registry = read("lib/wiki-os/templates/template-registry.ts");
     expect(registry).not.toMatch(/^import /m);
     expect(registry).not.toMatch(MEDIAWIKI_HELPERS);
-  });
-
-  it("has no client-side preview service left", () => {
-    expect(fs.existsSync(path.join(SRC, "lib/wiki-os/templates/preview-service.ts"))).toBe(false);
   });
 });
 

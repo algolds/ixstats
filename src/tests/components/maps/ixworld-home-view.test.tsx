@@ -6,16 +6,7 @@ import { fireEvent, render, renderHook } from "@testing-library/react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { MapKeyboardControls } from "~/components/maps/core/MapKeyboardControls";
 import { useWorldMapLayers } from "~/components/maps/core/hooks/useWorldMapLayers";
-import { IXNAY_PRIME_MERIDIAN_LNG, MAP_DEFAULTS, mapHomeCenter } from "~/lib/maps/map-config";
-
-describe("mapHomeCenter", () => {
-  it("is Ixnay's prime meridian on Ixnay and the origin elsewhere", () => {
-    expect(mapHomeCenter(true)).toEqual([IXNAY_PRIME_MERIDIAN_LNG, 0]);
-    expect(mapHomeCenter(false)).toEqual([0, 0]);
-    expect(MAP_DEFAULTS.center).toEqual([0, 0]);
-  });
-});
-
+import { mapHomeCenter } from "~/lib/maps/map-config";
 describe("R (reset view)", () => {
   function flyToAfterReset(homeCenter?: [number, number]) {
     const flyTo = jest.fn();

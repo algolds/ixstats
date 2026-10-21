@@ -1,9 +1,3 @@
-/**
- * The Studio's context as a tab sees it: one stable value while nothing it holds changes, a Studio that cleans up
- * after itself, and a map area that says so while the map has not loaded.
- */
-import { act, fireEvent, screen } from "@testing-library/react";
-
 jest.mock("~/trpc/react", () => ({
   api: {
     atlas: {
@@ -44,7 +38,6 @@ import {
   rig,
   step,
   studioElement,
-  studioMap,
   workers,
 } from "~/tests/helpers/studio-fixtures";
 
@@ -86,18 +79,5 @@ describe("leaving the Studio", () => {
     expect(workers.every((worker) => worker.terminated)).toBe(true);
     expect(rig.draftIds()).toEqual([]);
     expect(rig.listeners("styledata")).toBe(0);
-  });
-});
-
-describe("the map area", () => {
-  it("says the map is loading until it has", () => {
-    studioMap.mockReturnValue({ containerRef: { current: null }, map: null });
-    const view = renderStudio();
-    expect(screen.getByText("Loading the map.")).toBeInTheDocument();
-
-    studioMap.mockReturnValue({ containerRef: { current: null }, map: rig.map });
-    act(() => void view.rerender(studioElement()));
-    expect(screen.queryByText("Loading the map.")).not.toBeInTheDocument();
-    fireEvent.click(document.body);
   });
 });

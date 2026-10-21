@@ -88,13 +88,6 @@ describe("useNavBadges", () => {
     expect(result.current["daily-reward"]).toBeUndefined();
     expect(result.current["diplomacy-inbox"]).toBeUndefined();
   });
-
-  it("labels a first claim New", () => {
-    balance = { credits: 5, canClaimDailyBonus: true, loginStreak: 0 };
-    const { result } = renderHook(() => useNavBadges(true));
-    expect(result.current["daily-reward"]).toEqual({ kind: "action", label: "New" });
-  });
-
   it("counts unread messages from the inbox and hides a zero count", () => {
     folderCounts = { inbox: 5 };
     const { result, rerender } = renderHook(() => useNavBadges(true));

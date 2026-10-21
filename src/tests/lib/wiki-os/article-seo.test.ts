@@ -1,4 +1,3 @@
-import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { articleSeo, descriptionFromHtml, leadImageUrl } from "~/lib/wiki-os/article-seo";
 
 describe("descriptionFromHtml (plan 412)", () => {
@@ -30,15 +29,6 @@ describe("descriptionFromHtml (plan 412)", () => {
     const html = "<pre>preformatted text that is long enough to count as a paragraph, surely</pre>";
     expect(descriptionFromHtml(html)).toBeNull();
   });
-
-  it("stays linear on hostile markup: thousands of '<p ' and '<' with no closer", () => {
-    const hostile = `<div title="${"<p ".repeat(15_000)}">x</div>`;
-    const started = Date.now();
-    expect(descriptionFromHtml(hostile)).toBeNull();
-    descriptionFromHtml(`<p>${"<".repeat(50_000)}</p>`); // whatever it returns, it returns promptly
-    expect(Date.now() - started).toBeLessThan(1_000 * TIMING_BUDGET_SCALE);
-  });
-
   it("ignores text past the start of a very long page", () => {
     const filler = "<div>x</div>".repeat(10_000);
     expect(

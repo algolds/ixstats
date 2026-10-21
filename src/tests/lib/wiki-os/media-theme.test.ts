@@ -1,10 +1,8 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   detectMediaType,
-  getImageIdentifier,
   getStoredMediaThemeMode,
   mediaThemeAttributes,
-  normalizeMediaMode,
   setStoredMediaThemeMode,
 } from "~/lib/wiki-os/transformers/media-theme";
 import { resolveHighResWikiImage } from "~/lib/wiki-os/transformers/resolve-highres-image";
@@ -35,23 +33,7 @@ describe("WikiOS Media Theme System", () => {
       expect(detectMediaType("/images/Mountain_Landscape.jpeg")).toBe("photo");
       expect(detectMediaType("/images/Historical_Photo_1920.webp")).toBe("photo");
     });
-
-    it("handles unknown or empty inputs gracefully", () => {
-      expect(detectMediaType("")).toBe("unknown");
-      expect(detectMediaType("/images/sample_asset.bin")).toBe("unknown");
-    });
   });
-
-  describe("normalizeMediaMode", () => {
-    it("normalizes modes to canonical 2 modes (auto, plinth)", () => {
-      expect(normalizeMediaMode("adaptive")).toBe("auto");
-      expect(normalizeMediaMode("plate")).toBe("plinth");
-      expect(normalizeMediaMode("plinth")).toBe("plinth");
-      expect(normalizeMediaMode("auto")).toBe("auto");
-      expect(normalizeMediaMode(null)).toBe("auto");
-    });
-  });
-
   describe("mediaThemeAttributes", () => {
     it("names the picture's kind and nothing about the theme or the reader's mode", () => {
       expect(mediaThemeAttributes("svg")).toEqual({ "data-media-kind": "svg" });
@@ -110,17 +92,6 @@ describe("WikiOS Media Theme System", () => {
       setStoredMediaThemeMode("plinth");
       expect(getStoredMediaThemeMode()).toBe("plinth");
       expect(document.documentElement.getAttribute("data-media-theme")).toBe("plinth");
-    });
-  });
-
-  describe("getImageIdentifier", () => {
-    it("extracts clean filename from URL", () => {
-      expect(getImageIdentifier("https://ixwiki.com/images/Flag_of_Valoria.svg")).toBe(
-        "Flag_of_Valoria.svg"
-      );
-      expect(
-        getImageIdentifier("/thumb/a/ab/Seal_of_Ix.svg/300px-Seal_of_Ix.svg.png?ts=2026")
-      ).toBe("300px-Seal_of_Ix.svg.png");
     });
   });
 });

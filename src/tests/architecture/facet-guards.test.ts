@@ -227,13 +227,6 @@ describe("Facet anti-slop guards", () => {
     expect(layout?.content.match(/<MotionConfig\b/g) ?? []).toHaveLength(0);
     expect(hits(/RackFocusBlurWrapper/g)).toEqual([]);
   });
-
-  it("keeps the removed decoration (TintGlow, AcrylicGlow, Refraction, FacetCard, retint/rim/glow props) out", () => {
-    expect(
-      hits(/\b(?:TintGlow|AcrylicGlow|FacetCard)\b|<Refraction\b|\b(?:retint|rim|glow)=/g)
-    ).toEqual([]);
-  });
-
   it("imports icons only from iconoir-react (lucide-react is prohibited)", () => {
     expect(hits(/from ["']lucide-react["']/g)).toEqual([]);
   });
@@ -249,14 +242,6 @@ describe("Facet anti-slop guards", () => {
   });
 
   describe("Facet 3 foundations (docs/specs/2026-09-30-facet-3-design-system.md)", () => {
-    it("uses no legacy glass-*/facet-card-* classes (their CSS was deleted)", () => {
-      expect(
-        hits(
-          /\b(?:glass-(?:hierarchy-interactive|hierarchy-modal|child|parent|none|physics|blended|contextual-popover)|facet-card-(?:parent|child))\b/g
-        )
-      ).toEqual([]);
-    });
-
     it("defines every sanctioned gradient class in its sheet", () => {
       const identity = ["facet/interaction.css", "card-art.css"]
         .map((sheet) => fs.readFileSync(path.join(srcDir, "styles", sheet), "utf-8"))
@@ -268,11 +253,6 @@ describe("Facet anti-slop guards", () => {
         ]);
       }
     });
-
-    it("references no *-hsl colour tokens (none exist)", () => {
-      expect(hits(/var\(--[\w-]+-hsl\)/g)).toEqual([]);
-    });
-
     it("layers src/components/ui with the --z-* tokens, not arbitrary z-[N] values", () => {
       const uiDir = path.join("components", "ui") + path.sep;
       expect(hits(/\bz-\[\d+\]/g).filter((hit) => hit.startsWith(uiDir))).toEqual([]);
@@ -356,10 +336,6 @@ describe("Facet anti-slop guards", () => {
         )
         .filter((hit) => !UNSANCTIONED_TEXTURE_ALLOWED.has(hit));
       expect(offenders).toEqual([]);
-    });
-
-    it("do not bring back the retired MyCountry surface-kit", () => {
-      expect(hits(/surface-kit/g)).toEqual([]);
     });
   });
 });

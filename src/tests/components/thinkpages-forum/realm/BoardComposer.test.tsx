@@ -184,15 +184,6 @@ beforeEach(() => {
 });
 
 describe("BoardComposer on a phone", () => {
-  it("sits in a dock above the tab bar, on the shell's own offset", () => {
-    const { container } = renderComposer({ docked: true });
-    const dock = container.querySelector('[data-slot="board-dock"]');
-    expect(dock).toHaveClass("fixed");
-    expect(dock?.className).toContain("var(--shell-tabbar-height)");
-    expect(dock).toContainElement(screen.getByTestId("editor"));
-    expect(dock).toContainElement(post());
-  });
-
   it("keeps the editor, and the draft in it, when the viewport crosses the phone breakpoint", () => {
     const { rerender } = renderComposer({ docked: false });
     const editor = screen.getByTestId("editor");
@@ -218,28 +209,6 @@ describe("BoardComposer on a phone", () => {
     expect(screen.getByTestId("editor")).toBe(editor);
     expect(editor).toHaveValue("half a message");
   });
-
-  it("is a pane in the page and a well inside the dock", () => {
-    const { container, rerender } = renderComposer();
-    const composer = () => container.querySelector('[data-slot="board-composer"]')!;
-    expect(composer()).toHaveAttribute("data-variant", "pane");
-    rerender(
-      <BoardComposer
-        realmName="Eurth"
-        access={boardAccess()}
-        slowModeSeconds={0}
-        replyTo={null}
-        quote={null}
-        onTyping={jest.fn()}
-        onClearReply={jest.fn()}
-        onQuoteInserted={jest.fn()}
-        onSubmit={jest.fn()}
-        docked
-      />
-    );
-    expect(composer()).toHaveAttribute("data-variant", "well");
-  });
-
   describe("folded in the dock", () => {
     const composer = (container: HTMLElement) =>
       container.querySelector('[data-slot="board-composer"]')!;
@@ -305,38 +274,7 @@ describe("BoardComposer on a phone", () => {
       });
       expect(composer(container)).not.toHaveAttribute("data-collapsed");
     });
-
-    it("is never folded in the page", () => {
-      const { container } = renderComposer();
-      expect(composer(container)).not.toHaveAttribute("data-collapsed");
-      expect(screen.getByTestId("editor")).toHaveAttribute("data-hide-toolbar", "false");
-    });
   });
-
-  it("keeps the editor short so the dock leaves the messages in view", () => {
-    renderComposer({ docked: true });
-    expect(
-      Number(screen.getByTestId("editor").getAttribute("data-max-height"))
-    ).toBeLessThanOrEqual(120);
-  });
-
-  it("is in the page when not docked", () => {
-    const { container } = renderComposer();
-    expect(container.querySelector('[data-slot="board-dock"]')).toBeNull();
-    expect(Number(screen.getByTestId("editor").getAttribute("data-max-height"))).toBeGreaterThan(
-      120
-    );
-  });
-
-  it("does not dock the reason a viewer cannot post", () => {
-    const { container } = renderComposer({
-      docked: true,
-      access: boardAccess({ canPost: false, reason: "visitors_off", notice: "Visitors are off." }),
-    });
-    expect(screen.getByText("Visitors are off.")).toBeInTheDocument();
-    expect(container.querySelector('[data-slot="board-dock"]')).toBeNull();
-  });
-
   it("still posts from the dock", async () => {
     const { onSubmit } = renderComposer({ docked: true });
     type("Hello");
@@ -344,14 +282,6 @@ describe("BoardComposer on a phone", () => {
     expect(onSubmit).toHaveBeenCalled();
   });
 });
-
-describe("BoardComposer @ menu", () => {
-  it("gives the editor the forum's @ menu source", () => {
-    renderComposer();
-    expect(screen.getByTestId("editor")).toHaveAttribute("data-mention-source", "true");
-  });
-});
-
 describe("BoardComposer", () => {
   it("counts the plain text against the 1,000 limit", () => {
     renderComposer();

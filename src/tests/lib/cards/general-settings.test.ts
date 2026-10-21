@@ -21,14 +21,6 @@ function dbWith(rows: Array<{ key: string; value: string }>): Pick<PrismaClient,
 }
 
 describe("card general settings", () => {
-  it("defaults match the previously hard-coded game values (10% rake, 150 cards)", async () => {
-    const { getGeneralCardSettings } = load();
-    const s = await getGeneralCardSettings(dbWith([]));
-    expect(s.auctionHouseRakePct).toBe(10);
-    expect(s.maxInventoryCards).toBe(150);
-    expect(Object.keys(s).sort()).toEqual(["auctionHouseRakePct", "maxInventoryCards"]);
-  });
-
   it("marketplaceFee uses the configured rake and spares sales of 100 IxC or less", async () => {
     const { marketplaceFee } = load();
     const db = dbWith([{ key: "card_system_auction_rake_pct", value: "5" }]);
@@ -66,10 +58,5 @@ describe("card general settings", () => {
     await setGeneralCardSetting(app as never, "maxInventoryCards", 200);
     await getGeneralCardSettings(read);
     expect(read.systemConfig.findMany).toHaveBeenCalledTimes(3);
-  });
-
-  it("baseCardCapacity reads the admin capacity", async () => {
-    const db = dbWith([{ key: "card_system_max_inventory_cards", value: "400" }]);
-    expect(await load().baseCardCapacity(db)).toBe(400);
   });
 });

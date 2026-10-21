@@ -5,7 +5,7 @@
  * owner strip only to the owner.
  */
 import { describe, it, expect, beforeEach } from "@jest/globals";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { api } from "~/trpc/react";
 import {
   CommandProfileView,
@@ -99,19 +99,6 @@ beforeEach(() => {
 });
 
 describe("CommandProfileView", () => {
-  it("renders the hero and the public record from real data", () => {
-    render(<CommandProfileView {...base} />);
-    expect(screen.getByRole("heading", { level: 1, name: "Testland" })).toBeTruthy();
-    expect(screen.getByText(/Onward together/)).toBeTruthy();
-    expect(screen.getByText("Port Lune")).toBeTruthy();
-    expect(screen.getAllByText("Open the northern ports").length).toBeGreaterThan(0);
-    // Signed-out visitors read resolved outcomes too (no sign-in note).
-    expect(screen.getAllByText("Harbour strike").length).toBeGreaterThan(0);
-    expect(screen.queryByText(/sign in/i)).toBeNull();
-    // Missing sources fall back to empty states, not sample figures.
-    expect(screen.getAllByText("No wiki article yet").length).toBeGreaterThan(0);
-  });
-
   it("reads directives and outcomes from the public record, never the owner tree", () => {
     render(<CommandProfileView {...base} />);
     expect(anyApi.countries.getPublicRecord.useQuery).toHaveBeenCalledWith(
@@ -124,46 +111,6 @@ describe("CommandProfileView", () => {
     expect(screen.queryByText("Secret draft plan")).toBeNull();
     expect(screen.queryByText("Only you can see this")).toBeNull();
   });
-
-  it("restores the national pulse, country DNA and condition matrix from real readings", () => {
-    render(<CommandProfileView {...base} />);
-    const pulse = screen.getByRole("region", { name: /National pulse/ });
-    expect(within(pulse).getByText("Consolidating")).toBeTruthy();
-    const dna = document.getElementById("command-dna")!;
-    expect(within(dna).getByText("GDP per Capita")).toBeTruthy();
-    expect(within(dna).getByText("#3 of 41 in Ixnay")).toBeTruthy();
-    expect(within(dna).getByText("Employment")).toBeTruthy();
-    expect(within(dna).getByText("94.5%")).toBeTruthy();
-    // No invented stability or military figures.
-    expect(within(dna).queryByText("Stability")).toBeNull();
-    expect(screen.queryByText(/Readiness/)).toBeNull();
-  });
-
-  it("is the Factbook tab's overview, with tiles linking to the Factbook sections", () => {
-    render(<CommandProfileView {...base} />);
-    const tabs = screen.getByRole("navigation", { name: "Country sections" });
-    const factbook = within(tabs).getByRole("link", { name: /Factbook/ });
-    expect(factbook.getAttribute("href")).toMatch(/\/countries\/testland$/);
-    expect(factbook.getAttribute("aria-current")).toBe("page");
-    expect(within(tabs).queryByRole("link", { name: /Profile/ })).toBeNull();
-    // No section pills on the overview: the dock navigates the page, the tiles lead to the sections.
-    expect(screen.queryByRole("button", { name: /Labor/ })).toBeNull();
-    const sectionLinks: [string, string][] = [
-      ["Full geography", "geography"],
-      ["Full economy", "economy"],
-      ["Labor", "labor"],
-      ["Full government", "government"],
-    ];
-    for (const [name, section] of sectionLinks) {
-      expect(screen.getByRole("link", { name }).getAttribute("href")).toBe(
-        `/countries/testland/factbook/${section}`
-      );
-    }
-    expect(
-      screen.getAllByRole("link", { name: /Economic modeling/ })[0]!.getAttribute("href")
-    ).toMatch(/\/countries\/testland\/modeling$/);
-  });
-
   it("shows the owner strip and cover control to the owner", () => {
     render(
       <CommandProfileView

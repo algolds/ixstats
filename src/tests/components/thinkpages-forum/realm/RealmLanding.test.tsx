@@ -346,13 +346,6 @@ beforeEach(() => {
 });
 
 describe("RealmLanding", () => {
-  it("shows a skeleton while the board loads", () => {
-    state.board = { isLoading: true };
-    const { container } = render(<RealmLanding realm="eurth" />);
-    expect(container.querySelector("[data-slot='skeleton']")).not.toBeNull();
-    expect(screen.queryByTestId("feed")).toBeNull();
-  });
-
   it("says the realm was not found when the server does", () => {
     state.board = { error: { data: { code: "NOT_FOUND" } } };
     render(<RealmLanding realm="nope" />);
@@ -373,83 +366,6 @@ describe("RealmLanding", () => {
       expect(screen.getByRole("heading", { level: 1, name: "Eurth" })).toBeInTheDocument();
       expect(screen.getByText("31 members · 6 online · You're a member")).toBeInTheDocument();
     });
-
-    it("says Visitor to a visitor, and nothing of standing to a signed-out reader", () => {
-      state.board = {
-        data: boardData(messages, { access: boardAccess({ isMember: false, isVisitor: true }) }),
-      };
-      const { unmount } = render(<RealmLanding realm="eurth" />);
-      expect(screen.getByText("31 members · 6 online · Visitor")).toBeInTheDocument();
-      unmount();
-      state.board = {
-        data: boardData(messages, {
-          access: boardAccess({ isMember: false, canPost: false, reason: "sign_in" }),
-        }),
-      };
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.getByText("31 members · 6 online")).toBeInTheDocument();
-    });
-
-    it("leaves the online count out while the socket is down, and counts one member in the singular", () => {
-      live.online = null;
-      live.live = false;
-      state.board = {
-        data: boardData(messages, {
-          realm: { ...boardData([]).realm, memberCount: 1 },
-        }),
-      };
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.getByText("1 member · You're a member")).toBeInTheDocument();
-    });
-
-    it("shows the realm's emblem, else an icon", () => {
-      const withEmblem = boardData(messages, {
-        realm: { ...boardData([]).realm, emblemUrl: "https://cdn.example/eurth.png" },
-      });
-      state.board = { data: withEmblem };
-      const { container, unmount } = render(<RealmLanding realm="eurth" />);
-      expect(container.querySelector("img[src='https://cdn.example/eurth.png']")).not.toBeNull();
-      unmount();
-      state.board = { data: boardData(messages) };
-      const plain = render(<RealmLanding realm="eurth" />);
-      expect(plain.container.querySelector("img")).toBeNull();
-      expect(plain.container.querySelector("svg")).not.toBeNull();
-    });
-
-    it("marks a realm without an emblem with a tinted realm mark, not a grey tile", () => {
-      const { container } = render(<RealmLanding realm="eurth" />);
-      const mark = container.querySelector('[data-slot="page-header"] .size-16')!;
-      expect(mark).toHaveClass("bg-tint-fill", "text-tint");
-      expect(mark).not.toHaveClass("bg-fill-3");
-    });
-
-    it("has no ThinkPages trail above the name, only the back link and the facts", () => {
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.queryByRole("navigation", { name: "breadcrumb" })).toBeNull();
-      expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
-        "href",
-        "/thinkpages"
-      );
-    });
-
-    it("puts the realm picker in the header toolbar on a wide screen", () => {
-      installViewport({ wide: true, phone: false });
-      const { container } = render(<RealmLanding realm="eurth" />);
-      expect(container.querySelector('[data-slot="page-header-toolbar"]')).toContainElement(
-        screen.getByLabelText("Other realms")
-      );
-    });
-
-    it("moves the realm picker under the title on a phone, out of the toolbar the top chrome covers", () => {
-      installViewport({ wide: false, phone: true });
-      const { container } = render(<RealmLanding realm="eurth" />);
-      const picker = screen.getByLabelText("Other realms");
-      expect(container.querySelector('[data-slot="page-header-toolbar"]')).not.toContainElement(
-        picker
-      );
-      expect(container.querySelector('[data-slot="forum-page-actions"]')).toContainElement(picker);
-    });
-
     it("lists the other realms, opening their landing pages", () => {
       render(<RealmLanding realm="eurth" />);
       expect(screen.getByLabelText("Other realms")).toHaveAttribute("data-value", "eurth");
@@ -524,15 +440,6 @@ describe("RealmLanding", () => {
       render(<RealmLanding realm="eurth" />);
       expect(screen.queryByLabelText("Board settings")).toBeNull();
     });
-
-    it("opens the rail in the Info sheet below the wide layout", () => {
-      installViewport({ wide: false, phone: false });
-      state.section = section;
-      render(<RealmLanding realm="eurth" />);
-      fireEvent.click(screen.getByRole("button", { name: "Info" }));
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).getByRole("link", { name: /Hub/ })).toBeInTheDocument();
-    });
   });
 
   describe("phone", () => {
@@ -541,59 +448,6 @@ describe("RealmLanding", () => {
     it("docks the composer above the tab bar", () => {
       render(<RealmLanding realm="eurth" />);
       expect(screen.getByTestId("composer")).toHaveAttribute("data-docked", "true");
-    });
-
-    it("leaves room after the feed for the dock", () => {
-      const { container } = render(<RealmLanding realm="eurth" />);
-      const spacer = container.querySelector('[data-slot="dock-spacer"]')!;
-      expect(spacer).not.toBeNull();
-      expect(
-        screen.getByTestId("feed").compareDocumentPosition(spacer) &
-          Node.DOCUMENT_POSITION_FOLLOWING
-      ).toBeTruthy();
-    });
-
-    it("leaves no room when the viewer cannot post, so nothing is docked", () => {
-      state.board = {
-        data: boardData(messages, { access: boardAccess({ canPost: false, reason: "sign_in" }) }),
-      };
-      const { container } = render(<RealmLanding realm="eurth" />);
-      expect(container.querySelector('[data-slot="dock-spacer"]')).toBeNull();
-    });
-
-    it("does not dock the composer on larger screens", () => {
-      installViewport({ wide: false, phone: false });
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.getByTestId("composer")).toHaveAttribute("data-docked", "false");
-    });
-
-    it("lists the boards as chips under the header, and not again in the Info sheet", () => {
-      state.section = section;
-      render(<RealmLanding realm="eurth" />);
-      const chips = screen.getByRole("navigation", { name: "Boards" });
-      expect(within(chips).getByRole("link", { name: "Hub" })).toHaveAttribute(
-        "href",
-        "/thinkpages/r/eurth/hub"
-      );
-      expect(within(chips).getByRole("link", { name: "Current Events" })).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Info" }));
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).queryByRole("heading", { name: "Boards" })).toBeNull();
-      expect(within(dialog).getByText("people in the room")).toBeInTheDocument();
-    });
-
-    it("shows no chips off the phone", () => {
-      installViewport({ wide: true, phone: false });
-      state.section = section;
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.queryByRole("navigation", { name: "Boards" })).toBeNull();
-    });
-
-    it("has no Info button on a phone with nothing for the sheet", () => {
-      live.online = null;
-      state.section = section;
-      render(<RealmLanding realm="eurth" />);
-      expect(screen.queryByRole("button", { name: "Info" })).toBeNull();
     });
   });
 

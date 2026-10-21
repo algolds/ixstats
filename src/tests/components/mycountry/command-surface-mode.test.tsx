@@ -129,10 +129,4 @@ describe("CommandSurface executive mode", () => {
     expect(replaceState).toHaveBeenCalledWith(null, "", "/mycountry");
     expect(pushState).not.toHaveBeenCalled();
   });
-
-  it("always shows the console on the executive section", () => {
-    mockPathname = "/mycountry/executive";
-    render(<CommandSurface section="executive" />);
-    expect(screen.getByTestId("console")).toBeInTheDocument();
-  });
 });

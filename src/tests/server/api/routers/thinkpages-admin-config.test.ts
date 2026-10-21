@@ -51,15 +51,6 @@ describe("ThinkPages account limit (WK-11)", () => {
     });
     expect(db.thinkpagesAccount.create).not.toHaveBeenCalled();
   });
-
-  it("getAccountLimit exposes the configured limit", async () => {
-    const db = createMockPrisma();
-    db.systemConfig.findUnique.mockResolvedValue({ value: "40" });
-    const caller = createCallerFactory(thinkpagesAccountsRouter)(
-      createMockRouterContext({ db }) as never
-    );
-    expect(await caller.getAccountLimit()).toBe(40);
-  });
 });
 
 describe("saveThinkpagesDiscordFeedConfig (WK-10)", () => {

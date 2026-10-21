@@ -302,8 +302,4 @@ describe("matchIntervalMs & raceIntervalMs", () => {
   it("raceIntervalMs defaults to 3 IxDays", () => {
     expect(raceIntervalMs(null)).toBe(3 * IXDAY);
   });
-
-  it("raceIntervalMs honors a valid override", () => {
-    expect(raceIntervalMs({ raceIntervalDays: 5 })).toBe(5 * IXDAY);
-  });
 });

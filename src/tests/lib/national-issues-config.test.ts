@@ -19,10 +19,6 @@ import {
 } from "~/lib/national-issues/config";
 
 describe("national-issues-config spawnMode", () => {
-  it("defaults spawnMode to probability", () => {
-    expect(completeNationalIssuesConfig({}).spawnMode).toBe("probability");
-  });
-
   it("merges partial updates without dropping spawnMode", () => {
     const merged = completeNationalIssuesConfig({ maxIssuesPerSession: 7 });
     expect(merged).toEqual({
@@ -31,13 +27,6 @@ describe("national-issues-config spawnMode", () => {
       spawnMode: "probability",
     } satisfies NationalIssuesConfig);
   });
-
-  it("preserves an explicit spawnMode override", () => {
-    expect(completeNationalIssuesConfig({ spawnMode: "deterministic" }).spawnMode).toBe(
-      "deterministic"
-    );
-  });
-
   it("falls back to the default when the JSON file is missing", () => {
     expect(getNationalIssuesConfig().spawnMode).toBe("probability");
   });

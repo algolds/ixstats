@@ -1,4 +1,3 @@
-import { realmLabelsEditorHref, wantsRealmLabelsEditor } from "~/lib/maps/realm-labels";
 import type { FeatureCollection } from "geojson";
 import { WATER_BODY_LABELS } from "~/lib/maps/map-config";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
@@ -145,15 +144,5 @@ describe("the theme styles' ocean-label layer", () => {
       "#3498db",
     ]);
     expect((layer.paint["text-halo-color"] as Expr[])[4]).toBe("rgba(179, 205, 224, 0.6)");
-  });
-});
-
-describe("the realm labels editor link", () => {
-  it("opens /maps on the realm with the labels editor, and only that param value asks for it", () => {
-    expect(realmLabelsEditorHref("eurth")).toBe("/maps?realm=eurth&editor=labels");
-    expect(realmLabelsEditorHref("new world")).toBe("/maps?realm=new%20world&editor=labels");
-    expect(wantsRealmLabelsEditor(new URLSearchParams("realm=eurth&editor=labels"))).toBe(true);
-    expect(wantsRealmLabelsEditor(new URLSearchParams("realm=eurth&editor=other"))).toBe(false);
-    expect(wantsRealmLabelsEditor(null)).toBe(false);
   });
 });

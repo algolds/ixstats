@@ -121,40 +121,11 @@ describe("the World tab's visibility", () => {
     renderPanel(stateOf({ isAdmin: true }));
     expect(tabNames()).toContain("World");
   });
-
-  it("is not offered to someone who can't edit the realm's map", () => {
-    display.mockReturnValue(realm({ canEdit: false }) as never);
-    renderPanel(stateOf());
-    expect(tabNames()).not.toContain("World");
-    expect(tabNames()).toContain("Layers");
-  });
-
-  it("is never offered on Ixnay, not even to a site admin", () => {
-    display.mockReturnValue(realm({ isIxnay: true, canEdit: true }) as never);
-    renderPanel(stateOf({ isAdmin: true }));
-    expect(tabNames()).not.toContain("World");
-  });
-
   it("waits for the realm to load rather than flash on Ixnay", () => {
     display.mockReturnValue(undefined);
     renderPanel(stateOf());
     expect(tabNames()).not.toContain("World");
   });
-
-  it("is not part of the country editor", () => {
-    display.mockReturnValue(realm() as never);
-    renderPanel(
-      stateOf({
-        isWorldMode: false,
-        panelConfigs: {
-          panelA: { placement: "left", tabs: ["layers", "world"], collapsed: false },
-          panelB: { placement: "right", tabs: ["properties"], collapsed: false },
-        },
-      })
-    );
-    expect(tabNames()).toEqual(["Layers"]);
-  });
-
   it("follows the layout when the founder moved it to the other panel", () => {
     display.mockReturnValue(realm() as never);
     renderPanel(

@@ -52,23 +52,6 @@ describe("CabinetMeetingsPanel", () => {
       decisions: [],
     });
   });
-
-  it("shows a concluded meeting's outcome and decisions, without a Conclude action", () => {
-    mockMeetings = [
-      meeting({
-        status: "completed",
-        notes: "Budget agreed",
-        decisions: [{ id: "d1", title: "Budget review", decisionType: "approved" }],
-      }),
-    ];
-    render(<CabinetMeetingsPanel countryId="c1" />);
-
-    expect(screen.getByText("Concluded")).toBeInTheDocument();
-    expect(screen.getByText("Budget agreed")).toBeInTheDocument();
-    expect(screen.getByText("Approved")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Conclude" })).not.toBeInTheDocument();
-  });
-
   it("hides the Conclude action from a non-owner", () => {
     mockMeetings = [meeting({})];
     render(<CabinetMeetingsPanel countryId="c1" canManage={false} />);

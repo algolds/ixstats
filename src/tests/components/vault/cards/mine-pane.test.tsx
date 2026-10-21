@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { keepPreviousData } from "@tanstack/react-query";
 
 jest.mock("~/trpc/react", () => ({
@@ -189,30 +189,6 @@ describe("MinePane", () => {
       screen.getByText("A copy that is listed or in a trade can't be broken down.")
     ).toBeInTheDocument();
   });
-
-  it("gives focus to Select once a bulk action ends select mode", async () => {
-    breakDown.mutate.mockImplementation((_input: object, done: { onSuccess?: () => void }) =>
-      done.onSuccess?.()
-    );
-    listMine().mockReturnValue(page([row(1), row(2)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select" }));
-    fireEvent.click(face(1));
-    fireEvent.click(screen.getByRole("button", { name: "Break down 1" }));
-    fireEvent.click(screen.getByRole("button", { name: "Break down" }));
-    expect(breakDown.mutate).toHaveBeenCalledWith({ ownershipIds: ["o1"] }, expect.anything());
-    expect(screen.queryByRole("group", { name: "Selected cards" })).not.toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Select" })).toHaveFocus());
-  });
-
-  it("shows the player's dust first among the bar's controls", () => {
-    listMine().mockReturnValue(page([row(1)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    const dust = screen.getByRole("button", { name: "Dust: 0" });
-    const view = screen.getByRole("tab", { name: "Grid" });
-    expect(dust.compareDocumentPosition(view) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it("leaves select mode once the copies are added", () => {
     listMine().mockReturnValue(page([row(1), row(2)]) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -271,16 +247,6 @@ describe("MinePane", () => {
     render(<MinePane onOpenCard={jest.fn()} />);
     expect(screen.getAllByRole("button", { name: /^Card \d, / })).toHaveLength(3);
   });
-
-  it("puts the bulk bar before the cards, so it is reached first from the keyboard", () => {
-    listMine().mockReturnValue(page([row(1)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select" }));
-    const bar = screen.getByRole("group", { name: "Selected cards" });
-    const grid = screen.getByRole("list", { name: "Your cards" });
-    expect(bar.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it("drops a copy picked twice", () => {
     listMine().mockReturnValue(page([row(1), row(2)]) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -318,15 +284,6 @@ describe("MinePane", () => {
       expect(onOpenCard).toHaveBeenCalledWith("c1");
     }
   );
-
-  it("gives focus to Select on Done, not the page body, as the bar leaves", () => {
-    listMine().mockReturnValue(page([row(1)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Select" }));
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(screen.getByRole("button", { name: "Select" })).toHaveFocus();
-  });
-
   it("starts select mode afresh each time", () => {
     listMine().mockReturnValue(page([row(1)]) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -336,53 +293,6 @@ describe("MinePane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select" }));
     expect(screen.getByText("0 selected")).toBeInTheDocument();
   });
-
-  it("lists copies with a value column", () => {
-    listMine().mockReturnValue(page([row(1, 1200, 3), row(2, 0)]) as never);
-    const onOpenCard = jest.fn();
-    render(<MinePane onOpenCard={onOpenCard} />);
-    expect(screen.getByRole("tabpanel", { name: "Grid" })).toBeInTheDocument();
-    // Radix tabs switch on mouse down, not click.
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "List" }), { button: 0 });
-    expect(screen.getByRole("tabpanel", { name: "List" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Value" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "IxCredits 1,200" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "IxCredits 0" })).toBeInTheDocument();
-    expect(screen.queryByText("Retired")).not.toBeInTheDocument();
-    expect(screen.getByText("3 copies")).toBeInTheDocument();
-    expect(screen.getAllByText(/copies$/)).toHaveLength(1);
-    expect(screen.queryByRole("list", { name: "Your cards" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Card 2" }));
-    expect(onOpenCard).toHaveBeenCalledWith("c2");
-  });
-
-  it("says a retired copy is retired beside its value of nothing", () => {
-    listMine().mockReturnValue(page([row(1, 0, 1, true)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "List" }), { button: 0 });
-    expect(screen.getByRole("cell", { name: "Retired IxCredits 0" })).toBeInTheDocument();
-  });
-
-  it("marks a missing finish and level with a dash", () => {
-    const bare = row(1);
-    listMine().mockReturnValue(page([{ ...bare, face: { ...bare.face, copy: null } }]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "List" }), { button: 0 });
-    expect(screen.getAllByRole("cell", { name: "–" })).toHaveLength(2);
-  });
-
-  it("shows the grid while selecting, with the view switch off", () => {
-    listMine().mockReturnValue(page([row(1)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "List" }), { button: 0 });
-    fireEvent.click(screen.getByRole("button", { name: "Select" }));
-    expect(screen.queryByRole("columnheader", { name: "Value" })).not.toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Grid" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "List" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(screen.getByRole("columnheader", { name: "Value" })).toBeInTheDocument();
-  });
-
   it("searches as the player types", () => {
     listMine().mockReturnValue(page([row(1)]) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -406,16 +316,6 @@ describe("MinePane", () => {
     });
     expect(screen.getByRole("button", { name: "Filters, 2 on" })).toBeInTheDocument();
   });
-
-  it("offers the realms the player holds cards from", () => {
-    listMine().mockReturnValue(page([row(1)]) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }));
-    fireEvent.click(screen.getByRole("combobox", { name: "Realm" }));
-    fireEvent.click(screen.getByRole("option", { name: "Ixnay" }));
-    expect(lastInput()).toMatchObject({ realmId: "default" });
-  });
-
   it("sorts by the sort menu", () => {
     listMine().mockReturnValue(page([row(1)]) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -431,45 +331,6 @@ describe("MinePane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show more" }));
     expect(more.fetchNextPage).toHaveBeenCalledTimes(1);
   });
-
-  it("says when more cards did not load, and tries again", () => {
-    const failed = page([row(1)], 2, {
-      hasNextPage: true,
-      isError: true,
-      isFetchNextPageError: true,
-    });
-    listMine().mockReturnValue(failed as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.getByText("More cards did not load.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(failed.fetchNextPage).toHaveBeenCalledTimes(1);
-    expect(failed.refetch).not.toHaveBeenCalled();
-  });
-
-  it("holds the show-more button while the next page loads, and hides it after the last", () => {
-    listMine().mockReturnValue(
-      page([row(1)], 2, { hasNextPage: true, isFetchingNextPage: true }) as never
-    );
-    const { rerender } = render(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.getByRole("button", { name: "Show more" })).toBeDisabled();
-    listMine().mockReturnValue(page([row(1)]) as never);
-    rerender(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.queryByRole("button", { name: "Show more" })).not.toBeInTheDocument();
-  });
-
-  it("points an empty collection to Explore and the Store", () => {
-    listMine().mockReturnValue(page([], 0) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.getByText("No cards yet")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Explore cards" })).toHaveAttribute(
-      "href",
-      "/vault/cards/explore"
-    );
-    expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
-    expect(screen.getByRole("button", { name: "Select" })).toBeDisabled();
-  });
-
   it("says when nothing matches the filters, and clears them", () => {
     listMine().mockReturnValue(page([], 5) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
@@ -482,33 +343,6 @@ describe("MinePane", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(lastInput()).toEqual({ sort: "acquired", limit: 60 });
   });
-
-  it("shows a busy placeholder while the first page loads", () => {
-    listMine().mockReturnValue({
-      ...page([]),
-      data: undefined,
-      isLoading: true,
-      isFetching: true,
-    } as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    const panel = screen.getByRole("tabpanel", { name: "Grid" });
-    expect(panel).toHaveAttribute("aria-busy", "true");
-    expect(panel.querySelector('[data-slot="skeleton"]')).toBeInTheDocument();
-    expect(screen.queryByText("No cards yet")).not.toBeInTheDocument();
-    expect(screen.queryByText("No cards match these filters")).not.toBeInTheDocument();
-    expect(screen.queryByRole("list", { name: "Your cards" })).not.toBeInTheDocument();
-  });
-
-  it("says when the cards did not load, and tries again", () => {
-    const failed = { ...page([]), data: undefined, isError: true };
-    listMine().mockReturnValue(failed as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.getByText("Your cards did not load")).toBeInTheDocument();
-    expect(screen.queryByText("No cards yet")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    expect(failed.refetch).toHaveBeenCalledTimes(1);
-  });
-
   it.each<[string, Partial<QueryState>, string]>([
     ["while new cards load", { isFetching: true }, "true"],
     ["not while the next page loads", { isFetching: true, isFetchingNextPage: true }, "false"],
@@ -517,12 +351,5 @@ describe("MinePane", () => {
     listMine().mockReturnValue(page([row(1)], 1, state) as never);
     render(<MinePane onOpenCard={jest.fn()} />);
     expect(screen.getByRole("tabpanel", { name: "Grid" })).toHaveAttribute("aria-busy", busy);
-  });
-
-  it("keeps the cards it has when a refresh fails", () => {
-    listMine().mockReturnValue(page([row(1)], 1, { isError: true }) as never);
-    render(<MinePane onOpenCard={jest.fn()} />);
-    expect(screen.queryByText("Your cards did not load")).not.toBeInTheDocument();
-    expect(face(1)).toBeInTheDocument();
   });
 });

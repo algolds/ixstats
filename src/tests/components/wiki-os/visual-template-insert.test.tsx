@@ -91,21 +91,4 @@ describe("handleInsertTemplate when the preview fails", () => {
     expect(saved.complete).toBe(true);
     expect(saved.wikitext).toContain("{{Infobox country|name=Vesperia}}");
   });
-
-  it("says to sign in when signed out, and gives the generic reason for any other failure", async () => {
-    const { editor, view } = setup();
-
-    mockFetch.mockRejectedValueOnce(
-      Object.assign(new Error("UNAUTHORIZED"), { data: { code: "UNAUTHORIZED" } })
-    );
-    await act(() => view.result.current.handleInsertTemplate("Flag", { 1: "Vesperia" }));
-    expect(mockWarning.mock.calls[0]?.[1]).toContain("Sign in to preview templates.");
-
-    mockFetch.mockRejectedValueOnce(new Error("network down"));
-    await act(() => view.result.current.handleInsertTemplate("Flag", { 1: "Vesperia" }));
-    expect(mockWarning.mock.calls[1]?.[1]).toContain("The preview service did not answer.");
-    expect(
-      editor.children.filter((node) => (node as { type?: string }).type === "raw-html")
-    ).toHaveLength(2);
-  });
 });

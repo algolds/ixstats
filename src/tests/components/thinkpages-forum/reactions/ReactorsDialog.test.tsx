@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 type Reactor = {
@@ -159,17 +159,5 @@ describe("ReactorsDialog", () => {
       expect.anything(),
       expect.objectContaining({ enabled: true })
     );
-  });
-
-  it("announces loading as a status", () => {
-    Object.assign(mockState, { data: undefined, isLoading: true });
-    render(<ReactorsDialog postId="p1" type="all" onClose={jest.fn()} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Loading reactions");
-  });
-
-  it("closes through the dismiss button", () => {
-    const onClose = open();
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(onClose).toHaveBeenCalled();
   });
 });

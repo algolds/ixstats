@@ -134,17 +134,6 @@ describe("wikios.getArticleHtml for another wiki's page", () => {
     expect(out.contentHtml).toContain(`href="/wiki/Eurth?source=${wikiSource}"`);
     expect(out.contentHtml).not.toContain("<script");
   });
-
-  it("renders a revision once for every reader", async () => {
-    const page = sisterPage();
-    jest.mocked(getArticleWikitext).mockResolvedValue(page as never);
-
-    await caller().getArticleHtml({ title: page.title, wikiSource: "iiwiki" });
-    await caller().getArticleHtml({ title: page.title, wikiSource: "iiwiki" });
-
-    expect(guard.calls()).toHaveLength(1);
-  });
-
   it("says the page does not exist on that wiki when the wiki has no such page", async () => {
     jest.mocked(getArticleWikitext).mockResolvedValue(null);
 

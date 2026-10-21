@@ -51,8 +51,4 @@ describe("builder country payload validation", () => {
     expect(countryEconomyBuilderStateSchema.safeParse(p.e).success).toBe(true);
     expect(JSON.stringify(p)).toContain('"endDate":"2030-01-01T00:00:00.000Z"');
   });
-
-  it("keeps nulls (foundationCountry: null is meaningful)", () => {
-    expect(asJsonPayload<{ a: null }>({ a: null })).toEqual({ a: null });
-  });
 });

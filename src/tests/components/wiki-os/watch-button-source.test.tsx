@@ -9,11 +9,6 @@ describe("WatchButton (ruling E-l′)", () => {
     render(<WatchButton title="Portal:Eurth" wikiSource="iiwiki" />);
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
-
-  it("is offered on an IxWiki page", () => {
-    render(<WatchButton title="Aurelia" />);
-    expect(screen.getByRole("button", { name: /watch/i })).toBeInTheDocument();
-  });
 });
 
 describe("WatchButton marks a watched page visited (plan 416, WK-19)", () => {

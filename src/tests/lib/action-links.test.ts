@@ -1,7 +1,5 @@
 /** @jest-environment node */
 import {
-  NON_ACTION_EVENT_TYPES,
-  NON_ACTION_TITLES,
   RECENT_ACTIONS,
   SEARCH_ACTIONS,
   actionToken,
@@ -12,7 +10,6 @@ import {
   MAX_ACTIONS_PER_POST,
   countActionTokens,
   countTextActionTokens,
-  directiveActivityId,
   mapHtmlRuns,
   parseActionTokens,
   splitActionTokens,
@@ -244,30 +241,7 @@ describe("mapHtmlRuns", () => {
     expect(mapHtmlRuns("<b>x</b>", { markup: () => "" })).toBe("x");
   });
 });
-
-describe("directiveActivityId", () => {
-  it("prefixes the intent id", () => {
-    expect(directiveActivityId("ckabc")).toBe("dir-ckabc");
-  });
-
-  it("stays a valid token id for a cuid", () => {
-    const id = directiveActivityId("cm9x2k4f10000abcd1234efgh");
-    expect(id.length).toBeLessThanOrEqual(64);
-    expect(parseActionTokens(`[ixaction=${id}]`)).toEqual([id]);
-  });
-});
-
 describe("picker constants and ids", () => {
-  it("denies the rows that are not actions a player takes", () => {
-    expect(NON_ACTION_TITLES).toEqual([
-      "Names Generated in Onoma Lab",
-      "Naming Dictionary Shared",
-      "New Nation Founded",
-      "Leadership Established",
-    ]);
-    expect(NON_ACTION_EVENT_TYPES).toEqual(["economic_tier_change", "achievement_unlocked"]);
-  });
-
   it("lists 10 recent actions and up to 30 matches", () => {
     expect([RECENT_ACTIONS, SEARCH_ACTIONS]).toEqual([10, 30]);
   });

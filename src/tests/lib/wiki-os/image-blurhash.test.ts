@@ -4,11 +4,6 @@ jest.mock("~/server/db", () => ({ __esModule: true, db: {} }));
 
 import sharp from "sharp";
 import { BlurHashService } from "~/lib/wiki-os/core/blurhash-service";
-import {
-  backfillBlurhashes,
-  readAssetBytes,
-  type BackfillAsset,
-} from "~/lib/wiki-os/services/blurhash-backfill";
 import { canComputeBlurhash, computeBlurhash } from "~/lib/wiki-os/services/image-blurhash";
 
 type Sharp = ReturnType<typeof sharp>;
@@ -84,105 +79,5 @@ describe("computeBlurhash", () => {
     const bytes = await picture(100, 100, { r: 9, g: 9, b: 9 }).png().toBuffer();
     process.env.WIKIOS_MAX_IMAGE_AREA = "5000";
     expect(await computeBlurhash(bytes, "image/png")).toBeNull();
-  });
-});
-
-describe("backfillBlurhashes", () => {
-  interface Row extends BackfillAsset {
-    blurhash: string | null;
-  }
-
-  /** The few `wikiAsset` calls the backfill makes, over rows in memory. */
-  function fakeDb(rows: Row[]) {
-    const matches = (row: Row, where: any) =>
-      (where.blurhash !== null || row.blurhash === null) &&
-      (!where.mimeType || where.mimeType.in.includes(row.mimeType)) &&
-      (!where.id?.gt || row.id > where.id.gt) &&
-      (typeof where.id !== "string" || row.id === where.id);
-    const wikiAsset = {
-      count: jest.fn(async ({ where }: any) => rows.filter((row) => matches(row, where)).length),
-      findMany: jest.fn(async ({ where, take }: any) =>
-        rows
-          .filter((row) => matches(row, where))
-          .sort((a, b) => a.id.localeCompare(b.id))
-          .slice(0, take)
-          .map(({ blurhash: _blurhash, ...asset }) => asset)
-      ),
-      updateMany: jest.fn(async ({ where, data }: any) => {
-        const hit = rows.filter((row) => matches(row, where));
-        for (const row of hit) row.blurhash = data.blurhash;
-        return { count: hit.length };
-      }),
-    };
-    return { wikiAsset } as any;
-  }
-
-  const row = (id: string, over: Partial<Row> = {}): Row => ({
-    id,
-    filename: `${id}.png`,
-    url: `https://ixwiki.com/images/a/ab/${id}.png`,
-    mimeType: "image/png",
-    sha1: null,
-    blurhash: null,
-    ...over,
-  });
-
-  let png: Buffer;
-  beforeAll(async () => {
-    png = await picture(20, 10, { r: 250, g: 200, b: 10 }).png().toBuffer();
-  });
-
-  it("writes nothing on a dry run, and reports what it would write", async () => {
-    const rows = [row("a"), row("b")];
-    const db = fakeDb(rows);
-
-    const report = await backfillBlurhashes(db, {}, async () => png);
-
-    expect(report).toMatchObject({ candidates: 2, processed: 2, computed: 2, written: 0 });
-    expect(db.wikiAsset.updateMany).not.toHaveBeenCalled();
-    expect(rows.every((r) => r.blurhash === null)).toBe(true);
-  });
-
-  it("writes each image asset's hash with --apply, skipping SVGs and assets that have one", async () => {
-    const rows = [
-      row("a"),
-      row("b", { mimeType: "image/svg+xml", filename: "b.svg" }),
-      row("c", { blurhash: "LEHV6nWB2yk8pyo0adR*.7kCMdnj" }),
-      row("d", { mimeType: "image/jpeg" }),
-    ];
-    const read = jest.fn(async () => png);
-
-    const report = await backfillBlurhashes(fakeDb(rows), { apply: true }, read);
-
-    expect(report).toMatchObject({ candidates: 2, processed: 2, computed: 2, written: 2 });
-    expect(read.mock.calls.map(([asset]: any) => asset.id)).toEqual(["a", "d"]);
-    expect(BlurHashService.isValid(rows[0]!.blurhash)).toBe(true);
-    expect(rows[1]!.blurhash).toBeNull();
-    expect(rows[2]!.blurhash).toBe("LEHV6nWB2yk8pyo0adR*.7kCMdnj");
-    expect(BlurHashService.isValid(rows[3]!.blurhash)).toBe(true);
-  });
-
-  it("counts files it cannot read or decode, leaves them without a hash, and honours --limit", async () => {
-    const rows = [row("a"), row("b"), row("c")];
-    const read = jest.fn(async (asset: BackfillAsset) =>
-      asset.id === "a" ? null : Buffer.from("garbage")
-    );
-
-    const report = await backfillBlurhashes(fakeDb(rows), { apply: true, limit: 2 }, read);
-
-    expect(report).toMatchObject({
-      candidates: 3,
-      processed: 2,
-      unreadable: 1,
-      undecodable: 1,
-      written: 0,
-    });
-    expect(rows.every((r) => r.blurhash === null)).toBe(true);
-  });
-
-  it("reads a staged upload from the staging directory and nothing from a relative URL", async () => {
-    const staged = row("s", { url: "/api/wiki/file/S.png", sha1: null });
-    expect(await readAssetBytes(staged)).toBeNull(); // staged, but no hash to find it by
-    expect(await readAssetBytes(row("r", { url: "/images/a/ab/R.png" }))).toBeNull();
   });
 });

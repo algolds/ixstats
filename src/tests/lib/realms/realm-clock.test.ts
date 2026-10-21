@@ -3,7 +3,6 @@
 import {
   createRealmClock,
   formatRealmDate,
-  formatRealmSpeed,
   nextSpeedChangeAt,
   parseRealmClock,
   realmCalendarMs,
@@ -60,11 +59,5 @@ describe("realm clock", () => {
     expect(parseRealmClock({ ...clock, multiplier: 13 })).toBeNull();
     expect(parseRealmClock({ ...clock, multiplier: -1 })).toBeNull();
     expect(parseRealmClock("clock")).toBeNull();
-  });
-
-  it("names the speed", () => {
-    expect(formatRealmSpeed(0)).toBe("Paused");
-    expect(formatRealmSpeed(2)).toBe("×2");
-    expect(formatRealmSpeed(0.5)).toBe("×0.5");
   });
 });

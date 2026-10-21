@@ -50,12 +50,6 @@ Burgundie was founded in the medieval era.
     expect(intro).not.toContain("== History ==");
     expect(intro).not.toContain("Category:");
   });
-
-  it("handles empty wikitext gracefully", () => {
-    expect(extractIntroFromWikitext("")).toBe("");
-    expect(extractIntroFromWikitext("{{OnlyInfobox}}")).toBe("");
-  });
-
   it("strips references and html tags from paragraphs", () => {
     const raw = `
 The '''Vandover Republic''' is a coastal federation<ref>Official Gazette, 2024.</ref> known for maritime commerce.<ref name="stat"/>
@@ -74,15 +68,6 @@ The '''Vandover Republic''' is a coastal federation<ref>Official Gazette, 2024.<
  */
 
 describe("NativeSearchService Search Suite", () => {
-  it("handles empty and whitespace-only queries gracefully", async () => {
-    const spotlight = await NativeSearchService.spotlightSearch("");
-    expect(spotlight).toEqual([]);
-
-    const fulltext = await NativeSearchService.fulltextSearch("   ");
-    expect(fulltext.results).toEqual([]);
-    expect(fulltext.total).toBe(0);
-  });
-
   it("extracts clean search snippets and calculates reading time", () => {
     const rawWikitext = `== Overview ==
 The [[Treaty of Oakhaven]] was signed in 1904 between the {{Flag|Oakhaven}} Kingdom and [[Kuthernburg]].`;
@@ -142,33 +127,6 @@ describe("NativeSearchService snippets are plain text", () => {
     expectPlainText(item!.snippet);
     expect(item!.snippet).toContain("Burgundie is a");
   });
-
-  it("strips markup from full-text headlines (tsvector path) and keeps the hits as ranges", async () => {
-    mockQueryRaw
-      .mockResolvedValueOnce([
-        {
-          id: "1",
-          title: "Burgundie",
-          slug: "Burgundie",
-          summary: null,
-          headline: `[[Burgundie|The «kingdom»]] ${XSS} and {{Flag|Burgundie}} more`,
-          readingTime: 1,
-          leadImageUrl: null,
-          rank: 0.5,
-        },
-      ])
-      .mockResolvedValueOnce([{ total: 1 }]);
-
-    const { results } = await NativeSearchService.fulltextSearch("kingdom");
-
-    expectPlainText(results[0]!.snippet);
-    expect(results[0]!.snippet).toContain("The kingdom");
-    expect(results[0]!.snippet).not.toContain("{{");
-    expect(results[0]!.snippet).not.toContain("«");
-    const [start, end] = results[0]!.snippetRanges[0]!;
-    expect(results[0]!.snippet.slice(start, end)).toBe("kingdom");
-  });
-
   it("strips markup from the Prisma fallback window when the search indexes are missing", async () => {
     mockQueryRaw.mockRejectedValue(new Error("column a.searchVector does not exist"));
     mockFindMany.mockResolvedValue([

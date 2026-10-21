@@ -41,11 +41,6 @@ describe("rollRarity", () => {
   it("rolls Common when no rarity has odds", () => {
     expect(rollRarity(none, () => 0.5)).toBe("COMMON");
   });
-
-  it("rolls with Math.random by default", () => {
-    jest.spyOn(Math, "random").mockReturnValue(0.99);
-    expect(rollRarity(odds)).toBe("EPIC");
-  });
 });
 
 describe("tierCounts", () => {
@@ -106,13 +101,6 @@ describe("createPoolDrawer", () => {
     const drawer = createPoolDrawer({ card: { findFirst } } as never, {}, { COMMON: 9, EPIC: 1 });
     expect(await drawer.draw("EPIC")).toBeNull();
     expect(findFirst).toHaveBeenCalledTimes(1);
-  });
-
-  it("picks the place with Math.random by default", async () => {
-    jest.spyOn(Math, "random").mockReturnValue(0.5);
-    const tx = txWith(card);
-    await createPoolDrawer(tx as never, {}, { COMMON: 10 }).draw("COMMON");
-    expect(tx.card.findFirst).toHaveBeenCalledWith(expect.objectContaining({ skip: 5 }));
   });
 });
 

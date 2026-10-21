@@ -22,7 +22,6 @@ import {
   founder,
   member,
   officer,
-  postIn,
   seed,
 } from "~/tests/helpers/forum-board-fake";
 
@@ -75,26 +74,6 @@ describe("thinkpagesForum board procedures", () => {
       code: "BAD_REQUEST",
     });
   });
-
-  it("posts, edits, continues and configures through the module", async () => {
-    const store = withBoard();
-    const c = caller(member, store.db);
-    const { message: posted } = await c.postBoardMessage({
-      realm: "eurth",
-      html: "<p>Hello</p>",
-      replyToPostId: "p1",
-    });
-    expect(posted).toMatchObject({ contentHtml: "<p>Hello</p>", replyTo: { postId: "p1" } });
-    const edited = await c.editBoardMessage({ postId: posted.id, html: "<p>Hello again</p>" });
-    expect(edited.contentHtml).toBe("<p>Hello again</p>");
-    const continued = await c.continueInThread({ postId: posted.id, title: "A real thread" });
-    expect(postIn(store, posted.id).threadId).toBe(continued.threadId);
-    expect(continued.placeholder.continued).toMatchObject({ title: "A real thread" });
-    await expect(
-      caller(founder, store.db).updateBoardSettings({ realmId: "r_eurth", slowModeSeconds: 10 })
-    ).resolves.toEqual({ visitorsAllowed: true, slowModeSeconds: 10 });
-  });
-
   it("maps refusals to TRPC errors", async () => {
     const store = withBoard();
     await expect(

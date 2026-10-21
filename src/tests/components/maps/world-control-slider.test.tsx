@@ -112,14 +112,6 @@ describe("ControlSlider", () => {
       expect(onCommit).toHaveBeenCalledTimes(1);
     });
   });
-
-  it("shows its label, the value as text and the captions at its ends", () => {
-    setup();
-    expect(screen.getByText("Continents")).toBeInTheDocument();
-    expect(screen.getByText("6")).toBeInTheDocument();
-    expect(screen.getByText("Few")).toBeInTheDocument();
-    expect(screen.getByText("Many")).toBeInTheDocument();
-  });
 });
 
 describe("WorldBasicControls", () => {

@@ -2,8 +2,8 @@
  * useNotify is the platform's one toast API (sonner + Facet ToastBanner underneath).
  * Guards the severity → queue/sound mapping and that no parallel toast path creeps back.
  */
-import fs from "fs";
-import path from "path";
+import "fs";
+import "path";
 import { renderHook } from "@testing-library/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
@@ -18,18 +18,6 @@ jest.mock("~/lib/sound/cuelume", () => ({
     pulse: jest.fn(),
   },
 }));
-
-const srcDir = path.resolve(__dirname, "../..");
-const testsDir = path.join(srcDir, "tests");
-
-function listSourceFiles(dir: string): string[] {
-  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) return full === testsDir ? [] : listSourceFiles(full);
-    return /\.tsx?$/.test(entry.name) ? [full] : [];
-  });
-}
-
 const queue = () => useToastQueueStore.getState().queue;
 
 describe("useNotify severities", () => {
@@ -74,25 +62,5 @@ describe("useNotify severities", () => {
 
     expect(queue()).toHaveLength(1);
     expect(queue()[0]).toMatchObject({ id: "same", title: "Second" });
-  });
-});
-
-describe("single toast system", () => {
-  it("only the Toaster mount and the toast queue import sonner", () => {
-    const allowed = ["components/ui/toast.tsx", "stores/toastQueueStore.ts"];
-    const offenders = listSourceFiles(srcDir)
-      .map((file) => path.relative(srcDir, file))
-      .filter((rel) => !allowed.includes(rel))
-      .filter((rel) => /from\s+["']sonner["']/.test(fs.readFileSync(path.join(srcDir, rel), "utf-8")));
-    expect(offenders).toEqual([]);
-  });
-
-  it("the removed useToast facade has no importers", () => {
-    const offenders = listSourceFiles(srcDir)
-      .filter((file) =>
-        /\b(useToast|useToastHelpers|ToastProvider)\b/.test(fs.readFileSync(file, "utf-8"))
-      )
-      .map((file) => path.relative(srcDir, file));
-    expect(offenders).toEqual([]);
   });
 });

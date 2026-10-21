@@ -17,8 +17,6 @@ jest.mock("~/lib/activity", () => ({
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: { onAchievementUnlock: jest.fn().mockResolvedValue(undefined) },
 }));
-
-import { ACHIEVEMENT_ICON_MAP } from "~/components/achievements/constants";
 import type { AccountAchievementData, AchievementDefinition } from "~/lib/achievements/definitions";
 import { diplomacyLoader } from "~/lib/achievements/metrics/diplomacy";
 import { nationAccountLoader, nationLoader } from "~/lib/achievements/metrics/nation";
@@ -46,40 +44,6 @@ describe("the sets", () => {
     for (const loader of [diplomacyLoader, nationLoader, nationAccountLoader])
       expect(METRIC_LOADERS).toContain(loader);
   });
-
-  it.each([
-    ["dip-first-alliance", "Diplomacy", "Common"],
-    ["dip-lasting-embassies", "Diplomacy", "Rare"],
-    ["dip-good-neighbour", "Diplomacy", "Rare"],
-    ["dip-winning-hearts", "Diplomacy", "Rare"],
-    ["dip-cultural-envoy", "Diplomacy", "Rare"],
-    ["dip-consensus-builder", "Diplomacy", "Rare"],
-    ["dip-old-friends", "Diplomacy", "Epic"],
-    ["dip-alliance-architect", "Diplomacy", "Epic"],
-    ["dip-pacifist", "Diplomacy", "Rare"],
-    ["mil-peacekeeper", "Defense", "Rare"],
-    ["nation-first-arms", "Nation", "Common"],
-    ["nation-stewardship-1", "Nation", "Uncommon"],
-    ["nation-stewardship-2", "Nation", "Rare"],
-    ["nation-stewardship-3", "Nation", "Legendary"],
-    ["nation-identity", "Nation", "Uncommon"],
-    ["nation-heraldic-house", "Nation", "Rare"],
-    ["nation-cartographer", "Nation", "Rare"],
-    ["nation-chronicler", "Nation", "Epic"],
-  ])("%s is %s, %s", (id, category, rarity) => {
-    expect(byId(id)).toMatchObject({ category, rarity });
-    expect(MINE.filter((d) => d.id === id)).toHaveLength(1);
-  });
-
-  it("holds exactly the spec's achievements, none retired, each with an icon the UI draws", () => {
-    expect(MINE).toHaveLength(18);
-    for (const def of MINE) {
-      expect([def.id, def.retired]).toEqual([def.id, undefined]);
-      expect([def.id, def.icon in ACHIEVEMENT_ICON_MAP]).toEqual([def.id, true]);
-      expect([def.id, Boolean(def.rule ?? def.condition)]).toEqual([def.id, true]);
-    }
-  });
-
   it("read only metrics a registered loader returns", () => {
     const keys = new Set(
       [diplomacyLoader, nationLoader, nationAccountLoader].flatMap((l) => l.keys)

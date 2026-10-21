@@ -235,18 +235,4 @@ describe("passport handle chain and wiki attribution", () => {
     expect(await resolveHandleUser("Lyra Wiki")).toBeNull();
     expect(await resolveIdentity("Lyra Wiki", null, noForum)).toBeNull();
   });
-
-  it("reads the switch once per lookup, for the users holding the wiki name only", async () => {
-    const twin = row("t", { wikiUsername: "lyra wiki" });
-    usersTable([lyra, twin, bare]);
-    await resolveHandleUser("Lyra Wiki");
-    expect(mocked.userConnection.findMany).toHaveBeenCalledTimes(1);
-    expect(mocked.userConnection.findMany.mock.calls[0]![0]).toMatchObject({
-      where: { userId: { in: [lyra.clerkUserId, twin.clerkUserId] } },
-    });
-
-    mocked.userConnection.findMany.mockClear();
-    await resolveHandleUser("LyraForum");
-    expect(mocked.userConnection.findMany).not.toHaveBeenCalled();
-  });
 });

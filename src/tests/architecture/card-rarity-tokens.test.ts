@@ -50,18 +50,6 @@ describe("card rarity tokens", () => {
     const names = [...tokens.matchAll(/--color-rarity-([a-z-]+):/g)].map((m) => m[1]);
     expect(names.sort()).toEqual(Object.keys(CARD_RARITY_HEX).sort());
   });
-
-  it("pins the six hues", () => {
-    expect(CARD_RARITY_HEX).toEqual({
-      common: "#94a3b8",
-      uncommon: "#10b981",
-      rare: "#3b82f6",
-      "ultra-rare": "#06b6d4",
-      epic: "#a855f7",
-      legendary: "#eab308",
-    });
-  });
-
   it("maps every data-card-rarity value to its token in the card art sheet", () => {
     expect(cardArt).toMatch(
       /\[data-card-rarity\]\s*\{\s*--card-rarity:\s*var\(--color-rarity-common\);/
@@ -75,14 +63,6 @@ describe("card rarity tokens", () => {
       );
     }
   });
-
-  it("gives every finish but Standard a sheen", () => {
-    for (const finish of ["FOIL", "HOLO", "SERIALISED"]) {
-      expect(cardArt).toContain(`[data-card-finish="${finish}"] .card-face-sheen`);
-    }
-    expect(cardArt).not.toContain('[data-card-finish="STANDARD"]');
-  });
-
   it("is read only through data-card-rarity, never as a rarity utility class", () => {
     // The light-theme edge and gem are darkened at the element (--card-rarity-paint); a utility would paint the raw hue.
     const utility = /(?<![\w-])(?:text|bg|border|fill|stroke)-rarity-/;

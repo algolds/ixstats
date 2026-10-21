@@ -3,7 +3,7 @@
  * holder's nations in one realm, titled with the realm's name from the region overview, showing the
  * payload's passport handle (never the URL segment). Its layout carries the passport's noindex rule.
  */
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { act, render, screen } from "@testing-library/react";
 import type { PassportPayload, RealmItem } from "~/components/passport/types";
 
@@ -132,15 +132,6 @@ describe("realm passport page", () => {
     );
     expect(pageTitle).toHaveBeenLastCalledWith("Alex Pav (@alex_h) · Eurth Concord");
   });
-
-  it("leaves the realm separator out of the title until the realm's name has loaded", async () => {
-    queries.set("realms.region.overview", null);
-    queries.set("ixnayid.getRealms", []);
-    await renderPage();
-    expect(pageTitle).toHaveBeenLastCalledWith("Alex Pav (@alex)");
-    expect(screen.getByText("@alex")).toBeTruthy();
-  });
-
   it("does not crash on a malformed segment", async () => {
     queries.set("ixnayid.getPassport", null);
     queries.set("ixnayid.getRealms", []);

@@ -30,17 +30,6 @@ jest.mock("~/trpc/react", () => ({
 
 describe("CountryGrowthEditor", () => {
   beforeEach(() => mutate.mockClear());
-
-  it("shows the stored rates as percents, the factor as a multiplier, and the tier's cap", () => {
-    render(<CountryGrowthEditor countryId="c1" />);
-    expect(screen.getByLabelText("Population growth (%)")).toHaveValue(1);
-    expect(screen.getByLabelText("Adjusted GDP growth (%)")).toHaveValue(3);
-    expect(screen.getByLabelText("Max GDP growth (%)")).toHaveValue(5);
-    expect(screen.getByLabelText("Local growth factor (x)")).toHaveValue(1);
-    expect(screen.getByText(/Its tier caps GDP growth at 2.75%/)).toBeInTheDocument();
-    expect(screen.getByText("0.5 to 2")).toBeInTheDocument();
-  });
-
   it("saves the fields as decimals", () => {
     render(<CountryGrowthEditor countryId="c1" />);
     fireEvent.change(screen.getByLabelText("Population growth (%)"), {

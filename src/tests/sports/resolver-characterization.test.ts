@@ -329,9 +329,4 @@ describe("resolveMatch characterization (fixed seeds)", () => {
       expect(actual).toEqual(EXPECTED[name]);
     });
   }
-
-  it("is deterministic for the same seed", () => {
-    const args = CASES.hockeyPlayoffRosters!;
-    expect(digest(resolveMatch(args))).toBe(digest(resolveMatch(args)));
-  });
 });

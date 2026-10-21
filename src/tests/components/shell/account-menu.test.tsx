@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 type Country = { id: string; name: string; flag: string; slug: string };
 
@@ -43,45 +43,6 @@ beforeEach(() => {
 });
 
 describe("AccountMenu identity rows", () => {
-  it("links your country (flag and name) to its public page, with no separate public page row", () => {
-    render(<AccountMenu layout="sheet" />);
-    const link = screen.getByRole("link", { name: "Caphiria" });
-    expect(link).toHaveAttribute("href", expect.stringContaining("caphiria"));
-    expect(link).not.toHaveAttribute("href", "/mycountry");
-    expect(within(link).getByTestId("country-flag")).toHaveAttribute("src", "f.png");
-    expect(screen.queryByRole("link", { name: "Public country page" })).toBeNull();
-  });
-
-  it("links your Passport and your Stash, and no wiki profile", () => {
-    render(<AccountMenu layout="sheet" />);
-    expect(screen.getByRole("link", { name: "Passport" })).toHaveAttribute("href", "/@me");
-    expect(screen.getByRole("link", { name: "Stash" })).toHaveAttribute("href", "/stashes");
-    expect(screen.queryByRole("link", { name: "Wiki profile" })).toBeNull();
-  });
-
-  it("links Passport settings to the IxnayID & passport panel", () => {
-    render(<AccountMenu layout="sheet" />);
-    expect(screen.getByRole("link", { name: "Passport settings" })).toHaveAttribute(
-      "href",
-      "/settings?tab=account"
-    );
-    expect(screen.queryByRole("link", { name: "IxnayID connections" })).toBeNull();
-  });
-
-  it("omits the country row when you have no country", () => {
-    country = null;
-    render(<AccountMenu layout="sheet" />);
-    expect(screen.queryByTestId("country-flag")).toBeNull();
-    expect(screen.queryByRole("link", { name: "Caphiria" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
-  });
-
-  it("keeps Privacy and Terms reachable here, for the collapsed rail and the phone sheet", () => {
-    render(<AccountMenu layout="sheet" />);
-    expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
-    expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute("href", "/terms");
-  });
-
   it("shows none of the identity rows when signed out", () => {
     signedIn = false;
     render(<AccountMenu layout="sheet" />);

@@ -2,7 +2,7 @@
  * Image repository page: the source, search, browsed category, filters and open file live in the URL, so a link
  * shares them and Back closes the detail panel.
  */
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
 import type { RepositoryImagesInput } from "~/components/wiki-os/media-search/useRepositoryImages";
 
@@ -187,15 +187,6 @@ describe("repository page URL state", () => {
     expect(next.get("type")).toBe("png");
     expect(next.get("file")).toBe(image(1).url);
   });
-
-  it("leaves defaults out of the URL", () => {
-    openAt("type=png");
-    render(<RepositoryPage />);
-    const typeGroup = screen.getByRole("radiogroup", { name: "Filter by file type" });
-    fireEvent.click(within(typeGroup).getByRole("radio", { name: "All" }));
-    expect(replaceState.mock.calls.at(-1)![2]).toBe(PATH);
-  });
-
   it("switching source drops the search, category and open file", () => {
     openAt(`src=iiwiki&q=flag&cat=Flags&file=${encodeURIComponent(image(1).url)}`);
     render(<RepositoryPage />);
@@ -227,17 +218,5 @@ describe("repository page URL state", () => {
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
     expect(screen.queryByLabelText("Detail")).not.toBeInTheDocument();
-  });
-
-  it("offers My uploads only when signed in", () => {
-    openAt("src=ixwiki");
-    const { unmount } = render(<RepositoryPage />);
-    expect(screen.getByRole("radio", { name: "My uploads" })).toBeInTheDocument();
-    unmount();
-
-    mockUser = null;
-    render(<RepositoryPage />);
-    expect(screen.queryByRole("radio", { name: "My uploads" })).not.toBeInTheDocument();
-    expect(lastHookCall().signedIn).toBe(false);
   });
 });

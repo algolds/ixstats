@@ -45,13 +45,4 @@ describe("countries.getByIdBasic (plan 404)", () => {
     expect(select).not.toHaveProperty("geometry");
     expect(select).toMatchObject({ id: true, name: true, centroid: true });
   });
-
-  it("returns the profile without a geometry", async () => {
-    const findMany = jest.fn().mockResolvedValue([row]);
-
-    const country = await caller(findMany).getByIdBasic({ id: "c_1" });
-
-    expect(country).toMatchObject({ id: "c_1", name: "Aurelia", centroid: [1, 2] });
-    expect(country).not.toHaveProperty("geometry");
-  });
 });

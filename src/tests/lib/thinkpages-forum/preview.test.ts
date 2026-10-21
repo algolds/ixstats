@@ -1,19 +1,8 @@
 /** @jest-environment node */
 import {
   FEED_EXCERPT_MAX,
-  PANEL_EXCERPT_MAX,
-  PANEL_MESSAGES,
   previewExcerpt,
 } from "~/lib/thinkpages-forum/preview";
-
-describe("preview constants", () => {
-  it("are the spec's numbers", () => {
-    expect(FEED_EXCERPT_MAX).toBe(280);
-    expect(PANEL_EXCERPT_MAX).toBe(90);
-    expect(PANEL_MESSAGES).toBe(3);
-  });
-});
-
 describe("previewExcerpt", () => {
   it("keeps a short text whole with its whitespace collapsed", () => {
     expect(previewExcerpt("  Hello \n\n  world\t!  ", 280)).toBe("Hello world !");

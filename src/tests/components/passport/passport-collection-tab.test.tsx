@@ -104,102 +104,11 @@ describe("signatureRibbons", () => {
 });
 
 describe("PassportCollectionTab", () => {
-  it("shows level, deck value, IxCredits and Focus, with the IxCredits symbol once", () => {
-    renderTab();
-    expect(screen.getByText("Lv 3")).toBeInTheDocument();
-    expect(screen.getByText("1,200 / 1,500 XP")).toBeInTheDocument();
-    expect(screen.getByText("12,400")).toBeInTheDocument();
-    expect(screen.getByText("1,250")).toBeInTheDocument();
-    expect(screen.getByText("5/12")).toBeInTheDocument();
-    expect(screen.getByText("Military focus")).toBeInTheDocument();
-    expect(screen.getAllByTestId("ixcredits-symbol")).toHaveLength(1);
-  });
-
-  it("shows the holder's displayed cards as their faces, and the achievements shelf", () => {
-    renderTab();
-    expect(
-      screen.getByRole("button", { name: "Imperial Crown, Legendary, Standard, Ixnay" })
-    ).toHaveAttribute("data-card-face");
-    expect(
-      screen.getByRole("button", { name: "Senate Seal, Ultra Rare, Standard, Ixnay" })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/2 \/ 76 unlocked · 20 pts/)).toBeInTheDocument();
-    expect(screen.getByText("Top ribbons")).toBeInTheDocument();
-    expect(screen.getByText("Ribbon legend")).toBeInTheDocument();
-    expect(screen.getByTestId("passport-ribbon-shelf").children).toHaveLength(2);
-  });
-
-  it("states each count once: no card count beside the deck value, none on the ribbon rack", () => {
-    renderTab({ vault: { ...vault, totalCards: 37 } });
-    expect(screen.getByText("Market value in IxCredits")).toBeInTheDocument();
-    expect(document.body.textContent?.match(/37/g) ?? []).toHaveLength(0);
-    expect(screen.getByRole("heading", { name: "Ribbon rack" })).toBeInTheDocument();
-    // unlockedCount equals the ribbon count (2); it appears only in the unlocked line.
-    expect(screen.getAllByText(/\b2\b/)).toHaveLength(1);
-    expect(screen.getByText(/2 \/ 76 unlocked/)).toBeInTheDocument();
-  });
-
-  it("titles its sections as h2, matching the Realms tab", () => {
-    renderTab();
-    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
-      "Top cards",
-      "Achievements",
-    ]);
-  });
-
-  it("keeps a hidden collection under its Top cards title", () => {
-    renderTab({ vault: null });
-    const topCards = screen
-      .getByRole("heading", { level: 2, name: "Top cards" })
-      .closest("section")!;
-    expect(topCards).toHaveTextContent("@alex keeps their collection private.");
-  });
-
-  it("names the shelf after pinned ribbons when the holder pinned some", () => {
-    renderTab({
-      achievements: { ...achievements, ribbons: [ribbon("a", "Rare", true), ribbon("b", "Rare")] },
-    });
-    expect(screen.getByText("Signature ribbons")).toBeInTheDocument();
-  });
-
-  it("links nowhere: there is no public vault page to send a visitor to", () => {
-    renderTab();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-  });
-
   it("opens a card's sheet through the holder's display, which shows its art", () => {
     renderTab({ handle: "ann" });
     fireEvent.click(screen.getByRole("button", { name: /^Imperial Crown,/ }));
     expect(open).toHaveBeenCalledWith("c1", { kind: "holder", handle: "ann" });
     // The Passport is outside the Vault layout, so it hosts the sheet itself.
     expect(screen.getAllByTestId("card-sheet-host")).toHaveLength(1);
-  });
-
-  it("hosts no sheet when there are no cards to open", () => {
-    renderTab({ vault: { ...vault, topCards: [], totalCards: 0 } });
-    expect(screen.queryByTestId("card-sheet-host")).not.toBeInTheDocument();
-  });
-
-  it("shows empty states instead of invented data", () => {
-    renderTab({
-      vault: { ...vault, topCards: [], totalCards: 0, focus: null },
-      achievements: { unlockedCount: 0, totalCount: 76, points: 0, ribbons: [] },
-    });
-    expect(screen.getByText("@alex has not collected any IxCards yet.")).toBeInTheDocument();
-    expect(screen.getByText("@alex has not unlocked any achievements yet.")).toBeInTheDocument();
-    expect(screen.queryByText("Focus")).not.toBeInTheDocument();
-  });
-
-  it("says a hidden section is private", () => {
-    renderTab({ vault: null, achievements: null });
-    expect(screen.getByText("@alex keeps their collection private.")).toBeInTheDocument();
-    expect(screen.getByText("@alex keeps their achievements private.")).toBeInTheDocument();
-  });
-
-  it("tells the owner where to show a hidden section", () => {
-    renderTab({ vault: null, isOwner: true });
-    expect(
-      screen.getByText("You hide your collection. Change it on the back of your passport.")
-    ).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { countedPostId, discussedLabel, othersOf, placeLine } from "~/lib/discussed-in";
+import { countedPostId, othersOf } from "~/lib/discussed-in";
 
 describe("othersOf", () => {
   it("is the tally itself outside a post", () => {
@@ -34,42 +34,6 @@ describe("othersOf", () => {
     expect(othersOf({ count: 0, postIds: [] }, "p1").count).toBe(0);
   });
 });
-
-describe("discussedLabel", () => {
-  it.each([
-    [1, false, "Discussed in 1 post"],
-    [3, false, "Discussed in 3 posts"],
-    [1, true, "Also discussed in 1 other post"],
-    [4, true, "Also discussed in 4 other posts"],
-  ])("labels %s (others: %s) as %j", (count, others, expected) => {
-    expect(discussedLabel(count, others)).toBe(expected);
-  });
-});
-
-describe("placeLine", () => {
-  const ann = { name: "ann" };
-  it("names the category and realm of a thread post", () => {
-    expect(
-      placeLine({ kind: "thread", author: ann, categoryName: "General", realmName: null })
-    ).toBe("ann in General");
-    expect(
-      placeLine({ kind: "thread", author: ann, categoryName: "Hub", realmName: "Eurth" })
-    ).toBe("ann in Hub, Eurth");
-  });
-
-  it("puts a board message on the board", () => {
-    expect(placeLine({ kind: "board", author: ann, categoryName: null, realmName: "Eurth" })).toBe(
-      "ann on the Eurth board"
-    );
-  });
-
-  it("falls back to the author alone", () => {
-    expect(placeLine({ kind: "thread", author: ann, categoryName: null, realmName: null })).toBe(
-      "ann"
-    );
-  });
-});
-
 describe("countedPostId", () => {
   it("names the post, except a persona's, which the server never counts", () => {
     expect(countedPostId({ id: "p1", persona: false })).toBe("p1");

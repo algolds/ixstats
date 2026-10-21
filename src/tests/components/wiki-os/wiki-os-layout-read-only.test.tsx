@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 
 const mockPush = jest.fn();
@@ -58,14 +58,6 @@ describe("WikiOSLayout without a rail", () => {
     expect(hasTabs()).toBe(article);
     expect(hasPageTools()).toBe(article);
   });
-
-  it("keeps the article tabs on its history page, without the page tools", () => {
-    mockPathname = "/util/history/Aurelia";
-    renderLayout();
-    expect(screen.getByRole("tab", { name: "History" }).getAttribute("aria-selected")).toBe("true");
-    expect(hasPageTools()).toBe(false);
-  });
-
   it("offers Edit to a signed-in reader only", () => {
     mockPathname = "/wiki/Aurelia";
     const { unmount } = renderLayout();
@@ -76,15 +68,6 @@ describe("WikiOSLayout without a rail", () => {
     renderLayout();
     expect(screen.queryByRole("tab", { name: "Edit" })).toBeNull();
   });
-
-  it("every page offers New page, which opens the create dialog", async () => {
-    mockPathname = "/util/search";
-    renderLayout();
-    expect(screen.queryByText("create page dialog")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "New page" }));
-    expect(await screen.findByText("create page dialog")).toBeTruthy();
-  });
-
   it("shows no tabs or page tools on another wiki's page, but still New page", () => {
     mockPathname = "/wiki/Aurelia";
     renderLayout(true);

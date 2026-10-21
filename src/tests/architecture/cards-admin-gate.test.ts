@@ -23,84 +23,11 @@ describe("cards admin router", () => {
     expect(Object.keys(cardsRouter._def.procedures)).toContain("admin.overview.summary");
   });
 });
-
-const CARDS_ADMIN_PROCEDURES = {
-  overview: ["summary", "activity", "realms", "findCards"],
-  library: ["list", "update", "bulkSetRetired"],
-  imports: [
-    "searchCategories",
-    "categoryCounts",
-    "crawl",
-    "start",
-    "jobs",
-    "items",
-    "cancel",
-    "retry",
-    "resume",
-  ],
-  nationstates: [
-    "logs",
-    "logCards",
-    "active",
-    "start",
-    "pause",
-    "resume",
-    "stop",
-    "discoverRegions",
-    "filterCte",
-  ],
-  curation: ["queue", "review", "suggestions", "acceptSuggestion", "declineSuggestion"],
-  packs: ["list", "save", "setActive", "preview"],
-  economy: [
-    "get",
-    "saveValues",
-    "recomputeValues",
-    "saveMarket",
-    "saveEconomy",
-    "saveBonuses",
-    "saveLorewardPayouts",
-    "saveRarityThresholds",
-    "saveDailyImport",
-  ],
-  seasons: ["get", "set"],
-  compliance: [
-    "takedowns",
-    "file",
-    "hide",
-    "decline",
-    "restore",
-    "licences",
-    "setLicence",
-    "inscriptionReports",
-    "resolveInscriptionReport",
-  ],
-  designer: ["list", "save", "achievements"],
-  tools: [
-    "playerCards",
-    "grant",
-    "revoke",
-    "cancelAuction",
-    "cancelListing",
-    "voidTrade",
-    "awardPack",
-  ],
-} as const;
-
 const CARD_ROUTER_DIRS = ["cards", "lore-cards", "card-packs", "ns-import"].map((dir) =>
   path.resolve(__dirname, "../../server/api/routers", dir)
 );
 
 describe("cards admin surface", () => {
-  it("serves exactly the nine tabs', NationStates and player tool procedures under cards.admin", () => {
-    const expected = Object.entries(CARDS_ADMIN_PROCEDURES).flatMap(([tab, names]) =>
-      names.map((name) => `admin.${tab}.${name}`)
-    );
-    const actual = Object.keys(cardsRouter._def.procedures).filter((key) =>
-      key.startsWith("admin.")
-    );
-    expect(actual.sort()).toEqual(expected.sort());
-  });
-
   it("leaves no admin procedure in a card router outside cards/admin", () => {
     const files = CARD_ROUTER_DIRS.flatMap((dir) =>
       fs

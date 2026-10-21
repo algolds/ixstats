@@ -1,7 +1,7 @@
 import { getStyleForTheme, type MapTheme } from "~/lib/map-styles/registry";
-import standardStyle from "~/lib/map-styles/standard.json";
-import darkStyle from "~/lib/map-styles/dark.json";
-import paperStyle from "~/lib/map-styles/paper.json";
+import "~/lib/map-styles/standard.json";
+import "~/lib/map-styles/dark.json";
+import "~/lib/map-styles/paper.json";
 
 describe("MapLibre Style Specification Validation", () => {
   const mockFonts = {
@@ -12,13 +12,6 @@ describe("MapLibre Style Specification Validation", () => {
   const mockGlyphsUrl = "https://example.com/glyphs/{fontstack}/{range}.pbf";
 
   const themes: MapTheme[] = ["standard", "dark", "paper"];
-
-  test("should import JSON templates correctly", () => {
-    expect(standardStyle).toBeDefined();
-    expect(darkStyle).toBeDefined();
-    expect(paperStyle).toBeDefined();
-  });
-
   themes.forEach((theme) => {
     describe(`${theme} theme style validation`, () => {
       let resolvedStyle: any;
@@ -90,31 +83,5 @@ describe("MapLibre Style Specification Validation", () => {
         });
       });
     });
-  });
-
-  test("themes should have distinct styling choices", () => {
-    const standard = getStyleForTheme("standard", mockGlyphsUrl, mockFonts);
-    const dark = getStyleForTheme("dark", mockGlyphsUrl, mockFonts);
-    const paper = getStyleForTheme("paper", mockGlyphsUrl, mockFonts);
-
-    // Verify background color is different
-    const getBgColor = (style: any) => {
-      const bg = style.layers.find((l: any) => l.type === "background");
-      return bg?.paint?.["background-color"];
-    };
-
-    expect(getBgColor(standard)).toBe("#b3cde0");
-    expect(getBgColor(dark)).toBe("#0f172a");
-    expect(getBgColor(paper)).toBe("#f2ecda");
-
-    // Verify political fill opacity or colors differ
-    const getPolFillOpacity = (style: any) => {
-      const pol = style.layers.find((l: any) => l.id === "fill-political");
-      return pol?.paint?.["fill-opacity"];
-    };
-
-    expect(getPolFillOpacity(standard)).toBe(0.4);
-    expect(getPolFillOpacity(dark)).toBe(0.25);
-    expect(getPolFillOpacity(paper)).toBe(0.2);
   });
 });

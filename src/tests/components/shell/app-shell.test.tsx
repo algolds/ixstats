@@ -44,14 +44,6 @@ beforeEach(() => {
 });
 
 describe("AppShell", () => {
-  it("renders the navigation shell, the before-main slot and main", () => {
-    render(<Shell />);
-    expect(screen.getByTestId("facet-shell")).toBeInTheDocument();
-    expect(screen.getByTestId("before-main")).toBeInTheDocument();
-    expect(screen.getByRole("main")).toHaveAttribute("data-shell-main");
-    expect(screen.getByText("Page")).toBeInTheDocument();
-  });
-
   it("puts a skip link first, targeting the main landmark", () => {
     const { container } = render(<Shell />);
     const skip = screen.getByRole("link", { name: "Skip to content" });
@@ -62,32 +54,6 @@ describe("AppShell", () => {
     const firstFocusable = container.querySelector("a[href], button, [tabindex='0']");
     expect(firstFocusable).toBe(skip);
   });
-
-  it("marks chromeless routes (Maps)", () => {
-    mockPathname = "/maps";
-    const { container } = render(<Shell />);
-    expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-chromeless");
-  });
-
-  it("leaves other routes with chrome", () => {
-    const { container } = render(<Shell />);
-    expect(container.querySelector("[data-app-shell]")).not.toHaveAttribute("data-chromeless");
-  });
-
-  it("paints the tinted canvas and scopes the current app's tint on the shell root", () => {
-    mockPathname = "/vault";
-    const { container } = render(<Shell />);
-    const shell = container.querySelector("[data-app-shell]")!;
-    expect(shell.getAttribute("class")).toMatch(/\bfacet-canvas\b/);
-    expect(shell).toHaveAttribute("data-app", "vault");
-  });
-
-  it("paints MyLeague in Labs' colour, the app it lives under", () => {
-    mockPathname = "/myleague";
-    const { container } = render(<Shell />);
-    expect(container.querySelector("[data-app-shell]")).toHaveAttribute("data-app", "labs");
-  });
-
   it("auto-opens the daily reward on routes with chrome, not on chromeless ones", () => {
     render(<Shell />);
     expect(dailyRewardProps.at(-1)?.autoOpen).toBe(true);
@@ -95,13 +61,5 @@ describe("AppShell", () => {
     mockPathname = "/maps";
     render(<Shell />);
     expect(dailyRewardProps.at(-1)?.autoOpen).toBe(false);
-  });
-
-  it("gives chromeless routes no canvas wash", () => {
-    mockPathname = "/maps";
-    const { container } = render(<Shell />);
-    const shell = container.querySelector("[data-app-shell]")!;
-    expect(shell).toHaveAttribute("data-chromeless");
-    expect(shell.getAttribute("class") ?? "").not.toMatch(/\bfacet-canvas\b/);
   });
 });

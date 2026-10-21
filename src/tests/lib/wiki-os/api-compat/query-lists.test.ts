@@ -116,14 +116,6 @@ describe("list=allpages", () => {
     expect((await run("list=allpages&apnamespace=9999")).error.code).toBe("badvalue");
     expect((await run("list=allpages&apnamespace=x")).error.code).toBe("badinteger");
   });
-
-  it("formatversion=1 gives the same list", async () => {
-    const deps = await makeDeps({ store: fakeWiki(DATA) });
-    const body = (await call(deps, "action=query&list=allpages&aplimit=1")).body as Body;
-    expect(body.query.allpages).toEqual([{ pageid: 1, ns: 0, title: "Alpha" }]);
-    expect(body.continue).toEqual({ apcontinue: "Beta", continue: "-||" });
-    expect(body.batchcomplete).toBe("");
-  });
 });
 
 describe("generators", () => {

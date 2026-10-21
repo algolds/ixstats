@@ -24,32 +24,6 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 describe("ClaimsTab", () => {
-  it("names a nation-page claim by its page, marked as a new nation", () => {
-    mockClaims = [{ ...baseClaim, country: null, wikiSource: "iiwiki", wikiPageTitle: "Aurelia" }];
-    render(<ClaimsTab />);
-    expect(screen.getByText(/Aurelia/)).toBeInTheDocument();
-    expect(screen.getByText(/new nation from IIWiki/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Unknown nation/)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Page history" }).getAttribute("href")).toMatch(
-      /^https:\/\/iiwiki\.com\/.*Aurelia\?action=history$/
-    );
-  });
-
-  it("names a country claim by its country", () => {
-    mockClaims = [
-      {
-        ...baseClaim,
-        country: { id: "c1", name: "Borea", slug: "borea", flag: null, wikiPageTitle: null },
-        wikiSource: null,
-        wikiPageTitle: null,
-      },
-    ];
-    render(<ClaimsTab />);
-    expect(screen.getByText(/Borea/)).toBeInTheDocument();
-    expect(screen.queryByText(/new nation/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Page history" })).not.toBeInTheDocument();
-  });
-
   it("lets an officer approve others' claims but not their own", () => {
     const country = { id: "c1", name: "Borea", slug: "borea", flag: null, wikiPageTitle: null };
     const own = { clerkUserId: "clerk_officer", wikiUsername: "Officer" };

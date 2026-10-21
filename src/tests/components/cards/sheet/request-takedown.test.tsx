@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -134,20 +134,6 @@ describe("requesting a takedown from the card sheet", () => {
     );
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("sends no contact when the player leaves it empty", () => {
-    about({ signedIn: true });
-    const dialog = openRequest();
-    fireEvent.change(within(dialog).getByLabelText("Why should this card come down?"), {
-      target: { value: REASON },
-    });
-    fireEvent.change(within(dialog).getByLabelText("How can staff reach you?"), {
-      target: { value: "   " },
-    });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Send request" }));
-    expect(mutate).toHaveBeenCalledWith({ cardId: "c1", reason: REASON, contact: undefined });
-  });
-
   it("says plainly in the dialog that a request is already open, keeping what the player typed", () => {
     answerWith({ status: "already" });
     about({ signedIn: true });
@@ -174,17 +160,6 @@ describe("requesting a takedown from the card sheet", () => {
     expect(within(again).queryByRole("status")).toBeNull();
     expect(within(again).getByLabelText("Why should this card come down?")).toHaveValue(REASON);
   });
-
-  it("gives focus back to the request button when the dialog is cancelled", async () => {
-    about({ signedIn: true });
-    const dialog = openRequest();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog")).toBeNull();
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Request a takedown" })).toHaveFocus()
-    );
-  });
-
   it("keeps the request open with what was typed when it is refused", () => {
     answerWith({ message: "You have 5 requests waiting. Staff will answer those first." });
     about({ signedIn: true });

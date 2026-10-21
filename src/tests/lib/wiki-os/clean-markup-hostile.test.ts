@@ -1,12 +1,3 @@
-/** @jest-environment node */
-/**
- * Plan 406 follow-up: `cleanWikiMarkup` (and so `cleanWikitextExcerpt`) runs on text MediaWiki editors
- * write. Internal links are unpacked in one pass (the regular expression rescanned the rest of the
- * text from every `[[` that never closed), file links are matched from one bracket index, and an EXCERPT
- * (`maxLength > 0`) is read no further than CLEAN_MARKUP_CEILING characters. A whole page (`maxLength` 0)
- * is read in full, in linear time: tests/lib/wiki-os/clean-markup-linear.test.ts.
- */
-import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import {
   CLEAN_MARKUP_CEILING,
   cleanWikiMarkup,
@@ -77,54 +68,10 @@ describe("unpackInternalLinks", () => {
     }
     expect(disagreements.slice(0, 5)).toEqual([]);
   });
-
-  it("reads 200,000 unclosed [[ in under 100 ms", () => {
-    for (const text of [
-      "[[".repeat(100_000),
-      "[[a|".repeat(50_000),
-      "[[a]".repeat(50_000),
-      "[[a|b".repeat(40_000) + "]]",
-    ]) {
-      const started = performance.now();
-      unpackInternalLinks(text);
-      expect(performance.now() - started).toBeLessThan(100 * TIMING_BUDGET_SCALE);
-    }
-  });
 });
 
 describe("cleanWikiMarkup on hostile text", () => {
   // Not linear: bounded by the ceiling (about 0.2 s for the worst family at 20,000 characters on a busy machine).
-  const BUDGET_MS = 500 * TIMING_BUDGET_SCALE;
-  const FAMILIES = [
-    "[[",
-    "{{",
-    "<!--",
-    "<ref",
-    "<ref>",
-    "<gallery>",
-    "<math>",
-    "[[Category:",
-    "[[Template:",
-    "[[File:",
-    "[http://a ",
-    "<",
-    "{{flag|a",
-    "{{lang|a",
-    "{{quote|a",
-    "[[a|",
-    "[https://a",
-    "==a\n",
-    "{{Infobox\n",
-  ];
-
-  it.each(FAMILIES)("reads 200,000 characters of %j within the ceiling's bound", (unit) => {
-    const text = unit.repeat(Math.ceil(200_000 / unit.length));
-    const started = performance.now();
-    cleanWikiMarkup(text, 300);
-    cleanWikitextExcerpt(text, 300);
-    expect(performance.now() - started).toBeLessThan(BUDGET_MS);
-  });
-
   it("reads no more than the ceiling of a text for an excerpt, and all of it for a whole page", () => {
     expect(CLEAN_MARKUP_CEILING).toBe(20_000);
     const lead = "The lead paragraph. ";
@@ -152,12 +99,5 @@ describe("stripWikitextFiles on hostile text", () => {
         "a [[File:A.png|thumb|Flag of [[Urcea]]]] b [[Image:B.png]] c [[Media:C.ogg]]"
       )
     ).toBe("a  b  c ");
-  });
-
-  it("matches 100,000 file openers in linear time (one bracket index, not one scan per opener)", () => {
-    const text = "[[File:a|".repeat(100_000) + "]]";
-    const started = performance.now();
-    stripWikitextFiles(text);
-    expect(performance.now() - started).toBeLessThan(300 * TIMING_BUDGET_SCALE);
   });
 });

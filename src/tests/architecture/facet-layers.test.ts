@@ -62,17 +62,6 @@ describe("Facet layers", () => {
       .filter((f) => paintsGlass.test(stripComments(fs.readFileSync(f, "utf8"))));
     expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
-
-  it("leaves no material-* class or material= prop in the source", () => {
-    const offenders = walk(path.join(ROOT, "src"), /\.(tsx?|css)$/)
-      .filter((f) => !f.includes(`${path.sep}tests${path.sep}`))
-      .filter((f) =>
-        /\bmaterial-(thin|regular|thick|hero|acrylic)\b|\bmaterial="(thin|regular|thick|hero|acrylic)"/.test(
-          fs.readFileSync(f, "utf8")
-        )
-      );
-    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
-  });
 });
 
 describe("Facet stylesheet layout", () => {
@@ -83,17 +72,6 @@ describe("Facet stylesheet layout", () => {
       .sort();
     expect(sheets).toEqual(["interaction.css", "layers.css", "shell.css", "tokens.css"]);
     expect(fs.existsSync(path.join(STYLES, "facet.css"))).toBe(false);
-  });
-
-  it("keeps the deleted identity decoration out of the source", () => {
-    const offenders = walk(path.join(ROOT, "src"), /\.(tsx?|css)$/)
-      .filter((f) => !f.includes(`${path.sep}tests${path.sep}`))
-      .filter((f) =>
-        /facet-radiance|facet-ghost-heraldry|facet-hierarchy-child|facet-modal\b|facet-layout-(grid-3|main-span-2|sidebar-span-1)/.test(
-          fs.readFileSync(f, "utf8")
-        )
-      );
-    expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 });
 

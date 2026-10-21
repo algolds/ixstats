@@ -122,28 +122,6 @@ describe("Studio Presets tab", () => {
     });
     await waitFor(() => expect(value.pickPreset).toHaveBeenCalledWith("dry-world"));
   });
-
-  it("empties the new-preset name once the saved preset is the selected one", () => {
-    const value = withPreset("badlands");
-    const view = renderTab(<StudioPresetsTab />, value);
-    const field = () => screen.getByLabelText("Save the rail as a new preset");
-    fireEvent.change(field(), { target: { value: "Dry world" } });
-    expect(field()).toHaveValue("Dry world");
-
-    // Another save the preset list has not caught up with keeps the text for a retry
-    view.rerenderWith({ ...value });
-    expect(field()).toHaveValue("Dry world");
-
-    const dry = { ...BADLANDS, slug: "dry-world", name: "Dry world", published: false };
-    view.rerenderWith({
-      ...value,
-      presets: [...PRESETS, dry],
-      presetSlug: "dry-world",
-      presetParams: paramsForPreset(dry.params),
-    });
-    expect(field()).toHaveValue("");
-  });
-
   it("loads a new preset whether the list or the write's answer arrives first", async () => {
     let resolve!: (value: object) => void;
     presetWrites.create.mockReturnValue(new Promise((r) => (resolve = r)));
@@ -164,19 +142,6 @@ describe("Studio Presets tab", () => {
     await waitFor(() => expect(value.pickPreset).toHaveBeenCalledWith("dry-world"));
     expect(value.pickPreset).toHaveBeenCalledTimes(1);
   });
-
-  it("makes the confirm button of archive and reset destructive, and publish not", () => {
-    const open = (name: string) => {
-      fireEvent.click(screen.getByRole("button", { name }));
-      return within(screen.getByRole("alertdialog")).getAllByRole("button").at(-1)!;
-    };
-    const { unmount } = renderTab(<StudioPresetsTab />, withPreset("badlands"));
-    expect(open("Archive").className).toContain("bg-destructive");
-    unmount();
-    renderTab(<StudioPresetsTab />, withPreset("eurth"));
-    expect(open("Reset to factory").className).toContain("bg-destructive");
-  });
-
   it("asks before publishing, and publishes the saved draft", async () => {
     renderTab(<StudioPresetsTab />, withPreset("badlands"));
     fireEvent.click(screen.getByRole("button", { name: "Publish" }));

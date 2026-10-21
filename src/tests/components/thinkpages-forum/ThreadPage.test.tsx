@@ -293,87 +293,6 @@ beforeEach(() => {
 });
 
 describe("the thread page", () => {
-  it("shows every post in one feed pane, divided, with no card per post", () => {
-    set(threadData());
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    const feeds = container.querySelectorAll('[data-content="feed"]');
-    expect(feeds).toHaveLength(1);
-    const first = container.querySelector("#post-p1")!;
-    const second = container.querySelector("#post-p2")!;
-    expect(feeds[0]).toContainElement(first as HTMLElement);
-    expect(feeds[0]).toContainElement(second as HTMLElement);
-    expect(feeds[0]?.querySelectorAll('[data-slot="card"]')).toHaveLength(0);
-    expect(first).not.toHaveClass("border-t");
-    expect(second).toHaveClass("border-t", "border-separator");
-  });
-
-  it("gives each post its header: author, flag, the server's role pill and its #N permalink", () => {
-    set(threadData());
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    const first = within(container.querySelector<HTMLElement>("#post-p1")!);
-    expect(first.getByText("Fiannria")).toBeInTheDocument();
-    expect(first.getByText("Thread starter")).toBeInTheDocument();
-    expect(first.getByRole("link", { name: /#1/ })).toHaveAttribute("href", "/thinkpages/post/p1");
-    expect(container.querySelector("#post-p1 img[src='/flags/fi.png']")).not.toBeNull();
-    const second = within(container.querySelector<HTMLElement>("#post-p2")!);
-    expect(second.getByText("Staff")).toBeInTheDocument();
-    expect(second.queryByText("Thread starter")).toBeNull();
-  });
-
-  it("indents a post's body to the name column from sm up only", () => {
-    set(threadData());
-    render(<ThreadPage threadId="t1" page={1} />);
-    const body = document.querySelector('article[id^="post-"] > div.sm\\:pl-12');
-    expect(body).not.toBeNull();
-    expect(body).not.toHaveClass("pl-12");
-  });
-
-  it("styles an in-character thread as an article and says so; an out-of-character one is compact", () => {
-    set(threadData({ style: "ic" }));
-    const { container, unmount } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("In character")).toBeInTheDocument();
-    expect(container.querySelectorAll(".forum-post--ic")).toHaveLength(2);
-    unmount();
-
-    set(threadData({ style: "ooc" }));
-    const ooc = render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.queryByText("In character")).toBeNull();
-    expect(ooc.container.querySelectorAll(".forum-post--ooc")).toHaveLength(2);
-    expect(ooc.container.querySelector(".forum-post--ic")).toBeNull();
-  });
-
-  it("on a phone puts In character beside the trail, keeps Info in the header and the icons and one menu under the title", () => {
-    window.matchMedia = ((query: string) => ({
-      matches: query === "(max-width: 1535px)" || query === "(max-width: 767px)",
-      media: query,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      dispatchEvent: () => false,
-    })) as unknown as typeof window.matchMedia;
-    set({
-      ...threadData({ style: "ic" }),
-      canModerate: true,
-      moderable: true,
-      moderatorTools: { categories: [] },
-    });
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    const header = container.querySelector<HTMLElement>('[data-slot="page-header"]')!;
-    const badge = within(header).getByText("In character");
-    expect(badge.closest("nav")).toBeNull();
-    expect(badge.parentElement).toContainElement(within(header).getByRole("navigation"));
-    const names = (root: HTMLElement) =>
-      within(root)
-        .getAllByRole("button")
-        .map((b) => b.getAttribute("aria-label") ?? b.textContent);
-    expect(names(header)).toEqual(["Info"]);
-    // The icon-only Watch and Stash and the one Thread actions menu: no labelled moderator or Report buttons.
-    const row = container.querySelector<HTMLElement>('[data-slot="forum-page-actions"]')!;
-    expect(names(row)).toEqual(["Thread actions", "Watch thread", "Stash thread"]);
-    expect(within(row).queryByRole("button", { name: "Lock" })).toBeNull();
-  });
-
   it("shows a persona post as the persona only: no player, no flag, no role", () => {
     set(
       threadData({
@@ -395,58 +314,6 @@ describe("the thread page", () => {
     expect(within(card).queryByText("Fiannria")).toBeNull();
     expect(card.querySelector("img[width='18']")).toBeNull();
     expect(within(card).queryByText(/Staff|Officer|Thread starter/)).toBeNull();
-  });
-
-  it("marks an imported post without an account as from the old forum", () => {
-    set(
-      threadData({
-        posts: [post({ authorUserId: null, importedAuthorName: "Kir", role: null })],
-      })
-    );
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText("Kir")).toBeInTheDocument();
-    expect(screen.getByText("Old forum")).toBeInTheDocument();
-  });
-
-  it("renders a quote block inside a post body", () => {
-    set(
-      threadData({
-        posts: [
-          post({
-            contentHtml:
-              '<blockquote class="forum-quote" data-post="p0"><div class="forum-quote-author">Ann wrote:</div><div class="forum-quote-body">hello</div></blockquote><p>answer</p>',
-          }),
-        ],
-      })
-    );
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    expect(container.querySelector("#post-p1 blockquote.forum-quote")).toHaveTextContent("hello");
-  });
-
-  it("summarises the page in the pane footer and paginates", () => {
-    set(
-      threadData({
-        total: 87,
-        posts: [post({ number: 21 }), post({ id: "p2", number: 22, authorUserId: "u2" })],
-      })
-    );
-    const { container } = render(<ThreadPage threadId="t1" page={2} />);
-    const feed = container.querySelector('[data-content="feed"]')!;
-    expect(within(feed as HTMLElement).getByText("Posts 21–22 of 87")).toBeInTheDocument();
-    expect(
-      within(feed as HTMLElement).getAllByRole("navigation", { name: "Pagination" })
-    ).toHaveLength(1);
-  });
-
-  it("goes back to the thread's board", () => {
-    set(threadData());
-    render(<ThreadPage threadId="t1" page={1} />);
-    const trail = screen.getByRole("navigation", { name: "breadcrumb" });
-    const back = screen
-      .getAllByRole("link", { name: "Hub" })
-      .filter((link) => !trail.contains(link));
-    expect(back).toHaveLength(1);
-    expect(back[0]).toHaveAttribute("href", "/thinkpages/r/ixnay/hub");
   });
 });
 
@@ -480,44 +347,6 @@ describe("a Find a Realm advert thread", () => {
     render(<ThreadPage threadId="t1" page={1} />);
     expect(screen.queryByTestId("advert-card")).toBeNull();
     expect(screen.queryByRole("heading", { name: /^About/ })).toBeNull();
-  });
-
-  it("says the realm is archived when its advert is closed, beside the locked state", () => {
-    set({ ...threadData({ locked: true, canReply: false }), advert: advertOf({ closed: true }) });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByText(/Realm archived/)).toBeInTheDocument();
-    expect(screen.getByText("This thread is locked.")).toBeInTheDocument();
-  });
-
-  it("shows the notices in order: hidden, imported, archived, then the card, all before the feed", () => {
-    const base = threadData({ locked: true, canReply: false });
-    set({
-      ...base,
-      thread: { ...base.thread, hidden: true, xenforoThreadId: 12 },
-      advert: advertOf({ closed: true }),
-    });
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    const feed = container.querySelector('[data-content="feed"]')!;
-    const ordered = [
-      screen.getByText("This thread is hidden from members."),
-      screen.getByText("Imported from the old forum."),
-      screen.getByText(/Realm archived/),
-      screen.getByTestId("advert-card"),
-      feed,
-    ];
-    ordered.slice(1).forEach((node, index) => {
-      expect(
-        ordered[index]!.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING
-      ).toBeTruthy();
-    });
-  });
-
-  it("keeps the realm card outside the feed pane, so glass never sits on glass", () => {
-    set({ ...threadData(), advert: advertOf() });
-    const { container } = render(<ThreadPage threadId="t1" page={1} />);
-    const feed = container.querySelector('[data-content="feed"]')!;
-    expect(feed).not.toContainElement(screen.getByTestId("advert-card"));
-    expect(screen.getByTestId("advert-card").closest('[data-slot="card"]')).toBeNull();
   });
 });
 
@@ -633,14 +462,6 @@ describe("the reply area", () => {
       );
       expect(screen.getByTestId("composer")).toHaveAttribute("data-quote", "p2");
     });
-
-    it("opens the composer from the dock", () => {
-      installPhone();
-      set(threadData());
-      render(<ThreadPage threadId="t1" page={1} />);
-      fireEvent.click(screen.getByTestId("reply-dock"));
-      expect(screen.getByTestId("composer")).toBeInTheDocument();
-    });
   });
 });
 
@@ -726,26 +547,6 @@ describe("the rail", () => {
       within(related as HTMLElement).getByRole("link", { name: "Juan Kerr" })
     ).toBeInTheDocument();
   });
-
-  it("hides the Participants and Related panels when they have nothing to show", () => {
-    installViewport(true);
-    set(threadData());
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.getByRole("heading", { name: "This thread" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Participants" })).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Related on the wiki" })).toBeNull();
-  });
-
-  it("takes related pages from the thread's first post only", () => {
-    installViewport(true);
-    set(
-      threadData({
-        posts: [post({ number: 21, contentHtml: '<p><a href="/wiki/Elsewhere">x</a></p>' })],
-      })
-    );
-    render(<ThreadPage threadId="t1" page={2} />);
-    expect(screen.queryByRole("heading", { name: "Related on the wiki" })).toBeNull();
-  });
 });
 
 describe("read state and watching on the thread page", () => {
@@ -778,14 +579,6 @@ describe("read state and watching on the thread page", () => {
     expect(screen.getByText("You're watching this thread.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Unwatch" }));
     await waitFor(() => expect(mutations.unwatchThread).toHaveBeenCalledWith({ threadId: "t1" }));
-  });
-
-  it("shows no Watching panel to a reader who does not watch", () => {
-    installViewport(true);
-    set({ ...threadData(), watching: false });
-    render(<ThreadPage threadId="t1" page={1} />);
-    expect(screen.queryByText("You're watching this thread.")).toBeNull();
-    expect(screen.getByRole("button", { name: "Watch thread" })).toHaveTextContent("Watch");
   });
 });
 

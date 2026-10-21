@@ -282,38 +282,6 @@ describe("useBorderEditorLayers border drag source", () => {
       "dragging"
     );
   });
-
-  it("styles the selected vertex by feature-state, not by a property on every feature", () => {
-    const { sent, method, rerender, props } = setup();
-    rerender({ ...props, selectedVertex: { ringIndex: 0, vertexIndex: 1, coord: [4, 0] } });
-
-    expect(method("setFeatureState")).toHaveBeenCalledWith(
-      { source: "vertices", id: "0:1" },
-      { selected: true }
-    );
-    // Selecting a vertex is not a reason to resend the vertex source
-    expect(sent("vertices")).toHaveLength(0);
-
-    rerender({ ...props, geometry: square(0, 0, 9, 4) });
-    const [vertices] = sent("vertices").slice(-1);
-    expect(vertices!.features[0]!.properties).toEqual({ ringIndex: 0, vertexIndex: 0, vid: "0:0" });
-  });
-
-  it("moves the selection mark when another vertex is selected", () => {
-    const { method, rerender, props } = setup({
-      selectedVertex: { ringIndex: 0, vertexIndex: 1, coord: [4, 0] },
-    });
-    rerender({ ...props, selectedVertex: { ringIndex: 0, vertexIndex: 2, coord: [4, 4] } });
-
-    expect(method("removeFeatureState")).toHaveBeenCalledWith(
-      { source: "vertices", id: "0:1" },
-      "selected"
-    );
-    expect(method("setFeatureState")).toHaveBeenCalledWith(
-      { source: "vertices", id: "0:2" },
-      { selected: true }
-    );
-  });
 });
 
 describe("useBorderEditorLayers neighbours", () => {

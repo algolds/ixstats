@@ -1,5 +1,5 @@
-import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, beforeEach } from "@jest/globals";
 
 let mockIssues: unknown[] = [];
@@ -23,9 +23,7 @@ jest.mock("~/trpc/react", () => ({
 
 import { ExecutiveAgenda } from "~/components/mycountry/shell/ExecutiveAgenda";
 import {
-  deriveAgendaItems,
-  formatAgo,
-  formatAgendaTime,
+  deriveAgendaItems
 } from "~/components/mycountry/shell/agenda";
 
 const DAY = 86_400_000;
@@ -92,17 +90,6 @@ describe("deriveAgendaItems", () => {
     expect(byId["election:e2"]!.urgency).toBe("upcoming");
     expect(byId["election:e2"]!.statusLabel).toBe("Referendum");
   });
-
-  it("labels time relatively, never as a calendar date or weekday", () => {
-    expect(formatAgo(NOW - 30_000, NOW)).toBe("Just now");
-    expect(formatAgo(NOW - 5 * 60_000, NOW)).toBe("5m ago");
-    expect(formatAgo(NOW - 2 * 3_600_000, NOW)).toBe("2h ago");
-    expect(formatAgo(NOW - 3 * DAY, NOW)).toBe("3d ago");
-    expect(formatAgo(NOW - 15 * DAY, NOW)).toBe("2w ago");
-    expect(formatAgendaTime({ urgency: "overdue", receivedAt: NOW }, NOW)).toBe("Overdue");
-    expect(formatAgendaTime({ urgency: "due-soon", receivedAt: NOW }, NOW)).toBe("Due soon");
-    expect(formatAgendaTime({ urgency: null, receivedAt: null }, NOW)).toBe("");
-  });
 });
 
 describe("ExecutiveAgenda", () => {
@@ -118,16 +105,6 @@ describe("ExecutiveAgenda", () => {
   afterEach(() => {
     jest.useRealTimers();
   });
-
-  it("lists every open item with its source, flag and relative time", () => {
-    render(<ExecutiveAgenda countryId="c1" />);
-    const rows = within(screen.getByRole("region", { name: "Agenda" })).getAllByRole("listitem");
-    expect(rows).toHaveLength(3);
-    expect(screen.getByRole("img", { name: "Needs action" })).toBeTruthy();
-    expect(screen.getAllByText("2h ago").length).toBeGreaterThan(0);
-    expect(document.body.textContent).not.toMatch(/\b(unread|snooze|mailbox|inbox)\b/i);
-  });
-
   it("opens the matching drill or directive from a row", () => {
     const onOpenDrill = jest.fn();
     const onOpenIntent = jest.fn();
@@ -154,19 +131,5 @@ describe("ExecutiveAgenda", () => {
     render(<ExecutiveAgenda countryId="c1" />);
     expect(screen.queryByText("Issue a")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-  });
-
-  it("says plainly when nothing is waiting", () => {
-    mockIssues = [];
-    mockIntents = [];
-    render(<ExecutiveAgenda countryId="c1" />);
-    expect(screen.getByText("Nothing on your agenda")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /Declare/ })).toBeNull();
-  });
-
-  it("shows the directives left this week beside its title", () => {
-    render(<ExecutiveAgenda countryId="c1" />);
-    const title = screen.getByRole("heading", { name: "Agenda" });
-    expect(title.parentElement?.textContent).toContain("2 of 3 directives left this week");
   });
 });

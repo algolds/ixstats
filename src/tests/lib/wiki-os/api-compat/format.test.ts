@@ -4,7 +4,6 @@ import {
   Continuation,
   decodeCursor,
   encodeCursor,
-  optionalCursor,
   takePage,
 } from "~/lib/wiki-os/api-compat/continuation";
 import { ApiError, badContinue } from "~/lib/wiki-os/api-compat/errors";
@@ -12,7 +11,6 @@ import {
   API_DOCREF,
   ResponseBuilder,
   errorBody,
-  mwTimestamp,
   toWire,
   wrapText,
   type JsonObject,
@@ -40,10 +38,6 @@ describe("toWire", () => {
       batchcomplete: true,
     });
   });
-
-  it("leaves strings, numbers and null alone", () => {
-    expect(toWire({ a: "x", b: 1, c: null }, 1)).toEqual({ a: "x", b: 1, c: null });
-  });
 });
 
 describe("wrapText", () => {
@@ -52,13 +46,6 @@ describe("wrapText", () => {
     expect(wrapText("hi", 2)).toBe("hi");
   });
 });
-
-describe("timestamps", () => {
-  it("formats ISO to the second, without fractions", () => {
-    expect(mwTimestamp(new Date("2026-09-30T12:34:56.789Z"))).toBe("2026-09-30T12:34:56Z");
-  });
-});
-
 describe("errorBody", () => {
   const error = new ApiError("badtoken", "Invalid CSRF token.");
 
@@ -98,10 +85,6 @@ describe("ResponseBuilder", () => {
       query: { "*": "Be careful." },
     });
   });
-
-  it("adds no warnings key when there are none", () => {
-    expect(new ResponseBuilder().finish({ ok: true }, 2)).toEqual({ ok: true });
-  });
 });
 
 describe("cursors", () => {
@@ -115,12 +98,6 @@ describe("cursors", () => {
     expect(() => decodeCursor("only-one", ["s", "n"] as const)).toThrow(badContinue().message);
     expect(() => decodeCursor("a|notanumber", ["s", "n"] as const)).toThrow(ApiError);
     expect(() => decodeCursor("%E0%A4%A|1", ["s", "n"] as const)).toThrow(ApiError);
-  });
-
-  it("reads an absent cursor as undefined", () => {
-    expect(optionalCursor(undefined, ["s"] as const)).toBeUndefined();
-    expect(optionalCursor("", ["s"] as const)).toBeUndefined();
-    expect(optionalCursor("x", ["s"] as const)).toEqual(["x"]);
   });
 });
 

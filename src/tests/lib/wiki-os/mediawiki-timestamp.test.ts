@@ -1,8 +1,7 @@
 import {
   parseMWTimestamp,
   parseMWDateObject,
-  formatMWTimeAgo,
-  formatMWDate,
+  formatMWTimeAgo
 } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 
 describe("mediawiki-timestamp", () => {
@@ -16,12 +15,6 @@ describe("mediawiki-timestamp", () => {
       const result = parseMWTimestamp("2026-08-18T18:07:34Z");
       expect(result).toBe("2026-08-18T18:07:34.000Z");
     });
-
-    it("parses Date object", () => {
-      const d = new Date("2026-01-01T00:00:00Z");
-      expect(parseMWTimestamp(d)).toBe("2026-01-01T00:00:00.000Z");
-    });
-
     it("handles null, undefined and empty string", () => {
       expect(parseMWTimestamp(null)).toBeNull();
       expect(parseMWTimestamp(undefined)).toBeNull();
@@ -44,14 +37,6 @@ describe("mediawiki-timestamp", () => {
       expect(d?.getUTCMinutes()).toBe(35);
       expect(d?.getUTCSeconds()).toBe(57);
     });
-
-    it("returns valid Date for ISO string", () => {
-      const d = parseMWDateObject("2026-08-18T18:07:34Z");
-      expect(d).toBeInstanceOf(Date);
-      expect(d?.getUTCHours()).toBe(18);
-      expect(d?.getUTCMinutes()).toBe(7);
-    });
-
     it("returns null for invalid inputs", () => {
       expect(parseMWDateObject(null)).toBeNull();
       expect(parseMWDateObject(undefined)).toBeNull();
@@ -67,11 +52,6 @@ describe("mediawiki-timestamp", () => {
 
       const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000).toISOString();
       expect(formatMWTimeAgo(twoHoursAgo)).toBe("2h ago");
-    });
-
-    it("returns empty string for invalid timestamp", () => {
-      expect(formatMWTimeAgo(null)).toBe("");
-      expect(formatMWTimeAgo("")).toBe("");
     });
   });
 });

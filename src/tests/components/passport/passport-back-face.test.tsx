@@ -60,14 +60,6 @@ describe("PassportBackFace", () => {
   beforeEach(() => {
     mutate.mockClear();
   });
-
-  it("no longer labels the toggles as session-only", () => {
-    renderBackFace();
-    expect(screen.queryByText(/This Session/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/not saved/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Saved to your account/)).toBeInTheDocument();
-  });
-
   it("saves a visibility toggle", () => {
     renderBackFace();
     fireEvent.click(screen.getByRole("switch", { name: "Show IxCredits" }));

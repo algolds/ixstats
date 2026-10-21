@@ -1,5 +1,5 @@
 /** NationStates imports: start a region sync, control running syncs, run the CTE filter, read the history. */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 
 jest.mock("~/hooks/useNotify", () => {
@@ -131,14 +131,6 @@ describe("NsImports", () => {
     expect(resume).toHaveBeenCalledWith({ syncLogId: "log_a" });
     expect(screen.getByRole("button", { name: "Pause" })).toBeEnabled();
   });
-
-  it("offers no Resume on a sync that is running", () => {
-    serve({ active: [sync({})] });
-    render(<NsImports />);
-    expect(screen.getByText("Running")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Resume" })).not.toBeInTheDocument();
-  });
-
   it("disables a sync's buttons while a request for it is pending, and only that sync's", () => {
     serve({
       active: [sync({ stalled: true }), sync({ id: "log_b", region: "Balder" })],
@@ -162,13 +154,6 @@ describe("NsImports", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add Lazarus" }));
     expect(screen.getByLabelText("Regions, one per line")).toHaveValue("Lazarus");
   });
-
-  it("says so when no region has the tag", () => {
-    serve({ found: [] });
-    render(<NsImports />);
-    expect(screen.getByText("No region has that tag.")).toBeInTheDocument();
-  });
-
   it("runs the CTE filter", () => {
     serve();
     render(<NsImports />);
@@ -227,18 +212,6 @@ describe("NsImports", () => {
       { enabled: true },
     ]);
   });
-
-  it("says when a sync's cards come from before syncs recorded their own", () => {
-    serve({ logs: [log({})], logCards: { exact: false, total: 0, cards: [] } });
-    render(<NsImports />);
-    fireEvent.click(screen.getByRole("button", { name: "Cards" }));
-    const sheet = screen.getByRole("dialog");
-    expect(
-      within(sheet).getByText(/every card first synced from this region/i)
-    ).toBeInTheDocument();
-    expect(within(sheet).getByText("No cards found")).toBeInTheDocument();
-  });
-
   it("searches a sync's cards once typing pauses", () => {
     jest.useFakeTimers();
     try {

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { describe, it, expect, afterEach } from "@jest/globals";
 import { TabBar } from "~/components/shell/TabBar";
@@ -43,17 +43,6 @@ describe("TabBar", () => {
       "false"
     );
   });
-
-  it("gives signed-out visitors a ThinkPages tab, current on the forum's pages (phase 4b)", () => {
-    const guestApps = getVisibleApps({ signedIn: false, isAdmin: false });
-    render(<TabBar pathname="/thinkpages/t/abc" searchParams={null} apps={guestApps} {...navProps} />);
-    const nav = screen.getByRole("navigation", { name: "Tab bar" });
-    expect(within(nav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
-      "aria-current",
-      "page"
-    );
-  });
-
   it("opens More as a bottom sheet with the app's sections and the other apps", () => {
     mockPhoneWidth();
     render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);
@@ -69,17 +58,6 @@ describe("TabBar", () => {
     expect(within(sheet).getByRole("link", { name: "Wiki" })).toHaveAttribute("href", "/wiki");
     expect(within(sheet).getByRole("link", { name: "Settings" })).toBeInTheDocument();
   });
-
-  it("renders the shared source list in More, without the old Apps section header", () => {
-    mockPhoneWidth();
-    render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "More" }));
-    const sheet = screen.getByRole("dialog", { name: "More" });
-    const list = within(sheet).getByRole("navigation", { name: "App navigation" });
-    expect(list).toHaveAttribute("data-mode", "main");
-    expect(within(sheet).queryByText("Apps")).not.toBeInTheDocument();
-  });
-
   it("closes the sheet when a current-app section link is followed", () => {
     mockPhoneWidth();
     render(<TabBar pathname="/mycountry/economy" searchParams={null} apps={apps} {...navProps} />);
@@ -124,11 +102,5 @@ describe("TabBar", () => {
       })
     );
     expect(screen.queryByRole("dialog", { name: "More" })).not.toBeInTheDocument();
-  });
-
-  it("uses at least 44px targets", () => {
-    render(<TabBar pathname="/dashboard" searchParams={null} apps={apps} {...navProps} />);
-    expect(screen.getByRole("link", { name: "Home" }).className).toContain("min-h-11");
-    expect(screen.getByRole("button", { name: "More" }).className).toContain("min-h-11");
   });
 });

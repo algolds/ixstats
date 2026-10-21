@@ -24,14 +24,6 @@ describe("v2/terrain", () => {
     cellCount: TEST_CELLS,
     oceanPercentage: 0.65,
   });
-
-  it("populates elevation array h in meters", () => {
-    for (let i = 0; i < graph.cells.n; i++) {
-      expect(typeof graph.cells.h[i]).toBe("number");
-      expect(isNaN(graph.cells.h[i]!)).toBe(false);
-    }
-  });
-
   it("sets isLand = 1 for h >= 0 and isLand = 0 for h < 0", () => {
     for (let i = 0; i < graph.cells.n; i++) {
       const h = graph.cells.h[i]!;

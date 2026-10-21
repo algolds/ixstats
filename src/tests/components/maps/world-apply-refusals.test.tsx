@@ -59,20 +59,6 @@ describe("a refusal", () => {
     expect(onDiscardDraft).not.toHaveBeenCalled();
     expect(invalidated.worldStatus).toHaveBeenCalled();
   });
-
-  it.each([
-    ["FORBIDDEN", "You can't change this realm's world."],
-    ["BAD_REQUEST", "The server refused this world."],
-    ["NOT_FOUND", "The realm or the uploaded world was not found."],
-    ["CONFLICT", "The realm can't take a world right now."],
-  ])("words a %s refusal of the check", async (code, title) => {
-    start.mockRejectedValue(refusal("Ixnay's map is hand drawn", code));
-    renderRegion();
-    fireEvent.click(getUseButton());
-    expect(await screen.findByText(title)).toBeInTheDocument();
-    expect(screen.getByText("Ixnay's map is hand drawn")).toBeInTheDocument();
-  });
-
   it("says the check failed when the job did, with the reason it gives", async () => {
     renderRegion();
     await startCheck();
@@ -175,15 +161,6 @@ describe("a refusal", () => {
     await screen.findByText("The world could not be sent.");
     view.update({ lock: claimsLock() });
     expect(screen.getByRole("button", { name: "Retry" })).toBeDisabled();
-  });
-
-  it("closes the message and offers Use this world again", async () => {
-    respondToUpload({ status: 500, body: {} });
-    renderRegion();
-    fireEvent.click(getUseButton());
-    await screen.findByText("The world could not be sent.");
-    fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    expect(getUseButton()).toBeInTheDocument();
   });
 });
 

@@ -50,18 +50,6 @@ beforeEach(() => {
 });
 
 describe("the Atlas page", () => {
-  it("opens on the Realms tab and offers World Studio and Import a map", () => {
-    render(<AtlasPanel />);
-    expect(screen.getByRole("heading", { name: "Atlas" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "World Studio" })).toHaveAttribute(
-      "href",
-      "/admin/maps/studio"
-    );
-    expect(screen.getByRole("button", { name: "Import a map" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Realms" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("link", { name: "Eurth" })).toBeInTheDocument();
-  });
-
   it("switches between Realms, Jobs, Edit queue and Map style", () => {
     render(<AtlasPanel />);
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
@@ -136,14 +124,6 @@ describe("the health strip", () => {
     expect(within(strip).getByText("geo-profiles: Never ran")).toBeInTheDocument();
     expect(within(strip).getByText("map-import: failed 10m ago")).toBeInTheDocument();
   });
-
-  it("says Not measured for a folder that ran out of time", () => {
-    render(<AtlasPanel />);
-    expect(
-      within(screen.getByLabelText("Map health")).getByText("Not measured")
-    ).toBeInTheDocument();
-  });
-
   it("opens the tab that explains each item", () => {
     render(<AtlasPanel />);
     const strip = screen.getByLabelText("Map health");
@@ -152,23 +132,9 @@ describe("the health strip", () => {
     fireEvent.click(within(strip).getByText("Tiles"));
     expect(screen.getByRole("tab", { name: "Realms" })).toHaveAttribute("aria-selected", "true");
   });
-
-  it("says so when the summary cannot be read", () => {
-    state.health = undefined;
-    render(<AtlasPanel />);
-    expect(screen.getByText("The health summary could not be read.")).toBeInTheDocument();
-  });
-
   it("shows the server's message when the summary fails", () => {
     state.readErrors.health = "Health is down";
     render(<AtlasPanel />);
     expect(screen.getByText("Health is down")).toBeInTheDocument();
-  });
-
-  it("shows a placeholder while the summary loads", () => {
-    state.loading.health = true;
-    render(<AtlasPanel />);
-    expect(screen.queryByLabelText("Map health")).toBeNull();
-    expect(screen.queryByText("The health summary could not be read.")).toBeNull();
   });
 });

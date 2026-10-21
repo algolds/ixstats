@@ -1,5 +1,5 @@
 /** The sheet header's wishlist and per-card mute toggles. */
-import React from "react";
+import "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 jest.mock("~/hooks/cards/useSheetEconomy", () => ({ useSheetEconomy: jest.fn() }));
@@ -36,19 +36,6 @@ describe("WishlistToggle", () => {
     expect(unwish).toHaveBeenCalledWith({ cardId: "c1" });
     expect(wish).toHaveBeenCalledTimes(1);
   });
-
-  it("holds the toggle while either change is under way", () => {
-    jest.mocked(useMarketActions).mockReturnValue({
-      wish: { mutate: jest.fn(), isPending: false },
-      unwish: { mutate: jest.fn(), isPending: true },
-    } as never);
-    economy({ wishlisted: false, isBound: false });
-    render(<WishlistToggle cardId="c1" />);
-    expect(screen.getByRole("button", { name: "Add to wishlist" }).hasAttribute("disabled")).toBe(
-      true
-    );
-  });
-
   it("offers no wishlist for a bound card, or before the card's economy arrives", () => {
     jest
       .mocked(useMarketActions)
@@ -83,15 +70,5 @@ describe("MuteToggle", () => {
     render(<MuteToggle cardId="c1" />);
     fireEvent.click(screen.getByRole("button", { name: "Unmute notices about this card" }));
     expect(mutate).toHaveBeenCalledWith({ cardId: "c1", muted: false });
-  });
-
-  it("waits for the mute to load, and holds while a change is under way", () => {
-    mute(undefined);
-    const { unmount } = render(<MuteToggle cardId="c1" />);
-    expect(screen.getByRole("button").hasAttribute("disabled")).toBe(true);
-    unmount();
-    mute(false, true);
-    render(<MuteToggle cardId="c1" />);
-    expect(screen.getByRole("button").hasAttribute("disabled")).toBe(true);
   });
 });

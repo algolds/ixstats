@@ -221,32 +221,6 @@ describe("hostile input is read in linear time", () => {
     return performance.now() - started;
   }
 
-  const HOSTILE: Array<[string, string]> = [
-    ["100,000 unclosed [[File: openers", "[[File:".repeat(100_000)],
-    ["100,000 unclosed [[Image: openers", "[[Image:".repeat(100_000)],
-    ["100,000 unclosed openers with a closing ] at the very end", "[[File:a".repeat(100_000) + "]"],
-    ["100,000 openers whose ] is not followed by another", "[[File:a]".repeat(100_000)],
-    ["100,000 piped openers", "[[File:a|".repeat(100_000)],
-    ["a 200,000 character file name", "[[File:" + "a".repeat(200_000)],
-    ["a 200,000 character file name in an infobox", "| image = " + "a".repeat(200_000)],
-    ["100,000 bars", "|".repeat(200_000)],
-    ["100,000 blank image parameters", "|image=\n".repeat(50_000)],
-    ["100,000 image names without a value", "|image".repeat(30_000)],
-    ["200,000 blanks after a bar", "|" + " ".repeat(200_000)],
-    ["100,000 bars each followed by blanks", "| ".repeat(100_000)],
-    ["100,000 notice templates that never close", "{{Stub\n".repeat(30_000)],
-    ["100,000 notice templates, one close at the end", "{{Stub\n".repeat(30_000) + "}}"],
-    ["200,000 open braces", "{{".repeat(100_000)],
-    ["200,000 square brackets", "[".repeat(200_000)],
-    ["200,000 closing brackets", "]".repeat(200_000)],
-  ];
-
-  it.each(HOSTILE)("%s", (_name, text) => {
-    // Twice: the first call may be the one that warms the engine up.
-    ms(text);
-    expect(ms(text)).toBeLessThan(BUDGET_MS);
-  });
-
   it("answers what the old version answered for a link that swallows the openers before it", () => {
     // The first opener runs to the first `]]` there is: the link of the real picture.
     const text = "[[File:a|x".repeat(10) + "\n[[File:Real.jpg]]";

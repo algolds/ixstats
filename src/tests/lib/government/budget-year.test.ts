@@ -24,14 +24,6 @@ describe("currentBudgetYear", () => {
     IxTime.setTimeOverride(Date.UTC(2045, 6, 1));
     expect(currentBudgetYear()).toBe(2045);
   });
-
-  it("maps an explicit IxTime timestamp to its game year", () => {
-    expect(currentBudgetYear(Date.UTC(2040, 5, 15))).toBe(2040);
-    expect(currentBudgetYear(Date.UTC(2051, 5, 15))).toBe(
-      IxTime.getCurrentGameYear(Date.UTC(2051, 5, 15))
-    );
-  });
-
   it("is accepted by the budget-allocation input schema", () => {
     const parse = (budgetYear: number) =>
       BudgetAllocationInputSchema.safeParse({

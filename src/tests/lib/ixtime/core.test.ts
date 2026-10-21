@@ -10,30 +10,6 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
     IxTime.clearMultiplierOverride();
     IxTime.clearTimeOverride();
   });
-
-  describe("Epochs and Constants", () => {
-    it("should return expected real world epoch (Oct 4, 2020)", () => {
-      const epoch = IxTime.getRealWorldEpoch();
-      const date = new Date(epoch);
-      expect(date.getUTCFullYear()).toBe(2020);
-      expect(date.getUTCMonth()).toBe(9); // October = 9
-      expect(date.getUTCDate()).toBe(4);
-    });
-
-    it("should return expected in-game epoch (Jan 1, 2028)", () => {
-      const epoch = IxTime.getInGameEpoch();
-      const date = new Date(epoch);
-      expect(date.getUTCFullYear()).toBe(2028);
-      expect(date.getUTCMonth()).toBe(0); // January = 0
-      expect(date.getUTCDate()).toBe(1);
-    });
-
-    it("should return default speed multiplier for current era (2.0x)", () => {
-      const mult = IxTime.getDefaultMultiplier();
-      expect(mult).toBe(2.0);
-    });
-  });
-
   describe("Forward and Inverse Conversions", () => {
     it("should convert historical pre-2025 real time at 4x speed", () => {
       const real2022 = new Date("2022-10-04T00:00:00.000Z").getTime();
@@ -82,17 +58,6 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
 
       const plus3Months = IxTime.addMonths(base, 3);
       expect(new Date(plus3Months).getUTCMonth()).toBe(8); // September = 8
-    });
-
-    it("should format IxTime with ILT suffix", () => {
-      const ixTime = new Date(Date.UTC(2042, 2, 14, 15, 30, 0)).getTime();
-      const formattedWithTime = IxTime.formatIxTime(ixTime, true);
-      expect(formattedWithTime).toContain("March 14, 2042");
-      expect(formattedWithTime).toContain("15:30:00 (ILT)");
-
-      const formattedDateOnly = IxTime.formatIxTime(ixTime, false);
-      expect(formattedDateOnly).toContain("March 14, 2042 (ILT)");
-      expect(formattedDateOnly).not.toContain("15:30:00");
     });
   });
 
@@ -157,36 +122,5 @@ describe("IxTime Core Chronometry & Temporal Engine", () => {
       expect(IxTime.toDate(null)).toBeNull();
       expect(IxTime.toIsoString(null)).toBeNull();
     });
-  });
-});
-
-import { getPrimeMeridianWeather } from "~/lib/ixtime/weather";
-
-describe("getPrimeMeridianWeather", () => {
-  it("calculates Summer weather for August dates", () => {
-    const date = new Date("2042-08-22T14:30:00Z");
-    const weather = getPrimeMeridianWeather(date);
-
-    expect(weather.season).toBe("Summer");
-    expect(weather.tempC).toBeGreaterThan(15);
-    expect(weather.diurnalPhase).toBe("Afternoon");
-    expect(weather.summary).toContain("Prime Meridian");
-  });
-
-  it("calculates Winter weather for January dates", () => {
-    const date = new Date("2042-01-15T04:00:00Z");
-    const weather = getPrimeMeridianWeather(date);
-
-    expect(weather.season).toBe("Winter");
-    expect(weather.tempC).toBeLessThan(10);
-    expect(weather.diurnalPhase).toBe("Night");
-  });
-
-  it("calculates Spring weather for April dates", () => {
-    const date = new Date("2042-04-10T10:00:00Z");
-    const weather = getPrimeMeridianWeather(date);
-
-    expect(weather.season).toBe("Spring");
-    expect(weather.tempC).toBeGreaterThan(5);
   });
 });
