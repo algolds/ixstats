@@ -20,7 +20,7 @@ const face = (finish: CardFinish = "FOIL"): CardFaceData => ({
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 9,
   season: null,
   isRetired: false,
@@ -411,7 +411,7 @@ describe("CardBackProvenance", () => {
   it("gives an NS card its provenance line and a link to NationStates", () => {
     render(
       <CardBackProvenance
-        face={{ ...face(), cardType: "NS", season: 3, copy: null, silhouette: true }}
+        face={{ ...face(), cardType: "NS", season: 3, copy: null, uncollected: true }}
         copy={null}
         artCredit={null}
         ns={{

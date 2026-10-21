@@ -22,7 +22,7 @@ const face = (overrides: Partial<CardFaceData> = {}): CardFaceData => ({
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: "https://ixwiki.com/images/a.png",
-  silhouette: false,
+  uncollected: false,
   number: 42,
   season: null,
   isRetired: false,
@@ -73,7 +73,7 @@ describe("cardFaceLabel", () => {
           cardType: "NS",
           season: 3,
           copy: null,
-          silhouette: true,
+          uncollected: true,
           isRetired: true,
           realm: {
             id: "ns",

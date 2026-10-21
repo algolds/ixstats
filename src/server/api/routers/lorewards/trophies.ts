@@ -45,7 +45,8 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
 
   /**
    * A wiki user's trophies (rate-limited: any name can be asked for). The cards are those held by the account
-   * that verified the name, and are left out when that account hides its Vault cards on its passport.
+   * that verified the name, marked uncollected for any other viewer, and are left out when that account hides its
+   * Vault cards on its passport.
    */
   getTrophies: rateLimitedPublicProcedure
     .input(z.object({ username: z.string().min(1).max(200) }))
@@ -56,7 +57,8 @@ export const lorewardsTrophiesRouter = createTRPCRouter({
         ctx.db,
         input.username,
         showCards ? holder : null,
-        loadPassportHandleById
+        loadPassportHandleById,
+        ctx.user?.id ?? null
       );
     }),
 

@@ -1,7 +1,8 @@
 /** @jest-environment node */
 /**
  * Market › Browse: live listings and auctions in one list, featured first, then the chosen sort. Each source is read in
- * the merged order, so a page is exact; a live item shows its art to everyone and says whether it is the viewer's.
+ * the merged order, so a page is exact; every item shows its art, marked by the viewer's own copies, and says whether it
+ * is the viewer's.
  */
 import type { CardFaceData } from "~/lib/cards/face/types";
 import {
@@ -76,10 +77,12 @@ interface Read {
   select: object;
 }
 
-function makeDb(listings = [listingRow()], auctions = [auctionRow()]) {
+/** `held`: the card ids the viewer holds a copy of. */
+function makeDb(listings = [listingRow()], auctions = [auctionRow()], held: string[] = []) {
   return {
     cardListing: { findMany: jest.fn(async (_read: Read) => listings) },
     cardAuction: { findMany: jest.fn(async (_read: Read) => auctions) },
+    cardOwnership: { findMany: jest.fn(async () => held.map((cardId) => ({ cardId }))) },
   };
 }
 
@@ -133,7 +136,7 @@ describe("compareBrowse", () => {
 
 describe("browseMarket", () => {
   it("merges listings and auctions into one page and says whether more follow", async () => {
-    const db = makeDb();
+    const db = makeDb(undefined, undefined, ["c"]);
     const page = await browseMarket(
       db as never,
       "s",
@@ -141,10 +144,10 @@ describe("browseMarket", () => {
       NOW
     );
     expect(page.items.map((i) => [i.kind, i.id, i.price])).toEqual([["auction", "a1", 80]]);
-    // A live item shows its art to every viewer (spec §2.3 Discovery)
+    // Its art shows, and the seller, who still holds the listed copy, has collected the card
     expect(page.items[0]!.face).toMatchObject({
       cardId: "c",
-      silhouette: false,
+      uncollected: false,
       artwork: "https://x/a.png",
       copy: { ownershipId: "o2", serialNumber: 9, finish: "STANDARD", level: 2 },
     });
@@ -192,12 +195,35 @@ describe("browseMarket", () => {
         bidCount: 0,
         buyoutPrice: null,
         face: expect.objectContaining({
-          silhouette: false,
+          artwork: "https://x/a.png",
+          uncollected: true,
           copy: { ownershipId: "o1", finish: "FOIL", serialNumber: 3, level: 1 },
         }),
       },
     ]);
     expect(page.hasMore).toBe(false);
+  });
+
+  it("marks each item by the viewer's own copies, asking once about the page's cards only", async () => {
+    const db = makeDb(
+      [listingRow({ id: "l1", price: 120, card: { ...card, id: "listed" } })],
+      [
+        auctionRow({ id: "a1", currentBid: 80, card: { ...card, id: "held" } }),
+        auctionRow({ id: "a2", currentBid: 90, card: { ...card, id: "other" } }),
+      ],
+      ["held"]
+    );
+    const page = await browseMarket(db as never, "me", input({ limit: 2 }), NOW);
+    expect(page.items.map((i) => [i.id, i.face.cardId, i.face.uncollected])).toEqual([
+      ["a1", "held", false],
+      ["a2", "other", true],
+    ]);
+    expect(db.cardOwnership.findMany).toHaveBeenCalledTimes(1);
+    expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
+      where: { ownerId: "me", cardId: { in: ["held", "other"] } },
+      select: { cardId: true },
+      distinct: ["cardId"],
+    });
   });
 
   it("marks the viewer's own listing and auction, and no one else's", async () => {
@@ -339,13 +365,10 @@ describe("browseMarket", () => {
     });
   });
 
-  it("leaves out a row whose copy is gone", async () => {
-    const page = await browseMarket(
-      makeDb([listingRow({ ownership: null })], [auctionRow({ CardOwnership: null })]) as never,
-      "v",
-      input(),
-      NOW
-    );
+  it("leaves out a row whose copy is gone, asking nothing about an empty page", async () => {
+    const db = makeDb([listingRow({ ownership: null })], [auctionRow({ CardOwnership: null })]);
+    const page = await browseMarket(db as never, "v", input(), NOW);
     expect(page.items).toEqual([]);
+    expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
   });
 });

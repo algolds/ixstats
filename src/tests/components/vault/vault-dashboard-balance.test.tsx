@@ -125,7 +125,7 @@ describe("Vault Wallet page", () => {
               isSystem: true,
             },
             artwork: "/art/c1.png",
-            silhouette: false,
+            uncollected: false,
             number: null,
             season: 1,
             isRetired: false,

@@ -73,7 +73,7 @@ const row = (n: number, value = 100, copies = 1, isRetired = false): MineRow => 
     cardType: "LORE",
     realm,
     artwork: null,
-    silhouette: false,
+    uncollected: false,
     number: n,
     season: null,
     isRetired,

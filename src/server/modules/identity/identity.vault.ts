@@ -8,8 +8,8 @@ import { getVaultConfig, VAULT_CONFIG_DEFAULTS } from "~/lib/vault/vault-perks";
 import { BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { deckValueOf } from "~/lib/cards/copy-value";
 import type { CardFaceData } from "~/lib/cards/face/types";
+import { facesFor } from "~/lib/cards/hub/art-visibility";
 import { displayedCopies } from "~/lib/cards/hub/displayed";
-import { toCardFace } from "~/lib/cards/hub/faces";
 
 /** Lore card categories a collection can span. */
 const LORE_CATEGORY_COUNT = BROWSABLE_CATEGORIES.length;
@@ -36,7 +36,7 @@ export interface PassportVaultSummary {
   focus: PassportVaultFocus | null;
   /**
    * Collection highlight: the holder's display (`displayedCopies`), their pinned public showcase, else their most
-   * valuable live cards. A player's display is shown off, so the faces show their art.
+   * valuable live cards, each face marked by the viewer's own copies (a visitor's, or nobody's when signed out).
    */
   topCards: CardFaceData[];
 }
@@ -61,8 +61,10 @@ export function toVaultFocus(
   return { categoryCount: counts.size, categoryTotal: LORE_CATEGORY_COUNT, topCategory };
 }
 
+/** `viewerClerkId`: who is looking (null: signed out), whose own copies mark the display's faces. */
 export async function resolvePassportVault(
-  userId: string | null | undefined
+  userId: string | null | undefined,
+  viewerClerkId: string | null
 ): Promise<PassportVaultSummary> {
   const summary: PassportVaultSummary = {
     totalCards: 0,
@@ -79,7 +81,7 @@ export async function resolvePassportVault(
 
   const live = { ownerId: userId, cards: { isRetired: false } };
   try {
-    const [vault, liveOwnerships, deck, displayed] = await Promise.all([
+    const [vault, liveOwnerships, deck, displayed, viewer] = await Promise.all([
       db.myVault.findUnique({
         where: { userId },
         select: { credits: true, vaultLevel: true, vaultXp: true },
@@ -90,6 +92,9 @@ export async function resolvePassportVault(
       }),
       deckValueOf(db, userId),
       displayedCopies(db, userId),
+      viewerClerkId
+        ? db.user.findUnique({ where: { clerkUserId: viewerClerkId }, select: { id: true } })
+        : null,
     ]);
 
     if (vault) {
@@ -100,9 +105,7 @@ export async function resolvePassportVault(
     summary.totalCards = liveOwnerships.length;
     summary.deckValue = deck.total;
     summary.focus = toVaultFocus(liveOwnerships.map((o) => o.cards.category));
-    summary.topCards = displayed.copies.map(({ card, copy }) =>
-      toCardFace(card, { revealArt: true, copy })
-    );
+    summary.topCards = await facesFor(db, viewer?.id ?? null, displayed.copies);
   } catch (err) {
     console.warn("[PassportVault] Failed to resolve vault summary for user", userId, err);
   }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { ValueDb } from "~/lib/cards/copy-value";
 import { DISPLAY_SIZE, SHOWCASE_LIMITS } from "~/lib/cards/face/showcase-limits";
 import type { CardFaceData } from "~/lib/cards/face/types";
+import { facesFor } from "./art-visibility";
 import { displayedCopies } from "./displayed";
 import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "./faces";
 import type { PlayerRules } from "./players";
@@ -57,9 +58,14 @@ const ITEM_SELECT = {
 } satisfies Prisma.CardCollectionItemSelect;
 type ItemRow = Prisma.CardCollectionItemGetPayload<{ select: typeof ITEM_SELECT }>;
 
-/** A showcase shows its cards' art to anyone allowed to see it (spec §2.3 Discovery); a retired card shows none. */
-const itemFace = (item: ItemRow) =>
-  toCardFace(item.cardOwnership.cards, { revealArt: true, copy: item.cardOwnership });
+const itemSource = (item: ItemRow) => ({
+  card: item.cardOwnership.cards,
+  copy: item.cardOwnership,
+});
+
+/** A copy in the player's own showcase is theirs: a copy leaves its owner's showcases when it changes hands. */
+const ownItemFace = (item: ItemRow) =>
+  toCardFace(item.cardOwnership.cards, { collected: true, copy: item.cardOwnership });
 
 /** A pin counts only on a public showcase: a private one is never shown to others (`displayedCopies`). */
 const pinTime = (row: { isPublic: boolean; pinnedAt: Date | null }) =>
@@ -97,13 +103,14 @@ export async function listMyShowcases(db: ShowcaseDb, userId: string): Promise<S
     isPublic: r.isPublic,
     pinned: latest > 0 && pinTime(r) === latest,
     itemCount: r._count.items,
-    cover: r.items[0] ? itemFace(r.items[0]) : null,
+    cover: r.items[0] ? ownItemFace(r.items[0]) : null,
   }));
 }
 
 /**
  * A showcase as the viewer may see it: its owner always; anyone else while it is public and its owner shows Vault
  * cards. Others never see its retired copies, as the display leaves them out; its owner sees their placeholder faces.
+ * Every face shows its art, marked by the viewer's own copies, not the owner's.
  */
 export async function getShowcase(
   db: ShowcaseDb,
@@ -129,6 +136,7 @@ export async function getShowcase(
   const owner = isOwner ? null : (await rules.playersOf([row.userId])).get(row.userId);
   if (!isOwner && !owner?.showsVault) return null;
   const items = isOwner ? row.items : row.items.filter((i) => !i.cardOwnership.cards.isRetired);
+  const faces = await facesFor(db, viewerId, items.map(itemSource));
   return {
     id: row.id,
     name: row.name,
@@ -137,7 +145,7 @@ export async function getShowcase(
     pinned: pinTime(row) > 0,
     ownerName: owner?.name ?? null,
     isOwner,
-    items: items.map((item) => ({ itemId: item.id, face: itemFace(item) })),
+    items: items.map((item, i) => ({ itemId: item.id, face: faces[i] })),
   };
 }
 
@@ -272,6 +280,7 @@ export async function myDisplay(
   const shown = await displayedCopies(db, userId, DISPLAY_SIZE);
   return {
     showcase: shown.showcase,
-    faces: shown.copies.map(({ card, copy }) => toCardFace(card, { revealArt: true, copy })),
+    // The player's own display: every copy is theirs
+    faces: shown.copies.map(({ card, copy }) => toCardFace(card, { collected: true, copy })),
   };
 }

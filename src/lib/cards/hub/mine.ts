@@ -127,7 +127,7 @@ export function selectMine(entries: readonly MineEntry[], query: MineQuery): Min
   const next = start + page.length;
   return {
     rows: page.map(({ row, value }) => ({
-      face: toCardFace(row.cards, { revealArt: true, copy: row }),
+      face: toCardFace(row.cards, { collected: true, copy: row }),
       value,
       copies: copies.get(row.cardId) ?? 1,
       acquiredAt: row.acquiredAt,

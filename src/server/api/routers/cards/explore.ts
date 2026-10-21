@@ -1,4 +1,4 @@
-/** Explore: every realm's approved cards, silhouettes for what the viewer has not collected (spec §2.3). */
+/** Explore: every realm's approved cards with their art, the ones the viewer has not collected marked (spec §2.3). */
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import {
   ExploreQuerySchema,

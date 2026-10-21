@@ -29,7 +29,7 @@ const face = (n: number): CardFaceData => ({
     isSystem: true,
   },
   artwork: "https://www.nationstates.net/images/flags/testlandia.png",
-  silhouette: false,
+  uncollected: false,
   number: 12,
   season: 3,
   isRetired: false,

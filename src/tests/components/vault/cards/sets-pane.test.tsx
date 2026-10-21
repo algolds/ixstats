@@ -47,7 +47,7 @@ const face = (n: number, overrides: Partial<CardFaceData> = {}): CardFaceData =>
   cardType: "LORE",
   realm,
   artwork: `https://art/c${n}.png`,
-  silhouette: false,
+  uncollected: false,
   number: n,
   season: null,
   isRetired: false,

@@ -31,7 +31,7 @@ const face = (overrides: Partial<CardFaceData> = {}): CardFaceData => ({
   cardType: "LORE",
   realm: IXNAY,
   artwork: "/images/cards/caphiria.png",
-  silhouette: false,
+  uncollected: false,
   number: 42,
   season: null,
   isRetired: false,
@@ -81,15 +81,45 @@ describe("CardFace", () => {
     );
   });
 
-  it("shows a silhouette's number and no art", () => {
+  it("shows an uncollected card's art muted, with its number, and says it is not collected", () => {
     const { container } = render(
-      <CardFace face={face({ artwork: null, silhouette: true, copy: null })} size="S" />
+      <CardFace face={face({ uncollected: true, copy: null })} size="S" />
     );
-    expect(container.querySelector("img")).toBeNull();
+    const art = container.querySelector("img");
+    expect(art?.getAttribute("src")).toContain("/images/cards/caphiria.png");
+    expect(art).toHaveClass("card-face-uncollected");
     expect(screen.getByText("No. 42")).toBeInTheDocument();
     expect(
       screen.getByRole("img", { name: "Caphiria, Epic, Ixnay, not collected" })
     ).toBeInTheDocument();
+    // The crest by the title stays in colour: the art carries the mark
+    expect(screen.getByText("I")).not.toHaveClass("grayscale");
+  });
+
+  it("shows a held copy in full colour, with no number note", () => {
+    const { container } = render(<CardFace face={face()} size="S" />);
+    expect(container.querySelector("img")).not.toHaveClass("card-face-uncollected");
+    expect(screen.queryByText("No. 42")).toBeNull();
+  });
+
+  it("greys the realm crests of an uncollected card only when it has no art", () => {
+    const { rerender } = render(
+      <CardFace face={face({ artwork: null, uncollected: true, copy: null })} />
+    );
+    // The crest on the rarity tint and the one beside the title
+    expect(screen.getAllByText("I")).toHaveLength(2);
+    for (const crest of screen.getAllByText("I")) expect(crest).toHaveClass("grayscale");
+    rerender(<CardFace face={face({ artwork: null, uncollected: false })} />);
+    for (const crest of screen.getAllByText("I")) expect(crest).not.toHaveClass("grayscale");
+  });
+
+  it("mutes the art in card-art.css by a light desaturation, never a glow", () => {
+    const css = fs.readFileSync(path.resolve(__dirname, "../../../../styles/card-art.css"), "utf8");
+    const rule = /\.card-face-uncollected \{([^}]*)\}/.exec(css)?.[1] ?? "";
+    const saturation = /saturate\(([\d.]+)\)/.exec(rule);
+    expect(Number(saturation?.[1])).toBeGreaterThan(0);
+    expect(Number(saturation?.[1])).toBeLessThan(1);
+    expect(rule).not.toMatch(/shadow|glow|blur/);
   });
 
   it("shows a season chip only for cards that have a season", () => {

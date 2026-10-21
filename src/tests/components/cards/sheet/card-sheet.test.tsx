@@ -95,7 +95,7 @@ const face = {
   cardType: "LORE" as const,
   realm,
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: 9,
   season: null,
   isRetired: false,
@@ -254,7 +254,7 @@ describe("CardSheet", () => {
   });
 
   it("says how to get a card the viewer does not hold", () => {
-    showSheet(sheet({ copies: [], face: { ...face, copy: null, silhouette: true } }));
+    showSheet(sheet({ copies: [], face: { ...face, copy: null, uncollected: true } }));
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
     expect(
       screen.getByText(/You do not have this card yet\. It comes in Ixnay packs/)
@@ -672,7 +672,7 @@ describe("CardSheet about", () => {
     );
   });
 
-  it("tells the excerpt to hide the art for a silhouette or a retired card, but not for a held one", () => {
+  it("tells the excerpt to hide the art for a retired card only, not for one the viewer does not hold", () => {
     const commons = {
       ...card,
       wikiSource: "commons",
@@ -680,10 +680,10 @@ describe("CardSheet about", () => {
     };
     const page = "https://commons.wikimedia.org/wiki/File:Flag_of_Ireland.svg";
     showSheet(
-      sheet({ card: commons, copies: [], face: { ...face, copy: null, silhouette: true } })
+      sheet({ card: commons, copies: [], face: { ...face, copy: null, uncollected: true } })
     );
     const view = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
-    expect(screen.getByText(`Excerpt ${page} without art`)).toBeInTheDocument();
+    expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
     view.unmount();
     showSheet(sheet({ card: { ...card, isRetired: true }, face: { ...face, isRetired: true } }));
     const retired = render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);
@@ -694,7 +694,7 @@ describe("CardSheet about", () => {
     expect(screen.getByText(`Excerpt ${page}`)).toBeInTheDocument();
   });
 
-  it("adds the licence to the art credit when the line does not name it", () => {
+  it("adds the licence to the art credit when the line does not name it, held or not, since the art shows", () => {
     showSheet(
       sheet({
         card: {
@@ -702,6 +702,8 @@ describe("CardSheet about", () => {
           cardType: "SPECIAL",
           artCredit: { line: "Photo by Ann", licence: "CC BY 4.0", sourceUrl: null },
         },
+        copies: [],
+        face: { ...face, copy: null, uncollected: true },
       })
     );
     render(<CardSheet cardId="c1" from={null} onClose={jest.fn()} />);

@@ -5,7 +5,6 @@ jest.mock("~/lib/cards/copy-value", () => ({ loadCopyValues: jest.fn() }));
 
 import { copyFaces } from "~/lib/cards/hub/market-faces";
 import { loadCopyValues } from "~/lib/cards/copy-value";
-import { contextRevealsArt } from "~/lib/cards/hub/art-visibility";
 import { clearEconomyConfigCache } from "~/lib/cards/economy-config";
 import { clearGeneralCardSettingsCache } from "~/lib/cards/general-settings";
 import { getTradeDetails } from "~/server/modules/cards/trading/trade-queries";
@@ -27,19 +26,17 @@ const trade = (over: object = {}) => ({
   recipient: { id: "bob", clerkUserId: "user_bob" },
   ...over,
 });
-const face = (cardId: string) => ({ cardId, title: cardId, silhouette: false });
+const face = (cardId: string) => ({ cardId, title: cardId, uncollected: false });
 
-function makeDb(row: object | null, waitingOnViewer = 1) {
+function makeDb(row: object | null) {
   return {
     systemConfig: { findMany: jest.fn().mockResolvedValue([]) },
     tradeOffer: {
       findUnique: jest.fn().mockResolvedValue(row),
-      count: jest.fn().mockResolvedValue(waitingOnViewer),
-      findFirst: jest.fn().mockResolvedValue(null),
+      count: jest.fn().mockResolvedValue(1),
     },
     cardOwnership: {
       findMany: jest.fn().mockResolvedValue([{ id: "a1", inscription: "gg" }]),
-      count: jest.fn().mockResolvedValue(0),
     },
   };
 }
@@ -67,7 +64,7 @@ beforeEach(() => {
 });
 
 describe("getTradeDetails", () => {
-  it("shows the art of an offer waiting on the viewer, with values, the fee, the inscription and the parsed ids", async () => {
+  it("gives both sides' faces, values, the fee, the inscription and the parsed ids", async () => {
     const db = makeDb(trade());
     const details = await getTradeDetails(db as never, "bob", "t1");
 
@@ -78,7 +75,9 @@ describe("getTradeDetails", () => {
         recipient: { select: { id: true, clerkUserId: true } },
       },
     });
-    expect(copyFaces).toHaveBeenCalledWith(db, "bob", ["a1", "b1"], true);
+    // Every face shows its art, so the trade asks no offer question: the faces are marked by the viewer's copies
+    expect(copyFaces).toHaveBeenCalledWith(db, "bob", ["a1", "b1"]);
+    expect(db.tradeOffer.count).not.toHaveBeenCalled();
     // The inscription travels with the copy; who signed it does not (only the sheet names a signer)
     expect(db.cardOwnership.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["a1", "b1"] } },
@@ -107,38 +106,17 @@ describe("getTradeDetails", () => {
     ]);
   });
 
-  it("asks the card sheet's own offer question, so a trade and a sheet opened from it agree", async () => {
+  it("gives the proposer the same faces, and the turn to nobody once the trade is finished or expired", async () => {
     const db = makeDb(trade());
-    await getTradeDetails(db as never, "bob", "t1");
-    await contextRevealsArt(
-      db as never,
-      "bob",
-      "c1",
-      { kind: "offer", id: "t1" },
-      { vaultVisible: jest.fn(), holderOf: jest.fn() }
-    );
-    const liveOffer = {
-      id: "t1",
-      status: "PENDING",
-      expiresAt: { gt: expect.any(Date) },
-      proposerId: { not: "bob" },
-      OR: [{ initiatorId: "bob" }, { recipientId: "bob" }],
-    };
-    expect(db.tradeOffer.count.mock.calls[0]![0].where).toEqual(liveOffer);
-    expect(db.tradeOffer.findFirst.mock.calls[0]![0].where).toEqual(liveOffer);
-  });
-
-  it("follows the silhouette rule for the proposer and for a finished or expired trade", async () => {
-    const proposer = await getTradeDetails(makeDb(trade(), 0) as never, "alice", "t1");
-    expect(jest.mocked(copyFaces).mock.calls.at(-1)?.[3]).toBe(false);
+    const proposer = await getTradeDetails(db as never, "alice", "t1");
+    expect(copyFaces).toHaveBeenLastCalledWith(db, "alice", ["a1", "b1"]);
     expect(proposer).toMatchObject({ myTurn: false, viewerRole: "initiator" });
 
     const finished = await getTradeDetails(
-      makeDb(trade({ status: "ACCEPTED" }), 0) as never,
+      makeDb(trade({ status: "ACCEPTED" })) as never,
       "bob",
       "t1"
     );
-    expect(jest.mocked(copyFaces).mock.calls.at(-1)?.[3]).toBe(false);
     expect(finished.myTurn).toBe(false);
 
     // Expired: no longer the viewer's turn, whatever the stored status says

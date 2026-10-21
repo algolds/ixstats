@@ -6,9 +6,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import { facesFor } from "~/lib/cards/hub/art-visibility";
 import { CATALOGUE_WHERE } from "~/lib/cards/hub/catalogue";
-import { CARD_FACE_SELECT } from "~/lib/cards/hub/faces";
+import { CARD_FACE_SELECT, toCardFace } from "~/lib/cards/hub/faces";
 
 export const WISHLIST_MAX = 200;
 
@@ -61,7 +60,7 @@ export async function wishlistCardIds(db: WatchlistDb, userId: string): Promise<
 }
 
 export interface WishlistEntry {
-  /** Art only for cards the player holds or that are on sale (the silhouette rule). */
+  /** The card's art, marked uncollected while the player holds no copy. */
   face: CardFaceData;
   addedAt: Date;
   /** Copies the player already holds. */
@@ -86,12 +85,7 @@ export async function listWishlist(
   });
   if (rows.length === 0) return [];
   const cardIds = rows.map((r) => r.cardId);
-  const [faces, owned, listings, auctions] = await Promise.all([
-    facesFor(
-      db,
-      userId,
-      rows.map((r) => ({ card: r.card }))
-    ),
+  const [owned, listings, auctions] = await Promise.all([
     db.cardOwnership.groupBy({
       by: ["cardId"],
       where: { ownerId: userId, cardId: { in: cardIds } },
@@ -113,9 +107,8 @@ export async function listWishlist(
   const ownedBy = new Map(owned.map((o) => [o.cardId, o._count._all]));
   const listingBy = new Map(listings.map((l) => [l.cardId, l]));
   const auctionsBy = new Map(auctions.map((a) => [a.cardId, a._count._all]));
-  // `facesFor` keeps the order and length of its sources.
-  return rows.map((r, i) => ({
-    face: faces[i],
+  return rows.map((r) => ({
+    face: toCardFace(r.card, { collected: ownedBy.has(r.cardId) }),
     addedAt: r.createdAt,
     owned: ownedBy.get(r.cardId) ?? 0,
     listings: listingBy.get(r.cardId)?._count._all ?? 0,

@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * The Passport's collection highlight is the holder's display (`displayedCopies`): their pinned public showcase, else
- * their most valuable live copies, as faces that show their art.
+ * their most valuable live copies, as faces that show their art, each marked by the viewer's own copies.
  */
 jest.mock("~/server/db", () => ({
   __esModule: true,
@@ -9,6 +9,7 @@ jest.mock("~/server/db", () => ({
     myVault: { findUnique: jest.fn() },
     cardOwnership: { findMany: jest.fn() },
     cardCollection: { findFirst: jest.fn() },
+    user: { findUnique: jest.fn() },
   },
 }));
 jest.mock("~/lib/vault/vault-perks", () => ({
@@ -47,14 +48,14 @@ const copyRow = (n: number) => ({
   },
 });
 
-const faceOf = (n: number) => ({
+const faceOf = (n: number, uncollected = true) => ({
   cardId: `c${n}`,
   title: `Card ${n}`,
   rarity: "RARE",
   cardType: "LORE",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: `/art/c${n}.png`,
-  silhouette: false,
+  uncollected,
   number: n,
   season: null,
   isRetired: false,
@@ -72,15 +73,26 @@ const ranked = (...ns: number[]) =>
     value: 100 - n,
   }));
 
-/** The live-copy read (count and categories) and the display's read of the top copies' faces, in any order. */
-function ownerships(top: ReturnType<typeof copyRow>[]) {
+interface OwnershipRead {
+  where: { id?: { in: string[] }; cardId?: object };
+}
+/**
+ * The live-copy read (count and categories), the display's read of the top copies' faces, and the viewer's copies of
+ * the displayed cards (`held`), in any order.
+ */
+function ownerships(top: ReturnType<typeof copyRow>[], held: string[] = []) {
+  jest.mocked(db.cardOwnership.findMany).mockImplementation((async (args: OwnershipRead) => {
+    if (args.where.cardId) return held.map((cardId) => ({ cardId }));
+    return args.where.id
+      ? top.filter((row) => args.where.id?.in.includes(row.id))
+      : [{ cards: { category: "MILITARY" } }];
+  }) as never);
+}
+const heldRead = () =>
   jest
     .mocked(db.cardOwnership.findMany)
-    .mockImplementation((async (args: { where: { id?: { in: string[] } } }) =>
-      args.where.id
-        ? top.filter((row) => args.where.id?.in.includes(row.id))
-        : [{ cards: { category: "MILITARY" } }]) as never);
-}
+    .mock.calls.map(([args]) => args)
+    .find((args) => args?.where?.cardId);
 
 const faceRead = () =>
   jest
@@ -106,7 +118,7 @@ describe("resolvePassportVault topCards", () => {
       items: [{ cardOwnership: copyRow(3) }],
     } as never);
 
-    const vault = await resolvePassportVault("u1");
+    const vault = await resolvePassportVault("u1", null);
     expect(vault.topCards).toEqual([faceOf(3)]);
     expect(jest.mocked(db.cardCollection.findFirst).mock.calls[0]![0]).toMatchObject({
       where: { userId: "u1", isPublic: true, pinnedAt: { not: null } },
@@ -114,7 +126,7 @@ describe("resolvePassportVault topCards", () => {
   });
 
   it("falls back to the six most valuable live copies by copy value, one per card, best first", async () => {
-    const vault = await resolvePassportVault("u1");
+    const vault = await resolvePassportVault("u1", null);
     expect(vault.topCards).toEqual([faceOf(2), faceOf(1)]);
     expect(jest.mocked(topCopiesByValue).mock.calls).toEqual([[db, "u1", 6]]);
     expect(faceRead()).toMatchObject({
@@ -122,8 +134,35 @@ describe("resolvePassportVault topCards", () => {
     });
   });
 
+  it("marks each face by the viewer's own copies, not the holder's", async () => {
+    jest.mocked(db.user.findUnique).mockResolvedValue({ id: "u2" } as never);
+    ownerships([copyRow(1), copyRow(2)], ["c1"]);
+    const vault = await resolvePassportVault("u1", "clerk_u2");
+    expect(vault.topCards).toEqual([faceOf(2, true), faceOf(1, false)]);
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { clerkUserId: "clerk_u2" },
+      select: { id: true },
+    });
+    expect(heldRead()?.where).toEqual({ ownerId: "u2", cardId: { in: ["c2", "c1"] } });
+  });
+
+  it("shows the holder their own display as collected", async () => {
+    jest.mocked(db.user.findUnique).mockResolvedValue({ id: "u1" } as never);
+    ownerships([copyRow(1), copyRow(2)], ["c1", "c2"]);
+    const vault = await resolvePassportVault("u1", "clerk_u1");
+    expect(vault.topCards).toEqual([faceOf(2, false), faceOf(1, false)]);
+  });
+
+  it("marks every face for a signed-out visitor, asking for no viewer and none of their copies", async () => {
+    ownerships([copyRow(1), copyRow(2)], ["c1", "c2"]);
+    const vault = await resolvePassportVault("u1", null);
+    expect(vault.topCards).toEqual([faceOf(2), faceOf(1)]);
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+    expect(heldRead()).toBeUndefined();
+  });
+
   it("values the deck by the shared copy value and counts the live copies", async () => {
-    const vault = await resolvePassportVault("u1");
+    const vault = await resolvePassportVault("u1", null);
     expect(vault).toMatchObject({ totalCards: 1, deckValue: 290, xpPerLevel: 500 });
     expect(jest.mocked(deckValueOf).mock.calls).toEqual([[db, "u1"]]);
     const liveRead = jest
@@ -138,12 +177,12 @@ describe("resolvePassportVault topCards", () => {
 
   it("leaves out a top copy that is gone by the time its face is read", async () => {
     jest.mocked(topCopiesByValue).mockResolvedValue(ranked(3, 1));
-    const vault = await resolvePassportVault("u1");
+    const vault = await resolvePassportVault("u1", null);
     expect(vault.topCards).toEqual([faceOf(1)]);
   });
 
   it("has no highlight without an account", async () => {
-    expect((await resolvePassportVault(null)).topCards).toEqual([]);
+    expect((await resolvePassportVault(null, "clerk_u2")).topCards).toEqual([]);
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
     expect(deckValueOf).not.toHaveBeenCalled();
   });

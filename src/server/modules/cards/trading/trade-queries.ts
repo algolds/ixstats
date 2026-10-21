@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import { loadCopyValues } from "~/lib/cards/copy-value";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { marketplaceFee } from "~/lib/cards/general-settings";
-import { copyIdsOf, liveOfferTo } from "~/lib/cards/hub/art-visibility";
+import { copyIdsOf } from "~/lib/cards/hub/art-visibility";
 import { copyFaces } from "~/lib/cards/hub/market-faces";
 import type { TradeRole } from "~/lib/cards/trade/trade-table";
 
@@ -60,11 +60,9 @@ export async function getTradeDetails(
   const initiatorIds = copyIdsOf(trade.initiatorCardIds);
   const recipientIds = copyIdsOf(trade.recipientCardIds);
   const ids = [...initiatorIds, ...recipientIds];
-  // An offer waiting on the viewer shows all its art, asked with the card sheet's own offer rule (spec §2.3 Discovery)
-  const revealAll =
-    (await db.tradeOffer.count({ where: { id: trade.id, ...liveOfferTo(viewerId) } })) > 0;
   const [faces, signed, values, initiatorFee, recipientFee] = await Promise.all([
-    copyFaces(db, viewerId, ids, revealAll),
+    // Both sides show their art, each face marked by the viewer's own copies
+    copyFaces(db, viewerId, ids),
     db.cardOwnership.findMany({
       where: { id: { in: ids } },
       select: { id: true, inscription: true },

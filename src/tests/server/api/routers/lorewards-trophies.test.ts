@@ -98,8 +98,14 @@ const trophyRow = (
   },
 });
 
-/** The summary of a trophy row, its face showing its art. */
-const summary = (id: string, title: string, contest: string, place: string) => ({
+/** The summary of a trophy row, its face showing its art, marked when the viewer does not hold it. */
+const summary = (
+  id: string,
+  title: string,
+  contest: string,
+  place: string,
+  uncollected = false
+) => ({
   id,
   title,
   contest,
@@ -111,7 +117,7 @@ const summary = (id: string, title: string, contest: string, place: string) => (
     cardType: "TROPHY",
     realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
     artwork: `https://art/${id}.png`,
-    silhouette: false,
+    uncollected,
     number: 4,
     season: null,
     isRetired: false,
@@ -122,6 +128,11 @@ const summary = (id: string, title: string, contest: string, place: string) => (
 const CARD_SUMMARIES = [
   summary("card1", "Seastead Law", "weekly", "winner"),
   summary("card2", "Tide Charts", "daily", "runner-up"),
+];
+/** The same trophies to anyone but their holder: a trophy is a one-of-one, so nobody else holds it. */
+const NOT_HELD = [
+  summary("card1", "Seastead Law", "weekly", "winner", true),
+  summary("card2", "Tide Charts", "daily", "runner-up", true),
 ];
 
 const settings = (vaultCards: boolean) =>
@@ -338,12 +349,22 @@ describe("lorewards.getTrophies", () => {
       wins: { daily: 6, weekly: 1, monthly: 0 },
       runnerUps: 2,
       streak: 3,
-      cards: CARD_SUMMARIES,
+      cards: NOT_HELD,
       holderHandle: "Ada",
     });
     expect(theirs.cards[0]!.face.cardId).toBe("card1");
     expect(loadPassportHandleById).toHaveBeenCalledWith("u1");
     expect(db.vaultTransaction.aggregate).not.toHaveBeenCalled();
+  });
+
+  it("marks the trophies collected for their holder only", async () => {
+    // u1 verified the name "Ada", so holds its trophies; u2 cannot hold a one-of-one u1 holds
+    expect((await viewer().getTrophies({ username: "Ada" })).cards).toEqual(CARD_SUMMARIES);
+    const other = viewer({
+      auth: { userId: "clerk_2" },
+      user: { id: "u2", clerkUserId: "clerk_2" },
+    });
+    expect((await other.getTrophies({ username: "Ada" })).cards).toEqual(NOT_HELD);
   });
 
   it("reads each trophy with the fields of its face and of the copy held", async () => {
@@ -377,7 +398,7 @@ describe("lorewards.getTrophies", () => {
       wins: { daily: 0, weekly: 0, monthly: 0 },
       runnerUps: 0,
       streak: 0,
-      cards: CARD_SUMMARIES,
+      cards: NOT_HELD,
       holderHandle: "Ada",
     });
   });

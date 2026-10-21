@@ -223,7 +223,7 @@ export async function getPassport(query: IdentityQuery, forum: IdentityForumGate
     loadPersonalPersona(user),
     loadClerkProfile(identity),
     resolveIdentityNations(identity),
-    shown.vaultCards ? resolvePassportVault(user?.id) : null,
+    shown.vaultCards ? resolvePassportVault(user?.id, query.viewerClerkId) : null,
     shown.achievements && user
       ? loadAchievementsShowcase(user.clerkUserId, settings.pinnedRibbonKeys)
       : null,

@@ -9,7 +9,7 @@ export interface TrophyCardSummary {
   title: string;
   contest: LorewardType;
   place: LorewardPlace;
-  /** The trophy's face. A player's trophies are their showcase, so the art always shows. */
+  /** The trophy's face, with its art, marked uncollected for anyone but its holder. */
   face: CardFaceData;
 }
 
@@ -50,10 +50,14 @@ function contestOf(metadata: Prisma.JsonValue): LorewardType | null {
 const placeOf = (edition: string | null): LorewardPlace | null =>
   edition === "winner" || edition === "runner-up" ? edition : null;
 
-/** The trophy cards `userId` owns; a card whose contest or place was not recorded is left out. */
+/**
+ * The trophy cards `userId` owns, as `viewerId` sees them; a card whose contest or place was not recorded is left out.
+ * A trophy is a bound one-of-one, so the viewer has collected it only when they are its holder.
+ */
 export async function ownedTrophyCards(
   db: Pick<PrismaClient, "cardOwnership">,
-  userId: string
+  userId: string,
+  viewerId: string | null
 ): Promise<TrophyCardSummary[]> {
   const owned = await db.cardOwnership.findMany({
     where: { ownerId: userId, cards: { lorewardEntryId: { not: null } } },
@@ -63,13 +67,14 @@ export async function ownedTrophyCards(
     },
     orderBy: { acquiredAt: "desc" },
   });
+  const collected = viewerId === userId;
   const summaries: TrophyCardSummary[] = [];
   for (const row of owned) {
     const card = row.cards;
     const contest = contestOf(card.metadata);
     const place = placeOf(card.lorewardEdition);
     if (!contest || !place) continue;
-    const face = toCardFace(card, { revealArt: true, copy: row });
+    const face = toCardFace(card, { collected, copy: row });
     summaries.push({ id: card.id, title: card.title, contest, place, face });
   }
   return summaries;
@@ -78,19 +83,21 @@ export async function ownedTrophyCards(
 /**
  * A wiki name's public trophies: counts from that exact name's Lorewards stats (`canonicalWikiName`: MediaWiki names
  * are case-sensitive after the first letter, so "OstroZava" is not "Ostrozava") and the trophy cards held by the
- * platform account `userId` that verified the name (null: none), with that account's passport handle (`handleOf`).
+ * platform account `userId` that verified the name (null: none), as `viewerId` sees them (null: signed out), with that
+ * account's passport handle (`handleOf`).
  */
 export async function loadTrophies(
   db: TrophyDb,
   wikiUsername: string,
   userId: string | null,
-  handleOf: PassportHandleOf
+  handleOf: PassportHandleOf,
+  viewerId: string | null
 ): Promise<Trophies> {
   const [stats, cards, holderHandle] = await Promise.all([
     db.lorewardUserStats.findFirst({
       where: { username: canonicalWikiName(wikiUsername) },
     }),
-    userId ? ownedTrophyCards(db, userId) : Promise.resolve([]),
+    userId ? ownedTrophyCards(db, userId, viewerId) : Promise.resolve([]),
     userId ? handleOf(userId) : Promise.resolve(null),
   ]);
   if (!stats) return { ...NO_TROPHIES, cards, holderHandle };

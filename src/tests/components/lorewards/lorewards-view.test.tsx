@@ -43,7 +43,7 @@ const face = (cardId: string, title: string): CardFaceData => ({
   cardType: "TROPHY",
   realm: { id: "default", slug: "ixnay", name: "Ixnay", crestUrl: null, isSystem: false },
   artwork: `/art/${cardId}.png`,
-  silhouette: false,
+  uncollected: false,
   number: null,
   season: null,
   isRetired: false,

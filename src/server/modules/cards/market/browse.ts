@@ -1,12 +1,13 @@
 /**
  * Market › Browse: live listings and auctions in one list. Featured items come first, then the chosen sort ("ending
  * soon" is a sort), then the id. Each source is read in that same order and merged, so a page is exact up to
- * MAX_BROWSE_OFFSET. A live item shows its art to everyone (spec §2.3 Discovery) and names no seller: it says only
+ * MAX_BROWSE_OFFSET. An item shows its art, marked by the viewer's own copies, and names no seller: it says only
  * whether it is the viewer's, so Browse offers no Buy or Bid on their own.
  */
 import type { CardFinish, CardRarity, CardType, Prisma, PrismaClient } from "@prisma/client";
 import type { CardFaceData } from "~/lib/cards/face/types";
-import { CARD_FACE_SELECT, COPY_FACE_SELECT, toCardFace } from "~/lib/cards/hub/faces";
+import { facesFor, type FaceSource } from "~/lib/cards/hub/art-visibility";
+import { CARD_FACE_SELECT, COPY_FACE_SELECT } from "~/lib/cards/hub/faces";
 import { likeLiteral } from "~/lib/utils/like-literal";
 
 export const BROWSE_SORTS = ["newest", "ending_soon", "price_low", "price_high"] as const;
@@ -43,11 +44,18 @@ export interface BrowseItem {
   ownershipId: string;
   bidCount: number;
   buyoutPrice: number | null;
-  /** The copy's face, with its art. */
+  /** The copy's face, with its art, marked uncollected while the viewer holds no copy of the card. */
   face: CardFaceData;
 }
 
-type BrowseDb = Pick<PrismaClient, "cardListing" | "cardAuction">;
+/** An item before its face, which waits for the page: the viewer's copies of the page's cards are read once. */
+interface BrowseRow {
+  item: Omit<BrowseItem, "face">;
+  source: FaceSource;
+}
+type SortFields = Pick<BrowseItem, "id" | "isFeatured" | "price" | "endsAt" | "createdAt">;
+
+type BrowseDb = Pick<PrismaClient, "cardListing" | "cardAuction" | "cardOwnership">;
 
 function cardWhere(f: BrowseFilters): Prisma.CardWhereInput {
   return {
@@ -65,19 +73,19 @@ function cardFilter(f: BrowseFilters): { card?: Prisma.CardWhereInput } {
   return Object.keys(cards).length > 0 ? { card: cards } : {};
 }
 
-const SORT_KEY: Record<BrowseSort, (a: BrowseItem, b: BrowseItem) => number> = {
+const SORT_KEY: Record<BrowseSort, (a: SortFields, b: SortFields) => number> = {
   newest: (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   ending_soon: (a, b) => a.endsAt.getTime() - b.endsAt.getTime(),
   price_low: (a, b) => a.price - b.price,
   price_high: (a, b) => b.price - a.price,
 };
 
-const byId = (a: BrowseItem, b: BrowseItem): number => {
+const byId = (a: SortFields, b: SortFields): number => {
   if (a.id === b.id) return 0;
   return a.id < b.id ? -1 : 1;
 };
 
-export function compareBrowse(sort: BrowseSort): (a: BrowseItem, b: BrowseItem) => number {
+export function compareBrowse(sort: BrowseSort): (a: SortFields, b: SortFields) => number {
   return (a, b) =>
     Number(b.isFeatured) - Number(a.isFeatured) || SORT_KEY[sort](a, b) || byId(a, b);
 }
@@ -128,10 +136,10 @@ interface BrowseRead {
   now: Date;
 }
 
-async function listingItems(
+async function listingRows(
   db: BrowseDb,
   { viewerId, input, take, now }: BrowseRead
-): Promise<BrowseItem[]> {
+): Promise<BrowseRow[]> {
   const rows = await db.cardListing.findMany({
     where: {
       status: "ACTIVE",
@@ -150,27 +158,29 @@ async function listingItems(
     copy
       ? [
           {
-            kind: "listing" as const,
-            id: l.id,
-            price: l.price,
-            isFeatured: l.isFeatured,
-            endsAt: l.expiresAt,
-            createdAt: l.createdAt,
-            isMine: l.sellerId === viewerId,
-            ownershipId: copy.id,
-            bidCount: 0,
-            buyoutPrice: null,
-            face: toCardFace(l.card, { revealArt: true, copy }),
+            item: {
+              kind: "listing" as const,
+              id: l.id,
+              price: l.price,
+              isFeatured: l.isFeatured,
+              endsAt: l.expiresAt,
+              createdAt: l.createdAt,
+              isMine: l.sellerId === viewerId,
+              ownershipId: copy.id,
+              bidCount: 0,
+              buyoutPrice: null,
+            },
+            source: { card: l.card, copy },
           },
         ]
       : []
   );
 }
 
-async function auctionItems(
+async function auctionRows(
   db: BrowseDb,
   { viewerId, input, take, now }: BrowseRead
-): Promise<BrowseItem[]> {
+): Promise<BrowseRow[]> {
   const rows = await db.cardAuction.findMany({
     where: {
       status: "ACTIVE",
@@ -187,18 +197,20 @@ async function auctionItems(
     copy
       ? [
           {
-            kind: "auction" as const,
-            id: a.id,
-            // An auction's current bid starts at its starting price
-            price: a.currentBid,
-            isFeatured: a.isFeatured,
-            endsAt: a.endTime,
-            createdAt: a.createdAt,
-            isMine: a.sellerId === viewerId,
-            ownershipId: copy.id,
-            bidCount: a.bidCount,
-            buyoutPrice: a.buyoutPrice,
-            face: toCardFace(a.card, { revealArt: true, copy }),
+            item: {
+              kind: "auction" as const,
+              id: a.id,
+              // An auction's current bid starts at its starting price
+              price: a.currentBid,
+              isFeatured: a.isFeatured,
+              endsAt: a.endTime,
+              createdAt: a.createdAt,
+              isMine: a.sellerId === viewerId,
+              ownershipId: copy.id,
+              bidCount: a.bidCount,
+              buyoutPrice: a.buyoutPrice,
+            },
+            source: { card: a.card, copy },
           },
         ]
       : []
@@ -215,11 +227,21 @@ export async function browseMarket(
   // Each source's first offset + limit + 1 in the merged order hold the page and whether more follow
   const read: BrowseRead = { viewerId, input, take: offset + input.limit + 1, now };
   const [listings, auctions] = await Promise.all([
-    input.kind === "auctions" ? [] : listingItems(db, read),
-    input.kind === "listings" ? [] : auctionItems(db, read),
+    input.kind === "auctions" ? [] : listingRows(db, read),
+    input.kind === "listings" ? [] : auctionRows(db, read),
   ]);
+  const compare = compareBrowse(input.sort);
   const window = [...listings, ...auctions]
-    .sort(compareBrowse(input.sort))
+    .sort((a, b) => compare(a.item, b.item))
     .slice(offset, offset + input.limit + 1);
-  return { items: window.slice(0, input.limit), hasMore: window.length > input.limit };
+  const page = window.slice(0, input.limit);
+  const faces = await facesFor(
+    db,
+    viewerId,
+    page.map((row) => row.source)
+  );
+  return {
+    items: page.map((row, i) => ({ ...row.item, face: faces[i] })),
+    hasMore: window.length > input.limit,
+  };
 }

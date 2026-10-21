@@ -47,14 +47,14 @@ const realm = (id: string, name: string, slug = id) => ({
   crestUrl: null,
   isSystem: slug === "nationstates",
 });
-const face = (id: string, silhouette: boolean): CardFaceData => ({
+const face = (id: string, uncollected: boolean): CardFaceData => ({
   cardId: id,
   title: `Card ${id}`,
   rarity: "RARE",
   cardType: "LORE",
   realm: realm("default", "Ixnay", "ixnay"),
-  artwork: silhouette ? null : `https://art/${id}.png`,
-  silhouette,
+  artwork: `https://art/${id}.png`,
+  uncollected,
   number: 4,
   season: null,
   isRetired: false,
@@ -156,13 +156,12 @@ beforeEach(() => {
 });
 
 describe("ExplorePane", () => {
-  it("shows realm shelves first, with silhouettes and the wanted totals", () => {
+  it("shows realm shelves first, uncollected cards with their art and marked, and the wanted totals", () => {
     render(pane());
     const headings = screen.getAllByRole("heading").map((h) => h.textContent);
     expect(headings.indexOf("Ixnay")).toBeLessThan(headings.indexOf("All cards"));
-    expect(
-      screen.getByRole("button", { name: "Card n1, Rare, Ixnay, not collected" })
-    ).toBeInTheDocument();
+    const uncollected = screen.getByRole("button", { name: "Card n1, Rare, Ixnay, not collected" });
+    expect(uncollected.querySelector("img")?.getAttribute("src")).toContain("art/n1.png");
     expect(screen.getByText("Wanted by 3")).toBeInTheDocument();
     // The newest strip says nothing of wishes; only the most-wanted strip counts them.
     expect(screen.getAllByText(/^Wanted by/)).toHaveLength(1);

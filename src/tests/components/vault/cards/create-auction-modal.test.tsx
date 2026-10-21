@@ -39,7 +39,7 @@ const row = (
     cardType: "LORE" as const,
     realm,
     artwork: null,
-    silhouette: false,
+    uncollected: false,
     number: 1,
     season: null,
     isRetired: false,

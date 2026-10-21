@@ -167,18 +167,19 @@ beforeEach(() => {
 });
 
 describe("loadCardSheet", () => {
-  it("shows the art to a holder, with each copy's trail and signer by passport handle", async () => {
+  it("shows a holder their card as collected, with each copy's trail and signer by passport handle", async () => {
     const db = setup();
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
     expect(sheet!.face).toMatchObject({
       artwork: "https://art/c1.png",
-      silhouette: false,
+      uncollected: false,
       copy: { ownershipId: "o1" },
     });
     expect(sheet!.copies).toEqual([
       {
         face: expect.objectContaining({
           artwork: "https://art/c1.png",
+          uncollected: false,
           copy: { ownershipId: "o1", finish: "FOIL", serialNumber: 3, level: 2 },
         }),
         experience: 2400,
@@ -266,21 +267,24 @@ describe("loadCardSheet", () => {
     expect(db.cardWatchlist.count).toHaveBeenCalledWith({ where: { cardId: "c1" } });
   });
 
-  it("is a silhouette for a card the viewer does not hold and nobody lists, and asks for no trail", async () => {
+  it("shows a card the viewer does not hold and nobody lists with its art, marked uncollected, and asks for no trail", async () => {
     const db = setup({ copies: [] });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.face).toMatchObject({ artwork: null, silhouette: true, copy: null });
+    expect(sheet!.face).toMatchObject({
+      artwork: "https://art/c1.png",
+      uncollected: true,
+      copy: null,
+    });
     expect(sheet!.copies).toEqual([]);
     expect(trailReads(db)).toEqual([]);
     expect(playersOf).not.toHaveBeenCalled();
   });
 
-  it("shows the art while the card is at auction, with each seller by passport handle", async () => {
+  it("marks a card at auction by the viewer's copies, not the seller's, with each seller by passport handle", async () => {
     const mine = { ...LISTING, id: "a2", sellerId: "me", buyoutPrice: 300 };
     const db = setup({ copies: [], auctions: [LISTING, mine] });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.face.silhouette).toBe(false);
-    expect(sheet!.face.artwork).toBe("https://art/c1.png");
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
     const auction = {
       kind: "auction",
       id: "a1",
@@ -302,15 +306,18 @@ describe("loadCardSheet", () => {
     expect(playersOf).toHaveBeenCalledWith(["u-a", "me"]);
   });
 
-  it("shows the art while the card is on a live fixed-price listing, to a visitor too", async () => {
+  it("opens a card on a live fixed-price listing, to a visitor too, marked for whoever holds no copy", async () => {
     const db = setup({ copies: [], fixed: [FIXED] });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", silhouette: false });
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
     const visitor = await sheetFor(setup({ copies: [], fixed: [FIXED] }) as never, null, "c1", {
       from: null,
       rules,
     });
-    expect(visitor).toMatchObject({ face: { silhouette: false }, signedIn: false });
+    expect(visitor).toMatchObject({
+      face: { artwork: "https://art/c1.png", uncollected: true },
+      signedIn: false,
+    });
     expect(visitor!.market.listings[0]).toMatchObject({ id: "l1", isMine: false });
   });
 
@@ -432,15 +439,15 @@ describe("loadCardSheet", () => {
     expect(sheet!.market.listings).toEqual([]);
   });
 
-  it("shows the art inside an offer waiting on the viewer", async () => {
-    const db = setup({ copies: [] });
+  it("opens a card outside the catalogue inside an offer waiting on the viewer, with its art", async () => {
+    const db = setup({ copies: [], catalogued: 0 });
     db.tradeOffer.findFirst.mockResolvedValue({ initiatorCardIds: ["o9"], recipientCardIds: [] });
     db.cardOwnership.count.mockResolvedValue(1);
     const sheet = await sheetFor(db as never, "me", "c1", {
       from: { kind: "offer", id: "t1" },
       rules,
     });
-    expect(sheet!.face.silhouette).toBe(false);
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
     expect(db.tradeOffer.findFirst.mock.calls[0]![0]).toMatchObject({
       where: {
         id: "t1",
@@ -451,31 +458,38 @@ describe("loadCardSheet", () => {
     });
   });
 
-  it("shows a holder's trophy opened through the passport handle they show", async () => {
+  it("opens a holder's trophy to a visitor through the passport handle they show", async () => {
     const db = setup({ copies: [] });
     db.cardOwnership.findFirst.mockResolvedValue({ id: "trophy-copy" });
-    const sheet = await sheetFor(db as never, "me", "c1", {
+    const sheet = await sheetFor(db as never, null, "c1", {
       from: { kind: "holder", handle: "Takatta Loa" },
       rules,
     });
     expect(holderOf).toHaveBeenCalledWith("Takatta Loa");
     expect(rules.vaultVisible).toHaveBeenCalledWith("owner");
-    expect(sheet!.face.silhouette).toBe(false);
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
   });
 
-  it("keeps the silhouette when the place it was opened from does not show the card", async () => {
-    const db = setup({ copies: [] });
-    db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
-    const sheet = await sheetFor(db as never, "me", "c1", {
-      from: { kind: "showcase", id: "s1" },
-      rules: hidden,
-    });
-    expect(hidden.vaultVisible).toHaveBeenCalledWith("owner");
-    expect(sheet!.face).toMatchObject({ artwork: null, silhouette: true });
-  });
+  it.each([
+    ["an offer", { kind: "offer" as const, id: "t1" }],
+    ["a showcase its owner hides", { kind: "showcase" as const, id: "s1" }],
+    ["a holder who hides their Vault cards", { kind: "holder" as const, handle: "Takatta Loa" }],
+  ])(
+    "opens a catalogue card to a signed-in viewer from %s with its art, never asking the place",
+    async (_place, from) => {
+      const db = setup({ copies: [] });
+      db.cardCollection.findFirst.mockResolvedValue(SHOWCASE);
+      const sheet = await sheetFor(db as never, "me", "c1", { from, rules: hidden });
+      expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
+      expect(db.tradeOffer.findFirst).not.toHaveBeenCalled();
+      expect(db.cardCollection.findFirst).not.toHaveBeenCalled();
+      expect(holderOf).not.toHaveBeenCalled();
+      expect(hidden.vaultVisible).not.toHaveBeenCalled();
+    }
+  );
 
   it("asks the opening place alongside the market reads, not before them", async () => {
-    const db = setup({ copies: [] });
+    const db = setup({ copies: [], catalogued: 0 });
     let watchersRead!: () => void;
     const read = new Promise<void>((resolve) => (watchersRead = resolve));
     db.cardWatchlist.count.mockImplementation(async () => {
@@ -487,11 +501,9 @@ describe("loadCardSheet", () => {
       await read;
       return null;
     });
-    const sheet = await sheetFor(db as never, "me", "c1", {
-      from: { kind: "offer", id: "t1" },
-      rules,
-    });
-    expect(sheet!.face.silhouette).toBe(true);
+    await expect(
+      loadCardSheet(db as never, "me", "c1", { from: { kind: "offer", id: "t1" }, rules })
+    ).resolves.toBeNull();
   });
 
   it("does not ask the opening place when the viewer already holds the card", async () => {
@@ -518,7 +530,8 @@ describe("loadCardSheet", () => {
       season: 3,
       region: "The Pacific",
     });
-    expect(sheet!.face.silhouette).toBe(false);
+    // A NationStates card the viewer does not hold is marked like any other
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
   });
 
   it("reads the recorded art licence, and the excerpt, author and file page older cards keep in metadata", async () => {
@@ -573,7 +586,7 @@ describe("loadCardSheet", () => {
     expect(sheet!.card.excerpt).toBe("Older.");
   });
 
-  it("points nowhere near the art on a silhouette, but keeps the article", async () => {
+  it("credits and links the art of a card the viewer does not hold, since it shows", async () => {
     const db = setup({
       copies: [],
       card: {
@@ -589,10 +602,14 @@ describe("loadCardSheet", () => {
       },
     });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.face.silhouette).toBe(true);
+    expect(sheet!.face).toMatchObject({ artwork: "https://art/c1.png", uncollected: true });
     expect(sheet!.card).toMatchObject({
-      artCredit: null,
-      descriptionUrl: null,
+      artCredit: {
+        line: "Map.png by Ann, CC BY-SA 4.0",
+        licence: "CC BY-SA 4.0",
+        sourceUrl: "https://ixwiki.com/wiki/File:Map.png",
+      },
+      descriptionUrl: "https://commons.wikimedia.org/wiki/File:Map.png",
       wikiSource: "ixwiki",
       wikiArticleTitle: "Caphiria",
       excerpt: "Caphiria is...",
@@ -625,7 +642,7 @@ describe("loadCardSheet", () => {
       },
     });
     const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-    expect(sheet!.face).toMatchObject({ silhouette: false, artwork: null });
+    expect(sheet!.face).toMatchObject({ uncollected: false, artwork: null });
     expect(sheet!.card).toMatchObject({
       artCredit: null,
       descriptionUrl: null,
@@ -931,7 +948,7 @@ describe("loadCardSheet", () => {
       const db = setup({ copies: [], auctions: [LISTING] });
       const sheet = await sheetFor(db as never, null, "c1", { from: null, rules });
       expect(sheet).toMatchObject({
-        face: { artwork: "https://art/c1.png", silhouette: false, copy: null },
+        face: { artwork: "https://art/c1.png", uncollected: true, copy: null },
         signedIn: false,
         copies: [],
         market: { listings: [{ kind: "auction", id: "a1", sellerName: "@ann", isMine: false }] },
@@ -959,7 +976,7 @@ describe("loadCardSheet", () => {
         rules,
       });
       expect(rules.vaultVisible).toHaveBeenCalledWith("owner");
-      expect(sheet).toMatchObject({ face: { silhouette: false, copy: null }, copies: [] });
+      expect(sheet).toMatchObject({ face: { uncollected: true, copy: null }, copies: [] });
       expect(copyReads(db)).toEqual([expect.objectContaining({ ownerId: "owner" })]);
     });
 
@@ -973,7 +990,10 @@ describe("loadCardSheet", () => {
       expect(db.cardCollection.findFirst.mock.calls[0]![0]).toMatchObject({
         where: { id: "s1", isPublic: true },
       });
-      expect(sheet).toMatchObject({ face: { silhouette: false }, signedIn: false });
+      expect(sheet).toMatchObject({
+        face: { artwork: "https://art/c1.png", uncollected: true },
+        signedIn: false,
+      });
     });
 
     it("is asked to sign in for a retired copy on a public showcase, which lists it to its owner only", async () => {
@@ -1011,48 +1031,52 @@ describe("loadCardSheet", () => {
     });
   });
 
-  describe("a silhouette names no art", () => {
+  describe("only a retired card names no art", () => {
     const WITH_FILES = {
       ...CARD,
       wikiExcerpt:
         "An empire. [[File:Caphiria.png|thumb|The flag]] See [[:File:Caphiria.png|the flag]].",
     };
 
-    it("leaves the file links out of a silhouette's excerpt, as the client draws it", async () => {
-      const db = setup({ card: WITH_FILES, copies: [] });
+    it("leaves the file links out of a retired card's excerpt, as the client draws it, even for its holder", async () => {
+      const db = setup({ card: { ...WITH_FILES, isRetired: true }, catalogued: 0 });
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).not.toMatch(/File:|Caphiria\.png/);
       expect(sheet!.card.excerpt).toMatch(/^An empire\. +See the flag\.$/);
     });
 
-    it("leaves the file links out of a retired card's excerpt, even for its holder", async () => {
-      const db = setup({ card: { ...WITH_FILES, isRetired: true }, catalogued: 0 });
-      const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
-      expect(sheet!.card.excerpt).not.toMatch(/File:/);
-    });
-
-    it("keeps a held card's excerpt as stored", async () => {
-      const db = setup({ card: WITH_FILES });
+    it.each([
+      ["held", [COPY]],
+      ["not held", []],
+    ])("keeps the excerpt of a live card %s as stored", async (_held, copies) => {
+      const db = setup({ card: WITH_FILES, copies });
       const sheet = await sheetFor(db as never, "me", "c1", { from: null, rules });
       expect(sheet!.card.excerpt).toBe(WITH_FILES.wikiExcerpt);
     });
 
-    it("gives a Commons silhouette no file title, and a held Commons card its title", async () => {
+    it("gives a Commons card its file title, held or not, and a retired one none", async () => {
       const commons = {
         ...CARD,
         wikiSource: "commons",
         wikiArticleTitle: "File:Camilla Tuvalu Banner.png",
       };
-      const silhouette = await sheetFor(setup({ card: commons, copies: [] }) as never, "me", "c1", {
+      const notHeld = await sheetFor(setup({ card: commons, copies: [] }) as never, "me", "c1", {
         from: null,
         rules,
       });
-      expect(silhouette!.card).toMatchObject({ wikiSource: "commons", wikiArticleTitle: null });
+      expect(notHeld!.card.wikiArticleTitle).toBe("File:Camilla Tuvalu Banner.png");
       const held = await sheetFor(setup({ card: commons }) as never, "me", "c1", {
         from: null,
         rules,
       });
       expect(held!.card.wikiArticleTitle).toBe("File:Camilla Tuvalu Banner.png");
+      const retired = await sheetFor(
+        setup({ card: { ...commons, isRetired: true }, catalogued: 0 }) as never,
+        "me",
+        "c1",
+        { from: null, rules }
+      );
+      expect(retired!.card).toMatchObject({ wikiSource: "commons", wikiArticleTitle: null });
     });
   });
 

@@ -58,7 +58,7 @@ const face = (n: number): CardFaceData => ({
   cardType: "LORE",
   realm,
   artwork: null,
-  silhouette: false,
+  uncollected: false,
   number: n,
   season: null,
   isRetired: false,
