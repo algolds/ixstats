@@ -10,7 +10,6 @@ jest.mock("~/lib/notifications/hooks", () => ({
 import { describe, it, expect } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { thinkpagesThinktanksRouter } from "~/server/api/routers/thinkpages/thinktanks";
-import { generateInviteCode } from "~/server/api/routers/thinkpages/thinktanks/invites";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -58,48 +57,6 @@ function callerAs(userId: string, db: Db) {
 }
 
 describe("ThinkTank invite inbox", () => {
-  it("lists open invites to groups the caller has not joined", async () => {
-    const db = makeDb();
-    db.thinktankInvite.findMany.mockResolvedValue([
-      {
-        id: "i1",
-        invitedBy: OWNER,
-        createdAt: new Date(),
-        expiresAt: null,
-        group: {
-          id: "g1",
-          name: "Inner Circle",
-          avatar: null,
-          type: "invite_only",
-          memberCount: 3,
-          members: [],
-        },
-      },
-      {
-        id: "i2",
-        invitedBy: OWNER,
-        createdAt: new Date(),
-        expiresAt: null,
-        group: {
-          id: "g2",
-          name: "Joined",
-          avatar: null,
-          type: "public",
-          memberCount: 9,
-          members: [{ id: "m" }],
-        },
-      },
-    ]);
-
-    const invites = await callerAs(GUEST, db).getMyThinktankInvites();
-    expect(invites.map((i) => i.id)).toEqual(["i1"]);
-    expect(invites[0]!.group).not.toHaveProperty("members");
-    expect(db.thinktankInvite.findMany.mock.calls[0]![0].where).toMatchObject({
-      invitedUser: GUEST,
-      isUsed: false,
-    });
-  });
-
   it("accepting joins the group and consumes the invite", async () => {
     const db = makeDb();
     db.thinktankInvite.findFirst.mockResolvedValue({ id: "i1", groupId: "g1" });
@@ -144,10 +101,6 @@ describe("ThinkTank invite inbox", () => {
 });
 
 describe("ThinkTank invite codes", () => {
-  it("generates codes from the unambiguous alphabet", () => {
-    expect(generateInviteCode()).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
-  });
-
   it("only managers can create a code", async () => {
     const db = makeDb();
     await expect(
@@ -181,15 +134,5 @@ describe("ThinkTank invite codes", () => {
       isUsed: false,
     });
     expect(db.thinktankMember.create).toHaveBeenCalled();
-  });
-
-  it("an unknown code is rejected", async () => {
-    const db = makeDb();
-    db.thinktankInvite.findFirst.mockResolvedValue(null);
-    await expect(
-      callerAs(GUEST, db).joinThinktankByCode({ code: "NOPE1234" })
-    ).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
   });
 });

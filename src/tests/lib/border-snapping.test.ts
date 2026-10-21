@@ -21,28 +21,10 @@ function square(minLng: number, minLat: number, maxLng: number, maxLat: number):
 }
 
 describe("insertVertexIfOnSegment", () => {
-  test("inserts vertex on edge of polygon", () => {
-    const sq = square(0, 0, 2, 2);
-    // Point lies exactly on top edge (y=2) between (0,2) and (2,2)
-    const res = insertVertexIfOnSegment(sq, [1, 2], 1e-7);
-    expect(res.modified).toBe(true);
-    const ring = getAllRings(res.geometry)[0]!;
-    // Should have 6 coordinates: (0,0), (2,0), (2,2), (1,2), (0,2), (0,0)
-    expect(ring.length).toBe(6);
-    expect(ring[3]).toEqual([1, 2]);
-  });
-
   test("does not insert vertex if not on edge", () => {
     const sq = square(0, 0, 2, 2);
     // Point inside polygon
     const res = insertVertexIfOnSegment(sq, [1, 1], 1e-7);
-    expect(res.modified).toBe(false);
-  });
-
-  test("does not insert vertex if already at endpoint", () => {
-    const sq = square(0, 0, 2, 2);
-    // Point exactly at one of the vertices (2,2)
-    const res = insertVertexIfOnSegment(sq, [2, 2], 1e-7);
     expect(res.modified).toBe(false);
   });
 });

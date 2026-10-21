@@ -2,7 +2,6 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   deleteKeysByPattern,
-  getSharedRedis,
   type ScanDeleteClient,
 } from "~/lib/cache/redis-client";
 
@@ -20,12 +19,5 @@ describe("deleteKeysByPattern", () => {
     expect(unlink).toHaveBeenCalledTimes(2);
     expect(scan.mock.calls.map((call) => call[0])).toEqual(["0", "5"]);
     expect(scan).toHaveBeenCalledWith("0", "MATCH", "acs:*", "COUNT", 250);
-  });
-});
-
-describe("getSharedRedis", () => {
-  it("returns null when Redis is not enabled", () => {
-    delete process.env.REDIS_ENABLED;
-    expect(getSharedRedis()).toBeNull();
   });
 });

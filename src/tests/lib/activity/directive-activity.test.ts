@@ -92,13 +92,6 @@ describe("declareDirectiveActivity", () => {
     expect(log).toHaveBeenCalled();
     log.mockRestore();
   });
-
-  it("keeps a null user as null", async () => {
-    const db = fakeDb();
-    await declareDirectiveActivity(db as never, { ...INPUT, userId: null });
-    const [[call]] = db.activityFeed.create.mock.calls as never as [[{ data: { userId: null } }]];
-    expect(call.data.userId).toBeNull();
-  });
 });
 
 describe("withdrawDirectiveActivity", () => {

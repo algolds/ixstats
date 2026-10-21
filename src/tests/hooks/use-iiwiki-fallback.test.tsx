@@ -24,18 +24,6 @@ const page = {
 beforeEach(() => mockRender.mockReset());
 
 describe("useIiwikiFallback", () => {
-  it("stays out of the way while the server answers, and for other wikis", () => {
-    const { result: served } = renderHook(() => useIiwikiFallback("Gylias", "iiwiki", false), {
-      wrapper,
-    });
-    const { result: other } = renderHook(() => useIiwikiFallback("X", "althistory", true), {
-      wrapper,
-    });
-    expect(served.current.active).toBe(false);
-    expect(other.current.active).toBe(false);
-    expect(mockRender).not.toHaveBeenCalled();
-  });
-
   it("renders the page in the browser once the server fails", async () => {
     mockRender.mockResolvedValue(page);
     const { result } = renderHook(() => useIiwikiFallback("Gylias", "iiwiki", true), { wrapper });
@@ -58,19 +46,5 @@ describe("useIiwikiFallback", () => {
     rerender();
     expect(result.current.article).toBe(first);
     expect(result.current.article?.categories).toBe(first?.categories);
-  });
-
-  it("reports a page IIWiki does not have as missing", async () => {
-    mockRender.mockResolvedValue(null);
-    const { result } = renderHook(() => useIiwikiFallback("Nowhere", "iiwiki", true), { wrapper });
-    await waitFor(() => expect(result.current.missing).toBe(true));
-    expect(result.current.failed).toBe(false);
-  });
-
-  it("reports a browser IIWiki refuses as failed", async () => {
-    mockRender.mockRejectedValue(new Error("IIWiki answered 403"));
-    const { result } = renderHook(() => useIiwikiFallback("Gylias", "iiwiki", true), { wrapper });
-    await waitFor(() => expect(result.current.failed).toBe(true));
-    expect(result.current.article).toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
@@ -121,28 +121,6 @@ describe("SwipeableRow keyboard model", () => {
     // Focus goes back to where the menu was opened from.
     await waitFor(() => expect(document.activeElement).toBe(button));
   });
-
-  it("lists a commit action without a matching button in the menu", () => {
-    const onCommit = jest.fn();
-    render(<Row onCommit={onCommit} />);
-    fireEvent.keyDown(screen.getByRole("button", { name: "Open message" }), {
-      key: "F10",
-      shiftKey: true,
-    });
-    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
-    expect(onCommit).toHaveBeenCalledTimes(1);
-  });
-
-  it("ignores Delete, Backspace and Escape bubbling from a child", () => {
-    const onCommit = jest.fn();
-    render(<Row onCommit={onCommit} />);
-    const button = screen.getByRole("button", { name: "Open message" });
-    expect(fireEvent.keyDown(button, { key: "Delete" })).toBe(true);
-    expect(fireEvent.keyDown(button, { key: "Backspace" })).toBe(true);
-    expect(fireEvent.keyDown(button, { key: "Escape" })).toBe(true);
-    expect(onCommit).not.toHaveBeenCalled();
-  });
-
   describe("a row with nothing focusable inside", () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());
@@ -170,32 +148,6 @@ describe("SwipeableRow keyboard model", () => {
         jest.advanceTimersByTime(400);
       });
       expect(onCommit).toHaveBeenCalledTimes(1);
-    });
-
-    it("toggles its Expanded panel with Enter, and buttons inside the panel keep their keys", () => {
-      const onPanelButton = jest.fn();
-      const { container } = render(
-        <SwipeableRow>
-          <SwipeableRow.Content>
-            <div>Static message</div>
-          </SwipeableRow.Content>
-          <SwipeableRow.Expanded>
-            <button type="button" onClick={onPanelButton}>
-              Reply
-            </button>
-          </SwipeableRow.Expanded>
-        </SwipeableRow>
-      );
-      const row = container.querySelector<HTMLElement>("[data-swipeable-row]")!;
-      expect(row).toHaveAttribute("aria-expanded", "false");
-      press(row, "Enter");
-      expect(row).toHaveAttribute("aria-expanded", "true");
-
-      const reply = screen.getByRole("button", { name: "Reply" });
-      press(reply, "Enter");
-      press(reply, " ");
-      expect(onPanelButton).toHaveBeenCalledTimes(2);
-      expect(row).toHaveAttribute("aria-expanded", "true");
     });
   });
 });

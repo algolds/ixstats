@@ -292,12 +292,14 @@ describe("fiscal steward", () => {
 });
 
 describe("loaders", () => {
-  function ctx(
-    db: ReturnType<typeof createMockPrisma>,
-    countryId: string | null = "c1"
-  ): MetricContext {
-    return { db: db as never, clerkUserId: "clerk", userId: "u1", countryId, now: NOW };
-  }
+  const ctx = (db: ReturnType<typeof createMockPrisma>, countryId: string | null = "c1"): MetricContext => ({
+    db: db as never,
+    clerkUserId: "clerk",
+    userId: "u1",
+    countryId,
+    now: NOW,
+  });
+  const months = (n: number) => new Date(NOW.getTime() - n * MONTH_MS);
 
   it("return zero for every key without a country, and query nothing", async () => {
     const db = createMockPrisma();
@@ -310,48 +312,17 @@ describe("loaders", () => {
     expect(db.nationalIssue.findMany).not.toHaveBeenCalled();
   });
 
-  it("directives: one query for committed rows", async () => {
+  /** A nation 20 months owned, with a completed directive, three critical answers, three brokers' components and four budgeted years. */
+  function nation(ownedSince: Date | null | "no row" = months(20)) {
     const db = createMockPrisma();
     db.intent.findMany.mockResolvedValue([directive(0, { status: "completed" })]);
-    const result = await directivesLoader.load(ctx(db));
-    expect(db.intent.findMany).toHaveBeenCalledTimes(1);
-    expect(db.intent.findMany.mock.calls[0]![0].where).toEqual({
-      countryId: "c1",
-      status: { in: ["active", "completed", "abandoned"] },
-    });
-    expect(result).toMatchObject({ directivesCommitted: 1, directiveChainDepth: 1 });
-  });
-
-  it("issues: answered rows only, the 6 month raised count, and stability sums of critical answers", async () => {
-    const db = createMockPrisma();
-    const rows = issues(spread(3, 1), { severity: "critical" });
-    db.nationalIssue.findMany.mockResolvedValue(rows);
+    const answered = issues(spread(3, 1), { severity: "critical" });
+    db.nationalIssue.findMany.mockResolvedValue(answered);
     db.nationalIssue.count.mockResolvedValue(10);
     db.nationalIssueConsequence.groupBy.mockResolvedValue([
-      { issueId: rows[0]!.id, _sum: { deltaValue: -2 } },
-      { issueId: rows[1]!.id, _sum: { deltaValue: null } },
+      { issueId: answered[0]!.id, _sum: { deltaValue: -2 } },
+      { issueId: answered[1]!.id, _sum: { deltaValue: null } },
     ]);
-
-    const result = await issuesLoader.load(ctx(db));
-
-    expect(db.nationalIssue.findMany.mock.calls[0]![0].where).toEqual({
-      countryId: "c1",
-      status: "responded",
-    });
-    expect(db.nationalIssue.count.mock.calls[0]![0].where).toEqual({
-      countryId: "c1",
-      createdAt: { gte: new Date(NOW.getTime() - 6 * MONTH_MS) },
-    });
-    expect(db.nationalIssueConsequence.groupBy.mock.calls[0]![0].where).toMatchObject({
-      targetModel: "InternalStabilityMetrics",
-      targetField: "stabilityScore",
-      issue: { countryId: "c1", status: "responded", severity: { in: ["critical", "CRITICAL"] } },
-    });
-    expect(result).toMatchObject({ issuesAnswered: 3, criticalStableGains: 2 });
-  });
-
-  it("brokers: counts the brokers the live components and budget satisfy", async () => {
-    const db = createMockPrisma();
     db.governmentComponent.findMany.mockResolvedValue([
       { componentType: "MILITARY_ADMINISTRATION" },
       { componentType: "RELIGIOUS_LEGITIMACY" },
@@ -364,51 +335,58 @@ describe("loaders", () => {
       { allocatedPercent: 5, department: { category: "Culture" } },
       { allocatedPercent: 30, department: { category: "Education" } },
     ]);
+    db.budgetAllocation.count.mockResolvedValue(4);
+    // Rows the builder just rewrote are fine: only the year is read, never createdAt.
+    db.budgetAllocation.groupBy.mockResolvedValue([2040, 2041, 2042, 2043].map((budgetYear) => ({ budgetYear })));
+    db.country.findUnique.mockResolvedValue(ownedSince === "no row" ? null : { ownedSince });
+    return db;
+  }
 
-    const result = await brokersLoader.load(ctx(db));
+  const loadAll = async (db: ReturnType<typeof createMockPrisma>) =>
+    Object.assign(
+      {},
+      ...(await Promise.all([directivesLoader, issuesLoader, brokersLoader, budgetLoader].map((l) => l.load(ctx(db)))))
+    );
 
-    // generals (Defense 20 >= 15) and clergy (Culture 15 >= 15); technocrats lack their agencies
-    expect(result).toEqual({ brokersSatisfied: 2 });
+  it("read only what decides an unlock: committed directives, answered issues, critical stability sums, live brokers and budgeted years", async () => {
+    const db = nation();
+    expect(await loadAll(db)).toMatchObject({
+      directivesCommitted: 1,
+      directiveChainDepth: 1,
+      issuesAnswered: 3,
+      // generals (Defense 20 >= 15) and clergy (Culture 15 >= 15); technocrats lack their agencies
+      brokersSatisfied: 2,
+      budgetCurrentYear: 4,
+      fiscalSteward18m: 1,
+      criticalStableGains: 2,
+    });
+    expect(db.intent.findMany.mock.calls[0]![0].where).toEqual({
+      countryId: "c1",
+      status: { in: ["active", "completed", "abandoned"] },
+    });
+    expect(db.nationalIssue.findMany.mock.calls[0]![0].where).toEqual({ countryId: "c1", status: "responded" });
+    expect(db.nationalIssue.count.mock.calls[0]![0].where).toEqual({
+      countryId: "c1",
+      createdAt: { gte: new Date(NOW.getTime() - 6 * MONTH_MS) },
+    });
+    expect(db.nationalIssueConsequence.groupBy.mock.calls[0]![0].where).toMatchObject({
+      targetModel: "InternalStabilityMetrics",
+      targetField: "stabilityScore",
+      issue: { countryId: "c1", status: "responded", severity: { in: ["critical", "CRITICAL"] } },
+    });
     expect(db.budgetAllocation.findFirst.mock.calls[0]![0].where.budgetYear).toEqual({ lte: 2043 });
+    expect(db.budgetAllocation.count.mock.calls[0]![0].where).toEqual({
+      governmentStructure: { countryId: "c1" },
+      budgetYear: 2043,
+    });
+    expect(db.budgetAllocation.groupBy.mock.calls[0]![0].where.budgetYear).toEqual({ gte: 2040, lte: 2043 });
   });
 
-  describe("budget", () => {
-    function budgetDb(ownedSince: Date | null | undefined) {
-      const db = createMockPrisma();
-      db.budgetAllocation.count.mockResolvedValue(4);
-      // Rows the builder just rewrote are fine: only the year is read, never createdAt.
-      db.budgetAllocation.groupBy.mockResolvedValue(
-        [2040, 2041, 2042, 2043].map((budgetYear) => ({ budgetYear }))
-      );
-      db.country.findUnique.mockResolvedValue(ownedSince === undefined ? null : { ownedSince });
-      return db;
-    }
-    const months = (n: number) => new Date(NOW.getTime() - n * MONTH_MS);
-
-    it("counts this game year's allocations and flags covered years of an 18 month owner", async () => {
-      const db = budgetDb(months(20));
-
-      const result = await budgetLoader.load(ctx(db));
-
-      expect(result).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 1 });
-      expect(db.budgetAllocation.count.mock.calls[0]![0].where).toEqual({
-        governmentStructure: { countryId: "c1" },
-        budgetYear: 2043,
-      });
-      const grouped = db.budgetAllocation.groupBy.mock.calls[0]![0];
-      expect(grouped.where.budgetYear).toEqual({ gte: 2040, lte: 2043 });
-      expect(grouped._min).toBeUndefined();
-      expect(db.country.findUnique.mock.calls[0]![0]).toEqual({
-        where: { id: "c1" },
-        select: { ownedSince: true },
-      });
-    });
-
-    it("withholds the flag for a 17 month owner, an unknown ownership date or a missing country row", async () => {
-      for (const ownedSince of [months(17), null, undefined]) {
-        const result = await budgetLoader.load(ctx(budgetDb(ownedSince)));
-        expect(result).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 0 });
-      }
-    });
+  it.each([
+    ["a 17 month owner", months(17)],
+    ["an unknown ownership date", null],
+    ["a missing country row", "no row" as const],
+  ])("withhold the fiscal steward flag from %s", async (_who, ownedSince) => {
+    expect(await budgetLoader.load(ctx(nation(ownedSince)))).toEqual({ budgetCurrentYear: 4, fiscalSteward18m: 0 });
   });
 });

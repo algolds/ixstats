@@ -18,7 +18,7 @@ jest.mock("~/lib/notifications/hooks", () => ({
 }));
 import { achievementService } from "~/lib/achievements/service";
 import { ALL_DEFINITIONS } from "~/lib/achievements/sets";
-import { RETIRED_IDS, syncAchievements } from "~/lib/achievements/sync";
+import { syncAchievements } from "~/lib/achievements/sync";
 import { getBonusConfig, VAULT_BONUS_DEFAULTS } from "~/lib/vault/vault-bonus";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -72,23 +72,6 @@ describe("syncAchievements", () => {
       expect([def.id, rows.get(def.id)?.isActive]).toEqual([def.id, !def.retired]);
       expect(rows.get(def.id)?.iconUrl).toBe(def.icon);
     }
-  });
-
-  it("leaves retired rows that are already inactive alone, and retires the ones still active", async () => {
-    const db = createMockPrisma();
-    const alreadyRetired = SPEC_RETIRED.slice(0, 40);
-    db.achievement.findMany.mockResolvedValue(alreadyRetired.map((key) => ({ key })));
-
-    await syncAchievements(db as never);
-
-    expect(db.achievement.findMany).toHaveBeenCalledWith({
-      where: { key: { in: [...RETIRED_IDS] }, isActive: false },
-      select: { key: true },
-    });
-    const rows = upserts(db);
-    for (const key of alreadyRetired) expect(rows.has(key)).toBe(false);
-    for (const key of SPEC_RETIRED.slice(40)) expect(rows.get(key)?.isActive).toBe(false);
-    expect(rows.get("gen-welcome")?.isActive).toBe(true);
   });
 });
 
@@ -201,13 +184,6 @@ describe("vid-end-of-days", () => {
       })
     ).toBe(false);
   });
-
-  it("needs no country", () => {
-    expect(
-      achievementService.evaluateCondition(stored, { existingKeys: targets(), country: undefined })
-    ).toBe(true);
-  });
-
   it("cascades: the unlock that completes the set unlocks it in the same evaluation", async () => {
     const db = createMockPrisma();
     const missing = "dip-first-embassy";

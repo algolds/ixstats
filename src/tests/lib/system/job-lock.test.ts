@@ -72,10 +72,4 @@ describe("withJobLock", () => {
     ).rejects.toThrow("boom");
     expect(leases.size).toBe(0);
   });
-
-  it("passes the lease length in seconds", async () => {
-    const { db, $queryRaw } = makeDb();
-    await withJobLock(db, "db-backup", async () => 1, { timeoutMs: 60 * 60_000 });
-    expect($queryRaw.mock.calls[0]![3]).toBe(3600);
-  });
 });

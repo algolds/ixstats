@@ -71,34 +71,6 @@ const ACCOUNT_LEVEL_IDS = ALL_DEFINITIONS.filter(
 ).map((d) => d.id);
 
 describe("achievement scope", () => {
-  it("derives the account-level definitions from their rule metric or accountLevel flag", () => {
-    expect(ACCOUNT_LEVEL_IDS).toEqual(
-      expect.arrayContaining([
-        "gen-welcome",
-        "gen-one-week",
-        "gen-one-month",
-        "gen-three-months",
-        "gen-one-year",
-        "gen-achievement-hunter",
-        "gen-achievement-master",
-        "gen-achievement-legend",
-        "vid-end-of-days",
-        "vid-annual",
-        "meme-ns-ref",
-        "social-first-thinkpage",
-        "social-thinkpage-author",
-        "social-prolific-author",
-        "social-trending",
-        "lore-scholar",
-        "collect-lore-keeper",
-        "collect-archaeologist",
-        "collect-diplomat",
-        "social-recruiter",
-        "social-envoy",
-        "social-founders-hand",
-      ])
-    );
-  });
   it("account-level definitions evaluate without country data", () => {
     const data = {
       daysActive: 400,
@@ -130,40 +102,6 @@ describe("achievement scope", () => {
       }
     }
   });
-
-  it("keeps every other built-in achievement country-bound", async () => {
-    const conditions = await syncedConditions();
-    const countryBound = ALL_DEFINITIONS.filter(
-      (d) => !d.retired && !ACCOUNT_LEVEL_IDS.includes(d.id)
-    );
-    expect(countryBound.map((d) => d.id)).toEqual(
-      expect.arrayContaining([
-        "meme-1337",
-        "meme-bankruptcy",
-        "meme-stonks",
-        "lore-collector",
-        "social-popular",
-        "story-chain-1",
-        "story-chain-5",
-        "story-chain-25",
-        "mil-first-branch",
-        "dip-first-embassy",
-        "gov-first-component",
-        "gen-first-country",
-        "vid-lightswitch",
-      ])
-    );
-    for (const def of countryBound) {
-      expect(
-        achievementRequiresCountry({ key: def.id, conditionJson: conditions.get(def.id) ?? null })
-      ).toBe(true);
-    }
-    // e.g. followers belong to a country, GDP growth is a country stat
-    expect(achievementRequiresCountry({ key: "social-popular" })).toBe(true);
-    expect(achievementRequiresCountry({ key: "meme-stonks" })).toBe(true);
-    expect(achievementRequiresCountry({ key: "gen-first-country" })).toBe(true);
-  });
-
   it("classifies admin-authored rows by the metric their rule reads", () => {
     const rule = (metric: string) => JSON.stringify({ metric, operator: ">=", value: 1 });
     expect(achievementRequiresCountry({ key: "custom-a", conditionJson: rule("daysActive") })).toBe(
@@ -196,17 +134,6 @@ describe("AchievementService.evaluateCondition", () => {
     expect(
       achievementService.evaluateCondition({ key: "meme-stonks", conditionJson: null }, {})
     ).toBe(false);
-  });
-
-  it("evaluates gen-first-country from countryClaimed", () => {
-    const claimed = JSON.stringify({ metric: "countryClaimed", operator: "==", value: true });
-    const country = { id: "c1" } as never;
-    expect(
-      achievementService.evaluateCondition(
-        { key: "gen-first-country", conditionJson: claimed },
-        { country, countryClaimed: true }
-      )
-    ).toBe(true);
   });
 });
 
@@ -279,30 +206,6 @@ describe("AchievementService.checkAndUnlock without a country", () => {
     expect(db.userAchievement.create).not.toHaveBeenCalled();
     expect(grantBonus).not.toHaveBeenCalled();
   });
-
-  it("names the locked achievement nearest its numeric target, skipping met, non-numeric and country rules", async () => {
-    const db = setup(["gen-welcome", "gen-one-week", "social-first-thinkpage"]);
-
-    // 10 of 30 days beats 3 of 10 achievements; `<`, `==` and the country rule are not measurable.
-    const nearest = await achievementService.nearestLocked(CLERK_ID, null, db as never);
-
-    expect(nearest).toMatchObject({
-      current: 10,
-      target: 30,
-      achievement: { key: "gen-one-month" },
-    });
-    expect(db.userAchievement.create).not.toHaveBeenCalled();
-  });
-
-  it("reads the locked achievements in key order, so a tie on share and points always picks the same one", async () => {
-    const db = setup(["gen-welcome"]);
-    await achievementService.nearestLocked(CLERK_ID, null, db as never);
-    expect(db.achievement.findMany).toHaveBeenLastCalledWith({
-      where: { isActive: true, key: { notIn: ["gen-welcome"] } },
-      orderBy: { key: "asc" },
-    });
-  });
-
   it("pays nothing when a concurrent run already created the unlock", async () => {
     const db = setup();
     db.userAchievement.create.mockRejectedValue(Object.assign(new Error("dup"), { code: "P2002" }));

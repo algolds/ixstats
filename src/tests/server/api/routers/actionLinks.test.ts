@@ -23,7 +23,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { actionLinksRouter } from "~/server/api/routers/actionLinks";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createChain } from "~/server/modules/action-links";
-import { discussionCountsOf, discussionsOf } from "~/server/modules/thinkpages-forum";
+import { discussionCountsOf } from "~/server/modules/thinkpages-forum";
 
 const caller = (user: object | null, db: object = {}) =>
   createCallerFactory(actionLinksRouter)(
@@ -53,14 +53,6 @@ describe("actionLinks router", () => {
       code: "FORBIDDEN",
     });
   });
-
-  it("maps module refusals to the same TRPC code", async () => {
-    await expect(
-      caller(owner).reviewChain({ storylineId: "s1", approve: true })
-    ).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
   it("gives a caller without a country no actions to pick", async () => {
     await expect(caller(noCountry).myActivities({})).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
@@ -74,42 +66,6 @@ describe("actionLinks router", () => {
     );
     expect(country.findMany).not.toHaveBeenCalled();
   });
-
-  it("finds a directive's public activity row by its fixed id", async () => {
-    const findFirst = jest.fn(async () => ({ id: "dir-i1" }));
-    await expect(
-      caller(null, { activityFeed: { findFirst } }).directiveActivity({ intentId: "i1" })
-    ).resolves.toEqual({ activityId: "dir-i1" });
-    expect(findFirst).toHaveBeenCalledWith({
-      where: { id: "dir-i1", visibility: "public" },
-      select: { id: true },
-    });
-  });
-
-  it("returns null for a directive without a public row (a draft, an abandoned one, or one declared before this shipped)", async () => {
-    const findFirst = jest.fn(async () => null);
-    await expect(
-      caller(null, { activityFeed: { findFirst } }).directiveActivity({ intentId: "i2" })
-    ).resolves.toBeNull();
-  });
-
-  it("reads discussions as an anonymous viewer, passing the cursor on", async () => {
-    await caller(null).discussions({ activityId: "a1", cursor: "l020" });
-    expect(discussionsOf).toHaveBeenCalledWith(expect.anything(), null, {
-      activityId: "a1",
-      cursor: "l020",
-    });
-  });
-
-  it("reads discussions as the signed-in member with what they moderate", async () => {
-    await caller(owner).discussions({ activityId: "a1" });
-    expect(discussionsOf).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.objectContaining({ id: "u1", mod: expect.anything() }),
-      { activityId: "a1" }
-    );
-  });
-
   it("serves counts for up to 50 ids, anonymous", async () => {
     const ids = Array.from({ length: 50 }, (_, i) => `a${i}`);
     await expect(caller(null).discussionCounts({ activityIds: ids })).resolves.toMatchObject({

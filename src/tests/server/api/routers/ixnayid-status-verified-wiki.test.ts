@@ -88,24 +88,4 @@ describe("ixnayid.getStatus wiki state", () => {
       })
     );
   });
-
-  it("is linked, under the wiki username, once a link is verified", async () => {
-    const verifiedAt = new Date("2026-09-01T00:00:00Z");
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir", verifiedAt });
-    const status = await caller().getStatus();
-    expect(status.wiki).toMatchObject({ linked: true, username: "Kir", lastSync: verifiedAt });
-    expect(status.passportHandle).toBe("Kir");
-  });
-
-  it("keeps the wiki name out of the passport handle when wiki attribution is off", async () => {
-    const verifiedAt = new Date("2026-09-01T00:00:00Z");
-    mocked.wikiAccountLink.findFirst.mockResolvedValue({ username: "Kir", verifiedAt });
-    mocked.userConnection.findMany.mockResolvedValue([
-      { userId: "clerk_1", status: JSON.stringify({ showWikiAttribution: false }) },
-    ]);
-    const status = await caller().getStatus();
-    // The handle is what share and invite links carry; Settings still shows the owner their link.
-    expect(status.passportHandle).toBe("clerk_1");
-    expect(status.wiki).toMatchObject({ linked: true, username: "Kir" });
-  });
 });

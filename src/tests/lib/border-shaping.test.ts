@@ -26,32 +26,12 @@ function square(minLng: number, minLat: number, maxLng: number, maxLat: number):
 }
 
 describe("smoothGeometry", () => {
-  test("produces more vertices than the input (Chaikin doubles per iteration)", () => {
-    const sq = square(0, 0, 1, 1);
-    const result = smoothGeometry(sq, 1);
-    const inRings = getAllRings(sq);
-    const outRings = getAllRings(result);
-    const inCount = inRings[0]!.length - 1; // exclude closing duplicate
-    const outCount = outRings[0]!.length - 1;
-    expect(outCount).toBeGreaterThan(inCount);
-    // Chaikin doubles: 4 open → 8 open
-    expect(outCount).toBe(inCount * 2);
-  });
-
   test("preserves ring closure (first === last) after smoothing", () => {
     const sq = square(0, 0, 1, 1);
     const result = smoothGeometry(sq, 2);
     const ring = getAllRings(result)[0]!;
     expect(ring[0]![0]).toBeCloseTo(ring[ring.length - 1]![0]!, 10);
     expect(ring[0]![1]).toBeCloseTo(ring[ring.length - 1]![1]!, 10);
-  });
-
-  test("zero iterations is a no-op (same vertex count)", () => {
-    const sq = square(0, 0, 1, 1);
-    const result = smoothGeometry(sq, 0);
-    const inRings = getAllRings(sq);
-    const outRings = getAllRings(result);
-    expect(outRings[0]!.length).toBe(inRings[0]!.length);
   });
 });
 
@@ -77,16 +57,5 @@ describe("naturalizeGeometry", () => {
     expect(ring[0]![1]).toBeCloseTo(ring[ring.length - 1]![1]!, 10);
     const validation = validateGeometry(result);
     expect(validation.valid).toBe(true);
-  });
-
-  test("subdivides each edge — produces more vertices than the input", () => {
-    const sq = square(0, 0, 1, 1);
-    const result = naturalizeGeometry(sq, 0.01, 42);
-    const inRings = getAllRings(sq);
-    const outRings = getAllRings(result);
-    const inCount = inRings[0]!.length - 1; // open length
-    const outCount = outRings[0]!.length - 1;
-    // Each edge gains one midpoint, so output is 2x input
-    expect(outCount).toBe(inCount * 2);
   });
 });

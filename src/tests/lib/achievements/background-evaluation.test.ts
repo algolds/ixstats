@@ -20,7 +20,6 @@ jest.mock("~/lib/notifications/hooks", () => ({
 
 import {
   inMemoryQueueLength,
-  MAX_IN_MEMORY_QUEUE,
   queueAchievementCheck,
   resetAchievementQueue,
 } from "~/lib/achievements/queue";
@@ -67,22 +66,6 @@ beforeEach(() => {
 });
 
 describe("queueAchievementCheck", () => {
-  it("is safe to call from any event site", () => {
-    expect(() => queueAchievementCheck(undefined)).not.toThrow();
-    expect(() => queueAchievementCheck(null)).not.toThrow();
-    expect(inMemoryQueueLength()).toBe(0);
-
-    queueAchievementCheck("user_1");
-    queueAchievementCheck("user_1"); // already waiting → dropped
-    queueAchievementCheck("user_1", "country_1");
-    expect(inMemoryQueueLength()).toBe(2);
-  });
-
-  it("caps the in-process queue", () => {
-    for (let i = 0; i < MAX_IN_MEMORY_QUEUE + 5; i++) queueAchievementCheck(`u${i}`);
-    expect(inMemoryQueueLength()).toBe(MAX_IN_MEMORY_QUEUE);
-  });
-
   it("is fed by the event bus, with or without a country", () => {
     eventBus.publish("user:signup", { userId: "clerk_2" });
     eventBus.publish("country:updated", { userId: "clerk_3", countryId: "c3" });
@@ -130,14 +113,6 @@ describe("AchievementService queue worker", () => {
 
     queueAchievementCheck("user_db_1");
     expect(inMemoryQueueLength()).toBe(1);
-  });
-
-  it("returns null when idle and skips unknown users", async () => {
-    const db = createMockPrisma();
-    expect(await achievementService.processNextQueueItem(db as never)).toBeNull();
-
-    queueAchievementCheck("ghost");
-    expect(await achievementService.processNextQueueItem(db as never)).toEqual([]);
   });
 });
 

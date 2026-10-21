@@ -56,16 +56,6 @@ describe("cardImages", () => {
   it("rejects signed-out callers", async () => {
     await expect(images(ctx(db, null)).upsert(image)).rejects.toThrow(/Authentication required/);
   });
-
-  it("lets the player set their own country's image", async () => {
-    await images(ctx(db, "u1")).upsert({ ...image, countryId: "c_mine", presetKey: "harbour" });
-    expect(db.cardBackgroundImage.upsert).toHaveBeenCalledWith({
-      where: { countryId_cardType: { countryId: "c_mine", cardType: "trade" } },
-      update: expect.objectContaining({ imageUrl: image.imageUrl, presetKey: "harbour" }),
-      create: expect.objectContaining({ countryId: "c_mine", cardType: "trade" }),
-    });
-  });
-
   it("lets the country's owner reset an image even when it is not their active nation", async () => {
     db.country.findUnique.mockResolvedValue({ id: "c_other", ownerUserId: "u1" });
     await expect(

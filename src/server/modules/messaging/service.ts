@@ -7,12 +7,9 @@
 
 import {
   type MessagingDependencies,
-  type UserAccount,
   type GetConversationsByFolderInput,
-  type GetConversationsLegacyInput,
   type GetConversationMessagesInput,
   type CreateConversationInput,
-  type CreateConversationByCountriesInput,
   type SendMessageInput,
   type EditMessageInput,
   type DeleteMessageInput,
@@ -23,11 +20,9 @@ import {
   type LeaveConversationInput,
   type RespondToRequestInput,
   type SearchUsersInput,
-  type UpdatePresenceInput,
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
 } from "./contracts";
-import { batchResolveMessagingAccounts } from "./account-resolver";
 import { MessagingQueryOperations } from "./query-operations";
 import { MessagingMessageOperations } from "./message-operations";
 import { MessagingConversationOperations } from "./conversation-operations";
@@ -45,10 +40,6 @@ export class MessagingService {
     this.conversations = new MessagingConversationOperations(dependencies);
   }
 
-  public async batchResolveUsers(userIds: string[]): Promise<Map<string, UserAccount>> {
-    return await batchResolveMessagingAccounts(userIds, this.db);
-  }
-
   public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {
     return await this.queries.getConversationsByFolder(actorId, input);
   }
@@ -59,10 +50,6 @@ export class MessagingService {
 
   public async getConversation(actorId: string, conversationId: string) {
     return await this.queries.getConversation(actorId, conversationId);
-  }
-
-  public async getConversationsLegacy(actorId: string, input: GetConversationsLegacyInput) {
-    return await this.queries.getConversationsLegacy(actorId, input);
   }
 
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
@@ -105,13 +92,6 @@ export class MessagingService {
     return await this.conversations.createConversation(actorId, input);
   }
 
-  public async createConversationByCountries(
-    actorId: string,
-    input: CreateConversationByCountriesInput
-  ) {
-    return await this.conversations.createConversationByCountries(actorId, input);
-  }
-
   public async addParticipant(actorId: string, input: AddParticipantInput) {
     return await this.conversations.addParticipant(actorId, input);
   }
@@ -130,10 +110,6 @@ export class MessagingService {
 
   public async clearAllSystemNotifications(actorId: string) {
     return await this.conversations.clearAllSystemNotifications(actorId);
-  }
-
-  public async updatePresence(actorId: string, input: UpdatePresenceInput) {
-    return await this.conversations.updatePresence(actorId, input);
   }
 
   public async sendAdminBroadcast(_actorId: string, input: SendAdminBroadcastInput) {

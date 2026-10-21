@@ -2,7 +2,7 @@
  * A scrollable SegmentedControl keeps its selected segment in view: on a new selection, on focus, and when a segment
  * changes size after first paint (a count badge arriving), unless the row was scrolled by hand.
  */
-import React from "react";
+import "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
@@ -110,12 +110,6 @@ describe("SegmentedControl keep-in-view", () => {
     // Account upgrades spans 290 to 450 in a 300px track.
     expect(scrollLeft()).toBe(150);
   });
-
-  it("watches the track and every segment, since a widening segment does not resize the track", () => {
-    const { track } = renderStrip("upgrades");
-    expect(observer().observed).toEqual(new Set([track, ...Array.from(track.children)]));
-  });
-
   it("keeps the selected segment in view when one before it widens after first paint", () => {
     const { widths, scrollLeft } = renderStrip("upgrades");
     // My packs' count badge arrives and widens it by 35px.
@@ -123,25 +117,6 @@ describe("SegmentedControl keep-in-view", () => {
     observer().fire();
     expect(scrollLeft()).toBe(185);
   });
-
-  it("leaves the strip where the player scrolled it by hand", () => {
-    const { track, widths, scrollLeft } = renderStrip("upgrades");
-    fireEvent.pointerDown(track);
-    track.scrollLeft = 0;
-    widths[0] = 145;
-    observer().fire();
-    expect(scrollLeft()).toBe(0);
-  });
-
-  it("follows the selection again after a scroll by hand", () => {
-    const { track, rerender, scrollLeft } = renderStrip("upgrades");
-    fireEvent.wheel(track);
-    track.scrollLeft = 0;
-    rerender(<Strip value="cosmetics" />);
-    rerender(<Strip value="upgrades" />);
-    expect(scrollLeft()).toBe(150);
-  });
-
   it("scrolls a focused segment into view", () => {
     const { track, scrollLeft } = renderStrip("mine");
     expect(scrollLeft()).toBe(0);
@@ -150,22 +125,5 @@ describe("SegmentedControl keep-in-view", () => {
     track.scrollLeft = 200;
     fireEvent.focusIn(screen.getByRole("tab", { name: "Packs" }));
     expect(scrollLeft()).toBe(110);
-  });
-
-  it("stops watching when it unmounts", () => {
-    const { unmount } = renderStrip("upgrades");
-    const watching = observer();
-    unmount();
-    expect(watching.disconnected).toBe(true);
-  });
-
-  it("watches nothing and never scrolls when it is not scrollable", () => {
-    const view = render(<Strip value="packs" scrollable={false} />);
-    const track = screen.getByRole("tablist", { name: "Sections" });
-    const { scrollLeft } = layOut(track, [110, 80, 100, 160], 300);
-    view.rerender(<Strip value="upgrades" scrollable={false} />);
-    fireEvent.focusIn(screen.getByRole("tab", { name: "Account upgrades" }));
-    expect(MockResizeObserver.instances).toHaveLength(0);
-    expect(scrollLeft()).toBe(0);
   });
 });

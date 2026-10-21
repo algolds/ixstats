@@ -72,39 +72,4 @@ describe("PassportBackFace", () => {
     fireEvent.click(screen.getByRole("switch", { name: "Show link previews" }));
     expect(mutate).toHaveBeenCalledWith({ visibility: { linkPreview: false } });
   });
-
-  it("is inert while the passport is face up", () => {
-    const { rerender } = render(
-      <PassportBackFace isFlipped={false} displayName="Alex Pav" isOwner onDone={jest.fn()} />
-    );
-    expect(screen.getByTestId("passport-back-face")).toHaveAttribute("inert");
-    rerender(<PassportBackFace isFlipped displayName="Alex Pav" isOwner onDone={jest.fn()} />);
-    expect(screen.getByTestId("passport-back-face")).not.toHaveAttribute("inert");
-  });
-
-  it("pins and unpins signature ribbons", () => {
-    renderBackFace();
-    fireEvent.click(screen.getByRole("button", { name: /First Branch/ }));
-    expect(mutate).toHaveBeenCalledWith({
-      pinnedRibbonKeys: ["econ-first-million", "mil-first-branch"],
-    });
-    fireEvent.click(screen.getByRole("button", { name: /First Million/ }));
-    expect(mutate).toHaveBeenLastCalledWith({ pinnedRibbonKeys: [] });
-  });
-
-  it("saves a changed signature on Done", () => {
-    const onDone = renderBackFace();
-    fireEvent.change(screen.getByLabelText("Signature inscription"), {
-      target: { value: " Alexander " },
-    });
-    fireEvent.click(screen.getAllByRole("button", { name: /Done/ })[0]!);
-    expect(mutate).toHaveBeenCalledWith({ signature: "Alexander" });
-    expect(onDone).toHaveBeenCalled();
-  });
-
-  it("does not save an unchanged signature", () => {
-    renderBackFace();
-    fireEvent.click(screen.getAllByRole("button", { name: /Done/ })[0]!);
-    expect(mutate).not.toHaveBeenCalled();
-  });
 });

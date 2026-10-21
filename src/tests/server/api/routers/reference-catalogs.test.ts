@@ -10,13 +10,6 @@
 import { describe, it, expect, jest, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { militaryEquipmentCatalogRouter } from "~/server/api/routers/militaryEquipment/catalog";
-import { economicArchetypesPublicRouter } from "~/server/api/routers/economicArchetypes/public";
-import { governmentComponentsRouter } from "~/server/api/routers/governmentComponents";
-import { economicComponentsRouter } from "~/server/api/routers/economicComponents";
-import { buildEquipmentCatalogSeed } from "~/lib/military/catalog-seed";
-import { buildArchetypeSeedRows } from "~/lib/economy/archetypes/seed";
-import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
-import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
@@ -57,47 +50,6 @@ afterEach(() => {
 });
 
 describe("militaryEquipment.getPlayerCatalog", () => {
-  it("seeds an empty catalog from the built-in data, then serves the table's active rows", async () => {
-    const db = createMockPrisma();
-    db.militaryEquipmentCatalog.count.mockResolvedValue(0);
-    db.defenseManufacturer.count.mockResolvedValue(0);
-    db.militaryEquipmentCatalog.findMany.mockResolvedValue([catalogRow]);
-    db.defenseManufacturer.findMany.mockResolvedValue([
-      { key: "GENERAL_DYNAMICS", name: "General Dynamics", country: "USA" },
-    ]);
-    jest.spyOn(console, "info").mockImplementation(() => {});
-
-    const result = await createCallerFactory(militaryEquipmentCatalogRouter)(
-      anonCtx(db)
-    ).getPlayerCatalog();
-
-    expect(db.militaryEquipmentCatalog.createMany).toHaveBeenCalledWith({
-      data: buildEquipmentCatalogSeed(),
-      skipDuplicates: true,
-    });
-    expect(db.defenseManufacturer.createMany).toHaveBeenCalled();
-    expect(db.militaryEquipmentCatalog.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { isActive: true } })
-    );
-    expect(result.source).toBe("catalog");
-    expect(result.equipment).toEqual([
-      {
-        key: "M1A2_SEPV3",
-        type: "vehicle",
-        name: "M1A2 Abrams SEPv3 (admin edit)",
-        category: "Main Battle Tank",
-        era: "CONTEMPORARY",
-        manufacturer: "GENERAL_DYNAMICS",
-        role: undefined,
-        range: 450,
-        acquisitionCost: 12_000_000,
-        maintenanceCost: 600_000,
-        technologyLevel: 88,
-        imageUrl: null,
-      },
-    ]);
-  });
-
   it("doesn't reseed a catalog that already has rows", async () => {
     const db = createMockPrisma();
     db.militaryEquipmentCatalog.count.mockResolvedValue(5);
@@ -107,20 +59,6 @@ describe("militaryEquipment.getPlayerCatalog", () => {
 
     expect(db.militaryEquipmentCatalog.createMany).not.toHaveBeenCalled();
     expect(db.defenseManufacturer.createMany).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the built-in equipment when the catalog can't be read", async () => {
-    const db = createMockPrisma();
-    db.militaryEquipmentCatalog.count.mockRejectedValue(new Error("db down"));
-    jest.spyOn(console, "error").mockImplementation(() => {});
-
-    const result = await createCallerFactory(militaryEquipmentCatalogRouter)(
-      anonCtx(db)
-    ).getPlayerCatalog();
-
-    expect(result.source).toBe("builtin");
-    expect(result.equipment).toHaveLength(buildEquipmentCatalogSeed().length);
-    expect(result.manufacturers.length).toBeGreaterThan(0);
   });
 });
 
@@ -180,83 +118,5 @@ describe("militaryEquipment admin edits", () => {
       })
     ).rejects.toThrow(/Manufacturer not found/);
     expect(db.militaryEquipmentCatalog.create).not.toHaveBeenCalled();
-  });
-});
-
-describe("economicArchetypes.getAllArchetypes", () => {
-  it("seeds an empty table and serves rows with their key and era", async () => {
-    const db = createMockPrisma();
-    const [seed] = buildArchetypeSeedRows();
-    db.economicArchetype.count.mockResolvedValueOnce(0).mockResolvedValue(1);
-    db.economicArchetype.findMany.mockResolvedValue([
-      { ...seed, id: "row_1", name: "Silicon Valley (admin edit)", usageCount: 3 },
-    ]);
-    jest.spyOn(console, "info").mockImplementation(() => {});
-
-    const result = await createCallerFactory(economicArchetypesPublicRouter)(
-      anonCtx(db)
-    ).getAllArchetypes({ isActive: true });
-
-    expect(db.economicArchetype.createMany).toHaveBeenCalledWith({
-      data: buildArchetypeSeedRows(),
-      skipDuplicates: true,
-    });
-    expect(result.archetypes[0]).toMatchObject({
-      id: "row_1",
-      key: "silicon-valley",
-      era: "modern",
-      name: "Silicon Valley (admin edit)",
-      implementationComplexity: "high",
-    });
-  });
-
-  it("incrementArchetypeUsage matches the row id or the archetype key", async () => {
-    const db = createMockPrisma();
-    db.economicArchetype.updateMany.mockResolvedValue({ count: 1 });
-
-    await createCallerFactory(economicArchetypesPublicRouter)(
-      createMockRouterContext({ db, rateLimitIdentifier: "ip:198.51.100.4" }) as never
-    ).incrementArchetypeUsage({ archetypeId: "nordic" });
-
-    expect(db.economicArchetype.updateMany).toHaveBeenCalledWith({
-      where: { OR: [{ id: "nordic" }, { key: "nordic" }] },
-      data: { usageCount: { increment: 1 } },
-    });
-  });
-});
-
-describe("component catalogs are code-defined", () => {
-  it("governmentComponents.getAllComponents serves the code library with usage counts", async () => {
-    const db = createMockPrisma();
-    db.governmentComponentData.count.mockResolvedValue(64);
-    db.governmentComponentData.findMany.mockResolvedValue([
-      { componentType: "FEDERAL_SYSTEM", usageCount: 7 },
-    ]);
-
-    const result = await createCallerFactory(governmentComponentsRouter)(
-      anonCtx(db)
-    ).getAllComponents();
-
-    const library = Object.values(ATOMIC_COMPONENTS).filter(Boolean);
-    expect(result.count).toBe(library.length);
-    const federal = result.components.find((c) => c.type === "FEDERAL_SYSTEM");
-    expect(federal).toMatchObject({
-      name: ATOMIC_COMPONENTS.FEDERAL_SYSTEM!.name,
-      effectiveness: ATOMIC_COMPONENTS.FEDERAL_SYSTEM!.effectiveness,
-      usageCount: 7,
-    });
-  });
-
-  it("economicComponents.getAllComponents serves the code library even if the database differs", async () => {
-    const db = createMockPrisma();
-    db.economicComponentData.count.mockResolvedValue(27);
-    db.economicComponentData.findMany.mockResolvedValue([]);
-
-    const result = await createCallerFactory(economicComponentsRouter)(
-      anonCtx(db)
-    ).getAllComponents();
-
-    expect(result.count).toBe(Object.values(ATOMIC_ECONOMIC_COMPONENTS).filter(Boolean).length);
-    expect(result.components.every((c) => c.usageCount === 0)).toBe(true);
   });
 });

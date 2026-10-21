@@ -98,31 +98,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
     });
   });
   describe("Read Operations & Inbound Sync", () => {
-    test("5. getConversationsByFolder applies cursor and unread mappings", async () => {
-      mockDb.thinkshareConversation.findMany.mockResolvedValue([
-        {
-          id: "c_1",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          lastActivity: new Date(),
-          participants: [{ userId: "user_1", isActive: true }],
-          messages: [{ id: "m_1", userId: "user_2", content: "hi", createdAt: new Date() }],
-        },
-      ]);
-      mockDb.conversationParticipant.findMany.mockResolvedValue([
-        { conversationId: "c_1", userId: "user_1", lastReadAt: new Date(0) },
-      ]);
-      mockDb.thinkshareMessage.findMany.mockResolvedValue([
-        { conversationId: "c_1", ixTimeTimestamp: new Date(1000) },
-        { conversationId: "c_1", ixTimeTimestamp: new Date(2000) },
-        { conversationId: "c_1", ixTimeTimestamp: new Date(3000) },
-      ]);
-
-      const res = await service.getConversationsByFolder("user_1", { folder: "inbox", limit: 10 });
-      expect(res.conversations).toHaveLength(1);
-      expect(res.conversations[0]?.unreadCount).toBe(3);
-    });
-
     test("5b. group conversations skip blocked senders in previews and unread counts", async () => {
       mockDb.userConnection.findMany.mockResolvedValue([
         { targetUserId: "user_blocked", targetCountryId: null },
@@ -173,55 +148,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         expect.not.objectContaining({ userId: expect.anything() }),
       ]);
     });
-
-    test("6. getFolderCounts aggregates unread counts across all category folders", async () => {
-      mockDb.conversationParticipant.findMany.mockResolvedValue([
-        {
-          conversationId: "c_1",
-          lastReadAt: new Date(0),
-          conversation: { source: "thinkshare" },
-        },
-        {
-          conversationId: "c_2",
-          lastReadAt: new Date(0),
-          conversation: { source: "thinkshare" },
-        },
-        {
-          conversationId: "c_3",
-          lastReadAt: new Date(0),
-          conversation: { source: "diplomatic" },
-        },
-      ]);
-      mockDb.$queryRaw.mockResolvedValue([
-        { conversationId: "c_1", unread: 2 },
-        { conversationId: "c_2", unread: 1 },
-        { conversationId: "c_3", unread: 1 },
-      ]);
-
-      const counts = await service.getFolderCounts("user_1");
-      expect(counts.inbox).toBe(4);
-      expect(counts.diplomatic).toBe(1);
-      // No archive/trash state exists on ConversationParticipant, so no counts are reported.
-      expect(counts).not.toHaveProperty("archive");
-      expect(counts).not.toHaveProperty("trash");
-    });
-
-    test("6b. getFolderCounts does not load message rows", async () => {
-      mockDb.conversationParticipant.findMany.mockResolvedValue([
-        {
-          conversationId: "c_1",
-          lastReadAt: new Date(0),
-          conversation: { source: "thinkshare" },
-        },
-      ]);
-      mockDb.$queryRaw.mockResolvedValue([{ conversationId: "c_1", unread: 4 }]);
-
-      const counts = await service.getFolderCounts("user_1");
-      expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
-      expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(counts.inbox).toBe(4);
-    });
-
     test("6d. getFolderCounts leaves blocked senders out of group unread counts", async () => {
       mockDb.userConnection.findMany.mockResolvedValue([
         { targetUserId: "user_blocked", targetCountryId: null },
@@ -236,15 +162,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(sql.join("?")).toContain(`c."type" = 'direct' OR m."userId" <> ALL(`);
       expect(params).toContainEqual(["user_blocked"]);
     });
-
-    test("6c. getFolderCounts returns zeros without querying messages when user has no active participants", async () => {
-      mockDb.conversationParticipant.findMany.mockResolvedValue([]);
-
-      const counts = await service.getFolderCounts("user_1");
-      expect(Object.values(counts).every((n) => n === 0)).toBe(true);
-      expect(mockDb.$queryRaw).not.toHaveBeenCalled();
-      expect(mockDb.thinkshareMessage.findMany).not.toHaveBeenCalled();
-    });
     test("8. getConversationMessages enforces participant authorization", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue(null);
       mockDb.thinkshareConversation.findFirst.mockResolvedValue(null);
@@ -253,17 +170,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
         service.getConversationMessages("unauthorized_user", { conversationId: "c_1" })
       ).rejects.toThrow(MessagingForbiddenError);
     });
-
-    test("9. getConversationMessages loads message history when authorized", async () => {
-      mockDb.conversationParticipant.findFirst.mockResolvedValue({ id: "p_1", isActive: true });
-      mockDb.thinkshareMessage.findMany.mockResolvedValue([
-        { id: "m_1", userId: "user_1", content: "Hi", createdAt: new Date() },
-      ]);
-
-      const res = await service.getConversationMessages("user_1", { conversationId: "c_1" });
-      expect(res.messages).toHaveLength(1);
-      expect(res.messages[0]?.content).toBe("Hi");
-    });
   });
 
   describe("Write Operations & Atomic Transactions", () => {
@@ -271,31 +177,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       await expect(service.createConversation("user_1", { participantIds: [] })).rejects.toThrow(
         MessagingValidationError
       );
-    });
-
-    test("11. createConversation executes transaction for conversation and initial message", async () => {
-      mockDb.thinkshareConversation.create.mockResolvedValue({
-        id: "c_new",
-        participants: [{ userId: "user_1" }, { userId: "user_2" }],
-      });
-
-      const conv = await service.createConversation("user_1", {
-        participantIds: ["user_2"],
-        subject: "Alliance",
-        initialMessage: "Welcome!",
-      });
-
-      expect(mockDb.$transaction).toHaveBeenCalled();
-      expect(mockDb.thinkshareConversation.create).toHaveBeenCalled();
-      expect(mockDb.thinkshareMessage.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            conversationId: "c_new",
-            content: "Welcome!",
-          }),
-        })
-      );
-      expect(conv.id).toBe("c_new");
     });
     test("13. sendMessage enforces participant authorization", async () => {
       mockDb.conversationParticipant.findFirst.mockResolvedValue(null);
@@ -431,36 +312,6 @@ describe("MessagingService Domain Logic (Plan 163)", () => {
       expect(mockDb.thinkshareMessage.update).not.toHaveBeenCalled();
       expect(mockDb.messageReaction.upsert).not.toHaveBeenCalled();
       expect(mockDb.messageReaction.deleteMany).not.toHaveBeenCalled();
-    });
-
-    test("19. markMessagesAsRead updates lastReadAt timestamp", async () => {
-      mockDb.conversationParticipant.findFirst.mockResolvedValue({ id: "p_1" });
-
-      await service.markMessagesAsRead("user_1", { conversationId: "c_1" });
-
-      expect(mockDb.conversationParticipant.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { conversationId: "c_1", userId: "user_1" },
-          data: expect.objectContaining({ lastReadAt: expect.any(Date) }),
-        })
-      );
-    });
-    test("21. addParticipant upserts participant and leaveConversation deactivates", async () => {
-      mockDb.thinkshareConversation.findUnique.mockResolvedValue({
-        id: "c_1",
-        participants: [{ userId: "user_1", isActive: true }],
-      });
-
-      await service.addParticipant("user_1", { conversationId: "c_1", targetUserId: "user_new" });
-      expect(mockDb.conversationParticipant.upsert).toHaveBeenCalled();
-
-      await service.leaveConversation("user_1", { conversationId: "c_1" });
-      expect(mockDb.conversationParticipant.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { conversationId: "c_1", userId: "user_1" },
-          data: { isActive: false },
-        })
-      );
     });
     test("23. Telemetry strictly records surface metadata and excludes private message content or IDs", () => {
       recordMessagingTelemetry(

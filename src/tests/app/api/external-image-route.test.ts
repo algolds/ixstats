@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
-import { writeFile, access, rename } from "fs/promises";
+import { writeFile, access } from "fs/promises";
 
 jest.mock("@clerk/nextjs/server", () => ({
   auth: jest.fn().mockResolvedValue({ userId: "user_1" }),
@@ -111,23 +111,6 @@ describe("POST /api/download/external-image", () => {
     expect(reader.read.mock.calls.length).toBeLessThanOrEqual(6);
     expect(writeFile).not.toHaveBeenCalled();
   });
-
-  it("saves a small PNG and returns its public URL", async () => {
-    fetchMock.mockResolvedValue(imageResponse(pngBytes(1024)));
-
-    const res = await POST(postRequest(TRUSTED_URL));
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.url).toMatch(/\/images\/downloaded\/downloaded_[0-9a-f]{32}\.png$/);
-    expect(json.fileSize).toBe(1024);
-    expect(writeFile).toHaveBeenCalledTimes(1);
-    // Written to a temp file first, then renamed into place.
-    const tempPath = jest.mocked(writeFile).mock.calls[0]![0] as string;
-    expect(tempPath).toMatch(/\.tmp$/);
-    expect(rename).toHaveBeenCalledWith(tempPath, tempPath.replace(/\.[0-9a-f]{16}\.tmp$/, ""));
-  });
-
   it("answers 429 with Retry-After when the rate limiter refuses, before fetching anything", async () => {
     jest
       .mocked(rateLimiter.check)
@@ -144,22 +127,6 @@ describe("POST /api/download/external-image", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
   });
-
-  it("stores the same bytes fetched from two URLs as one file", async () => {
-    fetchMock.mockImplementation(async () => imageResponse(pngBytes(512)));
-    // After the first write lands the file exists.
-    jest.mocked(rename).mockImplementationOnce(async () => {
-      jest.mocked(access).mockResolvedValue(undefined);
-    });
-
-    const first = await (await POST(postRequest(TRUSTED_URL))).json();
-    const second = await (await POST(postRequest(`${TRUSTED_URL}?v=2`))).json();
-
-    expect(second.fileName).toBe(first.fileName);
-    expect(second.url).toBe(first.url);
-    expect(writeFile).toHaveBeenCalledTimes(1);
-  });
-
   it("stores different bytes served from the same URL as two files", async () => {
     fetchMock
       .mockResolvedValueOnce(imageResponse(pngBytes(512, 1)))

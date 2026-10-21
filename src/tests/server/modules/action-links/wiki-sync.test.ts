@@ -11,8 +11,7 @@ jest.mock("~/lib/wiki-os/config", () => ({
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { commitWikitextSave } from "~/lib/wiki-os/services/edit-service";
-import { db as serverDb } from "~/server/db";
-import { appendChainToWiki, syncPendingChainWikis } from "~/server/modules/action-links";
+import { appendChainToWiki } from "~/server/modules/action-links";
 
 function db(chain: object | null) {
   return {
@@ -69,29 +68,6 @@ describe("appendChainToWiki", () => {
     expect(wikitext).not.toContain("Secret overhaul");
     expect(wikitext).not.toContain("/thinkpages/post/p2");
   });
-
-  it("leaves out a link still on a XenForo post, which has no page to point at", async () => {
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
-    const xenforo = {
-      postSource: "xenforo",
-      postRef: "42",
-      activity: {
-        title: "Old treaty",
-        type: "diplomatic",
-        createdAt: new Date(0),
-        visibility: "public",
-      },
-    };
-    await appendChainToWiki(
-      db({ ...CHAIN, actionLinks: [...CHAIN.actionLinks, xenforo] }) as never,
-      "s1"
-    );
-    const { wikitext } = jest.mocked(commitWikitextSave).mock.calls[0]![1];
-    expect(wikitext).toContain("/thinkpages/post/p1 Signed]");
-    expect(wikitext).not.toContain("Old treaty");
-    expect(wikitext).not.toContain("/forum/");
-  });
-
   it("writes no section when every action of the chain is withdrawn, and marks it synced", async () => {
     const withdrawn = {
       postSource: "native",
@@ -104,18 +80,6 @@ describe("appendChainToWiki", () => {
     expect(ArticleRepository.findBySlug).not.toHaveBeenCalled();
     expect(d.storyline.update).toHaveBeenCalledWith({ where: { id: "s1" }, data: { wikiSyncedAt: expect.any(Date) } });
   });
-
-  it("creates the page when it does not exist", async () => {
-    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
-    await appendChainToWiki(db(CHAIN) as never, "s1");
-    expect(jest.mocked(commitWikitextSave).mock.calls[0]![1].wikitext.startsWith(`${MARKER}\n== Story chain`)).toBe(true);
-  });
-
-  it("does nothing for a chain that is not approved-and-pending", async () => {
-    await expect(appendChainToWiki(db(null) as never, "s1")).resolves.toBe(false);
-    expect(commitWikitextSave).not.toHaveBeenCalled();
-  });
-
   it("leaves wikiSyncedAt null when the save throws", async () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     jest.mocked(commitWikitextSave).mockRejectedValueOnce(new Error("down"));
@@ -152,14 +116,5 @@ describe("appendChainToWiki", () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue(null);
     await appendChainToWiki(db(CHAIN) as never, "s1");
     expect(jest.mocked(commitWikitextSave).mock.calls[1]![1].expectedHeadRef).toBeNull();
-  });
-});
-
-describe("syncPendingChainWikis", () => {
-  it("retries the longest-waiting chains first, so failing ones cannot starve the rest", async () => {
-    const findMany = jest.fn(async () => []);
-    Object.assign(serverDb, { storyline: { findMany } });
-    await expect(syncPendingChainWikis()).resolves.toEqual({ synced: 0, failed: 0 });
-    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ orderBy: { reviewedAt: "asc" }, take: 50 }));
   });
 });

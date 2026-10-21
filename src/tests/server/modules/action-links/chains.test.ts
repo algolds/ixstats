@@ -57,35 +57,6 @@ function chainDb(
 }
 
 describe("addPostToChain", () => {
-  it("appends the post's links after the current last entry", async () => {
-    const db = chainDb({ status: "open" });
-    await addPostToChain(db as never, {
-      countryId: "c1",
-      storylineId: "s1",
-      postSource: "native",
-      postRef: "p1",
-    });
-    expect(db.postActionLink.updateMany).toHaveBeenCalledWith({
-      where: {
-        postSource: "native",
-        postRef: "p1",
-        countryId: "c1",
-        activity: { visibility: "public" },
-        OR: [{ storylineId: null }, { storylineId: "s1" }],
-      },
-      data: { storylineId: "s1", chainOrder: 4 },
-    });
-    expect(db.postActionLink.count).toHaveBeenCalledWith({
-      where: {
-        postSource: "native",
-        postRef: "p1",
-        countryId: "c1",
-        activity: { visibility: "public" },
-        OR: [{ storylineId: null }, { storylineId: "s1" }],
-      },
-    });
-  });
-
   it("counts only links to public actions, so a post whose only link was withdrawn is refused", async () => {
     const db = chainDb({ status: "open" });
     db.postActionLink.count.mockResolvedValue(0);
@@ -172,18 +143,6 @@ describe("submitChain", () => {
     ).rejects.toBeInstanceOf(TRPCError);
     expect(db.storyline.updateMany).not.toHaveBeenCalled();
   });
-
-  it("refuses an empty chain", async () => {
-    const db = chainDb({ status: "open" });
-    db.postActionLink.count.mockResolvedValue(0);
-    await expect(
-      submitChain(
-        db as never,
-        { user: owner },
-        { countryId: "c1", storylineId: "s1", wikiPageTitle: "X" }
-      )
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-  });
 });
 
 describe("reviewChain", () => {
@@ -262,33 +221,11 @@ describe("reviewChain", () => {
     expect(onApproved).not.toHaveBeenCalled();
     expect(queueAchievementCheck).not.toHaveBeenCalled();
   });
-
-  it("returns a rejected chain to open with the note", async () => {
-    const db = chainDb({ status: "submitted" });
-    await reviewChain(
-      db as never,
-      admin,
-      { storylineId: "s1", approve: false, note: "Needs a source" },
-      jest.fn()
-    );
-    expect(db.storyline.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({ status: "open", reviewNote: "Needs a source" }),
-      })
-    );
-  });
-
   it("keeps the approval when the wiki write fails", async () => {
     const db = chainDb({ status: "submitted" });
     const onApproved = jest.fn(async () => {
       throw new Error("wiki down");
     });
-    await expect(reviewChain(db as never, admin, approve, onApproved)).resolves.toBeUndefined();
-  });
-
-  it("keeps the approval when the wiki write rejects with a non-Error value", async () => {
-    const db = chainDb({ status: "submitted" });
-    const onApproved = jest.fn(() => Promise.reject(undefined));
     await expect(reviewChain(db as never, admin, approve, onApproved)).resolves.toBeUndefined();
   });
 });

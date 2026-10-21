@@ -92,118 +92,59 @@ describe("isIdentityComplete", () => {
   });
 });
 
-describe("nationLoader", () => {
-  it("is a country loader that declares every key it returns", async () => {
-    const { load } = setup();
-    expect(nationLoader.scope).toBe("country");
-    expect(Object.keys(await load()).sort()).toEqual([...nationLoader.keys].sort());
+describe("loaders", () => {
+  it.each([
+    ["an 18-month owner with a rendered coat of arms and a full identity", { ownedSince: ago(18 * MONTH_MS), coatOfArms: RENDERED, nationalIdentity: COMPLETE_IDENTITY }, { ownedMonths: 18, armsAttached: 1, identityComplete: 1 }],
+    ["an imported wiki coat of arms", { coatOfArms: "https://ixwiki.com/images/arms.png" }, { armsAttached: 0 }],
+    ["an uploaded, not rendered, coat of arms", { coatOfArms: "/images/uploads/arms.png" }, { armsAttached: 0 }],
+    ["an identity without a motto", { nationalIdentity: { ...COMPLETE_IDENTITY, motto: null } }, { identityComplete: 0 }],
+    ["no ownership date, arms or identity", { ownedSince: null }, { ownedMonths: 0, armsAttached: 0, identityComplete: 0 }],
+    ["a missing country row", null, { ownedMonths: 0, armsAttached: 0, identityComplete: 0 }],
+  ] as const)("nationLoader reads %s", async (_case, country, expected) => {
+    const metrics = await setup(country as Record<string, unknown> | null).load();
+    expect(Object.keys(metrics).sort()).toEqual([...nationLoader.keys].sort());
+    expect(metrics).toMatchObject(expected);
   });
 
-  it("returns nothing for a user with no country", async () => {
+  it.each([
+    [25, 6, 5, { storyPinsApproved: 25, storyPinYears: 5 }],
+    [25, 5, 5, { storyPinsApproved: 0, storyPinYears: 5 }],
+    [4, 2, 2, { storyPinsApproved: 0, storyPinYears: 2 }],
+    [0, 0, 0, { storyPinsApproved: 0, storyPinYears: 0 }],
+  ])(
+    "story pins: %d approved pins over %d real months and %d in-world years read as %o, from one aggregate",
+    async (pins, months, years, expected) => {
+      const { db, load } = setup();
+      db.$queryRaw.mockResolvedValue([{ pins: BigInt(pins), months: BigInt(months), years: BigInt(years) }]);
+      expect(await load()).toMatchObject(expected);
+      const [strings, ...values] = db.$queryRaw.mock.calls[0] as [string[], ...string[]];
+      expect(values).toEqual(["c1"]);
+      expect(strings.join("?")).toMatch(/status = 'approved'/);
+      expect(db.storyPin.findMany).not.toHaveBeenCalled();
+    }
+  );
+
+  it("nationLoader loads nothing without a country", async () => {
     const { ctx } = setup();
     expect(await nationLoader.load({ ...ctx, countryId: null })).toEqual({});
   });
 
-  it("ownedMonths reads Country.ownedSince; null ownedSince gives 0 months", async () => {
-    expect((await setup({ ownedSince: null }).load()).ownedMonths).toBe(0);
-    expect((await setup({ ownedSince: ago(18 * MONTH_MS) }).load()).ownedMonths).toBe(18);
-    expect((await setup(null).load()).ownedMonths).toBe(0);
-  });
-
-  it("armsAttached is 1 only for a coat of arms the Vexel render wrote, not an imported wiki image", async () => {
-    expect((await setup({ coatOfArms: RENDERED }).load()).armsAttached).toBe(1);
-    expect(
-      (await setup({ coatOfArms: "https://ixwiki.com/images/arms.png" }).load()).armsAttached
-    ).toBe(0);
-    expect((await setup({ coatOfArms: "/images/uploads/arms.png" }).load()).armsAttached).toBe(0);
-    expect((await setup({ coatOfArms: null }).load()).armsAttached).toBe(0);
-  });
-
-  it("identityComplete reads the country's national identity", async () => {
-    expect((await setup({ nationalIdentity: COMPLETE_IDENTITY }).load()).identityComplete).toBe(1);
-    expect(
-      (await setup({ nationalIdentity: { ...COMPLETE_IDENTITY, motto: null } }).load())
-        .identityComplete
-    ).toBe(0);
-    expect((await setup({ nationalIdentity: null }).load()).identityComplete).toBe(0);
-  });
-});
-
-describe("story pins", () => {
-  const totals = (pins: number, months: number, years: number) => [
-    { pins: BigInt(pins), months: BigInt(months), years: BigInt(years) },
-  ];
-
-  it("reads one aggregate over the country's approved pins, not the rows", async () => {
-    const { db, load } = setup();
-    db.$queryRaw.mockResolvedValue(totals(25, 6, 5));
-    await load();
-    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
-    expect(db.storyPin.findMany).not.toHaveBeenCalled();
-    const [strings, ...values] = db.$queryRaw.mock.calls[0] as [string[], ...string[]];
-    expect(values).toEqual(["c1"]);
-    expect(strings.join("?")).toMatch(/story_pins/);
-    expect(strings.join("?")).toMatch(/status = 'approved'/);
-  });
-
-  it("storyPinsApproved counts the pins once they span 6 different real months, else 0", async () => {
-    const { db, load } = setup();
-    db.$queryRaw.mockResolvedValue(totals(25, 6, 5));
-    const metrics = await load();
-    expect(metrics.storyPinsApproved).toBe(25);
-    expect(metrics.storyPinYears).toBe(5);
-
-    db.$queryRaw.mockResolvedValue(totals(25, 5, 5));
-    expect((await load()).storyPinsApproved).toBe(0);
-  });
-
-  it("storyPinYears is the distinct in-world years, and 0 pins reads 0", async () => {
-    const { db, load } = setup();
-    db.$queryRaw.mockResolvedValue(totals(4, 2, 2));
-    expect((await load()).storyPinYears).toBe(2);
-    db.$queryRaw.mockResolvedValue(totals(0, 0, 0));
-    expect((await load()).storyPinsApproved).toBe(0);
-  });
-});
-
-describe("nationAccountLoader", () => {
-  function accountSetup() {
+  it("nationAccountLoader counts the user's published institution and dynasty designs and approved map edits by Clerk id, with no country", async () => {
     const db = createMockPrisma();
-    const ctx: MetricContext = {
+    db.heraldryAchievement.count.mockResolvedValue(3);
+    db.mapEditRequest.count.mockResolvedValue(10);
+    const metrics = await nationAccountLoader.load({
       db: db as never,
       clerkUserId: "clerk_1",
       userId: "user_1",
       countryId: null,
       now: NOW,
-    };
-    return { db, load: () => nationAccountLoader.load(ctx) };
-  }
-
-  it("is an account loader and works without a country", async () => {
-    const { load } = accountSetup();
+    });
     expect(nationAccountLoader.scope).toBe("account");
-    expect(Object.keys(await load()).sort()).toEqual([...nationAccountLoader.keys].sort());
-  });
-
-  it("heraldryPublishedInstitutions counts the user's published institution and dynasty designs by Clerk id", async () => {
-    const { db, load } = accountSetup();
-    db.heraldryAchievement.count.mockResolvedValue(3);
-    expect((await load()).heraldryPublishedInstitutions).toBe(3);
+    expect(metrics).toEqual({ heraldryPublishedInstitutions: 3, mapEditsApproved: 10 });
     expect(db.heraldryAchievement.count).toHaveBeenCalledWith({
-      where: {
-        ownerId: "clerk_1",
-        subjectType: { in: ["INSTITUTION", "DYNASTY"] },
-        isPublished: true,
-      },
+      where: { ownerId: "clerk_1", subjectType: { in: ["INSTITUTION", "DYNASTY"] }, isPublished: true },
     });
-  });
-
-  it("mapEditsApproved counts the user's approved map edits by Clerk id", async () => {
-    const { db, load } = accountSetup();
-    db.mapEditRequest.count.mockResolvedValue(10);
-    expect((await load()).mapEditsApproved).toBe(10);
-    expect(db.mapEditRequest.count).toHaveBeenCalledWith({
-      where: { userId: "clerk_1", status: "approved" },
-    });
+    expect(db.mapEditRequest.count).toHaveBeenCalledWith({ where: { userId: "clerk_1", status: "approved" } });
   });
 });

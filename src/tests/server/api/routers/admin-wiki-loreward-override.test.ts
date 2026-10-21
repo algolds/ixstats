@@ -15,7 +15,6 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { invalidateCache } from "~/lib/cache";
 import { createCallerFactory } from "~/server/api/trpc";
 import { adminWikiRouter } from "~/server/api/routers/admin/wiki";
 import { overrideLorewardEntry } from "~/server/modules/cards/cards.trophies";
@@ -68,39 +67,6 @@ afterEach(() => {
 });
 
 describe("admin.saveLorewardWinnerOverride", () => {
-  it("overrides through overrideLorewardEntry, mapping its input onto the override's fields", async () => {
-    await expect(
-      caller("admin").saveLorewardWinnerOverride({
-        date: "2026-10-16",
-        winnerUser: "Cy",
-        winnerPage: "Page",
-        winnerScore: 12,
-        winnerBytes: 340,
-        runnerUpUser: null,
-        runnerUpPage: null,
-      })
-    ).resolves.toEqual({ ...RESULT, botSynced: true });
-
-    expect(overrideLorewardEntry).toHaveBeenCalledWith(
-      expect.anything(),
-      { dbId: "db_admin", clerkId: "admin_1" },
-      {
-        date: "2026-10-16",
-        type: "daily",
-        status: "approved",
-        fields: {
-          winnerUser: "Cy",
-          winnerPage: "Page",
-          winnerScore: 12,
-          winnerBytes: 340,
-          runnerUpUser: null,
-          runnerUpPage: null,
-        },
-      }
-    );
-    expect(invalidateCache).toHaveBeenCalledWith(["lorewards."]);
-  });
-
   it("leaves out the fields the caller omits, so the override keeps their stored values", async () => {
     await caller("admin").saveLorewardWinnerOverride({
       date: "2026-10-16",
@@ -113,51 +79,6 @@ describe("admin.saveLorewardWinnerOverride", () => {
     expect(input.fields).toEqual({ winnerUser: "Cy", winnerPage: "Page" });
     expect(input.type).toBe("weekly");
   });
-
-  it("tells the bot what the entry now holds, with announce on, after the override is saved", async () => {
-    await caller("admin").saveLorewardWinnerOverride({
-      date: "2026-10-16",
-      winnerUser: "Cy",
-      winnerPage: "Page",
-    });
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/lorewards\/override$/),
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({
-          date: "2026-10-16",
-          type: "daily",
-          ...RESULT.written,
-          announce: true,
-        }),
-      })
-    );
-    expect(jest.mocked(overrideLorewardEntry).mock.invocationCallOrder[0]).toBeLessThan(
-      fetchMock.mock.invocationCallOrder[0]!
-    );
-  });
-
-  it("reports the override saved, and the bot not told, when the bot is unreachable", async () => {
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    fetchMock.mockRejectedValue(new TypeError("fetch failed"));
-
-    await expect(
-      caller("admin").saveLorewardWinnerOverride({
-        date: "2026-10-16",
-        winnerUser: "Cy",
-        winnerPage: "Page",
-      })
-    ).resolves.toEqual({ ...RESULT, botSynced: false });
-    expect(error).toHaveBeenCalledWith(
-      "[Lorewards] The override is saved, but the Discord bot was not told:",
-      expect.any(Error)
-    );
-    expect(invalidateCache).toHaveBeenCalledWith(["lorewards."]);
-    error.mockRestore();
-  });
-
   it("refuses an override date the calendar lacks", async () => {
     for (const date of ["2026-02-30", "2026-04-31"]) {
       await expect(

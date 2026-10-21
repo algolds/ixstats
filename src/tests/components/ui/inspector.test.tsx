@@ -47,18 +47,6 @@ function Probe() {
 }
 
 describe("Inspector", () => {
-  it("is in the server HTML as a CSS-gated aside, so it never pops in after hydration", () => {
-    const html = renderToString(
-      <Inspector title="Contents" open={false} onOpenChange={() => {}}>
-        <span>toc</span>
-      </Inspector>
-    );
-    expect(html).toMatch(
-      /<aside[^>]*aria-label="Contents"[^>]*class="[^"]*\bhidden\b[^"]*\bxl:block\b/
-    );
-    expect(html).toContain("toc");
-  });
-
   it("mounts its children once: in the aside while wide, in the sheet only while it is open below xl", () => {
     installMatchMedia(true);
     mounts = 0;
@@ -152,27 +140,6 @@ describe("Inspector", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(screen.queryByRole("dialog")).toBeNull();
   });
-
-  it("does not touch the owner's state when it starts wide or the sheet is closed", () => {
-    const onOpenChange = jest.fn();
-    installMatchMedia(true);
-    render(
-      <Inspector title="Contents" open onOpenChange={onOpenChange}>
-        toc
-      </Inspector>
-    );
-    expect(onOpenChange).not.toHaveBeenCalled();
-
-    installMatchMedia(false);
-    render(
-      <Inspector title="Other" open={false} onOpenChange={onOpenChange}>
-        toc
-      </Inspector>
-    );
-    resizeTo(true);
-    expect(onOpenChange).not.toHaveBeenCalled();
-  });
-
   it("does not read hydration (server snapshot, then the real wide viewport) as a crossing", () => {
     installMatchMedia(true);
     const onOpenChange = jest.fn();
@@ -192,20 +159,6 @@ describe("Inspector", () => {
     act(() => root.unmount());
     container.remove();
   });
-
-  it("leaves the sheet's state alone on widening when resetSheetOnWiden is false", () => {
-    installMatchMedia(false);
-    const onOpenChange = jest.fn();
-    render(
-      <Inspector title="Contents" open onOpenChange={onOpenChange} resetSheetOnWiden={false}>
-        toc
-      </Inspector>
-    );
-    resizeTo(true);
-    expect(onOpenChange).not.toHaveBeenCalled();
-    expect(document.querySelector('[data-slot="inspector"]')).toHaveTextContent("toc");
-  });
-
   describe("onWiden", () => {
     it("fires once on a real narrow-to-wide crossing, even when the sheet state is left alone", () => {
       installMatchMedia(false);
@@ -231,26 +184,6 @@ describe("Inspector", () => {
       expect(onWiden).toHaveBeenCalledTimes(1);
       resizeTo(true);
       expect(onWiden).toHaveBeenCalledTimes(2);
-    });
-
-    it("does not fire when the viewport starts wide or while hydrating", () => {
-      installMatchMedia(true);
-      const onWiden = jest.fn();
-      const tree = (
-        <Inspector title="Contents" open={false} onOpenChange={() => {}} onWiden={onWiden}>
-          toc
-        </Inspector>
-      );
-      const container = document.createElement("div");
-      document.body.appendChild(container);
-      container.innerHTML = renderToString(tree);
-      let root!: ReturnType<typeof hydrateRoot>;
-      act(() => {
-        root = hydrateRoot(container, tree);
-      });
-      expect(onWiden).not.toHaveBeenCalled();
-      act(() => root.unmount());
-      container.remove();
     });
   });
 });

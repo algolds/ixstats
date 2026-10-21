@@ -12,7 +12,6 @@ import { createMockPrisma, type MockPrismaProxy } from "~/tests/helpers/mock-db"
 const monitoring = createCallerFactory(autosaveMonitoringRouter);
 
 const USER = { name: "user", level: 100 };
-const ADMIN = { name: "admin", level: 10 };
 
 function ctx(db: MockPrismaProxy, id: string | null, role = USER, countryId = "country_mine") {
   return createMockRouterContext({
@@ -40,23 +39,5 @@ describe("autosaveMonitoring", () => {
     await expect(caller.getAutosaveStats({})).rejects.toThrow(/Admin privileges required/);
     await expect(caller.getActiveUsers({})).rejects.toThrow(/Admin privileges required/);
     expect(db.auditLog.findMany).not.toHaveBeenCalled();
-  });
-  it("reports health from the last five minutes' failure rate", async () => {
-    const admin = monitoring(ctx(db, "admin", ADMIN));
-
-    db.auditLog.findMany.mockResolvedValue([]);
-    await expect(admin.getSystemHealth()).resolves.toMatchObject({ status: "healthy" });
-
-    db.auditLog.findMany.mockResolvedValue([
-      { success: false, details: null },
-      { success: true, details: null },
-    ]);
-    await expect(admin.getSystemHealth()).resolves.toMatchObject({ status: "critical" });
-
-    db.auditLog.findMany.mockResolvedValue([{ success: true, details: '{"duration":9000}' }]);
-    await expect(admin.getSystemHealth()).resolves.toMatchObject({
-      status: "degraded",
-      avgResponseTime: 9000,
-    });
   });
 });

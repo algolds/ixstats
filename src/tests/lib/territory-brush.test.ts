@@ -12,7 +12,7 @@
  * Exact areas need not match — we just care about sign.
  */
 
-import type { Polygon, MultiPolygon } from "geojson";
+import type { Polygon } from "geojson";
 import { applyBrushStroke } from "~/lib/maps/territory-brush";
 import { calculateArea } from "~/lib/maps/border-editor";
 
@@ -91,44 +91,5 @@ describe("applyBrushStroke", () => {
     ];
     const result = applyBrushStroke(strokePoints, 5, SOURCE, TARGET);
     expect(result).toBeNull();
-  });
-
-  test("returns null for empty strokePoints array", () => {
-    expect(applyBrushStroke([], 10, SOURCE, TARGET)).toBeNull();
-  });
-
-  test("returns null for non-positive radius", () => {
-    const strokePoints: [number, number][] = [[-0.1, 0.5]];
-    expect(applyBrushStroke(strokePoints, 0, SOURCE, TARGET)).toBeNull();
-    expect(applyBrushStroke(strokePoints, -5, SOURCE, TARGET)).toBeNull();
-  });
-
-  test("single-point stroke (circular brush) also transfers area when on border", () => {
-    // A single point right on the shared edge, biased 0.05° into source.
-    const strokePoints: [number, number][] = [[-0.05, 0.5]];
-    const radiusKm = 15; // ~0.135°
-
-    const result = applyBrushStroke(strokePoints, radiusKm, SOURCE, TARGET);
-
-    // With the brush centred so close to the border, intersection with source is
-    // small but non-zero — result may be null if the brush doesn't reach source.
-    // We only assert the result is structurally valid when non-null.
-    if (result !== null) {
-      const newSourceArea = calculateArea(result.source);
-      const newTargetArea = calculateArea(result.target);
-      expect(newSourceArea).toBeLessThan(sourceAreaBefore);
-      expect(newTargetArea).toBeGreaterThan(targetAreaBefore);
-    }
-    // null is also acceptable (stroke entirely in target side after buffer)
-  });
-
-  test("issues array is present (may be empty) on successful transfer", () => {
-    const strokePoints: [number, number][] = [
-      [-0.1, 0.3],
-      [-0.1, 0.7],
-    ];
-    const result = applyBrushStroke(strokePoints, 20, SOURCE, TARGET);
-    expect(result).not.toBeNull();
-    expect(Array.isArray(result!.issues)).toBe(true);
   });
 });

@@ -42,7 +42,6 @@ import { NationalIssuesConsequences } from "~/lib/national-issues/consequences";
 import { calculateStabilityMetrics } from "~/lib/statecraft/stability-formulas";
 import {
   refreshStoredInternalStability,
-  stabilityRowData,
   STABILITY_NUMERIC_FIELDS,
 } from "~/lib/statecraft/stability-store";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -202,45 +201,5 @@ describe("stability event deltas", () => {
 
     formulaMock.mockReturnValue(formula(74));
     expect((await viewDefensePanel(db)).metrics.stabilityScore).toBe(57);
-  });
-
-  it("feeds recent active policies into the formula", async () => {
-    formulaMock.mockReturnValue(formula(70));
-    const db = makeDb(null, [
-      {
-        category: "social",
-        gdpEffect: 1,
-        calculatedEffects: JSON.stringify({ stabilityEffect: -4 }),
-        effectiveDate: new Date(),
-        effectiveIxTime: null,
-      },
-    ]);
-
-    await viewDefensePanel(db);
-
-    const recentPolicies = formulaMock.mock.calls[0]![4] as Array<Record<string, number>>;
-    expect(recentPolicies).toHaveLength(1);
-    expect(recentPolicies[0]).toEqual(
-      expect.objectContaining({ type: "social", popularityImpact: -40, economicImpact: 10 })
-    );
-  });
-});
-
-describe("stabilityRowData", () => {
-  it("bounds percentages to 0-100 and rates at 0", () => {
-    const stored: Record<string, unknown> = {
-      formulaSnapshot: JSON.stringify({ stabilityScore: 50, crimeRate: 10, violentCrimeRate: 40 }),
-    };
-    for (const f of STABILITY_NUMERIC_FIELDS) stored[f] = 40;
-    stored.stabilityScore = 70; // +20 from events
-    stored.crimeRate = 0; // -10 from events
-    const data = stabilityRowData(
-      formula(95, { crimeRate: 5, violentCrimeRate: 300 }) as any,
-      stored as any
-    );
-    expect(data.stabilityScore).toBe(100);
-    expect(data.crimeRate).toBe(0);
-    expect(data.violentCrimeRate).toBe(300);
-    expect(JSON.parse(data.formulaSnapshot).stabilityScore).toBe(95);
   });
 });

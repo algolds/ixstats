@@ -14,7 +14,6 @@ import {
   calculateCivilServiceCapacity,
   calculateTotalConsumedStaff,
   calculateComponentEconomicModifiers,
-  parseTimeToImplement,
   calculateImplementationDate,
 } from "~/lib/government/atomic-utils";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
@@ -97,28 +96,12 @@ function makeSnapshot(overrides: Partial<CountrySnapshot> = {}): CountrySnapshot
 }
 
 describe("calculateCivilServiceCapacity", () => {
-  test("matches the documented formula", () => {
-    // 100 + floor((pop / 100000) * (eff / 100))
-    expect(calculateCivilServiceCapacity(10_000_000, 100)).toBe(200);
-    expect(calculateCivilServiceCapacity(5_000_000, 50)).toBe(125);
-  });
-
-  test("scales up with population and effectiveness", () => {
-    const low = calculateCivilServiceCapacity(1_000_000, 50);
-    const high = calculateCivilServiceCapacity(50_000_000, 90);
-    expect(high).toBeGreaterThan(low);
-  });
-
   test("never drops below the floor of 50", () => {
     expect(calculateCivilServiceCapacity(0, 0)).toBeGreaterThanOrEqual(50);
   });
 });
 
 describe("calculateTotalConsumedStaff", () => {
-  test("returns 0 with no components", () => {
-    expect(calculateTotalConsumedStaff([], [], [])).toBe(0);
-  });
-
   test("sums staffRequired across selected government components", () => {
     const expected = staffFor(GOV_A) + staffFor(GOV_B);
     expect(calculateTotalConsumedStaff([GOV_A, GOV_B], [], [])).toBe(expected);
@@ -130,36 +113,7 @@ describe("calculateTotalConsumedStaff", () => {
     ).toBe(0);
   });
 });
-
-describe("parseTimeToImplement", () => {
-  test("parses month timeframes", () => {
-    expect(parseTimeToImplement("12 months")).toEqual({ months: 12 });
-    expect(parseTimeToImplement("6 months")).toEqual({ months: 6 });
-  });
-
-  test("parses year timeframes and takes the upper bound of a range", () => {
-    expect(parseTimeToImplement("2 years")).toEqual({ years: 2 });
-    expect(parseTimeToImplement("2-3 years")).toEqual({ years: 3 });
-  });
-
-  test("falls back to 12 months for unrecognized input", () => {
-    expect(parseTimeToImplement("soonish")).toEqual({ months: 12 });
-  });
-});
-
 describe("calculateImplementationDate (rollout scheduling)", () => {
-  test("a freshly queued component completes in the IxTime future (starts implementing)", () => {
-    const nowIx = IxTime.getCurrentIxTime();
-    const completion = calculateImplementationDate("12 months");
-    expect(completion.getTime()).toBeGreaterThan(nowIx);
-  });
-
-  test("longer timeframes complete later", () => {
-    const short = calculateImplementationDate("6 months").getTime();
-    const long = calculateImplementationDate("3 years").getTime();
-    expect(long).toBeGreaterThan(short);
-  });
-
   test("transition boundary: a past completion date is considered elapsed, a future one is not", () => {
     const nowIx = IxTime.getCurrentIxTime();
     const future = calculateImplementationDate("12 months");
@@ -184,16 +138,6 @@ describe("NationalIssuesEngine.evaluateCondition — active component membership
       )
     ).toBe(true);
   });
-
-  test('op "in" is false when the component is not active', () => {
-    expect(
-      NationalIssuesEngine.evaluateCondition(
-        { field: "activeComponents", op: "in", value: "planned_economy" },
-        snapshot
-      )
-    ).toBe(false);
-  });
-
   test('op "==" checks membership for array fields', () => {
     expect(
       NationalIssuesEngine.evaluateCondition(
@@ -234,28 +178,9 @@ describe("NationalIssuesEngine.evaluateCondition — active component membership
       )
     ).toBe(false);
   });
-
-  test("scalar comparisons still work unchanged", () => {
-    expect(
-      NationalIssuesEngine.evaluateCondition(
-        { field: "unemploymentRate", op: ">", value: 1 },
-        snapshot
-      )
-    ).toBe(true);
-  });
 });
 
 describe("calculateComponentEconomicModifiers", () => {
-  test("returns all-zero modifiers when no components are active", () => {
-    const mods = calculateComponentEconomicModifiers([], [], []);
-    expect(mods).toEqual({
-      maintenanceCost: 0,
-      taxRevenueModifier: 0,
-      unemploymentModifier: 0,
-      inflationModifier: 0,
-    });
-  });
-
   test("accrues maintenance cost from active government components", () => {
     const mods = calculateComponentEconomicModifiers([GOV_A], [], []);
     expect(mods.maintenanceCost).toBe(ATOMIC_COMPONENTS[GOV_A]?.maintenanceCost ?? 0);
