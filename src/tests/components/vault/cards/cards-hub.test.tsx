@@ -163,7 +163,7 @@ describe("CardsHub", () => {
       get: "o2",
     });
     spyOnHistory();
-    act(() => lastProps(MarketPane).onCloseTrade());
+    act(() => lastProps(MarketPane).onCloseTrade!());
     expect(replaceState).toHaveBeenCalledTimes(1);
     expect(replaceState).toHaveBeenCalledWith(null, "", "/vault/cards/market?tab=trades#offers");
     expect(pushState).not.toHaveBeenCalled();

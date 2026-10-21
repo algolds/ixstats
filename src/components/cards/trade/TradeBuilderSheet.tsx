@@ -200,7 +200,7 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
             {announcement}
           </div>
           {failure && (
-            <Signal role="alert" tone="destructive" title="Trade error">
+            <Signal tone="destructive" title="Trade error">
               {failure.message}
             </Signal>
           )}
@@ -228,7 +228,6 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
             <div className="space-y-1">
               {closed ? (
                 <Signal
-                  role="status"
                   tone="warning"
                   title={`@${state.partner.handle} ${AUDIENCE_TEXT[privacy.audience]}`}
                 />
