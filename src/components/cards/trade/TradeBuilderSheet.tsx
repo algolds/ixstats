@@ -51,22 +51,20 @@ const AUDIENCE_TEXT = {
 
 /** Every copy the table may show: the open trade's copies plus each one picked since. */
 function useKnownCopies(details: TradeDetailsView | undefined) {
-  const [known, setKnown] = useState<Map<string, TradeCopyLike>>(new Map());
+  const [picked, setPicked] = useState<Map<string, TradeCopyLike>>(new Map());
   const remember = (copy: TradeCopyLike | TradeableView) =>
-    setKnown((prev) => new Map(prev).set(copy.ownershipId, copy as TradeCopyLike));
+    setPicked((prev) => new Map(prev).set(copy.ownershipId, copy as TradeCopyLike));
 
-  useEffect(() => {
-    if (!details) return;
-    setKnown((prev) => {
-      const next = new Map(prev);
-      for (const copy of [...details.initiatorCopies, ...details.recipientCopies]) {
-        next.set(copy.ownershipId, copy);
-      }
-      return next;
-    });
-  }, [details]);
-
-  const resolve = (ids: string[]) => ids.flatMap((id) => known.get(id) ?? []);
+  // The open trade's copies are read from its details, so only picks need state
+  const onTable = new Map(
+    details
+      ? [...details.initiatorCopies, ...details.recipientCopies].map((copy) => [
+          copy.ownershipId,
+          copy,
+        ])
+      : []
+  );
+  const resolve = (ids: string[]) => ids.flatMap((id) => onTable.get(id) ?? picked.get(id) ?? []);
   return { resolve, remember };
 }
 
@@ -119,12 +117,13 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
     }
   }, [seedCopy, seedOwnershipId, remember]);
 
-  useEffect(() => {
-    if (details) {
-      dispatch({ type: "load", state: stateFromTrade(details, details.viewerRole) });
-      setEditing(false);
-    }
-  }, [details]);
+  // Each new read of the trade resets the table to it, during render rather than in an effect
+  const [loaded, setLoaded] = useState<TradeDetailsView | undefined>(undefined);
+  if (details && details !== loaded) {
+    setLoaded(details);
+    dispatch({ type: "load", state: stateFromTrade(details, details.viewerRole) });
+    setEditing(false);
+  }
 
   useEffect(() => {
     if (seed?.partnerHandle && partnerData && !state.partner) {
