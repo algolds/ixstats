@@ -25,8 +25,8 @@ and is scoped to one realm (`realmWhere`):
 - with no `realm`, it uses the realm of the viewer's active nation, or Ixnay when signed out;
 - `realm: "*"` (`ALL_REALMS`) returns every realm for site admins; anyone else gets their own realm.
 
-The public Vault card collection gallery that once sat at `/explore/collections` is gone: players' showcases live in
-the cards hub's Sets tab ([cards.md](./cards.md#showcases)), and its old address redirects there.
+The public Vault card collection gallery is gone: players' showcases live in the cards hub's Sets tab
+([cards.md](./cards.md#showcases)), and its old address redirects there.
 
 ## 2. The country profile
 
