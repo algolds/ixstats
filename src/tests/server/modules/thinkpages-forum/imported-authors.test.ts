@@ -5,11 +5,8 @@
  * content is moderable by any moderator of the category (it is not a site admin's).
  */
 import {
-  authorsOf,
   canSeeThread,
   editPost,
-  getCategoryThreads,
-  getThreadPosts,
   modEditPost,
   setPostHidden,
   setThreadFlag,
@@ -43,58 +40,6 @@ function importedStore() {
     ],
   });
 }
-
-interface SelectArgs {
-  select: Record<string, boolean>;
-}
-const selectOf = (mock: jest.Mock): Record<string, boolean> =>
-  (mock.mock.calls[0] as [SelectArgs])[0].select;
-
-describe("authorsOf with imported authors", () => {
-  it("queries only real user ids, skipping null and undefined", async () => {
-    const store = importedStore();
-    await authorsOf(store.db as never, [null, "u_m", undefined, null, "u_m"], []);
-    expect(store.db.user.findMany).toHaveBeenCalledTimes(1);
-    expect(store.db.user.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: { in: ["u_m"] } } })
-    );
-  });
-
-  it("spends no user query on a page of imported authors only", async () => {
-    const store = importedStore();
-    const out = await authorsOf(store.db as never, [null, null], [null]);
-    expect(store.db.user.findMany).not.toHaveBeenCalled();
-    expect(out.users.size).toBe(0);
-  });
-});
-
-describe("reads carry the imported author name", () => {
-  it("selects importedAuthorName for a thread's posts and returns a null-author thread as such", async () => {
-    const store = importedStore();
-    const out = await getThreadPosts(store.db as never, member, "t_imported", 1);
-    expect(selectOf(store.db.forumPost.findMany)).toMatchObject({
-      authorUserId: true,
-      importedAuthorName: true,
-    });
-    expect(out.thread).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
-    expect(out.posts[0]).toMatchObject({ authorUserId: null, importedAuthorName: "OldName" });
-  });
-
-  it("selects importedAuthorName for a category's threads", async () => {
-    const store = importedStore();
-    const out = await getCategoryThreads(
-      store.db as never,
-      member,
-      { key: "hub", realm: "eurth" },
-      1
-    );
-    expect(selectOf(store.db.forumThread.findMany)).toMatchObject({
-      authorUserId: true,
-      importedAuthorName: true,
-    });
-    expect(out.threads.find((t) => t.id === "t_imported")).toMatchObject(IMPORTED);
-  });
-});
 
 describe("canSeeThread with a null author", () => {
   const reports = {

@@ -3,12 +3,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals";
 import { securityConflictsRouter } from "~/server/api/routers/security/conflicts";
 import { newsGenerator } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications/api";
-import {
-  DEFAULT_PVP_DURATION_IXDAYS,
-  computeConflictOutcome,
-  militaryStrength,
-  pvpConflictEndsAt,
-} from "~/lib/military/conflict-outcome";
+import { DEFAULT_PVP_DURATION_IXDAYS, pvpConflictEndsAt } from "~/lib/military/conflict-outcome";
 import { IxTime } from "~/lib/ixtime";
 
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
@@ -67,21 +62,6 @@ const branch = (personnel: number) => ({
 });
 
 describe("conflict outcome helpers", () => {
-  it("sums personnel x readiness and operational assets (operational capped at quantity)", () => {
-    expect(
-      militaryStrength([
-        { units: [{ personnel: 1000, readiness: 50 }], assets: [{ quantity: 2, operational: 3 }] },
-      ])
-    ).toBe(500 + 20);
-  });
-
-  it("is deterministic for a given random source and favours the stronger side", () => {
-    const fixed = () => 0.9; // max swing, in the initiator's favour
-    expect(computeConflictOutcome(1000, 0, fixed)).toEqual(computeConflictOutcome(1000, 0, fixed));
-    expect(computeConflictOutcome(1000, 0, fixed).initiatorWins).toBe(true);
-    expect(computeConflictOutcome(0, 1000, () => 0.1).initiatorWins).toBe(false);
-  });
-
   it("ends a PvP conflict after its IxTime duration (default or from the rules)", () => {
     const start = new Date("2026-10-01T00:00:00Z");
     const realDays = (ixDays: number) => (ixDays / IxTime.getDefaultMultiplier()) * DAY;

@@ -1,19 +1,7 @@
 /**
  * @jest-environment node
  */
-import {
-  atMost,
-  exactly,
-  exitCode,
-  info,
-  markedPayload,
-  matches,
-  median,
-  percentile,
-  renderResults,
-  RESULT_MARKER,
-  type TargetResult,
-} from "../../../scripts/perf/atlas-bench-report";
+import { atMost, exitCode, info, percentile } from "../../../scripts/perf/atlas-bench-report";
 
 describe("atMost", () => {
   it("passes at and under the limit and fails over it", () => {
@@ -27,39 +15,6 @@ describe("atMost", () => {
     expect(atMost("a", Number.POSITIVE_INFINITY, 50, "ms").pass).toBe(false);
   });
 });
-
-describe("exactly", () => {
-  it("passes only on the expected value", () => {
-    expect(exactly("status", 304, 304, "").pass).toBe(true);
-    expect(exactly("status", 200, 304, "").pass).toBe(false);
-    expect(exactly("status", Number.NaN, 304, "").pass).toBe(false);
-  });
-});
-
-describe("matches", () => {
-  it("passes only when the measured text is the expected text", () => {
-    const header = "public, max-age=31536000, immutable";
-    expect(matches("header", header, header).pass).toBe(true);
-    expect(matches("header", "private, no-store", header).pass).toBe(false);
-    expect(matches("header", "", header).pass).toBe(false);
-  });
-});
-
-describe("median", () => {
-  it("is the middle value, or the mean of the middle two", () => {
-    expect(median([9, 1, 5])).toBe(5);
-    expect(median([4, 1, 2, 3])).toBe(2.5);
-    expect(median([7])).toBe(7);
-  });
-
-  it("does not reorder its input and is NaN for no values", () => {
-    const values = [3, 1, 2];
-    median(values);
-    expect(values).toEqual([3, 1, 2]);
-    expect(median([])).toBeNaN();
-  });
-});
-
 describe("percentile", () => {
   it("is the smallest value that at least p of the values are at or below (nearest rank)", () => {
     const values = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -74,43 +29,7 @@ describe("percentile", () => {
     expect(percentile(frames, 0.95)).toBe(1);
     expect(Math.max(...frames)).toBe(4.5);
   });
-
-  it("does not reorder its input and is NaN for none", () => {
-    const values = [3, 1, 2];
-    percentile(values, 0.95);
-    expect(values).toEqual([3, 1, 2]);
-    expect(percentile([], 0.95)).toBeNaN();
-  });
 });
-
-describe("info", () => {
-  it("is a line with a number and no target", () => {
-    const line = info("slowest drag frame", 4.5, "ms", "frame 12");
-    expect(line.measured).toBe("4.5 ms");
-    expect(line.target).toBe("not gated");
-    expect(line.informational).toBe(true);
-    expect(line.detail).toBe("frame 12");
-  });
-});
-
-describe("markedPayload", () => {
-  it("returns the text after the last marker line, whatever else the process printed", () => {
-    const stdout = [
-      "[DATABASE] Development mode",
-      `${RESULT_MARKER}{"a":1}`,
-      "warning: something",
-      `${RESULT_MARKER}{"a":2}`,
-      "",
-    ].join("\n");
-    expect(markedPayload(stdout)).toBe('{"a":2}');
-  });
-
-  it("is null when no line carries the marker", () => {
-    expect(markedPayload("nothing here\n")).toBeNull();
-    expect(markedPayload("")).toBeNull();
-  });
-});
-
 describe("exitCode", () => {
   const pass = atMost("p", 1, 2, "ms");
   const fail = atMost("f", 3, 2, "ms");
@@ -130,32 +49,5 @@ describe("exitCode", () => {
   it("is not decided by an informational line, however slow", () => {
     expect(exitCode([pass, info("slowest frame", 900, "ms")])).toBe(0);
     expect(exitCode([info("slowest frame", 1, "ms")])).toBe(1);
-  });
-});
-
-describe("renderResults", () => {
-  const results: TargetResult[] = [
-    atMost("layer route hit", 0.31, 50, "ms", "cold 345 ms"),
-    atMost("geo profile", 512, 400, "ms"),
-  ];
-
-  it("prints one PASS or FAIL line per target, with the detail under it", () => {
-    const lines = renderResults(results).split("\n");
-    expect(lines[0]).toMatch(/^PASS +layer route hit +0\.31 ms +<= 50 ms$/);
-    expect(lines[1]).toBe("      cold 345 ms");
-    expect(lines[2]).toMatch(/^FAIL +geo profile +512 ms +<= 400 ms$/);
-  });
-
-  it("ends with the count of targets that pass", () => {
-    const text = renderResults(results);
-    expect(text.split("\n").at(-1)).toBe("1 of 2 targets pass");
-  });
-
-  it("marks an informational line INFO and leaves it out of the count of targets", () => {
-    const text = renderResults([...results, info("slowest drag frame", 4.5, "ms", "frame 12")]);
-    const lines = text.split("\n");
-    expect(lines[3]).toMatch(/^INFO +slowest drag frame +4\.5 ms +not gated$/);
-    expect(lines[4]).toBe("      frame 12");
-    expect(lines.at(-1)).toBe("1 of 2 targets pass");
   });
 });

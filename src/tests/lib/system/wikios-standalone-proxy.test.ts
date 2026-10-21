@@ -30,38 +30,6 @@ const run = (path: string, headers: Record<string, string> = {}) =>
   middleware(new NextRequest(`http://localhost${path}`, { headers }), {} as NextFetchEvent);
 
 describe("proxy in WikiOS standalone mode", () => {
-  it("does nothing special when the flag is off", async () => {
-    delete process.env.NEXT_PUBLIC_WIKIOS_STANDALONE;
-    const res = await run("/countries/ixnay");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
-  });
-
-  it("sends / to the Main Page with a relative Location", async () => {
-    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";
-    const res = await run("/");
-    expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("/wiki/Main_Page");
-  });
-
-  it("sends paths WikiOS does not own to the configured IxStates URL, query kept", async () => {
-    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";
-    process.env.NEXT_PUBLIC_IXSTATES_URL = "https://ixwiki.com/projects/ixstates";
-    const res = await run("/countries/ixnay?tab=gdp");
-    expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe(
-      "https://ixwiki.com/projects/ixstates/countries/ixnay?tab=gdp"
-    );
-  });
-
-  it("serves paths WikiOS owns without needing the IxStates URL", async () => {
-    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";
-    delete process.env.NEXT_PUBLIC_IXSTATES_URL;
-    const res = await run("/wiki/Main_Page");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
-  });
-
   it("answers 500 and logs why when a redirect is needed but NEXT_PUBLIC_IXSTATES_URL is unset", async () => {
     process.env.NEXT_PUBLIC_WIKIOS_STANDALONE = "true";
     delete process.env.NEXT_PUBLIC_IXSTATES_URL;

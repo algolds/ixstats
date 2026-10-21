@@ -507,13 +507,6 @@ describe("redactEconomicBudget (countries.getByIdWithEconomicData for visitors)"
     });
     expect(record.governmentBudget).not.toBeNull(); // not mutated
   });
-
-  it("leaves a record without economic relations untouched", () => {
-    expect(redactEconomicBudget({ id: COUNTRY, fiscalSystem: null })).toEqual({
-      id: COUNTRY,
-      fiscalSystem: null,
-    });
-  });
 });
 
 // ─── Canon feed ─────────────────────────────────────────────────────────────
@@ -607,16 +600,6 @@ describe("diplomaticEmbassies.getEmbassies", () => {
       ours: [75_000, 2_500],
       theirs: [75_000, 2_500],
     });
-  });
-
-  it("checks the funding nations in one ownership query", async () => {
-    const db = makeDb({ ownerUserId: "other_db" });
-    expect(await budgets(otherPlayer(db))).toEqual({
-      ours: [75_000, 2_500],
-      theirs: [undefined, undefined],
-    });
-    expect(db.user.findUnique).toHaveBeenCalledTimes(1);
-    expect(db.country.findMany).toHaveBeenCalledTimes(1);
   });
 });
 

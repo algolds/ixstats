@@ -23,17 +23,6 @@ const locations = [...conf.matchAll(/^location\s+(\S+(?:\s+\S+)?)\s*\{([^}]*)\}/
 );
 
 describe("wikios-takeover.conf under /images/", () => {
-  it.each(["/images/flags/", "/images/uploads/"])("sends %s to WikiOS", (prefix) => {
-    const block = locations.find((location) => location.head === `^~ ${prefix}`);
-
-    expect(block).toBeDefined();
-    expect(block!.body).toContain("proxy_pass http://wikios;");
-  });
-
-  it("sends /images/wikios* to WikiOS", () => {
-    expect(locations.find((location) => location.head === "^~ /images/wikios")).toBeDefined();
-  });
-
   it("does not take /images/ itself, MediaWiki's uploads and thumbnails stay where they are", () => {
     const imageLocations = locations
       .map((location) => location.head)

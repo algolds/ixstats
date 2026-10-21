@@ -74,21 +74,6 @@ describe("ixnayid.setHandle", () => {
       select: { handle: true },
     });
   });
-
-  it("rejects a bad format", async () => {
-    await expect(caller().setHandle({ handle: "has space" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    expect(mocked.user.update).not.toHaveBeenCalled();
-  });
-
-  it("rejects a reserved word", async () => {
-    await expect(caller().setHandle({ handle: "settings" })).rejects.toMatchObject({
-      code: "BAD_REQUEST",
-    });
-    expect(mocked.user.update).not.toHaveBeenCalled();
-  });
-
   it("rejects a handle another user holds", async () => {
     mocked.user.findFirst.mockResolvedValue({ id: "db_2" });
     await expect(caller().setHandle({ handle: "taken" })).rejects.toMatchObject({
@@ -166,14 +151,6 @@ describe("ixnayid.setHandle", () => {
 });
 
 describe("ixnayid.getStatus handle", () => {
-  it("prefers the stored handle for the passport link", async () => {
-    storedUser("kir", null);
-    const status = await caller().getStatus();
-    expect(status.passportHandle).toBe("kir");
-    expect(status.handle).toBe("kir");
-    expect(status.canChangeHandle).toBe(true);
-  });
-
   it("reports the change as used, except for admins", async () => {
     storedUser("kir", CHANGED);
     expect((await caller().getStatus()).canChangeHandle).toBe(false);

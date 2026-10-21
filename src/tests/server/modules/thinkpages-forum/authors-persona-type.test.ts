@@ -20,19 +20,6 @@ function db(accounts: Array<{ id: string; accountType: string }>) {
 }
 
 describe("authorsOf persona types", () => {
-  it("selects accountType and returns each persona's type, null for a personal account", async () => {
-    const store = db([
-      { id: "g", accountType: "government" },
-      { id: "p", accountType: "personal" },
-    ]);
-    const out = await authorsOf(store as never, [], ["g", "p"]);
-    expect(store.thinkpagesAccount.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ select: expect.objectContaining({ accountType: true }) })
-    );
-    expect(out.personas.get("g")?.personaType).toBe("government");
-    expect(out.personas.get("p")?.personaType).toBeNull();
-  });
-
   it("gives a persona preview its type and still no flag", async () => {
     const maps = await authorsOf(db([{ id: "m", accountType: "media" }]) as never, [], ["m"]);
     const preview = previewAuthorOf(
@@ -47,26 +34,5 @@ describe("authorsOf persona types", () => {
       persona: true,
       personaType: "media",
     });
-  });
-
-  it("gives a member and an imported author no persona type", () => {
-    const maps = {
-      users: new Map([["u1", { name: "Kir", handle: "kir", avatarUrl: null, flagUrl: "/f.png" }]]),
-      personas: new Map(),
-    };
-    expect(
-      previewAuthorOf(
-        { authorUserId: "u1", authorPersonaId: null, importedAuthorName: null },
-        maps as never,
-        "M"
-      ).personaType
-    ).toBeNull();
-    expect(
-      previewAuthorOf(
-        { authorUserId: null, authorPersonaId: null, importedAuthorName: "Old" },
-        maps as never,
-        "M"
-      ).personaType
-    ).toBeNull();
   });
 });

@@ -127,6 +127,9 @@ System owners are the Clerk IDs in `SYSTEM_OWNER_IDS` (`src/lib/auth/system-owne
 }
 ```
 
+### Money While Playing As Another User
+A mutation that moves IxCredits, Sovereigns or card copies (a `PLAY_AS_MONEY_ROUTES` path in `src/server/api/trpc/impersonation.ts`, on any builder) answers `FORBIDDEN` with "Money and card actions are disabled while playing as another user. Exit play-as mode first."; reads stay allowed. `src/tests/architecture/play-as-money.test.ts` finds money mutations by what they write and fails when one is not covered.
+
 ### Rate Limited (Admin)
 ```json
 {

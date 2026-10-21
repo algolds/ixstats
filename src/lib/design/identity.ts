@@ -1,22 +1,11 @@
 /** Accent vocabulary: `FacetAccent`, `accentColor`, `facetAccentStyle`. */
 
 import type { CSSProperties } from "react";
-import { SYSTEM_COLORS, type FacetAccent } from "./tokens";
+import type { FacetAccent } from "./tokens";
 
 // Accents
 
 export type { FacetAccent } from "./tokens";
-
-/** Every accent a primitive accepts: the system colour roles, the app tint and gold. */
-export const FACET_ACCENTS = [
-  ...(Object.keys(SYSTEM_COLORS) as (keyof typeof SYSTEM_COLORS)[]),
-  "tint",
-  "gold",
-] as const satisfies readonly FacetAccent[];
-
-export function isFacetAccent(value: unknown): value is FacetAccent {
-  return typeof value === "string" && (FACET_ACCENTS as readonly string[]).includes(value);
-}
 
 /**
  * The CSS colour an accent resolves to: a system colour role (`var(--color-green)`), the app tint

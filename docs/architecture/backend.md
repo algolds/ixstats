@@ -64,6 +64,8 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 | **`premiumProcedure`** | Premium User | Authenticated + premium membership. |
 | **`adminProcedure`** | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging. |
 
+Every builder starts with `playAsMoneyMiddleware`: while an admin plays as another user, a mutation on a `PLAY_AS_MONEY_ROUTES` path (`src/server/api/trpc/impersonation.ts`: the Vault, cards, packs, market, workshop, trades, the Exchange, NS imports, achievement payouts and the Sovereign moves in sports) is refused with `FORBIDDEN`; reads stay allowed.
+
 ---
 
 ## 3. The `mergeRouters` Sub-Router Pattern

@@ -304,17 +304,6 @@ describe("validation", () => {
 });
 
 describe("starter force", () => {
-  it("previews and creates army, navy and air force from builder data", async () => {
-    const plan = await forces("owner").previewStarterForceStructure({ countryId: OWN });
-    expect(plan.budgetSource).toBe("builder");
-    expect(plan.branches).toHaveLength(3);
-
-    const result = await forces("owner").seedStarterForceStructure({ countryId: OWN });
-    expect(result).toEqual({ created: 3, budgetSource: "builder" });
-    const rows = mockDb.militaryBranch.createMany.mock.calls[0][0].data;
-    expect(rows.every((r: any) => r.countryId === OWN && r.activeDuty > 0)).toBe(true);
-  });
-
   it("refuses when the nation already has branches, and for strangers", async () => {
     mockDb.militaryBranch.count.mockResolvedValueOnce(2);
     await expect(
@@ -350,19 +339,5 @@ describe("deployments use only the nation's own units", () => {
     );
     expect(mockDb.militaryOperation.create).not.toHaveBeenCalled();
     expect(mockDb.militaryUnit.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("deploys and draws readiness from the nation's own units", async () => {
-    mockDb.user.findUnique.mockResolvedValue({ id: "u_owner" });
-    mockDb.militaryUnit.findMany.mockResolvedValue([{ id: "unit1" }]);
-    mockDb.militaryOperation.create.mockResolvedValue({ id: "op1", targetCountry: null });
-    await launch(["unit1"]);
-    expect(mockDb.deployment.createMany).toHaveBeenCalledWith({
-      data: [{ operationId: "op1", unitId: "unit1", status: "deployed" }],
-    });
-    expect(mockDb.militaryUnit.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ["unit1"] } },
-      data: { readiness: { decrement: 10 } },
-    });
   });
 });

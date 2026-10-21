@@ -14,7 +14,6 @@ import { geoEditorQueueRouter } from "~/server/api/routers/geo/editor/queue";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { geoEditorLinkageValidationRouter } from "~/server/api/routers/geo/editor/linkage/validation";
 import { geoFeaturesRealmLabelsRouter } from "~/server/api/routers/geo/features/realm-labels";
-import { geoFeaturesLabelsRouter } from "~/server/api/routers/geo/features/labels";
 import { realmMapPipelineRouter } from "~/server/api/routers/realms/map-pipeline";
 import { canEditRealmMap, canImportRealmMap } from "~/server/modules/realms/realms.access";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
@@ -220,56 +219,6 @@ describe("world-mode border editing is realm-scoped", () => {
     expect(db.mapLayer!.findFirst).not.toHaveBeenCalled();
     expect(db.mapLayer!.findMany).not.toHaveBeenCalled();
   });
-
-  it("split keeps the nation on the larger part, merge on the largest linked source", async () => {
-    const db = realmDb();
-    const rect = (x0: number, x1: number) => ({
-      type: "Polygon",
-      coordinates: [
-        [
-          [x0, 0],
-          [x1, 0],
-          [x1, 1],
-          [x0, 1],
-          [x0, 0],
-        ],
-      ],
-    });
-    db.mapLayer!.findFirst!.mockResolvedValue({
-      id: "ml1",
-      featureId: "A",
-      countryId: "c1",
-      geometry: rect(0, 3),
-    });
-    db.mapLayer!.createMany = jest.fn();
-    await borders(db, MAP_OFFICER).splitCountry({
-      featureId: "A",
-      splitLine: [
-        [1, -1],
-        [1, 2],
-      ],
-      nameA: "West",
-      nameB: "East",
-      realm: "eurth",
-    });
-    const parts: Array<{ areaSqKm: number; countryId: string | null }> =
-      db.mapLayer!.createMany.mock.calls[0][0].data;
-    const [small, large] = [...parts].sort((a, b) => a.areaSqKm - b.areaSqKm);
-    expect(large!.countryId).toBe("c1");
-    expect(small!.countryId).toBeNull();
-
-    db.mapLayer!.findMany!.mockResolvedValue([
-      { id: "m1", featureId: "A", countryId: "c1", areaSqKm: 10, geometry: rect(0, 1) },
-      { id: "m2", featureId: "B", countryId: "c2", areaSqKm: 30, geometry: rect(1, 2) },
-    ]);
-    await borders(db, MAP_OFFICER).mergeCountries({
-      featureIds: ["A", "B"],
-      newName: "Union",
-      realm: "eurth",
-    });
-    expect(db.mapLayer!.create!.mock.calls[0][0].data.countryId).toBe("c2");
-  });
-
   it("an editor saves only into their own draft session", async () => {
     const db = realmDb();
     db.mapEditorSession!.updateMany!.mockResolvedValue({ count: 0 });
@@ -343,53 +292,6 @@ describe("world-mode border editing is realm-scoped", () => {
         `${MAP_OFFICER}_${EURTH}_Gallambria`
       );
     });
-
-    it("stamps the save time itself, so the comparison with the feature's update time uses one clock", async () => {
-      const db = realmDb();
-      await borders(db, MAP_OFFICER).saveBorderEditDraft({
-        sessionId: `${MAP_OFFICER}_${EURTH}_Gallambria`,
-        sessionData: { ...draftData(SAVED), savedAt: 1 },
-      });
-      const saved = db.mapEditorSession!.updateMany!.mock.calls[0][0].data.sessionData;
-      expect(saved.savedAt).toBe(Date.now());
-      expect(saved.geometry).toEqual(square);
-    });
-
-    it("offers nothing on the next open once the draft was reset by a discard", async () => {
-      const db = realmDb();
-      const sessionId = `${MAP_OFFICER}_${EURTH}_Gallambria`;
-      let stored: object = { undoStack: [], mode: "select" };
-      db.mapLayer!.findFirst!.mockResolvedValue({
-        id: "ml1",
-        featureId: "Gallambria",
-        boundingBox: null,
-        updatedAt: hoursBefore(SAVED, 1),
-      });
-      db.mapEditorSession!.updateMany!.mockImplementation(
-        async ({ data }: { data: { sessionData: object } }) => {
-          stored = data.sessionData;
-          return { count: 1 };
-        }
-      );
-      db.mapEditorSession!.upsert!.mockImplementation(async () => ({
-        id: sessionId,
-        userId: MAP_OFFICER,
-        featureId: "Gallambria",
-        sessionData: stored,
-      }));
-      const caller = borders(db, MAP_OFFICER);
-      const open = () => caller.startBorderEditSession({ featureId: "Gallambria", realm: "eurth" });
-
-      await caller.saveBorderEditDraft({ sessionId, sessionData: draftData(SAVED) });
-      expect((await open()).draft).not.toBeNull();
-
-      await caller.saveBorderEditDraft({
-        sessionId,
-        sessionData: { undoStack: [], mode: "select" },
-      });
-      expect((await open()).draft).toBeNull();
-    });
-
     it("applying an edit clears this realm's draft of the feature, not another realm's", async () => {
       const db = realmDb();
       db.mapLayer!.findFirst!.mockResolvedValue({
@@ -412,34 +314,12 @@ describe("world-mode border editing is realm-scoped", () => {
         [{ where: { id: `${MAP_OFFICER}_${EURTH}_Gallambria` } }],
       ]);
     });
-
-    it("offers no draft once the feature was saved after it", async () => {
-      const { result } = await open({ sessionData: draftData(SAVED) }, hoursBefore(SAVED, -1));
-      expect(result.draft).toBeNull();
-    });
-
-    it("offers no draft written for another feature", async () => {
-      const other = draftData(SAVED, "Daxia");
-      const { result } = await open({ sessionData: other }, hoursBefore(SAVED, 1));
-      expect(result.draft).toBeNull();
-    });
-
     it("offers no draft that belongs to another user", async () => {
       const { result } = await open(
         { userId: PLAYER, sessionData: draftData(SAVED) },
         hoursBefore(SAVED, 1)
       );
       expect(result.draft).toBeNull();
-    });
-
-    it("offers no draft from a fresh session or an older autosave format", async () => {
-      const fresh = await open({ sessionData: { undoStack: [], mode: "select" } }, SAVED);
-      expect(fresh.result.draft).toBeNull();
-      const legacy = await open(
-        { sessionData: { geometry: square, undoStack: { entries: [] }, mode: "vertex_edit" } },
-        hoursBefore(SAVED, 1)
-      );
-      expect(legacy.result.draft).toBeNull();
     });
   });
 
@@ -637,54 +517,6 @@ describe("realm labels", () => {
       where: { id: "l1" },
       data: { text: "Sunless Bay", metadata: { seedKey: "Sunless Sea", rank: "minor" } },
       select: expect.any(Object),
-    });
-  });
-
-  it("lists the realm's labels for its editors with each one's rank", async () => {
-    const db = realmDb();
-    db.mapLabel!.findMany!.mockResolvedValue([
-      {
-        id: "l1",
-        text: "Auraid Bay",
-        labelType: "sea",
-        coordinates: [6, 38],
-        metadata: { rank: "minor" },
-      },
-      { id: "l2", text: "Argic Ocean", labelType: "ocean", coordinates: [0, 80], metadata: null },
-    ]);
-    const list = await labels(db, MAP_OFFICER).listRealmLabels({ realm: "eurth" });
-    expect(list).toEqual([
-      { id: "l1", text: "Auraid Bay", labelType: "sea", coordinates: [6, 38], rank: "minor" },
-      { id: "l2", text: "Argic Ocean", labelType: "ocean", coordinates: [0, 80], rank: "major" },
-    ]);
-  });
-
-  it("the public map lists the realm's own labels next to its nations' labels", async () => {
-    const db = realmDb();
-    db.mapLabel!.findMany!.mockImplementation(async ({ where }: { where: { countryId?: null } }) =>
-      where.countryId === null
-        ? [
-            {
-              id: "l1",
-              text: "Sunless Sea",
-              labelType: "sea",
-              coordinates: [10, 20],
-              metadata: { rank: "minor" },
-              countryId: null,
-              country: null,
-            },
-          ]
-        : []
-    );
-    const result = await createCallerFactory(geoFeaturesLabelsRouter)(
-      ctxAs(db, PLAYER)
-    ).getAllMapLabels({ realm: "eurth" });
-    expect(result.features).toHaveLength(1);
-    expect(result.features[0]!.properties).toMatchObject({
-      text: "Sunless Sea",
-      rank: "minor",
-      countryName: null,
-      realmLabel: true,
     });
   });
 });

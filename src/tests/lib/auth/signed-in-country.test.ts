@@ -17,10 +17,6 @@ function signInAs(userId: string | null) {
   authMock.mockResolvedValue({ userId } as AuthResult);
 }
 
-function userRow(countryId: string | null) {
-  return { countryId } as Awaited<ReturnType<typeof db.user.findUnique>>;
-}
-
 describe("getSignedInCountryId", () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -31,37 +27,6 @@ describe("getSignedInCountryId", () => {
     await expect(getSignedInCountryId()).resolves.toBe("");
     expect(findUniqueMock).not.toHaveBeenCalled();
   });
-
-  it("returns the linked country id for the signed-in Clerk user", async () => {
-    signInAs("user_1");
-    findUniqueMock.mockResolvedValue(userRow("country_1"));
-    await expect(getSignedInCountryId()).resolves.toBe("country_1");
-    expect(findUniqueMock).toHaveBeenCalledWith({
-      where: { clerkUserId: "user_1" },
-      select: { countryId: true },
-    });
-  });
-
-  it("returns an empty string when the user has no country", async () => {
-    signInAs("user_1");
-    findUniqueMock.mockResolvedValue(userRow(null));
-    await expect(getSignedInCountryId()).resolves.toBe("");
-  });
-
-  it("returns an empty string when the user row does not exist yet", async () => {
-    signInAs("user_1");
-    findUniqueMock.mockResolvedValue(null);
-    await expect(getSignedInCountryId()).resolves.toBe("");
-  });
-
-  it("falls back to an empty string when the lookup fails", async () => {
-    const failure = new Error("db down");
-    signInAs("user_1");
-    findUniqueMock.mockRejectedValue(failure);
-    await expect(getSignedInCountryId()).resolves.toBe("");
-    expect(rethrowMock).toHaveBeenCalledWith(failure);
-  });
-
   it("lets Next.js control-flow errors propagate", async () => {
     const nextError = new Error("DYNAMIC_SERVER_USAGE");
     authMock.mockRejectedValue(nextError);

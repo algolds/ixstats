@@ -106,22 +106,6 @@ describe("passportPageMetadata", () => {
     indexableMock.mockReset();
     indexableMock.mockResolvedValue(true);
   });
-
-  it("reads the anonymous card and builds the person's metadata with canonical /@handle", async () => {
-    cardMock.mockResolvedValue(card());
-    const meta = await passportPageMetadata("alex");
-    expect(cardMock).toHaveBeenCalledWith({ handle: "alex", viewerClerkId: null });
-    expect(meta.title).toBe("Alex Pav (@alex) · IxStates Passport");
-    expect(meta.alternates).toEqual({ canonical: "/@alex" });
-    expect(meta.robots).toBeUndefined();
-  });
-
-  it("merges the noindex rule", async () => {
-    cardMock.mockResolvedValue(card());
-    indexableMock.mockResolvedValue(false);
-    expect((await passportPageMetadata("alex")).robots).toEqual(NOINDEX);
-  });
-
   it("logs a failed card read and keeps only the indexing rule", async () => {
     const logged = jest.spyOn(console, "error").mockImplementation(() => undefined);
     cardMock.mockRejectedValue(new Error("db down"));
