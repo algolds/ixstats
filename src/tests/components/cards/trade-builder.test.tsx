@@ -111,20 +111,18 @@ beforeEach(() => {
   } as never);
   jest.mocked(usePartnerSearch).mockReturnValue({ data: [] } as never);
   findsPartner(partner());
-  jest
-    .mocked(useTradeables)
-    .mockImplementation(
-      (_partner, side) =>
-        ({
-          data: {
-            items:
-              side === "mine"
-                ? [tradeable("m1", { highlighted: true }), tradeable("m2")]
-                : [tradeable("t1", { highlighted: true }), tradeable("t2", { value: 0 })],
-            nextCursor: null,
-          },
-        }) as never
-    );
+  jest.mocked(useTradeables).mockImplementation(
+    (_partner, side) =>
+      ({
+        data: {
+          items:
+            side === "mine"
+              ? [tradeable("m1", { highlighted: true }), tradeable("m2")]
+              : [tradeable("t1", { highlighted: true }), tradeable("t2", { value: 0 })],
+          nextCursor: null,
+        },
+      }) as never
+  );
   jest.mocked(usePartnerWishlist).mockReturnValue({
     data: [
       { cardId: "card_m1", title: "Card m1", rarity: "RARE", realmId: "default", youOwn: 1 },
@@ -267,7 +265,12 @@ describe("TradeBuilderSheet: a new trade", () => {
     jest.mocked(usePartnerSearch).mockReturnValue({
       data: [
         partner({ id: "kir", handle: "kir", displayName: null, countryName: null }),
-        partner({ id: "zed", handle: "zed", displayName: "@zed", privacy: privacy({ allowed: false }) }),
+        partner({
+          id: "zed",
+          handle: "zed",
+          displayName: "@zed",
+          privacy: privacy({ allowed: false }),
+        }),
         partner(),
       ],
     } as never);
@@ -344,8 +347,7 @@ const openTrade = (over: object = {}) => ({
 });
 const showsTrade = (over: object = {}) =>
   jest.mocked(useTradeDetails).mockReturnValue({ data: openTrade(over) } as never);
-const renderTrade = () =>
-  render(<TradeBuilderSheet open onOpenChange={jest.fn()} tradeId="t9" />);
+const renderTrade = () => render(<TradeBuilderSheet open onOpenChange={jest.fn()} tradeId="t9" />);
 
 describe("TradeBuilderSheet: an open trade", () => {
   it("on your turn offers accept, decline and counter, and counters the same table", () => {
@@ -357,7 +359,9 @@ describe("TradeBuilderSheet: an open trade", () => {
     expect(screen.getByText("“Fair swap?”")).toBeTruthy();
     // Their signed copy: the text travels with it, the signer is never named here, and it can be reported.
     expect(column("You get").getByText("“gg”")).toBeTruthy();
-    expect(column("You get").getByRole("button", { name: "Report inscription on t1" })).toBeTruthy();
+    expect(
+      column("You get").getByRole("button", { name: "Report inscription on t1" })
+    ).toBeTruthy();
     expect(column("You give").queryByRole("button", { name: /Report/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
     expect(screen.getByLabelText("Credits you get")).toBeDisabled();
@@ -408,7 +412,9 @@ describe("TradeBuilderSheet: an open trade", () => {
     fireEvent.click(screen.getByRole("button", { name: "Accept" }));
     const message =
       "A card you would give was signed after this offer was made. Send a counter-offer so the other player sees it.";
-    React.act(() => lastOptions(mutations.respond).onError?.({ message, data: { code: "CONFLICT" } }));
+    React.act(() =>
+      lastOptions(mutations.respond).onError?.({ message, data: { code: "CONFLICT" } })
+    );
     expect(screen.getByRole("alert")).toHaveTextContent(message);
     expect(onOpenChange).not.toHaveBeenCalled();
     // The next answer starts clean.
@@ -444,6 +450,26 @@ describe("TradeBuilderSheet: an open trade", () => {
     expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Decline" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Counter" })).toBeNull();
+    // What is being answered stays on screen
+    expect(column("You get").getByText("Card t1")).toBeTruthy();
+    expect(column("You give").getByText("Card m1")).toBeTruthy();
+  });
+
+  it("keeps a counter being edited when the same trade is read again, and resets on a new revision", () => {
+    showsTrade();
+    const { rerender } = renderTrade();
+    fireEvent.click(screen.getByRole("button", { name: "Counter" }));
+    fireEvent.change(screen.getByLabelText("Credits you get"), { target: { value: "50" } });
+    // A refetch after any market event: an equal trade in a new object
+    showsTrade();
+    rerender(<TradeBuilderSheet open onOpenChange={jest.fn()} tradeId="t9" />);
+    expect((screen.getByLabelText("Credits you get") as HTMLInputElement).value).toBe("50");
+    expect(screen.getByRole("button", { name: "Send counter-offer" })).toBeTruthy();
+    // The partner countered: the table resets to their revision
+    showsTrade({ revision: 3 });
+    rerender(<TradeBuilderSheet open onOpenChange={jest.fn()} tradeId="t9" />);
+    expect(screen.getByRole("button", { name: "Accept" })).toBeTruthy();
+    expect((screen.getByLabelText("Credits you get") as HTMLInputElement).value).not.toBe("50");
   });
 
   it("says how a finished or expired trade ended, with nothing to answer", () => {

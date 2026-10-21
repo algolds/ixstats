@@ -117,10 +117,12 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
     }
   }, [seedCopy, seedOwnershipId, remember]);
 
-  // Each new read of the trade resets the table to it, during render rather than in an effect
-  const [loaded, setLoaded] = useState<TradeDetailsView | undefined>(undefined);
-  if (details && details !== loaded) {
-    setLoaded(details);
+  // A new revision of the trade resets the table to it, during render rather than in an effect. Keyed by
+  // revision, not by object: a refetch of the same trade (any market event) must not wipe a counter being edited.
+  const detailsKey = details ? `${details.id}:${details.revision}:${details.status}` : null;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  if (details && detailsKey !== loadedKey) {
+    setLoadedKey(detailsKey);
     dispatch({ type: "load", state: stateFromTrade(details, details.viewerRole) });
     setEditing(false);
   }
@@ -261,7 +263,8 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
             <p className="text-callout text-label-secondary italic">“{details.message}”</p>
           )}
 
-          {canBuild && state.partner && (
+          {/* An open trade shows both sides even when the partner is closed to you; only editing needs canBuild */}
+          {state.partner && (canBuild || details) && (
             <>
               <div className="grid gap-6 md:grid-cols-2">
                 <TradeSideColumn
@@ -286,7 +289,7 @@ export function TradeBuilderSheet({ open, onOpenChange, tradeId, seed }: TradeBu
                 />
               </div>
 
-              {editing && (
+              {editing && canBuild && (
                 <>
                   <div className="space-y-1">
                     <Label htmlFor="trade-note">A note for @{state.partner.handle}</Label>
