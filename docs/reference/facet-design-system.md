@@ -141,7 +141,7 @@ Enforced by `layers.css` today, and nothing more:
 - `visualization`: no padding, clipped overflow.
 - `feed`: a separator between items.
 
-Everything else in the table is enforced by the primitive that owns the type (`EntityHeader`, `Signal`, `RevealStage`, `CutoutCard`, `Stat`) or by the per-app sweep, not by CSS: the prose heading scale (`text-title-2` and `text-title-3`), the 36px and 44px data rows, right-aligned figures, the "–" empty cell, units, sortable headers, chart colours, the Well grid for facts, and the input field rhythm.
+Everything else in the table is enforced by the primitive that owns the type (`EntityHeader`, `Signal`, `CutoutCard`, `Stat`) or by the per-app sweep, not by CSS: the prose heading scale (`text-title-2` and `text-title-3`), the 36px and 44px data rows, right-aligned figures, the "–" empty cell, units, sortable headers, chart colours, the Well grid for facts, and the input field rhythm.
 
 **Card faces.** Trading cards are content art (`collectible`): one face component, `CardFace`
 (`src/components/cards/face/`), in sizes S, M and L at 5:7. Rarity is the edge colour plus a gem, from the one palette
@@ -206,7 +206,6 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
 - `FacetMaterial layer="chrome" | "overlay"` (default `chrome`) is the primitive for floating glass. Do not use it for content cards.
 - `Signal`: an inline semantic banner. Props: `tone` (`info | success | warning | destructive`), `title`, optional body, optional `onDismiss` (omit for critical signals). At most one per section.
 - `Inspector`: the one optional trailing column of a page, 320px wide and sticky from 1280px up, a `Sheet` below that. Props: `title`, `open`, `onOpenChange`. Use it for entity details, a table of contents or supporting data in Wells.
-- `RevealStage`: a `Dialog` with a full-bleed `art` stage and a centred title, for pack openings and claimed rewards. It plays the `reveal` sound cue on open.
 - `FlagWatermark` (`~/components/ui/facet`) is identity art for entity pages and heroes that have not moved to `EntityHeader` yet. Do not add it elsewhere.
 
 ### Actions and data
