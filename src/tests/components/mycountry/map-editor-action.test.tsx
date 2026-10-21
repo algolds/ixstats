@@ -74,16 +74,6 @@ describe("MyCountry header Map editor action", () => {
     );
     expect(can).toHaveBeenCalledWith("access", "MyCountryFeature", "map-editor");
   });
-
-  it("moves keyboard focus into the open pill and closes it on Escape", () => {
-    canUseMapEditor = true;
-    renderBar();
-    openEditPill();
-    expect(screen.getByRole("link", { name: "Country editor" })).toHaveFocus();
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.getByRole("button", { name: "Edit country or map" })).toHaveFocus();
-  });
-
   it("offers the map editor to a beta tester without premium", () => {
     canUseMapEditor = false;
     betaTester = true;

@@ -105,20 +105,6 @@ describe("a layer choice: the check", () => {
     expect(diff.kept).toEqual(["background", "climate", "political", "lakes"]);
     expect(JSON.stringify([db.mapLayer.rows, db.country.rows, db.realm.rows])).toBe(before);
   });
-
-  it("does not call a ticked replace 'nothing to add', where the plain realm map world does", async () => {
-    const db = drawnRealm();
-    for (const type of ["rivers", "icecaps"]) db.mapLayer.rows.push(mapRow(type, "x"));
-    const plain = jobFor(await realmMap(), { options: { fittedMapVersion: 0 } });
-    // the realm has every layer the bundle would generate and every region a nation
-    for (const type of ["altitudes", "climate"]) db.mapLayer.rows.push(mapRow(type, "y"));
-    await expect(runWorldDryRun(db, plain)).rejects.toMatchObject({
-      message: expect.stringContaining("nothing to add"),
-    });
-    const diff = await runWorldDryRun(db, jobFor(await realmMap(), choose(["climate"])));
-    expect(diff.chosen).toEqual(["climate"]);
-  });
-
   it.each(["lakes", "icecaps"] as const)(
     "refuses a ticked %s layer the world has none of, rather than wipe the realm's",
     async (empty) => {

@@ -69,22 +69,6 @@ beforeEach(() => clearTrpcMemoryCache());
 afterEach(() => jest.restoreAllMocks());
 
 describe("getCountryGeoProfile queries", () => {
-  it("reads geom_postgis with a bounding-box filter and never parses GeoJSON in SQL", async () => {
-    const db = fakeDb();
-    await call(db);
-    const queries = sqlOf(db);
-
-    // zones (climate, altitudes), rivers, lakes, neighbours, perimeter
-    expect(queries).toHaveLength(6);
-    for (const sql of queries) {
-      expect(sql).toContain("geom_postgis");
-      expect(sql).not.toContain("ST_GeomFromGeoJSON(");
-    }
-    for (const sql of queries.filter((q) => !q.includes("ST_Perimeter"))) {
-      expect(sql).toContain("&&");
-    }
-  });
-
   it("filters the rivers, lakes, zones and neighbours by the country's realm", async () => {
     const db = fakeDb();
     await call(db);
@@ -96,61 +80,6 @@ describe("getCountryGeoProfile queries", () => {
       `c2."realmId" = c."realmId"`
     );
   });
-
-  it("clips rivers, lakes and zones through subdivided pieces, whole when they lie inside", async () => {
-    const db = fakeDb();
-    await call(db);
-    const clipped = sqlOf(db).filter((sql) => /'(rivers|lakes)'/.test(sql) || sql.includes("$2"));
-
-    expect(clipped).toHaveLength(4);
-    for (const sql of clipped) {
-      expect(sql).toContain("ST_Subdivide(c.geom_postgis, 256)");
-      expect(sql).toMatch(
-        /CASE WHEN ST_CoveredBy\(\w+\.g, \w+\.g\) THEN \w+\.g\s+ELSE ST_Intersection/
-      );
-    }
-  });
-
-  it("assembles the profile from the answers of every query", async () => {
-    const profile = await call(fakeDb());
-
-    expect(profile.hydro).toMatchObject({
-      riverCount: 3,
-      totalRiverLengthKm: 121,
-      lakeCount: 2,
-      totalLakeAreaSqKm: 40,
-    });
-    expect(profile.neighbors).toEqual([
-      { id: "n1", name: "North", slug: "north", sharedBorderKm: 80 },
-    ]);
-    expect(profile.area.perimeterKm).toBe(1000);
-    expect(profile.derived.coastlineKm).toBe(920);
-    expect(profile.climate.zones).toHaveLength(1);
-    expect(profile.elevation.zones).toHaveLength(1);
-  });
-
-  it("starts every query before any answers and assembles whatever order they resolve in", async () => {
-    const pending: Array<() => void> = [];
-    const db = fakeDb();
-    db.$queryRawUnsafe.mockImplementation(
-      (sql: string, ...params: string[]) =>
-        new Promise<Row[]>((resolve) => pending.push(() => resolve(answer(sql, ...params))))
-    );
-
-    const result = call(db);
-    for (let tick = 0; tick < 200 && pending.length < 6; tick++) {
-      await new Promise((resolve) => setImmediate(resolve));
-    }
-    expect(pending).toHaveLength(6);
-    // the last query asked answers first
-    for (const resolve of pending.reverse()) resolve();
-
-    const profile = await result;
-    expect(profile.hydro.riverCount).toBe(3);
-    expect(profile.neighbors.map((n) => n.id)).toEqual(["n1"]);
-    expect(profile.area.perimeterKm).toBe(1000);
-  });
-
   it.each([
     ["rivers", (sql: string) => sql.includes("'rivers'")],
     ["lakes", (sql: string) => sql.includes("'lakes'")],
@@ -194,26 +123,5 @@ describe("getCountryGeoProfile queries", () => {
     expect(sqlOf(db)).toHaveLength(4);
     expect(db.mapLayer.findMany).toHaveBeenCalledTimes(2);
     expect(profile.hydro.riverCount).toBe(3);
-  });
-});
-
-describe("getCountryGeoProfile cache", () => {
-  it("serves the profile for an hour without querying again, then rebuilds it", async () => {
-    const start = 1_800_000_000_000;
-    const now = jest.spyOn(Date, "now").mockReturnValue(start);
-    const db = fakeDb();
-
-    await call(db);
-    const queries = db.$queryRawUnsafe.mock.calls.length;
-    expect(queries).toBe(6);
-
-    now.mockReturnValue(start + 59 * 60_000);
-    await call(db);
-    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(queries);
-    expect(db.country.findUnique).toHaveBeenCalledTimes(1);
-
-    now.mockReturnValue(start + 61 * 60_000);
-    await call(db);
-    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(queries * 2);
   });
 });

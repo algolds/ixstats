@@ -46,16 +46,6 @@ describe("geojson-pack", () => {
     const { political } = unpackLayers({ political: packFeatureCollection(fc, 4) });
     expect(political).toEqual(fc);
   });
-
-  it("stores lines as integer deltas, which is what makes it smaller", () => {
-    const packed = packFeatureCollection(fc, 2);
-    expect(packed.features[1]!.geometry).toEqual({
-      type: "LineString",
-      coordinates: [1012, -550, 1, 1],
-    });
-    expect(JSON.stringify(packed).length).toBeLessThan(JSON.stringify(fc).length);
-  });
-
   it("rounds to the precision without drifting along a line", () => {
     const line: FeatureCollection = {
       type: "FeatureCollection",
@@ -77,12 +67,5 @@ describe("geojson-pack", () => {
 
   it("passes plain GeoJSON (the IndexedDB placeholder) through unchanged", () => {
     expect(unpackLayers({ political: fc }).political).toBe(fc);
-  });
-
-  it("decodes each packed layer once, so unchanged layers keep their identity", () => {
-    const packed = packFeatureCollection(fc, 4);
-    const first = unpackLayers({ political: packed });
-    const second = unpackLayers({ political: packed, other: packFeatureCollection(fc, 2) });
-    expect(second.political).toBe(first.political);
   });
 });

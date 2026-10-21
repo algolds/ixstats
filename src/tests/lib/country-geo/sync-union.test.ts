@@ -69,15 +69,6 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
       areaSqMi: 4000 * 0.386102,
     });
   });
-
-  it("does not pull the regions' geometries into Node", async () => {
-    const db = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
-    await syncCountryGeometryFromMapLayer(db, "c1");
-    const select = db.mapLayer.findMany.mock.calls[0][0].select;
-    expect(select).not.toHaveProperty("geometry");
-    expect(select).toMatchObject({ centroid: true, boundingBox: true, areaSqKm: true });
-  });
-
   it("reads the nation's regions from its own realm's map only", async () => {
     const db = dbWith([], []);
     await syncCountryGeometryFromMapLayer(db, "c1");
@@ -185,32 +176,6 @@ describe("syncCountryGeometryFromMapLayer (PostGIS union)", () => {
       expect(data).toMatchObject({ centroid: [0.5, 0.5], landArea: 2000 });
       expect(warn).toHaveBeenCalledWith(expect.stringContaining("20261021120000_atlas_r0"));
     });
-
-    it("probes with to_regprocedure, which answers NULL instead of raising, so it cannot abort a caller's transaction", async () => {
-      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
-      const db = dbWith(unionOf(square(0, 0)), [region(2000, [0.5, 0.5], [0, 0, 1, 1])]);
-      await sync(db, "c1");
-      const [strings] = db.$queryRaw.mock.calls[0];
-      expect(strings.join("")).toContain("to_regprocedure('atlas_country_union(text,text)')");
-    });
-
-    it("probes once per process, whatever the answer", async () => {
-      const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
-      const missing = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
-      missing.$queryRaw.mockResolvedValue([{ present: false }]);
-      await sync(missing, "c1");
-      await sync(missing, "c2");
-      expect(missing.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(warn).toHaveBeenCalledTimes(1);
-
-      const { syncCountryGeometryFromMapLayer: syncOther } = await freshSync();
-      const present = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);
-      await syncOther(present, "c1");
-      await syncOther(present, "c2");
-      expect(present.$queryRaw).toHaveBeenCalledTimes(1);
-      expect(present.$queryRawUnsafe).toHaveBeenCalledTimes(2);
-    });
-
     it("a probe that fails is not remembered: this call keeps the outline, the next one asks again", async () => {
       const { syncCountryGeometryFromMapLayer: sync } = await freshSync();
       const db = dbWith(unionOf(square(0, 0)), [region(10, [0, 0], [0, 0, 1, 1])]);

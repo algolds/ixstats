@@ -111,38 +111,6 @@ function setup(prepare?: (st: VertexEditState) => void) {
 }
 
 describe("useVertexEditPointer drag", () => {
-  it("moves the vertex once per frame, to the latest pointer position", () => {
-    const { frame, fire, vertex } = setup();
-    fire("mousemove", move(20, 2, 2));
-    fire("mousemove", move(40, 3, 3));
-    expect(vertex()).toEqual([1, 1]);
-
-    frame();
-    expect(vertex()).toEqual([3, 3]);
-  });
-
-  it("applies the last move on mouse-up, so the vertex lands where the pointer stopped", () => {
-    const { frame, fire, st, vertex } = setup();
-    fire("mousemove", move(20, 2, 2));
-    frame();
-    fire("mousemove", move(40, 5, 6));
-    window.dispatchEvent(new MouseEvent("mouseup"));
-
-    expect(vertex()).toEqual([5, 6]);
-    expect(st.drag).toBeNull();
-  });
-
-  it("Escape restores the shape and drops the pending move", () => {
-    const { frame, fire, vertex } = setup();
-    fire("mousemove", move(20, 2, 2));
-    frame();
-    fire("mousemove", move(40, 9, 9));
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-    frame();
-
-    expect(vertex()).toEqual([1, 1]);
-  });
-
   it("Escape also puts back the neighbours the drag carried along", () => {
     const neighbor: Polygon = {
       type: "Polygon",

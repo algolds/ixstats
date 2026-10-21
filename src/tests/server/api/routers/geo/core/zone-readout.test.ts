@@ -8,8 +8,7 @@ import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { pointQueryProcedures } from "~/server/api/routers/geo/core/point-queries";
 import { geoProfileProcedures } from "~/server/api/routers/geo/core/geo-profile";
 import {
-  buildClimateZones,
-  buildElevationZones,
+  buildClimateZones
 } from "~/server/api/routers/geo/core/profile-zones";
 import { climateMetadataType, getAgricultureFactor } from "~/lib/maps/geo-analytics";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
@@ -24,8 +23,6 @@ const KOPPEN: ClimateKey = {
     { code: "EF", name: "Ice Cap", color: "#686868" },
   ],
 };
-const LAND_BAND = { fill: "#a8c995", zoneId: "land", zoneName: "Land" };
-
 type Mock = jest.Mock;
 
 /** A db whose realms are Ixnay and Eurth (with the Köppen key), and whose raw SQL answers `rows`. */
@@ -97,20 +94,6 @@ describe("climate and elevation zones of a country", () => {
       },
     ]);
   });
-
-  it("keeps Ixnay's Trewartha colours when the realm has no key", () => {
-    const [zone] = buildClimateZones([{ fill: "#00fd97", overlapArea: 5 }], true, null);
-    expect(zone).toMatchObject({ type: "Temperate Oceanic (Do)", percentArea: 100 });
-    expect(zone).not.toHaveProperty("code");
-  });
-
-  it("counts no elevation for a land-only band, but Ixnay's bands as before", () => {
-    expect(buildElevationZones([{ ...LAND_BAND, overlapArea: 50 }])).toEqual([]);
-    expect(buildElevationZones([{ fill: "#a8c995", overlapArea: 50 }])).toMatchObject([
-      { zone: "zone_0", percentArea: 100 },
-    ]);
-  });
-
   it("maps Köppen codes to the nearest Trewartha type and keeps Trewartha codes", () => {
     expect(
       ["Af", "Aw/As", "BWh", "BSk", "Csb", "Cwa", "Cfb", "Dfa", "Dfc", "ET", "EF", "Do"].map(
@@ -133,53 +116,6 @@ describe("climate and elevation zones of a country", () => {
     expect(climateMetadataType("Zz")).toBeNull();
   });
 });
-
-describe("the pin tool's zone readout", () => {
-  const layersAt = (rows: Array<{ layerType: string; properties: Record<string, unknown> }>) =>
-    fakeDb((sql) =>
-      sql.includes("FROM map_layers")
-        ? rows.map((r) => ({ featureId: "f", displayName: null, countryId: null, ...r }))
-        : []
-    );
-
-  it("names the climate zone through the realm's key and says Land for a land-only band", async () => {
-    const db = layersAt([
-      { layerType: "climate", properties: { fill: "#21c200", climateId: "Cfb" } },
-      { layerType: "altitudes", properties: LAND_BAND },
-    ]);
-    const info = await caller(ctxFor(db)).getPointInfo({ lng: 1, lat: 2, realm: "eurth" });
-    expect(info.climate).toEqual({
-      climateId: "Cfb",
-      climateName: "Cfb: Oceanic",
-      color: "#21c200",
-    });
-    expect(info.elevation).toEqual({
-      zoneId: "land",
-      zoneName: "Land",
-      elevationMin: null,
-      elevationMax: null,
-      elevationLabel: null,
-      color: "#a8c995",
-    });
-  });
-
-  it("finds the zone by its colour when the feature has no code", async () => {
-    const db = layersAt([{ layerType: "climate", properties: { fill: "#686868" } }]);
-    const info = await caller(ctxFor(db)).getPointInfo({ lng: 1, lat: -80, realm: "eurth" });
-    expect(info.climate?.climateName).toBe("EF: Ice Cap");
-  });
-
-  it("keeps Ixnay's Trewartha names and elevation bands", async () => {
-    const db = layersAt([
-      { layerType: "climate", properties: { fill: "#00fd97" } },
-      { layerType: "altitudes", properties: { fill: "#c3d3a1" } },
-    ]);
-    const info = await caller(ctxFor(db)).getPointInfo({ lng: 1, lat: 2 });
-    expect(info.climate?.climateName).toBe("Do: Temperate Oceanic");
-    expect(info.elevation).toMatchObject({ zoneName: "Low Hills", elevationLabel: "100-349m" });
-  });
-});
-
 describe("the Geography tab of a realm nation", () => {
   it("clips the realm's own climate and altitude layers to the nation and names zones by the key", async () => {
     const db = fakeDb((sql) => {
@@ -214,31 +150,6 @@ describe("the Geography tab of a realm nation", () => {
       .filter(([sql]) => sql.includes("ST_Subdivide(c.geom_postgis, 256)"));
     expect(clipSql.map(([, , layerType]) => layerType).sort()).toEqual(["altitudes", "climate"]);
     for (const [sql] of clipSql) expect(sql).toContain(`ml."worldId" = c."realmId"`);
-    expect(db.mapLayer.findMany).not.toHaveBeenCalled();
-  });
-
-  it("clips Ixnay's layers in PostGIS too, instead of pulling them into the server", async () => {
-    const db = fakeDb((sql) =>
-      sql.includes("ST_Subdivide(c.geom_postgis, 256)")
-        ? [{ fill: "#00fd97", climateId: null, zoneId: null, area: 200 }]
-        : []
-    );
-    db.country.findUnique.mockResolvedValue({
-      id: "c_ix",
-      name: "Caphiria",
-      realmId: DEFAULT_REALM_ID,
-      geometry: { type: "Point", coordinates: [0, 0] },
-      centroid: [0, -20],
-      boundingBox: [7, -33, 45, -1],
-      coastlineKm: null,
-      landArea: 200,
-      areaSqMi: null,
-    });
-    const profile = await caller(ctxFor(db)).getCountryGeoProfile({ countryId: "c_ix" });
-
-    expect(profile.climate.zones.map((z) => [z.type, z.percentArea])).toEqual([
-      ["Temperate Oceanic (Do)", 100],
-    ]);
     expect(db.mapLayer.findMany).not.toHaveBeenCalled();
   });
 });

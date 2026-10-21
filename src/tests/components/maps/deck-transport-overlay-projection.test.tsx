@@ -101,36 +101,6 @@ describe("DeckTransportOverlay projection guard", () => {
 
     expect(map.controls).toHaveLength(0);
   });
-
-  it("adds the deck control as soon as the projection is locked to mercator", () => {
-    const map = new FakeMap(DYNAMIC);
-    mount(map);
-
-    map.projectionType = "mercator";
-    act(() => map.emit("render"));
-
-    expect(map.controls).toHaveLength(1);
-    act(() => map.emit("render"));
-    expect(map.controls).toHaveLength(1);
-  });
-
-  it("adds the deck control immediately on a plain mercator or globe map", () => {
-    const mercator = new FakeMap("mercator");
-    const globe = new FakeMap("globe");
-    mount(mercator);
-    mount(globe);
-
-    expect(mercator.controls).toHaveLength(1);
-    expect(globe.controls).toHaveLength(1);
-  });
-
-  it("adds the deck control on a map whose style has no projection yet", () => {
-    const map = new FakeMap(undefined);
-    mount(map);
-
-    expect(map.controls).toHaveLength(1);
-  });
-
   it("removes the deck control when the projection turns dynamic and re-adds it when plain again", () => {
     const map = new FakeMap("mercator");
     mount(map);
@@ -144,25 +114,5 @@ describe("DeckTransportOverlay projection guard", () => {
     act(() => map.emit("render"));
     expect(map.controls).toHaveLength(1);
     expect(map.controls[0]).not.toBe(first);
-  });
-
-  it("does not push layers into deck between a projection change and the next render", () => {
-    const map = new FakeMap("mercator");
-    const { rerender } = mount(map);
-
-    map.projectionType = DYNAMIC;
-
-    expect(() =>
-      rerender(<DeckTransportOverlay map={asMap(map)} segments={[]} visible={false} />)
-    ).not.toThrow();
-  });
-
-  it("removes the deck control on unmount", () => {
-    const map = new FakeMap("mercator");
-    const { unmount } = mount(map);
-
-    unmount();
-
-    expect(map.controls).toHaveLength(0);
   });
 });

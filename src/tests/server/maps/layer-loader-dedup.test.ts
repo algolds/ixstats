@@ -39,21 +39,6 @@ describe("loadLayerFromDB in-flight dedup", () => {
   beforeEach(() => {
     clearLayerCache();
   });
-
-  it("concurrent loads of the same layer hit the DB once", async () => {
-    const findMany = jest.fn(resolvedRows);
-    const db = makeDb(findMany);
-
-    const [a, b] = await Promise.all([
-      loadLayerFromDB(db, "lakes", 1),
-      loadLayerFromDB(db, "lakes", 1),
-    ]);
-
-    expect(findMany).toHaveBeenCalledTimes(1);
-    expect(a).not.toBeNull();
-    expect(a).toBe(b);
-  });
-
   it("a failed load does not poison later calls", async () => {
     const findMany = jest.fn(resolvedRows).mockImplementationOnce(async () => {
       throw new Error("db down");

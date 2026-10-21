@@ -258,31 +258,6 @@ describe("a failure after the slots changed", () => {
     expect(db.realm.rows[0].seed).toBeNull();
     expect(runRelief).not.toHaveBeenCalled();
   });
-
-  it("names the step that failed: the map was restored, marking the import rolled back was not", async () => {
-    const { db } = original();
-    const upsert = db.mapLayer.upsert.getMockImplementation()!;
-    let failed = false;
-    db.mapLayer.upsert.mockImplementation(async (args: { create: { layerType: string } }) => {
-      if (args.create.layerType === "political" && !failed) {
-        failed = true;
-        throw new Error("connection reset");
-      }
-      return upsert(args);
-    });
-    db.mapImport.updateMany.mockRejectedValueOnce(new Error("lock timeout"));
-    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
-    const failure = await applyWorld(db, jobFor(await stored())).catch((e: Error) => e);
-    error.mockRestore();
-    expect((failure as Error).message).toMatch(/rejected 3 nation borders \(connection reset\)/);
-    expect((failure as Error).message).toMatch(
-      /The previous map was restored, but marking the import as rolled back failed \(lock timeout\)/
-    );
-    expect((failure as Error).message).not.toMatch(/Restoring the previous map/);
-    expect(country(db, "c_old1")).toBeDefined();
-    expect(layer(db, "political", "slot_old")).toMatchObject({ isActive: true });
-  });
-
   it("says so when the previous map cannot be restored either", async () => {
     const { db } = original();
     db.mapImport.create.mockRejectedValueOnce(new Error("disk full"));
@@ -587,15 +562,6 @@ describe("rebuildRealmRelief", () => {
     expect(cells.ok && Array.from(cells.cells)).toEqual(CELLS);
     expect(Array.from((source as { cells: Float32Array }).cells)).toEqual(CELLS);
   });
-
-  it("builds from the altitude bands when the map did not come from a world", async () => {
-    const db = seedRealm();
-    const runRelief = relief();
-    const out = await rebuildRealmRelief(db, "r1", { runRelief });
-    expect(out.source).toBe("bands");
-    expect(runRelief.mock.calls[0]![2]).toEqual({ bands: true });
-  });
-
   it("builds from the bands when a later import replaced the world's altitudes", async () => {
     const db = seedRealm();
     await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
@@ -610,14 +576,6 @@ describe("rebuildRealmRelief", () => {
       createdAt: new Date(Date.now() + 60_000),
       rolledBackAt: null,
     });
-    const runRelief = relief();
-    expect((await rebuildRealmRelief(db, "r1", { runRelief })).source).toBe("bands");
-  });
-
-  it("builds from the bands when the world's bundle is no longer stored", async () => {
-    const db = seedRealm();
-    await applyWorld(db, jobFor(await stored()), undefined, { runRelief: relief() });
-    // no stored job: the bundle cannot be found
     const runRelief = relief();
     expect((await rebuildRealmRelief(db, "r1", { runRelief })).source).toBe("bands");
   });

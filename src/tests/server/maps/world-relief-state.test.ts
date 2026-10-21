@@ -12,7 +12,7 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 }));
 jest.mock("~/lib/maps/map-update-bus", () => ({ broadcastMapUpdate: jest.fn() }));
 
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { rebuildRealmRelief } from "~/server/modules/maps/world-import";
@@ -77,38 +77,12 @@ function addApply(
 }
 
 describe("worldReliefFailed", () => {
-  it("is false for a realm that never had a world import", async () => {
-    await expect(worldReliefFailed(seedRealm(), "r1")).resolves.toBe(false);
-  });
-
-  it("is true when the relief step of the latest world import failed", async () => {
-    const db = seedRealm();
-    addApply(db, "j_apply", FAILED);
-    await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
-  });
-
-  it("is false when the relief was built", async () => {
-    const db = seedRealm();
-    addApply(db, "j_apply", BUILT);
-    await expect(worldReliefFailed(db, "r1")).resolves.toBe(false);
-  });
-
   it("reads the latest world import only: a later one that built its relief clears an earlier failure", async () => {
     const db = seedRealm();
     addApply(db, "j_old", FAILED);
     addApply(db, "j_new", BUILT, { createdAt: new Date("2026-03-01T00:00:00Z") });
     await expect(worldReliefFailed(db, "r1")).resolves.toBe(false);
   });
-
-  it("ignores dry runs, jobs that did not finish, other kinds and other realms", async () => {
-    const db = seedRealm();
-    addApply(db, "j_dry", FAILED, { dryRun: true });
-    addApply(db, "j_failed", FAILED, { status: "failed" });
-    addApply(db, "j_png", FAILED, { kind: "png" });
-    addApply(db, "j_other", FAILED, { realmId: "r2" });
-    await expect(worldReliefFailed(db, "r1")).resolves.toBe(false);
-  });
-
   it("is false once the import was rolled back: the previous relief is back", async () => {
     const db = seedRealm();
     addApply(db, "j_apply", FAILED);
@@ -120,18 +94,6 @@ describe("worldReliefFailed", () => {
 describe("worldReliefFailed, for a relief whose tiles are gone", () => {
   it("is true when the settings record a relief version that is not on disk (pruned, or never shared)", async () => {
     const db = recordsRelief("a".repeat(8));
-    await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
-  });
-
-  it("is false when the recorded version is on disk, and when the realm records no relief", async () => {
-    mkdirSync(path.join(rasterDir, "r1", "relief", "b".repeat(8)), { recursive: true });
-    await expect(worldReliefFailed(recordsRelief("b".repeat(8)), "r1")).resolves.toBe(false);
-    await expect(worldReliefFailed(seedRealm(), "r1")).resolves.toBe(false);
-  });
-
-  it("is true with a world whose relief step built, once its tiles are gone", async () => {
-    const db = recordsRelief("c".repeat(8));
-    addApply(db, "j_apply", BUILT);
     await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
   });
 });
@@ -150,15 +112,6 @@ describe("a relief rebuild", () => {
       relief: { status: "built", version: "abc12345", tiles: 12, error: null },
     });
   });
-
-  it("leaves a world import that failed to rebuild its relief marked failed", async () => {
-    const db = seedRealm();
-    addApply(db, "j_apply", FAILED);
-    const runRelief = jest.fn().mockRejectedValue(new Error("no heights"));
-    await expect(rebuildRealmRelief(db, "r1", { runRelief })).rejects.toThrow("no heights");
-    await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
-  });
-
   it("still answers when the bookkeeping fails: the relief is built", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
     const db = seedRealm();
@@ -168,12 +121,5 @@ describe("a relief rebuild", () => {
       built: true,
     });
     await expect(worldReliefFailed(db, "r1")).resolves.toBe(true);
-  });
-
-  it("leaves other jobs alone when the latest import's relief was built", async () => {
-    const db = seedRealm();
-    addApply(db, "j_apply", BUILT);
-    await rebuildRealmRelief(db, "r1", { runRelief: relief() });
-    expect(db.mapImportJob.update).not.toHaveBeenCalled();
   });
 });

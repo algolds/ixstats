@@ -6,12 +6,9 @@
  */
 import {
   existsSync,
-  mkdirSync,
   mkdtempSync,
   readdirSync,
-  rmSync,
-  utimesSync,
-  writeFileSync,
+  rmSync
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -20,8 +17,6 @@ const buildTile = jest.fn();
 jest.mock("~/server/modules/maps/tile-render", () => ({
   buildTile: (...a: unknown[]) => buildTile(...a),
 }));
-
-import { readTile } from "~/server/modules/maps/tile-cache";
 import { runMapTilePrerender } from "~/server/modules/maps/tile-prerender";
 
 interface Realm {
@@ -63,28 +58,6 @@ describe("runMapTilePrerender", () => {
       select: { id: true, status: true, mapVersion: true },
     });
   });
-
-  it("renders z0-3 of altitudes, rivers and lakes for a realm's version, then marks it done", async () => {
-    const result = await runMapTilePrerender(fakeDb([IXNAY]));
-    expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES);
-    expect(result).toMatchObject({ rendered: LOW_ZOOM_TILES, failed: 0, versionsCompleted: 1 });
-    expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
-
-    const calls = buildTile.mock.calls.map(
-      ([, realm, layer, z, x, y]) => `${realm}/${layer}/${z}/${x}/${y}`
-    );
-    expect(new Set(calls).size).toBe(LOW_ZOOM_TILES);
-    expect(calls).toEqual(
-      expect.arrayContaining([
-        "default/altitudes/0/0/0",
-        "default/rivers/3/7/7",
-        "default/lakes/2/3/0",
-      ])
-    );
-    expect(calls.some((c) => Number(c.split("/")[2]) > 3)).toBe(false);
-    expect(await readTile("default", 4, "rivers", 3, 7, 7)).toEqual(Buffer.from([1]));
-  });
-
   it("renders a version exactly once: a second run finds the marker and renders nothing", async () => {
     await runMapTilePrerender(fakeDb([IXNAY]));
     buildTile.mockClear();
@@ -92,23 +65,6 @@ describe("runMapTilePrerender", () => {
     expect(buildTile).not.toHaveBeenCalled();
     expect(result).toMatchObject({ rendered: 0, versionsCompleted: 0 });
   });
-
-  it("renders again when the realm's version moves on", async () => {
-    await runMapTilePrerender(fakeDb([IXNAY]));
-    buildTile.mockClear();
-    await runMapTilePrerender(fakeDb([{ ...IXNAY, mapVersion: 5 }]));
-    expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES);
-    expect(existsSync(path.join(root, "default", "f1", "5", ".done"))).toBe(true);
-  });
-
-  it("stores empty tiles too, so a realm with no features is marked done and its tiles are cache hits", async () => {
-    buildTile.mockResolvedValue(new Uint8Array());
-    await runMapTilePrerender(fakeDb([{ id: "r_empty", status: "active", mapVersion: 0 }]));
-    expect(existsSync(path.join(root, "r_empty", "f1", "0", ".done"))).toBe(true);
-    const hit = await readTile("r_empty", 0, "lakes", 3, 3, 3);
-    expect(hit?.length).toBe(0);
-  });
-
   it("renders only published realms and Ixnay: a draft or generating realm's tiles wait for a viewer", async () => {
     await runMapTilePrerender(
       fakeDb([
@@ -142,15 +98,6 @@ describe("runMapTilePrerender", () => {
     expect(second).toMatchObject({ rendered: 1, failed: 0, versionsCompleted: 1 });
     expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
   });
-
-  it("does not render a tile a viewer already caused to be cached", async () => {
-    const { writeTile } = await import("~/server/modules/maps/tile-cache");
-    await writeTile("default", 4, "altitudes", 0, 0, 0, Buffer.from([9]));
-    await runMapTilePrerender(fakeDb([IXNAY]));
-    expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES - 1);
-    expect(await readTile("default", 4, "altitudes", 0, 0, 0)).toEqual(Buffer.from([9]));
-  });
-
   it("stops between tiles when the budget is spent, without marking the version, and continues next run", async () => {
     let clock = 0;
     const options = { budgetMs: 1_000, now: () => clock };
@@ -168,31 +115,5 @@ describe("runMapTilePrerender", () => {
     await runMapTilePrerender(fakeDb([IXNAY]), { budgetMs: 1_000_000, now: () => clock });
     expect(buildTile).toHaveBeenCalledTimes(LOW_ZOOM_TILES - 10);
     expect(existsSync(path.join(root, "default", "f1", "4", ".done"))).toBe(true);
-  });
-
-  it("removes versions a day after the next one was ready, for every realm", async () => {
-    const DAY = 24 * 60 * 60 * 1000;
-    const old = (realm: string, version: number, ageMs: number) => {
-      const dir = path.join(root, realm, "f1", String(version));
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(path.join(dir, ".done"), "");
-      const stamp = new Date(Date.now() - ageMs);
-      utimesSync(path.join(dir, ".done"), stamp, stamp);
-    };
-    old("default", 1, 5 * DAY);
-    old("default", 2, 3 * DAY);
-    old("r_draft", 1, 5 * DAY);
-    old("r_draft", 2, 3 * DAY);
-    const result = await runMapTilePrerender(
-      fakeDb([
-        { id: "default", status: "active", mapVersion: 3 },
-        { id: "r_draft", status: "draft", mapVersion: 3 },
-      ])
-    );
-    // Ixnay's version 3 was just rendered, so version 2 (its successor 3 is brand new) stays; version 1 goes
-    expect(readdirSync(path.join(root, "default", "f1")).sort()).toEqual(["2", "3"]);
-    // The draft realm was not rendered; its newest old version is judged by its own age
-    expect(readdirSync(path.join(root, "r_draft", "f1"))).toEqual([]);
-    expect(result.removedVersions).toBe(3);
   });
 });

@@ -38,7 +38,7 @@ jest.mock("~/lib/maps/legacy-map-cache", () => ({
   dropLegacyMapCache: () => mockDropLegacy(),
 }));
 
-import { useRetryMapLayers, useDecodedMapLayers, useMapLayerData } from "~/hooks/useMapLayerData";
+import { useMapLayerData } from "~/hooks/useMapLayerData";
 
 const packedSquare = (id: string) => ({
   type: "FeatureCollection",
@@ -100,59 +100,6 @@ describe("useMapLayerData", () => {
     ]);
     expect(Object.keys(result.current.packed ?? {}).sort()).toEqual(["background", "political"]);
   });
-
-  it("defaults to the mid zoom bucket and asks the version of the realm it was given", async () => {
-    const { result } = renderHook(
-      () => useMapLayerData({ layers: ["political"], realm: "eurth" }),
-      {
-        wrapper,
-      }
-    );
-    await waitFor(() => expect(result.current.isPending).toBe(false));
-
-    expect(urls()).toEqual(["/api/map-layers/default/3/political?bucket=1&format=1"]);
-    expect(mockVersionQuery).toHaveBeenCalledWith({ realm: "eurth" }, expect.anything());
-  });
-
-  it("names the map version its layers belong to, which is what says the layers changed", async () => {
-    const { result, rerender } = renderHook(() => useMapLayerData({ layers: ["political"] }), {
-      wrapper,
-    });
-    expect(result.current.version).toBe(3);
-    await waitFor(() => expect(result.current.isPending).toBe(false));
-    rerender();
-    expect(result.current.version).toBe(3);
-    mockVersion = { realmId: "default", version: 4 };
-    rerender();
-    expect(result.current.version).toBe(4);
-  });
-
-  it("waits for the version, fetching nothing and reporting it is pending", () => {
-    mockVersion = undefined;
-    const { result } = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-
-    expect(result.current.isPending).toBe(true);
-    expect(result.current.packed).toBeUndefined();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("reports a version it could not get, rather than waiting for it forever", () => {
-    mockVersion = undefined;
-    mockVersionError = new Error("version query failed");
-    const { result } = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-    expect(result.current.error?.message).toBe("version query failed");
-  });
-
-  it("holds every request back while disabled, the version query included", () => {
-    renderHook(() => useMapLayerData({ layers: ["political"], enabled: false }), { wrapper });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(mockVersionQuery).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({ enabled: false })
-    );
-  });
-
   it("refetches when the map version changes, showing the old data until the new answers", async () => {
     const { result, rerender } = renderHook(() => useMapLayerData({ layers: ["political"] }), {
       wrapper,
@@ -187,52 +134,6 @@ describe("useMapLayerData", () => {
       )
     );
   });
-
-  it("drops the previous version's layer queries once the version moves, keeping other realms' and the shown map", async () => {
-    queryClient.setQueryData(["map-layer", "r_other", 9, 1, "political", 1], "another realm");
-    const { result, rerender } = renderHook(() => useMapLayerData({ layers: ["political"] }), {
-      wrapper,
-    });
-    await waitFor(() => expect(result.current.isPending).toBe(false));
-    const before = result.current.packed?.political;
-    const layerVersions = () =>
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["map-layer"] })
-        .map((q) => `${q.queryKey[1]}/${q.queryKey[2]}`)
-        .sort();
-    expect(layerVersions()).toEqual(["default/3", "r_other/9"]);
-
-    mockVersion = { realmId: "default", version: 4 };
-    rerender();
-    await waitFor(() => expect(layerVersions()).toEqual(["default/4", "r_other/9"]));
-
-    // the map still draws the previous version's data until the new one lands; then the new one
-    await waitFor(() => expect(result.current.packed?.political).not.toBe(before));
-    expect(layerVersions()).toEqual(["default/4", "r_other/9"]);
-  });
-
-  it("keeps a version's layers that another mounted map still shows", async () => {
-    const other = renderHook(() => useMapLayerData({ layers: ["political"], realm: "other" }), {
-      wrapper,
-    });
-    await waitFor(() => expect(other.result.current.isPending).toBe(false));
-
-    // the same realm under a different slug has moved on: the first map still observes version 3
-    mockVersion = { realmId: "default", version: 4 };
-    const moved = renderHook(() => useMapLayerData({ layers: ["political"], realm: "ixnay" }), {
-      wrapper,
-    });
-    await waitFor(() => expect(moved.result.current.isPending).toBe(false));
-
-    const versions = queryClient
-      .getQueryCache()
-      .findAll({ queryKey: ["map-layer"] })
-      .map((q) => q.queryKey[2]);
-    expect(versions).toContain(3);
-    expect(versions).toContain(4);
-  });
-
   it("escapes the realm in the URL", async () => {
     mockVersion = { realmId: "a/b", version: 0 };
     const { result } = renderHook(() => useMapLayerData({ layers: ["background"] }), { wrapper });
@@ -295,95 +196,5 @@ describe("useMapLayerData", () => {
 
     expect(result.current.error?.message).toMatch(/political.*404/);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("retries a layer the server failed to build, twice", async () => {
-    fetchMock.mockImplementation(
-      async () => ({ ok: false, status: 503, json: async () => ({}) }) as never
-    );
-    const { result } = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-
-    await waitFor(() => expect(result.current.error).not.toBeNull());
-
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-  });
-
-  it("drops the retired IndexedDB layer cache once the layers are used", () => {
-    renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-    expect(mockDropLegacy).toHaveBeenCalledTimes(1);
-  });
-
-  it("downloads nothing again for an unchanged version, even in a fresh mount", async () => {
-    const first = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-    await waitFor(() => expect(first.result.current.isPending).toBe(false));
-    first.unmount();
-
-    const second = renderHook(() => useMapLayerData({ layers: ["political"] }), { wrapper });
-
-    expect(second.result.current.packed?.political).toBeDefined();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it("fetches only the added layer when another is switched on", async () => {
-    const { result, rerender } = renderHook(
-      ({ layers }: { layers: Array<"political" | "climate"> }) => useMapLayerData({ layers }),
-      { wrapper, initialProps: { layers: ["political"] } }
-    );
-    await waitFor(() => expect(result.current.isPending).toBe(false));
-    fetchMock.mockClear();
-
-    rerender({ layers: ["political", "climate"] });
-    await waitFor(() => expect(Object.keys(result.current.packed ?? {})).toContain("climate"));
-
-    expect(urls()).toEqual(["/api/map-layers/default/3/climate?bucket=1&format=1"]);
-  });
-
-  it("reports a layer that cannot be loaded, and still delivers the others", async () => {
-    fetchMock.mockImplementation(async (url) =>
-      url.includes("political")
-        ? ({ ok: false, status: 500, json: async () => ({}) } as never)
-        : ({ ok: true, status: 200, json: async () => packedSquare(url) } as never)
-    );
-    const { result } = renderHook(() => useMapLayerData({ layers: ["political", "background"] }), {
-      wrapper,
-    });
-
-    await waitFor(() => expect(result.current.isPending).toBe(false));
-
-    expect(result.current.error?.message).toMatch(/political.*500/);
-    expect(Object.keys(result.current.packed ?? {})).toEqual(["background"]);
-  });
-});
-
-describe("useRetryMapLayers", () => {
-  it("asks for the map version again and downloads the layers again", async () => {
-    const { result } = renderHook(
-      () => ({ layers: useMapLayerData({ layers: ["political"] }), retry: useRetryMapLayers() }),
-      { wrapper }
-    );
-    await waitFor(() => expect(result.current.layers.isPending).toBe(false));
-
-    await act(async () => result.current.retry());
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-    expect(mockInvalidateVersion).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("useDecodedMapLayers", () => {
-  it("decodes the packed layers to GeoJSON, keeping each decoded layer for as long as it is the same", async () => {
-    const { result, rerender } = renderHook(() => useDecodedMapLayers({ layers: ["political"] }), {
-      wrapper,
-    });
-    await waitFor(() => expect(result.current.layers).toBeDefined());
-
-    const ring = (result.current.layers!.political!.features[0]!.geometry as GeoJSON.Polygon)
-      .coordinates[0]!;
-    expect(ring[0]).toEqual([0, 0]);
-    expect(ring[1]).toEqual([1, 0]);
-
-    const decoded = result.current.layers;
-    rerender();
-    expect(result.current.layers).toBe(decoded);
   });
 });

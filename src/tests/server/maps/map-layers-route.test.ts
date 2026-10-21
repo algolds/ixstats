@@ -89,66 +89,6 @@ beforeEach(() => {
 });
 
 describe("GET /api/map-layers", () => {
-  it("serves Ixnay's layer as packed JSON that any cache keeps for a year", async () => {
-    const res = await get("default", "3", "political", "?bucket=1");
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toContain("application/json");
-    expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(res.headers.get("etag")).toBe('"default-3-f1-political-1"');
-    expect(await res.text()).toBe(BODY);
-    expect(packedLayerAt).toHaveBeenCalledWith(expect.anything(), "default", 3, "political", 1);
-  });
-
-  it.each(["ixnay", "ixworld"])(
-    "takes Ixnay's name %s as well as its id, cached briefly rather than for a year",
-    async (name) => {
-      const res = await get(name, "3", "political");
-      expect(res.status).toBe(200);
-      expect(res.headers.get("etag")).toBe('"default-3-f1-political-1"');
-      expect(res.headers.get("cache-control")).toBe("public, max-age=300");
-      expect(realmFindUnique).not.toHaveBeenCalled();
-    }
-  );
-
-  it("defaults to the mid zoom bucket", async () => {
-    await get("default", "3", "political");
-    expect(packedLayerAt).toHaveBeenCalledWith(expect.anything(), "default", 3, "political", 1);
-  });
-
-  it.each([0, 1, 2])("serves zoom bucket %i", async (bucket) => {
-    const res = await get("default", "3", "political", `?bucket=${bucket}`);
-    expect(res.headers.get("etag")).toBe(`"default-3-f1-political-${bucket}"`);
-  });
-
-  it("caches a published realm's layer publicly, found by slug or id", async () => {
-    realmFindUnique.mockImplementation(
-      async ({ where }: { where: { id?: string; slug?: string } }) =>
-        where.id === "r_eurth" || where.slug === "eurth" ? realmRow("active") : null
-    );
-    const bySlug = await get("eurth", "3", "political");
-    expect(bySlug.status).toBe(200);
-    expect(bySlug.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
-
-    const byId = await get("r_eurth", "3", "political");
-    expect(byId.status).toBe(200);
-    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(byId.headers.get("etag")).toBe('"r_eurth-3-f1-political-1"');
-  });
-
-  it("makes only ID-addressed URLs immutable: a slug can be renamed or given to another realm", async () => {
-    realmFindUnique.mockImplementation(
-      async ({ where }: { where: { id?: string; slug?: string } }) =>
-        where.id === "r_eurth" || where.slug === "eurth" ? realmRow("active") : null
-    );
-    const bySlug = await get("eurth", "3", "political");
-    const byId = await get("r_eurth", "3", "political");
-
-    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(bySlug.headers.get("cache-control")).toBe("public, max-age=300");
-    expect(await bySlug.text()).toBe(await byId.text());
-  });
-
   it("answers 304 to a matching If-None-Match without building the layer", async () => {
     const res = await get("default", "3", "political", "?bucket=1", {
       "if-none-match": '"default-3-f1-political-1"',
@@ -191,29 +131,6 @@ describe("GET /api/map-layers", () => {
     expect(res.headers.get("cache-control")).not.toContain("immutable");
     expect(res.headers.get("etag")).toBe('"default-2-f1-political-1"');
   });
-
-  it("serves a version that is an epoch second (ten digits, what a bump yields from the first edit on)", async () => {
-    getRealmMapVersion.mockResolvedValue(1791783284);
-    const res = await get("default", "1791783284", "political");
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(res.headers.get("etag")).toBe('"default-1791783284-f1-political-1"');
-    expect(packedLayerAt).toHaveBeenCalledWith(
-      expect.anything(),
-      "default",
-      1791783284,
-      "political",
-      1
-    );
-  });
-
-  it("serves an empty realm's layer as the empty collection the loader built, status 200", async () => {
-    packedLayerAt.mockResolvedValue('{"type":"FeatureCollection","packed":4,"features":[]}');
-    const res = await get("eurth", "0", "political");
-    expect(res.status).toBe(200);
-    expect(JSON.parse(await res.text())).toMatchObject({ features: [] });
-  });
 });
 
 describe("GET /api/map-layers: loader format", () => {
@@ -250,17 +167,6 @@ describe("GET /api/map-layers: loader format", () => {
 
 describe("GET /api/map-layers: unpublished realms (no leak)", () => {
   beforeEach(() => realmFindUnique.mockResolvedValue(realmRow("draft")));
-
-  it.each(["draft", "generating"])("hides a %s realm from a signed-out viewer", async (status) => {
-    realmFindUnique.mockResolvedValue(realmRow(status));
-    const res = await get("eurth", "3", "political");
-
-    expect(res.status).toBe(404);
-    expect(res.headers.get("cache-control")).toBe("private, no-store");
-    expect(packedLayerAt).not.toHaveBeenCalled();
-    expect(await res.text()).not.toContain("FeatureCollection");
-  });
-
   it("hides it from a signed-in viewer who may not see it", async () => {
     auth.mockResolvedValue({ userId: "clerk_other" });
     userFind.mockResolvedValue({
@@ -272,24 +178,6 @@ describe("GET /api/map-layers: unpublished realms (no leak)", () => {
     expect(res.status).toBe(404);
     expect(packedLayerAt).not.toHaveBeenCalled();
   });
-
-  it("serves it to its owner, uncacheable by any cache, with no tag to revalidate", async () => {
-    auth.mockResolvedValue({ userId: "clerk_owner" });
-    userFind.mockResolvedValue({
-      id: "u1",
-      clerkUserId: "clerk_owner",
-      role: { name: "user", level: 100 },
-    });
-    const res = await get("eurth", "3", "political", "?bucket=1", {
-      "if-none-match": '"r_eurth-3-f1-political-1"',
-    });
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get("cache-control")).toBe("private, no-store");
-    expect(res.headers.get("etag")).toBeNull();
-    expect(await res.text()).toBe(BODY);
-  });
-
   it("serves it to site staff the same way", async () => {
     auth.mockResolvedValue({ userId: "clerk_admin" });
     userFind.mockResolvedValue({

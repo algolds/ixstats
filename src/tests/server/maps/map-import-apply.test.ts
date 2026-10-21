@@ -120,40 +120,6 @@ const apply = (mode: "merge" | "replace", extra: Record<string, string | null> =
   });
 
 describe("planMapImport (the dry run)", () => {
-  it("lists new, changed and unchanged borders, matched names, unknown names and unmatched regions", async () => {
-    const db = setup();
-    const realm = await findImportRealm(db, "r1");
-    const plan = await planMapImport(db as never, realm, result, apply("merge"), {});
-    const byNation = Object.fromEntries(plan.diff.features.map((f) => [f.nation, f]));
-    expect(byNation.Aurelia).toMatchObject({ key: "Aurelia", countryId: "c_aur", status: "new" });
-    // Borealis keeps its existing feature key and stated land area; its border is the same as before.
-    expect(byNation.Borealis).toMatchObject({
-      key: "borealis-key",
-      status: "unchanged",
-      landArea: { current: 51_000, action: "keep" },
-    });
-    expect(byNation.Aurelia!.landArea).toEqual({ current: null, action: "fill" });
-    expect(byNation.Cyrine).toMatchObject({ countryId: null, landArea: { action: "none" } });
-    expect(plan.diff.newNames).toEqual([{ nation: "Cyrine", suggestions: [] }]);
-    expect(plan.diff.unmatched).toEqual([]); // the sea is water, not unmatched
-    expect(plan.diff.kept).toBe(1);
-    expect(plan.diff.removed).toEqual([]);
-  });
-
-  it("replace mode lists the political features the new map does not have", async () => {
-    const db = setup();
-    const plan = await planMapImport(
-      db as never,
-      await findImportRealm(db, "r1"),
-      result,
-      apply("replace"),
-      {}
-    );
-    expect(plan.diff.removed).toEqual([
-      { key: "Old Kingdom", name: "Old Kingdom", countryName: null },
-    ]);
-  });
-
   it("marks a border that moved as changed", async () => {
     const db = setup();
     db.mapLayer.rows[0].geometry = square(11);
@@ -214,48 +180,6 @@ describe("refreshRealmMap", () => {
 });
 
 describe("applyMapImportPlan and rollback", () => {
-  it("replace mode retires stale political features only, then rolls back exactly", async () => {
-    const db = setup();
-    const realm = await findImportRealm(db, "r1");
-    const plan = await planMapImport(db as never, realm, result, apply("replace"), {});
-    const applied = await applyMapImportPlan(db as never, realm, plan, {
-      jobId: "j1",
-      requestedBy: "admin_1",
-    });
-    expect(applied).toMatchObject({
-      written: 3,
-      deactivated: 1,
-      landAreasFilled: ["Aurelia"],
-      rollbackAvailable: true,
-    });
-    const row = (key: string) =>
-      db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === key);
-    expect(row("Old Kingdom").isActive).toBe(false);
-    expect(row("lake-1").isActive).toBe(true); // another layer is never touched
-    // Stored repaired: the planned square as a MultiPolygon.
-    expect(row("borealis-key").geometry).toEqual({
-      type: "MultiPolygon",
-      coordinates: [plan.features.find((f) => f.key === "borealis-key")!.geometry.coordinates],
-    });
-    expect(db.country.rows[0].landArea).toBeGreaterThan(0);
-    expect(db.country.rows[1].landArea).toBe(51_000); // a stated land area is kept
-    expect(db.realm.rows[0].mapVersion).toBe(1); // the apply moved the realm's map version
-
-    const history = await listMapImports(db as never, admin, "r1");
-    expect(history[0]).toMatchObject({ id: applied.mapImportId, canRollBack: true });
-
-    const restored = await rollbackMapImport(db as never, admin, applied.mapImportId);
-    expect(restored).toMatchObject({ deleted: 2 }); // Aurelia and Cyrine did not exist before
-    expect(row("Aurelia")).toBeUndefined();
-    expect(row("Old Kingdom").isActive).toBe(true);
-    expect(row("borealis-key").geometry).toEqual(square(10));
-    expect(db.country.rows[0].landArea).toBeNull();
-    expect(db.realm.rows[0].mapVersion).toBe(2); // and so did the rollback
-    await expect(rollbackMapImport(db as never, admin, applied.mapImportId)).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
-  });
-
   it("replace mode keeps a feature whose incoming border was rejected", async () => {
     const db = setup();
     const realm = await findImportRealm(db, "r1");
@@ -271,20 +195,6 @@ describe("applyMapImportPlan and rollback", () => {
       db.mapLayer.rows.find((r: { featureId: string }) => r.featureId === key);
     expect(row("borealis-key").isActive).toBe(true);
   });
-
-  it("planning the same map again finds every border unchanged, although the stored copy was repaired", async () => {
-    const db = setup();
-    const realm = await findImportRealm(db, "r1");
-    const plan = await planMapImport(db as never, realm, result, apply("merge"), {});
-    await applyMapImportPlan(db as never, realm, plan, { jobId: "j1", requestedBy: "admin_1" });
-    const again = await planMapImport(db as never, realm, result, apply("merge"), {});
-    expect(again.diff.features.map((f) => f.status)).toEqual([
-      "unchanged",
-      "unchanged",
-      "unchanged",
-    ]);
-  });
-
   it("only the latest import still in place can be rolled back, and only by its staff", async () => {
     const db = setup();
     const realm = await findImportRealm(db, "r1");

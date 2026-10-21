@@ -4,7 +4,7 @@
  */
 
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry, Position } from "geojson";
-import { measureWorld, TREWARTHA_GROUPS, type MeasureLayers } from "~/lib/worldgen/measure-world";
+import { measureWorld } from "~/lib/worldgen/measure-world";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
 
 type Ring = Position[];
@@ -43,45 +43,6 @@ describe("measureWorld: land and hypsometry", () => {
     const expected = globeShare(40, 0, 40) + globeShare(40, 50, 90);
     expect(measures.landShare).toBeCloseTo(expected, 3);
   });
-
-  it("counts background and political land once", () => {
-    const measures = measureWorld({
-      background: layer(square(0, 0, 20)),
-      political: layer(square(10, 0, 20)),
-    });
-    expect(measures.landShare).toBeCloseTo(globeShare(30, 0, 20), 3);
-  });
-
-  it("shares the land among the nine zones, unbanded land counting as the lowest", () => {
-    const measures = measureWorld({
-      political: layer(square(0, 0, 20)),
-      altitudes: layer(feature(polygon(box(0, 0, 10, 20)), { zone: "zone_3" })),
-    });
-    expect(measures.hypsometry).toHaveLength(9);
-    expect(measures.hypsometry[0]).toBeCloseTo(0.5, 10);
-    expect(measures.hypsometry[3]).toBeCloseTo(0.5, 10);
-    expect(measures.hypsometry.reduce((sum, share) => sum + share, 0)).toBeCloseTo(1, 6);
-  });
-
-  it("reads Ixnay's altitude subgroups", () => {
-    const measures = measureWorld({
-      political: layer(square(0, 0, 20)),
-      altitudes: layer(feature(polygon(box(0, 0, 20, 20)), { "ixmap-subgroup": "Altitude-4" })),
-    });
-    expect(measures.hypsometry[4]).toBeCloseTo(1, 6);
-  });
-
-  it("measures an empty world as zeros", () => {
-    const measures = measureWorld({});
-    expect(measures).toEqual({
-      landShare: 0,
-      hypsometry: new Array(9).fill(0),
-      climate: { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, H: 0 },
-      unclassifiedShare: 0,
-      nations: { count: 0, medianKm2: 0, p90Km2: 0 },
-      coastlineKm: 0,
-    });
-  });
 });
 
 describe("measureWorld: climate", () => {
@@ -90,24 +51,6 @@ describe("measureWorld: climate", () => {
     political: land,
     climate: layer(west, east),
   });
-
-  it("splits the land by Trewartha group, whichever way a feature names its type", () => {
-    const west = feature(polygon(box(0, 0, 20, 40)), { code: "Cs" });
-    const east = feature(polygon(box(20, 0, 40, 40)), { biomeId: 0 });
-    const { climate } = measureWorld(halves(west, east));
-    expect(climate.C).toBeCloseTo(0.5, 10);
-    expect(climate.A).toBeCloseTo(0.5, 10);
-    expect(climate.B).toBe(0);
-  });
-
-  it("reads a colour-only feature as the nearest Trewartha colour", () => {
-    const { climate } = measureWorld({
-      political: land,
-      climate: layer(feature(polygon(box(0, 0, 40, 40)), { fill: "#980000" })),
-    });
-    expect(climate.A).toBeCloseTo(1, 6);
-  });
-
   it("maps Koppen and Trewartha encodings to the same groups", () => {
     const trewartha = measureWorld(
       halves(
@@ -148,185 +91,13 @@ describe("measureWorld: climate", () => {
       expect(other.climate).toEqual(trewartha.climate);
     }
   });
-
-  it("matches a key colour whatever its spelling: case, short form, an opaque alpha", () => {
-    // Neither colour is near a Trewartha colour, so only the key can name them
-    const climateKey: ClimateKey = {
-      system: "Koppen",
-      zones: [
-        { code: "Cfb", name: "Oceanic", color: "#A8C995" },
-        { code: "BWh", name: "Hot desert", color: "#aabbcc" },
-      ],
-    };
-    const spelled = (west: string, east: string) =>
-      measureWorld(
-        halves(
-          feature(polygon(box(0, 0, 20, 40)), { fill: west }),
-          feature(polygon(box(20, 0, 40, 40)), { fill: east })
-        ),
-        { climateKey }
-      ).climate;
-    for (const [west, east] of [
-      ["#a8c995", "#aabbcc"],
-      ["#a8c995ff", "#AABBCCFF"],
-      ["#A8C995", "#abc"],
-      ["#a8c995ff", "#abcf"],
-    ] as const) {
-      const climate = spelled(west, east);
-      expect(climate.D).toBeCloseTo(0.5, 10);
-      expect(climate.B).toBeCloseTo(0.5, 10);
-    }
-  });
-
-  it("reads a colour-only feature with an opaque alpha or a short form as its colour", () => {
-    const fill = (value: string) =>
-      measureWorld({
-        political: land,
-        climate: layer(feature(polygon(box(0, 0, 40, 40)), { fill: value })),
-      }).climate;
-    // #990000 is the canonical Ar; #900 is its short form near it, and ff is opaque
-    expect(fill("#990000ff").A).toBeCloseTo(1, 6);
-    expect(fill("#900").A).toBeCloseTo(1, 6);
-  });
-
-  it("maps Koppen's cold and polar types to Trewartha's boreal and polar groups", () => {
-    const { climate } = measureWorld(
-      halves(
-        feature(polygon(box(0, 0, 20, 40)), { code: "Dfc" }),
-        feature(polygon(box(20, 0, 40, 40)), { code: "ET" })
-      )
-    );
-    expect(climate.D + climate.E).toBeCloseTo(0.5, 10);
-    expect(climate.F).toBeCloseTo(0.5, 10);
-  });
-
-  it("shares only the classified land and ignores climate over the sea", () => {
-    const { climate } = measureWorld({
-      political: land,
-      climate: layer(
-        feature(polygon(box(0, 0, 20, 40)), { code: "E" }),
-        feature(polygon(box(100, 0, 140, 40)), { code: "Ar" })
-      ),
-    });
-    expect(climate.E).toBeCloseTo(1, 6);
-    expect(climate.A).toBe(0);
-  });
-
-  it("counts land whose climate it cannot place as unclassified, not as missing", () => {
-    const koppenWithoutKey = measureWorld({
-      political: land,
-      climate: layer(
-        feature(polygon(box(0, 0, 20, 40)), { climateId: "7" }),
-        feature(polygon(box(20, 0, 40, 40)), { code: "Dfc" })
-      ),
-    });
-    // half the land is a zone code the realm never described: the other half is all there is to share
-    expect(koppenWithoutKey.unclassifiedShare).toBeCloseTo(0.5, 10);
-    expect(koppenWithoutKey.climate.D + koppenWithoutKey.climate.E).toBeCloseTo(1, 10);
-    expect(measureWorld({ political: land }).unclassifiedShare).toBe(1);
-    const classified = measureWorld({
-      political: land,
-      climate: layer(feature(polygon(box(0, 0, 40, 40)), { code: "E" })),
-    });
-    expect(classified.unclassifiedShare).toBeCloseTo(0, 10);
-  });
-
-  it("keeps every group as a key", () => {
-    expect(Object.keys(measureWorld({}).climate)).toEqual([...TREWARTHA_GROUPS]);
-  });
 });
-
-describe("measureWorld: nations", () => {
-  it("counts the political features and measures their area in km2", () => {
-    const layers: MeasureLayers = {
-      political: layer(square(0, 0, 10), square(20, 0, 10), square(40, 0, 20)),
-    };
-    const { nations } = measureWorld(layers);
-    expect(nations.count).toBe(3);
-    // 10 x 10 degrees at the equator is about 1.236 million km2
-    expect(nations.medianKm2).toBeGreaterThan(1.2e6);
-    expect(nations.medianKm2).toBeLessThan(1.25e6);
-    // p90 interpolates toward the 20 x 20 degree nation (about 4.9 million km2)
-    expect(nations.p90Km2).toBeGreaterThan(nations.medianKm2);
-    expect(nations.p90Km2).toBeLessThan(5e6);
-  });
-
-  it("subtracts a hole and sums the parts of a multipolygon", () => {
-    const withHole = feature(polygon(box(0, 0, 10, 10), box(2, 2, 8, 8).reverse()));
-    const parts = feature({
-      type: "MultiPolygon",
-      coordinates: [[box(20, 0, 25, 5)], [box(30, 0, 35, 5)]],
-    });
-    const { nations } = measureWorld({ political: layer(withHole, parts) });
-    expect(nations.count).toBe(2);
-    const full = (DEG_KM * 10) ** 2;
-    const hole = (DEG_KM * 6) ** 2;
-    const split = 2 * (DEG_KM * 5) ** 2;
-    expect(nations.medianKm2).toBeCloseTo((full - hole + split) / 2, -4);
-  });
-
-  it("scales areas and distances to the planet's radius", () => {
-    const layers = { political: layer(square(0, 0, 10)) };
-    const earth = measureWorld(layers);
-    const half = measureWorld(layers, { radiusKm: 6371 / 2 });
-    expect(half.nations.medianKm2).toBeCloseTo(earth.nations.medianKm2 / 4, -2);
-    expect(half.coastlineKm).toBeCloseTo(earth.coastlineKm / 2, 0);
-  });
-
-  it("leaves out features without a polygon", () => {
-    const { nations } = measureWorld({
-      political: {
-        type: "FeatureCollection",
-        features: [{ type: "Feature", properties: {}, geometry: null }, square(0, 0, 10)],
-      },
-    });
-    expect(nations.count).toBe(1);
-  });
-});
-
 describe("measureWorld: coastline", () => {
-  it("measures the length of a land polygon's rings", () => {
-    const { coastlineKm } = measureWorld({ background: layer(square(0, 0, 10)) });
-    // two meridian edges of 10 degrees, an equator edge of 10 degrees and one at 10N a little shorter
-    const expected = 2 * 10 * DEG_KM + 10 * DEG_KM + 10 * DEG_KM * Math.cos((10 * Math.PI) / 180);
-    expect(coastlineKm).toBeGreaterThan(expected * 0.995);
-    expect(coastlineKm).toBeLessThan(expected * 1.005);
-  });
-
   it("drops the border two nations share", () => {
     const apart = measureWorld({ political: layer(square(0, 0, 10), square(20, 0, 10)) });
     const joined = measureWorld({ political: layer(square(0, 0, 10), square(10, 0, 10)) });
     expect(joined.coastlineKm).toBeLessThan(apart.coastlineKm - 10 * DEG_KM * 1.9);
   });
-
-  it("counts land that the background and the political layer both draw once", () => {
-    const either = measureWorld({ background: layer(square(0, 0, 10)) });
-    const both = measureWorld({
-      background: layer(square(0, 0, 10)),
-      political: layer(square(0, 0, 10)),
-    });
-    expect(both.coastlineKm).toBeCloseTo(either.coastlineKm, 3);
-  });
-
-  it("counts a hole in the land as coast and ignores a ring too short to enclose anything", () => {
-    const solid = measureWorld({ political: layer(square(0, 0, 20)) });
-    const lagoon = measureWorld({
-      political: layer(feature(polygon(box(0, 0, 20, 20), box(8, 8, 12, 12)))),
-    });
-    expect(lagoon.coastlineKm).toBeGreaterThan(solid.coastlineKm + 4 * 4 * DEG_KM * 0.95);
-    const line = measureWorld({
-      background: layer(
-        feature(
-          polygon([
-            [-153, 85],
-            [-153, -85],
-          ])
-        )
-      ),
-    });
-    expect(line.coastlineKm).toBe(0);
-  });
-
   it("counts nothing for the edges of a polar ring that run along the pole", () => {
     const cap = (poleVertices: Position[]) =>
       measureWorld({

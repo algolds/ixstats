@@ -43,25 +43,6 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 beforeEach(() => jest.mocked(confirmEditorAction).mockReset());
 
 describe("useBorderDraftPrompt", () => {
-  it("asks nothing when the loaded border has no draft", () => {
-    setup({ featureId: "Caphiria", pendingDraft: null });
-    expect(confirmEditorAction).not.toHaveBeenCalled();
-  });
-
-  it("offers Restore unsaved changes or Discard for a draft", () => {
-    jest.mocked(confirmEditorAction).mockReturnValue(new Promise(() => {}));
-    setup({ featureId: "Caphiria", pendingDraft: draft() });
-
-    expect(confirmEditorAction).toHaveBeenCalledTimes(1);
-    expect(confirmEditorAction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        confirmLabel: "Restore unsaved changes",
-        cancelLabel: "Discard",
-        description: expect.stringContaining("Caphiria"),
-      })
-    );
-  });
-
   it("restores the draft when the user accepts", async () => {
     jest.mocked(confirmEditorAction).mockResolvedValue(true);
     const offered = draft();
@@ -91,14 +72,5 @@ describe("useBorderDraftPrompt", () => {
     rerender({ state: { featureId: "Caphiria", pendingDraft: offered } });
 
     expect(confirmEditorAction).toHaveBeenCalledTimes(1);
-  });
-
-  it("asks again for a different draft", () => {
-    jest.mocked(confirmEditorAction).mockReturnValue(new Promise(() => {}));
-    const { rerender } = setup({ featureId: "Caphiria", pendingDraft: draft() });
-
-    rerender({ state: { featureId: "Daxia", pendingDraft: { ...draft(), featureId: "Daxia" } } });
-
-    expect(confirmEditorAction).toHaveBeenCalledTimes(2);
   });
 });

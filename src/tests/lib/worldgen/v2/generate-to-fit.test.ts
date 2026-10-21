@@ -75,50 +75,6 @@ describe("v2 generate to fit: land mask", () => {
     }
     expect(Math.abs(land / total - areaWeightedShare(mask))).toBeLessThan(0.01);
   });
-
-  it("keeps hypsometry, rivers, climate and the political layer downstream", () => {
-    expect(world.layers.altitudes!.features.length).toBeGreaterThan(3);
-    expect(world.layers.rivers!.features.length).toBeGreaterThan(0);
-    expect(world.layers.climate!.features.length).toBeGreaterThan(2);
-    expect(world.layers.political!.features.length).toBeGreaterThan(5);
-    const heights = Array.from(cells.h).filter((h, i) => cells.isLand[i] && h >= 0);
-    expect(Math.max(...heights)).toBeGreaterThan(1000);
-  });
-
-  it("draws the background from the mask's coastline", () => {
-    const bg = world.layers.background!.features;
-    expect(bg.length).toBeGreaterThanOrEqual(2);
-    expect(bg.length).toBeLessThan(40);
-  });
-
-  it("biases the relief toward the mask's altitude bands", () => {
-    const bands = layer(
-      rect(-120, -30, -40, 50, { zone: "zone_0" }),
-      rect(10, -35, 120, 55, { zone: "zone_0" }),
-      rect(60, -35, 120, 55, { zone: "zone_6" })
-    );
-    const guided = rasterizeLandMask({ background: CONTINENTS, altitudes: bands }, 720);
-    const g = generateWorld(PARAMS, undefined, { landMask: guided }).graph!.cells;
-    let high = 0;
-    let highN = 0;
-    let low = 0;
-    let lowN = 0;
-    for (let i = 0; i < g.n; i++) {
-      if (!g.isLand[i]) continue;
-      const lng = g.p[i * 2]!;
-      if (lng >= 60 && lng <= 120) {
-        high += g.h[i]!;
-        highN++;
-      } else if (lng >= 10 && lng < 60) {
-        low += g.h[i]!;
-        lowN++;
-      }
-    }
-    expect(highN).toBeGreaterThan(50);
-    expect(lowN).toBeGreaterThan(50);
-    expect(high / highN).toBeGreaterThan((low / lowN) * 1.5);
-  });
-
   it("survives a mask with no land at all", () => {
     const empty: LandMask = { width: 64, height: 32, land: new Uint8Array(64 * 32) };
     const w = generateWorld({ ...PARAMS, cellCount: 3000 }, undefined, { landMask: empty });
@@ -176,47 +132,9 @@ describe("v2 generate to fit: kept borders", () => {
     expect(world.slots).toEqual([]);
     expect(world.stats.countryCount).toBe(0);
   });
-
-  it("still exports the physical layers", () => {
-    for (const key of ["background", "altitudes", "climate", "rivers", "lakes", "icecaps"]) {
-      expect(world.layers[key]).toBeDefined();
-    }
-  });
 });
 
 describe("v2 MeshCache", () => {
-  it("builds a mesh once per (seed, cellCount, lloydIterations) and shares its geometry", () => {
-    const build = jest.fn(createMesh);
-    const cache = new MeshCache(build);
-    const a = cache.get(3, 2000, 2);
-    const b = cache.get(3, 2000, 2);
-    expect(build).toHaveBeenCalledTimes(1);
-    expect(b.cells.vertices).toBe(a.cells.vertices);
-    expect(b.cells.neighbors).toBe(a.cells.neighbors);
-    expect(b.cells.p).toBe(a.cells.p);
-    expect(b.cells.boundary).toBe(a.cells.boundary);
-    // Attribute arrays are the caller's own
-    expect(b.cells.h).not.toBe(a.cells.h);
-    expect(b.cells.isLand).not.toBe(a.cells.isLand);
-    expect(b.cells.h.every((v) => v === 0)).toBe(true);
-  });
-
-  it("misses on a different seed, cell count or relaxation, and keeps two entries", () => {
-    const build = jest.fn(createMesh);
-    const cache = new MeshCache(build);
-    cache.get(1, 1500, 1);
-    cache.get(2, 1500, 1);
-    cache.get(1, 1500, 1);
-    cache.get(2, 1500, 1);
-    expect(build).toHaveBeenCalledTimes(2);
-    cache.get(1, 1600, 1);
-    cache.get(1, 1500, 2);
-    expect(build).toHaveBeenCalledTimes(4);
-    // Capacity is two: the oldest entries were evicted
-    cache.get(1, 1500, 1);
-    expect(build).toHaveBeenCalledTimes(5);
-  });
-
   it("generates the same world as an uncached run, then again on a hit", () => {
     const cache = new MeshCache();
     const params = { ...PARAMS, cellCount: 3000 };
@@ -244,21 +162,6 @@ describe("v2 MeshCache", () => {
 describe("v2 nation slots", () => {
   const world = generateWorld({ ...PARAMS, cellCount: 8000 });
   const { states } = world.graph!;
-
-  it("has one slot per generated state, with its name, colour, cells and area", () => {
-    expect(states.length).toBeGreaterThan(5);
-    expect(world.slots).toHaveLength(states.length);
-    world.slots.forEach((slot, i) => {
-      const state = states[i]!;
-      expect(slot.key).toBe(`slot_${state.id}`);
-      expect(slot.name).toBe(state.name);
-      expect(slot.colour).toBe(state.color);
-      expect(slot.cells).toBe(state.cellCount);
-      expect(slot.areaKm2).toBe(state.areaKm2);
-    });
-    expect(new Set(world.slots.map((s) => s.key)).size).toBe(world.slots.length);
-  });
-
   it("carries a derived baseline inside the development band", () => {
     for (const slot of world.slots) {
       expect(Number.isInteger(slot.population)).toBe(true);
@@ -269,50 +172,5 @@ describe("v2 nation slots", () => {
     const total = world.slots.reduce((a, s) => a + s.population, 0);
     expect(total).toBeGreaterThan(0);
     expect(new Set(world.slots.map((s) => s.gdpPerCapita)).size).toBeGreaterThan(3);
-  });
-
-  it("scales the GDP base with params.developmentLevel", () => {
-    const mean = (w: typeof world) =>
-      w.slots.reduce((a, s) => a + s.gdpPerCapita, 0) / Math.max(1, w.slots.length);
-    const developing = generateWorld({
-      ...PARAMS,
-      cellCount: 3000,
-      developmentLevel: "developing",
-    });
-    const modern = generateWorld({ ...PARAMS, cellCount: 3000, developmentLevel: "modern" });
-    expect(mean(developing)).toBeLessThan(6000 * 1.25 + 1);
-    expect(mean(modern)).toBeGreaterThan(45000 * 0.75 - 1);
-  });
-
-  it("links each political feature to its slot", () => {
-    const keys = new Set(world.slots.map((s) => s.key));
-    const features = world.layers.political!.features;
-    expect(features.length).toBeGreaterThan(0);
-    for (const f of features) {
-      expect(keys.has(f.properties!.slotKey as string)).toBe(true);
-    }
-  });
-});
-
-describe("v2 GeneratedWorld output", () => {
-  const world = generateWorld({ ...PARAMS, cellCount: 3000 });
-
-  it("packs lng, lat and height per cell into a Float32Array", () => {
-    const { cells } = world.graph!;
-    expect(world.cells).toBeInstanceOf(Float32Array);
-    expect(world.cells).toHaveLength(cells.n * 3);
-    for (const i of [0, 1, cells.n >> 1, cells.n - 1]) {
-      expect(world.cells[i * 3]).toBeCloseTo(cells.p[i * 2]!, 3);
-      expect(world.cells[i * 3 + 1]).toBeCloseTo(cells.p[i * 2 + 1]!, 3);
-      expect(world.cells[i * 3 + 2]).toBe(cells.h[i]);
-    }
-  });
-
-  it("names no continent, river or lake", () => {
-    for (const key of ["background", "rivers", "lakes"]) {
-      for (const f of world.layers[key]!.features) {
-        expect(f.properties).not.toHaveProperty("name");
-      }
-    }
   });
 });

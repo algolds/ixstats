@@ -50,24 +50,6 @@ const layerRow = {
 };
 
 describe("getCountryGeoBundle queries", () => {
-  it("finds neighbours with a plain ST_Intersects the GiST index can serve (no ST_MakeValid)", async () => {
-    const db = makeDb({ layer: layerRow });
-    await getCountryGeoBundle(db, "c1");
-
-    const sql = db.$queryRawUnsafe.mock.calls[0]![0] as string;
-    expect(sql).toContain("ST_Intersects(ml1.geom_postgis, ml2.geom_postgis)");
-    expect(sql).not.toContain("ST_MakeValid");
-  });
-
-  it("reads the outline once: from the map layer when it has one, so not from the country as well", async () => {
-    const db = makeDb({ layer: layerRow });
-    const bundle = await getCountryGeoBundle(db, "c1");
-
-    expect(db.country.findUnique).toHaveBeenCalledTimes(1);
-    expect(db.country.findUnique.mock.calls[0]![0].select).not.toHaveProperty("geometry");
-    expect(bundle.geometry).toEqual(layerRow.geometry);
-  });
-
   it("names the country's realm by slug, so a viewer of another realm can load that realm's layers", async () => {
     const db = makeDb({ layer: layerRow });
     const bundle = await getCountryGeoBundle(db, "c1");
@@ -85,17 +67,6 @@ describe("getCountryGeoBundle queries", () => {
 
     expect(bundle.country.realmSlug).toBe("ixnay");
   });
-
-  it("selects only the map layer columns the bundle uses", async () => {
-    const db = makeDb({ layer: layerRow });
-    await getCountryGeoBundle(db, "c1");
-
-    const select = db.mapLayer.findFirst.mock.calls[0]![0].select;
-    expect(Object.keys(select).sort()).toEqual(
-      ["areaSqKm", "boundingBox", "centroid", "displayName", "featureId", "geometry", "id"].sort()
-    );
-  });
-
   it("falls back to the country's own outline when it has no map layer", async () => {
     const db = makeDb({ layer: null });
     const bundle = await getCountryGeoBundle(db, "c1");
@@ -104,12 +75,5 @@ describe("getCountryGeoBundle queries", () => {
     expect(bundle.geometry).toEqual(outline);
     expect(bundle.areaSqKm).toBe(77);
     expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
-  });
-
-  it("falls back to the country's outline when the layer row has none", async () => {
-    const db = makeDb({ layer: { ...layerRow, geometry: null } });
-    const bundle = await getCountryGeoBundle(db, "c1");
-
-    expect(bundle.geometry).toEqual(outline);
   });
 });

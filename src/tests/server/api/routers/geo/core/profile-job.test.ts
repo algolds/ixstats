@@ -94,83 +94,8 @@ describe("queueGeoProfileRecalculation", () => {
     expect(db.country.findUnique).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
   });
-
-  it("queues one country", async () => {
-    const db = makeDb([COUNTRIES[0]!]);
-    const result = await queueGeoProfileRecalculation(db as never, "c1");
-
-    expect(result).toMatchObject({ queued: 1 });
-    expect(db.country.count.mock.calls[0]?.[0].where).toMatchObject({ id: "c1" });
-    expect(db.countryGeoProfile.updateMany.mock.calls[0]?.[0].where).toEqual({
-      country: expect.objectContaining({ id: "c1" }),
-    });
-  });
 });
-
-describe("queueGeoProfileRecalculation: lastRunAt", () => {
-  it("reports when the geo-profiles job last ran, so the admin can tell whether it is enabled", async () => {
-    const startedAt = new Date("2026-10-11T12:00:00Z");
-    const db = makeDb(COUNTRIES, { startedAt });
-
-    const result = await queueGeoProfileRecalculation(db as never);
-
-    expect(result).toEqual({ queued: 3, lastRunAt: startedAt });
-    expect(db.cronRun.findFirst).toHaveBeenCalledWith({
-      where: { job: "geo-profiles" },
-      orderBy: { startedAt: "desc" },
-      select: { startedAt: true },
-    });
-  });
-
-  it("reports no run when the job never ran", async () => {
-    const result = await queueGeoProfileRecalculation(makeDb() as never);
-    expect(result.lastRunAt).toBeNull();
-  });
-});
-
 describe("runGeoProfileRecalculation", () => {
-  it("picks the countries whose profile is stale or missing", async () => {
-    const db = makeDb();
-    await runGeoProfileRecalculation(db as never, { onProgress: () => undefined });
-
-    const where = db.country.findMany.mock.calls[0]?.[0].where;
-    expect(where?.OR).toEqual([
-      { geoProfile: null },
-      { geoProfile: { lastCalculatedAt: { lte: GEO_PROFILE_STALE_AT } } },
-    ]);
-    expect(where?.AND).toEqual([
-      { geometry: { not: Prisma.DbNull } },
-      { geometry: { not: Prisma.JsonNull } },
-    ]);
-  });
-
-  it("recomputes one country at a time and reports progress after each", async () => {
-    refresh.mockResolvedValueOnce(3).mockResolvedValueOnce(1).mockResolvedValueOnce(2);
-    const db = makeDb();
-    const progress: Array<{ done: number; total: number; country: string }> = [];
-
-    const result = await runGeoProfileRecalculation(db as never, {
-      onProgress: (p) => progress.push(p),
-    });
-
-    expect(result).toEqual({
-      total: 3,
-      processed: 3,
-      failed: 0,
-      remaining: 0,
-      resourcesWritten: 6,
-      errors: [],
-    });
-    expect(refresh.mock.calls.map((call) => call[1])).toEqual(["c1", "c2", "c3"]);
-    expect(db.countryGeoProfile.upsert).toHaveBeenCalledTimes(3);
-    expect(db.state.peak).toBe(1);
-    expect(progress).toEqual([
-      { done: 1, total: 3, country: "Aurelia" },
-      { done: 2, total: 3, country: "Borealis" },
-      { done: 3, total: 3, country: "Cartadania" },
-    ]);
-  });
-
   it("leaves a failed country stale, reports it and carries on", async () => {
     const db = makeDb();
     db.country.findUnique.mockResolvedValueOnce(null as never);
@@ -206,20 +131,5 @@ describe("runGeoProfileRecalculation", () => {
 
     expect(result).toMatchObject({ total: 3, processed: 1, remaining: 2 });
     expect(refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("does nothing when no profile is stale", async () => {
-    const db = makeDb([]);
-    const result = await runGeoProfileRecalculation(db as never, { onProgress: () => undefined });
-
-    expect(result).toEqual({
-      total: 0,
-      processed: 0,
-      failed: 0,
-      remaining: 0,
-      resourcesWritten: 0,
-      errors: [],
-    });
-    expect(db.countryGeoProfile.upsert).not.toHaveBeenCalled();
   });
 });

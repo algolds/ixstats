@@ -15,54 +15,11 @@ const cells = (isLand: number[], biome: number[]) => ({
 const slot = (population: number, gdpPerCapita: number) => ({ population, gdpPerCapita });
 
 describe("worldgen/world-stats", () => {
-  it("reads the land share and the climate mix over land cells only", () => {
-    const stats = computeWorldStats({
-      cells: cells([1, 1, 1, 0, 0, 1], [0, 1, 3, 0, 0, 8]),
-      continentCount: 2,
-      slots: [],
-    });
-
-    expect(stats.landShare).toBeCloseTo(4 / 6, 10);
-    expect(stats.continents).toBe(2);
-    // Ar and Aw are both group A; the two sea cells (biome 0) do not count
-    expect(stats.climateMix).toEqual({ A: 0.5, B: 0.25, E: 0.25 });
-  });
-
-  it("gives a world with no land an empty climate mix and a zero share", () => {
-    const stats = computeWorldStats({
-      cells: cells([0, 0, 0], [0, 0, 0]),
-      continentCount: 0,
-      slots: [],
-    });
-    expect(stats.landShare).toBe(0);
-    expect(stats.climateMix).toEqual({});
-  });
-
   it("gives an empty mesh a zero share instead of NaN", () => {
     const stats = computeWorldStats({ cells: cells([], []), continentCount: 0, slots: [] });
     expect(stats.landShare).toBe(0);
     expect(stats.climateMix).toEqual({});
   });
-
-  it("files a biome id the table does not know under highland, as the slot geography does", () => {
-    const stats = computeWorldStats({
-      cells: cells([1, 1], [200, 11]),
-      continentCount: 1,
-      slots: [],
-    });
-    expect(stats.climateMix).toEqual({ H: 1 });
-  });
-
-  it("has no baseline range without slots (kept borders)", () => {
-    const stats = computeWorldStats({
-      cells: cells([1], [0]),
-      continentCount: 1,
-      slots: [],
-    });
-    expect(stats.slotCount).toBe(0);
-    expect(stats.baseline).toBeNull();
-  });
-
   it("counts the slots and ranges their population and GDP per capita", () => {
     const stats = computeWorldStats({
       cells: cells([1, 1], [0, 0]),

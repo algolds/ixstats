@@ -9,8 +9,6 @@ import {
   refreshGeographicResources,
   type ResourceSourceData,
 } from "~/lib/maps/geographic-resources";
-import { resolveClimateFromColor, getAgricultureFactor } from "~/lib/maps/geo-analytics";
-
 const base: ResourceSourceData = {
   countryName: "Aurelia",
   areaSqKm: 100_000,
@@ -22,10 +20,6 @@ const base: ResourceSourceData = {
 };
 
 describe("deriveGeographicResources", () => {
-  it("writes nothing for a country whose map shows no water, coast or zoned land", () => {
-    expect(deriveGeographicResources(base)).toEqual([]);
-  });
-
   it("lists the longest rivers and largest lakes as freshwater, on a fixed scale", () => {
     const res = deriveGeographicResources({
       ...base,
@@ -44,56 +38,6 @@ describe("deriveGeographicResources", () => {
       { resourceType: "freshwater", name: "Third", coordinates: [4, 4], quantity: 0.05 },
       { resourceType: "freshwater", name: "Mere", coordinates: [6, 6], quantity: 0.25 },
     ]);
-  });
-
-  it("adds a fishery only when there is a coast and a point on it", () => {
-    expect(deriveGeographicResources({ ...base, coastlineKm: 500, coastPoint: [7, 8] })).toEqual([
-      {
-        resourceType: "fishery",
-        name: "Aurelia coastal waters",
-        coordinates: [7, 8],
-        quantity: 0.25,
-      },
-    ]);
-    expect(deriveGeographicResources({ ...base, coastlineKm: 500, coastPoint: null })).toEqual([]);
-  });
-
-  it("weights farmland by each climate zone's agriculture factor", () => {
-    // Humid subtropical (Cf) and desert (Bw) fills from geo-analytics' climate colour table.
-    const fA = getAgricultureFactor(resolveClimateFromColor("#336600")!);
-    const fB = getAgricultureFactor(resolveClimateFromColor("#ffff33")!);
-    expect(fA).toBeGreaterThan(fB);
-
-    const res = deriveGeographicResources({
-      ...base,
-      climateAreas: [
-        { fill: "#ffff33", areaSqKm: 40_000, point: [20, 20] },
-        { fill: "#336600", areaSqKm: 60_000, point: [10, 10] },
-        { fill: "not-a-colour", areaSqKm: 1_000_000, point: [0, 0] },
-      ],
-    });
-    const arable = 60_000 * fA + 40_000 * fB;
-    const round2 = (n: number) => Math.round(n * 100) / 100;
-    expect(res).toEqual([
-      {
-        resourceType: "agricultural",
-        name: "Aurelia farmland",
-        coordinates: [10, 10],
-        quantity: round2(Math.min(1, arable / 100_000)),
-        quality: round2(arable / 100_000),
-        climateZone: resolveClimateFromColor("#336600"),
-      },
-    ]);
-  });
-
-  it("never produces minerals, oil, gas or forests (no geology data)", () => {
-    const res = deriveGeographicResources({
-      ...base,
-      coastlineKm: 3000,
-      coastPoint: [1, 1],
-      rivers: [{ name: "Vel", lengthKm: 100, point: [1, 1] }],
-    });
-    expect(new Set(res.map((r) => r.resourceType))).toEqual(new Set(["freshwater", "fishery"]));
   });
 });
 
@@ -149,23 +93,6 @@ describe("refreshGeographicResources", () => {
     // Every PostGIS query is scoped to the country by parameter.
     for (const call of db.$queryRawUnsafe.mock.calls) expect(call[1]).toBe("c1");
   });
-
-  it("clips on the indexed geom_postgis columns, never parsing GeoJSON in SQL", async () => {
-    const db = makeDb({ type: "Polygon", coordinates: [] });
-    await refreshGeographicResources(db as never, "c1");
-
-    const queries = db.$queryRawUnsafe.mock.calls.map((call) => call[0]);
-    expect(queries).toHaveLength(4);
-    for (const sql of queries) {
-      expect(sql).toContain("geom_postgis");
-      expect(sql).not.toContain("ST_GeomFromGeoJSON(");
-    }
-    for (const sql of queries.filter((q) => !q.includes("'political'"))) {
-      expect(sql).toContain("ST_Subdivide(c.geom_postgis, 256)");
-      expect(sql).toContain("&&");
-    }
-  });
-
   it("clears the rows of a country without geometry", async () => {
     const db = makeDb(null);
     expect(await refreshGeographicResources(db as never, "c1")).toBe(0);

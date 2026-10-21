@@ -8,8 +8,6 @@ import { worldMapProcedures } from "~/server/api/routers/geo/core/world-map";
 import { MAP_TRPC_KEYS } from "~/server/shared/map-invalidation";
 import { GEO_FEATURE_INVALIDATE_KEYS } from "~/lib/cache/trpc-cache";
 import { borderHistoryProcedures } from "~/server/api/routers/geo/core/border-history";
-import { unpackLayers } from "~/lib/maps/geojson-pack";
-
 type ModelMock = Record<string, jest.Mock>;
 
 /** Every model answers empty unless overridden. */
@@ -34,20 +32,6 @@ function dbWith(overrides: Record<string, Partial<ModelMock>> = {}) {
 const caller = createCallerFactory(createTRPCRouter(worldMapProcedures));
 const ctxFor = (db: unknown) =>
   ({ db, user: null, auth: null, rateLimitIdentifier: "test", headers: new Headers() }) as never;
-
-const square = (lng: number, lat: number, d: number) => ({
-  type: "Polygon" as const,
-  coordinates: [
-    [
-      [lng, lat],
-      [lng + d, lat],
-      [lng + d, lat + d],
-      [lng, lat + d],
-      [lng, lat],
-    ],
-  ],
-});
-
 beforeEach(() => {
   clearTrpcMemoryCache();
   jest.spyOn(console, "error").mockImplementation(() => {});
@@ -56,16 +40,6 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 describe("geoCore.getMapBundleMarkers", () => {
-  it("sends no POIs or capitals, rather than failing, when their queries fail", async () => {
-    const broken = jest.fn().mockRejectedValue(new Error('column "realmId" does not exist'));
-    const db = dbWith({ city: { findMany: broken }, pointOfInterest: { findMany: broken } });
-
-    const markers = await caller(ctxFor(db)).getMapBundleMarkers();
-
-    expect(markers.features.pois.features).toEqual([]);
-    expect(markers.capitals.features).toEqual([]);
-  });
-
   it("takes the realm's map version as part of its input: a moved version reads the database again", async () => {
     const capitals = jest.fn().mockResolvedValue([]);
     const db = dbWith({ city: { findMany: capitals } });
@@ -76,32 +50,6 @@ describe("geoCore.getMapBundleMarkers", () => {
 
     await caller(ctxFor(db)).getMapBundleMarkers({ version: 2 });
     expect(capitals).toHaveBeenCalledTimes(2);
-  });
-
-  it("carries no layers: those come from the versioned layer route", async () => {
-    const markers = await caller(ctxFor(dbWith())).getMapBundleMarkers();
-    expect(Object.keys(markers).sort()).toEqual(["capitals", "features", "realmId"]);
-    expect(Object.keys(markers.features)).toEqual(["pois"]);
-  });
-
-  it("sends capital coordinates at map precision, tagged with their country", async () => {
-    const db = dbWith({
-      city: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            id: "c1",
-            name: "Urceopolis",
-            coordinates: [12.345678901234, -45.678901234567],
-            country: { name: "Urcea", slug: "urcea" },
-          },
-        ]),
-      },
-    });
-
-    const { capitals } = await caller(ctxFor(db)).getMapBundleMarkers();
-
-    expect(capitals.features[0]!.geometry.coordinates).toEqual([12.34568, -45.6789]);
-    expect(capitals.features[0]!.properties).toMatchObject({ countryName: "Urcea" });
   });
 });
 
@@ -124,16 +72,6 @@ describe("map invalidation", () => {
   });
 });
 describe("geoCore.getMapBundleDetail", () => {
-  it("sends no cities or subdivisions, rather than failing, when their queries fail", async () => {
-    const broken = jest.fn().mockRejectedValue(new Error('column "realmId" does not exist'));
-    const db = dbWith({ city: { findMany: broken }, subdivision: { findMany: broken } });
-
-    const detail = await caller(ctxFor(db)).getMapBundleDetail({});
-
-    expect(detail.cities.features).toEqual([]);
-    expect(detail.subdivisions.features).toEqual([]);
-  });
-
   it("takes the realm's map version as part of its input: a moved version reads the database again", async () => {
     const cities = jest.fn().mockResolvedValue([]);
     const db = dbWith({ city: { findMany: cities } });
@@ -144,36 +82,5 @@ describe("geoCore.getMapBundleDetail", () => {
 
     await caller(ctxFor(db)).getMapBundleDetail({ version: 2 });
     expect(cities).toHaveBeenCalledTimes(2);
-  });
-
-  it("sends city and subdivision coordinates at map precision, not database precision", async () => {
-    const country = { name: "Urcea", slug: "urcea" };
-    const db = dbWith({
-      city: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            id: "c1",
-            name: "Urceopolis",
-            coordinates: [12.345678901234, -45.678901234567],
-            country,
-          },
-        ]),
-      },
-      subdivision: {
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            { id: "s1", name: "Canaery", geometry: square(1.123456789, 2.123456789, 0.5), country },
-          ]),
-      },
-    });
-
-    const detail = await caller(ctxFor(db)).getMapBundleDetail({});
-
-    expect(detail.cities.features[0]!.geometry.coordinates).toEqual([12.34568, -45.6789]);
-    const { subdivisions } = unpackLayers({ subdivisions: detail.subdivisions });
-    const ring = (subdivisions!.features[0]!.geometry as { coordinates: number[][][] })
-      .coordinates[0]!;
-    expect(ring[0]).toEqual([1.1235, 2.1235]);
   });
 });

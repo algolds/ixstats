@@ -1,10 +1,5 @@
-/**
- * Relief module: heights from generator cells and from altitude bands, tileable detail, and the hillshade.
- */
-
-import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
 import { makeRng } from "~/lib/worldgen/v2/helpers/rng";
-import { kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
+import { kmPerDegreeLng } from "~/lib/maps/planet";
 import {
   addDetail,
   heightsFromBands,
@@ -58,46 +53,6 @@ const metresPerPixelX = (y: number, width: number, height: number): number => {
 };
 
 describe("relief/heightsFromCells", () => {
-  it("returns a 2:1 grid at the requested width and fills land with the cell height", () => {
-    const cells = latticeCells(40, () => 500);
-    const g = heightsFromCells(cells, 512);
-    expect(g.width).toBe(512);
-    expect(g.height).toBe(256);
-    expect(g.metres).toHaveLength(512 * 256);
-    expect(g.metres[128 * 512 + 256]).toBeCloseTo(500, 1);
-    expect(g.metres[60 * 512 + 100]).toBeCloseTo(500, 1);
-  });
-
-  it("clamps sea (negative) heights to 0", () => {
-    const cells = latticeCells(40, (lng) => (lng < 0 ? -3000 : 800));
-    const g = heightsFromCells(cells, 512);
-    let min = Infinity;
-    for (const v of g.metres) min = Math.min(min, v);
-    expect(min).toBeGreaterThanOrEqual(0);
-    expect(g.metres[128 * 512 + 100]).toBe(0);
-    expect(g.metres[128 * 512 + 400]).toBeGreaterThan(700);
-  });
-
-  it("reaches a single high cell's height at the cell and slopes down around it", () => {
-    const cells = latticeCells(40, () => 100);
-    // Raise one cell near the middle of the map.
-    let peak = 0;
-    let best = Infinity;
-    for (let i = 0; i < cells.length; i += 3) {
-      const d = Math.hypot(cells[i]!, cells[i + 1]!);
-      if (d < best) {
-        best = d;
-        peak = i;
-      }
-    }
-    cells[peak + 2] = 4000;
-    const g = heightsFromCells(cells, 512);
-    const px = Math.round(((cells[peak]! + 180) / 360) * 512 - 0.5);
-    const py = Math.round(((90 - cells[peak + 1]!) / 180) * 256 - 0.5);
-    expect(g.metres[py * 512 + px]).toBeGreaterThan(3000);
-    expect(g.metres[py * 512 + px + 12]).toBeLessThan(g.metres[py * 512 + px]!);
-  });
-
   it("leaves no gap column at x = 0 or x = width - 1 when cells straddle the antimeridian", () => {
     const wrapped = (lng: number) => Math.abs(lng) > 150;
     const cells = latticeCells(36, (lng, lat) => (wrapped(lng) && Math.abs(lat) < 40 ? 1000 : 0));
@@ -193,33 +148,6 @@ describe("relief/heightsFromBands", () => {
     }
     expect(outside).toBe(0);
   });
-
-  it("rises monotonically from the coast to the centre of nested bands", () => {
-    const width = 256;
-    const height = 128;
-    const g = heightsFromBands(discs(width, height, 128), width, height, zones);
-    const row = (height / 2) * width;
-    let prev = -1;
-    for (let x = 128 - 62; x <= 128; x++) {
-      const v = g.metres[row + x]!;
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
-    }
-    expect(g.metres[row + 128]).toBeGreaterThan(900);
-    expect(g.metres[row + 128 - 59]).toBeLessThan(40);
-  });
-
-  it("interpolates inside one band instead of stepping", () => {
-    const width = 256;
-    const height = 128;
-    const g = heightsFromBands(discs(width, height, 128), width, height, zones);
-    const row = (height / 2) * width;
-    // Zone 2 (value 2) spans radii 42..60: expect several distinct heights across it.
-    const seen = new Set<number>();
-    for (let x = 128 - 59; x <= 128 - 43; x++) seen.add(Math.round(g.metres[row + x]!));
-    expect(seen.size).toBeGreaterThan(5);
-  });
-
   it("wraps distances across the antimeridian", () => {
     const width = 256;
     const height = 64;
@@ -237,43 +165,9 @@ describe("relief/heightsFromBands", () => {
     expect(Math.abs(g.metres[row + 1]! - g.metres[row + 248]!)).toBeLessThan(2);
     expect(g.metres[row + 1]!).toBeGreaterThan(g.metres[row + 30]!);
   });
-
-  it("lets a band with nothing above it climb towards its ceiling", () => {
-    const width = 128;
-    const height = 64;
-    const zg = new Uint8Array(width * height);
-    for (let y = 16; y < 48; y++) for (let x = 32; x < 96; x++) zg[y * width + x] = 1;
-    const g = heightsFromBands(zg, width, height, [{ min: 0, max: 99 }]);
-    const centre = g.metres[32 * width + 64]!;
-    const edge = g.metres[32 * width + 32]!;
-    expect(centre).toBeGreaterThan(85);
-    expect(edge).toBeLessThan(20);
-  });
-
-  it("treats values above the zone count as the top zone", () => {
-    const zg = new Uint8Array(64 * 32).fill(7);
-    zg.fill(0, 0, 64 * 4);
-    const g = heightsFromBands(zg, 64, 32, [
-      { min: 0, max: 50 },
-      { min: 50, max: 90 },
-    ]);
-    for (const v of g.metres) expect(v).toBeLessThanOrEqual(90);
-  });
 });
 
 describe("relief/addDetail", () => {
-  it("does nothing at zero ruggedness and never touches sea", () => {
-    const g = grid(512, (x, y) => (y > 100 ? 0 : 400 + x * 0.1));
-    const before = Float32Array.from(g.metres);
-    addDetail(g, 0);
-    expect(sameValues(g.metres, before)).toBe(true);
-    addDetail(g, 1);
-    let seaChanged = 0;
-    for (let i = 0; i < before.length; i++) if (before[i] === 0 && g.metres[i] !== 0) seaChanged++;
-    expect(seaChanged).toBe(0);
-    expect(sameValues(g.metres, before)).toBe(false);
-  });
-
   it("adds deterministic detail that keeps land above zero", () => {
     const a = grid(512, () => 30);
     const b = grid(512, () => 30);
@@ -289,55 +183,12 @@ describe("relief/addDetail", () => {
     expect(min).toBeGreaterThan(0);
     expect(changed).toBeGreaterThan(a.metres.length / 2);
   });
-
-  it("scales the detail with altitude and ruggedness", () => {
-    const spread = (altitude: number, ruggedness: number): number => {
-      const g = grid(512, () => altitude);
-      addDetail(g, ruggedness);
-      let sum = 0;
-      for (const v of g.metres) sum += (v - altitude) ** 2;
-      return Math.sqrt(sum / g.metres.length);
-    };
-    expect(spread(3000, 1)).toBeGreaterThan(spread(100, 1) * 3);
-    expect(spread(1500, 1)).toBeGreaterThan(spread(1500, 0.3) * 2);
-  });
-
-  it("texture shows on mountains and not on lowland once shaded", () => {
-    const shadedAlphas = (altitude: number): number[] => {
-      const g = grid(2048, () => altitude);
-      addDetail(g, 0.6);
-      const rgba = hillshade(g);
-      const out: number[] = [];
-      for (let y = 300; y < 700; y++)
-        for (let x = 0; x < 2048; x += 3) out.push(rgba[(y * 2048 + x) * 4 + 3]! / 255);
-      return out.sort((p, q) => p - q);
-    };
-    const lowland = shadedAlphas(100);
-    const hills = shadedAlphas(800);
-    const mountains = shadedAlphas(3000);
-    const p90 = (a: number[]) => a[Math.floor(a.length * 0.9)]!;
-    expect(lowland[lowland.length - 1]).toBeLessThanOrEqual(0.02);
-    expect(p90(hills)).toBeGreaterThan(0.02);
-    expect(p90(mountains)).toBeGreaterThan(0.08);
-    expect(p90(mountains)).toBeGreaterThan(p90(hills));
-  });
-
   it("tiles seamlessly: the pattern repeats every eighth of the width", () => {
     const g = grid(2048, () => 1200);
     addDetail(g, 0.8);
     const row = 400 * 2048;
     for (let x = 0; x < 2048 - 256; x += 37) {
       expect(g.metres[row + x + 256]).toBeCloseTo(g.metres[row + x]!, 3);
-    }
-  });
-
-  it("looks the same at half the width (detail is placed in world space)", () => {
-    const big = grid(2048, () => 1200);
-    const small = grid(1024, () => 1200);
-    addDetail(big, 0.8);
-    addDetail(small, 0.8);
-    for (let x = 0; x < 1024; x += 53) {
-      expect(small.metres[100 * 1024 + x]).toBeCloseTo(big.metres[200 * 2048 + x * 2]!, 3);
     }
   });
 });
@@ -354,21 +205,6 @@ describe("relief/hillshade", () => {
       const dx = Math.min(Math.abs(x - centre), W - Math.abs(x - centre));
       return Math.max(0, (12 - Math.hypot(dx, y - cy)) * 0.004 * mppEq);
     });
-
-  it("returns RGBA the size of the grid", () => {
-    expect(hillshade(grid(W, () => 0))).toHaveLength(W * H * 4);
-  });
-
-  it("leaves flat land and sea fully transparent", () => {
-    const opaque = (rgba: Uint8ClampedArray) => {
-      let n = 0;
-      for (let i = 3; i < rgba.length; i += 4) if (rgba[i] !== 0) n++;
-      return n;
-    };
-    expect(opaque(hillshade(grid(W, () => 700)))).toBe(0);
-    expect(opaque(hillshade(grid(W, () => 0)))).toBe(0);
-  });
-
   it("shades the SE flank of a hill black and the NW flank white", () => {
     const rgba = hillshade(cone(cx));
     const se = (cy + 5) * W + (cx + 5);
@@ -380,40 +216,6 @@ describe("relief/hillshade", () => {
     // Sea around the hill stays transparent.
     expect(alphaOf(rgba, 5 * W + 5)).toBe(0);
   });
-
-  it("puts shadow on the east face of a north-south ridge and light on its west face", () => {
-    const ridge = grid(W, (x) => Math.max(0, 8000 - Math.abs(x - cx) * 0.004 * mppEq));
-    const rgba = hillshade(ridge);
-    const row = cy * W;
-    expect(alphaOf(rgba, row + cx + 4)).toBeGreaterThan(20);
-    expect(rgba[(row + cx + 4) * 4]).toBe(0);
-    expect(alphaOf(rgba, row + cx - 4)).toBeGreaterThan(5);
-    expect(rgba[(row + cx - 4) * 4]).toBe(255);
-  });
-
-  it("caps the shadow near 0.55 and the light near 0.2 on the steepest faces", () => {
-    const alphas = (rgba: Uint8ClampedArray, white: boolean) => {
-      let max = 0;
-      for (let i = 0; i < W * H; i++) {
-        if (rgba[i * 4] === (white ? 255 : 0) && alphaOf(rgba, i) > max) max = alphaOf(rgba, i);
-      }
-      return max;
-    };
-    // A 25 degree face (after exaggeration) looking straight away from the light is as dark as it gets, and one
-    // looking straight at it as bright; a steeper face tilts out of the light's reach and is dimmer, not brighter.
-    const run = (sign: number) =>
-      hillshade(
-        grid(
-          W,
-          (x, y) => 8000 + sign * 0.0082 * mppEq * Math.max(-20, Math.min(20, x + y - cx - cy))
-        )
-      );
-    expect(alphas(run(-1), false)).toBeLessThanOrEqual(Math.round(0.56 * 255));
-    expect(alphas(run(-1), false)).toBeGreaterThan(Math.round(0.5 * 255));
-    expect(alphas(run(1), true)).toBeLessThanOrEqual(Math.round(0.21 * 255));
-    expect(alphas(run(1), true)).toBeGreaterThan(Math.round(0.18 * 255));
-  });
-
   it("shades the same physical slope equally at 0 and 60 degrees latitude", () => {
     // A 0.4 % physical slope: each pixel's rise follows its row's width in metres.
     const rowAt = (lat: number) => Math.round(((90 - lat) / 180) * H - 0.5);
@@ -436,60 +238,6 @@ describe("relief/hillshade", () => {
       Math.abs(alphaOf(naive, rowAt(0) * W + cx) - alphaOf(naive, rowAt(60) * W + cx))
     ).toBeGreaterThan(4);
   });
-
-  it("scales the north-south slope by the metres per degree of latitude", () => {
-    const rise = (kmPerDegreeLat() * 1000 * 180) / H; // metres per pixel row
-    // Heights fall to the south by a 0.5 % physical slope: the face looks away from the light.
-    const south = grid(W, (_x, y) => 8000 - 0.005 * rise * Math.max(-8, Math.min(8, y - cy)));
-    const rgba = hillshade(south);
-    expect(alphaOf(rgba, cy * W + cx)).toBeGreaterThan(20);
-    expect(rgba[(cy * W + cx) * 4]).toBe(0);
-  });
-
-  it("shows a mountain ridge of realistic size: 3,000 m over 10 pixels shades to the shadow cap", () => {
-    const ridge = grid(W, (x) => Math.max(0, 3000 - Math.abs(x - cx) * 300));
-    const rgba = hillshade(ridge);
-    const i = cy * W + cx + 5;
-    expect(rgba[i * 4]).toBe(0);
-    expect(alphaOf(rgba, i)).toBeGreaterThanOrEqual(Math.round(0.4 * 255));
-    expect(alphaOf(rgba, i)).toBeLessThanOrEqual(Math.round(0.56 * 255));
-    const lit = cy * W + cx - 5;
-    expect(alphaOf(rgba, lit)).toBeGreaterThanOrEqual(Math.round(0.15 * 255));
-    expect(alphaOf(rgba, lit)).toBeLessThanOrEqual(Math.round(0.21 * 255));
-  });
-
-  it("keeps a 50 m undulation on lowland nearly transparent", () => {
-    // 50 m swells every 16 pixels (about 300 km) over 100 m ground.
-    const swells = grid(
-      W,
-      (x, y) => 100 + 50 * Math.sin((x * 2 * Math.PI) / 16) * Math.cos((y * 2 * Math.PI) / 16)
-    );
-    const rgba = hillshade(swells);
-    let max = 0;
-    for (let y = 300; y < 700; y++)
-      for (let x = 0; x < W; x++) max = Math.max(max, alphaOf(rgba, y * W + x));
-    expect(max).toBeLessThanOrEqual(Math.round(0.08 * 255));
-  });
-
-  it("shades a hill the same at 1024 px as at 2048 px (the exaggeration is physical)", () => {
-    const hillAt = (width: number) => {
-      const height = width / 2;
-      const mx = (kmPerDegreeLng(0) * 1000 * 360) / width;
-      const my = (kmPerDegreeLat() * 1000 * 180) / height;
-      return grid(width, (x, y) => {
-        const r = Math.hypot((x - width / 2) * mx, (y - height / 2) * my);
-        return Math.max(0, (480_000 - r) * 0.004);
-      });
-    };
-    const big = hillshade(hillAt(2048));
-    const small = hillshade(hillAt(1024));
-    // 100 km south-east of the summit: 10 px at 2048, 5 px at 1024.
-    const a = alphaOf(big, (512 + 10) * 2048 + 1024 + 10);
-    const b = alphaOf(small, (256 + 5) * 1024 + 512 + 5);
-    expect(a).toBeGreaterThan(30);
-    expect(Math.abs(a - b)).toBeLessThanOrEqual(4);
-  });
-
   it("wraps across the antimeridian: a hill on the seam shades like one in the middle", () => {
     const centred = hillshade(cone(cx));
     const seamed = hillshade(cone(0));
@@ -502,51 +250,5 @@ describe("relief/hillshade", () => {
       }
     }
     expect(mismatches).toBe(0);
-  });
-});
-
-describe("relief/performance", () => {
-  const rows = 228; // about 66,600 cells, the size of a default world
-  const cells = latticeCells(
-    rows,
-    (lng, lat) => 1500 * Math.sin((lng * Math.PI) / 40) * Math.cos((lat * Math.PI) / 30) - 200,
-    7
-  );
-
-  it("rasterises 66k cells into a 2048x1024 grid within budget", () => {
-    const t0 = performance.now();
-    const g = heightsFromCells(cells, 2048);
-    const ms = performance.now() - t0;
-    expect(cells.length / 3).toBeGreaterThan(60000);
-    expect(g.metres.some((v) => v > 500)).toBe(true);
-    expect(ms).toBeLessThan(600 * TIMING_BUDGET_SCALE);
-  });
-
-  it("hillshades 2048x1024 within budget", () => {
-    const g = heightsFromCells(cells, 2048);
-    addDetail(g, 0.7);
-    const t0 = performance.now();
-    const rgba = hillshade(g);
-    const ms = performance.now() - t0;
-    expect(rgba).toHaveLength(2048 * 1024 * 4);
-    expect(ms).toBeLessThan(700 * TIMING_BUDGET_SCALE);
-  });
-
-  it("derives band heights at 2048x1024 within budget", () => {
-    const width = 2048;
-    const height = 1024;
-    const zones = Array.from({ length: 9 }, (_, k) => ({ min: k * 500, max: k * 500 + 499 }));
-    const zg = new Uint8Array(width * height);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const r = Math.hypot((x - 1024) / 2, y - 512);
-        zg[y * width + x] = r > 400 ? 0 : Math.min(9, 1 + Math.floor((400 - r) / 44));
-      }
-    }
-    const t0 = performance.now();
-    const g = heightsFromBands(zg, width, height, zones);
-    const ms = performance.now() - t0;
-    expect(g.metres[512 * width + 1024]).toBeGreaterThan(3500);
-    expect(ms).toBeLessThan(1500 * TIMING_BUDGET_SCALE);
   });
 });

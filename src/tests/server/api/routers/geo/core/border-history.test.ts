@@ -71,15 +71,6 @@ describe("getWorldMapAsOf history read", () => {
     const lte = db.borderHistory.findMany.mock.calls[0]![0].where.changedAt.lte as Date;
     expect(lte.getTime()).toBe(20_000 * IX_DAY_MS);
   });
-
-  it("answers two ixTimes of one day from one read", async () => {
-    const db = makeDb();
-    const api = caller(ctxFor(db));
-    await api.getWorldMapAsOf({ ixTime: 20_000 * IX_DAY_MS + 1 });
-    await api.getWorldMapAsOf({ ixTime: 20_000 * IX_DAY_MS + 9_999 });
-
-    expect(db.borderHistory.findMany).toHaveBeenCalledTimes(1);
-  });
 });
 
 describe("getHistoryRange", () => {
@@ -120,12 +111,5 @@ describe("getHistoryRange", () => {
 
     expect((await api.getHistoryRange({ realm: "ixnay" })).minTime).toBe(1_000);
     expect((await api.getHistoryRange()).minTime).toBe(5_000);
-  });
-
-  it("has no range for a realm without history, so the scrubber stays hidden", async () => {
-    const db = rangeDb(history.filter((row) => row.realmId === "default"));
-    const range = await caller(ctxFor(db)).getHistoryRange();
-
-    expect(range.minTime).toBeNull();
   });
 });

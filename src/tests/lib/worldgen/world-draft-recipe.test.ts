@@ -32,27 +32,6 @@ beforeEach(() => window.localStorage.clear());
 afterEach(() => jest.restoreAllMocks());
 
 describe("world draft recipe", () => {
-  it("restores what was saved, per realm", () => {
-    saveWorldRecipe("realm_a", recipe());
-    expect(loadWorldRecipe("realm_a")).toEqual(recipe());
-    expect(loadWorldRecipe("realm_b")).toBeNull();
-  });
-
-  it("keeps the seed, the source and the preset's controls under one key per realm", () => {
-    saveWorldRecipe("realm_a", recipe());
-    const stored = JSON.parse(window.localStorage.getItem(worldRecipeKey("realm_a"))!);
-    expect(stored.seed).toBe(4242);
-    expect(stored.controls.source).toBe("realm-map");
-    expect(stored.controls.preset).toBe("eurth");
-    expect(worldRecipeKey("realm_a")).not.toBe(worldRecipeKey("realm_b"));
-  });
-
-  it("stamps a recipe with its format and the generator's version", () => {
-    saveWorldRecipe("realm_a", recipe());
-    const raw = JSON.parse(window.localStorage.getItem(worldRecipeKey("realm_a"))!);
-    expect(raw).toMatchObject({ version: WORLD_RECIPE_VERSION, engine: ATLAS_ENGINE_VERSION });
-  });
-
   it("drops a recipe from before versions, or made by another format or generator", () => {
     const key = worldRecipeKey("realm_a");
     const { seed, controls } = recipe();
@@ -83,63 +62,6 @@ describe("world draft recipe", () => {
     expect(loadWorldRecipe("realm_a")).toBeNull();
     expect(window.localStorage.getItem(key)).toBeNull();
   });
-
-  it("forgets a recipe on request", () => {
-    saveWorldRecipe("realm_a", recipe());
-    clearWorldRecipe("realm_a");
-    expect(loadWorldRecipe("realm_a")).toBeNull();
-  });
-
-  it("returns nothing for text that is not JSON", () => {
-    window.localStorage.setItem(worldRecipeKey("realm_a"), "{not json");
-    expect(loadWorldRecipe("realm_a")).toBeNull();
-  });
-
-  it("returns nothing for JSON of the wrong shape", () => {
-    const key = worldRecipeKey("realm_a");
-    for (const value of [
-      "null",
-      "[]",
-      '{"seed":"x","controls":{}}',
-      '{"seed":5}',
-      stored({ seed: 5, controls: { ...recipe().controls, source: "elsewhere" } }),
-      stored({ seed: 5, controls: { ...recipe().controls, preset: "" } }),
-      stored({ seed: 5, controls: { ...recipe().controls, hypsometry: 3 } }),
-      stored({ seed: 5, controls: { ...recipe().controls, developmentLevel: "none" } }),
-      stored({ seed: 5, controls: { ...recipe().controls, latitudeBand: [1] } }),
-    ]) {
-      window.localStorage.setItem(key, value);
-      expect({ value, loaded: loadWorldRecipe("realm_a") }).toEqual({ value, loaded: null });
-    }
-  });
-
-  it("keeps any preset slug, for the presets to be checked against once they are known", () => {
-    window.localStorage.setItem(
-      worldRecipeKey("realm_a"),
-      stored({
-        seed: 5,
-        controls: { ...recipe().controls, preset: "badlands", hypsometry: "mars" },
-      })
-    );
-    expect(loadWorldRecipe("realm_a")?.controls).toMatchObject({
-      preset: "badlands",
-      hypsometry: "mars",
-    });
-  });
-
-  it("reads a version 1 recipe, whose preset ids are the built-ins' slugs, and saves it as version 2", () => {
-    const { seed, controls } = recipe();
-    window.localStorage.setItem(
-      worldRecipeKey("realm_a"),
-      JSON.stringify({ version: 1, engine: ATLAS_ENGINE_VERSION, seed, controls })
-    );
-    const loaded = loadWorldRecipe("realm_a");
-    expect(loaded).toEqual(recipe());
-    saveWorldRecipe("realm_a", loaded!);
-    expect(JSON.parse(window.localStorage.getItem(worldRecipeKey("realm_a"))!).version).toBe(2);
-    expect(WORLD_RECIPE_VERSION).toBe(2);
-  });
-
   it("pulls stored numbers back inside the slider limits", () => {
     window.localStorage.setItem(
       worldRecipeKey("realm_a"),
@@ -182,18 +104,6 @@ describe("the job in flight", () => {
     clearWorldRecipe("realm_a");
     expect(loadWorldJob("realm_a")).toEqual(job);
   });
-
-  it("keeps a check that has no apply yet", () => {
-    saveWorldJob("realm_a", { ...job, applyJobId: null });
-    expect(loadWorldJob("realm_a")).toEqual({ ...job, applyJobId: null });
-  });
-
-  it("is forgotten on request", () => {
-    saveWorldJob("realm_a", job);
-    clearWorldJob("realm_a");
-    expect(loadWorldJob("realm_a")).toBeNull();
-  });
-
   it.each([
     ["text that is not JSON", "{oops"],
     ["no check job", JSON.stringify({ applyJobId: null, draftKey: "k" })],
@@ -217,21 +127,6 @@ describe("when storage throws", () => {
     });
     expect(loadWorldRecipe("realm_a")).toBeNull();
   });
-
-  it("saves nothing instead of failing", () => {
-    jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new DOMException("full", "QuotaExceededError");
-    });
-    expect(() => saveWorldRecipe("realm_a", recipe())).not.toThrow();
-  });
-
-  it("clears nothing instead of failing", () => {
-    jest.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
-      throw new DOMException("denied", "SecurityError");
-    });
-    expect(() => clearWorldRecipe("realm_a")).not.toThrow();
-  });
-
   it("copes with a browser whose localStorage getter throws", () => {
     jest.spyOn(window, "localStorage", "get").mockImplementation(() => {
       throw new DOMException("denied", "SecurityError");

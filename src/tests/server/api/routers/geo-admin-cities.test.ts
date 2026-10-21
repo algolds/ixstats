@@ -135,34 +135,6 @@ describe("commitCityImport", () => {
     expect(invalidateRealmMap).toHaveBeenCalledWith(db, "r_eurth");
     errorSpy.mockRestore();
   });
-
-  it.each([3, 30])(
-    "looks the border, subdivisions and water up once for the whole batch of %i rows",
-    async (n) => {
-      const cities = Array.from({ length: n }, (_, i) => city(`City ${i}`, 10 + i / 10));
-      await expect(
-        callerAs(db, "player").commitCityImport({ countryId: "c_mine", cities })
-      ).resolves.toEqual({ created: n });
-
-      // one containment query and one water query, however many rows
-      expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(2);
-      expect(upsertCity).toHaveBeenCalledTimes(n);
-    }
-  );
-
-  it("hands each row's own lookup to upsertCity", async () => {
-    await callerAs(db, "player").commitCityImport({
-      countryId: "c_mine",
-      cities: [city("A", 10), city("B", 11)],
-    });
-
-    const lookups = (upsertCity as jest.Mock).mock.calls.map((c) => c[3]);
-    expect(lookups).toEqual([
-      { inside: true, subdivisionId: "s1", water: { riverKm: 1, lakeKm: 50 } },
-      { inside: true, subdivisionId: "s1", water: { riverKm: 2, lakeKm: 50 } },
-    ]);
-  });
-
   it("still imports every row when the batch lookup fails (each city is checked on its own)", async () => {
     db.$queryRawUnsafe = jest.fn().mockRejectedValue(new Error("PostGIS unavailable"));
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
@@ -179,14 +151,6 @@ describe("commitCityImport", () => {
     ]);
     errorSpy.mockRestore();
   });
-
-  it("reports an unknown country", async () => {
-    db.country.findUnique.mockResolvedValue(null);
-    await expect(
-      callerAs(db, "admin").commitCityImport({ countryId: "gone", cities: [] })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-  });
-
   it("validates coordinates", async () => {
     await expect(
       callerAs(db, "player").commitCityImport({

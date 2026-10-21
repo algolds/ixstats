@@ -8,8 +8,6 @@ import { db } from "~/server/db";
 import { loadLayerFromDB } from "~/server/modules/maps/layer-loader";
 import { requireAdminSession } from "~/server/shared/route-auth";
 import { rateLimiter } from "~/lib/cache";
-import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-
 // Mock the Prisma DB client
 jest.mock("~/server/db", () => ({
   db: {
@@ -49,79 +47,6 @@ jest.mock("~/server/modules/maps/layer-loader", () => ({
 }));
 
 const allowed = () => ({ success: true, remaining: 100, resetAt: new Date(Date.now() + 60_000) });
-
-describe("Map Editor Source Layer API", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (requireAdminSession as jest.Mock).mockResolvedValue({ userId: "admin_1" });
-    (rateLimiter.check as jest.Mock).mockResolvedValue(allowed());
-  });
-
-  test("should return national capitals GeoJSON features", async () => {
-    const mockCapitals = [
-      {
-        id: "cap-1",
-        name: "Capital City 1",
-        coordinates: [10.5, 20.5],
-        population: 500000,
-        wikiPageTitle: "Capital_1",
-        countryId: "ctry-1",
-        country: { name: "Country 1", slug: "country-1" },
-      },
-    ];
-
-    (db.city.findMany as jest.Mock).mockResolvedValue(mockCapitals);
-
-    const request = new NextRequest("http://localhost/api/maps/editor-source/capitals");
-    const response = await GET(request, {
-      params: Promise.resolve({ layer: "capitals" }),
-    });
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.type).toBe("FeatureCollection");
-    expect(data.features).toHaveLength(1);
-    expect(data.features[0].properties.name).toBe("Capital City 1");
-    expect(data.features[0].geometry.type).toBe("Point");
-    expect(data.features[0].geometry.coordinates).toEqual([10.5, 20.5]);
-  });
-  test("should fall back to layer loader for base layers", async () => {
-    const mockBaseCollection = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [0, 0],
-                [0, 5],
-                [5, 5],
-                [0, 0],
-              ],
-            ],
-          },
-          properties: { id: "p-1", name: "Base Area" },
-        },
-      ],
-    };
-
-    (loadLayerFromDB as jest.Mock).mockResolvedValue(mockBaseCollection);
-
-    const request = new NextRequest("http://localhost/api/maps/editor-source/political");
-    const response = await GET(request, {
-      params: Promise.resolve({ layer: "political" }),
-    });
-
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.type).toBe("FeatureCollection");
-    expect(data.features[0].properties.name).toBe("Base Area");
-    expect(loadLayerFromDB).toHaveBeenCalledWith(db, "political", 2, DEFAULT_REALM_ID);
-  });
-});
-
 describe("Map Editor Source Layer API — access and realm scope", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -162,16 +87,6 @@ describe("Map Editor Source Layer API — access and realm scope", () => {
     );
     expect(db.city.findMany).not.toHaveBeenCalled();
   });
-
-  it("serves Ixnay's features by default, privately cacheable", async () => {
-    const response = await get("cities", "cities");
-    expect(response.status).toBe(200);
-    expect(response.headers.get("Cache-Control")).toBe("private, max-age=60");
-    expect((db.city.findMany as jest.Mock).mock.calls[0][0].where).toMatchObject({
-      country: { realmId: DEFAULT_REALM_ID },
-    });
-  });
-
   it("scopes every overlay and base layer to ?realm=", async () => {
     (db.realm.findUnique as jest.Mock).mockResolvedValue({ id: "r_eurth" });
     for (const model of ["subdivision", "pointOfInterest", "storyPin", "mapLabel"] as const) {

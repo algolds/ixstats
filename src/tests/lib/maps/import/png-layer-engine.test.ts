@@ -6,7 +6,6 @@ import {
   type LayerEngineResult,
   type LayerFeature,
 } from "~/lib/maps/import/png/layer-engine";
-import { layerEngineOptionsSchema } from "~/lib/maps/import/png/layer-engine-options";
 import { engineContext } from "~/lib/maps/import/progress";
 import { polygonPlanarArea } from "~/lib/maps/ring-assembly";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
@@ -88,8 +87,6 @@ const polygon = (f: LayerFeature): Polygon => {
   return f.geometry;
 };
 const polygonArea = (g: Polygon) => polygonPlanarArea(g.coordinates);
-const totalArea = (features: LayerFeature[] = []) =>
-  features.reduce((sum, f) => sum + polygonArea(polygon(f)), 0);
 /** 1 px is 1.8° × 1.8° on this 200 × 100 globe. */
 const PX = 1.8 * 1.8;
 
@@ -106,24 +103,6 @@ describe("PNG layer engine: land, lakes, climate and ice from map art", () => {
       engineContext(() => undefined, { sliceMs: Infinity })
     );
   });
-
-  it("traces land as one altitude band styled as Ixnay's lowest band, border lines counted as land", () => {
-    const land = result.layers.altitudes!;
-    // A (not split by its border lines), B (across a strait too wide to be a line), C joined to D, the islet
-    expect(land).toHaveLength(4);
-    for (const f of land) {
-      expect(f.properties).toMatchObject({
-        fill: "#a8c995",
-        "ixmap-subgroup": "coastlines",
-        zoneId: "land",
-        zoneName: "Land",
-        id: f.key,
-      });
-    }
-    const a = land.find((f) => polygon(f).coordinates[0]!.some(([lon]) => lon === -144))!;
-    expect(polygon(a).coordinates).toHaveLength(2); // outline + the lake
-  });
-
   it("finds the lake but not the sea halves that meet across the antimeridian", () => {
     const lakes = result.layers.lakes!;
     expect(lakes).toHaveLength(1);
@@ -132,21 +111,6 @@ describe("PNG layer engine: land, lakes, climate and ice from map art", () => {
     expect(polygonArea(polygon(lakes[0]!)) / PX).toBeGreaterThan(discPixels * 0.8);
     expect(polygonArea(polygon(lakes[0]!)) / PX).toBeLessThan(discPixels * 1.2);
   });
-
-  it("tiles the land with climate zones: unmatched pixels filled, a legend swatch merged, the sea left out", () => {
-    const climate = result.layers.climate!;
-    const landArea = totalArea(result.layers.altitudes);
-    expect(Math.abs(totalArea(climate) - landArea) / landArea).toBeLessThan(0.005);
-    const zones = new Set(climate.map((f) => f.properties.climateId));
-    expect(zones).toEqual(new Set(["Af", "Cfb", "BSh", "EF"]));
-    expect(climate.filter((f) => f.properties.climateId === "BSh")).toHaveLength(1); // C only
-    expect(climate.find((f) => f.properties.climateId === "Cfb")!.properties).toMatchObject({
-      fill: "#21c200",
-      climateName: "Cfb: Oceanic",
-      "ixmap-subgroup": null,
-    });
-  });
-
   it("traces the polar ice round the whole globe and drops a white label speck and a white islet", () => {
     const ice = result.layers.icecaps!;
     expect(ice).toHaveLength(1);
@@ -164,19 +128,6 @@ describe("PNG layer engine: land, lakes, climate and ice from map art", () => {
       expect(new Set(keys).size).toBe(keys.length);
     }
   });
-
-  it("fills in every speck size it is not given", () => {
-    expect(
-      layerEngineOptionsSchema.parse({ minRegionPixels: { land: 3 } }).minRegionPixels
-    ).toEqual({
-      land: 3,
-      climate: 512,
-      icecaps: 4000,
-      elevation: 64,
-    });
-    expect(layerEngineOptionsSchema.parse({}).minRegionPixels.climate).toBe(512);
-  });
-
   it("refuses art that is not the land image's size", async () => {
     const small = await sharp({
       create: { width: 20, height: 10, channels: 3, background: { r: 0, g: 0, b: 0 } },

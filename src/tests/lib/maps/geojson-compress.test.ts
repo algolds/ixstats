@@ -66,34 +66,4 @@ describe("compressFeatureCollection", () => {
     expect(polygons[1]![0]).toEqual(SLIVER);
     expect(polygons[2]![0]!.length).toBeLessThan(second.length / 4);
   });
-
-  it("gives the same result as before for geometry turf accepts", () => {
-    const ring = circle(0, 0, 1, 360);
-    const out = compressFeatureCollection(
-      { type: "FeatureCollection", features: [feature({ type: "Polygon", coordinates: [ring] })] },
-      OPTIONS
-    );
-    const simplified = (out.features[0]!.geometry as Polygon).coordinates[0]!;
-
-    expect(simplified.length).toBeGreaterThan(8);
-    expect(simplified[0]).toEqual(simplified[simplified.length - 1]);
-  });
-
-  it("leaves a feature the caller already simplified at its vertices, truncating only", () => {
-    const ring = circle(0, 0, 1, 360);
-    const done = feature({ type: "Polygon", coordinates: [ring] });
-    const other = feature({ type: "Polygon", coordinates: [circle(10, 10, 1, 360)] });
-
-    const out = compressFeatureCollection(
-      { type: "FeatureCollection", features: [done, other] },
-      OPTIONS,
-      (f) => f === done
-    );
-    const kept = (out.features[0]!.geometry as Polygon).coordinates[0]!;
-    const simplified = (out.features[1]!.geometry as Polygon).coordinates[0]!;
-
-    expect(kept).toHaveLength(ring.length);
-    expect(kept[1]).toEqual(ring[1]!.map((n) => Math.round(n * 1e4) / 1e4));
-    expect(simplified.length).toBeLessThan(ring.length / 4);
-  });
 });

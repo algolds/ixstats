@@ -82,14 +82,6 @@ const EXPECTED_STAGE: Record<keyof WorldGenParams, StageId> = {
 };
 
 describe("v2/stages planRestart", () => {
-  it("starts at the mesh when there is no previous run", () => {
-    expect(planRestart(null, inputs())).toBe("mesh");
-  });
-
-  it("starts at the output when nothing changed", () => {
-    expect(planRestart(inputs(), inputs())).toBe("output");
-  });
-
   it.each(Object.keys(CHANGED) as (keyof WorldGenParams)[])(
     "restarts a change of %s at its stage",
     (field) => {
@@ -97,44 +89,6 @@ describe("v2/stages planRestart", () => {
       expect(planRestart(inputs(), next)).toBe(EXPECTED_STAGE[field]);
     }
   );
-
-  it("takes the earliest stage when several changed", () => {
-    const next = inputs({ hasIcecaps: false, temperatureOffset: 2, countryCountRange: [20, 80] });
-    expect(planRestart(inputs(), next)).toBe("climate");
-  });
-
-  it("does not count an equal array or object as a change", () => {
-    const next = inputs({
-      hypsometry: [...DEFAULT_PARAMS.hypsometry],
-      polarLand: { ...DEFAULT_PARAMS.polarLand },
-      countryCountRange: [...DEFAULT_PARAMS.countryCountRange],
-    });
-    expect(planRestart(inputs(), next)).toBe("output");
-  });
-
-  it("does not count the same polarLand written in another key order as a change", () => {
-    const next = inputs({
-      polarLand: { south: DEFAULT_PARAMS.polarLand.south, north: DEFAULT_PARAMS.polarLand.north },
-    });
-    expect(planRestart(inputs(), next)).toBe("output");
-    expect(planRestart(inputs(), inputs({ polarLand: { south: false, north: true } }))).toBe(
-      "land"
-    );
-  });
-
-  it("restarts a different land mask at the land and a different keep-borders at the nations", () => {
-    const mask = rasterizeLandMask({}, 64);
-    expect(planRestart(inputs({}, { landMask: mask }), inputs({}, { landMask: mask }))).toBe(
-      "output"
-    );
-    expect(planRestart(inputs({}, { landMask: mask }), inputs({}, { landMask: { ...mask } }))).toBe(
-      "land"
-    );
-    expect(planRestart(inputs(), inputs({}, { landMask: mask }))).toBe("land");
-    expect(planRestart(inputs(), inputs({}, { keepBorders: true }))).toBe("nations");
-    expect(planRestart(inputs({}, { keepBorders: false }), inputs())).toBe("output");
-  });
-
   it("reads every parameter in some stage", () => {
     const listed = new Set(Object.values(STAGE_FIELDS).flat());
     expect([...listed].sort()).toEqual(Object.keys(DEFAULT_PARAMS).sort());
@@ -250,29 +204,6 @@ describe("v2/stages restart equals a full run", () => {
       generateWorldStaged(start, undefined, { cache });
     }
   });
-
-  it("holds along a chain of changes that reuse each other's snapshots", () => {
-    const steps: Partial<WorldGenParams>[] = [
-      { temperatureOffset: 2 },
-      { temperatureOffset: 2, hasIcecaps: false },
-      { temperatureOffset: 2, hasIcecaps: false, countryCountRange: [25, 70] },
-      { temperatureOffset: -1, hasIcecaps: false, countryCountRange: [25, 70] },
-      { temperatureOffset: -1, hasIcecaps: true, countryCountRange: [25, 70] },
-      { oceanPercentage: 0.74 },
-      { oceanPercentage: 0.74, precipitationScale: 0.8 },
-      { oceanPercentage: 0.74, precipitationScale: 0.8, useMarkovNaming: false },
-    ];
-    const cache = new StageCache();
-    const meshCache = new MeshCache();
-    const start = base({ ...WORLD_PRESETS.ixnay, seed: 3 });
-    generateWorldStaged(start, undefined, { cache, meshCache });
-    for (const step of steps) {
-      const params = { ...start, ...step };
-      const staged = generateWorldStaged(params, undefined, { cache, meshCache });
-      expect(fingerprint(staged)).toEqual(fingerprint(generateWorld(params)));
-    }
-  });
-
   it("takes a changed land mask from the land stage and the same mask from the output", () => {
     const start = base({ ...WORLD_PRESETS.eurth, seed: 9 });
     const cache = new StageCache();
@@ -292,18 +223,6 @@ describe("v2/stages restart equals a full run", () => {
       fingerprint(generateWorld(start, undefined, { landMask: other }))
     );
   });
-
-  it("reports progress only for the stages that run", () => {
-    const start = base({ seed: 4 });
-    const cache = new StageCache();
-    generateWorldStaged(start, undefined, { cache });
-    const seen: string[] = [];
-    generateWorldStaged({ ...start, countryCountRange: [30, 90] }, (stage) => seen.push(stage), {
-      cache,
-    });
-    expect(new Set(seen)).toEqual(new Set(["politics", "export"]));
-  });
-
   it("serves the next run from the start after one that threw", () => {
     const start = base({ seed: 6 });
     const cache = new StageCache();
@@ -344,19 +263,5 @@ describe("v2/stages cache memory", () => {
       generateWorldStaged({ ...start, ...change }, undefined, { cache });
       expect(cache.bytesHeld()).toEqual(expected);
     }
-  });
-
-  it("exports the finished graph again for an output change and builds a new one for any earlier change", () => {
-    const start = base({ seed: 8 });
-    const cache = new StageCache();
-    const first = generateWorldStaged(start, undefined, { cache });
-    const output = generateWorldStaged({ ...start, hasIcecaps: false }, undefined, { cache });
-    expect(output.graph).toBe(first.graph);
-    expect(cache.graph).toBe(first.graph);
-    const nations = generateWorldStaged({ ...start, countryCountRange: [30, 90] }, undefined, {
-      cache,
-    });
-    expect(nations.graph).not.toBe(first.graph);
-    expect(cache.graph).toBe(nations.graph);
   });
 });

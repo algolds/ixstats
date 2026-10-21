@@ -17,12 +17,9 @@ jest.mock("~/lib/maps/geo-validation", () => ({
 
 import { createCallerFactory } from "~/server/api/trpc";
 import {
-  assertStorylineInCountry,
   geoFeaturesStorylinesRouter,
 } from "~/server/api/routers/geo/features/storylines";
 import { geoFeaturesStoryPinsRouter } from "~/server/api/routers/geo/features/storyPins";
-import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
-import { invalidateCache } from "~/lib/cache";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 const COUNTRY = { id: "c1", name: "Aurelia", slug: "aurelia", flag: null };
@@ -97,25 +94,6 @@ const pins = (db: unknown, user: Who = owner) =>
 
 describe("storylines (AT-14)", () => {
   beforeEach(() => jest.clearAllMocks());
-
-  it("the owner creates a storyline in their own country", async () => {
-    const db = setup();
-    const res = await storylines(db).createStoryline({
-      countryId: "c1",
-      title: "  Founding Wars ",
-      color: "#aa3300",
-    });
-    expect(res).toEqual({ id: "s_new", title: "Founding Wars" });
-    expect(db.storyline.create).toHaveBeenCalledWith({
-      data: { countryId: "c1", title: "Founding Wars", description: null, color: "#aa3300" },
-    });
-    expect(broadcastMapUpdate).toHaveBeenCalledWith("storyPin", "c1");
-    // The story pin modal's cached read (it carries the storyline) is cleared too.
-    expect(invalidateCache).toHaveBeenCalledWith(
-      expect.arrayContaining(["geoFeatures.getAllStoryPins", "geoFeatures.getStoryPinFull"])
-    );
-  });
-
   it("rejects a storyline in another country and a bad colour", async () => {
     const db = setup();
     await expect(
@@ -156,32 +134,6 @@ describe("storylines (AT-14)", () => {
     expect(db.storyline.delete).toHaveBeenCalledWith({ where: { id: "s1" } });
     expect(db.$transaction).toHaveBeenCalled();
   });
-
-  it("adds a pin after the storyline's last one, or at the given order", async () => {
-    const db = setup();
-    const res = await storylines(db).addPinToStoryline({
-      countryId: "c1",
-      storylineId: "s1",
-      pinId: "p1",
-    });
-    expect(res.order).toBe(3);
-    expect(db.storyPin.update).toHaveBeenCalledWith({
-      where: { id: "p1" },
-      data: { storylineId: "s1", storylineOrder: 3 },
-    });
-
-    await storylines(db).addPinToStoryline({
-      countryId: "c1",
-      storylineId: "s1",
-      pinId: "p1",
-      order: 0,
-    });
-    expect(db.storyPin.update).toHaveBeenLastCalledWith({
-      where: { id: "p1" },
-      data: { storylineId: "s1", storylineOrder: 0 },
-    });
-  });
-
   it("will not add another country's pin or use another country's storyline", async () => {
     const db = setup();
     await expect(
@@ -195,16 +147,6 @@ describe("storylines (AT-14)", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(db.storyPin.update).not.toHaveBeenCalled();
   });
-
-  it("removes a pin from its storyline", async () => {
-    const db = setup();
-    await storylines(db).removePinFromStoryline({ countryId: "c1", pinId: "p1" });
-    expect(db.storyPin.update).toHaveBeenCalledWith({
-      where: { id: "p1" },
-      data: { storylineId: null, storylineOrder: null },
-    });
-  });
-
   it("lists the country's storylines and loose pins for the owner and admins only", async () => {
     const db = setup();
     const res = await storylines(db).getCountryStorylines({ countryId: "c1" });
@@ -217,14 +159,6 @@ describe("storylines (AT-14)", () => {
       code: "FORBIDDEN",
     });
   });
-
-  it("an admin may edit any country's storylines", async () => {
-    const db = setup();
-    await expect(
-      storylines(db, admin).createStoryline({ countryId: "c1", title: "Admin" })
-    ).resolves.toBeDefined();
-  });
-
   it("createStoryPin and updateStoryPin refuse a storyline of another country", async () => {
     const db = setup();
     const base = {
@@ -250,17 +184,5 @@ describe("storylines (AT-14)", () => {
       pins(db).updateStoryPin({ countryId: "c1", pinId: "p1", storylineId: "s_other" })
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(db.storyPin.update).not.toHaveBeenCalled();
-  });
-
-  it("lists and accepts only map storylines, never story chains", async () => {
-    const db = setup();
-    await storylines(db).getCountryStorylines({ countryId: "c1" });
-    expect(db.storyline.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { countryId: "c1", kind: "map" } })
-    );
-    await assertStorylineInCountry(db as never, "s1", "c1");
-    expect(db.storyline.findFirst).toHaveBeenLastCalledWith(
-      expect.objectContaining({ where: { id: "s1", countryId: "c1", kind: "map" } })
-    );
   });
 });

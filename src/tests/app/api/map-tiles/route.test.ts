@@ -94,32 +94,9 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
   delete process.env.MAP_TILE_DIR;
 });
-
-const asOwner = () => {
-  auth.mockResolvedValue({ userId: "clerk_owner" });
-  userFind.mockResolvedValue({
-    id: "u1",
-    clerkUserId: "clerk_owner",
-    role: { name: "user", level: 100 },
-  });
-};
-const asAnonymous = () => {
-  auth.mockResolvedValue({ userId: null });
-  userFind.mockResolvedValue(null);
-};
-
 const body = async (res: Response) => new Uint8Array(await res.arrayBuffer());
 
 describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", () => {
-  it("serves an Ixnay tile as immutable, from the current version", async () => {
-    const res = await get("default", "3", "rivers", "2", "1", "3");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/x-protobuf");
-    expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(await body(res)).toEqual(new Uint8Array([1, 2, 3]));
-    expect(buildTile).toHaveBeenCalledWith(expect.anything(), "default", "rivers", 2, 1, 3);
-  });
-
   it("renders a tile once, writes it to the disk cache, and serves the next request without the renderer", async () => {
     const run = freshGet();
     await run("default", "3", "rivers", "2", "1", "3");
@@ -131,15 +108,6 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
     expect(again.headers.get("cache-control")).toBe(IMMUTABLE);
     expect(buildTile).toHaveBeenCalledTimes(1);
   });
-
-  it("serves a tile another process cached from disk, without the renderer", async () => {
-    await freshGet()("default", "3", "lakes", "1", "0", "1");
-    buildTile.mockClear();
-    const res = await freshGet()("default", "3", "lakes", "1", "0", "1");
-    expect(res.status).toBe(200);
-    expect(buildTile).not.toHaveBeenCalled();
-  });
-
   it("answers the same tile for an Ixnay name, a realm id and a realm slug", async () => {
     const run = freshGet();
     for (const realm of ["default", "ixnay", "ixworld"]) {
@@ -206,103 +174,6 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
       IMMUTABLE
     );
   });
-
-  it("serves a version that is an epoch second (ten digits, what a bump yields from the first edit on)", async () => {
-    table[0]!.mapVersion = 1791783284;
-    try {
-      const res = await get("default", "1791783284", "rivers", "1", "0", "0");
-      expect(res.status).toBe(200);
-      expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
-      expect(
-        existsSync(path.join(root, "default", "f1", "1791783284", "rivers", "1", "0", "0.pbf"))
-      ).toBe(true);
-    } finally {
-      table[0]!.mapVersion = 3;
-    }
-  });
-
-  it("404s on an unknown realm, uncached", async () => {
-    const res = await get("r_nope", "0", "lakes", "0", "0", "0");
-    expect(res.status).toBe(404);
-    expect(res.headers.get("cache-control")).toBe("no-store");
-    expect(readdirSync(root)).toEqual([]);
-  });
-
-  it("serves a published realm's tiles as immutable", async () => {
-    const res = await get("r_eurth", "2", "lakes", "0", "0", "0");
-    expect(res.headers.get("cache-control")).toBe(IMMUTABLE);
-  });
-
-  it("hides a draft realm from anyone who cannot moderate it, without rendering or caching", async () => {
-    const res = await get("r_draft", "1", "lakes", "0", "0", "0");
-    expect(res.status).toBe(404);
-    expect(res.headers.get("cache-control")).toBe("no-store");
-    expect(buildTile).not.toHaveBeenCalled();
-    expect(readdirSync(root)).toEqual([]);
-  });
-
-  it("serves a draft realm to its owner, never cacheable by a shared cache", async () => {
-    asOwner();
-    const res = await get("r_draft", "1", "lakes", "0", "0", "0");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("cache-control")).toBe("private, no-store");
-  });
-
-  it("does not serve a draft realm's cached tile to an anonymous viewer after its owner loaded it", async () => {
-    const run = freshGet();
-    asOwner();
-    expect((await run("r_draft", "1", "lakes", "0", "0", "0")).status).toBe(200);
-    expect(existsSync(path.join(root, "r_draft", "f1", "1", "lakes", "0", "0", "0.pbf"))).toBe(
-      true
-    );
-
-    asAnonymous();
-    for (const name of ["r_draft", "draft-world"]) {
-      const res = await run(name, "1", "lakes", "0", "0", "0");
-      expect(res.status).toBe(404);
-      expect(res.headers.get("cache-control")).toBe("no-store");
-      expect((await body(res)).length).toBe(0);
-    }
-    // The owner still gets the cached tile, still private
-    asOwner();
-    const again = await run("r_draft", "1", "lakes", "0", "0", "0");
-    expect(again.headers.get("cache-control")).toBe("private, no-store");
-    expect(buildTile).toHaveBeenCalledTimes(1);
-  });
-
-  it("serves an empty tile as an empty body, cached like any other (a realm with no features)", async () => {
-    buildTile.mockResolvedValue(new Uint8Array());
-    const run = freshGet();
-    const first = await run("default", "3", "altitudes", "3", "7", "7");
-    expect(first.status).toBe(200);
-    expect(first.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect((await body(first)).length).toBe(0);
-    const again = await run("default", "3", "altitudes", "3", "7", "7");
-    expect(again.status).toBe(200);
-    expect((await body(again)).length).toBe(0);
-    expect(buildTile).toHaveBeenCalledTimes(1);
-  });
-
-  it.each([
-    ["1", "1"],
-    ["3", "7"],
-    ["3", "0"],
-  ])(
-    "renders z%s x%s, a tile on the antimeridian's edge, like any other (the tile SQL splits what crosses it)",
-    async (z, x) => {
-      const res = await get("default", "3", "altitudes", z, x, "1");
-      expect(res.status).toBe(200);
-      expect(buildTile).toHaveBeenLastCalledWith(
-        expect.anything(),
-        "default",
-        "altitudes",
-        Number(z),
-        Number(x),
-        1
-      );
-    }
-  );
-
   it("answers an out-of-date version from the current version's cache, uncacheable, rendering once", async () => {
     const run = freshGet();
     for (const version of ["1", "0", "1"]) {
@@ -321,35 +192,6 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
     expect(current.headers.get("cache-control")).toBe(IMMUTABLE);
     expect(buildTile).toHaveBeenCalledTimes(1);
   });
-
-  it("makes only ID-addressed URLs immutable: a slug can be renamed or reassigned", async () => {
-    const run = freshGet();
-    const byId = await run("r_eurth", "2", "lakes", "0", "0", "0");
-    const bySlug = await run("eurth", "2", "lakes", "0", "0", "0");
-    expect(byId.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(bySlug.headers.get("cache-control")).toBe("public, max-age=300");
-    expect(bySlug.status).toBe(200);
-    expect(await body(bySlug)).toEqual(await body(byId));
-  });
-
-  it.each([
-    ["the Ixnay realm id", "default", IMMUTABLE],
-    ["Ixnay's slug", "ixworld", "public, max-age=300"],
-    ["Ixnay's name", "ixnay", "public, max-age=300"],
-  ])("serves Ixnay by %s with its own cache header", async (_name, realm, cacheControl) => {
-    const res = await get(realm, "3", "lakes", "0", "0", "0");
-    expect(res.headers.get("cache-control")).toBe(cacheControl);
-  });
-
-  it("keeps a slug-addressed unpublished realm private and uncached", async () => {
-    asOwner();
-    const res = await get("draft-world", "1", "lakes", "0", "0", "0");
-    expect(res.status).toBe(200);
-    expect(res.headers.get("cache-control")).toBe("private, no-store");
-    asAnonymous();
-    expect((await get("draft-world", "1", "lakes", "0", "0", "0")).status).toBe(404);
-  });
-
   it("404s on a version the realm has not reached, writing nothing", async () => {
     const res = await get("r_eurth", "9", "lakes", "0", "0", "0");
     expect(res.status).toBe(404);

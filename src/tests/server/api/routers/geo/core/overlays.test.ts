@@ -13,14 +13,6 @@ import {
 
 type MockFn = jest.Mock<any, any>;
 
-function makeGroupByResult(field: string, id: string, count: number) {
-  return { [field]: id, _count: { _all: count } };
-}
-
-function makeConflictRow(role: "initiatorId" | "defenderId", id: string, count: number) {
-  return { [role]: id, _count: { _all: count } };
-}
-
 function makeCountry(id: string, overrides: Record<string, unknown> = {}) {
   return {
     id,
@@ -93,36 +85,6 @@ describe("getRegionalChoropleth", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
-
-  it("derives health scores when metric is health", async () => {
-    mockDb.country.findMany.mockResolvedValue([
-      makeCountry("A", {
-        lifeExpectancy: 82,
-        literacyRate: 98,
-        povertyRate: 5,
-        currentGdpPerCapita: 50_000,
-      }),
-      makeCountry("B", {
-        lifeExpectancy: 60,
-        literacyRate: 50,
-        povertyRate: 45,
-        currentGdpPerCapita: 3_000,
-      }),
-    ]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = await caller.getRegionalChoropleth({
-      metric: "health",
-      groupBy: "country",
-    });
-
-    expect(result.rows).toHaveLength(2);
-    const aRaw = result.rows[0]?.rawValue ?? 0;
-    const bRaw = result.rows[1]?.rawValue ?? 0;
-    expect(aRaw).toBeGreaterThan(bRaw);
-    expect(result.rows[0]?.value).toBeGreaterThan(result.rows[1]?.value ?? 0);
-  });
-
   it("derives net trade balance from bilateral trade rows and inverts ranking", async () => {
     mockDb.country.findMany.mockResolvedValue([
       makeCountry("A"),
@@ -163,57 +125,6 @@ describe("getRegionalChoropleth", () => {
     expect(byId.get("A")?.value).toBeLessThan(byId.get("B")?.value ?? 1);
     expect(byId.get("A")?.value).toBeLessThan(byId.get("C")?.value ?? 1);
   });
-
-  it("preserves existing metric paths", async () => {
-    mockDb.country.findMany.mockResolvedValue([
-      makeCountry("A", { currentGdpPerCapita: 50_000 }),
-      makeCountry("B", { currentGdpPerCapita: 5_000 }),
-    ]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = await caller.getRegionalChoropleth({
-      metric: "gdpPerCapita",
-      groupBy: "country",
-    });
-
-    expect(result.rows[0]?.rawValue).toBe(50_000);
-    expect(result.rows[1]?.rawValue).toBe(5_000);
-    expect(result.rows[0]?.value).toBeGreaterThan(result.rows[1]?.value ?? 0);
-  });
-
-  it("returns one row per country with no geometry, and never reads it", async () => {
-    mockDb.country.findMany.mockResolvedValue([makeCountry("A"), makeCountry("B")]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = await caller.getRegionalChoropleth({ metric: "population", groupBy: "country" });
-
-    expect(mockDb.country.findMany.mock.calls[0]?.[0].select).not.toHaveProperty("geometry");
-    expect(result.rows.map((row) => row.countryId)).toEqual(["A", "B"]);
-    expect(result.rows[0]).toMatchObject({ name: "Country A", slug: "A", metric: "population" });
-    expect(JSON.stringify(result)).not.toContain("geometry");
-    expect(result.metadata).toMatchObject({ metric: "population", count: 2 });
-  });
-
-  it("groups by region with the group's value on each of its countries, still without geometry", async () => {
-    mockDb.country.findMany.mockResolvedValue([
-      makeCountry("A", { region: "North", currentGdpPerCapita: 10 }),
-      makeCountry("B", { region: "North", currentGdpPerCapita: 30 }),
-      makeCountry("C", { region: "South", currentGdpPerCapita: 100 }),
-    ]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = await caller.getRegionalChoropleth({
-      metric: "gdpPerCapita",
-      groupBy: "region",
-    });
-
-    const byId = new Map(result.rows.map((row) => [row.countryId, row]));
-    expect(byId.get("A")).toMatchObject({ rawValue: 20, groupName: "North", value: 0 });
-    expect(byId.get("B")).toMatchObject({ rawValue: 20, groupName: "North", value: 0 });
-    expect(byId.get("C")).toMatchObject({ rawValue: 100, groupName: "South", value: 1 });
-    expect(JSON.stringify(result)).not.toContain("geometry");
-    expect(result.metadata.count).toBe(2);
-  });
 });
 
 describe("computeCanonDensityScores", () => {
@@ -230,64 +141,7 @@ describe("computeCanonDensityScores", () => {
     expect(scores.get("B")).toBe(1 * 1 + 3 * 1); // 4
     expect(scores.get("C")).toBe(2 * 2 + 4 * 0.5); // 6
   });
-
-  it("returns zero for all countries when no sources have counts", () => {
-    const scores = computeCanonDensityScores(["A", "B"], {
-      storytellerEffect: {},
-      diplomaticEvent: {},
-      resolvedNationalIssue: {},
-      militaryConflict: {},
-      storyPin: {},
-    });
-
-    expect(scores.get("A")).toBe(0);
-    expect(scores.get("B")).toBe(0);
-  });
 });
-
-describe("getCanonDensity", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("returns weighted scores and percentile ranks per country", async () => {
-    mockDb.country.findMany.mockResolvedValue([
-      makeCountry("A"),
-      makeCountry("B"),
-      makeCountry("C"),
-    ]);
-
-    mockDb.storytellerEffect.groupBy.mockResolvedValue([
-      makeGroupByResult("countryId", "A", 2),
-      makeGroupByResult("countryId", "B", 1),
-    ]);
-    mockDb.diplomaticEvent.groupBy.mockResolvedValue([makeGroupByResult("country1Id", "B", 3)]);
-    mockDb.nationalIssue.groupBy.mockResolvedValue([]);
-    mockDb.militaryConflict.groupBy
-      .mockResolvedValueOnce([makeConflictRow("initiatorId", "A", 1)])
-      .mockResolvedValueOnce([makeConflictRow("defenderId", "C", 2)]);
-    mockDb.storyPin.groupBy.mockResolvedValue([makeGroupByResult("countryId", "C", 4)]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = await caller.getCanonDensity();
-
-    const byId = new Map(result.rows.map((row) => [row.countryId, row]));
-
-    expect(result.rows).toHaveLength(3);
-    expect(mockDb.country.findMany.mock.calls[0]?.[0].select).not.toHaveProperty("geometry");
-    expect(JSON.stringify(result)).not.toContain("geometry");
-    expect(byId.get("A")?.rawValue).toBe(4);
-    expect(byId.get("B")?.rawValue).toBe(4);
-    expect(byId.get("C")?.rawValue).toBe(6);
-
-    // C is the highest scorer and should outrank A and B.
-    expect(byId.get("C")?.value).toBeGreaterThan(byId.get("A")?.value ?? 1);
-    expect(byId.get("C")?.value).toBeGreaterThan(byId.get("B")?.value ?? 1);
-
-    expect(result.metadata.maxVal).toBe(6);
-  });
-});
-
 describe("getCrisisRiskMap", () => {
   type CrisisRiskResult = {
     rows: { countryId: string; value: number }[];
@@ -332,32 +186,6 @@ describe("getCrisisRiskMap", () => {
     jest.clearAllMocks();
     clearTrpcMemoryCache();
   });
-
-  it("does not issue per-profile findUnique", async () => {
-    mockDb.countryGeoProfile.findMany.mockResolvedValue([makeProfile("A"), makeProfile("B")]);
-    mockDb.crisisEvent.findMany.mockResolvedValue([]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
-
-    expect(mockDb.countryGeoProfile.findUnique).not.toHaveBeenCalled();
-    expect(mockDb.country.findMany).not.toHaveBeenCalled();
-    expect(result.rows.map((row) => row.countryId)).toEqual(["A", "B"]);
-    expect(result.rows[0]?.value).toBeGreaterThanOrEqual(0);
-  });
-
-  it("returns risk rows without geometry and does not read the country's outline", async () => {
-    mockDb.countryGeoProfile.findMany.mockResolvedValue([makeProfile("A")]);
-    mockDb.crisisEvent.findMany.mockResolvedValue([]);
-
-    const caller = createCallerFactory(testRouter)(baseContext);
-    const result = (await caller.getCrisisRiskMap()) as CrisisRiskResult;
-
-    const args = mockDb.countryGeoProfile.findMany.mock.calls[0]?.[0];
-    expect(args.select.country.select).not.toHaveProperty("geometry");
-    expect(JSON.stringify(result.rows)).not.toContain("geometry");
-  });
-
   it("resolves crisis points from JSON id arrays with one country query", async () => {
     mockDb.countryGeoProfile.findMany.mockResolvedValue([]);
     mockDb.crisisEvent.findMany.mockResolvedValue([

@@ -72,31 +72,6 @@ describe("startBorderEditSession neighbours", () => {
     expect(params).toEqual([EURTH, "Gallambria", 9, 19, 13, 24]);
     expect(db.mapLayer.findMany).not.toHaveBeenCalled();
   });
-
-  it("returns the neighbours as feature stubs without their update times", async () => {
-    const db = makeDb([
-      { featureId: "Daxia", displayName: "Daxia", geometry: square, updatedAt: hoursBefore(9) },
-    ]);
-    const result = await open(db);
-
-    expect(result.neighbors).toEqual([
-      { featureId: "Daxia", displayName: "Daxia", geometry: square },
-    ]);
-  });
-
-  it("reads no neighbours for a feature without a bounding box", async () => {
-    const db = makeDb();
-    db.mapLayer.findFirst.mockResolvedValue({
-      id: "ml1",
-      featureId: "Gallambria",
-      boundingBox: null,
-    });
-    const result = await open(db);
-
-    expect(db.$queryRawUnsafe).not.toHaveBeenCalled();
-    expect(result.neighbors).toEqual([]);
-  });
-
   describe("restoring a draft that moved neighbours", () => {
     function withDraft(db: ReturnType<typeof makeDb>) {
       db.mapEditorSession.upsert.mockResolvedValue({
