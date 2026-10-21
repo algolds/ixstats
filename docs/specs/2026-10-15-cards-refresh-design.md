@@ -1,7 +1,7 @@
 # Cards refresh: design
 
 **Date:** 2026-10-15
-**Status:** Approved in conversation; awaiting written-spec review
+**Status:** Phases 1-4 built and gated, and merged into `rose-garden` on 2026-10-20; Phases 5 (the realm loop) and 6 (surfaces) are planned, not started. The deploy runbooks are at the end of `docs/systems/cards.md`.
 **Scope:** LoreCards, NS cards, the Vault card system and the cards admin (data, import, economy, UI/UX)
 **Builds on:** `2026-08-13-ixcards-lore-first-rebuild.md`, `2026-10-14-vault-collectathon-hub-design.md` (set completion returns here), `2026-10-11-realm-content-licensing-drafts.md` (attribution and takedown duties)
 
