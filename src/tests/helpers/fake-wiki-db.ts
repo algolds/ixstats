@@ -8,7 +8,8 @@
  * `createFakeWikiDb({ prisma: true })` (the scenario tests) is closer to Prisma: rows get the schema's column defaults,
  * `select`/`include`, `where` and `orderBy` follow the relations the WikiOS reads use (an article's revisions and
  * categories, a revision's article, a membership's category), `lt`/`lte`/`gte`/`equals` (with `mode`) and the
- * `increment`/`decrement` updates work, an update stamps `updatedAt`, and `onQueryRaw` answers raw queries a test models.
+ * `increment`/`decrement` updates work, an update stamps `updatedAt`, `withJobLock`'s lease and `fillRevisionParents` are
+ * modelled, and `onQueryRaw` answers raw queries a test models.
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -286,6 +287,13 @@ function applyUpdate(schema: Schema | null, row: Row, data: Record<string, unkno
   if ("updatedAt" in row && !("updatedAt" in data)) row.updatedAt = new Date();
 }
 
+let lastStamp = 0;
+/** The time now, never the same twice. */
+function monotonicNow(): Date {
+  lastStamp = Math.max(Date.now(), lastStamp + 1);
+  return new Date(lastStamp);
+}
+
 export function createTable(
   defaults: () => Record<string, unknown> = () => ({}),
   name = "",
@@ -315,7 +323,8 @@ export function createTable(
     },
     insert(data: Record<string, unknown>): Row {
       counter += 1;
-      const stamp = new Date(Date.UTC(2026, 0, 1) + counter * 1000);
+      // Prisma mode: `now()`, a millisecond apart at least, so rows written in one test keep their order
+      const stamp = schema ? monotonicNow() : new Date(Date.UTC(2026, 0, 1) + counter * 1000);
       const row = {
         id: `${schema && name ? `${name}-` : "row"}${counter}`,
         createdAt: stamp,
@@ -602,6 +611,8 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
     systemConfig: table("systemConfig"),
     notification: table("notification"),
   };
+  /** withJobLock's leases (Prisma mode), by name. */
+  const leases = new Map<string, { holder: string; expiresAt: number }>();
   /** A raw query the test models: return its rows, or undefined to fall through to the fake's own. */
   const rawQueryHandlers: Array<(sql: string, values: unknown[]) => unknown[] | undefined> = [];
   const db: FakeWikiDb = {
@@ -639,6 +650,14 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
         const answer = handle(sql, values);
         if (answer !== undefined) return answer;
       }
+      if (prisma && sql.includes('INSERT INTO "job_leases"')) {
+        // withJobLock's lease: taken when free or expired, by the holder that asked
+        const [name, holder, seconds] = values as [string, string, number];
+        const lease = leases.get(name);
+        if (lease && lease.expiresAt > Date.now()) return [];
+        leases.set(name, { holder, expiresAt: Date.now() + seconds * 1000 });
+        return [{ holder }];
+      }
       return [];
     },
     $executeRaw: async (strings, ...values) => {
@@ -648,7 +667,30 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
         await acquireAdvisoryLock(values.join(":"));
         return 0;
       }
-      executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
+      const sql = strings.join("?").replace(/\s+/g, " ").trim();
+      executedSql.push({ sql, values });
+      if (prisma && sql.startsWith('DELETE FROM "job_leases"')) {
+        const [name, holder] = values as [string, string];
+        if (leases.get(name)?.holder === holder) leases.delete(name);
+        return 1;
+      }
+      if (prisma && sql.includes('SET "parentRevisionId" = chain."previousId"')) {
+        // fillRevisionParents: each live revision without a parent gets the live one before it, by (createdAt, id)
+        const live = sortRows(
+          schema,
+          "wikiRevision",
+          tables.wikiRevision.rows.filter((row) => row.articleId === values[0] && row.parked !== true),
+          [{ createdAt: "asc" }, { id: "asc" }]
+        );
+        let set = 0;
+        live.forEach((row, at) => {
+          if (at > 0 && !row.parentRevisionId) {
+            row.parentRevisionId = live[at - 1]!.id;
+            set += 1;
+          }
+        });
+        return set;
+      }
       return 0;
     },
   };
@@ -662,6 +704,7 @@ export function createFakeWikiDb({ prisma = false }: FakeWikiDbOptions = {}) {
     reset() {
       for (const one of Object.values(tables)) one.reset();
       rawQueryHandlers.length = 0;
+      leases.clear();
       executedSql.length = 0;
       advisoryLocks.length = 0;
       transactionOptions.length = 0;
