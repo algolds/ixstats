@@ -1,3 +1,8 @@
+/**
+ * The World tab: the controls ask the generator for the right world, a slider asks when it is released, the draft
+ * recipe is kept per realm and brings the preview back, and the lock explains itself without stopping a preview. The
+ * worker is a fake that the test speaks for.
+ */
 import { fireEvent, screen } from "@testing-library/react";
 
 jest.mock("~/trpc/react", () => {

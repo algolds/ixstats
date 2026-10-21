@@ -1,3 +1,7 @@
+/**
+ * The generator worker's logic, called directly: what it posts, in which order, what it transfers, what it
+ * remembers between requests, and what it does when the generator throws.
+ */
 import { generateWorldStaged } from "~/lib/worldgen/v2";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
 import type {

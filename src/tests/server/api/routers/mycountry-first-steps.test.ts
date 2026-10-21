@@ -1,3 +1,8 @@
+/**
+ * MyCountry after founding: the welcome summary and the "First steps" checklist, whose items tick
+ * from the rows each console writes (never the rows founding itself wrote), and the per-nation
+ * dismissal.
+ */
 import { myCountryFirstStepsRouter } from "~/server/api/routers/mycountry/first-steps";
 import {
   FOUNDING_GRACE_MS,

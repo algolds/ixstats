@@ -1,3 +1,11 @@
+/** @jest-environment node */
+/**
+ * Plan 406 follow-up: `cleanWikiMarkup` (and so `cleanWikitextExcerpt`) runs on text MediaWiki editors
+ * write. Internal links are unpacked in one pass (the regular expression rescanned the rest of the
+ * text from every `[[` that never closed), file links are matched from one bracket index, and an EXCERPT
+ * (`maxLength > 0`) is read no further than CLEAN_MARKUP_CEILING characters. A whole page (`maxLength` 0)
+ * is read in full, in linear time: tests/lib/wiki-os/clean-markup-linear.test.ts.
+ */
 import {
   CLEAN_MARKUP_CEILING,
   cleanWikiMarkup,

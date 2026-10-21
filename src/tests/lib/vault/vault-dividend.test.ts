@@ -1,3 +1,4 @@
+/** @jest-environment node */
 import { describe, it, expect } from "@jest/globals";
 import {
   DIVIDEND,

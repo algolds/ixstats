@@ -1,3 +1,8 @@
+/** @jest-environment node */
+/**
+ * Market › Browse: live listings and auctions in one list, featured first, then the chosen sort. Each source is read in
+ * the merged order, so a page is exact; a live item shows its art to everyone and says whether it is the viewer's.
+ */
 import {
   browseMarket,
   MAX_BROWSE_OFFSET,

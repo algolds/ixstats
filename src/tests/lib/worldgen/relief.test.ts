@@ -1,3 +1,6 @@
+/**
+ * Relief module: heights from generator cells and from altitude bands, tileable detail, and the hillshade.
+ */
 import { makeRng } from "~/lib/worldgen/v2/helpers/rng";
 import { kmPerDegreeLng } from "~/lib/maps/planet";
 import {

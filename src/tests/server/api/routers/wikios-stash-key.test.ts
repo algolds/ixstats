@@ -1,3 +1,11 @@
+/** @jest-environment node */
+// `jest` is deliberately NOT imported from "@jest/globals" (see cards-archetypes-admin-auth.test.ts):
+// the hoisted jest.mock() factories rely on the ambient global.
+//
+// A stash holds one item per (content type, title). `StashItem` used to be unique on
+// (stashId, pageTitle), so an Onoma name "Rome" and the article "Rome" overwrote each other.
+// The fake `stashItem` below only understands the NEW compound key, so a router still upserting on
+// the old two-column compound key fails here instead of silently passing.
 type FakeItem = {
   id: string;
   stashId: string;

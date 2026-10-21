@@ -1,3 +1,6 @@
+/**
+ * Government forms catalogue (spec §4).
+ */
 import {
   GOVERNMENT_FORMS,
   matchGovernmentForm,

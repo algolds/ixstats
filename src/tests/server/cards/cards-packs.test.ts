@@ -1,3 +1,5 @@
+/** @jest-environment node */
+/** The pack editor: what it saves, the guarantee cleared, the pool previewed, and no sale for a pool it can't deliver. */
 import {
   PackEditorSchema,
   previewPackPool,

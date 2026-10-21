@@ -1,3 +1,6 @@
+/**
+ * The PNG render: an equirectangular image laid out as the relief is, with its layers, and fast enough at 8192 px.
+ */
 import { renderMap } from "~/lib/worldgen/render-png";
 import { worldGraph } from "~/tests/helpers/world-graph";
 

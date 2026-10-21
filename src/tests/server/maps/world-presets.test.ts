@@ -1,3 +1,8 @@
+/** @jest-environment node */
+/**
+ * World presets in the database: lazy idempotent seeding from `WORLD_PRESETS`, drafts, publishing, versions,
+ * restore, reset to factory, archiving, and what founders get (published and unarchived only, never a draft).
+ */
 import { WORLD_PRESETS } from "~/lib/worldgen/v2/config";
 import {
   createWorldPreset,

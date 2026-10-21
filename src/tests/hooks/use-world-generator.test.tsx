@@ -1,3 +1,7 @@
+/**
+ * The world generator hook: one worker for the editor's life, the newest generate queued behind one in flight, stale
+ * answers dropped, and a failed run leaving the last good world in place.
+ */
 import { act, renderHook } from "@testing-library/react";
 
 import { useWorldGenerator } from "~/hooks/useWorldGenerator";

@@ -1,3 +1,8 @@
+/** @jest-environment node */
+/**
+ * Plan 402: redirects are recognised the way MediaWiki recognises them (text STARTS with
+ * #REDIRECT), and the target is a canonical title plus an optional fragment.
+ */
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 
 describe("parseRedirect", () => {

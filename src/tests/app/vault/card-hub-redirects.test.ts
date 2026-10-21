@@ -1,3 +1,9 @@
+/** @jest-environment node */
+/**
+ * Every old card address redirects permanently into the hub or the Store, keeping its query, and `/vault/cards` opens
+ * Mine; a page that moved out of the Vault (the Exchange) redirects permanently too. `src/proxy.ts` answers them: a
+ * redirect thrown by a page would stream as a 200 under the Vault's loading boundary, so the old pages are gone.
+ */
 import { afterAll, beforeAll, describe, expect, it, jest } from "@jest/globals";
 import { NextRequest, type NextFetchEvent } from "next/server";
 

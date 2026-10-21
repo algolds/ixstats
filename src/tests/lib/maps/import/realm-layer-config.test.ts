@@ -1,3 +1,4 @@
+/** @jest-environment node */
 import { realmLayerConfigSchema } from "~/lib/maps/import/realm-layer-config";
 describe("realm layer config", () => {
   it("names art by key, never by file path", () => {

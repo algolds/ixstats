@@ -1,3 +1,7 @@
+/** @jest-environment node */
+/**
+ * Plan 403: ArticleRepository writes and reads one MediaWiki-canonical identity per title.
+ */
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/render-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";

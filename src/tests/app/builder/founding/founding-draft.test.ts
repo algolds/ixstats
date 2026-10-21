@@ -1,3 +1,9 @@
+/**
+ * The founding draft's rules: step gating and the prerequisite redirect, the archetype switch
+ * (identity survives), reading stored drafts, the payload (never the explicit regime's
+ * payloads), policy presets replacing the component set, and the wiki import's mapping and
+ * archetype suggestion.
+ */
 import { getArchetypeDisplay } from "~/lib/economy/archetypes/display";
 import {
   applyImport,

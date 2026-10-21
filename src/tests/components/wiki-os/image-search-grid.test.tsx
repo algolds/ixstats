@@ -1,3 +1,8 @@
+/**
+ * WK-6: the image picker's Commons tab searches Wikimedia Commons through `commons.search` (debounced, paged with
+ * "Load more"), with loading, empty and error states, and each file's licence and author; picking a Commons file
+ * hands it on like an IxWiki one. WK-17: an IxWiki file's BlurHash is shown behind its thumbnail while it loads.
+ */
 import {
   commonsImageToResult,
   mergeCommonsPages,
