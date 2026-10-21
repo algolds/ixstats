@@ -99,7 +99,7 @@ scripts/
 
 ## 🃏 Cards (`scripts/cards/`)
 
-Cards refresh one-offs. Each is a dry run that prints its plan and writes nothing unless given `--apply`, and each is idempotent (a second run plans nothing). Production order: the [Phase 2 deploy runbook](../docs/systems/cards.md#phase-2-deploy-runbook-owner) (Phase 1's is in its plan).
+Cards refresh one-offs. Each is a dry run that prints its plan and writes nothing unless given `--apply`, and each is idempotent (a second run plans nothing). Production order: the [Phase 2 deploy runbook](../docs/systems/cards.md#phase-2-deploy-runbook-owner) (Phase 1's is in its plan). Phases 3 and 4 have no one-off script: Phase 4's SQL marks imported copies for the import share from the import ledger ([Phase 4 deploy runbook](../docs/systems/cards.md#phase-4-deploy-runbook-owner)).
 
 | Script | Purpose & Command |
 | :--- | :--- |
