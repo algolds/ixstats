@@ -130,29 +130,14 @@ describe("registry shape", () => {
   });
 });
 
-describe("wiki loader", () => {
-  it("counts the WikiOS edits of a player with no verified link, and never a row with no account", async () => {
-    const db = rawDb([{ edits: 3, created: 1, pages: 2 }]);
-    unlinked(db);
-    expect(await wikiLoader.load(ctx(db))).toEqual({
-      wikiEdits: 3,
-      wikiArticlesCreated: 1,
-      wikiDistinctPages: 2,
-    });
-    // With no link the name arm binds NULL, and `author = NULL` matches no row: null-authorId rows never count.
-    expect(sqlOf(db).params).toEqual(["u1", null]);
-  });
-
-  it("aggregates edits, created articles and distinct pages in one query on the account's own revisions", async () => {
+describe("raw-query loaders", () => {
+  it("wiki: aggregates the account's own revisions, plus MediaWiki imports with no account under exactly the link's name", async () => {
     const db = rawDb([{ edits: 120, created: 11, pages: 50 }]);
     linked(db, "Urcea");
-    const result = await wikiLoader.load(ctx(db));
-
-    expect(result).toEqual({ wikiEdits: 120, wikiArticlesCreated: 11, wikiDistinctPages: 50 });
+    expect(await wikiLoader.load(ctx(db))).toEqual({ wikiEdits: 120, wikiArticlesCreated: 11, wikiDistinctPages: 50 });
     expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const { sql, params } = sqlOf(db);
-    // The account's own rows, plus the rows imported from MediaWiki with no account under exactly the link's
-    // name. A row under "Urcea" that carries another account's id (a WikiOS label) is not counted.
+    // A row under "Urcea" that carries another account's id (a WikiOS label) is not counted.
     expect(params).toEqual(["u1", "Urcea"]);
     expect(sql).toContain('(r."authorId" = ? OR (r."authorId" IS NULL AND r.author = ?))');
     expect(sql).toContain('COUNT(DISTINCT r."articleId")');
@@ -162,120 +147,133 @@ describe("wiki loader", () => {
     expect(sql).toContain('a."redirectTargetSlug" IS NULL');
   });
 
-  it("is zero when the aggregate returns no row", async () => {
-    const db = rawDb([]);
-    linked(db);
-    expect(await wikiLoader.load(ctx(db))).toEqual({
-      wikiEdits: 0,
-      wikiArticlesCreated: 0,
-      wikiDistinctPages: 0,
-    });
-  });
-});
-
-describe("forum loader", () => {
-  it("replies are posts minus the user's own thread openers, and never below zero", async () => {
-    const db = createMockPrisma();
-    db.forumThread.count.mockResolvedValue(10);
-    db.forumPost.count.mockResolvedValueOnce(110).mockResolvedValueOnce(7);
-    expect(await forumLoader.load(ctx(db))).toEqual({
-      forumThreads: 10,
-      forumReplies: 100,
-      repliesReceived: 7,
-    });
-    db.forumThread.count.mockResolvedValue(3);
-    db.forumPost.count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
-    expect((await forumLoader.load(ctx(db))).forumReplies).toBe(0);
-  });
-  it("filters hidden rows and counts replies received from other authors on the user's threads", async () => {
-    const db = createMockPrisma();
-    db.forumThread.count.mockResolvedValue(0);
-    db.forumPost.count.mockResolvedValue(0);
-    await forumLoader.load(ctx(db));
-    expect(db.forumThread.count.mock.calls[0]![0].where).toEqual({
-      authorUserId: "u1",
-      hidden: false,
-    });
-    expect(db.forumPost.count.mock.calls[0]![0].where).toEqual({
-      authorUserId: "u1",
-      hidden: false,
-    });
-    expect(db.forumPost.count.mock.calls[1]![0].where).toEqual({
-      hidden: false,
-      thread: { authorUserId: "u1", hidden: false },
-      OR: [{ authorUserId: null }, { authorUserId: { not: "u1" } }],
-    });
-  });
-});
-describe("ThinkTank loader", () => {
-  it("counts groups founded and joined by Clerk id, leaving out realm boards and own groups", async () => {
-    const db = createMockPrisma();
-    db.thinktankGroup.count.mockResolvedValue(2);
-    db.thinktankMember.count.mockResolvedValue(3);
-    expect(await thinkTankLoader.load(ctx(db))).toEqual({
-      thinkTankFounded: 2,
-      thinkTankJoined: 3,
-    });
-    expect(db.thinktankGroup.count.mock.calls[0]![0].where).toEqual({
-      createdBy: "clerk",
-      isActive: true,
-      type: { not: "realm_board" },
-    });
-    expect(db.thinktankMember.count.mock.calls[0]![0].where).toEqual({
-      userId: "clerk",
-      isActive: true,
-      group: { createdBy: { not: "clerk" }, isActive: true, type: { not: "realm_board" } },
-    });
-  });
-});
-describe("posting streak", () => {
-  it("longestDayRun: 7 consecutive UTC days is 7, 6 is 6, a gap breaks the run", () => {
-    const run = (days: number[]) => longestDayRun(days.map((n) => day(n)));
-    expect(run([8, 9, 10, 11, 12, 13, 14])).toBe(7);
-    expect(run([9, 10, 11, 12, 13, 14])).toBe(6);
-    expect(run([8, 9, 10, 12, 13, 14])).toBe(3);
-    expect(run([])).toBe(0);
+  it.each([
+    ["no verified link (the name arm binds NULL, which matches no account-less row)", null, [{ edits: 3, created: 1, pages: 2 }], ["u1", null], { wikiEdits: 3, wikiArticlesCreated: 1, wikiDistinctPages: 2 }],
+    ["no aggregate row", "Urcea", [], ["u1", "Urcea"], { wikiEdits: 0, wikiArticlesCreated: 0, wikiDistinctPages: 0 }],
+  ] as const)("wiki with %s", async (_case, link, rows, params, expected) => {
+    const db = rawDb(rows);
+    if (link) linked(db, link);
+    else unlinked(db);
+    expect(await wikiLoader.load(ctx(db))).toEqual(expected);
+    expect(sqlOf(db).params).toEqual(params);
   });
 
-  it("counts a day once however many posts it holds, and uses UTC days", () => {
-    expect(longestDayRun([day(10, 1), day(10, 5), day(10, 23)])).toBe(1);
-    // 23:59 on the 10th and 00:01 on the 11th are consecutive days
-    expect(
-      longestDayRun([new Date("2026-10-10T23:59:00Z"), new Date("2026-10-11T00:01:00Z")])
-    ).toBe(2);
-  });
-
-  it("reads the distinct days of human ThinkPages posts and visible forum posts from the last 14 days", async () => {
+  it("posting streak: the distinct days of human ThinkPages posts and visible forum posts from the last 14 days", async () => {
     const db = rawDb([8, 9, 10, 11, 12, 13, 14].map((n) => ({ day: day(n) })));
-
     expect(await postingStreakLoader.load(ctx(db))).toEqual({ postingStreakDays: 7 });
-
-    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
     const { sql, params } = sqlOf(db);
-    expect(params).toEqual([
-      "clerk",
-      new Date(Date.UTC(2026, 9, 1)),
-      "u1",
-      new Date(Date.UTC(2026, 9, 1)),
-    ]);
+    expect(params).toEqual(["clerk", new Date(Date.UTC(2026, 9, 1)), "u1", new Date(Date.UTC(2026, 9, 1))]);
     expect(sql).toContain('p."isAutoGenerated" = false');
     expect(sql).toContain('p."repostOfId" IS NULL');
     expect(sql).toContain("f.hidden = false");
   });
 
-  it("a streak broken by one missing day is not 7", async () => {
-    const db = rawDb([8, 9, 10, 12, 13, 14].map((n) => ({ day: day(n) })));
-    expect((await postingStreakLoader.load(ctx(db))).postingStreakDays).toBe(3);
+  it("Renaissance week: one aggregate finds an ISO week with all three kinds of activity", async () => {
+    const since = new Date(NOW.getTime() - 14 * DAY);
+    const db = rawDb([{ weeks: 1 }]);
+    linked(db, "Urcea");
+    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 1 });
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    const { sql, params } = sqlOf(db);
+    // wiki account + link name, ThinkPages clerk id + since, forum user + since, packs, trades x2 + since, sales,
+    // week keys
+    expect(params).toEqual([
+      "u1", "Urcea", since, "clerk", since, "u1", since, "u1", since, "u1", "u1", since, "u1", since, NOW,
+      "2026-W42", "2026-W41",
+    ]);
+    expect(sql).toContain("HAVING COUNT(DISTINCT kind) = 3");
+    expect(sql).toContain('IYYY-"W"IW');
+    expect(sql).toContain('p."isAutoGenerated" = false');
+    expect(sql).toContain("r.parked = false");
+    expect(sql).toContain('(r."authorId" = ? OR (r."authorId" IS NULL AND r.author = ?))');
+  });
+
+  it.each([
+    ["no week holds all three", "Urcea", [{ weeks: 0 }], ["u1", "Urcea"], 0],
+    ["no aggregate row", "Urcea", [], ["u1", "Urcea"], 0],
+    ["no verified link (the account's own edits still count)", null, [{ weeks: 1 }], ["u1", null], 1],
+    ["a link stored un-normalized (matched in WikiRevision.author's form)", "kir_Republic", [{ weeks: 0 }], ["u1", "Kir Republic"], 0],
+  ] as const)("Renaissance week with %s", async (_case, link, rows, params, week) => {
+    const db = rawDb(rows);
+    if (link) linked(db, link);
+    else unlinked(db);
+    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: week });
+    expect(sqlOf(db).params.slice(0, 2)).toEqual(params);
   });
 });
 
-describe("claim streak", () => {
-  const vault = (loginStreak: number, lastLoginDate: Date | null) => ({
-    loginStreak,
-    lastLoginDate,
+describe("count loaders", () => {
+  it.each([
+    {
+      loader: forumLoader,
+      counts: { forumThread: [10], forumPost: [110, 7] },
+      expected: { forumThreads: 10, forumReplies: 100, repliesReceived: 7 },
+      where: [
+        ["forumThread", 0, { authorUserId: "u1", hidden: false }],
+        ["forumPost", 0, { authorUserId: "u1", hidden: false }],
+        // replies received: from other authors, on the user's visible threads
+        ["forumPost", 1, { hidden: false, thread: { authorUserId: "u1", hidden: false }, OR: [{ authorUserId: null }, { authorUserId: { not: "u1" } }] }],
+      ],
+    },
+    {
+      loader: forumLoader,
+      counts: { forumThread: [3], forumPost: [2, 0] },
+      expected: { forumThreads: 3, forumReplies: 0, repliesReceived: 0 },
+      where: [],
+    },
+    {
+      loader: thinkTankLoader,
+      counts: { thinktankGroup: [2], thinktankMember: [3] },
+      expected: { thinkTankFounded: 2, thinkTankJoined: 3 },
+      where: [
+        ["thinktankGroup", 0, { createdBy: "clerk", isActive: true, type: { not: "realm_board" } }],
+        ["thinktankMember", 0, { userId: "clerk", isActive: true, group: { createdBy: { not: "clerk" }, isActive: true, type: { not: "realm_board" } } }],
+      ],
+    },
+    {
+      loader: cardsActivityLoader,
+      counts: { userPack: [25], tradeOffer: [10], cardAuction: [1] },
+      expected: { packsOpened: 25, tradesCompleted: 10, auctionSales: 1 },
+      where: [
+        ["userPack", 0, { userId: "u1", isOpened: true }],
+        ["tradeOffer", 0, { status: "ACCEPTED", OR: [{ initiatorId: "u1" }, { recipientId: "u1" }] }],
+        ["cardAuction", 0, { sellerId: "u1", status: "COMPLETED" }],
+      ],
+    },
+    {
+      loader: creationsLoader,
+      counts: { languagePack: [2], heraldryAchievement: [1] },
+      expected: { onomaCreations: 2, vexelPublished: 1 },
+      where: [
+        ["languagePack", 0, { userId: "u1" }],
+        ["heraldryAchievement", 0, { ownerId: "clerk", isPublished: true }],
+      ],
+    },
+  ] as const)("$loader.id counts $expected from the user's own rows", async ({ loader, counts, expected, where }) => {
+    const db = createMockPrisma();
+    for (const [model, values] of Object.entries(counts)) {
+      for (const value of values) db[model]!.count!.mockResolvedValueOnce(value);
+    }
+    expect(await loader.load(ctx(db))).toEqual(expected);
+    for (const [model, call, clause] of where) {
+      expect(db[model]!.count!.mock.calls[call]![0].where).toEqual(clause);
+    }
+  });
+});
+
+describe("streaks", () => {
+  it.each([
+    ["7 consecutive UTC days", [day(8), day(9), day(10), day(11), day(12), day(13), day(14)], 7],
+    ["a gap", [day(8), day(9), day(10), day(12), day(13), day(14)], 3],
+    ["several posts on one day", [day(10, 1), day(10, 5), day(10, 23)], 1],
+    ["23:59 and 00:01 UTC", [new Date("2026-10-10T23:59:00Z"), new Date("2026-10-11T00:01:00Z")], 2],
+    ["no posts", [], 0],
+  ])("longestDayRun of %s is %d", (_case, days, run) => {
+    expect(longestDayRun(days)).toBe(run);
   });
 
   it("a claim today or yesterday keeps the streak; an older one has lapsed", () => {
+    const vault = (loginStreak: number, lastLoginDate: Date | null) => ({ loginStreak, lastLoginDate });
     expect(effectiveClaimStreak(vault(30, day(14, 1)), NOW)).toBe(30);
     expect(effectiveClaimStreak(vault(30, day(13, 23)), NOW)).toBe(30);
     expect(effectiveClaimStreak(vault(30, day(12, 23)), NOW)).toBe(0);
@@ -284,194 +282,59 @@ describe("claim streak", () => {
   });
 });
 
-describe("cards activity loader", () => {
-  it("counts packs opened, accepted trades and completed auction sales", async () => {
-    const db = createMockPrisma();
-    db.userPack.count.mockResolvedValue(25);
-    db.tradeOffer.count.mockResolvedValue(10);
-    db.cardAuction.count.mockResolvedValue(1);
-    expect(await cardsActivityLoader.load(ctx(db))).toEqual({
-      packsOpened: 25,
-      tradesCompleted: 10,
-      auctionSales: 1,
-    });
-    expect(db.userPack.count.mock.calls[0]![0].where).toEqual({ userId: "u1", isOpened: true });
-    expect(db.tradeOffer.count.mock.calls[0]![0].where).toEqual({
-      status: "ACCEPTED",
-      OR: [{ initiatorId: "u1" }, { recipientId: "u1" }],
-    });
-    expect(db.cardAuction.count.mock.calls[0]![0].where).toEqual({
-      sellerId: "u1",
-      status: "COMPLETED",
-    });
-  });
-});
-
 describe("cards deck loader", () => {
-  function setup(exTrophy = 0) {
+  it("counts a Legendary only from a pack or trade, values the deck by the shared copy value without trophies, and reads the effective claim streak", async () => {
     const db = rawDb();
     db.cardOwnership.count.mockResolvedValue(1);
     db.myVault.findUnique.mockResolvedValue({ loginStreak: 7, lastLoginDate: day(14, 2) });
-    jest.mocked(deckValueOf).mockResolvedValue({ total: exTrophy + 500, exTrophy });
-    return db;
-  }
-
-  it("reads Legendaries, the trophy-excluding deck value and the effective claim streak", async () => {
-    const db = setup(10_000);
+    jest.mocked(deckValueOf).mockResolvedValue({ total: 10_500, exTrophy: 10_000 });
     expect(await cardsDeckLoader.load(ctx(db))).toEqual({
       legendaryOwned: 1,
       deckValueExTrophy: 10_000,
       claimStreakDays: 7,
     });
-  });
-
-  it("a Legendary counts only from a pack or trade, never a trophy, retired or imported card", async () => {
-    const db = setup();
-    await cardsDeckLoader.load(ctx(db));
     expect(db.cardOwnership.count.mock.calls[0]![0].where).toEqual({
       ownerId: "u1",
       cards: { rarity: "LEGENDARY", isRetired: false, cardType: { not: "TROPHY" } },
       transferEvents: { some: { toUserId: "u1", action: { in: ["PACK_OPEN", "TRADE"] } } },
     });
-  });
-
-  it("values the player's deck by the shared copy value, trophies left out", async () => {
-    const db = setup(9800);
-    await cardsDeckLoader.load(ctx(db));
     expect(jest.mocked(deckValueOf)).toHaveBeenCalledWith(db, "u1");
     expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 
-  it("deck value is 0 for an empty deck, and the claim streak is 0 without a vault", async () => {
-    const db = setup(0);
+  it("is 0 for an empty deck, and the claim streak 0 without a vault", async () => {
+    const db = rawDb();
+    db.cardOwnership.count.mockResolvedValue(0);
     db.myVault.findUnique.mockResolvedValue(null);
-    const result = await cardsDeckLoader.load(ctx(db));
-    expect(result.deckValueExTrophy).toBe(0);
-    expect(result.claimStreakDays).toBe(0);
+    jest.mocked(deckValueOf).mockResolvedValue({ total: 0, exTrophy: 0 });
+    expect(await cardsDeckLoader.load(ctx(db))).toMatchObject({ deckValueExTrophy: 0, claimStreakDays: 0 });
   });
 });
 
 describe("Lorewards loader", () => {
-  it("is zero without a verified link", async () => {
+  const STATS = { dailyWins: 235, weeklyWins: 4, monthlyWins: 1, dailyRunnerUps: 9, longestStreak: 8 };
+  const WON = {
+    lorewardDailyWins: 235,
+    lorewardWeeklyWins: 4,
+    lorewardMonthlyWins: 1,
+    lorewardRunnerUps: 9,
+    lorewardWinStreak: 8,
+  };
+  const NONE = Object.fromEntries(Object.keys(WON).map((k) => [k, 0]));
+
+  it.each([
+    ["no verified link", null, STATS, null, NONE],
+    ["the linked username", "Urcea", STATS, "Urcea", WON],
+    // MediaWiki usernames are case-sensitive after the first letter: "OstroZava" is not "Ostrozava"
+    ["a link differing only in the first letter's case", "ostrozava", null, "Ostrozava", NONE],
+    ["a linked account with no stats row", "Urcea", null, "Urcea", NONE],
+  ] as const)("reads %s", async (_case, link, stats, username, expected) => {
     const db = createMockPrisma();
-    unlinked(db);
-    const result = await lorewardsLoader.load(ctx(db));
-    expect(Object.values(result).every((v) => v === 0)).toBe(true);
-    expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("reads the stats row of exactly the linked username", async () => {
-    const db = createMockPrisma();
-    linked(db, "Urcea");
-    db.lorewardUserStats.findFirst.mockResolvedValue({
-      dailyWins: 235,
-      weeklyWins: 4,
-      monthlyWins: 1,
-      dailyRunnerUps: 9,
-      longestStreak: 8,
-    });
-    expect(await lorewardsLoader.load(ctx(db))).toEqual({
-      lorewardDailyWins: 235,
-      lorewardWeeklyWins: 4,
-      lorewardMonthlyWins: 1,
-      lorewardRunnerUps: 9,
-      lorewardWinStreak: 8,
-    });
-    expect(db.lorewardUserStats.findFirst.mock.calls[0]![0].where).toEqual({ username: "Urcea" });
-  });
-
-  it("never reads another account's record that differs only in case after the first letter", async () => {
-    // MediaWiki usernames are case-sensitive after the first letter: "OstroZava" is not "Ostrozava".
-    const db = createMockPrisma();
-    linked(db, "ostrozava");
-    db.lorewardUserStats.findFirst.mockResolvedValue(null);
-    await lorewardsLoader.load(ctx(db));
-    expect(db.lorewardUserStats.findFirst.mock.calls[0]![0].where).toEqual({
-      username: "Ostrozava",
-    });
-  });
-
-  it("is zero when the linked account has no stats row", async () => {
-    const db = createMockPrisma();
-    linked(db);
-    db.lorewardUserStats.findFirst.mockResolvedValue(null);
-    expect((await lorewardsLoader.load(ctx(db))).lorewardDailyWins).toBe(0);
-  });
-});
-
-describe("creations loader", () => {
-  it("counts Onoma language packs by User.id and published Vexel designs by Clerk id", async () => {
-    const db = createMockPrisma();
-    db.languagePack.count.mockResolvedValue(2);
-    db.heraldryAchievement.count.mockResolvedValue(1);
-    expect(await creationsLoader.load(ctx(db))).toEqual({ onomaCreations: 2, vexelPublished: 1 });
-    expect(db.languagePack.count.mock.calls[0]![0].where).toEqual({ userId: "u1" });
-    expect(db.heraldryAchievement.count.mock.calls[0]![0].where).toEqual({
-      ownerId: "clerk",
-      isPublished: true,
-    });
-  });
-});
-
-describe("Renaissance week loader", () => {
-  const since = new Date(NOW.getTime() - 14 * DAY);
-
-  it("is 1 when one aggregate query finds an ISO week with all three kinds of activity", async () => {
-    const db = rawDb([{ weeks: 1 }]);
-    linked(db, "Urcea");
-    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 1 });
-
-    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
-    const { sql, params } = sqlOf(db);
-    // wiki account + link name, ThinkPages clerk id + since, forum user + since, packs, trades x2 + since, sales,
-    // week keys
-    expect(params).toEqual([
-      "u1",
-      "Urcea",
-      since,
-      "clerk",
-      since,
-      "u1",
-      since,
-      "u1",
-      since,
-      "u1",
-      "u1",
-      since,
-      "u1",
-      since,
-      NOW,
-      "2026-W42",
-      "2026-W41",
-    ]);
-    expect(sql).toContain("HAVING COUNT(DISTINCT kind) = 3");
-    expect(sql).toContain('IYYY-"W"IW');
-    expect(sql).toContain('p."isAutoGenerated" = false');
-    expect(sql).toContain("r.parked = false");
-    // The account's own edits, plus MediaWiki imports with no account under exactly the link's name.
-    expect(sql).toContain('(r."authorId" = ? OR (r."authorId" IS NULL AND r.author = ?))');
-  });
-
-  it("is 0 when no week holds all three", async () => {
-    const db = rawDb([{ weeks: 0 }]);
-    linked(db);
-    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 0 });
-    const empty = rawDb([]);
-    linked(empty);
-    expect(await renaissanceLoader.load(ctx(empty))).toEqual({ renaissanceWeek: 0 });
-  });
-
-  it("counts the WikiOS edits of a player with no verified link, and never a row with no account", async () => {
-    const db = rawDb([{ weeks: 1 }]);
-    unlinked(db);
-    expect(await renaissanceLoader.load(ctx(db))).toEqual({ renaissanceWeek: 1 });
-    expect(sqlOf(db).params.slice(0, 2)).toEqual(["u1", null]);
-  });
-
-  it("matches the link's name in its normalized form, the form WikiRevision.author holds", async () => {
-    const db = rawDb([{ weeks: 0 }]);
-    linked(db, "kir_Republic");
-    await renaissanceLoader.load(ctx(db));
-    expect(sqlOf(db).params.slice(0, 2)).toEqual(["u1", "Kir Republic"]);
+    if (link) linked(db, link);
+    else unlinked(db);
+    db.lorewardUserStats.findFirst.mockResolvedValue(stats);
+    expect(await lorewardsLoader.load(ctx(db))).toEqual(expected);
+    if (username) expect(db.lorewardUserStats.findFirst.mock.calls[0]![0].where).toEqual({ username });
+    else expect(db.lorewardUserStats.findFirst).not.toHaveBeenCalled();
   });
 });

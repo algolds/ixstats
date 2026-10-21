@@ -185,10 +185,7 @@ describe("council of state", () => {
 });
 
 describe("loaders", () => {
-  const ctx = (
-    db: ReturnType<typeof createMockPrisma>,
-    countryId: string | null = "c1"
-  ): MetricContext => ({
+  const ctx = (db: ReturnType<typeof createMockPrisma>, countryId: string | null = "c1"): MetricContext => ({
     db: db as never,
     clerkUserId: "clerk",
     userId: "u1",
@@ -208,49 +205,38 @@ describe("loaders", () => {
     expect(db.cabinetMeeting.findMany).not.toHaveBeenCalled();
   });
 
-  it("laws: bills of the country, prefiltered on a passed vote", async () => {
+  it("read only what decides an unlock: passed bills, completed elections by their first result, concluded meetings with a decision, officials by createdAt", async () => {
     const db = createMockPrisma();
     db.policy.findMany.mockResolvedValue([bill(true, month(1)), bill(true, month(2))]);
-    const result = await lawsLoader.load(ctx(db));
-    expect(db.policy.findMany.mock.calls[0]![0].where).toEqual({
-      countryId: "c1",
-      policyType: "legislative_bill",
-      reviewNotes: { contains: '"passed":true' },
-    });
-    expect(result).toEqual({ lawsPassed: 2, lawMonths: 2 });
-  });
-
-  it("elections: completed ones, timed by their first result, else their last update", async () => {
-    const db = createMockPrisma();
     db.election.findMany.mockResolvedValue([
-      {
-        name: "First General Election (Year 2041)",
-        updatedAt: new Date("2027-02-01T00:00:00Z"),
-        results: [{ createdAt: first }],
-      },
-      {
-        name: "General Election (Year 2044)",
-        updatedAt: later(18 * MONTH_MS),
-        results: [],
-      },
+      { name: "First General Election (Year 2041)", updatedAt: new Date("2027-02-01T00:00:00Z"), results: [{ createdAt: first }] },
+      { name: "General Election (Year 2044)", updatedAt: later(18 * MONTH_MS), results: [] },
     ]);
-    const result = await electionsLoader.load(ctx(db));
-    expect(db.election.findMany.mock.calls[0]![0].where).toEqual({
-      countryId: "c1",
-      status: "completed",
-    });
-    expect(result).toEqual({ electionsHeld: 2, fullTerm: 1, peacefulTransitions: 0 });
-  });
-
-  it("cabinet: concluded meetings with a decision, and active officials by createdAt not appointedDate", async () => {
-    const db = createMockPrisma();
     db.cabinetMeeting.findMany.mockResolvedValue(
       Array.from({ length: 25 }, (_, i) => ({ completedAt: new Date(START + i * WEEK) }))
     );
     db.governmentOfficial.count.mockResolvedValue(5);
 
-    const result = await cabinetLoader.load(ctx(db));
+    const metrics = Object.assign(
+      {},
+      ...(await Promise.all([lawsLoader, electionsLoader, cabinetLoader].map((l) => l.load(ctx(db)))))
+    );
 
+    expect(metrics).toEqual({
+      lawsPassed: 2,
+      lawMonths: 2,
+      electionsHeld: 2,
+      fullTerm: 1,
+      peacefulTransitions: 0,
+      meetingsWithDecisions: 25,
+      officials6m: 5,
+    });
+    expect(db.policy.findMany.mock.calls[0]![0].where).toEqual({
+      countryId: "c1",
+      policyType: "legislative_bill",
+      reviewNotes: { contains: '"passed":true' },
+    });
+    expect(db.election.findMany.mock.calls[0]![0].where).toEqual({ countryId: "c1", status: "completed" });
     expect(db.cabinetMeeting.findMany.mock.calls[0]![0].where).toEqual({
       countryId: "c1",
       status: "completed",
@@ -258,13 +244,11 @@ describe("loaders", () => {
       decisions: { some: {} },
     });
     const officials = db.governmentOfficial.count.mock.calls[0]![0].where;
-    expect(officials.isActive).toBe(true);
-    expect(officials.createdAt).toEqual({ lte: new Date(NOW.getTime() - 6 * MONTH_MS) });
+    expect(officials).toMatchObject({ isActive: true, createdAt: { lte: new Date(NOW.getTime() - 6 * MONTH_MS) } });
     expect(JSON.stringify(officials)).not.toContain("appointedDate");
     expect(officials.OR).toEqual([
       { governmentStructure: { countryId: "c1" } },
       { department: { governmentStructure: { countryId: "c1" } } },
     ]);
-    expect(result).toEqual({ meetingsWithDecisions: 25, officials6m: 5 });
   });
 });
