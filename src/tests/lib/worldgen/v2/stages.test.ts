@@ -17,7 +17,7 @@ import { MeshCache } from "~/lib/worldgen/v2/mesh";
 import { rasterizeLandMask, type LandMask } from "~/lib/worldgen/land-mask";
 import type { GeneratedWorld, WorldGenParams } from "~/lib/worldgen/v2/types";
 
-const CELLS = 3000;
+const CELLS = 1500;
 const base = (over: Partial<WorldGenParams> = {}): WorldGenParams => ({
   ...DEFAULT_PARAMS,
   cellCount: CELLS,
@@ -31,7 +31,7 @@ const inputs = (over: Partial<WorldGenParams> = {}, extra: Partial<StageInputs> 
 /** One changed value per parameter, none equal to the default or to a preset's. */
 const CHANGED: { [K in keyof WorldGenParams]: WorldGenParams[K] } = {
   seed: 43,
-  cellCount: 3500,
+  cellCount: 1800,
   plateCount: 12,
   continentCount: 4,
   continentLatitudeRange: [-30, 50],

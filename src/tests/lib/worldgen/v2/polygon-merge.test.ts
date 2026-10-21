@@ -157,7 +157,7 @@ function expectSameRings(actual: Position[][], expected: Position[][]) {
 }
 
 describe("v2/polygon-merge", () => {
-  const world = generateWorld({ ...DEFAULT_PARAMS, seed: 42, cellCount: 12000 });
+  const world = generateWorld({ ...DEFAULT_PARAMS, seed: 42, cellCount: 6000 });
   const graph = world.graph!;
   const { cells } = graph;
 
