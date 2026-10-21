@@ -104,4 +104,4 @@ import { rateLimiter } from "~/lib/rate-limiter";     // Removed — now ~/lib/c
 1. **Pure Functions First**: Keep simulation and calculation functions pure and idempotent.
 2. **Encapsulate Side Effects**: Confine database operations, Redis interactions, and outbound HTTP calls to services or cron workers within their respective subpackages.
 3. **No Cross-Domain Monoliths**: If a helper is specific to a domain, place it in `src/lib/<domain>/`. If it is shared across all domains (like `cn` or `logger`), use `src/lib/utils/` or `src/lib/system/`.
-4. **Unit Tests**: Place test files in the centralized tree at `src/tests/lib/<domain>/` (mirroring the source path). Run targeted tests with `bun run test -- <pattern>` or `bun run test:unit` for all of `src/tests/lib`.
+4. **Unit Tests**: Place test files in the centralized tree at `src/tests/lib/<domain>/` (mirroring the source path). Run targeted tests with `bun run test -- <pattern>` or `bun run test -- src/tests/lib` for all of `src/tests/lib`.

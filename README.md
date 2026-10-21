@@ -279,7 +279,6 @@ For WSL2, the maintainers' SSH tunnels and production-dump workflow, see [`docs/
 
 ```bash
 bun run test                   # Run the Jest suites (src/tests and colocated *.test.ts[x])
-bun run test:unit              # Fast sub-second parallel unit tests (Bun 1.4 native runner)
 bun run test -- <pattern>      # Run tests matching a specific pattern (e.g., bun run test -- ixtime)
 bun run test:watch             # Interactive Jest watch mode
 ```

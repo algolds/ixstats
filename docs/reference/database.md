@@ -1,6 +1,6 @@
 # Database Reference Snapshot
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-21
 
 Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->25<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
 Models: **<!-- BEGIN_DOCS:COUNT:models -->380<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->42<!-- END_DOCS:COUNT:enums --> enums)
@@ -55,7 +55,6 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 - `bun run db:migrate:deploy` – Production-safe migration execution
 - `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)
 - `scripts/setup` – Seed, backup, restore helpers (`db:seed`, `db:backup`, `db:restore`; for Postgres production backups use `pg_dump` — see the deployment runbook)
-- `bun run test:builder-perf` – Builder performance benchmark
 
 ## Data Ownership
 - Country data is authoritative in the `countries` router (`src/server/api/routers/countries/`); other routers compose around base country records

@@ -1,6 +1,6 @@
 # Testing & Type Safety Practices
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-21
 
 **Test Runner**: Jest 30.4.2 (@swc/jest, jsdom) · TypeScript 7.0.2 · Bun 1.4 Runtime  
 **Coverage**: Unit Tests, Integration Tests, Wire Audits, Type Partition Gates, Architecture Guards
@@ -12,9 +12,6 @@
 ```bash
 # Run all Jest unit and integration tests
 bun run test
-
-# Run src/tests/lib in parallel using Bun's native runner
-bun run test:unit
 
 # CI entrypoint: Jest with the flaky-test quarantine list
 bun run test:ci
@@ -59,12 +56,6 @@ bun run audit:arch
 
 # Cross-reference Prisma models against tRPC router endpoints (coverage gaps, unused models)
 bun run audit:wiring
-
-# Verify CRUD endpoint health
-bun run test:crud
-
-# Verify economic formula correctness and balance limits
-bun run test:economics
 ```
 
 ---

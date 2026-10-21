@@ -65,11 +65,6 @@ scripts/
 | [`scripts/verification/run-typecheck.ts`](verification/run-typecheck.ts) | Partitioned typecheck runner behind `typecheck:ui` / `:server` / `:trpc` / `:db`. |
 | [`scripts/verification/run-jest-with-quarantine.ts`](verification/run-jest-with-quarantine.ts) | CI Jest runner honouring `test-quarantine.json` (`bun run test:ci`, `test:quarantine:verify`). |
 | [`scripts/verification/check-entrypoints.ts`](verification/check-entrypoints.ts) | Client/server entrypoint boundary check (`bun run check:entrypoints`). |
-| [`scripts/audit/verify-economic-calculations.ts`](audit/verify-economic-calculations.ts) | Validates economic modeling formulas, ERI, and tax calculations (`bun run test:economics`). |
-| [`scripts/audit/verify-database-integrity.ts`](audit/verify-database-integrity.ts) | Checks referential integrity, indexes, and record counts (`bun run test:db`). |
-| [`scripts/audit/test-all-crud-operations.ts`](audit/test-all-crud-operations.ts) | Comprehensive CRUD regression test suite (`bun run test:crud`). |
-| [`scripts/audit/test-api-health.ts`](audit/test-api-health.ts) | Live API endpoint health checker (`bun run test:health`). |
-| [`scripts/audit/run-all-tests.ts`](audit/run-all-tests.ts) | Unified test runner for all audit suites (`bun run test:all`). |
 | [`scripts/audit-flag-urls.ts`](audit-flag-urls.ts) | Audits and validates country flag URLs against MediaWiki endpoints (`bun run audit:flags`). |
 | [`scripts/audit-production-urls.ts`](audit-production-urls.ts) | Validates production route 200 HTTP responses (`bun run audit:urls`). |
 | [`scripts/prod-audit.ts`](prod-audit.ts) | Deep production readiness audit suite. |

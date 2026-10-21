@@ -1,19 +1,12 @@
 # Audit & Verification Scripts
 
-**Last updated:** September 2026
+**Last updated:** 2026-10-21
 
-Automation under `scripts/audit` provides fast confidence in architecture boundaries, API wiring, database health, and economic calculations. Invoke these scripts with `bun <path>` or the corresponding `bun run` alias.
+Automation under `scripts/audit` provides fast confidence in architecture boundaries, API wiring, security guards and WikiOS parity. Invoke these scripts with `bun <path>` or the corresponding `bun run` alias.
 
 ## Script Catalog
 | Script | bun alias | Purpose |
 | --- | --- | --- |
-| `run-all-tests.ts` | `bun run test:all` | Runs the full audit suite with optional filters (`--only=crud,health`) |
-| `test-all-crud-operations.ts` | `bun run test:crud` | Exercises CRUD endpoints across countries, users, diplomacy, policies, and social content |
-| `test-api-health.ts` | `bun run test:health` | Pings every tRPC procedure for availability and latency |
-| `test-builder-performance.ts` | `bun run test:builder-perf` | Benchmarks builder system performance (government create, queries with limits) |
-| `verify-database-integrity.ts` | `bun run test:db` | Checks referential integrity, indexes, and record counts |
-| `verify-economic-calculations.ts` | `bun run test:economics` | Validates tier calculations, projections, and growth models |
-| `verify-live-data-wiring.ts` | `bun run test:wiring` | Confirms React components consume live tRPC data rather than mock fixtures |
 | `audit-trpc-wiring.ts` | `bun run audit:wiring` (`audit:wiring:json`) | Cross-references Prisma models against tRPC router endpoints; flags missing endpoints and unused models |
 | `audit-arch.ts` (+ `router-residue.ts`) | `bun run audit:arch` (`audit:arch:update`) | Architecture guard (CI): file-size ceilings with a ratchet baseline (`arch-baseline.json`), no cross-router imports, server boundary leaks, split residue (`router-residue-baseline.json`) |
 | `audit-country-idor.ts` | `bun run audit:idor` | Plan 332: every country-data mutation must check caller ownership (`idor-allowlist.json`) |
@@ -35,12 +28,8 @@ URL and flag audits live one level up: `scripts/audit-production-urls.ts` (`bun 
 
 ## Usage Examples
 ```bash
-# Run everything
-bun run test:all
-
-# Focus on CRUD + database integrity
-bun run test:crud
-bun run test:db
+# Architecture guard (runs in CI)
+bun run audit:arch
 
 # Regenerate wiring report in JSON format
 bun run audit:wiring:json
@@ -49,17 +38,15 @@ bun run audit:wiring:json
 ## Exit Codes
 - `0` – All checks passed
 - `1` – Critical failures (halting deployment)
-- `2` – Non-critical failures (`run-all-tests.ts`); review output before proceeding
 
 ## Recommended Deployment Flow
-`bun run verify:production` bundles `test:critical` (crud, health, database), `validate:schemas`, and `lint`. For a fuller pass:
-
 1. `bun run audit:arch`
 2. `bun run audit:wiring`
-3. `bun run test:crud`
-4. `bun run test:db`
-5. `bun run test:health`
-6. `bun run test:economics`
-7. Review reports under `scripts/audit/reports/` (if generated)
+3. `bun run validate:schemas`
+4. Review reports under `scripts/audit/reports/` (if generated)
+
+The live-database runners (`test:all`, `test:critical`, `test:crud`, `test:db`, `test:economics`, `test:health`,
+`test:wiring`, `test:builder-perf`) and `verify:production` were retired on 2026-10-21; behaviour is covered by Jest
+(`bun run test`).
 
 Update this README whenever new audit scripts are added or existing scripts change behaviour.

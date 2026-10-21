@@ -1,6 +1,6 @@
 # Monitoring & Observability
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-21
 
 Monitoring combines server logs, Discord webhooks, audit scripts, and compliance tooling to keep IxStats healthy.
 
@@ -38,8 +38,6 @@ Monitoring combines server logs, Discord webhooks, audit scripts, and compliance
 ## Manual Audits
 None of these run on a schedule. Mostly in `scripts/audit/`:
 - `audit-trpc-wiring.ts` (`bun run audit:wiring`) – Ensures front-end procedures map to live routers
-- `run-all-tests.ts` (`bun run test:all`, `bun run test:critical`) – Aggregated regression suite
-- `verify-economic-calculations.ts` (`bun run test:economics`), `verify-database-integrity.ts` (`bun run test:db`) – Spot-check critical calculations and schema health
 - `scripts/audit-production-urls.ts` (`bun run audit:urls:prod`) – Validates page availability under production base path
 
 

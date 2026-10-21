@@ -1,6 +1,6 @@
 # Events & Realtime Channels
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-21
 
 This reference summarises realtime channels, notification payloads, and scheduled jobs used across IxStates (IxStats).
 
@@ -104,9 +104,6 @@ ixtwitter sync is not a cron job; it runs as the separate `ixstats-ixtwitter` PM
 
 Manual scripts under `scripts/`:
 - `scripts/audit/audit-trpc-wiring.ts` – Verifies endpoint wiring
-- `scripts/audit/run-all-tests.ts` – Aggregated regression runner
-- `scripts/audit/test-all-crud-operations.ts` – Exercises CRUD endpoints
-- `scripts/audit/verify-economic-calculations.ts` – Validates economic formulas
 - `scripts/setup/backup-db.ts` / `restore-db.ts` – `db:backup` / `db:restore` (`pg_dump -Fc` to `backups/` with retention; `pg_restore`), see [deployment.md](../operations/deployment.md#backups-and-restore)
 
 ## Event Producers

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-21
 
 IxStats ships as a Next.js app. On the production VPS the web app runs as plain `next start` (via `start-production.sh`), with WebSockets and scheduled jobs in separate PM2 processes: `ixstats-ws` (`ws-backend.mjs`) and `ixstats-cron` (`cron-runner.mjs`). A custom Node server (`server.mjs`) that serves Next plus the WebSockets in one process remains available through `bun run start`. Production builds wrap `next build` with base-path tooling.
 
@@ -91,13 +91,12 @@ Stop the web app and `ixstats-cron` during a production restore so nothing write
 
 ## Health & Monitoring
 - Rate limiter and error logger configured via environment toggles (`RATE_LIMIT_ENABLED`, `DISCORD_WEBHOOK_ENABLED`)
-- `bun run verify:production` convenience command runs critical test suites, schema validation and linting
 - `GET /api/health` returns DB and memory status (200 `ok` / 503 `degraded`), plus per-job cron status (`lastRunAt`, `lastStatus`, `lastSuccessAt`) and Redis state; see [monitoring.md](monitoring.md#scheduled-jobs)
 - WebSocket failures log warnings but continue serving HTTP; monitor logs for `[Server] ✗ … WebSocket` (or `[WS] ✗` from `ixstats-ws`) entries
 
 ## Deployment Checklist
 1. Verify environment variables using `bun run auth:check:prod` / `bun run verify:environment` and compare with [Environment Configuration](#environment-configuration) below and `src/env.ts`. With `NODE_ENV=production`, `verify:environment` fails when a secret `src/env.ts` requires in production is missing or too short (Clerk keys, `IXTIME_BOT_SECRET`, `CRON_SECRET`, `WIKI_SYNC_WEBHOOK_SECRET`) and warns about Redis, `NEXT_PUBLIC_APP_URL` and the Discord webhook. Run it with the production env files loaded (see the [release guide](release-guide.md#a2-server-prep))
-2. Run `bun run audit:wiring` and `bun run test:critical`
+2. Run `bun run audit:wiring`, `bun run validate:schemas` and `bun run lint` (the live-database `test:critical` runner was retired on 2026-10-21; Jest runs in CI)
 3. Create a database backup with `bun run db:backup` (`deploy-production.sh` also takes one before `db push`; see [Backups and restore](#backups-and-restore))
 4. Build and deploy the new release
 5. Monitor Discord/webhook alerts and server logs after rollout
