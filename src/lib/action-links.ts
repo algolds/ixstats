@@ -16,8 +16,8 @@ export function directiveActivityId(intentId: string): string {
 }
 
 /**
- * Where a linked post lives. "xenforo" rows predate the native forum: the XenForo import remaps them to "native"
- * (and its rollback restores them), so the type stays while such rows may exist; nothing creates new ones. A row
+ * Where a linked post lives. "xenforo" rows predate the native forum: the retired XenForo import remapped them to
+ * "native", so the type stays while such rows may exist; nothing creates new ones. A row
  * still on a XenForo post has no page here, so a story chain's wiki section leaves it out.
  */
 export type PostSource = "native" | "xenforo";

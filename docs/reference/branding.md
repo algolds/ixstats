@@ -620,7 +620,7 @@ Activity, AlertTriangle, ArrowTrendingUp, ArrowTrendingDown, Bell, BookOpen, Bra
 | **Althistory Wiki**    | Tertiary wiki source                  | `mediawiki-config.ts` (WikiSource.ALTHISTORY) |
 | **Clerk**              | Authentication                        | `@clerk/nextjs`, `src/proxy.ts`               |
 | **Discord API**        | Bot, webhooks, user sync              | `discord.ts`, `discord-webhook.ts`            |
-| **XenForo**            | Old forum, import source only         | `scripts/migrations/export-xenforo-forum.ts`  |
+| **XenForo**            | Old forum, retired (imported posts)   | `xenforo*` columns in `forum.prisma`          |
 | **Unsplash**           | Card backgrounds                      | `unsplash-service.ts`                         |
 | **Giphy**              | GIF picker                            | ThinkPages composer                           |
 | **Wikimedia Commons**  | Image repository                      | `wikiCommonsImageService.ts`                  |

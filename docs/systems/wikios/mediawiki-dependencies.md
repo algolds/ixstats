@@ -155,8 +155,7 @@ URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` 
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
 Cloudflare), `src/lib/site-metadata.ts` (the page-metadata origin when `NEXT_PUBLIC_APP_URL` is unset),
 `src/lib/discord/site-url.ts` (the origin of the IxStates links sent to Discord when `APP_URL` is unset),
-`src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/thinkpages-forum/import/bbcode-wiki.ts` (the XenForo import turns `[wikilink]` and the wiki embed tags into
-links to the wiki's article URL; the link is built from the validated title only). `src/lib/wiki-os/v1-switch.ts` and
+`src/components/maps/core/MapWelcomeModal.tsx` (a link). `src/lib/wiki-os/v1-switch.ts` and
 `src/lib/wiki-os/permissions.ts` (`assertWikiosWritable`) only name `api.php` in comments: while the WikiOS v1 switch is off,
 `/w/api.php` answers `readonly`.
 
@@ -229,11 +228,8 @@ configuration object, never from a literal:
 - **`User-Agent` strings** sent to other services: `src/lib/demo-seed/sports/sports-helpers.ts`, `src/lib/discord/ixtwitter-sync.ts`,
   `src/lib/discord/thinkpages-feed.ts`, `src/lib/nationstates/api-client.ts`, `src/server/cron/validate-equipment-images.ts`.
 - **Other hosts under ixwiki.com that are not MediaWiki.** The old forum (`forum.ixwiki.com`, XenForo, retired in ThinkPages
-  forum phase 4b; the app neither previews nor redirects links to it): only the XenForo import reads its links, pointing those in
-  imported posts at native pages (`src/lib/thinkpages-forum/import/forum-links.ts`, which also matches the retired bridge's `/forum/...`
-  paths on `ixwiki.com`, spelled there because it is the host those stored links carry, whatever host the wiki is configured with,
-  and `src/server/modules/thinkpages-forum/import-forum-links.ts`); the
-  export script reads `XENFORO_API_URL` from the environment. Accounts (`accounts.ixwiki.com`, Clerk):
+  forum phase 4b; the app neither previews nor redirects links to it, and the import tooling that pointed its links in imported
+  posts at native pages was retired on 2026-10-21). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/shell/AccountMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/proxy.ts` (standalone root), `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
   `src/lib/time/clock-context.ts` (the maps host's top-level routes, so a root-level country page greets by its realm's clock).
@@ -244,11 +240,9 @@ configuration object, never from a literal:
 
 `grep -rn "ixwiki.com" src` (tests excluded) names the wiki's host as a functional address in **one** line, and
 `src/tests/architecture/ixwiki-host-literal.test.ts` keeps it so. Every other hit is a comment, a `User-Agent` contact string,
-or a subdomain that is not MediaWiki (above). The test also allows the second file below, which spells the host escaped.
+or a subdomain that is not MediaWiki (above).
 
 - `src/lib/wiki-os/config.ts`: the one default of `NEXT_PUBLIC_MEDIAWIKI_URL`, spelled once.
-- `src/lib/thinkpages-forum/import/forum-links.ts`: `ixwiki\.com` in the regular expression for the retired bridge's links,
-  which are stored with that host whatever host the wiki is configured with (a fact about stored rows, not configuration).
 
 The mirror (`csrf-cache.ts`, `write-service.ts`) reads `wikiosConfig.mediawiki.writeApiUrl` (`WIKIOS_MEDIAWIKI_API`, else the
 internal URL, else the public one) and `wikiosConfig.mediawiki.botUser`; the bot password stays an environment variable

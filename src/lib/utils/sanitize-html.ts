@@ -158,7 +158,7 @@ export function sanitizeUserContent(html: string): string {
       "data-summary",
       "data-imageurl",
       "data-source",
-      // Forum posts: a quote's source post, and the wiki links and embeds the XenForo import converts
+      // Forum posts: a quote's source post, and the wiki links and embeds in posts imported from XenForo
       "data-post",
       "data-wiki-embed",
       "data-wiki-title",

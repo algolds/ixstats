@@ -42,7 +42,7 @@ Paths are built in `src/lib/thinkpages-forum/links.ts` (`FORUM_HOME`, `categoryH
 | Pure helpers | `src/lib/thinkpages-forum/` (`links.ts`, `permalink.ts`, `categories.ts`, `moderation-policy.ts`) |
 | Layout and tint | `layout.tsx` sets `data-app="thinkpages"` (the Commons leather tint) for the subtree |
 
-The old XenForo forum is copied in by the import described in `docs/operations/forum-xenforo-import-runbook.md` and `docs/systems/forum.md`.
+Posts from the old XenForo forum were copied in by an import, retired on 2026-10-21; `docs/systems/forum.md` describes the imported rows, and the go-live runbook is `docs/history/operations/forum-xenforo-import-runbook.md`.
 
 ## Connections
 

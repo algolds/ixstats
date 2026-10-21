@@ -60,8 +60,6 @@
     "db:remap-budget-years": "bun scripts/migrations/remap-budget-years.ts",
     "db:archive-realm-boards": "bun scripts/migrations/archive-realm-boards.ts",
     "db:migrate-board-bans": "bun scripts/migrations/migrate-board-bans.ts",
-    "db:import-xenforo-forum": "bun scripts/migrations/import-xenforo-forum.ts",
-    "forum:export-xenforo": "bun scripts/migrations/export-xenforo-forum.ts",
     "forum:import-board-history": "bun scripts/migrations/import-realm-board-history.ts",
     "db:reset": "echo '⛔ DANGEROUS: db:reset is PERMANENTLY blocked. This would destroy 82 nations of production data.' && exit 1",
     "db:restore": "bun scripts/setup/restore-db.ts",

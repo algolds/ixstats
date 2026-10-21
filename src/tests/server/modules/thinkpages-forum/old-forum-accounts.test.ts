@@ -56,9 +56,6 @@ function store(
     findUnique: jest.fn(
       async ({ where }: { where: { id: string } }) => users.find((u) => u.id === where.id) ?? null
     ),
-    findMany: jest.fn(async ({ where }: { where: { forumUserId: number } }) =>
-      users.filter((u) => u.forumUserId === where.forumUserId)
-    ),
     update: jest.fn(
       async ({
         where,

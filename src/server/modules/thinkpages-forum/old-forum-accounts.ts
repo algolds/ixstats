@@ -1,12 +1,12 @@
 /**
  * Staff link an old XenForo account to an IxStats account (phase 4b: self-service forum linking is retired). The
  * link sets `User.forumUserId` / `forumUsername` and attributes the imported threads and posts of that XenForo
- * user at once (`relinkImportedAuthors`, scoped), so no import rerun is needed; re-linking to another id and
+ * user at once (`relinkImportedAuthors`, imported-authors-relink.ts); re-linking to another id and
  * unlinking hand the previous id's attributed imported rows back to the old name. Native content (no `xenforoUserId`) is never touched.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { ForumError } from "./errors";
-import { relinkImportedAuthors } from "./import-write";
+import { relinkImportedAuthors } from "./imported-authors-relink";
 
 export type OldForumAccountsDb = Pick<
   PrismaClient,
@@ -95,7 +95,7 @@ export async function linkOldForumAccount(
       where: { id: link.userId },
       data: { forumUserId: link.xenforoUserId, forumUsername: username, lastForumSync: new Date() },
     });
-    const relinked = await relinkImportedAuthors(tx, link.xenforoUserId);
+    const relinked = await relinkImportedAuthors(tx, link.xenforoUserId, link.userId);
     return { username, previousXenforoUserId: previous, released, relinked };
   });
 }

@@ -1,7 +1,7 @@
 /**
  * uploaded-assets.ts — records of images written under `uploadsDir()` (the image repository's "My uploads" and
- * "Forum" sources). `registerUploadedAsset` is a published contract (the forum attachment import calls it), so its
- * shape is a contract. Both functions degrade gracefully when the `uploaded_assets` table has not been applied yet.
+ * "Forum" sources). `registerUploadedAsset`'s result shape is a contract its callers (the image upload route) branch
+ * on. Both functions degrade gracefully when the `uploaded_assets` table has not been applied yet.
  *
  * `registerUploadedAsset` never throws; it returns `{ ok: false, reason, retryable }` on failure: `table-missing` and
  * `error` are retryable (apply the migration, try again), `invalid-input`, `unreadable-file` and `conflict` are not.

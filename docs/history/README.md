@@ -1,6 +1,6 @@
 # Documentation history
 
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-21
 
 Retired documents that are still worth keeping: finished audits, superseded specs and plans, and docs that describe
 deleted code. They are tracked in git, so links to them keep working, but **nothing here describes the current
@@ -33,6 +33,7 @@ folders (git-ignored); never link them from tracked docs.
 | [systems/wikios/wikios-longevity-workflow.md](systems/wikios/wikios-longevity-workflow.md) | WikiOS longevity round complete; Workstream C is in the backlog |
 | [systems/wikios/wikios-independence-2b-3.md](systems/wikios/wikios-independence-2b-3.md) | Stage 2b shipped; Stage 3 lives in [wikios-stage3-config-plan.md](../systems/wikios/wikios-stage3-config-plan.md) |
 | [systems/scheduled-changes.md](systems/scheduled-changes.md) | Its pipeline was deleted on 2026-10-06 (D11) |
+| [operations/forum-xenforo-import-runbook.md](operations/forum-xenforo-import-runbook.md) | XenForo forum go-live runbook; its export and import tooling was deleted on 2026-10-21 (owner ruling) |
 
 ## Merged into another doc
 

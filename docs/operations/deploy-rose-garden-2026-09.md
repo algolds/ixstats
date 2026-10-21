@@ -237,7 +237,8 @@ The ThinkPages forum follow-ups add two hand-written, idempotent files, in this 
 2. `prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql` rewrites the stored notification
    links (`"Notification"."href"`) that point at legacy URLs whose redirects this release deletes. It runs **after**
    the new code is live, in step 5e. It leaves the bridge's XenForo thread, post, node and member links
-   (`/forum/thread/<id>` and the rest) to the forum import, which points them at native pages (runbook step 6).
+   (`/forum/thread/<id>` and the rest) to the forum import, which points them at native pages (runbook step 6; the
+   import tooling was retired on 2026-10-21, see step 5e).
 
 ## 5. Deploy
 
@@ -487,11 +488,13 @@ docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
 ```
 
 The file does not touch the bridge's XenForo links (`/forum/thread/<id>[#post-<id>]`, `/forum/post/<id>`,
-`/forum/<nodeId>`, `/forum/members/<id>`): those need the imported threads, so the forum import's `--apply`
-(`docs/operations/forum-xenforo-import-runbook.md` step 6) points them at the native post or thread, or at
-`/thinkpages`. The same `--apply` moves the bridge's stashed threads (`forum:thread:<id>` items) to native items.
-Until step 6 runs, those notification links are 404s and those stash items are left out of `/stashes`, so run it soon
-after the deploy.
+`/forum/<nodeId>`, `/forum/members/<id>`): those need the imported threads, and the forum import's `--apply`
+(step 6 of the go-live runbook, now
+[docs/history/operations/forum-xenforo-import-runbook.md](../history/operations/forum-xenforo-import-runbook.md))
+points them at the native post or thread, or at `/thinkpages`, and moves the bridge's stashed threads
+(`forum:thread:<id>` items) to native items. **The import tooling was retired on 2026-10-21 (owner ruling).** If
+production has not run step 6, those notification links stay 404s and those stash items stay out of `/stashes` until
+the tooling is restored from git and run (the runbook's Retired note says how).
 
 ## 6. Smoke checks (browser)
 

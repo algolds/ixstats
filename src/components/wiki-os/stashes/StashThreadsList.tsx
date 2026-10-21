@@ -17,7 +17,7 @@ interface StashThreadsListProps {
 /**
  * Where a stashed thread opens and what it is called: a native item (`thinkpages:thread:<id>`) opens the ThinkPages
  * forum thread, built from its id. Anything else has no target and is not listed (the stash listing passes no
- * bridge-era item: the XenForo import moves those to native items).
+ * bridge-era item).
  */
 export function stashedThreadTarget(
   item: StashedThreadItem

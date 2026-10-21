@@ -101,8 +101,8 @@ Versioning communicates:
  │ 6. 🗨️ IXFORUM — Archival Community Discourse (Inherited v1.5)                                  │
  │    Action: DEBATE | Domain Accent: Commons leather (#115536) | Route: /thinkpages              │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • XenForo bridge (retired) │ Retired in forum phase 4b; there is no /forum route. The import   │
- │                            │ copies the old forum's threads into the native forum.             │
+ │ • XenForo bridge (retired) │ Retired in forum phase 4b; there is no /forum route. The old      │
+ │                            │ forum's threads were imported into the native forum.              │
  │ • Native forum             │ The community forum lives in ThinkPages at /thinkpages (box 5).   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
