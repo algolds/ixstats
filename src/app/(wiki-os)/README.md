@@ -69,7 +69,7 @@ src/lib/wiki-os/
 │
 ├── core/                      # Authoritative PostgreSQL Domain Services
 │   ├── domain-types.ts        # Nominal types
-│   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
+│   ├── wiki-ast.ts            # IxWiki AST block model
 │   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── article-repository.ts  # Authoritative CRUD repository (<2ms read, <10ms write)
 │   ├── link-graph-service.ts  # Link extractor & O(1) relational backlink graph engine

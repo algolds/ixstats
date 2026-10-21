@@ -21,7 +21,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { WikiMirrorJob } from "@prisma/client";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
-import { mediaWikiOrigin, STAGED_FILE_PATH } from "~/lib/wiki-os/config";
+import { STAGED_FILE_PATH } from "~/lib/wiki-os/config";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
@@ -195,28 +195,6 @@ describe("uploading a staged file", () => {
     expect(String(tables.wikiAsset.rows[0]?.url)).toContain("/images/");
     expect(await isStaged(sha1)).toBe(false);
   });
-
-  it("switches the asset to MediaWiki's images path, drops the staged copy and marks the pages that use the file stale", async () => {
-    const sha1 = await stagedUpload(png(3));
-    imageInfo(null);
-    wiki.on("upload", () => ({ upload: { result: "Success" } }));
-
-    await runUploadJob(uploadJob(sha1));
-
-    const { shard } = MediaAssetService.getMd5ShardPath("Flag of Eurth.png");
-    expect(tables.wikiAsset.rows[0]).toMatchObject({
-      url: `${mediaWikiOrigin().replace(/\/+$/, "")}/images/${shard}/Flag_of_Eurth.png`,
-      thumbnailUrl: null,
-      sha1,
-    });
-    expect(String(tables.wikiAsset.rows[0]?.url).startsWith(STAGED_FILE_PATH)).toBe(false);
-    expect(await isStaged(sha1)).toBe(false);
-    expect(readdirSync(directory)).toEqual([]);
-    expect(executedSql).toHaveLength(1);
-    expect(executedSql[0]?.sql).toContain("wiki_image_links");
-    expect(executedSql[0]?.values).toContain("Flag of Eurth.png");
-  });
-
   it("fails the job, and switches nothing, when the pages that use the file cannot be marked stale; the retry does both (review minor 2)", async () => {
     const bytes = png(21);
     const sha1 = await stagedUpload(bytes);

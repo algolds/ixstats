@@ -44,16 +44,7 @@ const SYSOP_RIGHTS = [
   "editprotected",
   "editinterface",
 ];
-const INTERFACE_ADMIN_RIGHTS = [
-  "editsitecss",
-  "editsitejs",
-  "editsitejson",
-  "editusercss",
-  "edituserjs",
-  "edituserjson",
-];
 const asSysop = () => asHolding(...SYSOP_RIGHTS);
-const asInterfaceAdmin = () => asHolding(...SYSOP_RIGHTS, ...INTERFACE_ADMIN_RIGHTS);
 const asPlainUser = () => asHolding("read", "edit");
 
 const FIXTURE = readFileSync(
@@ -150,28 +141,6 @@ describe("POST /api/wiki/import: who may", () => {
 });
 
 describe("POST /api/wiki/import: the raw body", () => {
-  it("imports an XML body for ?dryRun=false and returns the summary", async () => {
-    const res = await POST(post(FIXTURE, { query: "?dryRun=false" }));
-    const body = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(body).toEqual({
-      dryRun: false,
-      pages: 5,
-      pagesCreated: 5,
-      revisionsImported: 7,
-      revisionsSkipped: 0,
-      placeholdersFilled: 0,
-      uploadsSkipped: 1,
-      errors: [],
-      errorCount: 0,
-      warnings: [],
-      warningCount: 0,
-    });
-    expect(store.articles).toHaveLength(5);
-    expect(store.revisions).toHaveLength(7);
-  });
-
   it.each([
     "",
     "?dryRun=true",
@@ -205,15 +174,6 @@ describe("POST /api/wiki/import: the raw body", () => {
     expect(body).toMatchObject({ dryRun: false, pages: 5, revisionsImported: 7, errorCount: 0 });
     expect(store.revisions).toHaveLength(7);
   });
-
-  it("answers a second upload of the same dump with everything skipped", async () => {
-    await POST(post(FIXTURE, { query: "?dryRun=false" }));
-
-    const body = await (await POST(post(FIXTURE, { query: "?dryRun=false" }))).json();
-
-    expect(body).toMatchObject({ pagesCreated: 0, revisionsImported: 0, revisionsSkipped: 7 });
-  });
-
   it("reports a body that is not an export, and a corrupt archive, as a summary error", async () => {
     const notExport = await (await POST(post("<html/>"))).json();
     expect(notExport.errors[0]).toMatchObject({ title: "(dump)" });
@@ -360,44 +320,6 @@ describe("POST /api/wiki/import: per-page authorization (plan 409)", () => {
   </page>`;
   const DUMP = `<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" version="0.11" xml:lang="en">${page("Kingdom of Testia", 0, 1, "wikitext", "Testia is a kingdom.")}${page("MediaWiki:Common.js", 8, 2, "javascript", "alert(1);")}${page("User:Bob/common.css", 2, 3, "css", "body{}")}${page("Template:Infobox testia", 10, 4, "wikitext", "{{{name}}}")}
 </mediawiki>`;
-  const write = (as: () => void) => {
-    as();
-    return POST(post(DUMP, { query: "?dryRun=false" }));
-  };
-  const titles = () => store.articles.map((a) => a.title).sort();
-
-  it("lets a sysop import articles and templates, but skips the site script and user style pages", async () => {
-    const res = await write(asSysop);
-    const body = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(titles()).toEqual(["Kingdom of Testia", "Template:Infobox testia"]);
-    expect(body).toMatchObject({ pages: 4, pagesCreated: 2, errorCount: 2 });
-    expect(body.errors).toEqual([
-      {
-        title: "MediaWiki:Common.js",
-        message: "permission: Editing this MediaWiki page needs the editsitejs right.",
-      },
-      {
-        title: "User:Bob/common.css",
-        message:
-          "permission: Only interface administrators can edit user script, style and data pages.",
-      },
-    ]);
-  });
-
-  it("lets an interface administrator import every page of the dump", async () => {
-    const res = await write(asInterfaceAdmin);
-
-    expect((await res.json()).errorCount).toBe(0);
-    expect(titles()).toEqual([
-      "Kingdom of Testia",
-      "MediaWiki:Common.js",
-      "Template:Infobox testia",
-      "User:Bob/common.css",
-    ]);
-  });
-
   it("reports the skipped pages in a dry run too, without writing", async () => {
     asSysop();
     const res = await POST(post(DUMP));

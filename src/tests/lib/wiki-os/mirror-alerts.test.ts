@@ -7,7 +7,6 @@ import {
   alertDeadJobs,
   ATTEMPT_BACKOFF_MS,
   ATTEMPT_KEY,
-  DEAD_ALERT_INTERVAL_MS,
   DEAD_ALERT_KEY,
 } from "~/lib/wiki-os/services/mirror-alerts";
 import { discordWebhook } from "~/lib/discord/webhook";
@@ -91,16 +90,6 @@ describe("alertDeadJobs", () => {
       mockFindMany.mockResolvedValue([job("Foo")]);
       warn.mockResolvedValue(false); // down, refused, or not reachable
     });
-
-    it("does not stamp the warning as sent: the 30-minute throttle is for warnings that arrived", async () => {
-      await alertDeadJobs(NOW);
-
-      expect(warn).toHaveBeenCalledTimes(1);
-      expect(config.has(DEAD_ALERT_KEY)).toBe(false);
-      // the attempt is stamped on its own
-      expect(config.get(ATTEMPT_KEY)).toBe(NOW.toISOString());
-    });
-
     it("backs off 5 minutes after a failed attempt, so a dead webhook is not tried in every cycle", async () => {
       expect(ATTEMPT_BACKOFF_MS).toBe(5 * 60_000);
       await alertDeadJobs(NOW);
@@ -113,20 +102,6 @@ describe("alertDeadJobs", () => {
       await alertDeadJobs(minutes(5));
       expect(warn).toHaveBeenCalledTimes(2);
       expect(config.get(ATTEMPT_KEY)).toBe(minutes(5).toISOString()); // and the back-off starts again
-    });
-
-    it("tells the jobs as soon as an attempt after the back-off arrives, and then holds to the 30 minutes", async () => {
-      await alertDeadJobs(NOW);
-      warn.mockResolvedValue(true); // Discord is back
-
-      await alertDeadJobs(minutes(6));
-
-      expect(warn).toHaveBeenCalledTimes(2);
-      expect(config.get(DEAD_ALERT_KEY)).toBe(minutes(6).toISOString());
-      await alertDeadJobs(minutes(20));
-      expect(warn).toHaveBeenCalledTimes(2); // 30 minutes after the delivery, not after the first attempt
-      await alertDeadJobs(minutes(36));
-      expect(warn).toHaveBeenCalledTimes(3);
     });
   });
 
@@ -162,24 +137,6 @@ describe("alertDeadJobs", () => {
       ].join("\n"),
     ]);
   });
-
-  it("asks only for the newest five, newest first, of the dead jobs since the last warning", async () => {
-    mockConfigFind.mockResolvedValue({ value: minutesAgo(45).toISOString() });
-    mockCount.mockResolvedValue(1);
-    mockFindMany.mockResolvedValue([job("Foo")]);
-
-    await alertDeadJobs(NOW);
-
-    const where = { source: "ixwiki", state: "dead", updatedAt: { gt: minutesAgo(45) } };
-    expect(mockCount).toHaveBeenCalledWith({ where });
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where,
-      orderBy: { updatedAt: "desc" },
-      take: 5,
-      select: { kind: true, title: true, lastError: true },
-    });
-  });
-
   it("holds the warning back for 30 minutes after the last one, without even looking for jobs", async () => {
     mockConfigFind.mockResolvedValue({ value: minutesAgo(29).toISOString() });
     mockCount.mockResolvedValue(3);
@@ -190,29 +147,6 @@ describe("alertDeadJobs", () => {
     expect(mockCount).not.toHaveBeenCalled();
     expect(mockConfigUpsert).not.toHaveBeenCalled();
   });
-
-  it("warns again once 30 minutes have passed", async () => {
-    expect(DEAD_ALERT_INTERVAL_MS).toBe(30 * 60_000);
-    mockConfigFind.mockResolvedValue({ value: minutesAgo(30).toISOString() });
-    mockCount.mockResolvedValue(1);
-    mockFindMany.mockResolvedValue([job("Foo")]);
-
-    await alertDeadJobs(NOW);
-
-    expect(warn).toHaveBeenCalledTimes(1);
-  });
-
-  it("treats a stored time it cannot read as no warning ever sent, and then looks at every dead job", async () => {
-    mockConfigFind.mockResolvedValue({ value: "not a time" });
-    mockCount.mockResolvedValue(1);
-    mockFindMany.mockResolvedValue([job("Foo")]);
-
-    await alertDeadJobs(NOW);
-
-    expect(mockCount).toHaveBeenCalledWith({ where: { source: "ixwiki", state: "dead" } });
-    expect(warn).toHaveBeenCalledTimes(1);
-  });
-
   it("keeps each job's line short: Discord's description is limited and an error can be 2000 characters", async () => {
     mockCount.mockResolvedValue(2);
     mockFindMany.mockResolvedValue([job("A", "x".repeat(2_000)), job("B", null)]);

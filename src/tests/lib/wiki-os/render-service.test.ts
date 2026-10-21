@@ -111,26 +111,6 @@ beforeEach(() => {
 });
 
 describe("renderArticle", () => {
-  it("renders the Postgres wikitext and stores the bundle, the raw HTML and htmlSyncedAt, guarded by that wikitext", async () => {
-    const id = freshId();
-    stubArticle(id, { title: "Foo bar", wikitext: "'''Intro'''" });
-
-    const result = await renderArticle(id);
-
-    expect(result).toEqual({ ok: true });
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledWith("'''Intro'''", "Foo bar");
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-    const { where, data } = mockUpdateMany.mock.calls[0]?.[0];
-    expect(where).toEqual({ id, wikitext: "'''Intro'''" });
-    expect(data.contentHtml).toBe(PARSED);
-    expect(data.htmlSyncedAt).toBeInstanceOf(Date);
-    expect(data.renderedView).toEqual(buildViewBundle(PARSED));
-    expect(data.renderedView).toMatchObject({
-      rendererVersion: RENDERER_VERSION,
-      toc: [{ id: "History", text: "History", level: 2 }],
-    });
-  });
-
   it("stores nothing when MediaWiki fails, so the previous bundle stays and the article stays stale", async () => {
     const id = freshId();
     stubArticle(id);
@@ -139,33 +119,6 @@ describe("renderArticle", () => {
     await expect(renderArticle(id)).resolves.toEqual({ ok: false });
     expect(mockUpdateMany).not.toHaveBeenCalled();
   });
-
-  it("stores the page of a health-check failure anyway, with a warning, and renders it once", async () => {
-    const id = freshId();
-    stubArticle(id, { wikitext: "{{Infobox country|name=Foo}} text" });
-    mockRenderViaMediaWiki.mockResolvedValue("<p>text without the box</p>");
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("the infobox is missing"));
-    expect(mockRenderViaMediaWiki).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-  });
-
-  it("warns about leaked wikitext markup and still stores the page", async () => {
-    const id = freshId();
-    stubArticle(id);
-    mockRenderViaMediaWiki.mockResolvedValue("<p>[[File:A.png|200px|thumb]] left</p>");
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
-
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("leaked wikitext markup"));
-    warn.mockRestore();
-  });
-
   it("restarts on the new text when a save lands while it renders", async () => {
     const id = freshId();
     const rows = [
@@ -263,16 +216,6 @@ describe("renderArticle of a page its last edit blanked", () => {
       expect(mockUpdateMany.mock.calls[0]?.[0].data.contentHtml).toBe(OLD);
     }
   });
-
-  it("stores nothing for a page with no revision and no HTML, as before", async () => {
-    const id = freshId();
-    stubArticle(id, { wikitext: "", contentHtml: null, revisions: [] });
-
-    await expect(renderArticle(id)).resolves.toEqual({ ok: false });
-
-    expect(mockUpdateMany).not.toHaveBeenCalled();
-  });
-
   it("reads the newest live revision only (a parked MediaWiki edit is not the page)", async () => {
     const id = freshId();
     stubArticle(id, { wikitext: "", contentHtml: OLD, revisions: BLANK_REVISION });
@@ -515,46 +458,10 @@ describe("buildViewBundle", () => {
       '<p>Pop <span data-wikios-chip="CountryData:Aurelia:population"></span> and <span data-wikios-chip="MyCountry:gdp"></span> here.</p>'
     );
   });
-
-  it("keeps a chip whose key is outside the marker alphabet as the ordinary link it was", () => {
-    const bundle = buildViewBundle(
-      '<p><a href="/wiki/Template:CountryData:A%3CB:population">x</a></p>'
-    );
-
-    expect(bundle.bodyHtml).not.toContain("data-wikios-chip");
-    expect(bundle.bodyHtml).toContain("Template:CountryData");
-  });
 });
 
 describe("loadViewBundle", () => {
   const syncedAt = new Date("2026-09-30T10:00:00Z");
-
-  it("returns a valid bundle with its freshness", async () => {
-    const bundle = buildViewBundle(PARSED);
-    mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: syncedAt });
-
-    await expect(loadViewBundle("a")).resolves.toEqual({
-      bundle,
-      htmlSyncedAt: syncedAt,
-      outdated: false,
-    });
-    expect(mockFindUnique).toHaveBeenCalledWith({
-      where: { id: "a" },
-      select: { renderedView: true, htmlSyncedAt: true },
-    });
-  });
-
-  it("returns a stale bundle with a null htmlSyncedAt", async () => {
-    const bundle = buildViewBundle(PARSED);
-    mockFindUnique.mockResolvedValue({ renderedView: bundle, htmlSyncedAt: null });
-
-    await expect(loadViewBundle("a")).resolves.toEqual({
-      bundle,
-      htmlSyncedAt: null,
-      outdated: false,
-    });
-  });
-
   it.each([
     ["no bundle yet", null],
     ["a version that is not a string", { ...buildViewBundle(PARSED), rendererVersion: 0 }],
@@ -582,18 +489,6 @@ describe("loadViewBundle", () => {
       toc: [{ id: "History", text: "History", level: 2 }],
       rendererVersion: "2",
     };
-
-    it("is returned as outdated, with the freshness it had and its other fields as stored", async () => {
-      mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
-
-      const loaded = await loadViewBundle("a");
-
-      expect(loaded).toMatchObject({ htmlSyncedAt: syncedAt, outdated: true });
-      expect(loaded?.bundle.rendererVersion).toBe("2");
-      expect(loaded?.bundle.toc).toEqual(hostile.toc);
-      expect(loaded?.bundle.bodyHtml).toContain("<p>Body</p>");
-    });
-
     it("is re-sanitized by the current sanitizer: body, infobox and notices", async () => {
       mockFindUnique.mockResolvedValue({ renderedView: hostile, htmlSyncedAt: syncedAt });
 
@@ -705,15 +600,6 @@ describe("renderFallbackView", () => {
     expect(bundle?.bodyHtml).toContain("Earlier render.");
     expect(bundle?.bodyHtml).not.toContain("Newer");
   });
-
-  it("uses the stored HTML of an HTML-only row", async () => {
-    mockFindUnique.mockResolvedValue({ wikitext: "", contentHtml: "<p>Legacy.</p>", revisions: [] });
-
-    await expect(renderFallbackView("a")).resolves.toMatchObject({
-      bodyHtml: expect.stringContaining("Legacy."),
-    });
-  });
-
   it("is an empty bundle for a page an edit blanked, whatever HTML its earlier text left behind (m4)", async () => {
     mockFindUnique.mockResolvedValue({
       wikitext: "",

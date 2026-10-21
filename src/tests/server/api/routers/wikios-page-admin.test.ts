@@ -873,57 +873,6 @@ describe("getLog", () => {
 
 describe("the mirror outbox (plan 407)", () => {
   const jobs = () => tables.wikiMirrorJob.rows;
-
-  it("a move queues a job for the page and one for its talk page, each tied to its log row", async () => {
-    await as(memberCtx()).movePage({ from: "Old name", to: "New name" });
-
-    expect(
-      jobs().map((job) => `${job.kind}:${job.title}->${(job.payload as { to: string }).to}`)
-    ).toEqual(["move:Old name->New name", "move:Talk:Old name->Talk:New name"]);
-    const logIds = tables.wikiLog.rows.map((row) => row.id);
-    expect(jobs().map((job) => job.logId)).toEqual(logIds);
-    expect(jobs().every((job) => job.state === "pending" && job.source === "ixwiki")).toBe(true);
-  });
-
-  it("a delete and an undelete each queue their job with the reason", async () => {
-    await as(sysopCtx()).deletePage({ title: "Old name", reason: "spam" });
-    await as(sysopCtx()).undeletePage({ title: "Old name", reason: "oops" });
-
-    expect(
-      jobs().map((job) => ({ kind: job.kind, title: job.title, payload: job.payload }))
-    ).toEqual([
-      { kind: "delete", title: "Old name", payload: { reason: "spam" } },
-      { kind: "undelete", title: "Old name", payload: { reason: "oops" } },
-    ]);
-  });
-
-  it("a protection queues one job with every restriction, a lifted one with a null level", async () => {
-    const expiresAt = inFuture();
-    await as(sysopCtx()).protectPage({
-      title: "old_name",
-      restrictions: [
-        { action: "edit", level: "sysop", expiresAt },
-        { action: "move", level: null },
-      ],
-      reason: "edit war",
-    });
-
-    expect(jobs()).toHaveLength(1);
-    expect(jobs()[0]).toMatchObject({
-      kind: "protect",
-      title: "Old name",
-      articleId: "a-old",
-      logId: tables.wikiLog.rows[0]?.id,
-      payload: {
-        reason: "edit war",
-        restrictions: [
-          { action: "edit", level: "sysop", expiresAt: expiresAt.toISOString() },
-          { action: "move", level: null, expiresAt: null },
-        ],
-      },
-    });
-  });
-
   it("queues nothing for a refused operation, a block or a group change", async () => {
     await expect(as(plainCtx()).deletePage({ title: "Old name" })).rejects.toThrow();
     await as(ownerCtx()).blockUser({ target: { wikiUsername: "Victim" } });

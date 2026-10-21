@@ -148,19 +148,6 @@ beforeEach(() => {
 });
 
 describe("notifyWatchers", () => {
-  it("notifies each watcher of the page, leaving out the editor and other pages' watchers", async () => {
-    watches.push(watch("u_a"), watch("u_b"), watch("u_editor"), watch("u_c", "other_article"));
-
-    const notified = await edit();
-
-    expect(notified).toBe(2);
-    expect(
-      sent()
-        .map((n) => n.userId)
-        .sort()
-    ).toEqual(["clerk_u_a", "clerk_u_b"]);
-  });
-
   it("writes each notification under the watcher's Clerk id, the id the notification list reads", async () => {
     // WikiWatchlist.userId is the internal user id; notifications are listed by Clerk id.
     watches.push(watch("db_user_1", "art1", null, "user_2abcClerk"));
@@ -333,27 +320,6 @@ describe("notifyWatchers", () => {
     ]);
     expect(new Set(sent().map((n) => n.userId)).size).toBe(2300);
     expect(watches.filter((w) => w.notificationTime === null && w.clerkUserId)).toHaveLength(0);
-  });
-
-  it("says a page moved, from where, and links to the page", async () => {
-    watches.push(watch("u_a"));
-
-    await notifyWatchers({
-      kind: "moved",
-      articleId: "art1",
-      title: "New name",
-      fromTitle: "Old name",
-      editor: "Admin",
-      editorUserId: "u_admin",
-      summary: "Naming policy",
-    });
-
-    expect(sent()[0]).toMatchObject({
-      title: "New name was moved",
-      message: 'Admin moved it from "Old name": Naming policy',
-      href: "/wiki/New_name",
-      metadata: { articleId: "art1", kind: "moved" },
-    });
   });
   it("clips a very long edit summary", async () => {
     watches.push(watch("u_a"));

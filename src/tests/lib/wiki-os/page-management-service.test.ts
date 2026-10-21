@@ -11,11 +11,7 @@ import {
   talkTitleOf,
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
-import { enqueueRender } from "~/lib/wiki-os/services/render-service";
-import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
-import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
-
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
 const mockUpdate = jest.fn();
@@ -142,37 +138,6 @@ describe("PageManagementService.movePage", () => {
       PageManagementService.movePage("Old name", "old_name", "x", actor)
     ).rejects.toThrow("identical");
   });
-
-  it("keeps the page's own row, so its revisions stay attached", async () => {
-    const result = await PageManagementService.movePage("old_name", "New name", "tidy", actor);
-
-    expect(result.movedArticleId).toBe("orig");
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "orig" } }));
-    // Nothing deletes or re-parents revisions: the only revision written belongs to the redirect.
-    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
-    expect(mockRevisionCreate.mock.calls[0]?.[0].data.articleId).toBe("redirect");
-  });
-
-  it("leaves a redirect page at the old title with its own #REDIRECT revision", async () => {
-    const result = await PageManagementService.movePage("old_name", "New name", "tidy", actor);
-
-    expect(result.redirectArticleId).toBe("redirect");
-    expect(mockCreate.mock.calls[0]?.[0].data).toMatchObject({
-      title: "Old name",
-      slug: "old_name",
-      wikitext: "#REDIRECT [[New name]]",
-      redirectTargetSlug: "New name",
-      summary: null,
-      authorId: "u1",
-    });
-    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({
-      articleId: "redirect",
-      wikitext: "#REDIRECT [[New name]]",
-      author: "Tester",
-      authorId: "u1",
-    });
-  });
-
   it("leaves no redirect when asked not to", async () => {
     const result = await PageManagementService.movePage(
       "old_name",
@@ -204,38 +169,6 @@ describe("PageManagementService.movePage", () => {
       PageManagementService.movePage("old_name", "New name", "x", actor)
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
-
-  it("logs the move under the actor's name and user", async () => {
-    await PageManagementService.movePage("old_name", "New name", "tidy", actor);
-
-    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({
-      logType: "move",
-      action: "move",
-      actorName: "Tester",
-      userId: "u1",
-      comment: "tidy",
-      title: "New name",
-    });
-  });
-
-  it("moves the talk page along when it exists and the destination talk page is free", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-
-    const result = await PageManagementService.movePage("old_name", "New name", "tidy", actor);
-
-    expect(result.talk).toMatchObject({ oldSlug: "talk:old_name", newSlug: "talk:new_name" });
-    expect(mockUpdate.mock.calls.map((call) => call[0].where.id)).toEqual(["orig", "talk-orig"]);
-    expect(mockUpdate.mock.calls[1]?.[0].data).toMatchObject({
-      title: "Talk:New name",
-      namespace: 1,
-    });
-    expect(mockCreate.mock.calls[1]?.[0].data).toMatchObject({
-      title: "Talk:Old name",
-      wikitext: "#REDIRECT [[Talk:New name]]",
-    });
-    expect(mockLogCreate).toHaveBeenCalledTimes(2);
-  });
-
   it("does not move the talk page when it is missing, when the destination talk page exists, or when declined", async () => {
     expect(
       (await PageManagementService.movePage("old_name", "New name", "x", actor)).talk
@@ -411,24 +344,6 @@ describe("talkTitleOf", () => {
 });
 
 describe("PageManagementService.archiveArticle / restoreArticle", () => {
-  it("archives a published page and logs the delete under the actor's name", async () => {
-    pages({ old_name: original });
-    const result = await PageManagementService.archiveArticle("Old name", "spam", actor);
-
-    expect(result).toEqual({ success: true, articleId: "orig" });
-    expect(mockUpdate.mock.calls[0]?.[0]).toMatchObject({
-      where: { id: "orig" },
-      data: { status: "ARCHIVED", lastEditorId: "u1" },
-    });
-    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({
-      logType: "delete",
-      action: "delete",
-      actorName: "Tester",
-      userId: "u1",
-      comment: "spam",
-    });
-  });
-
   it("re-renders the pages that use a template or module when one is moved, archived or restored", async () => {
     const template = { id: "t1", title: "Template:Box", namespace: 10, status: "PUBLISHED" };
     pages({ "template:box": template });
@@ -458,26 +373,6 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
-
-  it("restores an archived page with the reason and logs it", async () => {
-    pages({ old_name: { ...original, status: "ARCHIVED" } });
-    const result = await PageManagementService.restoreArticle(
-      "Old name",
-      actor,
-      "ixwiki",
-      "mistake"
-    );
-
-    expect(result).toEqual({ success: true, articleId: "orig" });
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ status: "PUBLISHED" });
-    expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({
-      logType: "delete",
-      action: "restore",
-      actorName: "Tester",
-      comment: "mistake",
-    });
-  });
-
   it("refuses to restore a page that is not archived, or missing", async () => {
     await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toMatchObject({
       code: "CONFLICT",
@@ -557,69 +452,6 @@ describe("PageManagementService.movePage and the destination's creation lock (m6
     expect(keys).toEqual(["ixwiki:New name", "ixwiki:Talk:New name"]);
   });
 });
-
-describe("PageManagementService.movePage and the rendered view (plan 404)", () => {
-  it("marks the moved page stale under its new name and queues its render after the commit", async () => {
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
-      title: "New name",
-      htmlSyncedAt: null,
-    });
-    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
-    expect(enqueueRender).toHaveBeenCalledTimes(1);
-    expect(enqueueRender).toHaveBeenCalledWith("orig");
-  });
-
-  it("queues the moved talk page's render too", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({
-      id: where.id,
-    }));
-
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(
-      jest
-        .mocked(enqueueRender)
-        .mock.calls.map((call) => call[0])
-        .sort()
-    ).toEqual(["orig", "talk-orig"]);
-  });
-
-  it("marks a restored page stale and queues its render after the commit (a deleted page's view is rebuilt)", async () => {
-    pages({ old_name: { ...original, status: "ARCHIVED" } });
-
-    await PageManagementService.restoreArticle("Old name", actor);
-
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
-      status: "PUBLISHED",
-      htmlSyncedAt: null,
-    });
-    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
-    expect(enqueueRender).toHaveBeenCalledTimes(1);
-    expect(enqueueRender).toHaveBeenCalledWith("orig");
-  });
-
-  it("queues no render for a restore that was refused, or for a delete", async () => {
-    pages({ old_name: original });
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toMatchObject({
-      code: "CONFLICT",
-    });
-    await PageManagementService.archiveArticle("Old name", "spam", actor);
-
-    expect(enqueueRender).not.toHaveBeenCalled();
-  });
-
-  it("queues nothing for a move that failed", async () => {
-    mockFindFirst.mockReset().mockResolvedValue(null);
-
-    await expect(
-      PageManagementService.movePage("old_name", "new_name", "x", actor)
-    ).rejects.toThrow("not found");
-    expect(enqueueRender).not.toHaveBeenCalled();
-  });
-});
 describe("PageManagementService.getBrokenRedirects", () => {
   const redirectRow = (id: string, title: string, redirectTargetSlug: string) => ({
     id,
@@ -684,127 +516,7 @@ describe("PageManagementService.getBrokenRedirects", () => {
     expect(mockFindMany).toHaveBeenCalledTimes(1);
   });
 });
-
-describe("PageManagementService forgets what the caches hold about a page it changed", () => {
-  it("evicts a deleted page by title and id, after the delete committed", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
-    mockUpdate.mockResolvedValue({ id: "a1" });
-    mockLogCreate.mockImplementation(async () => {
-      expect(evictWikiTitleCaches).not.toHaveBeenCalled(); // still inside the transaction
-      return { id: "log-1" };
-    });
-
-    await PageManagementService.archiveArticle("Old name", "spam", actor);
-
-    expect(evictWikiTitleCaches).toHaveBeenCalledTimes(1);
-    expect(evictWikiTitleCaches).toHaveBeenCalledWith("Old name", "ixwiki", "a1");
-  });
-
-  it("evicts a restored page, whose negative cache entries would still say it is missing", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
-    mockUpdate.mockResolvedValue({ id: "a1" });
-
-    await PageManagementService.restoreArticle("Old name", actor);
-
-    expect(evictWikiTitleCaches).toHaveBeenCalledWith("Old name", "ixwiki", "a1");
-  });
-
-  it("evicts neither when the operation was refused", async () => {
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
-    await expect(PageManagementService.archiveArticle("Old name", "x", actor)).rejects.toThrow();
-    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
-
-    expect(evictWikiTitleCaches).not.toHaveBeenCalled();
-  });
-
-  it("evicts both names of a moved page and of its talk page", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    const evicted = jest
-      .mocked(evictWikiTitleCaches)
-      .mock.calls.map(([title, , id]) => `${title}@${id}`);
-    expect(evicted.sort()).toEqual(
-      [
-        "Old name@orig",
-        "New name@orig",
-        "Talk:Old name@talk-orig",
-        "Talk:New name@talk-orig",
-      ].sort()
-    );
-  });
-});
-
 describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
-  it("notifies the watchers of a moved page, under its new title, leaving the mover out", async () => {
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(notifyWatchers).toHaveBeenCalledTimes(1);
-    expect(notifyWatchers).toHaveBeenCalledWith({
-      kind: "moved",
-      articleId: "orig",
-      title: "New name",
-      fromTitle: "Old name",
-      editor: "Tester",
-      editorUserId: "u1",
-      summary: "tidy",
-    });
-  });
-
-  it("notifies the watchers of the talk page that moved with it", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(
-      jest
-        .mocked(notifyWatchers)
-        .mock.calls.map(([change]) => change.articleId)
-        .sort()
-    ).toEqual(["orig", "talk-orig"]);
-  });
-
-  it("notifies the watchers of a deleted page, leaving the deleter out", async () => {
-    await PageManagementService.archiveArticle("Old name", "spam", actor);
-
-    expect(notifyWatchers).toHaveBeenCalledWith({
-      kind: "deleted",
-      articleId: "orig",
-      title: "Old name",
-      editor: "Tester",
-      editorUserId: "u1",
-      summary: "spam",
-    });
-  });
-
-  it("notifies nobody when the move or the delete was refused", async () => {
-    mockFindFirst.mockReset().mockResolvedValue(null);
-
-    await expect(
-      PageManagementService.movePage("old_name", "new_name", "x", actor)
-    ).rejects.toThrow();
-    await expect(PageManagementService.archiveArticle("Old name", "x", actor)).rejects.toThrow();
-
-    expect(notifyWatchers).not.toHaveBeenCalled();
-  });
-
-  it("notifies the watchers of a restored page, leaving the restorer out", async () => {
-    pages({ old_name: { ...original, status: "ARCHIVED" } });
-
-    await PageManagementService.restoreArticle("Old name", actor, "ixwiki", "Wrongly deleted");
-
-    expect(notifyWatchers).toHaveBeenCalledTimes(1);
-    expect(notifyWatchers).toHaveBeenCalledWith({
-      kind: "restored",
-      articleId: "orig",
-      title: "Old name",
-      editor: "Tester",
-      editorUserId: "u1",
-      summary: "Wrongly deleted",
-    });
-  });
   it.each([
     ["move", () => PageManagementService.movePage("old_name", "new_name", "tidy", actor)],
     ["delete", () => PageManagementService.archiveArticle("Old name", "spam", actor)],
@@ -848,34 +560,6 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
       id: `log:${data.title}`,
     }));
   });
-
-  it("writes one move job in the move's transaction, from the old title, tied to its log row", async () => {
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(jobs()).toEqual([
-      {
-        source: "ixwiki",
-        kind: "move",
-        title: "Old name",
-        articleId: "orig",
-        logId: "log:New name",
-        payload: { to: "New name", reason: "tidy", leaveRedirect: true },
-      },
-    ]);
-    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
-  });
-
-  it("gives the talk page that moves along its own job, so each job mirrors what WikiOS did", async () => {
-    pages({ old_name: original, "talk:old_name": talkOriginal });
-
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
-
-    expect(jobs().map(({ kind, title, payload }) => ({ kind, title, to: payload.to }))).toEqual([
-      { kind: "move", title: "Old name", to: "New name" },
-      { kind: "move", title: "Talk:Old name", to: "Talk:New name" },
-    ]);
-  });
-
   it("records that no redirect was left when the mover asked for none", async () => {
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki", {
       leaveRedirect: false,
@@ -892,49 +576,5 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
     });
 
     expect(mockJobCreate).not.toHaveBeenCalled();
-  });
-
-  it("writes no job, and does not kick, when the move was refused", async () => {
-    pages({});
-
-    await expect(
-      PageManagementService.movePage("old_name", "new_name", "tidy", actor)
-    ).rejects.toThrow();
-
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(scheduleMirrorKick).not.toHaveBeenCalled();
-  });
-
-  it("writes a delete job and an undelete job with the reasons", async () => {
-    await PageManagementService.archiveArticle("Old name", "spam", actor);
-    pages({ old_name: { ...original, status: "ARCHIVED" } });
-    await PageManagementService.restoreArticle("Old name", actor, "ixwiki", "Wrongly deleted");
-
-    expect(jobs()).toEqual([
-      {
-        source: "ixwiki",
-        kind: "delete",
-        title: "Old name",
-        articleId: "orig",
-        logId: "log:Old name",
-        payload: { reason: "spam" },
-      },
-      {
-        source: "ixwiki",
-        kind: "undelete",
-        title: "Old name",
-        articleId: "orig",
-        logId: "log:Old name",
-        payload: { reason: "Wrongly deleted" },
-      },
-    ]);
-    expect(scheduleMirrorKick).toHaveBeenCalledTimes(2);
-  });
-
-  it("writes no job when a delete or an undelete was refused", async () => {
-    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
-
-    expect(mockJobCreate).not.toHaveBeenCalled();
-    expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 });

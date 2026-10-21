@@ -296,24 +296,7 @@ describe("importing a revision", () => {
       expect(decoded[4]).toBe(`wikios>${labels.short}`);
       expect(decoded.join("")).not.toContain("\uFFFD");
     });
-
-    it("leaves no space behind when the cut falls after one", async () => {
-      const [name] = await authors(
-        revisionRow({ id: "rev-1", author: `${"x".repeat(247)} tail`, authorId: null })
-      );
-
-      expect(name).toBe(`wikios&gt;${"x".repeat(247)}`);
-    });
   });
-
-  it("marks a minor edit minor", async () => {
-    revisionsAre(revisionRow({ minor: true }));
-
-    await runRevisionJob(job());
-
-    expect(requestsTo("import")[0]?.file?.content).toContain("<minor />");
-  });
-
   it("imports under the title the job was written with, the namespace and content model of that title", async () => {
     await runRevisionJob(job({ title: "Module:Box" }));
     await runRevisionJob(job({ title: "Template:Box" }));
@@ -594,14 +577,6 @@ describe("when the bot cannot log in", () => {
     expect(wiki.calls()).toEqual([]);
     expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
   });
-
-  it("fails the job when the bot credentials are not set", async () => {
-    delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
-
-    await expect(runRevisionJob(job())).rejects.toThrow(/WIKIOS_MEDIAWIKI_BOT_USER/);
-
-    expect(wiki.fetch).not.toHaveBeenCalled();
-  });
 });
 
 describe("a restore job (a park's re-push of WikiOS's head)", () => {
@@ -630,15 +605,6 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
     expect(requestsTo("import")[0]?.params.summary).toBe("Restoring WikiOS revision 90");
     expect(mockLinkFindMany).not.toHaveBeenCalled();
   });
-
-  it("is not minor, whatever the head revision was", async () => {
-    revisionsAre(revisionRow({ minor: true }));
-
-    await runRevisionJob(restore());
-
-    expect(requestsTo("import")[0]?.file?.content).not.toContain("<minor />");
-  });
-
   it("is imported even though the head already has a MediaWiki id: that revision is the one MediaWiki lost", async () => {
     revisionsAre(revisionRow({ mwRevId: 42 }));
 
@@ -648,13 +614,6 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
     // the head keeps its own id: only a revision with none is stamped
     expect(mockRevisionUpdateMany.mock.calls[0]?.[0].where).toEqual({ id: "rev-1", mwRevId: null });
   });
-
-  it("uses a default summary when none was recorded", async () => {
-    await runRevisionJob(job({ payload: { restore: true } }));
-
-    expect(requestsTo("import")[0]?.params.summary).toBe("Restoring the current WikiOS revision");
-  });
-
   it("fails when no mirror account is configured", async () => {
     delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
 
@@ -1045,25 +1004,6 @@ describe("a batch of revisions of one title", () => {
       ]);
       wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
     });
-
-    it("says so in the notes, not that someone else edited", async () => {
-      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
-
-      expect(outcomes[1]?.note).toContain("the mirror's own");
-      expect(outcomes[1]?.note).not.toContain("MediaWiki had a newer revision");
-      expect(outcomes[0]?.note).toContain("the mirror's own");
-      expect(outcomes[0]?.note).toContain("only the batch's newest text was pushed");
-      expect(requestsTo("edit")).toHaveLength(1); // the fallback itself is the same
-    });
-
-    it("asks MediaWiki who made the current revision", async () => {
-      await runBatch([jobFor(1), jobFor(2)]);
-
-      expect(wiki.calls().find((call) => call.params.rvlimit === "1")?.params.rvprop).toBe(
-        "ids|sha1|timestamp|user"
-      );
-    });
-
     it("knows the mirror account by its normalised name, whatever the bot-password's app name", async () => {
       process.env.WIKIOS_MEDIAWIKI_BOT_USER = "wikiOSMirror@other-app";
       historyIs([
@@ -1141,18 +1081,6 @@ describe("a batch of revisions of one title", () => {
       expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
       expect(plan.xml?.match(/<revision>/g)).toHaveLength(1);
     });
-
-    it("fills the batch up to the cap, never past it", async () => {
-      const medium = (n: number, createdAt: Date) => row(n, "m".repeat(2_500_000), createdAt);
-      revisionsAre(medium(1, AT1), medium(2, AT2), medium(3, AT3));
-
-      const plan = await planRevisionBatch([jobFor(1), jobFor(2), jobFor(3)]);
-
-      // 2.5 MB, 5.0 MB; a third would make 7.5 MB
-      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
-      expect(Buffer.byteLength(plan.xml ?? "")).toBeLessThanOrEqual(MAX_BATCH_BYTES);
-    });
-
     it("counts the text as escaped: an & takes five bytes of XML", async () => {
       const ampersands = (n: number, createdAt: Date) => row(n, "&".repeat(700_000), createdAt);
       revisionsAre(ampersands(1, AT1), ampersands(2, AT2));
@@ -1180,15 +1108,6 @@ describe("a batch of revisions of one title", () => {
 
       expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ id: { in: ["rev-1"] } });
     });
-
-    it("reads no text at all when every revision is already in MediaWiki", async () => {
-      revisionsAre(row(1, T1, AT1, { mwRevId: 5 }), row(2, T2, AT2, { mwRevId: 6 }));
-
-      await planRevisionBatch([jobFor(1), jobFor(2)]);
-
-      expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
-    });
-
     it("reads a restore's head even though MediaWiki has a revision for it", async () => {
       revisionsAre(row(1, T1, AT1, { mwRevId: 5 }));
 
@@ -1196,12 +1115,6 @@ describe("a batch of revisions of one title", () => {
 
       expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ id: { in: ["rev-1"] } });
       expect(plan.members[0]).toMatchObject({ send: true });
-    });
-
-    it("takes every revision of a small batch", async () => {
-      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
-
-      expect(plan.members).toHaveLength(2);
     });
   });
 

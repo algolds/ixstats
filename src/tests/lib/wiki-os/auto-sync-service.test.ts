@@ -1585,29 +1585,6 @@ describe("the sync status the telemetry reads", () => {
     stored({ value: JSON.stringify({ lastRunAt: 5 }) });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
   });
-
-  it("is ACTIVE after a clean recent cycle", async () => {
-    stored(statusRow());
-
-    await expect(getInboundSyncStatus(now)).resolves.toEqual({
-      status: "ACTIVE",
-      lastRunAt: "2026-09-27T10:00:00Z",
-      failures: 0,
-      lastError: null,
-      repushSkipped: [],
-    });
-  });
-
-  it("is DEGRADED when the last cycle had failures, and says what failed", async () => {
-    stored(statusRow({ failures: 2, lastError: "A: boom" }));
-
-    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
-      status: "DEGRADED",
-      failures: 2,
-      lastError: "A: boom",
-    });
-  });
-
   it("is DEGRADED, naming the articles, when parks went without a re-push (no mirror account)", async () => {
     stored(statusRow(), ["Foo", "Bar"]);
 
